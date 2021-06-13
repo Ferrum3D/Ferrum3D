@@ -2,6 +2,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include "StringUtils.h"
 #include "CoreUtils.h"
 #include "FeConsole.h"
@@ -56,8 +57,20 @@ namespace Ferrum
 	* @return number of characters printed.
 	*/
 	template<class T, class ...Args>
-	inline size_t FeLog(const FeLogType ty, const std::string& fmt, T val, Args... args) {
+	inline size_t FeLog(const FeLogType ty, const std::string_view fmt, T val, Args... args) {
 		return FeLog(ty, FeFormatString(fmt, val, args...));
+	}
+
+	/**
+	* @brief Log a formatted message to standard output.
+	* For example: `FeLog("{} + {} = {}", 2, 2, 4)` will print 2 + 2 = 4.
+	* @param fmt Message format, e.g. `"{} + {} = {}"`.
+	* @param args Arguments.
+	* @return number of characters printed.
+	*/
+	template<class T, class ...Args>
+	inline size_t FeLogMsg(const std::string_view fmt, T val, Args... args) {
+		return FeLog(FeLogType::Message, FeFormatString(fmt, val, args...));
 	}
 
 	/**
@@ -66,7 +79,7 @@ namespace Ferrum
 	* @param msg Message to print.
 	* @return number of characters printed.
 	*/
-	inline size_t FeLog(const FeLogType ty, const std::string& msg) {
+	inline size_t FeLog(const FeLogType ty, const std::string_view msg) {
 #ifndef FE_DEBUG
 		if (ty == FeLogType::Message || ty == FeLogType::Warning) {
 			return 0;
@@ -110,6 +123,15 @@ namespace Ferrum
 		FeResetConColor();
 		std::cerr << "]: " << msg << "\n"; // 3chars + msg + 1 char
 		return res + msg.length() + 4;
+	}
+
+	/**
+	* @brief Log a message to standard output.
+	* @param msg Message to print.
+	* @return number of characters printed.
+	*/
+	inline size_t FeLogMsg(const std::string_view msg) {
+		return FeLog(FeLogType::Message, msg);
 	}
 
 #define FE_ASSERT(_Stmt) if (!(_Stmt)) { ::Ferrum::FeLog(::Ferrum::FeLogType::Error, "Assertion failed in " __FILE__); FE_DEBUGBREAK }

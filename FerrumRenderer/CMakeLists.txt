@@ -3,14 +3,20 @@ cmake_minimum_required(VERSION 3.18.0)
 project(FerrumRenderer)
 
 set(SRC
-	src/FeRenderer.cpp
-	src/FeWindow.cpp
+	FeRenderer.cpp
+	FeWindow.cpp
+	FeGraphicsDevice.cpp
 )
 set(INCLUDE
-	include/FeRenderer.h
-	include/FeWindow.h
+	FeRenderer.h
+	FeWindow.h
+	IFeWindow.h
+	FeRenderAPI.h
+	IFeGraphicsDevice.h
+	FeGraphicsDevice.h
+	FeRenderInternal.h
 )
 
 add_library(FerrumRenderer SHARED ${SRC} ${INCLUDE})
 
-target_include_directories(FerrumRenderer PRIVATE "include")
+target_compile_definitions(FerrumRenderer PRIVATE FERRUMRENDERER_EXPORTS)
