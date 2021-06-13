@@ -1,6 +1,7 @@
 #pragma once
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include "utf8h/utf8.h"
 
@@ -30,11 +31,11 @@ namespace Ferrum
 	void FE_CORE_API FeUtf32CharToUtf8String(utf8_int32_t character, std::string& str);
 
 	inline void FeFormatString(std::ostream& stream, const int length, const char* fmt) {
-		stream << fmt;
+		stream << std::string_view(fmt, length);
 	}
 
-	inline std::string FeFormatString(const std::string& fmt) {
-		return fmt;
+	inline std::string FeFormatString(const std::string_view fmt) {
+		return std::string(fmt);
 	}
 
 	/**
@@ -83,9 +84,9 @@ namespace Ferrum
 	* @return A formatted string.
 	*/
 	template<class T, class ...Args>
-	inline std::string FeFormatString(const std::string& fmt, T val, Args... args) {
+	inline std::string FeFormatString(const std::string_view fmt, T val, Args... args) {
 		std::stringstream ss;
-		FeFormatString(ss, fmt.length(), fmt.c_str(), val, args...);
-		return std::move(ss.str());
+		FeFormatString(ss, fmt.length(), fmt.data(), val, args...);
+		return ss.str();
 	}
 }

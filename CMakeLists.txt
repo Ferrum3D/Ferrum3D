@@ -12,17 +12,19 @@ project(Ferrum3D)
 add_subdirectory(FerrumCore)
 add_subdirectory(FerrumRenderer)
 add_subdirectory(FerrumTestProject)
+add_subdirectory(FerrumUnitTests)
 
 add_subdirectory(External)
 
 set_property(TARGET FerrumCore PROPERTY FOLDER "Ferrum3D")
 set_property(TARGET FerrumRenderer PROPERTY FOLDER "Ferrum3D")
 set_property(TARGET FerrumTestProject PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FerrumUnitTests PROPERTY FOLDER "Ferrum3D")
 
 # renderer dependencies
 target_include_directories(FerrumRenderer
 PRIVATE
-	"FerrumCore/include"
+	"./"
 	"External/glfw/include"
 	"External/DiligentEngine"
 )
@@ -39,10 +41,19 @@ PRIVATE
 # test project dependencies
 target_include_directories(FerrumTestProject
 PRIVATE
-	"FerrumCore/include"
-	"FerrumRenderer/include"
+	"./"
 )
 target_link_libraries(FerrumTestProject
-	FerrumCore 
+	FerrumCore
+	FerrumRenderer
+)
+
+# unit tests project dependencies
+target_include_directories(FerrumUnitTests
+PRIVATE
+	"./"
+)
+target_link_libraries(FerrumUnitTests
+	FerrumCore
 	FerrumRenderer
 )
