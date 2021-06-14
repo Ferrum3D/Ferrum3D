@@ -36,7 +36,7 @@ int main() {
 	FeLogInit();
 
 	auto results = new int[100000];
-	std::vector<FeJobHandle> jobs;
+	std::vector<std::shared_ptr<FeJobHandle>> jobs;
 	auto js = std::make_unique<FeJobSystem>(std::thread::hardware_concurrency());
 	for (int i = 0; i < 100000; ++i) {
 		TestJob job{};
@@ -50,7 +50,7 @@ int main() {
 	FeLogMsg("All jobs scheduled");
 
 	for (auto& j : jobs)
-		j.Wait();
+		j->Wait();
 
 	FeLogMsg("All completed");
 	js->JoinAll();

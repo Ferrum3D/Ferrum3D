@@ -44,50 +44,43 @@ namespace Ferrum
 		friend class FeWorkerThread;
 		friend class FeJobQueue;
 
-		FeJobType m_Type;
+		FeJobType m_Type{};
 
-		std::condition_variable* m_JobCv{};
-		std::mutex* m_JobMutex{};
+		std::condition_variable m_JobCv{};
+		std::mutex m_JobMutex{};
 		void* m_Instance{};
 
-		FeJobFunction m_Func;
+		FeJobFunction m_Func{};
 
-		bool* m_Ready{};
-
-		inline FeJobHandle(FeJobFunction func, FeJobType type, void* inst) {
-			m_Func = func;
-			m_Type = type;
-			m_JobCv = new std::condition_variable();
-			m_JobMutex = new std::mutex();
-			m_Ready = new bool();
-			m_Instance = inst;
-		}
+		bool m_Ready{};
 
 		inline void MarkCompleted() {
-			std::unique_lock lk(*m_JobMutex);
-			*m_Ready = true;
-			m_JobCv->notify_all();
+			std::unique_lock lk(m_JobMutex);
+			m_Ready = true;
+			m_JobCv.notify_all();
 		}
 
 	public:
+		inline FeJobHandle(FeJobFunction func, FeJobType type, void* inst) {
+			m_Func = func;
+			m_Type = type;
+			m_Instance = inst;
+		}
+
 		inline FeJobType GetType() const {
 			return m_Type;
 		}
 
 		inline void Wait() {
-			{
-				std::unique_lock lk(*m_JobMutex);
-				while (!*m_Ready) m_JobCv->wait(lk);
-			}
-			delete m_JobCv;
-			delete m_JobMutex;
+			std::unique_lock lk(m_JobMutex);
+			while (!m_Ready) m_JobCv.wait(lk);
 		}
 	};
 
 	class FeJobQueue
 	{
 		std::shared_mutex m_Mutex{};
-		std::queue<FeJobHandle> m_Queues[(int)FeJobType::Count];
+		std::queue<std::shared_ptr<FeJobHandle>> m_Queues[(int)FeJobType::Count];
 
 	public:
 		inline bool HasJobs(FeJobType flags) {
@@ -102,9 +95,9 @@ namespace Ferrum
 			return false;
 		}
 
-		inline bool TryPopJob(FeJobType flags, FeJobHandle& handle) {
+		inline bool TryPopJob(FeJobType flags, std::shared_ptr<FeJobHandle>& handle) {
 			std::unique_lock lk(m_Mutex);
-			handle.m_Func = nullptr;
+			handle = nullptr;
 			for (int i = 0; i < (int)FeJobType::Count; ++i) {
 				auto flag = 1 << i;
 				if ((int(flags) & flag) && !m_Queues[i].empty()) {
@@ -114,12 +107,17 @@ namespace Ferrum
 				}
 			}
 
-			return handle.m_Func;
+			return handle != nullptr;
 		}
 
-		inline void Enqueue(const FeJobHandle& handle) {
+		inline void Enqueue(const std::shared_ptr<FeJobHandle>& handle) {
 			std::unique_lock lk(m_Mutex);
-			m_Queues[FeCountTrailingZeros((uint32_t)handle.GetType())].push(handle);
+			m_Queues[FeCountTrailingZeros((uint32_t)handle->GetType())].push(handle);
+		}
+
+		inline void Enqueue(std::shared_ptr<FeJobHandle>&& handle) {
+			std::unique_lock lk(m_Mutex);
+			m_Queues[FeCountTrailingZeros((uint32_t)handle->GetType())].push(std::move(handle));
 		}
 	};
 
@@ -171,10 +169,10 @@ namespace Ferrum
 						break;
 				}
 
-				FeJobHandle job{ nullptr, Flags, nullptr };
+				std::shared_ptr<FeJobHandle> job{};
 				if (JobSystemQueue.TryPopJob(Flags, job)) {
-					job.m_Func(job.m_Instance);
-					job.MarkCompleted();
+					job->m_Func(job->m_Instance);
+					job->MarkCompleted();
 				}
 			}
 
@@ -193,7 +191,7 @@ namespace Ferrum
 		std::atomic<FeWorkerThreadState> State{};
 
 		inline FeWorkerThread(const FeWorkerThreadDesc& desc) : JobSystemMutex(*desc.JobSystemMutex),
-				JobSystemCv(*desc.JobSystemCv), JobSystemQueue(*desc.JobSystemQueue) {
+			JobSystemCv(*desc.JobSystemCv), JobSystemQueue(*desc.JobSystemQueue) {
 			Name = desc.Name;
 			Id = desc.Id;
 			Flags = desc.Flags;
@@ -201,8 +199,6 @@ namespace Ferrum
 			Handle = std::thread(&FeWorkerThread::ThreadLoop, this);
 		}
 	};
-
-	inline constexpr size_t FeSyncSizePerThread = sizeof(std::mutex) + sizeof(std::condition_variable);
 
 	class FE_CORE_API FeJobSystem
 	{
@@ -212,20 +208,16 @@ namespace Ferrum
 		std::mutex m_Mutex{};
 		std::condition_variable m_Cv{};
 
-		FeStackAllocator m_SyncAllocator;
-
-		FeJobHandle ScheduleJob(FeJobFunction job, FeJobType type, void* inst);
+		std::shared_ptr<FeJobHandle> ScheduleJob(FeJobFunction job, FeJobType type, void* inst);
 
 		void Init(const std::vector<FeJobType>& threadFlagArray);
 
 	public:
-		inline FeJobSystem(const std::vector<FeJobType>& threadFlagArray)
-				: m_SyncAllocator(threadFlagArray.size() * FeSyncSizePerThread) {
+		inline FeJobSystem(const std::vector<FeJobType>& threadFlagArray) {
 			Init(threadFlagArray);
 		}
 
-		inline FeJobSystem(size_t threadCount)
-				: m_SyncAllocator(threadCount * FeSyncSizePerThread) {
+		inline FeJobSystem(size_t threadCount) {
 			std::vector<FeJobType> threadFlagArray(threadCount, FeJobType::LightJob | FeJobType::SingleFrameJob);
 			threadFlagArray[0] |= FeJobType::HardDriveJob | FeJobType::HeavyJob;
 			Init(threadFlagArray);
@@ -246,11 +238,11 @@ namespace Ferrum
 		 * @return A handle to the enqueued job
 		*/
 		template<class Job>
-		inline FeJobHandle Schedule(const Job& job, FeJobType type) {
+		inline std::shared_ptr<FeJobHandle> Schedule(const Job& job, FeJobType type) {
 			auto func = [](void* ptr) {
 				auto& instance = *((Job*)ptr);
 				instance.Execute();
-				delete &instance;
+				delete& instance;
 			};
 			return ScheduleJob(func, type, new Job(job));
 		}
