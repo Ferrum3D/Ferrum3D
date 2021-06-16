@@ -17,9 +17,9 @@ namespace Ferrum
 		}
 	}
 
-	std::shared_ptr<FeJobHandle> FeJobSystem::ScheduleJob(FeJobFunction job, FeJobType type, void* inst) {
-		auto handle = std::make_shared<FeJobHandle>(job, type, inst);
-		m_Queue.Enqueue(handle);
+	std::unique_ptr<FeJobHandle> FeJobSystem::ScheduleJob(FeJobFunction job, FeJobType type, void* inst) {
+		auto handle = std::make_unique<FeJobHandle>(job, type, inst);
+		m_Queue.Enqueue(handle.get());
 		m_Cv.notify_all();
 		return handle;
 	}
