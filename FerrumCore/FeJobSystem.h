@@ -50,13 +50,16 @@ namespace Ferrum
 		std::mutex m_JobMutex{};
 		void* m_Instance{};
 
+		std::thread::id m_ThreadId{};
+
 		FeJobFunction m_Func{};
 
 		bool m_Ready{};
 
-		inline void MarkCompleted() {
+		inline void MarkCompleted(std::thread::id tid) {
 			std::unique_lock lk(m_JobMutex);
 			m_Ready = true;
+			m_ThreadId = tid;
 			m_JobCv.notify_all();
 		}
 
@@ -75,12 +78,19 @@ namespace Ferrum
 			std::unique_lock lk(m_JobMutex);
 			while (!m_Ready) m_JobCv.wait(lk);
 		}
+
+		inline ~FeJobHandle() {
+			if (m_Instance) {
+				delete m_Instance;
+				m_Instance = nullptr;
+			}
+		}
 	};
 
 	class FeJobQueue
 	{
 		std::shared_mutex m_Mutex{};
-		std::queue<std::shared_ptr<FeJobHandle>> m_Queues[(int)FeJobType::Count];
+		std::queue<FeJobHandle*> m_Queues[(int)FeJobType::Count];
 
 	public:
 		inline bool HasJobs(FeJobType flags) {
@@ -95,7 +105,7 @@ namespace Ferrum
 			return false;
 		}
 
-		inline bool TryPopJob(FeJobType flags, std::shared_ptr<FeJobHandle>& handle) {
+		inline bool TryPopJob(FeJobType flags, FeJobHandle*& handle) {
 			std::unique_lock lk(m_Mutex);
 			handle = nullptr;
 			for (int i = 0; i < (int)FeJobType::Count; ++i) {
@@ -107,17 +117,12 @@ namespace Ferrum
 				}
 			}
 
-			return handle != nullptr;
+			return handle;
 		}
 
-		inline void Enqueue(const std::shared_ptr<FeJobHandle>& handle) {
+		inline void Enqueue(FeJobHandle* handle) {
 			std::unique_lock lk(m_Mutex);
 			m_Queues[FeCountTrailingZeros((uint32_t)handle->GetType())].push(handle);
-		}
-
-		inline void Enqueue(std::shared_ptr<FeJobHandle>&& handle) {
-			std::unique_lock lk(m_Mutex);
-			m_Queues[FeCountTrailingZeros((uint32_t)handle->GetType())].push(std::move(handle));
 		}
 	};
 
@@ -169,10 +174,10 @@ namespace Ferrum
 						break;
 				}
 
-				std::shared_ptr<FeJobHandle> job{};
+				FeJobHandle* job{};
 				if (JobSystemQueue.TryPopJob(Flags, job)) {
 					job->m_Func(job->m_Instance);
-					job->MarkCompleted();
+					job->MarkCompleted(std::this_thread::get_id());
 				}
 			}
 
@@ -208,7 +213,7 @@ namespace Ferrum
 		std::mutex m_Mutex{};
 		std::condition_variable m_Cv{};
 
-		std::shared_ptr<FeJobHandle> ScheduleJob(FeJobFunction job, FeJobType type, void* inst);
+		std::unique_ptr<FeJobHandle> ScheduleJob(FeJobFunction job, FeJobType type, void* inst);
 
 		void Init(const std::vector<FeJobType>& threadFlagArray);
 
@@ -238,11 +243,10 @@ namespace Ferrum
 		 * @return A handle to the enqueued job
 		*/
 		template<class Job>
-		inline std::shared_ptr<FeJobHandle> Schedule(const Job& job, FeJobType type) {
+		inline std::unique_ptr<FeJobHandle> Schedule(const Job& job, FeJobType type) {
 			auto func = [](void* ptr) {
 				auto& instance = *((Job*)ptr);
 				instance.Execute();
-				delete& instance;
 			};
 			return ScheduleJob(func, type, new Job(job));
 		}

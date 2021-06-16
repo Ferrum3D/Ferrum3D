@@ -18,7 +18,6 @@ set(INCLUDE
 	FeConsole.h
 	FeLog.h
 	StringUtils.h
-	utf8h/utf8.h
 	
 	FeParallelQueue.h
 	FeStackAllocator.h

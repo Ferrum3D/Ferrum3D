@@ -13,6 +13,7 @@ add_subdirectory(FerrumCore)
 add_subdirectory(FerrumRenderer)
 add_subdirectory(FerrumTestProject)
 add_subdirectory(FerrumUnitTests)
+add_subdirectory(FerrumAssetCompiler)
 
 add_subdirectory(External)
 
@@ -20,6 +21,7 @@ set_property(TARGET FerrumCore PROPERTY FOLDER "Ferrum3D")
 set_property(TARGET FerrumRenderer PROPERTY FOLDER "Ferrum3D")
 set_property(TARGET FerrumTestProject PROPERTY FOLDER "Ferrum3D")
 set_property(TARGET FerrumUnitTests PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FerrumAssetCompiler PROPERTY FOLDER "Ferrum3D")
 
 # renderer dependencies
 target_include_directories(FerrumRenderer
@@ -36,6 +38,13 @@ PRIVATE
     Diligent-GraphicsEngineVk-shared
 	glfw
 	FerrumCore
+)
+
+# core dependencies
+target_include_directories(FerrumCore
+PRIVATE
+	"External/entt"
+	"External/urf8h"
 )
 
 # test project dependencies
@@ -56,4 +65,13 @@ PRIVATE
 target_link_libraries(FerrumUnitTests
 	FerrumCore
 	FerrumRenderer
+)
+
+# asset compiler dependencies
+target_include_directories(FerrumAssetCompiler
+PRIVATE
+	"./"
+)
+target_link_libraries(FerrumAssetCompiler
+	FerrumCore
 )
