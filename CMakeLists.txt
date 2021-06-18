@@ -42,9 +42,9 @@ PRIVATE
 
 # core dependencies
 target_include_directories(FerrumCore
-PRIVATE
+PUBLIC
 	"External/entt"
-	"External/urf8h"
+	"External/utf8h"
 )
 
 # test project dependencies

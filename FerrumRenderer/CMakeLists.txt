@@ -8,13 +8,18 @@ set(SRC
 	FeGraphicsDevice.cpp
 )
 set(INCLUDE
+	FeRenderAPI.h
 	FeRenderer.h
 	FeWindow.h
-	IFeWindow.h
-	FeRenderAPI.h
-	IFeGraphicsDevice.h
 	FeGraphicsDevice.h
 	FeRenderInternal.h
+	FeShader.cpp
+	FeShader.h
+	
+	IFeRenderPass.h
+	IFeWindow.h
+	IFeGraphicsDevice.h
+	IFeShader.h
 )
 
 add_library(FerrumRenderer SHARED ${SRC} ${INCLUDE})

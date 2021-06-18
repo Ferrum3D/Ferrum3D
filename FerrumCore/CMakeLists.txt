@@ -7,6 +7,8 @@ set(SRC
 	StringUtils.cpp
 	
 	FeJobSystem.cpp
+	
+	FeAssetManager.cpp
 )
 set(INCLUDE
 	CoreUtils.h
@@ -22,6 +24,8 @@ set(INCLUDE
 	FeParallelQueue.h
 	FeStackAllocator.h
 	FeJobSystem.h
+	
+	FeAssetManager.h
 )
 
 add_library(FerrumCore SHARED ${SRC} ${INCLUDE})
