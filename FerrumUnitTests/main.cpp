@@ -1,6 +1,7 @@
 #include "FeTestFramework.h"
 #include "FeVectorTests.h"
 #include "FeAllocatorTests.h"
+#include "FeAssetManagerTests.h"
 
 using namespace Ferrum;
 

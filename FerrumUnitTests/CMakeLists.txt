@@ -11,6 +11,7 @@ set(INCLUDE
 	
 	FeVectorTests.h
 	FeAllocatorTests.h
+	FeAssetManagerTests.h
 )
 
 add_executable(FerrumUnitTests ${SRC} ${INCLUDE})
