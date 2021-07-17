@@ -7,71 +7,74 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 project(Ferrum3D)
 
-add_subdirectory(FerrumCore)
-add_subdirectory(FerrumRenderer)
-add_subdirectory(FerrumTestProject)
-add_subdirectory(FerrumUnitTests)
-add_subdirectory(FerrumAssetCompiler)
+add_subdirectory(FeCore)
+add_subdirectory(FeRenderer)
+add_subdirectory(FeTestProject)
+add_subdirectory(FeUnitTests)
+add_subdirectory(FeAssetCompiler)
 
-add_subdirectory(External)
+add_subdirectory(ThirdParty)
 
-set_property(TARGET FerrumCore PROPERTY FOLDER "Ferrum3D")
-set_property(TARGET FerrumRenderer PROPERTY FOLDER "Ferrum3D")
-set_property(TARGET FerrumTestProject PROPERTY FOLDER "Ferrum3D")
-set_property(TARGET FerrumUnitTests PROPERTY FOLDER "Ferrum3D")
-set_property(TARGET FerrumAssetCompiler PROPERTY FOLDER "Ferrum3D")
+target_compile_definitions(Diligent-ShaderTools PRIVATE _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+
+set_property(TARGET FeCore PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FeRenderer PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FeTestProject PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FeUnitTests PROPERTY FOLDER "Ferrum3D")
+set_property(TARGET FeAssetCompiler PROPERTY FOLDER "Ferrum3D")
 
 # renderer dependencies
-target_include_directories(FerrumRenderer
+target_include_directories(FeRenderer
 PRIVATE
 	"./"
-	"External/glfw/include"
-	"External/DiligentEngine"
+	"ThirdParty/glfw/include"
+	"ThirdParty/DiligentEngine"
 )
-target_link_libraries(FerrumRenderer
+target_link_libraries(FeRenderer
 PRIVATE
     Diligent-GraphicsEngineD3D11-shared
-    Diligent-GraphicsEngineOpenGL-shared
     Diligent-GraphicsEngineD3D12-shared
     Diligent-GraphicsEngineVk-shared
 	glfw
-	FerrumCore
+	FeCore
 )
 
 # core dependencies
-target_include_directories(FerrumCore
+target_include_directories(FeCore
 PUBLIC
-	"External/entt"
-	"External/utf8h"
+	"FeCore"
+	"ThirdParty/entt"
+	"ThirdParty/utf8h"
 )
 
 # test project dependencies
-target_include_directories(FerrumTestProject
+target_include_directories(FeTestProject
 PRIVATE
 	"./"
 )
-target_link_libraries(FerrumTestProject
-	FerrumCore
-	FerrumRenderer
+target_link_libraries(FeTestProject
+	FeCore
+	FeRenderer
 )
 
 # unit tests project dependencies
-target_include_directories(FerrumUnitTests
+target_include_directories(FeUnitTests
 PRIVATE
 	"./"
 )
-target_link_libraries(FerrumUnitTests
-	FerrumCore
-	FerrumRenderer
+target_link_libraries(FeUnitTests
+	FeCore
+	FeRenderer
 )
 
 # asset compiler dependencies
-target_include_directories(FerrumAssetCompiler
+target_include_directories(FeAssetCompiler
 PRIVATE
 	"./"
 )
-target_link_libraries(FerrumAssetCompiler
-	FerrumCore
+target_link_libraries(FeAssetCompiler
+	FeCore
 )
