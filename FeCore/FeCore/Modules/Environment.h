@@ -1,9 +1,9 @@
 #pragma once
-#include <vector>
-#include <array>
 #include <Memory/IBasicAllocator.h>
 #include <Utils/CoreUtils.h>
 #include <Utils/Result.h>
+#include <array>
+#include <vector>
 
 namespace FE::Env
 {
@@ -74,7 +74,8 @@ namespace FE::Env
 
             virtual VariableResult FindVariable(std::string_view name) = 0;
 
-            virtual VariableResult CreateVariable(std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) = 0;
+            virtual VariableResult CreateVariable(
+                std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) = 0;
 
             virtual VariableResult RemoveVariable(std::string_view name) = 0;
 
@@ -163,7 +164,8 @@ namespace FE::Env
             std::string_view nameView;
             auto [ok, data] =
                 GetEnvironment()
-                    .CreateVariable(std::move(name), sizeof(GlobalVariableStorage<T>), alignof(GlobalVariableStorage<T>), nameView)
+                    .CreateVariable(
+                        std::move(name), sizeof(GlobalVariableStorage<T>), alignof(GlobalVariableStorage<T>), nameView)
                     .ExpectEx("Couldn't create variable");
 
             GlobalVariableStorage<T>* storage = nullptr;
@@ -397,7 +399,20 @@ namespace FE::Env
     template<class T>
     Result<GlobalVariable<T*>> FindGlobalVariableByType()
     {
-        std::array<char, TypeName<T>().length() + 1> str;
+        auto str = []() {
+            constexpr std::string_view typeName = TypeName<T>();
+            constexpr size_t smallBufSize       = 128;
+            if constexpr (typeName.length() <= smallBufSize)
+            {
+                return std::array<char, typeName.length() + 1>{};
+            }
+            else
+            {
+                std::vector<char> result{};
+                result.resize(typeName.length() + 1);
+                return result;
+            }
+        }();
         size_t size = 0;
         str[size++] = '#';
         for (char c : TypeName<T>())
