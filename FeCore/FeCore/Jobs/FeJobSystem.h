@@ -11,30 +11,30 @@
 namespace FE
 {
     // clang-format off
-	FE_ENUM(FeJobType)
-	{
-		/**
-		 * @brief A job that's working with the hard drive
-		*/
-		HardDriveJob = 1 << 0,
+    FE_ENUM(FeJobType)
+    {
+        /**
+         * @brief A job that's working with the hard drive
+        */
+        HardDriveJob = 1 << 0,
 
-		/**
-		 * @brief A heavy job that's executing during multiple frames
-		*/
-		HeavyJob = 1 << 1,
+        /**
+         * @brief A heavy job that's executing during multiple frames
+        */
+        HeavyJob = 1 << 1,
 
-		/**
-		 * @brief A job that should be completed within the current frame
-		*/
-		SingleFrameJob = 1 << 2,
+        /**
+         * @brief A job that should be completed within the current frame
+        */
+        SingleFrameJob = 1 << 2,
 
-		/**
-		 * @brief A light job that's execution time is much less than an average frame time
-		*/
-		LightJob = 1 << 3,
+        /**
+         * @brief A light job that's execution time is much less than an average frame time
+        */
+        LightJob = 1 << 3,
 
-		Count = 4
-	};
+        Count = 4
+    };
     // clang-format on
 
     typedef void (*FeJobFunction)(void*);
@@ -147,18 +147,18 @@ namespace FE
         None,
 
         /**
-		 * @brief Thread is working
-		*/
+         * @brief Thread is working
+        */
         Working,
 
         /**
-		 * @brief Stop requested, but thread is allowed to finish all jobs in queue
-		*/
+         * @brief Stop requested, but thread is allowed to finish all jobs in queue
+        */
         JoinRequested,
 
         /**
-		 * @brief Stop requested, thread must stop working as soon as possible
-		*/
+         * @brief Stop requested, thread must stop working as soon as possible
+        */
         StopRequested
     };
 
@@ -252,19 +252,19 @@ namespace FE
         }
 
         /**
-		 * @brief Copy the Job struct to the worker thread and call Execute() in parallel
-		 * @tparam Job Type of job struct, e.g.
-		 * ```
-		 * struct Job
-		 * {
-		 *     int JobData;
-		 *     void Execute() { ... }
-		 * };
-		 * ```
-		 * @param job An instance of job struct
-		 * @param type Type of job
-		 * @return A handle to the enqueued job
-		*/
+         * @brief Copy the Job struct to the worker thread and call Execute() in parallel
+         * @tparam Job Type of job struct, e.g.
+         * ```
+         * struct Job
+         * {
+         *     int JobData;
+         *     void Execute() { ... }
+         * };
+         * ```
+         * @param job An instance of job struct
+         * @param type Type of job
+         * @return A handle to the enqueued job
+        */
         template<class Job>
         inline std::unique_ptr<FeJobHandle> Schedule(const Job& job, FeJobType type)
         {

@@ -92,6 +92,7 @@ namespace FE
          * @tparam FError 
          * @param okAction f(const TOk&, const T&)
          * @param errAction f(const TError&)
+         * @return 
          */
         template<class FOk, class FError>
         inline auto Match(FOk&& okAction, FError&& errAction) -> typename std::invoke_result<FError, const TError&>::type
@@ -115,6 +116,30 @@ namespace FE
                 else
                     return errAction(std::get<TError>(m_Data));
             }
+        }
+
+        /**
+         * @brief 
+         * @tparam F 
+         * @param action f(const TOk&, const T&)
+         * @return 
+        */
+        template<class F>
+        inline auto OnOk(F&& action) -> typename std::invoke_result<F, const TOk&, const T&>::type
+        {
+            return Match(std::forward<F>(action), [](auto) {});
+        }
+
+        /**
+         * @brief 
+         * @tparam F 
+         * @param action f(const TError&)
+         * @return 
+        */
+        template<class F>
+        inline auto OnErr(F&& action) -> typename std::invoke_result<F, const TError&>::type
+        {
+            return Match([](auto) {}, std::forward<F>(action));
         }
     };
 } // namespace FE

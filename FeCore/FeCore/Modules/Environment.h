@@ -37,6 +37,9 @@ namespace FE::Env
     template<class T>
     Result<GlobalVariable<T>> FindGlobalVariable(std::string_view name);
 
+    template<class T>
+    Result<GlobalVariable<T*>> FindGlobalVariableByType();
+
     FE_CORE_API void CreateEnvironment(IBasicAllocator* allocator = nullptr);
 
     FE_CORE_API Internal::IEnvironment& GetEnvironment();
@@ -339,7 +342,7 @@ namespace FE::Env
         str.push_back('#');
         for (char c : typeName)
             str.push_back(c);
-        return Internal::CreateGlobalVariableImpl<T*>(std::move(str), nullptr);
+        return Internal::CreateGlobalVariableImpl<T*>(std::move(str), value);
     }
 
     template<class T>
@@ -389,5 +392,17 @@ namespace FE::Env
             str[size++] = (FE::IntToHexChar((id >> i * 4) & 0xF));
 
         return FindGlobalVariable<T>(std::string_view(str.data(), str.size()));
+    }
+
+    template<class T>
+    Result<GlobalVariable<T*>> FindGlobalVariableByType()
+    {
+        std::array<char, TypeName<T>().length() + 1> str;
+        size_t size = 0;
+        str[size++] = '#';
+        for (char c : TypeName<T>())
+            str[size++] = c;
+
+        return FindGlobalVariable<T*>(std::string_view(str.data(), str.size()));
     }
 } // namespace FE::Env
