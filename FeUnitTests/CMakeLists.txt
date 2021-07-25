@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.18.0)
-
-project(FeUnitTests)
+cmake_minimum_required(VERSION 3.21.0)
 
 set(SRC
 	main.cpp

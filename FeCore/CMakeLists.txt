@@ -1,43 +1,50 @@
-cmake_minimum_required(VERSION 3.18.0)
-
-project(FeCore)
+cmake_minimum_required(VERSION 3.21.0)
 
 set(SRC
-	Assets/FeAssetManager.h
-	Assets/FeAssetManager.cpp
+	FeCore/Assets/FeAssetManager.h
+	FeCore/Assets/FeAssetManager.cpp
 	
-	Console/FeConsole.h
-	Console/FeConsole.cpp
-	Console/FeLog.h
+	FeCore/Console/FeConsole.h
+	FeCore/Console/FeConsole.cpp
+	FeCore/Console/FeLog.h
 	
-	Jobs/FeJobSystem.h
-	Jobs/FeJobSystem.cpp
-	Jobs/FeParallelQueue.h
+	FeCore/Jobs/FeJobSystem.h
+	FeCore/Jobs/FeJobSystem.cpp
+	FeCore/Jobs/FeParallelQueue.h
 	
-	Math/FeHalf.h
-	Math/FeVector3.h
-	Math/FeVector4.h
-	Math/FeVectorMath.h
+	FeCore/Math/FeHalf.h
+	FeCore/Math/FeVector3.h
+	FeCore/Math/FeVector4.h
+	FeCore/Math/FeVectorMath.h
 	
-	Memory/FeStackAllocator.h
+	FeCore/Memory/BasicSystemAllocator.h
+	FeCore/Memory/FeStackAllocator.h
+	FeCore/Memory/IBasicAllocator.h
 	
-	Scene/FeEntity.h
-	Scene/FeScene.h
+	FeCore/Modules/Environment.h
+	FeCore/Modules/Environment.cpp
 	
-	Time/DateTime.h
-	Time/DateTime.cpp
-	Time/TimeSpan.h
+	FeCore/Scene/FeEntity.h
+	FeCore/Scene/FeScene.h
 	
-	Utils/CoreUtils.h
-	Utils/Platform.h
-	Utils/Result.h
-	Utils/StringUtils.h
-	Utils/StringUtils.cpp
+	FeCore/Time/DateTime.h
+	FeCore/Time/DateTime.cpp
+	FeCore/Time/TimeSpan.h
+	
+	FeCore/Utils/CoreUtils.h
+	FeCore/Utils/Platform.h
+	FeCore/Utils/Result.h
+	FeCore/Utils/SortedStringVector.h
+	FeCore/Utils/StringUtils.h
+	FeCore/Utils/StringUtils.cpp
 )
 
-add_library(FeCore SHARED ${SRC} ${INCLUDE})
+add_library(FeCore SHARED ${SRC})
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
 target_compile_definitions(FeCore PRIVATE FERRUMCORE_EXPORTS)
+target_compile_definitions(FeCore PUBLIC _ENABLE_EXTENDED_ALIGNED_STORAGE)
+
+add_subdirectory(Tests)
