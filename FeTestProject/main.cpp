@@ -31,6 +31,8 @@ void main(in PSInput PSIn, out PSOutput PSOut)
 int main()
 {
     FE::InitLogger();
+    FE::LogMsg("\n{}\n{}\n{}", FE::TypeName<int>(), FE::TypeName<FE::IFeGraphicsDevice>(), FE::TypeName<FE::FeGraphicsDeviceDesc>(), FE::TypeName<std::string>());
+    FE::LogMsg("\n{}\n{}\n{}", FE::TypeHash<int>(), FE::TypeHash<FE::IFeGraphicsDevice>(), FE::TypeHash<FE::FeGraphicsDeviceDesc>(), FE::TypeHash<std::string>());
 
     auto window = FE::CreateMainWindow(800, 600);
     window->Init();
