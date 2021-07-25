@@ -1,45 +1,7 @@
 #include <FeCore/Modules/Environment.h>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <Tests/Common/TestCommon.h>
 
 using ::testing::AtLeast;
-
-class MockAllocateObject
-{
-public:
-    MOCK_METHOD(void, Construct, (), (noexcept));
-    MOCK_METHOD(void, Destruct, (), (noexcept));
-    MOCK_METHOD(void, Copy, (), (noexcept));
-    MOCK_METHOD(void, Move, (), (noexcept));
-};
-
-class AllocateObject
-{
-public:
-    static MockAllocateObject* mock;
-
-    AllocateObject() noexcept
-    {
-        mock->Construct();
-    }
-
-    AllocateObject(const MockAllocateObject&) noexcept
-    {
-        mock->Copy();
-    }
-
-    AllocateObject(MockAllocateObject&&) noexcept
-    {
-        mock->Move();
-    }
-
-    ~AllocateObject() noexcept
-    {
-        mock->Destruct();
-    }
-};
-
-MockAllocateObject* AllocateObject::mock = new MockAllocateObject;
 
 class EnvironmentTest : public ::testing::Test
 {
@@ -101,16 +63,16 @@ TEST_F(EnvironmentTest, FindVar)
 
 TEST_F(EnvironmentTest, NoCopies)
 {
-    EXPECT_CALL(*AllocateObject::mock, Construct()).Times(1);
-    EXPECT_CALL(*AllocateObject::mock, Destruct()).Times(1);
-    EXPECT_CALL(*AllocateObject::mock, Copy()).Times(0);
-    EXPECT_CALL(*AllocateObject::mock, Move()).Times(0);
+    auto mock = std::make_shared<MockConstructors>();
+    EXPECT_CALL(*mock, Construct()).Times(1);
+    EXPECT_CALL(*mock, Destruct()).Times(1);
+    EXPECT_CALL(*mock, Copy()).Times(0);
+    EXPECT_CALL(*mock, Move()).Times(0);
 
     {
-        auto handle1 = FE::Env::CreateGlobalVariable<AllocateObject>("NoCopies");
+        auto handle1 = FE::Env::CreateGlobalVariable<AllocateObject>("NoCopies", mock);
         auto handle2 = FE::Env::FindGlobalVariable<AllocateObject>("NoCopies").Unwrap();
 
         ASSERT_EQ(&*handle1, &*handle2);
     }
-    delete AllocateObject::mock;
 }

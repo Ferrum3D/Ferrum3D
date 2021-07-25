@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.21.0)
 
 set(SRC
+	Common/TestCommon.h
+
 	Math/Vector3.cpp
 	
 	Memory/StackAllocator.cpp
 	
 	Modules/Environment.cpp
+	Modules/Singleton.cpp
 )
 
 add_executable(FeCoreTests ${SRC})

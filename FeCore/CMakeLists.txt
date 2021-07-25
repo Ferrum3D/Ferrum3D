@@ -23,6 +23,7 @@ set(SRC
 	
 	FeCore/Modules/Environment.h
 	FeCore/Modules/Environment.cpp
+	FeCore/Modules/Singleton.h
 	
 	FeCore/Scene/FeEntity.h
 	FeCore/Scene/FeScene.h
