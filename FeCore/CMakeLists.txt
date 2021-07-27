@@ -28,6 +28,13 @@ set(SRC
 	FeCore/Scene/FeEntity.h
 	FeCore/Scene/FeScene.h
 	
+	FeCore/SIMD/Scalar/Float32x4.h
+	FeCore/SIMD/Scalar/Int32x4.h
+	FeCore/SIMD/SSE/Float32x4.h
+	FeCore/SIMD/SSE/Int32x4.h
+	FeCore/SIMD/CommonSIMD.h
+	FeCore/SIMD/SIMDIntrin.h
+	
 	FeCore/Time/DateTime.h
 	FeCore/Time/DateTime.cpp
 	FeCore/Time/TimeSpan.h
@@ -36,6 +43,8 @@ set(SRC
 	FeCore/Utils/Platform.h
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h
+	FeCore/Utils/String.h
+	FeCore/Utils/StringSlice.h
 	FeCore/Utils/StringUtils.h
 	FeCore/Utils/StringUtils.cpp
 )
@@ -44,6 +53,9 @@ add_library(FeCore SHARED ${SRC})
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
+
+target_compile_definitions(FeCore PUBLIC FE_SSE3_SUPPORTED)
+target_compile_definitions(FeCore PUBLIC FE_SSE41_SUPPORTED)
 
 target_compile_definitions(FeCore PRIVATE FERRUMCORE_EXPORTS)
 target_compile_definitions(FeCore PUBLIC _ENABLE_EXTENDED_ALIGNED_STORAGE)

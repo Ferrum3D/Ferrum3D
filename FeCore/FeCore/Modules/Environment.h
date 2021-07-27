@@ -402,7 +402,7 @@ namespace FE::Env
         auto str = []() {
             constexpr std::string_view typeName = TypeName<T>();
             constexpr size_t smallBufSize       = 128;
-            if constexpr (typeName.length() <= smallBufSize)
+            if constexpr (typeName.length() + 1 <= smallBufSize)
             {
                 return std::array<char, typeName.length() + 1>{};
             }
