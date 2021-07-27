@@ -77,13 +77,13 @@ namespace FE
     template<class T>
     inline constexpr T FeMakeAlignment(T x, T align)
     {
-        return (x + a - 1u) & ~(a - 1u);
+        return (x + (align - 1u)) & ~(align - 1u);
     }
 
     template<uint32_t A, class T>
     inline constexpr T FeMakeAlignment(T x)
     {
-        return (x + A - 1u) & ~(A - 1u);
+        return (x + (A - 1)) & ~(A - 1);
     }
 
     inline constexpr uint32_t FeNextPowerOf2(uint32_t v)

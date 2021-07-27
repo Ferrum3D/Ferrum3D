@@ -55,6 +55,7 @@ PUBLIC
 	"FeCore/FeCore"
 	"ThirdParty/entt"
 	"ThirdParty/utf8h"
+	"ThirdParty/utf8"
 )
 
 target_include_directories(FeCoreTests

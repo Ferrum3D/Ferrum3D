@@ -24,6 +24,7 @@ namespace FE
 {
 #ifdef _MSC_VER
 #    define FE_FUNCNAME __FUNCSIG__
+#    define FE_FINLINE __forceinline
 
 #    define FE_ALIGNED_MALLOC(size, alignment) _aligned_malloc(size, alignment)
 #    define FE_ALIGNED_FREE(ptr) _aligned_free(ptr)
