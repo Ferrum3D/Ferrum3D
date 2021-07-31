@@ -13,6 +13,6 @@ namespace FE
         DL::ITexture* GetTexture();
         DL::ITextureView* GetDefaultView(Diligent::TEXTURE_VIEW_TYPE type);
 
-        virtual uint3 GetSize() override;
+        //virtual uint3 GetSize() override;
     };
 } // namespace FE

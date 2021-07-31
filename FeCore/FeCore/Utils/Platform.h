@@ -1,8 +1,8 @@
 #pragma once
+#include <memory>
 #include <signal.h>
 #include <stdexcept>
 #include <string>
-#include <memory>
 
 #ifdef _WIN32
 #    define FE_WINDOWS 1
@@ -13,10 +13,14 @@
 #endif
 
 #ifdef FE_WINDOWS
-#    ifdef FERRUMCORE_EXPORTS
-#        define FE_CORE_API __declspec(dllexport)
+#    if 0
+#        ifdef FERRUMCORE_EXPORTS
+#            define FE_CORE_API __declspec(dllexport)
+#        else
+#            define FE_CORE_API __declspec(dllimport)
+#        endif
 #    else
-#        define FE_CORE_API __declspec(dllimport)
+#        define FE_CORE_API
 #    endif
 #endif
 

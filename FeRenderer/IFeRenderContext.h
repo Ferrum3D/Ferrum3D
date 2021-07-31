@@ -1,6 +1,6 @@
 #pragma once
 #include "IFeRenderTarget.h"
-#include <FeCore/Math/FeVector4.h>
+#include <FeCore/Math/Vector4.h>
 
 namespace FE
 {

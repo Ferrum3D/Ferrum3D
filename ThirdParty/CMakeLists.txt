@@ -4,6 +4,10 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory("glfw")
 add_subdirectory("DiligentEngine")
+add_library(rpmalloc STATIC
+	rpmalloc/rpmalloc/rpmalloc.h
+	rpmalloc/rpmalloc/rpmalloc.c
+)
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory("googletest")
@@ -19,5 +23,6 @@ set_target_properties(gtest_main PROPERTIES FOLDER ThirdParty)
 set_target_properties(gmock      PROPERTIES FOLDER ThirdParty)
 set_target_properties(gmock_main PROPERTIES FOLDER ThirdParty)
 set_target_properties(glfw       PROPERTIES FOLDER ThirdParty)
+set_target_properties(rpmalloc   PROPERTIES FOLDER ThirdParty)
 
 set(CMAKE_CXX_STANDARD 17)

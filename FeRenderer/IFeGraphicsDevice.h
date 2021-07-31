@@ -1,7 +1,7 @@
 #pragma once
 #include "IFeShader.h"
 #include "IFeTexture.h"
-#include <FeCore/Assets/FeAssetManager.h>
+#include <FeCore/Assets/AssetManager.h>
 
 namespace FE
 {

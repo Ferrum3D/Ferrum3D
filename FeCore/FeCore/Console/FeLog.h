@@ -1,8 +1,8 @@
 #pragma once
-#include "FeConsole.h"
+#include "Console.h"
 #include <Time/DateTime.h>
 #include <Utils/CoreUtils.h>
-#include <Utils/StringUtils.h>
+#include <Strings/Format.h>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -59,9 +59,9 @@ namespace FE
 	* @return number of characters printed.
 	*/
     template<class T, class... Args>
-    inline size_t LogTrace(const LogType ty, const std::string_view fmt, T val, Args... args)
+    inline size_t LogTrace(const LogType ty, const StringSlice fmt, T val, Args... args)
     {
-        return LogTrace(ty, FeFormatString(fmt, val, args...));
+        return LogTrace(ty, Fmt::Format(fmt, val, args...));
     }
 
     /**
@@ -72,9 +72,9 @@ namespace FE
 	* @return number of characters printed.
 	*/
     template<class T, class... Args>
-    inline size_t LogMsg(const std::string_view fmt, T val, Args... args)
+    inline size_t LogMsg(const StringSlice fmt, T val, Args... args)
     {
-        return LogTrace(LogType::Message, FeFormatString(fmt, val, args...));
+        return LogTrace(LogType::Message, Fmt::Format(fmt, val, args...));
     }
 
     /**
@@ -83,7 +83,7 @@ namespace FE
 	* @param msg Message to print.
 	* @return number of characters printed.
 	*/
-    inline size_t LogTrace(const LogType ty, const std::string_view msg)
+    inline size_t LogTrace(const LogType ty, const StringSlice msg)
     {
 #ifndef FE_DEBUG
         if (ty == LogType::Message || ty == LogType::Warning)
@@ -134,7 +134,7 @@ namespace FE
         }
         FeResetConColor();
         std::cerr << "]: " << msg << "\n"; // 3chars + msg + 1 char
-        return res + msg.length() + 4 + date.length();
+        return res + msg.Length() + 4 + date.length();
     }
 
     /**
@@ -142,7 +142,7 @@ namespace FE
 	* @param msg Message to print.
 	* @return number of characters printed.
 	*/
-    inline size_t LogMsg(const std::string_view msg)
+    inline size_t LogMsg(const StringSlice msg)
     {
         return LogTrace(LogType::Message, msg);
     }

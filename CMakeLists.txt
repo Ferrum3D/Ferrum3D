@@ -9,6 +9,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+add_compile_definitions(FE_SSE3_SUPPORTED=1)
+add_compile_definitions(FE_SSE41_SUPPORTED=1)
+
 project(Ferrum3D VERSION 0.0.1
 	DESCRIPTION "Ferrum3D Game Engine"
 	LANGUAGES CXX
@@ -54,8 +57,11 @@ target_include_directories(FeCore
 PUBLIC
 	"FeCore/FeCore"
 	"ThirdParty/entt"
-	"ThirdParty/utf8h"
-	"ThirdParty/utf8"
+	"ThirdParty/rpmalloc"
+)
+
+target_link_libraries(FeCore
+	rpmalloc
 )
 
 target_include_directories(FeCoreTests
@@ -74,7 +80,7 @@ PRIVATE
 )
 target_link_libraries(FeTestProject
 	FeCore
-	FeRenderer
+	# FeRenderer
 )
 
 # asset compiler dependencies

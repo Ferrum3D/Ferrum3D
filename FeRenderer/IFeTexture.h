@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Utils/CoreUtils.h>
-#include <FeCore/Math/FeVector3.h>
+#include <FeCore/Math/Vector3.h>
 
 namespace FE
 {
@@ -30,6 +30,6 @@ namespace FE
 		 * @brief Get vector { Width, Height, Depth } of the texture
 		 * @return Dimentions of the texture
 		*/
-        virtual uint3 GetSize() = 0;
+        //virtual uint3 GetSize() = 0;
     };
 } // namespace FE

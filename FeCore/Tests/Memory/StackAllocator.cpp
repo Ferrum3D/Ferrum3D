@@ -1,12 +1,12 @@
-#include <FeCore/Math/FeVectorMath.h>
-#include <FeCore/Memory/FeStackAllocator.h>
+#include <FeCore/Math/VectorMath.h>
+#include <FeCore/Memory/StackAllocator.h>
 #include <gtest/gtest.h>
 
-using namespace FE;
+using FE::float3;
 
 TEST(StackAllocator, Basic)
 {
-    FeStackAllocator alloc(sizeof(float3) * 3);
+    FE::FeStackAllocator alloc(sizeof(float3) * 3);
 
     {
         auto* vec1 = alloc.Allocate<float3>(1, 2, 3);
@@ -29,7 +29,7 @@ TEST(StackAllocator, Basic)
 
 TEST(StackAllocator, Array)
 {
-    FeStackAllocator alloc(512 * sizeof(int));
+    FE::FeStackAllocator alloc(512 * sizeof(int));
 
     auto* array = alloc.AllocateArray<int>(512);
 

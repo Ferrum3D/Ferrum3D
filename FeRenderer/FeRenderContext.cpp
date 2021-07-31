@@ -20,7 +20,7 @@ namespace FE
     void FeRenderContext::ClearRenderTarget(float4 color, float depth)
     {
         if (m_CurrentRT.RTV)
-            m_Context->ClearRenderTarget(m_CurrentRT.RTV, color.Data, DL::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            m_Context->ClearRenderTarget(m_CurrentRT.RTV, color.Data(), DL::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
         if (m_CurrentRT.DSV)
             m_Context->ClearDepthStencil(m_CurrentRT.DSV, DL::CLEAR_DEPTH_FLAG, depth, 0, DL::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     }
