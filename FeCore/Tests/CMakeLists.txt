@@ -10,7 +10,8 @@ set(SRC
 	Modules/Environment.cpp
 	Modules/Singleton.cpp
 	
-	Utils/String.cpp
+	Strings/Format.cpp
+	Strings/String.cpp
 )
 
 add_executable(FeCoreTests ${SRC})

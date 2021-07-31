@@ -1,7 +1,7 @@
 #include "FeGraphicsDevice.h"
 #include "FeShader.h"
 #include "FeTexture.h"
-#include <FeCore/Assets/FeAssetManager.h>
+#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Console/FeLog.h>
 
 namespace DL = Diligent;

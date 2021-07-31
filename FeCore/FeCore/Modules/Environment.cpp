@@ -124,7 +124,10 @@ namespace FE::Env
     Internal::IEnvironment& GetEnvironment()
     {
         if (!Internal::g_EnvInstance)
-            CreateEnvironment(nullptr);
+        {
+            FE_CORE_ASSERT(Internal::g_EnvInstance, "Environment must be created explicitly");
+            // CreateEnvironment(nullptr);
+        }
         return *Internal::g_EnvInstance;
     }
 

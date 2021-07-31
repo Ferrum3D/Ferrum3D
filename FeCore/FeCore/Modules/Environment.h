@@ -4,6 +4,8 @@
 #include <Utils/Result.h>
 #include <array>
 #include <vector>
+#include <mutex>
+#include <Strings/FeUnicode.h>
 
 namespace FE::Env
 {
@@ -16,38 +18,143 @@ namespace FE::Env
         class IEnvironment;
     } // namespace Internal
 
+    /**
+     * @brief Create a variable by unique ID.
+     * 
+     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
+     * 
+     * @tparam T Type of variable to create.
+     * @param id Unique ID of variable to create.
+     * @return The created variable.
+    */
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariable(uint32_t id, Args&&... args);
 
+    /**
+     * @brief Create a variable by unique name.
+     * 
+     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
+     * 
+     * @tparam T Type of variable to create.
+     * @param name Unique name of variable to create.
+     * @return The created variable.
+    */
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariable(std::string_view name, Args&&... args);
 
-    template<class T>
-    GlobalVariable<T*> CreateGlobalVariableByType(T* value);
+    /**
+     * @brief Create a variable by its type name.
+     * 
+     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
+     * 
+     * @tparam T Type of variable to create.
+     * @param value Value to initialize the variable with.
+     * @return The created variable.
+    */
+    template<class T, class... Args>
+    GlobalVariable<T> CreateGlobalVariableByType(Args&&... args);
 
+    /**
+     * @brief Allocate global variable storage.
+     * 
+     * Creates a global variable by unique ID, but doesn't initilize it.
+     * 
+     * @tparam T Type of variable to allocate.
+     * @param id Unique ID of variable to allocate.
+     * @return The allocated variable.
+    */
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(uint32_t id);
 
+    /**
+     * @brief Allocate global variable storage.
+     *
+     * Creates a global variable by unique name, but doesn't initilize it.
+     *
+     * @tparam T Type of variable to allocate.
+     * @param name Unique name of variable to allocate.
+     * @return The allocated variable.
+    */
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(std::string_view name);
 
+    /**
+     * @brief Find global variable by its ID.
+     * 
+     * Variable must be created by ID before calling this function. Returns an Error result if variable was not found.
+     * 
+     * @tparam T Type of variable to find.
+     * @param id Unique ID of variable to find.
+     * @return The result that can contain the variable.
+    */
     template<class T>
     Result<GlobalVariable<T>> FindGlobalVariable(uint32_t id);
 
+    /**
+     * @brief Find global variable by its name.
+     *
+     * Variable must be created by name before calling this function. Returns an Error result if variable was not found.
+     *
+     * @tparam T Type of variable to find.
+     * @param name Unique name of variable to find.
+     * @return The result that can contain the variable.
+    */
     template<class T>
     Result<GlobalVariable<T>> FindGlobalVariable(std::string_view name);
 
+    /**
+     * @brief Find global variable by its name.
+     *
+     * Variable must be created by type before calling this function. Returns an Error result if variable was not found.
+     *
+     * @tparam T Type of variable to find.
+     * @return The result that can contain the variable.
+    */
     template<class T>
-    Result<GlobalVariable<T*>> FindGlobalVariableByType();
+    Result<GlobalVariable<T>> FindGlobalVariableByType();
 
+    /**
+     * @brief Create global environment.
+     * 
+     * A custom allocator can be provided. If the provided allocator was nullptr, aligned versions
+     * of malloc() and free() will be used to allocate storage for global variables.
+     * 
+     * @param allocator Custom allocator.
+    */
     FE_CORE_API void CreateEnvironment(IBasicAllocator* allocator = nullptr);
 
+    /**
+     * @brief Get global environment instance.
+     * 
+     * Global environment must be created before any calls to this function. Unlike other singletons, the
+     * environment won't be created automatically. This function will throw if the environment was not
+     * created and attached to this module.
+    */
     FE_CORE_API Internal::IEnvironment& GetEnvironment();
 
+    /**
+     * @brief Attach an instance of global environment to this module.
+     * 
+     * This function will most likely be called from another module that already have an environment attached
+     * or created.
+     * 
+     * @param instance Instance of global environment to attach.
+    */
     FE_CORE_API void AttachEnvironment(Internal::IEnvironment& instance);
 
+    /**
+     * @brief Detach global environment.
+     * 
+     * If the current module is the owner of global environment, it will be released, all variables will be
+     * deallocated and destructed. If the current module isn't the owner of environment, it will just set
+     * the module-local pointer to environment to nullptr.
+    */
     FE_CORE_API void DetachEnvironment();
 
+    /**
+     * @brief Checks if the global environment exists and is attached to the current module.
+     * @return True if environment is attached.
+    */
     FE_CORE_API bool EnvironmentAttached();
 
     namespace Internal
@@ -179,7 +286,7 @@ namespace FE::Env
 
         inline void AttachGlobalEnvironment(void* environmentPointer)
         {
-            FE_ASSERT_MSG(!EnvironmentAttached(), "Attempt to attach second environment");
+            FE_CORE_ASSERT(!EnvironmentAttached(), "Attempt to attach second environment");
             FE::Env::AttachEnvironment(*static_cast<IEnvironment*>(environmentPointer));
         }
 
@@ -194,6 +301,13 @@ namespace FE::Env
         }
     } // namespace Internal
 
+    /**
+     * @brief Shared pointer to global variable storage.
+     * 
+     * Size of this class is same as size of a pointer. It implements intrusive reference counted pointer.
+     * 
+     * @tparam T Type of the variable that this class holds.
+    */
     template<class T>
     class GlobalVariable
     {
@@ -202,6 +316,9 @@ namespace FE::Env
     public:
         using StorageType = Internal::GlobalVariableStorage<T>;
 
+        /**
+         * @brief Create a _null_ global variable.
+        */
         inline GlobalVariable()
             : m_Storage(nullptr)
         {
@@ -239,11 +356,23 @@ namespace FE::Env
             return *this;
         }
 
+        /**
+         * @brief Get name of the global variable.
+         * 
+         * The name is either a normal string, which represents a user-defined unique variable name, or a special
+         * environment-generated name, it starts from a '#'. A special name is either a hexadecimal 8-digit (32-bit)
+         * number generated from unique variable IDs, or a type name.
+         * 
+         * @return 
+        */
         inline std::string_view GetName() const
         {
             return m_Storage->m_Name;
         }
 
+        /**
+         * @brief Set this variable to _null_.
+        */
         inline void Reset()
         {
             GlobalVariable{}.Swap(*this);
@@ -255,11 +384,19 @@ namespace FE::Env
                 m_Storage->Release();
         }
 
+        /**
+         * @brief Check if the variable is not empty and is constructed (initialized).
+         * @return True if constructed.
+        */
         inline bool IsConstructed()
         {
             return m_Storage && m_Storage->IsConstructed();
         }
 
+        /**
+         * @brief Swap contents of two variables. Potentially faster than just std::swap().
+         * @param other The variable to swap the content with.
+        */
         inline void Swap(GlobalVariable& other)
         {
             auto* t         = other.m_Storage;
@@ -269,29 +406,29 @@ namespace FE::Env
 
         inline T& operator*()
         {
-            FE_ASSERT_MSG(m_Storage, "Global variable was empty");
-            FE_ASSERT_MSG(m_Storage->IsConstructed(), "Global variable was not constructed");
+            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return m_Storage->Get();
         }
 
         inline T* operator->()
         {
-            FE_ASSERT_MSG(m_Storage, "Global variable was empty");
-            FE_ASSERT_MSG(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return m_Storage->Get();
+            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
+            return &m_Storage->Get();
         }
 
         inline const T& operator*() const
         {
-            FE_ASSERT_MSG(m_Storage, "Global variable was empty");
-            FE_ASSERT_MSG(m_Storage->IsConstructed(), "Global variable was not constructed");
+            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return m_Storage->Get();
         }
 
         inline const T* operator->() const
         {
-            FE_ASSERT_MSG(m_Storage, "Global variable was empty");
-            FE_ASSERT_MSG(m_Storage->IsConstructed(), "Global variable was not constructed");
+            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return m_Storage->Get();
         }
 
@@ -301,12 +438,18 @@ namespace FE::Env
         }
     };
 
+    /**
+     * @brief Compares names of two variables.
+    */
     template<class T>
     inline bool operator==(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {
         return x.GetName() == y.GetName();
     }
 
+    /**
+     * @brief Compares names of two variables.
+    */
     template<class T>
     inline bool operator!=(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {
@@ -316,7 +459,7 @@ namespace FE::Env
     template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariable(std::string_view name, Args&&... args)
     {
-        FE_ASSERT_MSG(name[0] != '#', "Names that start with a '#' are reserved for type name and ID variables");
+        FE_CORE_ASSERT(name[0] != '#', "Names that start with a '#' are reserved for type name and ID variables");
         std::vector<char> str;
         str.reserve(name.length());
         for (char c : name)
@@ -335,16 +478,16 @@ namespace FE::Env
         return Internal::CreateGlobalVariableImpl<T, Args...>(std::move(str), std::forward<Args>(args)...);
     }
 
-    template<class T>
-    GlobalVariable<T*> CreateGlobalVariableByType(T* value)
+    template<class T, class... Args>
+    inline GlobalVariable<T> CreateGlobalVariableByType(Args&&... args)
     {
-        std::string_view typeName = FE::TypeName<T>();
+        std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>();
         std::vector<char> str;
         str.reserve(typeName.length() + 1);
         str.push_back('#');
         for (char c : typeName)
             str.push_back(c);
-        return Internal::CreateGlobalVariableImpl<T*>(std::move(str), value);
+        return Internal::CreateGlobalVariableImpl<T>(std::move(str), std::forward<Args>(args)...);
     }
 
     template<class T>
@@ -397,27 +540,16 @@ namespace FE::Env
     }
 
     template<class T>
-    Result<GlobalVariable<T*>> FindGlobalVariableByType()
+    inline Result<GlobalVariable<T>> FindGlobalVariableByType()
     {
-        auto str = []() {
-            constexpr std::string_view typeName = TypeName<T>();
-            constexpr size_t smallBufSize       = 128;
-            if constexpr (typeName.length() + 1 <= smallBufSize)
-            {
-                return std::array<char, typeName.length() + 1>{};
-            }
-            else
-            {
-                std::vector<char> result{};
-                result.resize(typeName.length() + 1);
-                return result;
-            }
-        }();
+        auto typeName = TypeName<std::remove_pointer_t<T>>();
+        std::vector<char> str{};
+        str.resize(typeName.length() + 1);
         size_t size = 0;
         str[size++] = '#';
-        for (char c : TypeName<T>())
+        for (char c : typeName)
             str[size++] = c;
 
-        return FindGlobalVariable<T*>(std::string_view(str.data(), str.size()));
+        return FindGlobalVariable<T>(std::string_view(str.data(), str.size()));
     }
 } // namespace FE::Env

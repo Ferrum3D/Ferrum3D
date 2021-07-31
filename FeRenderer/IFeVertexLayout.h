@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Math/FeVectorMath.h>
+#include <FeCore/Math/VectorMath.h>
 #include <FeCore/Utils/CoreUtils.h>
 
 namespace FE

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <intrin.h>
+#include <string_view>
 
 namespace FE
 {
@@ -10,6 +11,12 @@ namespace FE
      * @brief Name of the engine
      */
     inline constexpr const char* FerrumEngineName = "Ferrum3D";
+
+#ifdef FE_DEBUG
+    inline constexpr bool IsDebugBuild = true;
+#else
+    inline constexpr bool IsDebugBuild = false;
+#endif
 
     /**
      * @brief Engine version
@@ -22,6 +29,23 @@ namespace FE
     struct EmptyStruct
     {
     };
+
+    struct SourcePosition
+    {
+        const char* FileName;
+        const char* FuncName;
+        int LineNumber;
+
+        inline SourcePosition(const char* file, const char* func, int line) noexcept
+            : FileName(file)
+            , FuncName(func)
+            , LineNumber(line)
+        {
+        }
+    };
+
+#define FE_SRCPOS() ::FE::SourcePosition(__FILE__, FE_FUNCNAME, __LINE__)
+#define FE_STATIC_SRCPOS(name) static ::FE::SourcePosition name(__FILE__, FE_FUNCNAME, __LINE__)
 
     namespace Internal
     {
@@ -40,11 +64,12 @@ namespace FE
         template<class T>
         inline constexpr SVWrapper TypeNameImpl()
         {
-            std::string_view fn = FE_FUNCNAME;
 #ifdef _MSC_VER
+            std::string_view fn = __FUNCSIG__;
             fn.remove_prefix(fn.find_first_of("<") + 1);
             fn.remove_suffix(fn.length() - fn.find_last_of(">"));
 #else
+            std::string_view fn = __PRETTY_FUNCTION__;
             fn.remove_prefix(fn.find_first_of("=") + 1);
             fn.remove_suffix(fn.length() - fn.find_last_of("]"));
 #endif
@@ -100,9 +125,7 @@ namespace FE
 
     inline constexpr char IntToHexChar(int n)
     {
-        if (n > 9)
-            return 'A' + (n - 10);
-        return '0' + n;
+        return "0123456789ABCDEF"[n];
     }
 
     inline constexpr auto FeSetBit = [](auto val, unsigned n) {

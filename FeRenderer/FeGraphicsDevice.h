@@ -14,7 +14,7 @@
 #include <DiligentTools/TextureLoader/interface/Image.h>
 #include <DiligentTools/TextureLoader/interface/TextureUtilities.h>
 #include "IFeGraphicsDevice.h"
-#include <FeCore/Assets/FeAssetManager.h>
+#include <FeCore/Assets/AssetManager.h>
 // clang-format on
 
 namespace DL = Diligent;

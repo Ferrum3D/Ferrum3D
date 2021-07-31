@@ -13,7 +13,7 @@ namespace FE
         inline static void TryFind()
         {
             std::unique_lock lk(m_Mutex);
-            Env::FindGlobalVariableByType<T>().OnOk([&](const auto&, const auto& variable) {
+            Env::FindGlobalVariableByType<T*>().OnOk([&](const auto&, const auto& variable) {
                 m_Instance = variable;
             });
         }
@@ -24,7 +24,7 @@ namespace FE
             FE_ASSERT_MSG(instance, "Singleton {} instance was a nullptr", TypeName<T>());
             FE_ASSERT_MSG(Get() == nullptr, "Couldn't register singleton {} twise", TypeName<T>());
             std::unique_lock lk(m_Mutex);
-            m_Instance = Env::CreateGlobalVariableByType(instance);
+            m_Instance = Env::CreateGlobalVariableByType<T*>(instance);
         }
 
         inline static void Unregister()

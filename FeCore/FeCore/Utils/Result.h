@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreUtils.h"
-#include <Console/FeLog.h>
+#include <Strings/FeUnicode.h>
 #include <tuple>
 #include <variant>
 
@@ -51,13 +51,13 @@ namespace FE
 
         inline TError GetError()
         {
-            FE_ASSERT_MSG(!IsOk(), "GetError() called on OK result");
+            FE_CORE_ASSERT(!IsOk(), "GetError() called on OK result");
             return std::get<TError>(m_Data);
         }
 
         inline TOk GetOk()
         {
-            FE_ASSERT_MSG(IsOk(), "GetOk() called on error result");
+            FE_CORE_ASSERT(IsOk(), "GetOk() called on error result");
             return std::get<0>(std::get<OkVariant>(m_Data));
         }
 
@@ -68,21 +68,21 @@ namespace FE
 
         inline T Unwrap()
         {
-            FE_ASSERT_MSG(IsOk(), "Unwrap() called on error result");
+            FE_CORE_ASSERT(IsOk(), "Unwrap() called on error result");
             return std::get<1>(std::get<OkVariant>(m_Data));
         }
 
         template<class... Args>
         inline T Expect(Args&&... msg)
         {
-            FE_ASSERT_MSG(IsOk(), std::forward<Args>(msg)...);
+            FE_CORE_ASSERT(IsOk(), "");
             return std::get<1>(std::get<OkVariant>(m_Data));
         }
 
         template<class... Args>
         inline OkVariant ExpectEx(Args&&... msg)
         {
-            FE_ASSERT_MSG(IsOk(), std::forward<Args>(msg)...);
+            FE_CORE_ASSERT(IsOk(), "");
             return std::get<OkVariant>(m_Data);
         }
 

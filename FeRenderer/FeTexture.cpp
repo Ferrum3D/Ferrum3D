@@ -17,6 +17,7 @@ namespace FE
         return m_Handle->GetDefaultView(type);
     }
 
+#if 0
     uint3 FeTexture::GetSize()
     {
         auto w = m_Handle->GetDesc().Width;
@@ -24,4 +25,5 @@ namespace FE
         auto d = m_Handle->GetDesc().Depth;
         return { w, h, d };
     }
+#endif
 } // namespace FE
