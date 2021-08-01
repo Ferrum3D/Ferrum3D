@@ -17,21 +17,21 @@ namespace FE
         AllocatorBase(const char* name, const char* description) noexcept;
         inline virtual ~AllocatorBase() {}
 
-        //================================================================================
+        //=========================================================================================
         // IAllocatorInfo
 
         const char* GetName() const noexcept override;
         const char* GetDescription() const noexcept override;
         bool Initialized() const noexcept override;
         virtual IAllocator* Get() noexcept override;
-        //================================================================================
+        //=========================================================================================
 
-        //================================================================================
+        //=========================================================================================
         // IAllocator
 
         virtual void CollectGarbage() override;
         virtual size_t MaxBlockSize() const override;
-        //================================================================================
+        //=========================================================================================
 
     protected:
         void CopyMemory(void* destination, void* source, size_t byteSize) const;

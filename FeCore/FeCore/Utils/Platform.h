@@ -6,10 +6,8 @@
 
 #ifdef _WIN32
 #    define FE_WINDOWS 1
-#    define FE_DEBUGBREAK __debugbreak();
 #elif defined(__linux__)
 #    define FE_LINUX 1
-#    define FE_DEBUGBREAK raise(SIGTRAP);
 #endif
 
 #ifdef FE_WINDOWS
@@ -45,8 +43,8 @@ namespace FE
 #    define FE_DEBUG 1
 
 #    if defined(FE_WINDOWS)
-#        define FE_DEBUGBREAK __debugbreak();
+#        define FE_DEBUGBREAK __debugbreak()
 #    elif defined(FE_LINUX)
-#        define FE_DEBUGBREAK raise(SIGTRAP);
+#        define FE_DEBUGBREAK raise(SIGTRAP)
 #    endif
 #endif

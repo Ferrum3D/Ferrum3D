@@ -1,21 +1,15 @@
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Jobs/JobSystem.h>
-#include <FeCore/Math/Vector3.h>
-#include <FeCore/Time/DateTime.h>
-#include <FeCore/Utils/Result.h>
-#include <array>
-#include <iostream>
-#include <FeCore/FeCore/Strings/String.h>
-#include <immintrin.h>
-#include <FeCore/Memory/Allocator.h>
-#include <FeCore/Memory/HeapAllocator.h>
+#include <FeCore/Memory/Memory.h>
 
 int main()
 {
-    FE::InitLogger();
     FE::Env::CreateEnvironment();
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
+    auto logger = FE::MakeUnique<FE::Debug::ConsoleLogger>();
     FE::String str = "loooooooooooooooooooooooooong";
-    FE::LogMsg("{}", FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated());
-    FE::LogMsg("{}", str.Capacity());
+    for (int i = 0; i < 16; ++i)
+    {
+        FE_LOG_MESSAGE("{}", FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated());
+        FE_LOG_MESSAGE("{}", str.Capacity());
+    }
 }
