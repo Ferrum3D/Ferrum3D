@@ -1,6 +1,8 @@
+#include <FeCore/Console/Console.h>
 #include <FeCore/Memory/BasicSystemAllocator.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Utils/SortedStringVector.h>
+#include <cstdio>
 
 namespace FE
 {
@@ -49,6 +51,11 @@ namespace FE::Env
                 : m_Allocator(allocator)
                 , m_Map(Allocator(allocator))
             {
+                Console::Init();
+                Console::SetColor(Console::Color::Green);
+                puts(">>>=======================================");
+                puts(">>>    Ferrum3D Global environment created\n");
+                Console::ResetColor();
             }
 
             inline VariableResult FindVariable(std::string_view name) override
@@ -101,6 +108,31 @@ namespace FE::Env
 
             inline void Destroy() override
             {
+                Console::SetColor(Console::Color::Green);
+                puts("\n\n>>>=======================================");
+                puts(">>>  Ferrum3D Global environment destroyed");
+                Console::ResetColor();
+                int leaked = 0;
+                for (auto& var : m_Map)
+                    if (std::get<1>(var))
+                        ++leaked;
+
+                if (leaked)
+                {
+                    printf("Variables leaked: %i, destroying them manually...\n", leaked);
+                    Console::SetColor(Console::Color::Red);
+                    puts("Destructors of leaked variables won't be called!");
+                    puts("Be sure to free all global variables before global environment shut-down");
+                    Console::ResetColor();
+                    for (auto& var : m_Map)
+                    {
+                        if (std::get<1>(var))
+                        {
+                            printf("Freeing variable \"%s\"...", std::get<0>(var).data());
+                            m_Allocator->Deallocate(std::get<1>(var));
+                        }
+                    }
+                }
                 m_Allocator->Deallocate(this);
             }
         };
@@ -117,6 +149,7 @@ namespace FE::Env
             allocator = &sysAlloc;
         }
 
+        Internal::g_IsEnvOwner  = true;
         Internal::g_EnvInstance = new (allocator->Allocate(sizeof(Internal::Environment), alignof(Internal::Environment)))
             Internal::Environment(allocator);
     }
@@ -148,6 +181,15 @@ namespace FE::Env
 
         Internal::g_EnvInstance = nullptr;
     }
+
+    static struct AutoCleanUpStruct
+    {
+        ~AutoCleanUpStruct()
+        {
+            if (EnvironmentAttached())
+                DetachEnvironment();
+        }
+    } AutoCleanUp;
 
     bool EnvironmentAttached()
     {

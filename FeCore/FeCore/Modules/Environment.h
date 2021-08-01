@@ -380,6 +380,8 @@ namespace FE::Env
 
         inline ~GlobalVariable()
         {
+            if (!EnvironmentAttached())
+                return;
             if (m_Storage)
                 m_Storage->Release();
         }

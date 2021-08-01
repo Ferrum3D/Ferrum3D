@@ -22,7 +22,6 @@ TEST(Strings, LongSizeCapacity)
 	FE::String str = cstr;
 	ASSERT_GT(str.Capacity(), 22);
 	ASSERT_EQ(str.Size(), strlen(cstr));
-	FE::LogMsg("str.Capacity() = {}; str.Size() = {}", str.Capacity(), str.Size());
 }
 
 TEST(Strings, SmallCodepointAt)
