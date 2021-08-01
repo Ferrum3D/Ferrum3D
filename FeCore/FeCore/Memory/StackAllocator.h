@@ -20,7 +20,7 @@ namespace FE
 
         inline void Resize(size_t size)
         {
-            FE_ASSERT_MSG(m_Allocated == 0, "Couldn't resize a non-empty allocator");
+            FE_CORE_ASSERT(m_Allocated == 0, "Couldn't resize a non-empty allocator");
             size         = FeMakeAlignment<FeStackAllocatorAlign>(size);
             m_MemorySize = size;
             if (m_Memory)
@@ -37,7 +37,7 @@ namespace FE
         {
             uint8_t* ptr = m_Memory + m_Allocated;
             m_Allocated += size;
-            FE_ASSERT_MSG(m_Allocated <= m_MemorySize, "Allocator overflow");
+            FE_CORE_ASSERT(m_Allocated <= m_MemorySize, "Allocator overflow");
             return ptr;
         }
 
