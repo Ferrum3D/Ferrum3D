@@ -7,9 +7,13 @@ int main()
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
     auto logger = FE::MakeUnique<FE::Debug::ConsoleLogger>();
     FE::String str = "loooooooooooooooooooooooooong";
-    for (int i = 0; i < 16; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         FE_LOG_MESSAGE("{}", FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated());
         FE_LOG_MESSAGE("{}", str.Capacity());
+        FE_LOG_WARNING("{}", FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated());
+        FE_LOG_WARNING("{}", str.Capacity());
+        FE_LOG_ERROR("{}", FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated());
+        FE_LOG_ERROR("{}", str.Capacity());
     }
 }
