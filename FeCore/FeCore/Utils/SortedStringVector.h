@@ -84,7 +84,7 @@ namespace FE
 
         inline std::tuple<TString, T>& Push(const TString& key, const T& value)
         {
-            auto it = FindIter(key);
+            auto it    = FindIter(key);
             size_t idx = it - m_Data.begin();
             if (it != m_Data.end() && std::get<0>(*it) == key)
                 std::get<1>(*it) = value;
@@ -95,7 +95,7 @@ namespace FE
 
         inline std::tuple<TString, T>& Push(TString&& key, T&& value)
         {
-            auto it = FindIter(key);
+            auto it    = FindIter(key);
             size_t idx = it - m_Data.begin();
             if (it != m_Data.end() && std::get<0>(*it) == key)
                 std::get<1>(*it) = value;

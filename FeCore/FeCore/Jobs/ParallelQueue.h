@@ -1,5 +1,5 @@
 #pragma once
-#include <Utils/CoreUtils.h>
+#include <FeCore/Utils/CoreUtils.h>
 #include <mutex>
 #include <queue>
 #include <shared_mutex>
@@ -14,9 +14,9 @@ namespace FE
 
     public:
         /**
-		* @brief Push to the queue.
-		* @param val What to push.
-		*/
+        * @brief Push to the queue.
+        * @param val What to push.
+        */
         void Push(const T& val)
         {
             std::unique_lock lk(m_Mutex);
@@ -24,8 +24,8 @@ namespace FE
         }
 
         /**
-		* @brief Clear the queue.
-		*/
+        * @brief Clear the queue.
+        */
         void Clear()
         {
             std::unique_lock lk(m_Mutex);
@@ -36,10 +36,10 @@ namespace FE
         }
 
         /**
-		* @brief Try pop from the queue.
-		* @param val Reference to variable. This variable will be set to the front of the queue.
-		* @return true if queue was not empty and a value can be retrieved.
-		*/
+        * @brief Try pop from the queue.
+        * @param val Reference to variable. This variable will be set to the front of the queue.
+        * @return true if queue was not empty and a value can be retrieved.
+        */
         bool TryPop(T& val)
         {
             std::unique_lock lk(m_Mutex);
@@ -53,9 +53,9 @@ namespace FE
         }
 
         /**
-		* @brief Check if the queue is empty
-		* @return true if the queue is empty.
-		*/
+        * @brief Check if the queue is empty
+        * @return true if the queue is empty.
+        */
         bool IsEmpty()
         {
             std::shared_lock lk(m_Mutex);

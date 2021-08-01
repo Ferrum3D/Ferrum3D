@@ -1,8 +1,8 @@
 #pragma once
+#include <FeCore/Utils/Platform.h>
 #include <cassert>
 #include <cstdint>
 #include <string>
-#include <Utils/Platform.h>
 
 namespace FE::UTF8
 {
@@ -12,7 +12,16 @@ namespace FE::UTF8
     using TCodepointTraits = std::char_traits<TCodepoint>;
 
     // assertion without loggers, used in modules on which loggers depend
-#define FE_CORE_ASSERT(expression, msg) do { if (!(expression)) { FE_DEBUGBREAK; (void)msg; } } while(0)
+#define FE_CORE_ASSERT(expression, msg)                                                                                          \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        if (!(expression))                                                                                                       \
+        {                                                                                                                        \
+            FE_DEBUGBREAK;                                                                                                       \
+            (void)msg;                                                                                                           \
+        }                                                                                                                        \
+    }                                                                                                                            \
+    while (0)
 
     namespace Internal
     {
@@ -89,7 +98,7 @@ namespace FE::UTF8
     inline TCodepoint DecodePrior(const TChar*& it) noexcept
     {
         uint32_t c;
-        int e = 1;
+        int e             = 1;
         const TChar* iter = it;
         int maxlen        = 3;
         while (e && maxlen--)
@@ -141,7 +150,7 @@ namespace FE::UTF8
         while (*str)
         {
             void* input = reinterpret_cast<void*>(const_cast<TChar*>(str));
-            str = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
+            str         = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
         }
         return e == 0;
     }

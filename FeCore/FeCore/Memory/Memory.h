@@ -1,7 +1,7 @@
 #pragma once
-#include <Memory/Allocator.h>
-#include <Memory/HeapAllocator.h>
-#include <Memory/SharedPtr.h>
+#include <FeCore/Memory/Allocator.h>
+#include <FeCore/Memory/HeapAllocator.h>
+#include <FeCore/Memory/SharedPtr.h>
 #include <memory>
 
 namespace FE
@@ -28,10 +28,10 @@ namespace FE
     auto MakeShared(Args&&... args) -> RefCountPtr<T>
     {
         FE_STATIC_SRCPOS(position);
-        using TObject = Internal::RefCountObject<T>;
+        using TObject         = Internal::RefCountObject<T>;
         IAllocator* allocator = &FE::GlobalAllocator<FE::HeapAllocator>::Get();
-        void* data = allocator->Allocate(sizeof(TObject), alignof(TObject), position);
-        auto* obj = new (data) TObject(allocator);
+        void* data            = allocator->Allocate(sizeof(TObject), alignof(TObject), position);
+        auto* obj             = new (data) TObject(allocator);
         obj->Construct(std::forward<Args>(args)...);
         return RefCountPtr<T>(obj);
     }

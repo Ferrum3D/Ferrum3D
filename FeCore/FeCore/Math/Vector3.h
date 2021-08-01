@@ -1,8 +1,8 @@
 #pragma once
-#include <SIMD/CommonSIMD.h>
+#include <FeCore/SIMD/CommonSIMD.h>
+#include <array>
 #include <cstdint>
 #include <iostream>
-#include <array>
 
 namespace FE
 {
@@ -227,9 +227,9 @@ namespace FE
 
     FE_FINLINE float Vector3F::Dot(const Vector3F& other) const noexcept
     {
-        TVec mul = m_Value * other.m_Value;
+        TVec mul     = m_Value * other.m_Value;
         TVec halfSum = mul.Broadcast<1>() + mul;
-        TVec sum = mul.Broadcast<2>() + halfSum;
+        TVec sum     = mul.Broadcast<2>() + halfSum;
         return sum.Select<0>();
     }
 
@@ -343,4 +343,4 @@ namespace std
     {
         return stream << "{ " << vec.X() << "; " << vec.Y() << "; " << vec.Z() << " }";
     }
-}
+} // namespace std

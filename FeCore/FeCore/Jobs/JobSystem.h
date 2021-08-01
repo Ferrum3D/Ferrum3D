@@ -1,6 +1,6 @@
 #pragma once
-#include <Memory/StackAllocator.h>
-#include <Utils/CoreUtils.h>
+#include <FeCore/Memory/StackAllocator.h>
+#include <FeCore/Utils/CoreUtils.h>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>

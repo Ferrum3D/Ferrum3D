@@ -70,8 +70,8 @@ namespace FE
     // TODO: Conversion to double/from double
 
     /**
-	* @brief Half-precision floating point.
-	*/
+    * @brief Half-precision floating point.
+    */
     struct FeHalf
     {
         constexpr FeHalf() noexcept

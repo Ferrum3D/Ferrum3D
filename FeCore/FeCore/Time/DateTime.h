@@ -1,6 +1,6 @@
 #pragma once
-#include <Strings/Format.h>
-#include "TimeSpan.h"
+#include <FeCore/Strings/Format.h>
+#include <FeCore/Time/TimeSpan.h>
 
 namespace FE
 {

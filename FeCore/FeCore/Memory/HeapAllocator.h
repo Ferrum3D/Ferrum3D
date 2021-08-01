@@ -1,6 +1,6 @@
 #pragma once
-#include <Memory/AllocatorBase.h>
-#include <Memory/IAllocator.h>
+#include <FeCore/Memory/AllocatorBase.h>
+#include <FeCore/Memory/IAllocator.h>
 
 namespace FE
 {

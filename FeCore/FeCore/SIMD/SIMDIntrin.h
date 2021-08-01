@@ -1,10 +1,9 @@
 #pragma once
-#include <Utils/Platform.h>
-#include <emmintrin.h>
-#include <xmmintrin.h>
+#include <FeCore/Utils/Platform.h>
+#ifdef FE_SSE3_SUPPORTED
+#    include <emmintrin.h>
+#    include <xmmintrin.h>
+#endif
 #ifdef FE_SSE41_SUPPORTED
-#    ifndef FE_SSE3_SUPPORTED
-#        define FE_SSE3_SUPPORTED
-#    endif
 #    include <smmintrin.h>
 #endif

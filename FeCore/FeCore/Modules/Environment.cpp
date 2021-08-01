@@ -1,6 +1,6 @@
-#include "Environment.h"
-#include <Memory/BasicSystemAllocator.h>
-#include <Utils/SortedStringVector.h>
+#include <FeCore/Memory/BasicSystemAllocator.h>
+#include <FeCore/Modules/Environment.h>
+#include <FeCore/Utils/SortedStringVector.h>
 
 namespace FE
 {
@@ -12,7 +12,7 @@ namespace FE
             return std::string_view(str.data(), str.size());
         }
     };
-}
+} // namespace FE
 
 namespace FE::Env
 {

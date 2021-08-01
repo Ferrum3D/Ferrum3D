@@ -1,14 +1,14 @@
 #pragma once
-#include <Utils/CoreUtils.h>
-#include <Utils/Platform.h>
-#include <Strings/StringSlice.h>
+#include <FeCore/Strings/StringSlice.h>
+#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Utils/Platform.h>
 #include <mutex>
 
 namespace FE::Console
 {
     /**
-	* @brief Cross-platform abstraction over console text color
-	*/
+    * @brief Cross-platform abstraction over console text color
+    */
     enum class Color
     {
         Default = 0xff,
@@ -54,13 +54,13 @@ namespace FE::Console
     void Init();
 
     /**
-	* @brief Set console text color
-	*/
+    * @brief Set console text color
+    */
     void SetColor(Color color);
 
     /**
-	* @brief Reset console text color to default
-	*/
+    * @brief Reset console text color to default
+    */
     void ResetColor();
 
     /**

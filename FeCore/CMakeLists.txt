@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.21.0)
-
 set(SRC
 	FeCore/Assets/AssetManager.h
 	FeCore/Assets/AssetManager.cpp
@@ -64,10 +62,13 @@ set(SRC
 
 add_library(FeCore STATIC ${SRC})
 
+# fe_enable_sse_for_target(FeCore) # TODO: fix this
+
+target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_link_libraries(FeCore rpmalloc entt)
+
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
-
-target_compile_definitions(FeCore PRIVATE FERRUMCORE_EXPORTS)
-target_compile_definitions(FeCore PUBLIC _ENABLE_EXTENDED_ALIGNED_STORAGE)
 
 add_subdirectory(Tests)
