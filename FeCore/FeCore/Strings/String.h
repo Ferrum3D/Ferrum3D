@@ -98,12 +98,14 @@ namespace FE
 
         inline TChar* Allocate(size_t s) noexcept
         {
-            return static_cast<TChar*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, FE_SRCPOS()));
+            FE_STATIC_SRCPOS(position);
+            return static_cast<TChar*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, position));
         }
 
         inline void Deallocate(TChar* c, size_t s) noexcept
         {
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(c, FE_SRCPOS(), s);
+            FE_STATIC_SRCPOS(position);
+            GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position, s);
         }
 
         inline void CopyData(TChar* dest, const TChar* src, size_t size) noexcept

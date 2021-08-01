@@ -23,7 +23,7 @@ namespace FE
 
         void Init(const Desc& desc);
 
-        //================================================================================
+        //=========================================================================================
         // IAllocator
 
         virtual void* Allocate(size_t size, size_t alignment, const SourcePosition& position) override;
@@ -32,6 +32,6 @@ namespace FE
             void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize = 0) override;
         virtual size_t TotalAllocated() const override;
         virtual size_t SizeOfBlock(void* pointer) override;
-        //================================================================================
+        //=========================================================================================
     };
 } // namespace FE

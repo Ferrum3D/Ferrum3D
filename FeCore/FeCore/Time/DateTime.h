@@ -1,9 +1,10 @@
 #pragma once
+#include <Strings/Format.h>
 #include "TimeSpan.h"
 
 namespace FE
 {
-    class FE_CORE_API DateTime
+    class DateTime
     {
         tm m_Data;
 
@@ -59,12 +60,7 @@ namespace FE
 
         void Format(std::ostream& stream, const char* format = "[%m/%d/%Y %T]") const;
 
-        inline std::string DateTime::ToString(const char* format = "[%m/%d/%Y %T]") const
-        {
-            std::stringstream ss;
-            Format(ss, format);
-            return ss.str();
-        }
+        String DateTime::ToString(const char* format = "[%m/%d/%Y %T]") const;
 
         inline static DateTime CreateLocal(time_t time)
         {

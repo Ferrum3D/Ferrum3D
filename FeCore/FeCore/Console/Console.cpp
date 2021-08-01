@@ -4,45 +4,57 @@
 #ifdef FE_WINDOWS
 #    define WIN32_LEAN_AND_MEAN
 #    include <Windows.h>
-HANDLE ConHandle = nullptr;
 #    undef min
 #    undef max
+
+static HANDLE ConHandle  = nullptr;
+static WORD DefaultColor = 0;
+
+inline static WORD GetConColor()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info{};
+    GetConsoleScreenBufferInfo(ConHandle, &info);
+    return info.wAttributes;
+}
 #endif
 
-namespace FE
+namespace FE::Console
 {
-    void FeInitConsole()
+    void Init()
     {
 #ifdef FE_WINDOWS
+        ConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleOutputCP(CP_UTF8);
-        setvbuf(stdout, nullptr, _IOFBF, 1000);
+        DefaultColor = GetConColor();
 #endif
     }
 
-    void FeSetConColor(FeConColor color)
+    void SetColor(Color color)
     {
 #ifdef FE_WINDOWS
-        if (!ConHandle)
-            ConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         if (ConHandle)
         {
-            fflush(stdout);
-            SetConsoleTextAttribute(ConHandle, (int)color);
+            if (color == Color::Default)
+            {
+                SetConsoleTextAttribute(ConHandle, DefaultColor);
+            }
+            else
+            {
+                SetConsoleTextAttribute(ConHandle, DefaultColor & 0xF0 | (WORD)color);
+            }
         }
 #elif defined(FE_LINUX)
-        std::cerr << "\033[" << (int)color << "m";
+        std::cout << "\033[" << (int)color << "m";
 #endif
     }
 
-    void FeResetConColor()
+    void ResetColor()
     {
-#ifdef FE_WINDOWS
-        if (!ConHandle)
-            ConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (ConHandle)
-            SetConsoleTextAttribute(ConHandle, (int)FeConColor::Def);
-#elif defined(FE_LINUX)
-        std::cerr << "\033[" << (int)ConColor::Def << "m";
-#endif
+        SetColor(Color::Default);
     }
-} // namespace FE
+
+    void PrintToStdout(StringSlice string)
+    {
+        std::cout << string;
+    }
+} // namespace FE::Console

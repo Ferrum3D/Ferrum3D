@@ -6,7 +6,10 @@ set(SRC
 	
 	FeCore/Console/Console.h
 	FeCore/Console/Console.cpp
+	FeCore/Console/ConsoleLogger.h
+	FeCore/Console/ConsoleLogger.cpp
 	FeCore/Console/FeLog.h
+	FeCore/Console/IConsoleLogger.h
 	
 	FeCore/Jobs/JobSystem.h
 	FeCore/Jobs/JobSystem.cpp
@@ -24,8 +27,9 @@ set(SRC
 	FeCore/Memory/HeapAllocator.h
 	FeCore/Memory/HeapAllocator.cpp
 	FeCore/Memory/IAllocator.h
-	FeCore/Memory/StackAllocator.h
 	FeCore/Memory/IBasicAllocator.h
+	FeCore/Memory/Memory.h
+	FeCore/Memory/StackAllocator.h
 	
 	FeCore/Modules/Environment.h
 	FeCore/Modules/Environment.cpp

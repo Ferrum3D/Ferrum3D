@@ -5,15 +5,14 @@
 #define RPMALLOC_CONFIGURABLE 1
 #include <rpmalloc/rpmalloc.h>
 
-#if 0
+#if 1
 #    define FE_MALLOC_PRINT(...)
 #else
 #    define FE_MALLOC_PRINT(...)                                                                                                 \
         do                                                                                                                       \
         {                                                                                                                        \
             printf_s(__VA_ARGS__);                                                                                               \
-            printf_s(                                                                                                            \
-                "\n\tAt file \"%s\"; line %i; called from %s\n", position.FileName, position.LineNumber, position.FuncName);     \
+            printf_s("\n\tAt file \"%s\"; line %i; caller %s\n\n", position.FileName, position.LineNumber, position.FuncName);   \
         }                                                                                                                        \
         while (0)
 #endif

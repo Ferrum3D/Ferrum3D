@@ -1,52 +1,71 @@
 #pragma once
 #include <Utils/CoreUtils.h>
 #include <Utils/Platform.h>
+#include <Strings/StringSlice.h>
 #include <mutex>
 
-namespace FE
+namespace FE::Console
 {
-    // clang-format off
-
     /**
 	* @brief Cross-platform abstraction over console text color
 	*/
-    FE_TYPED_ENUM(FeConColor, uint8_t)
+    enum class Color
     {
+        Default = 0xff,
 #ifdef FE_WINDOWS
-        Red    = 0xC,
-        Green  = 0xA,
-        Yellow = 0xE,
-        Blue   = 0xB,
-        White  = 0xF,
-        Def    = White
-#elif defined(FE_LINUX)
-        Red    = 31,
-        Green  = 32,
-        Yellow = 33,
-        Blue   = 34,
-        White  = 37,
-        Def    = 0
+        Black   = 0x0,
+        Navy    = 0x1,
+        Green   = 0x2,
+        Teal    = 0x3,
+        Maroon  = 0x4,
+        Purple  = 0x5,
+        Olive   = 0x6,
+        Silver  = 0x7,
+        Gray    = 0x8,
+        Blue    = 0x9,
+        Lime    = 0xa,
+        Aqua    = 0xb,
+        Red     = 0xc,
+        Fuchsia = 0xd,
+        Yellow  = 0xe,
+        White   = 0xf
+#else
+        Black   = 0,
+        Navy    = 4,
+        Green   = 2,
+        Teal    = 6,
+        Maroon  = 1,
+        Purple  = 5,
+        Olive   = 3,
+        Silver  = 7,
+        Gray    = 8,
+        Blue    = 12,
+        Lime    = 10,
+        Aqua    = 14,
+        Red     = 9,
+        Fuchsia = 13,
+        Yellow  = 11,
+        White   = 15
 #endif
     };
-    // clang-format on
 
-    /**
-	* @brief Console mutex, used internally, e.g. in FeLog
-	*/
-    static std::mutex ConsoleMut;
+    static std::mutex Mutex;
 
-    /**
-	* @brief Initialize console, used internally
-	*/
-    FE_CORE_API void FeInitConsole();
+    void Init();
 
     /**
 	* @brief Set console text color
 	*/
-    FE_CORE_API void FeSetConColor(FeConColor color);
+    void SetColor(Color color);
 
     /**
 	* @brief Reset console text color to default
 	*/
-    FE_CORE_API void FeResetConColor();
-} // namespace FE
+    void ResetColor();
+
+    /**
+     * @brief Print a string to stdout.
+     * @param string String to print.
+    */
+    void PrintToStdout(StringSlice string);
+} // namespace FE::Console

@@ -21,15 +21,15 @@ namespace FE
     public:
         inline static void Register(T* instance)
         {
-            FE_ASSERT_MSG(instance, "Singleton {} instance was a nullptr", TypeName<T>());
-            FE_ASSERT_MSG(Get() == nullptr, "Couldn't register singleton {} twise", TypeName<T>());
+            FE_CORE_ASSERT(instance, "Singleton instance was a nullptr");
+            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register singleton twise");
             std::unique_lock lk(m_Mutex);
             m_Instance = Env::CreateGlobalVariableByType<T*>(instance);
         }
 
         inline static void Unregister()
         {
-            FE_ASSERT_MSG(m_Instance, "Singleton {} instance was a nullptr", TypeName<T>());
+            FE_CORE_ASSERT(m_Instance, "Singleton instance was a nullptr");
             std::unique_lock lk(m_Mutex);
             *m_Instance = nullptr;
             m_Instance.Reset();
