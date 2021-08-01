@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.21.0)
-
 set(SRC
 	Common/TestCommon.h
 
@@ -15,7 +13,8 @@ set(SRC
 )
 
 add_executable(FeCoreTests ${SRC})
-target_link_libraries(FeCoreTests gtest gmock gtest_main)
+
+target_link_libraries(FeCoreTests gtest gmock gtest_main FeCore)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCoreTests PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

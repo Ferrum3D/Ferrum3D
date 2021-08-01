@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity.h"
+#include <FeCore/Scene/Entity.h>
 
 namespace FE
 {

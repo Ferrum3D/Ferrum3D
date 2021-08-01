@@ -1,4 +1,4 @@
-#include "Console.h"
+#include <FeCore/Console/Console.h>
 #include <iostream>
 
 #ifdef FE_WINDOWS

@@ -1,9 +1,9 @@
 #pragma once
-#include <SIMD/CommonSIMD.h>
+#include <FeCore/Math/Vector3.h>
+#include <FeCore/SIMD/CommonSIMD.h>
+#include <array>
 #include <cstdint>
 #include <iostream>
-#include <array>
-#include "Vector3.h"
 
 namespace FE
 {
@@ -251,8 +251,8 @@ namespace FE
     FE_FINLINE float Vector4F::Dot(const Vector4F& other) const noexcept
     {
         TVec mul = m_Value * other.m_Value;
-        TVec t = mul * mul.Shuffle<2, 3, 0, 1>();
-        TVec r = t + t.Shuffle<1, 0, 2, 3>();
+        TVec t   = mul * mul.Shuffle<2, 3, 0, 1>();
+        TVec r   = t + t.Shuffle<1, 0, 2, 3>();
         return r.Select<0>();
     }
 
@@ -366,4 +366,4 @@ namespace std
     {
         return stream << "{ " << vec.X() << "; " << vec.Y() << "; " << vec.Z() << "; " << vec.W() << " }";
     }
-}
+} // namespace std

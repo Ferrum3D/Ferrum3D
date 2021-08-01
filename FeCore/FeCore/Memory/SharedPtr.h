@@ -1,6 +1,6 @@
 #pragma once
-#include <Memory/Allocator.h>
-#include <Memory/HeapAllocator.h>
+#include <FeCore/Memory/Allocator.h>
+#include <FeCore/Memory/HeapAllocator.h>
 
 namespace FE
 {
@@ -84,9 +84,9 @@ namespace FE
 
         inline void Swap(RefCountPtr& other)
         {
-            auto* t = other.m_Data;
+            auto* t      = other.m_Data;
             other.m_Data = m_Data;
-            m_Data = t;
+            m_Data       = t;
         }
 
         inline RefCountPtr& operator=(const RefCountPtr& other)

@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreUtils.h"
-#include <Strings/FeUnicode.h>
+#include <FeCore/Strings/FeUnicode.h>
 #include <tuple>
 #include <variant>
 

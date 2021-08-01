@@ -1,8 +1,2 @@
-cmake_minimum_required(VERSION 3.21.0)
-
-set(SRC
-	main.cpp
-)
-set(INCLUDE)
-
-add_executable(FeAssetCompiler ${SRC} ${INCLUDE})
+add_executable(FeAssetCompiler main.cpp)
+target_link_libraries(FeAssetCompiler FeCore)

@@ -1,5 +1,5 @@
 #pragma once
-#include "Platform.h"
+#include <FeCore/Utils/Platform.h>
 #include <atomic>
 #include <cstdint>
 #include <intrin.h>

@@ -1,5 +1,5 @@
-#include "AssetManager.h"
-#include <Console/FeLog.h>
+#include <FeCore/Assets/AssetManager.h>
+#include <FeCore/Console/FeLog.h>
 #include <fstream>
 
 namespace FE

@@ -1,6 +1,6 @@
 #pragma once
-#include "IBasicAllocator.h"
-#include <Utils/Platform.h>
+#include <FeCore/Memory/IBasicAllocator.h>
+#include <FeCore/Utils/Platform.h>
 
 namespace FE
 {

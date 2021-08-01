@@ -2,5 +2,4 @@
 
 namespace FE::SIMD::Scalar
 {
-
 }

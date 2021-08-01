@@ -1,6 +1,6 @@
 #pragma once
-#include <Console/IConsoleLogger.h>
-#include <Modules/Singleton.h>
+#include <FeCore/Console/IConsoleLogger.h>
+#include <FeCore/Modules/Singleton.h>
 
 namespace FE::Debug
 {
@@ -9,7 +9,6 @@ namespace FE::Debug
         LogMessageType m_DebugLevel = LogMessageType::Error | LogMessageType::Warning | LogMessageType::Message;
 
     protected:
-
         //=========================================================================================
         // IConsoleLogger
 

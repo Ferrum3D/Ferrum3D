@@ -1,6 +1,6 @@
 #pragma once
-#include <Console/Console.h>
-#include <Strings/Format.h>
+#include <FeCore/Console/Console.h>
+#include <FeCore/Strings/Format.h>
 
 namespace FE::Debug
 {
@@ -8,8 +8,8 @@ namespace FE::Debug
 
     // clang-format off
     /**
-	* @brief Type of log message
-	*/
+    * @brief Type of log message
+    */
     FE_ENUM(LogMessageType)
     {
         /**
@@ -18,18 +18,18 @@ namespace FE::Debug
         None = 0,
 
         /**
-		* @brief A regular debug message
-		*/
+        * @brief A regular debug message
+        */
         Message = 1 << 0,
 
         /**
-		* @brief Warning
-		*/
+        * @brief Warning
+        */
         Warning = 1 << 1,
 
         /**
-		* @brief Error
-		*/
+        * @brief Error
+        */
         Error = 1 << 2
     };
     // clang-format on

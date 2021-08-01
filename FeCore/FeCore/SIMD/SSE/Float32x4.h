@@ -1,5 +1,5 @@
 #pragma once
-#include <SIMD/SIMDIntrin.h>
+#include <FeCore/SIMD/SIMDIntrin.h>
 
 #ifdef FE_SSE3_SUPPORTED
 namespace FE

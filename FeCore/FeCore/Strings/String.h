@@ -1,8 +1,8 @@
 #pragma once
-#include <Utils/CoreUtils.h>
-#include "StringSlice.h"
-#include <Memory/Allocator.h>
-#include <Memory/HeapAllocator.h>
+#include <FeCore/Memory/Allocator.h>
+#include <FeCore/Memory/HeapAllocator.h>
+#include <FeCore/Strings/StringSlice.h>
+#include <FeCore/Utils/CoreUtils.h>
 
 namespace FE
 {
@@ -359,7 +359,7 @@ namespace FE
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
         {
             auto begin = Data();
-            auto end = Data();
+            auto end   = Data();
             UTF8::Advance(begin, beginIndex);
             UTF8::Advance(end, endIndex);
             return StringSlice(begin, end - begin);

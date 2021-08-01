@@ -1,5 +1,5 @@
 #pragma once
-#include "FeUnicode.h"
+#include <FeCore/Strings/FeUnicode.h>
 #include <cassert>
 #include <ostream>
 
@@ -118,7 +118,7 @@ namespace FE
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
         {
             auto begin = Data();
-            auto end = Data();
+            auto end   = Data();
             UTF8::Advance(begin, beginIndex);
             UTF8::Advance(end, endIndex);
             return StringSlice(begin, end - begin);
@@ -227,4 +227,4 @@ namespace std
     {
         return stream << std::string_view(str.Data(), str.Size());
     }
-}
+} // namespace std

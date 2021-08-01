@@ -1,2 +1,2 @@
-cmake -S . -B build/ -A x64 -DDILIGENT_BUILD_SAMPLES=OFF
+cmake -S . -B Build/ -A x64
 PAUSE
