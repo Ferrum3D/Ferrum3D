@@ -29,6 +29,7 @@ set(SRC
 	FeCore/Memory/IAllocator.h
 	FeCore/Memory/IBasicAllocator.h
 	FeCore/Memory/Memory.h
+	FeCore/Memory/SharedPtr.h
 	FeCore/Memory/StackAllocator.h
 	
 	FeCore/Modules/Environment.h
