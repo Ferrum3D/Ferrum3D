@@ -24,6 +24,7 @@ add_subdirectory(FeCore)
 add_subdirectory(FeRenderer)
 add_subdirectory(FeTestProject)
 add_subdirectory(FeAssetCompiler)
+add_subdirectory(FeModules)
 
 add_subdirectory(ThirdParty)
 

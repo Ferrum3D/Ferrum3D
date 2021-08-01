@@ -196,7 +196,7 @@ namespace FE::Env
         {
             std::string_view m_Name;
             uint32_t m_RefCount;
-            typename std::aligned_storage<sizeof(T), alignof(T)>::type m_Storage;
+            std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
             std::mutex m_Mutex;
             bool m_IsConstructed;
 
