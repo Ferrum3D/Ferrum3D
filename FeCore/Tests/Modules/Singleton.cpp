@@ -33,21 +33,7 @@ public:
     }
 };
 
-class SingletonTest : public ::testing::Test
-{
-protected:
-    void SetUp() override
-    {
-        FE::Env::CreateEnvironment();
-    }
-
-    void TearDown() override
-    {
-        FE::Env::DetachEnvironment();
-    }
-};
-
-TEST_F(SingletonTest, CreateDelete)
+TEST(SingletonTest, CreateDelete)
 {
     auto mock = std::make_shared<MockConstructors>();
     EXPECT_CALL(*mock, Construct()).Times(1);

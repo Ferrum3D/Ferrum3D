@@ -3,35 +3,21 @@
 
 using ::testing::AtLeast;
 
-class EnvironmentTest : public ::testing::Test
-{
-protected:
-    void SetUp() override
-    {
-        FE::Env::CreateEnvironment();
-    }
-
-    void TearDown() override
-    {
-        FE::Env::DetachEnvironment();
-    }
-};
-
-TEST_F(EnvironmentTest, CreateVar)
+TEST(EnvironmentTest, CreateVar)
 {
     auto intVar = FE::Env::CreateGlobalVariable<int>("CreateVar", 123);
     ASSERT_EQ(*intVar, 123);
     ASSERT_EQ(intVar.GetName(), "CreateVar");
 }
 
-TEST_F(EnvironmentTest, CreateVarID)
+TEST(EnvironmentTest, CreateVarID)
 {
     auto intVar = FE::Env::CreateGlobalVariable<int>(0, 123);
     ASSERT_EQ(*intVar, 123);
     ASSERT_EQ(intVar.GetName(), "#00000000");
 }
 
-TEST_F(EnvironmentTest, SharedVar)
+TEST(EnvironmentTest, SharedVar)
 {
     auto instance1 = FE::Env::CreateGlobalVariable<int>("SharedVar", 123);
     auto instance2 = instance1;
@@ -44,7 +30,7 @@ TEST_F(EnvironmentTest, SharedVar)
     ASSERT_EQ(instance2.GetName(), "SharedVar");
 }
 
-TEST_F(EnvironmentTest, FindVar)
+TEST(EnvironmentTest, FindVar)
 {
     auto owner1 = FE::Env::CreateGlobalVariable<int>("FindVar", 123);
     auto owner2 = FE::Env::CreateGlobalVariable<int>(1, 456);
@@ -61,7 +47,7 @@ TEST_F(EnvironmentTest, FindVar)
     EXPECT_EQ(var456.GetName(), "#00000001");
 }
 
-TEST_F(EnvironmentTest, NoCopies)
+TEST(EnvironmentTest, NoCopies)
 {
     auto mock = std::make_shared<MockConstructors>();
     EXPECT_CALL(*mock, Construct()).Times(1);
