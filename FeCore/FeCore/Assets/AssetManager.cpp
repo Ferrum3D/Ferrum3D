@@ -34,7 +34,6 @@ namespace FE
 
     RawAsset AssetManager::LoadRawAssetImpl(const std::string& fileName)
     {
-#ifdef FE_DEBUG
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
         size_t size = file.tellg();
         file.seekg(0, std::ios::beg);
@@ -44,8 +43,5 @@ namespace FE
         file.read(array, size);
         FE_ASSERT_MSG(!file.fail(), "Failed to read file \"{}\"", fileName);
         return RawAsset(size, std::shared_ptr<void>(array));
-#else
-#    error Release-mode asset manager isn't implemented yet
-#endif
     }
 } // namespace FE

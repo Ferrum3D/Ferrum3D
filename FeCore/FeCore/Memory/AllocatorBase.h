@@ -53,8 +53,8 @@ namespace FE
     do { ProfileReallocate(pointer, position, newSize, newAlignment, oldSize); } while (0)
 #else
 #     define FE_PROFILE_ALLOC(size, alignment, position) do {} while (0)
-#     define FE_PROFILE_DEALLOC(pointer, position, size, alignment) do {} while (0)
-#     define FE_PROFILE_REALLOC(pointer, position, newSize, newAlignment, oldSize, oldAlignment) do {} while (0)
+#     define FE_PROFILE_DEALLOC(pointer, position, size) do {} while (0)
+#     define FE_PROFILE_REALLOC(pointer, position, newSize, newAlignment, oldSize) do {} while (0)
 #endif
     // clang-format on
 } // namespace FE

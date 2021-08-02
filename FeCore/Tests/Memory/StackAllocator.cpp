@@ -38,5 +38,9 @@ TEST(StackAllocator, Array)
     for (int i = 0; i < 512; ++i)
         EXPECT_EQ(i, array[i]);
 
-    EXPECT_DEATH(alloc.Allocate<int>(0), ".*Allocator overflow");
+#if FE_DEBUG
+    EXPECT_DEATH(alloc.Allocate<int>(0), ".*");
+#elif FE_RELEASE
+    EXPECT_ANY_THROW(alloc.Allocate<int>(0));
+#endif
 }

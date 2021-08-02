@@ -62,7 +62,7 @@ set(SRC
 
 add_library(FeCore STATIC ${SRC})
 
-# fe_enable_sse_for_target(FeCore) # TODO: fix this
+fe_enable_sse_for_target(FeCore)
 
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
