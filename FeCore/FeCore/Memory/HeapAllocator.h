@@ -19,7 +19,7 @@ namespace FE
         using Desc = HeapAllocatorDesc;
 
         HeapAllocator();
-        inline virtual ~HeapAllocator() {}
+        inline virtual ~HeapAllocator() = default;
 
         void Init(const Desc& desc);
 

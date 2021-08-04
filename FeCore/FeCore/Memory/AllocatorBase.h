@@ -15,7 +15,7 @@ namespace FE
 
     public:
         AllocatorBase(const char* name, const char* description) noexcept;
-        inline virtual ~AllocatorBase() {}
+        inline virtual ~AllocatorBase() = default;
 
         //=========================================================================================
         // IAllocatorInfo

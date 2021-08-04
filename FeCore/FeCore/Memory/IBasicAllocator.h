@@ -52,13 +52,13 @@ namespace FE
     };
 
     template<class T, class U>
-    inline bool operator==(StdBasicAllocator<T> const&, StdBasicAllocator<U> const&) noexcept
+    inline bool operator==(const StdBasicAllocator<T>&, const StdBasicAllocator<U>&) noexcept
     {
         return true;
     }
 
     template<class T, class U>
-    inline bool operator!=(StdBasicAllocator<T> const& x, StdBasicAllocator<U> const& y) noexcept
+    inline bool operator!=(const StdBasicAllocator<T>& x, const StdBasicAllocator<U>& y) noexcept
     {
         return !(x == y);
     }

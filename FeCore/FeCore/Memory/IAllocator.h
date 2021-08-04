@@ -12,7 +12,7 @@ namespace FE
     class IAllocator
     {
     public:
-        inline virtual ~IAllocator() {}
+        inline virtual ~IAllocator() = default;
 
         /**
          * @brief Allocate a block of memory with specified size and alignment.

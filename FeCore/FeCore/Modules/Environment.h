@@ -177,7 +177,7 @@ namespace FE::Env
         class IEnvironment
         {
         public:
-            virtual ~IEnvironment() {}
+            virtual ~IEnvironment() = default;
 
             virtual VariableResult FindVariable(std::string_view name) = 0;
 
