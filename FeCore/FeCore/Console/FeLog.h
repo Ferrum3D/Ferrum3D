@@ -28,4 +28,6 @@ namespace FE
         }                                                                                                                        \
     }                                                                                                                            \
     while (0)
+
+#define FE_UNREACHABLE(...) FE_ASSERT_MSG(false, __VA_ARGS__)
 } // namespace FE

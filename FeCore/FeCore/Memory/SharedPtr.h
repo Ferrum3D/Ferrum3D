@@ -6,49 +6,19 @@ namespace FE
 {
     namespace Internal
     {
-        template<class T>
-        class RefCountObject
+        struct RefCounter
         {
-            FE::IAllocator* m_Allocator;
-            std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
-            uint8_t m_RefCount;
+            void* Ptr;
+            uint32_t Count;
+            FE::IAllocator* Allocator;
+            bool MakeShared;
 
-        public:
-            inline RefCountObject(FE::IAllocator* allocator)
-                : m_Allocator(allocator)
-                , m_RefCount(0)
+            inline RefCounter(void* ptr, FE::IAllocator* allocator, bool makeShared, uint32_t count = 1)
+                : Ptr(ptr)
+                , Count(count)
+                , Allocator(allocator)
+                , MakeShared(makeShared)
             {
-            }
-
-            template<class... Args>
-            inline void Construct(Args&&... args)
-            {
-                new (&m_Storage) T(std::forward<Args>(args)...);
-            }
-
-            inline void Destruct()
-            {
-                reinterpret_cast<T*>(&m_Storage)->~T();
-            }
-
-            inline T* Get()
-            {
-                return reinterpret_cast<T*>(&m_Storage);
-            }
-
-            inline void AddRef()
-            {
-                ++m_RefCount;
-            }
-
-            inline void Release()
-            {
-                if (--m_RefCount == 0)
-                {
-                    reinterpret_cast<T*>(&m_Storage)->~T();
-                    FE_STATIC_SRCPOS(position);
-                    m_Allocator->Deallocate(this, position, sizeof(*this));
-                }
             }
         };
     } // namespace Internal
@@ -56,7 +26,7 @@ namespace FE
     template<class T>
     class RefCountPtr
     {
-        Internal::RefCountObject<T>* m_Data;
+        Internal::RefCounter* m_Data;
 
     public:
         inline RefCountPtr() noexcept
@@ -64,16 +34,25 @@ namespace FE
         {
         }
 
-        inline RefCountPtr(Internal::RefCountObject<T>* storage) noexcept
+        inline RefCountPtr(T* ptr) noexcept
+        {
+            IAllocator* allocator = &FE::GlobalAllocator<FE::HeapAllocator>::Get();
+            size_t size           = sizeof(Internal::RefCounter);
+            size_t align          = alignof(Internal::RefCounter);
+
+            m_Data = new (allocator->Allocate(size, align, FE_SRCPOS())) Internal::RefCounter(ptr, allocator, false);
+        }
+
+        inline RefCountPtr(Internal::RefCounter* storage) noexcept
             : m_Data(storage)
         {
-            m_Data->AddRef();
+            ++m_Data->Count;
         }
 
         inline RefCountPtr(const RefCountPtr& other) noexcept
             : m_Data(other.m_Data)
         {
-            m_Data->AddRef();
+            ++m_Data->Count;
         }
 
         inline RefCountPtr(RefCountPtr&& other) noexcept
@@ -108,38 +87,46 @@ namespace FE
 
         inline ~RefCountPtr()
         {
-            if (m_Data)
-                m_Data->Release();
+            if (m_Data == nullptr || --m_Data->Count)
+                return;
+            IAllocator* allocator = m_Data->Allocator;
+            bool makeShared       = m_Data->MakeShared;
+            // don't specify size here because T can be a different type since the pointer could have been casted
+            reinterpret_cast<T*>(m_Data->Ptr)->~T();
+            allocator->Deallocate(m_Data->Ptr, FE_SRCPOS());
+            if (makeShared)
+                return;
+            allocator->Deallocate(m_Data, FE_SRCPOS());
+        }
+
+        inline T* GetRaw() const
+        {
+            return static_cast<T*>(m_Data->Ptr);
         }
 
         inline T& operator*()
         {
-            return *m_Data->Get();
+            return *GetRaw();
         }
 
         inline T* operator->()
         {
-            return m_Data->Get();
+            return GetRaw();
         }
 
         inline const T& operator*() const
         {
-            return *m_Data->Get();
+            return *GetRaw();
         }
 
         inline const T* operator->() const
         {
-            return m_Data->Get();
+            return GetRaw();
         }
 
-        inline T* GetRaw()
+        inline Internal::RefCounter* GetImpl() const
         {
-            return m_Data->Get();
-        }
-
-        inline const T* GetRaw() const
-        {
-            return m_Data->Get();
+            return m_Data;
         }
 
         inline operator bool() const
@@ -148,14 +135,14 @@ namespace FE
         }
     };
 
-    template<class T>
-    inline bool operator==(const RefCountPtr<T>& lhs, const RefCountPtr<T>& rhs)
+    template<class T1, class T2>
+    inline bool operator==(const RefCountPtr<T1>& lhs, const RefCountPtr<T2>& rhs)
     {
         return lhs.GetRaw() == rhs.GetRaw();
     }
 
-    template<class T>
-    inline bool operator!=(const RefCountPtr<T>& lhs, const RefCountPtr<T>& rhs)
+    template<class T1, class T2>
+    inline bool operator!=(const RefCountPtr<T1>& lhs, const RefCountPtr<T2>& rhs)
     {
         return !(lhs == rhs);
     }

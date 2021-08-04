@@ -36,11 +36,13 @@ namespace FE
 } // namespace FE
 
 #ifdef NDEBUG
+#    define FE_DEBUG 0
 #    define FE_RELEASE 1
 
 #    define FE_DEBUGBREAK throw ::std::runtime_error("Fatal error");
 #else
 #    define FE_DEBUG 1
+#    define FE_RELEASE 0
 
 #    if defined(FE_WINDOWS)
 #        define FE_DEBUGBREAK __debugbreak()
