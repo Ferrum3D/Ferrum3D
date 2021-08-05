@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #undef CopyMemory
 
+#include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
 #include <array>
@@ -15,6 +16,14 @@
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
 #    define FE_VK_SURFACE_EXT VK_KHR_XCB_SURFACE_EXTENSION_NAME
 #endif
+
+#define FE_VK_ASSERT(stmt)                                                                                                  \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        vk::Result result = stmt;                                                                                                \
+        FE_ASSERT_MSG(result == vk::Result::eSuccess, "Vulkan result was {}", vk::to_string(result));                            \
+    }                                                                                                                            \
+    while (0)
 
 namespace FE::GPU
 {

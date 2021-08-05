@@ -1,0 +1,31 @@
+#pragma once
+#include <FeGPU/CommandQueue/ICommandQueue.h>
+#include <FeGPU/Common/VKConfig.h>
+
+namespace FE::GPU
+{
+    class VKDevice;
+
+    struct VKCommandQueueDesc
+    {
+        uint32_t QueueFamilyIndex;
+        uint32_t QueueIndex;
+    };
+
+    class VKCommandQueue : public ICommandQueue
+    {
+        VKDevice* m_Device;
+        vk::Queue m_Queue;
+        VKCommandQueueDesc m_Desc;
+
+    public:
+        VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc);
+
+        virtual void WaitForFence(const RefCountPtr<IFence>& fence, uint64_t value) override;
+        virtual void SignalFence(const RefCountPtr<IFence>& fence, uint64_t value) override;
+        virtual void SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers) override;
+
+        const VKCommandQueueDesc& GetDesc() const;
+        vk::Queue GetNativeQueue();
+    };
+}

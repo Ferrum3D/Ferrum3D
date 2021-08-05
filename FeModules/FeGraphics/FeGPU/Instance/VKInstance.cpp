@@ -5,13 +5,11 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode,
-    const char* pLayerPrefix, const char* pMessage, void* pUserData)
+    VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] uint64_t object,
+    [[maybe_unused]] size_t location, [[maybe_unused]] int32_t messageCode, [[maybe_unused]] const char* pLayerPrefix,
+    const char* pMessage, void* pUserData)
 {
     FE::Debug::LogMessageType type = FE::Debug::LogMessageType::Message;
-    // TODO: convert to FE::String instead
-    std::string vkFlags = vk::to_string(static_cast<vk::DebugReportFlagBitsEXT>(flags));
-    std::string objType = vk::to_string(static_cast<vk::DebugReportObjectTypeEXT>(objectType));
     switch (static_cast<vk::DebugReportFlagBitsEXT>(flags))
     {
     case vk::DebugReportFlagBitsEXT::eInformation:
@@ -29,8 +27,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         break;
     }
 
-    auto* logger = static_cast<FE::Debug::IConsoleLogger*>(pUserData);
-    logger->Log(type, "Vulkan validation {}: [{} : {}] {}", vkFlags, pLayerPrefix, objType, pMessage);
+    static_cast<FE::Debug::IConsoleLogger*>(pUserData)->Log(type, pMessage);
     return VK_FALSE;
 }
 
@@ -90,8 +87,13 @@ namespace FE::GPU
         {
             auto props = vkAdapter.getProperties();
             FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", props.deviceName);
-            m_PhysicalDevices.push_back(StaticPtrCast<IAdapter>(MakeShared<VKAdapter>(vkAdapter)));
+            m_PhysicalDevices.push_back(StaticPtrCast<IAdapter>(MakeShared<VKAdapter>(*this, vkAdapter)));
         }
+    }
+
+    vk::Instance& VKInstance::GetNativeInstance()
+    {
+        return m_Instance.get();
     }
 
     Vector<RefCountPtr<IAdapter>>& VKInstance::GetAdapters()

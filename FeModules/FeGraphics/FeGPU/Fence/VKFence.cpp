@@ -22,7 +22,7 @@ namespace FE::GPU
         waitInfo.semaphoreCount = 1;
         waitInfo.pSemaphores    = &m_Semaphore.get();
         waitInfo.pValues        = &value;
-        m_Device->GetNativeDevice().waitSemaphoresKHR(waitInfo, uint64_t(-1));
+        FE_VK_ASSERT(m_Device->GetNativeDevice().waitSemaphoresKHR(waitInfo, SemaphoreTimeout));
     }
 
     void VKFence::Signal(uint64_t value)
@@ -31,5 +31,10 @@ namespace FE::GPU
         signalInfo.semaphore = m_Semaphore.get();
         signalInfo.value     = value;
         m_Device->GetNativeDevice().signalSemaphoreKHR(signalInfo);
+    }
+
+    vk::Semaphore& VKFence::GetNativeSemaphore()
+    {
+        return m_Semaphore.get();
     }
 } // namespace FE::GPU

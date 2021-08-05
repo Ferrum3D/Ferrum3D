@@ -14,6 +14,8 @@ int main()
         auto adapter  = instance->GetAdapters()[0];
         auto device   = adapter->CreateDevice();
         auto fence    = device->CreateFence(0);
+        auto queue    = device->GetCommandQueue(FE::GPU::CommandQueueClass::Graphics);
+        auto buffer   = device->CreateCommandBuffer(FE::GPU::CommandQueueClass::Graphics);
     }
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
 }
