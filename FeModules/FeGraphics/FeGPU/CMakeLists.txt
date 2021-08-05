@@ -3,6 +3,15 @@ set(SRC
     Adapter/VKAdapter.h
     Adapter/VKAdapter.cpp
 
+    CommandQueue/ICommandQueue.h
+    CommandQueue/VKCommandQueue.h
+    CommandQueue/VKCommandQueue.cpp
+
+    CommandBuffer/ICommandBuffer.h
+    CommandBuffer/VKCommandBuffer.h
+    CommandBuffer/VKCommandBuffer.cpp
+
+    Common/BaseTypes.h
     Common/VKConfig.h
     Common/VKConfig.cpp
 
@@ -13,11 +22,32 @@ set(SRC
     Fence/IFence.h
     Fence/VKFence.h
     Fence/VKFence.cpp
+
+    Image/IImage.h
+    Image/IImage.cpp
+    Image/ImageEnums.h
+    Image/ImageFormat.h
+    Image/ImageFormat.cpp
+    Image/ImageSubresource.h
+    Image/VKImage.h
+    Image/VKImage.cpp
+    Image/VKImageFormat.h
     
     Instance/IInstance.h
     Instance/IInstance.cpp
     Instance/VKInstance.h
     Instance/VKInstance.cpp
+
+    Memory/IDeviceMemory.h
+    Memory/VKDeviceMemory.h
+    Memory/VKDeviceMemory.cpp
+
+    Resource/IResource.h
+    Resource/ResourceState.h
+
+    SwapChain/ISwapChain.h
+    SwapChain/VKSwapChain.h
+    SwapChain/VKSwapChain.cpp
 )
 
 add_library(FeGPU STATIC ${SRC})

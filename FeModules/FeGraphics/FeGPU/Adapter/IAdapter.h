@@ -20,11 +20,14 @@ namespace FE::GPU
         AdapterType Type;
     };
 
+    class IInstance;
+
     class IAdapter
     {
     public:
-        virtual ~IAdapter() = default;
-        virtual AdapterDesc& GetDesc() = 0;
+        virtual ~IAdapter()                         = default;
+        virtual IInstance& GetInstance()            = 0;
+        virtual AdapterDesc& GetDesc()              = 0;
         virtual RefCountPtr<IDevice> CreateDevice() = 0;
     };
-}
+} // namespace FE::GPU

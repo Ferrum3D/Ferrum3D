@@ -16,6 +16,7 @@ namespace FE::GPU
 
     public:
         VKInstance(const InstanceDesc& desc);
+        vk::Instance& GetNativeInstance();
 
         virtual Vector<RefCountPtr<IAdapter>>& GetAdapters() override;
     };

@@ -17,7 +17,8 @@ namespace FE::GPU
     class IInstance
     {
     public:
-        virtual ~IInstance()                                 = default;
+        virtual ~IInstance() = default;
+
         virtual Vector<RefCountPtr<IAdapter>>& GetAdapters() = 0;
     };
 

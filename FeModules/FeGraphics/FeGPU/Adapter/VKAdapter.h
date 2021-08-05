@@ -23,14 +23,16 @@ namespace FE::GPU
     class VKAdapter : public IAdapter
     {
         AdapterDesc m_Desc;
+        VKInstance* m_Instance;
         vk::PhysicalDevice m_VkAdapter;
         vk::PhysicalDeviceProperties m_Prop;
 
     public:
-        VKAdapter(const vk::PhysicalDevice& vkAdapter);
+        VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter);
 
+        vk::PhysicalDevice& GetNativeAdapter();
         virtual AdapterDesc& GetDesc() override;
-        vk::PhysicalDevice* GetNativeAdapter();
         virtual RefCountPtr<IDevice> CreateDevice() override;
+        virtual IInstance& GetInstance() override;
     };
 } // namespace FE::GPU
