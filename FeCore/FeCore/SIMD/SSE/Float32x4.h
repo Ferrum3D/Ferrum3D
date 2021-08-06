@@ -20,11 +20,11 @@ namespace FE
 
                 FE_FINLINE Float32x4(__m128 value);
 
-                FE_FINLINE Float32x4(float value);
+                FE_FINLINE Float32x4(Float32 value);
 
-                FE_FINLINE Float32x4(float x, float y, float z);
+                FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z);
 
-                FE_FINLINE Float32x4(float x, float y, float z, float w);
+                FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z, Float32 w);
 
                 FE_FINLINE static Float32x4 GetZero() noexcept;
 
@@ -38,16 +38,16 @@ namespace FE
                 FE_FINLINE Float32x4 Broadcast() const noexcept;
 
                 template<size_t I>
-                FE_FINLINE float Select() const noexcept;
+                FE_FINLINE Float32 Select() const noexcept;
 
                 template<>
-                FE_FINLINE float Select<0>() const noexcept;
+                FE_FINLINE Float32 Select<0>() const noexcept;
 
                 template<size_t I>
                 FE_FINLINE Float32x4 Replace(Float32x4 other) const noexcept;
 
                 template<size_t I>
-                FE_FINLINE Float32x4 Replace(float value) const noexcept;
+                FE_FINLINE Float32x4 Replace(Float32 value) const noexcept;
 
                 FE_FINLINE Float32x4 Floor() const noexcept;
 
@@ -71,17 +71,17 @@ namespace FE
 
                 FE_FINLINE static Float32x4 CompareLe(Float32x4 a, Float32x4 b) noexcept;
 
-                FE_FINLINE static bool CompareAllEq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllEq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
-                FE_FINLINE static bool CompareAllNeq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllNeq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
-                FE_FINLINE static bool CompareAllGt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllGt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
-                FE_FINLINE static bool CompareAllLt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllLt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
-                FE_FINLINE static bool CompareAllGe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllGe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
-                FE_FINLINE static bool CompareAllLe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
+                FE_FINLINE static bool CompareAllLe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
 
                 FE_FINLINE friend Float32x4 operator+(Float32x4 a, Float32x4 b) noexcept;
 
@@ -103,17 +103,17 @@ namespace FE
             {
             }
 
-            FE_FINLINE Float32x4::Float32x4(float value)
+            FE_FINLINE Float32x4::Float32x4(Float32 value)
                 : Data(_mm_set_ps1(value))
             {
             }
 
-            FE_FINLINE Float32x4::Float32x4(float x, float y, float z)
+            FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y, Float32 z)
                 : Data(_mm_set_ps(0, z, y, x))
             {
             }
 
-            FE_FINLINE Float32x4::Float32x4(float x, float y, float z, float w)
+            FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y, Float32 z, Float32 w)
                 : Data(_mm_set_ps(w, z, y, x))
             {
             }
@@ -145,14 +145,14 @@ namespace FE
             }
 
             template<size_t I>
-            FE_FINLINE float Float32x4::Select() const noexcept
+            FE_FINLINE Float32 Float32x4::Select() const noexcept
             {
                 static_assert(I < 4);
                 return _mm_cvtss_f32(Broadcast<I>());
             }
 
             template<>
-            FE_FINLINE float Float32x4::Select<0>() const noexcept
+            FE_FINLINE Float32 Float32x4::Select<0>() const noexcept
             {
                 return _mm_cvtss_f32(Data);
             }
@@ -168,7 +168,7 @@ namespace FE
             }
 
             template<size_t I>
-            FE_FINLINE Float32x4 Float32x4::Replace(float value) const noexcept
+            FE_FINLINE Float32x4 Float32x4::Replace(Float32 value) const noexcept
             {
                 return Replace<I>(Float32x4(value));
             }
@@ -240,36 +240,36 @@ namespace FE
                 return _mm_cmple_ps(a.Data, b.Data);
             }
 
-            FE_FINLINE bool Float32x4::CompareAllEq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllEq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 auto cmp = _mm_castps_si128(CompareNeq(a, b).Data);
                 return (_mm_movemask_epi8(cmp) & mask) == 0;
             }
 
-            FE_FINLINE bool Float32x4::CompareAllNeq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllNeq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 return !CompareAllEq(a, b, mask);
             }
 
-            FE_FINLINE bool Float32x4::CompareAllGt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllGt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 auto cmp = _mm_castps_si128(CompareLe(a, b).Data);
                 return (_mm_movemask_epi8(cmp) & mask) == 0;
             }
 
-            FE_FINLINE bool Float32x4::CompareAllLt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllLt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 auto cmp = _mm_castps_si128(CompareGe(a, b).Data);
                 return (_mm_movemask_epi8(cmp) & mask) == 0;
             }
 
-            FE_FINLINE bool Float32x4::CompareAllGe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllGe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 auto cmp = _mm_castps_si128(CompareLt(a, b).Data);
                 return (_mm_movemask_epi8(cmp) & mask) == 0;
             }
 
-            FE_FINLINE bool Float32x4::CompareAllLe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
+            FE_FINLINE bool Float32x4::CompareAllLe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
             {
                 auto cmp = _mm_castps_si128(CompareGt(a, b).Data);
                 return (_mm_movemask_epi8(cmp) & mask) == 0;

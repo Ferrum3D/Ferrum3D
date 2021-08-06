@@ -6,9 +6,9 @@ namespace FE::GPU
 {
     struct SwapChainDesc
     {
-        uint32_t ImageCount = 3;
-        uint32_t ImageWidth;
-        uint32_t ImageHeight;
+        UInt32 ImageCount = 3;
+        UInt32 ImageWidth;
+        UInt32 ImageHeight;
         bool VerticalSync = false;
         ICommandQueue* Queue;
 
@@ -21,11 +21,11 @@ namespace FE::GPU
         virtual ~ISwapChain() = default;
 
         virtual const SwapChainDesc& GetDesc()                                        = 0;
-        virtual uint32_t GetCurrentImageIndex()                                       = 0;
-        virtual uint32_t GetImageCount()                                              = 0;
-        virtual IImage* GetImage(uint32_t index)                                      = 0;
+        virtual UInt32 GetCurrentImageIndex()                                       = 0;
+        virtual UInt32 GetImageCount()                                              = 0;
+        virtual IImage* GetImage(UInt32 index)                                      = 0;
         virtual IImage* GetCurrentImage()                                             = 0;
-        virtual uint32_t NextImage(const RefCountPtr<IFence>& fence, uint64_t signal) = 0;
-        virtual void Present(const RefCountPtr<IFence>& fence, uint64_t wait)         = 0;
+        virtual UInt32 NextImage(const RefCountPtr<IFence>& fence, UInt64 signal) = 0;
+        virtual void Present(const RefCountPtr<IFence>& fence, UInt64 wait)         = 0;
     };
 } // namespace FE::GPU

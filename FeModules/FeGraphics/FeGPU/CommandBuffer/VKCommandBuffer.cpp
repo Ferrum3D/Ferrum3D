@@ -108,13 +108,13 @@ namespace FE::GPU
         m_CommandBuffer->end();
     }
 
-    void VKCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+    void VKCommandBuffer::Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
     {
         m_CommandBuffer->draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void VKCommandBuffer::DrawIndexed(
-        uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+        UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance)
     {
         m_CommandBuffer->drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }

@@ -17,27 +17,27 @@ namespace FE
         }
 
     public:
-        inline int32_t Years() const
+        inline Int32 Years() const
         {
             return m_Data.tm_year;
         }
 
-        inline int32_t Days() const
+        inline Int32 Days() const
         {
             return m_Data.tm_mday;
         }
 
-        inline int32_t Hours() const
+        inline Int32 Hours() const
         {
             return m_Data.tm_hour;
         }
 
-        inline int32_t Minutes() const
+        inline Int32 Minutes() const
         {
             return m_Data.tm_min;
         }
 
-        inline int32_t Seconds() const
+        inline Int32 Seconds() const
         {
             auto s = m_Data.tm_sec;
             if (s == 60)
@@ -45,7 +45,7 @@ namespace FE
             return s;
         }
 
-        inline int32_t TotalSeconds() const
+        inline Int32 TotalSeconds() const
         {
             auto copy = m_Data;
             return mktime(&copy);

@@ -9,11 +9,11 @@ namespace FE
         struct RefCounter
         {
             void* Ptr;
-            uint32_t Count;
+            UInt32 Count;
             FE::IAllocator* Allocator;
             bool MakeShared;
 
-            inline RefCounter(void* ptr, FE::IAllocator* allocator, bool makeShared, uint32_t count = 1)
+            inline RefCounter(void* ptr, FE::IAllocator* allocator, bool makeShared, UInt32 count = 1)
                 : Ptr(ptr)
                 , Count(count)
                 , Allocator(allocator)

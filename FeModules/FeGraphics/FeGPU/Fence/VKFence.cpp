@@ -5,7 +5,7 @@
 
 namespace FE::GPU
 {
-    VKFence::VKFence(VKDevice& dev, uint64_t value)
+    VKFence::VKFence(VKDevice& dev, UInt64 value)
     {
         vk::SemaphoreTypeCreateInfo timelineCI{};
         timelineCI.initialValue  = value;
@@ -16,7 +16,7 @@ namespace FE::GPU
         m_Device          = &dev;
     }
 
-    void VKFence::Wait(uint64_t value)
+    void VKFence::Wait(UInt64 value)
     {
         vk::SemaphoreWaitInfo waitInfo{};
         waitInfo.semaphoreCount = 1;
@@ -25,7 +25,7 @@ namespace FE::GPU
         FE_VK_ASSERT(m_Device->GetNativeDevice().waitSemaphoresKHR(waitInfo, SemaphoreTimeout));
     }
 
-    void VKFence::Signal(uint64_t value)
+    void VKFence::Signal(UInt64 value)
     {
         vk::SemaphoreSignalInfo signalInfo{};
         signalInfo.semaphore = m_Semaphore.get();

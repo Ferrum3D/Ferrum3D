@@ -13,7 +13,7 @@ namespace FE::GPU
     public:
         vk::UniqueDeviceMemory Memory;
 
-        VKDeviceMemory(VKDevice& dev, uint32_t typeBits, const MemoryAllocationDesc& desc);
+        VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc);
 
         virtual const MemoryAllocationDesc& GetDesc() override;
     };

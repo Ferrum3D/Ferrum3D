@@ -7,7 +7,7 @@ namespace FE::GPU
     {
     public:
         virtual ~IFence() = default;
-        virtual void Wait(uint64_t value) = 0;
-        virtual void Signal(uint64_t value) = 0;
+        virtual void Wait(UInt64 value) = 0;
+        virtual void Signal(UInt64 value) = 0;
     };
 }

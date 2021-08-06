@@ -7,6 +7,19 @@
 
 namespace FE
 {
+    using Int8 = int8_t;
+    using Int16 = int16_t;
+    using Int32 = int32_t;
+    using Int64 = int64_t;
+
+    using UInt8 = uint8_t;
+    using UInt16 = uint16_t;
+    using UInt32 = uint32_t;
+    using UInt64 = uint64_t;
+
+    using Float32 = float;
+    using Float64 = double;
+
     /**
      * @brief Name of the engine
      */
@@ -90,7 +103,7 @@ namespace FE
     }
 
     template<class T, class Func>
-    inline void FeAtomicBitOp(std::atomic<T>& a, uint8_t n, Func bitOp)
+    inline void FeAtomicBitOp(std::atomic<T>& a, UInt8 n, Func bitOp)
     {
         static_assert(std::is_integral<T>(), "T must be integral");
 
@@ -105,13 +118,13 @@ namespace FE
         return (x + (align - 1u)) & ~(align - 1u);
     }
 
-    template<uint32_t A, class T>
+    template<UInt32 A, class T>
     inline constexpr T FeMakeAlignment(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
     }
 
-    inline constexpr uint32_t FeNextPowerOf2(uint32_t v)
+    inline constexpr UInt32 FeNextPowerOf2(UInt32 v)
     {
         v--;
         v |= v >> 1;
@@ -140,13 +153,13 @@ namespace FE
 
 #ifdef _MSC_VER
 
-    uint32_t inline FeCountTrailingZeros(uint32_t value)
+    UInt32 inline FeCountTrailingZeros(UInt32 value)
     {
         unsigned long tz = 0;
         return _BitScanForward(&tz, value) ? tz : 32;
     }
 
-    uint32_t inline FeCountLeadingZeros(uint32_t value)
+    UInt32 inline FeCountLeadingZeros(UInt32 value)
     {
         unsigned long lz = 0;
         return _BitScanReverse(&lz, value) ? 31 - lz : 32;
@@ -154,12 +167,12 @@ namespace FE
 
 #else
 
-    uint32_t inline FeCountTrailingZeros(uint32_t value)
+    UInt32 inline FeCountTrailingZeros(UInt32 value)
     {
         return __builtin_ctz(value);
     }
 
-    uint32_t inline FeCountLeadingZeros(uint32_t value)
+    UInt32 inline FeCountLeadingZeros(UInt32 value)
     {
         return __builtin_clz(value);
     }

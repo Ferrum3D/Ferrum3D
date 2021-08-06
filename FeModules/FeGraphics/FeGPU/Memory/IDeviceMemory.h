@@ -11,7 +11,7 @@ namespace FE::GPU
 
     struct MemoryAllocationDesc
     {
-        uint64_t Size;
+        UInt64 Size;
         MemoryType Type;
     };
 

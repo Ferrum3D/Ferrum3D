@@ -18,7 +18,7 @@ namespace FE::GPU
         }
     }
 
-    VKDeviceMemory::VKDeviceMemory(VKDevice& dev, uint32_t typeBits, const MemoryAllocationDesc& desc)
+    VKDeviceMemory::VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc)
         : m_Desc(desc)
     {
         auto properties = VKConvert(desc.Type);

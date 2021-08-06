@@ -137,17 +137,17 @@ namespace FE::GPU
         return m_Desc;
     }
 
-    uint32_t VKSwapChain::GetCurrentImageIndex()
+    UInt32 VKSwapChain::GetCurrentImageIndex()
     {
         return m_FrameIndex;
     }
 
-    uint32_t VKSwapChain::GetImageCount()
+    UInt32 VKSwapChain::GetImageCount()
     {
         return m_Images.size();
     }
 
-    IImage* VKSwapChain::GetImage(uint32_t index)
+    IImage* VKSwapChain::GetImage(UInt32 index)
     {
         return m_Images[index].GetRaw();
     }
@@ -157,13 +157,13 @@ namespace FE::GPU
         return m_Images[m_FrameIndex].GetRaw();
     }
 
-    uint32_t VKSwapChain::NextImage(const RefCountPtr<IFence>& fence, uint64_t signal)
+    UInt32 VKSwapChain::NextImage(const RefCountPtr<IFence>& fence, UInt64 signal)
     {
         m_Device->GetNativeDevice().acquireNextImageKHR(
-            m_NativeSwapChain.get(), uint64_t(-1), m_ImageAvailableSemaphore.get(), nullptr, &m_FrameIndex);
+            m_NativeSwapChain.get(), UInt64(-1), m_ImageAvailableSemaphore.get(), nullptr, &m_FrameIndex);
 
         auto* vkfence      = static_cast<VKFence*>(m_Fence.GetRaw());
-        uint64_t waitValue = uint64_t(-1);
+        UInt64 waitValue = UInt64(-1);
 
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};
         timelineInfo.waitSemaphoreValueCount   = 1;
@@ -185,10 +185,10 @@ namespace FE::GPU
         return m_FrameIndex;
     }
 
-    void VKSwapChain::Present(const RefCountPtr<IFence>& fence, uint64_t wait)
+    void VKSwapChain::Present(const RefCountPtr<IFence>& fence, UInt64 wait)
     {
         auto* vkfence        = static_cast<VKFence*>(m_Fence.GetRaw());
-        uint64_t signalValue = uint64_t(-1);
+        UInt64 signalValue = UInt64(-1);
 
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};
         timelineInfo.waitSemaphoreValueCount   = 1;

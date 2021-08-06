@@ -2,12 +2,12 @@
 
 namespace FE::GPU
 {
-    ImageDesc ImageDesc::Img1D(ImageBindFlags bindFlags, uint32_t width, Format format)
+    ImageDesc ImageDesc::Img1D(ImageBindFlags bindFlags, UInt32 width, Format format)
     {
         return ImageDesc::Img1DArray(bindFlags, width, 1, format);
     }
 
-    ImageDesc ImageDesc::Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format)
+    ImageDesc ImageDesc::Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;
@@ -18,12 +18,12 @@ namespace FE::GPU
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, Format format)
+    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format)
     {
         return ImageDesc::Img2DArray(bindFlags, width, height, 1, format);
     }
 
-    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint16_t arraySize, Format format)
+    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format)
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;
@@ -34,12 +34,12 @@ namespace FE::GPU
         return desc;
     }
 
-    ImageDesc ImageDesc::ImgCubemap(ImageBindFlags bindFlags, uint32_t width, Format format)
+    ImageDesc ImageDesc::ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format)
     {
         return ImageDesc::ImgCubemapArray(bindFlags, width, 1, format);
     }
 
-    ImageDesc ImageDesc::ImgCubemapArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format)
+    ImageDesc ImageDesc::ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
     {
         ImageDesc desc;
         desc.BindFlags   = bindFlags;
@@ -50,7 +50,7 @@ namespace FE::GPU
         return desc;
     }
 
-    ImageDesc ImageDesc::Img3D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint32_t depth, Format format)
+    ImageDesc ImageDesc::Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format)
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;

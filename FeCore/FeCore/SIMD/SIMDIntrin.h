@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Utils/CoreUtils.h>
 #include <FeCore/Utils/Platform.h>
 #ifdef FE_SSE3_SUPPORTED
 #    include <emmintrin.h>

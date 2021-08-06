@@ -16,17 +16,17 @@ namespace FE::GPU
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
-        uint32_t ArraySize     = 1;
-        uint32_t MipLevelCount = 1;
-        uint32_t SampleCount   = 1;
+        UInt32 ArraySize     = 1;
+        UInt32 MipLevelCount = 1;
+        UInt32 SampleCount   = 1;
 
-        static ImageDesc Img1D(ImageBindFlags bindFlags, uint32_t width, Format format);
-        static ImageDesc Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
-        static ImageDesc Img2D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, Format format);
-        static ImageDesc Img2DArray(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint16_t arraySize, Format format);
-        static ImageDesc ImgCubemap(ImageBindFlags bindFlags, uint32_t width, Format format);
-        static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
-        static ImageDesc Img3D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint32_t depth, Format format);
+        static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
+        static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
+        static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format);
+        static ImageDesc Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format);
+        static ImageDesc ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format);
+        static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
+        static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
     };
 
     class IImage

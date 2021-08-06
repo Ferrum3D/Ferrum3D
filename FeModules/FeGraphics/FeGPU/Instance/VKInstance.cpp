@@ -5,8 +5,8 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-    VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] uint64_t object,
-    [[maybe_unused]] size_t location, [[maybe_unused]] int32_t messageCode, [[maybe_unused]] const char* pLayerPrefix,
+    VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] FE::UInt64 object,
+    [[maybe_unused]] size_t location, [[maybe_unused]] FE::Int32 messageCode, [[maybe_unused]] const char* pLayerPrefix,
     const char* pMessage, void* pUserData)
 {
     FE::Debug::LogMessageType type = FE::Debug::LogMessageType::Message;
@@ -62,9 +62,9 @@ namespace FE::GPU
 
         vk::InstanceCreateInfo instanceCI{};
         instanceCI.pApplicationInfo        = &appInfo;
-        instanceCI.enabledLayerCount       = static_cast<uint32_t>(RequiredInstanceLayers.size());
+        instanceCI.enabledLayerCount       = static_cast<UInt32>(RequiredInstanceLayers.size());
         instanceCI.ppEnabledLayerNames     = RequiredInstanceLayers.data();
-        instanceCI.enabledExtensionCount   = static_cast<uint32_t>(RequiredInstanceExtensions.size());
+        instanceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = RequiredInstanceExtensions.data();
 
         m_Instance = vk::createInstanceUnique(instanceCI);

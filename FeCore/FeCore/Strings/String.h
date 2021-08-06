@@ -21,7 +21,7 @@ namespace FE
         {
             union
             {
-                uint8_t Size;
+                UInt8 Size;
                 TChar Lx;
             };
             TChar Data[MinCapacity];
@@ -62,7 +62,7 @@ namespace FE
 
         inline void SetSSize(size_t size) noexcept
         {
-            m_Data.S.Size = static_cast<uint8_t>(size << 1);
+            m_Data.S.Size = static_cast<UInt8>(size << 1);
         }
 
         inline void SetLSize(size_t size) noexcept

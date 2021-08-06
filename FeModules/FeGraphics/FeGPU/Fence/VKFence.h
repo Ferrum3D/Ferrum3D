@@ -11,13 +11,13 @@ namespace FE::GPU
         VKDevice* m_Device;
 
     public:
-        inline static constexpr uint64_t SemaphoreTimeout = uint64_t(-1);
+        inline static constexpr UInt64 SemaphoreTimeout = UInt64(-1);
         vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eAllCommands;
 
-        VKFence(VKDevice& dev, uint64_t value);
+        VKFence(VKDevice& dev, UInt64 value);
 
-        virtual void Wait(uint64_t value) override;
-        virtual void Signal(uint64_t value) override;
+        virtual void Wait(UInt64 value) override;
+        virtual void Signal(UInt64 value) override;
 
         vk::Semaphore& GetNativeSemaphore();
     };

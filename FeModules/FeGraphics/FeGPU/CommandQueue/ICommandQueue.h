@@ -10,8 +10,8 @@ namespace FE::GPU
     public:
         virtual ~ICommandQueue() = default;
 
-        virtual void WaitForFence(const RefCountPtr<IFence>& fence, uint64_t value) = 0;
-        virtual void SignalFence(const RefCountPtr<IFence>& fence, uint64_t value) = 0;
+        virtual void WaitForFence(const RefCountPtr<IFence>& fence, UInt64 value) = 0;
+        virtual void SignalFence(const RefCountPtr<IFence>& fence, UInt64 value) = 0;
         virtual void SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers) = 0;
     };
 }

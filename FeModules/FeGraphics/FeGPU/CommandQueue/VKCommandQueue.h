@@ -8,8 +8,8 @@ namespace FE::GPU
 
     struct VKCommandQueueDesc
     {
-        uint32_t QueueFamilyIndex;
-        uint32_t QueueIndex;
+        UInt32 QueueFamilyIndex;
+        UInt32 QueueIndex;
     };
 
     class VKCommandQueue : public ICommandQueue
@@ -21,8 +21,8 @@ namespace FE::GPU
     public:
         VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc);
 
-        virtual void WaitForFence(const RefCountPtr<IFence>& fence, uint64_t value) override;
-        virtual void SignalFence(const RefCountPtr<IFence>& fence, uint64_t value) override;
+        virtual void WaitForFence(const RefCountPtr<IFence>& fence, UInt64 value) override;
+        virtual void SignalFence(const RefCountPtr<IFence>& fence, UInt64 value) override;
         virtual void SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers) override;
 
         const VKCommandQueueDesc& GetDesc() const;

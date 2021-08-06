@@ -9,12 +9,12 @@ namespace FE::GPU
 
     struct VKQueueFamilyData
     {
-        uint32_t FamilyIndex;
-        uint32_t QueueCount;
+        UInt32 FamilyIndex;
+        UInt32 QueueCount;
         CommandQueueClass Class;
         vk::UniqueCommandPool CmdPool;
 
-        inline VKQueueFamilyData(uint32_t idx, uint32_t count, CommandQueueClass cmdListClass)
+        inline VKQueueFamilyData(UInt32 idx, UInt32 count, CommandQueueClass cmdListClass)
             : FamilyIndex(idx)
             , QueueCount(count)
             , Class(cmdListClass)
@@ -38,7 +38,7 @@ namespace FE::GPU
         VKDevice(VKAdapter& adapter);
         vk::Device& GetNativeDevice();
 
-        uint32_t FindMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags properties);
+        UInt32 FindMemoryType(UInt32 typeBits, vk::MemoryPropertyFlags properties);
 
         inline vk::CommandPool& GetCommandPool(CommandQueueClass cmdQueueClass)
         {
@@ -49,7 +49,7 @@ namespace FE::GPU
             return m_QueueFamilyIndices.front().CmdPool.get();
         }
 
-        inline uint32_t GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
+        inline UInt32 GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
                 if (queue.Class == cmdQueueClass)
@@ -60,10 +60,10 @@ namespace FE::GPU
 
         virtual IAdapter& GetAdapter() override;
         virtual IInstance& GetInstance() override;
-        virtual RefCountPtr<IFence> CreateFence(uint64_t value) override;
+        virtual RefCountPtr<IFence> CreateFence(UInt64 value) override;
         virtual RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass) override;
         virtual RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) override;
         virtual RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc) override;
-        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, uint64_t size) override;
+        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size) override;
     };
 } // namespace FE::GPU

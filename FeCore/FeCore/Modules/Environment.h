@@ -28,7 +28,7 @@ namespace FE::Env
      * @return The created variable.
     */
     template<class T, class... Args>
-    GlobalVariable<T> CreateGlobalVariable(uint32_t id, Args&&... args);
+    GlobalVariable<T> CreateGlobalVariable(UInt32 id, Args&&... args);
 
     /**
      * @brief Create a variable by unique name.
@@ -64,7 +64,7 @@ namespace FE::Env
      * @return The allocated variable.
     */
     template<class T>
-    GlobalVariable<T> AllocateGlobalVariable(uint32_t id);
+    GlobalVariable<T> AllocateGlobalVariable(UInt32 id);
 
     /**
      * @brief Allocate global variable storage.
@@ -88,7 +88,7 @@ namespace FE::Env
      * @return The result that can contain the variable.
     */
     template<class T>
-    Result<GlobalVariable<T>> FindGlobalVariable(uint32_t id);
+    Result<GlobalVariable<T>> FindGlobalVariable(UInt32 id);
 
     /**
      * @brief Find global variable by its name.
@@ -159,13 +159,13 @@ namespace FE::Env
 
     namespace Internal
     {
-        enum class VariableError : uint8_t
+        enum class VariableError : UInt8
         {
             NotFound,
             AllocationError
         };
 
-        enum class VariableOk : uint8_t
+        enum class VariableOk : UInt8
         {
             Created,
             Found,
@@ -195,7 +195,7 @@ namespace FE::Env
         class GlobalVariableStorage
         {
             std::string_view m_Name;
-            uint32_t m_RefCount;
+            UInt32 m_RefCount;
             std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
             std::mutex m_Mutex;
             bool m_IsConstructed;
@@ -470,7 +470,7 @@ namespace FE::Env
     }
 
     template<class T, class... Args>
-    inline GlobalVariable<T> CreateGlobalVariable(uint32_t id, Args&&... args)
+    inline GlobalVariable<T> CreateGlobalVariable(UInt32 id, Args&&... args)
     {
         std::vector<char> str;
         str.reserve(9);
@@ -493,7 +493,7 @@ namespace FE::Env
     }
 
     template<class T>
-    inline GlobalVariable<T> AllocateGlobalVariable(uint32_t id)
+    inline GlobalVariable<T> AllocateGlobalVariable(UInt32 id)
     {
         std::vector<char> str;
         str.reserve(9);
@@ -530,7 +530,7 @@ namespace FE::Env
     }
 
     template<class T>
-    inline Result<GlobalVariable<T>> FindGlobalVariable(uint32_t id)
+    inline Result<GlobalVariable<T>> FindGlobalVariable(UInt32 id)
     {
         std::array<char, 9> str;
         size_t size = 0;

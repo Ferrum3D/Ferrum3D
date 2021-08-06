@@ -24,7 +24,7 @@ namespace FE::GPU
             auto graphics = vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eGraphics;
             auto compute  = vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute;
             auto copy     = vk::QueueFlagBits::eTransfer;
-            auto idx      = static_cast<uint32_t>(i);
+            auto idx      = static_cast<UInt32>(i);
 
             if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(CommandQueueClass::Graphics))
             {
@@ -41,12 +41,12 @@ namespace FE::GPU
         }
     }
 
-    uint32_t VKDevice::FindMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags properties)
+    UInt32 VKDevice::FindMemoryType(UInt32 typeBits, vk::MemoryPropertyFlags properties)
     {
         vk::PhysicalDeviceMemoryProperties memProperties;
         m_Adapter->GetNativeAdapter().getMemoryProperties(&memProperties);
 
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+        for (UInt32 i = 0; i < memProperties.memoryTypeCount; ++i)
         {
             if ((typeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
                 return i;
@@ -72,7 +72,7 @@ namespace FE::GPU
             FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", ext);
         }
 
-        constexpr float queuePriority = 1.0f;
+        constexpr Float32 queuePriority = 1.0f;
         Vector<vk::DeviceQueueCreateInfo> queuesCI{};
         for (auto& queue : m_QueueFamilyIndices)
         {
@@ -90,10 +90,10 @@ namespace FE::GPU
         deviceFeatures12.timelineSemaphore = true;
 
         vk::DeviceCreateInfo deviceCI{};
-        deviceCI.queueCreateInfoCount    = static_cast<uint32_t>(queuesCI.size());
+        deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.size());
         deviceCI.pQueueCreateInfos       = queuesCI.data();
         deviceCI.pEnabledFeatures        = &deviceFeatures;
-        deviceCI.enabledExtensionCount   = static_cast<uint32_t>(RequiredDeviceExtensions.size());
+        deviceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
         deviceCI.pNext                   = &deviceFeatures12;
 
@@ -113,7 +113,7 @@ namespace FE::GPU
         return m_NativeDevice.get();
     }
 
-    RefCountPtr<IFence> VKDevice::CreateFence(uint64_t value)
+    RefCountPtr<IFence> VKDevice::CreateFence(UInt64 value)
     {
         return StaticPtrCast<IFence>(MakeShared<VKFence>(*this, value));
     }
@@ -137,7 +137,7 @@ namespace FE::GPU
         return StaticPtrCast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
     }
 
-    RefCountPtr<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, uint64_t size)
+    RefCountPtr<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
     {
         BufferDesc desc{};
         desc.Size = size;
