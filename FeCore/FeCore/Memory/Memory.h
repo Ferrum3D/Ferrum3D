@@ -31,7 +31,7 @@ namespace FE
         IAllocator* allocator = &FE::GlobalAllocator<FE::HeapAllocator>::Get();
         size_t size = sizeof(Internal::RefCounter) + sizeof(T);
         size_t align = std::max(alignof(Internal::RefCounter), alignof(T));
-        uint8_t* allocation = static_cast<uint8_t*>(allocator->Allocate(size, align, FE_SRCPOS()));
+        UInt8* allocation = static_cast<UInt8*>(allocator->Allocate(size, align, FE_SRCPOS()));
         auto* ptr = new (allocation) T(std::forward<Args>(args)...);
         auto* data = new (allocation + sizeof(T)) Internal::RefCounter(ptr, allocator, true, 0);
         return RefCountPtr<T>(data);

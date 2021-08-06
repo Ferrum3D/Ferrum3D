@@ -7,24 +7,24 @@ namespace FE::GPU
 {
     struct Viewport
     {
-        float MinX;
-        float MinY;
-        float MinZ;
-        float MaxX;
-        float MaxY;
-        float MaxZ;
+        Float32 MinX;
+        Float32 MinY;
+        Float32 MinZ;
+        Float32 MaxX;
+        Float32 MaxY;
+        Float32 MaxZ;
 
-        inline float Width() const noexcept
+        inline Float32 Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        inline float Height() const noexcept
+        inline Float32 Height() const noexcept
         {
             return MaxY - MinY;
         }
 
-        inline float Depth() const noexcept
+        inline Float32 Depth() const noexcept
         {
             return MaxZ - MinZ;
         }
@@ -32,17 +32,17 @@ namespace FE::GPU
 
     struct Scissor
     {
-        int32_t MinX;
-        int32_t MinY;
-        int32_t MaxX;
-        int32_t MaxY;
+        Int32 MinX;
+        Int32 MinY;
+        Int32 MaxX;
+        Int32 MaxY;
 
-        inline float Width() const noexcept
+        inline Float32 Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        inline float Height() const noexcept
+        inline Float32 Height() const noexcept
         {
             return MaxY - MinY;
         }
@@ -62,8 +62,8 @@ namespace FE::GPU
         virtual void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) = 0;
         virtual void MemoryBarrier() = 0;
 
-        virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+        virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(
-            uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
+            UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) = 0;
     };
 } // namespace FE::GPU

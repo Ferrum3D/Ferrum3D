@@ -12,7 +12,7 @@ namespace FE::GPU
     {
     }
 
-    void VKCommandQueue::WaitForFence(const RefCountPtr<IFence>& fence, uint64_t value)
+    void VKCommandQueue::WaitForFence(const RefCountPtr<IFence>& fence, UInt64 value)
     {
         auto& nativeFence = *static_cast<VKFence*>(fence.GetRaw());
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};
@@ -28,7 +28,7 @@ namespace FE::GPU
         m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE);
     }
 
-    void VKCommandQueue::SignalFence(const RefCountPtr<IFence>& fence, uint64_t value)
+    void VKCommandQueue::SignalFence(const RefCountPtr<IFence>& fence, UInt64 value)
     {
         auto& nativeFence = static_cast<VKFence*>(fence.GetRaw())->GetNativeSemaphore();
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};

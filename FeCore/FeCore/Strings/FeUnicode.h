@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Utils/Platform.h>
+#include <FeCore/Utils/CoreUtils.h>
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -44,12 +44,12 @@ namespace FE::UTF8
          * occurs, this pointer will be a guess that depends on the particular
          * error, but it will always advance at least one byte.
          */
-        static void* utf8_decode(void* buf, uint32_t* c, int* e) noexcept
+        static void* utf8_decode(void* buf, UInt32* c, int* e) noexcept
         {
             static const char lengths[]  = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                             0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
             static const int masks[]     = { 0x00, 0x7f, 0x1f, 0x0f, 0x07 };
-            static const uint32_t mins[] = { 4194304, 0, 128, 2048, 65536 };
+            static const UInt32 mins[] = { 4194304, 0, 128, 2048, 65536 };
             static const int shiftc[]    = { 0, 18, 12, 6, 0 };
             static const int shifte[]    = { 0, 6, 4, 2, 0 };
 
@@ -65,10 +65,10 @@ namespace FE::UTF8
             /* Assume a four-byte character and load four bytes. Unused bits are
              * shifted out.
              */
-            *c = (uint32_t)(s[0] & masks[len]) << 18;
-            *c |= (uint32_t)(s[1] & 0x3f) << 12;
-            *c |= (uint32_t)(s[2] & 0x3f) << 6;
-            *c |= (uint32_t)(s[3] & 0x3f) << 0;
+            *c = (UInt32)(s[0] & masks[len]) << 18;
+            *c |= (UInt32)(s[1] & 0x3f) << 12;
+            *c |= (UInt32)(s[2] & 0x3f) << 6;
+            *c |= (UInt32)(s[3] & 0x3f) << 0;
             *c >>= shiftc[len];
 
             /* Accumulate the various error conditions. */
@@ -87,7 +87,7 @@ namespace FE::UTF8
 
     inline TCodepoint Decode(const TChar*& it) noexcept
     {
-        uint32_t c;
+        UInt32 c;
         int e;
         void* input = reinterpret_cast<void*>(const_cast<TChar*>(it));
         it          = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
@@ -97,7 +97,7 @@ namespace FE::UTF8
 
     inline TCodepoint DecodePrior(const TChar*& it) noexcept
     {
-        uint32_t c;
+        UInt32 c;
         int e             = 1;
         const TChar* iter = it;
         int maxlen        = 3;
@@ -145,7 +145,7 @@ namespace FE::UTF8
 
     inline bool Valid(const TChar* str) noexcept
     {
-        uint32_t c;
+        UInt32 c;
         int e = 0;
         while (*str)
         {

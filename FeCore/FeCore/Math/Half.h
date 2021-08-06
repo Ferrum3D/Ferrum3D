@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Utils/CoreUtils.h>
 #include <iostream>
 #include <limits>
 #include <stdint.h>
@@ -7,37 +8,37 @@ namespace FE
 {
     namespace FeHalfConst
     {
-        inline constexpr float Denorm         = 1.0f / 16384.0f;
-        inline constexpr int32_t BitsMantissa = 10;
-        inline constexpr int32_t BitsExponent = 5;
-        inline constexpr int32_t MaxExpVal    = 0x1f;
-        inline constexpr int32_t Bias         = MaxExpVal / 2;
-        inline constexpr int32_t MaxExp       = +Bias;
-        inline constexpr int32_t MinExp       = -Bias;
+        inline constexpr Float32 Denorm       = 1.0f / 16384.0f;
+        inline constexpr Int32 BitsMantissa = 10;
+        inline constexpr Int32 BitsExponent = 5;
+        inline constexpr Int32 MaxExpVal    = 0x1f;
+        inline constexpr Int32 Bias         = MaxExpVal / 2;
+        inline constexpr Int32 MaxExp       = +Bias;
+        inline constexpr Int32 MinExp       = -Bias;
 
-        inline constexpr int32_t DoubleBitsMantissa = 52;
-        inline constexpr int32_t DoubleBitsExponent = 11;
-        inline constexpr int32_t DoubleMaxExpVal    = 0x7ff;
-        inline constexpr int32_t DoubleBias         = DoubleMaxExpVal / 2;
+        inline constexpr Int32 DoubleBitsMantissa = 52;
+        inline constexpr Int32 DoubleBitsExponent = 11;
+        inline constexpr Int32 DoubleMaxExpVal    = 0x7ff;
+        inline constexpr Int32 DoubleBias         = DoubleMaxExpVal / 2;
 
-        inline constexpr int32_t FloatBitsMantissa = 23;
-        inline constexpr int32_t FloatBitsExponent = 8;
-        inline constexpr int32_t FloatMaxExpVal    = 0xff;
-        inline constexpr int32_t FloatBias         = FloatMaxExpVal / 2;
+        inline constexpr Int32 FloatBitsMantissa = 23;
+        inline constexpr Int32 FloatBitsExponent = 8;
+        inline constexpr Int32 FloatMaxExpVal    = 0xff;
+        inline constexpr Int32 FloatBias         = FloatMaxExpVal / 2;
     } // namespace FeHalfConst
 
     union HalfFormat
     {
-        uint16_t Data;
+        UInt16 Data;
 
         struct
         {
-            uint16_t M : FeHalfConst::BitsMantissa;
-            uint16_t E : FeHalfConst::BitsExponent;
-            uint16_t S : 1;
+            UInt16 M : FeHalfConst::BitsMantissa;
+            UInt16 E : FeHalfConst::BitsExponent;
+            UInt16 S : 1;
         } SEM; // Sign-Exponent-Mantissa
 
-        constexpr HalfFormat(uint16_t b)
+        constexpr HalfFormat(UInt16 b)
             : Data(b)
         {
         }
@@ -45,29 +46,29 @@ namespace FE
 
     union FloatFormat
     {
-        float Data;
+        Float32 Data;
 
         struct
         {
-            uint32_t M : FeHalfConst::FloatBitsMantissa;
-            uint32_t E : FeHalfConst::FloatBitsExponent;
-            uint32_t S : 1;
+            UInt32 M : FeHalfConst::FloatBitsMantissa;
+            UInt32 E : FeHalfConst::FloatBitsExponent;
+            UInt32 S : 1;
         } SEM; // Sign-Exponent-Mantissa
     };
 
     union DoubleFormat
     {
-        double Data;
+        Float64 Data;
 
         struct
         {
-            uint64_t M : FeHalfConst::DoubleBitsMantissa;
-            uint64_t E : FeHalfConst::DoubleBitsExponent;
-            uint64_t S : 1;
+            UInt64 M : FeHalfConst::DoubleBitsMantissa;
+            UInt64 E : FeHalfConst::DoubleBitsExponent;
+            UInt64 S : 1;
         } SEM; // Sign-Exponent-Mantissa
     };
 
-    // TODO: Conversion to double/from double
+    // TODO: Conversion to Float64/from Float64
 
     /**
     * @brief Half-precision floating point.
@@ -80,11 +81,11 @@ namespace FE
         }
 
         constexpr FeHalf(int iVal) noexcept
-            : FeHalf(float(iVal))
+            : FeHalf(Float32(iVal))
         {
         }
 
-        constexpr FeHalf(float fVal) noexcept
+        constexpr FeHalf(Float32 fVal) noexcept
             : m_data(0)
         {
             FloatFormat f{};
@@ -114,7 +115,7 @@ namespace FE
             // A normal number (not infinity, zero or NaN)
             else
             {
-                int32_t exp = f.SEM.E - 127;
+                Int32 exp = f.SEM.E - 127;
 
                 if (exp < -24)
                 { // Zero in half precision
@@ -125,7 +126,7 @@ namespace FE
                 { // Denorm
                     m_data.SEM.E = 0;
 
-                    uint32_t exp1 = (uint32_t)(-14 - exp);
+                    UInt32 exp1 = (UInt32)(-14 - exp);
                     switch (exp1)
                     {
                     case 0:
@@ -178,8 +179,8 @@ namespace FE
             }
         }
 
-        constexpr FeHalf(double dVal) noexcept
-            : FeHalf(float(dVal))
+        constexpr FeHalf(Float64 dVal) noexcept
+            : FeHalf(Float32(dVal))
         {
         }
 
@@ -204,19 +205,19 @@ namespace FE
             return *this;
         }
 
-        constexpr FeHalf& operator=(float other) noexcept
+        constexpr FeHalf& operator=(Float32 other) noexcept
         {
             *this = FeHalf(other);
             return *this;
         }
 
-        constexpr FeHalf& operator=(double other) noexcept
+        constexpr FeHalf& operator=(Float64 other) noexcept
         {
             *this = FeHalf(other);
             return *this;
         }
 
-        constexpr operator float() const noexcept
+        constexpr operator Float32() const noexcept
         {
             FloatFormat f{};
             f.SEM.S = m_data.SEM.S;
@@ -230,8 +231,8 @@ namespace FE
                 }
                 else
                 {
-                    float mantissa = float(m_data.SEM.M) / 1024.0f;
-                    float sign     = (m_data.SEM.S) ? -1.0f : 1.0f;
+                    Float32 mantissa = Float32(m_data.SEM.M) / 1024.0f;
+                    Float32 sign     = (m_data.SEM.S) ? -1.0f : 1.0f;
                     f.Data         = sign * mantissa * FeHalfConst::Denorm;
                 }
             }
@@ -248,9 +249,9 @@ namespace FE
             return f.Data;
         }
 
-        constexpr operator double() const noexcept
+        constexpr operator Float64() const noexcept
         {
-            return double(float(*this));
+            return Float64(Float32(*this));
         }
 
         constexpr bool operator!=(FeHalf other) const noexcept
@@ -275,19 +276,19 @@ namespace FE
             return m_data.Data == other.m_data.Data && !IsNaN();
         }
 
-        constexpr bool operator==(float other) const noexcept
+        constexpr bool operator==(Float32 other) const noexcept
         {
-            return float(*this) == other;
+            return Float32(*this) == other;
         }
 
-        constexpr bool operator==(double other) const noexcept
+        constexpr bool operator==(Float64 other) const noexcept
         {
-            return double(*this) == other;
+            return Float64(*this) == other;
         }
 
         constexpr bool operator==(int other) const noexcept
         {
-            return float(*this) == other;
+            return Float32(*this) == other;
         }
 
         constexpr bool operator<(FeHalf other) const noexcept
@@ -352,7 +353,7 @@ namespace FE
         }
 
     private:
-        constexpr FeHalf(uint16_t s, uint16_t e, uint16_t m)
+        constexpr FeHalf(UInt16 s, UInt16 e, UInt16 m)
             : m_data(0)
         {
             m_data.SEM.S = s;
@@ -365,22 +366,22 @@ namespace FE
 
     constexpr inline FeHalf operator+(FeHalf l, FeHalf r) noexcept
     {
-        return FeHalf(float(l) + float(r));
+        return FeHalf(Float32(l) + Float32(r));
     }
 
     constexpr inline FeHalf operator-(FeHalf l, FeHalf r) noexcept
     {
-        return FeHalf(float(l) - float(r));
+        return FeHalf(Float32(l) - Float32(r));
     }
 
     constexpr inline FeHalf operator*(FeHalf l, FeHalf r) noexcept
     {
-        return FeHalf(float(l) * float(r));
+        return FeHalf(Float32(l) * Float32(r));
     }
 
     constexpr inline FeHalf operator/(FeHalf l, FeHalf r) noexcept
     {
-        return FeHalf(float(l) / float(r));
+        return FeHalf(Float32(l) / Float32(r));
     }
 
     constexpr inline FeHalf& FeHalf::operator+=(FeHalf other) noexcept
@@ -424,7 +425,7 @@ namespace std
 
     inline std::ostream& operator<<(std::ostream& stream, half val)
     {
-        stream << float(val);
+        stream << Float32(val);
         return stream;
     }
 } // namespace std

@@ -20,37 +20,37 @@ namespace FE
         }
 
     public:
-        inline int32_t Year() const
+        inline Int32 Year() const
         {
             return m_Data.tm_year + 1900;
         }
 
-        inline int32_t Day() const
+        inline Int32 Day() const
         {
             return m_Data.tm_mday;
         }
 
-        inline int32_t DayOfWeek() const
+        inline Int32 DayOfWeek() const
         {
             return m_Data.tm_wday;
         }
 
-        inline int32_t DayOfYear() const
+        inline Int32 DayOfYear() const
         {
             return m_Data.tm_yday + 1;
         }
 
-        inline int32_t Hour() const
+        inline Int32 Hour() const
         {
             return m_Data.tm_hour;
         }
 
-        inline int32_t Minute() const
+        inline Int32 Minute() const
         {
             return m_Data.tm_min;
         }
 
-        inline int32_t Second() const
+        inline Int32 Second() const
         {
             auto s = m_Data.tm_sec;
             if (s == 60)

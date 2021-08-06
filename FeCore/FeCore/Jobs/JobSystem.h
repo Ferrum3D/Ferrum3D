@@ -138,7 +138,7 @@ namespace FE
         inline void Enqueue(FeJobHandle* handle)
         {
             std::unique_lock lk(m_Mutex);
-            m_Queues[FeCountTrailingZeros((uint32_t)handle->GetType())].push(handle);
+            m_Queues[FeCountTrailingZeros((UInt32)handle->GetType())].push(handle);
         }
     };
 
@@ -165,7 +165,7 @@ namespace FE
     struct FeWorkerThreadDesc
     {
         FeJobType Flags;
-        uint32_t Id;
+        UInt32 Id;
         String Name;
         std::mutex* JobSystemMutex;
         std::condition_variable* JobSystemCv;
@@ -205,7 +205,7 @@ namespace FE
     public:
         std::thread Handle;
         FeJobType Flags;
-        uint32_t Id;
+        UInt32 Id;
         String Name;
         std::mutex& JobSystemMutex;
         std::condition_variable& JobSystemCv;

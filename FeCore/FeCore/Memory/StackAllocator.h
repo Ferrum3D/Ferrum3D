@@ -4,11 +4,11 @@
 
 namespace FE
 {
-    inline constexpr uint32_t FeStackAllocatorAlign = 16;
+    inline constexpr UInt32 FeStackAllocatorAlign = 16;
 
     class FeStackAllocator
     {
-        uint8_t* m_Memory{};
+        UInt8* m_Memory{};
         size_t m_MemorySize{};
         size_t m_Allocated{};
 
@@ -25,7 +25,7 @@ namespace FE
             m_MemorySize = size;
             if (m_Memory)
                 delete m_Memory;
-            m_Memory = new uint8_t[size];
+            m_Memory = new UInt8[size];
         }
 
         inline void Reset()
@@ -35,7 +35,7 @@ namespace FE
 
         inline void* Malloc(size_t size)
         {
-            uint8_t* ptr = m_Memory + m_Allocated;
+            UInt8* ptr = m_Memory + m_Allocated;
             m_Allocated += size;
             FE_CORE_ASSERT(m_Allocated <= m_MemorySize, "Allocator overflow");
             return ptr;

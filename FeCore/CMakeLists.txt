@@ -55,6 +55,8 @@ set(SRC
 	FeCore/Time/TimeSpan.h
 	
 	FeCore/Utils/CoreUtils.h
+	FeCore/Utils/Interlocked.h
+	FeCore/Utils/Interlocked.cpp
 	FeCore/Utils/Platform.h
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h

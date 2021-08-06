@@ -25,10 +25,10 @@ namespace FE::GPU
 
         virtual IAdapter& GetAdapter()                                                           = 0;
         virtual IInstance& GetInstance()                                                         = 0;
-        virtual RefCountPtr<IFence> CreateFence(uint64_t value)                                  = 0;
+        virtual RefCountPtr<IFence> CreateFence(UInt64 value)                                  = 0;
         virtual RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass)      = 0;
         virtual RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) = 0;
         virtual RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc)               = 0;
-        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, uint64_t size)            = 0;
+        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size)            = 0;
     };
 } // namespace FE::GPU

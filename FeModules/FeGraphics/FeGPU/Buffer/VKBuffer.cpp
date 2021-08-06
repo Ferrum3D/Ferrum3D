@@ -10,7 +10,7 @@ namespace FE::GPU
     {
     }
 
-    void* VKBuffer::Map(uint64_t offset, uint64_t size)
+    void* VKBuffer::Map(UInt64 offset, UInt64 size)
     {
         return m_Device->GetNativeDevice().mapMemory(m_Memory->Memory.get(), offset, size);
     }
@@ -30,7 +30,7 @@ namespace FE::GPU
         BindMemory(StaticPtrCast<IDeviceMemory>(m_Memory), 0);
     }
 
-    void VKBuffer::BindMemory(const RefCountPtr<IDeviceMemory>& memory, uint64_t offset)
+    void VKBuffer::BindMemory(const RefCountPtr<IDeviceMemory>& memory, UInt64 offset)
     {
         m_Memory = StaticPtrCast<VKDeviceMemory>(memory);
         m_Device->GetNativeDevice().bindBufferMemory(Buffer.get(), m_Memory->Memory.get(), offset);

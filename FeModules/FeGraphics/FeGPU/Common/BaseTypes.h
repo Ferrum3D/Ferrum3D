@@ -1,34 +1,35 @@
 #pragma once
+#include <FeCore/Utils/CoreUtils.h>
 #include <cstdint>
 
 namespace FE::GPU
 {
     struct Size
     {
-        uint64_t Width;
-        uint64_t Height;
-        uint64_t Depth;
+        UInt64 Width;
+        UInt64 Height;
+        UInt64 Depth;
 
         inline Size() noexcept
             : Size(0, 0, 0)
         {
         }
 
-        inline Size(uint64_t w) noexcept
+        inline Size(UInt64 w) noexcept
             : Width(w)
             , Height(0)
             , Depth(0)
         {
         }
 
-        inline Size(uint64_t w, uint64_t h) noexcept
+        inline Size(UInt64 w, UInt64 h) noexcept
             : Width(w)
             , Height(h)
             , Depth(0)
         {
         }
 
-        inline Size(uint64_t w, uint64_t h, uint64_t d) noexcept
+        inline Size(UInt64 w, UInt64 h, UInt64 d) noexcept
             : Width(w)
             , Height(h)
             , Depth(d)
