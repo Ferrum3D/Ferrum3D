@@ -23,13 +23,14 @@ namespace FE::GPU
 
         vk::UniqueSemaphore m_ImageAvailableSemaphore;
         vk::UniqueSemaphore m_RenderFinishedSemaphore;
-        RefCountPtr<IFence> m_Fence;
         RefCountPtr<ICommandBuffer> m_CmdBuffer;
+        RefCountPtr<IFence> m_Fence;
 
         bool ValidateDimentions(const SwapChainDesc& swapChainDesc);
 
     public:
         VKSwapChain(VKDevice& dev, const SwapChainDesc& desc);
+        ~VKSwapChain();
 
         virtual const SwapChainDesc& GetDesc() override;
         virtual uint32_t GetCurrentImageIndex() override;

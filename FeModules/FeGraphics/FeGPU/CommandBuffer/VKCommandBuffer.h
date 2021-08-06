@@ -16,6 +16,8 @@ namespace FE::GPU
     public:
         VKCommandBuffer(VKDevice& dev, CommandQueueClass cmdQueueClass);
 
+        vk::CommandBuffer& GetNativeBuffer();
+
         virtual void Begin() override;
         virtual void End() override;
 

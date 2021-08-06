@@ -3,13 +3,17 @@ set(SRC
     Adapter/VKAdapter.h
     Adapter/VKAdapter.cpp
 
-    CommandQueue/ICommandQueue.h
-    CommandQueue/VKCommandQueue.h
-    CommandQueue/VKCommandQueue.cpp
+    Buffer/IBuffer.h
+    Buffer/VKBuffer.h
+    Buffer/VKBuffer.cpp
 
     CommandBuffer/ICommandBuffer.h
     CommandBuffer/VKCommandBuffer.h
     CommandBuffer/VKCommandBuffer.cpp
+
+    CommandQueue/ICommandQueue.h
+    CommandQueue/VKCommandQueue.h
+    CommandQueue/VKCommandQueue.cpp
 
     Common/BaseTypes.h
     Common/VKConfig.h

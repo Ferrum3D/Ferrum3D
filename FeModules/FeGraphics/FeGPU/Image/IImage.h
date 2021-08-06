@@ -29,7 +29,7 @@ namespace FE::GPU
         static ImageDesc Img3D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint32_t depth, Format format);
     };
 
-    class IImage : public IResource
+    class IImage
     {
     public:
         virtual ~IImage() = default;

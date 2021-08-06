@@ -19,5 +19,7 @@ namespace FE::GPU
     {
     public:
         virtual ~IDeviceMemory() = default;
+
+        virtual const MemoryAllocationDesc& GetDesc() = 0;
     };
 } // namespace FE::GPU

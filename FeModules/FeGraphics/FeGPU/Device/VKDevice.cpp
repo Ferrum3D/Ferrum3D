@@ -5,6 +5,8 @@
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
 #include <algorithm>
+#include <FeGPU/Swapchain/VKSwapChain.h>
+#include <FeGPU/Buffer/VKBuffer.h>
 
 namespace FE::GPU
 {
@@ -37,6 +39,21 @@ namespace FE::GPU
                 m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Transfer));
             }
         }
+    }
+
+    uint32_t VKDevice::FindMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags properties)
+    {
+        vk::PhysicalDeviceMemoryProperties memProperties;
+        m_Adapter->GetNativeAdapter().getMemoryProperties(&memProperties);
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+        {
+            if ((typeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                return i;
+        }
+
+        FE_UNREACHABLE("Memory type not found");
+        return -1;
     }
 
     VKDevice::VKDevice(VKAdapter& adapter)
@@ -112,6 +129,48 @@ namespace FE::GPU
     RefCountPtr<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
         return StaticPtrCast<ICommandBuffer>(MakeShared<VKCommandBuffer>(*this, cmdQueueClass));
+    }
+
+
+    RefCountPtr<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
+    {
+        return StaticPtrCast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
+    }
+
+    RefCountPtr<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, uint64_t size)
+    {
+        BufferDesc desc{};
+        desc.Size = size;
+        auto buffer = MakeShared<VKBuffer>(*this, desc);
+
+        vk::BufferCreateInfo bufferCI = {};
+        bufferCI.size = size;
+        bufferCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
+
+        if ((bindFlags & BindFlags::ShaderResource) != BindFlags::None)
+        {
+            bufferCI.usage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+        }
+
+        if ((bindFlags & BindFlags::UnorderedAccess) != BindFlags::None)
+        {
+            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        }
+
+        if ((bindFlags & BindFlags::VertexBuffer) != BindFlags::None)
+            bufferCI.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
+        if ((bindFlags & BindFlags::IndexBuffer) != BindFlags::None)
+            bufferCI.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
+        if ((bindFlags & BindFlags::ConstantBuffer) != BindFlags::None)
+            bufferCI.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
+        if ((bindFlags & BindFlags::IndirectDrawArgs) != BindFlags::None)
+            bufferCI.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
+
+        buffer->Buffer = m_NativeDevice->createBufferUnique(bufferCI);
+
+        return StaticPtrCast<IBuffer>(buffer);
     }
 
     IInstance& VKDevice::GetInstance()

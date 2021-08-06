@@ -34,6 +34,7 @@ namespace FE::GPU
 
         auto& pd     = static_cast<VKAdapter&>(m_Device->GetAdapter()).GetNativeAdapter();
         auto formats = pd.getSurfaceFormatsKHR<StdHeapAllocator<vk::SurfaceFormatKHR>>(m_Surface.get());
+        FE_ASSERT(pd.getSurfaceSupportKHR(m_Queue->GetDesc().QueueFamilyIndex, m_Surface.get()));
 
         constexpr auto preferredFormat = Format::B8G8R8A8_SRGB;
         m_ColorFormat.format           = vk::Format::eUndefined;
@@ -46,11 +47,11 @@ namespace FE::GPU
             m_ColorFormat = formats.front();
         }
 
-        auto capabilites = pd.getSurfaceCapabilitiesKHR(m_Surface.get());
+        m_Capabilities = pd.getSurfaceCapabilitiesKHR(m_Surface.get());
         if (!ValidateDimentions(m_Desc))
         {
-            auto min    = capabilites.minImageExtent;
-            auto max    = capabilites.maxImageExtent;
+            auto min    = m_Capabilities.minImageExtent;
+            auto max    = m_Capabilities.maxImageExtent;
             auto width  = std::clamp(m_Desc.ImageWidth, min.width, max.width);
             auto height = std::clamp(m_Desc.ImageHeight, min.height, max.height);
             FE_LOG_WARNING(
@@ -95,6 +96,7 @@ namespace FE::GPU
         swapChainCI.imageSharingMode = vk::SharingMode::eExclusive;
         swapChainCI.preTransform     = vk::SurfaceTransformFlagBitsKHR::eIdentity;
         swapChainCI.presentMode      = mode;
+        swapChainCI.clipped          = true;
 
         m_NativeSwapChain = m_Device->GetNativeDevice().createSwapchainKHRUnique(swapChainCI);
         auto images = m_Device->GetNativeDevice().getSwapchainImagesKHR<StdHeapAllocator<vk::Image>>(m_NativeSwapChain.get());
@@ -109,9 +111,10 @@ namespace FE::GPU
             backbuffer->Image = image;
             backbuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, VKConvert(m_ColorFormat.format));
             ResourceTransitionBarrierDesc desc{};
-            desc.Resource    = backbuffer.GetRaw();
-            desc.StateBefore = ResourceState::None;
-            desc.StateAfter  = ResourceState::Present;
+            desc.Image                   = backbuffer.GetRaw();
+            desc.StateBefore             = ResourceState::None;
+            desc.StateAfter              = ResourceState::Present;
+            desc.SubresourceRange.Apsect = ImageAspect::Color;
             m_CmdBuffer->ResourceTransitionBarriers({ desc });
             m_Images.push_back(StaticPtrCast<IImage>(backbuffer));
         }
@@ -122,6 +125,11 @@ namespace FE::GPU
         m_Fence                   = m_Device->CreateFence(0);
         m_Queue->SubmitBuffers({ m_CmdBuffer });
         m_Queue->SignalFence(m_Fence, 1);
+    }
+
+    VKSwapChain::~VKSwapChain()
+    {
+        m_Fence->Wait(1);
     }
 
     const SwapChainDesc& VKSwapChain::GetDesc()

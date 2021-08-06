@@ -1,6 +1,7 @@
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
+#include <FeGPU/CommandBuffer/VKCommandBuffer.h>
 
 namespace FE::GPU
 {
@@ -42,7 +43,25 @@ namespace FE::GPU
         m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE);
     }
 
-    void VKCommandQueue::SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers) {}
+    void VKCommandQueue::SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers)
+    {
+        Vector<vk::CommandBuffer> nativeBuffers{};
+        nativeBuffers.reserve(buffers.size());
+        for (auto& buf : buffers)
+        {
+            auto* vkbuffer = static_cast<VKCommandBuffer*>(buf.GetRaw());
+            nativeBuffers.push_back(vkbuffer->GetNativeBuffer());
+        }
+
+        vk::SubmitInfo info{};
+        info.pCommandBuffers = nativeBuffers.data();
+        info.commandBufferCount = nativeBuffers.size();
+
+        vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;
+        info.pWaitDstStageMask = &waitDstFlags;
+
+        m_Queue.submit(1, &info, VK_NULL_HANDLE);
+    }
 
     const VKCommandQueueDesc& VKCommandQueue::GetDesc() const
     {

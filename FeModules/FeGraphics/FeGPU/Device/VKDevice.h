@@ -1,6 +1,6 @@
 #pragma once
-#include <FeGPU/Device/IDevice.h>
 #include <FeCore/Console/FeLog.h>
+#include <FeGPU/Device/IDevice.h>
 #include <FeGPU/Instance/IInstance.h>
 
 namespace FE::GPU
@@ -38,6 +38,8 @@ namespace FE::GPU
         VKDevice(VKAdapter& adapter);
         vk::Device& GetNativeDevice();
 
+        uint32_t FindMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags properties);
+
         inline vk::CommandPool& GetCommandPool(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
@@ -61,5 +63,7 @@ namespace FE::GPU
         virtual RefCountPtr<IFence> CreateFence(uint64_t value) override;
         virtual RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass) override;
         virtual RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) override;
+        virtual RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc) override;
+        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, uint64_t size) override;
     };
 } // namespace FE::GPU
