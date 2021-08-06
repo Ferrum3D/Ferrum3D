@@ -18,7 +18,7 @@ namespace FE::GPU
     class ISwapChain
     {
     public:
-        virtual ~ISwapChain() = 0;
+        virtual ~ISwapChain() = default;
 
         virtual const SwapChainDesc& GetDesc()                                        = 0;
         virtual uint32_t GetCurrentImageIndex()                                       = 0;

@@ -8,18 +8,16 @@ namespace FE::GPU
     {
         static auto Conversions = []() {
             std::array<vk::ImageLayout, static_cast<size_t>(Format::Count)> result{};
-            result[static_cast<size_t>(ResourceState::None)]                   = vk::ImageLayout::eUndefined;
-            result[static_cast<size_t>(ResourceState::Common)]                 = vk::ImageLayout::eGeneral;
-            result[static_cast<size_t>(ResourceState::RenderTarget)]           = vk::ImageLayout::eColorAttachmentOptimal;
-            result[static_cast<size_t>(ResourceState::UnorderedAccess)]        = vk::ImageLayout::eGeneral;
-            result[static_cast<size_t>(ResourceState::DepthWrite)]             = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-            result[static_cast<size_t>(ResourceState::DepthRead)]              = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-            result[static_cast<size_t>(ResourceState::NonPixelShaderResource)] = vk::ImageLayout::eShaderReadOnlyOptimal;
-            result[static_cast<size_t>(ResourceState::PixelShaderResource)]    = vk::ImageLayout::eShaderReadOnlyOptimal;
-            result[static_cast<size_t>(ResourceState::CopyDest)]               = vk::ImageLayout::eTransferDstOptimal;
-            result[static_cast<size_t>(ResourceState::CopySource)]             = vk::ImageLayout::eTransferSrcOptimal;
-            result[static_cast<size_t>(ResourceState::GenericRead)]            = vk::ImageLayout::eReadOnlyOptimalKHR;
-            result[static_cast<size_t>(ResourceState::Present)]                = vk::ImageLayout::ePresentSrcKHR;
+            result[static_cast<size_t>(ResourceState::None)]            = vk::ImageLayout::eUndefined;
+            result[static_cast<size_t>(ResourceState::Common)]          = vk::ImageLayout::eGeneral;
+            result[static_cast<size_t>(ResourceState::RenderTarget)]    = vk::ImageLayout::eColorAttachmentOptimal;
+            result[static_cast<size_t>(ResourceState::UnorderedAccess)] = vk::ImageLayout::eGeneral;
+            result[static_cast<size_t>(ResourceState::DepthRead)]       = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+            result[static_cast<size_t>(ResourceState::DepthWrite)]      = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            result[static_cast<size_t>(ResourceState::ShaderResource)]  = vk::ImageLayout::eShaderReadOnlyOptimal;
+            result[static_cast<size_t>(ResourceState::CopySource)]      = vk::ImageLayout::eTransferSrcOptimal;
+            result[static_cast<size_t>(ResourceState::CopyDest)]        = vk::ImageLayout::eTransferDstOptimal;
+            result[static_cast<size_t>(ResourceState::Present)]         = vk::ImageLayout::ePresentSrcKHR;
             return result;
         }();
 
@@ -29,6 +27,9 @@ namespace FE::GPU
     inline vk::ImageAspectFlags VKConvert(ImageAspect aspect)
     {
         vk::ImageAspectFlags result{};
+        auto t1 = aspect & ImageAspect::Color;
+        auto t2 = aspect & ImageAspect::Depth;
+        auto t3 = aspect & ImageAspect::Stencil;
         if ((aspect & ImageAspect::Color) != ImageAspect::None)
             result |= vk::ImageAspectFlagBits::eColor;
         if ((aspect & ImageAspect::Depth) != ImageAspect::None)
@@ -51,29 +52,29 @@ namespace FE::GPU
 
     inline vk::AccessFlags GetSrcAccessMask(ResourceState state)
     {
-        switch (state)
-        {
-        case ResourceState::RenderTarget:
-            return vk::AccessFlagBits::eColorAttachmentWrite;
-        case ResourceState::CopySource:
-            return vk::AccessFlagBits::eTransferRead;
-        case ResourceState::CopyDest:
-            return vk::AccessFlagBits::eTransferWrite;
-        case ResourceState::DepthRead:
-            return vk::AccessFlagBits::eDepthStencilAttachmentRead;
-        case ResourceState::DepthWrite:
-            return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-        case ResourceState::NonPixelShaderResource:
-        case ResourceState::PixelShaderResource:
-            return vk::AccessFlagBits::eShaderRead;
-        case ResourceState::Present:
-        case ResourceState::Predication:
-            return vk::AccessFlagBits::eConditionalRenderingReadEXT;
-        case ResourceState::None:
-            return vk::AccessFlags();
-        default:
-            return vk::AccessFlags();
-        }
+        static auto Conversions = []() {
+            std::array<vk::AccessFlags, static_cast<size_t>(Format::Count)> result{};
+            using Bits = vk::AccessFlagBits;
+#define FE_CVT_ENTRY(state) result[static_cast<size_t>(ResourceState::state)]
+            FE_CVT_ENTRY(None)             = static_cast<Bits>(0);
+            FE_CVT_ENTRY(Common)           = static_cast<Bits>(0);
+            FE_CVT_ENTRY(VertexBuffer)     = Bits::eVertexAttributeRead;
+            FE_CVT_ENTRY(ConstantBuffer)   = Bits::eUniformRead;
+            FE_CVT_ENTRY(IndexBuffer)      = Bits::eIndexRead;
+            FE_CVT_ENTRY(RenderTarget)     = Bits::eColorAttachmentRead | Bits::eColorAttachmentWrite;
+            FE_CVT_ENTRY(UnorderedAccess)  = Bits::eShaderRead | Bits::eShaderWrite;
+            FE_CVT_ENTRY(DepthWrite)       = Bits::eDepthStencilAttachmentRead | Bits::eDepthStencilAttachmentWrite;
+            FE_CVT_ENTRY(DepthRead)        = Bits::eDepthStencilAttachmentRead;
+            FE_CVT_ENTRY(ShaderResource)   = Bits::eShaderRead;
+            FE_CVT_ENTRY(IndirectArgument) = Bits::eIndirectCommandRead;
+            FE_CVT_ENTRY(CopyDest)         = Bits::eTransferWrite;
+            FE_CVT_ENTRY(CopySource)       = Bits::eTransferRead;
+            FE_CVT_ENTRY(Present)          = Bits::eMemoryRead;
+#undef FE_CVT_ENTRY
+            return result;
+        }();
+
+        return Conversions[static_cast<size_t>(state)];
     }
 
     VKCommandBuffer::VKCommandBuffer(VKDevice& dev, CommandQueueClass cmdQueueClass)
@@ -90,6 +91,11 @@ namespace FE::GPU
         using Allocator = StdHeapAllocator<vk::UniqueCommandBuffer>;
         auto buffers    = nativeDevice.allocateCommandBuffersUnique<VULKAN_HPP_DEFAULT_DISPATCHER_TYPE, Allocator>(allocateInfo);
         m_CommandBuffer = std::move(buffers.front());
+    }
+
+    vk::CommandBuffer& VKCommandBuffer::GetNativeBuffer()
+    {
+        return m_CommandBuffer.get();
     }
 
     void VKCommandBuffer::Begin()
@@ -138,9 +144,7 @@ namespace FE::GPU
         Vector<vk::ImageMemoryBarrier> nativeBarriers;
         for (auto& barrier : barriers)
         {
-            VKImage* img = dynamic_cast<VKImage*>(barrier.Resource);
-            if (img == nullptr)
-                continue;
+            VKImage* img = static_cast<VKImage*>(barrier.Image);
 
             auto before = VKConvert(barrier.StateBefore);
             auto after  = VKConvert(barrier.StateAfter);

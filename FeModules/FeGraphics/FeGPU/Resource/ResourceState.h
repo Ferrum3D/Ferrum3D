@@ -7,29 +7,25 @@ namespace FE::GPU
     {
         None,
         Common,
-        VertexAndConstantBuffer,
+        VertexBuffer,
+        ConstantBuffer,
         IndexBuffer,
         RenderTarget,
         UnorderedAccess,
         DepthWrite,
         DepthRead,
-        NonPixelShaderResource,
-        PixelShaderResource,
-        StreamOut,
+        ShaderResource,
         IndirectArgument,
         CopyDest,
         CopySource,
-        GenericRead,
-        AllShaderResource,
-        Present,
-        Predication
+        Present
     };
 
-    class IResource;
+    class IImage;
 
     struct ResourceTransitionBarrierDesc
     {
-        IResource* Resource;
+        IImage* Image;
         ImageSubresourceRange SubresourceRange;
         ResourceState StateBefore;
         ResourceState StateAfter;

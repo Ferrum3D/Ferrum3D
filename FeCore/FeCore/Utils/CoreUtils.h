@@ -174,7 +174,7 @@ namespace FE
     }                                                                                                                            \
     inline _name operator&(_name a, _name b)                                                                                     \
     {                                                                                                                            \
-        return _name(_type(a) | _type(b));                                                                                       \
+        return _name(_type(a) & _type(b));                                                                                       \
     }                                                                                                                            \
     inline _name& operator|=(_name& a, _name b)                                                                                  \
     {                                                                                                                            \
@@ -191,7 +191,7 @@ namespace FE
     }                                                                                                                            \
     inline _name operator&(_name a, _type b)                                                                                     \
     {                                                                                                                            \
-        return _name(_type(a) | b);                                                                                              \
+        return _name(_type(a) & b);                                                                                              \
     }                                                                                                                            \
     inline _name& operator|=(_name& a, _type b)                                                                                  \
     {                                                                                                                            \

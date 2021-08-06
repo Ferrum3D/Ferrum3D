@@ -11,17 +11,4 @@ namespace FE::GPU
     {
         return Desc;
     }
-
-    void* VKImage::Map()
-    {
-        return nullptr;
-    }
-
-    void VKImage::Unmap()
-    {
-    }
-
-    void VKImage::BindMemory(const RefCountPtr<IDeviceMemory>& memory, uint64_t offset)
-    {
-    }
 }

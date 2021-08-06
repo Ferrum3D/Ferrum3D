@@ -18,9 +18,5 @@ namespace FE::GPU
         VKImage(VKDevice& dev);
 
         virtual const ImageDesc& GetDesc() override;
-
-        virtual void* Map() override;
-        virtual void Unmap() override;
-        virtual void BindMemory(const RefCountPtr<IDeviceMemory>& memory, uint64_t offset) override;
     };
 } // namespace FE::GPU
