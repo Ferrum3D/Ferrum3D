@@ -1,43 +1,44 @@
 #pragma once
-#include <cstdint>
+#include <FeCore/Utils/UUID.h>
 #include <cstddef>
+#include <cstdint>
 
 namespace FE
 {
-    using TypeID = std::size_t;
+    using TypeID = UUID;
 
-#define FE_RTTI(name)                                                                                                            \
-    inline virtual const char* const FERTTI_GetName() const                                                                      \
+#define FE_RTTI(name, uuid)                                                                                                      \
+    inline virtual const char* const FeRTTI_GetName() const                                                                      \
     {                                                                                                                            \
         return #name;                                                                                                            \
     }                                                                                                                            \
                                                                                                                                  \
-    inline virtual TypeID FERTTI_GetID() const                                                                                   \
+    inline virtual ::FE::TypeID FeRTTI_GetID() const                                                                             \
     {                                                                                                                            \
-        return name ::FERTTI_GetSID();                                                                                           \
+        return name ::FeRTTI_GetSID();                                                                                           \
     }                                                                                                                            \
                                                                                                                                  \
-    inline static TypeID FERTTI_GetSID()                                                                                         \
+    inline static ::FE::TypeID FeRTTI_GetSID()                                                                                   \
     {                                                                                                                            \
-        static int i;                                                                                                            \
-        return reinterpret_cast<TypeID>(&i);                                                                                     \
+        static ::FE::TypeID id = uuid;                                                                                           \
+        return id;                                                                                                               \
     }                                                                                                                            \
                                                                                                                                  \
-    inline static const char* FERTTI_GetSName()                                                                                  \
+    inline static const char* FeRTTI_GetSName()                                                                                  \
     {                                                                                                                            \
         return #name;                                                                                                            \
     }                                                                                                                            \
                                                                                                                                  \
     template<class T>                                                                                                            \
-    inline bool FERTTI_Is() const                                                                                                \
+    inline bool FeRTTI_Is() const                                                                                                \
     {                                                                                                                            \
-        return T::FERTTI_GetSID() == FERTTI_GetID();                                                                             \
+        return T::FeRTTI_GetSID() == FeRTTI_GetID();                                                                             \
     }
 
-    template<class TDstPtr, class TSrc>
+    template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_dynamic_cast(TSrc* src)
     {
-        if (src->template FERTTI_Is<std::remove_pointer_t<TDstPtr>>())
+        if (src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>())
             return reinterpret_cast<TDstPtr>(src);
         return nullptr;
     }

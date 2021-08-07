@@ -11,6 +11,7 @@ namespace FE
     {
         using TVec = SIMD::SSE::Float32x4;
 
+        FE_PUSH_MSVC_WARNING(4201)
         union
         {
             TVec m_Value;
@@ -20,6 +21,7 @@ namespace FE
                 Float32 m_X, m_Y, m_Z, m_W;
             };
         };
+        FE_POP_MSVC_WARNING
 
         FE_FINLINE Vector4F(TVec vec) noexcept;
 

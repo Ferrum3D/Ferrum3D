@@ -58,10 +58,12 @@ set(SRC
 	FeCore/Utils/Interlocked.cpp
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h
+	FeCore/Utils/UUID.h
 )
 
 add_library(FeCore STATIC ${SRC})
 
+fe_configure_target(FeCore)
 fe_enable_sse_for_target(FeCore)
 
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

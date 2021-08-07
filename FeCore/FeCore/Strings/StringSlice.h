@@ -28,12 +28,7 @@ namespace FE
             using pointer           = const TCodepoint*;
             using reference         = const TCodepoint&;
 
-            inline Iterator(const TChar* begin, const TChar* end)
-                : m_Iter(begin)
-            {
-            }
-
-            inline Iterator(const TChar* iter, const TChar* begin, const TChar* end)
+            inline Iterator(const TChar* iter)
                 : m_Iter(iter)
             {
             }
@@ -111,8 +106,7 @@ namespace FE
         // O(N)
         inline size_t Length() const noexcept
         {
-            auto ptr = Data();
-            return UTF8::Length(ptr, Size());
+            return UTF8::Length(Data(), Size());
         }
 
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
@@ -165,28 +159,22 @@ namespace FE
 
         inline Iterator begin() const noexcept
         {
-            auto ptr = Data();
-            return Iterator(ptr, ptr + Size());
+            return Iterator(Data());
         }
 
         inline Iterator end() const noexcept
         {
-            auto ptr  = Data();
-            auto size = Size();
-            return Iterator(ptr + size, ptr, ptr + size);
+            return Iterator(Data() + Size());
         }
 
         inline Iterator cbegin() const noexcept
         {
-            auto ptr = Data();
-            return Iterator(ptr, ptr + Size());
+            return Iterator(Data());
         }
 
         inline Iterator cend() const noexcept
         {
-            auto ptr  = Data();
-            auto size = Size();
-            return Iterator(ptr + size, ptr, ptr + size);
+            return Iterator(Data() + Size());
         }
     };
 

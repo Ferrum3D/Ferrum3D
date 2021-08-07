@@ -33,7 +33,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 
 namespace FE::GPU
 {
-    VKInstance::VKInstance(const InstanceDesc& desc)
+    VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
     {
         constexpr bool debugEnabled = FE_DEBUG;
         auto vkGetInstanceProcAddr  = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");

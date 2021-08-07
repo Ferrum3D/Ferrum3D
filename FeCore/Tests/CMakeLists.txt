@@ -7,9 +7,12 @@ set(SRC
 	
 	Modules/Environment.cpp
 	Modules/Singleton.cpp
+
+	RTTI/RTTI.cpp
 	
 	Strings/Format.cpp
 	Strings/String.cpp
+	Utils/UUID.cpp
 
 	main.cpp
 )

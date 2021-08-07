@@ -56,6 +56,8 @@ set(SRC
 
 add_library(FeGPU STATIC ${SRC})
 
+fe_configure_target(FeGPU)
+
 target_include_directories(FeGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 target_link_libraries(FeGPU vulkan glfw FeCore)

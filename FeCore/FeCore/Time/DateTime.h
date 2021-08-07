@@ -92,7 +92,7 @@ namespace FE
 
         inline TimeSpan operator-(const DateTime& other) const
         {
-            time_t diff = difftime(MakeTime(), other.MakeTime());
+            time_t diff = static_cast<time_t>(difftime(MakeTime(), other.MakeTime()));
             return TimeSpan::FromSeconds(diff);
         }
     };

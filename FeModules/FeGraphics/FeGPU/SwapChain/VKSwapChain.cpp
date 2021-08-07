@@ -10,9 +10,9 @@ namespace FE::GPU
 {
     bool VKSwapChain::ValidateDimentions(const SwapChainDesc& swapChainDesc)
     {
-        return m_Capabilities.minImageExtent.width <= swapChainDesc.ImageHeight
+        return m_Capabilities.minImageExtent.width <= swapChainDesc.ImageWidth
             && m_Capabilities.minImageExtent.height <= swapChainDesc.ImageHeight
-            && m_Capabilities.maxImageExtent.width >= swapChainDesc.ImageHeight
+            && m_Capabilities.maxImageExtent.width >= swapChainDesc.ImageWidth
             && m_Capabilities.maxImageExtent.height >= swapChainDesc.ImageHeight;
     }
 
@@ -110,12 +110,12 @@ namespace FE::GPU
             auto backbuffer   = MakeShared<VKImage>(*m_Device);
             backbuffer->Image = image;
             backbuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, VKConvert(m_ColorFormat.format));
-            ResourceTransitionBarrierDesc desc{};
-            desc.Image                   = backbuffer.GetRaw();
-            desc.StateBefore             = ResourceState::None;
-            desc.StateAfter              = ResourceState::Present;
-            desc.SubresourceRange.Apsect = ImageAspect::Color;
-            m_CmdBuffer->ResourceTransitionBarriers({ desc });
+            ResourceTransitionBarrierDesc barrierDesc{};
+            barrierDesc.Image                   = backbuffer.GetRaw();
+            barrierDesc.StateBefore             = ResourceState::None;
+            barrierDesc.StateAfter              = ResourceState::Present;
+            barrierDesc.SubresourceRange.Apsect = ImageAspect::Color;
+            m_CmdBuffer->ResourceTransitionBarriers({ barrierDesc });
             m_Images.push_back(StaticPtrCast<IImage>(backbuffer));
         }
         m_CmdBuffer->End();
@@ -144,7 +144,7 @@ namespace FE::GPU
 
     UInt32 VKSwapChain::GetImageCount()
     {
-        return m_Images.size();
+        return static_cast<UInt32>(m_Images.size());
     }
 
     IImage* VKSwapChain::GetImage(UInt32 index)
@@ -157,12 +157,12 @@ namespace FE::GPU
         return m_Images[m_FrameIndex].GetRaw();
     }
 
-    UInt32 VKSwapChain::NextImage(const RefCountPtr<IFence>& fence, UInt64 signal)
+    UInt32 VKSwapChain::NextImage([[maybe_unused]] const RefCountPtr<IFence>& fence, UInt64 signal)
     {
-        m_Device->GetNativeDevice().acquireNextImageKHR(
-            m_NativeSwapChain.get(), UInt64(-1), m_ImageAvailableSemaphore.get(), nullptr, &m_FrameIndex);
+        FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
+            m_NativeSwapChain.get(), UInt64(-1), m_ImageAvailableSemaphore.get(), nullptr, &m_FrameIndex));
 
-        auto* vkfence      = static_cast<VKFence*>(m_Fence.GetRaw());
+        auto* vkfence    = static_cast<VKFence*>(m_Fence.GetRaw());
         UInt64 waitValue = UInt64(-1);
 
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};
@@ -180,14 +180,14 @@ namespace FE::GPU
         submitInfo.pWaitDstStageMask            = &waitDstStageMask;
         submitInfo.signalSemaphoreCount         = 1;
         submitInfo.pSignalSemaphores            = &vkfence->GetNativeSemaphore();
-        m_Queue->GetNativeQueue().submit(1, &submitInfo, {});
+        FE_VK_ASSERT(m_Queue->GetNativeQueue().submit(1, &submitInfo, {}));
 
         return m_FrameIndex;
     }
 
-    void VKSwapChain::Present(const RefCountPtr<IFence>& fence, UInt64 wait)
+    void VKSwapChain::Present([[maybe_unused]] const RefCountPtr<IFence>& fence, UInt64 wait)
     {
-        auto* vkfence        = static_cast<VKFence*>(m_Fence.GetRaw());
+        auto* vkfence      = static_cast<VKFence*>(m_Fence.GetRaw());
         UInt64 signalValue = UInt64(-1);
 
         vk::TimelineSemaphoreSubmitInfo timelineInfo{};
@@ -205,7 +205,7 @@ namespace FE::GPU
         submitInfo.pWaitDstStageMask            = &waitDstStageMask;
         submitInfo.signalSemaphoreCount         = 1;
         submitInfo.pSignalSemaphores            = &m_RenderFinishedSemaphore.get();
-        m_Queue->GetNativeQueue().submit(1, &submitInfo, {});
+        FE_VK_ASSERT(m_Queue->GetNativeQueue().submit(1, &submitInfo, {}));
 
         vk::PresentInfoKHR presentInfo{};
         presentInfo.swapchainCount     = 1;
@@ -213,6 +213,6 @@ namespace FE::GPU
         presentInfo.pImageIndices      = &m_FrameIndex;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphore.get();
-        m_Queue->GetNativeQueue().presentKHR(presentInfo);
+        FE_VK_ASSERT(m_Queue->GetNativeQueue().presentKHR(presentInfo));
     }
 } // namespace FE::GPU

@@ -21,7 +21,7 @@ namespace FE
         inline void Resize(size_t size)
         {
             FE_CORE_ASSERT(m_Allocated == 0, "Couldn't resize a non-empty allocator");
-            size         = FeMakeAlignment<FeStackAllocatorAlign>(size);
+            size         = AlignUp<FeStackAllocatorAlign>(size);
             m_MemorySize = size;
             if (m_Memory)
                 delete m_Memory;

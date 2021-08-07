@@ -43,11 +43,15 @@ namespace FE
 
     void AllocatorBase::ProfileAllocate(size_t size, size_t alignment, const SourcePosition& position)
     {
+        (void)size;
+        (void)alignment;
+        (void)position;
         // TODO: in-engine memory profiler
     }
 
     void AllocatorBase::ProfileDeallocate(void* pointer, const SourcePosition& position, size_t size)
     {
+        (void)position;
         if (size == 0)
             size = SizeOfBlock(pointer);
         // TODO: in-engine memory profiler
@@ -56,6 +60,9 @@ namespace FE
     void AllocatorBase::ProfileReallocate(
         void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize)
     {
+        (void)position;
+        (void)newSize;
+        (void)newAlignment;
         if (oldSize == 0)
             oldSize = SizeOfBlock(pointer);
         // TODO: in-engine memory profiler

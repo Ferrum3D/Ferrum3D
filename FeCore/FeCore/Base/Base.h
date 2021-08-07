@@ -7,12 +7,12 @@
 
 namespace FE
 {
-    using Int8 = int8_t;
+    using Int8  = int8_t;
     using Int16 = int16_t;
     using Int32 = int32_t;
     using Int64 = int64_t;
 
-    using UInt8 = uint8_t;
+    using UInt8  = uint8_t;
     using UInt16 = uint16_t;
     using UInt32 = uint32_t;
     using UInt64 = uint64_t;
@@ -102,16 +102,6 @@ namespace FE
         return std::hash<std::string_view>{}(Internal::TypeNameImpl<T>().value);
     }
 
-    template<class T, class Func>
-    inline void FeAtomicBitOp(std::atomic<T>& a, UInt8 n, Func bitOp)
-    {
-        static_assert(std::is_integral<T>(), "T must be integral");
-
-        T val = a.load(), res = bitOp(val, n);
-        while (!a.compare_exchange_weak(val, res))
-            ;
-    }
-
     template<class T>
     inline constexpr T AlignUp(T x, T align)
     {
@@ -122,6 +112,18 @@ namespace FE
     inline constexpr T AlignUp(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
+    }
+
+    template<class T>
+    inline constexpr T AlignDown(T x, T align)
+    {
+        return ((x) & ~(align - 1));
+    }
+
+    template<UInt32 A, class T>
+    inline constexpr T AlignDown(T x)
+    {
+        return ((x) & ~(A - 1));
     }
 
     inline constexpr UInt32 NextPowerOf2(UInt32 v)
@@ -136,7 +138,7 @@ namespace FE
         return v;
     }
 
-    inline constexpr char IntToHexChar(int n)
+    inline constexpr char IntToHexChar(Int32 n)
     {
         return "0123456789ABCDEF"[n];
     }
@@ -168,6 +170,18 @@ namespace FE
     }
 
 #endif
+
+    // assertion without loggers, used in modules on which loggers depend
+#define FE_CORE_ASSERT(expression, msg)                                                                                          \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        if (!(expression))                                                                                                       \
+        {                                                                                                                        \
+            FE_DEBUGBREAK;                                                                                                       \
+            (void)msg;                                                                                                           \
+        }                                                                                                                        \
+    }                                                                                                                            \
+    while (0)
 
 #define FE_TYPED_ENUM(_name, _type)                                                                                              \
     enum class _name : _type;                                                                                                    \
