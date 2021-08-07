@@ -27,9 +27,6 @@ namespace FE::GPU
     inline vk::ImageAspectFlags VKConvert(ImageAspect aspect)
     {
         vk::ImageAspectFlags result{};
-        auto t1 = aspect & ImageAspect::Color;
-        auto t2 = aspect & ImageAspect::Depth;
-        auto t3 = aspect & ImageAspect::Stencil;
         if ((aspect & ImageAspect::Color) != ImageAspect::None)
             result |= vk::ImageAspectFlagBits::eColor;
         if ((aspect & ImageAspect::Depth) != ImageAspect::None)
@@ -175,7 +172,7 @@ namespace FE::GPU
 
         m_CommandBuffer->pipelineBarrier(
             vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion,
-            0, nullptr, 0, nullptr, nativeBarriers.size(), nativeBarriers.data());
+            0, nullptr, 0, nullptr, static_cast<UInt32>(nativeBarriers.size()), nativeBarriers.data());
     }
 
     void VKCommandBuffer::MemoryBarrier()

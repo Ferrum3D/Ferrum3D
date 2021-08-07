@@ -1,7 +1,11 @@
 #pragma once
+#include <FeCore/Base/Base.h>
+
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
+FE_PUSH_MSVC_WARNING(4239)
 #include <vulkan/vulkan.hpp>
+FE_POP_MSVC_WARNING
 #undef CopyMemory
 
 #include <FeCore/Console/FeLog.h>
@@ -17,7 +21,7 @@
 #    define FE_VK_SURFACE_EXT VK_KHR_XCB_SURFACE_EXTENSION_NAME
 #endif
 
-#define FE_VK_ASSERT(stmt)                                                                                                  \
+#define FE_VK_ASSERT(stmt)                                                                                                       \
     do                                                                                                                           \
     {                                                                                                                            \
         vk::Result result = stmt;                                                                                                \

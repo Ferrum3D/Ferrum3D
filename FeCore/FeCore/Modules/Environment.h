@@ -19,18 +19,6 @@ namespace FE::Env
     } // namespace Internal
 
     /**
-     * @brief Create a variable by unique ID.
-     * 
-     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
-     * 
-     * @tparam T Type of variable to create.
-     * @param id Unique ID of variable to create.
-     * @return The created variable.
-    */
-    template<class T, class... Args>
-    GlobalVariable<T> CreateGlobalVariable(UInt32 id, Args&&... args);
-
-    /**
      * @brief Create a variable by unique name.
      * 
      * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
@@ -77,18 +65,6 @@ namespace FE::Env
     */
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(std::string_view name);
-
-    /**
-     * @brief Find global variable by its ID.
-     * 
-     * Variable must be created by ID before calling this function. Returns an Error result if variable was not found.
-     * 
-     * @tparam T Type of variable to find.
-     * @param id Unique ID of variable to find.
-     * @return The result that can contain the variable.
-    */
-    template<class T>
-    Result<GlobalVariable<T>> FindGlobalVariable(UInt32 id);
 
     /**
      * @brief Find global variable by its name.
@@ -338,7 +314,7 @@ namespace FE::Env
                 m_Storage->AddRef();
         }
 
-        inline GlobalVariable(GlobalVariable&& other)
+        inline GlobalVariable(GlobalVariable&& other) noexcept
             : m_Storage(other.m_Storage)
         {
             other.m_Storage = nullptr;
@@ -350,7 +326,7 @@ namespace FE::Env
             return *this;
         }
 
-        inline GlobalVariable& operator=(GlobalVariable&& other)
+        inline GlobalVariable& operator=(GlobalVariable&& other) noexcept
         {
             GlobalVariable(std::move(other)).Swap(*this);
             return *this;
@@ -470,17 +446,6 @@ namespace FE::Env
     }
 
     template<class T, class... Args>
-    inline GlobalVariable<T> CreateGlobalVariable(UInt32 id, Args&&... args)
-    {
-        std::vector<char> str;
-        str.reserve(9);
-        str.push_back('#');
-        for (int i = 7; i >= 0; --i)
-            str.push_back(FE::IntToHexChar((id >> i * 4) & 0xF));
-        return Internal::CreateGlobalVariableImpl<T, Args...>(std::move(str), std::forward<Args>(args)...);
-    }
-
-    template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariableByType(Args&&... args)
     {
         std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>();
@@ -527,18 +492,6 @@ namespace FE::Env
             [&](const Internal::VariableError&) {
                 return Result<Var>::Err();
             });
-    }
-
-    template<class T>
-    inline Result<GlobalVariable<T>> FindGlobalVariable(UInt32 id)
-    {
-        std::array<char, 9> str;
-        size_t size = 0;
-        str[size++] = '#';
-        for (int i = 7; i >= 0; --i)
-            str[size++] = (FE::IntToHexChar((id >> i * 4) & 0xF));
-
-        return FindGlobalVariable<T>(std::string_view(str.data(), str.size()));
     }
 
     template<class T>

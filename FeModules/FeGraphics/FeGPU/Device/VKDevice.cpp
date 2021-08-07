@@ -53,7 +53,7 @@ namespace FE::GPU
         }
 
         FE_UNREACHABLE("Memory type not found");
-        return -1;
+        return static_cast<UInt32>(-1);
     }
 
     VKDevice::VKDevice(VKAdapter& adapter)

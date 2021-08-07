@@ -10,13 +10,6 @@ TEST(EnvironmentTest, CreateVar)
     ASSERT_EQ(intVar.GetName(), "CreateVar");
 }
 
-TEST(EnvironmentTest, CreateVarID)
-{
-    auto intVar = FE::Env::CreateGlobalVariable<int>(0, 123);
-    ASSERT_EQ(*intVar, 123);
-    ASSERT_EQ(intVar.GetName(), "#00000000");
-}
-
 TEST(EnvironmentTest, SharedVar)
 {
     auto instance1 = FE::Env::CreateGlobalVariable<int>("SharedVar", 123);
@@ -33,18 +26,14 @@ TEST(EnvironmentTest, SharedVar)
 TEST(EnvironmentTest, FindVar)
 {
     auto owner1 = FE::Env::CreateGlobalVariable<int>("FindVar", 123);
-    auto owner2 = FE::Env::CreateGlobalVariable<int>(1, 456);
     /* deleted var*/ FE::Env::CreateGlobalVariable<int>("Removed", 0);
 
     auto var123 = FE::Env::FindGlobalVariable<int>("FindVar").Unwrap();
-    auto var456 = FE::Env::FindGlobalVariable<int>(1).Unwrap();
     ASSERT_FALSE(FE::Env::FindGlobalVariable<int>("Removed").IsOk());
 
     ASSERT_EQ(*var123, 123);
-    ASSERT_EQ(*var456, 456);
 
     EXPECT_EQ(var123.GetName(), "FindVar");
-    EXPECT_EQ(var456.GetName(), "#00000001");
 }
 
 TEST(EnvironmentTest, NoCopies)

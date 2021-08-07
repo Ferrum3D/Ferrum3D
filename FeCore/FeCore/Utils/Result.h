@@ -72,17 +72,15 @@ namespace FE
             return std::get<1>(std::get<OkVariant>(m_Data));
         }
 
-        template<class... Args>
-        inline T Expect(Args&&... msg)
+        inline T Expect(const char* msg)
         {
-            FE_CORE_ASSERT(IsOk(), "");
+            FE_CORE_ASSERT(IsOk(), msg);
             return std::get<1>(std::get<OkVariant>(m_Data));
         }
 
-        template<class... Args>
-        inline OkVariant ExpectEx(Args&&... msg)
+        inline OkVariant ExpectEx(const char* msg)
         {
-            FE_CORE_ASSERT(IsOk(), "");
+            FE_CORE_ASSERT(IsOk(), msg);
             return std::get<OkVariant>(m_Data);
         }
 

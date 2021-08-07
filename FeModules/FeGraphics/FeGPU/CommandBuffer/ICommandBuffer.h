@@ -37,12 +37,12 @@ namespace FE::GPU
         Int32 MaxX;
         Int32 MaxY;
 
-        inline Float32 Width() const noexcept
+        inline Int32 Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        inline Float32 Height() const noexcept
+        inline Int32 Height() const noexcept
         {
             return MaxY - MinY;
         }

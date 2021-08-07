@@ -55,7 +55,7 @@ namespace FE::GPU
                 if (queue.Class == cmdQueueClass)
                     return queue.FamilyIndex;
             FE_UNREACHABLE("Couldn't find queue family");
-            return -1;
+            return static_cast<UInt32>(-1);
         }
 
         virtual IAdapter& GetAdapter() override;

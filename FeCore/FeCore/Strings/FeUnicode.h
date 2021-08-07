@@ -11,18 +11,6 @@ namespace FE::UTF8
     using TCodepoint       = char32_t;
     using TCodepointTraits = std::char_traits<TCodepoint>;
 
-    // assertion without loggers, used in modules on which loggers depend
-#define FE_CORE_ASSERT(expression, msg)                                                                                          \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        if (!(expression))                                                                                                       \
-        {                                                                                                                        \
-            FE_DEBUGBREAK;                                                                                                       \
-            (void)msg;                                                                                                           \
-        }                                                                                                                        \
-    }                                                                                                                            \
-    while (0)
-
     namespace Internal
     {
         /*

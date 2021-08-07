@@ -45,7 +45,7 @@ namespace FE
             return s;
         }
 
-        inline Int32 TotalSeconds() const
+        inline Int64 TotalSeconds() const
         {
             auto copy = m_Data;
             return mktime(&copy);

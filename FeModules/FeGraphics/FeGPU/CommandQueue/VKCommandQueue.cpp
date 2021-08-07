@@ -1,7 +1,7 @@
+#include <FeGPU/CommandBuffer/VKCommandBuffer.h>
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
-#include <FeGPU/CommandBuffer/VKCommandBuffer.h>
 
 namespace FE::GPU
 {
@@ -25,7 +25,7 @@ namespace FE::GPU
         submitInfo.pWaitSemaphores    = &nativeFence.GetNativeSemaphore();
         submitInfo.pWaitDstStageMask  = &nativeFence.Flags;
 
-        m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE);
+        FE_VK_ASSERT(m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE));
     }
 
     void VKCommandQueue::SignalFence(const RefCountPtr<IFence>& fence, UInt64 value)
@@ -40,7 +40,7 @@ namespace FE::GPU
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores    = &nativeFence;
 
-        m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE);
+        FE_VK_ASSERT(m_Queue.submit(1, &submitInfo, VK_NULL_HANDLE));
     }
 
     void VKCommandQueue::SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers)
@@ -54,13 +54,13 @@ namespace FE::GPU
         }
 
         vk::SubmitInfo info{};
-        info.pCommandBuffers = nativeBuffers.data();
-        info.commandBufferCount = nativeBuffers.size();
+        info.pCommandBuffers    = nativeBuffers.data();
+        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
 
         vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;
-        info.pWaitDstStageMask = &waitDstFlags;
+        info.pWaitDstStageMask              = &waitDstFlags;
 
-        m_Queue.submit(1, &info, VK_NULL_HANDLE);
+        FE_VK_ASSERT(m_Queue.submit(1, &info, VK_NULL_HANDLE));
     }
 
     const VKCommandQueueDesc& VKCommandQueue::GetDesc() const
