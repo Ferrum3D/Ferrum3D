@@ -1,4 +1,9 @@
 set(SRC
+	FeCore/Base/Base.h
+	FeCore/Base/CompilerTraits.h
+	FeCore/Base/Platform.h
+	FeCore/Base/PlatformTraits.h
+
 	FeCore/Console/Console.h
 	FeCore/Console/Console.cpp
 	FeCore/Console/ConsoleLogger.h
@@ -49,10 +54,8 @@ set(SRC
 	FeCore/Time/DateTime.cpp
 	FeCore/Time/TimeSpan.h
 	
-	FeCore/Utils/CoreUtils.h
 	FeCore/Utils/Interlocked.h
 	FeCore/Utils/Interlocked.cpp
-	FeCore/Utils/Platform.h
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h
 )

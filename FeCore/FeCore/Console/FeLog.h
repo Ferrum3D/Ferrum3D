@@ -26,7 +26,7 @@ namespace FE
     {                                                                                                                            \
         if (!(expr))                                                                                                             \
         {                                                                                                                        \
-            FE_LOG_ERROR("Assertion ({}) failed in file {} at line {}", #expr, __FILE__, __LINE__);                              \
+            FE_LOG_ERROR("Assertion (" #expr ") failed in file " __FILE__ " at line {}", __LINE__);                              \
             FE_DEBUGBREAK;                                                                                                       \
         }                                                                                                                        \
     }                                                                                                                            \
@@ -40,7 +40,7 @@ namespace FE
     {                                                                                                                            \
         if (!(_Stmt))                                                                                                            \
         {                                                                                                                        \
-            FE_LOG_ERROR("Error in file {} at line {}: {}", __FILE__, __LINE__, ::FE::Fmt::Format(__VA_ARGS__));                 \
+            FE_LOG_ERROR("Error in file " __FILE__ " at line {}: {}", __LINE__, ::FE::Fmt::Format(__VA_ARGS__));                 \
             FE_DEBUGBREAK;                                                                                                       \
         }                                                                                                                        \
     }                                                                                                                            \

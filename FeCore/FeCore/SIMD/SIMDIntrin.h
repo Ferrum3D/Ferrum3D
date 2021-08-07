@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Utils/CoreUtils.h>
-#include <FeCore/Utils/Platform.h>
+#include <FeCore/Base/Base.h>
+#include <FeCore/Base/Platform.h>
 #ifdef FE_SSE3_SUPPORTED
 #    include <emmintrin.h>
 #    include <xmmintrin.h>

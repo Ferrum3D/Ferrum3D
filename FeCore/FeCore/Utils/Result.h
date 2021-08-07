@@ -1,5 +1,5 @@
 #pragma once
-#include "CoreUtils.h"
+#include <FeCore/Base/Base.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <tuple>
 #include <variant>

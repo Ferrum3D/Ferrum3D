@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Strings/String.h>
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 #include <array>
 #include <cstdlib>
 #include <ostream>
