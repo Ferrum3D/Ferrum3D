@@ -1,19 +1,19 @@
 #pragma once
-#include <FeCore/Utils/CoreUtils.h>
-#include <FeCore/Utils/Platform.h>
+#include <FeCore/Base/Base.h>
+#include <FeCore/Base/Platform.h>
 #include <ctime>
 #include <ostream>
 #include <sstream>
 
 namespace FE
 {
-    class FE_CORE_API TimeSpan
+    class TimeSpan
     {
         tm m_Data;
 
         inline TimeSpan(time_t time)
         {
-            localtime_s(&m_Data, &time);
+            m_Data = *localtime(&time);
         }
 
     public:

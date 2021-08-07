@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Utils/Platform.h>
+#include <FeCore/Base/Platform.h>
 #include <atomic>
 #include <cstdint>
 #include <intrin.h>
@@ -57,8 +57,8 @@ namespace FE
         }
     };
 
-#define FE_SRCPOS() ::FE::SourcePosition(__FILE__, FE_FUNCNAME, __LINE__)
-#define FE_STATIC_SRCPOS(name) static ::FE::SourcePosition name(__FILE__, FE_FUNCNAME, __LINE__)
+#define FE_SRCPOS() ::FE::SourcePosition(__FILE__, FE_FUNCSIG, __LINE__)
+#define FE_STATIC_SRCPOS(name) static ::FE::SourcePosition name(__FILE__, FE_FUNCSIG, __LINE__)
 
     namespace Internal
     {
@@ -77,7 +77,7 @@ namespace FE
         template<class T>
         inline constexpr SVWrapper TypeNameImpl()
         {
-#ifdef _MSC_VER
+#if FE_COMPILER_MSVC
             std::string_view fn = __FUNCSIG__;
             fn.remove_prefix(fn.find_first_of("<") + 1);
             fn.remove_suffix(fn.length() - fn.find_last_of(">"));
@@ -113,18 +113,18 @@ namespace FE
     }
 
     template<class T>
-    inline constexpr T FeMakeAlignment(T x, T align)
+    inline constexpr T AlignUp(T x, T align)
     {
         return (x + (align - 1u)) & ~(align - 1u);
     }
 
     template<UInt32 A, class T>
-    inline constexpr T FeMakeAlignment(T x)
+    inline constexpr T AlignUp(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
     }
 
-    inline constexpr UInt32 FeNextPowerOf2(UInt32 v)
+    inline constexpr UInt32 NextPowerOf2(UInt32 v)
     {
         v--;
         v |= v >> 1;
@@ -141,25 +141,15 @@ namespace FE
         return "0123456789ABCDEF"[n];
     }
 
-    inline constexpr auto FeSetBit = [](auto val, unsigned n) {
-        return val | (1 << n);
-    };
-    inline constexpr auto FeResetBit = [](auto val, unsigned n) {
-        return val & ~(1 << n);
-    };
-    inline constexpr auto FeXorBit = [](auto val, unsigned n) {
-        return val ^ (1 << n);
-    };
+#ifdef FE_COMPILER_MSVC
 
-#ifdef _MSC_VER
-
-    UInt32 inline FeCountTrailingZeros(UInt32 value)
+    UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
     {
         unsigned long tz = 0;
         return _BitScanForward(&tz, value) ? tz : 32;
     }
 
-    UInt32 inline FeCountLeadingZeros(UInt32 value)
+    UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
     {
         unsigned long lz = 0;
         return _BitScanReverse(&lz, value) ? 31 - lz : 32;
@@ -167,12 +157,12 @@ namespace FE
 
 #else
 
-    UInt32 inline FeCountTrailingZeros(UInt32 value)
+    UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
     {
         return __builtin_ctz(value);
     }
 
-    UInt32 inline FeCountLeadingZeros(UInt32 value)
+    UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
     {
         return __builtin_clz(value);
     }
@@ -217,7 +207,7 @@ namespace FE
                                                                                                                                  \
     enum class _name : _type
 
-#define FE_ENUM(_name) FE_TYPED_ENUM(_name, int)
+#define FE_ENUM(_name) FE_TYPED_ENUM(_name, Int32)
 
 #define FE_ENUM_TO_STR(_name)                                                                                                    \
     inline std::ostream& operator<<(std::ostream& stream, _name parameter)                                                       \

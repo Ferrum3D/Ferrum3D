@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 
 #if FE_WINDOWS
 #    define FE_PLATFORM_ATOMIC_INT32 volatile long

@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Memory/IBasicAllocator.h>
 #include <FeCore/Strings/FeUnicode.h>
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 #include <FeCore/Utils/Result.h>
 #include <array>
 #include <mutex>
@@ -121,7 +121,7 @@ namespace FE::Env
      * 
      * @param allocator Custom allocator.
     */
-    FE_CORE_API void CreateEnvironment(IBasicAllocator* allocator = nullptr);
+    void CreateEnvironment(IBasicAllocator* allocator = nullptr);
 
     /**
      * @brief Get global environment instance.
@@ -130,7 +130,7 @@ namespace FE::Env
      * environment won't be created automatically. This function will throw if the environment was not
      * created and attached to this module.
     */
-    FE_CORE_API Internal::IEnvironment& GetEnvironment();
+    Internal::IEnvironment& GetEnvironment();
 
     /**
      * @brief Attach an instance of global environment to this module.
@@ -140,7 +140,7 @@ namespace FE::Env
      * 
      * @param instance Instance of global environment to attach.
     */
-    FE_CORE_API void AttachEnvironment(Internal::IEnvironment& instance);
+    void AttachEnvironment(Internal::IEnvironment& instance);
 
     /**
      * @brief Detach global environment.
@@ -149,13 +149,13 @@ namespace FE::Env
      * deallocated and destructed. If the current module isn't the owner of environment, it will just set
      * the module-local pointer to environment to nullptr.
     */
-    FE_CORE_API void DetachEnvironment();
+    void DetachEnvironment();
 
     /**
      * @brief Checks if the global environment exists and is attached to the current module.
      * @return True if environment is attached.
     */
-    FE_CORE_API bool EnvironmentAttached();
+    bool EnvironmentAttached();
 
     namespace Internal
     {

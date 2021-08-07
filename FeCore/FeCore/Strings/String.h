@@ -2,7 +2,7 @@
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Strings/StringSlice.h>
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {
@@ -90,7 +90,7 @@ namespace FE
         {
             if (s < MinCapacity)
                 return MinCapacity - 1;
-            size_t guess = FeMakeAlignment<Alignment / sizeof(TChar)>(s + 1) - 1;
+            size_t guess = FE::AlignUp<Alignment / sizeof(TChar)>(s + 1) - 1;
             if (guess == MinCapacity)
                 ++guess;
             return guess;

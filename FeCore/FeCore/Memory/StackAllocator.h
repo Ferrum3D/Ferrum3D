@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {

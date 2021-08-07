@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Strings/StringSlice.h>
-#include <FeCore/Utils/CoreUtils.h>
-#include <FeCore/Utils/Platform.h>
+#include <FeCore/Base/Base.h>
+#include <FeCore/Base/Platform.h>
 #include <mutex>
 
 namespace FE::Console

@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Utils/CoreUtils.h>
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {
