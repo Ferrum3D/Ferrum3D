@@ -148,6 +148,14 @@ namespace FE
          * @return The original value at dst.
         */
         static Int32 CompareExchange(AtomicInt32& dst, Int32 exchg, Int32 cmp);
+
+        /**
+         * @brief Compare dst and cmp and, if equal, replace dst with exchg.
+         * @param dst Destination, possibly replaced.
+         * @param exchg The value that replaces the dst if dst was equal to cmp.
+         * @param cmp The value that is compared to dst.
+         * @return The original value at dst.
+        */
         static Int64 CompareExchange(AtomicInt64& dst, Int64 exchg, Int64 cmp);
     };
 } // namespace FE

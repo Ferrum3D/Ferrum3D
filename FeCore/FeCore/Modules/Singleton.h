@@ -4,6 +4,20 @@
 
 namespace FE
 {
+    /**
+     * @brief This class provides interface to access registered singletons.
+     * 
+     * This class doesn't own the singleton, memory is managed by the user.
+     * 
+     * Usage:
+     * class IFoo { ... };
+     * class Foo : public SingletonImplBase<IFoo> { ... };
+     * 
+     * Foo* owner = new Foo;
+     * IFoo* instance = Singleton<IFoo>::Get();
+     * 
+     * @tparam T Type of singleton interface.
+    */
     template<class T>
     class Singleton
     {
@@ -19,6 +33,9 @@ namespace FE
         }
 
     public:
+        /**
+         * @brief Register the singleton instance.
+        */
         inline static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "Singleton instance was a nullptr");
@@ -27,6 +44,9 @@ namespace FE
             m_Instance = Env::CreateGlobalVariableByType<T*>(instance);
         }
 
+        /**
+         * @brief Unregister the singleton instance.
+        */
         inline static void Unregister()
         {
             FE_CORE_ASSERT(m_Instance, "Singleton instance was a nullptr");
@@ -35,6 +55,9 @@ namespace FE
             m_Instance.Reset();
         }
 
+        /**
+         * @brief Get the registered singleton instance.
+        */
         inline static T* Get()
         {
             if (!m_Instance)
@@ -52,6 +75,9 @@ namespace FE
     template<class T>
     std::shared_mutex Singleton<T>::m_Mutex;
 
+    /**
+     * @brief Helper class that registers and unregisters derived implementations of T in Singleton<T>.
+    */
     template<class T>
     struct SingletonImplBase : public T
     {

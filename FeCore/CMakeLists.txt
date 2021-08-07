@@ -1,17 +1,10 @@
 set(SRC
-	FeCore/Assets/AssetManager.h
-	FeCore/Assets/AssetManager.cpp
-	
 	FeCore/Console/Console.h
 	FeCore/Console/Console.cpp
 	FeCore/Console/ConsoleLogger.h
 	FeCore/Console/ConsoleLogger.cpp
 	FeCore/Console/FeLog.h
 	FeCore/Console/IConsoleLogger.h
-	
-	FeCore/Jobs/JobSystem.h
-	FeCore/Jobs/JobSystem.cpp
-	FeCore/Jobs/ParallelQueue.h
 	
 	FeCore/Math/Half.h
 	FeCore/Math/Vector3.h
@@ -33,6 +26,8 @@ set(SRC
 	FeCore/Modules/Environment.h
 	FeCore/Modules/Environment.cpp
 	FeCore/Modules/Singleton.h
+
+	FeCore/RTTI/RTTI.h
 	
 	FeCore/Scene/Entity.h
 	FeCore/Scene/Scene.h

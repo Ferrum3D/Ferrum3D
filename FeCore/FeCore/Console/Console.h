@@ -7,7 +7,7 @@
 namespace FE::Console
 {
     /**
-    * @brief Cross-platform abstraction over console text color
+    * @brief Cross-platform abstraction over console text color.
     */
     enum class Color
     {
