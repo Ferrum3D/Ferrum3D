@@ -4,6 +4,9 @@
 
 namespace FE
 {
+    /**
+     * @brief Description of HeapAllocator.
+    */
     struct HeapAllocatorDesc
     {
         size_t PageSize     = 64 * 1024;
@@ -11,6 +14,9 @@ namespace FE
         size_t SpanMapCount = 0;
     };
 
+    /**
+     * @brief Main global heap allocator.
+    */
     class HeapAllocator : public AllocatorBase
     {
         size_t m_TotalUsage = 0;
@@ -21,6 +27,10 @@ namespace FE
         HeapAllocator();
         inline virtual ~HeapAllocator() = default;
 
+        /**
+         * @brief Initialize allocator with provided HeapAllocatorDesc.
+         * @param desc The HeapAllocatorDesc to use.
+        */
         void Init(const Desc& desc);
 
         //=========================================================================================

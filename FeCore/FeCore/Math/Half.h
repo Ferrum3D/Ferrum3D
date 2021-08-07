@@ -68,8 +68,6 @@ namespace FE
         } SEM; // Sign-Exponent-Mantissa
     };
 
-    // TODO: Conversion to Float64/from Float64
-
     /**
     * @brief Half-precision floating point.
     */
@@ -425,7 +423,7 @@ namespace std
 
     inline std::ostream& operator<<(std::ostream& stream, half val)
     {
-        stream << Float32(val);
+        stream << static_cast<FE::Float32>(val);
         return stream;
     }
 } // namespace std

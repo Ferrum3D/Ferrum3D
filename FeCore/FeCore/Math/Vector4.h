@@ -42,52 +42,88 @@ namespace FE
 
         FE_FINLINE Vector4F(const std::array<Float32, 4>& array) noexcept;
 
+        /**
+         * @return Vector4F{ 0, 0, 0, 0 }.
+        */
         FE_FINLINE static Vector4F GetZero() noexcept;
 
+        /**
+         * @return Vector4F{ 1, 0, 0, 0 }.
+        */
         FE_FINLINE static Vector4F GetUnitX() noexcept;
 
+        /**
+         * @return Vector4F{ 0, 1, 0, 0 }.
+        */
         FE_FINLINE static Vector4F GetUnitY() noexcept;
 
+        /**
+         * @return Vector4F{ 0, 0, 1, 0 }.
+        */
         FE_FINLINE static Vector4F GetUnitZ() noexcept;
 
+        /**
+         * @return Vector4F{ 0, 0, 0, 1 }.
+        */
         FE_FINLINE static Vector4F GetUnitW() noexcept;
 
         FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
         FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
+        /**
+         * @return pointer to array of four floats.
+        */
         FE_FINLINE const Float32* Data() const noexcept;
 
+        /**
+         * @return Underlying SIMD type.
+        */
+        FE_FINLINE TVec GetSIMDVector() const noexcept;
+
         FE_FINLINE Float32 X() const noexcept;
-
         FE_FINLINE Float32 Y() const noexcept;
-
         FE_FINLINE Float32 Z() const noexcept;
-
         FE_FINLINE Float32 W() const noexcept;
 
         FE_FINLINE Float32& X() noexcept;
-
         FE_FINLINE Float32& Y() noexcept;
-
         FE_FINLINE Float32& Z() noexcept;
-
         FE_FINLINE Float32& W() noexcept;
 
         FE_FINLINE void Set(Float32 x, Float32 y, Float32 z, Float32 w) noexcept;
 
         FE_FINLINE Float32 Dot(const Vector4F& other) const noexcept;
 
+        /**
+         * @return Squared length of the vector.
+        */
         FE_FINLINE Float32 LengthSq() const noexcept;
 
+        /**
+         * @return Length of the vector.
+        */
         FE_FINLINE Float32 Length() const noexcept;
 
+        /**
+         * @return New normalized vector, this vector is not modified.
+        */
         FE_FINLINE Vector4F Normalized() const noexcept;
 
+        /**
+         * @brief Linearly interpolate between this and destination.
+         * 
+         * The result is (dst - this) * f + this;
+         * 
+         * @param f Interpolation factor.
+         * @return New interpolated vector, this vector is not modified.
+        */
         FE_FINLINE Vector4F Lerp(const Vector4F& dst, Float32 f) const noexcept;
 
-        FE_FINLINE Vector4F Cross(const Vector4F& other) const noexcept;
-
+        /**
+         * @brief Multiply each component of this vector with each component of other vector.
+         * @return New vector, this vector is not modified.
+        */
         FE_FINLINE Vector4F MulEach(const Vector4F& other) const noexcept;
 
         FE_FINLINE bool IsApproxEqualTo(const Vector4F& other, Float32 epsilon = 0.0001f) const noexcept;
@@ -203,6 +239,11 @@ namespace FE
         return m_Values;
     }
 
+    FE_FINLINE Vector4F::TVec Vector4F::GetSIMDVector() const noexcept
+    {
+        return m_Value;
+    }
+
     FE_FINLINE Float32 Vector4F::X() const noexcept
     {
         return m_X;
@@ -275,16 +316,6 @@ namespace FE
     FE_FINLINE Vector4F Vector4F::Lerp(const Vector4F& dst, Float32 f) const noexcept
     {
         return (dst.m_Value - m_Value) * f + m_Value;
-    }
-
-    FE_FINLINE Vector4F Vector4F::Cross(const Vector4F& other) const noexcept
-    {
-        auto yzx1 = m_Value.Shuffle<3, 0, 2, 1>();
-        auto zxy1 = m_Value.Shuffle<3, 1, 0, 2>();
-        auto yzx2 = other.m_Value.Shuffle<3, 0, 2, 1>();
-        auto zxy2 = other.m_Value.Shuffle<3, 1, 0, 2>();
-
-        return yzx1 * zxy2 - zxy1 * yzx2;
     }
 
     FE_FINLINE Vector4F Vector4F::MulEach(const Vector4F& other) const noexcept

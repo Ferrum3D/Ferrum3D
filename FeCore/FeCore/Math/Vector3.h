@@ -6,6 +6,9 @@
 
 namespace FE
 {
+    /**
+     * @brief 3-dimentional vector.
+    */
     class Vector3F
     {
         using TVec = SIMD::SSE::Float32x4;
@@ -39,48 +42,86 @@ namespace FE
 
         FE_FINLINE Vector3F(const std::array<Float32, 3>& array) noexcept;
 
+        /**
+         * @return Vector3F{ 0, 0, 0 }.
+        */
         FE_FINLINE static Vector3F GetZero() noexcept;
 
+        /**
+         * @return Vector3F{ 1, 0, 0 }.
+        */
         FE_FINLINE static Vector3F GetUnitX() noexcept;
 
+        /**
+         * @return Vector3F{ 0, 1, 0 }.
+        */
         FE_FINLINE static Vector3F GetUnitY() noexcept;
 
+        /**
+         * @return Vector3F{ 0, 0, 1 }.
+        */
         FE_FINLINE static Vector3F GetUnitZ() noexcept;
 
         FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
         FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
+        /**
+         * @return pointer to array of three floats.
+        */
         FE_FINLINE const Float32* Data() const noexcept;
 
+        /**
+         * @return Underlying SIMD type.
+        */
         FE_FINLINE TVec GetSIMDVector() const noexcept;
 
         FE_FINLINE Float32 X() const noexcept;
-
         FE_FINLINE Float32 Y() const noexcept;
-
         FE_FINLINE Float32 Z() const noexcept;
 
         FE_FINLINE Float32& X() noexcept;
-
         FE_FINLINE Float32& Y() noexcept;
-
         FE_FINLINE Float32& Z() noexcept;
 
         FE_FINLINE void Set(Float32 x, Float32 y, Float32 z) noexcept;
 
         FE_FINLINE Float32 Dot(const Vector3F& other) const noexcept;
 
+        /**
+         * @return Squared length of the vector.
+        */
         FE_FINLINE Float32 LengthSq() const noexcept;
 
+        /**
+         * @return Length of the vector.
+        */
         FE_FINLINE Float32 Length() const noexcept;
 
+        /**
+         * @return New normalized vector, this vector is not modified.
+        */
         FE_FINLINE Vector3F Normalized() const noexcept;
 
+        /**
+         * @brief Linearly interpolate between this and destination.
+         * 
+         * The result is (dst - this) * f + this;
+         * 
+         * @param f Interpolation factor.
+         * @return New interpolated vector, this vector is not modified.
+        */
         FE_FINLINE Vector3F Lerp(const Vector3F& dst, Float32 f) const noexcept;
 
+        /**
+         * @return Cross product [this x other]
+        */
         FE_FINLINE Vector3F Cross(const Vector3F& other) const noexcept;
 
+        /**
+         * @brief Multiply each component of this vector with each component of other vector.
+         * @return New vector, this vector is not modified.
+        */
         FE_FINLINE Vector3F MulEach(const Vector3F& other) const noexcept;
 
         FE_FINLINE bool IsApproxEqualTo(const Vector3F& other, Float32 epsilon = 0.0001f) const noexcept;

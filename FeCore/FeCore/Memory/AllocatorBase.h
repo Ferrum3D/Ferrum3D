@@ -4,6 +4,9 @@
 
 namespace FE
 {
+    /**
+     * @brief Base class for all allocators. Helps implementing IAllocator and IAllocatorInfo
+    */
     class AllocatorBase
         : public IAllocatorInfo
         , public IAllocator
@@ -14,7 +17,11 @@ namespace FE
         bool m_Initialized;
 
     public:
+        /**
+         * @brief Sets name and description.
+        */
         AllocatorBase(const char* name, const char* description) noexcept;
+
         inline virtual ~AllocatorBase() = default;
 
         //=========================================================================================
