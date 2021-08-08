@@ -7,7 +7,7 @@ namespace FE::GPU
     class VKDevice;
     class VKCommandQueue;
 
-    class VKSwapChain : public ISwapChain
+    class VKSwapChain : public Object<ISwapChain>
     {
         VKDevice* m_Device;
         VKCommandQueue* m_Queue;

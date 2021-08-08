@@ -16,6 +16,8 @@ namespace FE
         size_t m_Size;
 
     public:
+        FE_STRUCT_RTTI(StringSlice, "DCBAE48D-8751-4F0C-96F9-99866394482B");
+
         class Iterator
         {
             friend class StringSlice;

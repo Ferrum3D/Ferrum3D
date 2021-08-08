@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <cassert>
 #include <cstdint>
 #include <string>

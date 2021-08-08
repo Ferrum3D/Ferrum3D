@@ -22,6 +22,8 @@ namespace FE
         size_t m_TotalUsage = 0;
 
     public:
+        FE_CLASS_RTTI(HeapAllocator, "1C0FA67A-09E8-461B-818F-24454F5A5B0B");
+
         using Desc = HeapAllocatorDesc;
 
         HeapAllocator();

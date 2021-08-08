@@ -1,4 +1,3 @@
-#pragma once
 #include <FeCore/Memory/HeapAllocator.h>
 #include <cstdio>
 

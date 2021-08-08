@@ -5,7 +5,7 @@ namespace FE::GPU
 {
     class VKDevice;
 
-    class VKFence : public IFence
+    class VKFence : public Object<IFence>
     {
         vk::UniqueSemaphore m_Semaphore;
         VKDevice* m_Device;

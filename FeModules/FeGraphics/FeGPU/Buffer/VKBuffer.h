@@ -4,7 +4,7 @@
 
 namespace FE::GPU
 {
-    class VKBuffer : public IBuffer
+    class VKBuffer : public Object<IBuffer>
     {
         VKDevice* m_Device;
         RefCountPtr<VKDeviceMemory> m_Memory;

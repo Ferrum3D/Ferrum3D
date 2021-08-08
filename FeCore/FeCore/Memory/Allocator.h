@@ -2,6 +2,7 @@
 #include <FeCore/Memory/AllocatorBase.h>
 #include <FeCore/Memory/IAllocator.h>
 #include <FeCore/Modules/Environment.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE
 {
@@ -28,6 +29,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(GlobalAllocator<TAlloc>, "1EF91D3D-58ED-4E4E-8AAC-206072D356CE");
+
         /**
          * @brief Get instance of allocator. Must be already created.
          * @return Reference to allocator instance.

@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE
 {
@@ -11,6 +12,8 @@ namespace FE
     class IBasicAllocator
     {
     public:
+        FE_CLASS_RTTI(IBasicAllocator, "1D908F99-58A1-451D-A073-5E4226D59C80");
+
         /**
          * @brief Allocate a block of memory.
          * @param size Size of block to allocate.
@@ -36,6 +39,8 @@ namespace FE
         IBasicAllocator* m_Instance;
 
     public:
+        FE_CLASS_RTTI(StdBasicAllocator, "8077ABC7-F1F4-46D1-A4F0-626F2958BF26");
+
         using value_type = T;
 
         inline StdBasicAllocator(const StdBasicAllocator& other) noexcept

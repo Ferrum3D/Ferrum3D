@@ -12,7 +12,7 @@ namespace FE
         entt::entity m_Entity;
 
     public:
-        FE_RTTI(Entity, "8DF6EB0C-0CC0-4FDA-8D20-D0D78364BB49");
+        FE_CLASS_RTTI(Entity, "8DF6EB0C-0CC0-4FDA-8D20-D0D78364BB49");
 
         inline Entity(entt::registry& registry, entt::entity entity)
             : m_Registry(&registry)

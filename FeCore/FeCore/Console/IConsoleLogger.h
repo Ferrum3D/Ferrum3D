@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Console/Console.h>
+#include <FeCore/Memory/Object.h>
 #include <FeCore/Strings/Format.h>
 
 namespace FE::Debug
@@ -48,7 +49,7 @@ namespace FE::Debug
      * Usage:
      * FE::Singleton<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
     */
-    class IConsoleLogger
+    class IConsoleLogger : public IObject
     {
     protected:
         /**
@@ -58,7 +59,7 @@ namespace FE::Debug
          * 
          * @param message Message to log.
         */
-        virtual void PrintImpl(StringSlice message)                     = 0;
+        virtual void PrintImpl(StringSlice message) = 0;
 
         /**
          * @brief Protected implementation of IConsoleLogger::ColoredPrint.
@@ -79,9 +80,11 @@ namespace FE::Debug
          * @param type Type of message (information, warning, error).
          * @param message Message to print.
         */
-        virtual void LogImpl(LogMessageType type, StringSlice message)  = 0;
+        virtual void LogImpl(LogMessageType type, StringSlice message) = 0;
 
     public:
+        FE_CLASS_RTTI(IConsoleLogger, "0A75661C-E88C-4263-9095-785EB3CEECB8");
+
         /**
          * @brief Set levels of debug messages in logger.
          * 

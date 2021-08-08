@@ -19,8 +19,6 @@ namespace FE
                 return static_cast<UInt8>(std::find(digits, digits + 16, std::toupper(c)) - digits);
             };
 
-            // 62E1B7A1-C14A-4129-AC57-7E77289123E9
-
             size_t idx = 0;
             auto parse = [&](Int32 n) {
                 for (Int32 i = 0; i < n; ++i)

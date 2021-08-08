@@ -24,30 +24,41 @@ namespace FE
         return std::unique_ptr<T, TObjectDeleter<T, FE::HeapAllocator>>(obj, ObjectDeleter<T, FE::HeapAllocator>);
     }
 
-    template<class T, class... Args>
-    auto MakeShared(Args&&... args) -> RefCountPtr<T>
+    template<class T, class TAllocator, class... Args>
+    inline RefCountPtr<T> AllocateShared(Args&&... args)
     {
-        FE_STATIC_SRCPOS(position);
-        IAllocator* allocator = &FE::GlobalAllocator<FE::HeapAllocator>::Get();
-        size_t size = sizeof(Internal::RefCounter) + sizeof(T);
-        size_t align = std::max(alignof(Internal::RefCounter), alignof(T));
-        UInt8* allocation = static_cast<UInt8*>(allocator->Allocate(size, align, FE_SRCPOS()));
-        auto* ptr = new (allocation) T(std::forward<Args>(args)...);
-        auto* data = new (allocation + sizeof(T)) Internal::RefCounter(ptr, allocator, true, 0);
-        return RefCountPtr<T>(data);
+        constexpr size_t counterSize = AlignUp(sizeof(ReferenceCounter), alignof(T));
+        constexpr size_t wholeSize   = sizeof(T) + counterSize;
+
+        IAllocator* allocator     = &FE::GlobalAllocator<TAllocator>::Get();
+        UInt8* ptr                = static_cast<UInt8*>(allocator->Allocate(wholeSize, alignof(T), FE_SRCPOS()));
+        ReferenceCounter* counter = new (ptr) ReferenceCounter(allocator);
+
+        T* object = new (ptr + counterSize) T(std::forward<Args>(args)...);
+        object->AttachRefCounter(counter);
+        return RefCountPtr<T>(object);
+    }
+
+    template<class T, class... Args>
+    inline RefCountPtr<T> MakeShared(Args&&... args)
+    {
+        return AllocateShared<T, FE::HeapAllocator>(std::forward<Args>(args)...);
     }
 
     template<class TDest, class TSrc>
     RefCountPtr<TDest> StaticPtrCast(const RefCountPtr<TSrc>& src)
     {
-        return RefCountPtr<TDest>(src.GetImpl());
+        return RefCountPtr<TDest>(static_cast<TDest*>(src.GetRaw()));
     }
 
     template<class T, class TAlloc>
     class StdAllocator
     {
         mutable IAllocator* m_Instance;
+
     public:
+        FE_CLASS_RTTI(StdAllocator, "18778CFF-60EF-49FA-A560-46CE59C2BEFF");
+
         using value_type = T;
 
         inline StdAllocator(const StdAllocator& other) noexcept

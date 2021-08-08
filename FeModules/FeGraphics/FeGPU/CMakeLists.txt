@@ -60,6 +60,7 @@ fe_configure_target(FeGPU)
 
 target_include_directories(FeGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
+set_target_properties(FeGPU PROPERTIES FOLDER "Modules/FeGraphics/FeGPU")
 target_link_libraries(FeGPU vulkan glfw FeCore)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGPU PROPERTY SOURCES)

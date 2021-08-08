@@ -1,7 +1,7 @@
 #include <Tests/Common/TestCommon.h>
 #include <FeCore/Modules/Singleton.h>
 
-class ISingletonObject
+class ISingletonObject : public FE::IObject
 {
 };
 

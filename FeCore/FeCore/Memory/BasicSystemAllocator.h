@@ -1,6 +1,7 @@
 #pragma once
-#include <FeCore/Memory/IBasicAllocator.h>
 #include <FeCore/Base/Platform.h>
+#include <FeCore/Memory/IBasicAllocator.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE
 {
@@ -10,6 +11,8 @@ namespace FE
     class BasicSystemAllocator : public IBasicAllocator
     {
     public:
+        FE_CLASS_RTTI(BasicSystemAllocator, "3C61313A-C682-4142-ABB8-6D053868397A");
+
         virtual void* Allocate(size_t size, size_t alignment) noexcept override
         {
             return FE_ALIGNED_MALLOC(size, alignment);

@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Memory/Object.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
 #include <FeGPU/Device/IDevice.h>
@@ -22,7 +23,7 @@ namespace FE::GPU
 
     class IInstance;
 
-    class IAdapter
+    class IAdapter : public IObject
     {
     public:
         virtual ~IAdapter()                         = default;

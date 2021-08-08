@@ -24,6 +24,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(Result, "87C787E0-D455-4480-8BB8-E7ACAD4738ED");
+
         inline Result() = default;
 
         template<class... Args>

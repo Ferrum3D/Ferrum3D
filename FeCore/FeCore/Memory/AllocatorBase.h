@@ -17,6 +17,8 @@ namespace FE
         bool m_Initialized;
 
     public:
+        FE_CLASS_RTTI(AllocatorBase, "C5139EB6-81F7-4F1A-B7E7-368DA47DFE32");
+
         /**
          * @brief Sets name and description.
         */

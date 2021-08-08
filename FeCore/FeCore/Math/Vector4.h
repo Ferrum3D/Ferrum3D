@@ -26,7 +26,12 @@ namespace FE
         FE_FINLINE Vector4F(TVec vec) noexcept;
 
     public:
-        Vector4F() = default;
+        FE_STRUCT_RTTI(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
+
+        FE_FINLINE Vector4F()
+            : Vector4F(0, 0, 0, 0)
+        {
+        }
 
         FE_FINLINE Vector4F(const Vector4F& other) noexcept;
 

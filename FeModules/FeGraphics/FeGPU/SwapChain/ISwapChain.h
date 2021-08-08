@@ -15,7 +15,7 @@ namespace FE::GPU
         void* NativeWindowHandle = nullptr;
     };
 
-    class ISwapChain
+    class ISwapChain : public IObject
     {
     public:
         virtual ~ISwapChain() = default;

@@ -1,9 +1,10 @@
 #pragma once
+#include <FeCore/Memory/Object.h>
 #include <FeCore/Memory/Memory.h>
 
 namespace FE::GPU
 {
-    class IFence
+    class IFence : public IObject
     {
     public:
         virtual ~IFence() = default;

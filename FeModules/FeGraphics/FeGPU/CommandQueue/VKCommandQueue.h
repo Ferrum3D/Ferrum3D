@@ -12,7 +12,7 @@ namespace FE::GPU
         UInt32 QueueIndex;
     };
 
-    class VKCommandQueue : public ICommandQueue
+    class VKCommandQueue : public Object<ICommandQueue>
     {
         VKDevice* m_Device;
         vk::Queue m_Queue;

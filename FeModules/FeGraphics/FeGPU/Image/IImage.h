@@ -3,6 +3,7 @@
 #include <FeGPU/Image/ImageFormat.h>
 #include <FeGPU/Resource/IResource.h>
 #include <FeGPU/Image/ImageEnums.h>
+#include <FeCore/Memory/Object.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -29,7 +30,7 @@ namespace FE::GPU
         static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
     };
 
-    class IImage
+    class IImage : public IObject
     {
     public:
         virtual ~IImage() = default;

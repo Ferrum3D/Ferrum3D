@@ -6,7 +6,7 @@ namespace FE::GPU
 {
     class VKDevice;
 
-    class VKImage : public IImage
+    class VKImage : public Object<IImage>
     {
         VKDevice* m_Device;
 

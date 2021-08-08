@@ -1,71 +1,46 @@
 #pragma once
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
+#include <FeCore/Memory/Object.h>
 
 namespace FE
 {
-    namespace Internal
-    {
-        struct RefCounter
-        {
-            void* Ptr;
-            UInt32 Count;
-            FE::IAllocator* Allocator;
-            bool MakeShared;
-
-            inline RefCounter(void* ptr, FE::IAllocator* allocator, bool makeShared, UInt32 count = 1)
-                : Ptr(ptr)
-                , Count(count)
-                , Allocator(allocator)
-                , MakeShared(makeShared)
-            {
-            }
-        };
-    } // namespace Internal
-
-    template<class T>
+    template<class T, std::enable_if_t<std::is_base_of_v<IObject, T>, bool> = true>
     class RefCountPtr
     {
-        Internal::RefCounter* m_Data;
+        T* m_Object;
 
     public:
+        FE_CLASS_RTTI(RefCountPtr<T>, "FFF4F2AF-4AAA-49F6-AE7A-D28ED39C794E");
+
         inline RefCountPtr() noexcept
-            : m_Data(nullptr)
+            : m_Object(nullptr)
         {
         }
 
-        inline RefCountPtr(T* ptr) noexcept
+        inline RefCountPtr(T* object) noexcept
+            : m_Object(object)
         {
-            IAllocator* allocator = &FE::GlobalAllocator<FE::HeapAllocator>::Get();
-            size_t size           = sizeof(Internal::RefCounter);
-            size_t align          = alignof(Internal::RefCounter);
-
-            m_Data = new (allocator->Allocate(size, align, FE_SRCPOS())) Internal::RefCounter(ptr, allocator, false);
-        }
-
-        inline RefCountPtr(Internal::RefCounter* storage) noexcept
-            : m_Data(storage)
-        {
-            ++m_Data->Count;
+            m_Object->AddStrongRef();
         }
 
         inline RefCountPtr(const RefCountPtr& other) noexcept
-            : m_Data(other.m_Data)
+            : m_Object(other.m_Object)
         {
-            ++m_Data->Count;
+            m_Object->AddStrongRef();
         }
 
         inline RefCountPtr(RefCountPtr&& other) noexcept
-            : m_Data(other.m_Data)
+            : m_Object(other.m_Object)
         {
-            other.m_Data = nullptr;
+            other.m_Object = nullptr;
         }
 
         inline void Swap(RefCountPtr& other)
         {
-            auto* t      = other.m_Data;
-            other.m_Data = m_Data;
-            m_Data       = t;
+            auto* t      = other.m_Object;
+            other.m_Object = m_Object;
+            m_Object       = t;
         }
 
         inline RefCountPtr& operator=(const RefCountPtr& other)
@@ -87,21 +62,15 @@ namespace FE
 
         inline ~RefCountPtr()
         {
-            if (m_Data == nullptr || --m_Data->Count)
-                return;
-            IAllocator* allocator = m_Data->Allocator;
-            bool makeShared       = m_Data->MakeShared;
-            // don't specify size here because T can be a different type since the pointer could have been casted
-            reinterpret_cast<T*>(m_Data->Ptr)->~T();
-            allocator->Deallocate(m_Data->Ptr, FE_SRCPOS());
-            if (makeShared)
-                return;
-            allocator->Deallocate(m_Data, FE_SRCPOS());
+            if (m_Object)
+            {
+                m_Object->ReleaseStrongRef();
+            }
         }
 
         inline T* GetRaw() const
         {
-            return static_cast<T*>(m_Data->Ptr);
+            return m_Object;
         }
 
         inline T& operator*()
@@ -124,14 +93,9 @@ namespace FE
             return GetRaw();
         }
 
-        inline Internal::RefCounter* GetImpl() const
-        {
-            return m_Data;
-        }
-
         inline operator bool() const
         {
-            return m_Data;
+            return m_Object;
         }
     };
 

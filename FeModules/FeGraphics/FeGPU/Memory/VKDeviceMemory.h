@@ -6,7 +6,7 @@ namespace FE::GPU
 {
     class VKDevice;
 
-    class VKDeviceMemory : public IDeviceMemory
+    class VKDeviceMemory : public Object<IDeviceMemory>
     {
         MemoryAllocationDesc m_Desc;
 

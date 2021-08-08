@@ -80,7 +80,7 @@ namespace FE
 
         inline void Zero() noexcept
         {
-            for (int i = 0; i < Nwords; ++i)
+            for (size_t i = 0; i < Nwords; ++i)
                 m_Data.R[i] = 0;
         }
 
@@ -175,6 +175,8 @@ namespace FE
         }
 
     public:
+        FE_STRUCT_RTTI(String, "340DE9B8-EC27-4248-9E0D-7D40330E8EBA");
+
         class Iterator
         {
             const TChar* m_Iter;
@@ -446,6 +448,11 @@ namespace FE
         inline String& Append(StringSlice str)
         {
             return Append(str.Data(), str.Size());
+        }
+
+        inline String& Append(TChar cp)
+        {
+            return Append(&cp, 1); // TODO: optimize this for single chars
         }
 
         inline String& Append(const TChar* str)

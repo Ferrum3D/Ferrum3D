@@ -32,6 +32,8 @@ namespace FE
         };
 
     public:
+        FE_CLASS_RTTI(SortedStringVector, "926CCA36-7C1E-4F18-A081-9BE1E79DBD5C");
+
         using iterator       = decltype(m_Data.begin());
         using const_iterator = decltype(m_Data.cbegin());
 
