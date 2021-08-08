@@ -24,7 +24,7 @@ namespace FE::GPU
 
     class VKInstance;
 
-    class VKDevice : public IDevice
+    class VKDevice : public Object<IDevice>
     {
         vk::UniqueDevice m_NativeDevice;
         vk::PhysicalDevice* m_NativeAdapter;

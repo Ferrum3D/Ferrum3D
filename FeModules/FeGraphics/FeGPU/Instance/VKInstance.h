@@ -4,7 +4,7 @@
 
 namespace FE::GPU
 {
-    class VKInstance : public IInstance
+    class VKInstance : public Object<IInstance>
     {
         // Destructors of class members in C++ are called in reverse order
         // so the loader must be declared first to be destructed after the instance

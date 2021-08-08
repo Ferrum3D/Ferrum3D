@@ -18,7 +18,7 @@ namespace FE::GPU
     class IInstance;
     class IAdapter;
 
-    class IDevice
+    class IDevice : public IObject
     {
     public:
         virtual ~IDevice() = default;

@@ -14,7 +14,7 @@ namespace FE::GPU
     {
     };
 
-    class IInstance
+    class IInstance : public IObject
     {
     public:
         virtual ~IInstance() = default;

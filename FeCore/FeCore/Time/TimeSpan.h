@@ -17,6 +17,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(TimeSpan, "F42DAA6C-53F3-4AA5-9971-9783D8754F6C");
+
         inline Int32 Years() const
         {
             return m_Data.tm_year;

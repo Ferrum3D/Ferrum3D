@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Memory/Object.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -15,7 +16,7 @@ namespace FE::GPU
         MemoryType Type;
     };
 
-    class IDeviceMemory
+    class IDeviceMemory : public IObject
     {
     public:
         virtual ~IDeviceMemory() = default;

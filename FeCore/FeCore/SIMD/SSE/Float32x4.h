@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/SIMDIntrin.h>
 
 #ifdef FE_SSE3_SUPPORTED
@@ -12,6 +13,8 @@ namespace FE
 
             struct Float32x4
             {
+                FE_STRUCT_RTTI(Float32x4, "7A8BB7B4-0841-4D71-A81D-D3F76828F08F");
+
                 inline static constexpr size_t ElementCount = 4;
 
                 __m128 Data;

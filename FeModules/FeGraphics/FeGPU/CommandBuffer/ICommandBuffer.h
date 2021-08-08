@@ -1,6 +1,7 @@
 #pragma once
-#include <FeGPU/Resource/ResourceState.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Memory/Object.h>
+#include <FeGPU/Resource/ResourceState.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -48,7 +49,7 @@ namespace FE::GPU
         }
     };
 
-    class ICommandBuffer
+    class ICommandBuffer : public IObject
     {
     public:
         virtual ~ICommandBuffer() = default;
@@ -60,7 +61,7 @@ namespace FE::GPU
         virtual void SetScissor(const Scissor& scissor)    = 0;
 
         virtual void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) = 0;
-        virtual void MemoryBarrier() = 0;
+        virtual void MemoryBarrier()                                                                   = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(

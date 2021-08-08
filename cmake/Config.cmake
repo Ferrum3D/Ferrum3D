@@ -9,6 +9,7 @@ endif()
 if (FE_COMPILER_MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(_ENABLE_EXTENDED_ALIGNED_STORAGE)
+    set(CMAKE_USE_WIN32_THREADS_INIT ON)
 endif()
 
 option(FE_USE_SSE3 "Set this option to use SSE3 instructions in engine" ON)

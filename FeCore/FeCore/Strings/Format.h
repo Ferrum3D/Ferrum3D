@@ -1,7 +1,7 @@
 #pragma once
+#include <FeCore/Base/Base.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Strings/String.h>
-#include <FeCore/Base/Base.h>
 #include <array>
 #include <cstdlib>
 #include <ostream>
@@ -77,6 +77,35 @@ namespace FE::Fmt
         void Format(String& buffer, const std::string_view& value) const override
         {
             buffer.Append(value.data(), value.size());
+        }
+    };
+
+    template<>
+    struct ValueFormatter<UUID> : BasicValueFormatter<UUID>
+    {
+        void Format(String& buffer, const UUID& value) const override
+        {
+            static char digits[] = "0123456789ABCDEF";
+            Int32 idx            = 0;
+            buffer.Reserve(buffer.Size() + 36);
+            auto append = [&](UInt32 n) {
+                for (UInt32 i = 0; i < n; ++i)
+                {
+                    UInt8 c = value.Data[idx++];
+                    buffer.Append(digits[(c & 0xF0) >> 4]);
+                    buffer.Append(digits[(c & 0x0F) >> 0]);
+                }
+            };
+
+            append(4);
+            buffer.Append('-');
+            append(2);
+            buffer.Append('-');
+            append(2);
+            buffer.Append('-');
+            append(2);
+            buffer.Append('-');
+            append(6);
         }
     };
 

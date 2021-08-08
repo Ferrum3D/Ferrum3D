@@ -20,7 +20,7 @@ namespace FE::GPU
         }
     }
 
-    class VKAdapter : public IAdapter
+    class VKAdapter : public Object<IAdapter>
     {
         AdapterDesc m_Desc;
         VKInstance* m_Instance;

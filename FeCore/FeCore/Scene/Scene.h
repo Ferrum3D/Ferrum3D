@@ -15,6 +15,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(EntityIterator, "D7F10571-83B4-4794-93E4-C090E0B00EB8");
+
         template<class Func>
         inline void ForEach(Func&& func)
         {
@@ -32,6 +34,8 @@ namespace FE
         entt::registry m_Registry;
 
     public:
+        FE_CLASS_RTTI(FeScene, "369F4356-1EB9-4461-84E8-B59D2E8067A1");
+
         inline Entity CreateEntity()
         {
             return Entity(m_Registry, m_Registry.create());

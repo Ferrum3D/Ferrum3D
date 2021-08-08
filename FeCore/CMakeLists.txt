@@ -25,6 +25,8 @@ set(SRC
 	FeCore/Memory/IAllocator.h
 	FeCore/Memory/IBasicAllocator.h
 	FeCore/Memory/Memory.h
+	FeCore/Memory/Object.h
+	FeCore/Memory/ReferenceCounter.h
 	FeCore/Memory/SharedPtr.h
 	FeCore/Memory/StackAllocator.h
 	
@@ -33,6 +35,7 @@ set(SRC
 	FeCore/Modules/Singleton.h
 
 	FeCore/RTTI/RTTI.h
+	FeCore/RTTI/Type.h
 	
 	FeCore/Scene/Entity.h
 	FeCore/Scene/Scene.h
@@ -68,6 +71,7 @@ fe_enable_sse_for_target(FeCore)
 
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
+set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCore rpmalloc entt)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)

@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE
 {
@@ -12,6 +13,8 @@ namespace FE
     class IAllocator
     {
     public:
+        FE_CLASS_RTTI(IAllocator, "F747D71B-3E32-43B0-84C7-DDA8377F5D8A");
+
         inline virtual ~IAllocator() = default;
 
         /**
@@ -95,14 +98,38 @@ namespace FE
     };
 
     /**
-     * @brief
+     * @brief Interface for allocator info.
+     * 
+     * Provides information like name and description.
     */
     class IAllocatorInfo
     {
     public:
-        virtual const char* GetName() const noexcept        = 0;
+        FE_CLASS_RTTI(IAllocatorInfo, "92D623F5-C9D4-41A3-9C99-101C81A93035");
+
+        /**
+         * @brief Get name of allocator.
+        */
+        virtual const char* GetName() const noexcept = 0;
+
+        /**
+         * @brief Get description of allocator.
+        */
         virtual const char* GetDescription() const noexcept = 0;
-        virtual bool Initialized() const noexcept           = 0;
-        virtual IAllocator* Get() noexcept                  = 0;
+
+        /**
+         * @brief Check if allocator is initialized.
+         * 
+         * Allocators must be initialized before first use. Every allocator implementation provides
+         * a member function Init(const Desc&) and a type alias `using Desc = MyAllocatorDesc;`
+         * 
+         * @return True if allocator was initialized and is ready to use.
+        */
+        virtual bool Initialized() const noexcept = 0;
+
+        /**
+         * @brief Get allocator interface.
+        */
+        virtual IAllocator* Get() noexcept = 0;
     };
 } // namespace FE

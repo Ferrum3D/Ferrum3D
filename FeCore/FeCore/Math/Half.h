@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <iostream>
 #include <limits>
 #include <stdint.h>
@@ -8,7 +9,7 @@ namespace FE
 {
     namespace FeHalfConst
     {
-        inline constexpr Float32 Denorm       = 1.0f / 16384.0f;
+        inline constexpr Float32 Denorm     = 1.0f / 16384.0f;
         inline constexpr Int32 BitsMantissa = 10;
         inline constexpr Int32 BitsExponent = 5;
         inline constexpr Int32 MaxExpVal    = 0x1f;
@@ -73,6 +74,8 @@ namespace FE
     */
     struct FeHalf
     {
+        FE_STRUCT_RTTI(FeHalf, "F6FB0AF8-5F42-4C0B-97D3-70079F094924");
+
         constexpr FeHalf() noexcept
             : m_data(0)
         {
@@ -231,7 +234,7 @@ namespace FE
                 {
                     Float32 mantissa = Float32(m_data.SEM.M) / 1024.0f;
                     Float32 sign     = (m_data.SEM.S) ? -1.0f : 1.0f;
-                    f.Data         = sign * mantissa * FeHalfConst::Denorm;
+                    f.Data           = sign * mantissa * FeHalfConst::Denorm;
                 }
             }
             else if (m_data.SEM.E == FeHalfConst::MaxExpVal)
@@ -407,7 +410,8 @@ namespace FE
     }
 } // namespace FE
 
-using half = FE::FeHalf;
+using half    = FE::FeHalf;
+using float16 = half;
 
 namespace std
 {

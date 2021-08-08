@@ -19,6 +19,7 @@ set(SRC
 
 add_executable(FeCoreTests ${SRC})
 
+set_target_properties(FeCoreTests PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCoreTests gtest gmock FeCore)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCoreTests PROPERTY SOURCES)

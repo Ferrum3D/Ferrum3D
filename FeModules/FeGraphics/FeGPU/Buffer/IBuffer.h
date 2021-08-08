@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Memory/Object.h>
 #include <FeGPU/Resource/IResource.h>
 #include <FeGPU/Memory/IDeviceMemory.h>
 
@@ -11,7 +12,7 @@ namespace FE::GPU
         UInt64 Size;
     };
 
-    class IBuffer
+    class IBuffer : public IObject
     {
     public:
         virtual ~IBuffer() = default;

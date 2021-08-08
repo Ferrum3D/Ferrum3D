@@ -7,7 +7,7 @@ namespace FE::GPU
 {
     class VKDevice;
 
-    class VKCommandBuffer : public ICommandBuffer
+    class VKCommandBuffer : public Object<ICommandBuffer>
     {
         VKDevice* m_Device;
         vk::UniqueCommandBuffer m_CommandBuffer;

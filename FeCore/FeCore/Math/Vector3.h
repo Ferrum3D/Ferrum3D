@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/CommonSIMD.h>
 #include <array>
 #include <cstdint>
@@ -28,7 +29,12 @@ namespace FE
         FE_FINLINE Vector3F(TVec vec) noexcept;
 
     public:
-        Vector3F() = default;
+        FE_STRUCT_RTTI(Vector3F, "FBD32DD3-C4C4-46DA-8F74-E9EA863BCAAD");
+
+        FE_FINLINE Vector3F()
+            : Vector3F(0, 0, 0)
+        {
+        }
 
         FE_FINLINE Vector3F(const Vector3F& other) noexcept;
 

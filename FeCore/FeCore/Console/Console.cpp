@@ -40,7 +40,7 @@ namespace FE::Console
             }
             else
             {
-                SetConsoleTextAttribute(ConHandle, DefaultColor & 0xF0 | (WORD)color);
+                SetConsoleTextAttribute(ConHandle, (DefaultColor & 0xF0) | (WORD)color);
             }
         }
 #elif defined(FE_LINUX)

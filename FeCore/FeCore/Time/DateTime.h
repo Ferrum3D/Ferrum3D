@@ -20,6 +20,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(DateTime, "9927EE14-F009-464A-A067-4E4CB7AFE56C");
+
         inline Int32 Year() const
         {
             return m_Data.tm_year + 1900;
@@ -60,7 +62,7 @@ namespace FE
 
         void Format(std::ostream& stream, const char* format = "[%m/%d/%Y %T]") const;
 
-        String DateTime::ToString(const char* format = "[%m/%d/%Y %T]") const;
+        String ToString(const char* format = "[%m/%d/%Y %T]") const;
 
         inline static DateTime CreateLocal(time_t time)
         {

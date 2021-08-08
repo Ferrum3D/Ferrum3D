@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Modules/Environment.h>
 #include <shared_mutex>
+#include <FeCore/Memory/Object.h>
 
 namespace FE
 {
@@ -33,6 +34,8 @@ namespace FE
         }
 
     public:
+        FE_CLASS_RTTI(Singleton<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
+
         /**
          * @brief Register the singleton instance.
         */
@@ -79,8 +82,10 @@ namespace FE
      * @brief Helper class that registers and unregisters derived implementations of T in Singleton<T>.
     */
     template<class T>
-    struct SingletonImplBase : public T
+    struct SingletonImplBase : public Object<T>
     {
+        FE_CLASS_RTTI(SingletonImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
+
         inline SingletonImplBase()
         {
             Singleton<T>::Register(this);
