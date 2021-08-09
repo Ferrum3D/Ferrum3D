@@ -5,9 +5,7 @@
 
 namespace FE
 {
-    /**
-     * @brief IBasicAllocator implementation that uses aligned versions malloc() and free().
-    */
+    //! \brief \ref IBasicAllocator implementation that uses aligned versions `malloc()` and `free()`.
     class BasicSystemAllocator : public IBasicAllocator
     {
     public:

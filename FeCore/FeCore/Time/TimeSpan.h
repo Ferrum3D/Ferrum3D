@@ -7,6 +7,7 @@
 
 namespace FE
 {
+    //! \brief Represents a time span: an interval between two instances of \ref DateTime.
     class TimeSpan
     {
         tm m_Data;

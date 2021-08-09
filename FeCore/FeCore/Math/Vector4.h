@@ -7,6 +7,7 @@
 
 namespace FE
 {
+    //! \brief 4-dimentional vector.
     class Vector4F
     {
         using TVec = SIMD::SSE::Float32x4;
@@ -49,43 +50,29 @@ namespace FE
 
         FE_FINLINE Vector4F(const std::array<Float32, 4>& array) noexcept;
 
-        /**
-         * @return Vector4F{ 0, 0, 0, 0 }.
-        */
+        //! \return Vector4F{ 0, 0, 0, 0 }.
         FE_FINLINE static Vector4F GetZero() noexcept;
 
-        /**
-         * @return Vector4F{ 1, 0, 0, 0 }.
-        */
+        //! \return Vector4F{ 1, 0, 0, 0 }.
         FE_FINLINE static Vector4F GetUnitX() noexcept;
 
-        /**
-         * @return Vector4F{ 0, 1, 0, 0 }.
-        */
+        //! \return Vector4F{ 0, 1, 0, 0 }.
         FE_FINLINE static Vector4F GetUnitY() noexcept;
 
-        /**
-         * @return Vector4F{ 0, 0, 1, 0 }.
-        */
+        //! \return Vector4F{ 0, 0, 1, 0 }.
         FE_FINLINE static Vector4F GetUnitZ() noexcept;
 
-        /**
-         * @return Vector4F{ 0, 0, 0, 1 }.
-        */
+        //! \return Vector4F{ 0, 0, 0, 1 }.
         FE_FINLINE static Vector4F GetUnitW() noexcept;
 
         FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
         FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
-        /**
-         * @return pointer to array of four floats.
-        */
+        //! \return A pointer to array of four floats (components of the vector).
         FE_FINLINE const Float32* Data() const noexcept;
 
-        /**
-         * @return Underlying SIMD type.
-        */
+        //! \return Underlying SIMD type.
         FE_FINLINE TVec GetSIMDVector() const noexcept;
 
         FE_FINLINE Float32 X() const noexcept;
@@ -102,37 +89,34 @@ namespace FE
 
         FE_FINLINE Float32 Dot(const Vector4F& other) const noexcept;
 
-        /**
-         * @return Squared length of the vector.
-        */
+        //! \return Squared length of the vector.
         FE_FINLINE Float32 LengthSq() const noexcept;
 
-        /**
-         * @return Length of the vector.
-        */
+        //! \return Length of the vector.
         FE_FINLINE Float32 Length() const noexcept;
 
-        /**
-         * @return New normalized vector, this vector is not modified.
-        */
+        //! \return New normalized vector, this vector is not modified.
         FE_FINLINE Vector4F Normalized() const noexcept;
 
-        /**
-         * @brief Linearly interpolate between this and destination.
-         * 
-         * The result is (dst - this) * f + this;
-         * 
-         * @param f Interpolation factor.
-         * @return New interpolated vector, this vector is not modified.
-        */
+        //! \brief Linearly interpolate between this and destination.
+        //!
+        //! The result is (dst - this) * f + this;
+        //!
+        //! \param [in] f - Interpolation factor.
+        //! 
+        //! \return New interpolated vector, this vector is not modified.
         FE_FINLINE Vector4F Lerp(const Vector4F& dst, Float32 f) const noexcept;
 
-        /**
-         * @brief Multiply each component of this vector with each component of other vector.
-         * @return New vector, this vector is not modified.
-        */
+        //! \brief Multiply each component of this vector with each component of other vector.
+        //! \return New vector, this vector is not modified.
         FE_FINLINE Vector4F MulEach(const Vector4F& other) const noexcept;
 
+        //! \brief Check if two vectors are approximately equal.
+        //!
+        //! \param [in] other   - The vector to compare this vector with.
+        //! \param [in] epsilon - Accepted difference between the two vectors.
+        //!
+        //! \return True if the vectors are approximately equal.
         FE_FINLINE bool IsApproxEqualTo(const Vector4F& other, Float32 epsilon = 0.0001f) const noexcept;
 
         FE_FINLINE bool operator==(const Vector4F& other) const noexcept;

@@ -6,6 +6,7 @@
 
 namespace FE
 {
+    //! \brief String class that uses \ref HeapAllocator and UTF-8 encoding.
     class String final
     {
         struct LongMode

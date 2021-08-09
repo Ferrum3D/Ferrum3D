@@ -37,7 +37,7 @@ namespace FE
             UInt16 M : FeHalfConst::BitsMantissa;
             UInt16 E : FeHalfConst::BitsExponent;
             UInt16 S : 1;
-        } SEM; // Sign-Exponent-Mantissa
+        } SEM; //!< Sign-Exponent-Mantissa
 
         constexpr HalfFormat(UInt16 b)
             : Data(b)
@@ -54,7 +54,7 @@ namespace FE
             UInt32 M : FeHalfConst::FloatBitsMantissa;
             UInt32 E : FeHalfConst::FloatBitsExponent;
             UInt32 S : 1;
-        } SEM; // Sign-Exponent-Mantissa
+        } SEM; //!< Sign-Exponent-Mantissa
     };
 
     union DoubleFormat
@@ -66,12 +66,10 @@ namespace FE
             UInt64 M : FeHalfConst::DoubleBitsMantissa;
             UInt64 E : FeHalfConst::DoubleBitsExponent;
             UInt64 S : 1;
-        } SEM; // Sign-Exponent-Mantissa
+        } SEM; //!< Sign-Exponent-Mantissa
     };
 
-    /**
-    * @brief Half-precision floating point.
-    */
+    //! \brief Half-precision floating point.
     struct FeHalf
     {
         FE_STRUCT_RTTI(FeHalf, "F6FB0AF8-5F42-4C0B-97D3-70079F094924");

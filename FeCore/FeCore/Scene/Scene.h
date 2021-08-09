@@ -29,6 +29,7 @@ namespace FE
         }
     };
 
+    // \brief Represents a scene in ECS.
     class FeScene
     {
         entt::registry m_Registry;

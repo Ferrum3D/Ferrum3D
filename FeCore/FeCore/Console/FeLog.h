@@ -3,24 +3,16 @@
 
 namespace FE
 {
-    /**
-     * @brief Log a message using currently registered instance of FE::Debug::IConsoleLogger.
-    */
+    //! brief Log a message using currently registered instance of FE::Debug::IConsoleLogger.
 #define FE_LOG_MESSAGE(...) ::FE::Singleton<::FE::Debug::IConsoleLogger>::Get()->LogMessage(__VA_ARGS__)
 
-    /**
-     * @brief Log an error using currently registered instance of FE::Debug::IConsoleLogger.
-    */
+    //! \brief Log an error using currently registered instance of FE::Debug::IConsoleLogger.
 #define FE_LOG_ERROR(...) ::FE::Singleton<::FE::Debug::IConsoleLogger>::Get()->LogError(__VA_ARGS__)
 
-    /**
-     * @brief Log a warning using currently registered instance of FE::Debug::IConsoleLogger.
-    */
+    //! \brief Log a warning using currently registered instance of FE::Debug::IConsoleLogger.
 #define FE_LOG_WARNING(...) ::FE::Singleton<::FE::Debug::IConsoleLogger>::Get()->LogWarning(__VA_ARGS__)
 
-    /**
-     * @brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
-    */
+    //! \brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
 #define FE_ASSERT(expr)                                                                                                          \
     do                                                                                                                           \
     {                                                                                                                            \
@@ -32,9 +24,7 @@ namespace FE
     }                                                                                                                            \
     while (0)
 
-    /**
-     * @brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
-    */
+    //! \brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
 #define FE_ASSERT_MSG(_Stmt, ...)                                                                                                \
     do                                                                                                                           \
     {                                                                                                                            \
@@ -46,8 +36,6 @@ namespace FE
     }                                                                                                                            \
     while (0)
 
-    /**
-     * @brief Equivalent to FE_ASSERT_MSG(false, ...)
-    */
+    //! \brief Equivalent to FE_ASSERT_MSG(false, ...)
 #define FE_UNREACHABLE(...) FE_ASSERT_MSG(false, __VA_ARGS__)
 } // namespace FE

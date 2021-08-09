@@ -1,7 +1,7 @@
 #pragma once
+#include <FeCore/Base/Base.h>
 #include <FeCore/Memory/IBasicAllocator.h>
 #include <FeCore/Strings/FeUnicode.h>
-#include <FeCore/Base/Base.h>
 #include <FeCore/Utils/Result.h>
 #include <array>
 #include <mutex>
@@ -14,133 +14,120 @@ namespace FE::Env
 
     namespace Internal
     {
-        // Internal interface, implemented only once, used internally in this namespace only
+        // Internal interface, implemented only once, used internally in this namespace only.
         class IEnvironment;
     } // namespace Internal
 
-    /**
-     * @brief Create a variable by unique name.
-     * 
-     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
-     * 
-     * @tparam T Type of variable to create.
-     * @param name Unique name of variable to create.
-     * @return The created variable.
-    */
+    //! \brief Create a variable by unique name.
+    //!
+    //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
+    //!
+    //! \tparam T        - Type of variable to create.
+    //! \param [in] name - Unique name of variable to create.
+    //!
+    //! \return The created variable.
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariable(std::string_view name, Args&&... args);
 
-    /**
-     * @brief Create a variable by its type name.
-     * 
-     * Creates a global variable or finds an existing with the same identifier. Shared between different modules.
-     * 
-     * @tparam T Type of variable to create.
-     * @param value Value to initialize the variable with.
-     * @return The created variable.
-    */
+    //! \brief Create a variable by its type name.
+    //!
+    //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
+    //!
+    //! \tparam T         - Type of variable to create.
+    //! \param [in] value - Value to initialize the variable with.
+    //!
+    //! \return The created variable.
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariableByType(Args&&... args);
 
-    /**
-     * @brief Allocate global variable storage.
-     * 
-     * Creates a global variable by unique ID, but doesn't initilize it.
-     * 
-     * @tparam T Type of variable to allocate.
-     * @param id Unique ID of variable to allocate.
-     * @return The allocated variable.
-    */
+    //! \brief Allocate global variable storage.
+    //!
+    //! Creates a global variable by unique ID, but doesn't initilize it.
+    //!
+    //! \tparam T      - Type of variable to allocate.
+    //! \param [in] id - Unique ID of variable to allocate.
+    //!
+    //! \return The allocated variable.
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(UInt32 id);
 
-    /**
-     * @brief Allocate global variable storage.
-     *
-     * Creates a global variable by unique name, but doesn't initilize it.
-     *
-     * @tparam T Type of variable to allocate.
-     * @param name Unique name of variable to allocate.
-     * @return The allocated variable.
-    */
+    //! \brief Allocate global variable storage.
+    //!
+    //! Creates a global variable by unique name, but doesn't initilize it.
+    //!
+    //! \tparam T        - Type of variable to allocate.
+    //! \param [in] name - Unique name of variable to allocate.
+    //!
+    //! \return The allocated variable.
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(std::string_view name);
 
-    /**
-     * @brief Find global variable by its name.
-     *
-     * Variable must be created by name before calling this function. Returns an Error result if variable was not found.
-     *
-     * @tparam T Type of variable to find.
-     * @param name Unique name of variable to find.
-     * @return The result that can contain the variable.
-    */
+    //! \brief Find global variable by its name.
+    //!
+    //! Variable must be created by name before calling this function. Returns an Error result if variable was not found.
+    //!
+    //! \tparam T        - Type of variable to find.
+    //! \param [in] name - Unique name of variable to find.
+    //! \return The result that can contain the variable.
     template<class T>
     Result<GlobalVariable<T>> FindGlobalVariable(std::string_view name);
 
-    /**
-     * @brief Find global variable by its name.
-     *
-     * Variable must be created by type before calling this function. Returns an Error result if variable was not found.
-     *
-     * @tparam T Type of variable to find.
-     * @return The result that can contain the variable.
-    */
+    //! \brief Find global variable by its name.
+    //!
+    //! Variable must be created by type before calling this function. Returns an Error result if variable was not found.
+    //!
+    //! \tparam T - Type of variable to find.
+    //! \return The result that can contain the variable.
     template<class T>
     Result<GlobalVariable<T>> FindGlobalVariableByType();
 
-    /**
-     * @brief Create global environment.
-     * 
-     * A custom allocator can be provided. If the provided allocator was nullptr, aligned versions
-     * of malloc() and free() will be used to allocate storage for global variables.
-     * 
-     * @param allocator Custom allocator.
-    */
+    //! \brief Create global environment.
+    //!
+    //! A custom allocator can be provided. If the provided allocator was `nullptr`, aligned versions
+    //! of `malloc()` and `free()` will be used to allocate storage for global variables.
+    //!
+    //! \param [in] allocator - Custom allocator.
     void CreateEnvironment(IBasicAllocator* allocator = nullptr);
 
-    /**
-     * @brief Get global environment instance.
-     * 
-     * Global environment must be created before any calls to this function. Unlike other singletons, the
-     * environment won't be created automatically. This function will throw if the environment was not
-     * created and attached to this module.
-    */
+    //! \brief Get global environment instance.
+    //!
+    //! Global environment must be created before any calls to this function. Unlike other singletons, the
+    //! environment won't be created automatically. This function will throw if the environment was not
+    //! created and attached to this module.
     Internal::IEnvironment& GetEnvironment();
 
-    /**
-     * @brief Attach an instance of global environment to this module.
-     * 
-     * This function will most likely be called from another module that already have an environment attached
-     * or created.
-     * 
-     * @param instance Instance of global environment to attach.
-    */
+    //! \brief Attach an instance of global environment to this module.
+    //!
+    //! This function will most likely be called from another module that already have an environment attached
+    //! or created.
+    //!
+    //! \param [in] instance - Instance of global environment to attach.
     void AttachEnvironment(Internal::IEnvironment& instance);
 
-    /**
-     * @brief Detach global environment.
-     * 
-     * If the current module is the owner of global environment, it will be released, all variables will be
-     * deallocated and destructed. If the current module isn't the owner of environment, it will just set
-     * the module-local pointer to environment to nullptr.
-    */
+    //! \brief Detach global environment.
+    //!
+    //! If the current module is the owner of global environment, it will be released, all variables will be
+    //! deallocated and destructed. If the current module isn't the owner of environment, it will just set
+    //! the module-local pointer to environment to `nullptr`.
     void DetachEnvironment();
 
-    /**
-     * @brief Checks if the global environment exists and is attached to the current module.
-     * @return True if environment is attached.
-    */
+    //! \brief Checks if the global environment exists and is attached to the current module.
+    //!
+    //! \return True if environment is attached.
     bool EnvironmentAttached();
 
+    //! \internal
     namespace Internal
     {
+        //! \brief Type of error returned by environment functions.
         enum class VariableError : UInt8
         {
-            NotFound,
-            AllocationError
+            NotFound,       //!< Variable was not found.
+            AllocationError //!< Couldn't allocate variable because of an allocation error.
+                            //!< This is typically a fatal unrecoverable error, but some allocators can collect garbage.
         };
 
+        //! \brief Type of success result returned by environment functions.
         enum class VariableOk : UInt8
         {
             Created,
@@ -148,25 +135,39 @@ namespace FE::Env
             Removed
         };
 
+        //! \brief Specialization of \ref Result that uses \ref VaiableError and \ref VariableOk
         using VariableResult = Result<void*, VariableError, VariableOk>;
 
+        //! \brief Environment interface.
+        //!
+        //! This is an internal-only interface that should not be exposed to engine users. Only one instance across
+        //! all engine modules is allowed.
         class IEnvironment
         {
         public:
             virtual ~IEnvironment() = default;
 
+            //! \brief Find a global variable.
+            //! \see FE::Env::FindGlobalVariable
             virtual VariableResult FindVariable(std::string_view name) = 0;
 
+            //! \brief Create a global variable.
+            //! \see FE::Env::CreateGlobalVariable
             virtual VariableResult CreateVariable(
                 std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) = 0;
 
+            //! \brief Remove a global variable.
+            //! \see FE::Env::RemoveGlobalVariable
             virtual VariableResult RemoveVariable(std::string_view name) = 0;
 
+            //! \brief Get the allocator currently used by the environment.
             virtual FE::IBasicAllocator* GetAllocator() = 0;
 
+            //! \brief Destroy the environment.
             virtual void Destroy() = 0;
         };
 
+        //! \brief Storage of global variable. Allocated once for variable.
         template<class T>
         class GlobalVariableStorage
         {
@@ -179,6 +180,9 @@ namespace FE::Env
             friend class GlobalVariable<T>;
 
         public:
+            //! \brief Create uninitialized global variable storage.
+            //!
+            //! \param [in] name - Unique name of global variable.
             inline GlobalVariableStorage(std::string_view name)
                 : m_Name(name)
                 , m_RefCount(0)
@@ -186,6 +190,10 @@ namespace FE::Env
             {
             }
 
+            //! \brief Call variable's constructor.
+            //!
+            //! \tparam Args     - Types of arguments to call the constructor with.
+            //! \param [in] args - Arguments to call the constructor with.
             template<class... Args>
             inline void Construct(Args&&... args)
             {
@@ -194,6 +202,7 @@ namespace FE::Env
                 m_IsConstructed = true;
             }
 
+            //! \brief Call variable's destructor. This function does _not_ deallocate memory.
             inline void Destruct()
             {
                 std::unique_lock lk(m_Mutex);
@@ -201,27 +210,36 @@ namespace FE::Env
                 m_IsConstructed = false;
             }
 
+            //! \brief Check if variable was constructed.
+            //!
+            //! \return True if \ref Construct was called.
             inline bool IsConstructed() const
             {
                 return m_IsConstructed;
             }
 
+            //! \brief Get underlying variable.
             inline T& Get()
             {
                 return *reinterpret_cast<T*>(&m_Storage);
             }
 
+            //! \brief Get underlying variable.
             inline const T& Get() const
             {
                 return *reinterpret_cast<const T*>(&m_Storage);
             }
 
+            //! \brief Add a reference to internal counter.
             inline void AddRef()
             {
                 std::unique_lock lk(m_Mutex);
                 ++m_RefCount;
             }
 
+            //! \breif Remove a reference from internal counter.
+            //!
+            //! This function will call variable's destructor and deallocate memory if the reference counter reaches zero.
             inline void Release()
             {
                 std::unique_lock<std::mutex> lk(m_Mutex);
@@ -241,6 +259,11 @@ namespace FE::Env
             }
         };
 
+        //! \brief Allocate \ref GlobalVariableStorage for a global variable.
+        //!
+        //! \param [in] name - A vector of characters that represents the name of the variable.
+        //!
+        //! \return The allocated \ref GlobalVariableStorage.
         template<class T>
         inline GlobalVariableStorage<T>* AllocateVariableStorage(std::vector<char>&& name)
         {
@@ -260,12 +283,14 @@ namespace FE::Env
             return storage;
         }
 
+        //! \breif Attach an instance of global environment to current module.
         inline void AttachGlobalEnvironment(void* environmentPointer)
         {
             FE_CORE_ASSERT(!EnvironmentAttached(), "Attempt to attach second environment");
             FE::Env::AttachEnvironment(*static_cast<IEnvironment*>(environmentPointer));
         }
 
+        //! \brief Implementation of \ref FE::Env::CreateGlobalVariable
         template<class T, class... Args>
         inline GlobalVariable<T> CreateGlobalVariableImpl(std::vector<char>&& name, Args&&... args)
         {
@@ -277,13 +302,11 @@ namespace FE::Env
         }
     } // namespace Internal
 
-    /**
-     * @brief Shared pointer to global variable storage.
-     * 
-     * Size of this class is same as size of a pointer. It implements intrusive reference counted pointer.
-     * 
-     * @tparam T Type of the variable that this class holds.
-    */
+    //! \brief Shared pointer to global variable storage.
+    //!
+    //! Size of this class is same as size of a pointer. It implements intrusive reference counted pointer.
+    //!
+    //! \tparam T Type of the variable that this class holds.
     template<class T>
     class GlobalVariable
     {
@@ -292,9 +315,7 @@ namespace FE::Env
     public:
         using StorageType = Internal::GlobalVariableStorage<T>;
 
-        /**
-         * @brief Create a _null_ global variable.
-        */
+        //! \brief Create a _null_ global variable.
         inline GlobalVariable()
             : m_Storage(nullptr)
         {
@@ -332,23 +353,18 @@ namespace FE::Env
             return *this;
         }
 
-        /**
-         * @brief Get name of the global variable.
-         * 
-         * The name is either a normal string, which represents a user-defined unique variable name, or a special
-         * environment-generated name, it starts from a '#'. A special name is either a hexadecimal 8-digit (32-bit)
-         * number generated from unique variable IDs, or a type name.
-         * 
-         * @return 
-        */
+        //! \brief Get name of the global variable.
+        //!
+        //! The name is either a normal string, which represents a user-defined unique variable name, or a special
+        //! environment-generated name that starts from a '#'.
+        //!
+        //! \return The name of the variable.
         inline std::string_view GetName() const
         {
             return m_Storage->m_Name;
         }
 
-        /**
-         * @brief Set this variable to _null_.
-        */
+        //! \brief Set this variable to _null_.
         inline void Reset()
         {
             GlobalVariable{}.Swap(*this);
@@ -362,19 +378,17 @@ namespace FE::Env
                 m_Storage->Release();
         }
 
-        /**
-         * @brief Check if the variable is not empty and is constructed (initialized).
-         * @return True if constructed.
-        */
+        //! \brief Check if the variable is not empty and is constructed (initialized).
+        //!
+        //! \return True if constructed.
         inline bool IsConstructed()
         {
             return m_Storage && m_Storage->IsConstructed();
         }
 
-        /**
-         * @brief Swap contents of two variables. Potentially faster than just std::swap().
-         * @param other The variable to swap the content with.
-        */
+        //! \brief Swap contents of two variables.
+        //!
+        //! \param [in] other - The variable to swap the content with.
         inline void Swap(GlobalVariable& other)
         {
             auto* t         = other.m_Storage;
@@ -416,18 +430,14 @@ namespace FE::Env
         }
     };
 
-    /**
-     * @brief Compares names of two variables.
-    */
+    //! \brief Compares names of two variables.
     template<class T>
     inline bool operator==(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {
         return x.GetName() == y.GetName();
     }
 
-    /**
-     * @brief Compares names of two variables.
-    */
+    //! \brief Compares names of two variables.
     template<class T>
     inline bool operator!=(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {

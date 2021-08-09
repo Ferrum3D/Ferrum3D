@@ -10,6 +10,7 @@ namespace FE
     using UTF8::TCodepoint;
     using UTF8::TCodepointTraits;
 
+    //! \brief A slice of \ref String.
     class StringSlice final
     {
         const TChar* m_Data;
