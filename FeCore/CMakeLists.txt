@@ -35,7 +35,6 @@ set(SRC
 	FeCore/Modules/Singleton.h
 
 	FeCore/RTTI/RTTI.h
-	FeCore/RTTI/Type.h
 	
 	FeCore/Scene/Entity.h
 	FeCore/Scene/Scene.h

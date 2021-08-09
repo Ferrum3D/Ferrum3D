@@ -4,9 +4,7 @@
 
 namespace FE::Debug
 {
-    /**
-     * @brief Implementation of IConsoleLogger that prints messages to stdout.
-    */
+    //! \brief Implementation of IConsoleLogger that prints messages to stdout.
     class ConsoleLogger : public FE::SingletonImplBase<IConsoleLogger>
     {
         LogMessageType m_DebugLevel = LogMessageType::All;

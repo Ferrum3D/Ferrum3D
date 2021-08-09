@@ -4,6 +4,7 @@
 
 namespace FE
 {
+    //! \brief Represents an entity in ECS.
     class Entity
     {
         friend class Scene;

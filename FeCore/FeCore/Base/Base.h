@@ -20,35 +20,41 @@ namespace FE
     using Float32 = float;
     using Float64 = double;
 
-    /**
-     * @brief Name of the engine
-     */
+    //! \brief Name of engine.
     inline constexpr const char* FerrumEngineName = "Ferrum3D";
 
 #ifdef FE_DEBUG
+    //! \brief True on debug builds.
     inline constexpr bool IsDebugBuild = true;
 #else
     inline constexpr bool IsDebugBuild = false;
 #endif
 
-    /**
-     * @brief Engine version
-     */
+    //! \brief Engine version.
     inline constexpr struct
     {
         int Major = 0, Minor = 1, Patch = 0;
     } Ferrum3DVersion;
 
+    //! \brief Empty structure with no members.
     struct EmptyStruct
     {
     };
 
+    //! \brief Position in source file.
+    //!
+    //! Represents source position as name of file and function and line number.
     struct SourcePosition
     {
-        const char* FileName;
-        const char* FuncName;
-        int LineNumber;
+        const char* FileName; //!< Name of source file.
+        const char* FuncName; //!< Name of function.
+                              //!< This can be a fuction signature depending on compiler.
 
+        int LineNumber; //!< Number of line in source file.
+
+        //! Create a source position with specified data.
+        //!
+        //! \note It's recommended to use macros: \ref FE_SRCPOS and \ref FE_STATIC_SRCPOS
         inline SourcePosition(const char* file, const char* func, int line) noexcept
             : FileName(file)
             , FuncName(func)
@@ -60,13 +66,20 @@ namespace FE
 #define FE_SRCPOS() ::FE::SourcePosition(__FILE__, FE_FUNCSIG, __LINE__)
 #define FE_STATIC_SRCPOS(name) static ::FE::SourcePosition name(__FILE__, FE_FUNCSIG, __LINE__)
 
+    //! \internal
     namespace Internal
     {
+        //! \brief A simple `std::string_view` wrapper
+        //!
+        //! This is useful for function signatures when compiling with MSVC. `std::string_view` is a template class
+        //! (`std::basic_string_view< ... >`). It makes difficult to retrieve typename from a template function
+        //! signature since it makes more than one template.
         struct SVWrapper
         {
-            std::string_view value;
+            std::string_view value; //!< Actual value of the string view.
         };
 
+        //! \brief Remove leading and trailing spaces from a string view.
         inline constexpr std::string_view TrimTypeName(std::string_view name)
         {
             name.remove_prefix(name.find_first_not_of(" "));
@@ -74,6 +87,7 @@ namespace FE
             return name;
         }
 
+        //! \brief Internal implementation of \ref FE::TypeName.
         template<class T>
         inline constexpr SVWrapper TypeNameImpl()
         {
@@ -89,43 +103,62 @@ namespace FE
             return SVWrapper{ TrimTypeName(fn) };
         }
     } // namespace Internal
+    //! \endinternal
 
+    //! \brief Get name of a type as a compile-time constant.
+    //!
+    //! This implementation uses the `__PRETTY_FUNCTION__` hack to retrieve typename from a function signature
+    //! at compile-time.
     template<class T>
     inline constexpr std::string_view TypeName()
     {
         return Internal::TypeNameImpl<T>().value;
     }
 
+    //! \brief Calculate hash of type T.
     template<class T>
     inline size_t TypeHash()
     {
         return std::hash<std::string_view>{}(Internal::TypeNameImpl<T>().value);
     }
 
+    //! \brief Align up an integer.
+    //! \param [in] x     - Value to align.
+    //! \param [in] align - Alignment to use.
     template<class T>
     inline constexpr T AlignUp(T x, T align)
     {
         return (x + (align - 1u)) & ~(align - 1u);
     }
 
+    //! \brief Align up an integer.
+    //! \param [in] x     - Value to align.
+    //! \tparam A         - Alignment to use.
     template<UInt32 A, class T>
     inline constexpr T AlignUp(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
     }
 
+    //! \brief Align down an integer.
+    //! \param [in] x     - Value to align.
+    //! \param [in] align - Alignment to use.
     template<class T>
     inline constexpr T AlignDown(T x, T align)
     {
         return ((x) & ~(align - 1));
     }
 
+    //! \brief Align down an integer.
+    //! \param [in] x     - Value to align.
+    //! \tparam A         - Alignment to use.
     template<UInt32 A, class T>
     inline constexpr T AlignDown(T x)
     {
         return ((x) & ~(A - 1));
     }
 
+    //! TODO: move to math.
     inline constexpr UInt32 NextPowerOf2(UInt32 v)
     {
         v--;
@@ -138,6 +171,7 @@ namespace FE
         return v;
     }
 
+    //! TODO: move to math.
     inline constexpr char IntToHexChar(Int32 n)
     {
         return "0123456789ABCDEF"[n];
@@ -145,12 +179,14 @@ namespace FE
 
 #ifdef FE_COMPILER_MSVC
 
+    //! TODO: move to math.
     UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
     {
         unsigned long tz = 0;
         return _BitScanForward(&tz, value) ? tz : 32;
     }
 
+    //! TODO: move to math.
     UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
     {
         unsigned long lz = 0;
@@ -159,11 +195,13 @@ namespace FE
 
 #else
 
+    //! TODO: move to math.
     UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
     {
         return __builtin_ctz(value);
     }
 
+    //! TODO: move to math.
     UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
     {
         return __builtin_clz(value);
@@ -171,7 +209,9 @@ namespace FE
 
 #endif
 
-    // assertion without loggers, used in modules on which loggers depend
+    //! \brief Assertion without loggers, used in modules on which loggers depend.
+    //! 
+    //! If assertion fails this function will use \ref FE_DEBUGBREAK.
 #define FE_CORE_ASSERT(expression, msg)                                                                                          \
     do                                                                                                                           \
     {                                                                                                                            \
@@ -183,6 +223,7 @@ namespace FE
     }                                                                                                                            \
     while (0)
 
+    //! \brief Declare a typed enum with bitwise operators.
 #define FE_TYPED_ENUM(_name, _type)                                                                                              \
     enum class _name : _type;                                                                                                    \
     inline _name operator|(_name a, _name b)                                                                                     \
@@ -221,18 +262,6 @@ namespace FE
                                                                                                                                  \
     enum class _name : _type
 
+    //! \brief Declare an enum with bitwise operators.
 #define FE_ENUM(_name) FE_TYPED_ENUM(_name, Int32)
-
-#define FE_ENUM_TO_STR(_name)                                                                                                    \
-    inline std::ostream& operator<<(std::ostream& stream, _name parameter)                                                       \
-    {                                                                                                                            \
-        switch (parameter)
-
-#define FE_ENUM_STR_CASE(_name)                                                                                                  \
-    case _name:                                                                                                                  \
-        return stream << #_name
-#define FE_ENUM_STR_CASE_DEF(_name)                                                                                              \
-    default:                                                                                                                     \
-        return stream << #_name << "::{Unknown}";                                                                                \
-        }
 } // namespace FE

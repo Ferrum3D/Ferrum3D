@@ -4,35 +4,30 @@
 
 namespace FE
 {
-    /**
-     * @brief Basic allocator, provides interface similar to malloc() and free().
-     * 
-     * This interface is used to allocate global environment and other allocators.
-    */
+    //! @brief Basic allocator, provides interface similar to `malloc()` and `free()`.
+    //!
+    //! This interface is used to allocate global environment and other allocators.
     class IBasicAllocator
     {
     public:
         FE_CLASS_RTTI(IBasicAllocator, "1D908F99-58A1-451D-A073-5E4226D59C80");
 
-        /**
-         * @brief Allocate a block of memory.
-         * @param size Size of block to allocate.
-         * @param alignment Alignment of block to allocate.
-         * @return The pointer to the allocated block.
-        */
+        //! \brief Allocate a block of memory.
+        //!
+        //! \param size      - Size of block to allocate.
+        //! \param alignment - Alignment of block to allocate.
+        //!
+        //! \return The pointer to the allocated block.
         virtual void* Allocate(size_t size, size_t alignment) = 0;
 
-        /**
-         * @brief Deallocate memory at pointer.
-         * @param ptr Pointer returned by IBasicAllocator::Allocate function.
-        */
+        //! \brief Deallocate memory at pointer.
+        //! \param ptr - Pointer returned by \ref IBasicAllocator::Allocate function.
         virtual void Deallocate(void* ptr) = 0;
     };
 
-    /**
-     * @brief Wrapper on IBasicAllocator compatible with std::allocator.
-     * @tparam T Type of values to allocate.
-    */
+    //! @brief Wrapper on \ref IBasicAllocator compatible with `std::allocator`.
+    //!
+    //! @tparam T Type of values to allocate.
     template<class T>
     class StdBasicAllocator
     {

@@ -6,12 +6,14 @@
 
 namespace FE
 {
+    //! \brief A struct to work with UUIDs.
     struct alignas(16) UUID
     {
         std::array<UInt8, 16> Data{};
 
         inline UUID() = default;
 
+        //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline UUID(const char* str)
         {
             static char digits[]    = "0123456789ABCDEF";
@@ -53,6 +55,9 @@ namespace FE
 
 namespace std
 {
+    // TODO: Get rid of std::hash, we need compile-time hash calculation.
+
+    //!\ brief Calculate hash of a \ref FE::UUID.
     template<>
     struct hash<FE::UUID>
     {

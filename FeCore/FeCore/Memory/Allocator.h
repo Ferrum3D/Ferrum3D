@@ -6,16 +6,14 @@
 
 namespace FE
 {
-    /**
-     * @brief Global allocator holder.
-     * 
-     * This class works just like FE::Singleton<T>, but keeps the entire allocator object in an Env::GlobalVariable<T>
-     * and has some allocator-specific functions.
-     * 
-     * TAlloc must derive from FE::AllocatorBase.
-     * 
-     * @tparam TAlloc Type of allocator.
-    */
+    //! \brief Global allocator holder.
+    //!
+    //! This class works just like \ref FE::Singleton<T>, but keeps the entire allocator object in an \ref Env::GlobalVariable<T>
+    //! and has some allocator-specific functions.
+    //!
+    //! TAlloc must derive from \ref FE::AllocatorBase.
+    //!
+    //! \tparam TAlloc - Type of allocator.
     template<class TAlloc>
     class GlobalAllocator
     {
@@ -31,10 +29,8 @@ namespace FE
     public:
         FE_CLASS_RTTI(GlobalAllocator<TAlloc>, "1EF91D3D-58ED-4E4E-8AAC-206072D356CE");
 
-        /**
-         * @brief Get instance of allocator. Must be already created.
-         * @return Reference to allocator instance.
-        */
+        //! \brief Get instance of allocator. Must be already created.
+        //! \return Reference to allocator instance.
         inline static IAllocator& Get()
         {
             if (!m_Instance)
@@ -43,10 +39,8 @@ namespace FE
             return *m_Instance;
         }
 
-        /**
-         * @brief Get allocator info. Must be already created.
-         * @return Reference to allocator info.
-        */
+        //! \brief Get allocator info. Must be already created.
+        //! \return Reference to allocator info.
         inline static IAllocatorInfo& GetInfo()
         {
             if (!m_Instance)
@@ -55,14 +49,12 @@ namespace FE
             return *m_Instance;
         }
 
-        /**
-         * @brief Create an instance of allocator and call it's Init() member function.
-         * 
-         * This function will try to find instance of this allocator if it doesn't exist in current module.
-         * If the allocator is not found anywhere in global environment, it will be created and initialized.
-         * 
-         * @param desc Allocator configuration struct.
-        */
+        //! \brief Create an instance of allocator and call it's `Init()` member function.
+        //!
+        //! This function will try to find instance of this allocator if it doesn't exist in current module.
+        //! If the allocator is not found anywhere in global environment, it will be created and initialized.
+        //!
+        //! \param [in] desc - Allocator configuration struct.
         inline static void Init(const typename TAlloc::Desc& desc)
         {
             if (!m_Instance)
@@ -71,19 +63,16 @@ namespace FE
                 m_Instance->Init(desc);
         }
 
-        /**
-         * @brief Remove reference to the allocator from this module.
-        */
+        //! \brief Remove reference to the allocator from this module.
         inline static void Destroy()
         {
             FE_CORE_ASSERT(m_Instance, "Allocator must be created before first use");
             m_Instance.Reset();
         }
 
-        /**
-         * @brief Check if the allocator is created and ready to use.
-         * @return True if allocator is initialized.
-        */
+        //! \brief Check if the allocator is created and ready to use.
+        //! 
+        //! \return True if allocator is initialized.
         inline static bool Initialized()
         {
             if (!m_Instance)

@@ -4,6 +4,7 @@
 
 namespace FE
 {
+    //! \brief Represents date and time.
     class DateTime
     {
         tm m_Data;

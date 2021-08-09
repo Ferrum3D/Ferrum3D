@@ -9,15 +9,20 @@ namespace FE
     {
         namespace SSE
         {
-            // separate definitions and declarations, so that compiler explorer will show assembly for this code
+            // Separate definitions and declarations, so that compiler explorer will show assembly for this code.
 
+            //! \brief A wrapper on SSE vector (`__m128`) that provides operator overloading.
+            //! 
+            //! This struct provides interface that hides ugly _mm_XXX(...) functions and makes it easier to work with SIMD.
+            //! It also exists to provide scalar (non-SIMD) implementation for older processors.
+            //! The provided functions use SSE4.1, but it's planned to conditionally compile them for SSE3 only as an option.
             struct Float32x4
             {
                 FE_STRUCT_RTTI(Float32x4, "7A8BB7B4-0841-4D71-A81D-D3F76828F08F");
 
-                inline static constexpr size_t ElementCount = 4;
+                inline static constexpr size_t ElementCount = 4; //!< Number of elements in a vector.
 
-                __m128 Data;
+                __m128 Data; //!< Underlying SIMD vector type.
 
                 Float32x4() = default;
 
@@ -25,10 +30,13 @@ namespace FE
 
                 FE_FINLINE Float32x4(Float32 value);
 
+                //! \brief Set Data = { x, y, z, 0 }
                 FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z);
 
+                //! \brief Set Data = { x, y, z, w }
                 FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z, Float32 w);
 
+                //! \brief Get { 0, 0, 0, 0 }
                 FE_FINLINE static Float32x4 GetZero() noexcept;
 
                 template<size_t F3, size_t F2, size_t F1, size_t F0>
