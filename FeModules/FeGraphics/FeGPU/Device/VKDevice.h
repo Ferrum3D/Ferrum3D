@@ -1,4 +1,5 @@
 #pragma once
+#include <FeGPU/Common/VKConfig.h>
 #include <FeCore/Console/FeLog.h>
 #include <FeGPU/Device/IDevice.h>
 #include <FeGPU/Instance/IInstance.h>
@@ -13,6 +14,8 @@ namespace FE::GPU
         UInt32 QueueCount;
         CommandQueueClass Class;
         vk::UniqueCommandPool CmdPool;
+
+        FE_STRUCT_RTTI(VKQueueFamilyData, "95E71464-EA4F-42C3-8838-881FCE46754D");
 
         inline VKQueueFamilyData(UInt32 idx, UInt32 count, CommandQueueClass cmdListClass)
             : FamilyIndex(idx)
@@ -35,6 +38,8 @@ namespace FE::GPU
         void FindQueueFamilies();
 
     public:
+        FE_CLASS_RTTI(VKDevice, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
+
         VKDevice(VKAdapter& adapter);
         vk::Device& GetNativeDevice();
 

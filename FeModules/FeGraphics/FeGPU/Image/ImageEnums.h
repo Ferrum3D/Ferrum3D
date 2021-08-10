@@ -4,34 +4,41 @@
 
 namespace FE::GPU
 {
-    // clang-format off
-    FE_ENUM(ImageBindFlags)
+    enum class ImageBindFlags
     {
         None            = 0,
         ShaderRead      = 1 << 0,
         ShaderWrite     = 1 << 1,
         ShaderReadWrite = ShaderRead | ShaderWrite,
 
-        Color           = 1 << 2,
-        Depth           = 1 << 3,
-        Stencil         = 1 << 4,
+        Color   = 1 << 2,
+        Depth   = 1 << 3,
+        Stencil = 1 << 4,
 
-        TransferRead    = 1 << 5,
-        TransferWrite   = 1 << 6
+        TransferRead  = 1 << 5,
+        TransferWrite = 1 << 6
     };
-    // clang-format on
 
-    // clang-format off
-    FE_ENUM(ImageAspect)
+    FE_ENUM_OPERATORS(ImageBindFlags);
+
+    enum class ImageAspect
+    {
+        Color,
+        Depth,
+        Stencil
+    };
+
+    enum class ImageAspectFlags
     {
         None,
-        Color        = 1 << 0,
-        Depth        = 1 << 1,
-        Stencil      = 1 << 2,
+        Color        = 1 << static_cast<UInt32>(ImageAspect::Color),
+        Depth        = 1 << static_cast<UInt32>(ImageAspect::Depth),
+        Stencil      = 1 << static_cast<UInt32>(ImageAspect::Stencil),
         DepthStencil = Depth | Stencil,
-        All          = Color | Depth | Stencil
+        All          = Depth | Stencil | Color
     };
-    // clang-format on
+
+    FE_ENUM_OPERATORS(ImageAspectFlags);
 
     enum class ImageDim
     {

@@ -1,6 +1,6 @@
 #pragma once
-#include <FeGPU/SwapChain/ISwapChain.h>
 #include <FeGPU/Image/VKImageFormat.h>
+#include <FeGPU/SwapChain/ISwapChain.h>
 
 namespace FE::GPU
 {
@@ -29,6 +29,8 @@ namespace FE::GPU
         bool ValidateDimentions(const SwapChainDesc& swapChainDesc);
 
     public:
+        FE_CLASS_RTTI(VKSwapChain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
+
         VKSwapChain(VKDevice& dev, const SwapChainDesc& desc);
         ~VKSwapChain();
 
@@ -40,4 +42,4 @@ namespace FE::GPU
         virtual UInt32 NextImage(const RefCountPtr<IFence>& fence, UInt64 signal) override;
         virtual void Present(const RefCountPtr<IFence>& fence, UInt64 wait) override;
     };
-}
+} // namespace FE::GPU

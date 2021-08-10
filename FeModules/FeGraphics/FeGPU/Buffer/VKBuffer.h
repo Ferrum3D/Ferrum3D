@@ -10,6 +10,8 @@ namespace FE::GPU
         RefCountPtr<VKDeviceMemory> m_Memory;
 
     public:
+        FE_CLASS_RTTI(VKBuffer, "CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");
+
         BufferDesc Desc;
         vk::UniqueBuffer Buffer;
 

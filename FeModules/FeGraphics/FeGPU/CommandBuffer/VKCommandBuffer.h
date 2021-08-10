@@ -14,6 +14,8 @@ namespace FE::GPU
         bool m_IsUpdating;
 
     public:
+        FE_CLASS_RTTI(VKCommandBuffer, "9A422C8F-72E8-48DD-8BE6-63D059AE9432");
+
         VKCommandBuffer(VKDevice& dev, CommandQueueClass cmdQueueClass);
 
         vk::CommandBuffer& GetNativeBuffer();
