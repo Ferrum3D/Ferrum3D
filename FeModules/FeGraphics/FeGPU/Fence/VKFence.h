@@ -11,6 +11,8 @@ namespace FE::GPU
         VKDevice* m_Device;
 
     public:
+        FE_CLASS_RTTI(VKFence, "78363647-3381-46F2-97B1-2A1AC8AFC3C1");
+
         inline static constexpr UInt64 SemaphoreTimeout = UInt64(-1);
         vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eAllCommands;
 

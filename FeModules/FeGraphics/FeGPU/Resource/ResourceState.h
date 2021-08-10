@@ -25,6 +25,8 @@ namespace FE::GPU
 
     struct ResourceTransitionBarrierDesc
     {
+        FE_STRUCT_RTTI(ResourceTransitionBarrierDesc, "D4115E22-8C42-4639-9EEB-C53C588AF1D5");
+
         IImage* Image;
         ImageSubresourceRange SubresourceRange;
         ResourceState StateBefore;

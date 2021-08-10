@@ -24,14 +24,14 @@ namespace FE::GPU
         return Conversions[static_cast<size_t>(state)];
     }
 
-    inline vk::ImageAspectFlags VKConvert(ImageAspect aspect)
+    inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
         vk::ImageAspectFlags result{};
-        if ((aspect & ImageAspect::Color) != ImageAspect::None)
+        if ((aspect & ImageAspectFlags::Color) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eColor;
-        if ((aspect & ImageAspect::Depth) != ImageAspect::None)
+        if ((aspect & ImageAspectFlags::Depth) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eDepth;
-        if ((aspect & ImageAspect::Stencil) != ImageAspect::None)
+        if ((aspect & ImageAspectFlags::Stencil) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eStencil;
         return result;
     }

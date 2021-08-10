@@ -17,6 +17,7 @@ namespace FE::GPU
 
     struct AdapterDesc
     {
+        FE_STRUCT_RTTI(AdapterDesc, "11A8F0B5-48A0-4F1A-9023-8B3F65F2ECE1");
         String Name;
         AdapterType Type;
     };
@@ -26,6 +27,8 @@ namespace FE::GPU
     class IAdapter : public IObject
     {
     public:
+        FE_CLASS_RTTI(IAdapter, "860B2CCD-3918-4943-8D49-33040D76EA0D");
+
         virtual ~IAdapter()                         = default;
         virtual IInstance& GetInstance()            = 0;
         virtual AdapterDesc& GetDesc()              = 0;

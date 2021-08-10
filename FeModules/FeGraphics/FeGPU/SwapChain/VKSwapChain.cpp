@@ -73,7 +73,9 @@ namespace FE::GPU
                 for (auto& preferred : preferredModes)
                 {
                     if (supported == preferred)
+                    {
                         mode = supported;
+                    }
                 }
             }
         }
@@ -110,11 +112,12 @@ namespace FE::GPU
             auto backbuffer   = MakeShared<VKImage>(*m_Device);
             backbuffer->Image = image;
             backbuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, VKConvert(m_ColorFormat.format));
+
             ResourceTransitionBarrierDesc barrierDesc{};
             barrierDesc.Image                   = backbuffer.GetRaw();
             barrierDesc.StateBefore             = ResourceState::None;
             barrierDesc.StateAfter              = ResourceState::Present;
-            barrierDesc.SubresourceRange.Apsect = ImageAspect::Color;
+            barrierDesc.SubresourceRange.Apsect = ImageAspectFlags::Color;
             m_CmdBuffer->ResourceTransitionBarriers({ barrierDesc });
             m_Images.push_back(StaticPtrCast<IImage>(backbuffer));
         }

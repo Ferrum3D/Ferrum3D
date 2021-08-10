@@ -21,6 +21,8 @@ namespace FE::GPU
     class IDevice : public IObject
     {
     public:
+        FE_CLASS_RTTI(IDevice, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
+
         virtual ~IDevice() = default;
 
         virtual IAdapter& GetAdapter()                                                           = 0;

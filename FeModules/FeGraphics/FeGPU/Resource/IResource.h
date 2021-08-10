@@ -3,8 +3,7 @@
 
 namespace FE::GPU
 {
-    // clang-format off
-    FE_ENUM(BindFlags)
+    enum class BindFlags
     {
         None             = 0,
         VertexBuffer     = 1 << 0,
@@ -18,5 +17,6 @@ namespace FE::GPU
         IndirectDrawArgs = 1 << 8,
         InputAttachment  = 1 << 9
     };
-    // clang-format on
+
+    FE_ENUM_OPERATORS(BindFlags);
 } // namespace FE::GPU

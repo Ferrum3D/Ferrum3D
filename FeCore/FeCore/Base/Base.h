@@ -210,7 +210,7 @@ namespace FE
 #endif
 
     //! \brief Assertion without loggers, used in modules on which loggers depend.
-    //! 
+    //!
     //! If assertion fails this function will use \ref FE_DEBUGBREAK.
 #define FE_CORE_ASSERT(expression, msg)                                                                                          \
     do                                                                                                                           \
@@ -223,45 +223,32 @@ namespace FE
     }                                                                                                                            \
     while (0)
 
-    //! \brief Declare a typed enum with bitwise operators.
-#define FE_TYPED_ENUM(_name, _type)                                                                                              \
-    enum class _name : _type;                                                                                                    \
-    inline _name operator|(_name a, _name b)                                                                                     \
+    //! \brief Define bitwise operations on `enum`.
+    //! 
+    //! The macro defines bitwise or, and, xor operators.
+#define FE_ENUM_OPERATORS(Name)                                                                                                  \
+    inline constexpr Name operator|(Name a, Name b)                                                                              \
     {                                                                                                                            \
-        return _name(_type(a) | _type(b));                                                                                       \
+        return Name(((std::underlying_type_t<Name>)a) | ((std::underlying_type_t<Name>)b));                                      \
     }                                                                                                                            \
-    inline _name operator&(_name a, _name b)                                                                                     \
-    {                                                                                                                            \
-        return _name(_type(a) & _type(b));                                                                                       \
-    }                                                                                                                            \
-    inline _name& operator|=(_name& a, _name b)                                                                                  \
+    inline constexpr Name& operator|=(Name& a, Name b)                                                                           \
     {                                                                                                                            \
         return a = a | b;                                                                                                        \
     }                                                                                                                            \
-    inline _name& operator&=(_name& a, _name b)                                                                                  \
+    inline constexpr Name operator&(Name a, Name b)                                                                              \
+    {                                                                                                                            \
+        return Name(((std::underlying_type_t<Name>)a) & ((std::underlying_type_t<Name>)b));                                      \
+    }                                                                                                                            \
+    inline constexpr Name& operator&=(Name& a, Name b)                                                                           \
     {                                                                                                                            \
         return a = a & b;                                                                                                        \
     }                                                                                                                            \
-                                                                                                                                 \
-    inline _name operator|(_name a, _type b)                                                                                     \
+    inline constexpr Name operator^(Name a, Name b)                                                                              \
     {                                                                                                                            \
-        return _name(_type(a) | b);                                                                                              \
+        return Name(((std::underlying_type_t<Name>)a) ^ ((std::underlying_type_t<Name>)b));                                      \
     }                                                                                                                            \
-    inline _name operator&(_name a, _type b)                                                                                     \
+    inline constexpr Name& operator^=(Name& a, Name b)                                                                           \
     {                                                                                                                            \
-        return _name(_type(a) & b);                                                                                              \
-    }                                                                                                                            \
-    inline _name& operator|=(_name& a, _type b)                                                                                  \
-    {                                                                                                                            \
-        return a = a | b;                                                                                                        \
-    }                                                                                                                            \
-    inline _name& operator&=(_name& a, _type b)                                                                                  \
-    {                                                                                                                            \
-        return a = a & b;                                                                                                        \
-    }                                                                                                                            \
-                                                                                                                                 \
-    enum class _name : _type
-
-    //! \brief Declare an enum with bitwise operators.
-#define FE_ENUM(_name) FE_TYPED_ENUM(_name, Int32)
+        return a = a ^ b;                                                                                                        \
+    }
 } // namespace FE

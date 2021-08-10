@@ -21,6 +21,8 @@ namespace FE::GPU
         UInt32 MipLevelCount = 1;
         UInt32 SampleCount   = 1;
 
+        FE_STRUCT_RTTI(ImageDesc, "1B7CB069-C763-49D0-9CEA-088681802761");
+
         static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
         static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
         static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format);
@@ -33,6 +35,8 @@ namespace FE::GPU
     class IImage : public IObject
     {
     public:
+        FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
+
         virtual ~IImage() = default;
 
         virtual const ImageDesc& GetDesc() = 0;

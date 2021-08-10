@@ -49,6 +49,11 @@ set(SRC
     Resource/IResource.h
     Resource/ResourceState.h
 
+    Shader/IShaderModule.h
+    Shader/ShaderStage.h
+    Shader/VKShaderModule.h
+    Shader/VKShaderModule.cpp
+
     SwapChain/ISwapChain.h
     SwapChain/VKSwapChain.h
     SwapChain/VKSwapChain.cpp

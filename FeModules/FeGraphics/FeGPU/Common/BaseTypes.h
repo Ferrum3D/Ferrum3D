@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -9,6 +10,8 @@ namespace FE::GPU
         UInt64 Width;
         UInt64 Height;
         UInt64 Depth;
+
+        FE_STRUCT_RTTI(Size, "C32E4F84-3144-4D6D-A4D3-00F19E22D708");
 
         inline Size() noexcept
             : Size(0, 0, 0)

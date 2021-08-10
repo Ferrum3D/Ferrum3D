@@ -28,6 +28,8 @@ namespace FE::GPU
         vk::PhysicalDeviceProperties m_Prop;
 
     public:
+        FE_CLASS_RTTI(VKAdapter, "4054CC7E-C6EB-4A43-B326-E85C32BED38C");
+
         VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter);
 
         vk::PhysicalDevice& GetNativeAdapter();
