@@ -11,7 +11,7 @@ namespace FE::GPU
     {
         Vector<UInt32> m_ByteCode;
         ShaderModuleDesc m_Desc;
-        vk::ShaderModuleUnique m_NativeModule;
+        vk::UniqueShaderModule m_NativeModule;
         VKDevice* m_Device;
 
     public:
@@ -19,6 +19,6 @@ namespace FE::GPU
 
         VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc);
 
-        virtual const ShaderModuleDesc& GetDesc() const override;
+        const ShaderModuleDesc& GetDesc() const override;
     };
 } // namespace FE

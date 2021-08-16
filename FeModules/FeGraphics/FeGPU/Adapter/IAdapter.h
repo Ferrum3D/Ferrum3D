@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Object.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Memory/Object.h>
 #include <FeCore/Strings/String.h>
 #include <FeGPU/Device/IDevice.h>
 
@@ -29,7 +29,7 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(IAdapter, "860B2CCD-3918-4943-8D49-33040D76EA0D");
 
-        virtual ~IAdapter()                         = default;
+        ~IAdapter() override                        = default;
         virtual IInstance& GetInstance()            = 0;
         virtual AdapterDesc& GetDesc()              = 0;
         virtual RefCountPtr<IDevice> CreateDevice() = 0;

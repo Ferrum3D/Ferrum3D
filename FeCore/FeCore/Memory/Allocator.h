@@ -66,6 +66,8 @@ namespace FE
         //! \brief Remove reference to the allocator from this module.
         inline static void Destroy()
         {
+            if (!m_Instance)
+                TryFind();
             FE_CORE_ASSERT(m_Instance, "Allocator must be created before first use");
             m_Instance.Reset();
         }

@@ -157,7 +157,7 @@ namespace FE
 
         inline int Compare(const StringSlice& other) const noexcept
         {
-            return UTF8::Compare(Data(), other.Data(), std::min(Size(), other.Size()));
+            return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
         inline Iterator begin() const noexcept

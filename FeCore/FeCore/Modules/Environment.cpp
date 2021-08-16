@@ -76,7 +76,7 @@ namespace FE::Env
                 if (!storage)
                     return VariableResult::Err(VariableError::AllocationError);
 
-                auto& [str, ptr] = m_Map.Push(std::move(name), std::move(storage));
+                auto& [str, ptr] = m_Map.Push(std::move(name), storage);
                 nameView         = std::string_view(str.data(), str.size());
                 return VariableResult::Ok(storage, VariableOk::Created);
             }
@@ -94,7 +94,7 @@ namespace FE::Env
                 // moving half the vector to the left).
                 // That's why we just place a nullptr instead of the previous pointer, so we know the variable doesn't exist anymore.
                 // The handle (string + pointer) is quite light-weight and we don't use very many global variables and singletons,
-                // maybe not more than a hundred, so it would be resonable to just leak them for some performance benefits.
+                // maybe not more than a hundred, so it would be reasonable to just leak them for some performance benefits.
                 // TODO: it's possible to implement some garbage collection here and periodically remove all nullptr-variables
                 // from the map.
                 std::get<1>(*it) = nullptr;

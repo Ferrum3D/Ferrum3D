@@ -3,12 +3,12 @@
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
 #include <FeGPU/Image/VKImage.h>
-#include <FeGPU/Instance/VKInstance.h>
+#include <FeGPU/ImageView/VKImageView.h>
 #include <FeGPU/SwapChain/VKSwapChain.h>
 
 namespace FE::GPU
 {
-    bool VKSwapChain::ValidateDimentions(const SwapChainDesc& swapChainDesc)
+    bool VKSwapChain::ValidateDimensions(const SwapChainDesc& swapChainDesc) const
     {
         return m_Capabilities.minImageExtent.width <= swapChainDesc.ImageWidth
             && m_Capabilities.minImageExtent.height <= swapChainDesc.ImageHeight
@@ -19,10 +19,36 @@ namespace FE::GPU
     VKSwapChain::VKSwapChain(VKDevice& dev, const SwapChainDesc& desc)
         : m_Device(&dev)
         , m_Desc(desc)
-        , m_Queue(static_cast<VKCommandQueue*>(desc.Queue))
+        , m_Queue(fe_assert_cast<VKCommandQueue*>(desc.Queue))
     {
-        auto& instance = static_cast<VKInstance&>(m_Device->GetInstance());
+        auto& instance = *fe_assert_cast<VKInstance*>(&m_Device->GetInstance());
 
+        BuildNativeSwapChain(instance);
+
+        auto images = m_Device->GetNativeDevice().getSwapchainImagesKHR<StdHeapAllocator<vk::Image>>(m_NativeSwapChain.get());
+
+        m_Desc.Format = VKConvert(m_ColorFormat.format);
+        for (auto& image : images)
+        {
+            auto width        = m_Desc.ImageWidth;
+            auto height       = m_Desc.ImageHeight;
+            auto backBuffer   = MakeShared<VKImage>(*m_Device);
+            backBuffer->Image = image;
+            backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
+            m_Images.push_back(static_pointer_cast<IImage>(backBuffer));
+
+            ImageViewDesc viewDesc{};
+            viewDesc.SubresourceRange             = {};
+            viewDesc.SubresourceRange.AspectFlags = ImageAspectFlags::Color;
+            viewDesc.Image                        = static_pointer_cast<IImage>(backBuffer);
+            viewDesc.Format                       = m_Desc.Format;
+            viewDesc.Dimension                    = ImageDim::Image2D;
+            m_ImageViews.push_back(MakeShared<VKImageView>(*m_Device, viewDesc));
+        }
+    }
+
+    void VKSwapChain::BuildNativeSwapChain(VKInstance& instance)
+    {
 #if FE_WINDOWS
         vk::Win32SurfaceCreateInfoKHR surfaceCI{};
         surfaceCI.hinstance = GetModuleHandle(nullptr);
@@ -32,15 +58,19 @@ namespace FE::GPU
 #    error platform not supported
 #endif
 
-        auto& pd     = static_cast<VKAdapter&>(m_Device->GetAdapter()).GetNativeAdapter();
+        auto& pd     = fe_assert_cast<VKAdapter*>(&m_Device->GetAdapter())->GetNativeAdapter();
         auto formats = pd.getSurfaceFormatsKHR<StdHeapAllocator<vk::SurfaceFormatKHR>>(m_Surface.get());
         FE_ASSERT(pd.getSurfaceSupportKHR(m_Queue->GetDesc().QueueFamilyIndex, m_Surface.get()));
 
         constexpr auto preferredFormat = Format::B8G8R8A8_SRGB;
         m_ColorFormat.format           = vk::Format::eUndefined;
         for (auto& fmt : formats)
+        {
             if (fmt.format == preferredFormat && fmt.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+            {
                 m_ColorFormat = fmt;
+            }
+        }
         if (m_ColorFormat == vk::Format::eUndefined)
         {
             FE_LOG_WARNING("SwapChain format {} is not supported, using the first supported one", preferredFormat);
@@ -48,7 +78,7 @@ namespace FE::GPU
         }
 
         m_Capabilities = pd.getSurfaceCapabilitiesKHR(m_Surface.get());
-        if (!ValidateDimentions(m_Desc))
+        if (!ValidateDimensions(m_Desc))
         {
             auto min    = m_Capabilities.minImageExtent;
             auto max    = m_Capabilities.maxImageExtent;
@@ -62,7 +92,7 @@ namespace FE::GPU
         }
         vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
-        // is v-sync is disabled, try to use either immediate or mailbox (if supported)
+        // If v-sync is disabled, try to use either immediate or mailbox (if supported).
         if (!m_Desc.VerticalSync)
         {
             auto supportedModes = pd.getSurfacePresentModesKHR<StdHeapAllocator<vk::PresentModeKHR>>(m_Surface.get());
@@ -101,38 +131,11 @@ namespace FE::GPU
         swapChainCI.clipped          = true;
 
         m_NativeSwapChain = m_Device->GetNativeDevice().createSwapchainKHRUnique(swapChainCI);
-        auto images = m_Device->GetNativeDevice().getSwapchainImagesKHR<StdHeapAllocator<vk::Image>>(m_NativeSwapChain.get());
-
-        m_CmdBuffer = m_Device->CreateCommandBuffer(CommandQueueClass::Graphics);
-        m_CmdBuffer->Begin();
-        for (auto& image : images)
-        {
-            auto width        = m_Desc.ImageWidth;
-            auto height       = m_Desc.ImageHeight;
-            auto backbuffer   = MakeShared<VKImage>(*m_Device);
-            backbuffer->Image = image;
-            backbuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, VKConvert(m_ColorFormat.format));
-
-            ResourceTransitionBarrierDesc barrierDesc{};
-            barrierDesc.Image                   = backbuffer.GetRaw();
-            barrierDesc.StateBefore             = ResourceState::None;
-            barrierDesc.StateAfter              = ResourceState::Present;
-            barrierDesc.SubresourceRange.Apsect = ImageAspectFlags::Color;
-            m_CmdBuffer->ResourceTransitionBarriers({ barrierDesc });
-            m_Images.push_back(StaticPtrCast<IImage>(backbuffer));
-        }
-        m_CmdBuffer->End();
-
-        m_ImageAvailableSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
-        m_RenderFinishedSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
-        m_Fence                   = m_Device->CreateFence(0);
-        m_Queue->SubmitBuffers({ m_CmdBuffer });
-        m_Queue->SignalFence(m_Fence, 1);
     }
 
     VKSwapChain::~VKSwapChain()
     {
-        m_Fence->Wait(1);
+        m_Device->GetNativeDevice().waitIdle();
     }
 
     const SwapChainDesc& VKSwapChain::GetDesc()
@@ -160,62 +163,23 @@ namespace FE::GPU
         return m_Images[m_FrameIndex].GetRaw();
     }
 
-    UInt32 VKSwapChain::NextImage([[maybe_unused]] const RefCountPtr<IFence>& fence, UInt64 signal)
+    void VKSwapChain::Present()
     {
-        FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
-            m_NativeSwapChain.get(), UInt64(-1), m_ImageAvailableSemaphore.get(), nullptr, &m_FrameIndex));
-
-        auto* vkfence    = static_cast<VKFence*>(m_Fence.GetRaw());
-        UInt64 waitValue = UInt64(-1);
-
-        vk::TimelineSemaphoreSubmitInfo timelineInfo{};
-        timelineInfo.waitSemaphoreValueCount   = 1;
-        timelineInfo.pWaitSemaphoreValues      = &waitValue;
-        timelineInfo.signalSemaphoreValueCount = 1;
-        timelineInfo.pSignalSemaphoreValues    = &signal;
-
-        vk::SubmitInfo submitInfo{};
-        submitInfo.pNext              = &timelineInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores    = &m_ImageAvailableSemaphore.get();
-
-        vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
-        submitInfo.pWaitDstStageMask            = &waitDstStageMask;
-        submitInfo.signalSemaphoreCount         = 1;
-        submitInfo.pSignalSemaphores            = &vkfence->GetNativeSemaphore();
-        FE_VK_ASSERT(m_Queue->GetNativeQueue().submit(1, &submitInfo, {}));
-
-        return m_FrameIndex;
-    }
-
-    void VKSwapChain::Present([[maybe_unused]] const RefCountPtr<IFence>& fence, UInt64 wait)
-    {
-        auto* vkfence      = static_cast<VKFence*>(m_Fence.GetRaw());
-        UInt64 signalValue = UInt64(-1);
-
-        vk::TimelineSemaphoreSubmitInfo timelineInfo{};
-        timelineInfo.waitSemaphoreValueCount   = 1;
-        timelineInfo.pWaitSemaphoreValues      = &wait;
-        timelineInfo.signalSemaphoreValueCount = 1;
-        timelineInfo.pSignalSemaphoreValues    = &signalValue;
-
-        vk::SubmitInfo submitInfo{};
-        submitInfo.pNext              = &timelineInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores    = &vkfence->GetNativeSemaphore();
-
-        vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eTransfer;
-        submitInfo.pWaitDstStageMask            = &waitDstStageMask;
-        submitInfo.signalSemaphoreCount         = 1;
-        submitInfo.pSignalSemaphores            = &m_RenderFinishedSemaphore.get();
-        FE_VK_ASSERT(m_Queue->GetNativeQueue().submit(1, &submitInfo, {}));
-
         vk::PresentInfoKHR presentInfo{};
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphore.get();
         presentInfo.swapchainCount     = 1;
         presentInfo.pSwapchains        = &m_NativeSwapChain.get();
         presentInfo.pImageIndices      = &m_FrameIndex;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphore.get();
         FE_VK_ASSERT(m_Queue->GetNativeQueue().presentKHR(presentInfo));
+        m_Queue->GetNativeQueue().waitIdle(); // TODO: frames in-flight
+
+        AcquireNextImage(&m_FrameIndex);
+    }
+
+    void VKSwapChain::AcquireNextImage(UInt32* index)
+    {
+        FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
+            m_NativeSwapChain.get(), static_cast<UInt64>(-1), m_ImageAvailableSemaphore.get(), nullptr, index));
     }
 } // namespace FE::GPU

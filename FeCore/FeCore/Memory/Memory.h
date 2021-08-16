@@ -56,7 +56,7 @@ namespace FE
 
         IAllocator* allocator     = &FE::GlobalAllocator<TAllocator>::Get();
         UInt8* ptr                = static_cast<UInt8*>(allocator->Allocate(wholeSize, alignof(T), FE_SRCPOS()));
-        ReferenceCounter* counter = new (ptr) ReferenceCounter(allocator);
+        auto* counter = new (ptr) ReferenceCounter(allocator);
 
         T* object = new (ptr + counterSize) T(std::forward<Args>(args)...);
         object->AttachRefCounter(counter);
@@ -93,7 +93,7 @@ namespace FE
     //!
     //! \return An instance of \ref RefCountPtr that holds the same object but with different interface.
     template<class TDest, class TSrc>
-    RefCountPtr<TDest> StaticPtrCast(const RefCountPtr<TSrc>& src)
+    RefCountPtr<TDest> static_pointer_cast(const RefCountPtr<TSrc>& src)
     {
         return RefCountPtr<TDest>(static_cast<TDest*>(src.GetRaw()));
     }

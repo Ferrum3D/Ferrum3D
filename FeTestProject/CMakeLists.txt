@@ -1,4 +1,4 @@
-add_executable(FeTestProject main.cpp)
+add_executable(FeTestProject main.cpp VertexShader.h PixelShader.h)
 
 fe_configure_target(FeTestProject)
 

@@ -1,3 +1,4 @@
+#pragma once
 #include <FeGPU/Adapter/IAdapter.h>
 #include <FeGPU/Instance/VKInstance.h>
 

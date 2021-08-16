@@ -19,6 +19,6 @@ namespace FE::GPU
 
         VKImage(VKDevice& dev);
 
-        virtual const ImageDesc& GetDesc() override;
+        const ImageDesc& GetDesc() override;
     };
 } // namespace FE::GPU

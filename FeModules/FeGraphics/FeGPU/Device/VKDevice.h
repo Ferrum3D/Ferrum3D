@@ -3,6 +3,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeGPU/Device/IDevice.h>
 #include <FeGPU/Instance/IInstance.h>
+#include <FeGPU/CommandBuffer/VKCommandBuffer.h>
 
 namespace FE::GPU
 {
@@ -48,8 +49,27 @@ namespace FE::GPU
         inline vk::CommandPool& GetCommandPool(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
+            {
                 if (queue.Class == cmdQueueClass)
+                {
                     return queue.CmdPool.get();
+                }
+            }
+
+            FE_UNREACHABLE("Couldn't find command pool");
+            return m_QueueFamilyIndices.front().CmdPool.get();
+        }
+
+        inline vk::CommandPool& GetCommandPool(UInt32 queueFamilyIndex)
+        {
+            for (auto& queue : m_QueueFamilyIndices)
+            {
+                if (queue.FamilyIndex == queueFamilyIndex)
+                {
+                    return queue.CmdPool.get();
+                }
+            }
+
             FE_UNREACHABLE("Couldn't find command pool");
             return m_QueueFamilyIndices.front().CmdPool.get();
         }
@@ -57,18 +77,27 @@ namespace FE::GPU
         inline UInt32 GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
+            {
                 if (queue.Class == cmdQueueClass)
+                {
                     return queue.FamilyIndex;
+                }
+            }
+
             FE_UNREACHABLE("Couldn't find queue family");
             return static_cast<UInt32>(-1);
         }
 
-        virtual IAdapter& GetAdapter() override;
-        virtual IInstance& GetInstance() override;
-        virtual RefCountPtr<IFence> CreateFence(UInt64 value) override;
-        virtual RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass) override;
-        virtual RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) override;
-        virtual RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc) override;
-        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size) override;
+        IAdapter& GetAdapter() override;
+        IInstance& GetInstance() override;
+        RefCountPtr<IFence> CreateFence(FenceState state) override;
+        RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass) override;
+        RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) override;
+        RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc) override;
+        RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size) override;
+        RefCountPtr<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc) override;
+        RefCountPtr<IRenderPass> CreateRenderPass(const RenderPassDesc& desc) override;
+        RefCountPtr<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) override;
+        RefCountPtr<VKCommandBuffer> CreateCommandBuffer(UInt32 queueFamilyIndex);
     };
 } // namespace FE::GPU

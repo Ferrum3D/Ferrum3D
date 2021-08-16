@@ -21,12 +21,13 @@ namespace FE
     using Float64 = double;
 
     //! \brief Name of engine.
-    inline constexpr const char* FerrumEngineName = "Ferrum3D";
+    inline constexpr const char* FerrumEngineName = u8"Ferrum3D";
 
 #ifdef FE_DEBUG
     //! \brief True on debug builds.
     inline constexpr bool IsDebugBuild = true;
 #else
+    //! \brief True on debug builds.
     inline constexpr bool IsDebugBuild = false;
 #endif
 
@@ -34,7 +35,7 @@ namespace FE
     inline constexpr struct
     {
         int Major = 0, Minor = 1, Patch = 0;
-    } Ferrum3DVersion;
+    } FerrumVersion;
 
     //! \brief Empty structure with no members.
     struct EmptyStruct
@@ -82,8 +83,8 @@ namespace FE
         //! \brief Remove leading and trailing spaces from a string view.
         inline constexpr std::string_view TrimTypeName(std::string_view name)
         {
-            name.remove_prefix(name.find_first_not_of(" "));
-            name.remove_suffix(name.length() - name.find_last_not_of(" ") - 1);
+            name.remove_prefix(name.find_first_not_of(' '));
+            name.remove_suffix(name.length() - name.find_last_not_of(' ') - 1);
             return name;
         }
 
@@ -97,8 +98,8 @@ namespace FE
             fn.remove_suffix(fn.length() - fn.find_last_of(">"));
 #else
             std::string_view fn = __PRETTY_FUNCTION__;
-            fn.remove_prefix(fn.find_first_of("=") + 1);
-            fn.remove_suffix(fn.length() - fn.find_last_of("]"));
+            fn.remove_prefix(fn.find_first_of('=') + 1);
+            fn.remove_suffix(fn.length() - fn.find_last_of(']'));
 #endif
             return SVWrapper{ TrimTypeName(fn) };
         }
@@ -113,13 +114,6 @@ namespace FE
     inline constexpr std::string_view TypeName()
     {
         return Internal::TypeNameImpl<T>().value;
-    }
-
-    //! \brief Calculate hash of type T.
-    template<class T>
-    inline size_t TypeHash()
-    {
-        return std::hash<std::string_view>{}(Internal::TypeNameImpl<T>().value);
     }
 
     //! \brief Align up an integer.
@@ -209,22 +203,35 @@ namespace FE
 
 #endif
 
+#if FE_DEBUG
     //! \brief Assertion without loggers, used in modules on which loggers depend.
     //!
     //! If assertion fails this function will use \ref FE_DEBUGBREAK.
-#define FE_CORE_ASSERT(expression, msg)                                                                                          \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        if (!(expression))                                                                                                       \
+#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
+        do                                                                                                                       \
         {                                                                                                                        \
-            FE_DEBUGBREAK;                                                                                                       \
+            if (!(expression))                                                                                                   \
+            {                                                                                                                    \
+                FE_DEBUGBREAK;                                                                                                   \
+                (void)msg;                                                                                                       \
+            }                                                                                                                    \
+        }                                                                                                                        \
+        while (0)
+#else
+    //! \brief Assertion without loggers, used in modules on which loggers depend.
+    //!
+    //! If assertion fails this function will use \ref FE_DEBUGBREAK.
+#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
+        do                                                                                                                       \
+        {                                                                                                                        \
+            (void)expression;                                                                                                    \
             (void)msg;                                                                                                           \
         }                                                                                                                        \
-    }                                                                                                                            \
-    while (0)
+        while (0)
+#endif
 
     //! \brief Define bitwise operations on `enum`.
-    //! 
+    //!
     //! The macro defines bitwise or, and, xor operators.
 #define FE_ENUM_OPERATORS(Name)                                                                                                  \
     inline constexpr Name operator|(Name a, Name b)                                                                              \

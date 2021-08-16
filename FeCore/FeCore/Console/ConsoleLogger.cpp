@@ -27,8 +27,7 @@ namespace FE::Debug
             return;
 
         std::unique_lock lk(FE::Console::Mutex);
-        static FE::String name = FE::String(" ") + FE::FerrumEngineName + " [";
-        auto date              = FE::DateTime::Now().ToString() + name;
+        auto date = FE::DateTime::Now().ToString() + m_Header;
         PrintImpl(date);
 
         switch (type)

@@ -81,13 +81,33 @@ namespace FE
     inline TDstPtr fe_dynamic_cast(TSrc* src)
     {
         if (src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>())
-            return reinterpret_cast<TDstPtr>(src);
+            return static_cast<TDstPtr>(src);
 
         return nullptr;
     }
 
+    //! \brief Assert that a variable can be dynamically casted to another type.
+    //!
+    //! Works just like \ref fe_dynamic_cast<T*>, except it will assert that a type can be casted and won't return
+    //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
+    //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behaviour.
+    //!
+    //! \note The function uses only the classes that provide Ferrum3D RTTI through \ref FE_CLASS_RTTI.
+    //!
+    //! \tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! \tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //! \param [in] src - The source value.
+    //!
+    //! \return The result pointer if destination type was derived from source type.
+    template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
+    inline TDstPtr fe_assert_cast(TSrc* src)
+    {
+        FE_CORE_ASSERT(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
+        return static_cast<TDstPtr>(src);
+    }
+
     //! \brief Get name of a type.
-    //! 
+    //!
     //! This function returns a short name provided in \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.\n
     //! Example:
     //! \code{.cpp}
@@ -97,14 +117,14 @@ namespace FE
     //!         FE_CLASS_RTTI(Foo, "4BDF1868-0E22-48CF-9DBA-8DD10F2A9D0C");
     //!         // members...
     //!     };
-    //!     
+    //!
     //!     const char* fooName = fe_nameof<Foo<int>>(); // "Foo" - not "Foo<int>"!
     //! \endcode
-    //! 
-    //! \note The provided type must implement Ferrum3D RTTI system throgh \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
-    //! 
+    //!
+    //! \note The provided type must implement Ferrum3D RTTI system through \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
+    //!
     //! \tparam T - Type to get name of.
-    //! 
+    //!
     //! \return Short name of type T.
     template<class T>
     inline const char* fe_nameof() noexcept
@@ -113,7 +133,7 @@ namespace FE
     }
 
     //! \brief Get name of a type.
-    //! 
+    //!
     //! This functions is same as \ref fe_nameof(), but can return name of derived class if called from a base class.\n
     //! Returns a short name provided in \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.\n
     //! Example:
@@ -126,18 +146,18 @@ namespace FE
     //!     {
     //!         FE_CLASS_RTTI(Derived, "68CCD7DF-507F-4F3B-9EC3-001EEB33EB55");
     //!     };
-    //! 
+    //!
     //!     const char* derivedName = fe_nameof(*static_cast<Base*>(new Derived)); // "Derived"
     //! \endcode
-    //! 
+    //!
     //! For additional information see overload of \ref fe_nameof() without parameters.
-    //! 
+    //!
     //! \note The provided type must implement Ferrum3D RTTI system throgh \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
-    //! 
+    //!
     //! \tparam T - Type to get name of.
-    //! 
+    //!
     //! \return Short name of type T.
-    //! 
+    //!
     //! \see fe_nameof()
     template<class T>
     inline const char* fe_nameof(const T& object)

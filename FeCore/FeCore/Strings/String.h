@@ -1,8 +1,8 @@
 #pragma once
+#include <FeCore/Base/Base.h>
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Strings/StringSlice.h>
-#include <FeCore/Base/Base.h>
 
 namespace FE
 {
@@ -23,18 +23,18 @@ namespace FE
             union
             {
                 UInt8 Size;
-                TChar Lx;
+                [[maybe_unused]] TChar Lx;
             };
             TChar Data[MinCapacity];
         };
 
         union Ulx
         {
-            LongMode Lm;
-            ShortMode Sm;
+            [[maybe_unused]] LongMode Lm;
+            [[maybe_unused]] ShortMode Sm;
         };
 
-        inline static constexpr size_t Nwords = sizeof(Ulx) / sizeof(size_t);
+        inline static constexpr size_t WordCount = sizeof(Ulx) / sizeof(size_t);
 
         struct Rep
         {
@@ -42,16 +42,16 @@ namespace FE
             {
                 LongMode L;
                 ShortMode S;
-                size_t R[Nwords];
+                size_t R[WordCount];
             };
         } m_Data;
 
-        inline bool IsLong() const noexcept
+        [[nodiscard]] inline bool IsLong() const noexcept
         {
             return m_Data.S.Size & 1;
         }
 
-        inline size_t GetLCap() const noexcept
+        [[nodiscard]] inline size_t GetLCap() const noexcept
         {
             return m_Data.L.Cap & static_cast<size_t>(~1);
         }
@@ -81,8 +81,10 @@ namespace FE
 
         inline void Zero() noexcept
         {
-            for (size_t i = 0; i < Nwords; ++i)
-                m_Data.R[i] = 0;
+            for (auto& i : m_Data.R)
+            {
+                i = 0;
+            }
         }
 
         inline static constexpr size_t Alignment = 16;
@@ -90,31 +92,38 @@ namespace FE
         inline static size_t Recommend(size_t s) noexcept
         {
             if (s < MinCapacity)
+            {
                 return MinCapacity - 1;
+            }
+
             size_t guess = FE::AlignUp<Alignment / sizeof(TChar)>(s + 1) - 1;
+
             if (guess == MinCapacity)
+            {
                 ++guess;
+            }
+
             return guess;
         }
 
-        inline TChar* Allocate(size_t s) noexcept
+        inline static TChar* Allocate(size_t s) noexcept
         {
             FE_STATIC_SRCPOS(position);
             return static_cast<TChar*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, position));
         }
 
-        inline void Deallocate(TChar* c, size_t s) noexcept
+        inline static void Deallocate(TChar* c, size_t s) noexcept
         {
             FE_STATIC_SRCPOS(position);
             GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position, s);
         }
 
-        inline void CopyData(TChar* dest, const TChar* src, size_t size) noexcept
+        inline static void CopyData(TChar* dest, const TChar* src, size_t size) noexcept
         {
             TCharTraits::copy(dest, src, size);
         }
 
-        inline void SetData(TChar* dest, TChar value, size_t size) noexcept
+        inline static void SetData(TChar* dest, TChar value, size_t size) noexcept
         {
             TCharTraits::assign(dest, size, value);
         }
@@ -135,6 +144,7 @@ namespace FE
                 SetLCap(newCap + 1);
                 SetLSize(size);
             }
+
             return newPtr;
         }
 
@@ -154,7 +164,7 @@ namespace FE
 
         inline void GrowAndReplace(
             size_t oldCap, size_t deltaCap, size_t oldSize, size_t copyCount, size_t delCount, size_t addCount,
-            const TChar* newElems)
+            const TChar* newChars)
         {
             TChar* oldData = Data();
             size_t cap     = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
@@ -162,7 +172,7 @@ namespace FE
             if (copyCount)
                 CopyData(newData, oldData, copyCount);
             if (addCount)
-                CopyData(newData + copyCount, newElems, addCount);
+                CopyData(newData + copyCount, newChars, addCount);
             size_t copySize = oldSize - delCount - copyCount;
             if (copySize)
                 CopyData(newData + copyCount + addCount, oldData + delCount, copySize);
@@ -259,8 +269,8 @@ namespace FE
         }
 
         inline String(String&& other) noexcept
+            : m_Data(other.m_Data)
         {
-            m_Data = other.m_Data;
             other.Zero();
         }
 
@@ -294,7 +304,9 @@ namespace FE
         inline ~String() noexcept
         {
             if (IsLong())
+            {
                 Deallocate(m_Data.L.Data, GetLCap());
+            }
         }
 
         inline const TChar* Data() const noexcept
@@ -308,14 +320,14 @@ namespace FE
         }
 
         // O(1)
-        inline TChar ByteAt(size_t index) const
+        [[nodiscard]] inline TChar ByteAt(size_t index) const
         {
-            assert(index < Size());
+            FE_CORE_ASSERT(index < Size(), "Invalid index");
             return Data()[index];
         }
 
         // O(N)
-        inline TCodepoint CodePointAt(size_t index) const
+        [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
         {
             auto begin     = Data();
             auto end       = begin + Size() + 1;
@@ -323,32 +335,34 @@ namespace FE
             for (auto iter = begin; iter != end; UTF8::Decode(iter), ++cpIndex)
             {
                 if (cpIndex == index)
+                {
                     return UTF8::PeekDecode(iter);
+                }
             }
 
-            assert(0);
+            FE_CORE_ASSERT(false, "Invalid index");
             return 0;
         }
 
         // O(1)
-        inline size_t Size() const noexcept
+        [[nodiscard]] inline size_t Size() const noexcept
         {
             return IsLong() ? m_Data.L.Size : m_Data.S.Size >> 1;
         }
 
-        inline bool Empty() const noexcept
+        [[nodiscard]] inline bool Empty() const noexcept
         {
             return Size() == 0;
         }
 
         // O(1)
-        inline size_t Capacity() const noexcept
+        [[nodiscard]] inline size_t Capacity() const noexcept
         {
             return (IsLong() ? GetLCap() : MinCapacity) - 1;
         }
 
         // O(N)
-        inline size_t Length() const noexcept
+        [[nodiscard]] inline size_t Length() const noexcept
         {
             auto ptr = Data();
             return UTF8::Length(ptr, Size());
@@ -494,31 +508,31 @@ namespace FE
             return t;
         }
 
-        inline int Compare(const String& other) const noexcept
+        [[nodiscard]] inline Int32 Compare(const StringSlice& other) const noexcept
         {
-            return UTF8::Compare(Data(), other.Data(), std::min(Size(), other.Size()));
+            return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        inline Iterator begin() const noexcept
+        [[nodiscard]] inline Iterator begin() const noexcept
         {
             auto ptr = Data();
             return Iterator(ptr);
         }
 
-        inline Iterator end() const noexcept
+        [[nodiscard]] inline Iterator end() const noexcept
         {
             auto ptr  = Data();
             auto size = Size();
             return Iterator(ptr + size);
         }
 
-        inline Iterator cbegin() const noexcept
+        [[nodiscard]] inline Iterator cbegin() const noexcept
         {
             auto ptr = Data();
             return Iterator(ptr);
         }
 
-        inline Iterator cend() const noexcept
+        [[nodiscard]] inline Iterator cend() const noexcept
         {
             auto ptr  = Data();
             auto size = Size();

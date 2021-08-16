@@ -7,20 +7,18 @@ namespace FE::GPU
 
     class VKFence : public Object<IFence>
     {
-        vk::UniqueSemaphore m_Semaphore;
+        vk::UniqueFence m_NativeFence;
         VKDevice* m_Device;
 
     public:
         FE_CLASS_RTTI(VKFence, "78363647-3381-46F2-97B1-2A1AC8AFC3C1");
 
-        inline static constexpr UInt64 SemaphoreTimeout = UInt64(-1);
-        vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eAllCommands;
+        VKFence(VKDevice& dev, FenceState initialState);
+        void SignalOnCPU() override;
+        void WaitOnCPU() override;
+        void Reset() override;
+        FenceState GetState() override;
 
-        VKFence(VKDevice& dev, UInt64 value);
-
-        virtual void Wait(UInt64 value) override;
-        virtual void Signal(UInt64 value) override;
-
-        vk::Semaphore& GetNativeSemaphore();
+        vk::Fence& GetNativeFence();
     };
 }

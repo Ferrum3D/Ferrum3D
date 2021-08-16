@@ -20,7 +20,7 @@ namespace FE::GPU
         UInt16 MipSliceCount   = 1;
         UInt16 ArraySliceCount = 1;
 
-        ImageAspectFlags Apsect = ImageAspectFlags::All;
+        ImageAspectFlags AspectFlags = ImageAspectFlags::All;
 
         FE_STRUCT_RTTI(ImageSubresourceRange, "93D87B09-78B5-40C9-8104-F06699FA6D10");
     };

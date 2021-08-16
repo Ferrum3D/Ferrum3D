@@ -29,6 +29,9 @@ TEST(Float3, SetXYZ)
     EXPECT_EQ(f.Y(), 2);
     EXPECT_EQ(f.Z(), 3);
     f.Set(-1, -1, -1);
+    EXPECT_EQ(f.X(), -1);
+    EXPECT_EQ(f.Y(), -1);
+    EXPECT_EQ(f.Z(), -1);
     f.X() = 1;
     f.Y() = 2;
     f.Z() = 3;
@@ -87,7 +90,8 @@ TEST(Float3, Cross)
     {
         float3 a{ dist(mt), dist(mt), dist(mt) };
         float3 b{ dist(mt), dist(mt), dist(mt) };
-        ASSERT_TRUE(a.Cross(b).IsApproxEqualTo(CrossRef(a.Data(), b.Data())));
+        auto ref = FE::Vector3F(CrossRef(a.Data(), b.Data()));
+        ASSERT_TRUE(a.Cross(b).IsApproxEqualTo(ref));
     }
 }
 

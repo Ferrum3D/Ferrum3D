@@ -106,8 +106,9 @@ namespace FE::UTF8
         return Decode(it);
     }
 
-    inline int Compare(const TChar* lhs, const TChar* rhs, size_t length) noexcept
+    inline int Compare(const TChar* lhs, const TChar* rhs, size_t length1, size_t length2) noexcept
     {
+        size_t length = std::min(length1, length2);
         for (; 0 < length; --length, Decode(lhs), Decode(rhs))
         {
             if (*lhs != *rhs)
@@ -116,7 +117,12 @@ namespace FE::UTF8
             }
         }
 
-        return 0;
+        if (length1 == length2)
+        {
+            return 0;
+        }
+
+        return length1 < length2 ? -1 : 1;
     }
 
     inline size_t Length(const TChar* str, size_t byteLen) noexcept

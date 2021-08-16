@@ -7,7 +7,7 @@ namespace FE::GPU
 {
     struct ShaderModuleDesc
     {
-        UInt8* ByteCode;
+        const UInt8* ByteCode;
         size_t ByteCodeSize;
         String EntryPoint;
         ShaderStage Stage;
@@ -20,8 +20,8 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(IShaderModule, "0040A2EF-9D25-42AC-9A95-B3F8D4288E49");
 
-        virtual ~IShaderModule() = default;
+        ~IShaderModule() override = default;
 
-        virtual const ShaderModuleDesc& GetDesc() const = 0;
+        [[nodiscard]] virtual const ShaderModuleDesc& GetDesc() const = 0;
     };
 } // namespace FE

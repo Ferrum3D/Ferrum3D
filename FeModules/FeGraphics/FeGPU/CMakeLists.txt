@@ -19,6 +19,10 @@ set(SRC
     Common/VKConfig.h
     Common/VKConfig.cpp
 
+    Descriptors/IDescriptorHeap.h
+    Descriptors/VKDescriptorHeap.h
+    Descriptors/VKDescriptorHeap.cpp
+
     Device/IDevice.h
     Device/VKDevice.h
     Device/VKDevice.cpp
@@ -36,7 +40,11 @@ set(SRC
     Image/VKImage.h
     Image/VKImage.cpp
     Image/VKImageFormat.h
-    
+
+    ImageView/IImageView.h
+    ImageView/VKImageView.h
+    ImageView/VKImageView.cpp
+
     Instance/IInstance.h
     Instance/IInstance.cpp
     Instance/VKInstance.h
@@ -45,6 +53,14 @@ set(SRC
     Memory/IDeviceMemory.h
     Memory/VKDeviceMemory.h
     Memory/VKDeviceMemory.cpp
+
+    Pipeline/InputLayoutBuilder.h
+    Pipeline/InputStreamLayout.h
+    Pipeline/PipelineStates.h
+
+    RenderPass/IRenderPass.h
+    RenderPass/VKRenderPass.h
+    RenderPass/VKRenderPass.cpp
 
     Resource/IResource.h
     Resource/ResourceState.h

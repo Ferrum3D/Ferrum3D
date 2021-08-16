@@ -2,7 +2,6 @@
 #include <FeCore/Memory/Memory.h>
 #include <gtest/gtest.h>
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Memory/Object.h>
 
 int main(int argc, char** argv)
 {

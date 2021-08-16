@@ -6,12 +6,12 @@
 namespace FE
 {
     //! \brief Shared pointer implementation that uses engine's internal reference counting system.
-    //! 
+    //!
     //! For more information about engine's reference counting system see \ref ReferenceCounter.
     //!
     //! \note T _must_ inherit from \ref IObject.
     //! \see ReferenceCounter
-    template<class T, std::enable_if_t<std::is_base_of_v<IObject, T>, bool> = true>
+    template<class T>
     class RefCountPtr
     {
         T* m_Object;
@@ -34,7 +34,10 @@ namespace FE
         inline RefCountPtr(T* object) noexcept
             : m_Object(object)
         {
-            m_Object->AddStrongRef();
+            if (m_Object)
+            {
+                m_Object->AddStrongRef();
+            }
         }
 
         //! \brief Copy a pointer (adds a strong reference to underlying object).
@@ -43,7 +46,10 @@ namespace FE
         inline RefCountPtr(const RefCountPtr& other) noexcept
             : m_Object(other.m_Object)
         {
-            m_Object->AddStrongRef();
+            if (m_Object)
+            {
+                m_Object->AddStrongRef();
+            }
         }
 
         //! \brief Move a pointer (doesn't add a strong reference to underlying object).
@@ -75,7 +81,7 @@ namespace FE
         //! \brief Move a pointer (doesn't add a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to move.
-        inline RefCountPtr& operator=(RefCountPtr&& other)
+        inline RefCountPtr& operator=(RefCountPtr&& other) noexcept
         {
             RefCountPtr(std::move(other)).Swap(*this);
             return *this;

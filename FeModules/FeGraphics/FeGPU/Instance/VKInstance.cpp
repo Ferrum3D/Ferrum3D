@@ -1,9 +1,9 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeGPU/Adapter/VKAdapter.h>
-#include <FeGPU/Instance/VKInstance.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+#if FE_DEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] FE::UInt64 object,
     [[maybe_unused]] size_t location, [[maybe_unused]] FE::Int32 messageCode, [[maybe_unused]] const char* pLayerPrefix,
@@ -30,12 +30,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     static_cast<FE::Debug::IConsoleLogger*>(pUserData)->Log(type, pMessage);
     return VK_FALSE;
 }
+#endif
 
 namespace FE::GPU
 {
     VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
     {
-        constexpr bool debugEnabled = FE_DEBUG;
         auto vkGetInstanceProcAddr  = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
@@ -69,8 +69,7 @@ namespace FE::GPU
 
         m_Instance = vk::createInstanceUnique(instanceCI);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_Instance.get());
-        if (debugEnabled)
-        {
+#if FE_DEBUG
             vk::DebugReportCallbackCreateInfoEXT debugCI{};
             debugCI.flags |= vk::DebugReportFlagBitsEXT::eWarning;
             debugCI.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
@@ -79,7 +78,7 @@ namespace FE::GPU
             debugCI.pfnCallback = &DebugReportCallback;
             debugCI.pUserData   = FE::Singleton<FE::Debug::IConsoleLogger>::Get();
             m_Debug             = m_Instance->createDebugReportCallbackEXTUnique(debugCI);
-        }
+#endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");
 
         auto vkAdapters = m_Instance->enumeratePhysicalDevices<StdHeapAllocator<vk::PhysicalDevice>>();
@@ -87,7 +86,7 @@ namespace FE::GPU
         {
             auto props = vkAdapter.getProperties();
             FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", props.deviceName);
-            m_PhysicalDevices.push_back(StaticPtrCast<IAdapter>(MakeShared<VKAdapter>(*this, vkAdapter)));
+            m_PhysicalDevices.push_back(static_pointer_cast<IAdapter>(MakeShared<VKAdapter>(*this, vkAdapter)));
         }
     }
 

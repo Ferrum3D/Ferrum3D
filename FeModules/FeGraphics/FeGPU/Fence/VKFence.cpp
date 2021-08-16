@@ -5,36 +5,38 @@
 
 namespace FE::GPU
 {
-    VKFence::VKFence(VKDevice& dev, UInt64 value)
+    VKFence::VKFence(VKDevice& dev, FenceState initialState)
+        : m_Device(&dev)
     {
-        vk::SemaphoreTypeCreateInfo timelineCI{};
-        timelineCI.initialValue  = value;
-        timelineCI.semaphoreType = vk::SemaphoreType::eTimeline;
-        vk::SemaphoreCreateInfo semaphoreCI;
-        semaphoreCI.pNext = &timelineCI;
-        m_Semaphore       = dev.GetNativeDevice().createSemaphoreUnique(semaphoreCI);
-        m_Device          = &dev;
+        vk::FenceCreateInfo fenceCI{};
+        fenceCI.flags =
+            initialState == FenceState::Reset ? static_cast<vk::FenceCreateFlagBits>(0) : vk::FenceCreateFlagBits::eSignaled;
+        m_NativeFence = m_Device->GetNativeDevice().createFenceUnique(fenceCI);
     }
 
-    void VKFence::Wait(UInt64 value)
+    void VKFence::SignalOnCPU()
     {
-        vk::SemaphoreWaitInfo waitInfo{};
-        waitInfo.semaphoreCount = 1;
-        waitInfo.pSemaphores    = &m_Semaphore.get();
-        waitInfo.pValues        = &value;
-        FE_VK_ASSERT(m_Device->GetNativeDevice().waitSemaphoresKHR(waitInfo, SemaphoreTimeout));
+        auto queue = m_Device->GetCommandQueue(CommandQueueClass::Graphics);
+        queue->SignalFence(this);
     }
 
-    void VKFence::Signal(UInt64 value)
+    void VKFence::WaitOnCPU()
     {
-        vk::SemaphoreSignalInfo signalInfo{};
-        signalInfo.semaphore = m_Semaphore.get();
-        signalInfo.value     = value;
-        m_Device->GetNativeDevice().signalSemaphoreKHR(signalInfo);
+        FE_VK_ASSERT(m_Device->GetNativeDevice().waitForFences({ m_NativeFence.get() }, false, static_cast<UInt64>(-1)));
     }
 
-    vk::Semaphore& VKFence::GetNativeSemaphore()
+    void VKFence::Reset()
     {
-        return m_Semaphore.get();
+        m_Device->GetNativeDevice().resetFences({ m_NativeFence.get() });
+    }
+
+    FenceState VKFence::GetState()
+    {
+        return FenceState::Signaled;
+    }
+
+    vk::Fence& VKFence::GetNativeFence()
+    {
+        return m_NativeFence.get();
     }
 } // namespace FE::GPU

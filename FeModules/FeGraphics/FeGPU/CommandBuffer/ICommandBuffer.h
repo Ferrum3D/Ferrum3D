@@ -17,17 +17,17 @@ namespace FE::GPU
 
         FE_STRUCT_RTTI(Viewport, "0BD79E66-6539-4AD3-A6DC-66066B56C5BF");
 
-        inline Float32 Width() const noexcept
+        [[nodiscard]] inline Float32 Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        inline Float32 Height() const noexcept
+        [[nodiscard]] inline Float32 Height() const noexcept
         {
             return MaxY - MinY;
         }
 
-        inline Float32 Depth() const noexcept
+        [[nodiscard]] inline Float32 Depth() const noexcept
         {
             return MaxZ - MinZ;
         }
@@ -42,12 +42,12 @@ namespace FE::GPU
 
         FE_STRUCT_RTTI(Scissor, "BC7244C7-821B-4044-B408-219A2BE1A955");
 
-        inline Int32 Width() const noexcept
+        [[nodiscard]] inline Int32 Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        inline Int32 Height() const noexcept
+        [[nodiscard]] inline Int32 Height() const noexcept
         {
             return MaxY - MinY;
         }
@@ -56,7 +56,7 @@ namespace FE::GPU
     class ICommandBuffer : public IObject
     {
     public:
-        virtual ~ICommandBuffer() = default;
+        ~ICommandBuffer() override = default;
 
         FE_CLASS_RTTI(ICommandBuffer, "80A845FD-5E8F-4BF1-BB75-880DE377D4A2");
 

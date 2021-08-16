@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.21.0)
+cmake_minimum_required(VERSION 3.17.0)
 
 project(Ferrum3D VERSION 0.1.0
 	DESCRIPTION "Ferrum3D Game Engine"
-	LANGUAGES CXX
+	LANGUAGES CXX C
 )
 
 enable_testing()
