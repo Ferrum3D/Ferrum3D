@@ -7,3 +7,6 @@
 [submodule "ThirdParty/googletest"]
 	path = ThirdParty/googletest
 	url = https://github.com/google/googletest.git
+[submodule "ThirdParty/rpmalloc"]
+	path = ThirdParty/rpmalloc
+	url = https://github.com/mjansson/rpmalloc.git
