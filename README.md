@@ -5,7 +5,7 @@ It is intended to be multi-platform, data-oriented, data-driven and modular.
 However, currently only the engine's core is tested since the development started only about
 two months ago.
 
-The next module to write is **FeGPU** - a graphics HAL (Hardware Abstraction Level) on top of
+The next module to write is **FeGPU** - a graphics HAL (Hardware Abstraction Layer) on top of
 Vulkan API and draw a triangle with vertex and constant buffers. This will allow to develop
 a higher-level renderer with engine's frame graph implementation.
 
