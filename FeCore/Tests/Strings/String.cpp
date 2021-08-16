@@ -1,5 +1,4 @@
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Strings/String.h>
 #include <gtest/gtest.h>
 
 TEST(Strings, EmptySizeCapacity)
@@ -22,6 +21,28 @@ TEST(Strings, LongSizeCapacity)
     FE::String str   = cstr;
     ASSERT_GT(str.Capacity(), 22);
     ASSERT_EQ(str.Size(), strlen(cstr));
+}
+
+TEST(Strings, SmallByteAt)
+{
+    FE::String str = "0123456789";
+    EXPECT_EQ(str.ByteAt(0), '0');
+    EXPECT_EQ(str.ByteAt(9), '9');
+}
+
+TEST(Strings, LongByteAt)
+{
+    FE::String str = "loooooooooooooooooooooooooooooooooooong 0123456789";
+    EXPECT_EQ(str.ByteAt(40), '0');
+    EXPECT_EQ(str.ByteAt(49), '9');
+}
+
+TEST(Strings, Length)
+{
+    FE::String smalls = "0123";
+    FE::String longs  = "loooooooooooooooooooooooooooooooooooong";
+    EXPECT_EQ(smalls.Length(), 4);
+    EXPECT_EQ(longs.Length(), 39);
 }
 
 TEST(Strings, SmallCodepointAt)
@@ -81,4 +102,41 @@ TEST(Strings, LongConcat)
     auto c = a + b;
     ASSERT_EQ(c(0, 128), a);
     ASSERT_EQ(c(128, 256), b);
+}
+
+TEST(Strings, ShrinkReserve)
+{
+    FE::String str;
+    EXPECT_EQ(str.Capacity(), 22); // initially small
+
+    str.Reserve(128); // small -> long
+    EXPECT_GE(str.Capacity(), 128);
+
+    str.Append("123");
+    str.Shrink(); // long -> small
+    EXPECT_EQ(str.Capacity(), 22);
+
+    const char l[] = "looooooooooooooooooooooooooooooooooooong";
+    str.Append(l); // small -> long
+    str.Shrink();  // long -> long
+    EXPECT_GE(str.Capacity(), sizeof(l) + 3 - 1);
+}
+
+TEST(Strings, Compare)
+{
+    EXPECT_EQ(FE::String("abc").Compare(FE::StringSlice("abc")), 0);
+    EXPECT_EQ(FE::String("abc").Compare(FE::String("abc")), 0);
+
+    EXPECT_EQ(FE::String("abc").Compare("abc"), 0);
+
+    EXPECT_GT(FE::String("abcd").Compare("abc"), 0);
+    EXPECT_LT(FE::String("abc").Compare("abcd"), 0);
+
+    EXPECT_GT(FE::String("az").Compare("aa"), 0);
+    EXPECT_LT(FE::String("aa").Compare("az"), 0);
+
+    EXPECT_GT(FE::String("azz").Compare("aa"), 0);
+    EXPECT_GT(FE::String("az").Compare("aaz"), 0);
+    EXPECT_GT(FE::String("aza").Compare("aa"), 0);
+    EXPECT_GT(FE::String("az").Compare("aaa"), 0);
 }

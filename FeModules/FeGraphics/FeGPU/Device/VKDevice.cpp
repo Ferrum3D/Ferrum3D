@@ -1,12 +1,15 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeGPU/Adapter/VKAdapter.h>
+#include <FeGPU/Buffer/VKBuffer.h>
 #include <FeGPU/CommandBuffer/VKCommandBuffer.h>
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
+#include <FeGPU/Descriptors/VKDescriptorHeap.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
+#include <FeGPU/RenderPass/VKRenderPass.h>
+#include <FeGPU/Shader/VKShaderModule.h>
+#include <FeGPU/SwapChain/VKSwapChain.h>
 #include <algorithm>
-#include <FeGPU/Swapchain/VKSwapChain.h>
-#include <FeGPU/Buffer/VKBuffer.h>
 
 namespace FE::GPU
 {
@@ -49,7 +52,9 @@ namespace FE::GPU
         for (UInt32 i = 0; i < memProperties.memoryTypeCount; ++i)
         {
             if ((typeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
                 return i;
+            }
         }
 
         FE_UNREACHABLE("Memory type not found");
@@ -59,8 +64,9 @@ namespace FE::GPU
     VKDevice::VKDevice(VKAdapter& adapter)
         : m_Adapter(&adapter)
         , m_NativeAdapter(&adapter.GetNativeAdapter())
-        , m_Instance(static_cast<VKInstance*>(&adapter.GetInstance()))
+        , m_Instance(fe_dynamic_cast<VKInstance*>(&adapter.GetInstance()))
     {
+        FE_LOG_MESSAGE("Creating Vulkan Device on GPU: {}...", m_Adapter->GetDesc().Name);
         FindQueueFamilies();
 
         auto availableExt = m_NativeAdapter->enumerateDeviceExtensionProperties<StdHeapAllocator<vk::ExtensionProperties>>();
@@ -113,9 +119,9 @@ namespace FE::GPU
         return m_NativeDevice.get();
     }
 
-    RefCountPtr<IFence> VKDevice::CreateFence(UInt64 value)
+    RefCountPtr<IFence> VKDevice::CreateFence(FenceState state)
     {
-        return StaticPtrCast<IFence>(MakeShared<VKFence>(*this, value));
+        return static_pointer_cast<IFence>(MakeShared<VKFence>(*this, state));
     }
 
     RefCountPtr<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
@@ -123,29 +129,28 @@ namespace FE::GPU
         VKCommandQueueDesc desc{};
         desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
         desc.QueueIndex       = 0;
-        return StaticPtrCast<ICommandQueue>(MakeShared<VKCommandQueue>(*this, desc));
+        return static_pointer_cast<ICommandQueue>(MakeShared<VKCommandQueue>(*this, desc));
     }
 
     RefCountPtr<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
-        return StaticPtrCast<ICommandBuffer>(MakeShared<VKCommandBuffer>(*this, cmdQueueClass));
+        return static_pointer_cast<ICommandBuffer>(MakeShared<VKCommandBuffer>(*this, cmdQueueClass));
     }
-
 
     RefCountPtr<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
     {
-        return StaticPtrCast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
+        return static_pointer_cast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
     }
 
     RefCountPtr<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
     {
         BufferDesc desc{};
-        desc.Size = size;
+        desc.Size   = size;
         auto buffer = MakeShared<VKBuffer>(*this, desc);
 
         vk::BufferCreateInfo bufferCI = {};
-        bufferCI.size = size;
-        bufferCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
+        bufferCI.size                 = size;
+        bufferCI.usage                = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
 
         if ((bindFlags & BindFlags::ShaderResource) != BindFlags::None)
         {
@@ -170,7 +175,7 @@ namespace FE::GPU
 
         buffer->Buffer = m_NativeDevice->createBufferUnique(bufferCI);
 
-        return StaticPtrCast<IBuffer>(buffer);
+        return static_pointer_cast<IBuffer>(buffer);
     }
 
     IInstance& VKDevice::GetInstance()
@@ -181,5 +186,25 @@ namespace FE::GPU
     IAdapter& VKDevice::GetAdapter()
     {
         return *m_Adapter;
+    }
+
+    RefCountPtr<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
+    {
+        return static_pointer_cast<IShaderModule>(MakeShared<VKShaderModule>(*this, desc));
+    }
+
+    RefCountPtr<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
+    {
+        return MakeShared<VKCommandBuffer>(*this, queueFamilyIndex);
+    }
+
+    RefCountPtr<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
+    {
+        return static_pointer_cast<IRenderPass>(MakeShared<VKRenderPass>(*this, desc));
+    }
+
+    RefCountPtr<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
+    {
+        return static_pointer_cast<IDescriptorHeap>(MakeShared<VKDescriptorHeap>(*this, desc));
     }
 } // namespace FE::GPU

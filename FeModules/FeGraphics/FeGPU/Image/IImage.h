@@ -13,7 +13,7 @@ namespace FE::GPU
         Size ImageSize = { 0, 0, 0 };
 
         Format ImageFormat = Format::None;
-        ImageDim Dimention = ImageDim::Image2D;
+        ImageDim Dimension = ImageDim::Image2D;
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
@@ -37,7 +37,7 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
 
-        virtual ~IImage() = default;
+        ~IImage() override = default;
 
         virtual const ImageDesc& GetDesc() = 0;
     };

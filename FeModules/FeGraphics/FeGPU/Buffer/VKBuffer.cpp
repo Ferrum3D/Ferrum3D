@@ -27,12 +27,12 @@ namespace FE::GPU
         desc.Size = memoryRequirements.size;
         desc.Type = type;
         m_Memory  = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
-        BindMemory(StaticPtrCast<IDeviceMemory>(m_Memory), 0);
+        BindMemory(static_pointer_cast<IDeviceMemory>(m_Memory), 0);
     }
 
     void VKBuffer::BindMemory(const RefCountPtr<IDeviceMemory>& memory, UInt64 offset)
     {
-        m_Memory = StaticPtrCast<VKDeviceMemory>(memory);
+        m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
         m_Device->GetNativeDevice().bindBufferMemory(Buffer.get(), m_Memory->Memory.get(), offset);
     }
 } // namespace FE::GPU

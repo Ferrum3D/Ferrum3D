@@ -5,7 +5,7 @@ namespace FE::GPU
 {
     enum class ResourceState
     {
-        None,
+        Undefined,
         Common,
         VertexBuffer,
         ConstantBuffer,
@@ -27,9 +27,9 @@ namespace FE::GPU
     {
         FE_STRUCT_RTTI(ResourceTransitionBarrierDesc, "D4115E22-8C42-4639-9EEB-C53C588AF1D5");
 
-        IImage* Image;
+        IImage* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
-        ResourceState StateBefore;
-        ResourceState StateAfter;
+        ResourceState StateBefore = ResourceState::Undefined;
+        ResourceState StateAfter = ResourceState::Undefined;
     };
 }

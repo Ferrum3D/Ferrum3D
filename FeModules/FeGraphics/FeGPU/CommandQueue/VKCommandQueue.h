@@ -25,11 +25,10 @@ namespace FE::GPU
 
         VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc);
 
-        virtual void WaitForFence(const RefCountPtr<IFence>& fence, UInt64 value) override;
-        virtual void SignalFence(const RefCountPtr<IFence>& fence, UInt64 value) override;
-        virtual void SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers) override;
+        void SignalFence(const RefCountPtr<IFence>& fence) override;
+        void SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence) override;
 
-        const VKCommandQueueDesc& GetDesc() const;
+        [[nodiscard]] const VKCommandQueueDesc& GetDesc() const;
         vk::Queue GetNativeQueue();
     };
 }

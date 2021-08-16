@@ -7,6 +7,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include "PixelShader.h"
+#include "VertexShader.h"
+
 struct Vertex
 {
     float X, Y, Z;
@@ -18,11 +21,15 @@ int main()
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
     {
         auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
+        FE_LOG_MESSAGE(
+            "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
+            FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
+
         FE::GPU::InstanceDesc desc{};
         auto instance = FE::GPU::CreateGraphicsAPIInstance(desc, FE::GPU::GraphicsAPI::Vulkan);
         auto adapter  = instance->GetAdapters()[0];
         auto device   = adapter->CreateDevice();
-        auto fence    = device->CreateFence(0);
+        auto fence    = device->CreateFence(FE::GPU::FenceState::Reset);
         auto queue    = device->GetCommandQueue(FE::GPU::CommandQueueClass::Graphics);
         auto buffer   = device->CreateCommandBuffer(FE::GPU::CommandQueueClass::Graphics);
 
@@ -65,6 +72,45 @@ int main()
             memcpy(map, constantData.Data(), sizeof(FE::float4));
             constantBuffer->Unmap();
         }
+
+        FE::GPU::ShaderModuleDesc pixelDesc;
+        pixelDesc.EntryPoint   = "main";
+        pixelDesc.ByteCode     = PixelShader;
+        pixelDesc.ByteCodeSize = sizeof(PixelShader);
+        pixelDesc.Stage        = FE::GPU::ShaderStage::Pixel;
+        auto pixelShader       = device->CreateShaderModule(pixelDesc);
+
+        FE::GPU::ShaderModuleDesc vertexDesc;
+        vertexDesc.EntryPoint   = "main";
+        vertexDesc.ByteCode     = VertexShader;
+        vertexDesc.ByteCodeSize = sizeof(VertexShader);
+        vertexDesc.Stage        = FE::GPU::ShaderStage::Vertex;
+        auto vertexShader       = device->CreateShaderModule(vertexDesc);
+
+        FE::GPU::RenderPassDesc renderPassDesc{};
+
+        FE::GPU::AttachmentDesc attachmentDesc{};
+        attachmentDesc.Format       = swapChain->GetDesc().Format;
+        attachmentDesc.StoreOp      = FE::GPU::AttachmentStoreOp::Store;
+        attachmentDesc.LoadOp       = FE::GPU::AttachmentLoadOp::Clear;
+        attachmentDesc.InitialState = FE::GPU::ResourceState::Undefined;
+        attachmentDesc.FinalState   = FE::GPU::ResourceState::Present;
+
+        renderPassDesc.Attachments = { attachmentDesc };
+
+        FE::GPU::SubpassDesc subpassDesc{};
+        subpassDesc.RenderTargetAttachments = { FE::GPU::SubpassAttachment(FE::GPU::ResourceState::RenderTarget, 0) };
+        renderPassDesc.Subpasses            = { subpassDesc };
+
+        FE::GPU::SubpassDependency dependency{};
+        renderPassDesc.SubpassDependencies = { dependency };
+
+        auto renderPass = device->CreateRenderPass(renderPassDesc);
+
+        FE::GPU::DescriptorHeapDesc descriptorHeapDesc{};
+        descriptorHeapDesc.MaxSets = 1;
+        descriptorHeapDesc.Sizes   = { FE::GPU::DescriptorSize(1, FE::GPU::ShaderResourceType::ConstantBuffer) };
+        auto descriptorHeap        = device->CreateDescriptorHeap(descriptorHeapDesc);
 
         while (!glfwWindowShouldClose(window))
         {

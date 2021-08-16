@@ -7,7 +7,7 @@
 
 namespace FE
 {
-    //! \brief 3-dimentional vector.
+    //! \brief 3-dimensional vector.
     class Vector3F
     {
         using TVec = SIMD::SSE::Float32x4;
@@ -24,7 +24,7 @@ namespace FE
         };
         FE_POP_MSVC_WARNING
 
-        FE_FINLINE Vector3F(TVec vec) noexcept;
+        FE_FINLINE explicit Vector3F(TVec vec) noexcept;
 
     public:
         FE_STRUCT_RTTI(Vector3F, "FBD32DD3-C4C4-46DA-8F74-E9EA863BCAAD");
@@ -46,7 +46,7 @@ namespace FE
 
         FE_FINLINE Vector3F(Float32 x, Float32 y, Float32 z) noexcept;
 
-        FE_FINLINE Vector3F(const std::array<Float32, 3>& array) noexcept;
+        FE_FINLINE explicit Vector3F(const std::array<Float32, 3>& array) noexcept;
 
         //! \return Vector3F{ 0, 0, 0 }.
         FE_FINLINE static Vector3F GetZero() noexcept;
@@ -65,31 +65,31 @@ namespace FE
         FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of three floats (components of the vector).
-        FE_FINLINE const Float32* Data() const noexcept;
+        [[nodiscard]] FE_FINLINE const Float32* Data() const noexcept;
 
         //! \return Underlying SIMD type.
-        FE_FINLINE TVec GetSIMDVector() const noexcept;
+        [[nodiscard]] FE_FINLINE TVec GetSIMDVector() const noexcept;
 
-        FE_FINLINE Float32 X() const noexcept;
-        FE_FINLINE Float32 Y() const noexcept;
-        FE_FINLINE Float32 Z() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 X() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Y() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Z() const noexcept;
 
-        FE_FINLINE Float32& X() noexcept;
-        FE_FINLINE Float32& Y() noexcept;
-        FE_FINLINE Float32& Z() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& X() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& Y() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& Z() noexcept;
 
         FE_FINLINE void Set(Float32 x, Float32 y, Float32 z) noexcept;
 
-        FE_FINLINE Float32 Dot(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Dot(const Vector3F& other) const noexcept;
 
         //! \return Squared length of the vector.
-        FE_FINLINE Float32 LengthSq() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 LengthSq() const noexcept;
 
         //! \return Length of the vector.
-        FE_FINLINE Float32 Length() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Length() const noexcept;
 
         //! \return New normalized vector, this vector is not modified.
-        FE_FINLINE Vector3F Normalized() const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F Normalized() const noexcept;
 
         //! \brief Linearly interpolate between this and destination.
         //!
@@ -98,15 +98,15 @@ namespace FE
         //! \param [in] f - Interpolation factor.
         //!
         //! \return New interpolated vector, this vector is not modified.
-        FE_FINLINE Vector3F Lerp(const Vector3F& dst, Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F Lerp(const Vector3F& dst, Float32 f) const noexcept;
 
         //! \return Cross product [this x other].
-        FE_FINLINE Vector3F Cross(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F Cross(const Vector3F& other) const noexcept;
 
         //! \brief Multiply each component of this vector with each component of other vector.
-        //! 
+        //!
         //! \return New vector, this vector is not modified.
-        FE_FINLINE Vector3F MulEach(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F MulEach(const Vector3F& other) const noexcept;
 
         //! \brief Check if two vectors are approximately equal.
         //!
@@ -114,7 +114,7 @@ namespace FE
         //! \param [in] epsilon - Accepted difference between the two vectors.
         //!
         //! \return True if the vectors are approximately equal.
-        FE_FINLINE bool IsApproxEqualTo(const Vector3F& other, Float32 epsilon = 0.0001f) const noexcept;
+        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Vector3F& other, Float32 epsilon = 0.0001f) const noexcept;
 
         FE_FINLINE bool operator==(const Vector3F& other) const noexcept;
 
@@ -277,12 +277,12 @@ namespace FE
     FE_FINLINE Vector3F Vector3F::Normalized() const noexcept
     {
         Float32 len = Length();
-        return m_Value / len;
+        return Vector3F(m_Value / len);
     }
 
     FE_FINLINE Vector3F Vector3F::Lerp(const Vector3F& dst, Float32 f) const noexcept
     {
-        return (dst.m_Value - m_Value) * f + m_Value;
+        return Vector3F((dst.m_Value - m_Value) * f + m_Value);
     }
 
     FE_FINLINE Vector3F Vector3F::Cross(const Vector3F& other) const noexcept
@@ -292,12 +292,12 @@ namespace FE
         auto yzx2 = other.m_Value.Shuffle<3, 0, 2, 1>();
         auto zxy2 = other.m_Value.Shuffle<3, 1, 0, 2>();
 
-        return yzx1 * zxy2 - zxy1 * yzx2;
+        return Vector3F(yzx1 * zxy2 - zxy1 * yzx2);
     }
 
     FE_FINLINE Vector3F Vector3F::MulEach(const Vector3F& other) const noexcept
     {
-        return m_Value * other.m_Value;
+        return Vector3F(m_Value * other.m_Value);
     }
 
     FE_FINLINE bool Vector3F::IsApproxEqualTo(const Vector3F& other, Float32 epsilon) const noexcept
@@ -318,27 +318,27 @@ namespace FE
 
     FE_FINLINE Vector3F Vector3F::operator-() const noexcept
     {
-        return 1.0f - m_Value;
+        return Vector3F(1.0f - m_Value);
     }
 
     FE_FINLINE Vector3F Vector3F::operator+(const Vector3F& other) const noexcept
     {
-        return m_Value + other.m_Value;
+        return Vector3F(m_Value + other.m_Value);
     }
 
     FE_FINLINE Vector3F Vector3F::operator-(const Vector3F& other) const noexcept
     {
-        return m_Value - other.m_Value;
+        return Vector3F(m_Value - other.m_Value);
     }
 
     FE_FINLINE Vector3F Vector3F::operator*(Float32 f) const noexcept
     {
-        return m_Value * f;
+        return Vector3F(m_Value * f);
     }
 
     FE_FINLINE Vector3F Vector3F::operator/(Float32 f) const noexcept
     {
-        return m_Value / f;
+        return Vector3F(m_Value / f);
     }
 
     FE_FINLINE Vector3F& Vector3F::operator+=(const Vector3F& other) noexcept

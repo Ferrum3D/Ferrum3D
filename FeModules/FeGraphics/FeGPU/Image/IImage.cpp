@@ -11,7 +11,7 @@ namespace FE::GPU
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;
-        desc.Dimention   = ImageDim::Image1D;
+        desc.Dimension   = ImageDim::Image1D;
         desc.ImageFormat = format;
         desc.ImageSize   = { width, 1, 1 };
         desc.ArraySize   = arraySize;
@@ -27,7 +27,7 @@ namespace FE::GPU
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;
-        desc.Dimention   = ImageDim::Image2D;
+        desc.Dimension   = ImageDim::Image2D;
         desc.ImageSize   = { width, height, 1 };
         desc.ArraySize   = arraySize;
         desc.ImageFormat = format;
@@ -43,7 +43,7 @@ namespace FE::GPU
     {
         ImageDesc desc;
         desc.BindFlags   = bindFlags;
-        desc.Dimention   = ImageDim::ImageCubemap;
+        desc.Dimension   = ImageDim::ImageCubemap;
         desc.ImageSize   = { width, width, 1 };
         desc.ArraySize   = 6 * arraySize;
         desc.ImageFormat = format;
@@ -54,7 +54,7 @@ namespace FE::GPU
     {
         ImageDesc desc{};
         desc.BindFlags   = bindFlags;
-        desc.Dimention   = ImageDim::Image3D;
+        desc.Dimension   = ImageDim::Image3D;
         desc.ImageSize   = { width, height, depth };
         desc.ArraySize   = 1;
         desc.ImageFormat = format;

@@ -1,3 +1,4 @@
+#pragma once
 #include <FeGPU/Buffer/IBuffer.h>
 #include <FeGPU/Memory/VKDeviceMemory.h>
 #include <FeGPU/Common/VKConfig.h>

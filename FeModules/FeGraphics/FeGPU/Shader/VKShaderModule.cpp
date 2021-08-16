@@ -22,4 +22,4 @@ namespace FE::GPU
     {
         return m_Desc;
     }
-} // namespace FE
+} // namespace FE::GPU

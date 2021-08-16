@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 
-namespace FE
+namespace FE::GPU
 {
     enum class ShaderStage : UInt32
     {
@@ -14,14 +14,14 @@ namespace FE
 
     enum class ShaderStageFlags : UInt32
     {
-        None = 0,
-        Vertex = 1 << static_cast<UInt32>(ShaderStage::Vertex),
+        None         = 0,
+        Vertex       = 1 << static_cast<UInt32>(ShaderStage::Vertex),
         Tessellation = 1 << static_cast<UInt32>(ShaderStage::Tessellation),
-        Pixel = 1 << static_cast<UInt32>(ShaderStage::Pixel),
-        Geometry = 1 << static_cast<UInt32>(ShaderStage::Geometry),
-        Compute = 1 << static_cast<UInt32>(ShaderStage::Compute),
-        All = Vertex | Tessellation | Pixel | Compute
+        Pixel        = 1 << static_cast<UInt32>(ShaderStage::Pixel),
+        Geometry     = 1 << static_cast<UInt32>(ShaderStage::Geometry),
+        Compute      = 1 << static_cast<UInt32>(ShaderStage::Compute),
+        All          = Vertex | Tessellation | Pixel | Geometry | Compute
     };
 
     FE_ENUM_OPERATORS(ShaderStageFlags);
-}
+} // namespace FE::GPU

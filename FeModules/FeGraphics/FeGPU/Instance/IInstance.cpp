@@ -10,7 +10,7 @@ namespace FE::GPU
         case GraphicsAPI::None:
             break;
         case GraphicsAPI::Vulkan:
-            return StaticPtrCast<IInstance>(MakeShared<VKInstance>(desc));
+            return static_pointer_cast<IInstance>(MakeShared<VKInstance>(desc));
         default:
             break;
         }

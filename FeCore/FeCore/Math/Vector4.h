@@ -7,7 +7,7 @@
 
 namespace FE
 {
-    //! \brief 4-dimentional vector.
+    //! \brief 4-dimensional vector.
     class Vector4F
     {
         using TVec = SIMD::SSE::Float32x4;

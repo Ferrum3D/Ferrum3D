@@ -12,5 +12,8 @@ CTestTestfile.cmake
 _deps
 
 # ignore the build folder
-build/
+Build/
+BuildDebug/
+BuildRelease/
 .vs/
+.idea/
