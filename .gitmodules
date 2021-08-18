@@ -10,3 +10,6 @@
 [submodule "ThirdParty/rpmalloc"]
 	path = ThirdParty/rpmalloc
 	url = https://github.com/mjansson/rpmalloc.git
+[submodule "ThirdParty/DirectXShaderCompiler"]
+	path = ThirdParty/DirectXShaderCompiler
+	url = https://github.com/microsoft/DirectXShaderCompiler.git
