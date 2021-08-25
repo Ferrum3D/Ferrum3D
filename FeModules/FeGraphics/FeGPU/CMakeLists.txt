@@ -73,7 +73,10 @@ set(SRC
     SwapChain/ISwapChain.h
     SwapChain/VKSwapChain.h
     SwapChain/VKSwapChain.cpp
-)
+    Shader/IShaderCompiler.h
+    Shader/ShaderCompilerDXC.h
+    Shader/ShaderCompilerDXC.cpp
+        Descriptors/IDescriptorTable.h Descriptors/VKDescriptorTable.h Descriptors/VKDescriptorTable.cpp Pipeline/IGraphicsPipeline.h Pipeline/VKGraphicsPipeline.h Pipeline/VKGraphicsPipeline.cpp)
 
 add_library(FeGPU STATIC ${SRC})
 
@@ -82,7 +85,7 @@ fe_configure_target(FeGPU)
 target_include_directories(FeGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 set_target_properties(FeGPU PROPERTIES FOLDER "Modules/FeGraphics/FeGPU")
-target_link_libraries(FeGPU vulkan glfw FeCore)
+target_link_libraries(FeGPU vulkan glfw dxc FeCore)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGPU PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

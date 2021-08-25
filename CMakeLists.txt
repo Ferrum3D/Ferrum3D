@@ -15,6 +15,7 @@ include(ThirdParty/glfw)
 include(ThirdParty/gtest)
 include(ThirdParty/rpmalloc)
 include(ThirdParty/vulkan)
+include(ThirdParty/dxc)
 
 add_subdirectory(FeCore)
 add_subdirectory(FeModules)

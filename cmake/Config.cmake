@@ -8,6 +8,7 @@ endif()
 
 if (FE_COMPILER_MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
     add_compile_definitions(_ENABLE_EXTENDED_ALIGNED_STORAGE)
     set(CMAKE_USE_WIN32_THREADS_INIT ON)
 endif()

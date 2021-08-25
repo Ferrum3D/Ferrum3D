@@ -5,6 +5,24 @@
 
 namespace FE::GPU
 {
+    inline vk::ShaderStageFlags VKConvert(ShaderStageFlags source)
+    {
+        auto result = static_cast<vk::ShaderStageFlags>(0);
+#define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
+    if ((source & ShaderStageFlags::ferrum) != ShaderStageFlags::None)                                                           \
+        result |= vk::ShaderStageFlagBits::vulkan
+
+        FE_CVT_ENTRY(Pixel, eFragment);
+        FE_CVT_ENTRY(Vertex, eVertex);
+        FE_CVT_ENTRY(Hull, eTessellationControl);
+        FE_CVT_ENTRY(Domain, eTessellationEvaluation);
+        FE_CVT_ENTRY(Geometry, eGeometry);
+        FE_CVT_ENTRY(Compute, eCompute);
+#undef FE_CVT_ENTRY
+
+        return result;
+    }
+
     class VKDevice;
 
     class VKShaderModule : public Object<IShaderModule>
@@ -21,4 +39,4 @@ namespace FE::GPU
 
         const ShaderModuleDesc& GetDesc() const override;
     };
-} // namespace FE
+} // namespace FE::GPU

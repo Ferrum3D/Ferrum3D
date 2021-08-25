@@ -61,7 +61,7 @@ set(SRC
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h
 	FeCore/Utils/UUID.h
-)
+        FeCore/Modules/DynamicLibrary.h FeCore/Modules/DynamicLibrary.cpp FeCore/Base/PlatformInclude.h)
 
 add_library(FeCore STATIC ${SRC})
 

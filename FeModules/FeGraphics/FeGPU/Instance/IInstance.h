@@ -1,15 +1,10 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeGPU/Adapter/IAdapter.h>
+#include <FeGPU/Common/BaseTypes.h>
 
 namespace FE::GPU
 {
-    enum class GraphicsAPI
-    {
-        None,
-        Vulkan
-    };
-
     struct InstanceDesc
     {
         FE_STRUCT_RTTI(InstanceDesc, "20125FD5-EFCB-426E-B1EE-50DF51457171");
