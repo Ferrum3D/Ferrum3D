@@ -5,6 +5,12 @@
 
 namespace FE::GPU
 {
+    enum class GraphicsAPI
+    {
+        None,
+        Vulkan
+    };
+
     struct Size
     {
         UInt64 Width;

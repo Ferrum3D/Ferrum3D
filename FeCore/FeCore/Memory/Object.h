@@ -68,7 +68,7 @@ namespace FE
             return m_RefCounter->AddStrongRef();
         }
 
-        //! Directly uses \ref ReferenceCounter::ReleaseStrongRef, but also calls the virtual desctructor
+        //! Directly uses \ref ReferenceCounter::ReleaseStrongRef, but also calls the virtual destructor
         //! of itself (commits suicide) when the reference counter reaches zero.
         inline UInt32 ReleaseStrongRef() override
         {

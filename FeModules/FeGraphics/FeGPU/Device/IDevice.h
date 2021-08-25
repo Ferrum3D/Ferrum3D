@@ -6,6 +6,7 @@
 #include <FeGPU/Fence/IFence.h>
 #include <FeGPU/RenderPass/IRenderPass.h>
 #include <FeGPU/Resource/IResource.h>
+#include <FeGPU/Shader/IShaderCompiler.h>
 #include <FeGPU/Shader/IShaderModule.h>
 #include <FeGPU/SwapChain/ISwapChain.h>
 
@@ -38,5 +39,6 @@ namespace FE::GPU
         virtual RefCountPtr<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc)       = 0;
         virtual RefCountPtr<IRenderPass> CreateRenderPass(const RenderPassDesc& desc)             = 0;
         virtual RefCountPtr<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) = 0;
+        virtual RefCountPtr<IShaderCompiler> CreateShaderCompiler() = 0;
     };
 } // namespace FE::GPU

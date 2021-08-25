@@ -2,57 +2,12 @@
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/Object.h>
 #include <FeGPU/Resource/ResourceState.h>
+#include <FeGPU/Descriptors/IDescriptorTable.h>
+#include <FeGPU/Pipeline/IGraphicsPipeline.h>
 #include <cstdint>
 
 namespace FE::GPU
 {
-    struct Viewport
-    {
-        Float32 MinX;
-        Float32 MinY;
-        Float32 MinZ;
-        Float32 MaxX;
-        Float32 MaxY;
-        Float32 MaxZ;
-
-        FE_STRUCT_RTTI(Viewport, "0BD79E66-6539-4AD3-A6DC-66066B56C5BF");
-
-        [[nodiscard]] inline Float32 Width() const noexcept
-        {
-            return MaxX - MinX;
-        }
-
-        [[nodiscard]] inline Float32 Height() const noexcept
-        {
-            return MaxY - MinY;
-        }
-
-        [[nodiscard]] inline Float32 Depth() const noexcept
-        {
-            return MaxZ - MinZ;
-        }
-    };
-
-    struct Scissor
-    {
-        Int32 MinX;
-        Int32 MinY;
-        Int32 MaxX;
-        Int32 MaxY;
-
-        FE_STRUCT_RTTI(Scissor, "BC7244C7-821B-4044-B408-219A2BE1A955");
-
-        [[nodiscard]] inline Int32 Width() const noexcept
-        {
-            return MaxX - MinX;
-        }
-
-        [[nodiscard]] inline Int32 Height() const noexcept
-        {
-            return MaxY - MinY;
-        }
-    };
-
     class ICommandBuffer : public IObject
     {
     public:
@@ -68,6 +23,8 @@ namespace FE::GPU
 
         virtual void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) = 0;
         virtual void MemoryBarrier()                                                                   = 0;
+
+        virtual void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables) = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(

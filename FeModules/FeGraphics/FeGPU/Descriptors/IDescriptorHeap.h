@@ -1,21 +1,10 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <FeGPU/Descriptors/IDescriptorTable.h>
 
 namespace FE::GPU
 {
-    enum class ShaderResourceType
-    {
-        None,
-        ConstantBuffer,
-        TextureSRV,
-        TextureUAV,
-        BufferSRV,
-        BufferUAV,
-        Sampler,
-        InputAttachment
-    };
-
     struct DescriptorSize
     {
         UInt32 DescriptorCount          = 0;
@@ -46,5 +35,7 @@ namespace FE::GPU
         FE_CLASS_RTTI(IDescriptorHeap, "B6F00D47-B483-4919-87F9-25348091482F");
 
         ~IDescriptorHeap() override = default;
+
+        virtual RefCountPtr<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) = 0;
     };
 } // namespace FE::GPU

@@ -121,7 +121,9 @@ namespace FE::GPU
         }
 
         if (nativeBarriers.empty())
+        {
             return;
+        }
 
         m_CommandBuffer->pipelineBarrier(
             vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion,
@@ -135,5 +137,10 @@ namespace FE::GPU
         m_CommandBuffer->pipelineBarrier(
             vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion,
             1, &barrier, 0, nullptr, 0, nullptr);
+    }
+
+    void VKCommandBuffer::BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables)
+    {
+        static_assert(false); // TODO
     }
 } // namespace FE::GPU

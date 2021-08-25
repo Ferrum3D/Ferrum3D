@@ -109,13 +109,6 @@ namespace FE::GPU
         float4 BlendConstants{};
     };
 
-    struct FixedPipelineStates
-    {
-        RasterizationState RasterizationState;
-        DepthStencilState DepthStencilState;
-        ColorBlendState BlendState;
-    };
-
     enum class PipelineStageFlags : UInt32
     {
         TopOfPipe                    = 1 << 0,

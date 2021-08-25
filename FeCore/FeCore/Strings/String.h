@@ -513,6 +513,18 @@ namespace FE
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
+        [[nodiscard]] inline std::wstring ToWideString() const
+        {
+            std::wstring result;
+            result.reserve(Length());
+            for (TCodepoint cp : *this)
+            {
+                result += static_cast<wchar_t>(cp);
+            }
+
+            return result;
+        }
+
         [[nodiscard]] inline Iterator begin() const noexcept
         {
             auto ptr = Data();
@@ -520,19 +532,6 @@ namespace FE
         }
 
         [[nodiscard]] inline Iterator end() const noexcept
-        {
-            auto ptr  = Data();
-            auto size = Size();
-            return Iterator(ptr + size);
-        }
-
-        [[nodiscard]] inline Iterator cbegin() const noexcept
-        {
-            auto ptr = Data();
-            return Iterator(ptr);
-        }
-
-        [[nodiscard]] inline Iterator cend() const noexcept
         {
             auto ptr  = Data();
             auto size = Size();

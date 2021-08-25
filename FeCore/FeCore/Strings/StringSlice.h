@@ -1,7 +1,10 @@
 #pragma once
 #include <FeCore/Strings/FeUnicode.h>
 #include <cassert>
+#include <codecvt>
+#include <locale>
 #include <ostream>
+#include <string>
 
 namespace FE
 {
@@ -67,6 +70,27 @@ namespace FE
                 return t;
             }
 
+            inline friend Iterator operator+(Iterator lhs, Int32 rhs)
+            {
+                if (rhs > 0)
+                {
+                    while (rhs--)
+                        ++lhs;
+                }
+                else
+                {
+                    while (rhs--)
+                        --lhs;
+                }
+
+                return lhs;
+            }
+
+            inline friend Iterator operator-(const Iterator& lhs, Int32 rhs)
+            {
+                return lhs + (-rhs);
+            }
+
             inline friend bool operator==(const Iterator& a, const Iterator& b)
             {
                 return a.m_Iter == b.m_Iter;
@@ -77,6 +101,12 @@ namespace FE
                 return a.m_Iter != b.m_Iter;
             };
         };
+
+        inline constexpr StringSlice() noexcept
+            : m_Data(nullptr)
+            , m_Size(0)
+        {
+        }
 
         inline constexpr StringSlice(const TChar* data, size_t size) noexcept
             : m_Data(data)
@@ -96,18 +126,18 @@ namespace FE
         {
         }
 
-        inline constexpr const TChar* Data() const noexcept
+        [[nodiscard]] inline constexpr const TChar* Data() const noexcept
         {
             return m_Data;
         }
 
-        inline constexpr size_t Size() const noexcept
+        [[nodiscard]] inline constexpr size_t Size() const noexcept
         {
             return m_Size;
         }
 
         // O(N)
-        inline size_t Length() const noexcept
+        [[nodiscard]] inline size_t Length() const noexcept
         {
             return UTF8::Length(Data(), Size());
         }
@@ -122,14 +152,14 @@ namespace FE
         }
 
         // O(1)
-        inline TChar ByteAt(size_t index) const
+        [[nodiscard]] inline TChar ByteAt(size_t index) const
         {
             assert(index < Size());
             return Data()[index];
         }
 
         // O(N)
-        inline TCodepoint CodePointAt(size_t index) const
+        [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
         {
             auto begin     = Data();
             auto end       = begin + Size() + 1;
@@ -144,38 +174,56 @@ namespace FE
             return 0;
         }
 
-        inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
         {
             auto e = end();
             for (auto iter = begin(); iter != e; ++iter)
             {
                 if (*iter == search)
+                {
                     return iter;
+                }
             }
             return e;
         }
 
-        inline int Compare(const StringSlice& other) const noexcept
+        [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
+        {
+            auto e      = end();
+            auto result = e;
+            for (auto iter = begin(); iter != e; ++iter)
+            {
+                if (*iter == search)
+                {
+                    result = iter;
+                }
+            }
+            return result;
+        }
+
+        [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        inline Iterator begin() const noexcept
+        [[nodiscard]] inline std::wstring ToWideString() const
+        {
+            std::wstring result;
+            result.reserve(Length());
+            for (TCodepoint cp : *this)
+            {
+                result += static_cast<wchar_t>(cp);
+            }
+
+            return result;
+        }
+
+        [[nodiscard]] inline Iterator begin() const noexcept
         {
             return Iterator(Data());
         }
 
-        inline Iterator end() const noexcept
-        {
-            return Iterator(Data() + Size());
-        }
-
-        inline Iterator cbegin() const noexcept
-        {
-            return Iterator(Data());
-        }
-
-        inline Iterator cend() const noexcept
+        [[nodiscard]] inline Iterator end() const noexcept
         {
             return Iterator(Data() + Size());
         }

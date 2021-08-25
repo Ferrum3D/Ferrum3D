@@ -99,5 +99,6 @@ namespace FE::GPU
         RefCountPtr<IRenderPass> CreateRenderPass(const RenderPassDesc& desc) override;
         RefCountPtr<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) override;
         RefCountPtr<VKCommandBuffer> CreateCommandBuffer(UInt32 queueFamilyIndex);
+        RefCountPtr<IShaderCompiler> CreateShaderCompiler() override;
     };
 } // namespace FE::GPU

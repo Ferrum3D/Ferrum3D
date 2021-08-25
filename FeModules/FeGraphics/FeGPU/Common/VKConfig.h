@@ -1,12 +1,10 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/Base/PlatformInclude.h>
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 FE_PUSH_MSVC_WARNING(4239)
 #include <vulkan/vulkan.hpp>
 FE_POP_MSVC_WARNING
-#undef CopyMemory
 
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Memory.h>

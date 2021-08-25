@@ -8,6 +8,7 @@
 #include <FeGPU/Fence/VKFence.h>
 #include <FeGPU/RenderPass/VKRenderPass.h>
 #include <FeGPU/Shader/VKShaderModule.h>
+#include <FeGPU/Shader/ShaderCompilerDXC.h>
 #include <FeGPU/SwapChain/VKSwapChain.h>
 #include <algorithm>
 
@@ -206,5 +207,10 @@ namespace FE::GPU
     RefCountPtr<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
     {
         return static_pointer_cast<IDescriptorHeap>(MakeShared<VKDescriptorHeap>(*this, desc));
+    }
+
+    RefCountPtr<IShaderCompiler> VKDevice::CreateShaderCompiler()
+    {
+        return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>());
     }
 } // namespace FE::GPU

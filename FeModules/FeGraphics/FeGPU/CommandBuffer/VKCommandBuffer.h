@@ -94,6 +94,8 @@ namespace FE::GPU
         void Begin() override;
         void End() override;
 
+        void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables) override;
+
         void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) override;
         void DrawIndexed(
             UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) override;
