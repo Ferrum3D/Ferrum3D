@@ -23,5 +23,18 @@ namespace FE::GPU
         VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const Vector<DescriptorDesc>& descriptors);
 
         void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) override;
+
+        inline vk::DescriptorSet& GetNativeSet();
+        inline vk::DescriptorSetLayout& GetNativeSetLayout();
     };
+
+    inline vk::DescriptorSet& VKDescriptorTable::GetNativeSet()
+    {
+        return m_Set;
+    }
+
+    inline vk::DescriptorSetLayout& VKDescriptorTable::GetNativeSetLayout()
+    {
+        return m_Layout.get();
+    }
 }

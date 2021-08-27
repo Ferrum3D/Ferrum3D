@@ -1,13 +1,23 @@
 #pragma once
+#include <FeCore/Math/Vector4.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/Object.h>
-#include <FeGPU/Resource/ResourceState.h>
 #include <FeGPU/Descriptors/IDescriptorTable.h>
+#include <FeGPU/Framebuffer/IFramebuffer.h>
 #include <FeGPU/Pipeline/IGraphicsPipeline.h>
+#include <FeGPU/RenderPass/IRenderPass.h>
+#include <FeGPU/Resource/ResourceState.h>
 #include <cstdint>
 
 namespace FE::GPU
 {
+    struct ClearValueDesc
+    {
+        float4 Color;
+
+        FE_STRUCT_RTTI(ClearValueDesc, "DA133DBF-F0B7-43DB-A367-C125ED14E06F");
+    };
+
     class ICommandBuffer : public IObject
     {
     public:
@@ -24,7 +34,14 @@ namespace FE::GPU
         virtual void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) = 0;
         virtual void MemoryBarrier()                                                                   = 0;
 
-        virtual void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables) = 0;
+        virtual void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
+        virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                    = 0;
+
+        virtual void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) = 0;
+        virtual void EndRenderPass()                                                                                       = 0;
+
+        virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer) = 0;
+        virtual void BindIndexBuffer(IBuffer* buffer)               = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(

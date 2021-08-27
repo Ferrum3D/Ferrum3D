@@ -2,6 +2,7 @@
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
+#include <FeGPU/SwapChain/VKSwapChain.h>
 
 namespace FE::GPU
 {
@@ -38,13 +39,17 @@ namespace FE::GPU
         }
 
         vk::SubmitInfo info{};
-        info.pCommandBuffers    = nativeBuffers.data();
-        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
+        info.pCommandBuffers      = nativeBuffers.data();
+        info.commandBufferCount   = static_cast<UInt32>(nativeBuffers.size());
+        info.pWaitSemaphores      = &VKSwapChain::m_ImageAvailableSemaphore.get();
+        info.waitSemaphoreCount   = 1;
+        info.pSignalSemaphores    = &VKSwapChain::m_RenderFinishedSemaphore.get();
+        info.signalSemaphoreCount = 1;
 
         vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;
         info.pWaitDstStageMask              = &waitDstFlags;
 
-        auto& vkFence = fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence();
+        vk::Fence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : nullptr;
         m_Queue.submit({ info }, vkFence);
     }
 } // namespace FE::GPU

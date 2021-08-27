@@ -20,11 +20,9 @@ namespace FE::GPU
         vk::SurfaceCapabilitiesKHR m_Capabilities;
 
         Vector<RefCountPtr<IImage>> m_Images;
-        Vector<RefCountPtr<VKImageView>> m_ImageViews;
+        Vector<RefCountPtr<IImageView>> m_ImageViews;
         UInt32 m_FrameIndex = 0;
 
-        vk::UniqueSemaphore m_ImageAvailableSemaphore;
-        vk::UniqueSemaphore m_RenderFinishedSemaphore;
         RefCountPtr<IFence> m_Fence;
 
         bool ValidateDimensions(const SwapChainDesc& swapChainDesc) const;
@@ -32,6 +30,9 @@ namespace FE::GPU
         void AcquireNextImage(UInt32* index);
 
     public:
+        static vk::UniqueSemaphore m_ImageAvailableSemaphore;
+        static vk::UniqueSemaphore m_RenderFinishedSemaphore;
+
         FE_CLASS_RTTI(VKSwapChain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
         VKSwapChain(VKDevice& dev, const SwapChainDesc& desc);
@@ -43,5 +44,7 @@ namespace FE::GPU
         IImage* GetImage(UInt32 index) override;
         IImage* GetCurrentImage() override;
         void Present() override;
+
+        Vector<RefCountPtr<IImageView>> GetRTVs() override;
     };
 } // namespace FE::GPU

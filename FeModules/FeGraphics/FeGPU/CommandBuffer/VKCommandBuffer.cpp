@@ -1,6 +1,11 @@
+#include <FeGPU/Buffer/VKBuffer.h>
 #include <FeGPU/CommandBuffer/VKCommandBuffer.h>
+#include <FeGPU/Descriptors/VKDescriptorTable.h>
 #include <FeGPU/Device/VKDevice.h>
+#include <FeGPU/Framebuffer/VKFramebuffer.h>
 #include <FeGPU/Image/VKImage.h>
+#include <FeGPU/Pipeline/VKGraphicsPipeline.h>
+#include <FeGPU/RenderPass/VKRenderPass.h>
 
 namespace FE::GPU
 {
@@ -66,21 +71,13 @@ namespace FE::GPU
 
     void VKCommandBuffer::SetViewport(const Viewport& viewport)
     {
-        vk::Viewport vp{};
-        vp.x        = viewport.MinX;
-        vp.y        = viewport.MinY;
-        vp.width    = viewport.Width();
-        vp.height   = viewport.Height();
-        vp.minDepth = viewport.MinZ;
-        vp.maxDepth = viewport.MaxZ;
+        vk::Viewport vp = VKConvert(viewport);
         m_CommandBuffer->setViewport(0, 1, &vp);
     }
 
     void VKCommandBuffer::SetScissor(const Scissor& scissor)
     {
-        vk::Rect2D rect{};
-        rect.offset = vk::Offset2D(scissor.MinX, scissor.MaxX);
-        rect.extent = vk::Extent2D(scissor.Width(), scissor.Height());
+        vk::Rect2D rect = VKConvert(scissor);
         m_CommandBuffer->setScissor(0, 1, &rect);
     }
 
@@ -139,8 +136,57 @@ namespace FE::GPU
             1, &barrier, 0, nullptr, 0, nullptr);
     }
 
-    void VKCommandBuffer::BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables)
+    void VKCommandBuffer::BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
     {
-        static_assert(false); // TODO
+        Vector<vk::DescriptorSet> nativeSets;
+        for (auto& table : descriptorTables)
+        {
+            nativeSets.push_back(fe_assert_cast<VKDescriptorTable*>(table)->GetNativeSet());
+        }
+
+        auto* vkPipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline);
+        m_CommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkPipeline->GetNativeLayout(), 0, nativeSets, {});
+    }
+
+    void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue)
+    {
+        vk::ClearValue vkClearValue{};
+        vkClearValue.color.float32[0] = clearValue.Color.X();
+        vkClearValue.color.float32[1] = clearValue.Color.Y();
+        vkClearValue.color.float32[2] = clearValue.Color.Z();
+        vkClearValue.color.float32[3] = clearValue.Color.W();
+
+        vk::RenderPassBeginInfo info{};
+        info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
+        info.renderPass        = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
+        info.clearValueCount   = 1;
+        info.pClearValues      = &vkClearValue;
+        info.renderArea.offset = vk::Offset2D{ 0, 0 };
+        info.renderArea.extent = vk::Extent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
+        m_CommandBuffer->beginRenderPass(info, vk::SubpassContents::eInline);
+    }
+
+    void VKCommandBuffer::EndRenderPass()
+    {
+        m_CommandBuffer->endRenderPass();
+    }
+
+    void VKCommandBuffer::BindGraphicsPipeline(IGraphicsPipeline* pipeline)
+    {
+        auto& nativePipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline)->GetNativePipeline();
+        m_CommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, nativePipeline);
+    }
+
+    void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer)
+    {
+        auto nativeBuffer     = fe_assert_cast<VKBuffer*>(buffer)->Buffer.get();
+        vk::DeviceSize offset = 0;
+        m_CommandBuffer->bindVertexBuffers(slot, { nativeBuffer }, { offset });
+    }
+
+    void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer)
+    {
+        auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer.get();
+        m_CommandBuffer->bindIndexBuffer(nativeBuffer, 0, vk::IndexType::eUint32);
     }
 } // namespace FE::GPU

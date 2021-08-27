@@ -133,7 +133,8 @@ namespace FE::GPU
                   // TODO: for some reason vulkan1.2 doesn't work, validation layers say:
                   // "Invalid SPIR-V binary version 1.5 for target environment SPIR-V 1.3 (under Vulkan 1.1 semantics)"
                   L"-fspv-target-env=vulkan1.1", L"-fspv-extension=KHR", L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1",
-                  L"-fspv-extension=SPV_GOOGLE_user_type", L"-fvk-use-dx-layout", L"-fspv-reflect" });
+                  L"-fspv-extension=SPV_GOOGLE_user_type", L"-fvk-use-dx-layout", L"-fspv-extension=SPV_EXT_descriptor_indexing",
+                  L"-fspv-reflect", L"-Od" });
         }
         auto argsCount = static_cast<UInt32>(compileArgs.size());
 

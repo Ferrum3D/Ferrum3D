@@ -9,6 +9,17 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     [[maybe_unused]] size_t location, [[maybe_unused]] FE::Int32 messageCode, [[maybe_unused]] const char* pLayerPrefix,
     const char* pMessage, void* pUserData)
 {
+    constexpr static auto ignoredMessages = std::array{ "VUID-VkShaderModuleCreateInfo-pCode-04147" };
+
+    std::string_view message = pMessage;
+    for (auto& msg : ignoredMessages)
+    {
+        if (message.find(msg) != std::string_view::npos)
+        {
+            return VK_FALSE;
+        }
+    }
+
     FE::Debug::LogMessageType type = FE::Debug::LogMessageType::Message;
     switch (static_cast<vk::DebugReportFlagBitsEXT>(flags))
     {
@@ -36,7 +47,7 @@ namespace FE::GPU
 {
     VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
     {
-        auto vkGetInstanceProcAddr  = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+        auto vkGetInstanceProcAddr = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
         auto layers = vk::enumerateInstanceLayerProperties<StdHeapAllocator<vk::LayerProperties>>();
@@ -70,14 +81,14 @@ namespace FE::GPU
         m_Instance = vk::createInstanceUnique(instanceCI);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_Instance.get());
 #if FE_DEBUG
-            vk::DebugReportCallbackCreateInfoEXT debugCI{};
-            debugCI.flags |= vk::DebugReportFlagBitsEXT::eWarning;
-            debugCI.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
-            debugCI.flags |= vk::DebugReportFlagBitsEXT::eError;
-            debugCI.flags |= vk::DebugReportFlagBitsEXT::eDebug;
-            debugCI.pfnCallback = &DebugReportCallback;
-            debugCI.pUserData   = FE::Singleton<FE::Debug::IConsoleLogger>::Get();
-            m_Debug             = m_Instance->createDebugReportCallbackEXTUnique(debugCI);
+        vk::DebugReportCallbackCreateInfoEXT debugCI{};
+        debugCI.flags |= vk::DebugReportFlagBitsEXT::eWarning;
+        debugCI.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
+        debugCI.flags |= vk::DebugReportFlagBitsEXT::eError;
+        debugCI.flags |= vk::DebugReportFlagBitsEXT::eDebug;
+        debugCI.pfnCallback = &DebugReportCallback;
+        debugCI.pUserData   = FE::Singleton<FE::Debug::IConsoleLogger>::Get();
+        m_Debug             = m_Instance->createDebugReportCallbackEXTUnique(debugCI);
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");
 

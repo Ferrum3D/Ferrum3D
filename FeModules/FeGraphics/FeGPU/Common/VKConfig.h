@@ -29,13 +29,9 @@ FE_POP_MSVC_WARNING
 
 namespace FE::GPU
 {
-    constexpr auto RequiredInstanceLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
+    constexpr auto RequiredInstanceLayers = std::array{ "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_standard_validation" };
 
     constexpr auto RequiredInstanceExtensions =
         std::array{ VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, FE_VK_SURFACE_EXT };
-
-    constexpr auto RequiredDeviceExtensions =
-        std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-                    VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME };
 } // namespace FE::GPU

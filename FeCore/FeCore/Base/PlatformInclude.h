@@ -1,3 +1,4 @@
+#pragma once
 #include <FeCore/Base/Platform.h>
 
 #if FE_WINDOWS

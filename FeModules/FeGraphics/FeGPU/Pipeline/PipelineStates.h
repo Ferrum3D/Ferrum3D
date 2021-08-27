@@ -2,14 +2,25 @@
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/Vector4.h>
 
+#include <utility>
+
 namespace FE::GPU
 {
     enum class CullingMode
     {
-        None,
         Back,
         Front
     };
+
+    enum class CullingModeFlags
+    {
+        None         = 0,
+        Back         = 1 << static_cast<UInt32>(CullingMode::Back),
+        Front        = 1 << static_cast<UInt32>(CullingMode::Front),
+        BackAndFront = Back | Front
+    };
+
+    FE_ENUM_OPERATORS(CullingModeFlags);
 
     enum class PolygonMode
     {
@@ -80,7 +91,7 @@ namespace FE::GPU
         bool DepthClampEnabled    = false;
         bool DepthBiasEnabled     = false;
         bool RasterDiscardEnabled = false;
-        CullingMode CullMode      = CullingMode::Back;
+        CullingModeFlags CullMode = CullingModeFlags::None;
         PolygonMode PolyMode      = PolygonMode::Fill;
     };
 
@@ -107,6 +118,20 @@ namespace FE::GPU
     {
         Vector<TargetColorBlending> TargetBlendStates{};
         float4 BlendConstants{};
+
+        inline ColorBlendState() = default;
+
+        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates)
+            : TargetBlendStates(targetBlendStates)
+            , BlendConstants(0)
+        {
+        }
+
+        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates, float4 constants)
+            : TargetBlendStates(targetBlendStates)
+            , BlendConstants(std::move(constants))
+        {
+        }
     };
 
     enum class PipelineStageFlags : UInt32

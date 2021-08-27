@@ -86,7 +86,7 @@ namespace FE::UTF8
 
     inline TCodepoint DecodePrior(const TChar*& it) noexcept
     {
-        UInt32 c;
+        UInt32 c = 0;
         int e             = 1;
         const TChar* iter = it;
         int maxlen        = 3;

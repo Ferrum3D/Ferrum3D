@@ -22,4 +22,13 @@ namespace FE::GPU
     {
         return m_Desc;
     }
+
+    vk::PipelineShaderStageCreateInfo VKShaderModule::GetStageCI()
+    {
+        vk::PipelineShaderStageCreateInfo info{};
+        info.module = m_NativeModule.get();
+        info.pName = m_Desc.EntryPoint.Data();
+        info.stage = VKConvert(m_Desc.Stage);
+        return info;
+    }
 } // namespace FE::GPU

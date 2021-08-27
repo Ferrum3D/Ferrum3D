@@ -76,7 +76,7 @@ set(SRC
     Shader/IShaderCompiler.h
     Shader/ShaderCompilerDXC.h
     Shader/ShaderCompilerDXC.cpp
-        Descriptors/IDescriptorTable.h Descriptors/VKDescriptorTable.h Descriptors/VKDescriptorTable.cpp Pipeline/IGraphicsPipeline.h Pipeline/VKGraphicsPipeline.h Pipeline/VKGraphicsPipeline.cpp)
+        Descriptors/IDescriptorTable.h Descriptors/VKDescriptorTable.h Descriptors/VKDescriptorTable.cpp Pipeline/IGraphicsPipeline.h Pipeline/VKGraphicsPipeline.h Pipeline/VKGraphicsPipeline.cpp Framebuffer/IFramebuffer.h Framebuffer/VKFramebuffer.h Framebuffer/VKFramebuffer.cpp)
 
 add_library(FeGPU STATIC ${SRC})
 

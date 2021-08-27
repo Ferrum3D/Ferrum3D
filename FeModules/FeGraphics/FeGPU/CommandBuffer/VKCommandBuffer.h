@@ -7,6 +7,26 @@ namespace FE::GPU
 {
     class VKDevice;
 
+    inline vk::Viewport VKConvert(const Viewport& viewport)
+    {
+        vk::Viewport vp{};
+        vp.x        = viewport.MinX;
+        vp.y        = viewport.MinY;
+        vp.width    = viewport.Width();
+        vp.height   = viewport.Height();
+        vp.minDepth = viewport.MinZ;
+        vp.maxDepth = viewport.MaxZ;
+        return vp;
+    }
+
+    inline vk::Rect2D VKConvert(const Scissor& scissor)
+    {
+        vk::Rect2D rect{};
+        rect.offset = vk::Offset2D(scissor.MinX, scissor.MinY);
+        rect.extent = vk::Extent2D(scissor.Width(), scissor.Height());
+        return rect;
+    }
+
     inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
         vk::ImageAspectFlags result{};
@@ -94,7 +114,14 @@ namespace FE::GPU
         void Begin() override;
         void End() override;
 
-        void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables) override;
+        void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
+        void BindGraphicsPipeline(IGraphicsPipeline* pipeline) override;
+
+        void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) override;
+        void EndRenderPass() override;
+
+        void BindVertexBuffer(UInt32 slot, IBuffer* buffer) override;
+        void BindIndexBuffer(IBuffer* buffer) override;
 
         void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) override;
         void DrawIndexed(

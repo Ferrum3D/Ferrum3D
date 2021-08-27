@@ -2,6 +2,7 @@
 #include <FeCore/Math/Vector4.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeGPU/Instance/IInstance.h>
+#include <FeGPU/Pipeline/InputLayoutBuilder.h>
 #include <fstream>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -10,7 +11,7 @@
 
 struct Vertex
 {
-    float X, Y, Z;
+    FE::Float32 X, Y, Z;
 };
 
 FE::String ReadFile(const FE::String& path)
@@ -27,8 +28,22 @@ FE::String ReadFile(const FE::String& path)
 
 namespace HAL = FE::GPU;
 
+HAL::Viewport CreateViewport(GLFWwindow* window)
+{
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    return HAL::Viewport(0, static_cast<float>(width), 0, static_cast<float>(height));
+}
+
+HAL::Scissor CreateScissor(GLFWwindow* window)
+{
+    auto vp = CreateViewport(window);
+    return HAL::Scissor(vp);
+}
+
 int main()
 {
+    const int frameBufferCount = 3;
     FE::Env::CreateEnvironment();
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
     {
@@ -41,17 +56,17 @@ int main()
         auto instance = HAL::CreateGraphicsAPIInstance(desc, HAL::GraphicsAPI::Vulkan);
         auto adapter  = instance->GetAdapters()[0];
         auto device   = adapter->CreateDevice();
-        auto fence    = device->CreateFence(HAL::FenceState::Reset);
         auto queue    = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
-        auto buffer   = device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics);
         auto compiler = device->CreateShaderCompiler();
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         GLFWwindow* window = glfwCreateWindow(800, 600, "Test project", nullptr, nullptr);
+        auto viewport      = CreateViewport(window);
+        auto scissor       = CreateScissor(window);
 
         HAL::SwapChainDesc swapChainDesc{};
-        swapChainDesc.ImageCount         = 3;
+        swapChainDesc.ImageCount         = frameBufferCount;
         swapChainDesc.ImageWidth         = 800;
         swapChainDesc.ImageHeight        = 600;
         swapChainDesc.NativeWindowHandle = glfwGetWin32Window(window);
@@ -61,25 +76,25 @@ int main()
 
         FE::RefCountPtr<HAL::IBuffer> indexBuffer, vertexBuffer, constantBuffer;
         {
-            std::vector<Vertex> vertexData = { { -0.5, -0.5, 0.0 }, { 0.0, 0.5, 0.0 }, { 0.5, -0.5, 0.0 } };
-            auto vertexSize                = vertexData.size() * sizeof(Vertex);
-            vertexBuffer                   = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
+            FE::Vector<Vertex> vertexData = { { -0.5, -0.5, 0.0 }, { 0.0, 0.5, 0.0 }, { 0.5, -0.5, 0.0 } };
+            auto vertexSize               = vertexData.size() * sizeof(Vertex);
+            vertexBuffer                  = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
             vertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             void* map = vertexBuffer->Map(0);
             memcpy(map, vertexData.data(), vertexSize);
             vertexBuffer->Unmap();
         }
         {
-            std::vector<uint32_t> indexData = { 0, 1, 2 };
-            auto indexSize                  = indexData.size() * sizeof(uint32_t);
-            indexBuffer                     = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
+            FE::Vector<FE::UInt32> indexData = { 0, 1, 2 };
+            auto indexSize                   = indexData.size() * sizeof(FE::UInt32);
+            indexBuffer                      = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
             indexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             void* map = indexBuffer->Map(0);
             memcpy(map, indexData.data(), indexSize);
             indexBuffer->Unmap();
         }
         {
-            FE::float4 constantData = { 1, 0, 0, 1 };
+            FE::float4 constantData = { 0.1f, 0.7f, 0.1f, 1 };
             constantBuffer          = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::float4));
             constantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             void* map = constantBuffer->Map(0);
@@ -88,7 +103,7 @@ int main()
         }
 
         HAL::ShaderCompilerArgs psArgs{};
-        psArgs.Version    = HAL::HLSLShaderVersion{ 6, 0 };
+        psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         psArgs.Stage      = HAL::ShaderStage::Pixel;
         psArgs.EntryPoint = "main";
         psArgs.TargetAPI  = HAL::GraphicsAPI::Vulkan;
@@ -105,7 +120,7 @@ int main()
         auto pixelShader       = device->CreateShaderModule(pixelDesc);
 
         HAL::ShaderCompilerArgs vsArgs{};
-        vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 0 };
+        vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         vsArgs.Stage      = HAL::ShaderStage::Vertex;
         vsArgs.EntryPoint = "main";
         vsArgs.TargetAPI  = HAL::GraphicsAPI::Vulkan;
@@ -147,7 +162,7 @@ int main()
         auto descriptorHeap        = device->CreateDescriptorHeap(descriptorHeapDesc);
 
         HAL::DescriptorDesc descriptorDesc{};
-        descriptorDesc.Stage        = HAL::ShaderStageFlags::Vertex;
+        descriptorDesc.Stage        = HAL::ShaderStageFlags::Pixel;
         descriptorDesc.ResourceType = HAL::ShaderResourceType::ConstantBuffer;
         descriptorDesc.Count        = 1;
         auto descriptorTable        = descriptorHeap->AllocateDescriptorTable({ descriptorDesc });
@@ -156,9 +171,57 @@ int main()
         write.Buffer = constantBuffer.GetRaw();
         descriptorTable->Update(write);
 
+        HAL::GraphicsPipelineDesc pipelineDesc{};
+        pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
+                                       .AddBuffer(HAL::InputStreamRate::PerVertex)
+                                       .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
+                                       .Build()
+                                       .Build();
+
+        pipelineDesc.RenderPass       = renderPass;
+        pipelineDesc.SubpassIndex     = 0;
+        pipelineDesc.ColorBlend       = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
+        pipelineDesc.Shaders          = { pixelShader, vertexShader };
+        pipelineDesc.DescriptorTables = { descriptorTable };
+        pipelineDesc.Viewport         = viewport;
+        pipelineDesc.Scissor          = scissor;
+        pipelineDesc.Rasterization    = HAL::RasterizationState{};
+
+        auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
+
+        auto RTVs = swapChain->GetRTVs();
+        FE::Vector<FE::RefCountPtr<HAL::IFramebuffer>> framebuffers;
+        FE::Vector<FE::RefCountPtr<HAL::ICommandBuffer>> commandBuffers;
+        for (size_t i = 0; i < frameBufferCount; ++i)
+        {
+            HAL::FramebufferDesc framebufferDesc{};
+            framebufferDesc.RenderPass        = renderPass.GetRaw();
+            framebufferDesc.RenderTargetViews = { RTVs[i] };
+            framebufferDesc.Width             = static_cast<FE::UInt32>(viewport.Width());
+            framebufferDesc.Height            = static_cast<FE::UInt32>(viewport.Height());
+            auto framebuffer                  = framebuffers.emplace_back(device->CreateFramebuffer(framebufferDesc));
+
+            auto& cmd = commandBuffers.emplace_back(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
+            cmd->Begin();
+            cmd->BindGraphicsPipeline(pipeline.GetRaw());
+            cmd->BindDescriptorTables({ descriptorTable.GetRaw() }, pipeline.GetRaw());
+            cmd->SetViewport(viewport);
+            cmd->SetScissor(scissor);
+            cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
+            cmd->BindIndexBuffer(indexBuffer.GetRaw());
+            cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ { 0.1f, 0.1f, 0.7f, 1 } });
+            cmd->DrawIndexed(3, 1, 0, 0, 0);
+            cmd->EndRenderPass();
+            cmd->End();
+        }
+
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+            auto index = swapChain->GetCurrentImageIndex();
+            queue->SubmitBuffers({ commandBuffers[index] }, nullptr);
+            swapChain->Present();
+            glfwSwapBuffers(window);
         }
     }
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
