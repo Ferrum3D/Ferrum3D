@@ -1,4 +1,5 @@
 #include <FeGPU/Image/VKImage.h>
+#include <FeGPU/Device/VKDevice.h>
 
 namespace FE::GPU
 {
@@ -10,5 +11,22 @@ namespace FE::GPU
     const ImageDesc& VKImage::GetDesc()
     {
         return Desc;
+    }
+
+    RefCountPtr<IImageView> VKImage::CreateRenderTargetView()
+    {
+        ImageSubresourceRange range{};
+        range.ArraySliceCount = Desc.ArraySize;
+        range.MinArraySlice = 0;
+        range.MinMipSlice = 0;
+        range.MipSliceCount = 1;
+        range.AspectFlags = ImageAspectFlags::Color;
+
+        ImageViewDesc desc{};
+        desc.Format = Desc.ImageFormat;
+        desc.Image = this;
+        desc.Dimension = Desc.Dimension;
+        desc.SubresourceRange = range;
+        return m_Device->CreateImageView(desc);
     }
 }

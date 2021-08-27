@@ -23,6 +23,28 @@ namespace FE::GPU
         return result;
     }
 
+    inline vk::ShaderStageFlagBits VKConvert(ShaderStage source)
+    {
+        switch (source)
+        {
+        case ShaderStage::Vertex:
+            return vk::ShaderStageFlagBits::eVertex;
+        case ShaderStage::Pixel:
+            return vk::ShaderStageFlagBits::eFragment;
+        case ShaderStage::Hull:
+            return vk::ShaderStageFlagBits::eTessellationControl;
+        case ShaderStage::Domain:
+            return vk::ShaderStageFlagBits::eTessellationEvaluation;
+        case ShaderStage::Geometry:
+            return vk::ShaderStageFlagBits::eGeometry;
+        case ShaderStage::Compute:
+            return vk::ShaderStageFlagBits::eCompute;
+        default:
+            FE_UNREACHABLE("Invalid ShaderStage");
+            return static_cast<vk::ShaderStageFlagBits>(-1);
+        }
+    }
+
     class VKDevice;
 
     class VKShaderModule : public Object<IShaderModule>
@@ -38,5 +60,7 @@ namespace FE::GPU
         VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc);
 
         const ShaderModuleDesc& GetDesc() const override;
+
+        vk::PipelineShaderStageCreateInfo GetStageCI();
     };
 } // namespace FE::GPU

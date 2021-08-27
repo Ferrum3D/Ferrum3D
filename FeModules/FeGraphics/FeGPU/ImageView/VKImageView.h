@@ -17,5 +17,12 @@ namespace FE::GPU
         VKImageView(VKDevice& dev, const ImageViewDesc& desc);
 
         [[nodiscard]] const ImageViewDesc& GetDesc() const override;
+
+        [[nodiscard]] inline vk::ImageView& GetNativeView();
     };
+
+    inline vk::ImageView& VKImageView::GetNativeView()
+    {
+        return m_NativeView.get();
+    }
 } // namespace FE::GPU

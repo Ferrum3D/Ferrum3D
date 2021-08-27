@@ -1,9 +1,9 @@
 #pragma once
+#include <FeCore/Memory/Object.h>
 #include <FeGPU/Common/BaseTypes.h>
+#include <FeGPU/Image/ImageEnums.h>
 #include <FeGPU/Image/ImageFormat.h>
 #include <FeGPU/Resource/IResource.h>
-#include <FeGPU/Image/ImageEnums.h>
-#include <FeCore/Memory/Object.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -17,7 +17,7 @@ namespace FE::GPU
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
-        UInt32 ArraySize     = 1;
+        UInt16 ArraySize     = 1;
         UInt32 MipLevelCount = 1;
         UInt32 SampleCount   = 1;
 
@@ -32,6 +32,8 @@ namespace FE::GPU
         static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
     };
 
+    class IImageView;
+
     class IImage : public IObject
     {
     public:
@@ -39,6 +41,7 @@ namespace FE::GPU
 
         ~IImage() override = default;
 
-        virtual const ImageDesc& GetDesc() = 0;
+        virtual const ImageDesc& GetDesc()                       = 0;
+        virtual RefCountPtr<IImageView> CreateRenderTargetView() = 0;
     };
 } // namespace FE::GPU

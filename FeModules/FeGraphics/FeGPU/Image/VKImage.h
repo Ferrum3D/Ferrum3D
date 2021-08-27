@@ -17,8 +17,9 @@ namespace FE::GPU
 
         FE_CLASS_RTTI(VKImage, "9726C432-92C1-489C-9623-55330B3530E8");
 
-        VKImage(VKDevice& dev);
+        explicit VKImage(VKDevice& dev);
 
         const ImageDesc& GetDesc() override;
+        RefCountPtr<IImageView> CreateRenderTargetView() override;
     };
 } // namespace FE::GPU

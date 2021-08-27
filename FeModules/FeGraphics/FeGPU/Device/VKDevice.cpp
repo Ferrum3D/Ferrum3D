@@ -6,14 +6,19 @@
 #include <FeGPU/Descriptors/VKDescriptorHeap.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
+#include <FeGPU/Framebuffer/VKFramebuffer.h>
+#include <FeGPU/ImageView/VKImageView.h>
+#include <FeGPU/Pipeline/VKGraphicsPipeline.h>
 #include <FeGPU/RenderPass/VKRenderPass.h>
-#include <FeGPU/Shader/VKShaderModule.h>
 #include <FeGPU/Shader/ShaderCompilerDXC.h>
+#include <FeGPU/Shader/VKShaderModule.h>
 #include <FeGPU/SwapChain/VKSwapChain.h>
 #include <algorithm>
 
 namespace FE::GPU
 {
+    constexpr auto RequiredDeviceExtensions = std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
     void VKDevice::FindQueueFamilies()
     {
         auto hasQueueFamily = [this](CommandQueueClass cmdQueueClass) {
@@ -76,7 +81,7 @@ namespace FE::GPU
             bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const vk::ExtensionProperties& props) {
                 return StringSlice(ext) == props.extensionName.data();
             });
-            FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", ext);
+            FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", String(ext));
         }
 
         constexpr Float32 queuePriority = 1.0f;
@@ -212,5 +217,20 @@ namespace FE::GPU
     RefCountPtr<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
         return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>());
+    }
+
+    RefCountPtr<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
+    {
+        return static_pointer_cast<IGraphicsPipeline>(MakeShared<VKGraphicsPipeline>(*this, desc));
+    }
+
+    RefCountPtr<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
+    {
+        return static_pointer_cast<IImageView>(MakeShared<VKImageView>(*this, desc));
+    }
+
+    RefCountPtr<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
+    {
+        return static_pointer_cast<IFramebuffer>(MakeShared<VKFramebuffer>(*this, desc));
     }
 } // namespace FE::GPU

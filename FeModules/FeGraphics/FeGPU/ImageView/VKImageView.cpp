@@ -5,7 +5,7 @@
 
 namespace FE::GPU
 {
-    vk::ImageViewType VKConvert(ImageDim dim, bool isArray)
+    inline vk::ImageViewType VKConvert(ImageDim dim, bool isArray)
     {
         switch (dim)
         {
@@ -17,7 +17,7 @@ namespace FE::GPU
             FE_ASSERT_MSG(!isArray, "Array of 3D images is not allowed");
             return vk::ImageViewType::e3D;
         case ImageDim::ImageCubemap:
-            return vk::ImageViewType::eCube;
+            return isArray ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
         default:
             FE_UNREACHABLE("Invalid ImageDim");
             return vk::ImageViewType::e2D;
@@ -34,11 +34,11 @@ namespace FE::GPU
         , m_Device(&dev)
     {
         vk::ImageViewCreateInfo viewCI{};
-        viewCI.components = vk::ComponentMapping();
-        viewCI.format = VKConvert(desc.Format);
-        viewCI.image = fe_assert_cast<VKImage*>(desc.Image.GetRaw())->Image;
-        viewCI.viewType = VKConvert(desc.Dimension, desc.SubresourceRange.ArraySliceCount != 1);
+        viewCI.components       = vk::ComponentMapping();
+        viewCI.format           = VKConvert(desc.Format);
+        viewCI.image            = fe_assert_cast<VKImage*>(desc.Image.GetRaw())->Image;
+        viewCI.viewType         = VKConvert(desc.Dimension, desc.SubresourceRange.ArraySliceCount != 1);
         viewCI.subresourceRange = VKConvert(desc.SubresourceRange);
-        m_NativeView = m_Device->GetNativeDevice().createImageViewUnique(viewCI);
+        m_NativeView            = m_Device->GetNativeDevice().createImageViewUnique(viewCI);
     }
 } // namespace FE::GPU

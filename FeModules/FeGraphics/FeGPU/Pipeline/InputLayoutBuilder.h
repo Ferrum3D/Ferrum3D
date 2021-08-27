@@ -7,10 +7,11 @@ namespace FE::GPU
     {
         friend class InputLayoutBuilder;
 
+        InputLayoutBuilder* m_Parent = nullptr;
         InputStreamBufferDesc m_Buffer{};
         Vector<InputStreamAttributeDesc> m_Attributes;
 
-        UInt32 m_Index = 0;
+        UInt32 m_Index  = 0;
         UInt32 m_Offset = 0;
 
     public:
@@ -25,6 +26,11 @@ namespace FE::GPU
         {
             m_Offset += bytes;
             return *this;
+        }
+
+        inline InputLayoutBuilder& Build()
+        {
+            return *m_Parent;
         }
     };
 
@@ -41,9 +47,10 @@ namespace FE::GPU
 
         inline InputLayoutBufferBuilder& AddBuffer(InputStreamRate inputRate)
         {
-            auto& result = m_Buffers.emplace_back();
+            auto& result              = m_Buffers.emplace_back();
             result.m_Buffer.InputRate = inputRate;
-            result.m_Index = static_cast<UInt32>(m_Buffers.size() - 1);
+            result.m_Index            = static_cast<UInt32>(m_Buffers.size() - 1);
+            result.m_Parent           = this;
 
             return result;
         }
@@ -51,12 +58,12 @@ namespace FE::GPU
         inline InputStreamLayout Build()
         {
             InputStreamLayout result;
-            result.Topology=m_Topology;
+            result.Topology = m_Topology;
 
             for (auto& bufferBuilder : m_Buffers)
             {
                 bufferBuilder.m_Buffer.Stride = bufferBuilder.m_Offset;
-                result.PushBuffer(bufferBuilder);
+                result.PushBuffer(bufferBuilder.m_Buffer);
 
                 for (auto& attribute : bufferBuilder.m_Attributes)
                 {

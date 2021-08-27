@@ -41,7 +41,7 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(VKDevice, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
 
-        VKDevice(VKAdapter& adapter);
+        explicit VKDevice(VKAdapter& adapter);
         vk::Device& GetNativeDevice();
 
         UInt32 FindMemoryType(UInt32 typeBits, vk::MemoryPropertyFlags properties);
@@ -100,5 +100,8 @@ namespace FE::GPU
         RefCountPtr<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) override;
         RefCountPtr<VKCommandBuffer> CreateCommandBuffer(UInt32 queueFamilyIndex);
         RefCountPtr<IShaderCompiler> CreateShaderCompiler() override;
+        RefCountPtr<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
+        RefCountPtr<IImageView> CreateImageView(const ImageViewDesc& desc) override;
+        RefCountPtr<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
     };
 } // namespace FE::GPU

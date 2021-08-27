@@ -1,9 +1,7 @@
 #include <FeGPU/Adapter/VKAdapter.h>
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
 #include <FeGPU/Device/VKDevice.h>
-#include <FeGPU/Fence/VKFence.h>
 #include <FeGPU/Image/VKImage.h>
-#include <FeGPU/ImageView/VKImageView.h>
 #include <FeGPU/SwapChain/VKSwapChain.h>
 
 namespace FE::GPU
@@ -37,14 +35,13 @@ namespace FE::GPU
             backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
             m_Images.push_back(static_pointer_cast<IImage>(backBuffer));
 
-            ImageViewDesc viewDesc{};
-            viewDesc.SubresourceRange             = {};
-            viewDesc.SubresourceRange.AspectFlags = ImageAspectFlags::Color;
-            viewDesc.Image                        = static_pointer_cast<IImage>(backBuffer);
-            viewDesc.Format                       = m_Desc.Format;
-            viewDesc.Dimension                    = ImageDim::Image2D;
-            m_ImageViews.push_back(MakeShared<VKImageView>(*m_Device, viewDesc));
+            m_ImageViews.push_back(backBuffer->CreateRenderTargetView());
         }
+
+        m_RenderFinishedSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
+        m_ImageAvailableSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
+
+        AcquireNextImage(&m_FrameIndex);
     }
 
     void VKSwapChain::BuildNativeSwapChain(VKInstance& instance)
@@ -90,7 +87,7 @@ namespace FE::GPU
             m_Desc.ImageWidth  = width;
             m_Desc.ImageHeight = height;
         }
-        vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
+        auto mode = vk::PresentModeKHR::eFifo;
 
         // If v-sync is disabled, try to use either immediate or mailbox (if supported).
         if (!m_Desc.VerticalSync)
@@ -124,11 +121,13 @@ namespace FE::GPU
         swapChainCI.imageColorSpace  = m_ColorFormat.colorSpace;
         swapChainCI.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst
             | vk::ImageUsageFlagBits::eInputAttachment;
-        swapChainCI.compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        swapChainCI.imageSharingMode = vk::SharingMode::eExclusive;
-        swapChainCI.preTransform     = vk::SurfaceTransformFlagBitsKHR::eIdentity;
-        swapChainCI.presentMode      = mode;
-        swapChainCI.clipped          = true;
+        swapChainCI.compositeAlpha        = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        swapChainCI.imageSharingMode      = vk::SharingMode::eExclusive;
+        swapChainCI.preTransform          = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+        swapChainCI.presentMode           = mode;
+        swapChainCI.clipped               = true;
+        swapChainCI.pQueueFamilyIndices   = &m_Queue->GetDesc().QueueFamilyIndex;
+        swapChainCI.queueFamilyIndexCount = 1;
 
         m_NativeSwapChain = m_Device->GetNativeDevice().createSwapchainKHRUnique(swapChainCI);
     }
@@ -136,6 +135,10 @@ namespace FE::GPU
     VKSwapChain::~VKSwapChain()
     {
         m_Device->GetNativeDevice().waitIdle();
+        m_Device->GetNativeDevice().destroy(m_ImageAvailableSemaphore.get());
+        m_Device->GetNativeDevice().destroy(m_RenderFinishedSemaphore.get());
+        m_ImageAvailableSemaphore.release();
+        m_RenderFinishedSemaphore.release();
     }
 
     const SwapChainDesc& VKSwapChain::GetDesc()
@@ -179,7 +182,16 @@ namespace FE::GPU
 
     void VKSwapChain::AcquireNextImage(UInt32* index)
     {
+        vk::Semaphore semaphore = m_ImageAvailableSemaphore.get();
         FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
-            m_NativeSwapChain.get(), static_cast<UInt64>(-1), m_ImageAvailableSemaphore.get(), nullptr, index));
+            m_NativeSwapChain.get(), static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
+
+    Vector<RefCountPtr<IImageView>> VKSwapChain::GetRTVs()
+    {
+        return m_ImageViews;
+    }
+
+    vk::UniqueSemaphore VKSwapChain::m_ImageAvailableSemaphore;
+    vk::UniqueSemaphore VKSwapChain::m_RenderFinishedSemaphore;
 } // namespace FE::GPU

@@ -8,7 +8,7 @@ namespace FE::GPU
         UInt16 MipSlice   = 0;
         UInt16 ArraySlice = 0;
 
-        ImageAspect Apsect = ImageAspect::Color;
+        ImageAspect Aspect = ImageAspect::Color;
 
         FE_STRUCT_RTTI(ImageSubresource, "A4E67F19-16D0-4C1C-BD8B-D270A4141D45");
     };

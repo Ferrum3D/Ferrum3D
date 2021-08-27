@@ -8,6 +8,8 @@ namespace FE::GPU
 {
     struct ImageViewDesc
     {
+        FE_STRUCT_RTTI(ImageViewDesc, "F018B216-D830-4856-8BF1-E1C082BBBBB1");
+        
         ImageSubresourceRange SubresourceRange;
         Format Format = Format::None;
         RefCountPtr<IImage> Image;

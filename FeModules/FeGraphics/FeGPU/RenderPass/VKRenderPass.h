@@ -75,5 +75,12 @@ namespace FE::GPU
 
         VKRenderPass(VKDevice& dev, const RenderPassDesc& desc);
         UInt32 GetAttachmentCount() override;
+
+        inline vk::RenderPass& GetNativeRenderPass();
     };
+
+    inline vk::RenderPass& VKRenderPass::GetNativeRenderPass()
+    {
+        return m_NativeRenderPass.get();
+    }
 } // namespace FE::GPU
