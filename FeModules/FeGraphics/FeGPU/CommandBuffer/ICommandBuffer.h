@@ -24,6 +24,8 @@ namespace FE::GPU
         UInt32 DestOffset;
         UInt64 Size;
 
+        FE_STRUCT_RTTI(BufferCopyRegion, "6D8D35DF-F12D-4F47-95EE-BA1DE3EA275E");
+
         inline BufferCopyRegion() = default;
 
         inline explicit BufferCopyRegion(UInt64 size)
