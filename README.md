@@ -2,12 +2,22 @@
 **Ferrum3D** is a 3D game engine under active development.
 It is intended to be multi-platform, data-oriented, data-driven and modular.
 
-However, currently only the engine's core is tested since the development started only about
-two months ago.
+## Current development status
+Currently working modules are the engine's core and graphics hardware abstraction.
+The HAL allowed to write a simple triangle application using vertex and index buffers.
+The color of the triangle is stored in a constant buffer accessed through descriptors.
 
-The next module to write is **FeGPU** - a graphics HAL (Hardware Abstraction Layer) on top of
-Vulkan API and draw a triangle with vertex and constant buffers. This will allow to develop
-a higher-level renderer with engine's frame graph implementation.
+Next steps to do with HAL:
+1. Add copying commands to `FE::GPU::ICommandBuffer` to support device-local buffers
+1. Add SPIR-V reflection to use HLSL semantics instead of `[[vk::location()]]`
+1. Add support for different queues for rendering and presentation
+1. Add samplers and textures with mipmaps
+1. Refactor the code and write documentation
+
+The next step will be to write a high-level renderer using FrameGraph.
+This renderer must abstract away all synchronization and resource management.
+It will allow custom render passes which are classes that define
+the way they access resources and record command buffers abstracted with `IRenderContext`.
 
 ## Getting the sources and building
 If you want to build the engine, run samples and tests you will need:
