@@ -123,6 +123,8 @@ namespace FE::GPU
         void BindVertexBuffer(UInt32 slot, IBuffer* buffer) override;
         void BindIndexBuffer(IBuffer* buffer) override;
 
+        void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region) override;
+
         void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) override;
         void DrawIndexed(
             UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) override;

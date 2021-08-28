@@ -150,30 +150,36 @@ namespace FE::GPU
         desc.Size   = size;
         auto buffer = MakeShared<VKBuffer>(*this, desc);
 
-        vk::BufferCreateInfo bufferCI = {};
-        bufferCI.size                 = size;
-        bufferCI.usage                = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
+        vk::BufferCreateInfo bufferCI{};
+        bufferCI.size  = size;
+        bufferCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
 
         if ((bindFlags & BindFlags::ShaderResource) != BindFlags::None)
         {
             bufferCI.usage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
             bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
         }
-
         if ((bindFlags & BindFlags::UnorderedAccess) != BindFlags::None)
         {
             bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
             bufferCI.usage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
         }
-
         if ((bindFlags & BindFlags::VertexBuffer) != BindFlags::None)
+        {
             bufferCI.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
+        }
         if ((bindFlags & BindFlags::IndexBuffer) != BindFlags::None)
+        {
             bufferCI.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
+        }
         if ((bindFlags & BindFlags::ConstantBuffer) != BindFlags::None)
+        {
             bufferCI.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
+        }
         if ((bindFlags & BindFlags::IndirectDrawArgs) != BindFlags::None)
+        {
             bufferCI.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
+        }
 
         buffer->Buffer = m_NativeDevice->createBufferUnique(bufferCI);
 
@@ -233,5 +239,27 @@ namespace FE::GPU
     void VKDevice::WaitIdle()
     {
         m_NativeDevice->waitIdle();
+    }
+
+    vk::Semaphore& VKDevice::AddWaitSemaphore()
+    {
+        return m_WaitSemaphores.emplace_back();
+    }
+
+    vk::Semaphore& VKDevice::AddSignalSemaphore()
+    {
+        return m_SignalSemaphores.emplace_back();
+    }
+
+    UInt32 VKDevice::GetWaitSemaphores(const vk::Semaphore** semaphores)
+    {
+        *semaphores = m_WaitSemaphores.data();
+        return static_cast<UInt32>(m_WaitSemaphores.size());
+    }
+
+    UInt32 VKDevice::GetSignalSemaphores(const vk::Semaphore** semaphores)
+    {
+        *semaphores = m_SignalSemaphores.data();
+        return static_cast<UInt32>(m_SignalSemaphores.size());
     }
 } // namespace FE::GPU

@@ -23,16 +23,18 @@ namespace FE::GPU
         Vector<RefCountPtr<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
-        RefCountPtr<IFence> m_Fence;
+        Vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
+        Vector<vk::UniqueSemaphore> m_RenderFinishedSemaphores;
+        UInt32 m_FrameIndex;
+
+        vk::Semaphore* m_CurrentImageAvailableSemaphore;
+        vk::Semaphore* m_CurrentRenderFinishedSemaphore;
 
         bool ValidateDimensions(const SwapChainDesc& swapChainDesc) const;
         void BuildNativeSwapChain(VKInstance& instance);
         void AcquireNextImage(UInt32* index);
 
     public:
-        static std::vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
-        static std::vector<vk::UniqueSemaphore> m_RenderFinishedSemaphores;
-        static UInt32 m_FrameIndex;
 
         FE_CLASS_RTTI(VKSwapChain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
