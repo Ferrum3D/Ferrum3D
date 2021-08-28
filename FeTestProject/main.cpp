@@ -189,6 +189,12 @@ int main()
 
         auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
+        FE::Vector<FE::RefCountPtr<HAL::IFence>> fences;
+        for (size_t i = 0; i < swapChain->GetDesc().FrameCount; ++i)
+        {
+            fences.push_back(device->CreateFence(HAL::FenceState::Signaled));
+        }
+
         auto RTVs = swapChain->GetRTVs();
         FE::Vector<FE::RefCountPtr<HAL::IFramebuffer>> framebuffers;
         FE::Vector<FE::RefCountPtr<HAL::ICommandBuffer>> commandBuffers;
@@ -217,12 +223,17 @@ int main()
 
         while (!glfwWindowShouldClose(window))
         {
+            auto frameIndex = swapChain->GetCurrentFrameIndex();
+
+            fences[frameIndex]->WaitOnCPU();
             glfwPollEvents();
             auto index = swapChain->GetCurrentImageIndex();
-            queue->SubmitBuffers({ commandBuffers[index] }, nullptr);
+            fences[swapChain->GetCurrentFrameIndex()]->Reset();
+            queue->SubmitBuffers({ commandBuffers[index] }, fences[frameIndex]);
             swapChain->Present();
-            glfwSwapBuffers(window);
         }
+
+        device->WaitIdle();
     }
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
 }

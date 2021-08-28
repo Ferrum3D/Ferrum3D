@@ -88,6 +88,7 @@ namespace FE::GPU
             return static_cast<UInt32>(-1);
         }
 
+        void WaitIdle() override;
         IAdapter& GetAdapter() override;
         IInstance& GetInstance() override;
         RefCountPtr<IFence> CreateFence(FenceState state) override;
