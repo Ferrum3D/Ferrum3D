@@ -18,10 +18,10 @@ namespace FE::GPU
 
         VKBuffer(VKDevice& dev, const BufferDesc& desc);
 
-        virtual void* Map(UInt64 offset, UInt64 size = static_cast<UInt64>(-1)) override;
-        virtual void Unmap() override;
+        void* Map(UInt64 offset, UInt64 size = static_cast<UInt64>(-1)) override;
+        void Unmap() override;
 
-        virtual void AllocateMemory(MemoryType type) override;
-        virtual void BindMemory(const RefCountPtr<IDeviceMemory>& memory, UInt64 offset) override;
+        void AllocateMemory(MemoryType type) override;
+        void BindMemory(const RefCountPtr<IDeviceMemory>& memory, UInt64 offset) override;
     };
 } // namespace FE::GPU

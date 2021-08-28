@@ -4,6 +4,16 @@
 
 namespace FE::GPU
 {
+    enum class SubmitFlags
+    {
+        None          = 0,
+        FrameBegin    = 1 << 0,
+        FrameEnd      = 1 << 1,
+        FrameBeginEnd = FrameBegin | FrameEnd
+    };
+
+    FE_ENUM_OPERATORS(SubmitFlags);
+
     class ICommandBuffer;
 
     class ICommandQueue : public IObject
@@ -16,6 +26,6 @@ namespace FE::GPU
         virtual void SignalFence(const RefCountPtr<IFence>& fence) = 0;
 
         virtual void SubmitBuffers(
-            const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence) = 0;
+            const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence, SubmitFlags flags) = 0;
     };
 } // namespace FE::GPU

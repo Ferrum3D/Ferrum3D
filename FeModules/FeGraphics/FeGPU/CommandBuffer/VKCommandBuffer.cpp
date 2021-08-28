@@ -189,4 +189,16 @@ namespace FE::GPU
         auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer.get();
         m_CommandBuffer->bindIndexBuffer(nativeBuffer, 0, vk::IndexType::eUint32);
     }
+
+    void VKCommandBuffer::CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)
+    {
+        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer.get();
+        auto nativeDst = fe_assert_cast<VKBuffer*>(dest)->Buffer.get();
+        
+        vk::BufferCopy copy{};
+        copy.size      = region.Size;
+        copy.dstOffset = region.DestOffset;
+        copy.srcOffset = region.SourceOffset;
+        m_CommandBuffer->copyBuffer(nativeSrc, nativeDst, { copy });
+    }
 } // namespace FE::GPU

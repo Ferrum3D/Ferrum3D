@@ -36,6 +36,9 @@ namespace FE::GPU
         VKInstance* m_Instance;
         Vector<VKQueueFamilyData> m_QueueFamilyIndices;
 
+        Vector<vk::Semaphore> m_WaitSemaphores;
+        Vector<vk::Semaphore> m_SignalSemaphores;
+
         void FindQueueFamilies();
 
     public:
@@ -87,6 +90,11 @@ namespace FE::GPU
             FE_UNREACHABLE("Couldn't find queue family");
             return static_cast<UInt32>(-1);
         }
+
+        vk::Semaphore& AddWaitSemaphore();
+        vk::Semaphore& AddSignalSemaphore();
+        UInt32 GetWaitSemaphores(const vk::Semaphore** semaphores);
+        UInt32 GetSignalSemaphores(const vk::Semaphore** semaphores);
 
         void WaitIdle() override;
         IAdapter& GetAdapter() override;

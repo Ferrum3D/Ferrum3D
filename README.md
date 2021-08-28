@@ -8,7 +8,6 @@ The HAL allowed to write a simple triangle application using vertex and index bu
 The color of the triangle is stored in a constant buffer accessed through descriptors.
 
 Next steps to do with HAL:
-1. Add copying commands to `FE::GPU::ICommandBuffer` to support device-local buffers
 1. Add SPIR-V reflection to use HLSL semantics instead of `[[vk::location()]]`
 1. Add support for different queues for rendering and presentation
 1. Add samplers and textures with mipmaps

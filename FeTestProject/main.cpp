@@ -53,11 +53,12 @@ int main()
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
 
         HAL::InstanceDesc desc{};
-        auto instance = HAL::CreateGraphicsAPIInstance(desc, HAL::GraphicsAPI::Vulkan);
-        auto adapter  = instance->GetAdapters()[0];
-        auto device   = adapter->CreateDevice();
-        auto queue    = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
-        auto compiler = device->CreateShaderCompiler();
+        auto instance      = HAL::CreateGraphicsAPIInstance(desc, HAL::GraphicsAPI::Vulkan);
+        auto adapter       = instance->GetAdapters()[0];
+        auto device        = adapter->CreateDevice();
+        auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
+        auto transferQueue = device->GetCommandQueue(HAL::CommandQueueClass::Transfer);
+        auto compiler      = device->CreateShaderCompiler();
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -70,28 +71,43 @@ int main()
         swapChainDesc.ImageWidth         = 800;
         swapChainDesc.ImageHeight        = 600;
         swapChainDesc.NativeWindowHandle = glfwGetWin32Window(window);
-        swapChainDesc.Queue              = queue.GetRaw();
+        swapChainDesc.Queue              = graphicsQueue.GetRaw();
         swapChainDesc.VerticalSync       = true;
         auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
-        FE::RefCountPtr<HAL::IBuffer> indexBuffer, vertexBuffer, constantBuffer;
+        FE::RefCountPtr<HAL::IBuffer> indexBufferStaging, vertexBufferStaging, constantBuffer;
+        FE::RefCountPtr<HAL::IBuffer> indexBuffer, vertexBuffer;
+        FE::UInt64 vertexSize, indexSize;
         {
-            FE::Vector<Vertex> vertexData = { { -0.5, -0.5, 0.0 }, { 0.0, 0.5, 0.0 }, { 0.5, -0.5, 0.0 } };
-            auto vertexSize               = vertexData.size() * sizeof(Vertex);
-            vertexBuffer                  = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
-            vertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-            void* map = vertexBuffer->Map(0);
+            // clang-format off
+            FE::Vector<Vertex> vertexData = {
+                { -0.5, -0.5, 0.0 },
+                { +0.5, +0.5, 0.0 },
+                { +0.5, -0.5, 0.0 },
+                { -0.5, +0.5, 0.0 }
+            };
+            // clang-format on
+            vertexSize          = vertexData.size() * sizeof(Vertex);
+            vertexBufferStaging = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
+            vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+            void* map = vertexBufferStaging->Map(0);
             memcpy(map, vertexData.data(), vertexSize);
-            vertexBuffer->Unmap();
+            vertexBufferStaging->Unmap();
+
+            vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
+            vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
-            FE::Vector<FE::UInt32> indexData = { 0, 1, 2 };
-            auto indexSize                   = indexData.size() * sizeof(FE::UInt32);
-            indexBuffer                      = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
-            indexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-            void* map = indexBuffer->Map(0);
+            FE::Vector<FE::UInt32> indexData = { 0, 2, 3, 3, 2, 1 };
+            indexSize                        = indexData.size() * sizeof(FE::UInt32);
+            indexBufferStaging               = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
+            indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+            void* map = indexBufferStaging->Map(0);
             memcpy(map, indexData.data(), indexSize);
-            indexBuffer->Unmap();
+            indexBufferStaging->Unmap();
+
+            indexBuffer = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
+            indexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
             FE::float4 constantData = { 0.1f, 0.7f, 0.1f, 1 };
@@ -100,6 +116,17 @@ int main()
             void* map = constantBuffer->Map(0);
             memcpy(map, constantData.Data(), sizeof(FE::float4));
             constantBuffer->Unmap();
+        }
+
+        {
+            auto transferComplete = device->CreateFence(HAL::FenceState::Reset);
+            auto copyCmdBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
+            copyCmdBuffer->Begin();
+            copyCmdBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), vertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
+            copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
+            copyCmdBuffer->End();
+            transferQueue->SubmitBuffers({ copyCmdBuffer }, { transferComplete }, HAL::SubmitFlags::None);
+            transferComplete->WaitOnCPU();
         }
 
         HAL::ShaderCompilerArgs psArgs{};
@@ -187,6 +214,8 @@ int main()
         pipelineDesc.Scissor          = scissor;
         pipelineDesc.Rasterization    = HAL::RasterizationState{};
 
+        pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+
         auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
         FE::Vector<FE::RefCountPtr<HAL::IFence>> fences;
@@ -216,7 +245,7 @@ int main()
             cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
             cmd->BindIndexBuffer(indexBuffer.GetRaw());
             cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ { 0.1f, 0.1f, 0.7f, 1 } });
-            cmd->DrawIndexed(3, 1, 0, 0, 0);
+            cmd->DrawIndexed(6, 1, 0, 0, 0);
             cmd->EndRenderPass();
             cmd->End();
         }
@@ -227,9 +256,9 @@ int main()
 
             fences[frameIndex]->WaitOnCPU();
             glfwPollEvents();
-            auto index = swapChain->GetCurrentImageIndex();
+            auto imageIndex = swapChain->GetCurrentImageIndex();
             fences[swapChain->GetCurrentFrameIndex()]->Reset();
-            queue->SubmitBuffers({ commandBuffers[index] }, fences[frameIndex]);
+            graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
             swapChain->Present();
         }
 

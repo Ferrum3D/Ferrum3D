@@ -2,7 +2,6 @@
 #include <FeGPU/CommandQueue/VKCommandQueue.h>
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Fence/VKFence.h>
-#include <FeGPU/SwapChain/VKSwapChain.h>
 
 namespace FE::GPU
 {
@@ -25,10 +24,11 @@ namespace FE::GPU
 
     void VKCommandQueue::SignalFence(const RefCountPtr<IFence>& fence)
     {
-        SubmitBuffers({}, fence);
+        SubmitBuffers({}, fence, SubmitFlags::None);
     }
 
-    void VKCommandQueue::SubmitBuffers(const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence)
+    void VKCommandQueue::SubmitBuffers(
+        const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence, SubmitFlags flags)
     {
         Vector<vk::CommandBuffer> nativeBuffers{};
         nativeBuffers.reserve(buffers.size());
@@ -39,12 +39,17 @@ namespace FE::GPU
         }
 
         vk::SubmitInfo info{};
-        info.pCommandBuffers      = nativeBuffers.data();
-        info.commandBufferCount   = static_cast<UInt32>(nativeBuffers.size());
-        info.pWaitSemaphores      = &VKSwapChain::m_ImageAvailableSemaphores[VKSwapChain::m_FrameIndex].get();
-        info.waitSemaphoreCount   = 1;
-        info.pSignalSemaphores    = &VKSwapChain::m_RenderFinishedSemaphores[VKSwapChain::m_FrameIndex].get();
-        info.signalSemaphoreCount = 1;
+        info.pCommandBuffers    = nativeBuffers.data();
+        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
+
+        if ((flags & SubmitFlags::FrameBegin) != SubmitFlags::None)
+        {
+            info.waitSemaphoreCount = m_Device->GetWaitSemaphores(&info.pWaitSemaphores);
+        }
+        if ((flags & SubmitFlags::FrameEnd) != SubmitFlags::None)
+        {
+            info.signalSemaphoreCount = m_Device->GetSignalSemaphores(&info.pSignalSemaphores);
+        }
 
         vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;
         info.pWaitDstStageMask              = &waitDstFlags;
