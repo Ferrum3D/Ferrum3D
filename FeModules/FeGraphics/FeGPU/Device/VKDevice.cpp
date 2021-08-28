@@ -98,16 +98,12 @@ namespace FE::GPU
         deviceFeatures.geometryShader     = true;
         deviceFeatures.tessellationShader = true;
 
-        vk::PhysicalDeviceVulkan12Features deviceFeatures12{};
-        deviceFeatures12.timelineSemaphore = true;
-
         vk::DeviceCreateInfo deviceCI{};
         deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.size());
         deviceCI.pQueueCreateInfos       = queuesCI.data();
         deviceCI.pEnabledFeatures        = &deviceFeatures;
         deviceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
-        deviceCI.pNext                   = &deviceFeatures12;
 
         m_NativeDevice = m_NativeAdapter->createDeviceUnique(deviceCI);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_NativeDevice.get());
@@ -232,5 +228,10 @@ namespace FE::GPU
     RefCountPtr<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
     {
         return static_pointer_cast<IFramebuffer>(MakeShared<VKFramebuffer>(*this, desc));
+    }
+
+    void VKDevice::WaitIdle()
+    {
+        m_NativeDevice->waitIdle();
     }
 } // namespace FE::GPU

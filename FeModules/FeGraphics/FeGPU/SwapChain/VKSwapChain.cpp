@@ -38,10 +38,13 @@ namespace FE::GPU
             m_ImageViews.push_back(backBuffer->CreateRenderTargetView());
         }
 
-        m_RenderFinishedSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
-        m_ImageAvailableSemaphore = m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{});
+        for (size_t i = 0; i < m_Desc.FrameCount; ++i)
+        {
+            m_RenderFinishedSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));
+            m_ImageAvailableSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));
+        }
 
-        AcquireNextImage(&m_FrameIndex);
+        AcquireNextImage(&m_ImageIndex);
     }
 
     void VKSwapChain::BuildNativeSwapChain(VKInstance& instance)
@@ -134,11 +137,13 @@ namespace FE::GPU
 
     VKSwapChain::~VKSwapChain()
     {
-        m_Device->GetNativeDevice().waitIdle();
-        m_Device->GetNativeDevice().destroy(m_ImageAvailableSemaphore.get());
-        m_Device->GetNativeDevice().destroy(m_RenderFinishedSemaphore.get());
-        m_ImageAvailableSemaphore.release();
-        m_RenderFinishedSemaphore.release();
+        for (size_t i = 0; i < m_Desc.FrameCount; ++i)
+        {
+            m_Device->GetNativeDevice().destroy(m_ImageAvailableSemaphores[i].get());
+            m_Device->GetNativeDevice().destroy(m_RenderFinishedSemaphores[i].get());
+            m_ImageAvailableSemaphores[i].release();
+            m_RenderFinishedSemaphores[i].release();
+        }
     }
 
     const SwapChainDesc& VKSwapChain::GetDesc()
@@ -148,7 +153,7 @@ namespace FE::GPU
 
     UInt32 VKSwapChain::GetCurrentImageIndex()
     {
-        return m_FrameIndex;
+        return m_ImageIndex;
     }
 
     UInt32 VKSwapChain::GetImageCount()
@@ -163,26 +168,26 @@ namespace FE::GPU
 
     IImage* VKSwapChain::GetCurrentImage()
     {
-        return m_Images[m_FrameIndex].GetRaw();
+        return m_Images[m_ImageIndex].GetRaw();
     }
 
     void VKSwapChain::Present()
     {
         vk::PresentInfoKHR presentInfo{};
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphore.get();
+        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphores[m_FrameIndex].get();
         presentInfo.swapchainCount     = 1;
         presentInfo.pSwapchains        = &m_NativeSwapChain.get();
-        presentInfo.pImageIndices      = &m_FrameIndex;
+        presentInfo.pImageIndices      = &m_ImageIndex;
         FE_VK_ASSERT(m_Queue->GetNativeQueue().presentKHR(presentInfo));
-        m_Queue->GetNativeQueue().waitIdle(); // TODO: frames in-flight
 
-        AcquireNextImage(&m_FrameIndex);
+        m_FrameIndex = (m_FrameIndex + 1) % m_Desc.FrameCount;
+        AcquireNextImage(&m_ImageIndex);
     }
 
     void VKSwapChain::AcquireNextImage(UInt32* index)
     {
-        vk::Semaphore semaphore = m_ImageAvailableSemaphore.get();
+        vk::Semaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex].get();
         FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
             m_NativeSwapChain.get(), static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
@@ -192,6 +197,12 @@ namespace FE::GPU
         return m_ImageViews;
     }
 
-    vk::UniqueSemaphore VKSwapChain::m_ImageAvailableSemaphore;
-    vk::UniqueSemaphore VKSwapChain::m_RenderFinishedSemaphore;
+    UInt32 VKSwapChain::GetCurrentFrameIndex()
+    {
+        return m_FrameIndex;
+    }
+
+    std::vector<vk::UniqueSemaphore> VKSwapChain::m_ImageAvailableSemaphores;
+    std::vector<vk::UniqueSemaphore> VKSwapChain::m_RenderFinishedSemaphores;
+    UInt32 VKSwapChain::m_FrameIndex = 0;
 } // namespace FE::GPU

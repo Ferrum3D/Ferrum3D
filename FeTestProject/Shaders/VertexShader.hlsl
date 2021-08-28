@@ -1,11 +1,11 @@
 struct VSInput
 {
-    [[vk::location(0)]] float3 pos : POSITION;
+    float3 pos : POSITION;
 };
 
 struct VSOutput
 {
-    [[vk::location(0)]] float4 pos: SV_POSITION;
+    float4 pos: SV_POSITION;
 };
 
 VSOutput main(VSInput input)

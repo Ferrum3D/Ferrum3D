@@ -1,6 +1,6 @@
 struct VSOutput
 {
-    [[vk::location(0)]] float4 pos: SV_POSITION;
+    float4 pos: SV_POSITION;
 };
 
 // Vulkan binding 0 in descriptor set 0

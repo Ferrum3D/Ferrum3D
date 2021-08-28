@@ -41,9 +41,9 @@ namespace FE::GPU
         vk::SubmitInfo info{};
         info.pCommandBuffers      = nativeBuffers.data();
         info.commandBufferCount   = static_cast<UInt32>(nativeBuffers.size());
-        info.pWaitSemaphores      = &VKSwapChain::m_ImageAvailableSemaphore.get();
+        info.pWaitSemaphores      = &VKSwapChain::m_ImageAvailableSemaphores[VKSwapChain::m_FrameIndex].get();
         info.waitSemaphoreCount   = 1;
-        info.pSignalSemaphores    = &VKSwapChain::m_RenderFinishedSemaphore.get();
+        info.pSignalSemaphores    = &VKSwapChain::m_RenderFinishedSemaphores[VKSwapChain::m_FrameIndex].get();
         info.signalSemaphoreCount = 1;
 
         vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;

@@ -4,6 +4,7 @@
 #include <FeGPU/CommandQueue/ICommandQueue.h>
 #include <FeGPU/Descriptors/IDescriptorHeap.h>
 #include <FeGPU/Fence/IFence.h>
+#include <FeGPU/Framebuffer/IFramebuffer.h>
 #include <FeGPU/ImageView/IImageView.h>
 #include <FeGPU/Pipeline/IGraphicsPipeline.h>
 #include <FeGPU/RenderPass/IRenderPass.h>
@@ -11,7 +12,6 @@
 #include <FeGPU/Shader/IShaderCompiler.h>
 #include <FeGPU/Shader/IShaderModule.h>
 #include <FeGPU/SwapChain/ISwapChain.h>
-#include <FeGPU/Framebuffer/IFramebuffer.h>
 
 namespace FE::GPU
 {
@@ -32,6 +32,7 @@ namespace FE::GPU
 
         ~IDevice() override = default;
 
+        virtual void WaitIdle()                                                                         = 0;
         virtual IAdapter& GetAdapter()                                                                  = 0;
         virtual IInstance& GetInstance()                                                                = 0;
         virtual RefCountPtr<IFence> CreateFence(FenceState state)                                       = 0;

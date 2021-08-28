@@ -21,7 +21,7 @@ namespace FE::GPU
 
         Vector<RefCountPtr<IImage>> m_Images;
         Vector<RefCountPtr<IImageView>> m_ImageViews;
-        UInt32 m_FrameIndex = 0;
+        UInt32 m_ImageIndex = 0;
 
         RefCountPtr<IFence> m_Fence;
 
@@ -30,8 +30,9 @@ namespace FE::GPU
         void AcquireNextImage(UInt32* index);
 
     public:
-        static vk::UniqueSemaphore m_ImageAvailableSemaphore;
-        static vk::UniqueSemaphore m_RenderFinishedSemaphore;
+        static std::vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
+        static std::vector<vk::UniqueSemaphore> m_RenderFinishedSemaphores;
+        static UInt32 m_FrameIndex;
 
         FE_CLASS_RTTI(VKSwapChain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
@@ -40,6 +41,7 @@ namespace FE::GPU
 
         const SwapChainDesc& GetDesc() override;
         UInt32 GetCurrentImageIndex() override;
+        UInt32 GetCurrentFrameIndex() override;
         UInt32 GetImageCount() override;
         IImage* GetImage(UInt32 index) override;
         IImage* GetCurrentImage() override;
