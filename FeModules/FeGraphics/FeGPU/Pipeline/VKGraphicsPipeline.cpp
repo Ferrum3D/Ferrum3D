@@ -5,6 +5,7 @@
 #include <FeGPU/Pipeline/VKGraphicsPipeline.h>
 #include <FeGPU/RenderPass/VKRenderPass.h>
 #include <FeGPU/Shader/VKShaderModule.h>
+#include <FeGPU/Shader/VKShaderReflection.h>
 
 namespace FE::GPU
 {
@@ -250,12 +251,22 @@ namespace FE::GPU
             binding.stride    = buffers[i].Stride;
         }
 
+        IShaderModule* vertexShader = nullptr;
+        for (auto& shader : m_Desc.Shaders)
+        {
+            if (shader->GetDesc().Stage == ShaderStage::Vertex)
+            {
+                vertexShader = shader.GetRaw();
+            }
+        }
+
         for (const auto& item : attributes)
         {
-            auto& attribute   = states.AttributeDesc.emplace_back();
-            attribute.binding = item.BufferIndex;
-            attribute.offset  = item.Offset;
-            attribute.format  = VKConvert(item.ElementFormat);
+            auto& attribute    = states.AttributeDesc.emplace_back();
+            attribute.binding  = item.BufferIndex;
+            attribute.location = vertexShader->GetReflection()->GetInputAttributeLocation(item.ShaderSemantic);
+            attribute.offset   = item.Offset;
+            attribute.format   = VKConvert(item.ElementFormat);
         }
 
         states.VertexInput.pVertexBindingDescriptions      = states.BindingDesc.data();

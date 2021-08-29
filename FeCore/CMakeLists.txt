@@ -2,6 +2,7 @@ set(SRC
 	FeCore/Base/Base.h
 	FeCore/Base/CompilerTraits.h
 	FeCore/Base/Platform.h
+	FeCore/Base/PlatformInclude.h
 	FeCore/Base/PlatformTraits.h
 
 	FeCore/Console/Console.h
@@ -29,7 +30,9 @@ set(SRC
 	FeCore/Memory/ReferenceCounter.h
 	FeCore/Memory/SharedPtr.h
 	FeCore/Memory/StackAllocator.h
-	
+
+	FeCore/Modules/DynamicLibrary.h
+	FeCore/Modules/DynamicLibrary.cpp
 	FeCore/Modules/Environment.h
 	FeCore/Modules/Environment.cpp
 	FeCore/Modules/Singleton.h
@@ -61,7 +64,7 @@ set(SRC
 	FeCore/Utils/Result.h
 	FeCore/Utils/SortedStringVector.h
 	FeCore/Utils/UUID.h
-        FeCore/Modules/DynamicLibrary.h FeCore/Modules/DynamicLibrary.cpp FeCore/Base/PlatformInclude.h)
+)
 
 add_library(FeCore STATIC ${SRC})
 

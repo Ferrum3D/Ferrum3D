@@ -16,6 +16,7 @@ include(ThirdParty/gtest)
 include(ThirdParty/rpmalloc)
 include(ThirdParty/vulkan)
 include(ThirdParty/dxc)
+include(ThirdParty/SPIRV-Cross)
 
 add_subdirectory(FeCore)
 add_subdirectory(FeModules)

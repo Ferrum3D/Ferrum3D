@@ -5,6 +5,8 @@
 
 namespace FE::GPU
 {
+    class IShaderReflection;
+
     struct ShaderModuleDesc
     {
         const UInt8* ByteCode;
@@ -23,5 +25,6 @@ namespace FE::GPU
         ~IShaderModule() override = default;
 
         [[nodiscard]] virtual const ShaderModuleDesc& GetDesc() const = 0;
+        [[nodiscard]] virtual IShaderReflection* GetReflection() = 0;
     };
 } // namespace FE

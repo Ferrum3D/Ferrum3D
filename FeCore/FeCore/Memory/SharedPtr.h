@@ -133,6 +133,30 @@ namespace FE
         }
     };
 
+    template<class T>
+    inline bool operator==(const RefCountPtr<T>& lhs, std::nullptr_t)
+    {
+        return lhs.GetRaw() == nullptr;
+    }
+
+    template<class T>
+    inline bool operator!=(const RefCountPtr<T>& lhs, std::nullptr_t)
+    {
+        return !(lhs == nullptr);
+    }
+
+    template<class T>
+    inline bool operator==(std::nullptr_t, const RefCountPtr<T>& rhs)
+    {
+        return rhs.GetRaw() == nullptr;
+    }
+
+    template<class T>
+    inline bool operator!=(std::nullptr_t, const RefCountPtr<T>& rhs)
+    {
+        return !(nullptr == rhs);
+    }
+
     template<class T1, class T2>
     inline bool operator==(const RefCountPtr<T1>& lhs, const RefCountPtr<T2>& rhs)
     {

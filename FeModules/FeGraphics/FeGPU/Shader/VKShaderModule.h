@@ -5,6 +5,8 @@
 
 namespace FE::GPU
 {
+    class VKShaderReflection;
+
     inline vk::ShaderStageFlags VKConvert(ShaderStageFlags source)
     {
         auto result = static_cast<vk::ShaderStageFlags>(0);
@@ -53,6 +55,7 @@ namespace FE::GPU
         ShaderModuleDesc m_Desc;
         vk::UniqueShaderModule m_NativeModule;
         VKDevice* m_Device;
+        RefCountPtr<VKShaderReflection> m_Reflection;
 
     public:
         FE_CLASS_RTTI(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");
@@ -62,5 +65,6 @@ namespace FE::GPU
         const ShaderModuleDesc& GetDesc() const override;
 
         vk::PipelineShaderStageCreateInfo GetStageCI();
+        IShaderReflection* GetReflection() override;
     };
 } // namespace FE::GPU

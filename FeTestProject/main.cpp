@@ -11,7 +11,8 @@
 
 struct Vertex
 {
-    FE::Float32 X, Y, Z;
+    FE::Float32 XYZ[3];
+    FE::Float32 RGB[3];
 };
 
 FE::String ReadFile(const FE::String& path)
@@ -81,10 +82,10 @@ int main()
         {
             // clang-format off
             FE::Vector<Vertex> vertexData = {
-                { -0.5, -0.5, 0.0 },
-                { +0.5, +0.5, 0.0 },
-                { +0.5, -0.5, 0.0 },
-                { -0.5, +0.5, 0.0 }
+                { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.3f, 0.3f} },
+                { {+0.5f, +0.5f, 0.0f}, {0.3f, 1.0f, 0.3f} },
+                { {+0.5f, -0.5f, 0.0f}, {0.3f, 0.3f, 1.0f} },
+                { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f, 0.3f} }
             };
             // clang-format on
             vertexSize          = vertexData.size() * sizeof(Vertex);
@@ -110,7 +111,7 @@ int main()
             indexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
-            FE::float4 constantData = { 0.1f, 0.7f, 0.1f, 1 };
+            FE::float4 constantData = { 0.0f, 0.0f, 0.0f, 0.0f };
             constantBuffer          = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::float4));
             constantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             void* map = constantBuffer->Map(0);
@@ -202,6 +203,7 @@ int main()
         pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
                                        .AddBuffer(HAL::InputStreamRate::PerVertex)
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
+                                       .AddAttribute(HAL::Format::R32G32B32_SFloat, "COLOR")
                                        .Build()
                                        .Build();
 

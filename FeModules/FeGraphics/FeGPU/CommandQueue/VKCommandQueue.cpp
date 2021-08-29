@@ -51,8 +51,8 @@ namespace FE::GPU
             info.signalSemaphoreCount = m_Device->GetSignalSemaphores(&info.pSignalSemaphores);
         }
 
-        vk::PipelineStageFlags waitDstFlags = vk::PipelineStageFlagBits::eAllCommands;
-        info.pWaitDstStageMask              = &waitDstFlags;
+        Vector<vk::PipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, vk::PipelineStageFlagBits::eAllCommands);
+        info.pWaitDstStageMask = waitDstFlags.data();
 
         vk::Fence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : nullptr;
         m_Queue.submit({ info }, vkFence);
