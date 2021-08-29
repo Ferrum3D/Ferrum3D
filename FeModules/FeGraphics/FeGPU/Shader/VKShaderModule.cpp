@@ -1,5 +1,6 @@
 #include <FeGPU/Device/VKDevice.h>
 #include <FeGPU/Shader/VKShaderModule.h>
+#include <FeGPU/Shader/VKShaderReflection.h>
 
 namespace FE::GPU
 {
@@ -30,5 +31,15 @@ namespace FE::GPU
         info.pName = m_Desc.EntryPoint.Data();
         info.stage = VKConvert(m_Desc.Stage);
         return info;
+    }
+
+    IShaderReflection* VKShaderModule::GetReflection()
+    {
+        if (m_Reflection == nullptr)
+        {
+            m_Reflection = MakeShared<VKShaderReflection>(m_ByteCode);
+        }
+
+        return m_Reflection.GetRaw();
     }
 } // namespace FE::GPU

@@ -22,7 +22,7 @@ namespace FE
                                                                                                                                  \
     inline static const ::FE::TypeID& FeRTTI_GetSID()                                                                            \
     {                                                                                                                            \
-        static ::FE::TypeID id = uuid;                                                                                           \
+        static ::FE::TypeID id = ::FE::TypeID(uuid);                                                                             \
         return id;                                                                                                               \
     }                                                                                                                            \
                                                                                                                                  \
