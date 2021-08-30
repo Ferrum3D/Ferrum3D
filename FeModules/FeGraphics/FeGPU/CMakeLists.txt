@@ -89,7 +89,7 @@ set(SRC
     SwapChain/ISwapChain.h
     SwapChain/VKSwapChain.h
     SwapChain/VKSwapChain.cpp
-)
+        Window/IWindow.h Window/Window.h Window/Window.cpp Common/Viewport.h)
 
 add_library(FeGPU STATIC ${SRC})
 

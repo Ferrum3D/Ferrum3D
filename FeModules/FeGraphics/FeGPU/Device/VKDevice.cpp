@@ -13,6 +13,7 @@
 #include <FeGPU/Shader/ShaderCompilerDXC.h>
 #include <FeGPU/Shader/VKShaderModule.h>
 #include <FeGPU/SwapChain/VKSwapChain.h>
+#include <FeGPU/Window/Window.h>
 #include <algorithm>
 
 namespace FE::GPU
@@ -218,7 +219,7 @@ namespace FE::GPU
 
     RefCountPtr<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
-        return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>());
+        return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan));
     }
 
     RefCountPtr<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
@@ -261,5 +262,10 @@ namespace FE::GPU
     {
         *semaphores = m_SignalSemaphores.data();
         return static_cast<UInt32>(m_SignalSemaphores.size());
+    }
+
+    RefCountPtr<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
+    {
+        return static_pointer_cast<IWindow>(MakeShared<Window>(desc));
     }
 } // namespace FE::GPU

@@ -12,5 +12,5 @@ cbuffer Settings : register(b0, space0)
 
 float4 main(VSOutput input) : SV_TARGET
 {
-    return sColor + input.color;
+    return sColor * input.color;
 }
