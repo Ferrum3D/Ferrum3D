@@ -112,5 +112,6 @@ namespace FE::GPU
         RefCountPtr<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
         RefCountPtr<IImageView> CreateImageView(const ImageViewDesc& desc) override;
         RefCountPtr<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
+        RefCountPtr<IWindow> CreateWindow(const WindowDesc& desc) override;
     };
 } // namespace FE::GPU

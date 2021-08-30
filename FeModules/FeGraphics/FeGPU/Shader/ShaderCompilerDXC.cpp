@@ -74,8 +74,9 @@ namespace FE::GPU
         return result.str();
     }
 
-    ShaderCompilerDXC::ShaderCompilerDXC()
+    ShaderCompilerDXC::ShaderCompilerDXC(GraphicsAPI api)
         : m_Module("dxcompiler")
+        , m_API(api)
     {
     }
 
@@ -125,7 +126,7 @@ namespace FE::GPU
         auto defineCount = static_cast<UInt32>(defines.size());
 
         Vector<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
-        if (args.TargetAPI == GraphicsAPI::Vulkan)
+        if (m_API == GraphicsAPI::Vulkan)
         {
             compileArgs.insert(
                 compileArgs.end(),

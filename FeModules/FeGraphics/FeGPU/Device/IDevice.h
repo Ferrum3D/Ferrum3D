@@ -12,6 +12,7 @@
 #include <FeGPU/Shader/IShaderCompiler.h>
 #include <FeGPU/Shader/IShaderModule.h>
 #include <FeGPU/SwapChain/ISwapChain.h>
+#include <FeGPU/Window/IWindow.h>
 
 namespace FE::GPU
 {
@@ -47,5 +48,6 @@ namespace FE::GPU
         virtual RefCountPtr<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
         virtual RefCountPtr<IImageView> CreateImageView(const ImageViewDesc& desc)                      = 0;
         virtual RefCountPtr<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc)                = 0;
+        virtual RefCountPtr<IWindow> CreateWindow(const WindowDesc& desc)                               = 0;
     };
 } // namespace FE::GPU

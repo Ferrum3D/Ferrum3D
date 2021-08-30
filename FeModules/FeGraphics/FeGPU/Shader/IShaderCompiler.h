@@ -29,7 +29,6 @@ namespace FE::GPU
         StringSlice SourceCode;
         StringSlice EntryPoint;
         StringSlice FullPath;
-        GraphicsAPI TargetAPI = GraphicsAPI::None;
 
         FE_STRUCT_RTTI(ShaderCompilerArgs, "58A284CE-87C0-4142-AF5B-86539F015382");
     };

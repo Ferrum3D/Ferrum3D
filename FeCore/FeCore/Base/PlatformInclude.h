@@ -12,6 +12,7 @@
 
 #    undef CopyMemory
 #    undef GetObject
+#    undef CreateWindow
 #else
 #    error Unsupported platform
 #endif
