@@ -24,8 +24,6 @@ namespace FE
         };
         FE_POP_MSVC_WARNING
 
-        FE_FINLINE Vector4F(TVec vec) noexcept;
-
     public:
         FE_STRUCT_RTTI(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
 
@@ -34,9 +32,11 @@ namespace FE
         {
         }
 
+        FE_FINLINE explicit Vector4F(TVec vec) noexcept;
+
         FE_FINLINE Vector4F(const Vector4F& other) noexcept;
 
-        FE_FINLINE Vector4F(const Vector3F& other, Float32 w = 1.0f) noexcept;
+        FE_FINLINE explicit Vector4F(const Vector3F& other, Float32 w = 1.0f) noexcept;
 
         FE_FINLINE Vector4F& operator=(const Vector4F& other) noexcept;
 
@@ -48,68 +48,71 @@ namespace FE
 
         FE_FINLINE Vector4F(Float32 x, Float32 y, Float32 z, Float32 w) noexcept;
 
-        FE_FINLINE Vector4F(const std::array<Float32, 4>& array) noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F GetVector3F() const noexcept;
+
+        FE_FINLINE explicit Vector4F(const std::array<Float32, 4>& array) noexcept;
 
         //! \return Vector4F{ 0, 0, 0, 0 }.
-        FE_FINLINE static Vector4F GetZero() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector4F GetZero() noexcept;
 
         //! \return Vector4F{ 1, 0, 0, 0 }.
-        FE_FINLINE static Vector4F GetUnitX() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector4F GetUnitX() noexcept;
 
         //! \return Vector4F{ 0, 1, 0, 0 }.
-        FE_FINLINE static Vector4F GetUnitY() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector4F GetUnitY() noexcept;
 
         //! \return Vector4F{ 0, 0, 1, 0 }.
-        FE_FINLINE static Vector4F GetUnitZ() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector4F GetUnitZ() noexcept;
 
         //! \return Vector4F{ 0, 0, 0, 1 }.
-        FE_FINLINE static Vector4F GetUnitW() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector4F GetUnitW() noexcept;
 
-        FE_FINLINE Float32 operator[](size_t index) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
-        FE_FINLINE Float32 operator()(size_t index) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32& operator()(size_t index) noexcept;
+        [[nodiscard]] FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of four floats (components of the vector).
-        FE_FINLINE const Float32* Data() const noexcept;
+        [[nodiscard]] FE_FINLINE const Float32* Data() const noexcept;
 
         //! \return Underlying SIMD type.
-        FE_FINLINE TVec GetSIMDVector() const noexcept;
+        [[nodiscard]] FE_FINLINE const TVec& GetSIMD() const noexcept;
 
-        FE_FINLINE Float32 X() const noexcept;
-        FE_FINLINE Float32 Y() const noexcept;
-        FE_FINLINE Float32 Z() const noexcept;
-        FE_FINLINE Float32 W() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 X() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Y() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Z() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 W() const noexcept;
 
-        FE_FINLINE Float32& X() noexcept;
-        FE_FINLINE Float32& Y() noexcept;
-        FE_FINLINE Float32& Z() noexcept;
-        FE_FINLINE Float32& W() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& X() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& Y() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& Z() noexcept;
+        [[nodiscard]] FE_FINLINE Float32& W() noexcept;
 
         FE_FINLINE void Set(Float32 x, Float32 y, Float32 z, Float32 w) noexcept;
 
-        FE_FINLINE Float32 Dot(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Dot(const Vector4F& other) const noexcept;
 
         //! \return Squared length of the vector.
-        FE_FINLINE Float32 LengthSq() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 LengthSq() const noexcept;
 
         //! \return Length of the vector.
-        FE_FINLINE Float32 Length() const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 Length() const noexcept;
 
         //! \return New normalized vector, this vector is not modified.
-        FE_FINLINE Vector4F Normalized() const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F Normalized() const noexcept;
 
         //! \brief Linearly interpolate between this and destination.
         //!
         //! The result is (dst - this) * f + this;
         //!
         //! \param [in] f - Interpolation factor.
-        //! 
+        //!
         //! \return New interpolated vector, this vector is not modified.
-        FE_FINLINE Vector4F Lerp(const Vector4F& dst, Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F Lerp(const Vector4F& dst, Float32 f) const noexcept;
 
         //! \brief Multiply each component of this vector with each component of other vector.
         //! \return New vector, this vector is not modified.
-        FE_FINLINE Vector4F MulEach(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F MulEach(const Vector4F& other) const noexcept;
 
         //! \brief Check if two vectors are approximately equal.
         //!
@@ -117,170 +120,173 @@ namespace FE
         //! \param [in] epsilon - Accepted difference between the two vectors.
         //!
         //! \return True if the vectors are approximately equal.
-        FE_FINLINE bool IsApproxEqualTo(const Vector4F& other, Float32 epsilon = 0.0001f) const noexcept;
+        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Vector4F& other, Float32 epsilon = Constants::Epsilon) const noexcept;
 
-        FE_FINLINE bool operator==(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE bool operator==(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE bool operator!=(const Vector4F& other) const noexcept;
 
-        FE_FINLINE bool operator!=(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F operator-() const noexcept;
 
-        FE_FINLINE Vector4F operator-() const noexcept;
-
-        FE_FINLINE Vector4F operator+(const Vector4F& other) const noexcept;
-
-        FE_FINLINE Vector4F operator-(const Vector4F& other) const noexcept;
-
-        FE_FINLINE Vector4F operator*(Float32 f) const noexcept;
-
-        FE_FINLINE Vector4F operator/(Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F operator+(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F operator-(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F operator*(Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector4F operator/(Float32 f) const noexcept;
 
         FE_FINLINE Vector4F& operator+=(const Vector4F& other) noexcept;
-
         FE_FINLINE Vector4F& operator-=(const Vector4F& other) noexcept;
-
         FE_FINLINE Vector4F& operator*=(Float32 f) noexcept;
-
         FE_FINLINE Vector4F& operator/=(Float32 f) noexcept;
     };
 
-    FE_FINLINE Vector4F::Vector4F(TVec vec) noexcept
+    Vector4F::Vector4F(TVec vec) noexcept // NOLINT clang-tidy complains about uninitialized union members
         : m_Value(vec)
     {
     }
 
-    FE_FINLINE Vector4F::Vector4F(const Vector4F& other) noexcept
+    Vector4F::Vector4F(const Vector4F& other) noexcept // NOLINT
         : m_Value(other.m_Value)
     {
     }
 
-    FE_FINLINE Vector4F::Vector4F(const Vector3F& other, Float32 w) noexcept
-        : m_Value(other.GetSIMDVector())
+    Vector4F::Vector4F(const Vector3F& other, Float32 w) noexcept // NOLINT
+        : m_Value(other.GetSIMD())
     {
         m_W = w;
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator=(const Vector4F& other) noexcept
+    Vector4F& Vector4F::operator=(const Vector4F& other) noexcept
     {
         m_Value = other.m_Value;
         return *this;
     }
 
-    FE_FINLINE Vector4F::Vector4F(Vector4F&& other) noexcept
+    Vector4F::Vector4F(Vector4F&& other) noexcept // NOLINT
         : m_Value(other.m_Value)
     {
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator=(Vector4F&& other) noexcept
+    Vector4F& Vector4F::operator=(Vector4F&& other) noexcept
     {
         m_Value = other.m_Value;
         return *this;
     }
 
-    FE_FINLINE Vector4F::Vector4F(Float32 value) noexcept
+    Vector4F::Vector4F(Float32 value) noexcept // NOLINT
         : m_Value(value)
     {
     }
 
-    FE_FINLINE Vector4F::Vector4F(Float32 x, Float32 y, Float32 z, Float32 w) noexcept
+    Vector4F::Vector4F(Float32 x, Float32 y, Float32 z, Float32 w) noexcept // NOLINT
         : m_Value(x, y, z, w)
     {
     }
 
-    FE_FINLINE Vector4F::Vector4F(const std::array<Float32, 4>& array) noexcept
+    Vector4F::Vector4F(const std::array<Float32, 4>& array) noexcept // NOLINT
         : m_Value(array[0], array[1], array[2], array[3])
     {
     }
 
-    FE_FINLINE Vector4F Vector4F::GetZero() noexcept
+    Vector3F Vector4F::GetVector3F() const noexcept
+    {
+        return Vector3F(m_Value);
+    }
+
+    Vector4F Vector4F::GetZero() noexcept
     {
         return Vector4F(0);
     }
 
-    FE_FINLINE Vector4F Vector4F::GetUnitX() noexcept
+    Vector4F Vector4F::GetUnitX() noexcept
     {
         return Vector4F(1, 0, 0, 0);
     }
 
-    FE_FINLINE Vector4F Vector4F::GetUnitY() noexcept
+    Vector4F Vector4F::GetUnitY() noexcept
     {
         return Vector4F(0, 1, 0, 0);
     }
 
-    FE_FINLINE Vector4F Vector4F::GetUnitZ() noexcept
+    Vector4F Vector4F::GetUnitZ() noexcept
     {
         return Vector4F(0, 0, 1, 0);
     }
 
-    FE_FINLINE Vector4F Vector4F::GetUnitW() noexcept
+    Vector4F Vector4F::GetUnitW() noexcept
     {
         return Vector4F(0, 0, 0, 1);
     }
 
-    FE_FINLINE Float32 Vector4F::operator[](size_t index) const noexcept
+    Float32 Vector4F::operator[](size_t index) const noexcept
     {
         return m_Values[index];
     }
 
-    FE_FINLINE Float32 Vector4F::operator()(size_t index) const noexcept
+    Float32 Vector4F::operator()(size_t index) const noexcept
     {
         return m_Values[index];
     }
 
-    FE_FINLINE const Float32* Vector4F::Data() const noexcept
+    Float32& Vector4F::operator()(size_t index) noexcept
+    {
+        return m_Values[index];
+    }
+
+    const Float32* Vector4F::Data() const noexcept
     {
         return m_Values;
     }
 
-    FE_FINLINE Vector4F::TVec Vector4F::GetSIMDVector() const noexcept
+    const Vector4F::TVec& Vector4F::GetSIMD() const noexcept
     {
         return m_Value;
     }
 
-    FE_FINLINE Float32 Vector4F::X() const noexcept
+    Float32 Vector4F::X() const noexcept
     {
         return m_X;
     }
 
-    FE_FINLINE Float32 Vector4F::Y() const noexcept
+    Float32 Vector4F::Y() const noexcept
     {
         return m_Y;
     }
 
-    FE_FINLINE Float32 Vector4F::Z() const noexcept
+    Float32 Vector4F::Z() const noexcept
     {
         return m_Z;
     }
 
-    FE_FINLINE Float32 Vector4F::W() const noexcept
+    Float32 Vector4F::W() const noexcept
     {
         return m_W;
     }
 
-    FE_FINLINE Float32& Vector4F::X() noexcept
+    Float32& Vector4F::X() noexcept
     {
         return m_X;
     }
 
-    FE_FINLINE Float32& Vector4F::Y() noexcept
+    Float32& Vector4F::Y() noexcept
     {
         return m_Y;
     }
 
-    FE_FINLINE Float32& Vector4F::Z() noexcept
+    Float32& Vector4F::Z() noexcept
     {
         return m_Z;
     }
 
-    FE_FINLINE Float32& Vector4F::W() noexcept
+    Float32& Vector4F::W() noexcept
     {
         return m_W;
     }
 
-    FE_FINLINE void Vector4F::Set(Float32 x, Float32 y, Float32 z, Float32 w) noexcept
+    void Vector4F::Set(Float32 x, Float32 y, Float32 z, Float32 w) noexcept
     {
         m_Value = TVec(x, y, z, w);
     }
 
-    FE_FINLINE Float32 Vector4F::Dot(const Vector4F& other) const noexcept
+    Float32 Vector4F::Dot(const Vector4F& other) const noexcept
     {
         TVec mul = m_Value * other.m_Value;
         TVec t   = mul * mul.Shuffle<2, 3, 0, 1>();
@@ -288,103 +294,101 @@ namespace FE
         return r.Select<0>();
     }
 
-    FE_FINLINE Float32 Vector4F::LengthSq() const noexcept
+    Float32 Vector4F::LengthSq() const noexcept
     {
         return Dot(*this);
     }
 
-    FE_FINLINE Float32 Vector4F::Length() const noexcept
+    Float32 Vector4F::Length() const noexcept
     {
         return std::sqrt(LengthSq());
     }
 
-    FE_FINLINE Vector4F Vector4F::Normalized() const noexcept
+    Vector4F Vector4F::Normalized() const noexcept
     {
         Float32 len = Length();
-        return m_Value / len;
+        return Vector4F(m_Value / len);
     }
 
-    FE_FINLINE Vector4F Vector4F::Lerp(const Vector4F& dst, Float32 f) const noexcept
+    Vector4F Vector4F::Lerp(const Vector4F& dst, Float32 f) const noexcept
     {
-        return (dst.m_Value - m_Value) * f + m_Value;
+        return Vector4F((dst.m_Value - m_Value) * f + m_Value);
     }
 
-    FE_FINLINE Vector4F Vector4F::MulEach(const Vector4F& other) const noexcept
+    Vector4F Vector4F::MulEach(const Vector4F& other) const noexcept
     {
-        return m_Value * other.m_Value;
+        return Vector4F(m_Value * other.m_Value);
     }
 
-    FE_FINLINE bool Vector4F::IsApproxEqualTo(const Vector4F& other, Float32 epsilon) const noexcept
+    bool Vector4F::IsApproxEqualTo(const Vector4F& other, Float32 epsilon) const noexcept
     {
         // TODO: move epsilon value to some <MathUtils.h>
-        return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xfff);
+        return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xffff);
     }
 
-    FE_FINLINE bool Vector4F::operator==(const Vector4F& other) const noexcept
+    bool Vector4F::operator==(const Vector4F& other) const noexcept
     {
-        return TVec::CompareAllEq(m_Value, other.m_Value, 0xfff);
+        return TVec::CompareAllEq(m_Value, other.m_Value, 0xffff);
     }
 
-    FE_FINLINE bool Vector4F::operator!=(const Vector4F& other) const noexcept
+    bool Vector4F::operator!=(const Vector4F& other) const noexcept
     {
-        return TVec::CompareAllNeq(m_Value, other.m_Value, 0xfff);
+        return TVec::CompareAllNeq(m_Value, other.m_Value, 0xffff);
     }
 
-    FE_FINLINE Vector4F Vector4F::operator-() const noexcept
+    Vector4F Vector4F::operator-() const noexcept
     {
-        return 1.0f - m_Value;
+        return Vector4F(1.0f - m_Value);
     }
 
-    FE_FINLINE Vector4F Vector4F::operator+(const Vector4F& other) const noexcept
+    Vector4F Vector4F::operator+(const Vector4F& other) const noexcept
     {
-        return m_Value + other.m_Value;
+        return Vector4F(m_Value + other.m_Value);
     }
 
-    FE_FINLINE Vector4F Vector4F::operator-(const Vector4F& other) const noexcept
+    Vector4F Vector4F::operator-(const Vector4F& other) const noexcept
     {
-        return m_Value - other.m_Value;
+        return Vector4F(m_Value - other.m_Value);
     }
 
-    FE_FINLINE Vector4F Vector4F::operator*(Float32 f) const noexcept
+    Vector4F Vector4F::operator*(Float32 f) const noexcept
     {
-        return m_Value * f;
+        return Vector4F(m_Value * f);
     }
 
-    FE_FINLINE Vector4F Vector4F::operator/(Float32 f) const noexcept
+    Vector4F Vector4F::operator/(Float32 f) const noexcept
     {
-        return m_Value / f;
+        return Vector4F(m_Value / f);
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator+=(const Vector4F& other) noexcept
+    Vector4F& Vector4F::operator+=(const Vector4F& other) noexcept
     {
         *this = *this + other;
         return *this;
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator-=(const Vector4F& other) noexcept
+    Vector4F& Vector4F::operator-=(const Vector4F& other) noexcept
     {
         *this = *this - other;
         return *this;
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator*=(Float32 f) noexcept
+    Vector4F& Vector4F::operator*=(Float32 f) noexcept
     {
         *this = *this * f;
         return *this;
     }
 
-    FE_FINLINE Vector4F& Vector4F::operator/=(Float32 f) noexcept
+    Vector4F& Vector4F::operator/=(Float32 f) noexcept
     {
         *this = *this / f;
         return *this;
     }
-
-    using float4 = Vector4F;
 } // namespace FE
 
-namespace std
+namespace std // NOLINT
 {
-    inline ostream& operator<<(ostream& stream, const FE::float4& vec)
+    inline ostream& operator<<(ostream& stream, const FE::Vector4F& vec)
     {
         return stream << "{ " << vec.X() << "; " << vec.Y() << "; " << vec.Z() << "; " << vec.W() << " }";
     }

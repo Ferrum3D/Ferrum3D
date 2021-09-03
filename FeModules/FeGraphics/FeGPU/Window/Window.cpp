@@ -37,4 +37,4 @@ namespace FE::GPU
     {
         return Scissor(CreateViewport());
     }
-}
+} // namespace FE::GPU

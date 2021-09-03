@@ -16,6 +16,7 @@ set(SRC
     CommandQueue/VKCommandQueue.cpp
 
     Common/BaseTypes.h
+    Common/Viewport.h
     Common/VKConfig.h
     Common/VKConfig.cpp
 
@@ -89,7 +90,10 @@ set(SRC
     SwapChain/ISwapChain.h
     SwapChain/VKSwapChain.h
     SwapChain/VKSwapChain.cpp
-        Window/IWindow.h Window/Window.h Window/Window.cpp Common/Viewport.h)
+
+    Window/IWindow.h
+    Window/Window.h
+    Window/Window.cpp)
 
 add_library(FeGPU STATIC ${SRC})
 

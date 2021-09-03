@@ -36,6 +36,6 @@ namespace FE::GPU
 
         ~IDescriptorHeap() override = default;
 
-        virtual RefCountPtr<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) = 0;
+        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) = 0;
     };
 } // namespace FE::GPU

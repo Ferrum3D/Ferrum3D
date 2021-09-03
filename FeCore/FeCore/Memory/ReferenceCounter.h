@@ -1,8 +1,8 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Memory/IAllocator.h>
+#include <FeCore/Parallel/Interlocked.h>
 #include <FeCore/RTTI/RTTI.h>
-#include <FeCore/Utils/Interlocked.h>
 
 namespace FE
 {

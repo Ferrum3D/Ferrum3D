@@ -17,8 +17,8 @@ namespace FE::GPU
 
         FE_CLASS_RTTI(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
-        virtual Vector<RefCountPtr<IAdapter>>& GetAdapters() = 0;
+        virtual Vector<Shared<IAdapter>>& GetAdapters() = 0;
     };
 
-    RefCountPtr<IInstance> CreateGraphicsAPIInstance(InstanceDesc desc, GraphicsAPI api);
+    Shared<IInstance> CreateGraphicsAPIInstance(InstanceDesc desc, GraphicsAPI api);
 } // namespace FE::GPU

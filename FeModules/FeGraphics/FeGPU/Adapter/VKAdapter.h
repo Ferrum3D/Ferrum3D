@@ -35,7 +35,7 @@ namespace FE::GPU
 
         vk::PhysicalDevice& GetNativeAdapter();
         virtual AdapterDesc& GetDesc() override;
-        virtual RefCountPtr<IDevice> CreateDevice() override;
+        virtual Shared<IDevice> CreateDevice() override;
         virtual IInstance& GetInstance() override;
     };
 } // namespace FE::GPU

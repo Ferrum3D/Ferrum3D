@@ -33,21 +33,21 @@ namespace FE::GPU
 
         ~IDevice() override = default;
 
-        virtual void WaitIdle()                                                                         = 0;
-        virtual IAdapter& GetAdapter()                                                                  = 0;
-        virtual IInstance& GetInstance()                                                                = 0;
-        virtual RefCountPtr<IFence> CreateFence(FenceState state)                                       = 0;
-        virtual RefCountPtr<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass)             = 0;
-        virtual RefCountPtr<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass)        = 0;
-        virtual RefCountPtr<ISwapChain> CreateSwapChain(const SwapChainDesc& desc)                      = 0;
-        virtual RefCountPtr<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size)                     = 0;
-        virtual RefCountPtr<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc)             = 0;
-        virtual RefCountPtr<IRenderPass> CreateRenderPass(const RenderPassDesc& desc)                   = 0;
-        virtual RefCountPtr<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc)       = 0;
-        virtual RefCountPtr<IShaderCompiler> CreateShaderCompiler()                                     = 0;
-        virtual RefCountPtr<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
-        virtual RefCountPtr<IImageView> CreateImageView(const ImageViewDesc& desc)                      = 0;
-        virtual RefCountPtr<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc)                = 0;
-        virtual RefCountPtr<IWindow> CreateWindow(const WindowDesc& desc)                               = 0;
+        virtual void WaitIdle()                                                                    = 0;
+        virtual IAdapter& GetAdapter()                                                             = 0;
+        virtual IInstance& GetInstance()                                                           = 0;
+        virtual Shared<IFence> CreateFence(FenceState state)                                       = 0;
+        virtual Shared<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass)             = 0;
+        virtual Shared<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass)        = 0;
+        virtual Shared<ISwapChain> CreateSwapChain(const SwapChainDesc& desc)                      = 0;
+        virtual Shared<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size)                     = 0;
+        virtual Shared<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc)             = 0;
+        virtual Shared<IRenderPass> CreateRenderPass(const RenderPassDesc& desc)                   = 0;
+        virtual Shared<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc)       = 0;
+        virtual Shared<IShaderCompiler> CreateShaderCompiler()                                     = 0;
+        virtual Shared<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
+        virtual Shared<IImageView> CreateImageView(const ImageViewDesc& desc)                      = 0;
+        virtual Shared<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc)                = 0;
+        virtual Shared<IWindow> CreateWindow(const WindowDesc& desc)                               = 0;
     };
 } // namespace FE::GPU

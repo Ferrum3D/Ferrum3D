@@ -11,7 +11,7 @@ namespace FE::GPU
     {
         VKDevice* m_Device;
         vk::UniqueFramebuffer m_NativeFramebuffer;
-        Vector<RefCountPtr<IImageView>> m_RTVs;
+        Vector<Shared<IImageView>> m_RTVs;
         FramebufferDesc m_Desc;
 
     public:

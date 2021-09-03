@@ -1,11 +1,5 @@
-#include <FeCore/Utils/Interlocked.h>
-#if FE_WINDOWS
-#    define NOMINMAX
-#    define WIN32_LEAN_AND_MEAN
-#    include <Windows.h>
-#else
-#    error platform is not supported yet
-#endif
+#include <FeCore/Parallel/Interlocked.h>
+#include <FeCore/Base/PlatformInclude.h>
 
 namespace FE
 {

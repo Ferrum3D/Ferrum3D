@@ -26,7 +26,7 @@ namespace FE::Debug
         if ((type & m_DebugLevel) == LogMessageType::None)
             return;
 
-        std::unique_lock lk(FE::Console::Mutex);
+        UniqueLocker lk(FE::Console::StdoutMutex);
         auto date = FE::DateTime::Now().ToString() + m_Header;
         PrintImpl(date);
 

@@ -40,7 +40,7 @@ namespace FE::GPU
 
         VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc);
 
-        RefCountPtr<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) override;
+        Shared<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) override;
 
         vk::DescriptorPool& GetNativeDescriptorPool();
     };

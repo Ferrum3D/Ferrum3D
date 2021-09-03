@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Math/MathUtils.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/CommonSIMD.h>
 #include <array>
@@ -24,8 +25,6 @@ namespace FE
         };
         FE_POP_MSVC_WARNING
 
-        FE_FINLINE explicit Vector3F(TVec vec) noexcept;
-
     public:
         FE_STRUCT_RTTI(Vector3F, "FBD32DD3-C4C4-46DA-8F74-E9EA863BCAAD");
 
@@ -33,6 +32,8 @@ namespace FE
             : Vector3F(0, 0, 0)
         {
         }
+
+        FE_FINLINE explicit Vector3F(TVec vec) noexcept;
 
         FE_FINLINE Vector3F(const Vector3F& other) noexcept;
 
@@ -49,26 +50,26 @@ namespace FE
         FE_FINLINE explicit Vector3F(const std::array<Float32, 3>& array) noexcept;
 
         //! \return Vector3F{ 0, 0, 0 }.
-        FE_FINLINE static Vector3F GetZero() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector3F GetZero() noexcept;
 
         //! \return Vector3F{ 1, 0, 0 }.
-        FE_FINLINE static Vector3F GetUnitX() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector3F GetUnitX() noexcept;
 
         //! \return Vector3F{ 0, 1, 0 }.
-        FE_FINLINE static Vector3F GetUnitY() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector3F GetUnitY() noexcept;
 
         //! \return Vector3F{ 0, 0, 1 }.
-        FE_FINLINE static Vector3F GetUnitZ() noexcept;
+        [[nodiscard]] FE_FINLINE static Vector3F GetUnitZ() noexcept;
 
-        FE_FINLINE Float32 operator[](size_t index) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
-        FE_FINLINE Float32 operator()(size_t index) const noexcept;
+        [[nodiscard]] FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of three floats (components of the vector).
         [[nodiscard]] FE_FINLINE const Float32* Data() const noexcept;
 
         //! \return Underlying SIMD type.
-        [[nodiscard]] FE_FINLINE TVec GetSIMDVector() const noexcept;
+        [[nodiscard]] FE_FINLINE TVec GetSIMD() const noexcept;
 
         [[nodiscard]] FE_FINLINE Float32 X() const noexcept;
         [[nodiscard]] FE_FINLINE Float32 Y() const noexcept;
@@ -114,21 +115,21 @@ namespace FE
         //! \param [in] epsilon - Accepted difference between the two vectors.
         //!
         //! \return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Vector3F& other, Float32 epsilon = 0.0001f) const noexcept;
+        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Vector3F& other, Float32 epsilon = Constants::Epsilon) const noexcept;
 
-        FE_FINLINE bool operator==(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE bool operator==(const Vector3F& other) const noexcept;
 
-        FE_FINLINE bool operator!=(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE bool operator!=(const Vector3F& other) const noexcept;
 
-        FE_FINLINE Vector3F operator-() const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F operator-() const noexcept;
 
-        FE_FINLINE Vector3F operator+(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F operator+(const Vector3F& other) const noexcept;
 
-        FE_FINLINE Vector3F operator-(const Vector3F& other) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F operator-(const Vector3F& other) const noexcept;
 
-        FE_FINLINE Vector3F operator*(Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F operator*(Float32 f) const noexcept;
 
-        FE_FINLINE Vector3F operator/(Float32 f) const noexcept;
+        [[nodiscard]] FE_FINLINE Vector3F operator/(Float32 f) const noexcept;
 
         FE_FINLINE Vector3F& operator+=(const Vector3F& other) noexcept;
 
@@ -139,12 +140,12 @@ namespace FE
         FE_FINLINE Vector3F& operator/=(Float32 f) noexcept;
     };
 
-    FE_FINLINE Vector3F::Vector3F(TVec vec) noexcept
+    FE_FINLINE Vector3F::Vector3F(TVec vec) noexcept // NOLINT clang-tidy complains about uninitialized union members
         : m_Value(vec)
     {
     }
 
-    FE_FINLINE Vector3F::Vector3F(const Vector3F& other) noexcept
+    FE_FINLINE Vector3F::Vector3F(const Vector3F& other) noexcept // NOLINT
         : m_Value(other.m_Value)
     {
     }
@@ -155,7 +156,7 @@ namespace FE
         return *this;
     }
 
-    FE_FINLINE Vector3F::Vector3F(Vector3F&& other) noexcept
+    FE_FINLINE Vector3F::Vector3F(Vector3F&& other) noexcept // NOLINT
         : m_Value(other.m_Value)
     {
     }
@@ -166,17 +167,17 @@ namespace FE
         return *this;
     }
 
-    FE_FINLINE Vector3F::Vector3F(Float32 value) noexcept
+    FE_FINLINE Vector3F::Vector3F(Float32 value) noexcept // NOLINT
         : m_Value(value)
     {
     }
 
-    FE_FINLINE Vector3F::Vector3F(Float32 x, Float32 y, Float32 z) noexcept
+    FE_FINLINE Vector3F::Vector3F(Float32 x, Float32 y, Float32 z) noexcept // NOLINT
         : m_Value(x, y, z)
     {
     }
 
-    FE_FINLINE Vector3F::Vector3F(const std::array<Float32, 3>& array) noexcept
+    FE_FINLINE Vector3F::Vector3F(const std::array<Float32, 3>& array) noexcept // NOLINT
         : m_Value(array[0], array[1], array[2])
     {
     }
@@ -216,7 +217,7 @@ namespace FE
         return m_Values;
     }
 
-    FE_FINLINE Vector3F::TVec Vector3F::GetSIMDVector() const noexcept
+    FE_FINLINE Vector3F::TVec Vector3F::GetSIMD() const noexcept
     {
         return m_Value;
     }
@@ -364,13 +365,11 @@ namespace FE
         *this = *this / f;
         return *this;
     }
-
-    using float3 = Vector3F;
 } // namespace FE
 
-namespace std
+namespace std // NOLINT
 {
-    inline ostream& operator<<(ostream& stream, const FE::float3& vec)
+    inline ostream& operator<<(ostream& stream, const FE::Vector3F& vec)
     {
         return stream << "{ " << vec.X() << "; " << vec.Y() << "; " << vec.Z() << " }";
     }

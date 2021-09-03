@@ -20,6 +20,6 @@ namespace FE::GPU
         explicit VKImage(VKDevice& dev);
 
         const ImageDesc& GetDesc() override;
-        RefCountPtr<IImageView> CreateRenderTargetView() override;
+        Shared<IImageView> CreateRenderTargetView() override;
     };
 } // namespace FE::GPU

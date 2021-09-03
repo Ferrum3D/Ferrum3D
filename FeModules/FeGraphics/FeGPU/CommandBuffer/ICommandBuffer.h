@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Math/Vector4.h>
+#include <FeCore/Math/Color.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/Object.h>
 #include <FeGPU/Descriptors/IDescriptorTable.h>
@@ -13,7 +13,7 @@ namespace FE::GPU
 {
     struct ClearValueDesc
     {
-        float4 Color;
+        Color ColorValue;
 
         FE_STRUCT_RTTI(ClearValueDesc, "DA133DBF-F0B7-43DB-A367-C125ED14E06F");
     };

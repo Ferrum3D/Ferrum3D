@@ -22,7 +22,7 @@ namespace FE::GPU
         return m_VkAdapter;
     }
 
-    RefCountPtr<IDevice> VKAdapter::CreateDevice()
+    Shared<IDevice> VKAdapter::CreateDevice()
     {
         return static_pointer_cast<IDevice>(MakeShared<VKDevice>(*this));
     }

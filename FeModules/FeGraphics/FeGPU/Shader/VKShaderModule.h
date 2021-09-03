@@ -55,7 +55,7 @@ namespace FE::GPU
         ShaderModuleDesc m_Desc;
         vk::UniqueShaderModule m_NativeModule;
         VKDevice* m_Device;
-        RefCountPtr<VKShaderReflection> m_Reflection;
+        Shared<VKShaderReflection> m_Reflection;
 
     public:
         FE_CLASS_RTTI(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");

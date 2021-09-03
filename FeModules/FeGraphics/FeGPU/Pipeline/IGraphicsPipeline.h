@@ -11,11 +11,11 @@ namespace FE::GPU
 {
     struct GraphicsPipelineDesc
     {
-        RefCountPtr<IRenderPass> RenderPass;
+        Shared<IRenderPass> RenderPass;
         UInt32 SubpassIndex;
 
-        Vector<RefCountPtr<IDescriptorTable>> DescriptorTables;
-        Vector<RefCountPtr<IShaderModule>> Shaders;
+        Vector<Shared<IDescriptorTable>> DescriptorTables;
+        Vector<Shared<IShaderModule>> Shaders;
 
         RasterizationState Rasterization;
         DepthStencilState DepthStencil;

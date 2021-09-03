@@ -18,6 +18,10 @@ include(ThirdParty/vulkan)
 include(ThirdParty/dxc)
 include(ThirdParty/SPIRV-Cross)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_subdirectory(FeCore)
 add_subdirectory(FeModules)
 add_subdirectory(FeAssetCompiler)

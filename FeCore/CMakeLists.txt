@@ -1,70 +1,80 @@
 set(SRC
-	FeCore/Base/Base.h
-	FeCore/Base/CompilerTraits.h
-	FeCore/Base/Platform.h
-	FeCore/Base/PlatformInclude.h
-	FeCore/Base/PlatformTraits.h
+    FeCore/Base/Base.h
+    FeCore/Base/CompilerTraits.h
+    FeCore/Base/Platform.h
+    FeCore/Base/PlatformInclude.h
+    FeCore/Base/PlatformTraits.h
 
-	FeCore/Console/Console.h
-	FeCore/Console/Console.cpp
-	FeCore/Console/ConsoleLogger.h
-	FeCore/Console/ConsoleLogger.cpp
-	FeCore/Console/FeLog.h
-	FeCore/Console/IConsoleLogger.h
-	
-	FeCore/Math/Half.h
-	FeCore/Math/Vector3.h
-	FeCore/Math/Vector4.h
-	FeCore/Math/VectorMath.h
-	
-	FeCore/Memory/Allocator.h
-	FeCore/Memory/AllocatorBase.h
-	FeCore/Memory/AllocatorBase.cpp
-	FeCore/Memory/BasicSystemAllocator.h
-	FeCore/Memory/HeapAllocator.h
-	FeCore/Memory/HeapAllocator.cpp
-	FeCore/Memory/IAllocator.h
-	FeCore/Memory/IBasicAllocator.h
-	FeCore/Memory/Memory.h
-	FeCore/Memory/Object.h
-	FeCore/Memory/ReferenceCounter.h
-	FeCore/Memory/SharedPtr.h
-	FeCore/Memory/StackAllocator.h
+    FeCore/Console/Console.h
+    FeCore/Console/Console.cpp
+    FeCore/Console/ConsoleLogger.h
+    FeCore/Console/ConsoleLogger.cpp
+    FeCore/Console/FeLog.h
+    FeCore/Console/IConsoleLogger.h
 
-	FeCore/Modules/DynamicLibrary.h
-	FeCore/Modules/DynamicLibrary.cpp
-	FeCore/Modules/Environment.h
-	FeCore/Modules/Environment.cpp
-	FeCore/Modules/Singleton.h
+    FeCore/Math/Half.h
+    FeCore/Math/Vector3.h
+    FeCore/Math/Vector4.h
+    FeCore/Math/VectorMath.h
 
-	FeCore/RTTI/RTTI.h
-	
-	FeCore/Scene/Entity.h
-	FeCore/Scene/Scene.h
-	
-	FeCore/SIMD/Scalar/Float32x4.h
-	FeCore/SIMD/Scalar/Int32x4.h
-	FeCore/SIMD/SSE/Float32x4.h
-	FeCore/SIMD/SSE/Int32x4.h
-	FeCore/SIMD/CommonSIMD.h
-	FeCore/SIMD/SIMDIntrin.h
-	
-	FeCore/Strings/FeUnicode.h
-	FeCore/Strings/Format.h
-	FeCore/Strings/Format.cpp
-	FeCore/Strings/String.h
-	FeCore/Strings/StringSlice.h
-	
-	FeCore/Time/DateTime.h
-	FeCore/Time/DateTime.cpp
-	FeCore/Time/TimeSpan.h
-	
-	FeCore/Utils/Interlocked.h
-	FeCore/Utils/Interlocked.cpp
-	FeCore/Utils/Result.h
-	FeCore/Utils/SortedStringVector.h
-	FeCore/Utils/UUID.h
-)
+    FeCore/Memory/Allocator.h
+    FeCore/Memory/AllocatorBase.h
+    FeCore/Memory/AllocatorBase.cpp
+    FeCore/Memory/BasicSystemAllocator.h
+    FeCore/Memory/HeapAllocator.h
+    FeCore/Memory/HeapAllocator.cpp
+    FeCore/Memory/IAllocator.h
+    FeCore/Memory/IBasicAllocator.h
+    FeCore/Memory/Memory.h
+    FeCore/Memory/Object.h
+    FeCore/Memory/ReferenceCounter.h
+    FeCore/Memory/SharedPtr.h
+    FeCore/Memory/StackAllocator.h
+
+    FeCore/Modules/DynamicLibrary.h
+    FeCore/Modules/DynamicLibrary.cpp
+    FeCore/Modules/Environment.h
+    FeCore/Modules/Environment.cpp
+    FeCore/Modules/Singleton.h
+
+    FeCore/RTTI/RTTI.h
+
+    FeCore/Scene/Entity.h
+    FeCore/Scene/Scene.h
+
+    FeCore/SIMD/Scalar/Float32x4.h
+    FeCore/SIMD/Scalar/Int32x4.h
+    FeCore/SIMD/SSE/Float32x4.h
+    FeCore/SIMD/SSE/Int32x4.h
+    FeCore/SIMD/CommonSIMD.h
+    FeCore/SIMD/SIMDIntrin.h
+
+    FeCore/Strings/FeUnicode.h
+    FeCore/Strings/Format.h
+    FeCore/Strings/Format.cpp
+    FeCore/Strings/String.h
+    FeCore/Strings/StringSlice.h
+
+    FeCore/Time/DateTime.h
+    FeCore/Time/DateTime.cpp
+    FeCore/Time/TimeSpan.h
+
+    FeCore/Parallel/Interlocked.h
+    FeCore/Parallel/Interlocked.cpp
+    FeCore/Utils/Result.h
+    FeCore/Utils/SortedStringVector.h
+    FeCore/Utils/UUID.h
+
+    FeCore/Math/Color.h
+    FeCore/Math/Colors.h
+    FeCore/Math/Colors.cpp
+    FeCore/Math/MathUtils.h
+    FeCore/Math/Matrix4x4F.h
+    FeCore/Containers/ArraySlice.h
+    FeCore/Memory/UniquePtr.h
+    FeCore/Parallel/SpinMutex.h
+    FeCore/Parallel/Mutex.h
+    FeCore/Parallel/Locker.h)
 
 add_library(FeCore STATIC ${SRC})
 

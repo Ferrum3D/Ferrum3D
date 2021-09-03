@@ -22,13 +22,13 @@ namespace FE::GPU
         return m_Queue;
     }
 
-    void VKCommandQueue::SignalFence(const RefCountPtr<IFence>& fence)
+    void VKCommandQueue::SignalFence(const Shared<IFence>& fence)
     {
         SubmitBuffers({}, fence, SubmitFlags::None);
     }
 
     void VKCommandQueue::SubmitBuffers(
-        const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence, SubmitFlags flags)
+        const Vector<Shared<ICommandBuffer>>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
     {
         Vector<vk::CommandBuffer> nativeBuffers{};
         nativeBuffers.reserve(buffers.size());

@@ -1,6 +1,6 @@
 #pragma once
-#include <FeGPU/Window/IWindow.h>
 #include <FeCore/Base/PlatformInclude.h>
+#include <FeGPU/Window/IWindow.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
@@ -25,4 +25,4 @@ namespace FE::GPU
         Viewport CreateViewport() override;
         Scissor CreateScissor() override;
     };
-}
+} // namespace FE::GPU

@@ -30,9 +30,14 @@ namespace FE::GPU
         BindMemory(static_pointer_cast<IDeviceMemory>(m_Memory), 0);
     }
 
-    void VKBuffer::BindMemory(const RefCountPtr<IDeviceMemory>& memory, UInt64 offset)
+    void VKBuffer::BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset)
     {
         m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
         m_Device->GetNativeDevice().bindBufferMemory(Buffer.get(), m_Memory->Memory.get(), offset);
+    }
+
+    const BufferDesc& VKBuffer::GetDesc() const
+    {
+        return Desc;
     }
 } // namespace FE::GPU

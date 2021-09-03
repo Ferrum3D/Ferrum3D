@@ -66,6 +66,8 @@ namespace FE
 
                 FE_FINLINE Float32x4 Round() const noexcept;
 
+                FE_FINLINE Float32x4 HorizontalAdd(Float32x4 b) const noexcept;
+
                 FE_FINLINE static Float32x4 Min(Float32x4 a, Float32x4 b) noexcept;
 
                 FE_FINLINE static Float32x4 Max(Float32x4 a, Float32x4 b) noexcept;
@@ -145,6 +147,7 @@ namespace FE
             FE_FINLINE Float32x4 Float32x4::Shuffle() const noexcept
             {
                 static_assert(F3 < 4 && F2 < 4 && F1 < 4 && F0 < 4);
+                // TODO: test this _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(*this), _MM_SHUFFLE(F3, F2, F1, F0)));
                 return Shuffle<F3, F2, F1, F0>(*this, *this);
             }
 
@@ -320,6 +323,11 @@ namespace FE
             FE_FINLINE Float32x4 Float32x4::InverseApprox() const noexcept
             {
                 return _mm_rcp_ps(Data);
+            }
+
+            Float32x4 Float32x4::HorizontalAdd(Float32x4 b) const noexcept
+            {
+                return _mm_hadd_ps(Data, b.Data);
             }
         } // namespace SSE
 
