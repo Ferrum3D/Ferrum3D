@@ -29,7 +29,7 @@ namespace FE::GPU
         return m_NativePool.get();
     }
 
-    RefCountPtr<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors)
+    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors)
     {
         return static_pointer_cast<IDescriptorTable>(MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors));
     }

@@ -19,8 +19,8 @@ namespace FE::GPU
         vk::SurfaceFormatKHR m_ColorFormat;
         vk::SurfaceCapabilitiesKHR m_Capabilities;
 
-        Vector<RefCountPtr<IImage>> m_Images;
-        Vector<RefCountPtr<IImageView>> m_ImageViews;
+        Vector<Shared<IImage>> m_Images;
+        Vector<Shared<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
         Vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
@@ -49,6 +49,6 @@ namespace FE::GPU
         IImage* GetCurrentImage() override;
         void Present() override;
 
-        Vector<RefCountPtr<IImageView>> GetRTVs() override;
+        Vector<Shared<IImageView>> GetRTVs() override;
     };
 } // namespace FE::GPU

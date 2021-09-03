@@ -1,14 +1,31 @@
+/*
+ * Copyright 2021 Nikita Dubovikov
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Math/Vector4.h>
-#include <FeCore/Memory/Memory.h>
+#include <FeCore/Containers/ArraySlice.h>
+#include <FeCore/Math/Colors.h>
 #include <FeGPU/Instance/IInstance.h>
 #include <FeGPU/Pipeline/InputLayoutBuilder.h>
 #include <fstream>
+#include <chrono>
 
 struct Vertex
 {
-    FE::Float32 XYZ[3];
-    FE::Float32 RGB[3];
+    [[maybe_unused]] FE::Float32 XYZ[3];
+    [[maybe_unused]] FE::Float32 RGB[3];
 };
 
 FE::String ReadFile(const FE::String& path)
@@ -36,15 +53,14 @@ int main()
             "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
 
-        HAL::InstanceDesc desc{};
-        auto instance      = HAL::CreateGraphicsAPIInstance(desc, HAL::GraphicsAPI::Vulkan);
+        auto instance      = HAL::CreateGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
         auto adapter       = instance->GetAdapters()[0];
         auto device        = adapter->CreateDevice();
         auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
         auto transferQueue = device->GetCommandQueue(HAL::CommandQueueClass::Transfer);
         auto compiler      = device->CreateShaderCompiler();
 
-        auto window   = device->CreateWindow(HAL::WindowDesc{800, 600, "Test project"});
+        auto window   = device->CreateWindow(HAL::WindowDesc{ 800, 600, "Test project" });
         auto viewport = window->CreateViewport();
         auto scissor  = window->CreateScissor();
 
@@ -54,11 +70,11 @@ int main()
         swapChainDesc.ImageHeight        = scissor.Height();
         swapChainDesc.NativeWindowHandle = window->GetNativeHandle();
         swapChainDesc.Queue              = graphicsQueue.GetRaw();
-        swapChainDesc.VerticalSync       = true;
+        swapChainDesc.VerticalSync       = false;
         auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
-        FE::RefCountPtr<HAL::IBuffer> indexBufferStaging, vertexBufferStaging, constantBuffer;
-        FE::RefCountPtr<HAL::IBuffer> indexBuffer, vertexBuffer;
+        FE::Shared<HAL::IBuffer> indexBufferStaging, vertexBufferStaging, constantBuffer;
+        FE::Shared<HAL::IBuffer> indexBuffer, vertexBuffer;
         FE::UInt64 vertexSize, indexSize;
         {
             // clang-format off
@@ -72,9 +88,7 @@ int main()
             vertexSize          = vertexData.size() * sizeof(Vertex);
             vertexBufferStaging = device->CreateBuffer(HAL::BindFlags::None, vertexSize);
             vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
-            void* map = vertexBufferStaging->Map(0);
-            memcpy(map, vertexData.data(), vertexSize);
-            vertexBufferStaging->Unmap();
+            vertexBufferStaging->UpdateData(vertexData.data());
 
             vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
             vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
@@ -84,21 +98,17 @@ int main()
             indexSize                        = indexData.size() * sizeof(FE::UInt32);
             indexBufferStaging               = device->CreateBuffer(HAL::BindFlags::None, indexSize);
             indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
-            void* map = indexBufferStaging->Map(0);
-            memcpy(map, indexData.data(), indexSize);
-            indexBufferStaging->Unmap();
+            indexBufferStaging->UpdateData(indexData.data());
 
             indexBuffer = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
             indexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
-            FE::float4 constantData = { 1.0f, 1.0f, 1.0f, 1.0f };
+            FE::Color constantData = FE::Colors::White;
             constantData *= 0.7f;
-            constantBuffer = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::float4));
+            constantBuffer = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector4F));
             constantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-            void* map = constantBuffer->Map(0);
-            memcpy(map, constantData.Data(), sizeof(FE::float4));
-            constantBuffer->Unmap();
+            constantBuffer->UpdateData(constantData.Data());
         }
 
         {
@@ -121,7 +131,7 @@ int main()
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
 
-        HAL::ShaderModuleDesc pixelDesc;
+        HAL::ShaderModuleDesc pixelDesc{};
         pixelDesc.EntryPoint   = "main";
         pixelDesc.ByteCode     = psByteCode.data();
         pixelDesc.ByteCodeSize = psByteCode.size();
@@ -137,7 +147,7 @@ int main()
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
 
-        HAL::ShaderModuleDesc vertexDesc;
+        HAL::ShaderModuleDesc vertexDesc{};
         vertexDesc.EntryPoint   = "main";
         vertexDesc.ByteCode     = vsByteCode.data();
         vertexDesc.ByteCodeSize = vsByteCode.size();
@@ -169,15 +179,10 @@ int main()
         descriptorHeapDesc.Sizes   = { HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
         auto descriptorHeap        = device->CreateDescriptorHeap(descriptorHeapDesc);
 
-        HAL::DescriptorDesc descriptorDesc{};
-        descriptorDesc.Stage        = HAL::ShaderStageFlags::Pixel;
-        descriptorDesc.ResourceType = HAL::ShaderResourceType::ConstantBuffer;
-        descriptorDesc.Count        = 1;
-        auto descriptorTable        = descriptorHeap->AllocateDescriptorTable({ descriptorDesc });
+        HAL::DescriptorDesc descriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
+        auto descriptorTable = descriptorHeap->AllocateDescriptorTable({ descriptorDesc });
 
-        HAL::DescriptorWriteBuffer write{};
-        write.Buffer = constantBuffer.GetRaw();
-        descriptorTable->Update(write);
+        descriptorTable->Update(HAL::DescriptorWriteBuffer(constantBuffer.GetRaw()));
 
         HAL::GraphicsPipelineDesc pipelineDesc{};
         pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
@@ -200,15 +205,15 @@ int main()
 
         auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
-        FE::Vector<FE::RefCountPtr<HAL::IFence>> fences;
+        FE::Vector<FE::Shared<HAL::IFence>> fences;
         for (size_t i = 0; i < swapChain->GetDesc().FrameCount; ++i)
         {
             fences.push_back(device->CreateFence(HAL::FenceState::Signaled));
         }
 
         auto RTVs = swapChain->GetRTVs();
-        FE::Vector<FE::RefCountPtr<HAL::IFramebuffer>> framebuffers;
-        FE::Vector<FE::RefCountPtr<HAL::ICommandBuffer>> commandBuffers;
+        FE::Vector<FE::Shared<HAL::IFramebuffer>> framebuffers;
+        FE::Vector<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
         for (size_t i = 0; i < frameBufferCount; ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
@@ -226,12 +231,14 @@ int main()
             cmd->SetScissor(scissor);
             cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
             cmd->BindIndexBuffer(indexBuffer.GetRaw());
-            cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ { 0.1f, 0.1f, 0.7f, 1 } });
+            cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ FE::Colors::Coral });
             cmd->DrawIndexed(6, 1, 0, 0, 0);
             cmd->EndRenderPass();
             cmd->End();
         }
 
+        auto ts = std::chrono::high_resolution_clock::now();
+        FE::Int16 frames = 0;
         while (!window->CloseRequested())
         {
             auto frameIndex = swapChain->GetCurrentFrameIndex();
@@ -242,6 +249,13 @@ int main()
             fences[swapChain->GetCurrentFrameIndex()]->Reset();
             graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
             swapChain->Present();
+
+            auto delta = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ts).count();
+            if ((frames = (frames + 1) % 1000) == 0)
+            {
+                FE_LOG_MESSAGE("Delta: {}mcs, FPS: {}", delta, 1'000'000.0 / static_cast<double>(delta));
+            }
+            ts = std::chrono::high_resolution_clock::now();
         }
 
         device->WaitIdle();

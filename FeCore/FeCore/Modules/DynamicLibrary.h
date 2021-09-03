@@ -7,6 +7,7 @@ namespace FE
     class DynamicLibrary : public Object<IObject>
     {
         void* m_NativeHandle = nullptr;
+        String m_FullName;
 
         void* GetFunctionImpl(StringSlice functionName);
 

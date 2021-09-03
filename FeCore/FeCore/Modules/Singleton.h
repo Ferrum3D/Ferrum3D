@@ -45,7 +45,7 @@ namespace FE
         inline static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "Singleton instance was a nullptr");
-            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register singleton twise");
+            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register singleton twice");
             std::unique_lock lk(m_Mutex);
             m_Instance = Env::CreateGlobalVariableByType<T*>(instance);
         }

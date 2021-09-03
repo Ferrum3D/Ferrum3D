@@ -30,7 +30,7 @@ namespace FE::Env
 
             FE::IBasicAllocator* m_Allocator = nullptr;
             Map m_Map;
-            std::mutex m_Lock;
+            Mutex m_Lock;
 
             inline VariableResult FindVariableNoLock(std::string_view name)
             {
@@ -60,14 +60,14 @@ namespace FE::Env
 
             inline VariableResult FindVariable(std::string_view name) override
             {
-                std::unique_lock lk(m_Lock);
+                UniqueLocker lk(m_Lock);
                 return FindVariableNoLock(name);
             }
 
             inline VariableResult CreateVariable(
                 std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) override
             {
-                std::unique_lock lk(m_Lock);
+                UniqueLocker lk(m_Lock);
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
                 if (find.IsOk())
                     return find;
@@ -83,7 +83,7 @@ namespace FE::Env
 
             inline VariableResult RemoveVariable(std::string_view name) override
             {
-                std::unique_lock lk(m_Lock);
+                UniqueLocker lk(m_Lock);
                 auto it = m_Map.FindIter(name);
                 if (it == m_Map.end())
                     return VariableResult::Err(VariableError::NotFound);
@@ -95,8 +95,7 @@ namespace FE::Env
                 // That's why we just place a nullptr instead of the previous pointer, so we know the variable doesn't exist anymore.
                 // The handle (string + pointer) is quite light-weight and we don't use very many global variables and singletons,
                 // maybe not more than a hundred, so it would be reasonable to just leak them for some performance benefits.
-                // TODO: it's possible to implement some garbage collection here and periodically remove all nullptr-variables
-                // from the map.
+                // TODO: it's possible to implement some garbage collection here and periodically remove all nullptr-variables from the map.
                 std::get<1>(*it) = nullptr;
                 return result;
             }

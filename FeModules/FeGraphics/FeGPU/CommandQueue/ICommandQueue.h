@@ -23,9 +23,9 @@ namespace FE::GPU
 
         FE_CLASS_RTTI(ICommandQueue, "2BC9A588-BF3E-420B-A8C7-6DC770E5F4B3");
 
-        virtual void SignalFence(const RefCountPtr<IFence>& fence) = 0;
+        virtual void SignalFence(const Shared<IFence>& fence) = 0;
 
         virtual void SubmitBuffers(
-            const Vector<RefCountPtr<ICommandBuffer>>& buffers, const RefCountPtr<IFence>& signalFence, SubmitFlags flags) = 0;
+            const Vector<Shared<ICommandBuffer>>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) = 0;
     };
 } // namespace FE::GPU

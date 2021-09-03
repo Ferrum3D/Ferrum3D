@@ -2,7 +2,7 @@
 #include <FeCore/Strings/StringSlice.h>
 #include <FeCore/Base/Base.h>
 #include <FeCore/Base/Platform.h>
-#include <mutex>
+#include <FeCore/Parallel/Locker.h>
 
 namespace FE::Console
 {
@@ -47,7 +47,7 @@ namespace FE::Console
 #endif
     };
 
-    static std::mutex Mutex;
+    static Mutex StdoutMutex;
 
     void Init();
 
@@ -58,6 +58,7 @@ namespace FE::Console
     void ResetColor();
 
     //! \brief Print a string to stdout.
+    //!
     //! \param [in] string - String to print.
     void PrintToStdout(StringSlice string);
 } // namespace FE::Console

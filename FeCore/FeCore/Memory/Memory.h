@@ -2,71 +2,74 @@
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Memory/SharedPtr.h>
+#include <FeCore/Memory/UniquePtr.h>
 #include <memory>
 
 namespace FE
 {
-    //! \breif Deleter for `std::unique_ptr` that uses \ref GlobalAllocator.
+    //! \brief Create a `Unique<T>`.
     //!
-    //! \tparam T      - Type of object to delete.
-    //! \tparam TAlloc - Type of allocator used to allocate the object.
-    //!                  This type _must_ implement \ref IAllocator.
-    template<class T, class TAlloc>
-    constexpr auto ObjectDeleter = [](T* obj) {
+    //! \param [in] args   - Arguments to call constructor of T with.
+    //! \tparam T          - Type of object to allocate.
+    //! \tparam TAllocator - Type of allocator to use for allocation and deallocation of the object.
+    //! \tparam Args       - Types of arguments to call constructor of T with.
+    //!
+    //! \return An instance of `Unique<T>` that holds the allocated object of type T.
+    template<class T, class TAllocator, class... Args>
+    inline Unique<T, TAllocator> AllocateUnique(Args&&... args)
+    {
         FE_STATIC_SRCPOS(position);
-        FE::GlobalAllocator<TAlloc>::Get().Deallocate(obj, position);
-    };
+        void* data = FE::GlobalAllocator<TAllocator>::Get().Allocate(sizeof(T), alignof(T), position);
+        T* obj     = new (data) T(std::forward<Args>(args)...);
+        return Unique<T, TAllocator>(obj);
+    }
 
-    //! \brief Type of \ref ObjectDeleter.
-    template<class T, class TAlloc>
-    using TObjectDeleter = decltype(ObjectDeleter<T, TAlloc>);
-
-    //! \brief Create a `std::unique_ptr` with \ref ObjectDeleter that uses \ref HeapAllocator.
+    //! \brief Create a `Unique<T>` that uses \ref HeapAllocator.
     //!
     //! \param [in] args - Arguments to call constructor of T with.
     //! \tparam T        - Type of object to allocate.
     //! \tparam Args     - Types of arguments to call constructor of T with.
     //!
-    //! \return An instance of `std::unique_ptr` that holds the allocated object of type T.
+    //! \return An instance of `Unique<T>` that holds the allocated object of type T.
     template<class T, class... Args>
-    auto MakeUnique(Args&&... args) -> std::unique_ptr<T, TObjectDeleter<T, FE::HeapAllocator>>
+    inline Unique<T> MakeUnique(Args&&... args)
     {
         FE_STATIC_SRCPOS(position);
         void* data = FE::GlobalAllocator<FE::HeapAllocator>::Get().Allocate(sizeof(T), alignof(T), position);
         T* obj     = new (data) T(std::forward<Args>(args)...);
-        return std::unique_ptr<T, TObjectDeleter<T, FE::HeapAllocator>>(obj, ObjectDeleter<T, FE::HeapAllocator>);
+        return Unique<T>(obj);
     }
 
-    //! \brief Create a \ref RefCountPtr.
+    //! \brief Create a \ref Shared<T>.
     //!
     //! This function allocates storage for \ref ReferenceCounter and an object of type T.
-    //! It attaches reference counter to the allocated object and returns an instance of \ref RefCountPtr.
+    //! It attaches reference counter to the allocated object and returns an instance of \ref Shared<T>.
     //!
     //! \param [in] args   - Arguments to call constructor of T with.
     //! \tparam T          - Type of object to allocate.
-    //! \tparam IAllocator - Type of allocator to use for allocation and deallocation of the object.
+    //! \tparam TAllocator - Type of allocator to use for allocation and deallocation of the object.
     //! \tparam Args       - Types of arguments to call constructor of T with.
     //!
     //! \return An instance of \ref RefCountPtr that holds the allocated object of type T.
     template<class T, class TAllocator, class... Args>
-    inline RefCountPtr<T> AllocateShared(Args&&... args)
+    inline Shared<T> AllocateShared(Args&&... args)
     {
         constexpr size_t counterSize = AlignUp(sizeof(ReferenceCounter), alignof(T));
         constexpr size_t wholeSize   = sizeof(T) + counterSize;
 
-        IAllocator* allocator     = &FE::GlobalAllocator<TAllocator>::Get();
-        UInt8* ptr                = static_cast<UInt8*>(allocator->Allocate(wholeSize, alignof(T), FE_SRCPOS()));
-        auto* counter = new (ptr) ReferenceCounter(allocator);
+        IAllocator* allocator = &FE::GlobalAllocator<TAllocator>::Get();
+        UInt8* ptr            = static_cast<UInt8*>(allocator->Allocate(wholeSize, alignof(T), FE_SRCPOS()));
+        auto* counter         = new (ptr) ReferenceCounter(allocator);
 
         T* object = new (ptr + counterSize) T(std::forward<Args>(args)...);
         object->AttachRefCounter(counter);
-        return RefCountPtr<T>(object);
+        return Shared<T>(object);
     }
 
-    //! \brief Create a \ref RefCountPtr.
+    //! \brief Create a \ref Shared<T>.
     //!
     //! This function allocates storage for \ref ReferenceCounter and an object of type T.
-    //! It attaches reference counter to the allocated object and returns an instance of \ref RefCountPtr.
+    //! It attaches reference counter to the allocated object and returns an instance of \ref Shared<T>.
     //!
     //! \param [in] args   - Arguments to call constructor of T with.
     //! \tparam T          - Type of object to allocate.
@@ -74,16 +77,16 @@ namespace FE
     //!
     //! \return An instance of \ref RefCountPtr that holds the allocated object of type T.
     template<class T, class... Args>
-    inline RefCountPtr<T> MakeShared(Args&&... args)
+    inline Shared<T> MakeShared(Args&&... args)
     {
         return AllocateShared<T, FE::HeapAllocator>(std::forward<Args>(args)...);
     }
 
-    //! \brief Perform static_cast of \ref RefCountPtr.
+    //! \brief Perform `static_cast` of \ref Shared<T>.
     //!
-    //! This function retrieves a raw pointer using \ref RefCountPtr::GetRaw and does a static_cast to TDest.
-    //! The result pointer is then used to create a new \ref RefCountPtr.\n
-    //! It can be used to cast a derived cast to base.
+    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a static_cast to TDest.
+    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! It can be used to cast a derived class to base.
     //!
     //! \note To cast a base class to derived, use \ref fe_dynamic_cast.
     //!
@@ -91,11 +94,106 @@ namespace FE
     //! \tparam TDest   - The type of result pointer.
     //! \tparam TSrc    - The type of source pointer.
     //!
-    //! \return An instance of \ref RefCountPtr that holds the same object but with different interface.
+    //! \return An instance of \ref Shared<TDest> that holds the same object but statically casted.
     template<class TDest, class TSrc>
-    RefCountPtr<TDest> static_pointer_cast(const RefCountPtr<TSrc>& src)
+    inline Shared<TDest> static_pointer_cast(const Shared<TSrc>& src)
     {
-        return RefCountPtr<TDest>(static_cast<TDest*>(src.GetRaw()));
+        return Shared<TDest>(static_cast<TDest*>(src.GetRaw()));
+    }
+
+    //! \brief Perform `static_cast` of \ref Unique<T>.
+    //!
+    //! This function retrieves a raw pointer using \ref Unique::Detach() and does a static_cast to TDest.
+    //! The result pointer is then used to create a new \ref Unique<TDest>.\n
+    //! It can be used to cast a derived class to base.
+    //!
+    //! \note To cast a base class to derived, use \ref fe_dynamic_cast.
+    //!
+    //! \param [in] src - Source pointer.
+    //! \tparam TDest   - The type of result pointer.
+    //! \tparam TSrc    - The type of source pointer.
+    //!
+    //! \return An instance of \ref Unique<TDest> that holds the same object but statically casted.
+    template<class TDest, class TSrc>
+    inline Unique<TDest> static_pointer_cast(Unique<TSrc>&& src)
+    {
+        return Unique<TDest>(static_cast<TDest*>(src.Detach()));
+    }
+
+    //! \brief Perform \ref fe_dynamic_cast of \ref Shared<T>.
+    //!
+    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a fe_dynamic_cast to TDest.
+    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! It can be used to cast a base class to derived.
+    //!
+    //! \note To cast a derived class to base, use `static_cast`.
+    //!
+    //! \param [in] src - Source pointer.
+    //! \tparam TDest   - The type of result pointer.
+    //! \tparam TSrc    - The type of source pointer.
+    //!
+    //! \return An instance of \ref Shared<TDest> that holds the same object but dynamically casted.
+    template<class TDest, class TSrc>
+    inline Shared<TDest> dynamic_pointer_cast(const Shared<TSrc>& src)
+    {
+        return Shared<TDest>(fe_dynamic_cast<TDest*>(src.GetRaw()));
+    }
+
+    //! \brief Perform \ref fe_dynamic_cast of \ref Unique<T>.
+    //!
+    //! This function retrieves a raw pointer using \ref Unique::Detach() and does a fe_dynamic_cast to TDest.
+    //! The result pointer is then used to create a new \ref Unique<TDest>.\n
+    //! It can be used to cast a base class to derived.
+    //!
+    //! \note To cast a derived class to base, use `static_cast`.
+    //!
+    //! \param [in] src - Source pointer.
+    //! \tparam TDest   - The type of result pointer.
+    //! \tparam TSrc    - The type of source pointer.
+    //!
+    //! \return An instance of \ref Unique<TDest> that holds the same object but dynamically casted.
+    template<class TDest, class TSrc>
+    inline Unique<TDest> dynamic_pointer_cast(Unique<TSrc>&& src)
+    {
+        return Unique<TDest>(fe_dynamic_cast<TDest*>(src.Detach()));
+    }
+
+    //! \brief Perform \ref fe_assert_cast of \ref Shared<T>.
+    //!
+    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a fe_assert_cast to TDest.
+    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! It can be used to cast a base class to derived.
+    //!
+    //! \note You must be sure that dynamic cast from TSrc to TDest will succeed.
+    //!
+    //! \param [in] src - Source pointer.
+    //! \tparam TDest   - The type of result pointer.
+    //! \tparam TSrc    - The type of source pointer.
+    //!
+    //! \return An instance of \ref Shared<TDest> that holds the same object but dynamically casted.
+    template<class TDest, class TSrc>
+    inline Shared<TDest> assert_pointer_cast(const Shared<TSrc>& src)
+    {
+        return Shared<TDest>(fe_assert_cast<TDest*>(src.GetRaw()));
+    }
+
+    //! \brief Perform \ref fe_assert_cast of \ref Unique<T>.
+    //!
+    //! This function retrieves a raw pointer using \ref Unique::Detach() and does a fe_assert_cast to TDest.
+    //! The result pointer is then used to create a new \ref Unique<TDest>.\n
+    //! It can be used to cast a base class to derived.
+    //!
+    //! \note You must be sure that dynamic cast from TSrc to TDest will succeed.
+    //!
+    //! \param [in] src - Source pointer.
+    //! \tparam TDest   - The type of result pointer.
+    //! \tparam TSrc    - The type of source pointer.
+    //!
+    //! \return An instance of \ref Unique<TDest> that holds the same object but dynamically casted.
+    template<class TDest, class TSrc>
+    inline Unique<TDest> assert_pointer_cast(Unique<TSrc>&& src)
+    {
+        return Unique<TDest>(fe_assert_cast<TDest*>(src.Detach()));
     }
 
     //! \brief A wrapper for \ref IAllocator compatible with `std::allocator`.
@@ -115,7 +213,7 @@ namespace FE
         }
 
         template<class TOther>
-        inline StdAllocator(const StdAllocator<TOther, TAlloc>& other) noexcept
+        inline explicit StdAllocator(const StdAllocator<TOther, TAlloc>& other) noexcept
             : m_Instance(other.GetImpl())
         {
         }

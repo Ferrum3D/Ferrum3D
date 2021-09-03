@@ -151,10 +151,10 @@ namespace FE::GPU
     void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue)
     {
         vk::ClearValue vkClearValue{};
-        vkClearValue.color.float32[0] = clearValue.Color.X();
-        vkClearValue.color.float32[1] = clearValue.Color.Y();
-        vkClearValue.color.float32[2] = clearValue.Color.Z();
-        vkClearValue.color.float32[3] = clearValue.Color.W();
+        vkClearValue.color.float32[0] = clearValue.ColorValue.R32();
+        vkClearValue.color.float32[1] = clearValue.ColorValue.B32();
+        vkClearValue.color.float32[2] = clearValue.ColorValue.B32();
+        vkClearValue.color.float32[3] = clearValue.ColorValue.A32();
 
         vk::RenderPassBeginInfo info{};
         info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();

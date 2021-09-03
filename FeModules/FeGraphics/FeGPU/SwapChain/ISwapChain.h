@@ -36,6 +36,6 @@ namespace FE::GPU
         virtual IImage* GetImage(UInt32 index) = 0;
         virtual IImage* GetCurrentImage()      = 0;
 
-        virtual Vector<RefCountPtr<IImageView>> GetRTVs() = 0;
+        virtual Vector<Shared<IImageView>> GetRTVs() = 0;
     };
 } // namespace FE::GPU

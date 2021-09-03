@@ -190,7 +190,7 @@ namespace FE::GPU
             m_NativeSwapChain.get(), static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
 
-    Vector<RefCountPtr<IImageView>> VKSwapChain::GetRTVs()
+    Vector<Shared<IImageView>> VKSwapChain::GetRTVs()
     {
         return m_ImageViews;
     }

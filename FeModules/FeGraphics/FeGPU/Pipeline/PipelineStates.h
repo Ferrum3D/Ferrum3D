@@ -117,7 +117,7 @@ namespace FE::GPU
     struct ColorBlendState
     {
         Vector<TargetColorBlending> TargetBlendStates{};
-        float4 BlendConstants{};
+        Vector4F BlendConstants{};
 
         inline ColorBlendState() = default;
 
@@ -127,9 +127,9 @@ namespace FE::GPU
         {
         }
 
-        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates, float4 constants)
+        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates, const Vector4F& constants)
             : TargetBlendStates(targetBlendStates)
-            , BlendConstants(std::move(constants))
+            , BlendConstants(constants)
         {
         }
     };

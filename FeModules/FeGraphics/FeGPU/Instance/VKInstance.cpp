@@ -106,7 +106,7 @@ namespace FE::GPU
         return m_Instance.get();
     }
 
-    Vector<RefCountPtr<IAdapter>>& VKInstance::GetAdapters()
+    Vector<Shared<IAdapter>>& VKInstance::GetAdapters()
     {
         return m_PhysicalDevices;
     }

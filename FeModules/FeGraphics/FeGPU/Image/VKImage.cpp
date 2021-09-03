@@ -13,7 +13,7 @@ namespace FE::GPU
         return Desc;
     }
 
-    RefCountPtr<IImageView> VKImage::CreateRenderTargetView()
+    Shared<IImageView> VKImage::CreateRenderTargetView()
     {
         ImageSubresourceRange range{};
         range.ArraySliceCount = Desc.ArraySize;

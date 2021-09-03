@@ -5,6 +5,7 @@
 #    define FE_PLATFORM_ATOMIC_INT32 volatile long
 #    define FE_PLATFORM_ATOMIC_INT64 volatile ::FE::Int64
 #else
+#    error Platform not supported yet
 #endif
 
 namespace FE

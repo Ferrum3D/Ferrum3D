@@ -1,8 +1,8 @@
 #pragma once
 #include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Modules/DynamicLibrary.h>
+#include <FeCore/Parallel/Interlocked.h>
 #include <FeGPU/Shader/IShaderCompiler.h>
-#include <FeCore/Utils/Interlocked.h>
 
 #include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/dxcapi.h>

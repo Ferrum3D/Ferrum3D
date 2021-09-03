@@ -122,12 +122,12 @@ namespace FE::GPU
         return m_NativeDevice.get();
     }
 
-    RefCountPtr<IFence> VKDevice::CreateFence(FenceState state)
+    Shared<IFence> VKDevice::CreateFence(FenceState state)
     {
         return static_pointer_cast<IFence>(MakeShared<VKFence>(*this, state));
     }
 
-    RefCountPtr<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
+    Shared<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
     {
         VKCommandQueueDesc desc{};
         desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
@@ -135,17 +135,17 @@ namespace FE::GPU
         return static_pointer_cast<ICommandQueue>(MakeShared<VKCommandQueue>(*this, desc));
     }
 
-    RefCountPtr<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
+    Shared<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
         return static_pointer_cast<ICommandBuffer>(MakeShared<VKCommandBuffer>(*this, cmdQueueClass));
     }
 
-    RefCountPtr<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
+    Shared<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
     {
         return static_pointer_cast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
     }
 
-    RefCountPtr<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
+    Shared<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
     {
         BufferDesc desc{};
         desc.Size   = size;
@@ -197,42 +197,42 @@ namespace FE::GPU
         return *m_Adapter;
     }
 
-    RefCountPtr<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
+    Shared<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
     {
         return static_pointer_cast<IShaderModule>(MakeShared<VKShaderModule>(*this, desc));
     }
 
-    RefCountPtr<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
+    Shared<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
     {
         return MakeShared<VKCommandBuffer>(*this, queueFamilyIndex);
     }
 
-    RefCountPtr<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
+    Shared<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
     {
         return static_pointer_cast<IRenderPass>(MakeShared<VKRenderPass>(*this, desc));
     }
 
-    RefCountPtr<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
+    Shared<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
     {
         return static_pointer_cast<IDescriptorHeap>(MakeShared<VKDescriptorHeap>(*this, desc));
     }
 
-    RefCountPtr<IShaderCompiler> VKDevice::CreateShaderCompiler()
+    Shared<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
         return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan));
     }
 
-    RefCountPtr<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
+    Shared<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
     {
         return static_pointer_cast<IGraphicsPipeline>(MakeShared<VKGraphicsPipeline>(*this, desc));
     }
 
-    RefCountPtr<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
+    Shared<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
     {
         return static_pointer_cast<IImageView>(MakeShared<VKImageView>(*this, desc));
     }
 
-    RefCountPtr<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
+    Shared<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
     {
         return static_pointer_cast<IFramebuffer>(MakeShared<VKFramebuffer>(*this, desc));
     }
@@ -264,7 +264,7 @@ namespace FE::GPU
         return static_cast<UInt32>(m_SignalSemaphores.size());
     }
 
-    RefCountPtr<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
+    Shared<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
     {
         return static_pointer_cast<IWindow>(MakeShared<Window>(desc));
     }

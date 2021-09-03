@@ -3,7 +3,7 @@
 
 namespace FE::GPU
 {
-    RefCountPtr<IInstance> CreateGraphicsAPIInstance(InstanceDesc desc, GraphicsAPI api)
+    Shared<IInstance> CreateGraphicsAPIInstance(InstanceDesc desc, GraphicsAPI api)
     {
         switch (api)
         {

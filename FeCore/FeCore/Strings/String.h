@@ -309,7 +309,7 @@ namespace FE
             }
         }
 
-        inline const TChar* Data() const noexcept
+        [[nodiscard]] inline const TChar* Data() const noexcept
         {
             return IsLong() ? m_Data.L.Data : m_Data.S.Data;
         }
@@ -439,9 +439,12 @@ namespace FE
 
         inline String& Append(const TChar* str, size_t count)
         {
-            assert(count == 0 || str != nullptr);
+            FE_CORE_ASSERT(count == 0 || str != nullptr, "Couldn't append more than 0 chars from a null string");
             if (count == 0)
+            {
                 return *this;
+            }
+
             size_t size = Size();
             size_t cap  = Capacity();
             if (cap - size >= count)
@@ -493,7 +496,7 @@ namespace FE
         inline friend String operator+(const String& lhs, const TChar* rhs)
         {
             String t;
-            t.Reserve(lhs.Size() + std::char_traits<TChar>::length(rhs));
+            t.Reserve(lhs.Size() + TCharTraits::length(rhs));
             t += lhs;
             t += rhs;
             return t;

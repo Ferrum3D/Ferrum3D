@@ -1,8 +1,10 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/Math/MathUtils.h>
 #include <FeCore/Memory/IBasicAllocator.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Utils/Result.h>
+#include <FeCore/Parallel/Locker.h>
 #include <array>
 #include <mutex>
 #include <vector>
@@ -42,7 +44,7 @@ namespace FE::Env
 
     //! \brief Allocate global variable storage.
     //!
-    //! Creates a global variable by unique ID, but doesn't initilize it.
+    //! Creates a global variable by unique ID, but doesn't initialize it.
     //!
     //! \tparam T      - Type of variable to allocate.
     //! \param [in] id - Unique ID of variable to allocate.
@@ -53,7 +55,7 @@ namespace FE::Env
 
     //! \brief Allocate global variable storage.
     //!
-    //! Creates a global variable by unique name, but doesn't initilize it.
+    //! Creates a global variable by unique name, but doesn't initialize it.
     //!
     //! \tparam T        - Type of variable to allocate.
     //! \param [in] name - Unique name of variable to allocate.
@@ -135,7 +137,7 @@ namespace FE::Env
             Removed
         };
 
-        //! \brief Specialization of \ref Result that uses \ref VaiableError and \ref VariableOk
+        //! \brief Specialization of \ref Result that uses \ref VariableError and \ref VariableOk
         using VariableResult = Result<void*, VariableError, VariableOk>;
 
         //! \brief Environment interface.
@@ -174,7 +176,7 @@ namespace FE::Env
             std::string_view m_Name;
             UInt32 m_RefCount;
             std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
-            std::mutex m_Mutex;
+            SpinMutex m_Mutex;
             bool m_IsConstructed;
 
             friend class GlobalVariable<T>;
@@ -197,7 +199,7 @@ namespace FE::Env
             template<class... Args>
             inline void Construct(Args&&... args)
             {
-                std::unique_lock lk(m_Mutex);
+                UniqueLocker lk(m_Mutex);
                 new (&m_Storage) T(std::forward<Args>(args)...);
                 m_IsConstructed = true;
             }
@@ -205,7 +207,7 @@ namespace FE::Env
             //! \brief Call variable's destructor. This function does _not_ deallocate memory.
             inline void Destruct()
             {
-                std::unique_lock lk(m_Mutex);
+                UniqueLocker lk(m_Mutex);
                 reinterpret_cast<T*>(&m_Storage)->~T();
                 m_IsConstructed = false;
             }
@@ -213,7 +215,7 @@ namespace FE::Env
             //! \brief Check if variable was constructed.
             //!
             //! \return True if \ref Construct was called.
-            inline bool IsConstructed() const
+            [[nodiscard]] inline bool IsConstructed() const
             {
                 return m_IsConstructed;
             }
@@ -233,7 +235,7 @@ namespace FE::Env
             //! \brief Add a reference to internal counter.
             inline void AddRef()
             {
-                std::unique_lock lk(m_Mutex);
+                UniqueLocker lk(m_Mutex);
                 ++m_RefCount;
             }
 
@@ -242,7 +244,7 @@ namespace FE::Env
             //! This function will call variable's destructor and deallocate memory if the reference counter reaches zero.
             inline void Release()
             {
-                std::unique_lock<std::mutex> lk(m_Mutex);
+                UniqueLocker lk(m_Mutex);
 
                 if (--m_RefCount == 0)
                 {
@@ -253,7 +255,7 @@ namespace FE::Env
                     if (m_IsConstructed)
                         reinterpret_cast<T*>(&m_Storage)->~T();
 
-                    lk.unlock();
+                    lk.Unlock();
                     allocator->Deallocate(this);
                 }
             }
@@ -298,7 +300,7 @@ namespace FE::Env
 
             storage->Construct(std::forward<Args>(args)...);
 
-            return storage;
+            return FE::Env::GlobalVariable<T>(storage);
         }
     } // namespace Internal
 
@@ -321,7 +323,7 @@ namespace FE::Env
         {
         }
 
-        inline GlobalVariable(Internal::GlobalVariableStorage<T>* storage)
+        inline explicit GlobalVariable(StorageType* storage)
             : m_Storage(storage)
         {
             if (m_Storage)
@@ -359,7 +361,7 @@ namespace FE::Env
         //! environment-generated name that starts from a '#'.
         //!
         //! \return The name of the variable.
-        inline std::string_view GetName() const
+        [[nodiscard]] inline std::string_view GetName() const
         {
             return m_Storage->m_Name;
         }

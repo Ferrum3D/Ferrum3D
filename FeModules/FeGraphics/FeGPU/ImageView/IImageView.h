@@ -12,7 +12,7 @@ namespace FE::GPU
         
         ImageSubresourceRange SubresourceRange;
         Format Format = Format::None;
-        RefCountPtr<IImage> Image;
+        Shared<IImage> Image;
         ImageDim Dimension = ImageDim::Image2D;
     };
 

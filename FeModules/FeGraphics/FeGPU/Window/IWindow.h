@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Strings/String.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Strings/String.h>
 #include <FeGPU/Common/Viewport.h>
 
 namespace FE::GPU
@@ -22,10 +22,10 @@ namespace FE::GPU
 
         ~IWindow() override = default;
 
-        virtual void PollEvents() = 0;
-        virtual bool CloseRequested() = 0;
-        virtual void* GetNativeHandle() = 0;
+        virtual void PollEvents()         = 0;
+        virtual bool CloseRequested()     = 0;
+        virtual void* GetNativeHandle()   = 0;
         virtual Viewport CreateViewport() = 0;
-        virtual Scissor CreateScissor() = 0;
+        virtual Scissor CreateScissor()   = 0;
     };
-}
+} // namespace FE::GPU

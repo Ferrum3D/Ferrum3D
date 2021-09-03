@@ -16,17 +16,17 @@ namespace FE
 {
     DynamicLibrary::DynamicLibrary(StringSlice fileName)
     {
-        String fullName = fileName;
-        fullName += FE_DLL_EXTENSION;
-        m_NativeHandle = FE_LOAD_LIBRARY(fullName.Data());
+        m_FullName = fileName;
+        m_FullName += FE_DLL_EXTENSION;
+        m_NativeHandle = FE_LOAD_LIBRARY(m_FullName.Data());
 
         if (m_NativeHandle)
         {
-            FE_LOG_MESSAGE("Loaded dynamic library from '{}'", fullName);
+            FE_LOG_MESSAGE("Loaded dynamic library '{}'", m_FullName);
         }
         else
         {
-            FE_LOG_ERROR("Library '{}' was not loaded due to an error", fullName);
+            FE_LOG_ERROR("Library '{}' was not loaded due to an error", m_FullName);
         }
     }
 
@@ -37,6 +37,10 @@ namespace FE
 
     DynamicLibrary::~DynamicLibrary()
     {
-        FE_FREE_LIBRARY(m_NativeHandle);
+        if (m_NativeHandle)
+        {
+            FE_FREE_LIBRARY(m_NativeHandle);
+        }
+        FE_LOG_MESSAGE("Unloaded dynamic library '{}'", m_FullName);
     }
 } // namespace FE

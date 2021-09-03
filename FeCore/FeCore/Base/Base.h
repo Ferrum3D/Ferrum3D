@@ -49,14 +49,14 @@ namespace FE
     {
         const char* FileName; //!< Name of source file.
         const char* FuncName; //!< Name of function.
-                              //!< This can be a fuction signature depending on compiler.
+                              //!< This can be a function signature depending on compiler.
 
-        int LineNumber; //!< Number of line in source file.
+        Int32 LineNumber; //!< Number of line in source file.
 
         //! Create a source position with specified data.
         //!
         //! \note It's recommended to use macros: \ref FE_SRCPOS and \ref FE_STATIC_SRCPOS
-        inline SourcePosition(const char* file, const char* func, int line) noexcept
+        inline SourcePosition(const char* file, const char* func, Int32 line) noexcept
             : FileName(file)
             , FuncName(func)
             , LineNumber(line)
@@ -151,57 +151,6 @@ namespace FE
     {
         return ((x) & ~(A - 1));
     }
-
-    //! TODO: move to math.
-    inline constexpr UInt32 NextPowerOf2(UInt32 v)
-    {
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v++;
-        return v;
-    }
-
-    //! TODO: move to math.
-    inline constexpr char IntToHexChar(Int32 n)
-    {
-        return "0123456789ABCDEF"[n];
-    }
-
-#ifdef FE_COMPILER_MSVC
-
-    //! TODO: move to math.
-    UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
-    {
-        unsigned long tz = 0;
-        return _BitScanForward(&tz, value) ? tz : 32;
-    }
-
-    //! TODO: move to math.
-    UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
-    {
-        unsigned long lz = 0;
-        return _BitScanReverse(&lz, value) ? 31 - lz : 32;
-    }
-
-#else
-
-    //! TODO: move to math.
-    UInt32 FE_FINLINE CountTrailingZeros(UInt32 value)
-    {
-        return __builtin_ctz(value);
-    }
-
-    //! TODO: move to math.
-    UInt32 FE_FINLINE CountLeadingZeros(UInt32 value)
-    {
-        return __builtin_clz(value);
-    }
-
-#endif
 
 #if FE_DEBUG
     //! \brief Assertion without loggers, used in modules on which loggers depend.

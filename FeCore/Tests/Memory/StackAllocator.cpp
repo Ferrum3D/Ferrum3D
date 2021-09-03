@@ -2,27 +2,27 @@
 #include <FeCore/Memory/StackAllocator.h>
 #include <gtest/gtest.h>
 
-using FE::float3;
+using FE::Vector3F;
 
 TEST(StackAllocator, Basic)
 {
-    FE::FeStackAllocator alloc(sizeof(float3) * 3);
+    FE::FeStackAllocator alloc(sizeof(Vector3F) * 3);
 
     {
-        auto* vec1 = alloc.Allocate<float3>(1, 2, 3);
-        auto* vec2 = alloc.Allocate<float3>(4, 5, 6);
-        auto* sum  = alloc.Allocate<float3>(5, 7, 9);
-        EXPECT_EQ(*vec1, float3(1, 2, 3));
-        EXPECT_EQ(*vec2, float3(4, 5, 6));
+        auto* vec1 = alloc.Allocate<Vector3F>(1, 2, 3);
+        auto* vec2 = alloc.Allocate<Vector3F>(4, 5, 6);
+        auto* sum  = alloc.Allocate<Vector3F>(5, 7, 9);
+        EXPECT_EQ(*vec1, Vector3F(1, 2, 3));
+        EXPECT_EQ(*vec2, Vector3F(4, 5, 6));
         EXPECT_EQ(*vec1 + *vec2, *sum);
     }
     alloc.Reset();
     {
-        auto* vec1 = alloc.Allocate<float3>(1, 2, 3);
-        auto* vec2 = alloc.Allocate<float3>(4, 5, 6);
-        auto* sum  = alloc.Allocate<float3>(5, 7, 9);
-        EXPECT_EQ(*vec1, float3(1, 2, 3));
-        EXPECT_EQ(*vec2, float3(4, 5, 6));
+        auto* vec1 = alloc.Allocate<Vector3F>(1, 2, 3);
+        auto* vec2 = alloc.Allocate<Vector3F>(4, 5, 6);
+        auto* sum  = alloc.Allocate<Vector3F>(5, 7, 9);
+        EXPECT_EQ(*vec1, Vector3F(1, 2, 3));
+        EXPECT_EQ(*vec2, Vector3F(4, 5, 6));
         EXPECT_EQ(*vec1 + *vec2, *sum);
     }
 }
