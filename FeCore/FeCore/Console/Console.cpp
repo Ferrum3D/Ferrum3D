@@ -55,6 +55,6 @@ namespace FE::Console
 
     void PrintToStdout(StringSlice string)
     {
-        std::cout << string;
+        fwrite(string.Data(), 1, string.Size(), stdout);
     }
 } // namespace FE::Console

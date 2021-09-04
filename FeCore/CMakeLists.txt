@@ -74,7 +74,8 @@ set(SRC
     FeCore/Memory/UniquePtr.h
     FeCore/Parallel/SpinMutex.h
     FeCore/Parallel/Mutex.h
-    FeCore/Parallel/Locker.h)
+    FeCore/Parallel/Locker.h
+    FeCore/IO/FileHandle.h FeCore/IO/FileHandle.cpp FeCore/IO/IStream.h FeCore/IO/BaseIO.h FeCore/IO/BaseIO.cpp FeCore/IO/StreamBase.h FeCore/IO/StdoutStream.h FeCore/IO/StdoutStream.cpp FeCore/IO/FileStream.h FeCore/IO/FileStream.cpp FeCore/Parallel/Mutex.cpp)
 
 add_library(FeCore STATIC ${SRC})
 

@@ -1,0 +1,76 @@
+#include <FeCore/IO/FileStream.h>
+
+namespace FE::IO
+{
+    bool FileStream::WriteAllowed() const noexcept
+    {
+        return IsWriteAllowed(GetOpenMode());
+    }
+
+    bool FileStream::ReadAllowed() const noexcept
+    {
+        return IsReadAllowed(GetOpenMode());
+    }
+
+    bool FileStream::SeekAllowed() const noexcept
+    {
+        return true;
+    }
+
+    bool FileStream::IsOpen() const
+    {
+        return m_Handle->IsOpen();
+    }
+
+    ResultCode FileStream::Seek(SSize offset, SeekMode seekMode)
+    {
+        return m_Handle->Seek(offset, seekMode);
+    }
+
+    USize FileStream::Tell() const
+    {
+        return m_Handle->Tell();
+    }
+
+    USize FileStream::Length() const
+    {
+        return m_Handle->Length();
+    }
+
+    USize FileStream::ReadToBuffer(void* buffer, USize size)
+    {
+        return m_Handle->Read(buffer, size);
+    }
+
+    USize FileStream::WriteFromBuffer(const void* buffer, USize size)
+    {
+        return m_Handle->Write(buffer, size);
+    }
+
+    StringSlice FileStream::GetName()
+    {
+        return m_Handle->GetName();
+    }
+
+    OpenMode FileStream::GetOpenMode() const
+    {
+        return m_OpenMode;
+    }
+
+    void FileStream::Close()
+    {
+        m_Handle->Close();
+        m_OpenMode = OpenMode::None;
+    }
+
+    ResultCode FileStream::Open(StringSlice fileName, OpenMode openMode)
+    {
+        return m_Handle->Open(fileName, openMode);
+    }
+
+    FileStream::FileStream(FileHandle* file)
+        : m_Handle(file)
+        , m_OpenMode(OpenMode::None)
+    {
+    }
+}

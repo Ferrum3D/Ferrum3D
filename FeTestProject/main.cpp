@@ -19,7 +19,8 @@
 #include <FeCore/Math/Colors.h>
 #include <FeGPU/Instance/IInstance.h>
 #include <FeGPU/Pipeline/InputLayoutBuilder.h>
-#include <fstream>
+#include <FeCore/IO/FileHandle.h>
+#include <FeCore/IO/StdoutStream.h>
 #include <chrono>
 
 struct Vertex
@@ -27,18 +28,6 @@ struct Vertex
     [[maybe_unused]] FE::Float32 XYZ[3];
     [[maybe_unused]] FE::Float32 RGB[3];
 };
-
-FE::String ReadFile(const FE::String& path)
-{
-    std::ifstream stream(path.Data());
-    FE_ASSERT(stream.good());
-    stream.seekg(0, std::ios::end);
-    auto len = stream.tellg();
-    FE::String result(len, ' ');
-    stream.seekg(0, std::ios::beg);
-    stream.read(result.Data(), len);
-    return result;
-}
 
 namespace HAL = FE::GPU;
 
@@ -53,6 +42,11 @@ int main()
             "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
 
+        FE::IO::StdoutStream stdoutStream;
+        {
+            char b[] = "Test unicode. Тестим юникод\n";
+            stdoutStream.WriteFromBuffer(b, sizeof(b));
+        }
         auto instance      = HAL::CreateGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
         auto adapter       = instance->GetAdapters()[0];
         auto device        = adapter->CreateDevice();
@@ -127,7 +121,7 @@ int main()
         psArgs.Stage      = HAL::ShaderStage::Pixel;
         psArgs.EntryPoint = "main";
         psArgs.FullPath   = "Assets/Shaders/PixelShader.hlsl";
-        auto psSource     = ReadFile(psArgs.FullPath);
+        auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
 
@@ -143,7 +137,7 @@ int main()
         vsArgs.Stage      = HAL::ShaderStage::Vertex;
         vsArgs.EntryPoint = "main";
         vsArgs.FullPath   = "Assets/Shaders/VertexShader.hlsl";
-        auto vsSource     = ReadFile(vsArgs.FullPath);
+        auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
 
