@@ -1,46 +1,25 @@
 #pragma once
-#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Parallel/Interlocked.h>
-
-#if FE_WINDOWS
-using TNativeMutex = RTL_CRITICAL_SECTION;
-#else
-#   error Platform not supported yet
-#endif
 
 namespace FE
 {
     class Mutex final
     {
-        TNativeMutex m_NativeMutex;
+        inline static constexpr USize NativeMutexSpace = 64;
+        std::aligned_storage_t<NativeMutexSpace> m_NativeMutex;
 
     public:
         Mutex(const Mutex&) = delete;
         Mutex& operator=(const Mutex&) = delete;
 
-        FE_FINLINE Mutex() noexcept // NOLINT
-        {
-            InitializeCriticalSection(&m_NativeMutex);
-        }
+        Mutex() noexcept;
 
-        FE_FINLINE ~Mutex()
-        {
-            DeleteCriticalSection(&m_NativeMutex);
-        }
+        ~Mutex();
 
-        FE_FINLINE void Lock() noexcept
-        {
-            EnterCriticalSection(&m_NativeMutex);
-        }
+        void Lock() noexcept;
 
-        bool TryLock()
-        {
-            return TryEnterCriticalSection(&m_NativeMutex);
-        }
+        bool TryLock();
 
-        void Unlock()
-        {
-            LeaveCriticalSection(&m_NativeMutex);
-        }
+        void Unlock();
     };
-}
+} // namespace FE

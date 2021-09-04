@@ -20,6 +20,11 @@ namespace FE
     using Float32 = float;
     using Float64 = double;
 
+    using USize = UInt64;
+    using SSize = Int64;
+
+    static_assert(sizeof(size_t) == sizeof(Int64));
+
     //! \brief Name of engine.
     inline constexpr const char* FerrumEngineName = u8"Ferrum3D";
 
