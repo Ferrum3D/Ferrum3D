@@ -16,17 +16,33 @@
 
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
+#include <FeCore/EventBus/EventBus.h>
+#include <FeCore/IO/FileHandle.h>
+#include <FeCore/IO/StdoutStream.h>
 #include <FeCore/Math/Colors.h>
 #include <FeGPU/Instance/IInstance.h>
 #include <FeGPU/Pipeline/InputLayoutBuilder.h>
-#include <FeCore/IO/FileHandle.h>
-#include <FeCore/IO/StdoutStream.h>
 #include <chrono>
 
 struct Vertex
 {
     [[maybe_unused]] FE::Float32 XYZ[3];
     [[maybe_unused]] FE::Float32 RGB[3];
+};
+
+class TestEvent : public FE::IObject
+{
+public:
+    virtual void OnHello(const char* name) = 0;
+};
+
+class TestEventHandler : public FE::EventBus<TestEvent>::Handler
+{
+public:
+    void OnHello(const char* name) override
+    {
+        FE_LOG_MESSAGE("Hello, {}!", FE::StringSlice(name));
+    }
 };
 
 namespace HAL = FE::GPU;
@@ -41,6 +57,12 @@ int main()
         FE_LOG_MESSAGE(
             "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
+        auto eventBus = FE::MakeShared<FE::EventBus<TestEvent>>();
+        auto handler1 = FE::MakeShared<TestEventHandler>();
+        auto handler2 = FE::MakeShared<TestEventHandler>();
+
+        FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "World");
+        FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "123");
 
         FE::IO::StdoutStream stdoutStream;
         {
@@ -231,7 +253,7 @@ int main()
             cmd->End();
         }
 
-        auto ts = std::chrono::high_resolution_clock::now();
+        auto ts          = std::chrono::high_resolution_clock::now();
         FE::Int16 frames = 0;
         while (!window->CloseRequested())
         {
@@ -244,7 +266,8 @@ int main()
             graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
             swapChain->Present();
 
-            auto delta = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ts).count();
+            auto delta =
+                std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ts).count();
             if ((frames = (frames + 1) % 1000) == 0)
             {
                 FE_LOG_MESSAGE("Delta: {}mcs, FPS: {}", delta, 1'000'000.0 / static_cast<double>(delta));
