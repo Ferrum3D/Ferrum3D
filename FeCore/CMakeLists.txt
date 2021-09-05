@@ -12,7 +12,27 @@ set(SRC
     FeCore/Console/FeLog.h
     FeCore/Console/IConsoleLogger.h
 
+    FeCore/Containers/ArraySlice.h
+
+    FeCore/EventBus/EventBus.h
+
+    FeCore/IO/BaseIO.h
+    FeCore/IO/BaseIO.cpp
+    FeCore/IO/FileHandle.h
+    FeCore/IO/FileHandle.cpp
+    FeCore/IO/FileStream.h
+    FeCore/IO/FileStream.cpp
+    FeCore/IO/IStream.h
+    FeCore/IO/StdoutStream.h
+    FeCore/IO/StdoutStream.cpp
+    FeCore/IO/StreamBase.h
+
+    FeCore/Math/Color.h
+    FeCore/Math/Colors.h
+    FeCore/Math/Colors.cpp
     FeCore/Math/Half.h
+    FeCore/Math/MathUtils.h
+    FeCore/Math/Matrix4x4F.h
     FeCore/Math/Vector3.h
     FeCore/Math/Vector4.h
     FeCore/Math/VectorMath.h
@@ -30,12 +50,20 @@ set(SRC
     FeCore/Memory/ReferenceCounter.h
     FeCore/Memory/SharedPtr.h
     FeCore/Memory/StackAllocator.h
+    FeCore/Memory/UniquePtr.h
 
     FeCore/Modules/DynamicLibrary.h
     FeCore/Modules/DynamicLibrary.cpp
     FeCore/Modules/Environment.h
     FeCore/Modules/Environment.cpp
     FeCore/Modules/Singleton.h
+
+    FeCore/Parallel/Interlocked.h
+    FeCore/Parallel/Interlocked.cpp
+    FeCore/Parallel/Locker.h
+    FeCore/Parallel/Mutex.h
+    FeCore/Parallel/Mutex.cpp
+    FeCore/Parallel/SpinMutex.h
 
     FeCore/RTTI/RTTI.h
 
@@ -59,23 +87,9 @@ set(SRC
     FeCore/Time/DateTime.cpp
     FeCore/Time/TimeSpan.h
 
-    FeCore/Parallel/Interlocked.h
-    FeCore/Parallel/Interlocked.cpp
     FeCore/Utils/Result.h
     FeCore/Utils/SortedStringVector.h
-    FeCore/Utils/UUID.h
-
-    FeCore/Math/Color.h
-    FeCore/Math/Colors.h
-    FeCore/Math/Colors.cpp
-    FeCore/Math/MathUtils.h
-    FeCore/Math/Matrix4x4F.h
-    FeCore/Containers/ArraySlice.h
-    FeCore/Memory/UniquePtr.h
-    FeCore/Parallel/SpinMutex.h
-    FeCore/Parallel/Mutex.h
-    FeCore/Parallel/Locker.h
-    FeCore/IO/FileHandle.h FeCore/IO/FileHandle.cpp FeCore/IO/IStream.h FeCore/IO/BaseIO.h FeCore/IO/BaseIO.cpp FeCore/IO/StreamBase.h FeCore/IO/StdoutStream.h FeCore/IO/StdoutStream.cpp FeCore/IO/FileStream.h FeCore/IO/FileStream.cpp FeCore/Parallel/Mutex.cpp)
+    FeCore/Utils/UUID.h)
 
 add_library(FeCore STATIC ${SRC})
 
