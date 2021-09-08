@@ -65,7 +65,8 @@ namespace FE::IO
         FILE* m_Handle;
         String m_FileName{};
 
-        char m_OpenMode[8]{};
+        char m_OpenModeString[8]{};
+        OpenMode m_OpenMode = OpenMode::None;
 
         void GenFileOpenMode(OpenMode openMode);
 
@@ -83,6 +84,7 @@ namespace FE::IO
         [[nodiscard]] USize Tell() const;
 
         [[nodiscard]] DateTime GetLastModificationTime() const;
+        [[nodiscard]] OpenMode GetOpenMode() const;
 
         USize Read(void* buffer, USize size);
         USize Write(const void* buffer, USize size);

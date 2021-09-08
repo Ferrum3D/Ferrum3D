@@ -19,7 +19,7 @@ namespace FE
     //!     |      Object      |
     //!     +------------------+
     //!
-    //! It will delete `this` assumming that a single block was used to allocate the object and the counter.\n
+    //! It will delete `this` assuming that a single block was used to allocate the object and the counter.\n
     //!
     //! Example (pseudo-code):
     //! \code{.cpp}
@@ -34,9 +34,9 @@ namespace FE
     //! This layout is used for better locality and performance: it groups two allocations into one.
     //! The internal reference counting system also supports copying shared pointers using their raw pointers:
     //! \code{.cpp}
-    //!     RefCountPtr<MyObject> ptr1 = MakeShared<MyObject>(); // refcount = 1
-    //!     RefCountPtr<MyObject> ptr2 = ptr1;                   // refcount = 2 <-- Valid for std::shared_ptr too
-    //!     RefCountPtr<MyObject> ptr3 = ptr1.GetRaw();          // refcount = 3 <-- Also valid here!
+    //!     Shared<MyObject> ptr1 = MakeShared<MyObject>(); // refcount = 1
+    //!     Shared<MyObject> ptr2 = ptr1;                   // refcount = 2 <-- Valid for std::shared_ptr too
+    //!     Shared<MyObject> ptr3 = ptr1.GetRaw();          // refcount = 3 <-- Also valid here!
     //! \endcode
     //!
     //! It also has some limitations: the objects must inherit from \ref IObject and all allocations must be
@@ -54,17 +54,17 @@ namespace FE
         //! \brief Create a new reference counter with specified allocator.
         //!
         //! The specified allocator will be used to free memory after the counter reaches zero.
-        //! This constructor initilizes the counter to _zero_.
+        //! This constructor initializes the counter to _zero_.
         //!
         //! \param [in] allocator - The allocator to use to free memory.
-        inline ReferenceCounter(IAllocator* allocator)
+        inline explicit ReferenceCounter(IAllocator* allocator)
             : m_StrongRefCount(0)
             , m_Allocator(allocator)
         {
         }
 
         //! \brief Add a strong reference to the counter.
-        inline uint32_t AddStrongRef()
+        inline UInt32 AddStrongRef()
         {
             return Interlocked::Increment(m_StrongRefCount);
         }
@@ -79,7 +79,7 @@ namespace FE
         //!
         //! \return The new (decremented) number of strong references.
         template<class F>
-        inline uint32_t ReleaseStrongRef(F&& destroyCallback)
+        inline UInt32 ReleaseStrongRef(F&& destroyCallback)
         {
             if (Interlocked::Decrement(m_StrongRefCount) == 0)
             {
