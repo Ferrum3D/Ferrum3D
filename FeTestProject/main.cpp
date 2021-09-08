@@ -142,33 +142,23 @@ int main()
         psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         psArgs.Stage      = HAL::ShaderStage::Pixel;
         psArgs.EntryPoint = "main";
-        psArgs.FullPath   = "Assets/Shaders/PixelShader.hlsl";
+        psArgs.FullPath   = "Assets/TestProject/Shaders/PixelShader.hlsl";
         auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
 
-        HAL::ShaderModuleDesc pixelDesc{};
-        pixelDesc.EntryPoint   = "main";
-        pixelDesc.ByteCode     = psByteCode.data();
-        pixelDesc.ByteCodeSize = psByteCode.size();
-        pixelDesc.Stage        = HAL::ShaderStage::Pixel;
-        auto pixelShader       = device->CreateShaderModule(pixelDesc);
+        auto pixelShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
 
         HAL::ShaderCompilerArgs vsArgs{};
         vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         vsArgs.Stage      = HAL::ShaderStage::Vertex;
         vsArgs.EntryPoint = "main";
-        vsArgs.FullPath   = "Assets/Shaders/VertexShader.hlsl";
+        vsArgs.FullPath   = "Assets/TestProject/Shaders/VertexShader.hlsl";
         auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
 
-        HAL::ShaderModuleDesc vertexDesc{};
-        vertexDesc.EntryPoint   = "main";
-        vertexDesc.ByteCode     = vsByteCode.data();
-        vertexDesc.ByteCodeSize = vsByteCode.size();
-        vertexDesc.Stage        = HAL::ShaderStage::Vertex;
-        auto vertexShader       = device->CreateShaderModule(vertexDesc);
+        auto vertexShader       = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
 
         HAL::RenderPassDesc renderPassDesc{};
 
@@ -230,7 +220,7 @@ int main()
         auto RTVs = swapChain->GetRTVs();
         FE::Vector<FE::Shared<HAL::IFramebuffer>> framebuffers;
         FE::Vector<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
-        for (size_t i = 0; i < frameBufferCount; ++i)
+        for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
             framebufferDesc.RenderPass        = renderPass.GetRaw();

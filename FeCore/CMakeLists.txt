@@ -89,7 +89,21 @@ set(SRC
 
     FeCore/Utils/Result.h
     FeCore/Utils/SortedStringVector.h
-    FeCore/Utils/UUID.h FeCore/Assets/AssetStorage.h FeCore/Assets/Asset.h FeCore/Assets/WeakAsset.h FeCore/Assets/IAssetLoader.h FeCore/Assets/IAssetProvider.h FeCore/Assets/AssetRegistry.h FeCore/Assets/AssetRegistry.cpp FeCore/Assets/AssetProviderDev.h FeCore/Assets/AssetProviderDev.cpp FeCore/Assets/IAssetManager.h FeCore/Assets/AssetCommon.h FeCore/Assets/AssetManager.h FeCore/Assets/AssetManager.cpp)
+    FeCore/Utils/UUID.h
+
+    FeCore/Assets/AssetStorage.h
+    FeCore/Assets/Asset.h
+    FeCore/Assets/WeakAsset.h
+    FeCore/Assets/IAssetLoader.h
+    FeCore/Assets/IAssetProvider.h
+    FeCore/Assets/AssetRegistry.h
+    FeCore/Assets/AssetRegistry.cpp
+    FeCore/Assets/AssetProviderDev.h
+    FeCore/Assets/AssetProviderDev.cpp
+    FeCore/Assets/IAssetManager.h
+    FeCore/Assets/AssetCommon.h
+    FeCore/Assets/AssetManager.h
+    FeCore/Assets/AssetManager.cpp)
 
 add_library(FeCore STATIC ${SRC})
 
