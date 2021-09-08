@@ -2,6 +2,7 @@
 #include <FeCore/Strings/StringSlice.h>
 #include <FeCore/Time/DateTime.h>
 #include <FeCore/IO/BaseIO.h>
+#include <FeCore/Console/FeLog.h>
 
 namespace FE::IO
 {
