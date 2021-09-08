@@ -4,6 +4,7 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <FeCore/Memory/UniquePtr.h>
 #include <memory>
+#include <unordered_map>
 
 namespace FE
 {
@@ -34,10 +35,7 @@ namespace FE
     template<class T, class... Args>
     inline Unique<T> MakeUnique(Args&&... args)
     {
-        FE_STATIC_SRCPOS(position);
-        void* data = FE::GlobalAllocator<FE::HeapAllocator>::Get().Allocate(sizeof(T), alignof(T), position);
-        T* obj     = new (data) T(std::forward<Args>(args)...);
-        return Unique<T>(obj);
+        return AllocateUnique<T, HeapAllocator>(std::forward<Args>(args)...);
     }
 
     //! \brief Create a \ref Shared<T>.
@@ -260,4 +258,8 @@ namespace FE
     //! \brief An alias for `std::vector` that uses \ref HeapAllocator through \ref StdHeapAllocator.
     template<class T>
     using Vector = std::vector<T, StdHeapAllocator<T>>;
+
+    //! \brief An alias for `std::unordered_map` that uses \ref HeapAllocator through \ref StdHeapAllocator.
+    template<class TKey, class TValue, class THasher = std::hash<TKey>, class TEq = std::equal_to<TKey>>
+    using UnorderedMap = std::unordered_map<TKey, TValue, THasher, TEq, StdHeapAllocator<std::pair<const TKey, TValue>>>;
 } // namespace FE

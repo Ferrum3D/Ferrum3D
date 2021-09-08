@@ -13,6 +13,17 @@ namespace FE
 
         inline UUID() = default;
 
+        inline UUID(const UUID& other) noexcept
+        {
+            memcpy(Data.data(), other.Data.data(), 16);
+        }
+
+        inline UUID& operator=(const UUID& other) noexcept
+        {
+            memcpy(Data.data(), other.Data.data(), 16);
+            return *this;
+        }
+
         //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline explicit UUID(const char* str)
         {

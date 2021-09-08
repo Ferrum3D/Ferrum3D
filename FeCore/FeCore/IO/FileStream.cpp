@@ -1,5 +1,7 @@
 #include <FeCore/IO/FileStream.h>
 
+#include <utility>
+
 namespace FE::IO
 {
     bool FileStream::WriteAllowed() const noexcept
@@ -54,13 +56,12 @@ namespace FE::IO
 
     OpenMode FileStream::GetOpenMode() const
     {
-        return m_OpenMode;
+        return m_Handle->GetOpenMode();
     }
 
     void FileStream::Close()
     {
         m_Handle->Close();
-        m_OpenMode = OpenMode::None;
     }
 
     ResultCode FileStream::Open(StringSlice fileName, OpenMode openMode)
@@ -68,9 +69,13 @@ namespace FE::IO
         return m_Handle->Open(fileName, openMode);
     }
 
-    FileStream::FileStream(FileHandle* file)
+    FileStream::FileStream(const Shared<FileHandle>& file)
         : m_Handle(file)
-        , m_OpenMode(OpenMode::None)
+    {
+    }
+
+    FileStream::FileStream(Shared<FileHandle>&& file)
+        : m_Handle(std::move(file))
     {
     }
 }

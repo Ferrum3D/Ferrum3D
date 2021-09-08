@@ -6,11 +6,12 @@ namespace FE::IO
 {
     class FileStream : public StreamBase
     {
-        FileHandle* m_Handle;
-        OpenMode m_OpenMode;
+        Shared<FileHandle> m_Handle;
 
     public:
-        explicit FileStream(FileHandle* file);
+        explicit FileStream(const Shared<FileHandle>& file);
+        explicit FileStream(Shared<FileHandle>&& file);
+
         ~FileStream() override = default;
 
         ResultCode Open(StringSlice fileName, OpenMode openMode);

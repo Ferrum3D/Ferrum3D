@@ -46,10 +46,11 @@ namespace FE::IO
         Close();
 
         GenFileOpenMode(openMode);
-        m_Handle = fopen(fileName.Data(), m_OpenMode);
+        m_Handle = fopen(fileName.Data(), m_OpenModeString);
         if (m_Handle)
         {
             m_FileName = fileName;
+            m_OpenMode = openMode;
             return ResultCode::Success;
         }
 
@@ -62,6 +63,7 @@ namespace FE::IO
         {
             fclose(m_Handle);
             m_Handle = nullptr;
+            m_OpenMode = OpenMode::None;
             m_FileName.Clear();
         }
     }
@@ -72,29 +74,29 @@ namespace FE::IO
         switch (openMode)
         {
         case OpenMode::ReadOnly:
-            m_OpenMode[index++] = 'r';
+            m_OpenModeString[index++] = 'r';
             break;
         case OpenMode::Append:
-            m_OpenMode[index++] = 'a';
+            m_OpenModeString[index++] = 'a';
             break;
         case OpenMode::WriteOnly:
         case OpenMode::Create:
         case OpenMode::CreateNew:
-            m_OpenMode[index++] = 'w';
+            m_OpenModeString[index++] = 'w';
             break;
         case OpenMode::ReadWrite:
-            m_OpenMode[index++] = 'r';
-            m_OpenMode[index++] = '+';
+            m_OpenModeString[index++] = 'r';
+            m_OpenModeString[index++] = '+';
             break;
         case OpenMode::Truncate:
-            m_OpenMode[index++] = 'w';
-            m_OpenMode[index++] = '+';
+            m_OpenModeString[index++] = 'w';
+            m_OpenModeString[index++] = '+';
             break;
         default:
             FE_UNREACHABLE("Invalid FileOpenMode");
         }
 
-        m_OpenMode[index] = 'b';
+        m_OpenModeString[index] = 'b';
     }
 
     ResultCode FileHandle::Seek(SSize offset, SeekMode seekMode)
@@ -188,6 +190,11 @@ namespace FE::IO
     bool FileHandle::IsOpen() const
     {
         return m_Handle;
+    }
+
+    OpenMode FileHandle::GetOpenMode() const
+    {
+        return m_OpenMode;
     }
 
     bool File::Exists(StringSlice fileName)
