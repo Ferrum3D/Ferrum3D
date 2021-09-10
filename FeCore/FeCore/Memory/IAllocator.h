@@ -22,7 +22,7 @@ namespace FE
         //! \param [in] position  - Position in source file where allocation was requested.
         //!
         //! \return The pointer to the allocated block.
-        virtual void* Allocate(size_t size, size_t alignment, const SourcePosition& position) = 0;
+        [[nodiscard]] virtual void* Allocate(size_t size, size_t alignment, const SourcePosition& position) = 0;
 
         //! \brief Deallocate memory at pointer.
         //!
@@ -42,17 +42,16 @@ namespace FE
         //!
         //! Use this to resize a block of memory and/or to change its alignment. Allocates memory block of at least new Size
         //! and copies old block contents to the new block. Can shrink or enlarge the block (depends on new and old size).
-        //! Returns the same block without allocations if and only if the old and new sizes and alignments match.
+        //! Returns the same block without allocations if and only if the old and new sizes match.
         //!
         //! \param [in] pointer      - Pointer to the old block of memory.
         //! \param [in] position     - Position in source file where reallocation was requested.
         //! \param [in] newSize      - Size of block to allocate.
         //! \param [in] newAlignment - Alignment of block to allocate.
         //! \param [in] oldSize      - Size of already allocated block that will be deallocated.
-        //! \param [in] oldAlignment - Alignment of already allocated block that will be deallocated.
         //!
         //! \return The pointer to the allocated block.
-        virtual void* Reallocate(
+        [[nodiscard]] virtual void* Reallocate(
             void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize = 0) = 0;
 
         //! \brief Query size of previously allocated block.
@@ -62,7 +61,7 @@ namespace FE
         //! \param [in] pointer - Pointer to a block of memory.
         //!
         //! \return Size of specified block.
-        virtual size_t SizeOfBlock(void* pointer) = 0;
+        [[nodiscard]] virtual size_t SizeOfBlock(void* pointer) = 0;
 
         //! \brief Try to free some unused memory from an allocator.
         //!
@@ -73,7 +72,7 @@ namespace FE
 
         //! \brief Query total memory allocated through this allocator.
         //! \return Total allocated memory in bytes.
-        virtual size_t TotalAllocated() const = 0;
+        [[nodiscard]] virtual size_t TotalAllocated() const = 0;
 
         //! \brief Query maximum size of allocated block.
         //!
@@ -82,7 +81,7 @@ namespace FE
         //! If an allocator doesn't have specific limits this function will return maximum value a size_t can have.
         //!
         //! \return Maximum size of allocated block in bytes.
-        virtual size_t MaxBlockSize() const = 0;
+        [[nodiscard]] virtual size_t MaxBlockSize() const = 0;
     };
 
     //! \brief Interface for allocator info.
@@ -94,10 +93,10 @@ namespace FE
         FE_CLASS_RTTI(IAllocatorInfo, "92D623F5-C9D4-41A3-9C99-101C81A93035");
 
         //! \brief Get name of allocator.
-        virtual const char* GetName() const noexcept = 0;
+        [[nodiscard]] virtual const char* GetName() const noexcept = 0;
 
         //! \brief Get description of allocator.
-        virtual const char* GetDescription() const noexcept = 0;
+        [[nodiscard]] virtual const char* GetDescription() const noexcept = 0;
 
         //! \brief Check if allocator is initialized.
         //!
@@ -105,11 +104,11 @@ namespace FE
         //! a member function `Init(const Desc&)` and a type alias `using Desc = MyAllocatorDesc;`
         //!
         //! \return True if allocator was initialized and is ready to use.
-        virtual bool Initialized() const noexcept = 0;
+        [[nodiscard]] virtual bool Initialized() const noexcept = 0;
 
         //! \brief Get allocator interface.
         //!
         //! \see IAllocator
-        virtual IAllocator* Get() noexcept = 0;
+        [[nodiscard]] virtual IAllocator* Get() noexcept = 0;
     };
 } // namespace FE

@@ -157,6 +157,17 @@ namespace FE
         return ((x) & ~(A - 1));
     }
 
+    template<class T>
+    inline constexpr T MakeMask(T bitCount, T leftShift)
+    {
+        if (bitCount == 64)
+        {
+            return static_cast<T>(-1);
+        }
+        auto mask = (1 << bitCount) - 1;
+        return static_cast<T>(mask << leftShift);
+    }
+
 #if FE_DEBUG
     //! \brief Assertion without loggers, used in modules on which loggers depend.
     //!

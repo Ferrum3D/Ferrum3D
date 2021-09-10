@@ -28,17 +28,17 @@ namespace FE
         //=========================================================================================
         // IAllocatorInfo
 
-        const char* GetName() const noexcept override;
-        const char* GetDescription() const noexcept override;
-        bool Initialized() const noexcept override;
-        virtual IAllocator* Get() noexcept override;
+        [[nodiscard]] const char* GetName() const noexcept override;
+        [[nodiscard]] const char* GetDescription() const noexcept override;
+        [[nodiscard]] bool Initialized() const noexcept override;
+        [[nodiscard]] IAllocator* Get() noexcept override;
         //=========================================================================================
 
         //=========================================================================================
         // IAllocator
 
-        virtual void CollectGarbage() override;
-        virtual size_t MaxBlockSize() const override;
+        void CollectGarbage() override;
+        [[nodiscard]] size_t MaxBlockSize() const override;
         //=========================================================================================
 
     protected:

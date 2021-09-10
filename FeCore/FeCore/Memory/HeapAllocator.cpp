@@ -1,12 +1,16 @@
 #include <FeCore/Memory/HeapAllocator.h>
-#include <cstdio>
 
 #define RPMALLOC_CONFIGURABLE 1
 #include <rpmalloc/rpmalloc.h>
 
 #if 1
-#    define FE_MALLOC_PRINT(...)
+#    define FE_MALLOC_PRINT(...)                                                                                                 \
+        do                                                                                                                       \
+        {                                                                                                                        \
+        }                                                                                                                        \
+        while (0)
 #else
+#    include <cstdio>
 #    define FE_MALLOC_PRINT(...)                                                                                                 \
         do                                                                                                                       \
         {                                                                                                                        \
@@ -70,5 +74,10 @@ namespace FE
     size_t HeapAllocator::SizeOfBlock(void* pointer)
     {
         return rpmalloc_usable_size(pointer);
+    }
+
+    void HeapAllocator::ThreadInit()
+    {
+        rpmalloc_thread_initialize();
     }
 } // namespace FE

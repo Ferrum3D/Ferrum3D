@@ -6,7 +6,7 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveBitFields: false
 AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: Right
-AlignOperands: false
+AlignOperands: DontAlign
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
@@ -30,7 +30,6 @@ BraceWrapping:
     AfterEnum: true
     AfterFunction: true
     AfterNamespace: true
-    BeforeLambdaBody: true
     AfterStruct: true
     AfterUnion: true
     AfterExternBlock: true

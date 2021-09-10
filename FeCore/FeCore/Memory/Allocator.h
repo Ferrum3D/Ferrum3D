@@ -63,6 +63,11 @@ namespace FE
                 m_Instance->Init(desc);
         }
 
+        inline static void ThreadInit()
+        {
+            m_Instance->ThreadInit();
+        }
+
         //! \brief Remove reference to the allocator from this module.
         inline static void Destroy()
         {

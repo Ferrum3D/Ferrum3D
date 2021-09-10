@@ -19,6 +19,7 @@
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/IO/StdoutStream.h>
+#include <FeCore/Jobs/JobScheduler.h>
 #include <FeCore/Math/Colors.h>
 #include <FeGPU/Instance/IInstance.h>
 #include <FeGPU/Pipeline/InputLayoutBuilder.h>
@@ -45,6 +46,27 @@ public:
     }
 };
 
+static FE::AtomicInt32 JobCounter = 0;
+
+class TestJob : public FE::Job
+{
+public:
+    int id;
+
+    explicit TestJob(int i, FE::JobPriority priority = FE::JobPriority::Normal)
+        : FE::Job(priority, false)
+        , id(i)
+    {
+    }
+
+protected:
+    void Execute(const FE::JobExecutionContext&) override
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        FE::Interlocked::Increment(JobCounter);
+    }
+};
+
 namespace HAL = FE::GPU;
 
 int main()
@@ -57,6 +79,7 @@ int main()
         FE_LOG_MESSAGE(
             "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
+
         auto eventBus = FE::MakeShared<FE::EventBus<TestEvent>>();
         auto handler1 = FE::MakeShared<TestEventHandler>();
         auto handler2 = FE::MakeShared<TestEventHandler>();
@@ -64,11 +87,24 @@ int main()
         FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "World");
         FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "123");
 
+        auto jobScheduler = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
+
         FE::IO::StdoutStream stdoutStream;
         {
             char b[] = "Test unicode. Тестим юникод\n";
             stdoutStream.WriteFromBuffer(b, sizeof(b));
         }
+
+        FE::Vector<TestJob> testJobs;
+        testJobs.reserve(16 * 1024);
+        for (int i = 0; i < 16 * 1024; ++i)
+        {
+            testJobs.emplace_back(TestJob(i)).Schedule();
+        }
+        testJobs.emplace_back(TestJob(999999, FE::JobPriority::Highest)).Schedule();
+
+        FE_LOG_MESSAGE("Counter: {}", JobCounter);
+
         auto instance      = HAL::CreateGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
         auto adapter       = instance->GetAdapters()[0];
         auto device        = adapter->CreateDevice();
@@ -158,7 +194,7 @@ int main()
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
 
-        auto vertexShader       = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+        auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
 
         HAL::RenderPassDesc renderPassDesc{};
 
@@ -260,6 +296,7 @@ int main()
                 std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ts).count();
             if ((frames = (frames + 1) % 1000) == 0)
             {
+                FE_LOG_MESSAGE("Counter: {}", JobCounter);
                 FE_LOG_MESSAGE("Delta: {}mcs, FPS: {}", delta, 1'000'000.0 / static_cast<double>(delta));
             }
             ts = std::chrono::high_resolution_clock::now();

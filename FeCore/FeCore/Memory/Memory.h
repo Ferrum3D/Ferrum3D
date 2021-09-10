@@ -221,6 +221,11 @@ namespace FE
             m_Instance = &FE::GlobalAllocator<TAlloc>::Get();
         }
 
+        inline explicit StdAllocator(TAlloc* instance) noexcept
+        {
+            m_Instance = instance;
+        }
+
         inline IAllocator* GetImpl() const noexcept
         {
             return m_Instance;
