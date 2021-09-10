@@ -12,7 +12,7 @@ namespace FE::Assets
         ~IAssetLoader() override = default;
 
         [[nodiscard]] virtual AssetType GetAssetType() const                    = 0;
-        virtual AssetStorage* CreateStorage()                                   = 0;
+        [[nodiscard]] virtual AssetStorage* CreateStorage()                     = 0;
         virtual void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) = 0;
     };
 } // namespace FE::Assets

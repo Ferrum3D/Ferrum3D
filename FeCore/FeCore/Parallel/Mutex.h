@@ -13,13 +13,10 @@ namespace FE
         Mutex& operator=(const Mutex&) = delete;
 
         Mutex() noexcept;
-
         ~Mutex();
 
         void Lock() noexcept;
-
         bool TryLock();
-
         void Unlock();
     };
 } // namespace FE

@@ -29,16 +29,17 @@ namespace FE
         //!
         //! \param [in] desc - The \ref HeapAllocatorDesc to use.
         void Init(const Desc& desc);
+        void ThreadInit();
 
         //=========================================================================================
         // IAllocator
 
-        void* Allocate(size_t size, size_t alignment, const SourcePosition& position) override;
+        [[nodiscard]] void* Allocate(size_t size, size_t alignment, const SourcePosition& position) override;
         void Deallocate(void* pointer, const SourcePosition& position, size_t size) override;
-        void* Reallocate(
+        [[nodiscard]] void* Reallocate(
             void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize) override;
         [[nodiscard]] size_t TotalAllocated() const override;
-        size_t SizeOfBlock(void* pointer) override;
+        [[nodiscard]] size_t SizeOfBlock(void* pointer) override;
         //=========================================================================================
     };
 } // namespace FE

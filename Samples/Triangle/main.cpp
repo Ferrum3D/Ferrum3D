@@ -49,6 +49,7 @@ void RunExample()
     HAL::ShaderCompilerArgs shaderArgs{};
     shaderArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     shaderArgs.EntryPoint = "main";
+
     shaderArgs.Stage      = HAL::ShaderStage::Pixel;
     shaderArgs.FullPath   = "Assets/Samples/Triangle/Shaders/PixelShader.hlsl";
     auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
