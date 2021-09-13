@@ -6,7 +6,7 @@
 namespace FE
 {
     template<class TEvent>
-    class EventHandler : public Object<TEvent>
+    class EventHandler : public TEvent
     {
     protected:
         FE_CLASS_RTTI(EventHandler, "389F7F29-DB23-42CE-A877-A5F003701988");

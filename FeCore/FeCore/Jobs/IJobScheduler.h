@@ -13,6 +13,8 @@ namespace FE
         [[nodiscard]] virtual UInt32 GetWorkerCount() const = 0;
         [[nodiscard]] virtual UInt32 GetWorkerID() const    = 0;
 
+        [[nodiscard]] virtual void* OneFrameAllocate(USize size, USize alignment) = 0;
+
         virtual void ScheduleJob(Job* job) = 0;
     };
 } // namespace FE

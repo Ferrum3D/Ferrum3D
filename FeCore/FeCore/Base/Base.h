@@ -121,7 +121,11 @@ namespace FE
         return Internal::TypeNameImpl<T>().value;
     }
 
+    //! \brief Maximum alignment value, should be enough for anything
+    inline constexpr USize MaximumAlignment = 16;
+
     //! \brief Align up an integer.
+    //!
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
@@ -130,7 +134,18 @@ namespace FE
         return (x + (align - 1u)) & ~(align - 1u);
     }
 
+    //! \brief Align up a pointer.
+    //!
+    //! \param [in] x     - Value to align.
+    //! \param [in] align - Alignment to use.
+    template<class T>
+    inline constexpr T* AlignUp(const T* x, USize align)
+    {
+        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<USize>(x), align));
+    }
+
     //! \brief Align up an integer.
+    //!
     //! \param [in] x     - Value to align.
     //! \tparam A         - Alignment to use.
     template<UInt32 A, class T>
@@ -140,31 +155,39 @@ namespace FE
     }
 
     //! \brief Align down an integer.
+    //!
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
     inline constexpr T AlignDown(T x, T align)
     {
-        return ((x) & ~(align - 1));
+        return (x & ~(align - 1));
+    }
+
+    //! \brief Align down a pointer.
+    //!
+    //! \param [in] x     - Value to align.
+    //! \param [in] align - Alignment to use.
+    template<class T>
+    inline constexpr T* AlignDown(const T* x, USize align)
+    {
+        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<USize>(x), align));
     }
 
     //! \brief Align down an integer.
+    //!
     //! \param [in] x     - Value to align.
     //! \tparam A         - Alignment to use.
     template<UInt32 A, class T>
     inline constexpr T AlignDown(T x)
     {
-        return ((x) & ~(A - 1));
+        return (x & ~(A - 1));
     }
 
     template<class T>
     inline constexpr T MakeMask(T bitCount, T leftShift)
     {
-        if (bitCount == 64)
-        {
-            return static_cast<T>(-1);
-        }
-        auto mask = (1 << bitCount) - 1;
+        auto mask = bitCount == 64 ? static_cast<T>(-1) : ((1 << bitCount) - 1);
         return static_cast<T>(mask << leftShift);
     }
 

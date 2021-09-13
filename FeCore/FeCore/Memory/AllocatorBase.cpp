@@ -38,7 +38,7 @@ namespace FE
 
     void AllocatorBase::CopyMemory(void* destination, void* source, size_t byteSize) const
     {
-        memcpy_s(destination, byteSize, source, byteSize);
+        memcpy(destination, source, byteSize);
     }
 
     void AllocatorBase::ProfileAllocate(size_t size, size_t alignment, const SourcePosition& position)

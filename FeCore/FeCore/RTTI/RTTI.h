@@ -2,6 +2,7 @@
 #include <FeCore/Utils/UUID.h>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 namespace FE
 {
@@ -26,9 +27,9 @@ namespace FE
         return id;                                                                                                               \
     }                                                                                                                            \
                                                                                                                                  \
-    inline static const char* FeRTTI_GetSName()                                                                                  \
+    inline static std::string_view FeRTTI_GetSName()                                                                                  \
     {                                                                                                                            \
-        return #name;                                                                                                            \
+        return TypeName<name>();                                                                                          \
     }
 
     //! \brief Define common RTTI functions for a class.
@@ -50,9 +51,9 @@ namespace FE
 #define FE_CLASS_RTTI(name, uuid)                                                                                                \
     FE_STRUCT_RTTI(name, uuid);                                                                                                  \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
-    inline virtual const char* FeRTTI_GetName() const                                                                            \
+    inline virtual std::string_view FeRTTI_GetName() const                                                                            \
     {                                                                                                                            \
-        return #name;                                                                                                            \
+        return TypeName<name>();                                                                                          \
     }                                                                                                                            \
                                                                                                                                  \
     inline virtual ::FE::TypeID FeRTTI_GetID() const                                                                             \
@@ -127,7 +128,7 @@ namespace FE
     //!
     //! \return Short name of type T.
     template<class T>
-    inline const char* fe_nameof() noexcept
+    inline std::string_view fe_nameof() noexcept
     {
         return T::FeRTTI_GetSName();
     }
@@ -160,7 +161,7 @@ namespace FE
     //!
     //! \see fe_nameof()
     template<class T>
-    inline const char* fe_nameof(const T& object)
+    inline std::string_view fe_nameof(const T& object)
     {
         return object.FeRTTI_GetName();
     }
