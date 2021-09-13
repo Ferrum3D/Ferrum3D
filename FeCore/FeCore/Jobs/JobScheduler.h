@@ -1,8 +1,11 @@
 #pragma once
+#include <FeCore/Allocators/MonotonicAllocator.h>
+#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/IJobScheduler.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Modules/Singleton.h>
 #include <FeCore/Parallel/Semaphore.h>
+#include <FeCore/EventBus/EventBus.h>
 #include <deque>
 #include <thread>
 
@@ -132,15 +135,21 @@ namespace FE
         }
     };
 
-    class JobScheduler final : public SingletonImplBase<IJobScheduler>
+    class JobScheduler final
+        : public SingletonImplBase<IJobScheduler>
+        , public EventBus<FrameEvents>::Handler
     {
-        UInt32 m_WorkerCount;
+        const UInt32 m_WorkerCount;
         Vector<SchedulerThreadInfo*> m_Threads;
         JobGlobalQueue m_GlobalQueue;
 
         Semaphore m_Semaphore;
         AtomicInt32 m_SleepingWorkerCount;
         AtomicInt32 m_ShouldExit;
+
+        AtomicInt32 m_FrameIndex;
+        MonotonicAllocatorAsync m_OneFrameAllocators[2];
+        MonotonicAllocatorSync m_ThreadInfoAllocator;
 
         static thread_local SchedulerThreadInfo* m_CurrentThreadInfo;
         inline static constexpr UInt32 MaxThreadCount = 32;
@@ -159,6 +168,11 @@ namespace FE
 
         [[nodiscard]] UInt32 GetWorkerCount() const override;
         [[nodiscard]] UInt32 GetWorkerID() const override;
+
+        void* OneFrameAllocate(USize size, USize alignment) override;
+
         void ScheduleJob(Job* job) override;
+
+        void OnFrameStart(const FrameEventArgs& args) override;
     };
 } // namespace FE

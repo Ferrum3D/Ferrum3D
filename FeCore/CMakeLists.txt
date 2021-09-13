@@ -103,7 +103,18 @@ set(SRC
     FeCore/Assets/IAssetManager.h
     FeCore/Assets/AssetCommon.h
     FeCore/Assets/AssetManager.h
-    FeCore/Assets/AssetManager.cpp FeCore/Jobs/JobTree.h FeCore/Parallel/AtomicFlags.h FeCore/Jobs/Job.h FeCore/Utils/BoolPointer.h FeCore/Jobs/IJobScheduler.h FeCore/Jobs/JobScheduler.h FeCore/Jobs/JobScheduler.cpp FeCore/Parallel/Semaphore.h FeCore/Parallel/Semaphore.cpp)
+    FeCore/Assets/AssetManager.cpp
+    FeCore/Jobs/JobTree.h
+    FeCore/Parallel/AtomicFlags.h
+    FeCore/Jobs/Job.h
+    FeCore/Utils/BoolPointer.h
+    FeCore/Jobs/IJobScheduler.h
+    FeCore/Jobs/JobScheduler.h
+    FeCore/Jobs/JobScheduler.cpp
+    FeCore/Parallel/Semaphore.h
+    FeCore/Parallel/Semaphore.cpp
+    FeCore/Allocators/MonotonicAllocator.h
+    FeCore/EventBus/FrameEvents.h)
 
 add_library(FeCore STATIC ${SRC})
 

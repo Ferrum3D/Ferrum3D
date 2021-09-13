@@ -22,7 +22,7 @@ namespace FE
         //! \param [in] position  - Position in source file where allocation was requested.
         //!
         //! \return The pointer to the allocated block.
-        [[nodiscard]] virtual void* Allocate(size_t size, size_t alignment, const SourcePosition& position) = 0;
+        [[nodiscard]] virtual void* Allocate(USize size, USize alignment, const SourcePosition& position) = 0;
 
         //! \brief Deallocate memory at pointer.
         //!
@@ -36,7 +36,7 @@ namespace FE
         //! \param [in] pointer  - Pointer returned by IAllocator::Allocate function.
         //! \param [in] position - Position in source file where deallocation was requested.
         //! \param [in] size     - Size of allocated block (optional).
-        virtual void Deallocate(void* pointer, const SourcePosition& position, size_t size = 0) = 0;
+        virtual void Deallocate(void* pointer, const SourcePosition& position, USize size = 0) = 0;
 
         //! \brief Reallocate a block of memory.
         //!
@@ -52,16 +52,19 @@ namespace FE
         //!
         //! \return The pointer to the allocated block.
         [[nodiscard]] virtual void* Reallocate(
-            void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize = 0) = 0;
+            void* pointer, const SourcePosition& position, USize newSize, USize newAlignment, USize oldSize = 0) = 0;
 
         //! \brief Query size of previously allocated block.
         //!
         //! This function's behavior is undefined if the pointer was allocated using a different allocator.
+        //! It is allowed to return zero for some allocators, so don't rely on result if you don't know the
+        //! exact allocator accessed through this interface. Pool and monotonic allocators usually work with
+        //! very small allocations, so storing the size can make overhead very significant.
         //!
         //! \param [in] pointer - Pointer to a block of memory.
         //!
         //! \return Size of specified block.
-        [[nodiscard]] virtual size_t SizeOfBlock(void* pointer) = 0;
+        [[nodiscard]] virtual USize SizeOfBlock(void* pointer) = 0;
 
         //! \brief Try to free some unused memory from an allocator.
         //!
@@ -71,17 +74,18 @@ namespace FE
         virtual void CollectGarbage() = 0;
 
         //! \brief Query total memory allocated through this allocator.
+        //!
         //! \return Total allocated memory in bytes.
-        [[nodiscard]] virtual size_t TotalAllocated() const = 0;
+        [[nodiscard]] virtual USize TotalAllocated() const = 0;
 
         //! \brief Query maximum size of allocated block.
         //!
         //! Some allocators can have limits on allocation size. These allocators will return the value in bytes.
         //! For example, a pool allocator will return size of a single chunk.
-        //! If an allocator doesn't have specific limits this function will return maximum value a size_t can have.
+        //! If an allocator doesn't have specific limits this function will return maximum value a USize can have.
         //!
         //! \return Maximum size of allocated block in bytes.
-        [[nodiscard]] virtual size_t MaxBlockSize() const = 0;
+        [[nodiscard]] virtual USize MaxBlockSize() const = 0;
     };
 
     //! \brief Interface for allocator info.

@@ -31,21 +31,6 @@ struct Vertex
     [[maybe_unused]] FE::Float32 RGB[3];
 };
 
-class TestEvent : public FE::IObject
-{
-public:
-    virtual void OnHello(const char* name) = 0;
-};
-
-class TestEventHandler : public FE::EventBus<TestEvent>::Handler
-{
-public:
-    void OnHello(const char* name) override
-    {
-        FE_LOG_MESSAGE("Hello, {}!", FE::StringSlice(name));
-    }
-};
-
 static FE::AtomicInt32 JobCounter = 0;
 
 class TestJob : public FE::Job
@@ -80,13 +65,7 @@ int main()
             "Running {} version {}.{}.{}", FE::StringSlice(FE::FerrumEngineName), FE::FerrumVersion.Major,
             FE::FerrumVersion.Minor, FE::FerrumVersion.Patch);
 
-        auto eventBus = FE::MakeShared<FE::EventBus<TestEvent>>();
-        auto handler1 = FE::MakeShared<TestEventHandler>();
-        auto handler2 = FE::MakeShared<TestEventHandler>();
-
-        FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "World");
-        FE::EventBus<TestEvent>::SendEvent(&TestEvent::OnHello, "123");
-
+        auto eventBus     = FE::MakeShared<FE::EventBus<FE::FrameEvents>>();
         auto jobScheduler = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
 
         FE::IO::StdoutStream stdoutStream;
@@ -227,7 +206,7 @@ int main()
         descriptorTable->Update(HAL::DescriptorWriteBuffer(constantBuffer.GetRaw()));
 
         HAL::GraphicsPipelineDesc pipelineDesc{};
-        pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
+        pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
                                        .AddBuffer(HAL::InputStreamRate::PerVertex)
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "COLOR")
@@ -279,11 +258,24 @@ int main()
             cmd->End();
         }
 
+        FE::FrameEventArgs frameEventArgs{};
         auto ts          = std::chrono::high_resolution_clock::now();
         FE::Int16 frames = 0;
         while (!window->CloseRequested())
         {
-            auto frameIndex = swapChain->GetCurrentFrameIndex();
+            auto getDelta = [](std::chrono::high_resolution_clock::time_point ts) {
+                auto now = std::chrono::high_resolution_clock::now();
+                auto ms  = std::chrono::duration_cast<std::chrono::microseconds>(now - ts).count();
+                return static_cast<FE::Float32>(ms) / 1'000'000;
+            };
+            auto frameIndex          = swapChain->GetCurrentFrameIndex();
+            frameEventArgs.DeltaTime = getDelta(ts);
+            eventBus->SendEvent(&FE::FrameEvents::OnFrameStart, frameEventArgs);
+
+            frameEventArgs.DeltaTime = getDelta(ts);
+            eventBus->SendEvent(&FE::FrameEvents::OnUpdate, frameEventArgs);
+            frameEventArgs.DeltaTime = getDelta(ts);
+            eventBus->SendEvent(&FE::FrameEvents::OnLateUpdate, frameEventArgs);
 
             fences[frameIndex]->WaitOnCPU();
             window->PollEvents();
@@ -292,13 +284,14 @@ int main()
             graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
             swapChain->Present();
 
-            auto delta =
-                std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ts).count();
             if ((frames = (frames + 1) % 1000) == 0)
             {
+                auto delta = getDelta(ts);
                 FE_LOG_MESSAGE("Counter: {}", JobCounter);
-                FE_LOG_MESSAGE("Delta: {}mcs, FPS: {}", delta, 1'000'000.0 / static_cast<double>(delta));
+                FE_LOG_MESSAGE("Delta: {}sec, FPS: {}", delta, 1.0f / delta);
             }
+            frameEventArgs.DeltaTime = getDelta(ts);
+            eventBus->SendEvent(&FE::FrameEvents::OnFrameEnd, frameEventArgs);
             ts = std::chrono::high_resolution_clock::now();
         }
 

@@ -1,21 +1,22 @@
 #pragma once
 #include <FeCore/Memory/AllocatorBase.h>
 #include <FeCore/Memory/IAllocator.h>
+#include <FeCore/Parallel/Interlocked.h>
 
 namespace FE
 {
     //! \brief Description of \ref HeapAllocator.
     struct HeapAllocatorDesc
     {
-        size_t PageSize     = 64 * 1024;
-        size_t SpanSize     = 0;
-        size_t SpanMapCount = 0;
+        USize PageSize     = 64 * 1024;
+        USize SpanSize     = 0;
+        USize SpanMapCount = 0;
     };
 
     //! \brief Main global heap allocator.
     class HeapAllocator final : public AllocatorBase
     {
-        size_t m_TotalUsage = 0;
+        AtomicInt64 m_TotalUsage;
 
     public:
         FE_CLASS_RTTI(HeapAllocator, "1C0FA67A-09E8-461B-818F-24454F5A5B0B");
@@ -34,12 +35,12 @@ namespace FE
         //=========================================================================================
         // IAllocator
 
-        [[nodiscard]] void* Allocate(size_t size, size_t alignment, const SourcePosition& position) override;
-        void Deallocate(void* pointer, const SourcePosition& position, size_t size) override;
+        [[nodiscard]] void* Allocate(USize size, USize alignment, const SourcePosition& position) override;
+        void Deallocate(void* pointer, const SourcePosition& position, USize size) override;
         [[nodiscard]] void* Reallocate(
-            void* pointer, const SourcePosition& position, size_t newSize, size_t newAlignment, size_t oldSize) override;
-        [[nodiscard]] size_t TotalAllocated() const override;
-        [[nodiscard]] size_t SizeOfBlock(void* pointer) override;
+            void* pointer, const SourcePosition& position, USize newSize, USize newAlignment, USize oldSize) override;
+        [[nodiscard]] USize TotalAllocated() const override;
+        [[nodiscard]] USize SizeOfBlock(void* pointer) override;
         //=========================================================================================
     };
 } // namespace FE
