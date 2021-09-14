@@ -1,30 +1,25 @@
 #pragma once
-#include <FeCore/Containers/ArraySliceMut.h>
+#include <FeCore/Memory/Memory.h>
+#include <array>
 
 namespace FE
 {
     template<class T>
-    class ArraySlice
+    class ArraySliceMut
     {
-        const T* m_Begin;
-        const T* m_End;
+        T* m_Begin;
+        T* m_End;
 
     public:
-        FE_STRUCT_RTTI(ArraySlice, "C047D694-0887-403D-AD65-6A1B7B873951");
+        FE_STRUCT_RTTI(ArraySliceMut, "C047D694-0887-403D-AD65-6A1B7B873951");
 
-        inline ArraySlice()
+        inline ArraySliceMut()
             : m_Begin(nullptr)
             , m_End(nullptr)
         {
         }
 
-        inline explicit ArraySlice(const ArraySliceMut<T>& mutableSlice)
-            : m_Begin(mutableSlice.Data())
-            , m_End(mutableSlice.Data() + mutableSlice.Length())
-        {
-        }
-
-        inline ArraySlice(const T* array, USize length)
+        inline ArraySliceMut(T* array, USize length)
             : m_Begin(array)
             , m_End(array + length)
         {
@@ -34,51 +29,47 @@ namespace FE
             }
         }
 
-        inline ArraySlice(const T* begin, const T* end)
+        inline ArraySliceMut(T* begin, T* end)
             : m_Begin(begin)
             , m_End(end)
         {
         }
 
-        inline ArraySlice(const ArraySlice& other)
-            : ArraySlice(other.m_Begin, other.m_End)
-        {
-        }
+        inline ArraySliceMut(const ArraySliceMut& other) = default;
+        inline ArraySliceMut& operator=(const ArraySliceMut& other) = default;
 
-        inline ArraySlice(ArraySlice&& other) noexcept
-            : ArraySlice(other.m_Begin, other.m_End)
+        inline ArraySliceMut(ArraySliceMut&& other) noexcept
+            : ArraySliceMut(other.m_Begin, other.m_End)
         {
             other.Reset();
         }
 
         template<USize N>
-        inline ArraySlice(const std::array<T, N>& array) // NOLINT
+        inline explicit ArraySliceMut(std::array<T, N>& array)
             : m_Begin(array.data())
             , m_End(array.data() + array.size())
         {
         }
 
-        inline ArraySlice(const Vector<T>& vector) // NOLINT
+        inline explicit ArraySliceMut(Vector<T>& vector)
             : m_Begin(vector.data())
             , m_End(vector.data() + vector.size())
         {
         }
 
-        inline ArraySlice& operator=(const ArraySlice& other) = default;
-
-        inline ArraySlice& operator=(ArraySlice&& other) noexcept
+        inline ArraySliceMut& operator=(ArraySliceMut&& other) noexcept
         {
             *this = other;
             other.Reset();
         }
 
-        inline ArraySlice operator()(USize beginIndex, USize endIndex) const noexcept
+        inline ArraySliceMut operator()(USize beginIndex, USize endIndex) noexcept
         {
             FE_CORE_ASSERT(beginIndex < Length() && endIndex <= Length(), "Index out of range");
-            return ArraySlice(m_Begin + beginIndex, m_Begin + endIndex);
+            return ArraySliceMut(m_Begin + beginIndex, m_Begin + endIndex);
         }
 
-        inline const T& operator[](USize index) const noexcept
+        inline T& operator[](USize index) noexcept
         {
             FE_CORE_ASSERT(index < Length(), "Index out of range");
             return m_Begin[index];
@@ -103,7 +94,12 @@ namespace FE
         {
             return m_Begin;
         }
-        
+
+        [[nodiscard]] inline T* Data()
+        {
+            return m_Begin;
+        }
+
         inline USize CopyDataTo(ArraySliceMut<T> destination) const
         {
             USize size = std::min(Length(), destination.Length());
@@ -121,12 +117,22 @@ namespace FE
             return m_End;
         }
 
-        inline bool operator==(const ArraySlice& other) const noexcept
+        [[nodiscard]] inline T* begin()
+        {
+            return m_Begin;
+        }
+
+        [[nodiscard]] inline T* end()
+        {
+            return m_End;
+        }
+
+        inline bool operator==(const ArraySliceMut& other) const noexcept
         {
             return m_Begin == other.m_Begin && m_End == other.m_End;
         }
 
-        inline bool operator!=(const ArraySlice& other) const noexcept
+        inline bool operator!=(const ArraySliceMut& other) const noexcept
         {
             return !(*this == other);
         }

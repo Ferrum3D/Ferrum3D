@@ -114,7 +114,7 @@ set(SRC
     FeCore/Parallel/Semaphore.h
     FeCore/Parallel/Semaphore.cpp
     FeCore/Allocators/MonotonicAllocator.h
-    FeCore/EventBus/FrameEvents.h)
+    FeCore/EventBus/FrameEvents.h FeCore/Containers/ArraySliceMut.h FeCore/Jobs/SignalJob.h)
 
 add_library(FeCore STATIC ${SRC})
 

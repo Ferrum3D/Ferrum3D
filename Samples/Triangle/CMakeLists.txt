@@ -1,4 +1,4 @@
-add_executable(Triangle main.cpp)
+add_executable(Triangle main.cpp ../JobSystem/main.cpp)
 
 fe_configure_target(Triangle)
 
