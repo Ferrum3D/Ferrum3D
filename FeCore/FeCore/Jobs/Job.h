@@ -127,6 +127,8 @@ namespace FE
         //! only when dependency counter reaches zero.
         inline void Schedule();
 
+        inline void Complete();
+
         //! \return Job's priority.
         [[nodiscard]] inline JobPriority GetPriority() const;
 
@@ -228,5 +230,11 @@ namespace FE
     bool Job::Empty() const
     {
         return m_TreeEmptyPair.GetBool();
+    }
+
+    void Job::Complete()
+    {
+        Schedule();
+        Singleton<IJobScheduler>::Get()->SuspendUntilComplete(this);
     }
 } // namespace FE

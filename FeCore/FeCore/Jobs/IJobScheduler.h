@@ -16,5 +16,6 @@ namespace FE
         [[nodiscard]] virtual void* OneFrameAllocate(USize size, USize alignment) = 0;
 
         virtual void ScheduleJob(Job* job) = 0;
+        virtual void SuspendUntilComplete(Job* job) = 0;
     };
 } // namespace FE

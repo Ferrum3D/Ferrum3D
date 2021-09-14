@@ -12,10 +12,10 @@ namespace FE
     {
         MonotonicAllocatorDesc desc{};
         desc.InitialBlockSize = AlignUp<alignof(SchedulerThreadInfo)>(sizeof(SchedulerThreadInfo)) * MaxThreadCount;
-        desc.MaxBlockCount = 1;
+        desc.MaxBlockCount    = 1;
         m_ThreadInfoAllocator.Init(desc);
         desc.InitialBlockSize = 1024;
-        desc.MaxBlockCount = 32;
+        desc.MaxBlockCount    = 32;
         m_OneFrameAllocators[0].Init(desc);
         m_OneFrameAllocators[1].Init(desc);
 
@@ -84,59 +84,7 @@ namespace FE
         m_Semaphore.Acquire();
         m_CurrentThreadInfo = m_Threads[id];
         GlobalAllocator<HeapAllocator>::ThreadInit();
-
-        UInt32 victimIndex = 0;
-        if (m_CurrentThreadInfo->WorkerID == 0)
-        {
-            victimIndex = 1;
-        }
-
-        while (true)
-        {
-            if (m_CurrentThreadInfo->IsWorker())
-            {
-                if (Interlocked::Load(m_ShouldExit) == 1)
-                {
-                    return;
-                }
-
-                if (m_GlobalQueue.Empty())
-                {
-                    Interlocked::Increment(m_SleepingWorkerCount);
-                    Interlocked::Exchange(m_CurrentThreadInfo->IsSleeping, 1);
-                    m_CurrentThreadInfo->WaitSemaphore.Acquire();
-
-                    if (Interlocked::Load(m_ShouldExit) == 1)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            Job* job = m_GlobalQueue.Dequeue();
-            if (job == nullptr)
-            {
-                job = m_CurrentThreadInfo->Queue.SelfSteal();
-            }
-
-            while (true)
-            {
-                while (job)
-                {
-                    Execute(job);
-                    job = m_CurrentThreadInfo->Queue.SelfSteal();
-                    if (job)
-                    {
-                        NotifyWorker();
-                    }
-                }
-                job = TryStealJob(victimIndex);
-                if (!job)
-                {
-                    break;
-                }
-            }
-        }
+        ProcessJobs(nullptr);
     }
 
     void JobScheduler::Execute(Job* job)
@@ -144,6 +92,13 @@ namespace FE
         JobExecutionContext context{};
         context.WorkerID = m_CurrentThreadInfo->WorkerID;
         job->ExecuteInternal(context);
+        for (auto& t : m_Threads)
+        {
+            if (t->WaitJob == job)
+            {
+                t->WaitSemaphore.Release();
+            }
+        }
     }
 
     SchedulerThreadInfo* JobScheduler::GetCurrentThread()
@@ -221,5 +176,92 @@ namespace FE
     {
         auto reset = Interlocked::Exchange(m_FrameIndex, args.FrameIndex % 2);
         m_OneFrameAllocators[reset].ResetAll();
+    }
+
+    void JobScheduler::SuspendUntilComplete(Job* job)
+    {
+        ProcessJobs(job);
+    }
+
+    void JobScheduler::ProcessJobs(Job* waitJob)
+    {
+        auto shouldExit = [this]() {
+            return Interlocked::Load(m_ShouldExit) == 1;
+        };
+        auto waitJobReady = [waitJob]() {
+            return waitJob && waitJob->GetExecutionState() == JobExecutionState::Complete;
+        };
+
+        UInt32 victimIndex = 0;
+        if (m_CurrentThreadInfo->WorkerID == 0)
+        {
+            victimIndex = 1;
+        }
+
+        while (true)
+        {
+            if (waitJobReady())
+            {
+                return;
+            }
+            if (m_CurrentThreadInfo->IsWorker() && !waitJob)
+            {
+                if (shouldExit())
+                {
+                    return;
+                }
+
+                if (m_GlobalQueue.Empty())
+                {
+                    Interlocked::Increment(m_SleepingWorkerCount);
+                    Interlocked::Exchange(m_CurrentThreadInfo->IsSleeping, 1);
+                    m_CurrentThreadInfo->WaitJob = waitJob;
+                    m_CurrentThreadInfo->WaitSemaphore.Acquire();
+
+                    if (shouldExit())
+                    {
+                        return;
+                    }
+                }
+            }
+
+            if (waitJobReady())
+            {
+                return;
+            }
+
+            Job* job = m_GlobalQueue.Dequeue();
+            if (job == nullptr)
+            {
+                job = m_CurrentThreadInfo->Queue.SelfSteal();
+            }
+
+            while (true)
+            {
+                while (job)
+                {
+                    Execute(job);
+                    if (waitJobReady())
+                    {
+                        return;
+                    }
+
+                    job = m_CurrentThreadInfo->Queue.SelfSteal();
+                    if (job)
+                    {
+                        NotifyWorker();
+                    }
+                }
+                if (waitJobReady())
+                {
+                    return;
+                }
+                job = TryStealJob(victimIndex);
+                if (!job)
+                {
+                    break;
+                }
+            }
+        }
     }
 } // namespace FE

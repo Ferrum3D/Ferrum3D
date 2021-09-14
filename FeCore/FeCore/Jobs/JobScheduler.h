@@ -128,6 +128,7 @@ namespace FE
         std::thread::id ThreadID;
         Semaphore WaitSemaphore;
         AtomicInt32 IsSleeping;
+        Job* WaitJob;
 
         [[nodiscard]] inline bool IsWorker() const noexcept
         {
@@ -156,7 +157,8 @@ namespace FE
 
         void NotifyWorker();
         void WorkerThreadProcess(UInt32 id);
-        static void Execute(Job* job);
+        void ProcessJobs(Job* waitJob);
+        void Execute(Job* job);
         SchedulerThreadInfo* GetCurrentThread();
         Job* TryStealJob(UInt32& victimIndex);
 
@@ -172,7 +174,7 @@ namespace FE
         void* OneFrameAllocate(USize size, USize alignment) override;
 
         void ScheduleJob(Job* job) override;
-
+        void SuspendUntilComplete(Job* job) override;
         void OnFrameStart(const FrameEventArgs& args) override;
     };
 } // namespace FE
