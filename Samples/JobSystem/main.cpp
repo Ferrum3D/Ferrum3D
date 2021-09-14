@@ -5,12 +5,14 @@
 #include <FeCore/Jobs/JobScheduler.h>
 #include <FeCore/Jobs/SignalJob.h>
 #include <algorithm>
+#include <chrono>
 #include <random>
 
 using FE::Int32;
+using FE::UInt64;
 using FE::USize;
 
-inline constexpr USize MinJobArrayLength = 1024;
+inline constexpr USize MinJobArrayLength = 64 * 1024;
 
 void MergeArraysSync(const FE::ArraySlice<Int32>& lhs, const FE::ArraySlice<Int32>& rhs, FE::ArraySliceMut<Int32> space)
 {
@@ -94,7 +96,8 @@ void ParallelSort(FE::ArraySliceMut<Int32> array)
 {
     FE::Vector<Int32> space;
     space.resize(array.Length());
-    MergeSortImplAsync(array, FE::ArraySliceMut(space));;
+    MergeSortImplAsync(array, FE::ArraySliceMut(space));
+    ;
 }
 
 void AssertSorted(const FE::ArraySlice<int>& values)
@@ -108,28 +111,48 @@ void AssertSorted(const FE::ArraySlice<int>& values)
     }
 }
 
+template<class F>
+inline UInt64 MeasureTime(F&& function)
+{
+    auto s = std::chrono::high_resolution_clock::now();
+    function();
+    auto e = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(e - s).count();
+}
+
 int main()
 {
     FE::Env::CreateEnvironment();
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
     {
-        std::random_device device;
-        std::mt19937 mt(device());
-        std::uniform_int_distribution<Int32> distribution;
+        [[maybe_unused]] std::random_device device;
+        [[maybe_unused]] std::mt19937 mt(device());
+        [[maybe_unused]] std::uniform_int_distribution<Int32> distribution;
         auto logger       = FE::MakeShared<FE::Debug::ConsoleLogger>();
         auto eventBus     = FE::MakeShared<FE::EventBus<FE::FrameEvents>>();
         auto jobScheduler = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
 
         const USize length = 2'000'000;
-        FE::Vector<Int32> values;
-        values.reserve(length);
+        FE::Vector<Int32> values1, values2;
+        values1.reserve(length);
         for (Int32 i = 0; i < length; ++i)
         {
-            values.push_back(distribution(mt));
+            values1.push_back(distribution(mt));
         }
+        values2.resize(length);
+        FE::ArraySlice(values1).CopyDataTo(FE::ArraySliceMut(values2));
 
-        ParallelSort(FE::ArraySliceMut(values));
-        AssertSorted(values);
+        auto parallel = MeasureTime([&values1]() {
+            ParallelSort(FE::ArraySliceMut(values1));
+        });
+        AssertSorted(values1);
+
+        auto stdSort = MeasureTime([&values2]() {
+            std::sort(values2.begin(), values2.end());
+        });
+        AssertSorted(values2);
+
+        FE_LOG_MESSAGE("Parallel: {}mcs, std::sort: {}msc, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
     }
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
 }

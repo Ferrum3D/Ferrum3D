@@ -212,8 +212,8 @@ namespace FE
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
-            (void)expression;                                                                                                    \
-            (void)msg;                                                                                                           \
+            (void)(expression);                                                                                                    \
+            (void)(msg);                                                                                                           \
         }                                                                                                                        \
         while (0)
 #endif
