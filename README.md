@@ -1,10 +1,10 @@
 # Ferrum3D Engine
-**Ferrum3D** is a 3D game engine under active development.
-It is intended to be multi-platform, data-oriented, data-driven and modular.
+**Ferrum3D** is a 3D game engine.
+It is intended to be multi-platform, data-oriented, data-driven, and modular.
 
 ## Current development status
-Currently working modules are the engine's core and graphics hardware abstraction.
-The HAL allowed to write a simple triangle application using vertex and index buffers.
+Currently, working modules are the engine's core and graphics hardware abstraction.
+The HAL allowed writing a simple triangle application using vertex and index buffers.
 The color of the triangle is stored in a constant buffer accessed through descriptors.
 
 Next steps to do with HAL:
@@ -23,7 +23,7 @@ If you want to build the engine, run samples and tests you will need:
  - **Python3** (tested with Python 3.9.5)
 
 ### Windows
-Currently the engine was tested on windows only. For building you will need
+Currently, the engine was tested on windows only. For building, you will need
 Visual Studio 2019 with *Game Development for C++* installed.
 
 ### Downloading sources
@@ -37,7 +37,7 @@ git submodule update --init --recursive
 ```
 
 ### Build steps
-After you cloned the repository, run this commands:
+After you cloned the repository, run these commands:
 ```shell
 cd Ferrum3D
 cmake -B Build -S .
