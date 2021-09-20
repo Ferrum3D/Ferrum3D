@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(FeCore)
-add_subdirectory(FeModules)
+add_subdirectory(Modules)
 add_subdirectory(FeAssetCompiler)
 add_subdirectory(FeTestProject)
 add_subdirectory(Samples)

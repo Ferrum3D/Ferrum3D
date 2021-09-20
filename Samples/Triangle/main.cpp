@@ -1,7 +1,7 @@
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
-#include <FeGPU/Instance/IInstance.h>
-#include <FeGPU/Pipeline/InputLayoutBuilder.h>
+#include <GPU/Instance/IInstance.h>
+#include <GPU/Pipeline/InputLayoutBuilder.h>
 
 struct Vertex
 {
