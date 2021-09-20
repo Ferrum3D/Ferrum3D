@@ -92,7 +92,7 @@ namespace FE
 
     protected:
         BoolPointer<JobTree> m_TreeEmptyPair;
-        Job* m_Dependent    = nullptr;
+        Job* m_Dependent = nullptr;
 
         //! \brief Synchronously run the job. Will be called from worker thread.
         //!

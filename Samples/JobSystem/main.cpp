@@ -97,7 +97,6 @@ void ParallelSort(FE::ArraySliceMut<Int32> array)
     FE::Vector<Int32> space;
     space.resize(array.Length());
     MergeSortImplAsync(array, FE::ArraySliceMut(space));
-    ;
 }
 
 void AssertSorted(const FE::ArraySlice<int>& values)
