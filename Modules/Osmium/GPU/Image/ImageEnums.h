@@ -1,0 +1,51 @@
+#pragma once
+#include <GPU/Common/BaseTypes.h>
+#include <GPU/Image/ImageFormat.h>
+
+namespace FE::GPU
+{
+    enum class ImageBindFlags
+    {
+        None            = 0,
+        ShaderRead      = 1 << 0,
+        ShaderWrite     = 1 << 1,
+        ShaderReadWrite = ShaderRead | ShaderWrite,
+
+        Color   = 1 << 2,
+        Depth   = 1 << 3,
+        Stencil = 1 << 4,
+
+        TransferRead  = 1 << 5,
+        TransferWrite = 1 << 6
+    };
+
+    FE_ENUM_OPERATORS(ImageBindFlags);
+
+    enum class ImageAspect
+    {
+        Color,
+        Depth,
+        Stencil
+    };
+
+    enum class ImageAspectFlags
+    {
+        None,
+        Color        = 1 << static_cast<UInt32>(ImageAspect::Color),
+        Depth        = 1 << static_cast<UInt32>(ImageAspect::Depth),
+        Stencil      = 1 << static_cast<UInt32>(ImageAspect::Stencil),
+        DepthStencil = Depth | Stencil,
+        All          = Depth | Stencil | Color
+    };
+
+    FE_ENUM_OPERATORS(ImageAspectFlags);
+
+    enum class ImageDim
+    {
+        None,
+        Image1D,
+        Image2D,
+        Image3D,
+        ImageCubemap
+    };
+} // namespace FE::GPU
