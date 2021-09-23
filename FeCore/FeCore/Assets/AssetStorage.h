@@ -66,6 +66,7 @@ namespace FE::Assets
             }
             if (--m_WeakRefCount == 0)
             {
+                lk.Unlock();
                 this->~AssetStorage();
                 GlobalAllocator<HeapAllocator>::Get().Deallocate(this, FE_SRCPOS());
             }

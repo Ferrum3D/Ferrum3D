@@ -15,6 +15,7 @@ _deps
 Build/
 BuildDebug/
 BuildRelease/
+**/*/obj/
 
 # IDEs
 .vs/
