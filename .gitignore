@@ -16,6 +16,7 @@ Build/
 BuildDebug/
 BuildRelease/
 **/*/obj/
+**/*/bin/
 
 # IDEs
 .vs/

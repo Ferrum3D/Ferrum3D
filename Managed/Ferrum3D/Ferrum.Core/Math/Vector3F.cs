@@ -5,46 +5,32 @@ using System.Runtime.InteropServices;
 namespace Ferrum.Core.Math
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector4F : IEquatable<Vector4F>
+    public struct Vector3F : IEquatable<Vector3F>
     {
         [FieldOffset(0)]
         public float X;
         public float Y;
         public float Z;
-        public float W;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(Vector3F xyz, float w = 1f) : this(xyz.X, xyz.Y, xyz.Z, w)
+        public Vector3F(float value) : this(value, value, value)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(float value) : this(value, value, value, value)
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(float x, float y, float z, float w)
+        public Vector3F(float x, float y, float z)
         {
             X = x;
             Y = y;
             Z = z;
-            W = w;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F GetVector3()
-        {
-            return new Vector3F(X, Y, Z);
-        }
+        public readonly static Vector3F Zero;
+        public readonly static Vector3F One = new Vector3F(1);
 
-        public static readonly Vector4F Zero;
-        public static readonly Vector4F One = new Vector4F(1);
-
-        public static readonly Vector4F UnitX = new Vector4F(1, 0, 0, 0);
-        public static readonly Vector4F UnitY = new Vector4F(0, 1, 0, 0);
-        public static readonly Vector4F UnitZ = new Vector4F(0, 0, 1, 0);
-        public static readonly Vector4F UnitW = new Vector4F(0, 0, 0, 1);
+        public readonly static Vector3F UnitX = new Vector3F(1, 0, 0);
+        public readonly static Vector3F UnitY = new Vector3F(0, 1, 0);
+        public readonly static Vector3F UnitZ = new Vector3F(0, 0, 1);
 
         public float this[int index]
         {
@@ -59,8 +45,6 @@ namespace Ferrum.Core.Math
                         return Y;
                     case 2:
                         return Z;
-                    case 3:
-                        return W;
                     default:
                         throw new IndexOutOfRangeException(nameof(index));
                 }
@@ -79,9 +63,6 @@ namespace Ferrum.Core.Math
                     case 2:
                         Z = value;
                         break;
-                    case 3:
-                        W = value;
-                        break;
                     default:
                         throw new IndexOutOfRangeException(nameof(index));
                 }
@@ -89,15 +70,15 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Dot(Vector4F other)
+        public float Dot(Vector3F other)
         {
             return Dot(this, other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Dot(Vector4F lhs, Vector4F rhs)
+        public static float Dot(Vector3F lhs, Vector3F rhs)
         {
-            return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z + lhs.W * rhs.W;
+            return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z;
         }
 
         public float LengthSq
@@ -114,7 +95,7 @@ namespace Ferrum.Core.Math
             set => this *= value / Length;
         }
 
-        public Vector4F Normalized
+        public Vector3F Normalized
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -126,76 +107,81 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F LerpClamped(Vector4F dst, float f)
+        public Vector3F LerpClamped(Vector3F dst, float f)
         {
             return LerpClamped(this, dst, f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F Lerp(Vector4F dst, float f)
+        public Vector3F Lerp(Vector3F dst, float f)
         {
             return Lerp(this, dst, f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F LerpClamped(Vector4F src, Vector4F dst, float f)
+        public static Vector3F LerpClamped(Vector3F src, Vector3F dst, float f)
         {
             return Lerp(src, dst, MathF.Saturate(f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F Lerp(Vector4F src, Vector4F dst, float f)
+        public static Vector3F Lerp(Vector3F src, Vector3F dst, float f)
         {
             return (dst - src) * f + src;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F MulEach(Vector4F lhs, Vector4F rhs)
+        public static Vector3F MulEach(Vector3F lhs, Vector3F rhs)
         {
-            return new Vector4F(lhs.X * rhs.X, lhs.Y * rhs.Y, lhs.Z * rhs.Z, lhs.W * rhs.W);
+            return new Vector3F(lhs.X * rhs.X, lhs.Y * rhs.Y, lhs.Z * rhs.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AreApproxEqual(Vector4F lhs, Vector4F rhs, float epsilon = MathF.Epsilon)
+        public static bool AreApproxEqual(Vector3F lhs, Vector3F rhs, float epsilon = MathF.Epsilon)
         {
-            return MathF.AreApproxEqual(lhs.X, rhs.X, epsilon)
-                   && MathF.AreApproxEqual(lhs.Y, rhs.Y, epsilon)
-                   && MathF.AreApproxEqual(lhs.Z, rhs.Z, epsilon)
-                   && MathF.AreApproxEqual(lhs.W, rhs.W, epsilon);
+            return MathF.AreApproxEqual(lhs.X, rhs.X)
+                   && MathF.AreApproxEqual(lhs.Y, rhs.Y)
+                   && MathF.AreApproxEqual(lhs.Z, rhs.Z);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3F operator -(Vector3F vector)
+        {
+            return new Vector3F(-vector.X, -vector.Y, -vector.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F operator -(Vector4F vector)
+        public static Vector3F operator +(Vector3F lhs, Vector3F rhs)
         {
-            return new Vector4F(-vector.X, -vector.Y, -vector.Z, -vector.W);
+            return new Vector3F(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F operator +(Vector4F lhs, Vector4F rhs)
+        public static Vector3F operator -(Vector3F lhs, Vector3F rhs)
         {
-            return new Vector4F(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z, lhs.W + rhs.W);
+            return new Vector3F(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F operator -(Vector4F lhs, Vector4F rhs)
+        public static Vector3F operator *(Vector3F vector, float f)
         {
-            return new Vector4F(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z, lhs.W - rhs.W);
+            return new Vector3F(vector.X * f, vector.Y * f, vector.Z * f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F operator *(Vector4F vector, float f)
-        {
-            return new Vector4F(vector.X * f, vector.Y * f, vector.Z * f, vector.W * f);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F operator /(Vector4F vector, float f)
+        public static Vector3F operator /(Vector3F vector, float f)
         {
             return vector * (1f / f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(Vector4F other)
+        public override string ToString()
+        {
+            return $"({X}; {Y}; {Z})";
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(Vector3F other)
         {
             return AreApproxEqual(this, other);
         }
@@ -203,7 +189,7 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            return obj is Vector4F other && Equals(other);
+            return obj is Vector3F other && Equals(other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -214,15 +200,8 @@ namespace Ferrum.Core.Math
                 var hashCode = X.GetHashCode();
                 hashCode = (hashCode * 397) ^ Y.GetHashCode();
                 hashCode = (hashCode * 397) ^ Z.GetHashCode();
-                hashCode = (hashCode * 397) ^ W.GetHashCode();
                 return hashCode;
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override string ToString()
-        {
-            return $"({X}; {Y}; {Z}; {W})";
         }
     }
 }
