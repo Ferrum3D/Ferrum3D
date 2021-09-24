@@ -70,9 +70,21 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AreApproxEqual(float x, float y, float epsilon = Epsilon)
+        public static bool AreApproxEqual(float lhs, float rhs, float epsilon = Epsilon)
         {
-            return System.Math.Abs(x - y) < epsilon;
+            return System.Math.Abs(lhs - rhs) < epsilon;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Clamp(float value, float min, float max)
+        {
+            return System.Math.Max(min, System.Math.Min(value, max));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Saturate(float value)
+        {
+            return Clamp(value, 0, 1);
         }
     }
 }

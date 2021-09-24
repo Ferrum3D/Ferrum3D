@@ -11,9 +11,10 @@
         <AssemblyName>Ferrum.Core</AssemblyName>
         <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
+        <PlatformTarget>x64</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
@@ -23,7 +24,7 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
+        <PlatformTarget>x64</PlatformTarget>
         <DebugType>pdbonly</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>bin\Release\</OutputPath>
@@ -39,7 +40,10 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Math\Color.cs" />
-        <Compile Include="Math\FMath.cs" />
+        <Compile Include="Math\Colors.cs" />
+        <Compile Include="Math\MathF.cs" />
+        <Compile Include="Math\Matrix4x4F.cs" />
+        <Compile Include="Math\Vector3F.cs" />
         <Compile Include="Math\Vector4F.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
