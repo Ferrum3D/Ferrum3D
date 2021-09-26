@@ -7,30 +7,33 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3F : IEquatable<Vector3F>
     {
-        [FieldOffset(0)]
+        public static Vector3F Zero => new Vector3F(0);
+        public static Vector3F One => new Vector3F(1);
+
+        public static Vector3F UnitX => new Vector3F(1, 0, 0);
+        public static Vector3F UnitY => new Vector3F(0, 1, 0);
+        public static Vector3F UnitZ => new Vector3F(0, 0, 1);
+
+        public float LengthSq
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Dot(this, this);
+        }
+
+        public Vector3F Normalized
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                var result = this;
+                result.Length = 1;
+                return result;
+            }
+        }
+
         public float X;
         public float Y;
         public float Z;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F(float value) : this(value, value, value)
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F(float x, float y, float z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-
-        public readonly static Vector3F Zero;
-        public readonly static Vector3F One = new Vector3F(1);
-
-        public readonly static Vector3F UnitX = new Vector3F(1, 0, 0);
-        public readonly static Vector3F UnitY = new Vector3F(0, 1, 0);
-        public readonly static Vector3F UnitZ = new Vector3F(0, 0, 1);
 
         public float this[int index]
         {
@@ -69,6 +72,27 @@ namespace Ferrum.Core.Math
             }
         }
 
+        public float Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => MathF.Sqrt(LengthSq);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => this *= value / Length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3F(float value) : this(value, value, value)
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3F(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Dot(Vector3F other)
         {
@@ -79,31 +103,6 @@ namespace Ferrum.Core.Math
         public static float Dot(Vector3F lhs, Vector3F rhs)
         {
             return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z;
-        }
-
-        public float LengthSq
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Dot(this, this);
-        }
-
-        public float Length
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MathF.Sqrt(LengthSq);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => this *= value / Length;
-        }
-
-        public Vector3F Normalized
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                var result = this;
-                result.Length = 1;
-                return result;
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,7 +142,7 @@ namespace Ferrum.Core.Math
                    && MathF.AreApproxEqual(lhs.Y, rhs.Y)
                    && MathF.AreApproxEqual(lhs.Z, rhs.Z);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3F operator -(Vector3F vector)
         {

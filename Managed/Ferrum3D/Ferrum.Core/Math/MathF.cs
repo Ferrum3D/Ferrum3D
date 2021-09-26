@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Ferrum.Core.Math
 {
@@ -8,7 +9,7 @@ namespace Ferrum.Core.Math
     public static class MathF
     {
         public const float Epsilon = 0.0001f;
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float x)
         {
@@ -85,6 +86,12 @@ namespace Ferrum.Core.Math
         public static float Saturate(float value)
         {
             return Clamp(value, 0, 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float NextFloat(this Random random)
+        {
+            return (float) random.NextDouble();
         }
     }
 }

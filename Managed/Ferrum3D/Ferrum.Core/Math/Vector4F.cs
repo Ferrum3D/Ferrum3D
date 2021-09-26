@@ -7,44 +7,35 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector4F : IEquatable<Vector4F>
     {
-        [FieldOffset(0)]
+        public static Vector4F Zero => new Vector4F(0);
+        public static Vector4F One => new Vector4F(1);
+
+        public static Vector4F UnitX => new Vector4F(1, 0, 0, 0);
+        public static Vector4F UnitY => new Vector4F(0, 1, 0, 0);
+        public static Vector4F UnitZ => new Vector4F(0, 0, 1, 0);
+        public static Vector4F UnitW => new Vector4F(0, 0, 0, 1);
+
+        public float LengthSq
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Dot(this, this);
+        }
+
+        public Vector4F Normalized
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                var result = this;
+                result.Length = 1;
+                return result;
+            }
+        }
+
         public float X;
         public float Y;
         public float Z;
         public float W;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(Vector3F xyz, float w = 1f) : this(xyz.X, xyz.Y, xyz.Z, w)
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(float value) : this(value, value, value, value)
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F(float x, float y, float z, float w)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-            W = w;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F GetVector3()
-        {
-            return new Vector3F(X, Y, Z);
-        }
-
-        public static readonly Vector4F Zero;
-        public static readonly Vector4F One = new Vector4F(1);
-
-        public static readonly Vector4F UnitX = new Vector4F(1, 0, 0, 0);
-        public static readonly Vector4F UnitY = new Vector4F(0, 1, 0, 0);
-        public static readonly Vector4F UnitZ = new Vector4F(0, 0, 1, 0);
-        public static readonly Vector4F UnitW = new Vector4F(0, 0, 0, 1);
 
         public float this[int index]
         {
@@ -88,6 +79,39 @@ namespace Ferrum.Core.Math
             }
         }
 
+        public float Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => MathF.Sqrt(LengthSq);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => this *= value / Length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4F(Vector3F xyz, float w = 1f) : this(xyz.X, xyz.Y, xyz.Z, w)
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4F(float value) : this(value, value, value, value)
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4F(float x, float y, float z, float w)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+            W = w;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3F GetVector3()
+        {
+            return new Vector3F(X, Y, Z);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Dot(Vector4F other)
         {
@@ -98,31 +122,6 @@ namespace Ferrum.Core.Math
         public static float Dot(Vector4F lhs, Vector4F rhs)
         {
             return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z + lhs.W * rhs.W;
-        }
-
-        public float LengthSq
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Dot(this, this);
-        }
-
-        public float Length
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MathF.Sqrt(LengthSq);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => this *= value / Length;
-        }
-
-        public Vector4F Normalized
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                var result = this;
-                result.Length = 1;
-                return result;
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
