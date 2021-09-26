@@ -7,48 +7,7 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Color : IEquatable<Color>
     {
-        [FieldOffset(0)] private Vector4F color;
-        private const float MaxByte = 255.0f;
-        private const float InvMaxByte = 1.0f / 255.0f;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Color(Vector4F rgba)
-        {
-            color = rgba;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Color(Vector3F rgb, float a = 1f) : this(new Vector4F(rgb, a))
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Color(float r, float g, float b, float a) : this(new Vector4F(r, g, b, a))
-        {
-        }
-
-        public readonly static Color Zero = new Color(0, 0, 0, 0);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Color FromBytes(byte r, byte g, byte b, byte a)
-        {
-            var red = r * InvMaxByte;
-            var green = g * InvMaxByte;
-            var blue = b * InvMaxByte;
-            var alpha = a * InvMaxByte;
-            return new Color(red, green, blue, alpha);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Color FromUInt32(uint rgba)
-        {
-            var r = (byte)((rgba >> 24) & 0xFF);
-            var g = (byte)((rgba >> 16) & 0xFF);
-            var b = (byte)((rgba >> 8) & 0xFF);
-            var a = (byte)((rgba >> 0) & 0xFF);
-
-            return FromBytes(r, g, b, a);
-        }
+        public static Color Zero => new Color(0, 0, 0, 0);
 
         public float this[int index]
         {
@@ -56,18 +15,6 @@ namespace Ferrum.Core.Math
             get => color[index];
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => color[index] = value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4F GetVector4()
-        {
-            return color;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F GetVector3()
-        {
-            return color.GetVector3();
         }
 
         public float R32
@@ -117,7 +64,60 @@ namespace Ferrum.Core.Math
             get => (byte) (MaxByte * color.W);
             set => color.W = value * InvMaxByte;
         }
-        
+
+        private Vector4F color;
+        private const float MaxByte = 255.0f;
+        private const float InvMaxByte = 1.0f / 255.0f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Color(Vector4F rgba)
+        {
+            color = rgba;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Color(Vector3F rgb, float a = 1f) : this(new Vector4F(rgb, a))
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Color(float r, float g, float b, float a) : this(new Vector4F(r, g, b, a))
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color FromBytes(byte r, byte g, byte b, byte a)
+        {
+            var red = r * InvMaxByte;
+            var green = g * InvMaxByte;
+            var blue = b * InvMaxByte;
+            var alpha = a * InvMaxByte;
+            return new Color(red, green, blue, alpha);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color FromUInt32(uint rgba)
+        {
+            var r = (byte) ((rgba >> 24) & 0xFF);
+            var g = (byte) ((rgba >> 16) & 0xFF);
+            var b = (byte) ((rgba >> 8) & 0xFF);
+            var a = (byte) ((rgba >> 0) & 0xFF);
+
+            return FromBytes(r, g, b, a);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4F GetVector4()
+        {
+            return color;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3F GetVector3()
+        {
+            return color.GetVector3();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Color ToLinear()
         {

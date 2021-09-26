@@ -7,20 +7,132 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4x4F : IEquatable<Matrix4x4F>
     {
-        [FieldOffset(0)] private Vector4F row0;
-        private Vector4F row1;
-        private Vector4F row2;
-        private Vector4F row3;
+        public static Matrix4x4F Zero => new Matrix4x4F();
 
-        public static readonly Matrix4x4F Zero;
-
-        public static readonly Matrix4x4F Identity = new Matrix4x4F
+        public static Matrix4x4F Identity => new Matrix4x4F
         {
             row0 = Vector4F.UnitX,
             row1 = Vector4F.UnitY,
             row2 = Vector4F.UnitZ,
             row3 = Vector4F.UnitW
         };
+
+        public Matrix4x4F Transposed => FromRows(Column0, Column1, Column2, Column3);
+
+        public Vector4F BasisX => GetColumn(0);
+        public Vector4F BasisY => GetColumn(1);
+        public Vector4F BasisZ => GetColumn(2);
+
+        public float this[int rowIndex, int columnIndex]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                switch (rowIndex)
+                {
+                    case 0:
+                        return row0[columnIndex];
+                    case 1:
+                        return row1[columnIndex];
+                    case 2:
+                        return row2[columnIndex];
+                    case 3:
+                        return row3[columnIndex];
+                    default:
+                        throw new IndexOutOfRangeException(nameof(rowIndex));
+                }
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                switch (rowIndex)
+                {
+                    case 0:
+                        row0[columnIndex] = value;
+                        break;
+                    case 1:
+                        row1[columnIndex] = value;
+                        break;
+                    case 2:
+                        row2[columnIndex] = value;
+                        break;
+                    case 3:
+                        row3[columnIndex] = value;
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException(nameof(rowIndex));
+                }
+            }
+        }
+
+        public Vector4F Row0
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => row0;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => row0 = value;
+        }
+
+        public Vector4F Row1
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => row1;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => row1 = value;
+        }
+
+        public Vector4F Row2
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => row2;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => row2 = value;
+        }
+
+        public Vector4F Row3
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => row3;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => row3 = value;
+        }
+
+        public Vector4F Column0
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetColumn(0);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => SetColumn(0, value);
+        }
+
+        public Vector4F Column1
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetColumn(1);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => SetColumn(1, value);
+        }
+
+        public Vector4F Column2
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetColumn(2);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => SetColumn(2, value);
+        }
+
+        public Vector4F Column3
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetColumn(3);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => SetColumn(3, value);
+        }
+
+        private Vector4F row0;
+        private Vector4F row1;
+        private Vector4F row2;
+        private Vector4F row3;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F FromRows(Vector4F row0, Vector4F row1, Vector4F row2, Vector4F row3)
@@ -150,48 +262,6 @@ namespace Ferrum.Core.Math
             };
         }
 
-        public float this[int rowIndex, int columnIndex]
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                switch (rowIndex)
-                {
-                    case 0:
-                        return row0[columnIndex];
-                    case 1:
-                        return row1[columnIndex];
-                    case 2:
-                        return row2[columnIndex];
-                    case 3:
-                        return row3[columnIndex];
-                    default:
-                        throw new IndexOutOfRangeException(nameof(rowIndex));
-                }
-            }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                switch (rowIndex)
-                {
-                    case 0:
-                        row0[columnIndex] = value;
-                        break;
-                    case 1:
-                        row1[columnIndex] = value;
-                        break;
-                    case 2:
-                        row2[columnIndex] = value;
-                        break;
-                    case 3:
-                        row3[columnIndex] = value;
-                        break;
-                    default:
-                        throw new IndexOutOfRangeException(nameof(rowIndex));
-                }
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4F GetRow(int index)
         {
@@ -244,38 +314,6 @@ namespace Ferrum.Core.Math
             SetRow(index, new Vector4F(xyz, w));
         }
 
-        public Vector4F Row0
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => row0;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => row0 = value;
-        }
-
-        public Vector4F Row1
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => row1;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => row1 = value;
-        }
-
-        public Vector4F Row2
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => row2;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => row2 = value;
-        }
-
-        public Vector4F Row3
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => row3;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => row3 = value;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4F GetColumn(int index)
         {
@@ -290,7 +328,7 @@ namespace Ferrum.Core.Math
             this[2, index] = column.Z;
             this[3, index] = column.W;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetColumn(int index, float x, float y, float z, float w)
         {
@@ -303,43 +341,17 @@ namespace Ferrum.Core.Math
             SetColumn(index, new Vector4F(xyz, w));
         }
 
-        public Vector4F Column0
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Determinant()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GetColumn(0);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => SetColumn(0, value);
+            return Matrix4x4FBindings.Determinant(this);
         }
 
-        public Vector4F Column1
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix4x4F InverseTransform()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GetColumn(1);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => SetColumn(1, value);
+            return Matrix4x4FBindings.InverseTransform(this);
         }
-
-        public Vector4F Column2
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GetColumn(2);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => SetColumn(2, value);
-        }
-
-        public Vector4F Column3
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GetColumn(3);
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => SetColumn(3, value);
-        }
-
-        public Matrix4x4F Transposed => FromRows(Column0, Column1, Column2, Column3);
-
-        public Vector4F BasisX => GetColumn(0);
-        public Vector4F BasisY => GetColumn(1);
-        public Vector4F BasisZ => GetColumn(2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F operator +(Matrix4x4F lhs, Matrix4x4F rhs)
@@ -364,9 +376,13 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F operator *(Matrix4x4F lhs, Matrix4x4F rhs)
         {
-            // TODO: decide to use whether the new managed function or a binging SIMD-optimized C++ code.
-            // Call to a DLL will introduce additional cost, but it may be worth doing here. Test later...
-            throw new NotImplementedException();
+            return Matrix4x4FBindings.Multiply(lhs, rhs);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector4F operator *(Matrix4x4F lhs, Vector4F rhs)
+        {
+            return Matrix4x4FBindings.Multiply(lhs, rhs);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
