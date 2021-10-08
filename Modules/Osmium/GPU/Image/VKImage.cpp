@@ -29,4 +29,9 @@ namespace FE::GPU
         desc.SubresourceRange = range;
         return m_Device->CreateImageView(desc);
     }
+
+    VKImage::VKImage(VKDevice& dev, const ImageDesc& desc)
+    {
+        FE_UNREACHABLE("Not implemented");
+    }
 }

@@ -7,6 +7,7 @@
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Fence/VKFence.h>
 #include <GPU/Framebuffer/VKFramebuffer.h>
+#include <GPU/Image/VKImage.h>
 #include <GPU/ImageView/VKImageView.h>
 #include <GPU/Pipeline/VKGraphicsPipeline.h>
 #include <GPU/RenderPass/VKRenderPass.h>
@@ -267,5 +268,10 @@ namespace FE::GPU
     Shared<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
     {
         return static_pointer_cast<IWindow>(MakeShared<Window>(desc));
+    }
+
+    Shared<IImage> VKDevice::CreateImage(const ImageDesc& desc)
+    {
+        return static_pointer_cast<IImage>(MakeShared<VKImage>(*this, desc));
     }
 } // namespace FE::GPU

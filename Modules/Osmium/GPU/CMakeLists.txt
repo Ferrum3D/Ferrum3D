@@ -101,7 +101,7 @@ fe_configure_target(OsmiumGPU)
 
 target_include_directories(OsmiumGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-set_target_properties(OsmiumGPU PROPERTIES FOLDER "Modules/Osmium/GPU")
+set_target_properties(OsmiumGPU PROPERTIES FOLDER "Modules/Osmium")
 target_link_libraries(OsmiumGPU vulkan glfw dxc FeCore spirv-cross-core spirv-cross-hlsl)
 
 get_property("TARGET_SOURCE_FILES" TARGET OsmiumGPU PROPERTY SOURCES)
