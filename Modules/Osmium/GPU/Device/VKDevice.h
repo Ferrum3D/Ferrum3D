@@ -28,7 +28,7 @@ namespace FE::GPU
 
     class VKInstance;
 
-    class VKDevice : public Object<IDevice>
+    class VKDevice final : public Object<IDevice>
     {
         vk::UniqueDevice m_NativeDevice;
         vk::PhysicalDevice* m_NativeAdapter;
@@ -113,5 +113,6 @@ namespace FE::GPU
         Shared<IImageView> CreateImageView(const ImageViewDesc& desc) override;
         Shared<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
         Shared<IWindow> CreateWindow(const WindowDesc& desc) override;
+        Shared<IImage> CreateImage(const ImageDesc& desc) override;
     };
 } // namespace FE::GPU

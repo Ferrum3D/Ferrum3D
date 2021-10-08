@@ -41,7 +41,7 @@ namespace FE::GPU
 
         ~IImage() override = default;
 
-        virtual const ImageDesc& GetDesc()                       = 0;
+        virtual const ImageDesc& GetDesc()                  = 0;
         virtual Shared<IImageView> CreateRenderTargetView() = 0;
     };
 } // namespace FE::GPU
