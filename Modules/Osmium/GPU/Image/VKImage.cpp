@@ -30,7 +30,7 @@ namespace FE::GPU
         return m_Device->CreateImageView(desc);
     }
 
-    VKImage::VKImage(VKDevice& dev, const ImageDesc& desc)
+    VKImage::VKImage(VKDevice&, const ImageDesc&)
     {
         FE_UNREACHABLE("Not implemented");
     }

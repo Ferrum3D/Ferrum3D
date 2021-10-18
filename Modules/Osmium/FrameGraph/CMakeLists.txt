@@ -1,9 +1,11 @@
 set(SRC
+    FrameGraph/FrameGraphBuilder.h
+    FrameGraph/FrameGraphBuilder.cpp
     FrameGraph/IFrameGraph.h
 
-    Resource/IFrameGraphResource.h
-    Resource/FrameGraphTexture.h
-    Resource/FrameGraphTexture.cpp Resource/FrameGraphResourceBase.h)
+    RenderPass/IRenderPass.h
+
+    Resource/FrameGraphResource.h Resource/FrameGraphMutResource.h)
 
 add_library(OsmiumFrameGraph STATIC ${SRC})
 
