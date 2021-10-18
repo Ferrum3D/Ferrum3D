@@ -53,17 +53,12 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F MultiplyManaged(Matrix4x4F lhs, Matrix4x4F rhs)
         {
-            var result = new Matrix4x4F();
+            var result = Matrix4x4F.Zero;
             for (var i = 0; i < 4; ++i)
+            for (var j = 0; j < 4; ++j)
+            for (var k = 0; k < 4; ++k)
             {
-                for (var j = 0; j < 4; ++j)
-                {
-                    result[i, j] = 0;
-                    for (var k = 0; k < 4; ++k)
-                    {
-                        result[i, j] += lhs[i, k] * rhs[k, j];
-                    }
-                }
+                result[i, j] += lhs[i, k] * rhs[k, j];
             }
 
             return result;

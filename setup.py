@@ -6,7 +6,7 @@ def run_command(arguments):
     proc = subprocess.run(arguments, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     if proc.returncode:
         print(f'Process "{arguments[0]}" exited with code {proc.returncode}')
-        print(f'Stderr:\n{proc.stderr}')
+        print(f'Stderr:\n{proc.stderr.decode("utf-8")}')
     return proc.returncode == 0
 
 
