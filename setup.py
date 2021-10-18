@@ -1,13 +1,5 @@
-import subprocess
-import os
-
-
-def run_command(arguments):
-    proc = subprocess.run(arguments, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    if proc.returncode:
-        print(f'Process "{arguments[0]}" exited with code {proc.returncode}')
-        print(f'Stderr:\n{proc.stderr.decode("utf-8")}')
-    return proc.returncode == 0
+from scripts.common.common import run_command
+import sys
 
 
 def run_cmake_command(config_name: str):
@@ -17,7 +9,7 @@ def run_cmake_command(config_name: str):
         '-S', '.',
         f'-DCMAKE_BUILD_TYPE={config_name.capitalize()}'
     ]
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         args += '-A', 'x64'
         args += '-G', 'Visual Studio 16 2019'
     code = run_command(args)
