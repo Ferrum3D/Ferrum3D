@@ -13,6 +13,8 @@ set(SRC
     FeCore/Console/IConsoleLogger.h
 
     FeCore/Containers/ArraySlice.h
+    FeCore/Containers/ArraySliceMut.h
+    FeCore/Containers/List.h
 
     FeCore/EventBus/EventBus.h
 
@@ -105,6 +107,7 @@ set(SRC
     FeCore/Assets/AssetManager.h
     FeCore/Assets/AssetManager.cpp
     FeCore/Jobs/JobTree.h
+    FeCore/Jobs/SignalJob.h
     FeCore/Parallel/AtomicFlags.h
     FeCore/Jobs/Job.h
     FeCore/Utils/BoolPointer.h
@@ -114,7 +117,7 @@ set(SRC
     FeCore/Parallel/Semaphore.h
     FeCore/Parallel/Semaphore.cpp
     FeCore/Allocators/MonotonicAllocator.h
-    FeCore/EventBus/FrameEvents.h FeCore/Containers/ArraySliceMut.h FeCore/Jobs/SignalJob.h)
+    FeCore/EventBus/FrameEvents.h)
 
 add_library(FeCore STATIC ${SRC})
 
