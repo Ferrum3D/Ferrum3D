@@ -15,7 +15,9 @@ set(SRC
 	Utils/UUID.cpp
 
 	main.cpp
-    Math/Matrix4x4.cpp)
+    Math/Matrix4x4.cpp
+
+	Containers/List.cpp)
 
 add_executable(FeCoreTests ${SRC})
 
