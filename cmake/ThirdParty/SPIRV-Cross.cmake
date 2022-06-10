@@ -1,3 +1,4 @@
+set(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON)
 add_subdirectory(${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross)
 set_target_properties(spirv-cross PROPERTIES FOLDER "${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross")
 set_target_properties(spirv-cross-core PROPERTIES FOLDER "${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross")
