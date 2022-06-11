@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
+#include <algorithm>
 
 namespace FE
 {
@@ -8,27 +9,26 @@ namespace FE
     {
         inline static constexpr USize Alignment = 16;
 
-        inline static T* Allocate(USize s) noexcept
+        inline static T* Allocate(USize n) noexcept
         {
             FE_STATIC_SRCPOS(position);
-            return static_cast<T*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, position));
+            return static_cast<T*>(GlobalAllocator<HeapAllocator>::Get().Allocate(n * sizeof(T), Alignment, position));
         }
 
         inline void VAllocate(USize n) noexcept
         {
-            auto allocation = Allocate(n * sizeof(T));
+            auto allocation = Allocate(n);
             m_Begin         = allocation;
             m_End           = allocation;
-            m_EndCap        = m_Begin + n * sizeof(T);
+            m_EndCap        = m_Begin + n;
         }
 
         inline void ConstructAtEnd(USize n)
         {
             for (USize i = 0; i < n; ++i)
             {
-                new (&m_End[i]) T();
+                new (m_End++) T();
             }
-            m_End += n;
         }
 
         inline void MoveConstructAtEnd(T&& x)
@@ -40,9 +40,8 @@ namespace FE
         {
             for (USize i = 0; i < n; ++i)
             {
-                new (&m_End[i]) T(x);
+                new (m_End++) T(x);
             }
-            m_End += n;
         }
 
         inline void DestructAtEnd(T* newEnd)
@@ -64,9 +63,9 @@ namespace FE
         inline void VDeallocate() noexcept
         {
             Deallocate(m_Begin, Capacity() * sizeof(T));
-            m_Begin         = nullptr;
-            m_End           = nullptr;
-            m_EndCap        = nullptr;
+            m_Begin  = nullptr;
+            m_End    = nullptr;
+            m_EndCap = nullptr;
         }
 
         inline static void CopyData(T* dest, const T* src, size_t count) noexcept
@@ -79,14 +78,21 @@ namespace FE
             return std::max(2 * Capacity(), newSize);
         }
 
-        inline void AppendImpl(USize n)
+        inline void AppendImpl(USize n, bool shrink = false)
         {
+            auto newCap = Recommend(n + Size());
             if (m_EndCap - m_End >= n)
             {
-                return;
+                if (shrink)
+                {
+                    newCap = n;
+                }
+                else
+                {
+                    return;
+                }
             }
 
-            auto newCap = Recommend(n + Size());
             if (Empty())
             {
                 VAllocate(newCap);
@@ -94,13 +100,13 @@ namespace FE
             }
 
             T* newBegin = Allocate(newCap);
-            T* newEnd = newBegin + Size();
+            T* newEnd   = newBegin + Size();
 
             CopyData(newBegin, m_Begin, Size());
             VDeallocate();
 
-            m_Begin = newBegin;
-            m_End = newEnd;
+            m_Begin  = newBegin;
+            m_End    = newEnd;
             m_EndCap = newBegin + newCap;
         }
 
@@ -112,6 +118,20 @@ namespace FE
         FE_STRUCT_RTTI(List, "F478A740-263E-4274-A0CC-3789769262E2");
 
         inline List() = default;
+
+        inline List(List&& other) noexcept
+        {
+            Swap(other);
+        }
+
+        inline List(const List& other)
+        {
+            Reserve(other.Size());
+            for (const auto& v : other)
+            {
+                Push(v);
+            }
+        }
 
         inline List(USize n, const T& x)
         {
@@ -203,6 +223,7 @@ namespace FE
         {
             AppendImpl(1);
             new (m_End++) T(std::forward<Args>(args)...);
+            return Back();
         }
 
         inline ~List()
@@ -226,15 +247,60 @@ namespace FE
             return m_End == m_Begin;
         }
 
-        inline void Reserve() {}
+        inline void Reserve(USize n)
+        {
+            if (Capacity() >= n)
+            {
+                return;
+            }
 
-        inline void Resize(USize n) {}
+            AppendImpl(n - Size());
+        }
 
-        inline void Resize(USize n, const T& x) {}
+        inline void Resize(USize n)
+        {
+            Resize(n, T{});
+        }
 
-        inline void Swap(List<T>& other) {}
+        inline void Resize(USize n, const T& x)
+        {
+            Reserve(n);
+            if (Size() > n)
+            {
+                m_End = m_Begin + n;
+                return;
+            }
 
-        inline void Shrink() {}
+            ConstructAtEnd(n - Size(), x);
+        }
+
+        inline void Swap(List<T>& other)
+        {
+            std::swap(m_Begin, other.m_Begin);
+            std::swap(m_End, other.m_End);
+            std::swap(m_EndCap, other.m_EndCap);
+        }
+
+        inline void Shrink()
+        {
+            if (Capacity() == Size())
+            {
+                return;
+            }
+
+            if (Size() == 0)
+            {
+                VDeallocate();
+                return;
+            }
+
+            AppendImpl(0, true);
+        }
+
+        inline void Sort()
+        {
+            std::sort(m_Begin, m_End);
+        }
 
         [[nodiscard]] inline T& operator[](USize index) noexcept
         {
