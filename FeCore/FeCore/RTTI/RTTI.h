@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Base/Base.h>
 #include <FeCore/Utils/UUID.h>
 #include <cstddef>
 #include <cstdint>
@@ -27,9 +28,9 @@ namespace FE
         return id;                                                                                                               \
     }                                                                                                                            \
                                                                                                                                  \
-    inline static std::string_view FeRTTI_GetSName()                                                                                  \
+    inline static std::string_view FeRTTI_GetSName()                                                                             \
     {                                                                                                                            \
-        return TypeName<name>();                                                                                          \
+        return ::FE::TypeName<name>();                                                                                                 \
     }
 
     //! \brief Define common RTTI functions for a class.
@@ -51,9 +52,9 @@ namespace FE
 #define FE_CLASS_RTTI(name, uuid)                                                                                                \
     FE_STRUCT_RTTI(name, uuid);                                                                                                  \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
-    inline virtual std::string_view FeRTTI_GetName() const                                                                            \
+    inline virtual std::string_view FeRTTI_GetName() const                                                                       \
     {                                                                                                                            \
-        return TypeName<name>();                                                                                          \
+        return ::FE::TypeName<name>();                                                                                           \
     }                                                                                                                            \
                                                                                                                                  \
     inline virtual ::FE::TypeID FeRTTI_GetID() const                                                                             \
