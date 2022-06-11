@@ -70,8 +70,8 @@ int main()
 
         FE::IO::StdoutStream stdoutStream;
         {
-            char b[] = "Test unicode. Тестим юникод\n";
-            stdoutStream.WriteFromBuffer(b, sizeof(b));
+            FE::String b = "Test unicode. Тестим юникод. 中文考試. Æ ¶ ✅ ♣ ♘\n";
+            stdoutStream.WriteFromBuffer(b.Data(), b.Size());
         }
 
         FE::Vector<TestJob> testJobs;
@@ -157,7 +157,7 @@ int main()
         psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         psArgs.Stage      = HAL::ShaderStage::Pixel;
         psArgs.EntryPoint = "main";
-        psArgs.FullPath   = "Assets/TestProject/Shaders/PixelShader.hlsl";
+        psArgs.FullPath   = "../Assets/TestProject/Shaders/PixelShader.hlsl";
         auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
@@ -168,7 +168,7 @@ int main()
         vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         vsArgs.Stage      = HAL::ShaderStage::Vertex;
         vsArgs.EntryPoint = "main";
-        vsArgs.FullPath   = "Assets/TestProject/Shaders/VertexShader.hlsl";
+        vsArgs.FullPath   = "../Assets/TestProject/Shaders/VertexShader.hlsl";
         auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);

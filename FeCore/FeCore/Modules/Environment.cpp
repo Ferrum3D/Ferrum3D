@@ -2,6 +2,7 @@
 #include <FeCore/Memory/BasicSystemAllocator.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Utils/SortedStringVector.h>
+#include <sstream>
 #include <cstdio>
 
 namespace FE
@@ -53,8 +54,10 @@ namespace FE::Env
             {
                 Console::Init();
                 Console::SetColor(Console::Color::Green);
-                puts(">>>=======================================");
-                puts(">>>    Ferrum3D Global environment created\n");
+                std::stringstream ss;
+                ss << "====================[ Ferrum v" << FerrumVersion.Major << "." << FerrumVersion.Minor;
+                ss << " Global Environment Created ]====================\n";
+                puts(ss.str().c_str());
                 Console::ResetColor();
             }
 
@@ -108,8 +111,7 @@ namespace FE::Env
             inline void Destroy() override
             {
                 Console::SetColor(Console::Color::Green);
-                puts("\n\n>>>=======================================");
-                puts(">>>  Ferrum3D Global environment destroyed");
+                puts("\n\n====================[ Ferrum3D Global environment destroyed ]====================");
                 Console::ResetColor();
                 int leaked = 0;
                 for (auto& var : m_Map)
