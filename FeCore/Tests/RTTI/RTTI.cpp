@@ -23,7 +23,7 @@ public:
 TEST(RTTI, TypeName)
 {
     Foo foo;
-    auto expectedName = FE::String("Foo");
+    auto expectedName = "class Foo";
     ASSERT_EQ(foo.FeRTTI_GetName(), expectedName);
     ASSERT_EQ(Foo::FeRTTI_GetSName(), expectedName);
 }
