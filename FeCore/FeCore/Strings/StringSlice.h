@@ -116,7 +116,7 @@ namespace FE
 
         inline constexpr StringSlice(const TChar* data) noexcept
             : m_Data(data)
-            , m_Size(std::char_traits<TChar>::length(data))
+            , m_Size(data == nullptr ? 0 : std::char_traits<TChar>::length(data))
         {
         }
 
