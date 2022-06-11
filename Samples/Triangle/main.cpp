@@ -51,13 +51,13 @@ void RunExample()
     shaderArgs.EntryPoint = "main";
 
     shaderArgs.Stage      = HAL::ShaderStage::Pixel;
-    shaderArgs.FullPath   = "Assets/Samples/Triangle/Shaders/PixelShader.hlsl";
+    shaderArgs.FullPath   = "../Assets/Samples/Triangle/Shaders/PixelShader.hlsl";
     auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto psByteCode       = compiler->CompileShader(shaderArgs);
 
     shaderArgs.Stage      = HAL::ShaderStage::Vertex;
-    shaderArgs.FullPath   = "Assets/Samples/Triangle/Shaders/VertexShader.hlsl";
+    shaderArgs.FullPath   = "../Assets/Samples/Triangle/Shaders/VertexShader.hlsl";
     source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto vsByteCode       = compiler->CompileShader(shaderArgs);
