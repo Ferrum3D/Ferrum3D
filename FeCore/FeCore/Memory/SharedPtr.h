@@ -162,7 +162,7 @@ namespace FE
     template<class T1, class T2>
     inline bool operator==(const Shared<T1>& lhs, const Shared<T2>& rhs)
     {
-        return lhs.GetRaw() == rhs.GetRaw();
+        return static_cast<IObject*>(lhs.GetRaw()) == static_cast<IObject*>(rhs.GetRaw());
     }
 
     template<class T1, class T2>
