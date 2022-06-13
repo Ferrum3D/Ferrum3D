@@ -23,7 +23,7 @@ namespace FE
             auto view = m_Registry.view<Component...>();
             for (auto e : view)
             {
-                FeEntity entity(m_Registry, e);
+                Entity entity(m_Registry, e);
                 func(entity, view.get<Component>(e)...);
             }
         }
@@ -45,7 +45,7 @@ namespace FE
         template<class... Component>
         inline EntityIterator<Component...> GetIterator()
         {
-            return FeEntityIterator<Component...>(m_Registry);
+            return EntityIterator<Component...>(m_Registry);
         }
     };
 } // namespace FE
