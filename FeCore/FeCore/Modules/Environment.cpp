@@ -56,7 +56,7 @@ namespace FE::Env
                 Console::SetColor(Console::Color::Green);
                 std::stringstream ss;
                 ss << "====================[ Ferrum v" << FerrumVersion.Major << "." << FerrumVersion.Minor;
-                ss << " Global Environment Created ]====================\n";
+                ss << " Global environment created ]====================\n";
                 puts(ss.str().c_str());
                 Console::ResetColor();
             }
@@ -111,7 +111,7 @@ namespace FE::Env
             inline void Destroy() override
             {
                 Console::SetColor(Console::Color::Green);
-                puts("\n\n====================[ Ferrum3D Global environment destroyed ]====================");
+                puts("\n\n====================[ Ferrum3D Global environment destroyed ]=====================");
                 Console::ResetColor();
                 int leaked = 0;
                 for (auto& var : m_Map)
