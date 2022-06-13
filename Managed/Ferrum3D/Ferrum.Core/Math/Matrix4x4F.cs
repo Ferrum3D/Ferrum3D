@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Ferrum.Core.Math
 {
@@ -422,6 +425,11 @@ namespace Ferrum.Core.Math
                    && Vector4F.AreApproxEqual(lhs.Row1, rhs.Row1, epsilon)
                    && Vector4F.AreApproxEqual(lhs.Row2, rhs.Row2, epsilon)
                    && Vector4F.AreApproxEqual(lhs.Row3, rhs.Row3, epsilon);
+        }
+
+        public override string ToString()
+        {
+            return string.Join("; ", Enumerable.Range(0, 4).Select(GetRow));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

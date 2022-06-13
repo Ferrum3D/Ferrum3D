@@ -103,6 +103,19 @@ namespace FE
             }
         }
 
+        //! \brief Forget object and don't free it automatically.
+        //!
+        //! Can be useful to send an object to managed program.
+        inline T* Detach()
+        {
+            if (m_Object)
+            {
+                m_Object->AddStrongRef();
+            }
+
+            return m_Object;
+        }
+
         //! \brief Get underlying raw pointer.
         inline T* GetRaw() const
         {

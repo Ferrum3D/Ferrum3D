@@ -39,6 +39,8 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Console\ConsoleLogger.cs" />
+        <Compile Include="Console\ConsoleLoggerBindings.cs" />
         <Compile Include="Math\Color.cs" />
         <Compile Include="Math\Colors.cs" />
         <Compile Include="Math\MathF.cs" />
@@ -46,6 +48,7 @@
         <Compile Include="Math\Matrix4x4FBindings.cs" />
         <Compile Include="Math\Vector3F.cs" />
         <Compile Include="Math\Vector4F.cs" />
+        <Compile Include="Modules\Engine.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
     <ItemGroup>
