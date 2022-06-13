@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using Ferrum.Core.Console;
 using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
 
 namespace TestCsProject
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             Engine.Init();
             ConsoleLogger.Init();
