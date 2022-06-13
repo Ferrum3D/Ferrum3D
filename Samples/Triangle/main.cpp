@@ -61,6 +61,7 @@ void RunExample()
     source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto vsByteCode       = compiler->CompileShader(shaderArgs);
+    compiler.Reset();
 
     auto pixelShader  = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
     auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
