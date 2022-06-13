@@ -237,6 +237,7 @@ namespace FE::Env
             {
                 UniqueLocker lk(m_Mutex);
                 ++m_RefCount;
+                printf("> (++) %u; %s\n", m_RefCount, m_Name.data());
             }
 
             //! \breif Remove a reference from internal counter.
@@ -246,6 +247,7 @@ namespace FE::Env
             {
                 UniqueLocker lk(m_Mutex);
 
+                printf("> (--) %u; %s\n", m_RefCount, m_Name.data());
                 if (--m_RefCount == 0)
                 {
                     auto& env       = FE::Env::GetEnvironment();
@@ -462,10 +464,11 @@ namespace FE::Env
     {
         std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>();
         std::vector<char> str;
-        str.reserve(typeName.length() + 1);
+        str.reserve(typeName.length() + 2);
         str.push_back('#');
         for (char c : typeName)
             str.push_back(c);
+        str.push_back('\0');
         return Internal::CreateGlobalVariableImpl<T>(std::move(str), std::forward<Args>(args)...);
     }
 
@@ -511,7 +514,7 @@ namespace FE::Env
     {
         auto typeName = TypeName<std::remove_pointer_t<T>>();
         std::vector<char> str{};
-        str.resize(typeName.length() + 1);
+        str.resize(typeName.length() + 2);
         size_t size = 0;
         str[size++] = '#';
         for (char c : typeName)

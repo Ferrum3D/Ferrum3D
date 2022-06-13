@@ -15,5 +15,10 @@ namespace FE
         {
             FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
         }
+
+        FE_DLL_EXPORT Env::Internal::IEnvironment* GetEnvironment()
+        {
+            return &Env::GetEnvironment();
+        }
     }
 }

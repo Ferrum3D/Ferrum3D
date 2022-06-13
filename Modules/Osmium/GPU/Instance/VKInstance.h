@@ -18,6 +18,8 @@ namespace FE::GPU
         FE_CLASS_RTTI(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
 
         VKInstance(const InstanceDesc& desc);
+        ~VKInstance() override;
+
         vk::Instance& GetNativeInstance();
 
         virtual Vector<Shared<IAdapter>>& GetAdapters() override;
