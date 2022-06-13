@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
 #include <FeCore/Strings/StringSlice.h>
+#include <FeCore/Strings/String.h>
 
 namespace FE
 {

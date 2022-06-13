@@ -40,10 +40,8 @@ set(SRC
     GPU/Framebuffer/VKFramebuffer.cpp
 
     GPU/Image/IImage.h
-    GPU/Image/IImage.cpp
     GPU/Image/ImageEnums.h
     GPU/Image/ImageFormat.h
-    GPU/Image/ImageFormat.cpp
     GPU/Image/ImageSubresource.h
     GPU/Image/VKImage.h
     GPU/Image/VKImage.cpp
@@ -95,7 +93,7 @@ set(SRC
     GPU/Window/Window.h
     GPU/Window/Window.cpp)
 
-add_library(OsmiumGPU STATIC ${SRC})
+add_library(OsmiumGPU SHARED ${SRC})
 
 fe_configure_target(OsmiumGPU)
 

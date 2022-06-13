@@ -14,6 +14,7 @@ namespace FE
         FE_DLL_EXPORT void DeinitEngine()
         {
             FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
+            FE::Env::DetachEnvironment();
         }
 
         FE_DLL_EXPORT Env::Internal::IEnvironment* GetEnvironment()
