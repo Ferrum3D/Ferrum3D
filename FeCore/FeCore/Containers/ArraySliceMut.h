@@ -11,7 +11,7 @@ namespace FE
         T* m_End;
 
     public:
-        FE_STRUCT_RTTI(ArraySliceMut, "C047D694-0887-403D-AD65-6A1B7B873951");
+        FE_STRUCT_RTTI(ArraySliceMut, "086387CB-9142-4A0D-9037-2B6044BE5875");
 
         inline ArraySliceMut()
             : m_Begin(nullptr)
