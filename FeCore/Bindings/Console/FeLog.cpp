@@ -1,5 +1,6 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Memory.h>
+#include <cstdio>
 
 namespace FE
 {

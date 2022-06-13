@@ -28,6 +28,7 @@ namespace FE::Debug
 
         UniqueLocker lk(FE::Console::StdoutMutex);
         auto date = FE::DateTime::Now().ToString("[%m/%d %T]") + m_Header;
+        //PrintImpl(Fmt::Format("logger #{} ", reinterpret_cast<USize>(static_cast<void*>(this))));
         PrintImpl(date);
 
         switch (type)

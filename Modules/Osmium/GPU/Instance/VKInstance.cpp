@@ -45,6 +45,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 
 namespace FE::GPU
 {
+    VKInstance::~VKInstance()
+    {
+        FE_LOG_MESSAGE("Vulkan instance destroyed successfully");
+    }
+
     VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
     {
         auto vkGetInstanceProcAddr = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");

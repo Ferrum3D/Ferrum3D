@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Threading;
-using Ferrum.Core.Math;
 
 namespace Ferrum.Core.Modules
 {
@@ -9,8 +7,19 @@ namespace Ferrum.Core.Modules
     {
         [DllImport("FeCoreBindings", EntryPoint = "InitEngine")]
         public static extern void Init();
-        
+
         [DllImport("FeCoreBindings", EntryPoint = "DeinitEngine")]
         public static extern void Deinit();
+
+        [DllImport("FeCoreBindings", EntryPoint = "GetEnvironment")]
+        private static extern unsafe void* GetEnvironmentNative();
+
+        public static IntPtr GetEnvironment()
+        {
+            unsafe
+            {
+                return new IntPtr(GetEnvironmentNative());
+            }
+        }
     }
 }

@@ -73,7 +73,10 @@ namespace FE::Env
                 UniqueLocker lk(m_Lock);
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
                 if (find.IsOk())
+                {
+                    printf("Found a global variable %s\n", name.data());
                     return find;
+                }
 
                 void* storage = m_Allocator->Allocate(size, alignment);
                 if (!storage)
@@ -81,6 +84,7 @@ namespace FE::Env
 
                 auto& [str, ptr] = m_Map.Push(std::move(name), storage);
                 nameView         = std::string_view(str.data(), str.size());
+                printf("Created a global variable %s\n", name.data());
                 return VariableResult::Ok(storage, VariableOk::Created);
             }
 
@@ -129,7 +133,7 @@ namespace FE::Env
                     {
                         if (std::get<1>(var))
                         {
-                            printf("Freeing variable \"%s\"...", std::get<0>(var).data());
+                            printf("Freeing variable \"%s\"...\n", std::get<0>(var).data());
                             m_Allocator->Deallocate(std::get<1>(var));
                         }
                     }

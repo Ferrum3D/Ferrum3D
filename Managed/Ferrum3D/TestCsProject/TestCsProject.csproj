@@ -7,6 +7,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Ferrum.Core\Ferrum.Core.csproj" />
+      <ProjectReference Include="..\Ferrum.Osmium.GPU\Ferrum.Osmium.GPU.csproj" />
     </ItemGroup>
 
 </Project>
