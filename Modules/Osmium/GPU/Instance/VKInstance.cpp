@@ -70,6 +70,8 @@ namespace FE::GPU
 
         vk::ApplicationInfo appInfo{};
         appInfo.apiVersion = VK_API_VERSION_1_2;
+        appInfo.pEngineName = FerrumEngineName;
+        appInfo.pApplicationName = desc.ApplicationName;
 
         vk::InstanceCreateInfo instanceCI{};
         instanceCI.pApplicationInfo        = &appInfo;
