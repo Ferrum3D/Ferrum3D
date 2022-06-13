@@ -1,4 +1,3 @@
-#include <FeCore/Console/FeLog.h>
 #include <FeCore/Math/Matrix4x4F.h>
 
 namespace FE
