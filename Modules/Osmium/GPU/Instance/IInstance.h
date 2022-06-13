@@ -22,5 +22,6 @@ namespace FE::GPU
         virtual Vector<Shared<IAdapter>>& GetAdapters() = 0;
     };
 
-    Shared<IInstance> CreateGraphicsAPIInstance(InstanceDesc desc, GraphicsAPI api);
+    typedef void (*AttachEnvironmentProc)(Env::Internal::IEnvironment* environment);
+    typedef IInstance* (*CreateGraphicsAPIInstanceProc)(InstanceDesc desc, GraphicsAPI api);
 } // namespace FE::GPU

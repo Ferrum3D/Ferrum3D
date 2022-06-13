@@ -1,5 +1,6 @@
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
+#include <FeCore/Modules/DynamicLibrary.h>
 #include <GPU/Instance/IInstance.h>
 #include <GPU/Pipeline/InputLayoutBuilder.h>
 
@@ -13,8 +14,15 @@ namespace HAL = FE::GPU;
 
 void RunExample()
 {
-    auto logger        = FE::MakeShared<FE::Debug::ConsoleLogger>();
-    auto instance      = HAL::CreateGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
+    auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
+
+    FE::DynamicLibrary osmiumLib("OsmiumGPU");
+    auto attachEnvironment = osmiumLib.GetFunction<HAL::AttachEnvironmentProc>("AttachEnvironment");
+    attachEnvironment(&FE::Env::GetEnvironment());
+    auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
+
+    auto instance      = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
+    instance->ReleaseStrongRef();
     auto adapter       = instance->GetAdapters().front();
     auto device        = adapter->CreateDevice();
     auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
@@ -147,4 +155,5 @@ int main()
     FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc());
     RunExample();
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
+    FE::Env::DetachEnvironment();
 }

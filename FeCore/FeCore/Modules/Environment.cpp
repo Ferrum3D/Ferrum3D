@@ -191,8 +191,8 @@ namespace FE::Env
     {
         ~AutoCleanUpStruct()
         {
-            if (EnvironmentAttached())
-                DetachEnvironment();
+//            if (EnvironmentAttached())
+//                DetachEnvironment();
         }
     } AutoCleanUp;
 
