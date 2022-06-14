@@ -41,7 +41,11 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="DeviceObjects\Adapter.cs" />
+        <Compile Include="DeviceObjects\AdapterType.cs" />
+        <Compile Include="DeviceObjects\CommandQueue.cs" />
+        <Compile Include="DeviceObjects\CommandQueueClass.cs" />
         <Compile Include="DeviceObjects\Device.cs" />
+        <Compile Include="DeviceObjects\DeviceObject.cs" />
         <Compile Include="DeviceObjects\GraphicsApi.cs" />
         <Compile Include="DeviceObjects\Instance.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />

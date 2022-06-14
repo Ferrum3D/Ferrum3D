@@ -3,38 +3,26 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Device : IDisposable
+    public class Device : DeviceObject
     {
-        private IntPtr handle;
-
-        public Device(IntPtr handle)
+        public Device(IntPtr handle) : base(handle)
         {
-            this.handle = handle;
         }
 
-        public void Dispose()
+        public CommandQueue GetCommandQueue(CommandQueueClass cmdQueueClass)
         {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
+            return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
         }
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        private void ReleaseUnmanagedResources()
-        {
-            if (handle == IntPtr.Zero)
-            {
-                return;
-            }
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_GetCommandQueue")]
+        private static extern IntPtr GetCommandQueueNative(IntPtr self, int cmdQueueClass);
 
-            DestructNative(handle);
-            handle = IntPtr.Zero;
-        }
-        
-        ~Device()
+        protected override void ReleaseUnmanagedResources()
         {
-            ReleaseUnmanagedResources();
+            DestructNative(Handle);
         }
     }
 }

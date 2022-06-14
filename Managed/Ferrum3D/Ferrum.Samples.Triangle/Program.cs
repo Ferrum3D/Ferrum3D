@@ -14,6 +14,7 @@ namespace Ferrum.Samples.Triangle
             using var instance = new Instance(Engine.GetEnvironment(), desc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
             using var device = adapter.CreateDevice();
+            using var graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
         }
 
         private static void Main()
