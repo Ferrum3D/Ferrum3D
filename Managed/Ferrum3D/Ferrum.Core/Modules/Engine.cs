@@ -3,23 +3,40 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Modules
 {
-    public static class Engine
+    public class Engine : IDisposable
     {
-        [DllImport("FeCoreBindings", EntryPoint = "InitEngine")]
-        public static extern void Init();
+        public static IntPtr Environment { get; private set; }
 
-        [DllImport("FeCoreBindings", EntryPoint = "DeinitEngine")]
-        public static extern void Deinit();
-
-        public static IntPtr GetEnvironment()
+        public Engine()
         {
-            unsafe
-            {
-                return new IntPtr(GetEnvironmentNative());
-            }
+            InitNative();
+            Environment = GetEnvironmentNative();
         }
 
+        public void Dispose()
+        {
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
+
+        [DllImport("FeCoreBindings", EntryPoint = "InitEngine")]
+        private static extern void InitNative();
+
+        private static void ReleaseUnmanagedResources()
+        {
+            DeinitNative();
+            Environment = IntPtr.Zero;
+        }
+
+        [DllImport("FeCoreBindings", EntryPoint = "DeinitEngine")]
+        private static extern void DeinitNative();
+
         [DllImport("FeCoreBindings", EntryPoint = "GetEnvironment")]
-        private static extern unsafe void* GetEnvironmentNative();
+        private static extern IntPtr GetEnvironmentNative();
+
+        ~Engine()
+        {
+            ReleaseUnmanagedResources();
+        }
     }
 }
