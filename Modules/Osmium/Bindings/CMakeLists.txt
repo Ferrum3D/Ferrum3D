@@ -1,4 +1,7 @@
-set(SRC Instance/Instance.cpp)
+set(SRC
+    Instance/Instance.cpp
+    Adapter/Adapter.cpp
+    Device/Device.cpp)
 
 add_library(OsmiumBindings SHARED ${SRC})
 

@@ -13,9 +13,7 @@ namespace Ferrum.Core.Modules
             {
                 if (mod.ModuleName?.ToLower() == moduleName)
                 {
-                    System.Console.WriteLine($"==> Unloading {mod.ModuleName}");
                     FreeLibrary(mod.BaseAddress);
-                    System.Console.WriteLine("Unloaded");
                 }
             }
         }
