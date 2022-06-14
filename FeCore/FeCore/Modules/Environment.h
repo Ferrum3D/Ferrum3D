@@ -237,7 +237,6 @@ namespace FE::Env
             {
                 UniqueLocker lk(m_Mutex);
                 ++m_RefCount;
-                printf("> (++) %u; %s\n", m_RefCount, m_Name.data());
             }
 
             //! \breif Remove a reference from internal counter.
@@ -247,7 +246,6 @@ namespace FE::Env
             {
                 UniqueLocker lk(m_Mutex);
 
-                printf("> (--) %u; %s\n", m_RefCount, m_Name.data());
                 if (--m_RefCount == 0)
                 {
                     auto& env       = FE::Env::GetEnvironment();
