@@ -7,13 +7,13 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector4F : IEquatable<Vector4F>
     {
-        public static Vector4F Zero => new Vector4F(0);
-        public static Vector4F One => new Vector4F(1);
+        public static Vector4F Zero => new(0);
+        public static Vector4F One => new(1);
 
-        public static Vector4F UnitX => new Vector4F(1, 0, 0, 0);
-        public static Vector4F UnitY => new Vector4F(0, 1, 0, 0);
-        public static Vector4F UnitZ => new Vector4F(0, 0, 1, 0);
-        public static Vector4F UnitW => new Vector4F(0, 0, 0, 1);
+        public static Vector4F UnitX => new(1, 0, 0, 0);
+        public static Vector4F UnitY => new(0, 1, 0, 0);
+        public static Vector4F UnitZ => new(0, 0, 1, 0);
+        public static Vector4F UnitW => new(0, 0, 0, 1);
 
         public float LengthSq
         {

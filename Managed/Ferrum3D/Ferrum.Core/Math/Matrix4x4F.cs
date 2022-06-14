@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Ferrum.Core.Math
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4x4F : IEquatable<Matrix4x4F>
     {
-        public static Matrix4x4F Zero => new Matrix4x4F();
+        public static Matrix4x4F Zero => new();
 
-        public static Matrix4x4F Identity => new Matrix4x4F
+        public static Matrix4x4F Identity => new()
         {
             row0 = Vector4F.UnitX,
             row1 = Vector4F.UnitY,

@@ -7,7 +7,7 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Color : IEquatable<Color>
     {
-        public static Color Zero => new Color(0, 0, 0, 0);
+        public static Color Zero => new(0, 0, 0, 0);
 
         public float this[int index]
         {
@@ -43,25 +43,25 @@ namespace Ferrum.Core.Math
 
         public byte R8
         {
-            get => (byte) (MaxByte * color.X);
+            get => (byte)(MaxByte * color.X);
             set => color.X = value * InvMaxByte;
         }
 
         public byte G8
         {
-            get => (byte) (MaxByte * color.Y);
+            get => (byte)(MaxByte * color.Y);
             set => color.Y = value * InvMaxByte;
         }
 
         public byte B8
         {
-            get => (byte) (MaxByte * color.Z);
+            get => (byte)(MaxByte * color.Z);
             set => color.Z = value * InvMaxByte;
         }
 
         public byte A8
         {
-            get => (byte) (MaxByte * color.W);
+            get => (byte)(MaxByte * color.W);
             set => color.W = value * InvMaxByte;
         }
 
@@ -98,10 +98,10 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Color FromUInt32(uint rgba)
         {
-            var r = (byte) ((rgba >> 24) & 0xFF);
-            var g = (byte) ((rgba >> 16) & 0xFF);
-            var b = (byte) ((rgba >> 8) & 0xFF);
-            var a = (byte) ((rgba >> 0) & 0xFF);
+            var r = (byte)((rgba >> 24) & 0xFF);
+            var g = (byte)((rgba >> 16) & 0xFF);
+            var b = (byte)((rgba >> 8) & 0xFF);
+            var a = (byte)((rgba >> 0) & 0xFF);
 
             return FromBytes(r, g, b, a);
         }
@@ -165,7 +165,7 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ToUInt32()
         {
-            return (uint) (A8 << 24) | (uint) (B8 << 16) | (uint) (G8 << 8) | R8;
+            return (uint)(A8 << 24) | (uint)(B8 << 16) | (uint)(G8 << 8) | R8;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -7,12 +7,12 @@ namespace Ferrum.Core.Math
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3F : IEquatable<Vector3F>
     {
-        public static Vector3F Zero => new Vector3F(0);
-        public static Vector3F One => new Vector3F(1);
+        public static Vector3F Zero => new(0);
+        public static Vector3F One => new(1);
 
-        public static Vector3F UnitX => new Vector3F(1, 0, 0);
-        public static Vector3F UnitY => new Vector3F(0, 1, 0);
-        public static Vector3F UnitZ => new Vector3F(0, 0, 1);
+        public static Vector3F UnitX => new(1, 0, 0);
+        public static Vector3F UnitY => new(0, 1, 0);
+        public static Vector3F UnitZ => new(0, 0, 1);
 
         public float LengthSq
         {

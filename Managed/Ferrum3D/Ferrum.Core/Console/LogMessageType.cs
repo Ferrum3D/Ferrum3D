@@ -7,5 +7,5 @@
         Warning = 1 << 1,
         Error = 1 << 2,
         All = Message | Warning | Error
-    };
+    }
 }

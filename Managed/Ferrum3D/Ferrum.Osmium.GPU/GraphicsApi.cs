@@ -4,5 +4,5 @@
     {
         None,
         Vulkan
-    };
+    }
 }

@@ -11,9 +11,6 @@ namespace Ferrum.Core.Modules
         [DllImport("FeCoreBindings", EntryPoint = "DeinitEngine")]
         public static extern void Deinit();
 
-        [DllImport("FeCoreBindings", EntryPoint = "GetEnvironment")]
-        private static extern unsafe void* GetEnvironmentNative();
-
         public static IntPtr GetEnvironment()
         {
             unsafe
@@ -21,5 +18,8 @@ namespace Ferrum.Core.Modules
                 return new IntPtr(GetEnvironmentNative());
             }
         }
+
+        [DllImport("FeCoreBindings", EntryPoint = "GetEnvironment")]
+        private static extern unsafe void* GetEnvironmentNative();
     }
 }
