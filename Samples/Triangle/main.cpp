@@ -21,12 +21,11 @@ void RunExample()
     attachEnvironment(&FE::Env::GetEnvironment());
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
-    auto instance      = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
+    auto instance = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
     instance->ReleaseStrongRef();
     auto adapter       = instance->GetAdapters().front();
     auto device        = adapter->CreateDevice();
     auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
-    auto compiler      = device->CreateShaderCompiler();
 
     auto window   = device->CreateWindow(HAL::WindowDesc{ 800, 600, "Test project" });
     auto viewport = window->CreateViewport();
@@ -54,6 +53,7 @@ void RunExample()
         vertexBuffer->UpdateData(vertexData.data());
     }
 
+    auto compiler = device->CreateShaderCompiler();
     HAL::ShaderCompilerArgs shaderArgs{};
     shaderArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     shaderArgs.EntryPoint = "main";

@@ -1,8 +1,8 @@
 using System.Linq;
 using Ferrum.Core.Console;
 using Ferrum.Core.Modules;
-using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Samples.Triangle
 {
@@ -15,6 +15,13 @@ namespace Ferrum.Samples.Triangle
             using var adapter = instance.Adapters.First();
             using var device = adapter.CreateDevice();
             using var graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
+            using var window = device.CreateWindow(new Window.Desc(800, 600, "TestApp"));
+            using var shaderCompiler = device.CreateShaderCompiler();
+
+            while (!window.CloseRequested)
+            {
+                window.PollEvents();
+            }
         }
 
         private static void Main()

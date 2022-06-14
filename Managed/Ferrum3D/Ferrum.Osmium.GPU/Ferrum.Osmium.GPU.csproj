@@ -49,6 +49,8 @@
         <Compile Include="DeviceObjects\GraphicsApi.cs" />
         <Compile Include="DeviceObjects\Instance.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Shaders\ShaderCompiler.cs" />
+        <Compile Include="WindowSystem\Window.cs" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Ferrum.Core\Ferrum.Core.csproj">
@@ -77,9 +79,6 @@
             <Link>OsmiumGPU.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Instance" />
     </ItemGroup>
 
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
