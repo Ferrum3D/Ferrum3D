@@ -1,4 +1,4 @@
-﻿namespace Ferrum.Osmium.GPU
+﻿namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public enum GraphicsApi
     {

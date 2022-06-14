@@ -1,4 +1,4 @@
-#include "FeCore/Modules/DynamicLibrary.h"
+#include <FeCore/Modules/DynamicLibrary.h>
 #include <GPU/Instance/IInstance.h>
 
 namespace FE::GPU
@@ -27,9 +27,22 @@ namespace FE::GPU
             return createGraphicsAPIInstance(*desc, static_cast<GraphicsAPI>(api));
         }
 
-        FE_DLL_EXPORT void IInstance_Destruct(IInstance* instance)
+        FE_DLL_EXPORT void IInstance_GetAdapters(IInstance* self, IAdapter** adapters, Int32* size)
         {
-            instance->ReleaseStrongRef();
+            auto& a = self->GetAdapters();
+            *size = static_cast<Int32>(a.size());
+            if (adapters)
+            {
+                for (USize i = 0; i < a.size(); ++i)
+                {
+                    adapters[i] = a[i].Detach();
+                }
+            }
+        }
+
+        FE_DLL_EXPORT void IInstance_Destruct(IInstance* self)
+        {
+            self->ReleaseStrongRef();
         }
     }
 }

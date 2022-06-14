@@ -1,47 +1,62 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 
-namespace Ferrum.Osmium.GPU
+namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Instance : IDisposable
+    public sealed class Instance : IDisposable
     {
-        private unsafe void* handle;
+        public IEnumerable<Adapter> Adapters => adapters;
+        private IntPtr handle;
+        private readonly Adapter[] adapters;
 
         public Instance(IntPtr environment, Desc desc, GraphicsApi api)
         {
-            unsafe
-            {
-                AttachEnvironment((void*)environment);
-                handle = ConstructNative(ref desc, (int)api);
-            }
+            AttachEnvironment(environment);
+            handle = ConstructNative(ref desc, (int)api);
+            GetAdaptersNative(handle, null, out var adapterCount);
+            var a = new IntPtr[adapterCount];
+            GetAdaptersNative(handle, a, out _);
+            adapters = a.Select(x => new Adapter(x)).ToArray();
         }
 
         public void Dispose()
         {
+            foreach (var adapter in Adapters)
+            {
+                adapter.Dispose();
+            }
+            
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }
 
         [DllImport("OsmiumBindings", EntryPoint = "AttachEnvironment")]
-        private static extern unsafe void AttachEnvironment(void* env);
+        private static extern void AttachEnvironment(IntPtr env);
 
         [DllImport("OsmiumBindings", EntryPoint = "IInstance_Construct")]
-        private static extern unsafe void* ConstructNative(ref Desc desc, int api);
+        private static extern IntPtr ConstructNative(ref Desc desc, int api);
 
         [DllImport("OsmiumBindings", EntryPoint = "IInstance_Destruct")]
-        private static extern unsafe void DestructNative(void* instance);
+        private static extern void DestructNative(IntPtr self);
 
         [DllImport("OsmiumBindings", EntryPoint = "DetachEnvironment")]
         private static extern void DetachEnvironment();
 
+        [DllImport("OsmiumBindings", EntryPoint = "IInstance_GetAdapters")]
+        private static extern void GetAdaptersNative(IntPtr self, IntPtr[] adapters, out int size);
+
         private void ReleaseUnmanagedResources()
         {
-            unsafe
+            if (handle == IntPtr.Zero)
             {
-                DestructNative(handle);
-                handle = (void*)0;
+                return;
             }
+
+            DestructNative(handle);
+            handle = IntPtr.Zero;
 
             DetachEnvironment();
             DynamicLibrary.UnloadModule("OsmiumBindings.dll");
