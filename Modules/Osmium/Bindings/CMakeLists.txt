@@ -1,7 +1,7 @@
 set(SRC
     DeviceObjects/Instance.cpp
     DeviceObjects/Adapter.cpp
-    DeviceObjects/Device.cpp DeviceObjects/CommandQueue.cpp)
+    DeviceObjects/Device.cpp DeviceObjects/CommandQueue.cpp Shaders/ShaderCompiler.cpp WindowSystem/Window.cpp WindowSystem/Window.h)
 
 add_library(OsmiumBindings SHARED ${SRC})
 

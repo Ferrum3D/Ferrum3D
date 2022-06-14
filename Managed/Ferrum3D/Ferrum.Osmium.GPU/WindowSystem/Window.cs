@@ -1,0 +1,57 @@
+﻿using System;
+using System.Runtime.InteropServices;
+using Ferrum.Osmium.GPU.DeviceObjects;
+
+namespace Ferrum.Osmium.GPU.WindowSystem
+{
+    public class Window : DeviceObject
+    {
+        public uint Width => desc.Width;
+        public uint Height => desc.Height;
+        public string Title => desc.Title;
+
+        public bool CloseRequested { get; private set; }
+
+        private readonly Desc desc;
+
+        public Window(IntPtr handle, Desc desc) : base(handle)
+        {
+            this.desc = desc;
+        }
+
+        public void PollEvents()
+        {
+            PollEventsNative(Handle);
+            CloseRequested = CloseRequestedNative(Handle);
+        }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IWindow_Destruct")]
+        private static extern void DestructNative(IntPtr self);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IWindow_PollEvents")]
+        private static extern void PollEventsNative(IntPtr self);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IWindow_CloseRequested")]
+        private static extern bool CloseRequestedNative(IntPtr self);
+
+        protected override void ReleaseUnmanagedResources()
+        {
+            DestructNative(Handle);
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct Desc
+        {
+            public readonly uint Width;
+            public readonly uint Height;
+            public readonly string Title;
+
+            public Desc(uint width, uint height, string title)
+            {
+                Width = width;
+                Height = height;
+                Title = title;
+            }
+        }
+    }
+}
