@@ -19,9 +19,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new Device(CreateDeviceNative(Handle));
         }
 
+        public override string ToString()
+        {
+            return $"{Type} GPU adapter {Name}";
+        }
+
         [DllImport("OsmiumBindings", EntryPoint = "IAdapter_CreateDevice")]
         private static extern IntPtr CreateDeviceNative(IntPtr self);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IAdapter_GetDesc")]
         private static extern void GetDescNative(IntPtr self, out Desc desc);
 
@@ -38,11 +43,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             public readonly string Name;
             public readonly int Type;
-        }
-
-        public override string ToString()
-        {
-            return $"{Type} GPU adapter {Name}";
         }
     }
 }
