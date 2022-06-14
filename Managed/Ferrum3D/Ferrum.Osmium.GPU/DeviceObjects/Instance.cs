@@ -28,7 +28,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             {
                 adapter.Dispose();
             }
-            
+
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }

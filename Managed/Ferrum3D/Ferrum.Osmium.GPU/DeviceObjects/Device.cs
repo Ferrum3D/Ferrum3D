@@ -28,10 +28,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateShaderCompiler")]
         private static extern IntPtr CreateShaderCompilerNative(IntPtr self);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateWindow")]
         private static extern IntPtr CreateWindowNative(IntPtr self, ref Window.Desc desc);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
