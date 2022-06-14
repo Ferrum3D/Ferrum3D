@@ -74,7 +74,6 @@ namespace FE::Env
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
                 if (find.IsOk())
                 {
-                    printf("Found a global variable %s\n", name.data());
                     return find;
                 }
 
@@ -84,7 +83,6 @@ namespace FE::Env
 
                 auto& [str, ptr] = m_Map.Push(std::move(name), storage);
                 nameView         = std::string_view(str.data(), str.size());
-                printf("Created a global variable %s\n", name.data());
                 return VariableResult::Ok(storage, VariableOk::Created);
             }
 
@@ -186,15 +184,6 @@ namespace FE::Env
 
         Internal::g_EnvInstance = nullptr;
     }
-
-    static struct AutoCleanUpStruct
-    {
-        ~AutoCleanUpStruct()
-        {
-//            if (EnvironmentAttached())
-//                DetachEnvironment();
-        }
-    } AutoCleanUp;
 
     bool EnvironmentAttached()
     {
