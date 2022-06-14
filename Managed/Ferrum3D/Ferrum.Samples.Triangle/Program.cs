@@ -10,12 +10,13 @@ namespace Ferrum.Samples.Triangle
     {
         private static void RunExample()
         {
-            var desc = new Instance.Desc("TestApp");
-            using var instance = new Instance(Engine.GetEnvironment(), desc, GraphicsApi.Vulkan);
+            var instanceDesc = new Instance.Desc("TestApp");
+            using var instance = new Instance(Engine.Environment, instanceDesc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
             using var device = adapter.CreateDevice();
             using var graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
-            using var window = device.CreateWindow(new Window.Desc(800, 600, "TestApp"));
+            var windowDesc = new Window.Desc(800, 600, "TestApp");
+            using var window = device.CreateWindow(windowDesc);
             using var shaderCompiler = device.CreateShaderCompiler();
 
             while (!window.CloseRequested)
@@ -26,15 +27,12 @@ namespace Ferrum.Samples.Triangle
 
         private static void Main()
         {
-            Engine.Init();
-            ConsoleLogger.Init();
+            using var engine = new Engine();
+            using var logger = new ConsoleLogger();
 
             ConsoleLogger.LogMessage("Test unicode. Тестим юникод. 中文考試. Æ ¶ ✅ ♣ ♘");
 
             RunExample();
-
-            ConsoleLogger.Deinit();
-            Engine.Deinit();
         }
     }
 }
