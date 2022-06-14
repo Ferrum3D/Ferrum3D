@@ -3,37 +3,20 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public enum AdapterType
-    {
-        None,
-        Integrated,
-        Discrete,
-        Virtual,
-        Cpu
-    }
-
-    public sealed class Adapter : IDisposable
+    public sealed class Adapter : DeviceObject
     {
         public string Name => desc.Name;
         public AdapterType Type => (AdapterType)desc.Type;
-        private IntPtr handle;
         private readonly Desc desc;
 
-        public Adapter(IntPtr handle)
+        public Adapter(IntPtr handle) : base(handle)
         {
-            this.handle = handle;
             GetDescNative(handle, out desc);
         }
 
         public Device CreateDevice()
         {
-            return new Device(CreateDeviceNative(handle));
-        }
-
-        public void Dispose()
-        {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
+            return new Device(CreateDeviceNative(Handle));
         }
 
         [DllImport("OsmiumBindings", EntryPoint = "IAdapter_CreateDevice")]
@@ -45,15 +28,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "IAdapter_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        private void ReleaseUnmanagedResources()
+        protected override void ReleaseUnmanagedResources()
         {
-            if (handle == IntPtr.Zero)
-            {
-                return;
-            }
-
-            DestructNative(handle);
-            handle = IntPtr.Zero;
+            DestructNative(Handle);
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -66,11 +43,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public override string ToString()
         {
             return $"{Type} GPU adapter {Name}";
-        }
-
-        ~Adapter()
-        {
-            ReleaseUnmanagedResources();
         }
     }
 }

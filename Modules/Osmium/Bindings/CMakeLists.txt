@@ -1,7 +1,7 @@
 set(SRC
-    Instance/Instance.cpp
-    Adapter/Adapter.cpp
-    Device/Device.cpp)
+    DeviceObjects/Instance.cpp
+    DeviceObjects/Adapter.cpp
+    DeviceObjects/Device.cpp DeviceObjects/CommandQueue.cpp)
 
 add_library(OsmiumBindings SHARED ${SRC})
 
