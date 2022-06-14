@@ -19,7 +19,7 @@ namespace Ferrum.Core.Benchmark.Math
                 }
             }
         }
-        
+
         [Benchmark]
         public void Managed()
         {

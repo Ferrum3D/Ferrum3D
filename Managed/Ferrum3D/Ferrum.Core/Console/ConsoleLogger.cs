@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace Ferrum.Core.Console
+﻿namespace Ferrum.Core.Console
 {
     public static class ConsoleLogger
     {

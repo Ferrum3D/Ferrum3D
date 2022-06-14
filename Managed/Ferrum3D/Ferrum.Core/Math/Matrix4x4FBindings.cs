@@ -5,18 +5,6 @@ namespace Ferrum.Core.Math
 {
     public static class Matrix4x4FBindings
     {
-        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_Multiply")]
-        private static extern void MultiplyNative(ref Matrix4x4F lhs, ref Matrix4x4F rhs, out Matrix4x4F result);
-
-        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_VectorMultiply")]
-        private static extern void MultiplyNative(ref Matrix4x4F lhs, ref Vector4F rhs, out Vector4F result);
-
-        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_Determinant")]
-        private static extern float DeterminantNative(ref Matrix4x4F matrix);
-
-        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_InverseTransform")]
-        private static extern void InverseTransformNative(ref Matrix4x4F matrix, out Matrix4x4F result);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F Multiply(Matrix4x4F lhs, Matrix4x4F rhs)
         {
@@ -43,7 +31,7 @@ namespace Ferrum.Core.Math
             InverseTransformNative(ref matrix, out var result);
             return result;
         }
-        
+
         /// <summary>
         ///     Managed implementation of matrix multiplication for reference.
         /// </summary>
@@ -63,5 +51,17 @@ namespace Ferrum.Core.Math
 
             return result;
         }
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_Multiply")]
+        private static extern void MultiplyNative(ref Matrix4x4F lhs, ref Matrix4x4F rhs, out Matrix4x4F result);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_VectorMultiply")]
+        private static extern void MultiplyNative(ref Matrix4x4F lhs, ref Vector4F rhs, out Vector4F result);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_Determinant")]
+        private static extern float DeterminantNative(ref Matrix4x4F matrix);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_InverseTransform")]
+        private static extern void InverseTransformNative(ref Matrix4x4F matrix, out Matrix4x4F result);
     }
 }
