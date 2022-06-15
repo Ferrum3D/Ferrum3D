@@ -19,7 +19,7 @@ namespace FE
 
         FE_DLL_EXPORT void ConsoleLogger_Log(Debug::IConsoleLogger* logger, const char* message, Int32 logType)
         {
-            logger->Log(static_cast<Debug::LogMessageType>(logType), StringSlice(message));
+            logger->Log(static_cast<Debug::LogMessageType>(logType), "{}", StringSlice(message));
         }
     }
 }
