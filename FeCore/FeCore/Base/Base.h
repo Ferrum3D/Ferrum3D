@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Base/Platform.h>
 #include <atomic>
+#include <cassert>
 #include <cstdint>
 #include <intrin.h>
 #include <string_view>
@@ -198,11 +199,7 @@ namespace FE
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
-            if (!(expression))                                                                                                   \
-            {                                                                                                                    \
-                FE_DEBUGBREAK;                                                                                                   \
-                (void)msg;                                                                                                       \
-            }                                                                                                                    \
+            assert((expression) && (msg));                                                                                       \
         }                                                                                                                        \
         while (0)
 #else
@@ -212,8 +209,8 @@ namespace FE
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
-            (void)(expression);                                                                                                    \
-            (void)(msg);                                                                                                           \
+            (void)(expression);                                                                                                  \
+            (void)(msg);                                                                                                         \
         }                                                                                                                        \
         while (0)
 #endif
