@@ -4,6 +4,16 @@ namespace FE::GPU
 {
     extern "C"
     {
+        FE_DLL_EXPORT void IWindow_CreateViewport(IWindow* self, Viewport* viewport)
+        {
+            *viewport = self->CreateViewport();
+        }
+
+        FE_DLL_EXPORT void IWindow_CreateScissor(IWindow* self, Scissor* scissor)
+        {
+            *scissor = self->CreateScissor();
+        }
+
         FE_DLL_EXPORT void IWindow_PollEvents(IWindow* self)
         {
             self->PollEvents();
