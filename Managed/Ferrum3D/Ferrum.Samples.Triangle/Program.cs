@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Ferrum.Core.Console;
 using Ferrum.Core.Modules;
@@ -18,6 +19,9 @@ namespace Ferrum.Samples.Triangle
             var windowDesc = new Window.Desc(800, 600, "TestApp");
             using var window = device.CreateWindow(windowDesc);
             using var shaderCompiler = device.CreateShaderCompiler();
+            var viewport = window.CreateViewport();
+            var scissor = window.CreateScissor();
+            ConsoleLogger.LogMessage($"Window: {viewport}; {scissor}");
 
             while (!window.CloseRequested)
             {
