@@ -12,12 +12,14 @@ namespace Ferrum.Osmium.GPU.WindowSystem
         public string Title => desc.Title;
 
         public bool CloseRequested { get; private set; }
+        public IntPtr NativeHandle { get; }
 
         private readonly Desc desc;
 
         public Window(IntPtr handle, Desc desc) : base(handle)
         {
             this.desc = desc;
+            NativeHandle = GetNativeHandleNative(Handle);
         }
 
         public void PollEvents()
@@ -37,6 +39,9 @@ namespace Ferrum.Osmium.GPU.WindowSystem
             CreateViewportNative(Handle, out var viewport);
             return viewport;
         }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IWindow_GetNativeHandle")]
+        private static extern IntPtr GetNativeHandleNative(IntPtr self);
 
         [DllImport("OsmiumBindings", EntryPoint = "IWindow_CreateScissor")]
         private static extern void CreateScissorNative(IntPtr self, out Scissor scissor);

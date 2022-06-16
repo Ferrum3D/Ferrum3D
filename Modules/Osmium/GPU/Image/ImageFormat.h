@@ -4,7 +4,7 @@
 
 namespace FE::GPU
 {
-    enum class Format
+    enum class Format : Int32
     {
         None,
         R4G4_UNorm_Pack8,

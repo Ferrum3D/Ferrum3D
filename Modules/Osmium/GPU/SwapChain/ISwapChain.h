@@ -2,6 +2,7 @@
 #include <GPU/Fence/IFence.h>
 #include <GPU/Image/IImage.h>
 #include <GPU/ImageView/IImageView.h>
+#include <GPU/CommandQueue/ICommandQueue.h>
 
 namespace FE::GPU
 {

@@ -16,6 +16,22 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
         }
 
+        public SwapChain CreateSwapChain(SwapChain.Desc desc)
+        {
+            var nativeDesc = new SwapChain.DescNative(desc);
+            return new SwapChain(CreateSwapChainNative(Handle, ref nativeDesc));
+        }
+
+        public Buffer CreateBuffer(BindFlags flags, ulong size)
+        {
+            return new Buffer(CreateBufferNative(Handle, (int)flags, size));
+        }
+
+        public Buffer CreateBuffer(BindFlags flags, int size)
+        {
+            return CreateBuffer(flags, (ulong)size);
+        }
+
         public ShaderCompiler CreateShaderCompiler()
         {
             return new ShaderCompiler(CreateShaderCompilerNative(Handle));
@@ -25,6 +41,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new Window(CreateWindowNative(Handle, ref desc), desc);
         }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateBuffer")]
+        private static extern IntPtr CreateBufferNative(IntPtr self, int bindFlags, ulong size);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateSwapChain")]
+        private static extern IntPtr CreateSwapChainNative(IntPtr self, ref SwapChain.DescNative desc);
 
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateShaderCompiler")]
         private static extern IntPtr CreateShaderCompilerNative(IntPtr self);
