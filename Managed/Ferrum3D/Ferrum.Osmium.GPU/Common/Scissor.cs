@@ -11,9 +11,9 @@ namespace Ferrum.Osmium.GPU.Common
         public readonly int MaxX;
         public readonly int MaxY;
 
-        public float Width => MaxX - MinX;
+        public int Width => MaxX - MinX;
 
-        public float Height => MaxY - MinY;
+        public int Height => MaxY - MinY;
 
         public Scissor(int minX, int minY, int maxX, int maxY)
         {

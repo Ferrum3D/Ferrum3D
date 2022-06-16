@@ -4,6 +4,11 @@ namespace FE::GPU
 {
     extern "C"
     {
+        FE_DLL_EXPORT void* IWindow_GetNativeHandle(IWindow* self)
+        {
+            return self->GetNativeHandle();
+        }
+
         FE_DLL_EXPORT void IWindow_CreateViewport(IWindow* self, Viewport* viewport)
         {
             *viewport = self->CreateViewport();

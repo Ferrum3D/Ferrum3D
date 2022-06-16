@@ -4,7 +4,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public abstract class DeviceObject : IDisposable
     {
-        protected IntPtr Handle;
+        public IntPtr Handle { get; private set; }
 
         protected DeviceObject(IntPtr handle)
         {
