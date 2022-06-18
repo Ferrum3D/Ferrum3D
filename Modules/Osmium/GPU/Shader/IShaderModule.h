@@ -2,6 +2,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Object.h>
 #include <GPU/Shader/ShaderStage.h>
+#include <FeCore/Containers/ByteBuffer.h>
 
 namespace FE::GPU
 {
@@ -18,9 +19,9 @@ namespace FE::GPU
 
         inline ShaderModuleDesc() = default;
 
-        inline ShaderModuleDesc(ShaderStage stage, const Vector<UInt8>& byteCode)
-            : ByteCode(byteCode.data())
-            , ByteCodeSize(byteCode.size())
+        inline ShaderModuleDesc(ShaderStage stage, const Shared<IByteBuffer>& byteCode)
+            : ByteCode(byteCode->Data())
+            , ByteCodeSize(byteCode->Size())
             , EntryPoint("main")
             , Stage(stage)
         {

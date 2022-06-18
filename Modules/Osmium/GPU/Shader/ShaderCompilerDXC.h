@@ -19,6 +19,6 @@ namespace FE::GPU
 
         ShaderCompilerDXC(GraphicsAPI api);
 
-        Vector<UInt8> CompileShader(const ShaderCompilerArgs& args) override;
+        Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) override;
     };
 } // namespace FE::GPU

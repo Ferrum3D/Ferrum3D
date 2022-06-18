@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Containers;
+using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Device : DeviceObject
+    public class Device : UnmanagedObject
     {
         public Device(IntPtr handle) : base(handle)
         {
@@ -16,10 +18,27 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
         }
 
+        public RenderPass CreateRenderPass(RenderPass.Desc desc)
+        {
+            var nativeDesc = new RenderPass.DescNative(desc);
+            return new RenderPass(CreateRenderPassNative(Handle, ref nativeDesc));
+        }
+
         public SwapChain CreateSwapChain(SwapChain.Desc desc)
         {
             var nativeDesc = new SwapChain.DescNative(desc);
             return new SwapChain(CreateSwapChainNative(Handle, ref nativeDesc));
+        }
+
+        public ShaderModule CreateShaderModule(ShaderStage stage, ByteBuffer bytecode)
+        {
+            return CreateShaderModule(new ShaderModule.Desc(stage, bytecode));
+        }
+
+        public ShaderModule CreateShaderModule(ShaderModule.Desc desc)
+        {
+            var nativeDesc = new ShaderModule.DescNative(desc);
+            return new ShaderModule(CreateShaderModuleNative(Handle, ref nativeDesc));
         }
 
         public Buffer CreateBuffer(BindFlags flags, ulong size)
@@ -41,6 +60,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new Window(CreateWindowNative(Handle, ref desc), desc);
         }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateRenderPass")]
+        private static extern IntPtr CreateRenderPassNative(IntPtr self, ref RenderPass.DescNative desc);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateShaderModule")]
+        private static extern IntPtr CreateShaderModuleNative(IntPtr self, ref ShaderModule.DescNative desc);
 
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateBuffer")]
         private static extern IntPtr CreateBufferNative(IntPtr self, int bindFlags, ulong size);

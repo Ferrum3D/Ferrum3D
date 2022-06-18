@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.Common;
 using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.GPU.WindowSystem
 {
-    public class Window : DeviceObject
+    public class Window : UnmanagedObject
     {
         public uint Width => desc.Width;
         public uint Height => desc.Height;

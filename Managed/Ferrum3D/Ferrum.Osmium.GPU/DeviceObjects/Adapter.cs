@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public sealed class Adapter : DeviceObject
+    public sealed class Adapter : UnmanagedObject
     {
         public string Name => desc.Name;
         public AdapterType Type => (AdapterType)desc.Type;

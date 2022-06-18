@@ -1,5 +1,5 @@
 set(SRC
-    Math/Matrix4x4F.cpp Modules/Engine.cpp Console/FeLog.cpp)
+    Math/Matrix4x4F.cpp Modules/Engine.cpp Console/FeLog.cpp Containers/ByteBuffer.cpp)
 
 add_library(FeCoreBindings SHARED ${SRC})
 

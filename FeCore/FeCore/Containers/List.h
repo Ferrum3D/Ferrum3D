@@ -81,7 +81,7 @@ namespace FE
         inline void AppendImpl(USize n, bool shrink = false)
         {
             auto newCap = Recommend(n + Size());
-            if (m_EndCap - m_End >= n)
+            if (m_EndCap - m_End >= static_cast<SSize>(n))
             {
                 if (shrink)
                 {
@@ -162,6 +162,15 @@ namespace FE
             for (auto& v : list)
             {
                 Push(v);
+            }
+        }
+
+        inline void Assign(const T* begin, const T* end)
+        {
+            Reserve(end - begin);
+            for (; begin != end; ++begin)
+            {
+                Push(*begin);
             }
         }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Containers/List.h>
 #include <array>
 
 namespace FE
@@ -54,6 +55,12 @@ namespace FE
         inline explicit ArraySliceMut(Vector<T>& vector)
             : m_Begin(vector.data())
             , m_End(vector.data() + vector.size())
+        {
+        }
+
+        inline explicit ArraySliceMut(List<T>& list)
+            : m_Begin(list.Data())
+            , m_End(list.Data() + list.Size())
         {
         }
 

@@ -1,6 +1,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <GPU/Shader/ShaderCompilerDXC.h>
 #include <d3d12shader.h>
+#include <FeCore/Containers/ByteBuffer.h>
 
 namespace FE::GPU
 {
@@ -80,7 +81,7 @@ namespace FE::GPU
     {
     }
 
-    Vector<UInt8> ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
+    Shared<IByteBuffer> ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
     {
         auto sepIter       = args.FullPath.FindLastOf('/');
         auto shaderName    = StringSlice(sepIter + 1, args.FullPath.end()).ToWideString();
@@ -154,13 +155,13 @@ namespace FE::GPU
             }
         }
 
-        Vector<UInt8> returnValue;
+        List<UInt8> returnValue;
         if (SUCCEEDED(result))
         {
             CComPtr<IDxcBlob> byteCode;
             FE_ASSERT(SUCCEEDED(compileResult->GetResult(&byteCode)));
             auto bufferPtr = static_cast<UInt8*>(byteCode->GetBufferPointer());
-            returnValue.assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
+            returnValue.Assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
         }
         else
         {
@@ -173,6 +174,6 @@ namespace FE::GPU
             }
         }
 
-        return returnValue;
+        return static_pointer_cast<IByteBuffer>(MakeShared<ByteBuffer>(std::move(returnValue)));
     }
 } // namespace FE::GPU

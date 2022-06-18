@@ -114,7 +114,7 @@ namespace FE::GPU
         void Begin() override;
         void End() override;
 
-        void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
+        void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
         void BindGraphicsPipeline(IGraphicsPipeline* pipeline) override;
 
         void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) override;
@@ -132,7 +132,7 @@ namespace FE::GPU
         void SetViewport(const Viewport& viewport) override;
         void SetScissor(const Scissor& scissor) override;
 
-        void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) override;
+        void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) override;
         void MemoryBarrier() override;
     };
 } // namespace FE::GPU
