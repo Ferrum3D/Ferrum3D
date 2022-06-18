@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Ferrum.Osmium.GPU.DeviceObjects
+namespace Ferrum.Core.Modules
 {
-    public abstract class DeviceObject : IDisposable
+    public abstract class UnmanagedObject : IDisposable
     {
         public IntPtr Handle { get; private set; }
 
-        protected DeviceObject(IntPtr handle)
+        protected UnmanagedObject(IntPtr handle)
         {
             Handle = handle;
         }
@@ -15,6 +15,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             ReleaseHandle();
             GC.SuppressFinalize(this);
+        }
+
+        public IntPtr Detach()
+        {
+            var result = Handle;
+            Handle = IntPtr.Zero;
+            return result;
         }
 
         private void ReleaseHandle()
@@ -30,7 +37,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         protected abstract void ReleaseUnmanagedResources();
 
-        ~DeviceObject()
+        ~UnmanagedObject()
         {
             ReleaseHandle();
         }

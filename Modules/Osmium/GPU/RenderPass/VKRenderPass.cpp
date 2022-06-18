@@ -44,7 +44,7 @@ namespace FE::GPU
 
     UInt32 VKRenderPass::GetAttachmentCount()
     {
-        return static_cast<UInt32>(m_Desc.Attachments.size());
+        return static_cast<UInt32>(m_Desc.Attachments.Size());
     }
 
     void VKRenderPass::BuildNativeRenderPass()
@@ -52,7 +52,7 @@ namespace FE::GPU
         auto attachmentDescriptions = BuildAttachmentDescriptions();
 
         Vector<SubpassAttachmentReferences> subpassAttachmentReferences;
-        for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.size()); ++i)
+        for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.Size()); ++i)
         {
             auto& refs = subpassAttachmentReferences.emplace_back();
 
@@ -65,7 +65,7 @@ namespace FE::GPU
             refs.RT    = BuildAttachmentReferences(i, AttachmentType::RenderTarget);
 
             auto& preserve = m_Desc.Subpasses[i].PreserveAttachments;
-            refs.Preserve  = preserve.empty() ? nullptr : preserve.data();
+            refs.Preserve  = preserve.Empty() ? nullptr : preserve.Data();
         }
 
         auto subpassDescriptions = BuildSubpassDescriptions(subpassAttachmentReferences);
@@ -108,9 +108,9 @@ namespace FE::GPU
         Vector<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const
     {
         Vector<vk::SubpassDescription> result;
-        result.reserve(m_Desc.Subpasses.size());
+        result.reserve(m_Desc.Subpasses.Size());
 
-        for (size_t i = 0; i < m_Desc.Subpasses.size(); ++i)
+        for (size_t i = 0; i < m_Desc.Subpasses.Size(); ++i)
         {
             auto& currentRefs = subpassAttachmentReferences[i];
 
@@ -167,7 +167,7 @@ namespace FE::GPU
         Vector<vk::SubpassDependency> result;
 
         static auto validateSubpassIndex = [this](UInt32 index) {
-            return index < m_Desc.Subpasses.size() ? index : VK_SUBPASS_EXTERNAL;
+            return index < m_Desc.Subpasses.Size() ? index : VK_SUBPASS_EXTERNAL;
         };
 
         for (auto& dependency : m_Desc.SubpassDependencies)

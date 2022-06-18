@@ -56,10 +56,10 @@ namespace FE::GPU
         virtual void SetViewport(const Viewport& viewport) = 0;
         virtual void SetScissor(const Scissor& scissor)    = 0;
 
-        virtual void ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers) = 0;
+        virtual void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) = 0;
         virtual void MemoryBarrier()                                                                   = 0;
 
-        virtual void BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
+        virtual void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
         virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                    = 0;
 
         virtual void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) = 0;

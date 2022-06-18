@@ -42,6 +42,7 @@
     <ItemGroup>
         <Compile Include="Console\ConsoleLogger.cs" />
         <Compile Include="Console\LogMessageType.cs" />
+        <Compile Include="Containers\ByteBuffer.cs" />
         <Compile Include="Math\Color.cs" />
         <Compile Include="Math\Colors.cs" />
         <Compile Include="Math\MathF.cs" />
@@ -51,6 +52,7 @@
         <Compile Include="Math\Vector4F.cs" />
         <Compile Include="Modules\DynamicLibrary.cs" />
         <Compile Include="Modules\Engine.cs" />
+        <Compile Include="Modules\UnmanagedObject.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">

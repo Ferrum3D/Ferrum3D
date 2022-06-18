@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Buffer : DeviceObject
+    public class Buffer : UnmanagedObject
     {
         public Buffer(IntPtr handle) : base(handle)
         {
@@ -43,10 +44,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             UpdateDataNative(Handle, data, offset, size);
         }
         
-        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_Destruct")]
+        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_AllocateMemory")]
         private static extern void AllocateMemoryNative(IntPtr self, int memoryType);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_Destruct")]
+        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_UpdateData")]
         private static extern void UpdateDataNative(IntPtr self, IntPtr data, ulong offset, ulong size);
 
         [DllImport("OsmiumBindings", EntryPoint = "IBuffer_Destruct")]

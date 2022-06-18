@@ -1,17 +1,37 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class SwapChain : DeviceObject
+    public class SwapChain : UnmanagedObject
     {
         public SwapChain(IntPtr handle) : base(handle)
         {
         }
 
+        private DescNative NativeDesc
+        {
+            get
+            {
+                GetDescNative(Handle, out var desc);
+                return desc;
+            }
+        }
+        
+        public uint ImageCount => NativeDesc.ImageCount;
+        public uint FrameCount => NativeDesc.FrameCount;
+        public uint ImageWidth => NativeDesc.ImageWidth;
+        public uint ImageHeight => NativeDesc.ImageHeight;
+        public bool VerticalSync => NativeDesc.VerticalSync;
+        public Format Format => (Format)NativeDesc.Format;
+
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Destruct")]
         private static extern void DestructNative(IntPtr self);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetDesc")]
+        private static extern void GetDescNative(IntPtr self, out DescNative desc);
 
         protected override void ReleaseUnmanagedResources()
         {

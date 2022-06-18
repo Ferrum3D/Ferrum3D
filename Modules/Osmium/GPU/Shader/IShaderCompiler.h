@@ -3,6 +3,7 @@
 #include <FeCore/Strings/String.h>
 #include <GPU/Shader/ShaderStage.h>
 #include <GPU/Common/BaseTypes.h>
+#include <FeCore/Containers/IByteBuffer.h>
 
 namespace FE::GPU
 {
@@ -40,6 +41,6 @@ namespace FE::GPU
 
         ~IShaderCompiler() override = default;
 
-        virtual Vector<UInt8> CompileShader(const ShaderCompilerArgs& args) = 0;
+        virtual Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) = 0;
     };
 } // namespace FE::GPU

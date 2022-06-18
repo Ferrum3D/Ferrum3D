@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class CommandQueue : DeviceObject
+    public class CommandQueue : UnmanagedObject
     {
         public CommandQueue(IntPtr handle) : base(handle)
         {

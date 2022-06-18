@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Containers/List.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <GPU/Pipeline/PipelineStates.h>
 #include <GPU/Resource/ResourceState.h>
@@ -61,9 +62,9 @@ namespace FE::GPU
 
     struct SubpassDesc
     {
-        Vector<SubpassAttachment> InputAttachments;
-        Vector<SubpassAttachment> RenderTargetAttachments;
-        Vector<UInt32> PreserveAttachments;
+        List<SubpassAttachment> InputAttachments;
+        List<SubpassAttachment> RenderTargetAttachments;
+        List<UInt32> PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
 
         FE_STRUCT_RTTI(SubpassDesc, "8A770B89-4A7B-43C8-B2C5-1503DF4B547D");
@@ -84,9 +85,9 @@ namespace FE::GPU
 
     struct RenderPassDesc
     {
-        Vector<SubpassDesc> Subpasses;
-        Vector<AttachmentDesc> Attachments;
-        Vector<SubpassDependency> SubpassDependencies;
+        List<SubpassDesc> Subpasses;
+        List<AttachmentDesc> Attachments;
+        List<SubpassDependency> SubpassDependencies;
 
         FE_STRUCT_RTTI(RenderPassDesc, "41AC7F3A-6A7C-4A85-8D11-3D6E0B5B70AD");
     };

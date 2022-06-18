@@ -4,12 +4,13 @@ using System.Runtime.InteropServices;
 using Ferrum.Core.Console;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Samples.Triangle
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal struct Vertex
+    internal readonly struct Vertex
     {
         public readonly float X;
         public readonly float Y;
@@ -59,8 +60,24 @@ namespace Ferrum.Samples.Triangle
             vertexBuffer.AllocateMemory(MemoryType.HostVisible);
             vertexBuffer.UpdateData(vertexData);
 
-            using var compiler = device.CreateShaderCompiler();
-            
+            var compiler = device.CreateShaderCompiler();
+            var vsArgs = ShaderCompiler.Args.FromFile(ShaderStage.Vertex, "Assets/Shaders/VertexShader.hlsl");
+            using var vsBytecode = compiler.CompileShader(vsArgs);
+            var psArgs = ShaderCompiler.Args.FromFile(ShaderStage.Pixel, "Assets/Shaders/PixelShader.hlsl");
+            using var psBytecode = compiler.CompileShader(psArgs);
+
+            using var pixelShader = device.CreateShaderModule(ShaderStage.Pixel, psBytecode);
+            using var vertexShader = device.CreateShaderModule(ShaderStage.Vertex, vsBytecode);
+            compiler.Dispose();
+
+            var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
+            var subpassDesc = new SubpassDesc()
+                    .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0));
+            var renderPassDesc = new RenderPass.Desc()
+                .WithAttachments(attachmentDesc)
+                .WithSubpasses(subpassDesc)
+                .WithSubpassDependencies(SubpassDependency.Default);
+            using var renderPass = device.CreateRenderPass(renderPassDesc);
 
             while (!window.CloseRequested)
             {

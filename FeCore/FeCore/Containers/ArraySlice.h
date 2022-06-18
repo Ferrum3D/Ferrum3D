@@ -64,6 +64,12 @@ namespace FE
         {
         }
 
+        inline ArraySlice(const List<T>& list) // NOLINT
+            : m_Begin(list.Data())
+            , m_End(list.Data() + list.Size())
+        {
+        }
+
         inline ArraySlice& operator=(const ArraySlice& other) = default;
 
         inline ArraySlice& operator=(ArraySlice&& other) noexcept

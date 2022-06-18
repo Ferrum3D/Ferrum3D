@@ -81,7 +81,7 @@ namespace FE::GPU
         m_CommandBuffer->setScissor(0, 1, &rect);
     }
 
-    void VKCommandBuffer::ResourceTransitionBarriers(const Vector<ResourceTransitionBarrierDesc>& barriers)
+    void VKCommandBuffer::ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers)
     {
         Vector<vk::ImageMemoryBarrier> nativeBarriers;
         for (auto& barrier : barriers)
@@ -136,7 +136,7 @@ namespace FE::GPU
             1, &barrier, 0, nullptr, 0, nullptr);
     }
 
-    void VKCommandBuffer::BindDescriptorTables(const Vector<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
+    void VKCommandBuffer::BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
     {
         Vector<vk::DescriptorSet> nativeSets;
         for (auto& table : descriptorTables)
