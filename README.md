@@ -1,5 +1,5 @@
 # Ferrum3D Engine
-**Ferrum3D** is a multi-platform, data-oriented, data-driven, and modular 3D game engine.
+**Ferrum3D** is a data-oriented, data-driven, and modular 3D game engine.
 
 ## Current development status
 For now, only the core is working. The FrameGraph and C# bindings are in development.
