@@ -7,6 +7,7 @@ namespace Ferrum.Core.Benchmark.Math
     public class MatrixBenchmark
     {
         private readonly Matrix4x4F matrix;
+        public static Matrix4x4F PublicField;
 
         public MatrixBenchmark()
         {
@@ -23,13 +24,13 @@ namespace Ferrum.Core.Benchmark.Math
         [Benchmark]
         public void Managed()
         {
-            Matrix4x4FBindings.MultiplyManaged(matrix, matrix);
+            PublicField = Matrix4x4F.MultiplyManaged(matrix, matrix);
         }
 
         [Benchmark]
         public void Unmanaged()
         {
-            Matrix4x4FBindings.Multiply(matrix, matrix);
+            PublicField = matrix * matrix;
         }
     }
 }

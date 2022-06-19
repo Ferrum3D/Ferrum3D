@@ -13,9 +13,10 @@ namespace Ferrum.Core.Tests.Math
         {
             var l = CreateRandomMatrix();
             var r = CreateRandomMatrix();
-            var r1 = Matrix4x4FBindings.MultiplyManaged(l, r);
-            var r2 = Matrix4x4FBindings.Multiply(l, r);
+            var r1 = Matrix4x4F.MultiplyManaged(l, r);
+            var r2 = l * r;
             Assert.IsTrue(Matrix4x4F.AreApproxEqual(r1, r2));
+            Assert.IsFalse(r1 == r2);
         }
 
         private static Matrix4x4F CreateRandomMatrix()
