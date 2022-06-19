@@ -28,13 +28,13 @@ namespace FE::GPU
     }
 
     void VKCommandQueue::SubmitBuffers(
-        const Vector<Shared<ICommandBuffer>>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
+        const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
     {
         Vector<vk::CommandBuffer> nativeBuffers{};
-        nativeBuffers.reserve(buffers.size());
+        nativeBuffers.reserve(buffers.Size());
         for (auto& buf : buffers)
         {
-            auto* vkBuffer = fe_assert_cast<VKCommandBuffer*>(buf.GetRaw());
+            auto* vkBuffer = fe_assert_cast<VKCommandBuffer*>(buf);
             nativeBuffers.push_back(vkBuffer->GetNativeBuffer());
         }
 

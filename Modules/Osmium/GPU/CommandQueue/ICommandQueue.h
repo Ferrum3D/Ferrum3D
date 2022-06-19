@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
+#include <FeCore/Containers/List.h>
 #include <GPU/Fence/IFence.h>
 
 namespace FE::GPU
@@ -26,6 +27,6 @@ namespace FE::GPU
         virtual void SignalFence(const Shared<IFence>& fence) = 0;
 
         virtual void SubmitBuffers(
-            const Vector<Shared<ICommandBuffer>>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) = 0;
+            const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) = 0;
     };
 } // namespace FE::GPU
