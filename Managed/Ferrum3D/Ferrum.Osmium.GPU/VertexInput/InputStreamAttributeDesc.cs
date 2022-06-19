@@ -3,7 +3,6 @@ using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.GPU.VertexInput
 {
-    [StructLayout(LayoutKind.Sequential)]
     public readonly struct InputStreamAttributeDesc
     {
         public readonly string ShaderSemantic;
@@ -46,12 +45,35 @@ namespace Ferrum.Osmium.GPU.VertexInput
             return !left.Equals(right);
         }
 
-        public InputStreamAttributeDesc(string shaderSemantic, int bufferIndex, int offset, Format elementFormat)
+        public InputStreamAttributeDesc(string shaderSemantic, uint bufferIndex, uint offset, Format elementFormat)
         {
             ShaderSemantic = shaderSemantic;
-            BufferIndex = (uint)bufferIndex;
-            Offset = (uint)offset;
+            BufferIndex = bufferIndex;
+            Offset = offset;
             ElementFormat = elementFormat;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct Native
+        {
+            public unsafe fixed byte ShaderSemantic[32];
+            public readonly uint BufferIndex;
+            public readonly uint Offset;
+            public readonly Format ElementFormat;
+
+            public Native(InputStreamAttributeDesc desc)
+            {
+                for (var i = 0; i < desc.ShaderSemantic.Length; i++)
+                {
+                    unsafe
+                    {
+                        ShaderSemantic[i] = (byte)desc.ShaderSemantic[i];
+                    }
+                }
+                BufferIndex = desc.BufferIndex;
+                Offset = desc.Offset;
+                ElementFormat = desc.ElementFormat;
+            }
         }
     }
 }
