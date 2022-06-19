@@ -133,6 +133,19 @@ namespace FE
             }
         }
 
+        inline List& operator=(List&& other)
+        {
+            Swap(other);
+            return *this;
+        }
+
+        inline List& operator=(const List& other)
+        {
+            List lst(other);
+            Swap(lst);
+            return *this;
+        }
+
         inline List(USize n, const T& x)
         {
             VAllocate(n);
