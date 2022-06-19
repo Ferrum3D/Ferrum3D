@@ -58,6 +58,7 @@
         <Compile Include="DeviceObjects\FormatUtils.cs" />
         <Compile Include="DeviceObjects\GraphicsApi.cs" />
         <Compile Include="DeviceObjects\GraphicsPipeline.cs" />
+        <Compile Include="DeviceObjects\ImageView.cs" />
         <Compile Include="DeviceObjects\Instance.cs" />
         <Compile Include="DeviceObjects\MemoryType.cs" />
         <Compile Include="DeviceObjects\PipelineStageFlags.cs" />

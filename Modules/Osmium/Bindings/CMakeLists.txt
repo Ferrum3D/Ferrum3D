@@ -14,7 +14,7 @@ set(SRC
     DeviceObjects/RenderPass.h
     DeviceObjects/GraphicsPipeline.cpp
     DeviceObjects/GraphicsPipeline.h
-    DeviceObjects/Fence.cpp)
+    DeviceObjects/Fence.cpp DeviceObjects/ImageView.cpp)
 
 add_library(OsmiumBindings SHARED ${SRC})
 

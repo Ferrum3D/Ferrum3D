@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.WindowSystem;
@@ -14,6 +16,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public bool VerticalSync => NativeDesc.VerticalSync;
         public Format Format => (Format)NativeDesc.Format;
 
+        private readonly ImageView[] renderTargetViews;
+    
         private DescNative NativeDesc
         {
             get
@@ -22,10 +26,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return desc;
             }
         }
+        
+        public IReadOnlyList<ImageView> RenderTargetViews => renderTargetViews;
 
         public SwapChain(IntPtr handle) : base(handle)
         {
+            GetRTVsNative(Handle, null, out var rtvCount);
+            var rtv = new IntPtr[rtvCount];
+            GetRTVsNative(Handle, rtv, out _);
+            renderTargetViews = rtv.Select(x => new ImageView(x)).ToArray();
         }
+        
+        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetRTVs")]
+        private static extern void GetRTVsNative(IntPtr self, IntPtr[] renderTargets, out uint count);
 
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Destruct")]
         private static extern void DestructNative(IntPtr self);
@@ -35,6 +48,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         protected override void ReleaseUnmanagedResources()
         {
+            foreach (var rtv in renderTargetViews)
+            {
+                rtv.Dispose();
+            }
             DestructNative(Handle);
         }
 
