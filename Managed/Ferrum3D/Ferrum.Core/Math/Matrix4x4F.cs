@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Ferrum.Core.Math
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix4x4F : IEquatable<Matrix4x4F>
+    public partial struct Matrix4x4F : IEquatable<Matrix4x4F>
     {
         public static Matrix4x4F Zero => new();
 
@@ -345,13 +345,14 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Determinant()
         {
-            return Matrix4x4FBindings.Determinant(this);
+            return DeterminantNative(ref this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4F InverseTransform()
         {
-            return Matrix4x4FBindings.InverseTransform(this);
+            InverseTransformNative(ref this, out var result);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -377,13 +378,15 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F operator *(Matrix4x4F lhs, Matrix4x4F rhs)
         {
-            return Matrix4x4FBindings.Multiply(lhs, rhs);
+            MultiplyNative(ref lhs, ref rhs, out var result);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4F operator *(Matrix4x4F lhs, Vector4F rhs)
         {
-            return Matrix4x4FBindings.Multiply(lhs, rhs);
+            MultiplyNative(ref lhs, ref rhs, out var result);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -443,6 +446,18 @@ namespace Ferrum.Core.Math
         public override bool Equals(object obj)
         {
             return obj is Matrix4x4F other && Equals(other);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(Matrix4x4F lhs, Matrix4x4F rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(Matrix4x4F lhs, Matrix4x4F rhs)
+        {
+            return !lhs.Equals(rhs);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

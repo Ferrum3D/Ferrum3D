@@ -3,35 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Math
 {
-    public static class Matrix4x4FBindings
+    public partial struct Matrix4x4F
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix4x4F Multiply(Matrix4x4F lhs, Matrix4x4F rhs)
-        {
-            MultiplyNative(ref lhs, ref rhs, out var result);
-            return result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4F Multiply(Matrix4x4F lhs, Vector4F rhs)
-        {
-            MultiplyNative(ref lhs, ref rhs, out var result);
-            return result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Determinant(Matrix4x4F lhs)
-        {
-            return DeterminantNative(ref lhs);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix4x4F InverseTransform(Matrix4x4F matrix)
-        {
-            InverseTransformNative(ref matrix, out var result);
-            return result;
-        }
-
         /// <summary>
         ///     Managed implementation of matrix multiplication for reference.
         /// </summary>
@@ -41,7 +14,7 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F MultiplyManaged(Matrix4x4F lhs, Matrix4x4F rhs)
         {
-            var result = Matrix4x4F.Zero;
+            var result = Zero;
             for (var i = 0; i < 4; ++i)
             for (var j = 0; j < 4; ++j)
             for (var k = 0; k < 4; ++k)
