@@ -243,7 +243,7 @@ namespace FE::GPU
         const auto& buffers    = m_Desc.InputLayout.GetBuffers();
         const auto& attributes = m_Desc.InputLayout.GetAttributes();
 
-        for (size_t i = 0; i < buffers.size(); ++i)
+        for (size_t i = 0; i < buffers.Size(); ++i)
         {
             auto& binding     = states.BindingDesc.emplace_back();
             binding.binding   = static_cast<UInt32>(i);
@@ -355,7 +355,7 @@ namespace FE::GPU
 
     void VKGraphicsPipeline::BuildBlendState(VKGraphicsPipeline::BlendState& state)
     {
-        for (size_t i = 0; i < m_Desc.ColorBlend.TargetBlendStates.size(); ++i)
+        for (size_t i = 0; i < m_Desc.ColorBlend.TargetBlendStates.Size(); ++i)
         {
             state.Attachments.push_back(BuildBlendState(i));
         }

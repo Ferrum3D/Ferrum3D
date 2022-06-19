@@ -88,46 +88,46 @@ namespace FE::GPU
 
     struct RasterizationState
     {
+        CullingModeFlags CullMode = CullingModeFlags::None;
+        PolygonMode PolyMode      = PolygonMode::Fill;
         bool DepthClampEnabled    = false;
         bool DepthBiasEnabled     = false;
         bool RasterDiscardEnabled = false;
-        CullingModeFlags CullMode = CullingModeFlags::None;
-        PolygonMode PolyMode      = PolygonMode::Fill;
     };
 
     struct DepthStencilState
     {
+        CompareOp DepthCompareOp = CompareOp::Less;
         bool DepthTestEnabled    = false;
         bool DepthWriteEnabled   = false;
-        CompareOp DepthCompareOp = CompareOp::Less;
     };
 
     struct TargetColorBlending
     {
         ColorComponentFlags ColorWriteFlags = ColorComponentFlags::All;
-        bool BlendEnabled                   = false;
         BlendFactor SourceFactor            = BlendFactor::One;
         BlendFactor DestinationFactor       = BlendFactor::Zero;
         BlendOperation BlendOp              = BlendOperation::Add;
         BlendFactor SourceAlphaFactor       = BlendFactor::One;
         BlendFactor DestinationAlphaFactor  = BlendFactor::Zero;
         BlendOperation AlphaBlendOp         = BlendOperation::Add;
+        bool BlendEnabled                   = false;
     };
 
     struct ColorBlendState
     {
-        Vector<TargetColorBlending> TargetBlendStates{};
+        List<TargetColorBlending> TargetBlendStates{};
         Vector4F BlendConstants{};
 
         inline ColorBlendState() = default;
 
-        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates)
+        inline ColorBlendState(const List<TargetColorBlending>& targetBlendStates)
             : TargetBlendStates(targetBlendStates)
             , BlendConstants(0)
         {
         }
 
-        inline ColorBlendState(const Vector<TargetColorBlending>& targetBlendStates, const Vector4F& constants)
+        inline ColorBlendState(const List<TargetColorBlending>& targetBlendStates, const Vector4F& constants)
             : TargetBlendStates(targetBlendStates)
             , BlendConstants(constants)
         {
