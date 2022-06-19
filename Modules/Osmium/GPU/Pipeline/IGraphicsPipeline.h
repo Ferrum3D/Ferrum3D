@@ -14,8 +14,8 @@ namespace FE::GPU
         Shared<IRenderPass> RenderPass;
         UInt32 SubpassIndex;
 
-        Vector<Shared<IDescriptorTable>> DescriptorTables;
-        Vector<Shared<IShaderModule>> Shaders;
+        List<Shared<IDescriptorTable>> DescriptorTables;
+        List<Shared<IShaderModule>> Shaders;
 
         RasterizationState Rasterization;
         DepthStencilState DepthStencil;
