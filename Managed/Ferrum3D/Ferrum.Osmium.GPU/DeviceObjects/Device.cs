@@ -13,6 +13,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
         }
 
+        public Fence CreateFence(Fence.FenceState state)
+        {
+            return new Fence(CreateFenceNative(Handle, state));
+        }
+
         public CommandQueue GetCommandQueue(CommandQueueClass cmdQueueClass)
         {
             return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
@@ -66,6 +71,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new Window(CreateWindowNative(Handle, ref desc), desc);
         }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateFence")]
+        private static extern IntPtr CreateFenceNative(IntPtr self, Fence.FenceState state);
 
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateGraphicsPipeline")]
         private static extern IntPtr CreateGraphicsPipelineNative(IntPtr self, ref GraphicsPipeline.DescNative desc);

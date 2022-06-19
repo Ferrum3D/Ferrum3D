@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Console;
+using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
@@ -99,6 +101,12 @@ namespace Ferrum.Samples.Triangle
             pipelineDesc.Viewport = viewport;
 
             using var pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+
+            using var fences = new DisposableList<Fence>();
+            for (var i = 0; i < swapChain.FrameCount; i++)
+            {
+                fences.Add(device.CreateFence(Fence.FenceState.Signaled));
+            }
 
             while (!window.CloseRequested)
             {
