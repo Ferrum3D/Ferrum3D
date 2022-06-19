@@ -103,6 +103,8 @@ void RunExample()
     pipelineDesc.Shaders                = { pixelShader, vertexShader };
     pipelineDesc.Rasterization          = HAL::RasterizationState{};
     pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+    pipelineDesc.Scissor                = scissor;
+    pipelineDesc.Viewport               = viewport;
 
     auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
