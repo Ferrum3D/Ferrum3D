@@ -1,6 +1,7 @@
+#include <Bindings/DeviceObjects/GraphicsPipeline.h>
+#include <Bindings/DeviceObjects/RenderPass.h>
 #include <Bindings/Shaders/ShaderModule.h>
 #include <Bindings/WindowSystem/Window.h>
-#include <Bindings/DeviceObjects/RenderPass.h>
 #include <GPU/Device/IDevice.h>
 
 namespace FE::GPU
@@ -8,6 +9,11 @@ namespace FE::GPU
     template<class T>
     inline void CopyFromByteBuffer(IByteBuffer* src, List<T>& dst)
     {
+        if (src == nullptr)
+        {
+            return;
+        }
+
         auto size = src->Size() / sizeof(T);
         if (size)
         {
@@ -19,6 +25,49 @@ namespace FE::GPU
 
     extern "C"
     {
+        FE_DLL_EXPORT IGraphicsPipeline* IDevice_CreateGraphicsPipeline(IDevice* self, GraphicsPipelineDescBinding* desc)
+        {
+            GraphicsPipelineDesc d{};
+            d.ColorBlend.BlendConstants = Vector4F{ desc->ColorBlend.BlendConstantX, desc->ColorBlend.BlendConstantY,
+                                                    desc->ColorBlend.BlendConstantZ, desc->ColorBlend.BlendConstantW };
+            CopyFromByteBuffer(desc->ColorBlend.TargetBlendStates, d.ColorBlend.TargetBlendStates);
+
+            d.InputLayout.Topology = desc->InputLayout.Topology;
+            CopyFromByteBuffer(desc->InputLayout.Buffers, d.InputLayout.GetBuffers());
+            List<InputStreamAttributeDescBinding> attributes;
+            CopyFromByteBuffer(desc->InputLayout.Attributes, attributes);
+            for (auto& attribute : attributes)
+            {
+                InputStreamAttributeDesc a;
+                a.BufferIndex    = attribute.BufferIndex;
+                a.ElementFormat  = attribute.ElementFormat;
+                a.Offset         = attribute.Offset;
+                a.ShaderSemantic = attribute.ShaderSemantic;
+                d.InputLayout.PushAttribute(a);
+            }
+
+            d.Rasterization.CullMode = desc->Rasterization.CullMode;
+            d.Rasterization.PolyMode = desc->Rasterization.PolyMode;
+            d.Rasterization.DepthClampEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 4;
+            d.Rasterization.DepthBiasEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 2;
+            d.Rasterization.RasterDiscardEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 1;
+
+            d.DepthStencil.DepthCompareOp  = desc->DepthStencil.DepthCompareOp;
+            d.DepthStencil.DepthTestEnabled = desc->DepthStencil.DepthTestWriteEnabled & 2;
+            d.DepthStencil.DepthWriteEnabled = desc->DepthStencil.DepthTestWriteEnabled & 1;
+
+            d.Viewport      = desc->Viewport;
+            d.Scissor       = desc->Scissor;
+
+            d.RenderPass = desc->RenderPass;
+            CopyFromByteBuffer(desc->DescriptorTables, d.DescriptorTables);
+            CopyFromByteBuffer(desc->Shaders, d.Shaders);
+
+            d.SubpassIndex = desc->SubpassIndex;
+
+            return self->CreateGraphicsPipeline(d).Detach();
+        }
+
         FE_DLL_EXPORT IRenderPass* IDevice_CreateRenderPass(IDevice* self, RenderPassDescBinding* desc)
         {
             RenderPassDesc d{};
