@@ -8,6 +8,22 @@ namespace Ferrum.Osmium.GPU.VertexInput
         public readonly uint Stride;
         public readonly InputStreamRate InputRate;
 
+        public InputStreamBufferDesc(uint stride, InputStreamRate inputRate)
+        {
+            Stride = stride;
+            InputRate = inputRate;
+        }
+
+        public InputStreamBufferDesc WithInputRate(InputStreamRate inputRate)
+        {
+            return new InputStreamBufferDesc(Stride, inputRate);
+        }
+
+        public InputStreamBufferDesc WithStride(uint stride)
+        {
+            return new InputStreamBufferDesc(stride, InputRate);
+        }
+
         public bool Equals(InputStreamBufferDesc other)
         {
             return Stride == other.Stride && InputRate == other.InputRate;
