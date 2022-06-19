@@ -25,6 +25,11 @@ namespace FE::GPU
 
     extern "C"
     {
+        FE_DLL_EXPORT IFence* IDevice_CreateFence(IDevice* self, FenceState state)
+        {
+            return self->CreateFence(state).Detach();
+        }
+
         FE_DLL_EXPORT IGraphicsPipeline* IDevice_CreateGraphicsPipeline(IDevice* self, GraphicsPipelineDescBinding* desc)
         {
             GraphicsPipelineDesc d{};
@@ -60,8 +65,22 @@ namespace FE::GPU
             d.Scissor       = desc->Scissor;
 
             d.RenderPass = desc->RenderPass;
-            CopyFromByteBuffer(desc->DescriptorTables, d.DescriptorTables);
-            CopyFromByteBuffer(desc->Shaders, d.Shaders);
+
+            List<IDescriptorTable*> descriptorTables;
+            CopyFromByteBuffer(desc->DescriptorTables, descriptorTables);
+            d.DescriptorTables.Reserve(descriptorTables.Size());
+            for (auto* descriptorTable : descriptorTables)
+            {
+                d.DescriptorTables.Push(descriptorTable);
+            }
+
+            List<IShaderModule*> shaders;
+            CopyFromByteBuffer(desc->Shaders, shaders);
+            d.Shaders.Reserve(shaders.Size());
+            for (auto* shader : shaders)
+            {
+                d.Shaders.Push(shader);
+            }
 
             d.SubpassIndex = desc->SubpassIndex;
 
