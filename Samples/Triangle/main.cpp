@@ -144,7 +144,7 @@ void RunExample()
         window->PollEvents();
         auto imageIndex = swapChain->GetCurrentImageIndex();
         fences[swapChain->GetCurrentFrameIndex()]->Reset();
-        graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+        graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
         swapChain->Present();
     }
 

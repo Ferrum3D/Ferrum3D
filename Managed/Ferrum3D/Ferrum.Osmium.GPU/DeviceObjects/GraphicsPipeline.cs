@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
@@ -42,9 +41,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
                 DescriptorTables = IntPtr.Zero;
-                Shaders = ByteBuffer.FromCollection(desc.Shaders
-                    .Select(x => x.Handle)
-                    .ToArray()).Detach();
+                Shaders = ByteBuffer.FromObjectCollection(desc.Shaders).Detach();
                 Rasterization = new RasterizationState.Native(desc.Rasterization);
                 DepthStencil = new DepthStencilState.Native(desc.DepthStencil);
                 ColorBlend = new ColorBlendState.Native(desc.ColorBlend);

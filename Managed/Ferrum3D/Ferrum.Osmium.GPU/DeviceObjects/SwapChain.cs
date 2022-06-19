@@ -16,8 +16,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public bool VerticalSync => NativeDesc.VerticalSync;
         public Format Format => (Format)NativeDesc.Format;
 
+        public int CurrentFrameIndex => (int)GetCurrentFrameIndexNative(Handle);
+        public int CurrentImageIndex => (int)GetCurrentImageIndexNative(Handle);
+
+        public IReadOnlyList<ImageView> RenderTargetViews => renderTargetViews;
+
         private readonly ImageView[] renderTargetViews;
-    
+
         private DescNative NativeDesc
         {
             get
@@ -26,8 +31,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return desc;
             }
         }
-        
-        public IReadOnlyList<ImageView> RenderTargetViews => renderTargetViews;
 
         public SwapChain(IntPtr handle) : base(handle)
         {
@@ -36,9 +39,17 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             GetRTVsNative(Handle, rtv, out _);
             renderTargetViews = rtv.Select(x => new ImageView(x)).ToArray();
         }
-        
+
+        public void Present()
+        {
+            PresentNative(Handle);
+        }
+
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetRTVs")]
         private static extern void GetRTVsNative(IntPtr self, IntPtr[] renderTargets, out uint count);
+        
+        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Present")]
+        private static extern void PresentNative(IntPtr self);
 
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Destruct")]
         private static extern void DestructNative(IntPtr self);
@@ -46,12 +57,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetDesc")]
         private static extern void GetDescNative(IntPtr self, out DescNative desc);
 
+        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetCurrentFrameIndex")]
+        private static extern uint GetCurrentFrameIndexNative(IntPtr self);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetCurrentImageIndex")]
+        private static extern uint GetCurrentImageIndexNative(IntPtr self);
+
         protected override void ReleaseUnmanagedResources()
         {
             foreach (var rtv in renderTargetViews)
             {
                 rtv.Dispose();
             }
+
             DestructNative(Handle);
         }
 

@@ -4,10 +4,25 @@ namespace FE::GPU
 {
     extern "C"
     {
+        FE_DLL_EXPORT UInt32 ISwapChain_GetCurrentFrameIndex(ISwapChain* self)
+        {
+            return self->GetCurrentFrameIndex();
+        }
+
+        FE_DLL_EXPORT UInt32 ISwapChain_GetCurrentImageIndex(ISwapChain* self)
+        {
+            return self->GetCurrentImageIndex();
+        }
+
+        FE_DLL_EXPORT void ISwapChain_Present(ISwapChain* self)
+        {
+            self->Present();
+        }
+
         FE_DLL_EXPORT void ISwapChain_GetRTVs(ISwapChain* self, IImageView** renderTargets, Int32* count)
         {
             auto result = self->GetRTVs();
-            *count = static_cast<Int32>(result.size());
+            *count      = static_cast<Int32>(result.size());
             if (renderTargets)
             {
                 for (Int32 i = 0; i < result.size(); ++i)
@@ -27,4 +42,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-}
+} // namespace FE::GPU

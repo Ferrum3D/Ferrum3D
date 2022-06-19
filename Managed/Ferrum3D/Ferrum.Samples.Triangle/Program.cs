@@ -1,8 +1,8 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
+using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
@@ -108,10 +108,42 @@ namespace Ferrum.Samples.Triangle
                 fences.Add(device.CreateFence(Fence.FenceState.Signaled));
             }
 
+            using var framebuffers = new DisposableList<Framebuffer>();
+            using var commandBuffers = new DisposableList<CommandBuffer>();
+            for (var i = 0; i < swapChain.ImageCount; i++)
+            {
+                var desc = new Framebuffer.Desc()
+                    .WithRenderPass(renderPass)
+                    .WithScissor(scissor)
+                    .WithRenderTargetViews(swapChain.RenderTargetViews[i]);
+
+                framebuffers.Add(device.CreateFramebuffer(desc));
+                commandBuffers.Add(device.CreateCommandBuffer(CommandQueueClass.Graphics));
+
+                using var builder = commandBuffers[i].Begin();
+                builder.BindGraphicsPipeline(pipeline);
+                builder.SetViewport(viewport);
+                builder.SetScissor(scissor);
+                builder.BindVertexBuffer(0, vertexBuffer);
+                builder.BeginRenderPass(renderPass, framebuffers[i], Colors.MediumAquamarine);
+                builder.Draw(6, 1, 0, 0);
+                builder.EndRenderPass();
+            }
+
+            using var commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
             while (!window.CloseRequested)
             {
+                var frameIndex = swapChain.CurrentFrameIndex;
+                fences[frameIndex].WaitOnCpu();
                 window.PollEvents();
+                var imageIndex = swapChain.CurrentImageIndex;
+                fences[swapChain.CurrentFrameIndex].Reset();
+                commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex],
+                    CommandQueue.SubmitFlags.FrameBeginEnd);
+                swapChain.Present();
             }
+
+            device.WaitIdle();
         }
 
         private static void Main()

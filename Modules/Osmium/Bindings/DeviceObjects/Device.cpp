@@ -1,30 +1,44 @@
+#include <Bindings/DeviceObjects/Framebuffer.h>
 #include <Bindings/DeviceObjects/GraphicsPipeline.h>
 #include <Bindings/DeviceObjects/RenderPass.h>
 #include <Bindings/Shaders/ShaderModule.h>
 #include <Bindings/WindowSystem/Window.h>
+#include <Bindings/Common.h>
 #include <GPU/Device/IDevice.h>
 
 namespace FE::GPU
 {
-    template<class T>
-    inline void CopyFromByteBuffer(IByteBuffer* src, List<T>& dst)
-    {
-        if (src == nullptr)
-        {
-            return;
-        }
-
-        auto size = src->Size() / sizeof(T);
-        if (size)
-        {
-            dst.Resize(size);
-            memcpy(dst.Data(), src->Data(), src->Size());
-            src->ReleaseStrongRef();
-        }
-    }
-
     extern "C"
     {
+        FE_DLL_EXPORT void IDevice_WaitIdle(IDevice* self)
+        {
+            self->WaitIdle();
+        }
+
+        FE_DLL_EXPORT ICommandBuffer* IDevice_CreateCommandBuffer(IDevice* self, CommandQueueClass queueClass)
+        {
+            return self->CreateCommandBuffer(queueClass).Detach();
+        }
+
+        FE_DLL_EXPORT IFramebuffer* IDevice_CreateFramebuffer(IDevice* self, FramebufferDescBinding* desc)
+        {
+            FramebufferDesc d{};
+
+            List<IImageView*> rtv;
+            CopyFromByteBuffer(desc->RenderTargetViews, rtv);
+            d.RenderTargetViews.Reserve(rtv.Size());
+            for (auto& r : rtv)
+            {
+                d.RenderTargetViews.Push(r);
+            }
+
+            d.RenderPass = desc->RenderPass;
+            d.Width      = desc->Width;
+            d.Height     = desc->Height;
+
+            return self->CreateFramebuffer(d).Detach();
+        }
+
         FE_DLL_EXPORT IFence* IDevice_CreateFence(IDevice* self, FenceState state)
         {
             return self->CreateFence(state).Detach();
@@ -51,18 +65,18 @@ namespace FE::GPU
                 d.InputLayout.PushAttribute(a);
             }
 
-            d.Rasterization.CullMode = desc->Rasterization.CullMode;
-            d.Rasterization.PolyMode = desc->Rasterization.PolyMode;
-            d.Rasterization.DepthClampEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 4;
-            d.Rasterization.DepthBiasEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 2;
+            d.Rasterization.CullMode             = desc->Rasterization.CullMode;
+            d.Rasterization.PolyMode             = desc->Rasterization.PolyMode;
+            d.Rasterization.DepthClampEnabled    = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 4;
+            d.Rasterization.DepthBiasEnabled     = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 2;
             d.Rasterization.RasterDiscardEnabled = desc->Rasterization.DepthClampDepthBiasRasterDiscardEnabled & 1;
 
-            d.DepthStencil.DepthCompareOp  = desc->DepthStencil.DepthCompareOp;
-            d.DepthStencil.DepthTestEnabled = desc->DepthStencil.DepthTestWriteEnabled & 2;
+            d.DepthStencil.DepthCompareOp    = desc->DepthStencil.DepthCompareOp;
+            d.DepthStencil.DepthTestEnabled  = desc->DepthStencil.DepthTestWriteEnabled & 2;
             d.DepthStencil.DepthWriteEnabled = desc->DepthStencil.DepthTestWriteEnabled & 1;
 
-            d.Viewport      = desc->Viewport;
-            d.Scissor       = desc->Scissor;
+            d.Viewport = desc->Viewport;
+            d.Scissor  = desc->Scissor;
 
             d.RenderPass = desc->RenderPass;
 

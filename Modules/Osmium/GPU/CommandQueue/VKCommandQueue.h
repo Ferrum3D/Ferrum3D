@@ -27,7 +27,7 @@ namespace FE::GPU
 
         void SignalFence(const Shared<IFence>& fence) override;
         void SubmitBuffers(
-            const Vector<Shared<ICommandBuffer>>& buffers, const Shared<IFence>& signalFence,
+            const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence,
             SubmitFlags flags) override;
 
         [[nodiscard]] const VKCommandQueueDesc& GetDesc() const;

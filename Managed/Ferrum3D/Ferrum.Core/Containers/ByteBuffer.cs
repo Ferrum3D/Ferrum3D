@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 
@@ -25,6 +26,12 @@ namespace Ferrum.Core.Containers
 
         public ByteBuffer(int size) : this(ConstructNative((ulong)size))
         {
+        }
+
+        public static ByteBuffer FromObjectCollection<T>(IEnumerable<T> collection)
+            where T : UnmanagedObject
+        {
+            return FromCollection(collection.Select(x => x.Handle).ToArray());
         }
 
         public static ByteBuffer FromCollection<T>(IReadOnlyList<T> collection)
