@@ -4,7 +4,9 @@ using System.Runtime.InteropServices;
 using Ferrum.Core.Console;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
+using Ferrum.Osmium.GPU.VertexInput;
 using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Samples.Triangle
@@ -72,12 +74,32 @@ namespace Ferrum.Samples.Triangle
 
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
             var subpassDesc = new SubpassDesc()
-                    .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0));
+                .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0));
             var renderPassDesc = new RenderPass.Desc()
                 .WithAttachments(attachmentDesc)
                 .WithSubpasses(subpassDesc)
                 .WithSubpassDependencies(SubpassDependency.Default);
             using var renderPass = device.CreateRenderPass(renderPassDesc);
+
+            var scissor = window.CreateScissor();
+            var viewport = window.CreateViewport();
+
+            var pipelineDesc = GraphicsPipeline.Desc.Default;
+            pipelineDesc.InputLayout = new InputStreamLayout.Builder()
+                .AddBuffer(InputStreamRate.PerVertex)
+                .AddAttribute(Format.R32G32B32_SFloat, "POSITION")
+                .AddAttribute(Format.R32G32B32_SFloat, "COLOR")
+                .Build()
+                .Build();
+            pipelineDesc.RenderPass = renderPass;
+            pipelineDesc.SubpassIndex = 0;
+            pipelineDesc.ColorBlend = new ColorBlendState(TargetColorBlending.Default);
+            pipelineDesc.Shaders = new[] { pixelShader, vertexShader };
+            pipelineDesc.Rasterization = new RasterizationState(CullingModeFlags.Back);
+            pipelineDesc.Scissor = scissor;
+            pipelineDesc.Viewport = viewport;
+
+            using var pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
             while (!window.CloseRequested)
             {
