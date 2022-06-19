@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.Common;
-using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.GPU.WindowSystem
 {
@@ -11,9 +10,9 @@ namespace Ferrum.Osmium.GPU.WindowSystem
         public uint Width => desc.Width;
         public uint Height => desc.Height;
         public string Title => desc.Title;
+        public IntPtr NativeHandle { get; }
 
         public bool CloseRequested { get; private set; }
-        public IntPtr NativeHandle { get; }
 
         private readonly Desc desc;
 
@@ -46,10 +45,10 @@ namespace Ferrum.Osmium.GPU.WindowSystem
 
         [DllImport("OsmiumBindings", EntryPoint = "IWindow_CreateScissor")]
         private static extern void CreateScissorNative(IntPtr self, out Scissor scissor);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IWindow_CreateViewport")]
         private static extern void CreateViewportNative(IntPtr self, out Viewport viewport);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IWindow_Destruct")]
         private static extern void DestructNative(IntPtr self);
 

@@ -7,7 +7,7 @@ namespace Ferrum.Osmium.GPU.Common
     {
         public readonly int MinX;
         public readonly int MinY;
-        
+
         public readonly int MaxX;
         public readonly int MaxY;
 
@@ -22,7 +22,7 @@ namespace Ferrum.Osmium.GPU.Common
             MaxX = maxX;
             MaxY = maxY;
         }
-        
+
         public override string ToString()
         {
             return $"Scissor ({{{MinX}; {MinY}}} {{{MaxX}; {MaxY}}})";

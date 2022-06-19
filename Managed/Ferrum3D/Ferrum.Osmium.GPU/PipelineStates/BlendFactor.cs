@@ -20,6 +20,6 @@
         Src1Color,
         OneMinusSrc1Color,
         Src1Alpha,
-        OneMinusSrc1Alpha,
+        OneMinusSrc1Alpha
     }
 }

@@ -9,18 +9,12 @@ namespace Ferrum.Osmium.GPU.VertexInput
 {
     public sealed class InputStreamLayout
     {
-        private readonly List<InputStreamBufferDesc> buffers = new List<InputStreamBufferDesc>();
-        private readonly List<InputStreamAttributeDesc> attributes = new List<InputStreamAttributeDesc>();
-        
-        public PrimitiveTopology Topology { get; private set; }
-
         public IReadOnlyList<InputStreamBufferDesc> Buffers => buffers;
         public IReadOnlyList<InputStreamAttributeDesc> Attributes => attributes;
 
-        private bool Equals(InputStreamLayout other)
-        {
-            return buffers.SequenceEqual(other.buffers) && attributes.SequenceEqual(other.attributes);
-        }
+        public PrimitiveTopology Topology { get; private set; }
+        private readonly List<InputStreamBufferDesc> buffers = new List<InputStreamBufferDesc>();
+        private readonly List<InputStreamAttributeDesc> attributes = new List<InputStreamAttributeDesc>();
 
         public override bool Equals(object obj)
         {
@@ -55,6 +49,11 @@ namespace Ferrum.Osmium.GPU.VertexInput
             return !Equals(left, right);
         }
 
+        private bool Equals(InputStreamLayout other)
+        {
+            return buffers.SequenceEqual(other.buffers) && attributes.SequenceEqual(other.attributes);
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct Native
         {
@@ -74,20 +73,20 @@ namespace Ferrum.Osmium.GPU.VertexInput
 
         public class BufferBuilder
         {
-            internal InputStreamBufferDesc Buffer;
-            private readonly Builder parent;
             internal readonly List<InputStreamAttributeDesc> Attributes = new List<InputStreamAttributeDesc>();
+            internal InputStreamBufferDesc Buffer;
+            internal uint Offset;
+            private readonly Builder parent;
 
             private readonly uint index;
-            internal uint Offset;
-            
+
             internal BufferBuilder(InputStreamRate inputRate, uint index, Builder parent)
             {
                 Buffer = Buffer.WithInputRate(inputRate);
                 this.index = index;
                 this.parent = parent;
             }
-            
+
             public BufferBuilder AddAttribute(Format format, string semantic)
             {
                 Attributes.Add(new InputStreamAttributeDesc(semantic, index, Offset, format));
@@ -116,7 +115,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
                 buffers.Add(new BufferBuilder(inputRate, (uint)buffers.Count, this));
                 return buffers.Last();
             }
-            
+
             public InputStreamLayout Build()
             {
                 var result = new InputStreamLayout
