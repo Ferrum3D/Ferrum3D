@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
-using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.GPU.Shaders
 {
@@ -52,7 +51,8 @@ namespace Ferrum.Osmium.GPU.Shaders
                 return new Args(HlslVersion.V6, stage, File.ReadAllText(filePath), entryPoint, filePath);
             }
 
-            public static Args FromFile(ShaderStage stage, string filePath, HlslVersion version, string entryPoint = "main")
+            public static Args FromFile(ShaderStage stage, string filePath, HlslVersion version,
+                string entryPoint = "main")
             {
                 return new Args(version, stage, File.ReadAllText(filePath), entryPoint, filePath);
             }

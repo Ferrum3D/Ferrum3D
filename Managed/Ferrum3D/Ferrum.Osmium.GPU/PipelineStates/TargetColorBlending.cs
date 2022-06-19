@@ -5,6 +5,10 @@ namespace Ferrum.Osmium.GPU.PipelineStates
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct TargetColorBlending
     {
+        public static TargetColorBlending Default = new TargetColorBlending(ColorComponentFlags.All, false,
+            BlendFactor.One, BlendFactor.Zero, BlendOperation.Add,
+            BlendFactor.One, BlendFactor.Zero, BlendOperation.Add);
+
         public readonly ColorComponentFlags ColorWriteFlags;
         public readonly BlendFactor SourceFactor;
         public readonly BlendFactor DestinationFactor;
@@ -27,9 +31,5 @@ namespace Ferrum.Osmium.GPU.PipelineStates
             DestinationAlphaFactor = destinationAlphaFactor;
             AlphaBlendOp = alphaBlendOp;
         }
-
-        public static TargetColorBlending Default = new TargetColorBlending(ColorComponentFlags.All, false,
-            BlendFactor.One, BlendFactor.Zero, BlendOperation.Add,
-            BlendFactor.One, BlendFactor.Zero, BlendOperation.Add);
     }
 }

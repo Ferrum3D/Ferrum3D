@@ -7,9 +7,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class SwapChain : UnmanagedObject
     {
-        public SwapChain(IntPtr handle) : base(handle)
-        {
-        }
+        public uint ImageCount => NativeDesc.ImageCount;
+        public uint FrameCount => NativeDesc.FrameCount;
+        public uint ImageWidth => NativeDesc.ImageWidth;
+        public uint ImageHeight => NativeDesc.ImageHeight;
+        public bool VerticalSync => NativeDesc.VerticalSync;
+        public Format Format => (Format)NativeDesc.Format;
 
         private DescNative NativeDesc
         {
@@ -19,13 +22,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return desc;
             }
         }
-        
-        public uint ImageCount => NativeDesc.ImageCount;
-        public uint FrameCount => NativeDesc.FrameCount;
-        public uint ImageWidth => NativeDesc.ImageWidth;
-        public uint ImageHeight => NativeDesc.ImageHeight;
-        public bool VerticalSync => NativeDesc.VerticalSync;
-        public Format Format => (Format)NativeDesc.Format;
+
+        public SwapChain(IntPtr handle) : base(handle)
+        {
+        }
 
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Destruct")]
         private static extern void DestructNative(IntPtr self);
@@ -49,7 +49,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly Format Format;
             public readonly CommandQueue Queue;
             public readonly Window Window;
-            
+
             public Desc(Window window, CommandQueue queue, Format format = Format.None, bool verticalSync = false,
                 uint imageCount = 3, uint frameCount = 2)
             {

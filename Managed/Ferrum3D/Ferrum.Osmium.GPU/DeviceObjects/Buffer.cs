@@ -16,19 +16,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
 
         public void UpdateData<T>(T[] data, int offset)
-            where T: unmanaged
+            where T : unmanaged
         {
             UpdateData(data, (ulong)offset);
         }
 
         public void UpdateData<T>(T[] data, int offset, int size)
-            where T: unmanaged
+            where T : unmanaged
         {
             UpdateData(data, (ulong)offset, (ulong)size);
         }
-        
+
         public void UpdateData<T>(T[] data, ulong offset = 0, ulong size = ulong.MaxValue)
-            where T: unmanaged
+            where T : unmanaged
         {
             unsafe
             {
@@ -43,7 +43,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             UpdateDataNative(Handle, data, offset, size);
         }
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IBuffer_AllocateMemory")]
         private static extern void AllocateMemoryNative(IntPtr self, int memoryType);
 

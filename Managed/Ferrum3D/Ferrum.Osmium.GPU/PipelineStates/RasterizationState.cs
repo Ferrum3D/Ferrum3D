@@ -4,6 +4,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
 {
     public readonly struct RasterizationState
     {
+        public static RasterizationState Default = new RasterizationState(CullingModeFlags.None);
         public readonly CullingModeFlags CullMode;
         public readonly PolygonMode PolyMode;
         public readonly bool DepthClampEnabled;
@@ -29,21 +30,19 @@ namespace Ferrum.Osmium.GPU.PipelineStates
             PolyMode = polyMode;
         }
 
-        public static RasterizationState Default = new RasterizationState(CullingModeFlags.None);
-        
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct Native
         {
             public readonly CullingModeFlags CullMode;
             public readonly PolygonMode PolyMode;
             public readonly ulong DepthClampDepthBiasRasterDiscardEnabled;
-            
+
             public Native(RasterizationState state)
             {
                 DepthClampDepthBiasRasterDiscardEnabled = 0;
                 CullMode = state.CullMode;
                 PolyMode = state.PolyMode;
-                
+
                 if (state.DepthClampEnabled)
                 {
                     DepthClampDepthBiasRasterDiscardEnabled |= 4;

@@ -8,6 +8,13 @@ namespace Ferrum.Core.Containers
 {
     public class ByteBuffer : UnmanagedObject, IEnumerable<byte>
     {
+        public int Size => (int)SizeNative(Handle);
+        public long LongSize => (long)SizeNative(Handle);
+
+        public byte this[int index] => ByteAt(index, DataNative(Handle));
+
+        public IntPtr DataPointer => DataNative(Handle);
+
         public ByteBuffer(IntPtr handle) : base(handle)
         {
         }
@@ -37,12 +44,14 @@ namespace Ferrum.Core.Containers
             return buffer;
         }
 
-        public int Size => (int)SizeNative(Handle);
-        public long LongSize => (long)SizeNative(Handle);
-
-        public byte this[int index] => ByteAt(index, DataNative(Handle));
-
-        public IntPtr DataPointer => DataNative(Handle);
+        public IEnumerator<byte> GetEnumerator()
+        {
+            var data = DataNative(Handle);
+            for (var i = 0; i < Size; ++i)
+            {
+                yield return ByteAt(i, data);
+            }
+        }
 
         private static byte ByteAt(int index, IntPtr data)
         {
@@ -68,15 +77,6 @@ namespace Ferrum.Core.Containers
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
-        }
-
-        public IEnumerator<byte> GetEnumerator()
-        {
-            var data = DataNative(Handle);
-            for (var i = 0; i < Size; ++i)
-            {
-                yield return ByteAt(i, data);
-            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

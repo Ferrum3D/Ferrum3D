@@ -10,6 +10,14 @@ namespace Ferrum.Osmium.GPU.VertexInput
         public readonly uint Offset;
         public readonly Format ElementFormat;
 
+        public InputStreamAttributeDesc(string shaderSemantic, uint bufferIndex, uint offset, Format elementFormat)
+        {
+            ShaderSemantic = shaderSemantic;
+            BufferIndex = bufferIndex;
+            Offset = offset;
+            ElementFormat = elementFormat;
+        }
+
         public bool Equals(InputStreamAttributeDesc other)
         {
             return ShaderSemantic == other.ShaderSemantic
@@ -27,7 +35,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
         {
             unchecked
             {
-                var hashCode = (ShaderSemantic != null ? ShaderSemantic.GetHashCode() : 0);
+                var hashCode = ShaderSemantic != null ? ShaderSemantic.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (int)BufferIndex;
                 hashCode = (hashCode * 397) ^ (int)Offset;
                 hashCode = (hashCode * 397) ^ (int)ElementFormat;
@@ -45,21 +53,13 @@ namespace Ferrum.Osmium.GPU.VertexInput
             return !left.Equals(right);
         }
 
-        public InputStreamAttributeDesc(string shaderSemantic, uint bufferIndex, uint offset, Format elementFormat)
-        {
-            ShaderSemantic = shaderSemantic;
-            BufferIndex = bufferIndex;
-            Offset = offset;
-            ElementFormat = elementFormat;
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         internal struct Native
         {
-            public unsafe fixed byte ShaderSemantic[32];
             public readonly uint BufferIndex;
             public readonly uint Offset;
             public readonly Format ElementFormat;
+            public unsafe fixed byte ShaderSemantic[32];
 
             public Native(InputStreamAttributeDesc desc)
             {
@@ -70,6 +70,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
                         ShaderSemantic[i] = (byte)desc.ShaderSemantic[i];
                     }
                 }
+
                 BufferIndex = desc.BufferIndex;
                 Offset = desc.Offset;
                 ElementFormat = desc.ElementFormat;

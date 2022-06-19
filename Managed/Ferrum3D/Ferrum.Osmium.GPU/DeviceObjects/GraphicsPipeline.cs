@@ -56,6 +56,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public struct Desc
         {
+            public static Desc Default = new Desc(null, 0, null, RasterizationState.Default, DepthStencilState.Default,
+                new ColorBlendState(), new InputStreamLayout(), new Viewport(), new Scissor());
+
             public RenderPass RenderPass;
             public uint SubpassIndex;
             public ShaderModule[] Shaders;
@@ -65,9 +68,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public InputStreamLayout InputLayout;
             public Viewport Viewport;
             public Scissor Scissor;
-
-            public static Desc Default = new Desc(null, 0, null, RasterizationState.Default, DepthStencilState.Default,
-                new ColorBlendState(), new InputStreamLayout(), new Viewport(), new Scissor());
 
             public Desc(RenderPass renderPass, uint subpassIndex, ShaderModule[] shaders,
                 RasterizationState rasterization, DepthStencilState depthStencil, ColorBlendState colorBlend,
