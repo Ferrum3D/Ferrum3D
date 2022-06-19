@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <FeCore/Containers/List.h>
 #include <GPU/Image/ImageFormat.h>
 
 namespace FE::GPU
@@ -73,45 +74,56 @@ namespace FE::GPU
 
     class InputStreamLayout
     {
-        Vector<InputStreamBufferDesc> m_Buffers;
-        Vector<InputStreamAttributeDesc> m_Attributes;
+        List<InputStreamBufferDesc> m_Buffers;
+        List<InputStreamAttributeDesc> m_Attributes;
 
     public:
         inline void PushBuffer(const InputStreamBufferDesc& bufferDesc)
         {
-            m_Buffers.push_back(bufferDesc);
+            m_Buffers.Push(bufferDesc);
         }
 
         inline void PushAttribute(const InputStreamAttributeDesc& attributeDesc)
         {
-            m_Attributes.push_back(attributeDesc);
+            m_Attributes.Push(attributeDesc);
         }
 
-        inline const Vector<InputStreamBufferDesc>& GetBuffers() const
+        inline List<InputStreamBufferDesc>& GetBuffers()
         {
             return m_Buffers;
         }
 
-        inline const Vector<InputStreamAttributeDesc>& GetAttributes() const
+        inline List<InputStreamAttributeDesc>& GetAttributes()
+        {
+            return m_Attributes;
+        }
+
+        inline const List<InputStreamBufferDesc>& GetBuffers() const
+        {
+            return m_Buffers;
+        }
+
+        inline const List<InputStreamAttributeDesc>& GetAttributes() const
         {
             return m_Attributes;
         }
 
         bool operator==(const InputStreamLayout& rhs) const
         {
-            if (m_Buffers.size() != rhs.m_Buffers.size() || m_Attributes.size() != rhs.m_Attributes.size())
+            if (m_Buffers.Size() != rhs.m_Buffers.Size() || m_Attributes.Size() != rhs.m_Attributes.Size())
             {
                 return false;
             }
 
-            for (size_t i = 0; i < m_Buffers.size(); ++i)
+            for (size_t i = 0; i < m_Buffers.Size(); ++i)
             {
                 if (m_Buffers[i] != rhs.m_Buffers[i])
                 {
                     return false;
                 }
             }
-            for (size_t i = 0; i < m_Attributes.size(); ++i)
+
+            for (size_t i = 0; i < m_Attributes.Size(); ++i)
             {
                 if (m_Attributes[i] != rhs.m_Attributes[i])
                 {
