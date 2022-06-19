@@ -18,6 +18,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
         }
 
+        public GraphicsPipeline CreateGraphicsPipeline(GraphicsPipeline.Desc desc)
+        {
+            var nativeDesc = new GraphicsPipeline.DescNative(desc);
+            return new GraphicsPipeline(CreateGraphicsPipelineNative(Handle, ref nativeDesc));
+        }
+
         public RenderPass CreateRenderPass(RenderPass.Desc desc)
         {
             var nativeDesc = new RenderPass.DescNative(desc);
@@ -60,6 +66,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new Window(CreateWindowNative(Handle, ref desc), desc);
         }
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateGraphicsPipeline")]
+        private static extern IntPtr CreateGraphicsPipelineNative(IntPtr self, ref GraphicsPipeline.DescNative desc);
 
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateRenderPass")]
         private static extern IntPtr CreateRenderPassNative(IntPtr self, ref RenderPass.DescNative desc);
