@@ -26,4 +26,4 @@ def process_files():
     if error_count == 0:
         print("Header validation finished without errors.")
     else:
-        print("Header validation finished, {error_count} errors found.")
+        print(f"Header validation finished, {error_count} errors found.")
