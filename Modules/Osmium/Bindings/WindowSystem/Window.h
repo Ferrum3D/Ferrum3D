@@ -1,5 +1,5 @@
 #pragma once
-#include <GPU/Window/IWindow.h>
+#include <FeCore/Base/Base.h>
 
 namespace FE::GPU
 {
@@ -10,4 +10,4 @@ namespace FE::GPU
 
         const char* Title;
     };
-}
+} // namespace FE::GPU

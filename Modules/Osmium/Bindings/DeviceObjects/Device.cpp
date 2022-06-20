@@ -1,10 +1,21 @@
+#include <Bindings/Common.h>
 #include <Bindings/DeviceObjects/Framebuffer.h>
 #include <Bindings/DeviceObjects/GraphicsPipeline.h>
 #include <Bindings/DeviceObjects/RenderPass.h>
 #include <Bindings/Shaders/ShaderModule.h>
 #include <Bindings/WindowSystem/Window.h>
-#include <Bindings/Common.h>
+#include <GPU/Buffer/IBuffer.h>
+#include <GPU/CommandBuffer/ICommandBuffer.h>
+#include <GPU/CommandQueue/ICommandQueue.h>
+#include <GPU/Descriptors/IDescriptorTable.h>
 #include <GPU/Device/IDevice.h>
+#include <GPU/Fence/IFence.h>
+#include <GPU/Framebuffer/IFramebuffer.h>
+#include <GPU/ImageView/IImageView.h>
+#include <GPU/Shader/IShaderCompiler.h>
+#include <GPU/Shader/IShaderModule.h>
+#include <GPU/SwapChain/ISwapChain.h>
+#include <GPU/Window/IWindow.h>
 
 namespace FE::GPU
 {

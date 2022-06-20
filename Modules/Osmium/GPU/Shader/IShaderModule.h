@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Memory/Object.h>
+#include <FeCore/Memory/SharedPtr.h>
 #include <GPU/Shader/ShaderStage.h>
 #include <FeCore/Containers/IByteBuffer.h>
 
@@ -11,7 +11,7 @@ namespace FE::GPU
     struct ShaderModuleDesc
     {
         const UInt8* ByteCode = nullptr;
-        size_t ByteCodeSize = 0;
+        USize ByteCodeSize = 0;
         String EntryPoint;
         ShaderStage Stage = ShaderStage::Vertex;
 

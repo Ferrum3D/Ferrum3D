@@ -1,6 +1,10 @@
 #pragma once
-#include <FeCore/Containers/IByteBuffer.h>
 #include <GPU/RenderPass/IRenderPass.h>
+
+namespace FE
+{
+    class IByteBuffer;
+}
 
 namespace FE::GPU
 {

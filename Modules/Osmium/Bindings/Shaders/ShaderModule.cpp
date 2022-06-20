@@ -1,4 +1,5 @@
-#include "ShaderModule.h"
+#include <Bindings/Shaders/ShaderModule.h>
+#include <GPU/Shader/IShaderModule.h>
 
 namespace FE::GPU
 {
@@ -9,4 +10,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-}
+} // namespace FE::GPU
