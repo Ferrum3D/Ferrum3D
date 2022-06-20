@@ -6,6 +6,7 @@
 #include <GPU/RenderPass/VKRenderPass.h>
 #include <GPU/Shader/VKShaderModule.h>
 #include <GPU/Shader/VKShaderReflection.h>
+#include <GPU/Common/VKViewport.h>
 
 namespace FE::GPU
 {

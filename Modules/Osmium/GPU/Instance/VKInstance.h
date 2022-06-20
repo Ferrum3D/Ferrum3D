@@ -1,6 +1,6 @@
 #pragma once
-#include <GPU/Instance/IInstance.h>
 #include <GPU/Common/VKConfig.h>
+#include <GPU/Instance/IInstance.h>
 
 namespace FE::GPU
 {
@@ -17,11 +17,11 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
 
-        VKInstance(const InstanceDesc& desc);
+        explicit VKInstance(const InstanceDesc& desc);
         ~VKInstance() override;
 
         vk::Instance& GetNativeInstance();
 
-        virtual Vector<Shared<IAdapter>>& GetAdapters() override;
+        Vector<Shared<IAdapter>>& GetAdapters() override;
     };
-}
+} // namespace FE::GPU

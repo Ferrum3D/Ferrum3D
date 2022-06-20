@@ -71,7 +71,7 @@ set(SRC
     GPU/RenderPass/VKRenderPass.h
     GPU/RenderPass/VKRenderPass.cpp
 
-    GPU/Resource/IResource.h
+    GPU/Resource/BindFlags.h
     GPU/Resource/ResourceState.h
 
     GPU/Shader/IShaderCompiler.h
@@ -91,7 +91,11 @@ set(SRC
 
     GPU/Window/IWindow.h
     GPU/Window/Window.h
-    GPU/Window/Window.cpp)
+    GPU/Window/Window.cpp
+
+    GPU/Memory/MemoryType.h
+    GPU/Fence/FenceState.h
+    GPU/Image/VKImageSubresource.h GPU/Common/VKViewport.h GPU/Resource/VKResourceState.h GPU/Resource/ShaderResourceType.h GPU/Descriptors/DescriptorDesc.h)
 
 add_library(OsmiumGPU SHARED ${SRC})
 

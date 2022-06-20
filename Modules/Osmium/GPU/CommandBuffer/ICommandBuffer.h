@@ -1,13 +1,9 @@
 #pragma once
+#include <FeCore/Containers/List.h>
 #include <FeCore/Math/Color.h>
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/Memory/Object.h>
-#include <GPU/Descriptors/IDescriptorTable.h>
-#include <GPU/Framebuffer/IFramebuffer.h>
-#include <GPU/Pipeline/IGraphicsPipeline.h>
-#include <GPU/RenderPass/IRenderPass.h>
+#include <FeCore/Memory/SharedPtr.h>
+#include <GPU/Common/Viewport.h>
 #include <GPU/Resource/ResourceState.h>
-#include <cstdint>
 
 namespace FE::GPU
 {
@@ -43,6 +39,12 @@ namespace FE::GPU
         }
     };
 
+    class IDescriptorTable;
+    class IGraphicsPipeline;
+    class IRenderPass;
+    class IFramebuffer;
+    class IBuffer;
+
     class ICommandBuffer : public IObject
     {
     public:
@@ -57,10 +59,10 @@ namespace FE::GPU
         virtual void SetScissor(const Scissor& scissor)    = 0;
 
         virtual void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) = 0;
-        virtual void MemoryBarrier()                                                                   = 0;
+        virtual void MemoryBarrier()                                                                 = 0;
 
         virtual void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
-        virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                    = 0;
+        virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                  = 0;
 
         virtual void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) = 0;
         virtual void EndRenderPass()                                                                                       = 0;

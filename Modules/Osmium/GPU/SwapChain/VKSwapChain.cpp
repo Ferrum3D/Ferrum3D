@@ -2,6 +2,8 @@
 #include <GPU/CommandQueue/VKCommandQueue.h>
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Image/VKImage.h>
+#include <GPU/ImageView/IImageView.h>
+#include <GPU/Instance/VKInstance.h>
 #include <GPU/SwapChain/VKSwapChain.h>
 
 namespace FE::GPU
@@ -33,9 +35,9 @@ namespace FE::GPU
             auto backBuffer   = MakeShared<VKImage>(*m_Device);
             backBuffer->Image = image;
             backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
-            m_Images.push_back(static_pointer_cast<IImage>(backBuffer));
+            m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
-            m_ImageViews.push_back(backBuffer->CreateRenderTargetView());
+            m_ImageViews.Push(backBuffer->CreateRenderTargetView());
         }
 
         for (size_t i = 0; i < m_Desc.FrameCount; ++i)
@@ -154,7 +156,7 @@ namespace FE::GPU
 
     UInt32 VKSwapChain::GetImageCount()
     {
-        return static_cast<UInt32>(m_Images.size());
+        return static_cast<UInt32>(m_Images.Size());
     }
 
     IImage* VKSwapChain::GetImage(UInt32 index)
@@ -177,7 +179,7 @@ namespace FE::GPU
         presentInfo.pImageIndices      = &m_ImageIndex;
         FE_VK_ASSERT(m_Queue->GetNativeQueue().presentKHR(presentInfo));
 
-        m_FrameIndex = (m_FrameIndex + 1) % m_Desc.FrameCount;
+        m_FrameIndex                      = (m_FrameIndex + 1) % m_Desc.FrameCount;
         *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex].get();
         *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex].get();
         AcquireNextImage(&m_ImageIndex);
@@ -190,7 +192,7 @@ namespace FE::GPU
             m_NativeSwapChain.get(), static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
 
-    Vector<Shared<IImageView>> VKSwapChain::GetRTVs()
+    List<Shared<IImageView>> VKSwapChain::GetRTVs()
     {
         return m_ImageViews;
     }

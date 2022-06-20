@@ -11,6 +11,13 @@ namespace FE::GPU
         Vulkan
     };
 
+    enum class CommandQueueClass
+    {
+        Graphics,
+        Compute,
+        Transfer
+    };
+
     struct Size
     {
         UInt64 Width;

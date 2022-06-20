@@ -2,6 +2,7 @@
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Image/VKImageFormat.h>
 #include <GPU/RenderPass/VKRenderPass.h>
+#include <GPU/Resource/VKResourceState.h>
 
 namespace FE::GPU
 {
@@ -35,7 +36,7 @@ namespace FE::GPU
         }
     }
 
-    VKRenderPass::VKRenderPass(VKDevice& dev, const RenderPassDesc& desc)
+    VKRenderPass::VKRenderPass(VKDevice& dev, const RenderPassDesc& desc) // NOLINT(modernize-pass-by-value)
         : m_Device(&dev)
         , m_Desc(desc)
     {

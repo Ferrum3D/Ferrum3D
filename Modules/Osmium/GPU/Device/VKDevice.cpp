@@ -9,6 +9,7 @@
 #include <GPU/Framebuffer/VKFramebuffer.h>
 #include <GPU/Image/VKImage.h>
 #include <GPU/ImageView/VKImageView.h>
+#include <GPU/Instance/VKInstance.h>
 #include <GPU/Pipeline/VKGraphicsPipeline.h>
 #include <GPU/RenderPass/VKRenderPass.h>
 #include <GPU/Shader/ShaderCompilerDXC.h>

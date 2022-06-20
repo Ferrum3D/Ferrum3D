@@ -1,5 +1,4 @@
 #pragma once
-#include <FeCore/Memory/Object.h>
 #include <GPU/ImageView/IImageView.h>
 #include <GPU/Common/VKConfig.h>
 

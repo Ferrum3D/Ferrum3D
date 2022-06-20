@@ -1,15 +1,16 @@
 #pragma once
-#include <FeCore/RTTI/RTTI.h>
-#include <GPU/Image/IImage.h>
+#include <FeCore/Memory/SharedPtr.h>
 #include <GPU/Image/ImageFormat.h>
 #include <GPU/Image/ImageSubresource.h>
 
 namespace FE::GPU
 {
+    class IImage;
+
     struct ImageViewDesc
     {
         FE_STRUCT_RTTI(ImageViewDesc, "F018B216-D830-4856-8BF1-E1C082BBBBB1");
-        
+
         ImageSubresourceRange SubresourceRange;
         Format Format = Format::None;
         Shared<IImage> Image;

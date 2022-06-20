@@ -27,8 +27,7 @@ namespace FE::GPU
         SubmitBuffers({}, fence, SubmitFlags::None);
     }
 
-    void VKCommandQueue::SubmitBuffers(
-        const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
+    void VKCommandQueue::SubmitBuffers(const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
     {
         Vector<vk::CommandBuffer> nativeBuffers{};
         nativeBuffers.reserve(buffers.Size());

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <GPU/Common/VKConfig.h>
 #include <GPU/Pipeline/IGraphicsPipeline.h>
 
@@ -45,7 +44,7 @@ namespace FE::GPU
         vk::PipelineColorBlendAttachmentState BuildBlendState(size_t attachmentIndex);
         vk::PipelineRasterizationStateCreateInfo BuildRasterizationState();
         vk::PipelineMultisampleStateCreateInfo BuildMultisampleState();
-        vk::PipelineDepthStencilStateCreateInfo BuildDepthState() const;
+        [[nodiscard]] vk::PipelineDepthStencilStateCreateInfo BuildDepthState() const;
 
     public:
         FE_CLASS_RTTI(VKGraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");

@@ -1,6 +1,7 @@
 #pragma once
 #include <GPU/Descriptors/IDescriptorTable.h>
 #include <GPU/Common/VKConfig.h>
+#include <FeCore/Containers/List.h>
 
 namespace FE::GPU
 {
@@ -15,12 +16,12 @@ namespace FE::GPU
         vk::UniqueDescriptorSetLayout m_Layout;
         vk::DescriptorSet m_Set;
 
-        Vector<DescriptorDesc> m_Descriptors;
+        List<DescriptorDesc> m_Descriptors;
 
     public:
         FE_CLASS_RTTI(VKDescriptorTable, "262CD421-E748-4F4C-A732-2ABB951D486A");
 
-        VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const Vector<DescriptorDesc>& descriptors);
+        VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors);
 
         void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) override;
 

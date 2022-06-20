@@ -1,6 +1,5 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
-#include <GPU/Adapter/IAdapter.h>
 #include <GPU/Common/BaseTypes.h>
 
 namespace FE::GPU
@@ -11,6 +10,8 @@ namespace FE::GPU
 
         const char* ApplicationName;
     };
+
+    class IAdapter;
 
     class IInstance : public IObject
     {

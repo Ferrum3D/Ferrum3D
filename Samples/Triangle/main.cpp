@@ -2,7 +2,23 @@
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <GPU/Instance/IInstance.h>
+#include <GPU/Adapter/IAdapter.h>
+#include <GPU/Device/IDevice.h>
+#include <GPU/Fence/IFence.h>
+#include <GPU/CommandQueue/ICommandQueue.h>
 #include <GPU/Pipeline/InputLayoutBuilder.h>
+#include <GPU/Window/IWindow.h>
+#include <GPU/SwapChain/ISwapChain.h>
+#include <GPU/Buffer/IBuffer.h>
+#include <GPU/Shader/IShaderCompiler.h>
+#include <GPU/Shader/IShaderModule.h>
+#include <GPU/RenderPass/IRenderPass.h>
+#include <GPU/Pipeline/IGraphicsPipeline.h>
+#include <FeCore/Containers/IByteBuffer.h>
+#include <GPU/ImageView/IImageView.h>
+#include <GPU/Descriptors/IDescriptorTable.h>
+#include <GPU/Framebuffer/IFramebuffer.h>
+#include <GPU/CommandBuffer/ICommandBuffer.h>
 
 struct Vertex
 {
@@ -144,7 +160,8 @@ void RunExample()
         window->PollEvents();
         auto imageIndex = swapChain->GetCurrentImageIndex();
         fences[swapChain->GetCurrentFrameIndex()]->Reset();
-        graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+        graphicsQueue->SubmitBuffers(
+            { commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
         swapChain->Present();
     }
 

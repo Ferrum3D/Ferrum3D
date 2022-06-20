@@ -1,11 +1,12 @@
 #pragma once
-#include <GPU/Fence/IFence.h>
-#include <GPU/Image/IImage.h>
-#include <GPU/ImageView/IImageView.h>
-#include <GPU/CommandQueue/ICommandQueue.h>
+#include <FeCore/Containers/List.h>
+#include <FeCore/Memory/SharedPtr.h>
+#include <GPU/Image/ImageFormat.h>
 
 namespace FE::GPU
 {
+    class ICommandQueue;
+
     struct SwapChainDesc
     {
         FE_STRUCT_RTTI(SwapChainDesc, "19401C0C-A89C-4393-8D40-F669AB8B128C");
@@ -22,6 +23,9 @@ namespace FE::GPU
         void* NativeWindowHandle = nullptr;
     };
 
+    class IImage;
+    class IImageView;
+
     class ISwapChain : public IObject
     {
     public:
@@ -37,6 +41,6 @@ namespace FE::GPU
         virtual IImage* GetImage(UInt32 index) = 0;
         virtual IImage* GetCurrentImage()      = 0;
 
-        virtual Vector<Shared<IImageView>> GetRTVs() = 0;
+        virtual List<Shared<IImageView>> GetRTVs() = 0;
     };
 } // namespace FE::GPU

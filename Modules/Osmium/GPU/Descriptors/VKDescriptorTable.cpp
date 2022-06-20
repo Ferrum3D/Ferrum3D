@@ -6,7 +6,7 @@
 
 namespace FE::GPU
 {
-    VKDescriptorTable::VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const Vector<DescriptorDesc>& descriptors)
+    VKDescriptorTable::VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors)
         : m_Device(&dev)
         , m_Heap(&heap)
         , m_Descriptors(descriptors)

@@ -17,7 +17,7 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(ShaderCompilerDXC, "9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
-        ShaderCompilerDXC(GraphicsAPI api);
+        explicit ShaderCompilerDXC(GraphicsAPI api);
 
         Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) override;
     };

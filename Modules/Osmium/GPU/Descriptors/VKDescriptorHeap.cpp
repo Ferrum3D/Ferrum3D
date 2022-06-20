@@ -1,5 +1,5 @@
-#include <GPU/Descriptors/VKDescriptorTable.h>
 #include <GPU/Descriptors/VKDescriptorHeap.h>
+#include <GPU/Descriptors/VKDescriptorTable.h>
 #include <GPU/Device/VKDevice.h>
 
 namespace FE::GPU
@@ -8,7 +8,7 @@ namespace FE::GPU
         : m_Device(&dev)
     {
         Vector<vk::DescriptorPoolSize> sizes;
-        sizes.reserve(desc.Sizes.size());
+        sizes.reserve(desc.Sizes.Size());
         for (auto& size : desc.Sizes)
         {
             auto& nativeSize           = sizes.emplace_back();
@@ -29,7 +29,7 @@ namespace FE::GPU
         return m_NativePool.get();
     }
 
-    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors)
+    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const List<DescriptorDesc>& descriptors)
     {
         return static_pointer_cast<IDescriptorTable>(MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors));
     }

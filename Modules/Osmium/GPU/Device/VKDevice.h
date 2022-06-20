@@ -1,9 +1,7 @@
 #pragma once
-#include <GPU/Common/VKConfig.h>
 #include <FeCore/Console/FeLog.h>
+#include <GPU/Common/VKConfig.h>
 #include <GPU/Device/IDevice.h>
-#include <GPU/Instance/IInstance.h>
-#include <GPU/CommandBuffer/VKCommandBuffer.h>
 
 namespace FE::GPU
 {
@@ -27,6 +25,7 @@ namespace FE::GPU
     };
 
     class VKInstance;
+    class VKCommandBuffer;
 
     class VKDevice final : public Object<IDevice>
     {

@@ -1,7 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/Vector4.h>
-
 #include <utility>
 
 namespace FE::GPU

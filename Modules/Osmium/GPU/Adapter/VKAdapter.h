@@ -1,9 +1,11 @@
 #pragma once
 #include <GPU/Adapter/IAdapter.h>
-#include <GPU/Instance/VKInstance.h>
+#include <GPU/Common/VKConfig.h>
 
 namespace FE::GPU
 {
+    class VKInstance;
+
     inline AdapterType VKConvert(const vk::PhysicalDeviceType& src) noexcept
     {
         switch (src)
@@ -34,8 +36,8 @@ namespace FE::GPU
         VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter);
 
         vk::PhysicalDevice& GetNativeAdapter();
-        virtual AdapterDesc& GetDesc() override;
-        virtual Shared<IDevice> CreateDevice() override;
-        virtual IInstance& GetInstance() override;
+        AdapterDesc& GetDesc() override;
+        Shared<IDevice> CreateDevice() override;
+        IInstance& GetInstance() override;
     };
 } // namespace FE::GPU

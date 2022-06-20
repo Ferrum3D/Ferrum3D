@@ -1,30 +1,37 @@
 #pragma once
-#include <GPU/Buffer/IBuffer.h>
-#include <GPU/CommandBuffer/ICommandBuffer.h>
-#include <GPU/CommandQueue/ICommandQueue.h>
-#include <GPU/Descriptors/IDescriptorHeap.h>
-#include <GPU/Fence/IFence.h>
-#include <GPU/Framebuffer/IFramebuffer.h>
-#include <GPU/ImageView/IImageView.h>
-#include <GPU/Pipeline/IGraphicsPipeline.h>
-#include <GPU/RenderPass/IRenderPass.h>
-#include <GPU/Resource/IResource.h>
-#include <GPU/Shader/IShaderCompiler.h>
-#include <GPU/Shader/IShaderModule.h>
-#include <GPU/SwapChain/ISwapChain.h>
-#include <GPU/Window/IWindow.h>
+#include <FeCore/Memory/SharedPtr.h>
+#include <GPU/Common/BaseTypes.h>
+#include <GPU/Fence/FenceState.h>
+#include <GPU/Resource/BindFlags.h>
 
 namespace FE::GPU
 {
-    enum class CommandQueueClass
-    {
-        Graphics,
-        Compute,
-        Transfer
-    };
-
     class IInstance;
+    class IFence;
     class IAdapter;
+    class ICommandQueue;
+    class ICommandBuffer;
+    class ISwapChain;
+    class IBuffer;
+    class IShaderModule;
+    class IRenderPass;
+    class IDescriptorHeap;
+    class IShaderCompiler;
+    class IGraphicsPipeline;
+    class IImageView;
+    class IFramebuffer;
+    class IWindow;
+    class IImage;
+
+    struct SwapChainDesc;
+    struct ShaderModuleDesc;
+    struct RenderPassDesc;
+    struct DescriptorHeapDesc;
+    struct GraphicsPipelineDesc;
+    struct ImageViewDesc;
+    struct FramebufferDesc;
+    struct WindowDesc;
+    struct ImageDesc;
 
     class IDevice : public IObject
     {

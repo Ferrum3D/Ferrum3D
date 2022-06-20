@@ -1,15 +1,9 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
-#include <cstdint>
+#include <GPU/Memory/MemoryType.h>
 
 namespace FE::GPU
 {
-    enum class MemoryType
-    {
-        DeviceLocal,
-        HostVisible
-    };
-
     struct MemoryAllocationDesc
     {
         UInt64 Size;
@@ -23,7 +17,7 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(IDeviceMemory, "52A70884-939E-42DF-B406-26AC86B8DD51");
 
-        virtual ~IDeviceMemory() = default;
+        ~IDeviceMemory() override = default;
 
         virtual const MemoryAllocationDesc& GetDesc() = 0;
     };

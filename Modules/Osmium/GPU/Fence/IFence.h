@@ -1,15 +1,9 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/Object.h>
+#include <GPU/Fence/FenceState.h>
 
 namespace FE::GPU
 {
-    enum class FenceState
-    {
-        Signaled,
-        Reset
-    };
-
     class IFence : public IObject
     {
     public:
