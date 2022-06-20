@@ -95,7 +95,7 @@ set(SRC
 
     GPU/Memory/MemoryType.h
     GPU/Fence/FenceState.h
-    GPU/Image/VKImageSubresource.h GPU/Common/VKViewport.h GPU/Resource/VKResourceState.h GPU/Resource/ShaderResourceType.h GPU/Descriptors/DescriptorDesc.h)
+    GPU/Image/VKImageSubresource.h GPU/Common/VKViewport.h GPU/Resource/VKResourceState.h GPU/Resource/ShaderResourceType.h GPU/Descriptors/DescriptorDesc.h GPU/OsmiumGPU.h)
 
 add_library(OsmiumGPU SHARED ${SRC})
 
