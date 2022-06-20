@@ -21,8 +21,8 @@
 #include <FeCore/IO/StdoutStream.h>
 #include <FeCore/Jobs/JobScheduler.h>
 #include <FeCore/Math/Colors.h>
-#include <GPU/Instance/IInstance.h>
-#include <GPU/Pipeline/InputLayoutBuilder.h>
+#include <FeCore/Modules/DynamicLibrary.h>
+#include <GPU/OsmiumGPU.h>
 #include <chrono>
 
 struct Vertex
@@ -84,7 +84,12 @@ int main()
 
         FE_LOG_MESSAGE("Counter: {}", JobCounter);
 
-        auto instance      = HAL::CreateGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
+        FE::DynamicLibrary osmiumLib("OsmiumGPU");
+        auto attachEnvironment = osmiumLib.GetFunction<HAL::AttachEnvironmentProc>("AttachEnvironment");
+        attachEnvironment(&FE::Env::GetEnvironment());
+        auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
+
+        auto instance      = createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
         auto adapter       = instance->GetAdapters()[0];
         auto device        = adapter->CreateDevice();
         auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
@@ -149,7 +154,7 @@ int main()
             copyCmdBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), vertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
             copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
             copyCmdBuffer->End();
-            transferQueue->SubmitBuffers({ copyCmdBuffer }, { transferComplete }, HAL::SubmitFlags::None);
+            transferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
             transferComplete->WaitOnCPU();
         }
 
@@ -281,7 +286,8 @@ int main()
             window->PollEvents();
             auto imageIndex = swapChain->GetCurrentImageIndex();
             fences[swapChain->GetCurrentFrameIndex()]->Reset();
-            graphicsQueue->SubmitBuffers({ commandBuffers[imageIndex] }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+            graphicsQueue->SubmitBuffers(
+                { commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
             swapChain->Present();
 
             if ((frames = (frames + 1) % 1000) == 0)
