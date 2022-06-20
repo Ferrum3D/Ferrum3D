@@ -1,7 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Object.h>
 #include <FeCore/Containers/List.h>
-#include <GPU/Fence/IFence.h>
+#include <FeCore/Memory/Object.h>
 
 namespace FE::GPU
 {
@@ -16,6 +15,7 @@ namespace FE::GPU
     FE_ENUM_OPERATORS(SubmitFlags);
 
     class ICommandBuffer;
+    class IFence;
 
     class ICommandQueue : public IObject
     {

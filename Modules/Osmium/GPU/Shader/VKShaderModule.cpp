@@ -4,7 +4,7 @@
 
 namespace FE::GPU
 {
-    VKShaderModule::VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc)
+    VKShaderModule::VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc) // NOLINT(modernize-pass-by-value)
         : m_Device(&dev)
         , m_Desc(desc)
     {
@@ -28,8 +28,8 @@ namespace FE::GPU
     {
         vk::PipelineShaderStageCreateInfo info{};
         info.module = m_NativeModule.get();
-        info.pName = m_Desc.EntryPoint.Data();
-        info.stage = VKConvert(m_Desc.Stage);
+        info.pName  = m_Desc.EntryPoint.Data();
+        info.stage  = VKConvert(m_Desc.Stage);
         return info;
     }
 

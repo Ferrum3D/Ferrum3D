@@ -1,9 +1,9 @@
 #pragma once
-#include <FeCore/Memory/Object.h>
+#include <FeCore/Memory/SharedPtr.h>
 #include <GPU/Common/BaseTypes.h>
 #include <GPU/Image/ImageEnums.h>
 #include <GPU/Image/ImageFormat.h>
-#include <GPU/Resource/IResource.h>
+#include <GPU/Resource/BindFlags.h>
 #include <cstdint>
 
 namespace FE::GPU
@@ -26,7 +26,8 @@ namespace FE::GPU
         inline static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
         inline static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format);
-        inline static ImageDesc Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format);
+        inline static ImageDesc Img2DArray(
+            ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format);
         inline static ImageDesc ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
         inline static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);

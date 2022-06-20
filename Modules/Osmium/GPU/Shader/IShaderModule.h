@@ -2,7 +2,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Object.h>
 #include <GPU/Shader/ShaderStage.h>
-#include <FeCore/Containers/ByteBuffer.h>
+#include <FeCore/Containers/IByteBuffer.h>
 
 namespace FE::GPU
 {

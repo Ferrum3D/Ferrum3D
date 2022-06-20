@@ -1,5 +1,6 @@
 #include <FeCore/Console/FeLog.h>
 #include <GPU/Adapter/VKAdapter.h>
+#include <GPU/Instance/VKInstance.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -74,8 +75,8 @@ namespace FE::GPU
         }
 
         vk::ApplicationInfo appInfo{};
-        appInfo.apiVersion = VK_API_VERSION_1_2;
-        appInfo.pEngineName = FerrumEngineName;
+        appInfo.apiVersion       = VK_API_VERSION_1_2;
+        appInfo.pEngineName      = FerrumEngineName;
         appInfo.pApplicationName = desc.ApplicationName;
 
         vk::InstanceCreateInfo instanceCI{};

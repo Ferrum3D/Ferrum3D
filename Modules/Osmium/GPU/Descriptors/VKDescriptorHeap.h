@@ -1,6 +1,6 @@
 #pragma once
-#include <GPU/Descriptors/IDescriptorHeap.h>
 #include <GPU/Common/VKConfig.h>
+#include <GPU/Descriptors/IDescriptorHeap.h>
 
 namespace FE::GPU
 {
@@ -40,8 +40,8 @@ namespace FE::GPU
 
         VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc);
 
-        Shared<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) override;
+        Shared<IDescriptorTable> AllocateDescriptorTable(const List<DescriptorDesc>& descriptors) override;
 
         vk::DescriptorPool& GetNativeDescriptorPool();
     };
-}
+} // namespace FE::GPU

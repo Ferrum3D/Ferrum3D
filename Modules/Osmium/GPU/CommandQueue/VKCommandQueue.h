@@ -26,9 +26,7 @@ namespace FE::GPU
         VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc);
 
         void SignalFence(const Shared<IFence>& fence) override;
-        void SubmitBuffers(
-            const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence,
-            SubmitFlags flags) override;
+        void SubmitBuffers(const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) override;
 
         [[nodiscard]] const VKCommandQueueDesc& GetDesc() const;
         vk::Queue GetNativeQueue();

@@ -1,8 +1,6 @@
 #pragma once
-
-#include <FeCore/Memory/Object.h>
-#include <GPU/Memory/IDeviceMemory.h>
-#include <GPU/Resource/IResource.h>
+#include <FeCore/Memory/SharedPtr.h>
+#include <GPU/Memory/MemoryType.h>
 
 namespace FE::GPU
 {
@@ -19,13 +17,14 @@ namespace FE::GPU
     public:
         FE_CLASS_RTTI(IBuffer, "2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
-        virtual ~IBuffer() = default;
+        ~IBuffer() override = default;
 
-        virtual void* Map(UInt64 offset, UInt64 size = static_cast<UInt64>(-1)) = 0;
+        virtual void* Map(UInt64 offset, UInt64 size) = 0;
+        void* Map(UInt64 offset);
 
         virtual void Unmap() = 0;
 
-        [[nodiscard]] virtual void AllocateMemory(MemoryType type) = 0;
+        virtual void AllocateMemory(MemoryType type) = 0;
 
         virtual void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) = 0;
 
@@ -33,6 +32,11 @@ namespace FE::GPU
 
         inline void UpdateData(const void* data, UInt64 offset = 0, UInt64 size = static_cast<UInt64>(-1));
     };
+
+    inline void* IBuffer::Map(UInt64 offset)
+    {
+        return Map(offset, static_cast<UInt64>(-1));
+    }
 
     inline void IBuffer::UpdateData(const void* data, UInt64 offset, UInt64 size)
     {

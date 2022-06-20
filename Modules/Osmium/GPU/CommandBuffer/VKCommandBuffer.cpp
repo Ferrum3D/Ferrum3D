@@ -1,11 +1,14 @@
 #include <GPU/Buffer/VKBuffer.h>
 #include <GPU/CommandBuffer/VKCommandBuffer.h>
+#include <GPU/Common/VKViewport.h>
 #include <GPU/Descriptors/VKDescriptorTable.h>
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Framebuffer/VKFramebuffer.h>
 #include <GPU/Image/VKImage.h>
+#include <GPU/Image/VKImageSubresource.h>
 #include <GPU/Pipeline/VKGraphicsPipeline.h>
 #include <GPU/RenderPass/VKRenderPass.h>
+#include <GPU/Resource/VKResourceState.h>
 
 namespace FE::GPU
 {
@@ -194,7 +197,7 @@ namespace FE::GPU
     {
         auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer.get();
         auto nativeDst = fe_assert_cast<VKBuffer*>(dest)->Buffer.get();
-        
+
         vk::BufferCopy copy{};
         copy.size      = region.Size;
         copy.dstOffset = region.DestOffset;

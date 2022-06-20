@@ -22,7 +22,8 @@ namespace FE::GPU
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_Window = glfwCreateWindow(desc.Width, desc.Height, m_Title.Data(), nullptr, nullptr);
+        m_Window =
+            glfwCreateWindow(static_cast<int>(desc.Width), static_cast<int>(desc.Height), m_Title.Data(), nullptr, nullptr);
         m_Handle = glfwGetWin32Window(m_Window);
     }
 
@@ -30,7 +31,7 @@ namespace FE::GPU
     {
         int width, height;
         glfwGetWindowSize(m_Window, &width, &height);
-        return Viewport(0, static_cast<float>(width), 0, static_cast<float>(height));
+        return { 0, static_cast<float>(width), 0, static_cast<float>(height) };
     }
 
     Scissor Window::CreateScissor()

@@ -1,14 +1,14 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
 #include <GPU/Common/Viewport.h>
-#include <GPU/Descriptors/IDescriptorTable.h>
 #include <GPU/Pipeline/InputStreamLayout.h>
 #include <GPU/Pipeline/PipelineStates.h>
-#include <GPU/RenderPass/IRenderPass.h>
-#include <GPU/Shader/IShaderModule.h>
 
 namespace FE::GPU
 {
+    class IDescriptorTable;
+    class IShaderModule;
+
     struct GraphicsPipelineDesc
     {
         Shared<IRenderPass> RenderPass;

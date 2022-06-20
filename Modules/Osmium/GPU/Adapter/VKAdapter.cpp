@@ -1,5 +1,6 @@
 #include <GPU/Adapter/VKAdapter.h>
 #include <GPU/Device/VKDevice.h>
+#include <GPU/Instance/VKInstance.h>
 
 namespace FE::GPU
 {

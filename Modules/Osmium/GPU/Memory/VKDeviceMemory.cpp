@@ -1,6 +1,6 @@
 #include <GPU/Common/VKConfig.h>
-#include <GPU/Memory/VKDeviceMemory.h>
 #include <GPU/Device/VKDevice.h>
+#include <GPU/Memory/VKDeviceMemory.h>
 
 namespace FE::GPU
 {
@@ -24,13 +24,13 @@ namespace FE::GPU
         auto properties = VKConvert(desc.Type);
 
         vk::MemoryAllocateInfo info{};
-        info.allocationSize = desc.Size;
+        info.allocationSize  = desc.Size;
         info.memoryTypeIndex = dev.FindMemoryType(typeBits, properties);
-        Memory = dev.GetNativeDevice().allocateMemoryUnique(info);
+        Memory               = dev.GetNativeDevice().allocateMemoryUnique(info);
     }
 
     const MemoryAllocationDesc& VKDeviceMemory::GetDesc()
     {
         return m_Desc;
     }
-}
+} // namespace FE::GPU

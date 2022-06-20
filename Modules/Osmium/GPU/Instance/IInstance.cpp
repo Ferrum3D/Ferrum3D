@@ -21,4 +21,4 @@ namespace FE::GPU
         }
         return {};
     }
-}
+} // namespace FE::GPU

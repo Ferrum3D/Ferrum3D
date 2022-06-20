@@ -1,10 +1,12 @@
 #pragma once
 #include <GPU/Buffer/IBuffer.h>
-#include <GPU/Memory/VKDeviceMemory.h>
 #include <GPU/Common/VKConfig.h>
 
 namespace FE::GPU
 {
+    class VKDevice;
+    class VKDeviceMemory;
+
     class VKBuffer : public Object<IBuffer>
     {
         VKDevice* m_Device;
@@ -18,12 +20,12 @@ namespace FE::GPU
 
         VKBuffer(VKDevice& dev, const BufferDesc& desc);
 
-        void* Map(UInt64 offset, UInt64 size = static_cast<UInt64>(-1)) override;
+        void* Map(UInt64 offset, UInt64 size) override;
         void Unmap() override;
 
         void AllocateMemory(MemoryType type) override;
         void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) override;
 
-        const BufferDesc& GetDesc() const override;
+        [[nodiscard]] const BufferDesc& GetDesc() const override;
     };
 } // namespace FE::GPU

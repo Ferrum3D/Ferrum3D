@@ -1,5 +1,7 @@
-#include <GPU/Image/VKImage.h>
 #include <GPU/Device/VKDevice.h>
+#include <GPU/Image/VKImage.h>
+#include <GPU/ImageView/VKImageView.h>
+#include <GPU/Image/ImageSubresource.h>
 
 namespace FE::GPU
 {
@@ -17,15 +19,15 @@ namespace FE::GPU
     {
         ImageSubresourceRange range{};
         range.ArraySliceCount = Desc.ArraySize;
-        range.MinArraySlice = 0;
-        range.MinMipSlice = 0;
-        range.MipSliceCount = 1;
-        range.AspectFlags = ImageAspectFlags::Color;
+        range.MinArraySlice   = 0;
+        range.MinMipSlice     = 0;
+        range.MipSliceCount   = 1;
+        range.AspectFlags     = ImageAspectFlags::Color;
 
         ImageViewDesc desc{};
-        desc.Format = Desc.ImageFormat;
-        desc.Image = this;
-        desc.Dimension = Desc.Dimension;
+        desc.Format           = Desc.ImageFormat;
+        desc.Image            = this;
+        desc.Dimension        = Desc.Dimension;
         desc.SubresourceRange = range;
         return m_Device->CreateImageView(desc);
     }
@@ -34,4 +36,4 @@ namespace FE::GPU
     {
         FE_UNREACHABLE("Not implemented");
     }
-}
+} // namespace FE::GPU

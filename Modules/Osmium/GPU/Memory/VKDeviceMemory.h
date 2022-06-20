@@ -17,6 +17,6 @@ namespace FE::GPU
 
         VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc);
 
-        virtual const MemoryAllocationDesc& GetDesc() override;
+        const MemoryAllocationDesc& GetDesc() override;
     };
 } // namespace FE::GPU

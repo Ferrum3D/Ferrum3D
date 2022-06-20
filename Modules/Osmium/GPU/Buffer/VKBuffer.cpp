@@ -1,6 +1,7 @@
 #include <GPU/Buffer/VKBuffer.h>
 #include <GPU/Common/VKConfig.h>
 #include <GPU/Device/VKDevice.h>
+#include <GPU/Memory/VKDeviceMemory.h>
 
 namespace FE::GPU
 {

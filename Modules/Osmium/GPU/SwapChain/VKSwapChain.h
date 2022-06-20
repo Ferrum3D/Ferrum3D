@@ -19,8 +19,8 @@ namespace FE::GPU
         vk::SurfaceFormatKHR m_ColorFormat;
         vk::SurfaceCapabilitiesKHR m_Capabilities;
 
-        Vector<Shared<IImage>> m_Images;
-        Vector<Shared<IImageView>> m_ImageViews;
+        List<Shared<IImage>> m_Images;
+        List<Shared<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
         Vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
@@ -35,7 +35,6 @@ namespace FE::GPU
         void AcquireNextImage(UInt32* index);
 
     public:
-
         FE_CLASS_RTTI(VKSwapChain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
         VKSwapChain(VKDevice& dev, const SwapChainDesc& desc);
@@ -49,6 +48,6 @@ namespace FE::GPU
         IImage* GetCurrentImage() override;
         void Present() override;
 
-        Vector<Shared<IImageView>> GetRTVs() override;
+        List<Shared<IImageView>> GetRTVs() override;
     };
 } // namespace FE::GPU

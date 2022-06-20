@@ -1,10 +1,12 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
-#include <GPU/ImageView/IImageView.h>
-#include <GPU/RenderPass/IRenderPass.h>
+#include <FeCore/Containers/List.h>
+#include <FeCore/Memory/SharedPtr.h>
 
 namespace FE::GPU
 {
+    class IImageView;
+    class IRenderPass;
+
     struct FramebufferDesc
     {
         FE_STRUCT_RTTI(FramebufferDesc, "0A969932-5EFF-401E-9318-1C77D190E8A9");

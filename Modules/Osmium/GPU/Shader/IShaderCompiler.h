@@ -1,9 +1,13 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
-#include <GPU/Shader/ShaderStage.h>
 #include <GPU/Common/BaseTypes.h>
-#include <FeCore/Containers/IByteBuffer.h>
+#include <GPU/Shader/ShaderStage.h>
+
+namespace FE
+{
+    class IByteBuffer;
+}
 
 namespace FE::GPU
 {

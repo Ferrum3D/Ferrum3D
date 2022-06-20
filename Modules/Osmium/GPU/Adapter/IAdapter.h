@@ -1,8 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/Memory/Object.h>
+#include <FeCore/Memory/SharedPtr.h>
 #include <FeCore/Strings/String.h>
-#include <GPU/Device/IDevice.h>
 
 namespace FE::GPU
 {
@@ -23,6 +21,7 @@ namespace FE::GPU
     };
 
     class IInstance;
+    class IDevice;
 
     class IAdapter : public IObject
     {

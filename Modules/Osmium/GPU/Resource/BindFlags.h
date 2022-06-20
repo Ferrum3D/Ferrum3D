@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
+#include <FeCore/Base/Base.h>
 
 namespace FE::GPU
 {

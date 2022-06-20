@@ -1,7 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/RTTI/RTTI.h>
-#include <GPU/Descriptors/IDescriptorTable.h>
+#include <FeCore/Containers/List.h>
+#include <GPU/Descriptors/DescriptorDesc.h>
 
 namespace FE::GPU
 {
@@ -23,11 +22,13 @@ namespace FE::GPU
 
     struct DescriptorHeapDesc
     {
-        Vector<DescriptorSize> Sizes;
+        List<DescriptorSize> Sizes;
         UInt32 MaxSets = 0;
 
         FE_STRUCT_RTTI(DescriptorHeapDesc, "CAB78665-9C43-41B4-9E51-36ACBB293B32");
     };
+
+    class IDescriptorTable;
 
     class IDescriptorHeap : public IObject
     {
@@ -36,6 +37,6 @@ namespace FE::GPU
 
         ~IDescriptorHeap() override = default;
 
-        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const Vector<DescriptorDesc>& descriptors) = 0;
+        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const List<DescriptorDesc>& descriptors) = 0;
     };
 } // namespace FE::GPU

@@ -1,4 +1,5 @@
 #pragma once
+#include <GPU/Common/VKConfig.h>
 #include <GPU/Fence/IFence.h>
 
 namespace FE::GPU
@@ -21,4 +22,4 @@ namespace FE::GPU
 
         vk::Fence& GetNativeFence();
     };
-}
+} // namespace FE::GPU

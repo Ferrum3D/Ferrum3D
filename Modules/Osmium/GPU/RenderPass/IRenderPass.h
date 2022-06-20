@@ -1,7 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
 #include <FeCore/Containers/List.h>
-#include <FeCore/RTTI/RTTI.h>
+#include <FeCore/Memory/Memory.h>
 #include <GPU/Pipeline/PipelineStates.h>
 #include <GPU/Resource/ResourceState.h>
 
@@ -38,7 +37,7 @@ namespace FE::GPU
     struct SubpassAttachment
     {
         ResourceState State = ResourceState::Undefined;
-        UInt32 Index = static_cast<UInt32>(-1);
+        UInt32 Index        = static_cast<UInt32>(-1);
 
         SubpassAttachment() = default;
 

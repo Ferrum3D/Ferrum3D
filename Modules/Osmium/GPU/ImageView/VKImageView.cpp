@@ -1,6 +1,7 @@
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Image/VKImage.h>
 #include <GPU/Image/VKImageFormat.h>
+#include <GPU/Image/VKImageSubresource.h>
 #include <GPU/ImageView/VKImageView.h>
 
 namespace FE::GPU
