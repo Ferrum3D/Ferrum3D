@@ -1,6 +1,11 @@
 #pragma once
 #include <GPU/Pipeline/IGraphicsPipeline.h>
 
+namespace FE
+{
+    class IByteBuffer;
+}
+
 namespace FE::GPU
 {
     struct ColorBlendStateBinding
@@ -11,6 +16,8 @@ namespace FE::GPU
         float BlendConstantW;
         IByteBuffer* TargetBlendStates;
     };
+
+    class IGraphicsPipeline;
 
     struct InputStreamLayoutBinding
     {
@@ -39,6 +46,8 @@ namespace FE::GPU
         PolygonMode PolyMode;
         UInt64 DepthClampDepthBiasRasterDiscardEnabled;
     };
+
+    class IRenderPass;
 
     struct GraphicsPipelineDescBinding
     {

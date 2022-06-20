@@ -8,6 +8,7 @@ namespace FE::GPU
 {
     class IDescriptorTable;
     class IShaderModule;
+    class IRenderPass;
 
     struct GraphicsPipelineDesc
     {

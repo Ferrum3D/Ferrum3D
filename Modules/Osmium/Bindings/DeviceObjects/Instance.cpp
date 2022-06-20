@@ -1,4 +1,5 @@
 #include <FeCore/Modules/DynamicLibrary.h>
+#include <GPU/Adapter/IAdapter.h>
 #include <GPU/Instance/IInstance.h>
 
 namespace FE::GPU
@@ -30,7 +31,7 @@ namespace FE::GPU
         FE_DLL_EXPORT void IInstance_GetAdapters(IInstance* self, IAdapter** adapters, Int32* size)
         {
             auto& a = self->GetAdapters();
-            *size = static_cast<Int32>(a.size());
+            *size   = static_cast<Int32>(a.size());
             if (adapters)
             {
                 for (USize i = 0; i < a.size(); ++i)
@@ -45,4 +46,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-}
+} // namespace FE::GPU

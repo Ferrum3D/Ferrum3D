@@ -1,4 +1,5 @@
 #include <GPU/Adapter/IAdapter.h>
+#include <GPU/Device/IDevice.h>
 #include <objbase.h>
 #include <strsafe.h>
 

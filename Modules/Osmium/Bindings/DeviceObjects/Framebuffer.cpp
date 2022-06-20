@@ -1,4 +1,5 @@
 #include <Bindings/DeviceObjects/Framebuffer.h>
+#include <GPU/Framebuffer/IFramebuffer.h>
 
 namespace FE::GPU
 {
@@ -9,4 +10,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-}
+} // namespace FE::GPU

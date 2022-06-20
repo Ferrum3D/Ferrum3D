@@ -19,4 +19,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-}
+} // namespace FE::GPU
