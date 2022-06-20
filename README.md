@@ -2,16 +2,17 @@
 **Ferrum3D** is a data-oriented, data-driven, and modular 3D game engine.
 
 ## Current development status
-For now, only the core is working. The FrameGraph and C# bindings are in development.
+For now, only the core and its C# bindings are working.
+The higher level renderer, i.e. FrameGraph is in development yet.
 
 ## Getting the sources and building
 If you want to build the engine, run samples and tests you will need:
  - **CMake v1.17.0** minimum
- - **Python3** (tested with Python 3.9.5)
+ - **Python3** (tested with Python 3.10)
 
 ### Windows
 Currently, the engine has been tested on Windows only. For building, you will need
-Visual Studio 2019 with *Game Development for C++* installed.
+Visual Studio build tools installed.
 
 ### Downloading sources
 This repository uses git submodules for dependencies. To clone the sources run this:
@@ -24,15 +25,11 @@ If you cloned the repository without `--recursive`, run this:
 git submodule update --init --recursive
 ```
 
-### Build steps
+### Build and run
 After you cloned the repository, run the setup script:
 ```shell
-python setup.py
+./setup
 ```
 
-If you're using Visual Studio, you can now open the solution in `BuildRelease/Ferrum3D.sln`
-and build it.
-
-When C++ projects are compiled, you can build the C# bindings. Open another
-solution in `Managed/Ferrum3D/Ferrum3D.sln`. It depends on DLLs from `BuildRelease/`, so
-make sure it has been built.
+It will set up all projects in all configurations, build them and run the triangle sample.
+To use the engine, you will need to reference the managed assemblies in your project.
