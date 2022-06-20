@@ -1,4 +1,3 @@
-#pragma once
 #include <GPU/CommandQueue/VKCommandQueue.h>
 #include <GPU/Device/VKDevice.h>
 #include <GPU/Fence/VKFence.h>
