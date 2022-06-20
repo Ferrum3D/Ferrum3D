@@ -1,37 +1,65 @@
 set(SRC
+    # FERRUM_SORT_LINES BEGIN
+    FeCore/Allocators/MonotonicAllocator.h
+
+    FeCore/Assets/Asset.h
+    FeCore/Assets/AssetCommon.h
+    FeCore/Assets/AssetManager.cpp
+    FeCore/Assets/AssetManager.h
+    FeCore/Assets/AssetProviderDev.cpp
+    FeCore/Assets/AssetProviderDev.h
+    FeCore/Assets/AssetRegistry.cpp
+    FeCore/Assets/AssetRegistry.h
+    FeCore/Assets/AssetStorage.h
+    FeCore/Assets/IAssetLoader.h
+    FeCore/Assets/IAssetManager.h
+    FeCore/Assets/IAssetProvider.h
+    FeCore/Assets/WeakAsset.h
+
     FeCore/Base/Base.h
     FeCore/Base/CompilerTraits.h
     FeCore/Base/Platform.h
     FeCore/Base/PlatformInclude.h
     FeCore/Base/PlatformTraits.h
 
-    FeCore/Console/Console.h
     FeCore/Console/Console.cpp
-    FeCore/Console/ConsoleLogger.h
+    FeCore/Console/Console.h
     FeCore/Console/ConsoleLogger.cpp
+    FeCore/Console/ConsoleLogger.h
     FeCore/Console/FeLog.h
     FeCore/Console/IConsoleLogger.h
 
     FeCore/Containers/ArraySlice.h
     FeCore/Containers/ArraySliceMut.h
+    FeCore/Containers/ByteBuffer.cpp
+    FeCore/Containers/ByteBuffer.h
+    FeCore/Containers/IByteBuffer.h
     FeCore/Containers/List.h
 
     FeCore/EventBus/EventBus.h
+    FeCore/EventBus/FrameEvents.h
 
-    FeCore/IO/BaseIO.h
     FeCore/IO/BaseIO.cpp
-    FeCore/IO/FileHandle.h
+    FeCore/IO/BaseIO.h
     FeCore/IO/FileHandle.cpp
-    FeCore/IO/FileStream.h
+    FeCore/IO/FileHandle.h
     FeCore/IO/FileStream.cpp
+    FeCore/IO/FileStream.h
     FeCore/IO/IStream.h
-    FeCore/IO/StdoutStream.h
     FeCore/IO/StdoutStream.cpp
+    FeCore/IO/StdoutStream.h
     FeCore/IO/StreamBase.h
 
+    FeCore/Jobs/IJobScheduler.h
+    FeCore/Jobs/Job.h
+    FeCore/Jobs/JobScheduler.cpp
+    FeCore/Jobs/JobScheduler.h
+    FeCore/Jobs/JobTree.h
+    FeCore/Jobs/SignalJob.h
+
     FeCore/Math/Color.h
-    FeCore/Math/Colors.h
     FeCore/Math/Colors.cpp
+    FeCore/Math/Colors.h
     FeCore/Math/Half.h
     FeCore/Math/MathUtils.h
     FeCore/Math/Matrix4x4F.h
@@ -40,11 +68,11 @@ set(SRC
     FeCore/Math/VectorMath.h
 
     FeCore/Memory/Allocator.h
-    FeCore/Memory/AllocatorBase.h
     FeCore/Memory/AllocatorBase.cpp
+    FeCore/Memory/AllocatorBase.h
     FeCore/Memory/BasicSystemAllocator.h
-    FeCore/Memory/HeapAllocator.h
     FeCore/Memory/HeapAllocator.cpp
+    FeCore/Memory/HeapAllocator.h
     FeCore/Memory/IAllocator.h
     FeCore/Memory/IBasicAllocator.h
     FeCore/Memory/Memory.h
@@ -54,73 +82,52 @@ set(SRC
     FeCore/Memory/StackAllocator.h
     FeCore/Memory/UniquePtr.h
 
-    FeCore/Modules/DynamicLibrary.h
     FeCore/Modules/DynamicLibrary.cpp
-    FeCore/Modules/Environment.h
+    FeCore/Modules/DynamicLibrary.h
     FeCore/Modules/Environment.cpp
+    FeCore/Modules/Environment.h
     FeCore/Modules/Singleton.h
 
-    FeCore/Parallel/Interlocked.h
+    FeCore/Parallel/AtomicFlags.h
     FeCore/Parallel/Interlocked.cpp
+    FeCore/Parallel/Interlocked.h
     FeCore/Parallel/Locker.h
-    FeCore/Parallel/Mutex.h
     FeCore/Parallel/Mutex.cpp
+    FeCore/Parallel/Mutex.h
+    FeCore/Parallel/Semaphore.cpp
+    FeCore/Parallel/Semaphore.h
     FeCore/Parallel/SpinMutex.h
 
     FeCore/RTTI/RTTI.h
 
-    FeCore/Scene/Entity.h
-    FeCore/Scene/Scene.h
-
-    FeCore/SIMD/Scalar/Float32x4.h
-    FeCore/SIMD/Scalar/Int32x4.h
-    FeCore/SIMD/SSE/Float32x4.h
-    FeCore/SIMD/SSE/Int32x4.h
     FeCore/SIMD/CommonSIMD.h
     FeCore/SIMD/SIMDIntrin.h
 
+    FeCore/SIMD/SSE/Float32x4.h
+    FeCore/SIMD/SSE/Int32x4.h
+
+    FeCore/SIMD/Scalar/Float32x4.h
+    FeCore/SIMD/Scalar/Int32x4.h
+
+    FeCore/Scene/Entity.h
+    FeCore/Scene/Scene.h
+
     FeCore/Strings/FeUnicode.h
-    FeCore/Strings/Format.h
     FeCore/Strings/Format.cpp
+    FeCore/Strings/Format.h
     FeCore/Strings/String.h
     FeCore/Strings/StringSlice.h
 
-    FeCore/Time/DateTime.h
     FeCore/Time/DateTime.cpp
+    FeCore/Time/DateTime.h
     FeCore/Time/TimeSpan.h
 
+    FeCore/Utils/BoolPointer.h
     FeCore/Utils/Result.h
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
-
-    FeCore/Assets/AssetStorage.h
-    FeCore/Assets/Asset.h
-    FeCore/Assets/WeakAsset.h
-    FeCore/Assets/IAssetLoader.h
-    FeCore/Assets/IAssetProvider.h
-    FeCore/Assets/AssetRegistry.h
-    FeCore/Assets/AssetRegistry.cpp
-    FeCore/Assets/AssetProviderDev.h
-    FeCore/Assets/AssetProviderDev.cpp
-    FeCore/Assets/IAssetManager.h
-    FeCore/Assets/AssetCommon.h
-    FeCore/Assets/AssetManager.h
-    FeCore/Assets/AssetManager.cpp
-    FeCore/Jobs/JobTree.h
-    FeCore/Jobs/SignalJob.h
-    FeCore/Parallel/AtomicFlags.h
-    FeCore/Jobs/Job.h
-    FeCore/Utils/BoolPointer.h
-    FeCore/Jobs/IJobScheduler.h
-    FeCore/Jobs/JobScheduler.h
-    FeCore/Jobs/JobScheduler.cpp
-    FeCore/Parallel/Semaphore.h
-    FeCore/Parallel/Semaphore.cpp
-    FeCore/Allocators/MonotonicAllocator.h
-    FeCore/EventBus/FrameEvents.h
-    FeCore/Containers/ByteBuffer.h
-    FeCore/Containers/ByteBuffer.cpp
-    FeCore/Containers/IByteBuffer.h)
+    # FERRUM_SORT_LINES END
+)
 
 add_library(FeCore STATIC ${SRC})
 

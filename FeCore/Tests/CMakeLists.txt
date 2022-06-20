@@ -1,23 +1,27 @@
 set(SRC
-	Common/TestCommon.h
+	# FERRUM_SORT_LINES BEGIN
+    Common/TestCommon.h
 
-	Math/Vector3.cpp
-	
-	Memory/StackAllocator.cpp
-	
-	Modules/Environment.cpp
-	Modules/Singleton.cpp
+    Containers/List.cpp
 
-	RTTI/RTTI.cpp
-	
-	Strings/Format.cpp
-	Strings/String.cpp
-	Utils/UUID.cpp
-
-	main.cpp
     Math/Matrix4x4.cpp
+    Math/Vector3.cpp
 
-	Containers/List.cpp)
+    Memory/StackAllocator.cpp
+
+    Modules/Environment.cpp
+    Modules/Singleton.cpp
+
+    RTTI/RTTI.cpp
+
+    Strings/Format.cpp
+    Strings/String.cpp
+
+    Utils/UUID.cpp
+
+    main.cpp
+	# FERRUM_SORT_LINES END
+)
 
 add_executable(FeCoreTests ${SRC})
 

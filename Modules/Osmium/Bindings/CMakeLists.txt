@@ -1,20 +1,31 @@
 set(SRC
-    DeviceObjects/Instance.cpp
+    # FERRUM_SORT_LINES BEGIN
+    Common.h
+
     DeviceObjects/Adapter.cpp
-    DeviceObjects/Device.cpp
-    DeviceObjects/CommandQueue.cpp
-    Shaders/ShaderCompiler.cpp
-    WindowSystem/Window.cpp
-    WindowSystem/Window.h
-    DeviceObjects/SwapChain.cpp
     DeviceObjects/Buffer.cpp
-    Shaders/ShaderModule.cpp
-    Shaders/ShaderModule.h
-    DeviceObjects/RenderPass.cpp
-    DeviceObjects/RenderPass.h
+    DeviceObjects/CommandBuffer.cpp
+    DeviceObjects/CommandQueue.cpp
+    DeviceObjects/Device.cpp
+    DeviceObjects/Fence.cpp
+    DeviceObjects/Framebuffer.cpp
+    DeviceObjects/Framebuffer.h
     DeviceObjects/GraphicsPipeline.cpp
     DeviceObjects/GraphicsPipeline.h
-    DeviceObjects/Fence.cpp DeviceObjects/ImageView.cpp DeviceObjects/Framebuffer.cpp DeviceObjects/Framebuffer.h DeviceObjects/CommandBuffer.cpp Common.h)
+    DeviceObjects/ImageView.cpp
+    DeviceObjects/Instance.cpp
+    DeviceObjects/RenderPass.cpp
+    DeviceObjects/RenderPass.h
+    DeviceObjects/SwapChain.cpp
+
+    Shaders/ShaderCompiler.cpp
+    Shaders/ShaderModule.cpp
+    Shaders/ShaderModule.h
+
+    WindowSystem/Window.cpp
+    WindowSystem/Window.h
+    # FERRUM_SORT_LINES END
+)
 
 add_library(OsmiumBindings SHARED ${SRC})
 
