@@ -12,9 +12,12 @@ namespace FE::GPU
         , m_Descriptors(descriptors)
     {
         Vector<vk::DescriptorSetLayoutBinding> bindings;
-        for (auto& desc : m_Descriptors)
+        for (USize i = 0; i < m_Descriptors.Size(); ++i)
         {
-            auto& binding           = bindings.emplace_back();
+            auto& desc    = m_Descriptors[i];
+            auto& binding = bindings.emplace_back();
+
+            binding.binding         = static_cast<UInt32>(i);
             binding.descriptorCount = desc.Count;
             binding.descriptorType  = GetDescriptorType(desc.ResourceType);
             binding.stageFlags      = VKConvert(desc.Stage);
@@ -43,7 +46,7 @@ namespace FE::GPU
         info.range  = descriptorWriteBuffer.Range == static_cast<UInt32>(-1) ? VK_WHOLE_SIZE : descriptorWriteBuffer.Range;
 
         vk::WriteDescriptorSet write{};
-        write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteBuffer.ArrayIndex].ResourceType);
+        write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteBuffer.Binding].ResourceType);
         write.descriptorCount = 1;
         write.dstArrayElement = descriptorWriteBuffer.ArrayIndex;
         write.dstBinding      = descriptorWriteBuffer.Binding;
