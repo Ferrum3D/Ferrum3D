@@ -5,17 +5,9 @@
 
 namespace FE::GPU
 {
-    struct DescriptorWriteBase
-    {
-        FE_STRUCT_RTTI(DescriptorWriteBase, "9FA1676E-C6BA-4F09-9BB5-BA0E137F17EB");
-
-        UInt32 Binding = 0;
-        UInt32 ArrayIndex = 0;
-    };
-
     class IBuffer;
 
-    struct DescriptorWriteBuffer : DescriptorWriteBase
+    struct DescriptorWriteBuffer
     {
         FE_STRUCT_RTTI(DescriptorWriteBuffer, "C19369F9-0A1C-4FEA-A517-4F47CA0E20BE");
 
@@ -28,9 +20,11 @@ namespace FE::GPU
         {
         }
 
+        IBuffer* Buffer = nullptr;
+        UInt32 Binding = 0;
+        UInt32 ArrayIndex = 0;
         UInt32 Offset = 0;
         UInt32 Range = static_cast<UInt32>(-1);
-        IBuffer* Buffer = nullptr;
     };
 
     struct DescriptorDesc
