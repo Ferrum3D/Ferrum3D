@@ -25,6 +25,7 @@ namespace FE::Assets
         auto stream   = m_Provider->CreateAssetLoadingStream(assetID);
         auto loader   = m_Loaders[type];
         auto* storage = loader->CreateStorage();
+        storage->AddStrongRef();
         loader->LoadAsset(storage, stream.GetRaw());
         return storage;
     }
