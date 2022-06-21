@@ -89,7 +89,9 @@ int main()
         attachEnvironment(&FE::Env::GetEnvironment());
         auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
-        auto instance      = createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan);
+        auto instance = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
+        instance->ReleaseStrongRef();
+
         auto adapter       = instance->GetAdapters()[0];
         auto device        = adapter->CreateDevice();
         auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
