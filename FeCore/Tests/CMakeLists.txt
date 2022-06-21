@@ -1,5 +1,8 @@
 set(SRC
 	# FERRUM_SORT_LINES BEGIN
+    Assets/AssetManager.cpp
+    Assets/TestAssetLoader.h
+
     Common/TestCommon.h
 
     Containers/List.cpp
@@ -20,10 +23,13 @@ set(SRC
     Utils/UUID.cpp
 
     main.cpp
-	# FERRUM_SORT_LINES END
+    # FERRUM_SORT_LINES END
 )
 
 add_executable(FeCoreTests ${SRC})
+
+configure_file(Assets/TestAsset1.txt ${CMAKE_BINARY_DIR}/Assets/TestAsset1.txt COPYONLY)
+configure_file(Assets/TestAsset2.txt ${CMAKE_BINARY_DIR}/Assets/TestAsset2.txt COPYONLY)
 
 set_target_properties(FeCoreTests PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCoreTests gtest gmock FeCore)
