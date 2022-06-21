@@ -31,7 +31,7 @@ namespace FE::GPU
         FE_DLL_EXPORT IDescriptorHeap* IDevice_CreateDescriptorHeap(IDevice* self, DescriptorHeapDescBinding* desc)
         {
             DescriptorHeapDesc d;
-            d.MaxSets = desc->MaxSets;
+            d.MaxTables = desc->MaxSets;
             CopyFromByteBuffer(desc->Sizes, d.Sizes);
             return self->CreateDescriptorHeap(d).Detach();
         }

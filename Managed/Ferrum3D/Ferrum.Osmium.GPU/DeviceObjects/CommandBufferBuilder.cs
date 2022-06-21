@@ -35,6 +35,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindIndexBuffer")]
         private static extern void BindIndexBufferNative(IntPtr self, IntPtr buffer);
 
+        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindDescriptorTables")]
+        private static extern void BindDescriptorTablesNative(IntPtr self, IntPtr[] descriptorTables, uint count,
+            IntPtr pipeline);
+
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBuffers")]
         private static extern void CopyBuffersNative(IntPtr self, IntPtr source, IntPtr dest,
             ref BufferCopyRegion region);
@@ -42,6 +46,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Draw")]
         private static extern void DrawNative(IntPtr self, uint vertexCount, uint instanceCount, uint firstVertex,
             uint firstInstance);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_DrawIndexed")]
+        private static extern void DrawIndexedNative(IntPtr self, uint indexCount, uint instanceCount, uint firstIndex,
+            int vertexOffset, uint firstInstance);
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindGraphicsPipeline")]
         private static extern void BindGraphicsPipelineNative(IntPtr self, IntPtr pipeline);
@@ -97,6 +105,17 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 BindIndexBufferNative(handle, indexBuffer.Handle);
             }
 
+            public void BindDescriptorTables(DescriptorTable[] descriptorTables, GraphicsPipeline pipeline)
+            {
+                var handles = new IntPtr[descriptorTables.Length];
+                for (var i = 0; i < descriptorTables.Length; i++)
+                {
+                    handles[i] = descriptorTables[i].Handle;
+                }
+
+                BindDescriptorTablesNative(handle, handles, (uint)descriptorTables.Length, pipeline.Handle);
+            }
+
             public void CopyBuffers(Buffer source, Buffer dest, BufferCopyRegion region)
             {
                 CopyBuffersNative(handle, source.Handle, dest.Handle, ref region);
@@ -105,6 +124,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)
             {
                 DrawNative(handle, (uint)vertexCount, (uint)instanceCount, (uint)firstVertex, (uint)firstInstance);
+            }
+
+            public void DrawIndexed(int indexCount, int instanceCount, int firstIndex, int vertexOffset,
+                int firstInstance)
+            {
+                DrawIndexedNative(handle, (uint)indexCount, (uint)instanceCount, (uint)firstIndex, vertexOffset,
+                    (uint)firstInstance);
             }
 
             public void BindGraphicsPipeline(GraphicsPipeline pipeline)

@@ -40,7 +40,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             {
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
-                DescriptorTables = IntPtr.Zero;
+                DescriptorTables = ByteBuffer.FromObjectCollection(desc.DescriptorTables).Detach();
                 Shaders = ByteBuffer.FromObjectCollection(desc.Shaders).Detach();
                 Rasterization = new RasterizationState.Native(desc.Rasterization);
                 DepthStencil = new DepthStencilState.Native(desc.DepthStencil);
@@ -53,12 +53,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public struct Desc
         {
-            public static Desc Default = new Desc(null, 0, null, RasterizationState.Default, DepthStencilState.Default,
+            public static Desc Default = new Desc(null, 0, null, null, RasterizationState.Default, DepthStencilState.Default,
                 new ColorBlendState(), new InputStreamLayout(), new Viewport(), new Scissor());
 
             public RenderPass RenderPass;
             public uint SubpassIndex;
             public ShaderModule[] Shaders;
+            public DescriptorTable[] DescriptorTables;
             public RasterizationState Rasterization;
             public DepthStencilState DepthStencil;
             public ColorBlendState ColorBlend;
@@ -66,13 +67,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public Viewport Viewport;
             public Scissor Scissor;
 
-            public Desc(RenderPass renderPass, uint subpassIndex, ShaderModule[] shaders,
+            public Desc(RenderPass renderPass, uint subpassIndex, ShaderModule[] shaders, DescriptorTable[] descriptorTables,
                 RasterizationState rasterization, DepthStencilState depthStencil, ColorBlendState colorBlend,
                 InputStreamLayout inputLayout, Viewport viewport, Scissor scissor)
             {
                 RenderPass = renderPass;
                 SubpassIndex = subpassIndex;
                 Shaders = shaders;
+                DescriptorTables = descriptorTables;
                 Rasterization = rasterization;
                 DepthStencil = depthStencil;
                 ColorBlend = colorBlend;

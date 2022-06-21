@@ -23,14 +23,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct NativeDesc
+        public struct DescNative
         {
             public readonly IntPtr RenderTargetViews;
             public readonly IntPtr RenderPass;
             public readonly uint Width;
             public readonly uint Height;
 
-            public NativeDesc(Desc desc)
+            public DescNative(Desc desc)
             {
                 RenderTargetViews = ByteBuffer.FromObjectCollection(desc.RenderTargetViews).Detach();
                 RenderPass = desc.RenderPass.Handle;
