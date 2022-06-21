@@ -25,7 +25,7 @@ set(SRC
     WindowSystem/Window.cpp
     WindowSystem/Window.h
     # FERRUM_SORT_LINES END
-)
+    DeviceObjects/DescriptorHeap.cpp DeviceObjects/DescriptorHeap.h)
 
 add_library(OsmiumBindings SHARED ${SRC})
 
