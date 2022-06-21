@@ -9,11 +9,12 @@ namespace Ferrum.Core.Modules
         public static void UnloadModule(string moduleName)
         {
             moduleName = moduleName.ToLower();
-            foreach (ProcessModule mod in Process.GetCurrentProcess().Modules)
+            var mods = Process.GetCurrentProcess().Modules;
+            for (var i = 0; i < mods.Count; i++)
             {
-                if (mod.ModuleName?.ToLower() == moduleName)
+                if (mods[i].ModuleName?.ToLower() == moduleName)
                 {
-                    FreeLibrary(mod.BaseAddress);
+                    FreeLibrary(mods[i].BaseAddress);
                 }
             }
         }

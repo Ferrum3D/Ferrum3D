@@ -24,10 +24,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         private struct SubpassDescNative
         {
-            private readonly IntPtr InputAttachments;
-            private readonly IntPtr RenderTargetAttachments;
-            private readonly IntPtr PreserveAttachments;
-            private readonly SubpassAttachment DepthStencilAttachment;
+            public readonly IntPtr InputAttachments;
+            public readonly IntPtr RenderTargetAttachments;
+            public readonly IntPtr PreserveAttachments;
+            public readonly SubpassAttachment DepthStencilAttachment;
 
             public SubpassDescNative(SubpassDesc desc)
             {

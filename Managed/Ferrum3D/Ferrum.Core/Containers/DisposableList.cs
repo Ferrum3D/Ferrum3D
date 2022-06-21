@@ -8,8 +8,9 @@ namespace Ferrum.Core.Containers
     {
         public void Dispose()
         {
-            foreach (var elem in this)
+            for (var i = 0; i < Count; i++)
             {
+                var elem = this[i];
                 elem.Dispose();
             }
         }

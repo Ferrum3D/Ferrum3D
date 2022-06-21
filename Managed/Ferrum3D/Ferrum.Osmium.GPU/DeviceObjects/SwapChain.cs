@@ -65,9 +65,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         protected override void ReleaseUnmanagedResources()
         {
-            foreach (var rtv in renderTargetViews)
+            for (var i = 0; i < renderTargetViews.Length; i++)
             {
-                rtv.Dispose();
+                renderTargetViews[i].Dispose();
             }
 
             DestructNative(Handle);
