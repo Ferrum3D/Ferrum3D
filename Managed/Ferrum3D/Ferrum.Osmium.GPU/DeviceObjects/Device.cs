@@ -16,10 +16,16 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new CommandBuffer(CreateCommandBufferNative(Handle, cmdQueueClass));
         }
+        
+        public DescriptorHeap CreateDescriptorHeap(DescriptorHeap.Desc desc)
+        {
+            var nativeDesc = new DescriptorHeap.DescNative(desc);
+            return new DescriptorHeap(CreateDescriptorHeapNative(Handle, ref nativeDesc));
+        }
 
         public Framebuffer CreateFramebuffer(Framebuffer.Desc desc)
         {
-            var nativeDesc = new Framebuffer.NativeDesc(desc);
+            var nativeDesc = new Framebuffer.DescNative(desc);
             return new Framebuffer(CreateFramebufferNative(Handle, ref nativeDesc));
         }
 
