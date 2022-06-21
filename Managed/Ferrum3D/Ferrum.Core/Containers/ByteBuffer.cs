@@ -31,7 +31,9 @@ namespace Ferrum.Core.Containers
         public static ByteBuffer FromObjectCollection<T>(IEnumerable<T> collection)
             where T : UnmanagedObject
         {
-            return FromCollection(collection.Select(x => x.Handle).ToArray());
+            return collection != null
+                ? FromCollection(collection.Select(x => x.Handle).ToArray())
+                : null;
         }
 
         public static ByteBuffer FromCollection<T>(IReadOnlyList<T> collection)
