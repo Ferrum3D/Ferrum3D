@@ -8,7 +8,7 @@ struct VSOutput
     float4 pos: SV_POSITION;
 };
 
-cbuffer Settings : register(b0, space1)
+cbuffer Settings : register(b1, space0)
 {
     float3 g_Offset;
 };

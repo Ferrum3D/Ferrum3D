@@ -148,11 +148,14 @@ void RunExample()
 
     HAL::DescriptorDesc psDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
     HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
-    auto psDescriptorTable = descriptorHeap->AllocateDescriptorTable({ psDescriptorDesc });
-    auto vsDescriptorTable = descriptorHeap->AllocateDescriptorTable({ vsDescriptorDesc });
+    auto descriptorTable = descriptorHeap->AllocateDescriptorTable({ psDescriptorDesc, vsDescriptorDesc });
 
-    psDescriptorTable->Update(HAL::DescriptorWriteBuffer(psConstantBuffer.GetRaw()));
-    vsDescriptorTable->Update(HAL::DescriptorWriteBuffer(vsConstantBuffer.GetRaw()));
+    HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.GetRaw() };
+    descriptorTable->Update(descriptorWrite);
+    descriptorWrite.ArrayIndex = 0;
+    descriptorWrite.Binding    = 1;
+    descriptorWrite.Buffer     = vsConstantBuffer.GetRaw();
+    descriptorTable->Update(descriptorWrite);
 
     HAL::GraphicsPipelineDesc pipelineDesc{};
     pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
@@ -165,7 +168,7 @@ void RunExample()
     pipelineDesc.SubpassIndex     = 0;
     pipelineDesc.ColorBlend       = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
     pipelineDesc.Shaders          = { pixelShader, vertexShader };
-    pipelineDesc.DescriptorTables = { psDescriptorTable, vsDescriptorTable };
+    pipelineDesc.DescriptorTables = { descriptorTable };
     pipelineDesc.Viewport         = viewport;
     pipelineDesc.Scissor          = scissor;
     pipelineDesc.Rasterization    = HAL::RasterizationState{};
@@ -195,7 +198,7 @@ void RunExample()
         auto& cmd = commandBuffers.emplace_back(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
         cmd->Begin();
         cmd->BindGraphicsPipeline(pipeline.GetRaw());
-        cmd->BindDescriptorTables({ psDescriptorTable.GetRaw(), vsDescriptorTable.GetRaw() }, pipeline.GetRaw());
+        cmd->BindDescriptorTables({ descriptorTable.GetRaw() }, pipeline.GetRaw());
         cmd->SetViewport(viewport);
         cmd->SetScissor(scissor);
         cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
