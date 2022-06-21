@@ -84,6 +84,8 @@ namespace FE::Assets
             // Every strong reference holds a weak reference too, so if the weak counter reaches zero we can safely delete storage
             if (--m_WeakRefCount == 0)
             {
+                lk.Unlock();
+                this->~AssetStorage();
                 GlobalAllocator<HeapAllocator>::Get().Deallocate(this, FE_SRCPOS());
             }
         }
