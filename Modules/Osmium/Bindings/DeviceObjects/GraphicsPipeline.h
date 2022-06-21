@@ -28,10 +28,10 @@ namespace FE::GPU
 
     struct InputStreamAttributeDescBinding
     {
-        char ShaderSemantic[32];
         UInt32 BufferIndex;
         UInt32 Offset;
         Format ElementFormat;
+        char ShaderSemantic[32];
     };
 
     struct DepthStencilStateBinding
