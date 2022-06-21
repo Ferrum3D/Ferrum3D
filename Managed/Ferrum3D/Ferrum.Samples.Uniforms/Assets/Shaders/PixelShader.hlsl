@@ -7,7 +7,7 @@ struct VSOutput
 cbuffer Settings : register(b0, space0)
 {
 float4 g_Color;
-};
+}
 
 float4 main(VSOutput input) : SV_TARGET
 {

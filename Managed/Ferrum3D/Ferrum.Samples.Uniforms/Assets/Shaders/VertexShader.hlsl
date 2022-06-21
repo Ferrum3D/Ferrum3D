@@ -11,7 +11,7 @@ struct VSOutput
 cbuffer Settings : register(b1, space0)
 {
 float3 g_Offset;
-};
+}
 
 VSOutput main(VSInput input)
 {
