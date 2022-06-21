@@ -123,12 +123,14 @@ namespace Ferrum.Osmium.GPU.VertexInput
                     Topology = topology
                 };
 
-                foreach (var bufferBuilder in buffers)
+                for (var i = 0; i < buffers.Count; i++)
                 {
+                    var bufferBuilder = buffers[i];
                     result.buffers.Add(bufferBuilder.Buffer.WithStride(bufferBuilder.Offset));
 
-                    foreach (var attribute in bufferBuilder.Attributes)
+                    for (var j = 0; j < bufferBuilder.Attributes.Count; j++)
                     {
+                        var attribute = bufferBuilder.Attributes[j];
                         result.attributes.Add(attribute);
                     }
                 }

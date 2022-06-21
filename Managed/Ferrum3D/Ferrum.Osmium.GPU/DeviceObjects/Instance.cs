@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public sealed class Instance : IDisposable
     {
-        public IEnumerable<Adapter> Adapters => adapters;
+        public IReadOnlyList<Adapter> Adapters => adapters;
         private IntPtr handle;
         private readonly Adapter[] adapters;
 
@@ -24,8 +24,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public void Dispose()
         {
-            foreach (var adapter in Adapters)
+            for (var i = 0; i < Adapters.Count; i++)
             {
+                var adapter = Adapters[i];
                 adapter.Dispose();
             }
 
