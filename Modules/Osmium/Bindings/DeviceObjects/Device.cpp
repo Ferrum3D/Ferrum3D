@@ -1,4 +1,5 @@
 #include <Bindings/Common.h>
+#include <Bindings/DeviceObjects/DescriptorHeap.h>
 #include <Bindings/DeviceObjects/Framebuffer.h>
 #include <Bindings/DeviceObjects/GraphicsPipeline.h>
 #include <Bindings/DeviceObjects/RenderPass.h>
@@ -7,6 +8,7 @@
 #include <GPU/Buffer/IBuffer.h>
 #include <GPU/CommandBuffer/ICommandBuffer.h>
 #include <GPU/CommandQueue/ICommandQueue.h>
+#include <GPU/Descriptors/IDescriptorHeap.h>
 #include <GPU/Descriptors/IDescriptorTable.h>
 #include <GPU/Device/IDevice.h>
 #include <GPU/Fence/IFence.h>
@@ -24,6 +26,14 @@ namespace FE::GPU
         FE_DLL_EXPORT void IDevice_WaitIdle(IDevice* self)
         {
             self->WaitIdle();
+        }
+
+        FE_DLL_EXPORT IDescriptorHeap* IDevice_CreateDescriptorHeap(IDevice* self, DescriptorHeapDescBinding* desc)
+        {
+            DescriptorHeapDesc d;
+            d.MaxSets = desc->MaxSets;
+            CopyFromByteBuffer(desc->Sizes, d.Sizes);
+            return self->CreateDescriptorHeap(d).Detach();
         }
 
         FE_DLL_EXPORT ICommandBuffer* IDevice_CreateCommandBuffer(IDevice* self, CommandQueueClass queueClass)

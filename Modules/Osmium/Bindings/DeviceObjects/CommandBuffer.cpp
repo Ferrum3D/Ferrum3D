@@ -56,6 +56,11 @@ namespace FE::GPU
             self->BindIndexBuffer(buffer);
         }
 
+        FE_DLL_EXPORT void ICommandBuffer_CopyBuffers(ICommandBuffer* self, IBuffer* source, IBuffer* dest, BufferCopyRegion* region)
+        {
+            self->CopyBuffers(source, dest, *region);
+        }
+
         FE_DLL_EXPORT void ICommandBuffer_Draw(
             ICommandBuffer* self, UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
         {

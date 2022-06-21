@@ -16,6 +16,25 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BufferCopyRegion
+    {
+        public readonly ulong Size;
+        public readonly uint SourceOffset;
+        public readonly uint DestOffset;
+
+        public BufferCopyRegion(uint sourceOffset, uint destOffset, ulong size)
+        {
+            Size = size;
+            SourceOffset = sourceOffset;
+            DestOffset = destOffset;
+        }
+
+        public BufferCopyRegion(ulong size) : this(0, 0, size)
+        {
+        }
+    }
+
     public partial class CommandBuffer
     {
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Begin")]
@@ -45,6 +64,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindIndexBuffer")]
         private static extern void BindIndexBufferNative(IntPtr self, IntPtr buffer);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBuffers")]
+        private static extern void CopyBuffersNative(IntPtr self, IntPtr source, IntPtr dest,
+            ref BufferCopyRegion region);
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Draw")]
         private static extern void DrawNative(IntPtr self, uint vertexCount, uint instanceCount, uint firstVertex,
@@ -102,6 +125,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public void BindIndexBuffer(Buffer indexBuffer)
             {
                 BindIndexBufferNative(handle, indexBuffer.Handle);
+            }
+
+            public void CopyBuffers(Buffer source, Buffer dest, BufferCopyRegion region)
+            {
+                CopyBuffersNative(handle, source.Handle, dest.Handle, ref region);
             }
 
             public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)

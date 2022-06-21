@@ -16,9 +16,9 @@ namespace FE::GPU
 
     struct BufferCopyRegion
     {
+        UInt64 Size;
         UInt32 SourceOffset;
         UInt32 DestOffset;
-        UInt64 Size;
 
         FE_STRUCT_RTTI(BufferCopyRegion, "6D8D35DF-F12D-4F47-95EE-BA1DE3EA275E");
 
