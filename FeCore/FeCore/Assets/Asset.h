@@ -98,7 +98,7 @@ namespace FE::Assets
 
         inline void LoadSync()
         {
-            m_Storage = Singleton<IAssetManager>::Get()->LoadAsset(m_ID);
+            m_Storage = static_cast<T*>(Singleton<IAssetManager>::Get()->LoadAsset(m_ID));
         }
 
         inline T& operator*()
