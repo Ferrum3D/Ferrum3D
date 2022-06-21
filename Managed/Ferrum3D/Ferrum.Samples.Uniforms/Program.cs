@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Console;
+using Ferrum.Core.Containers;
 using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.DeviceObjects;
@@ -103,7 +104,7 @@ namespace Ferrum.Samples.Uniforms
             using var pixelShader = device.CreateShaderModule(ShaderStage.Pixel, psBytecode);
             using var vertexShader = device.CreateShaderModule(ShaderStage.Vertex, vsBytecode);
             compiler.Dispose();
-            
+
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
             var subpassDesc = new SubpassDesc()
                 .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0));
@@ -115,7 +116,22 @@ namespace Ferrum.Samples.Uniforms
 
             var scissor = window.CreateScissor();
             var viewport = window.CreateViewport();
-            
+
+            var descriptorHeapDesc = new DescriptorHeap.Desc()
+                .WithMaxTables(2)
+                .WithSizes(
+                    new DescriptorSize(1, ShaderResourceType.ConstantBuffer),
+                    new DescriptorSize(1, ShaderResourceType.ConstantBuffer)
+                );
+
+            using var descriptorHeap = device.CreateDescriptorHeap(descriptorHeapDesc);
+            var psDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Pixel, 1);
+            var vsDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Vertex, 1);
+            using var descriptorTable = descriptorHeap.AllocateDescriptorTable(psDescriptorDesc, vsDescriptorDesc);
+
+            descriptorTable.Update(0, psConstantBuffer);
+            descriptorTable.Update(1, vsConstantBuffer);
+
             var pipelineDesc = GraphicsPipeline.Desc.Default;
             pipelineDesc.InputLayout = new InputStreamLayout.Builder()
                 .AddBuffer(InputStreamRate.PerVertex)
@@ -126,9 +142,57 @@ namespace Ferrum.Samples.Uniforms
             pipelineDesc.SubpassIndex = 0;
             pipelineDesc.ColorBlend = new ColorBlendState(TargetColorBlending.Default);
             pipelineDesc.Shaders = new[] { pixelShader, vertexShader };
+            pipelineDesc.DescriptorTables = new[] { descriptorTable };
             pipelineDesc.Rasterization = new RasterizationState(CullingModeFlags.Back);
             pipelineDesc.Scissor = scissor;
             pipelineDesc.Viewport = viewport;
+
+            using var pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+
+            using var fences = new DisposableList<Fence>();
+            for (var i = 0; i < swapChain.FrameCount; i++)
+            {
+                fences.Add(device.CreateFence(Fence.FenceState.Signaled));
+            }
+
+            using var framebuffers = new DisposableList<Framebuffer>();
+            using var commandBuffers = new DisposableList<CommandBuffer>();
+            for (var i = 0; i < swapChain.ImageCount; i++)
+            {
+                var desc = new Framebuffer.Desc()
+                    .WithRenderPass(renderPass)
+                    .WithScissor(scissor)
+                    .WithRenderTargetViews(swapChain.RenderTargetViews[i]);
+
+                framebuffers.Add(device.CreateFramebuffer(desc));
+                commandBuffers.Add(device.CreateCommandBuffer(CommandQueueClass.Graphics));
+
+                using var builder = commandBuffers[i].Begin();
+                builder.BindGraphicsPipeline(pipeline);
+                builder.BindDescriptorTables(new[] { descriptorTable }, pipeline);
+                builder.SetViewport(viewport);
+                builder.SetScissor(scissor);
+                builder.BindVertexBuffer(0, vertexBuffer);
+                builder.BindIndexBuffer(indexBuffer);
+                builder.BeginRenderPass(renderPass, framebuffers[i], Colors.MediumAquamarine);
+                builder.DrawIndexed(6, 1, 0, 0, 0);
+                builder.EndRenderPass();
+            }
+
+            using var commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
+            while (!window.CloseRequested)
+            {
+                var frameIndex = swapChain.CurrentFrameIndex;
+                fences[frameIndex].WaitOnCpu();
+                window.PollEvents();
+                var imageIndex = swapChain.CurrentImageIndex;
+                fences[swapChain.CurrentFrameIndex].Reset();
+                commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex],
+                    CommandQueue.SubmitFlags.FrameBeginEnd);
+                swapChain.Present();
+            }
+
+            device.WaitIdle();
         }
 
         private static void Main()
