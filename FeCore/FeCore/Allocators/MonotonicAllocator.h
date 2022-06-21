@@ -22,6 +22,9 @@ namespace FE
         };
     } // namespace Internal
 
+    //! \brief Monotonic allocator descriptor.
+    //!
+    //! This structure stores monotonic allocator config.
     struct MonotonicAllocatorDesc
     {
         IAllocator* ParentAllocator = nullptr; //!< Allocator used to allocate internal blocks. Defaults to HeapAllocator.
@@ -31,6 +34,14 @@ namespace FE
         USize MaxGrowCount     = 8;            //!< Block size will grow MaximumGrowCount at max.
     };
 
+    //! \brief Monotonic allocator.
+    //!
+    //! \tparam TMutex - Mutex type.
+    //!
+    //! This allocator is used to allocate contiguous blocks of memory.
+    //! It is useful for allocating large amounts of memory that won't be freed very often.
+    //! Usually it is used to allocate the data that lives only one frame. In this case the whole allocator
+    //! storage will be freed only once every frame.
     template<class TMutex>
     class MonotonicAllocator : public AllocatorBase
     {

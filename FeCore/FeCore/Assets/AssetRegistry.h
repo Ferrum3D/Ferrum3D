@@ -19,11 +19,39 @@ namespace FE::Assets
     public:
         FE_CLASS_RTTI(AssetRegistry, "35D62039-49D0-48AE-9AD7-ADA816B945F5");
 
+        ~AssetRegistry() override = default;
+
+        //! \brief Add asset to registry.
+        //!
+        //! \param [in] assetID - ID of asset to add.
+        //! \param [in] assetType - Type of asset to add.
+        //! \param [in] fileName - File name of asset to add.
         void AddAsset(const AssetID& assetID, const AssetType& assetType, StringSlice fileName);
+
+        //! \brief Remove asset from registry.
+        //!
+        //! \param [in] assetID - ID of asset to remove.
         void RemoveAsset(const AssetID& assetID);
 
+        //! \brief Check if asset is registered.
+        //!
+        //! \param [in] assetID - ID of asset to check.
+        //!
+        //! \return True if asset is registered.
         bool HasAsset(const AssetID& assetID);
+
+        //! \brief Get file path of asset.
+        //!
+        //! \param [in] assetID - ID of asset to get file path for.
+        //!
+        //! \return File path of asset.
         StringSlice GetAssetFilePath(const AssetID& assetID);
+
+        //! \brief Get type of asset.
+        //!
+        //! \param [in] assetID - ID of asset to get type for.
+        //!
+        //! \return Type of asset.
         AssetType GetAssetType(const AssetID& assetID);
     };
-}
+} // namespace FE::Assets

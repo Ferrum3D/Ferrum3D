@@ -12,6 +12,7 @@ namespace FE::Assets
     //! Asset manager makes no assumptions on how the data of asset is stored. IAssetLoader must take
     //! a data stream and create an instance of this class. The users of asset will Get the data of assets
     //! they need in implementation-defined way through classes derived from AssetStorage.
+    //! The AssetStorage class is responsible for reference counting and deleting the data after its reference count reaches 0.
     class AssetStorage
     {
         SpinMutex m_Mutex;
@@ -22,11 +23,16 @@ namespace FE::Assets
         IAssetLoader* m_Loader;
 
         //! \brief Delete the asset data, but keep this instance of AssetStorage.
+        //!
+        //! This function is called by AssetStorage when its reference count reaches 0.
         virtual void Delete() = 0;
 
     public:
         FE_CLASS_RTTI(AssetStorage, "46CA2164-383A-472F-995E-6FDBC9A1C550");
 
+        //! \brief Construct an instance of AssetStorage with a loader.
+        //!
+        //! \param [in] loader - Loader that will be used to load the asset data.
         inline explicit AssetStorage(IAssetLoader* loader) noexcept
             : m_Loader(loader)
             , m_WeakRefCount(0)
@@ -36,6 +42,7 @@ namespace FE::Assets
 
         virtual ~AssetStorage() = default;
 
+        //! \brief Check if the asset is still valid.
         [[nodiscard]] inline bool IsAlive() const
         {
             return m_StrongRefCount > 0;
@@ -47,8 +54,10 @@ namespace FE::Assets
             return true;
         }
 
+        //! \brief Get type of asset.
         [[nodiscard]] virtual AssetType GetAssetType() const = 0;
 
+        //! \brief Add a strong reference to the asset.
         inline void AddStrongRef()
         {
             UniqueLocker lk(m_Mutex);
@@ -56,6 +65,7 @@ namespace FE::Assets
             ++m_WeakRefCount;
         }
 
+        //! \brief Remove a strong reference from the asset.
         inline void ReleaseStrongRef()
         {
             UniqueLocker lk(m_Mutex);
@@ -72,12 +82,14 @@ namespace FE::Assets
             }
         }
 
+        //! \brief Add a weak reference to the asset.
         inline void AddWeakRef()
         {
             UniqueLocker lk(m_Mutex);
             ++m_WeakRefCount;
         }
 
+        //! \brief Remove a weak reference from the asset.
         inline void ReleaseWeakRef()
         {
             UniqueLocker lk(m_Mutex);
