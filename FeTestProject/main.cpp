@@ -307,4 +307,5 @@ int main()
         device->WaitIdle();
     }
     FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
+    FE::Env::DetachEnvironment();
 }
