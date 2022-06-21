@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
 #include <FeCore/Assets/AssetCommon.h>
+#include <FeCore/Memory/Memory.h>
 
 namespace FE::Assets
 {
@@ -8,6 +8,10 @@ namespace FE::Assets
     class IAssetLoader;
     class AssetStorage;
 
+    //! \brief Asset manager interface.
+    //!
+    //! This interface is used to load assets. It uses the attached providers and loaders to get data streams
+    //! and initialize asset storages.
     class IAssetManager : public IObject
     {
     public:
@@ -15,9 +19,18 @@ namespace FE::Assets
 
         ~IAssetManager() override = default;
 
-        virtual void RegisterAssetLoader(Shared<IAssetLoader> loader)     = 0;
+        //! \brief Register an instance of IAssetLoader.
+        //!
+        //! \param [in] loader - The loader to register.
+        virtual void RegisterAssetLoader(Shared<IAssetLoader> loader) = 0;
+
+        //! \brief Register an instance of IAssetProvider.
+        //!
+        //! \param[in] provider - The provider to register.
         virtual void AttachAssetProvider(Shared<IAssetProvider> provider) = 0;
-        virtual void DetachAssetProvider()                                = 0;
+
+        //! \brief Detach the attached instance of IAssetProvider.
+        virtual void DetachAssetProvider() = 0;
 
         //! \brief Load asset synchronously on this thread.
         //!

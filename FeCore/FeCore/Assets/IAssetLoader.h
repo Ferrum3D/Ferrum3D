@@ -4,6 +4,9 @@
 
 namespace FE::Assets
 {
+    //! \brief Asset loader interface.
+    //!
+    //! Asset loaders are responsible for loading assets from streams.
     class IAssetLoader : public IObject
     {
     public:
@@ -11,8 +14,21 @@ namespace FE::Assets
 
         ~IAssetLoader() override = default;
 
-        [[nodiscard]] virtual AssetType GetAssetType() const                    = 0;
-        [[nodiscard]] virtual AssetStorage* CreateStorage()                     = 0;
+        //! \brief Get type of asset that this loader can load.
+        [[nodiscard]] virtual AssetType GetAssetType() const = 0;
+
+        //! \brief Create storage for asset.
+        //!
+        //! The storage will have one strong reference. Remove the reference when you are done with it.
+        //! Asset<T>::Load() will take ownership of the storage and will remove this reference automatically.
+        [[nodiscard]] virtual AssetStorage* CreateStorage() = 0;
+
+        //! \brief Load asset from stream.
+        //!
+        //! Load asset from stream and store it in storage synchronously on this thread.
+        //!
+        //! \param [in] storage - Storage to load asset into.
+        //! \param [in] assetStream - Stream to load asset from.
         virtual void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) = 0;
     };
 } // namespace FE::Assets

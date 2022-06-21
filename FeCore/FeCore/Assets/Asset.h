@@ -5,6 +5,12 @@
 
 namespace FE::Assets
 {
+    //! \brief Asset holder.
+    //!
+    //! \tparam T - Asset storage type.
+    //!
+    //! This class is used to hold asset storage. It implements reference counting and
+    //! provides interface for asset loading.
     template<class T>
     class Asset final
     {
@@ -39,6 +45,7 @@ namespace FE::Assets
             }
         }
 
+        //! \brief Copy constructor.
         inline Asset(const Asset& other)
             : m_Storage(other.m_Storage)
         {
@@ -48,29 +55,34 @@ namespace FE::Assets
             }
         }
 
+        //! \brief Move constructor.
         inline Asset(Asset&& other) noexcept
             : m_Storage(other.m_Storage)
         {
             other.m_Storage = nullptr;
         }
 
+        //! \brief Copy assignment.
         inline Asset& operator=(const Asset& other)
         {
             Asset(other).Swap(*this);
             return *this;
         }
 
+        //! \brief Move assignment.
         inline Asset& operator=(Asset&& other) noexcept
         {
             Asset(std::move(other)).Swap(*this);
             return *this;
         }
 
+        //! \brief Reset the asset holder and remove a reference from the asset.
         inline void Reset()
         {
             Asset{}.Swap(*this);
         }
 
+        //! \brief Get underlying asset storage.
         inline T* Get()
         {
             return m_Storage;
@@ -84,6 +96,7 @@ namespace FE::Assets
             }
         }
 
+        //! \brief Swap two asset holders.
         inline void Swap(Asset& other)
         {
             auto* t         = other.m_Storage;
@@ -91,11 +104,17 @@ namespace FE::Assets
             m_Storage       = t;
         }
 
+        //! \brief Create a weak asset holder from this.
         inline WeakAsset<T> CreateWeak()
         {
             return WeakAsset<T>(m_Storage);
         }
 
+        //! \brief Load asset from the manager synchronously.
+        //!
+        //! The function will block until the asset is loaded. It will call the manager's LoadAsset function.
+        //!
+        //! \see IAssetManager::LoadAsset
         inline void LoadSync()
         {
             m_Storage = static_cast<T*>(Singleton<IAssetManager>::Get()->LoadAsset(m_ID));
@@ -123,6 +142,7 @@ namespace FE::Assets
             return *m_Storage;
         }
 
+        //! \brief Check if the asset is valid.
         inline operator bool() const
         {
             return m_Storage;

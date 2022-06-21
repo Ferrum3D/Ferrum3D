@@ -4,6 +4,10 @@
 
 namespace FE::Assets
 {
+    //! \brief Asset provider interface.
+    //!
+    //! Asset provider is responsible for creating asset loading streams for given asset ID.
+    //! It is used by IAssetManager.
     class IAssetProvider : public IObject
     {
     public:
@@ -11,7 +15,14 @@ namespace FE::Assets
 
         ~IAssetProvider() override = default;
 
+        //! \brief Create asset loading stream for given asset ID.
         virtual Shared<IO::IStream> CreateAssetLoadingStream(const AssetID& assetID) = 0;
-        virtual AssetType GetAssetType(const AssetID& assetID)                       = 0;
+
+        //! \brief Returns asset type of given asset ID.
+        //!
+        //! \param [in] assetID - ID of asset.
+        //!
+        //! \return Asset type of given asset ID.
+        virtual AssetType GetAssetType(const AssetID& assetID) = 0;
     };
 } // namespace FE::Assets
