@@ -5,36 +5,6 @@ using Ferrum.Osmium.GPU.Common;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ClearValueDesc
-    {
-        public readonly Color Color;
-
-        public ClearValueDesc(Color color)
-        {
-            Color = color;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct BufferCopyRegion
-    {
-        public readonly ulong Size;
-        public readonly uint SourceOffset;
-        public readonly uint DestOffset;
-
-        public BufferCopyRegion(uint sourceOffset, uint destOffset, ulong size)
-        {
-            Size = size;
-            SourceOffset = sourceOffset;
-            DestOffset = destOffset;
-        }
-
-        public BufferCopyRegion(ulong size) : this(0, 0, size)
-        {
-        }
-    }
-
     public partial class CommandBuffer
     {
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Begin")]
