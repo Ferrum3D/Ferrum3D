@@ -49,9 +49,12 @@ namespace FE::Console
 
     static Mutex StdoutMutex;
 
+    //! \brief Initialize the console.
     void Init();
 
     //! \brief Set console text color.
+    //!
+    //! \param [in] color - The color to set.
     void SetColor(Color color);
 
     //! \brief Reset console text color to default.
