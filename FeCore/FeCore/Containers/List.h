@@ -4,6 +4,7 @@
 
 namespace FE
 {
+    //! \brief A List of elements stored contiguously in memory. Can grow when out of memory.
     template<class T>
     class List final
     {
@@ -133,7 +134,7 @@ namespace FE
             }
         }
 
-        inline List& operator=(List&& other)
+        inline List& operator=(List&& other) noexcept
         {
             Swap(other);
             return *this;
@@ -163,13 +164,20 @@ namespace FE
             return *this;
         }
 
+        //! \brief Assign N copies of X.
+        //!
+        //! \param [in] n - The length of data.
+        //! \param [in] x - The element to copy N times.
         inline void Assign(USize n, const T& x)
         {
-            VDeallocate();
+            Clear();
             AppendImpl(n);
             ConstructAtEnd(n, x);
         }
 
+        //! \brief Assign data from a std::initializer_list.
+        //!
+        //! \param [in] list - The list to assign.
         inline void Assign(std::initializer_list<T> list)
         {
             for (auto& v : list)
@@ -178,6 +186,10 @@ namespace FE
             }
         }
 
+        //! \brief Assign data from a C-style array.
+        //!
+        //! \param [in] begin - A pointer to the array.
+        //! \param [in] end - A pointer to the element after array that won't be included.
         inline void Assign(const T* begin, const T* end)
         {
             Reserve(end - begin);
@@ -187,6 +199,11 @@ namespace FE
             }
         }
 
+        //! \brief Push a new element to the back of the container and move.
+        //!
+        //! \param [in] x - The element to push.
+        //!
+        //! \return The reference to the back of the container.
         inline T& Push(T&& x)
         {
             AppendImpl(1);
@@ -194,6 +211,11 @@ namespace FE
             return Back();
         }
 
+        //! \brief Push a new element to the back of the container and copy.
+        //!
+        //! \param [in] x - The element to push.
+        //!
+        //! \return The reference to the back of the container.
         inline T& Push(const T& x)
         {
             AppendImpl(1);
@@ -201,12 +223,14 @@ namespace FE
             return Back();
         }
 
+        //! \brief Destruct the back of the container.
         inline void RemoveBack()
         {
             FE_CORE_ASSERT(!Empty(), "List was empty");
             DestructAtEnd(m_End - 1);
         }
 
+        //! \brief Pop an element from the back.
         inline T Pop()
         {
             auto res = Back();
@@ -214,18 +238,33 @@ namespace FE
             return res;
         }
 
-        inline List& Append(const T& x)
-        {
-            Push(x);
-            return *this;
-        }
-
+        //! \brief Append a new element to the back of the container and move.
+        //!
+        //! \param [in] x - The element to push.
+        //!
+        //! \return The reference to the container.
         inline List& Append(T&& x)
         {
             Push(std::move(x));
             return *this;
         }
 
+        //! \brief Append a new element to the back of the container and copy.
+        //!
+        //! \param [in] x - The element to push.
+        //!
+        //! \return The reference to the container.
+        inline List& Append(const T& x)
+        {
+            Push(x);
+            return *this;
+        }
+
+        //! \brief Append N default constructed elements to the back of the container.
+        //!
+        //! \param [in] n - The number of elements to append.
+        //!
+        //! \return The reference to the container.
         inline List& Append(USize n)
         {
             AppendImpl(n);
@@ -233,6 +272,12 @@ namespace FE
             return *this;
         }
 
+        //! \brief Append N copies of the specified element to the back of the container.
+        //!
+        //! \param [in] n - The number of elements to append.
+        //! \param [in] x - The element to copy N times.
+        //!
+        //! \return The reference to the container.
         inline List& Append(USize n, const T& x)
         {
             AppendImpl(n);
@@ -240,6 +285,12 @@ namespace FE
             return *this;
         }
 
+        //! \brief Construct an element in place at back of the container.
+        //!
+        //! \tparam Args - Types of the arguments.
+        //! \param args - The arguments to the element constructor with.
+        //!
+        //! \return The reference to the back of the container.
         template<class... Args>
         inline T& Emplace(Args&&... args)
         {
@@ -254,21 +305,27 @@ namespace FE
             VDeallocate();
         }
 
+        //! \brief Get the length of the container in number of elements.
         [[nodiscard]] inline USize Size() const noexcept
         {
             return m_End - m_Begin;
         }
 
+        //! \brief Get the capacity of the container.
         [[nodiscard]] inline USize Capacity() const noexcept
         {
             return m_EndCap - m_Begin;
         }
 
+        //! \brief Check if the container is empty.
         [[nodiscard]] inline bool Empty() const noexcept
         {
             return m_End == m_Begin;
         }
 
+        //! \brief Reserve capacity for N elements. Does nothing if Capacity() >= N.
+        //!
+        //! \param [in] n - The capacity to reserve.
         inline void Reserve(USize n)
         {
             if (Capacity() >= n)
@@ -279,23 +336,37 @@ namespace FE
             AppendImpl(n - Size());
         }
 
+        //! \brief Resize the container.
+        //!
+        //! If Size() < n, will construct new elements on the back to fit size.
+        //! If Size() > n, Will destruct the fit size.
+        //!
+        //! \param [in] n - The new size of the container.
         inline void Resize(USize n)
         {
             Resize(n, T{});
         }
 
+        //! \brief Resize the container.
+        //!
+        //! If Size() < n, will construct new elements on the back to fit size.
+        //! If Size() > n, Will destruct the fit size.
+        //!
+        //! \param [in] n - The new size of the container.
+        //! \param [in] x - The element to copy to the new elements (if any were added).
         inline void Resize(USize n, const T& x)
         {
             Reserve(n);
             if (Size() > n)
             {
-                m_End = m_Begin + n;
+                DestructAtEnd(m_Begin + n);
                 return;
             }
 
             ConstructAtEnd(n - Size(), x);
         }
 
+        //! \bried Swap two lists.
         inline void Swap(List<T>& other)
         {
             std::swap(m_Begin, other.m_Begin);
@@ -303,6 +374,7 @@ namespace FE
             std::swap(m_EndCap, other.m_EndCap);
         }
 
+        //! \brief Set the capacity to be equal to the size. Useful to free wasted memory.
         inline void Shrink()
         {
             if (Capacity() == Size())
@@ -319,6 +391,7 @@ namespace FE
             AppendImpl(0, true);
         }
 
+        //! \brief Sort elements in the container.
         inline void Sort()
         {
             std::sort(m_Begin, m_End);
@@ -336,40 +409,47 @@ namespace FE
             return m_Begin[index];
         }
 
+        //! \brief Clear the container.
         inline void Clear()
         {
             DestructAtEnd(m_Begin);
         }
 
+        //! \brief Get the first element of the container.
         [[nodiscard]] inline T& Front() noexcept
         {
             FE_CORE_ASSERT(!Empty(), "List was empty");
             return *m_Begin;
         }
 
+        //! \brief Get the first element of the container.
         [[nodiscard]] inline const T& Front() const noexcept
         {
             FE_CORE_ASSERT(!Empty(), "List was empty");
             return *m_Begin;
         }
 
+        //! \brief Get the last element of the container.
         [[nodiscard]] inline T& Back() noexcept
         {
             FE_CORE_ASSERT(!Empty(), "List was empty");
             return *(m_End - 1);
         }
 
+        //! \brief Get the last element of the container.
         [[nodiscard]] inline const T& Back() const noexcept
         {
             FE_CORE_ASSERT(!Empty(), "List was empty");
             return *(m_End - 1);
         }
 
+        //! \brief Get the pointer to the first element of the container.
         [[nodiscard]] inline T* Data() noexcept
         {
             return m_Begin;
         }
 
+        //! \brief Get the pointer to the first element of the container.
         [[nodiscard]] inline const T* Data() const noexcept
         {
             return m_Begin;

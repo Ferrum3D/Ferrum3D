@@ -3,6 +3,9 @@
 
 namespace FE
 {
+    //! \brief A ByteBuffer interface.
+    //!
+    //! A buffer that stores contiguous memory as an array of bytes.
     class IByteBuffer : public IObject
     {
     public:
@@ -10,9 +13,13 @@ namespace FE
 
         ~IByteBuffer() override = default;
 
+        //! \brief Get a pointer to the beginning of buffer storage.
         [[nodiscard]] virtual UInt8* Data() = 0;
+
+        //! \brief Get a pointer to the beginning of buffer storage.
         [[nodiscard]] virtual const UInt8* Data() const = 0;
+
+        //! \brief Get the size of buffer in bytes.
         [[nodiscard]] virtual USize Size() const = 0;
     };
-
-}
+} // namespace FE
