@@ -141,10 +141,10 @@ void RunExample()
     auto renderPass = device->CreateRenderPass(renderPassDesc);
 
     HAL::DescriptorHeapDesc descriptorHeapDesc{};
-    descriptorHeapDesc.MaxSets = 2;
-    descriptorHeapDesc.Sizes   = { HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer),
-                                   HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
-    auto descriptorHeap        = device->CreateDescriptorHeap(descriptorHeapDesc);
+    descriptorHeapDesc.MaxTables = 2;
+    descriptorHeapDesc.Sizes     = { HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer),
+                                     HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
+    auto descriptorHeap          = device->CreateDescriptorHeap(descriptorHeapDesc);
 
     HAL::DescriptorDesc psDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
     HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
@@ -152,9 +152,8 @@ void RunExample()
 
     HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.GetRaw() };
     descriptorTable->Update(descriptorWrite);
-    descriptorWrite.ArrayIndex = 0;
-    descriptorWrite.Binding    = 1;
-    descriptorWrite.Buffer     = vsConstantBuffer.GetRaw();
+    descriptorWrite.Binding = 1;
+    descriptorWrite.Buffer  = vsConstantBuffer.GetRaw();
     descriptorTable->Update(descriptorWrite);
 
     HAL::GraphicsPipelineDesc pipelineDesc{};

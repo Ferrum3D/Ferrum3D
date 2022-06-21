@@ -14,7 +14,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public void SubmitBuffers(CommandBuffer buffer, Fence signalFence, SubmitFlags flags)
         {
-            SubmitBuffers(new []{buffer}, signalFence, flags);
+            SubmitBuffers(new[] { buffer }, signalFence, flags);
         }
 
         public void SubmitBuffers(IEnumerable<CommandBuffer> buffers, Fence signalFence, SubmitFlags flags)

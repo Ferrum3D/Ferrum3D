@@ -47,7 +47,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetRTVs")]
         private static extern void GetRTVsNative(IntPtr self, IntPtr[] renderTargets, out uint count);
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Present")]
         private static extern void PresentNative(IntPtr self);
 
