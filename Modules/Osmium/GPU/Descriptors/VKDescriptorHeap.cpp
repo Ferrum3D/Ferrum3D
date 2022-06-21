@@ -17,7 +17,7 @@ namespace FE::GPU
         }
 
         vk::DescriptorPoolCreateInfo poolCI{};
-        poolCI.maxSets       = desc.MaxSets;
+        poolCI.maxSets       = desc.MaxTables;
         poolCI.pPoolSizes    = sizes.data();
         poolCI.poolSizeCount = static_cast<UInt32>(sizes.size());
 

@@ -56,10 +56,10 @@ namespace Ferrum.Osmium.GPU.VertexInput
         [StructLayout(LayoutKind.Sequential)]
         internal struct Native
         {
-            public unsafe fixed byte ShaderSemantic[32];
             public readonly uint BufferIndex;
             public readonly uint Offset;
             public readonly Format ElementFormat;
+            public unsafe fixed byte ShaderSemantic[32];
 
             public Native(InputStreamAttributeDesc desc)
             {

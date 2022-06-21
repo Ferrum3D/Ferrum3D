@@ -23,7 +23,7 @@ namespace FE::GPU
     struct DescriptorHeapDesc
     {
         List<DescriptorSize> Sizes;
-        UInt32 MaxSets = 0;
+        UInt32 MaxTables = 0;
 
         FE_STRUCT_RTTI(DescriptorHeapDesc, "CAB78665-9C43-41B4-9E51-36ACBB293B32");
     };

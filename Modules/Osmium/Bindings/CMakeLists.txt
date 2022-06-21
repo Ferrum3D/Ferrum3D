@@ -6,6 +6,9 @@ set(SRC
     DeviceObjects/Buffer.cpp
     DeviceObjects/CommandBuffer.cpp
     DeviceObjects/CommandQueue.cpp
+    DeviceObjects/DescriptorHeap.cpp
+    DeviceObjects/DescriptorHeap.h
+    DeviceObjects/DescriptorTable.cpp
     DeviceObjects/Device.cpp
     DeviceObjects/Fence.cpp
     DeviceObjects/Framebuffer.cpp
@@ -25,7 +28,7 @@ set(SRC
     WindowSystem/Window.cpp
     WindowSystem/Window.h
     # FERRUM_SORT_LINES END
-    DeviceObjects/DescriptorHeap.cpp DeviceObjects/DescriptorHeap.h DeviceObjects/DescriptorTable.cpp)
+)
 
 add_library(OsmiumBindings SHARED ${SRC})
 

@@ -204,7 +204,7 @@ int main()
         auto renderPass = device->CreateRenderPass(renderPassDesc);
 
         HAL::DescriptorHeapDesc descriptorHeapDesc{};
-        descriptorHeapDesc.MaxSets = 1;
+        descriptorHeapDesc.MaxTables = 1;
         descriptorHeapDesc.Sizes   = { HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
         auto descriptorHeap        = device->CreateDescriptorHeap(descriptorHeapDesc);
 

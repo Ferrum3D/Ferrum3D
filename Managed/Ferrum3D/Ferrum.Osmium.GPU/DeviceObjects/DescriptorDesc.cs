@@ -9,7 +9,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public readonly ShaderResourceType ResourceType;
         public readonly ShaderStageFlags Stage;
         public readonly uint Count;
-        
+
         public DescriptorDesc(ShaderResourceType resourceType, ShaderStageFlags stage, uint count)
         {
             ResourceType = resourceType;

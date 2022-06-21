@@ -6,8 +6,8 @@ namespace Ferrum.Core.Benchmark.Math
 {
     public class MatrixBenchmark
     {
-        private readonly Matrix4x4F matrix;
         public static Matrix4x4F PublicField;
+        private readonly Matrix4x4F matrix;
 
         public MatrixBenchmark()
         {

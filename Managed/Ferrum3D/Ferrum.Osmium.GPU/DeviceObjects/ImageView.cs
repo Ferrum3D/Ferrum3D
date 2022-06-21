@@ -9,7 +9,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public ImageView(IntPtr handle) : base(handle)
         {
         }
-        
+
         [DllImport("OsmiumBindings", EntryPoint = "IImageView_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
