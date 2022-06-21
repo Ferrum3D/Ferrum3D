@@ -12,6 +12,8 @@ struct Vertex
 
 namespace HAL = FE::GPU;
 
+inline constexpr const char* ExampleName = "Ferrum3D - Triangle";
+
 void RunExample()
 {
     auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
@@ -21,13 +23,14 @@ void RunExample()
     attachEnvironment(&FE::Env::GetEnvironment());
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
-    auto instance = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
+    auto instance =
+        FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
     instance->ReleaseStrongRef();
     auto adapter       = instance->GetAdapters().front();
     auto device        = adapter->CreateDevice();
     auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
 
-    auto window   = device->CreateWindow(HAL::WindowDesc{ 800, 600, "Test project" });
+    auto window   = device->CreateWindow(HAL::WindowDesc{ 800, 600, ExampleName });
     auto viewport = window->CreateViewport();
     auto scissor  = window->CreateScissor();
 
