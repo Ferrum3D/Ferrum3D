@@ -23,25 +23,25 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct DescNative
+        internal readonly struct DescNative
         {
-            public ColorBlendState.Native ColorBlend;
-            public InputStreamLayout.Native InputLayout;
-            public RasterizationState.Native Rasterization;
-            public DepthStencilState.Native DepthStencil;
-            public Viewport Viewport;
-            public Scissor Scissor;
-            public IntPtr RenderPass;
-            public IntPtr DescriptorTables;
-            public IntPtr Shaders;
-            public uint SubpassIndex;
+            public readonly ColorBlendState.Native ColorBlend;
+            public readonly InputStreamLayout.Native InputLayout;
+            public readonly RasterizationState.Native Rasterization;
+            public readonly DepthStencilState.Native DepthStencil;
+            public readonly Viewport Viewport;
+            public readonly Scissor Scissor;
+            public readonly IntPtr RenderPass;
+            public readonly IntPtr DescriptorTables;
+            public readonly IntPtr Shaders;
+            public readonly uint SubpassIndex;
 
             public DescNative(Desc desc)
             {
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
-                DescriptorTables = ByteBuffer.FromObjectCollection(desc.DescriptorTables).Detach();
-                Shaders = ByteBuffer.FromObjectCollection(desc.Shaders).Detach();
+                DescriptorTables =  ByteBuffer.FromObjectCollection(desc.DescriptorTables)?.Detach() ?? IntPtr.Zero;
+                Shaders = ByteBuffer.FromObjectCollection(desc.Shaders)?.Detach() ?? IntPtr.Zero;
                 Rasterization = new RasterizationState.Native(desc.Rasterization);
                 DepthStencil = new DepthStencilState.Native(desc.DepthStencil);
                 ColorBlend = new ColorBlendState.Native(desc.ColorBlend);
