@@ -9,6 +9,13 @@ namespace FE::GPU
         FE_STRUCT_RTTI(InstanceDesc, "20125FD5-EFCB-426E-B1EE-50DF51457171");
 
         const char* ApplicationName;
+
+        inline InstanceDesc() = default;
+
+        inline explicit InstanceDesc(const char* applicationName)
+            : ApplicationName(applicationName)
+        {
+        }
     };
 
     class IAdapter;

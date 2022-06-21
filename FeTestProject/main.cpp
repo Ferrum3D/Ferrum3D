@@ -89,7 +89,8 @@ int main()
         attachEnvironment(&FE::Env::GetEnvironment());
         auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
-        auto instance = FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{}, HAL::GraphicsAPI::Vulkan));
+        auto instance =
+            FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ "Ferrum3D test" }, HAL::GraphicsAPI::Vulkan));
         instance->ReleaseStrongRef();
 
         auto adapter       = instance->GetAdapters()[0];
