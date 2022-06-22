@@ -8,7 +8,7 @@ def process_files():
     global error_count
     for filename in filenames:
         try:
-            with open(filename) as f:
+            with open(filename, encoding='utf-8') as f:
                 if "#pragma once" not in f.readline():
                     if filename.endswith(".h"):
                         print('=' * 80)
