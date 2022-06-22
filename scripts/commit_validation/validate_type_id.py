@@ -44,7 +44,7 @@ def proc_line(line_text, line_number, file_name, uuid_str):
 
 def process_files():
     for filename in filenames:
-        with open(filename) as f:
+        with open(filename, encoding='utf-8') as f:
             try:
                 for n, line in enumerate(f):
                     search_result = pattern.search(line)
