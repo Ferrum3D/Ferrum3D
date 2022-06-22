@@ -6,9 +6,9 @@ namespace Ferrum.Core.Containers
 {
     public abstract class ByteBuffer : UnmanagedObject
     {
-        public IntPtr DataPointer => DataNative(Handle);
+        public IntPtr DataPointer => Handle == IntPtr.Zero ? IntPtr.Zero : DataNative(Handle);
 
-        protected ByteBuffer(ulong size) : this(ConstructNative(size))
+        protected ByteBuffer(long size) : this(ConstructNative((ulong)size))
         {
         }
 
@@ -24,13 +24,16 @@ namespace Ferrum.Core.Containers
         private static extern IntPtr ConstructNative(ulong size);
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Size")]
-        protected static extern ulong SizeNative(IntPtr self);
+        private protected static extern ulong SizeNative(IntPtr self);
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Data")]
         private static extern IntPtr DataNative(IntPtr self);
+        
+        [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_CopyTo")]
+        private protected static extern void CopyToNative(IntPtr self, IntPtr dest);
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Destruct")]
-        private static extern void DestructNative(IntPtr self);
+        private protected static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()
         {
