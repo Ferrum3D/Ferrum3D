@@ -33,7 +33,7 @@ namespace Ferrum.Core.Containers
                     throw new IndexOutOfRangeException();
                 }
 
-                if (value * elementSize == (long)SizeNative(Handle))
+                if (value == LongCapacity)
                 {
                     return;
                 }
@@ -46,9 +46,9 @@ namespace Ferrum.Core.Containers
                 }
 
                 var newData = new NativeArray<T>(value);
-                CopyToNative(Handle, newData.Handle);
                 if (Handle != IntPtr.Zero)
                 {
+                    CopyToNative(Handle, newData.Handle);
                     DestructNative(Handle);
                 }
 
@@ -75,12 +75,13 @@ namespace Ferrum.Core.Containers
             {
                 LongCapacity = c.Count;
                 LongCount = c.Count;
-                
+
                 for (var i = 0; i < c.Count; ++i)
                 {
                     var elem = c[i];
                     SetElementAtUnchecked(i, ref elem);
                 }
+
                 return;
             }
 
@@ -90,11 +91,11 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        public NativeList(long capacity) : base(capacity)
+        public NativeList(long capacity) : base(capacity * elementSize)
         {
         }
 
-        public NativeList(int capacity) : base(capacity)
+        public NativeList(int capacity) : base(capacity * elementSize)
         {
         }
 
@@ -191,12 +192,19 @@ namespace Ferrum.Core.Containers
 
         public void Insert(int index, T item)
         {
-            EnsureCapacity(++LongCount);
-            for (var i = index; i < LongCount - 1; ++i)
+            if (index > Count || index < 0)
             {
-                var elem = ElementAtUnchecked(i);
-                SetElementAtUnchecked(i + 1, ref elem);
+                throw new IndexOutOfRangeException();
             }
+
+            EnsureCapacity(++LongCount);
+            for (var i = LongCount - 1; i > index; --i)
+            {
+                var elem = ElementAtUnchecked(i - 1);
+                SetElementAtUnchecked(i, ref elem);
+            }
+
+            SetElementAtUnchecked(index, ref item);
         }
 
         public void RemoveAt(int index)
