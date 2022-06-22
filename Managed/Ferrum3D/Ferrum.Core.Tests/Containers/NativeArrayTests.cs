@@ -1,5 +1,4 @@
-﻿using System;
-using Ferrum.Core.Containers;
+﻿using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 using NUnit.Framework;
 

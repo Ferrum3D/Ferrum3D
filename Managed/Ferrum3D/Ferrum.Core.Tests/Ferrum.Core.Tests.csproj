@@ -250,6 +250,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Containers\NativeArrayTests.cs" />
+        <Compile Include="Containers\NativeListTests.cs" />
         <Compile Include="Math\MatrixTests.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
