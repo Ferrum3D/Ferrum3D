@@ -57,7 +57,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new SwapChain(CreateSwapChainNative(Handle, ref nativeDesc));
         }
 
-        public ShaderModule CreateShaderModule(ShaderStage stage, ByteBuffer bytecode)
+        public ShaderModule CreateShaderModule(ShaderStage stage, NativeArray<byte> bytecode)
         {
             return CreateShaderModule(new ShaderModule.Desc(stage, bytecode));
         }

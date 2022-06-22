@@ -63,8 +63,8 @@ namespace Ferrum.Osmium.GPU.VertexInput
 
             public Native(InputStreamLayout layout)
             {
-                Buffers = ByteBuffer.FromCollection(layout.buffers).Detach();
-                Attributes = ByteBuffer.FromCollection(layout.attributes
+                Buffers = new NativeArray<InputStreamBufferDesc>(layout.buffers).Detach();
+                Attributes = new NativeArray<InputStreamAttributeDesc.Native>(layout.attributes
                     .Select(x => new InputStreamAttributeDesc.Native(x))
                     .ToArray()).Detach();
                 Topology = layout.Topology;

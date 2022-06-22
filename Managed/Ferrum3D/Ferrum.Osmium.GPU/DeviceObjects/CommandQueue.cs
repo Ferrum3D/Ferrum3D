@@ -19,7 +19,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public void SubmitBuffers(IEnumerable<CommandBuffer> buffers, Fence signalFence, SubmitFlags flags)
         {
-            SubmitBuffersNative(Handle, ByteBuffer.FromObjectCollection(buffers).Detach(), signalFence.Handle, flags);
+            SubmitBuffersNative(Handle, NativeArray<IntPtr>.FromObjectCollection(buffers).Detach(),
+                signalFence.Handle, flags);
         }
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandQueue_Destruct")]

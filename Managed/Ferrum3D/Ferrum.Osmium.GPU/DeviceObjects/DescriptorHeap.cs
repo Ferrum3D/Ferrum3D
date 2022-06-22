@@ -49,7 +49,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             public DescNative(Desc desc)
             {
-                Sizes = ByteBuffer.FromCollection(desc.Sizes).Detach();
+                Sizes = new NativeArray<DescriptorSize>(desc.Sizes).Detach();
                 MaxTables = (uint)desc.MaxTables;
             }
         }

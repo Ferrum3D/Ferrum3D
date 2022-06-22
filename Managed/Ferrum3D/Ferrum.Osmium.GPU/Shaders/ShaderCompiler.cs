@@ -12,9 +12,9 @@ namespace Ferrum.Osmium.GPU.Shaders
         {
         }
 
-        public ByteBuffer CompileShader(Args args)
+        public NativeArray<byte> CompileShader(Args args)
         {
-            return new ByteBuffer(CompileShaderNative(Handle, ref args));
+            return NativeArray<byte>.FromHandle(CompileShaderNative(Handle, ref args));
         }
 
         [DllImport("OsmiumBindings", EntryPoint = "IShaderCompiler_CompileShader")]

@@ -22,24 +22,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct SubpassDescNative
-        {
-            public readonly IntPtr InputAttachments;
-            public readonly IntPtr RenderTargetAttachments;
-            public readonly IntPtr PreserveAttachments;
-            public readonly SubpassAttachment DepthStencilAttachment;
-
-            public SubpassDescNative(SubpassDesc desc)
-            {
-                desc = desc.ReplaceNulls();
-                InputAttachments = ByteBuffer.FromCollection(desc.InputAttachments).Detach();
-                RenderTargetAttachments = ByteBuffer.FromCollection(desc.RenderTargetAttachments).Detach();
-                PreserveAttachments = ByteBuffer.FromCollection(desc.PreserveAttachments).Detach();
-                DepthStencilAttachment = desc.DepthStencilAttachment ?? SubpassAttachment.None;
-            }
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         internal readonly struct DescNative
         {
             public readonly IntPtr Subpasses;
@@ -48,10 +30,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             public DescNative(Desc desc)
             {
-                var subpasses = desc.Subpasses.Select(x => new SubpassDescNative(x)).ToList();
-                Subpasses = ByteBuffer.FromCollection(subpasses).Detach();
-                Attachments = ByteBuffer.FromCollection(desc.Attachments).Detach();
-                SubpassDependencies = ByteBuffer.FromCollection(desc.SubpassDependencies).Detach();
+                var subpasses = desc.Subpasses.Select(x => new SubpassDesc.Native(x)).ToList();
+                Subpasses = new NativeArray<SubpassDesc.Native>(subpasses).Detach();
+                Attachments = new NativeArray<AttachmentDesc>(desc.Attachments).Detach();
+                SubpassDependencies = new NativeArray<SubpassDependency>(desc.SubpassDependencies).Detach();
             }
         }
 

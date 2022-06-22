@@ -1,81 +1,30 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.Containers
 {
-    public class ByteBuffer : UnmanagedObject, IEnumerable<byte>
+    public abstract class ByteBuffer : UnmanagedObject
     {
-        public int Size => (int)SizeNative(Handle);
-        public long LongSize => (long)SizeNative(Handle);
-
-        public byte this[int index] => ByteAt(index, DataNative(Handle));
-
         public IntPtr DataPointer => DataNative(Handle);
 
-        public ByteBuffer(IntPtr handle) : base(handle)
+        protected ByteBuffer(ulong size) : this(ConstructNative(size))
         {
         }
 
-        public ByteBuffer(ulong size) : this(ConstructNative(size))
+        protected ByteBuffer(int size) : this(ConstructNative((ulong)size))
         {
         }
 
-        public ByteBuffer(int size) : this(ConstructNative((ulong)size))
+        protected ByteBuffer(IntPtr handle) : base(handle)
         {
-        }
-
-        public static ByteBuffer FromObjectCollection<T>(IEnumerable<T> collection)
-            where T : UnmanagedObject
-        {
-            return collection != null
-                ? FromCollection(collection.Select(x => x.Handle).ToArray())
-                : null;
-        }
-
-        public static ByteBuffer FromCollection<T>(IReadOnlyList<T> collection)
-            where T : unmanaged
-        {
-            var buffer = new ByteBuffer(collection.Count * Marshal.SizeOf<T>());
-            var ptr = buffer.DataPointer;
-            for (var i = 0; i < collection.Count; ++i)
-            {
-                unsafe
-                {
-                    var elemPtr = (T*)(ptr + i * Marshal.SizeOf<T>());
-                    *elemPtr = collection[i];
-                }
-            }
-
-            return buffer;
-        }
-
-        public IEnumerator<byte> GetEnumerator()
-        {
-            var data = DataNative(Handle);
-            for (var i = 0; i < Size; ++i)
-            {
-                yield return ByteAt(i, data);
-            }
-        }
-
-        private static byte ByteAt(int index, IntPtr data)
-        {
-            unsafe
-            {
-                var ptr = (byte*)data + index;
-                return *ptr;
-            }
         }
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Construct")]
         private static extern IntPtr ConstructNative(ulong size);
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Size")]
-        private static extern ulong SizeNative(IntPtr self);
+        protected static extern ulong SizeNative(IntPtr self);
 
         [DllImport("FeCoreBindings", EntryPoint = "IByteBuffer_Data")]
         private static extern IntPtr DataNative(IntPtr self);
@@ -86,11 +35,6 @@ namespace Ferrum.Core.Containers
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }
