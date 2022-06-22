@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
 
@@ -10,14 +11,21 @@ namespace Ferrum.Core.Containers
     public sealed class NativeArray<T> : ByteBuffer, IReadOnlyList<T>
         where T : unmanaged
     {
-        public int Count => (int)SizeNative(Handle);
-        public long LongCount => (long)SizeNative(Handle);
+        public int Count => (int)SizeNative(Handle) / elementSize;
+        public long LongCount => (long)SizeNative(Handle) / elementSize;
 
-        public T this[int index] => ElementAt(index);
+        public T this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ElementAt(index);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => SetElementAt(index, ref value);
+        }
 
         private static readonly int elementSize = Marshal.SizeOf<T>();
 
-        public NativeArray(ulong size) : base(size * (ulong)elementSize)
+        public NativeArray(long size) : base(size * elementSize)
         {
         }
 
@@ -27,14 +35,10 @@ namespace Ferrum.Core.Containers
 
         public NativeArray(IReadOnlyList<T> collection) : base(collection.Count * elementSize)
         {
-            var ptr = DataPointer;
             for (var i = 0; i < collection.Count; ++i)
             {
-                unsafe
-                {
-                    var elemPtr = (T*)(ptr + i * elementSize);
-                    *elemPtr = collection[i];
-                }
+                var elem = collection[i];
+                SetElementAtUnchecked(i, ref elem);
             }
         }
 
@@ -50,6 +54,7 @@ namespace Ferrum.Core.Containers
                 : null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NativeArray<T> FromHandle(IntPtr handle)
         {
             return new NativeArray<T>(handle);
@@ -63,7 +68,8 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        private T ElementAtUnchecked(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private T ElementAtUnchecked(long index)
         {
             unsafe
             {
@@ -71,7 +77,17 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        private T ElementAt(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetElementAtUnchecked(long index, ref T item)
+        {
+            unsafe
+            {
+                ((T*)DataPointer)![index] = item;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private T ElementAt(long index)
         {
             if (DataPointer == IntPtr.Zero || index < 0 || index > Count)
             {
@@ -79,6 +95,17 @@ namespace Ferrum.Core.Containers
             }
 
             return ElementAtUnchecked(index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetElementAt(long index, ref T item)
+        {
+            if (DataPointer == IntPtr.Zero || index < 0 || index > Count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            SetElementAtUnchecked(index, ref item);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
