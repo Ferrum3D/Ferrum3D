@@ -10,7 +10,6 @@ namespace Ferrum.Core.Containers
     public sealed class NativeArray<T> : ByteBuffer, IReadOnlyList<T>
         where T : unmanaged
     {
-
         public int Count => (int)SizeNative(Handle);
         public long LongCount => (long)SizeNative(Handle);
 
@@ -60,7 +59,15 @@ namespace Ferrum.Core.Containers
         {
             for (var i = 0; i < Count; ++i)
             {
-                yield return ElementAt(i);
+                yield return ElementAtUnchecked(i);
+            }
+        }
+
+        private T ElementAtUnchecked(int index)
+        {
+            unsafe
+            {
+                return ((T*)DataPointer)![index];
             }
         }
 
@@ -71,10 +78,7 @@ namespace Ferrum.Core.Containers
                 throw new IndexOutOfRangeException();
             }
 
-            unsafe
-            {
-                return ((T*)DataPointer)![index];
-            }
+            return ElementAtUnchecked(index);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
