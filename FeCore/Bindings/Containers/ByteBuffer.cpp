@@ -24,5 +24,10 @@ namespace FE
         {
             return self->Size();
         }
+
+        FE_DLL_EXPORT void IByteBuffer_CopyTo(IByteBuffer* self, IByteBuffer* dest)
+        {
+            self->CopyTo(dest);
+        }
     }
 }

@@ -21,5 +21,8 @@ namespace FE
 
         //! \brief Get the size of buffer in bytes.
         [[nodiscard]] virtual USize Size() const = 0;
+
+        //! \brief Copy data from this buffer to dest.
+        virtual void CopyTo(IByteBuffer* dest) const = 0;
     };
 } // namespace FE

@@ -45,6 +45,7 @@
         <Compile Include="Containers\ByteBuffer.cs" />
         <Compile Include="Containers\DisposableList.cs" />
         <Compile Include="Containers\NativeArray.cs" />
+        <Compile Include="Containers\NativeList.cs" />
         <Compile Include="Math\Color.cs" />
         <Compile Include="Math\Colors.cs" />
         <Compile Include="Math\MathF.cs" />

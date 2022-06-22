@@ -4,7 +4,7 @@ namespace Ferrum.Core.Modules
 {
     public abstract class UnmanagedObject : IDisposable
     {
-        public IntPtr Handle { get; private set; }
+        public IntPtr Handle { get; private protected set; }
 
         protected UnmanagedObject(IntPtr handle)
         {
