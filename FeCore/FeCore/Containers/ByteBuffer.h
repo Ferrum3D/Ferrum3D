@@ -30,5 +30,6 @@ namespace FE
         [[nodiscard]] UInt8* Data() override;
         [[nodiscard]] const UInt8* Data() const override;
         [[nodiscard]] USize Size() const override;
+        void CopyTo(IByteBuffer* dest) const override;
     };
 } // namespace FE

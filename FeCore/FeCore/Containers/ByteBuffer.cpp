@@ -31,4 +31,13 @@ namespace FE
     {
         return m_Data.Size();
     }
+
+    void ByteBuffer::CopyTo(IByteBuffer* dest) const
+    {
+        if (Size() > dest->Size())
+        {
+            static_cast<ByteBuffer*>(dest)->m_Data.Resize(Size());
+        }
+        memcpy(dest->Data(), Data(), Size());
+    }
 }
