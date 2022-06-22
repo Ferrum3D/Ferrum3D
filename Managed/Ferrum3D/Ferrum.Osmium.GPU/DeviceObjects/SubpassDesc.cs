@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Ferrum.Core.Containers;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
@@ -48,6 +51,24 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 PreserveAttachments ?? new List<uint>(),
                 DepthStencilAttachment ?? SubpassAttachment.None
             );
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct Native
+        {
+            public readonly IntPtr InputAttachments;
+            public readonly IntPtr RenderTargetAttachments;
+            public readonly IntPtr PreserveAttachments;
+            public readonly SubpassAttachment DepthStencilAttachment;
+
+            public Native(SubpassDesc desc)
+            {
+                desc = desc.ReplaceNulls();
+                InputAttachments = new NativeArray<SubpassAttachment>(desc.InputAttachments).Detach();
+                RenderTargetAttachments = new NativeArray<SubpassAttachment>(desc.RenderTargetAttachments).Detach();
+                PreserveAttachments = new NativeArray<uint>(desc.PreserveAttachments).Detach();
+                DepthStencilAttachment = desc.DepthStencilAttachment ?? SubpassAttachment.None;
+            }
         }
     }
 }

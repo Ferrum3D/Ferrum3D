@@ -31,7 +31,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public DescNative(Desc desc)
             {
                 Bytecode = desc.Bytecode.DataPointer;
-                BytecodeSize = (ulong)desc.Bytecode.LongSize;
+                BytecodeSize = (ulong)desc.Bytecode.LongCount;
                 EntryPoint = desc.EntryPoint;
                 Stage = (int)desc.Stage;
             }
@@ -39,11 +39,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public readonly struct Desc
         {
-            public readonly ByteBuffer Bytecode;
+            public readonly NativeArray<byte> Bytecode;
             public readonly string EntryPoint;
             public readonly ShaderStage Stage;
 
-            public Desc(ShaderStage stage, ByteBuffer bytecode)
+            public Desc(ShaderStage stage, NativeArray<byte> bytecode)
             {
                 Stage = stage;
                 Bytecode = bytecode;

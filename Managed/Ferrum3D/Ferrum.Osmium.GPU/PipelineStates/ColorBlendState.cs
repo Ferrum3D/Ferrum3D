@@ -38,7 +38,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
                 BlendConstantY = state.BlendConstants.Y;
                 BlendConstantZ = state.BlendConstants.Z;
                 BlendConstantW = state.BlendConstants.W;
-                TargetBlendStates = ByteBuffer.FromCollection(state.TargetBlendStates).Detach();
+                TargetBlendStates = new NativeArray<TargetColorBlending>(state.TargetBlendStates).Detach();
             }
         }
     }

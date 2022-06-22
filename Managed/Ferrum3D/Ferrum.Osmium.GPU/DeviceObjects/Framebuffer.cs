@@ -32,7 +32,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             public DescNative(Desc desc)
             {
-                RenderTargetViews = ByteBuffer.FromObjectCollection(desc.RenderTargetViews).Detach();
+                RenderTargetViews = NativeArray<IntPtr>.FromObjectCollection(desc.RenderTargetViews).Detach();
                 RenderPass = desc.RenderPass.Handle;
                 Width = (uint)desc.Width;
                 Height = (uint)desc.Height;
