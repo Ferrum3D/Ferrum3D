@@ -1,1 +1,2 @@
 add_subdirectory(OsmiumGPU)
+add_subdirectory(OsmiumAssets)
