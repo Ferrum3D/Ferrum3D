@@ -22,7 +22,7 @@
 #include <FeCore/Jobs/JobScheduler.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Modules/DynamicLibrary.h>
-#include <GPU/OsmiumGPU.h>
+#include <OsGPU/OsmiumGPU.h>
 #include <chrono>
 
 struct Vertex
