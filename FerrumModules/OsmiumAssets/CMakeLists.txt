@@ -4,8 +4,12 @@ set(SRC
 
     OsAssets/Images/ImageAssetLoader.cpp
     OsAssets/Images/ImageAssetLoader.h
+    OsAssets/Images/ImageAssetStorage.cpp
+    OsAssets/Images/ImageAssetStorage.h
+    OsAssets/Images/StbImage.cpp
+    OsAssets/Images/StbImage.h
     # FERRUM_SORT_LINES END
-    OsAssets/Images/ImageAssetStorage.cpp OsAssets/Images/ImageAssetStorage.h OsAssets/Images/StbImage.h OsAssets/Images/StbImage.cpp)
+)
 
 add_library(OsmiumAssets STATIC ${SRC})
 
