@@ -17,6 +17,7 @@ include(ThirdParty/rpmalloc)
 include(ThirdParty/vulkan)
 include(ThirdParty/dxc)
 include(ThirdParty/SPIRV-Cross)
+include(ThirdParty/stb)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
