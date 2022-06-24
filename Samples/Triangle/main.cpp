@@ -2,7 +2,7 @@
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Modules/DynamicLibrary.h>
-#include <GPU/OsmiumGPU.h>
+#include <OsGPU/OsmiumGPU.h>
 
 struct Vertex
 {
