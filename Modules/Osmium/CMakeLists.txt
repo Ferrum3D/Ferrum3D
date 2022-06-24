@@ -1,107 +1,107 @@
 set(SRC
     # FERRUM_SORT_LINES BEGIN
-    GPU/OsmiumGPU.h
+    OsGPU/OsmiumGPU.h
 
-    GPU/Adapter/IAdapter.h
-    GPU/Adapter/VKAdapter.cpp
-    GPU/Adapter/VKAdapter.h
+    OsGPU/Adapter/IAdapter.h
+    OsGPU/Adapter/VKAdapter.cpp
+    OsGPU/Adapter/VKAdapter.h
 
-    GPU/Buffer/IBuffer.h
-    GPU/Buffer/VKBuffer.cpp
-    GPU/Buffer/VKBuffer.h
+    OsGPU/Buffer/IBuffer.h
+    OsGPU/Buffer/VKBuffer.cpp
+    OsGPU/Buffer/VKBuffer.h
 
-    GPU/CommandBuffer/ICommandBuffer.h
-    GPU/CommandBuffer/VKCommandBuffer.cpp
-    GPU/CommandBuffer/VKCommandBuffer.h
+    OsGPU/CommandBuffer/ICommandBuffer.h
+    OsGPU/CommandBuffer/VKCommandBuffer.cpp
+    OsGPU/CommandBuffer/VKCommandBuffer.h
 
-    GPU/CommandQueue/ICommandQueue.h
-    GPU/CommandQueue/VKCommandQueue.cpp
-    GPU/CommandQueue/VKCommandQueue.h
+    OsGPU/CommandQueue/ICommandQueue.h
+    OsGPU/CommandQueue/VKCommandQueue.cpp
+    OsGPU/CommandQueue/VKCommandQueue.h
 
-    GPU/Common/BaseTypes.h
-    GPU/Common/VKConfig.cpp
-    GPU/Common/VKConfig.h
-    GPU/Common/VKViewport.h
-    GPU/Common/Viewport.h
+    OsGPU/Common/BaseTypes.h
+    OsGPU/Common/VKConfig.cpp
+    OsGPU/Common/VKConfig.h
+    OsGPU/Common/VKViewport.h
+    OsGPU/Common/Viewport.h
 
-    GPU/Descriptors/DescriptorDesc.h
-    GPU/Descriptors/IDescriptorHeap.h
-    GPU/Descriptors/IDescriptorTable.h
-    GPU/Descriptors/VKDescriptorHeap.cpp
-    GPU/Descriptors/VKDescriptorHeap.h
-    GPU/Descriptors/VKDescriptorTable.cpp
-    GPU/Descriptors/VKDescriptorTable.h
+    OsGPU/Descriptors/DescriptorDesc.h
+    OsGPU/Descriptors/IDescriptorHeap.h
+    OsGPU/Descriptors/IDescriptorTable.h
+    OsGPU/Descriptors/VKDescriptorHeap.cpp
+    OsGPU/Descriptors/VKDescriptorHeap.h
+    OsGPU/Descriptors/VKDescriptorTable.cpp
+    OsGPU/Descriptors/VKDescriptorTable.h
 
-    GPU/Device/IDevice.h
-    GPU/Device/VKDevice.cpp
-    GPU/Device/VKDevice.h
+    OsGPU/Device/IDevice.h
+    OsGPU/Device/VKDevice.cpp
+    OsGPU/Device/VKDevice.h
 
-    GPU/Fence/FenceState.h
-    GPU/Fence/IFence.h
-    GPU/Fence/VKFence.cpp
-    GPU/Fence/VKFence.h
+    OsGPU/Fence/FenceState.h
+    OsGPU/Fence/IFence.h
+    OsGPU/Fence/VKFence.cpp
+    OsGPU/Fence/VKFence.h
 
-    GPU/Framebuffer/IFramebuffer.h
-    GPU/Framebuffer/VKFramebuffer.cpp
-    GPU/Framebuffer/VKFramebuffer.h
+    OsGPU/Framebuffer/IFramebuffer.h
+    OsGPU/Framebuffer/VKFramebuffer.cpp
+    OsGPU/Framebuffer/VKFramebuffer.h
 
-    GPU/Image/IImage.h
-    GPU/Image/ImageEnums.h
-    GPU/Image/ImageFormat.h
-    GPU/Image/ImageSubresource.h
-    GPU/Image/VKImage.cpp
-    GPU/Image/VKImage.h
-    GPU/Image/VKImageFormat.h
-    GPU/Image/VKImageSubresource.h
+    OsGPU/Image/IImage.h
+    OsGPU/Image/ImageEnums.h
+    OsGPU/Image/ImageFormat.h
+    OsGPU/Image/ImageSubresource.h
+    OsGPU/Image/VKImage.cpp
+    OsGPU/Image/VKImage.h
+    OsGPU/Image/VKImageFormat.h
+    OsGPU/Image/VKImageSubresource.h
 
-    GPU/ImageView/IImageView.h
-    GPU/ImageView/VKImageView.cpp
-    GPU/ImageView/VKImageView.h
+    OsGPU/ImageView/IImageView.h
+    OsGPU/ImageView/VKImageView.cpp
+    OsGPU/ImageView/VKImageView.h
 
-    GPU/Instance/IInstance.cpp
-    GPU/Instance/IInstance.h
-    GPU/Instance/VKInstance.cpp
-    GPU/Instance/VKInstance.h
+    OsGPU/Instance/IInstance.cpp
+    OsGPU/Instance/IInstance.h
+    OsGPU/Instance/VKInstance.cpp
+    OsGPU/Instance/VKInstance.h
 
-    GPU/Memory/IDeviceMemory.h
-    GPU/Memory/MemoryType.h
-    GPU/Memory/VKDeviceMemory.cpp
-    GPU/Memory/VKDeviceMemory.h
+    OsGPU/Memory/IDeviceMemory.h
+    OsGPU/Memory/MemoryType.h
+    OsGPU/Memory/VKDeviceMemory.cpp
+    OsGPU/Memory/VKDeviceMemory.h
 
-    GPU/Pipeline/IGraphicsPipeline.h
-    GPU/Pipeline/InputLayoutBuilder.h
-    GPU/Pipeline/InputStreamLayout.h
-    GPU/Pipeline/PipelineStates.h
-    GPU/Pipeline/VKGraphicsPipeline.cpp
-    GPU/Pipeline/VKGraphicsPipeline.h
+    OsGPU/Pipeline/IGraphicsPipeline.h
+    OsGPU/Pipeline/InputLayoutBuilder.h
+    OsGPU/Pipeline/InputStreamLayout.h
+    OsGPU/Pipeline/PipelineStates.h
+    OsGPU/Pipeline/VKGraphicsPipeline.cpp
+    OsGPU/Pipeline/VKGraphicsPipeline.h
 
-    GPU/RenderPass/IRenderPass.h
-    GPU/RenderPass/VKRenderPass.cpp
-    GPU/RenderPass/VKRenderPass.h
+    OsGPU/RenderPass/IRenderPass.h
+    OsGPU/RenderPass/VKRenderPass.cpp
+    OsGPU/RenderPass/VKRenderPass.h
 
-    GPU/Resource/BindFlags.h
-    GPU/Resource/ResourceState.h
-    GPU/Resource/ShaderResourceType.h
-    GPU/Resource/VKResourceState.h
+    OsGPU/Resource/BindFlags.h
+    OsGPU/Resource/ResourceState.h
+    OsGPU/Resource/ShaderResourceType.h
+    OsGPU/Resource/VKResourceState.h
 
-    GPU/Shader/IShaderCompiler.h
-    GPU/Shader/IShaderModule.h
-    GPU/Shader/IShaderReflection.h
-    GPU/Shader/ShaderCompilerDXC.cpp
-    GPU/Shader/ShaderCompilerDXC.h
-    GPU/Shader/ShaderStage.h
-    GPU/Shader/VKShaderModule.cpp
-    GPU/Shader/VKShaderModule.h
-    GPU/Shader/VKShaderReflection.cpp
-    GPU/Shader/VKShaderReflection.h
+    OsGPU/Shader/IShaderCompiler.h
+    OsGPU/Shader/IShaderModule.h
+    OsGPU/Shader/IShaderReflection.h
+    OsGPU/Shader/ShaderCompilerDXC.cpp
+    OsGPU/Shader/ShaderCompilerDXC.h
+    OsGPU/Shader/ShaderStage.h
+    OsGPU/Shader/VKShaderModule.cpp
+    OsGPU/Shader/VKShaderModule.h
+    OsGPU/Shader/VKShaderReflection.cpp
+    OsGPU/Shader/VKShaderReflection.h
 
-    GPU/SwapChain/ISwapChain.h
-    GPU/SwapChain/VKSwapChain.cpp
-    GPU/SwapChain/VKSwapChain.h
+    OsGPU/SwapChain/ISwapChain.h
+    OsGPU/SwapChain/VKSwapChain.cpp
+    OsGPU/SwapChain/VKSwapChain.h
 
-    GPU/Window/IWindow.h
-    GPU/Window/Window.cpp
-    GPU/Window/Window.h
+    OsGPU/Window/IWindow.h
+    OsGPU/Window/Window.cpp
+    OsGPU/Window/Window.h
     # FERRUM_SORT_LINES END
 )
 
