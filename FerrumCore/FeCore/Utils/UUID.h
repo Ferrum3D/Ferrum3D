@@ -25,7 +25,7 @@ namespace FE
         }
 
         //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
-        inline explicit UUID(const char* str)
+        inline explicit UUID(const char* str) noexcept
         {
             static char digits[]    = "0123456789ABCDEF";
             constexpr auto getValue = [](char c) {
