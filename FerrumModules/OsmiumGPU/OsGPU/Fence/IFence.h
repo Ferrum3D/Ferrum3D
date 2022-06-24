@@ -2,7 +2,7 @@
 #include <FeCore/Memory/Object.h>
 #include <OsGPU/Fence/FenceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IFence : public IObject
     {
@@ -16,4 +16,4 @@ namespace FE::GPU
         virtual void Reset()          = 0;
         virtual FenceState GetState() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

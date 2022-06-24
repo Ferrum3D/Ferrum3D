@@ -3,7 +3,7 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Fence/VKFence.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKCommandQueue::VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc)
         : m_Desc(desc)
@@ -56,4 +56,4 @@ namespace FE::GPU
         vk::Fence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : nullptr;
         m_Queue.submit({ info }, vkFence);
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

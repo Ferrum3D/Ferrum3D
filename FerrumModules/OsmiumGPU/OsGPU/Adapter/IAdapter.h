@@ -2,7 +2,7 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <FeCore/Strings/String.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class AdapterType
     {
@@ -33,4 +33,4 @@ namespace FE::GPU
         virtual AdapterDesc& GetDesc()         = 0;
         virtual Shared<IDevice> CreateDevice() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <FeCore/Containers/IByteBuffer.h>
 #include <FeCore/Containers/List.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     template<class T>
     inline void CopyFromByteBuffer(IByteBuffer* src, List<T>& dst)
@@ -20,4 +20,4 @@ namespace FE::GPU
             src->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

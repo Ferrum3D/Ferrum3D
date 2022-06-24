@@ -2,7 +2,7 @@
 #include <OsGPU/CommandQueue/ICommandQueue.h>
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -31,4 +31,4 @@ namespace FE::GPU
         [[nodiscard]] const VKCommandQueueDesc& GetDesc() const;
         vk::Queue GetNativeQueue();
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

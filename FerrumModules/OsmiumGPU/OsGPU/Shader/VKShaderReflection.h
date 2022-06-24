@@ -2,7 +2,7 @@
 #include <OsGPU/Shader/IShaderReflection.h>
 #include <spirv_hlsl.hpp>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKShaderReflection : public Object<IShaderReflection>
     {

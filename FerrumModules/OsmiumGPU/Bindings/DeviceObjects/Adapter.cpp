@@ -1,9 +1,9 @@
-#include <GPU/Adapter/IAdapter.h>
-#include <GPU/Device/IDevice.h>
+#include <OsGPU/Adapter/IAdapter.h>
+#include <OsGPU/Device/IDevice.h>
 #include <objbase.h>
 #include <strsafe.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -34,4 +34,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

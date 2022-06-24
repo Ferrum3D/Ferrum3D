@@ -1,12 +1,12 @@
 #pragma once
-#include <GPU/RenderPass/IRenderPass.h>
+#include <OsGPU/RenderPass/IRenderPass.h>
 
 namespace FE
 {
     class IByteBuffer;
 }
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct RenderPassDescBinding
     {
@@ -22,4 +22,4 @@ namespace FE::GPU
         IByteBuffer* PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <OsGPU/Adapter/IAdapter.h>
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKInstance;
 
@@ -40,4 +40,4 @@ namespace FE::GPU
         Shared<IDevice> CreateDevice() override;
         IInstance& GetInstance() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

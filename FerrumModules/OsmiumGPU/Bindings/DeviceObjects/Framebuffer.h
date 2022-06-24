@@ -6,7 +6,7 @@ namespace FE
     class IByteBuffer;
 }
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IRenderPass;
 
@@ -17,4 +17,4 @@ namespace FE::GPU
         UInt32 Width;
         UInt32 Height;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

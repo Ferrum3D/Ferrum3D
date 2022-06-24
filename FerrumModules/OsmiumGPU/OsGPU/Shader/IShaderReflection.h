@@ -2,7 +2,7 @@
 #include <FeCore/Memory/Memory.h>
 #include <OsGPU/Image/ImageFormat.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct ShaderInputAttribute
     {
@@ -23,4 +23,4 @@ namespace FE::GPU
         virtual Vector<ShaderInputAttribute> GetInputAttributes()      = 0;
         virtual UInt32 GetInputAttributeLocation(StringSlice semantic) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <OsGPU/Shader/VKShaderModule.h>
 #include <OsGPU/Shader/VKShaderReflection.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKShaderModule::VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc) // NOLINT(modernize-pass-by-value)
         : m_Device(&dev)
@@ -42,4 +42,4 @@ namespace FE::GPU
 
         return m_Reflection.GetRaw();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

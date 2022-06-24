@@ -1,7 +1,7 @@
 #pragma once
 #include <OsGPU/Image/ImageSubresource.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class ResourceState
     {

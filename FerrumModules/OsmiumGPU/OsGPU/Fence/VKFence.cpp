@@ -2,7 +2,7 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Fence/VKFence.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKFence::VKFence(VKDevice& dev, FenceState initialState)
         : m_Device(&dev)
@@ -38,4 +38,4 @@ namespace FE::GPU
     {
         return m_NativeFence.get();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

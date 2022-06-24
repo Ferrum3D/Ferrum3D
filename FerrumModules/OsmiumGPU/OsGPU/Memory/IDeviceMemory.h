@@ -2,7 +2,7 @@
 #include <FeCore/Memory/Object.h>
 #include <OsGPU/Memory/MemoryType.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct MemoryAllocationDesc
     {
@@ -21,4 +21,4 @@ namespace FE::GPU
 
         virtual const MemoryAllocationDesc& GetDesc() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

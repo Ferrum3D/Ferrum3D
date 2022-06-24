@@ -1,6 +1,6 @@
-#include <GPU/Buffer/IBuffer.h>
+#include <OsGPU/Buffer/IBuffer.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -19,4 +19,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

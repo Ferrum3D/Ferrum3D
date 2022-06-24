@@ -4,7 +4,7 @@
 #include <OsGPU/Shader/ShaderStage.h>
 #include <FeCore/Containers/IByteBuffer.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IShaderReflection;
 

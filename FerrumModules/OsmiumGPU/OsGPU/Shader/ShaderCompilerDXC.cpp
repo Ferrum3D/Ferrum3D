@@ -3,7 +3,7 @@
 #include <OsGPU/Shader/ShaderCompilerDXC.h>
 #include <d3d12shader.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IncludeHandler : public IDxcIncludeHandler
     {
@@ -176,4 +176,4 @@ namespace FE::GPU
 
         return static_pointer_cast<IByteBuffer>(MakeShared<ByteBuffer>(std::move(returnValue)));
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

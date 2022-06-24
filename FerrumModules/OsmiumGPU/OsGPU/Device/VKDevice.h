@@ -3,7 +3,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Device/IDevice.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKAdapter;
 
@@ -114,4 +114,4 @@ namespace FE::GPU
         Shared<IWindow> CreateWindow(const WindowDesc& desc) override;
         Shared<IImage> CreateImage(const ImageDesc& desc) override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

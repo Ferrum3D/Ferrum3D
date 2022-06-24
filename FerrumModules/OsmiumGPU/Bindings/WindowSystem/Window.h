@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct WindowDescBinding
     {
@@ -10,4 +10,4 @@ namespace FE::GPU
 
         const char* Title;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

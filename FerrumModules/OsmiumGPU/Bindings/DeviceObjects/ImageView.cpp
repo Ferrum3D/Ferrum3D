@@ -1,6 +1,6 @@
-#include <GPU/ImageView/IImageView.h>
+#include <OsGPU/ImageView/IImageView.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -9,4 +9,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

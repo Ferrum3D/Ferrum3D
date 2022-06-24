@@ -7,7 +7,7 @@
 #include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/dxcapi.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class ShaderCompilerDXC : public Object<IShaderCompiler>
     {
@@ -21,4 +21,4 @@ namespace FE::GPU
 
         Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

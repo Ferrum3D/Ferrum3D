@@ -10,7 +10,7 @@ struct Vertex
     [[maybe_unused]] FE::Float32 RGB[3];
 };
 
-namespace HAL = FE::GPU;
+namespace HAL = FE::Osmium;
 
 inline constexpr const char* ExampleName = "Ferrum3D - Triangle";
 

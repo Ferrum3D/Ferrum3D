@@ -3,7 +3,7 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Memory/VKDeviceMemory.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKBuffer::VKBuffer(VKDevice& dev, const BufferDesc& desc)
         : m_Device(&dev)
@@ -41,4 +41,4 @@ namespace FE::GPU
     {
         return Desc;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

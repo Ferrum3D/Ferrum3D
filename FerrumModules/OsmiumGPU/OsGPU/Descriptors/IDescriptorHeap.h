@@ -2,7 +2,7 @@
 #include <FeCore/Containers/List.h>
 #include <OsGPU/Descriptors/DescriptorDesc.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct DescriptorSize
     {
@@ -39,4 +39,4 @@ namespace FE::GPU
 
         virtual Shared<IDescriptorTable> AllocateDescriptorTable(const List<DescriptorDesc>& descriptors) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

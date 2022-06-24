@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Containers/IByteBuffer.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct DescriptorHeapDescBinding
     {

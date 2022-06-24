@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Common/Viewport.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     inline vk::Viewport VKConvert(const Viewport& viewport)
     {
@@ -23,4 +23,4 @@ namespace FE::GPU
         rect.extent = vk::Extent2D(scissor.Width(), scissor.Height());
         return rect;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

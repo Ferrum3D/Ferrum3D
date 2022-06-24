@@ -4,7 +4,7 @@
 #include <FeCore/Containers/List.h>
 #include <OsGPU/Image/ImageFormat.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class PrimitiveTopology
     {
@@ -141,4 +141,4 @@ namespace FE::GPU
 
         PrimitiveTopology Topology;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

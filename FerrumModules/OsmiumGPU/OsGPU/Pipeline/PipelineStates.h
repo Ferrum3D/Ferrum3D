@@ -3,7 +3,7 @@
 #include <FeCore/Math/Vector4.h>
 #include <utility>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class CullingMode
     {
@@ -154,4 +154,4 @@ namespace FE::GPU
     };
 
     FE_ENUM_OPERATORS(PipelineStageFlags);
-} // namespace FE::GPU
+} // namespace FE::Osmium

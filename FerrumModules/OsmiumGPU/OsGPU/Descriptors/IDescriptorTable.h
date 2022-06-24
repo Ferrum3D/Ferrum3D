@@ -1,7 +1,7 @@
 #pragma once
 #include <OsGPU/Descriptors/DescriptorDesc.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IDescriptorTable : public IObject
     {
@@ -12,4 +12,4 @@ namespace FE::GPU
 
         virtual void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

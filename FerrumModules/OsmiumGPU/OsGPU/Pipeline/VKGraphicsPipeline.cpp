@@ -8,7 +8,7 @@
 #include <OsGPU/Shader/VKShaderReflection.h>
 #include <OsGPU/Common/VKViewport.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     inline vk::BlendOp VKConvert(BlendOperation source)
     {
@@ -371,4 +371,4 @@ namespace FE::GPU
         state.CreateInfo.blendConstants[2] = m_Desc.ColorBlend.BlendConstants.Z();
         state.CreateInfo.blendConstants[3] = m_Desc.ColorBlend.BlendConstants.W();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

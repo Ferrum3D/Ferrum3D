@@ -3,7 +3,7 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Image/ImageFormat.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class ICommandQueue;
 
@@ -43,4 +43,4 @@ namespace FE::GPU
 
         virtual List<Shared<IImageView>> GetRTVs() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

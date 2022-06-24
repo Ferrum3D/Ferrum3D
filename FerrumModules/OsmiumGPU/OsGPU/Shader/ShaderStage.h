@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class ShaderStage : UInt32
     {
@@ -26,4 +26,4 @@ namespace FE::GPU
     };
 
     FE_ENUM_OPERATORS(ShaderStageFlags);
-} // namespace FE::GPU
+} // namespace FE::Osmium

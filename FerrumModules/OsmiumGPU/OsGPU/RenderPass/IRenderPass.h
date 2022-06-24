@@ -4,7 +4,7 @@
 #include <OsGPU/Pipeline/PipelineStates.h>
 #include <OsGPU/Resource/ResourceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class AttachmentLoadOp
     {
@@ -98,4 +98,4 @@ namespace FE::GPU
 
         virtual UInt32 GetAttachmentCount() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

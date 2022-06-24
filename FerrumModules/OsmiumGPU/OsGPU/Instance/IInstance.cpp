@@ -1,7 +1,7 @@
 #include <OsGPU/Instance/IInstance.h>
 #include <OsGPU/Instance/VKInstance.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C" FE_DLL_EXPORT void AttachEnvironment(Env::Internal::IEnvironment* environment)
     {
@@ -21,4 +21,4 @@ namespace FE::GPU
         }
         return {};
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

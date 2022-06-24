@@ -3,7 +3,7 @@
 #include <OsGPU/ImageView/VKImageView.h>
 #include <OsGPU/RenderPass/VKRenderPass.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKFramebuffer::VKFramebuffer(VKDevice& dev, const FramebufferDesc& desc)
         : m_Device(&dev)
@@ -27,4 +27,4 @@ namespace FE::GPU
 
         m_NativeFramebuffer = m_Device->GetNativeDevice().createFramebufferUnique(framebufferCI);
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

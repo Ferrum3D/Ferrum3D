@@ -2,7 +2,7 @@
 #include <OsGPU/CommandBuffer/ICommandBuffer.h>
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -44,4 +44,4 @@ namespace FE::GPU
         void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) override;
         void MemoryBarrier() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

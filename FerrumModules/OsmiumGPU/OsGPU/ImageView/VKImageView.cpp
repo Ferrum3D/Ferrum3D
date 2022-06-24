@@ -4,7 +4,7 @@
 #include <OsGPU/Image/VKImageSubresource.h>
 #include <OsGPU/ImageView/VKImageView.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     inline vk::ImageViewType VKConvert(ImageDim dim, bool isArray)
     {
@@ -42,4 +42,4 @@ namespace FE::GPU
         viewCI.subresourceRange = VKConvert(desc.SubresourceRange);
         m_NativeView            = m_Device->GetNativeDevice().createImageViewUnique(viewCI);
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

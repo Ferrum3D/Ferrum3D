@@ -2,7 +2,7 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Instance/VKInstance.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter)
         : m_VkAdapter(vkAdapter)
@@ -32,4 +32,4 @@ namespace FE::GPU
     {
         return *m_Instance;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

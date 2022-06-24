@@ -1,7 +1,7 @@
 #include <Bindings/Shaders/ShaderModule.h>
-#include <GPU/Shader/IShaderModule.h>
+#include <OsGPU/Shader/IShaderModule.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -10,4 +10,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

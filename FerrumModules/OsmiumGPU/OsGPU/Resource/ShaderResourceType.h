@@ -1,6 +1,6 @@
 #pragma once
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class ShaderResourceType
     {
@@ -13,4 +13,4 @@ namespace FE::GPU
         Sampler,
         InputAttachment
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -1,12 +1,12 @@
 #pragma once
-#include <GPU/Pipeline/IGraphicsPipeline.h>
+#include <OsGPU/Pipeline/IGraphicsPipeline.h>
 
 namespace FE
 {
     class IByteBuffer;
 }
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct ColorBlendStateBinding
     {
@@ -64,4 +64,4 @@ namespace FE::GPU
 
         UInt32 SubpassIndex;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

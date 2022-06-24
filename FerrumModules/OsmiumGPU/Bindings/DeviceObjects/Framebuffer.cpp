@@ -1,7 +1,7 @@
 #include <Bindings/DeviceObjects/Framebuffer.h>
-#include <GPU/Framebuffer/IFramebuffer.h>
+#include <OsGPU/Framebuffer/IFramebuffer.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -10,4 +10,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

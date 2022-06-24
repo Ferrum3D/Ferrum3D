@@ -1,7 +1,7 @@
 #include <FeCore/Containers/IByteBuffer.h>
-#include <GPU/Shader/IShaderCompiler.h>
+#include <OsGPU/Shader/IShaderCompiler.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -31,4 +31,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

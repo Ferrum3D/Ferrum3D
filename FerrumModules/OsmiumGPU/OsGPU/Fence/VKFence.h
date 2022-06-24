@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Fence/IFence.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -22,4 +22,4 @@ namespace FE::GPU
 
         vk::Fence& GetNativeFence();
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

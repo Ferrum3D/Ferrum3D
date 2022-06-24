@@ -2,7 +2,7 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Memory/MemoryType.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IDeviceMemory;
 
@@ -49,4 +49,4 @@ namespace FE::GPU
         memcpy(map, data, size);
         Unmap();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

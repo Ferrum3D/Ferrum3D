@@ -1,10 +1,10 @@
 #pragma once
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class MemoryType
     {
         DeviceLocal,
         HostVisible
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

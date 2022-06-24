@@ -2,7 +2,7 @@
 #include <OsGPU/Buffer/IBuffer.h>
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
     class VKDeviceMemory;
@@ -28,4 +28,4 @@ namespace FE::GPU
 
         [[nodiscard]] const BufferDesc& GetDesc() const override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

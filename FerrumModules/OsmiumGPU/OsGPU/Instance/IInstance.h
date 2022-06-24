@@ -2,7 +2,7 @@
 #include <FeCore/Memory/Memory.h>
 #include <OsGPU/Common/BaseTypes.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct InstanceDesc
     {
@@ -32,4 +32,4 @@ namespace FE::GPU
 
     typedef void (*AttachEnvironmentProc)(Env::Internal::IEnvironment* environment);
     typedef IInstance* (*CreateGraphicsAPIInstanceProc)(InstanceDesc desc, GraphicsAPI api);
-} // namespace FE::GPU
+} // namespace FE::Osmium

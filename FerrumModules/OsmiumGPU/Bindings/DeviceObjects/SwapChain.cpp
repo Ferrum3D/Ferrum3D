@@ -1,7 +1,7 @@
-#include <GPU/ImageView/IImageView.h>
-#include <GPU/SwapChain/ISwapChain.h>
+#include <OsGPU/ImageView/IImageView.h>
+#include <OsGPU/SwapChain/ISwapChain.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -43,4 +43,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

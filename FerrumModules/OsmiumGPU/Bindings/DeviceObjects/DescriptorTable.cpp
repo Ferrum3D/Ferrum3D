@@ -1,6 +1,6 @@
-#include <GPU/Descriptors/IDescriptorTable.h>
+#include <OsGPU/Descriptors/IDescriptorTable.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
