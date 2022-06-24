@@ -87,8 +87,8 @@ namespace Ferrum.Samples.Uniforms
 
                 using (var builder = commandBuffer.Begin())
                 {
-                    builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, new BufferCopyRegion(vertexSize));
-                    builder.CopyBuffers(indexStagingBuffer, indexBuffer, new BufferCopyRegion(indexSize));
+                    builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
+                    builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
                 }
 
                 transferQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);

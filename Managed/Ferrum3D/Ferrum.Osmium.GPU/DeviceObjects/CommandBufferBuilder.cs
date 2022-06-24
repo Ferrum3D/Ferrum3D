@@ -116,6 +116,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 BindDescriptorTablesNative(handle, handles, (uint)descriptorTables.Length, pipeline.Handle);
             }
 
+            public void CopyBuffers(Buffer source, Buffer dest, ulong size)
+            {
+                CopyBuffers(source, dest, new BufferCopyRegion(size));
+            }
+
             public void CopyBuffers(Buffer source, Buffer dest, BufferCopyRegion region)
             {
                 CopyBuffersNative(handle, source.Handle, dest.Handle, ref region);
