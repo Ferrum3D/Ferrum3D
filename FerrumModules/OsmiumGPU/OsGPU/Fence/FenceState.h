@@ -1,6 +1,6 @@
 #pragma once
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class FenceState
     {

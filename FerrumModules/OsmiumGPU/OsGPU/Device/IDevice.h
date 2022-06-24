@@ -4,7 +4,7 @@
 #include <OsGPU/Fence/FenceState.h>
 #include <OsGPU/Resource/BindFlags.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IInstance;
     class IFence;
@@ -58,4 +58,4 @@ namespace FE::GPU
         [[nodiscard]] virtual Shared<IWindow> CreateWindow(const WindowDesc& desc)                               = 0;
         [[nodiscard]] virtual Shared<IImage> CreateImage(const ImageDesc& desc)                                  = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

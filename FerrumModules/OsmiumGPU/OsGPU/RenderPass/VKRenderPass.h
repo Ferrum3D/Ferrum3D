@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/RenderPass/IRenderPass.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -83,4 +83,4 @@ namespace FE::GPU
     {
         return m_NativeRenderPass.get();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

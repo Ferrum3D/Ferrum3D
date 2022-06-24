@@ -3,7 +3,7 @@
 #include <OsGPU/Resource/ShaderResourceType.h>
 #include <OsGPU/Shader/ShaderStage.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IBuffer;
 

@@ -4,7 +4,7 @@
 #include <array>
 #include <tuple>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     // clang-format off
     static auto VKFormatConversions = []() {
@@ -336,4 +336,4 @@ namespace FE::GPU
     {
         return !(lhs == rhs);
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

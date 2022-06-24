@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Descriptors/IDescriptorHeap.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -44,4 +44,4 @@ namespace FE::GPU
 
         vk::DescriptorPool& GetNativeDescriptorPool();
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

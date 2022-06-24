@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Instance/IInstance.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKInstance : public Object<IInstance>
     {
@@ -24,4 +24,4 @@ namespace FE::GPU
 
         Vector<Shared<IAdapter>>& GetAdapters() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -10,7 +10,7 @@
 #include <OsGPU/RenderPass/VKRenderPass.h>
 #include <OsGPU/Resource/VKResourceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKCommandBuffer::VKCommandBuffer(VKDevice& dev, CommandQueueClass cmdQueueClass)
         : m_Device(&dev)
@@ -204,4 +204,4 @@ namespace FE::GPU
         copy.srcOffset = region.SourceOffset;
         m_CommandBuffer->copyBuffer(nativeSrc, nativeDst, { copy });
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <OsGPU/Common/BaseTypes.h>
 #include <OsGPU/Image/ImageFormat.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class ImageBindFlags
     {
@@ -48,4 +48,4 @@ namespace FE::GPU
         Image3D,
         ImageCubemap
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

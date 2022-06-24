@@ -44,7 +44,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 }
 #endif
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKInstance::~VKInstance()
     {
@@ -118,4 +118,4 @@ namespace FE::GPU
     {
         return m_PhysicalDevices;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

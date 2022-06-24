@@ -9,7 +9,7 @@ namespace FE
     class IByteBuffer;
 }
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct HLSLShaderVersion
     {
@@ -47,4 +47,4 @@ namespace FE::GPU
 
         virtual Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

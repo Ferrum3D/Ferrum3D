@@ -1,6 +1,6 @@
-#include <GPU/Fence/IFence.h>
+#include <OsGPU/Fence/IFence.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -29,4 +29,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

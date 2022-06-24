@@ -3,7 +3,7 @@
 #include <FeCore/Strings/String.h>
 #include <OsGPU/Common/Viewport.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct WindowDesc
     {
@@ -28,4 +28,4 @@ namespace FE::GPU
         virtual Viewport CreateViewport() = 0;
         virtual Scissor CreateScissor()   = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

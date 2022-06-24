@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class BindFlags
     {
@@ -19,4 +19,4 @@ namespace FE::GPU
     };
 
     FE_ENUM_OPERATORS(BindFlags);
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <OsGPU/Image/VKImageFormat.h>
 #include <OsGPU/SwapChain/ISwapChain.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
     class VKCommandQueue;
@@ -50,4 +50,4 @@ namespace FE::GPU
 
         List<Shared<IImageView>> GetRTVs() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

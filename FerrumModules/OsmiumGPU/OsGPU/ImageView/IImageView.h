@@ -3,7 +3,7 @@
 #include <OsGPU/Image/ImageFormat.h>
 #include <OsGPU/Image/ImageSubresource.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IImage;
 
@@ -26,4 +26,4 @@ namespace FE::GPU
 
         [[nodiscard]] virtual const ImageViewDesc& GetDesc() const = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

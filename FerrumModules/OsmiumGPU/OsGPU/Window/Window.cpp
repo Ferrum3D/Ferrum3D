@@ -1,6 +1,6 @@
 #include <OsGPU/Window/Window.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     void Window::PollEvents()
     {
@@ -38,4 +38,4 @@ namespace FE::GPU
     {
         return Scissor(CreateViewport());
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

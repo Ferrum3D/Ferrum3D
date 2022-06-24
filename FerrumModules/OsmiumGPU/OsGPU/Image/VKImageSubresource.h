@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Image/ImageSubresource.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
@@ -26,4 +26,4 @@ namespace FE::GPU
         result.aspectMask     = VKConvert(range.AspectFlags);
         return result;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

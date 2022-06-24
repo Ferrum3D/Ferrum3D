@@ -1,7 +1,7 @@
 #pragma once
 #include <OsGPU/Image/ImageEnums.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct ImageSubresource
     {
@@ -24,4 +24,4 @@ namespace FE::GPU
 
         FE_STRUCT_RTTI(ImageSubresourceRange, "93D87B09-78B5-40C9-8104-F06699FA6D10");
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

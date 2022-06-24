@@ -2,7 +2,7 @@
 #include <FeCore/Containers/List.h>
 #include <FeCore/Memory/Object.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class SubmitFlags
     {
@@ -29,4 +29,4 @@ namespace FE::GPU
         virtual void SubmitBuffers(
             const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

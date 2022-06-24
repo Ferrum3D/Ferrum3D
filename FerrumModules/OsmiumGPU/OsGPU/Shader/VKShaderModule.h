@@ -3,7 +3,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Shader/IShaderModule.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKShaderReflection;
 
@@ -67,4 +67,4 @@ namespace FE::GPU
         vk::PipelineShaderStageCreateInfo GetStageCI();
         IShaderReflection* GetReflection() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <FeCore/Containers/List.h>
 #include <FeCore/Memory/SharedPtr.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IImageView;
     class IRenderPass;
@@ -26,4 +26,4 @@ namespace FE::GPU
 
         [[nodiscard]] virtual const FramebufferDesc& GetDesc() const = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

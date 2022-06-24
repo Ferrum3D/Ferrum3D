@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Pipeline/IGraphicsPipeline.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -64,4 +64,4 @@ namespace FE::GPU
     {
         return m_Layout.get();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

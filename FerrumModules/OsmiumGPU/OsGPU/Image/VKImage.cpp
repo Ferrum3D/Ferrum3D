@@ -3,7 +3,7 @@
 #include <OsGPU/ImageView/VKImageView.h>
 #include <OsGPU/Image/ImageSubresource.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKImage::VKImage(VKDevice& dev)
         : m_Device(&dev)
@@ -36,4 +36,4 @@ namespace FE::GPU
     {
         FE_UNREACHABLE("Not implemented");
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

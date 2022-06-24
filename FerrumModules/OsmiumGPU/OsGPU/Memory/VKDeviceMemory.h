@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Memory/IDeviceMemory.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -19,4 +19,4 @@ namespace FE::GPU
 
         const MemoryAllocationDesc& GetDesc() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

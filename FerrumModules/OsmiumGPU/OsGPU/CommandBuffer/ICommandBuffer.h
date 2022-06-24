@@ -5,7 +5,7 @@
 #include <OsGPU/Common/Viewport.h>
 #include <OsGPU/Resource/ResourceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct ClearValueDesc
     {
@@ -76,4 +76,4 @@ namespace FE::GPU
         virtual void DrawIndexed(
             UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

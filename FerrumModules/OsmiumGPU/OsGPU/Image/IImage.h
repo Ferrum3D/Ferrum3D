@@ -6,7 +6,7 @@
 #include <OsGPU/Resource/BindFlags.h>
 #include <cstdint>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct ImageDesc
     {
@@ -104,4 +104,4 @@ namespace FE::GPU
         virtual const ImageDesc& GetDesc()                  = 0;
         virtual Shared<IImageView> CreateRenderTargetView() = 0;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Image/IImage.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -23,4 +23,4 @@ namespace FE::GPU
         const ImageDesc& GetDesc() override;
         Shared<IImageView> CreateRenderTargetView() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

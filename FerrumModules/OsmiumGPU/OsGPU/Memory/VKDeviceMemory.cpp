@@ -2,15 +2,15 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Memory/VKDeviceMemory.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     vk::MemoryPropertyFlags VKConvert(MemoryType type)
     {
         switch (type)
         {
-        case FE::GPU::MemoryType::DeviceLocal:
+        case MemoryType::DeviceLocal:
             return vk::MemoryPropertyFlagBits::eDeviceLocal;
-        case FE::GPU::MemoryType::HostVisible:
+        case MemoryType::HostVisible:
             return vk::MemoryPropertyFlagBits::eHostVisible;
         default:
             FE_UNREACHABLE("Invalid memory type");
@@ -33,4 +33,4 @@ namespace FE::GPU
     {
         return m_Desc;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

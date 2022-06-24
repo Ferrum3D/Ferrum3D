@@ -1,7 +1,7 @@
-#include <GPU/CommandBuffer/ICommandBuffer.h>
-#include <GPU/Descriptors/IDescriptorTable.h>
+#include <OsGPU/CommandBuffer/ICommandBuffer.h>
+#include <OsGPU/Descriptors/IDescriptorTable.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -88,4 +88,4 @@ namespace FE::GPU
             self->BindGraphicsPipeline(pipeline);
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

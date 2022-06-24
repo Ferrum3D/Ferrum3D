@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Framebuffer/IFramebuffer.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
     class IImageView;
@@ -33,4 +33,4 @@ namespace FE::GPU
     {
         return m_Desc;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

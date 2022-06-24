@@ -2,7 +2,7 @@
 #include <FeCore/Strings/Format.h>
 #include <FeCore/Strings/String.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class Format : Int32
     {
@@ -1144,16 +1144,16 @@ namespace FE::GPU
             return 0;
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium
 
 namespace FE::Fmt
 {
     template<>
-    struct ValueFormatter<FE::GPU::Format> : BasicValueFormatter<FE::GPU::Format>
+    struct ValueFormatter<FE::Osmium::Format> : BasicValueFormatter<FE::Osmium::Format>
     {
-        void Format(String& buffer, const FE::GPU::Format& value) const override
+        void Format(String& buffer, const FE::Osmium::Format& value) const override
         {
-            buffer.Append(FE::GPU::ToString(value));
+            buffer.Append(FE::Osmium::ToString(value));
         }
     };
 } // namespace FE::Fmt

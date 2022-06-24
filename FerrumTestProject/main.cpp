@@ -52,7 +52,7 @@ protected:
     }
 };
 
-namespace HAL = FE::GPU;
+namespace HAL = FE::Osmium;
 
 int main()
 {

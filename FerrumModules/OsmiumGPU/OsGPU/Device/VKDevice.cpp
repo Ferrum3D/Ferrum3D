@@ -18,7 +18,7 @@
 #include <OsGPU/Window/Window.h>
 #include <algorithm>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     constexpr auto RequiredDeviceExtensions = std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -275,4 +275,4 @@ namespace FE::GPU
     {
         return static_pointer_cast<IImage>(MakeShared<VKImage>(*this, desc));
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

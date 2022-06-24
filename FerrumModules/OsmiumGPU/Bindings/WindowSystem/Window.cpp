@@ -1,7 +1,7 @@
 #include <Bindings/WindowSystem/Window.h>
-#include <GPU/Window/IWindow.h>
+#include <OsGPU/Window/IWindow.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -35,4 +35,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

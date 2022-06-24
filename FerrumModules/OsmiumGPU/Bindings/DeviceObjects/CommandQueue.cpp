@@ -1,9 +1,9 @@
 #include <Bindings/Common.h>
 #include <FeCore/Containers/IByteBuffer.h>
-#include <GPU/CommandQueue/ICommandQueue.h>
-#include <GPU/Fence/IFence.h>
+#include <OsGPU/CommandQueue/ICommandQueue.h>
+#include <OsGPU/Fence/IFence.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -20,4 +20,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

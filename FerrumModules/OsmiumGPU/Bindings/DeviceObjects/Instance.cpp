@@ -1,8 +1,8 @@
 #include <FeCore/Modules/DynamicLibrary.h>
-#include <GPU/Adapter/IAdapter.h>
-#include <GPU/Instance/IInstance.h>
+#include <OsGPU/Adapter/IAdapter.h>
+#include <OsGPU/Instance/IInstance.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     Shared<DynamicLibrary> g_OsmiumLib;
 
@@ -46,4 +46,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

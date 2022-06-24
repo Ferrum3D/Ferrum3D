@@ -4,7 +4,7 @@
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Shader/VKShaderModule.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKDescriptorTable::VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors)
         : m_Device(&dev)
@@ -54,4 +54,4 @@ namespace FE::GPU
         write.pBufferInfo     = &info;
         m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

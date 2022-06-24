@@ -2,7 +2,7 @@
 #include <OsGPU/Descriptors/VKDescriptorTable.h>
 #include <OsGPU/Device/VKDevice.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     VKDescriptorHeap::VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc)
         : m_Device(&dev)
@@ -33,4 +33,4 @@ namespace FE::GPU
     {
         return static_pointer_cast<IDescriptorTable>(MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors));
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -1,7 +1,7 @@
 #include <OsGPU/Shader/VKShaderReflection.h>
 #include <FeCore/Console/FeLog.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     namespace SpvC = spirv_cross;
 

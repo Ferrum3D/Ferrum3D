@@ -2,7 +2,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Resource/ResourceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     inline vk::AccessFlags GetAccessMask(ResourceState state)
     {
@@ -50,4 +50,4 @@ namespace FE::GPU
 
         return Conversions[static_cast<USize>(state)];
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

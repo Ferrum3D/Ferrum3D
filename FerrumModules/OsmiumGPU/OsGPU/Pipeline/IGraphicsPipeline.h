@@ -4,7 +4,7 @@
 #include <OsGPU/Pipeline/InputStreamLayout.h>
 #include <OsGPU/Pipeline/PipelineStates.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class IDescriptorTable;
     class IShaderModule;
@@ -35,4 +35,4 @@ namespace FE::GPU
 
         ~IGraphicsPipeline() override = default;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

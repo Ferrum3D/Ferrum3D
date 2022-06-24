@@ -1,5 +1,5 @@
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
-} // namespace FE::GPU
+} // namespace FE::Osmium

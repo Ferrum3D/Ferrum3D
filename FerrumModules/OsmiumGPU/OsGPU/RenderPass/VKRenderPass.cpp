@@ -4,7 +4,7 @@
 #include <OsGPU/RenderPass/VKRenderPass.h>
 #include <OsGPU/Resource/VKResourceState.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     vk::AttachmentLoadOp VKConvert(AttachmentLoadOp source)
     {
@@ -186,4 +186,4 @@ namespace FE::GPU
 
         return result;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

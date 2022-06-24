@@ -6,7 +6,7 @@
 #include <OsGPU/Instance/VKInstance.h>
 #include <OsGPU/SwapChain/VKSwapChain.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     bool VKSwapChain::ValidateDimensions(const SwapChainDesc& swapChainDesc) const
     {
@@ -201,4 +201,4 @@ namespace FE::GPU
     {
         return m_FrameIndex;
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

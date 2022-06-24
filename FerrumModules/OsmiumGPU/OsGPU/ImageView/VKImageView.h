@@ -2,7 +2,7 @@
 #include <OsGPU/ImageView/IImageView.h>
 #include <OsGPU/Common/VKConfig.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
 
@@ -24,4 +24,4 @@ namespace FE::GPU
     {
         return m_NativeView.get();
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

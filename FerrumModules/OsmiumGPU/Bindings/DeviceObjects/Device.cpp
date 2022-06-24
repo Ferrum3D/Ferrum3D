@@ -5,21 +5,21 @@
 #include <Bindings/DeviceObjects/RenderPass.h>
 #include <Bindings/Shaders/ShaderModule.h>
 #include <Bindings/WindowSystem/Window.h>
-#include <GPU/Buffer/IBuffer.h>
-#include <GPU/CommandBuffer/ICommandBuffer.h>
-#include <GPU/CommandQueue/ICommandQueue.h>
-#include <GPU/Descriptors/IDescriptorHeap.h>
-#include <GPU/Descriptors/IDescriptorTable.h>
-#include <GPU/Device/IDevice.h>
-#include <GPU/Fence/IFence.h>
-#include <GPU/Framebuffer/IFramebuffer.h>
-#include <GPU/ImageView/IImageView.h>
-#include <GPU/Shader/IShaderCompiler.h>
-#include <GPU/Shader/IShaderModule.h>
-#include <GPU/SwapChain/ISwapChain.h>
-#include <GPU/Window/IWindow.h>
+#include <OsGPU/Buffer/IBuffer.h>
+#include <OsGPU/CommandBuffer/ICommandBuffer.h>
+#include <OsGPU/CommandQueue/ICommandQueue.h>
+#include <OsGPU/Descriptors/IDescriptorHeap.h>
+#include <OsGPU/Descriptors/IDescriptorTable.h>
+#include <OsGPU/Device/IDevice.h>
+#include <OsGPU/Fence/IFence.h>
+#include <OsGPU/Framebuffer/IFramebuffer.h>
+#include <OsGPU/ImageView/IImageView.h>
+#include <OsGPU/Shader/IShaderCompiler.h>
+#include <OsGPU/Shader/IShaderModule.h>
+#include <OsGPU/SwapChain/ISwapChain.h>
+#include <OsGPU/Window/IWindow.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     extern "C"
     {
@@ -184,4 +184,4 @@ namespace FE::GPU
             self->ReleaseStrongRef();
         }
     }
-} // namespace FE::GPU
+} // namespace FE::Osmium

@@ -3,7 +3,7 @@
 #include <FeCore/RTTI/RTTI.h>
 #include <cstdint>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     enum class GraphicsAPI
     {
@@ -52,4 +52,4 @@ namespace FE::GPU
         {
         }
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

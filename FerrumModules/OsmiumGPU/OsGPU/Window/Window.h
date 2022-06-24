@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class Window : public Object<IWindow>
     {
@@ -25,4 +25,4 @@ namespace FE::GPU
         Viewport CreateViewport() override;
         Scissor CreateScissor() override;
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

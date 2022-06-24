@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     struct Viewport
     {

@@ -1,7 +1,7 @@
 #pragma once
 #include <OsGPU/Pipeline/InputStreamLayout.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class InputLayoutBufferBuilder
     {
@@ -74,4 +74,4 @@ namespace FE::GPU
             return result;
         }
     };
-} // namespace FE::GPU
+} // namespace FE::Osmium

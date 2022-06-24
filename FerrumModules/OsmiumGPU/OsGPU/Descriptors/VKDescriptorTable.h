@@ -3,7 +3,7 @@
 #include <OsGPU/Common/VKConfig.h>
 #include <FeCore/Containers/List.h>
 
-namespace FE::GPU
+namespace FE::Osmium
 {
     class VKDevice;
     class VKDescriptorHeap;
