@@ -39,6 +39,35 @@ namespace FE::Osmium
         }
     };
 
+    struct BufferImageCopyRegion
+    {
+        UInt64 BufferOffset{};
+        ImageSubresource ImageSubresource{};
+        Offset ImageOffset{};
+        Size ImageSize{};
+
+        FE_STRUCT_RTTI(BufferImageCopyRegion, "1678AA71-032A-4414-8747-F7C806FC3DC6");
+
+        inline BufferImageCopyRegion() = default;
+
+        inline explicit BufferImageCopyRegion(Size size)
+            : BufferOffset(0)
+            , ImageSubresource()
+            , ImageOffset()
+            , ImageSize(size)
+        {
+        }
+
+        inline BufferImageCopyRegion(
+            UInt64 buffetOffset, struct ImageSubresource imageSubresource, Offset imageOffset, Size imageSize)
+            : BufferOffset(buffetOffset)
+            , ImageSubresource(imageSubresource)
+            , ImageOffset(imageOffset)
+            , ImageSize(imageSize)
+        {
+        }
+    };
+
     class IDescriptorTable;
     class IGraphicsPipeline;
     class IRenderPass;
@@ -70,7 +99,8 @@ namespace FE::Osmium
         virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer) = 0;
         virtual void BindIndexBuffer(IBuffer* buffer)               = 0;
 
-        virtual void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region) = 0;
+        virtual void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)           = 0;
+        virtual void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(
