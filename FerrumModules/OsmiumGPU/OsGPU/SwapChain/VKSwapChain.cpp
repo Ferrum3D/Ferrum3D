@@ -37,10 +37,10 @@ namespace FE::Osmium
             backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::RenderTarget, width, height, m_Desc.Format);
             m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
-            m_ImageViews.Push(backBuffer->CreateRenderTargetView());
+            m_ImageViews.Push(backBuffer->CreateView());
         }
 
-        for (size_t i = 0; i < m_Desc.FrameCount; ++i)
+        for (USize i = 0; i < m_Desc.FrameCount; ++i)
         {
             m_RenderFinishedSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));
             m_ImageAvailableSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));

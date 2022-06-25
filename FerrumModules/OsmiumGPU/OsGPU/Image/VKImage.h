@@ -5,10 +5,12 @@
 namespace FE::Osmium
 {
     class VKDevice;
+    class VKDeviceMemory;
 
     class VKImage : public Object<IImage>
     {
         VKDevice* m_Device;
+        Shared<VKDeviceMemory> m_Memory;
 
     public:
         vk::UniqueImage UniqueImage;
@@ -21,6 +23,9 @@ namespace FE::Osmium
         VKImage(VKDevice& dev, const ImageDesc& desc);
 
         const ImageDesc& GetDesc() override;
-        Shared<IImageView> CreateRenderTargetView() override;
+        Shared<IImageView> CreateView() override;
+
+        void AllocateMemory(MemoryType type) override;
+        void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) override;
     };
 } // namespace FE::Osmium

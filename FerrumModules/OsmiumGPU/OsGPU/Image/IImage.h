@@ -3,6 +3,7 @@
 #include <OsGPU/Common/BaseTypes.h>
 #include <OsGPU/Image/ImageEnums.h>
 #include <OsGPU/Image/ImageFormat.h>
+#include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Resource/BindFlags.h>
 #include <cstdint>
 
@@ -10,7 +11,7 @@ namespace FE::Osmium
 {
     struct ImageDesc
     {
-        Size ImageSize = { 0, 0, 0 };
+        Size ImageSize = {};
 
         Format ImageFormat = Format::None;
         ImageDim Dimension = ImageDim::Image2D;
@@ -93,6 +94,7 @@ namespace FE::Osmium
     }
 
     class IImageView;
+    class IDeviceMemory;
 
     class IImage : public IObject
     {
@@ -101,7 +103,10 @@ namespace FE::Osmium
 
         ~IImage() override = default;
 
-        virtual const ImageDesc& GetDesc()                  = 0;
-        virtual Shared<IImageView> CreateRenderTargetView() = 0;
+        virtual const ImageDesc& GetDesc()      = 0;
+        virtual Shared<IImageView> CreateView() = 0;
+
+        virtual void AllocateMemory(MemoryType type)                                = 0;
+        virtual void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) = 0;
     };
 } // namespace FE::Osmium
