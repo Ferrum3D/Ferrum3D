@@ -7,7 +7,7 @@ namespace FE::Osmium
     inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
         vk::ImageAspectFlags result{};
-        if ((aspect & ImageAspectFlags::Color) != ImageAspectFlags::None)
+        if ((aspect & ImageAspectFlags::RenderTarget) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eColor;
         if ((aspect & ImageAspectFlags::Depth) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eDepth;

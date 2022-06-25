@@ -22,7 +22,7 @@ namespace FE::Osmium
         range.MinArraySlice   = 0;
         range.MinMipSlice     = 0;
         range.MipSliceCount   = 1;
-        range.AspectFlags     = ImageAspectFlags::Color;
+        range.AspectFlags     = ImageAspectFlags::RenderTarget;
 
         ImageViewDesc desc{};
         desc.Format           = Desc.ImageFormat;
