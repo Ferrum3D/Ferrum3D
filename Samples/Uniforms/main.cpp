@@ -74,7 +74,7 @@ void RunExample()
     }
 
     {
-        FE::Color constantData = FE::Colors::Gold;
+        auto constantData = FE::Colors::Gold;
         psConstantBuffer       = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector4F));
         psConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
         psConstantBuffer->UpdateData(constantData.Data());
