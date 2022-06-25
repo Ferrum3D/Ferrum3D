@@ -18,7 +18,7 @@ namespace FE::Osmium::Internal
         return Result<UInt8*, StringSlice>::Err(stbi_failure_reason());
     }
 
-    void FreeImageData(UInt8* data)
+    void FreeImageMemory(UInt8* data)
     {
         stbi_image_free(data);
     }
