@@ -11,9 +11,9 @@ namespace FE::Osmium
         ShaderWrite     = 1 << 1,
         ShaderReadWrite = ShaderRead | ShaderWrite,
 
-        Color   = 1 << 2,
-        Depth   = 1 << 3,
-        Stencil = 1 << 4,
+        RenderTarget = 1 << 2,
+        Depth        = 1 << 3,
+        Stencil      = 1 << 4,
 
         TransferRead  = 1 << 5,
         TransferWrite = 1 << 6
@@ -23,7 +23,7 @@ namespace FE::Osmium
 
     enum class ImageAspect
     {
-        Color,
+        RenderTarget,
         Depth,
         Stencil
     };
@@ -31,11 +31,11 @@ namespace FE::Osmium
     enum class ImageAspectFlags
     {
         None,
-        Color        = 1 << static_cast<UInt32>(ImageAspect::Color),
+        RenderTarget = 1 << static_cast<UInt32>(ImageAspect::RenderTarget),
         Depth        = 1 << static_cast<UInt32>(ImageAspect::Depth),
         Stencil      = 1 << static_cast<UInt32>(ImageAspect::Stencil),
         DepthStencil = Depth | Stencil,
-        All          = Depth | Stencil | Color
+        All          = Depth | Stencil | RenderTarget
     };
 
     FE_ENUM_OPERATORS(ImageAspectFlags);

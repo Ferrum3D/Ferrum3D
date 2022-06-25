@@ -34,7 +34,7 @@ namespace FE::Osmium
             auto height       = m_Desc.ImageHeight;
             auto backBuffer   = MakeShared<VKImage>(*m_Device);
             backBuffer->Image = image;
-            backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
+            backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::RenderTarget, width, height, m_Desc.Format);
             m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
             m_ImageViews.Push(backBuffer->CreateRenderTargetView());
