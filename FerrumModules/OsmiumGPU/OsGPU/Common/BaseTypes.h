@@ -18,6 +18,41 @@ namespace FE::Osmium
         Transfer
     };
 
+    struct Offset
+    {
+        UInt64 X;
+        UInt64 Y;
+        UInt64 Z;
+
+        FE_STRUCT_RTTI(Offset, "761BFA99-DC5D-400B-9117-92ED2C1AD3EB");
+
+        inline Offset() noexcept
+            : Offset(0, 0, 1)
+        {
+        }
+
+        inline Offset(UInt64 x) noexcept
+            : X(x)
+            , Y(0)
+            , Z(1)
+        {
+        }
+
+        inline Offset(UInt64 x, UInt64 y) noexcept
+            : X(x)
+            , Y(y)
+            , Z(1)
+        {
+        }
+
+        inline Offset(UInt64 x, UInt64 y, UInt64 z) noexcept
+            : X(x)
+            , Y(y)
+            , Z(z)
+        {
+        }
+    };
+
     struct Size
     {
         UInt64 Width;
