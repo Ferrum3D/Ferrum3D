@@ -39,7 +39,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         break;
     }
 
-    static_cast<FE::Debug::IConsoleLogger*>(pUserData)->Log(type, pMessage);
+    static_cast<FE::Debug::IConsoleLogger*>(pUserData)->Log(type, "{}", message);
     return VK_FALSE;
 }
 #endif
