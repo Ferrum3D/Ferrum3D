@@ -113,5 +113,6 @@ namespace FE::Osmium
         Shared<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
         Shared<IWindow> CreateWindow(const WindowDesc& desc) override;
         Shared<IImage> CreateImage(const ImageDesc& desc) override;
+        Shared<ISampler> CreateSampler(const SamplerDesc& desc) override;
     };
 } // namespace FE::Osmium

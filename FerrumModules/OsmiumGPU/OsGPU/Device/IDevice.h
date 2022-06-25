@@ -22,6 +22,7 @@ namespace FE::Osmium
     class IFramebuffer;
     class IWindow;
     class IImage;
+    class ISampler;
 
     struct SwapChainDesc;
     struct ShaderModuleDesc;
@@ -32,6 +33,7 @@ namespace FE::Osmium
     struct FramebufferDesc;
     struct WindowDesc;
     struct ImageDesc;
+    struct SamplerDesc;
 
     class IDevice : public IObject
     {
@@ -57,5 +59,6 @@ namespace FE::Osmium
         [[nodiscard]] virtual Shared<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc)                = 0;
         [[nodiscard]] virtual Shared<IWindow> CreateWindow(const WindowDesc& desc)                               = 0;
         [[nodiscard]] virtual Shared<IImage> CreateImage(const ImageDesc& desc)                                  = 0;
+        [[nodiscard]] virtual Shared<ISampler> CreateSampler(const SamplerDesc& desc)                            = 0;
     };
 } // namespace FE::Osmium

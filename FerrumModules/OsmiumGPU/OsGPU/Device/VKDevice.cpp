@@ -12,6 +12,7 @@
 #include <OsGPU/Instance/VKInstance.h>
 #include <OsGPU/Pipeline/VKGraphicsPipeline.h>
 #include <OsGPU/RenderPass/VKRenderPass.h>
+#include <OsGPU/Sampler/VKSampler.h>
 #include <OsGPU/Shader/ShaderCompilerDXC.h>
 #include <OsGPU/Shader/VKShaderModule.h>
 #include <OsGPU/SwapChain/VKSwapChain.h>
@@ -100,6 +101,7 @@ namespace FE::Osmium
         vk::PhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.geometryShader     = true;
         deviceFeatures.tessellationShader = true;
+        deviceFeatures.samplerAnisotropy  = true;
 
         vk::DeviceCreateInfo deviceCI{};
         deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.size());
@@ -274,5 +276,10 @@ namespace FE::Osmium
     Shared<IImage> VKDevice::CreateImage(const ImageDesc& desc)
     {
         return static_pointer_cast<IImage>(MakeShared<VKImage>(*this, desc));
+    }
+
+    Shared<ISampler> VKDevice::CreateSampler(const SamplerDesc& desc)
+    {
+        return static_pointer_cast<ISampler>(MakeShared<VKSampler>(*this, desc));
     }
 } // namespace FE::Osmium

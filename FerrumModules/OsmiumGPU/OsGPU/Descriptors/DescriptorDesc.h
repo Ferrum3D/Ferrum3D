@@ -6,6 +6,8 @@
 namespace FE::Osmium
 {
     class IBuffer;
+    class IImageView;
+    class ISampler;
 
     struct DescriptorWriteBuffer
     {
@@ -25,6 +27,38 @@ namespace FE::Osmium
         UInt32 ArrayIndex = 0;
         UInt32 Offset = 0;
         UInt32 Range = static_cast<UInt32>(-1);
+    };
+
+    struct DescriptorWriteImage
+    {
+        FE_STRUCT_RTTI(DescriptorWriteImage, "680ED3D3-DB75-474C-8EA8-1F5F9090F5DE");
+
+        inline DescriptorWriteImage() = default;
+
+        inline explicit DescriptorWriteImage(IImageView* imageView)
+            : View(imageView)
+        {
+        }
+
+        IImageView* View = nullptr;
+        UInt32 Binding = 0;
+        UInt32 ArrayIndex = 0;
+    };
+
+    struct DescriptorWriteSampler
+    {
+        FE_STRUCT_RTTI(DescriptorWriteSampler, "7690B5AF-5653-47F7-B12D-0D2F9E4E9DB2");
+
+        inline DescriptorWriteSampler() = default;
+
+        inline explicit DescriptorWriteSampler(ISampler* sampler)
+            : Sampler(sampler)
+        {
+        }
+
+        ISampler* Sampler = nullptr;
+        UInt32 Binding = 0;
+        UInt32 ArrayIndex = 0;
     };
 
     struct DescriptorDesc

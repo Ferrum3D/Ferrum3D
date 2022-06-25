@@ -11,6 +11,7 @@
 struct Vertex
 {
     [[maybe_unused]] FE::Float32 XYZ[3];
+    [[maybe_unused]] FE::Float32 UV[2];
 };
 
 namespace HAL = FE::Osmium;
@@ -58,16 +59,16 @@ void RunExample()
     auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
     FE::Shared<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
-    FE::Shared<HAL::IBuffer> psConstantBuffer, vsConstantBuffer;
+    FE::Shared<HAL::IBuffer> vsConstantBuffer;
     FE::Shared<HAL::IBuffer> indexBuffer, vertexBuffer;
     FE::UInt64 vertexSize, indexSize;
     {
         // clang-format off
             FE::Vector<Vertex> vertexData = {
-                { {-0.5f, -0.5f, 0.0f} },
-                { {+0.5f, +0.5f, 0.0f} },
-                { {+0.5f, -0.5f, 0.0f} },
-                { {-0.5f, +0.5f, 0.0f} }
+                { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f} },
+                { {+0.5f, +0.5f, 0.0f}, {0.0f, 1.0f} },
+                { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f} },
+                { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f} }
             };
         // clang-format on
         vertexSize          = vertexData.size() * sizeof(Vertex);
@@ -107,12 +108,6 @@ void RunExample()
     }
 
     {
-        auto constantData = FE::Colors::Gold;
-        psConstantBuffer  = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector4F));
-        psConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-        psConstantBuffer->UpdateData(constantData.Data());
-    }
-    {
         FE::Vector3F constantData = { 0.3f, -0.4f, 0.0f };
         vsConstantBuffer          = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector3F));
         vsConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
@@ -127,19 +122,25 @@ void RunExample()
         copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
 
         HAL::ResourceTransitionBarrierDesc barrier{};
-        barrier.Image = textureImage.GetRaw();
+        barrier.Image                        = textureImage.GetRaw();
         barrier.SubresourceRange.AspectFlags = HAL::ImageAspectFlags::RenderTarget;
-        barrier.StateBefore = HAL::ResourceState::Undefined;
-        barrier.StateAfter = HAL::ResourceState::CopyDest;
+        barrier.StateBefore                  = HAL::ResourceState::Undefined;
+        barrier.StateAfter                   = HAL::ResourceState::CopyDest;
         copyCmdBuffer->ResourceTransitionBarriers({ barrier });
+
         auto size = textureImage->GetDesc().ImageSize;
         copyCmdBuffer->CopyBufferToImage(textureStaging.GetRaw(), textureImage.GetRaw(), HAL::BufferImageCopyRegion(size));
+
+        barrier.StateBefore = HAL::ResourceState::CopyDest;
+        barrier.StateAfter  = HAL::ResourceState::ShaderResource;
+        copyCmdBuffer->ResourceTransitionBarriers({ barrier });
         copyCmdBuffer->End();
         transferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
         transferComplete->WaitOnCPU();
     }
 
-    auto textureView = textureImage->CreateView();
+    auto textureView    = textureImage->CreateView();
+    auto textureSampler = device->CreateSampler(HAL::SamplerDesc{});
 
     auto compiler = device->CreateShaderCompiler();
     HAL::ShaderCompilerArgs psArgs{};
@@ -185,18 +186,25 @@ void RunExample()
     auto renderPass = device->CreateRenderPass(renderPassDesc);
 
     HAL::DescriptorHeapDesc descriptorHeapDesc{};
-    descriptorHeapDesc.MaxTables = 2;
-    descriptorHeapDesc.Sizes     = { HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer),
+    descriptorHeapDesc.MaxTables = 1;
+    descriptorHeapDesc.Sizes     = { HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
+                                     HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
                                      HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
     auto descriptorHeap          = device->CreateDescriptorHeap(descriptorHeapDesc);
 
-    HAL::DescriptorDesc psDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
+    HAL::DescriptorDesc psSamplerDescriptorDesc(HAL::ShaderResourceType::Sampler, HAL::ShaderStageFlags::Pixel, 1);
+    HAL::DescriptorDesc psTextureDescriptorDesc(HAL::ShaderResourceType::TextureSRV, HAL::ShaderStageFlags::Pixel, 1);
     HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
-    auto descriptorTable = descriptorHeap->AllocateDescriptorTable({ psDescriptorDesc, vsDescriptorDesc });
+    auto descriptorTable =
+        descriptorHeap->AllocateDescriptorTable({ psSamplerDescriptorDesc, psTextureDescriptorDesc, vsDescriptorDesc });
 
-    HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.GetRaw() };
-    descriptorTable->Update(descriptorWrite);
-    descriptorWrite.Binding = 1;
+    HAL::DescriptorWriteSampler descriptorWriteSampler{ textureSampler.GetRaw() };
+    descriptorTable->Update(descriptorWriteSampler);
+    HAL::DescriptorWriteImage descriptorWriteImage{ textureView.GetRaw() };
+    descriptorWriteImage.Binding = 1;
+    descriptorTable->Update(descriptorWriteImage);
+    HAL::DescriptorWriteBuffer descriptorWrite{ vsConstantBuffer.GetRaw() };
+    descriptorWrite.Binding = 2;
     descriptorWrite.Buffer  = vsConstantBuffer.GetRaw();
     descriptorTable->Update(descriptorWrite);
 
@@ -204,6 +212,7 @@ void RunExample()
     pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
                                    .AddBuffer(HAL::InputStreamRate::PerVertex)
                                    .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
+                                   .AddAttribute(HAL::Format::R32G32_SFloat, "TEXCOORD")
                                    .Build()
                                    .Build();
 

@@ -6,11 +6,11 @@ namespace FE::Osmium
 {
     VKAdapter::VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter)
         : m_VkAdapter(vkAdapter)
-        , m_Prop(vkAdapter.getProperties())
+        , Prop(vkAdapter.getProperties())
         , m_Instance(&instance)
     {
-        m_Desc.Name = m_Prop.deviceName.data();
-        m_Desc.Type = VKConvert(m_Prop.deviceType);
+        m_Desc.Name = Prop.deviceName.data();
+        m_Desc.Type = VKConvert(Prop.deviceType);
     }
 
     AdapterDesc& VKAdapter::GetDesc()

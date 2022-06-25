@@ -24,6 +24,8 @@ namespace FE::Osmium
         VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors);
 
         void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) override;
+        void Update(const DescriptorWriteImage& descriptorWriteBuffer) override;
+        void Update(const DescriptorWriteSampler& descriptorWriteBuffer) override;
 
         inline vk::DescriptorSet& GetNativeSet();
         inline vk::DescriptorSetLayout& GetNativeSetLayout();
