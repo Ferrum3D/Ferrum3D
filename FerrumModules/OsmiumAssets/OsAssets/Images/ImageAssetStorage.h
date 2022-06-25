@@ -17,6 +17,8 @@ namespace FE::Osmium
         void Delete() override;
 
     public:
+        FE_CLASS_RTTI(ImageAssetStorage, "0C9406E1-44CF-49E1-8B3B-D9E116E10C91");
+
         [[nodiscard]] inline UInt32 PixelValueAt(USize row, USize column) const
         {
             return m_Data[row * m_Width + column];
