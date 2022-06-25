@@ -9,6 +9,7 @@
 #include <OsGPU/Fence/IFence.h>
 #include <OsGPU/Framebuffer/IFramebuffer.h>
 #include <OsGPU/ImageView/IImageView.h>
+#include <OsGPU/Image/IImage.h>
 #include <OsGPU/Instance/IInstance.h>
 #include <OsGPU/Pipeline/IGraphicsPipeline.h>
 #include <OsGPU/Pipeline/InputLayoutBuilder.h>
