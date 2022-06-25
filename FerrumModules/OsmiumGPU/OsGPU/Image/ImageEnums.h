@@ -16,7 +16,9 @@ namespace FE::Osmium
         Stencil      = 1 << 4,
 
         TransferRead  = 1 << 5,
-        TransferWrite = 1 << 6
+        TransferWrite = 1 << 6,
+
+        UnorderedAccess = 1 << 7
     };
 
     FE_ENUM_OPERATORS(ImageBindFlags);
