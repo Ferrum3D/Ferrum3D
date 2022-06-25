@@ -27,21 +27,21 @@ namespace FE::Osmium
         FE_STRUCT_RTTI(Size, "C32E4F84-3144-4D6D-A4D3-00F19E22D708");
 
         inline Size() noexcept
-            : Size(0, 0, 0)
+            : Size(0, 0, 1)
         {
         }
 
         inline Size(UInt64 w) noexcept
             : Width(w)
             , Height(0)
-            , Depth(0)
+            , Depth(1)
         {
         }
 
         inline Size(UInt64 w, UInt64 h) noexcept
             : Width(w)
             , Height(h)
-            , Depth(0)
+            , Depth(1)
         {
         }
 
