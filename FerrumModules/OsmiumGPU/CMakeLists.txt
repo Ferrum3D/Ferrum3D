@@ -19,6 +19,7 @@ set(SRC
     OsGPU/CommandQueue/VKCommandQueue.h
 
     OsGPU/Common/BaseTypes.h
+    OsGPU/Common/VKBaseTypes.h
     OsGPU/Common/VKConfig.cpp
     OsGPU/Common/VKConfig.h
     OsGPU/Common/VKViewport.h
