@@ -14,8 +14,8 @@ namespace FE::Assets
     template<class T>
     class Asset final
     {
-        T* m_Storage;
         AssetID m_ID;
+        T* m_Storage;
 
     public:
         FE_STRUCT_RTTI(Asset, "A0DD3482-B26A-498A-AB03-F40642D50D5F");
