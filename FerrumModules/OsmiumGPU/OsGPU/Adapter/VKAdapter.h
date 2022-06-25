@@ -28,10 +28,11 @@ namespace FE::Osmium
         AdapterDesc m_Desc;
         VKInstance* m_Instance;
         vk::PhysicalDevice m_VkAdapter;
-        vk::PhysicalDeviceProperties m_Prop;
 
     public:
         FE_CLASS_RTTI(VKAdapter, "4054CC7E-C6EB-4A43-B326-E85C32BED38C");
+
+        vk::PhysicalDeviceProperties Prop;
 
         VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter);
 

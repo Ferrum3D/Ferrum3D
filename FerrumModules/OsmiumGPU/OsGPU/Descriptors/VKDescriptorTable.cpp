@@ -3,6 +3,8 @@
 #include <OsGPU/Descriptors/VKDescriptorTable.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Shader/VKShaderModule.h>
+#include <OsGPU/ImageView/VKImageView.h>
+#include <OsGPU/Sampler/VKSampler.h>
 
 namespace FE::Osmium
 {
@@ -52,6 +54,41 @@ namespace FE::Osmium
         write.dstBinding      = descriptorWriteBuffer.Binding;
         write.dstSet          = m_Set;
         write.pBufferInfo     = &info;
+        m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
+    }
+
+    void VKDescriptorTable::Update(const DescriptorWriteImage& descriptorWriteImage)
+    {
+        auto vkView = fe_assert_cast<VKImageView*>(descriptorWriteImage.View);
+        vk::DescriptorImageInfo info{};
+        info.imageView = vkView->GetNativeView();
+        info.sampler = VK_NULL_HANDLE;
+        info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+        vk::WriteDescriptorSet write{};
+        write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteImage.Binding].ResourceType);
+        write.descriptorCount = 1;
+        write.dstArrayElement = descriptorWriteImage.ArrayIndex;
+        write.dstBinding      = descriptorWriteImage.Binding;
+        write.dstSet          = m_Set;
+        write.pImageInfo     = &info;
+        m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
+    }
+
+    void VKDescriptorTable::Update(const DescriptorWriteSampler& descriptorWriteSampler)
+    {
+        auto vkSampler = fe_assert_cast<VKSampler*>(descriptorWriteSampler.Sampler);
+        vk::DescriptorImageInfo info{};
+        info.imageView = VK_NULL_HANDLE;
+        info.sampler = vkSampler->Sampler.get();
+
+        vk::WriteDescriptorSet write{};
+        write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteSampler.Binding].ResourceType);
+        write.descriptorCount = 1;
+        write.dstArrayElement = descriptorWriteSampler.ArrayIndex;
+        write.dstBinding      = descriptorWriteSampler.Binding;
+        write.dstSet          = m_Set;
+        write.pImageInfo     = &info;
         m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
     }
 } // namespace FE::Osmium

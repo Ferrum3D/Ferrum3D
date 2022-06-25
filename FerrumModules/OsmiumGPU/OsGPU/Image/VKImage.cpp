@@ -39,7 +39,7 @@ namespace FE::Osmium
         : m_Device(&dev)
         , Desc(desc)
     {
-        vk::ImageCreateInfo imageInfo{};
+        vk::ImageCreateInfo imageCI{};
         vk::ImageUsageFlags usage{};
         if ((desc.BindFlags & ImageBindFlags::Depth) != ImageBindFlags::None)
         {
@@ -73,44 +73,44 @@ namespace FE::Osmium
         switch (desc.Dimension)
         {
         case ImageDim::Image1D:
-            imageInfo.imageType = vk::ImageType::e1D;
+            imageCI.imageType = vk::ImageType::e1D;
             break;
         case ImageDim::ImageCubemap:
             FE_ASSERT_MSG(desc.ArraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.ArraySize);
-            imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+            imageCI.flags = vk::ImageCreateFlagBits::eCubeCompatible;
             [[fallthrough]];
         case ImageDim::Image2D:
-            imageInfo.imageType = vk::ImageType::e2D;
+            imageCI.imageType = vk::ImageType::e2D;
             break;
         case ImageDim::Image3D:
-            imageInfo.imageType = vk::ImageType::e3D;
+            imageCI.imageType = vk::ImageType::e3D;
             break;
         default:
             FE_UNREACHABLE("Unknown image dimension");
             break;
         }
 
-        imageInfo.extent = VKConvert(desc.ImageSize);
-        if (desc.Dimension != ImageDim::Image2D && imageInfo.extent.height > 1)
+        imageCI.extent = VKConvert(desc.ImageSize);
+        if (desc.Dimension != ImageDim::Image2D && imageCI.extent.height > 1)
         {
-            FE_LOG_WARNING("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageInfo.extent.height);
-            imageInfo.extent.height = 1;
+            FE_LOG_WARNING("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
+            imageCI.extent.height = 1;
         }
-        if (desc.Dimension != ImageDim::Image3D && imageInfo.extent.depth > 1)
+        if (desc.Dimension != ImageDim::Image3D && imageCI.extent.depth > 1)
         {
-            FE_LOG_WARNING("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageInfo.extent.depth);
-            imageInfo.extent.depth = 1;
+            FE_LOG_WARNING("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
+            imageCI.extent.depth = 1;
         }
-        imageInfo.mipLevels     = desc.MipLevelCount;
-        imageInfo.arrayLayers   = desc.ArraySize;
-        imageInfo.format        = VKConvert(desc.ImageFormat);
-        imageInfo.tiling        = vk::ImageTiling::eOptimal;
-        imageInfo.initialLayout = vk::ImageLayout::eUndefined;
-        imageInfo.usage         = usage;
-        imageInfo.samples       = static_cast<vk::SampleCountFlagBits>(desc.SampleCount);
-        imageInfo.sharingMode   = vk::SharingMode::eExclusive;
+        imageCI.mipLevels     = desc.MipLevelCount;
+        imageCI.arrayLayers   = desc.ArraySize;
+        imageCI.format        = VKConvert(desc.ImageFormat);
+        imageCI.tiling        = vk::ImageTiling::eOptimal;
+        imageCI.initialLayout = vk::ImageLayout::eUndefined;
+        imageCI.usage         = usage;
+        imageCI.samples       = static_cast<vk::SampleCountFlagBits>(desc.SampleCount);
+        imageCI.sharingMode   = vk::SharingMode::eExclusive;
 
-        UniqueImage = m_Device->GetNativeDevice().createImageUnique(imageInfo);
+        UniqueImage = m_Device->GetNativeDevice().createImageUnique(imageCI);
         Image       = UniqueImage.get();
     }
 

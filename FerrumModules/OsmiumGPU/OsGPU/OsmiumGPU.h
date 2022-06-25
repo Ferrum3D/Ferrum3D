@@ -18,3 +18,4 @@
 #include <OsGPU/Shader/IShaderModule.h>
 #include <OsGPU/SwapChain/ISwapChain.h>
 #include <OsGPU/Window/IWindow.h>
+#include <OsGPU/Sampler/ISampler.h>

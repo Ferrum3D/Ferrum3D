@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/Vector4.h>
+#include <FeCore/Containers/List.h>
 #include <utility>
 
 namespace FE::Osmium

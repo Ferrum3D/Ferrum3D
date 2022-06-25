@@ -75,6 +75,7 @@ set(SRC
     OsGPU/Pipeline/PipelineStates.h
     OsGPU/Pipeline/VKGraphicsPipeline.cpp
     OsGPU/Pipeline/VKGraphicsPipeline.h
+    OsGPU/Pipeline/VKPipelineStates.h
 
     OsGPU/RenderPass/IRenderPass.h
     OsGPU/RenderPass/VKRenderPass.cpp
@@ -84,6 +85,10 @@ set(SRC
     OsGPU/Resource/ResourceState.h
     OsGPU/Resource/ShaderResourceType.h
     OsGPU/Resource/VKResourceState.h
+
+    OsGPU/Sampler/ISampler.h
+    OsGPU/Sampler/VKSampler.cpp
+    OsGPU/Sampler/VKSampler.h
 
     OsGPU/Shader/IShaderCompiler.h
     OsGPU/Shader/IShaderModule.h

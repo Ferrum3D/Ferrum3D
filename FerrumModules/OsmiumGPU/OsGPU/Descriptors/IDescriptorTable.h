@@ -11,5 +11,7 @@ namespace FE::Osmium
         ~IDescriptorTable() override = default;
 
         virtual void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) = 0;
+        virtual void Update(const DescriptorWriteImage& descriptorWriteBuffer) = 0;
+        virtual void Update(const DescriptorWriteSampler& descriptorWriteBuffer) = 0;
     };
 } // namespace FE::Osmium

@@ -1,3 +1,4 @@
+#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 #include <FeCore/Math/Color.h>
 
