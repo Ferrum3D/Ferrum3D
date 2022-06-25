@@ -16,8 +16,9 @@ namespace FE::Assets
     Shared<IO::IStream> AssetProviderDev::CreateAssetLoadingStream(const AssetID& assetID)
     {
         FE_ASSERT_MSG(m_Registry, "Registry was not attached");
+        auto fileName = m_Registry->GetAssetFilePath(assetID);
         auto stream = MakeShared<IO::FileStream>(MakeShared<IO::FileHandle>());
-        stream->Open(m_Registry->GetAssetFilePath(assetID), IO::OpenMode::ReadWrite);
+        FE_IO_ASSERT(stream->Open(fileName, IO::OpenMode::ReadWrite));
         return static_pointer_cast<IO::IStream>(stream);
     }
 
