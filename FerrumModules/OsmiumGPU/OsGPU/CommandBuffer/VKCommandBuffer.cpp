@@ -1,5 +1,6 @@
 #include <OsGPU/Buffer/VKBuffer.h>
 #include <OsGPU/CommandBuffer/VKCommandBuffer.h>
+#include <OsGPU/Common/VKBaseTypes.h>
 #include <OsGPU/Common/VKViewport.h>
 #include <OsGPU/Descriptors/VKDescriptorTable.h>
 #include <OsGPU/Device/VKDevice.h>
@@ -203,5 +204,27 @@ namespace FE::Osmium
         copy.dstOffset = region.DestOffset;
         copy.srcOffset = region.SourceOffset;
         m_CommandBuffer->copyBuffer(nativeSrc, nativeDst, { copy });
+    }
+
+    void VKCommandBuffer::CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region)
+    {
+        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer.get();
+        auto nativeDst = fe_assert_cast<VKImage*>(dest)->Image;
+
+        vk::BufferImageCopy copy{};
+        copy.bufferOffset      = region.BufferOffset;
+        copy.bufferRowLength   = 0;
+        copy.bufferImageHeight = 0;
+
+        auto subresource                     = VKConvert(region.ImageSubresource);
+        copy.imageSubresource.aspectMask     = subresource.aspectMask;
+        copy.imageSubresource.mipLevel       = subresource.mipLevel;
+        copy.imageSubresource.baseArrayLayer = subresource.arrayLayer;
+        copy.imageSubresource.layerCount     = 1;
+
+        copy.imageOffset = VKConvert(region.ImageOffset);
+        copy.imageExtent = VKConvert(region.ImageSize);
+
+        m_CommandBuffer->copyBufferToImage(nativeSrc, nativeDst, vk::ImageLayout::eTransferDstOptimal, { copy });
     }
 } // namespace FE::Osmium

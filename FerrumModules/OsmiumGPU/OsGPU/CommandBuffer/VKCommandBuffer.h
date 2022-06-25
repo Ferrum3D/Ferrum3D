@@ -33,6 +33,7 @@ namespace FE::Osmium
         void BindIndexBuffer(IBuffer* buffer) override;
 
         void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region) override;
+        void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) override;
 
         void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) override;
         void DrawIndexed(
