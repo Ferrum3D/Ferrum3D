@@ -27,6 +27,11 @@ namespace FE::Osmium
             return Color::FromUInt32(PixelValueAt(row, column));
         }
 
+        [[nodiscard]] inline USize Size() const
+        {
+            return m_Width * m_Height * 4;
+        }
+
         [[nodiscard]] inline const UInt8* Data() const
         {
             return m_Data;
