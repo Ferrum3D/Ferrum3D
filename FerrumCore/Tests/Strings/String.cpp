@@ -140,3 +140,13 @@ TEST(Strings, Compare)
     EXPECT_GT(FE::String("aza").Compare("aa"), 0);
     EXPECT_GT(FE::String("az").Compare("aaa"), 0);
 }
+
+TEST(Strings, Split)
+{
+    auto str = FE::String("abc def 123");
+    auto split = str.Split();
+    ASSERT_EQ(split.Size(), 3);
+    EXPECT_EQ(split[0], FE::StringSlice("abc"));
+    EXPECT_EQ(split[1], FE::StringSlice("def"));
+    EXPECT_EQ(split[2], FE::StringSlice("123"));
+}
