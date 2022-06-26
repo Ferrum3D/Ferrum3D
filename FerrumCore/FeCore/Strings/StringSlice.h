@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Containers/List.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <cassert>
 #include <codecvt>
@@ -25,6 +26,7 @@ namespace FE
         class Iterator
         {
             friend class StringSlice;
+            friend class String;
             const TChar* m_Iter;
 
         public:
@@ -174,10 +176,10 @@ namespace FE
             return 0;
         }
 
-        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        [[nodiscard]] inline Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
         {
             auto e = end();
-            for (auto iter = begin(); iter != e; ++iter)
+            for (auto iter = start; iter != e; ++iter)
             {
                 if (*iter == search)
                 {
@@ -185,6 +187,11 @@ namespace FE
                 }
             }
             return e;
+        }
+
+        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        {
+            return FindFirstOf(begin(), search);
         }
 
         [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
@@ -199,6 +206,29 @@ namespace FE
                 }
             }
             return result;
+        }
+
+        [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
+        {
+            List<StringSlice> result;
+            auto current = begin();
+            while (current != end())
+            {
+                auto cPos = FindFirstOf(current, c);
+                result.Emplace(current.m_Iter, cPos.m_Iter - current.m_Iter);
+                current = cPos;
+                if (current != end())
+                {
+                    ++current;
+                }
+            }
+
+            return result;
+        }
+
+        [[nodiscard]] inline List<StringSlice> SplitLines() const
+        {
+            return Split('\n');
         }
 
         [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept

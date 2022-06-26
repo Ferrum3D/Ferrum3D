@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/Containers/List.h>
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -190,6 +191,7 @@ namespace FE
 
         class Iterator
         {
+            friend class String;
             const TChar* m_Iter;
 
         public:
@@ -370,7 +372,7 @@ namespace FE
 
         inline operator StringSlice() const noexcept
         {
-            return StringSlice(Data(), Size());
+            return { Data(), Size() };
         }
 
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
@@ -509,6 +511,31 @@ namespace FE
             t += lhs;
             t += rhs;
             return t;
+        }
+
+        [[nodiscard]] inline Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
+        {
+            return StringSlice(Data(), Size()).FindFirstOf(start.m_Iter, search).m_Iter;
+        }
+
+        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        {
+            return StringSlice(Data(), Size()).FindFirstOf(search).m_Iter;
+        }
+
+        [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
+        {
+            return StringSlice(Data(), Size()).FindLastOf(search).m_Iter;
+        }
+
+        [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
+        {
+            return StringSlice(Data(), Size()).Split(c);
+        }
+
+        [[nodiscard]] inline List<StringSlice> SplitLines() const
+        {
+            return Split('\n');
         }
 
         [[nodiscard]] inline Int32 Compare(const StringSlice& other) const noexcept
