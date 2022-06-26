@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Math;
+using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.Assets
 {
@@ -9,9 +10,12 @@ namespace Ferrum.Osmium.Assets
     {
         public Color this[int row, int column] => Color.FromUInt32(PixelValueAt(row, column));
 
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        public int Width => (int)ImageSize.Width;
+        public int Height => (int)ImageSize.Height;
         public ulong ByteSize { get; private set; }
+
+        public IntPtr DataHandle { get; private set; }
+        public Size ImageSize { get; private set; }
 
         public ImageAsset() : base(IntPtr.Zero)
         {
@@ -21,16 +25,16 @@ namespace Ferrum.Osmium.Assets
         {
             unsafe
             {
-                var ptr = (uint*)DataNative(Handle);
+                var ptr = (uint*)DataHandle;
                 return ptr![row * Width + column];
             }
         }
 
         protected override void Initialize()
         {
-            Width = WidthNative(Handle);
-            Height = HeightNative(Handle);
+            ImageSize = new Size(WidthNative(Handle), HeightNative(Handle));
             ByteSize = SizeNative(Handle);
+            DataHandle = DataNative(Handle);
         }
 
         [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Load")]

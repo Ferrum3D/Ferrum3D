@@ -63,12 +63,12 @@ void RunExample()
     FE::UInt64 vertexSize, indexSize;
     {
         // clang-format off
-            FE::Vector<Vertex> vertexData = {
-                { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f} },
-                { {+0.5f, +0.5f, 0.0f}, {0.0f, 1.0f} },
-                { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f} },
-                { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f} }
-            };
+        FE::Vector<Vertex> vertexData = {
+            { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f} },
+            { {+0.5f, +0.5f, 0.0f}, {0.0f, 1.0f} },
+            { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f} },
+            { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f} }
+        };
         // clang-format on
         vertexSize          = vertexData.size() * sizeof(Vertex);
         vertexBufferStaging = device->CreateBuffer(HAL::BindFlags::None, vertexSize);

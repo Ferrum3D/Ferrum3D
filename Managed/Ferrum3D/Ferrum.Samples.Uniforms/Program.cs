@@ -200,7 +200,7 @@ namespace Ferrum.Samples.Uniforms
         {
             using var engine = new Engine();
             using var logger = new ConsoleLogger();
-            OsmiumGpuModule.AttachEnvironment(Engine.Environment);
+            using var osmiumGpuModule = new OsmiumGpuModule(Engine.Environment);
 
             RunExample();
         }

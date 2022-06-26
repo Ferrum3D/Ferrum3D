@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.GPU.Common;
@@ -42,6 +43,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBuffers")]
         private static extern void CopyBuffersNative(IntPtr self, IntPtr source, IntPtr dest,
             ref BufferCopyRegion region);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_ResourceTransitionBarriers")]
+        private static extern void ResourceTransitionBarriersNative(IntPtr self, IntPtr barriers, uint count);
+
+        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBufferToImage")]
+        private static extern void CopyBufferToImageNative(IntPtr self, IntPtr source, IntPtr dest,
+            ref BufferImageCopyRegion region);
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Draw")]
         private static extern void DrawNative(IntPtr self, uint vertexCount, uint instanceCount, uint firstVertex,
@@ -124,6 +132,47 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public void CopyBuffers(Buffer source, Buffer dest, BufferCopyRegion region)
             {
                 CopyBuffersNative(handle, source.Handle, dest.Handle, ref region);
+            }
+
+            public void CopyBufferToImage(Buffer source, Image dest, BufferImageCopyRegion region)
+            {
+                CopyBufferToImageNative(handle, source.Handle, dest.Handle, ref region);
+            }
+
+            public void CopyBufferToImage(Buffer source, Image dest, Size size)
+            {
+                CopyBufferToImage(source, dest, new BufferImageCopyRegion(size));
+            }
+
+            public void ResourceTransitionBarriers(ResourceTransitionBarrierDesc[] barriers)
+            {
+                var nativeBarriers = new ResourceTransitionBarrierDesc.Native[barriers.Length];
+                for (var i = 0; i < barriers.Length; ++i)
+                {
+                    nativeBarriers[i] = new ResourceTransitionBarrierDesc.Native(barriers[i]);
+                }
+
+                unsafe
+                {
+                    fixed (ResourceTransitionBarrierDesc.Native* ptr = nativeBarriers)
+                    {
+                        ResourceTransitionBarriersNative(handle, new IntPtr(ptr), (uint)nativeBarriers.Length);
+                    }
+                }
+            }
+
+            public void ResourceTransitionBarrier(ResourceTransitionBarrierDesc barrier)
+            {
+                var nativeBarrier = new ResourceTransitionBarrierDesc.Native(barrier);
+                unsafe
+                {
+                    ResourceTransitionBarriersNative(handle, new IntPtr(&nativeBarrier), 1u);
+                }
+            }
+
+            public void ResourceTransitionBarrier(Image image, ResourceState stateBefore, ResourceState stateAfter)
+            {
+                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, stateBefore, stateAfter));
             }
 
             public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)

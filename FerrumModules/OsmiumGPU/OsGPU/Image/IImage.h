@@ -18,9 +18,9 @@ namespace FE::Osmium
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
-        UInt16 ArraySize     = 1;
         UInt32 MipLevelCount = 1;
         UInt32 SampleCount   = 1;
+        UInt16 ArraySize     = 1;
 
         FE_STRUCT_RTTI(ImageDesc, "1B7CB069-C763-49D0-9CEA-088681802761");
 

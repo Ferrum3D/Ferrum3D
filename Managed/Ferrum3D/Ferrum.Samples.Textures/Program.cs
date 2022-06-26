@@ -26,7 +26,7 @@ namespace Ferrum.Samples.Textures
 
         public readonly float U;
         public readonly float V;
-        
+
         public Vertex(float x, float y, float z, float u, float v)
         {
             X = x;
@@ -50,7 +50,6 @@ namespace Ferrum.Samples.Textures
 
         private static readonly uint[] indexData = { 0, 2, 3, 3, 2, 1 };
 
-        private static readonly Color[] psConstantData = { Colors.Gold };
         private static readonly Vector3F[] vsConstantData = { new(0.3f, -0.4f, 0.0f) };
 
         private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
@@ -63,9 +62,17 @@ namespace Ferrum.Samples.Textures
             return stagingBuffer;
         }
 
+        private static Buffer CreateHostVisibleBuffer(BindFlags bindFlags, Device device, ImageAsset data)
+        {
+            var stagingBuffer = device.CreateBuffer(bindFlags, data.ByteSize);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(data.DataHandle);
+            return stagingBuffer;
+        }
+
         private static void RunExample()
         {
-            using var textureImage = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             var instanceDesc = new Instance.Desc("Ferrum3D - Uniforms");
             using var instance = new Instance(instanceDesc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
@@ -79,7 +86,6 @@ namespace Ferrum.Samples.Textures
             var swapChainDesc = new SwapChain.Desc(window, graphicsQueue);
             using var swapChain = device.CreateSwapChain(swapChainDesc);
 
-            using var psConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, psConstantData);
             using var vsConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, vsConstantData);
 
             var vertexSize = (ulong)(vertexData.Length * Marshal.SizeOf<Vertex>());
@@ -89,11 +95,16 @@ namespace Ferrum.Samples.Textures
             vertexBuffer.AllocateMemory(MemoryType.DeviceLocal);
             using var indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, indexSize);
             indexBuffer.AllocateMemory(MemoryType.DeviceLocal);
+            using var textureImage = device.CreateImage(Image.Desc.Img2D(
+                ImageBindFlags.TransferWrite | ImageBindFlags.ShaderRead, imageAsset.Width, imageAsset.Height,
+                Format.R8G8B8A8_SRGB));
+            textureImage.AllocateMemory(MemoryType.DeviceLocal);
 
             using (var transferComplete = device.CreateFence(Fence.FenceState.Reset))
             {
                 using var vertexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, vertexData);
                 using var indexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, indexData);
+                using var textureStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, imageAsset);
                 using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Transfer);
                 using var transferQueue = device.GetCommandQueue(CommandQueueClass.Transfer);
 
@@ -101,11 +112,17 @@ namespace Ferrum.Samples.Textures
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.Undefined, ResourceState.CopyDest);
+                    builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.CopyDest,
+                        ResourceState.ShaderResource);
                 }
 
                 transferQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);
                 transferComplete.WaitOnCpu();
             }
+
+            using var textureSampler = device.CreateSampler(Sampler.Desc.Default);
 
             var compiler = device.CreateShaderCompiler();
             var vsArgs = ShaderCompiler.Args.FromFile(ShaderStage.Vertex, "Assets/Shaders/VertexShader.hlsl");
@@ -132,17 +149,21 @@ namespace Ferrum.Samples.Textures
             var descriptorHeapDesc = new DescriptorHeap.Desc()
                 .WithMaxTables(2)
                 .WithSizes(
-                    new DescriptorSize(1, ShaderResourceType.ConstantBuffer),
+                    new DescriptorSize(1, ShaderResourceType.Sampler),
+                    new DescriptorSize(1, ShaderResourceType.TextureSrv),
                     new DescriptorSize(1, ShaderResourceType.ConstantBuffer)
                 );
 
             using var descriptorHeap = device.CreateDescriptorHeap(descriptorHeapDesc);
-            var psDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Pixel, 1);
+            var descriptorSamplerDesc = new DescriptorDesc(ShaderResourceType.Sampler, ShaderStageFlags.Pixel, 1);
+            var descriptorImageDesc = new DescriptorDesc(ShaderResourceType.TextureSrv, ShaderStageFlags.Pixel, 1);
             var vsDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Vertex, 1);
-            using var descriptorTable = descriptorHeap.AllocateDescriptorTable(psDescriptorDesc, vsDescriptorDesc);
+            using var descriptorTable =
+                descriptorHeap.AllocateDescriptorTable(descriptorSamplerDesc, descriptorImageDesc, vsDescriptorDesc);
 
-            descriptorTable.Update(0, psConstantBuffer);
-            descriptorTable.Update(1, vsConstantBuffer);
+            descriptorTable.Update(0, textureSampler);
+            descriptorTable.Update(1, textureImage.View);
+            descriptorTable.Update(2, vsConstantBuffer);
 
             var pipelineDesc = GraphicsPipeline.Desc.Default;
             pipelineDesc.InputLayout = new InputStreamLayout.Builder()
@@ -213,8 +234,8 @@ namespace Ferrum.Samples.Textures
             using var engine = new Engine();
             using var logger = new ConsoleLogger();
             using var assetManager = new AssetManager("Assets/FerrumAssetIndex");
-            OsmiumGpuModule.AttachEnvironment(Engine.Environment);
-            OsmiumAssetsModule.AttachEnvironment(Engine.Environment);
+            using var osmiumGpuModule = new OsmiumGpuModule(Engine.Environment);
+            using var osmiumAssetsModule = new OsmiumAssetsModule(Engine.Environment);
 
             RunExample();
         }

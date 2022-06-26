@@ -4,47 +4,32 @@ using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public readonly struct DescriptorWriteBuffer
-    {
-        public readonly Buffer Buffer;
-        public readonly int Binding;
-        public readonly int ArrayIndex;
-        public readonly int Offset;
-        public readonly int Range;
-
-        public DescriptorWriteBuffer(Buffer buffer, int binding, int range = -1, int offset = 0, int arrayIndex = 0)
-        {
-            Buffer = buffer;
-            Binding = binding;
-            ArrayIndex = arrayIndex;
-            Offset = offset;
-            Range = range;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal readonly struct Native
-        {
-            public readonly IntPtr Buffer;
-            public readonly uint Binding;
-            public readonly uint ArrayIndex;
-            public readonly uint Offset;
-            public readonly uint Range;
-
-            public Native(DescriptorWriteBuffer write)
-            {
-                Buffer = write.Buffer?.Handle ?? IntPtr.Zero;
-                Binding = (uint)write.Binding;
-                ArrayIndex = (uint)write.ArrayIndex;
-                Offset = (uint)write.Offset;
-                Range = write.Range == -1 ? uint.MaxValue : (uint)write.Range;
-            }
-        }
-    }
-
     public class DescriptorTable : UnmanagedObject
     {
         public DescriptorTable(IntPtr handle) : base(handle)
         {
+        }
+
+        public void Update(int binding, Sampler sampler)
+        {
+            Update(new DescriptorWriteSampler(sampler, binding));
+        }
+
+        public void Update(DescriptorWriteSampler descriptorWriteSampler)
+        {
+            var nativeWrite = new DescriptorWriteSampler.Native(descriptorWriteSampler);
+            UpdateNative(Handle, ref nativeWrite);
+        }
+
+        public void Update(int binding, ImageView imageView)
+        {
+            Update(new DescriptorWriteImage(imageView, binding));
+        }
+
+        public void Update(DescriptorWriteImage descriptorWriteImage)
+        {
+            var nativeWrite = new DescriptorWriteImage.Native(descriptorWriteImage);
+            UpdateNative(Handle, ref nativeWrite);
         }
 
         public void Update(int binding, Buffer buffer)
@@ -61,7 +46,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_Destruct")]
         private static extern void DestructNative(IntPtr handle);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_Update")]
+        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateSampler")]
+        private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteSampler.Native writeSampler);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateImage")]
+        private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteImage.Native writeImage);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateBuffer")]
         private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteBuffer.Native writeBuffer);
 
         protected override void ReleaseUnmanagedResources()

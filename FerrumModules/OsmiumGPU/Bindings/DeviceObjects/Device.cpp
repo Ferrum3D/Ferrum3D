@@ -13,7 +13,9 @@
 #include <OsGPU/Device/IDevice.h>
 #include <OsGPU/Fence/IFence.h>
 #include <OsGPU/Framebuffer/IFramebuffer.h>
+#include <OsGPU/Image/IImage.h>
 #include <OsGPU/ImageView/IImageView.h>
+#include <OsGPU/Sampler/ISampler.h>
 #include <OsGPU/Shader/IShaderCompiler.h>
 #include <OsGPU/Shader/IShaderModule.h>
 #include <OsGPU/SwapChain/ISwapChain.h>
@@ -39,6 +41,16 @@ namespace FE::Osmium
         FE_DLL_EXPORT ICommandBuffer* IDevice_CreateCommandBuffer(IDevice* self, CommandQueueClass queueClass)
         {
             return self->CreateCommandBuffer(queueClass).Detach();
+        }
+
+        FE_DLL_EXPORT ISampler* IDevice_CreateSampler(IDevice* self, SamplerDesc* desc)
+        {
+            return self->CreateSampler(*desc).Detach();
+        }
+
+        FE_DLL_EXPORT IImage* IDevice_CreateImage(IDevice* self, ImageDesc* desc)
+        {
+            return self->CreateImage(*desc).Detach();
         }
 
         FE_DLL_EXPORT IFramebuffer* IDevice_CreateFramebuffer(IDevice* self, FramebufferDescBinding* desc)

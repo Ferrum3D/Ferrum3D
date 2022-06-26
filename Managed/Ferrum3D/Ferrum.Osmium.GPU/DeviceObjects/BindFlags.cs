@@ -1,5 +1,8 @@
-﻿namespace Ferrum.Osmium.GPU.DeviceObjects
+﻿using System;
+
+namespace Ferrum.Osmium.GPU.DeviceObjects
 {
+    [Flags]
     public enum BindFlags
     {
         None = 0,

@@ -41,10 +41,10 @@ namespace FE::Osmium
 
     struct BufferImageCopyRegion
     {
-        UInt64 BufferOffset{};
-        ImageSubresource ImageSubresource{};
         Offset ImageOffset{};
         Size ImageSize{};
+        ImageSubresource ImageSubresource{};
+        UInt64 BufferOffset{};
 
         FE_STRUCT_RTTI(BufferImageCopyRegion, "1678AA71-032A-4414-8747-F7C806FC3DC6");
 

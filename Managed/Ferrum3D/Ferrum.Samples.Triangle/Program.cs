@@ -151,7 +151,7 @@ namespace Ferrum.Samples.Triangle
         {
             using var engine = new Engine();
             using var logger = new ConsoleLogger();
-            OsmiumGpuModule.AttachEnvironment(Engine.Environment);
+            using var osmiumGpuModule = new OsmiumGpuModule(Engine.Environment);
 
             ConsoleLogger.LogMessage("Test unicode. Тестим юникод. 中文考試. Æ ¶ ✅ ♣ ♘");
 

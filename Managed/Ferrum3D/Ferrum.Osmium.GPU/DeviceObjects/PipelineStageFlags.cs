@@ -1,5 +1,8 @@
-﻿namespace Ferrum.Osmium.GPU.DeviceObjects
+﻿using System;
+
+namespace Ferrum.Osmium.GPU.DeviceObjects
 {
+    [Flags]
     public enum PipelineStageFlags : uint
     {
         TopOfPipe = 1 << 0,
