@@ -555,6 +555,11 @@ namespace FE
             return result;
         }
 
+        [[nodiscard]] inline explicit operator UUID() const noexcept
+        {
+            return UUID(Data());
+        }
+
         [[nodiscard]] inline Iterator begin() const noexcept
         {
             auto ptr = Data();
