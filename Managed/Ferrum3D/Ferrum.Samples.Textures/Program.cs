@@ -1,17 +1,21 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Assets;
 using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
+using Ferrum.Osmium.Assets;
 using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.VertexInput;
 using Ferrum.Osmium.GPU.WindowSystem;
+using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
-namespace Ferrum.Samples.Uniforms
+namespace Ferrum.Samples.Textures
 {
     [StructLayout(LayoutKind.Sequential)]
     internal struct Vertex
@@ -20,11 +24,17 @@ namespace Ferrum.Samples.Uniforms
         public readonly float Y;
         public readonly float Z;
 
-        public Vertex(float x, float y, float z)
+        public readonly float U;
+        public readonly float V;
+        
+        public Vertex(float x, float y, float z, float u, float v)
         {
             X = x;
             Y = y;
             Z = z;
+
+            U = u;
+            V = v;
         }
     }
 
@@ -32,10 +42,10 @@ namespace Ferrum.Samples.Uniforms
     {
         private static readonly Vertex[] vertexData =
         {
-            new(-0.5f, -0.5f, 0.0f),
-            new(+0.5f, +0.5f, 0.0f),
-            new(+0.5f, -0.5f, 0.0f),
-            new(-0.5f, +0.5f, 0.0f)
+            new(-0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
+            new(+0.5f, +0.5f, 0.0f, 0.0f, 1.0f),
+            new(+0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
+            new(-0.5f, +0.5f, 0.0f, 1.0f, 1.0f)
         };
 
         private static readonly uint[] indexData = { 0, 2, 3, 3, 2, 1 };
@@ -55,6 +65,7 @@ namespace Ferrum.Samples.Uniforms
 
         private static void RunExample()
         {
+            using var textureImage = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             var instanceDesc = new Instance.Desc("Ferrum3D - Uniforms");
             using var instance = new Instance(instanceDesc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
@@ -137,6 +148,7 @@ namespace Ferrum.Samples.Uniforms
             pipelineDesc.InputLayout = new InputStreamLayout.Builder()
                 .AddBuffer(InputStreamRate.PerVertex)
                 .AddAttribute(Format.R32G32B32_SFloat, "POSITION")
+                .AddAttribute(Format.R32G32_SFloat, "TEXCOORD")
                 .Build()
                 .Build();
             pipelineDesc.RenderPass = renderPass;
@@ -200,7 +212,9 @@ namespace Ferrum.Samples.Uniforms
         {
             using var engine = new Engine();
             using var logger = new ConsoleLogger();
+            using var assetManager = new AssetManager("Assets/FerrumAssetIndex");
             OsmiumGpuModule.AttachEnvironment(Engine.Environment);
+            OsmiumAssetsModule.AttachEnvironment(Engine.Environment);
 
             RunExample();
         }

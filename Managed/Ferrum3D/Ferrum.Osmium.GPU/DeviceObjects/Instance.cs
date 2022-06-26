@@ -12,9 +12,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private IntPtr handle;
         private readonly Adapter[] adapters;
 
-        public Instance(IntPtr environment, Desc desc, GraphicsApi api)
+        public Instance(Desc desc, GraphicsApi api)
         {
-            AttachEnvironment(environment);
             handle = ConstructNative(ref desc, (int)api);
             GetAdaptersNative(handle, null, out var adapterCount);
             var a = new IntPtr[adapterCount];
@@ -33,9 +32,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }
-
-        [DllImport("OsmiumBindings", EntryPoint = "AttachEnvironment")]
-        private static extern void AttachEnvironment(IntPtr env);
 
         [DllImport("OsmiumBindings", EntryPoint = "IInstance_Construct")]
         private static extern IntPtr ConstructNative(ref Desc desc, int api);

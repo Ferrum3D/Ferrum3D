@@ -4,21 +4,10 @@
 
 namespace FE::Osmium
 {
-    Shared<DynamicLibrary> g_OsmiumLib;
+    extern Shared<DynamicLibrary> g_OsmiumLib;
 
     extern "C"
     {
-        FE_DLL_EXPORT void AttachEnvironment(Env::Internal::IEnvironment* env)
-        {
-            Env::AttachEnvironment(*env);
-            g_OsmiumLib = MakeShared<DynamicLibrary>("OsmiumGPU");
-        }
-
-        FE_DLL_EXPORT void DetachEnvironment()
-        {
-            g_OsmiumLib.Reset();
-        }
-
         FE_DLL_EXPORT IInstance* IInstance_Construct(InstanceDesc* desc, Int32 api)
         {
             auto attachEnvironment = g_OsmiumLib->GetFunction<AttachEnvironmentProc>("AttachEnvironment");

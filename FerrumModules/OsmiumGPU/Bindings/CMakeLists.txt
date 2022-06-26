@@ -28,7 +28,7 @@ set(SRC
     WindowSystem/Window.cpp
     WindowSystem/Window.h
     # FERRUM_SORT_LINES END
-)
+    Module.cpp)
 
 add_library(OsmiumBindings SHARED ${SRC})
 
