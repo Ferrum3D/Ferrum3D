@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <algorithm>
+#include <tuple>
 
 namespace FE
 {
@@ -9,6 +10,18 @@ namespace FE
     class List final
     {
         inline static constexpr USize Alignment = 16;
+
+        template<USize I>
+        [[nodiscard]] inline const T& GetAt() const
+        {
+            return m_Begin[I];
+        }
+
+        template<USize... I>
+        [[nodiscard]] inline auto AsTupleImpl(std::index_sequence<I...>) const
+        {
+            return std::make_tuple(GetAt<I>()...);
+        }
 
         inline static T* Allocate(USize n) noexcept
         {
@@ -453,6 +466,13 @@ namespace FE
         [[nodiscard]] inline const T* Data() const noexcept
         {
             return m_Begin;
+        }
+
+        template<USize I>
+        [[nodiscard]] inline auto AsTuple() const
+        {
+            FE_CORE_ASSERT(I == Size(), "Tuple size must match List size");
+            return AsTupleImpl(std::make_index_sequence<I>{});
         }
 
         inline T* begin() noexcept
