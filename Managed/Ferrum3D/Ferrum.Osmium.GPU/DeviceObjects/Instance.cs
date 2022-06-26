@@ -39,9 +39,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "IInstance_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "DetachEnvironment")]
-        private static extern void DetachEnvironment();
-
         [DllImport("OsmiumBindings", EntryPoint = "IInstance_GetAdapters")]
         private static extern void GetAdaptersNative(IntPtr self, IntPtr[] adapters, out int size);
 
@@ -54,9 +51,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             DestructNative(handle);
             handle = IntPtr.Zero;
-
-            DetachEnvironment();
-            DynamicLibrary.UnloadModule("OsmiumBindings.dll");
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]

@@ -30,6 +30,14 @@ namespace FE::Osmium
             self->SetScissor(*rect);
         }
 
+        FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(
+            ICommandBuffer* self, ResourceTransitionBarrierDesc* barriers, UInt32 count)
+        {
+            List<ResourceTransitionBarrierDesc> list;
+            list.Assign(barriers, barriers + count);
+            self->ResourceTransitionBarriers(list);
+        }
+
         FE_DLL_EXPORT void ICommandBuffer_MemoryBarrier(ICommandBuffer* self)
         {
             self->MemoryBarrier();
@@ -71,6 +79,12 @@ namespace FE::Osmium
             self->CopyBuffers(source, dest, *region);
         }
 
+        FE_DLL_EXPORT void ICommandBuffer_CopyBufferToImage(
+            ICommandBuffer* self, IBuffer* source, IImage* dest, BufferImageCopyRegion* region)
+        {
+            self->CopyBufferToImage(source, dest, *region);
+        }
+
         FE_DLL_EXPORT void ICommandBuffer_Draw(
             ICommandBuffer* self, UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
         {
@@ -78,7 +92,8 @@ namespace FE::Osmium
         }
 
         FE_DLL_EXPORT void ICommandBuffer_DrawIndexed(
-            ICommandBuffer* self, UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance)
+            ICommandBuffer* self, UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset,
+            UInt32 firstInstance)
         {
             self->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
         }

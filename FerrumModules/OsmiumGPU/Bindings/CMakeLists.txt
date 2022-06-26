@@ -15,11 +15,15 @@ set(SRC
     DeviceObjects/Framebuffer.h
     DeviceObjects/GraphicsPipeline.cpp
     DeviceObjects/GraphicsPipeline.h
+    DeviceObjects/Image.cpp
     DeviceObjects/ImageView.cpp
     DeviceObjects/Instance.cpp
     DeviceObjects/RenderPass.cpp
     DeviceObjects/RenderPass.h
+    DeviceObjects/Sampler.cpp
     DeviceObjects/SwapChain.cpp
+
+    Module.cpp
 
     Shaders/ShaderCompiler.cpp
     Shaders/ShaderModule.cpp
@@ -28,7 +32,7 @@ set(SRC
     WindowSystem/Window.cpp
     WindowSystem/Window.h
     # FERRUM_SORT_LINES END
-    Module.cpp)
+)
 
 add_library(OsmiumBindings SHARED ${SRC})
 

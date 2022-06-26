@@ -9,6 +9,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateCommandBuffer")]
         private static extern IntPtr CreateCommandBufferNative(IntPtr self, CommandQueueClass cmdQueueClass);
 
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateSampler")]
+        private static extern IntPtr CreateSamplerNative(IntPtr self, ref Sampler.Desc desc);
+
+        [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateImage")]
+        private static extern IntPtr CreateImageNative(IntPtr self, ref Image.Desc desc);
+
         [DllImport("OsmiumBindings", EntryPoint = "IDevice_CreateDescriptorHeap")]
         private static extern IntPtr CreateDescriptorHeapNative(IntPtr self, ref DescriptorHeap.DescNative desc);
 

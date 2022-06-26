@@ -35,6 +35,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             DestructNative(Handle);
         }
 
+        [Flags]
         public enum SubmitFlags
         {
             None = 0,
