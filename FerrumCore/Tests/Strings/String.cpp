@@ -19,7 +19,7 @@ TEST(Strings, LongSizeCapacity)
 {
     const char* cstr = "loooooooooooooooooooooooooooooooooooooooooong";
     FE::String str   = cstr;
-    ASSERT_GT(str.Capacity(), 22);
+    ASSERT_GE(str.Capacity(), 35);
     ASSERT_EQ(str.Size(), strlen(cstr));
 }
 
