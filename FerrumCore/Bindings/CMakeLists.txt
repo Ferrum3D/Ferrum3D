@@ -1,5 +1,8 @@
 set(SRC
     # FERRUM_SORT_LINES BEGIN
+    Assets/AssetManager.cpp
+    Assets/AssetRegistry.cpp
+
     Console/FeLog.cpp
 
     Containers/ByteBuffer.cpp
