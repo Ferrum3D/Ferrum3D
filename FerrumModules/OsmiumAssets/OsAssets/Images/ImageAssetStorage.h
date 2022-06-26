@@ -22,7 +22,7 @@ namespace FE::Osmium
 
         [[nodiscard]] inline UInt32 PixelValueAt(USize row, USize column) const
         {
-            return m_Data[row * m_Width + column];
+            return reinterpret_cast<UInt32*>(m_Data)[row * m_Width + column];
         }
 
         [[nodiscard]] inline Color PixelColorAt(USize row, USize column) const

@@ -4,6 +4,7 @@ using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
+using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
@@ -46,7 +47,7 @@ namespace Ferrum.Samples.Triangle
         private static void RunExample()
         {
             var instanceDesc = new Instance.Desc("Ferrum3D - Triangle");
-            using var instance = new Instance(Engine.Environment, instanceDesc, GraphicsApi.Vulkan);
+            using var instance = new Instance(instanceDesc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
             using var device = adapter.CreateDevice();
 
@@ -150,6 +151,7 @@ namespace Ferrum.Samples.Triangle
         {
             using var engine = new Engine();
             using var logger = new ConsoleLogger();
+            OsmiumGpuModule.AttachEnvironment(Engine.Environment);
 
             ConsoleLogger.LogMessage("Test unicode. Тестим юникод. 中文考試. Æ ¶ ✅ ♣ ♘");
 
