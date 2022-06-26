@@ -23,12 +23,11 @@ void RunExample()
 {
     auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
 
-    auto imageAssetID  = FE::Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1");
     auto assetManager  = FE::MakeShared<FE::Assets::AssetManager>();
     auto assetProvider = FE::MakeShared<FE::Assets::AssetProviderDev>();
     auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
     auto assetLoader   = FE::MakeShared<HAL::ImageAssetLoader>();
-    assetRegistry->AddAsset(imageAssetID, assetLoader->GetAssetType(), "../Assets/Samples/Textures/Textures/image.jpg");
+    assetRegistry->LoadAssetsFromFile("../Assets/Samples/Textures/FerrumAssetIndex");
     assetProvider->AttachRegistry(assetRegistry);
     assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(assetLoader));
     assetManager->AttachAssetProvider(static_pointer_cast<FE::Assets::IAssetProvider>(assetProvider));
@@ -93,7 +92,7 @@ void RunExample()
     FE::Shared<HAL::IBuffer> textureStaging;
     FE::Shared<HAL::IImage> textureImage;
     {
-        auto imageAsset = FE::Assets::Asset<HAL::ImageAssetStorage>(imageAssetID);
+        auto imageAsset = FE::Assets::Asset<HAL::ImageAssetStorage>(FE::Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1"));
         imageAsset.LoadSync();
 
         textureStaging = device->CreateBuffer(HAL::BindFlags::None, imageAsset->Size());
