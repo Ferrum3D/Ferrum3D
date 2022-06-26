@@ -21,6 +21,11 @@ namespace FE::Assets
 
         ~AssetRegistry() override = default;
 
+        //! \brief Load Assets from a `FerrumAssetIndex` file.
+        //!
+        //! \param [in] fileName - The file to load assets from.
+        void LoadAssetsFromFile(StringSlice fileName);
+
         //! \brief Add asset to registry.
         //!
         //! \param [in] assetID - ID of asset to add.

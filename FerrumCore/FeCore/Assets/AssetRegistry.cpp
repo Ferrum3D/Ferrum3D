@@ -1,7 +1,20 @@
 #include <FeCore/Assets/AssetRegistry.h>
+#include <FeCore/IO/FileHandle.h>
 
 namespace FE::Assets
 {
+    void AssetRegistry::LoadAssetsFromFile(StringSlice fileName)
+    {
+        auto content = IO::File::ReadAllText(fileName);
+        for (auto line : content.SplitLines())
+        {
+            auto [id, type, file] = line.Split().AsTuple<3>();
+            AddAsset(AssetID(id), AssetType(type), file);
+        }
+
+        FE_LOG_MESSAGE("Successfully loaded Assets from {}", fileName);
+    }
+
     void AssetRegistry::AddAsset(const AssetID& assetID, const AssetType& assetType, StringSlice fileName)
     {
         m_AssetFiles[assetID] = fileName;
@@ -28,4 +41,4 @@ namespace FE::Assets
     {
         return m_AssetTypes[assetID];
     }
-}
+} // namespace FE::Assets
