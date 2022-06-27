@@ -29,4 +29,9 @@ namespace FE::Assets
         loader->LoadAsset(storage, stream.GetRaw());
         return storage;
     }
+
+    void AssetManager::RemoveAssetLoader(AssetType assetType)
+    {
+        m_Loaders.erase(assetType);
+    }
 } // namespace FE::Assets

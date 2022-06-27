@@ -1,9 +1,10 @@
 set(SRC
     # FERRUM_SORT_LINES BEGIN
     Images/ImageAssetStorage.cpp
+
     Module.cpp
     # FERRUM_SORT_LINES END
-    )
+)
 
 add_library(OsmiumAssetsBindings SHARED ${SRC})
 
