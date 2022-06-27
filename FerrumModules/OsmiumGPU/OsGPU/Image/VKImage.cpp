@@ -18,14 +18,14 @@ namespace FE::Osmium
         return Desc;
     }
 
-    Shared<IImageView> VKImage::CreateView()
+    Shared<IImageView> VKImage::CreateView(ImageAspectFlags aspectFlags)
     {
         ImageSubresourceRange range{};
         range.ArraySliceCount = Desc.ArraySize;
         range.MinArraySlice   = 0;
         range.MinMipSlice     = 0;
         range.MipSliceCount   = 1;
-        range.AspectFlags     = ImageAspectFlags::RenderTarget;
+        range.AspectFlags     = aspectFlags;
 
         ImageViewDesc desc{};
         desc.Format           = Desc.ImageFormat;

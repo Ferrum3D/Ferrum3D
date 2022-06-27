@@ -18,8 +18,7 @@ namespace FE::Osmium
         bool VerticalSync  = false;
         Format Format      = Format::None;
 
-        ICommandQueue* Queue = nullptr;
-
+        ICommandQueue* Queue     = nullptr;
         void* NativeWindowHandle = nullptr;
     };
 
@@ -42,5 +41,6 @@ namespace FE::Osmium
         virtual IImage* GetCurrentImage()      = 0;
 
         virtual List<Shared<IImageView>> GetRTVs() = 0;
+        virtual Shared<IImageView> GetDSV()        = 0;
     };
 } // namespace FE::Osmium

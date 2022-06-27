@@ -164,6 +164,9 @@ namespace FE::Osmium
         result.depthTestEnable  = m_Desc.DepthStencil.DepthTestEnabled;
         result.depthWriteEnable = m_Desc.DepthStencil.DepthWriteEnabled;
         result.depthCompareOp   = VKConvert(m_Desc.DepthStencil.DepthCompareOp);
+        result.depthBoundsTestEnable = false;
+        result.minDepthBounds = 0.0f;
+        result.maxDepthBounds = 1.0f;
         return result;
     }
 

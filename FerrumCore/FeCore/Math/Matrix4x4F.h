@@ -236,7 +236,7 @@ namespace FE
         matrix.SetRow(0, focalLength / aspect, 0.0f, 0.0f, 0.0f);
         matrix.SetRow(1, 0.0f, -focalLength, 0.0f, 0.0f);
         matrix.SetRow(2, 0.0f, 0.0f, near / (far - near), far * near / (far - near));
-        matrix.SetRow(3, 0.0f, 0.0f, -1.0f, 0.0f);
+        matrix.SetRow(3, 0.0f, 0.0f, -1.0f, 1.0f);
         return matrix;
     }
 

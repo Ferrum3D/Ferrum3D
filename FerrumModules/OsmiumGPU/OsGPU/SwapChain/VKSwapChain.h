@@ -19,6 +19,8 @@ namespace FE::Osmium
         vk::SurfaceFormatKHR m_ColorFormat;
         vk::SurfaceCapabilitiesKHR m_Capabilities;
 
+        Shared<IImage> m_DepthImage;
+        Shared<IImageView> m_DepthImageView;
         List<Shared<IImage>> m_Images;
         List<Shared<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
@@ -49,5 +51,6 @@ namespace FE::Osmium
         void Present() override;
 
         List<Shared<IImageView>> GetRTVs() override;
+        Shared<IImageView> GetDSV() override;
     };
 } // namespace FE::Osmium
