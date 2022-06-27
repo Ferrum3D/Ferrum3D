@@ -15,6 +15,7 @@ namespace FE::Assets
         ~AssetManager() override = default;
 
         void RegisterAssetLoader(Shared<IAssetLoader> loader) override;
+        void RemoveAssetLoader(AssetType assetType) override;
         void AttachAssetProvider(Shared<IAssetProvider> provider) override;
         void DetachAssetProvider() override;
         AssetStorage* LoadAsset(const AssetID& assetID) override;

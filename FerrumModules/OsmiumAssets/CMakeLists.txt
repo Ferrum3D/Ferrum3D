@@ -9,7 +9,7 @@ set(SRC
     OsAssets/Images/StbImage.cpp
     OsAssets/Images/StbImage.h
     # FERRUM_SORT_LINES END
-    )
+)
 
 add_library(OsmiumAssets STATIC ${SRC})
 

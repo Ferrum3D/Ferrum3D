@@ -24,6 +24,13 @@ namespace FE::Assets
         //! \param [in] loader - The loader to register.
         virtual void RegisterAssetLoader(Shared<IAssetLoader> loader) = 0;
 
+        //! \brief Remove an instance of IAssetLoader.
+        //!
+        //! This is useful to clean up the AssetManager after a module that attached its own asset loaders.
+        //!
+        //! \param [in] assetType - The the of the asset associated with the loader to remove.
+        virtual void RemoveAssetLoader(AssetType assetType) = 0;
+
         //! \brief Register an instance of IAssetProvider.
         //!
         //! \param[in] provider - The provider to register.
