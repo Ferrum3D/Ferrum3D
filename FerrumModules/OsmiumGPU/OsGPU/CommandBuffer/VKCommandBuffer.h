@@ -26,7 +26,8 @@ namespace FE::Osmium
         void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
         void BindGraphicsPipeline(IGraphicsPipeline* pipeline) override;
 
-        void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) override;
+        void BeginRenderPass(
+            IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues) override;
         void EndRenderPass() override;
 
         void BindVertexBuffer(UInt32 slot, IBuffer* buffer) override;

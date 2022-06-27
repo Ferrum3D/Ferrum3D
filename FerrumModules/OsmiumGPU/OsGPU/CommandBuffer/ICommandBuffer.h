@@ -10,8 +10,31 @@ namespace FE::Osmium
     struct ClearValueDesc
     {
         Color ColorValue;
+        Float32 DepthValue;
+        UInt32 StencilValue;
+        bool IsDepth;
+
+        inline static ClearValueDesc CreateColorValue(const Color& color)
+        {
+            ClearValueDesc result{};
+            result.ColorValue = color;
+            result.IsDepth    = false;
+            return result;
+        }
+
+        inline static ClearValueDesc CreateDepthStencilValue(float depth = 1.0f, UInt32 stencil = 0)
+        {
+            ClearValueDesc result{};
+            result.DepthValue   = depth;
+            result.StencilValue = stencil;
+            result.IsDepth      = true;
+            return result;
+        }
 
         FE_STRUCT_RTTI(ClearValueDesc, "DA133DBF-F0B7-43DB-A367-C125ED14E06F");
+
+    private:
+        ClearValueDesc() = default;
     };
 
     struct BufferCopyRegion
@@ -93,8 +116,9 @@ namespace FE::Osmium
         virtual void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
         virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                  = 0;
 
-        virtual void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue) = 0;
-        virtual void EndRenderPass()                                                                                       = 0;
+        virtual void BeginRenderPass(
+            IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues) = 0;
+        virtual void EndRenderPass()                                                                     = 0;
 
         virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer) = 0;
         virtual void BindIndexBuffer(IBuffer* buffer)               = 0;

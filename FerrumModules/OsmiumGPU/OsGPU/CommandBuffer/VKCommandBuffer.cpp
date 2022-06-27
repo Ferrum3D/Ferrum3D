@@ -7,6 +7,7 @@
 #include <OsGPU/Framebuffer/VKFramebuffer.h>
 #include <OsGPU/Image/VKImage.h>
 #include <OsGPU/Image/VKImageSubresource.h>
+#include <OsGPU/ImageView/IImageView.h>
 #include <OsGPU/Pipeline/VKGraphicsPipeline.h>
 #include <OsGPU/RenderPass/VKRenderPass.h>
 #include <OsGPU/Resource/VKResourceState.h>
@@ -152,19 +153,32 @@ namespace FE::Osmium
         m_CommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkPipeline->GetNativeLayout(), 0, nativeSets, {});
     }
 
-    void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer, const ClearValueDesc& clearValue)
+    void VKCommandBuffer::BeginRenderPass(
+        IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues)
     {
-        vk::ClearValue vkClearValue{};
-        vkClearValue.color.float32[0] = clearValue.ColorValue.R32();
-        vkClearValue.color.float32[1] = clearValue.ColorValue.B32();
-        vkClearValue.color.float32[2] = clearValue.ColorValue.B32();
-        vkClearValue.color.float32[3] = clearValue.ColorValue.A32();
+        Vector<vk::ClearValue> vkClearValues{};
+        for (const auto& clearValue : clearValues)
+        {
+            auto& vkClearValue = vkClearValues.emplace_back();
+            if (clearValue.IsDepth)
+            {
+                vkClearValue.depthStencil.depth   = clearValue.DepthValue;
+                vkClearValue.depthStencil.stencil = clearValue.StencilValue;
+            }
+            else
+            {
+                vkClearValue.color.float32[0] = clearValue.ColorValue.R32();
+                vkClearValue.color.float32[1] = clearValue.ColorValue.G32();
+                vkClearValue.color.float32[2] = clearValue.ColorValue.B32();
+                vkClearValue.color.float32[3] = clearValue.ColorValue.A32();
+            }
+        }
 
         vk::RenderPassBeginInfo info{};
         info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
         info.renderPass        = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
-        info.clearValueCount   = 1;
-        info.pClearValues      = &vkClearValue;
+        info.clearValueCount   = static_cast<UInt32>(vkClearValues.size());
+        info.pClearValues      = vkClearValues.data();
         info.renderArea.offset = vk::Offset2D{ 0, 0 };
         info.renderArea.extent = vk::Extent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
         m_CommandBuffer->beginRenderPass(info, vk::SubpassContents::eInline);

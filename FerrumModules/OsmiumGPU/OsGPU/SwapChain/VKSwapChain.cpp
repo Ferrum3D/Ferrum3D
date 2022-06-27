@@ -27,18 +27,23 @@ namespace FE::Osmium
 
         auto images = m_Device->GetNativeDevice().getSwapchainImagesKHR<StdHeapAllocator<vk::Image>>(m_NativeSwapChain.get());
 
+        auto width    = m_Desc.ImageWidth;
+        auto height   = m_Desc.ImageHeight;
         m_Desc.Format = VKConvert(m_ColorFormat.format);
         for (auto& image : images)
         {
-            auto width        = m_Desc.ImageWidth;
-            auto height       = m_Desc.ImageHeight;
             auto backBuffer   = MakeShared<VKImage>(*m_Device);
             backBuffer->Image = image;
             backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::RenderTarget, width, height, m_Desc.Format);
             m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
-            m_ImageViews.Push(backBuffer->CreateView());
+            m_ImageViews.Push(backBuffer->CreateView(ImageAspectFlags::RenderTarget));
         }
+
+        auto depthImageDesc = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);
+        m_DepthImage        = dev.CreateImage(depthImageDesc);
+        m_DepthImage->AllocateMemory(MemoryType::DeviceLocal);
+        m_DepthImageView = m_DepthImage->CreateView(ImageAspectFlags::Depth);
 
         for (USize i = 0; i < m_Desc.FrameCount; ++i)
         {
@@ -195,6 +200,11 @@ namespace FE::Osmium
     List<Shared<IImageView>> VKSwapChain::GetRTVs()
     {
         return m_ImageViews;
+    }
+
+    Shared<IImageView> VKSwapChain::GetDSV()
+    {
+        return m_DepthImageView;
     }
 
     UInt32 VKSwapChain::GetCurrentFrameIndex()
