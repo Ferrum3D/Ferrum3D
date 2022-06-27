@@ -118,8 +118,8 @@ void RunExample()
         auto constantData = FE::Matrix4x4F::GetIdentity();
         constantData *= FE::Matrix4x4F::CreateProjection(FE::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
         constantData *= FE::Matrix4x4F::CreateRotationY(FE::Constants::PI);
-        constantData *= FE::Matrix4x4F::CreateRotationX(0.3f);
-        constantData *= FE::Matrix4x4F::CreateTranslation(FE::Vector3F(0.0f, 0.4f, 0.2f));
+        constantData *= FE::Matrix4x4F::CreateRotationX(-0.5f);
+        constantData *= FE::Matrix4x4F::CreateTranslation(FE::Vector3F(0.0f, 0.8f, -1.5f));
         vsConstantBuffer = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(constantData));
         vsConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
         vsConstantBuffer->UpdateData(constantData.RowMajorData());

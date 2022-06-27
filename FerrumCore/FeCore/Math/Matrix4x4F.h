@@ -35,7 +35,7 @@ namespace FE
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
 
         // Vulkan-compatible
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(Float32 fovY, Float32 aspect, Float32 near, Float32 far);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(Float32 fovY, Float32 aspectRatio, Float32 near, Float32 far);
 
         [[nodiscard]] FE_FINLINE const Float32* RowMajorData() const;
 
@@ -228,15 +228,17 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::CreateProjection(Float32 fovY, Float32 aspect, Float32 near, Float32 far)
+    Matrix4x4F Matrix4x4F::CreateProjection(Float32 fovY, Float32 aspectRatio, Float32 near, Float32 far)
     {
         Matrix4x4F matrix{};
-        Float32 focalLength = 1.0f / std::tan(fovY / 2.0f);
 
-        matrix.SetRow(0, focalLength / aspect, 0.0f, 0.0f, 0.0f);
-        matrix.SetRow(1, 0.0f, -focalLength, 0.0f, 0.0f);
-        matrix.SetRow(2, 0.0f, 0.0f, near / (far - near), far * near / (far - near));
-        matrix.SetRow(3, 0.0f, 0.0f, -1.0f, 1.0f);
+        Float32 cotY  = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
+        Float32 cotX  = cotY / aspectRatio;
+        Float32 invFl = 1.0f / (far - near);
+        matrix.SetRow(0, -cotX, 0.0f, 0.0f, 0.0f);
+        matrix.SetRow(1, 0.0f, cotY, 0.0f, 0.0f);
+        matrix.SetRow(2, 0.0f, 0.0f, far * invFl, -far * near * invFl);
+        matrix.SetRow(3, 0.0f, 0.0f, 1.0f, 0.0f);
         return matrix;
     }
 
@@ -502,25 +504,25 @@ namespace FE
 
         auto invDet = 1 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
 
-        m(0, 0) = ( t(1, 1) * c5 - t(1, 2) * c4 + t(1, 3) * c3) * invDet;
+        m(0, 0) = (t(1, 1) * c5 - t(1, 2) * c4 + t(1, 3) * c3) * invDet;
         m(0, 1) = (-t(0, 1) * c5 + t(0, 2) * c4 - t(0, 3) * c3) * invDet;
-        m(0, 2) = ( t(3, 1) * s5 - t(3, 2) * s4 + t(3, 3) * s3) * invDet;
+        m(0, 2) = (t(3, 1) * s5 - t(3, 2) * s4 + t(3, 3) * s3) * invDet;
         m(0, 3) = (-t(2, 1) * s5 + t(2, 2) * s4 - t(2, 3) * s3) * invDet;
 
         m(1, 0) = (-t(1, 0) * c5 + t(1, 2) * c2 - t(1, 3) * c1) * invDet;
-        m(1, 1) = ( t(0, 0) * c5 - t(0, 2) * c2 + t(0, 3) * c1) * invDet;
+        m(1, 1) = (t(0, 0) * c5 - t(0, 2) * c2 + t(0, 3) * c1) * invDet;
         m(1, 2) = (-t(3, 0) * s5 + t(3, 2) * s2 - t(3, 3) * s1) * invDet;
-        m(1, 3) = ( t(2, 0) * s5 - t(2, 2) * s2 + t(2, 3) * s1) * invDet;
+        m(1, 3) = (t(2, 0) * s5 - t(2, 2) * s2 + t(2, 3) * s1) * invDet;
 
-        m(2, 0) = ( t(1, 0) * c4 - t(1, 1) * c2 + t(1, 3) * c0) * invDet;
+        m(2, 0) = (t(1, 0) * c4 - t(1, 1) * c2 + t(1, 3) * c0) * invDet;
         m(2, 1) = (-t(0, 0) * c4 + t(0, 1) * c2 - t(0, 3) * c0) * invDet;
-        m(2, 2) = ( t(3, 0) * s4 - t(3, 1) * s2 + t(3, 3) * s0) * invDet;
+        m(2, 2) = (t(3, 0) * s4 - t(3, 1) * s2 + t(3, 3) * s0) * invDet;
         m(2, 3) = (-t(2, 0) * s4 + t(2, 1) * s2 - t(2, 3) * s0) * invDet;
 
         m(3, 0) = (-t(1, 0) * c3 + t(1, 1) * c1 - t(1, 2) * c0) * invDet;
-        m(3, 1) = ( t(0, 0) * c3 - t(0, 1) * c1 + t(0, 2) * c0) * invDet;
+        m(3, 1) = (t(0, 0) * c3 - t(0, 1) * c1 + t(0, 2) * c0) * invDet;
         m(3, 2) = (-t(3, 0) * s3 + t(3, 1) * s1 - t(3, 2) * s0) * invDet;
-        m(3, 3) = ( t(2, 0) * s3 - t(2, 1) * s1 + t(2, 2) * s0) * invDet;
+        m(3, 3) = (t(2, 0) * s3 - t(2, 1) * s1 + t(2, 2) * s0) * invDet;
 
         return m;
     }
