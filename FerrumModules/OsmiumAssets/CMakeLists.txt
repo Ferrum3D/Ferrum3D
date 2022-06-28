@@ -8,6 +8,13 @@ set(SRC
     OsAssets/Images/ImageAssetStorage.h
     OsAssets/Images/StbImage.cpp
     OsAssets/Images/StbImage.h
+
+    OsAssets/Meshes/MeshAssetLoader.cpp
+    OsAssets/Meshes/MeshAssetLoader.h
+    OsAssets/Meshes/MeshAssetStorage.cpp
+    OsAssets/Meshes/MeshAssetStorage.h
+    OsAssets/Meshes/MeshLoaderImpl.cpp
+    OsAssets/Meshes/MeshLoaderImpl.h
     # FERRUM_SORT_LINES END
 )
 
