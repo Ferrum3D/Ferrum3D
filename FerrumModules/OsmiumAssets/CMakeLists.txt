@@ -18,7 +18,7 @@ fe_configure_target(OsmiumAssets)
 target_include_directories(OsmiumAssets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set_target_properties(OsmiumAssets PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsmiumAssets FeCore stb)
+target_link_libraries(OsmiumAssets FeCore stb assimp)
 
 get_property("TARGET_SOURCE_FILES" TARGET OsmiumAssets PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
