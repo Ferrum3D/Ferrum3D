@@ -138,7 +138,7 @@ void RunExample()
         transferComplete->WaitOnCPU();
     }
 
-    auto textureView    = textureImage->CreateView();
+    auto textureView    = textureImage->CreateView(HAL::ImageAspectFlags::RenderTarget);
     auto textureSampler = device->CreateSampler(HAL::SamplerDesc{});
 
     auto compiler = device->CreateShaderCompiler();
@@ -254,7 +254,7 @@ void RunExample()
         cmd->SetScissor(scissor);
         cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
         cmd->BindIndexBuffer(indexBuffer.GetRaw());
-        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ FE::Colors::MediumAquamarine });
+        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
         cmd->DrawIndexed(6, 1, 0, 0, 0);
         cmd->EndRenderPass();
         cmd->End();
