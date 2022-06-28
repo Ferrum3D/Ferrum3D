@@ -10,9 +10,9 @@ namespace FE::Osmium
             *desc = self->GetDesc();
         }
 
-        FE_DLL_EXPORT IImageView* IImage_CreateView(IImage* self)
+        FE_DLL_EXPORT IImageView* IImage_CreateView(IImage* self, ImageAspectFlags aspectFlags)
         {
-            return self->CreateView().Detach();
+            return self->CreateView(aspectFlags).Detach();
         }
 
         FE_DLL_EXPORT void IImage_AllocateMemory(IImage* self, Int32 memoryType)

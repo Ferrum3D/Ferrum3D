@@ -25,7 +25,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BeginRenderPass")]
         private static extern void BeginRenderPassNative(IntPtr self, IntPtr renderPass, IntPtr framebuffer,
-            ref ClearValueDesc clearValueDesc);
+            IntPtr clearValues, uint clearValueCount);
 
         [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_EndRenderPass")]
         private static extern void EndRenderPassNative(IntPtr self);
@@ -87,15 +87,21 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 MemoryBarrierNative(handle);
             }
 
-            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer, Color clearColor)
+            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer, params ClearValueDesc[] clearValues)
             {
-                var clearValueDesc = new ClearValueDesc(clearColor);
-                BeginRenderPassNative(handle, renderPass.Handle, framebuffer.Handle, ref clearValueDesc);
+                unsafe
+                {
+                    fixed (ClearValueDesc* ptr = clearValues)
+                    {
+                        BeginRenderPassNative(handle, renderPass.Handle, framebuffer.Handle, new IntPtr(ptr),
+                            (uint)clearValues.Length);
+                    }
+                }
             }
 
-            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer, ClearValueDesc clearValueDesc)
+            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer, Color clearColor)
             {
-                BeginRenderPassNative(handle, renderPass.Handle, framebuffer.Handle, ref clearValueDesc);
+                BeginRenderPass(renderPass, framebuffer, ClearValueDesc.CreateColorValue(clearColor));
             }
 
             public void EndRenderPass()
