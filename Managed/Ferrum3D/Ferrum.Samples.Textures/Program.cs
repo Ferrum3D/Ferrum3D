@@ -162,7 +162,7 @@ namespace Ferrum.Samples.Textures
                 descriptorHeap.AllocateDescriptorTable(descriptorSamplerDesc, descriptorImageDesc, vsDescriptorDesc);
 
             descriptorTable.Update(0, textureSampler);
-            descriptorTable.Update(1, textureImage.View);
+            descriptorTable.Update(1, textureImage.DefaultView);
             descriptorTable.Update(2, vsConstantBuffer);
 
             var pipelineDesc = GraphicsPipeline.Desc.Default;

@@ -6,9 +6,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Image : UnmanagedObject
     {
-        private ImageView imageView;
+        private ImageView defaultView;
+        private ImageView depthStencilView;
 
-        public ImageView View => imageView ?? (imageView = new ImageView(CreateViewNative(Handle)));
+        public ImageView DefaultView =>
+            defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.RenderTarget)));
+
+        public ImageView DepthStencilView =>
+            depthStencilView ?? (depthStencilView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth)));
 
         public Image(IntPtr handle) : base(handle)
         {
@@ -20,7 +25,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         }
 
         [DllImport("OsmiumBindings", EntryPoint = "IImage_CreateView")]
-        private static extern IntPtr CreateViewNative(IntPtr self);
+        private static extern IntPtr CreateViewNative(IntPtr self, ImageAspectFlags aspectFlags);
 
         [DllImport("OsmiumBindings", EntryPoint = "IImage_AllocateMemory")]
         private static extern void AllocateMemoryNative(IntPtr self, int memoryType);
@@ -30,7 +35,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         protected override void ReleaseUnmanagedResources()
         {
-            imageView?.Dispose();
+            defaultView?.Dispose();
+            depthStencilView?.Dispose();
             DestructNative(Handle);
         }
 

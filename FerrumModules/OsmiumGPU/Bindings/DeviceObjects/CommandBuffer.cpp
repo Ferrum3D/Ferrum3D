@@ -44,10 +44,12 @@ namespace FE::Osmium
         }
 
         FE_DLL_EXPORT void ICommandBuffer_BeginRenderPass(
-            ICommandBuffer* self, IRenderPass* renderPass, IFramebuffer* framebuffer, ClearValueDesc* clearValue)
+            ICommandBuffer* self, IRenderPass* renderPass, IFramebuffer* framebuffer, ClearValueDesc* clearValues,
+            UInt32 clearValueCount)
         {
-            ClearValueDesc c = *clearValue;
-            self->BeginRenderPass(renderPass, framebuffer, c);
+            List<ClearValueDesc> list;
+            list.Assign(clearValues, clearValues + clearValueCount);
+            self->BeginRenderPass(renderPass, framebuffer, list);
         }
 
         FE_DLL_EXPORT void ICommandBuffer_EndRenderPass(ICommandBuffer* self)
