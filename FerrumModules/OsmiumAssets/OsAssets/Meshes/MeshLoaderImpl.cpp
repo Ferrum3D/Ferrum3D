@@ -114,7 +114,7 @@ namespace FE::Osmium
                         break;
                     case MeshVertexComponent::TextureCoordinate2F:
                         vertexBuffer[vbIndex++] = pTexCoord->x;
-                        vertexBuffer[vbIndex++] = pTexCoord->y;
+                        vertexBuffer[vbIndex++] = -pTexCoord->y;
                         break;
                     case MeshVertexComponent::Color3F:
                         vertexBuffer[vbIndex++] = color.r;
