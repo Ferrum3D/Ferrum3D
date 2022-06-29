@@ -82,7 +82,6 @@
         <Compile Include="DeviceObjects\Instance.cs" />
         <Compile Include="DeviceObjects\MemoryType.cs" />
         <Compile Include="DeviceObjects\Offset.cs" />
-        <Compile Include="DeviceObjects\PipelineStageFlags.cs" />
         <Compile Include="DeviceObjects\RenderPass.cs" />
         <Compile Include="DeviceObjects\ResourceState.cs" />
         <Compile Include="DeviceObjects\ResourceTransitionBarrierDesc.cs" />

@@ -1,5 +1,8 @@
-﻿namespace Ferrum.Osmium.GPU.PipelineStates
+﻿using System;
+
+namespace Ferrum.Osmium.GPU.PipelineStates
 {
+    [Flags]
     public enum ColorComponentFlags
     {
         None = 0,
