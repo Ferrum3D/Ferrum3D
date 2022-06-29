@@ -1,5 +1,5 @@
 #pragma once
-#include <signal.h>
+#include <csignal>
 #include <malloc.h>
 
 #if defined _WIN32 || defined _WIN64 || defined _WINDOWS
