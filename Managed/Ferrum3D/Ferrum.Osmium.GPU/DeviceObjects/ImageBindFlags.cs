@@ -7,14 +7,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     {
         None = 0,
 
-        ShaderRead      = 1 << 0,
-        UnorderedAccess = 1 << 7,
+        ShaderRead = 1 << 0,
+        UnorderedAccess = 1 << 1,
 
-        RenderTarget = 1 << 2,
-        Depth        = 1 << 3,
-        Stencil      = 1 << 4,
+        Color = 1 << 2,
+        Depth = 1 << 3,
+        Stencil = 1 << 4,
 
-        TransferRead  = 1 << 5,
+        TransferRead = 1 << 5,
         TransferWrite = 1 << 6
     }
 }

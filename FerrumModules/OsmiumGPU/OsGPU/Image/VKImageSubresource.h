@@ -8,7 +8,7 @@ namespace FE::Osmium
     {
         switch(aspect)
         {
-        case ImageAspect::RenderTarget:
+        case ImageAspect::Color:
             return vk::ImageAspectFlagBits::eColor;
         case ImageAspect::Depth:
             return vk::ImageAspectFlagBits::eDepth;
@@ -23,7 +23,7 @@ namespace FE::Osmium
     inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
         vk::ImageAspectFlags result{};
-        if ((aspect & ImageAspectFlags::RenderTarget) != ImageAspectFlags::None)
+        if ((aspect & ImageAspectFlags::Color) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eColor;
         if ((aspect & ImageAspectFlags::Depth) != ImageAspectFlags::None)
             result |= vk::ImageAspectFlagBits::eDepth;
