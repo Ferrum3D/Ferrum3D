@@ -2,11 +2,12 @@
 #include <FeCore/IO/FileHandle.h>
 
 #if FE_WINDOWS
-#define FE_SEEK_64 _fseeki64
-#define FE_TELL_64 _ftelli64
+#    include <direct.h>
+#    define FE_SEEK_64 _fseeki64
+#    define FE_TELL_64 _ftelli64
 #else
-#define FE_SEEK_64 fseek
-#define FE_SEEK_64 ftell
+#    define FE_SEEK_64 fseek
+#    define FE_SEEK_64 ftell
 #endif
 
 namespace FE::IO
@@ -62,7 +63,7 @@ namespace FE::IO
         if (IsOpen())
         {
             fclose(m_Handle);
-            m_Handle = nullptr;
+            m_Handle   = nullptr;
             m_OpenMode = OpenMode::None;
             m_FileName.Clear();
         }
@@ -197,6 +198,28 @@ namespace FE::IO
         return m_OpenMode;
     }
 
+    String Directory::GetCurrentDirectory()
+    {
+        static char buffer[256];
+#if FE_WINDOWS
+        _getcwd(buffer, sizeof(buffer));
+#else
+#    error Unsopported platform
+#endif
+        return buffer;
+    }
+
+    StringSlice Directory::GetParent(StringSlice fileName)
+    {
+        auto endIter = fileName.FindLastOf(FE_PATH_SEPARATOR);
+        if (endIter == fileName.end())
+        {
+            endIter = fileName.FindLastOf('/');
+        }
+
+        return { fileName.begin(), endIter };
+    }
+
     bool File::Exists(StringSlice fileName)
     {
         struct stat buffer; // NOLINT
@@ -216,7 +239,11 @@ namespace FE::IO
     String File::ReadAllText(StringSlice fileName)
     {
         FileHandle file;
-        FE_IO_ASSERT(file.Open(fileName, OpenMode::ReadOnly));
+        auto result = file.Open(fileName, OpenMode::ReadOnly);
+        FE_ASSERT_MSG(
+            result == ResultCode::Success, "IO Error while loading file {}: {}", Directory::GetCurrentDirectory() / fileName,
+            GetResultDesc(result));
+
         auto length = file.Length();
         String buffer(length, ' ');
         file.Read(buffer.Data(), length);
