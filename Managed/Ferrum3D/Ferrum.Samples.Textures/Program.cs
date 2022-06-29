@@ -112,9 +112,10 @@ namespace Ferrum.Samples.Textures
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.Undefined, ResourceState.CopyDest);
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.Undefined,
+                        ResourceState.TransferWrite);
                     builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.CopyDest,
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.TransferWrite,
                         ResourceState.ShaderResource);
                 }
 

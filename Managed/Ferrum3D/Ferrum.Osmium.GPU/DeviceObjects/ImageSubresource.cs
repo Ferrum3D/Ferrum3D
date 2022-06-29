@@ -10,7 +10,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public readonly ImageAspect Aspect;
 
-        public static ImageSubresource Default = new ImageSubresource(0, 0, ImageAspect.RenderTarget);
+        public static ImageSubresource Default = new ImageSubresource(0, 0, ImageAspect.Color);
 
         public ImageSubresource(ushort mipSlice, ushort arraySlice, ImageAspect aspect)
         {

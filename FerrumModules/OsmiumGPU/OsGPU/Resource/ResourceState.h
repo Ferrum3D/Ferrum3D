@@ -16,8 +16,8 @@ namespace FE::Osmium
         DepthRead,
         ShaderResource,
         IndirectArgument,
-        CopyDest,
-        CopySource,
+        TransferWrite,
+        TransferRead,
         Present
     };
 
@@ -30,6 +30,6 @@ namespace FE::Osmium
         IImage* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
         ResourceState StateBefore = ResourceState::Undefined;
-        ResourceState StateAfter = ResourceState::Undefined;
+        ResourceState StateAfter  = ResourceState::Undefined;
     };
-}
+} // namespace FE::Osmium

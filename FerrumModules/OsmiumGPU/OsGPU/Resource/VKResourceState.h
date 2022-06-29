@@ -21,8 +21,8 @@ namespace FE::Osmium
             result[static_cast<USize>(ResourceState::DepthRead)]        = Bits::eDepthStencilAttachmentRead;
             result[static_cast<USize>(ResourceState::ShaderResource)]   = Bits::eShaderRead;
             result[static_cast<USize>(ResourceState::IndirectArgument)] = Bits::eIndirectCommandRead;
-            result[static_cast<USize>(ResourceState::CopyDest)]         = Bits::eTransferWrite;
-            result[static_cast<USize>(ResourceState::CopySource)]       = Bits::eTransferRead;
+            result[static_cast<USize>(ResourceState::TransferWrite)]    = Bits::eTransferWrite;
+            result[static_cast<USize>(ResourceState::TransferRead)]     = Bits::eTransferRead;
             result[static_cast<USize>(ResourceState::Present)]          = Bits::eMemoryRead;
             // clang-format on
             return result;
@@ -42,8 +42,8 @@ namespace FE::Osmium
             result[static_cast<USize>(ResourceState::DepthRead)]       = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
             result[static_cast<USize>(ResourceState::DepthWrite)]      = vk::ImageLayout::eDepthStencilAttachmentOptimal;
             result[static_cast<USize>(ResourceState::ShaderResource)]  = vk::ImageLayout::eShaderReadOnlyOptimal;
-            result[static_cast<USize>(ResourceState::CopySource)]      = vk::ImageLayout::eTransferSrcOptimal;
-            result[static_cast<USize>(ResourceState::CopyDest)]        = vk::ImageLayout::eTransferDstOptimal;
+            result[static_cast<USize>(ResourceState::TransferRead)]    = vk::ImageLayout::eTransferSrcOptimal;
+            result[static_cast<USize>(ResourceState::TransferWrite)]   = vk::ImageLayout::eTransferDstOptimal;
             result[static_cast<USize>(ResourceState::Present)]         = vk::ImageLayout::ePresentSrcKHR;
             return result;
         }();

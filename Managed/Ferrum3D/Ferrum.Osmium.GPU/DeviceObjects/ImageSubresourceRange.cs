@@ -13,7 +13,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public readonly ImageAspectFlags AspectFlags;
 
         public static readonly ImageSubresourceRange Default =
-            new ImageSubresourceRange(0, 0, 1, 1, ImageAspectFlags.RenderTarget);
+            new ImageSubresourceRange(0, 0, 1, 1, ImageAspectFlags.Color);
 
         public ImageSubresourceRange(ushort minMipSlice, ushort minArraySlice, ushort mipSliceCount,
             ushort arraySliceCount, ImageAspectFlags aspectFlags)
