@@ -34,10 +34,10 @@ namespace FE::Osmium
         {
             auto backBuffer   = MakeShared<VKImage>(*m_Device);
             backBuffer->Image = image;
-            backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::RenderTarget, width, height, m_Desc.Format);
+            backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
             m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
-            m_ImageViews.Push(backBuffer->CreateView(ImageAspectFlags::RenderTarget));
+            m_ImageViews.Push(backBuffer->CreateView(ImageAspectFlags::Color));
         }
 
         auto depthImageDesc = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);

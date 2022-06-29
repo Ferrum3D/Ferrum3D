@@ -53,7 +53,7 @@ namespace FE::Osmium
         {
             usage |= vk::ImageUsageFlagBits::eSampled;
         }
-        if ((desc.BindFlags & ImageBindFlags::RenderTarget) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::Color) != ImageBindFlags::None)
         {
             usage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
         }

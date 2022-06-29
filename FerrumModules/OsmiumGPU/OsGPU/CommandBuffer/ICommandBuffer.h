@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Containers/List.h>
-#include <FeCore/Math/Color.h>
+#include <FeCore/Math/Colors.h>
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Common/Viewport.h>
 #include <OsGPU/Resource/ResourceState.h>
@@ -9,10 +9,10 @@ namespace FE::Osmium
 {
     struct ClearValueDesc
     {
-        Color ColorValue;
-        Float32 DepthValue;
-        UInt32 StencilValue;
-        bool IsDepth;
+        Color ColorValue    = Colors::Black;
+        Float32 DepthValue  = 0;
+        UInt32 StencilValue = 0;
+        bool IsDepth        = false;
 
         inline static ClearValueDesc CreateColorValue(const Color& color)
         {

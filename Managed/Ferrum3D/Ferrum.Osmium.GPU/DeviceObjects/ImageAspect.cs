@@ -2,7 +2,7 @@
 {
     public enum ImageAspect
     {
-        RenderTarget,
+        Color,
         Depth,
         Stencil
     }
