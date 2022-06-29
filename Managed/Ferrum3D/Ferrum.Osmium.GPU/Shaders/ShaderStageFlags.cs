@@ -1,5 +1,8 @@
-﻿namespace Ferrum.Osmium.GPU.Shaders
+﻿using System;
+
+namespace Ferrum.Osmium.GPU.Shaders
 {
+    [Flags]
     public enum ShaderStageFlags : uint
     {
         None = 0,

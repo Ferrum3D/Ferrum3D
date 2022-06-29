@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Ferrum.Osmium.GPU.PipelineStates;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
