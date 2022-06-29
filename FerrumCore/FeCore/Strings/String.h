@@ -480,36 +480,32 @@ namespace FE
             return Append(str, std::char_traits<TChar>::length(str));
         }
 
-        inline String& Append(const String& other)
-        {
-            return Append(other.Data(), other.Size());
-        }
-
-        inline String& operator+=(const TChar* str)
+        inline String& operator+=(StringSlice str)
         {
             return Append(str);
         }
 
-        inline String& operator+=(const String& str)
+        inline String& operator/=(const StringSlice& str)
         {
+            Append(FE_PATH_SEPARATOR);
             return Append(str);
         }
 
-        inline friend String operator+(const String& lhs, const TChar* rhs)
+        inline friend String operator+(const String& lhs, StringSlice rhs)
         {
             String t;
-            t.Reserve(lhs.Size() + TCharTraits::length(rhs));
+            t.Reserve(lhs.Size() + rhs.Size() + 1);
             t += lhs;
             t += rhs;
             return t;
         }
 
-        inline friend String operator+(const String& lhs, const String& rhs)
+        inline friend String operator/(const String& lhs, StringSlice rhs)
         {
             String t;
-            t.Reserve(lhs.Size() + rhs.Size());
+            t.Reserve(lhs.Size() + rhs.Size() + 2);
             t += lhs;
-            t += rhs;
+            t /= rhs;
             return t;
         }
 
