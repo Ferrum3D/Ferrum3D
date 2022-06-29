@@ -7,6 +7,8 @@
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <OsAssets/Images/ImageAssetLoader.h>
 #include <OsAssets/Images/ImageAssetStorage.h>
+#include <OsAssets/Meshes/MeshAssetLoader.h>
+#include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsGPU/OsmiumGPU.h>
 
 struct Vertex
@@ -27,10 +29,10 @@ void RunExample()
     auto assetManager  = FE::MakeShared<FE::Assets::AssetManager>();
     auto assetProvider = FE::MakeShared<FE::Assets::AssetProviderDev>();
     auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
-    auto assetLoader   = FE::MakeShared<HAL::ImageAssetLoader>();
     assetRegistry->LoadAssetsFromFile("../Assets/Samples/Models/FerrumAssetIndex");
     assetProvider->AttachRegistry(assetRegistry);
-    assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(assetLoader));
+    assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(FE::MakeShared<HAL::ImageAssetLoader>()));
+    assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(FE::MakeShared<HAL::MeshAssetLoader>()));
     assetManager->AttachAssetProvider(static_pointer_cast<FE::Assets::IAssetProvider>(assetProvider));
 
     FE::DynamicLibrary osmiumLib("OsmiumGPU");
@@ -58,38 +60,26 @@ void RunExample()
     swapChainDesc.Queue              = graphicsQueue.GetRaw();
     auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
+    auto meshAsset = FE::Assets::Asset<HAL::MeshAssetStorage>(FE::Assets::AssetID("884FEDDD-141D-49A0-92B2-38B519403D0A"));
+    meshAsset.LoadSync();
     FE::Shared<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
     FE::Shared<HAL::IBuffer> vsConstantBuffer;
     FE::Shared<HAL::IBuffer> indexBuffer, vertexBuffer;
     FE::UInt64 vertexSize, indexSize;
     {
-        // clang-format off
-        FE::Vector<Vertex> vertexData = {
-            { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f} },
-            { {+0.5f, +0.5f, 0.0f}, {0.0f, 1.0f} },
-            { {+0.5f, -0.5f, 0.0f}, {0.0f, 0.0f} },
-            { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f} },
-
-            { {-0.5f, -0.5f, 0.7f}, {1.0f, 0.0f} },
-            { {+0.5f, +0.5f, 0.7f}, {0.0f, 1.0f} },
-            { {+0.5f, -0.5f, 0.7f}, {0.0f, 0.0f} },
-            { {-0.5f, +0.5f, 0.7f}, {1.0f, 1.0f} }
-        };
-        // clang-format on
-        vertexSize          = vertexData.size() * sizeof(Vertex);
+        vertexSize          = meshAsset->VertexSize();
         vertexBufferStaging = device->CreateBuffer(HAL::BindFlags::None, vertexSize);
         vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
-        vertexBufferStaging->UpdateData(vertexData.data());
+        vertexBufferStaging->UpdateData(meshAsset->VertexData());
 
         vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
         vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
     {
-        FE::Vector<FE::UInt32> indexData = { 0, 2, 3, 3, 2, 1, 4, 6, 7, 7, 6, 5 };
-        indexSize                        = indexData.size() * sizeof(FE::UInt32);
-        indexBufferStaging               = device->CreateBuffer(HAL::BindFlags::None, indexSize);
+        indexSize          = meshAsset->IndexSize();
+        indexBufferStaging = device->CreateBuffer(HAL::BindFlags::None, indexSize);
         indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
-        indexBufferStaging->UpdateData(indexData.data());
+        indexBufferStaging->UpdateData(meshAsset->IndexData());
 
         indexBuffer = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
         indexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
@@ -119,7 +109,8 @@ void RunExample()
         constantData *= FE::Matrix4x4F::CreateProjection(FE::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
         constantData *= FE::Matrix4x4F::CreateRotationY(FE::Constants::PI);
         constantData *= FE::Matrix4x4F::CreateRotationX(-0.5f);
-        constantData *= FE::Matrix4x4F::CreateTranslation(FE::Vector3F(0.0f, 0.8f, -1.5f));
+        constantData *= FE::Matrix4x4F::CreateTranslation(FE::Vector3F(0.0f, 0.8f, -1.5f) * 2);
+        constantData *= FE::Matrix4x4F::CreateRotationY(FE::Constants::PI * -1.3f);
         vsConstantBuffer = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(constantData));
         vsConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
         vsConstantBuffer->UpdateData(constantData.RowMajorData());
@@ -245,8 +236,8 @@ void RunExample()
     pipelineDesc.Rasterization    = HAL::RasterizationState{};
 
     pipelineDesc.DepthStencil.DepthWriteEnabled = true;
-    pipelineDesc.DepthStencil.DepthTestEnabled = true;
-    pipelineDesc.DepthStencil.DepthCompareOp = HAL::CompareOp::Less;
+    pipelineDesc.DepthStencil.DepthTestEnabled  = true;
+    pipelineDesc.DepthStencil.DepthCompareOp    = HAL::CompareOp::Less;
 
     pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
 
@@ -281,7 +272,7 @@ void RunExample()
         FE::List<HAL::ClearValueDesc> clearValues = { HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
                                                       HAL::ClearValueDesc::CreateDepthStencilValue() };
         cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), clearValues);
-        cmd->DrawIndexed(12, 1, 0, 0, 0);
+        cmd->DrawIndexed(meshAsset->IndexSize() / sizeof(FE::UInt32), 1, 0, 0, 0);
         cmd->EndRenderPass();
         cmd->End();
     }
