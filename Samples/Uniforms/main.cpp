@@ -102,7 +102,7 @@ void RunExample()
     psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     psArgs.Stage      = HAL::ShaderStage::Pixel;
     psArgs.EntryPoint = "main";
-    psArgs.FullPath   = "../Assets/Samples/Uniforms/Shaders/PixelShader.hlsl";
+    psArgs.FullPath   = "../../Samples/Uniforms/Shaders/PixelShader.hlsl";
     auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
     psArgs.SourceCode = psSource;
     auto psByteCode   = compiler->CompileShader(psArgs);
@@ -113,7 +113,7 @@ void RunExample()
     vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     vsArgs.Stage      = HAL::ShaderStage::Vertex;
     vsArgs.EntryPoint = "main";
-    vsArgs.FullPath   = "../Assets/Samples/Uniforms/Shaders/VertexShader.hlsl";
+    vsArgs.FullPath   = "../../Samples/Uniforms/Shaders/VertexShader.hlsl";
     auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
     vsArgs.SourceCode = vsSource;
     auto vsByteCode   = compiler->CompileShader(vsArgs);
@@ -202,7 +202,7 @@ void RunExample()
         cmd->SetScissor(scissor);
         cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
         cmd->BindIndexBuffer(indexBuffer.GetRaw());
-        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ FE::Colors::MediumAquamarine });
+        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
         cmd->DrawIndexed(6, 1, 0, 0, 0);
         cmd->EndRenderPass();
         cmd->End();

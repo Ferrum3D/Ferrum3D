@@ -165,7 +165,7 @@ int main()
         psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         psArgs.Stage      = HAL::ShaderStage::Pixel;
         psArgs.EntryPoint = "main";
-        psArgs.FullPath   = "../Assets/TestProject/Shaders/PixelShader.hlsl";
+        psArgs.FullPath   = "../../FerrumTestProject/Shaders/PixelShader.hlsl";
         auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
@@ -176,7 +176,7 @@ int main()
         vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         vsArgs.Stage      = HAL::ShaderStage::Vertex;
         vsArgs.EntryPoint = "main";
-        vsArgs.FullPath   = "../Assets/TestProject/Shaders/VertexShader.hlsl";
+        vsArgs.FullPath   = "../../FerrumTestProject/Shaders/VertexShader.hlsl";
         auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
@@ -260,7 +260,7 @@ int main()
             cmd->SetScissor(scissor);
             cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
             cmd->BindIndexBuffer(indexBuffer.GetRaw());
-            cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ FE::Colors::Coral });
+            cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::Coral } });
             cmd->DrawIndexed(6, 1, 0, 0, 0);
             cmd->EndRenderPass();
             cmd->End();
