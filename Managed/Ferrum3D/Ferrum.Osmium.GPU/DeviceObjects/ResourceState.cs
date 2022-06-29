@@ -13,8 +13,8 @@
         DepthRead,
         ShaderResource,
         IndirectArgument,
-        CopyDest,
-        CopySource,
+        TransferWrite,
+        TransferRead,
         Present
     }
 }

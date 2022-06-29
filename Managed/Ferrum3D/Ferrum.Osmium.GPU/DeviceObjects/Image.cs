@@ -10,7 +10,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private ImageView depthStencilView;
 
         public ImageView DefaultView =>
-            defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.RenderTarget)));
+            defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Color)));
 
         public ImageView DepthStencilView =>
             depthStencilView ?? (depthStencilView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth)));
