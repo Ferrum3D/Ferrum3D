@@ -62,13 +62,13 @@ void RunExample()
     shaderArgs.EntryPoint = "main";
 
     shaderArgs.Stage      = HAL::ShaderStage::Pixel;
-    shaderArgs.FullPath   = "../Assets/Samples/Triangle/Shaders/PixelShader.hlsl";
+    shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/PixelShader.hlsl";
     auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto psByteCode       = compiler->CompileShader(shaderArgs);
 
     shaderArgs.Stage      = HAL::ShaderStage::Vertex;
-    shaderArgs.FullPath   = "../Assets/Samples/Triangle/Shaders/VertexShader.hlsl";
+    shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/VertexShader.hlsl";
     source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto vsByteCode       = compiler->CompileShader(shaderArgs);
@@ -133,7 +133,7 @@ void RunExample()
         cmd->SetViewport(viewport);
         cmd->SetScissor(scissor);
         cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
-        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), HAL::ClearValueDesc{ FE::Colors::MediumAquamarine });
+        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
         cmd->Draw(6, 1, 0, 0);
         cmd->EndRenderPass();
         cmd->End();

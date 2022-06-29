@@ -29,7 +29,7 @@ void RunExample()
     auto assetManager  = FE::MakeShared<FE::Assets::AssetManager>();
     auto assetProvider = FE::MakeShared<FE::Assets::AssetProviderDev>();
     auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
-    assetRegistry->LoadAssetsFromFile("../Assets/Samples/Models/FerrumAssetIndex");
+    assetRegistry->LoadAssetsFromFile("../../Samples/Models/FerrumAssetIndex");
     assetProvider->AttachRegistry(assetRegistry);
     assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(FE::MakeShared<HAL::ImageAssetLoader>()));
     assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(FE::MakeShared<HAL::MeshAssetLoader>()));
@@ -149,7 +149,7 @@ void RunExample()
     psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     psArgs.Stage      = HAL::ShaderStage::Pixel;
     psArgs.EntryPoint = "main";
-    psArgs.FullPath   = "../Assets/Samples/Models/Shaders/PixelShader.hlsl";
+    psArgs.FullPath   = "../../Samples/Models/Shaders/PixelShader.hlsl";
     auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
     psArgs.SourceCode = psSource;
     auto psByteCode   = compiler->CompileShader(psArgs);
@@ -160,7 +160,7 @@ void RunExample()
     vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     vsArgs.Stage      = HAL::ShaderStage::Vertex;
     vsArgs.EntryPoint = "main";
-    vsArgs.FullPath   = "../Assets/Samples/Models/Shaders/VertexShader.hlsl";
+    vsArgs.FullPath   = "../../Samples/Models/Shaders/VertexShader.hlsl";
     auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
     vsArgs.SourceCode = vsSource;
     auto vsByteCode   = compiler->CompileShader(vsArgs);
