@@ -54,6 +54,12 @@ namespace FE::IO
         }
     }
 
+    struct Directory
+    {
+        static String GetCurrentDirectory();
+        static StringSlice GetParent(StringSlice fileName);
+    };
+
     struct File
     {
         static bool Exists(StringSlice fileName);
