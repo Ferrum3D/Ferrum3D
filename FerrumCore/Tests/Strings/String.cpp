@@ -76,10 +76,15 @@ TEST(Strings, Equals)
     FE::String b = "abc";
     FE::String c = "xyz";
     FE::String d = "qqqq";
+    FE::String e = "";
+    FE::String f;
 
     EXPECT_EQ(a, b);
     EXPECT_NE(a, c);
     EXPECT_NE(a, d);
+    EXPECT_EQ(e, f);
+    EXPECT_NE(a, e);
+    EXPECT_NE(d, f);
 }
 
 TEST(Strings, Slice)
@@ -124,6 +129,8 @@ TEST(Strings, ShrinkReserve)
 
 TEST(Strings, Compare)
 {
+    EXPECT_EQ(FE::String{}.Compare(FE::String{}), 0);
+
     EXPECT_EQ(FE::String("abc").Compare(FE::StringSlice("abc")), 0);
     EXPECT_EQ(FE::String("abc").Compare(FE::String("abc")), 0);
 
@@ -149,4 +156,37 @@ TEST(Strings, Split)
     EXPECT_EQ(split[0], FE::StringSlice("abc"));
     EXPECT_EQ(split[1], FE::StringSlice("def"));
     EXPECT_EQ(split[2], FE::StringSlice("123"));
+}
+
+TEST(Strings, SplitSpace)
+{
+    auto str = FE::String(" ");
+    auto split = str.Split();
+    ASSERT_EQ(split.Size(), 1);
+    EXPECT_EQ(split[0], FE::StringSlice{});
+}
+
+TEST(Strings, SplitEmpty)
+{
+    auto str = FE::String("");
+    auto split = str.Split();
+    ASSERT_EQ(split.Size(), 0);
+}
+
+TEST(Strings, SplitLines)
+{
+    auto str = FE::String("abc\ndef\r\n123");
+    auto split = str.SplitLines();
+    ASSERT_EQ(split.Size(), 3);
+    EXPECT_EQ(split[0], FE::StringSlice("abc"));
+    EXPECT_EQ(split[1], FE::StringSlice("def"));
+    EXPECT_EQ(split[2], FE::StringSlice("123"));
+}
+
+TEST(Strings, Strip)
+{
+    EXPECT_EQ(FE::String("123").Strip(), FE::StringSlice("123"));
+    EXPECT_EQ(FE::String("    123    ").StripRight(), FE::StringSlice("    123"));
+    EXPECT_EQ(FE::String("    123    ").StripLeft(), FE::StringSlice("123    "));
+    EXPECT_EQ(FE::String(" \t \n \r   ").StripLeft(), FE::StringSlice{});
 }

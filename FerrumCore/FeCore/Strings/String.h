@@ -535,7 +535,22 @@ namespace FE
 
         [[nodiscard]] inline List<StringSlice> SplitLines() const
         {
-            return Split('\n');
+            return StringSlice(Data(), Size()).SplitLines();
+        }
+
+        [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            return StringSlice(Data(), Size()).StripRight(chars);
+        }
+
+        [[nodiscard]] inline StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            return StringSlice(Data(), Size()).StripLeft(chars);
+        }
+
+        [[nodiscard]] inline StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            return StringSlice(Data(), Size()).Strip(chars);
         }
 
         [[nodiscard]] inline Int32 Compare(const StringSlice& other) const noexcept
