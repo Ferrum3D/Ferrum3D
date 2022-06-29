@@ -1,7 +1,7 @@
+#include <FeCore/Console/FeLog.h>
 #include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Meshes/MeshLoaderImpl.h>
-#include <FeCore/Console/FeLog.h>
 
 namespace FE::Osmium
 {
@@ -20,15 +20,15 @@ namespace FE::Osmium
 
     void Osmium::MeshAssetLoader::LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
     {
-        List<MeshVertexComponent> components = {
-            MeshVertexComponent::Position3F,
-            MeshVertexComponent::TextureCoordinate2F
-        };
+        List<MeshVertexComponent> components = { MeshVertexComponent::Position3F, MeshVertexComponent::TextureCoordinate2F };
 
         auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
         auto length        = assetStream->Length();
         List<Int8> buffer(length, 0);
-        auto success = LoadMeshFromMemory(buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, imageStorage->m_VertexCount);
-        FE_ASSERT_MSG(success, "Failed to load a mesh");
+        assetStream->ReadToBuffer(buffer.Data(), length);
+
+        auto result = LoadMeshFromMemory(
+            buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, imageStorage->m_VertexCount);
+        FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 } // namespace FE::Osmium

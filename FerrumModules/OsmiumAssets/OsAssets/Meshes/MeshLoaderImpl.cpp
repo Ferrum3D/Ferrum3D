@@ -40,7 +40,7 @@ namespace FE::Osmium
         List<UInt32>& indexBuffer, UInt32& vertexCount)
     {
         Assimp::Importer Importer;
-        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.Data(), fileData.Size(), g_PostProcessFlags);
+        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.Data(), fileData.Size(), g_PostProcessFlags, ".fbx");
         if (!pScene)
         {
             String error = Importer.GetErrorString();
