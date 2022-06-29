@@ -208,6 +208,11 @@ namespace FE
             return result;
         }
 
+        [[nodiscard]] inline bool Contains(TCodepoint search) const noexcept
+        {
+            return FindFirstOf(search) != end();
+        }
+
         [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
         {
             List<StringSlice> result;
@@ -228,7 +233,71 @@ namespace FE
 
         [[nodiscard]] inline List<StringSlice> SplitLines() const
         {
-            return Split('\n');
+            List<StringSlice> result;
+            auto current = begin();
+            while (current != end())
+            {
+                auto cPos = FindFirstOf(current, '\n');
+                auto line = StringSlice(current.m_Iter, cPos.m_Iter - current.m_Iter).StripRight("\r");
+                result.Emplace(line);
+                current = cPos;
+                if (current != end())
+                {
+                    ++current;
+                }
+            }
+
+            return result;
+        }
+
+        [[nodiscard]] inline StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            if (Size() == 0)
+            {
+                return {};
+            }
+
+            auto endIter = end();
+            auto result  = begin();
+            for (auto iter = begin(); iter != endIter; ++iter)
+            {
+                if (!chars.Contains(*iter))
+                {
+                    break;
+                }
+
+                result = iter;
+                ++result;
+            }
+
+            return { result, endIter };
+        }
+
+        [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            if (Size() == 0)
+            {
+                return {};
+            }
+
+            auto beginIter = begin();
+            auto result    = end();
+            for (auto iter = --end(); iter != beginIter; --iter)
+            {
+                if (!chars.Contains(*iter))
+                {
+                    break;
+                }
+
+                result = iter;
+            }
+
+            return { beginIter, result };
+        }
+
+        [[nodiscard]] inline StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
+        {
+            return StripLeft(chars).StripRight(chars);
         }
 
         [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept
