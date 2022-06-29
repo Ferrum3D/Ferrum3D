@@ -5,11 +5,12 @@ namespace FE::Assets
 {
     void AssetRegistry::LoadAssetsFromFile(StringSlice fileName)
     {
+        auto parentDir = IO::Directory::GetCurrentDirectory() / IO::Directory::GetParent(fileName);
         auto content = IO::File::ReadAllText(fileName);
         for (auto line : content.SplitLines())
         {
             auto [id, type, file] = line.Split().AsTuple<3>();
-            AddAsset(AssetID(id), AssetType(type), file);
+            AddAsset(AssetID(id), AssetType(type), parentDir / file);
         }
 
         FE_LOG_MESSAGE("Successfully loaded Assets from {}", fileName);
