@@ -384,7 +384,7 @@ namespace FE
         [[nodiscard]] inline T ConvertTo() const
         {
             T result;
-            FE_CORE_ASSERT(TryConvertTo(result), "Attempt to parse an invalid number");
+            FE_CORE_ASSERT(TryConvertTo(result), "Attempt to parse an invalid value");
             return result;
         }
 
