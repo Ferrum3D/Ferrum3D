@@ -19,6 +19,13 @@ namespace FE
         m_FullName = fileName;
         m_FullName += FE_DLL_EXTENSION;
         m_NativeHandle = FE_LOAD_LIBRARY(m_FullName.Data());
+        if (!m_NativeHandle)
+        {
+            m_FullName = fileName;
+            m_FullName += "d";
+            m_FullName += FE_DLL_EXTENSION;
+            m_NativeHandle = FE_LOAD_LIBRARY(m_FullName.Data());
+        }
 
         if (m_NativeHandle)
         {
