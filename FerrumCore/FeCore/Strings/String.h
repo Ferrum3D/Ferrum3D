@@ -554,6 +554,38 @@ namespace FE
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
+        [[nodiscard]] inline bool StartsWith(StringSlice prefix) const noexcept
+        {
+            if (prefix.Size() > Size())
+            {
+                return false;
+            }
+
+            return UTF8::Compare(Data(), prefix.Data(), prefix.Size(), prefix.Size()) == 0;
+        }
+
+        [[nodiscard]] inline bool EndsWith(StringSlice suffix) const noexcept
+        {
+            if (suffix.Size() > Size())
+            {
+                return false;
+            }
+
+            return UTF8::Compare(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size()) == 0;
+        }
+
+        template<class T>
+        [[nodiscard]] inline T TryConvertTo(T& result)
+        {
+            return StringSlice(Data(), Size()).TryConvertTo<T>(result);
+        }
+
+        template<class T>
+        [[nodiscard]] inline T ConvertTo()
+        {
+            return StringSlice(Data(), Size()).ConvertTo<T>();
+        }
+
         [[nodiscard]] inline std::wstring ToWideString() const
         {
             std::wstring result;

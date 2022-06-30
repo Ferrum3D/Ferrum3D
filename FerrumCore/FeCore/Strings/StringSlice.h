@@ -6,6 +6,7 @@
 #include <locale>
 #include <ostream>
 #include <string>
+#include <type_traits>
 
 namespace FE
 {
@@ -19,6 +20,16 @@ namespace FE
     {
         const TChar* m_Data;
         size_t m_Size;
+
+        bool TryToIntImpl(Int64& result) const;
+        bool TryToUIntImpl(UInt64& result) const;
+
+        bool TryToFloatImpl(Float64& result) const;
+
+        template<class T>
+        inline static constexpr bool is_signed_integer_v = std::is_signed_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+        template<class T>
+        inline static constexpr bool is_unsigned_integer_v = std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
 
     public:
         FE_STRUCT_RTTI(StringSlice, "DCBAE48D-8751-4F0C-96F9-99866394482B");
@@ -213,6 +224,26 @@ namespace FE
             return FindFirstOf(search) != end();
         }
 
+        [[nodiscard]] inline bool StartsWith(StringSlice prefix) const noexcept
+        {
+            if (prefix.Size() > Size())
+            {
+                return false;
+            }
+
+            return UTF8::Compare(Data(), prefix.Data(), prefix.Size(), prefix.Size()) == 0;
+        }
+
+        [[nodiscard]] inline bool EndsWith(StringSlice suffix) const noexcept
+        {
+            if (suffix.Size() > Size())
+            {
+                return false;
+            }
+
+            return UTF8::Compare(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size()) == 0;
+        }
+
         [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
         {
             List<StringSlice> result;
@@ -303,6 +334,58 @@ namespace FE
         [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
+        }
+
+        template<class TInt>
+        [[nodiscard]] inline std::enable_if_t<is_signed_integer_v<TInt>, TInt> TryConvertTo(TInt& result) const noexcept
+        {
+            Int64 temp;
+            auto ret = TryToIntImpl(temp);
+            result   = static_cast<TInt>(temp);
+            return ret && result == temp;
+        }
+
+        template<class TInt>
+        [[nodiscard]] inline std::enable_if_t<is_unsigned_integer_v<TInt>, TInt> TryConvertTo(TInt& result) const noexcept
+        {
+            UInt64 temp;
+            auto ret = TryToUIntImpl(temp);
+            result   = static_cast<TInt>(temp);
+            return ret && result == temp;
+        }
+
+        template<class TFloat>
+        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, TFloat> TryConvertTo(TFloat& result) const noexcept
+        {
+            Float64 temp;
+            auto ret = TryToFloatImpl(temp);
+            result   = static_cast<TFloat>(temp);
+            return ret;
+        }
+
+        template<class TBool>
+        [[nodiscard]] inline std::enable_if_t<std::is_same_v<TBool, bool>, TBool> TryConvertTo(TBool& result) const noexcept
+        {
+            if (*this == "true" || *this == "1")
+            {
+                result = true;
+                return true;
+            }
+            if (*this == "false" || *this == "0")
+            {
+                result = false;
+                return true;
+            }
+
+            return false;
+        }
+
+        template<class T>
+        [[nodiscard]] inline T ConvertTo() const
+        {
+            T result;
+            FE_CORE_ASSERT(TryConvertTo(result), "Attempt to parse an invalid number");
+            return result;
         }
 
         [[nodiscard]] inline std::wstring ToWideString() const
