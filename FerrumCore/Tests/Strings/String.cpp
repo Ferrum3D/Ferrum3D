@@ -216,6 +216,7 @@ TEST(Strings, EndsWith)
 TEST(Strings, TryConvertTo)
 {
     int i;
+    char c;
     unsigned u;
     float f;
     bool b;
@@ -237,6 +238,8 @@ TEST(Strings, TryConvertTo)
     EXPECT_FALSE(FE::String("").TryConvertTo<bool>(b));
     EXPECT_FALSE(FE::String("-").TryConvertTo<int>(i));
     EXPECT_FALSE(FE::String("--123").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("300").TryConvertTo<char>(c));
+    EXPECT_FALSE(FE::String("123123123123123").TryConvertTo<int>(i));
     EXPECT_FALSE(FE::String("123qq").TryConvertTo<int>(i));
     EXPECT_FALSE(FE::String("qq123").TryConvertTo<int>(i));
     EXPECT_FALSE(FE::String("-123").TryConvertTo<unsigned>(u));
