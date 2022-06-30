@@ -24,7 +24,7 @@ namespace FE::Osmium
         range.ArraySliceCount = Desc.ArraySize;
         range.MinArraySlice   = 0;
         range.MinMipSlice     = 0;
-        range.MipSliceCount   = 1;
+        range.MipSliceCount   = static_cast<UInt16>(Desc.MipSliceCount);
         range.AspectFlags     = aspectFlags;
 
         ImageViewDesc desc{};
@@ -101,7 +101,7 @@ namespace FE::Osmium
             FE_LOG_WARNING("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
             imageCI.extent.depth = 1;
         }
-        imageCI.mipLevels     = desc.MipLevelCount;
+        imageCI.mipLevels     = desc.MipSliceCount;
         imageCI.arrayLayers   = desc.ArraySize;
         imageCI.format        = VKConvert(desc.ImageFormat);
         imageCI.tiling        = vk::ImageTiling::eOptimal;

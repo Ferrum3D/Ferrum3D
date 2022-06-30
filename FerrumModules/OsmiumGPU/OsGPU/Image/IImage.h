@@ -18,7 +18,7 @@ namespace FE::Osmium
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
-        UInt32 MipLevelCount = 1;
+        UInt32 MipSliceCount = 1;
         UInt32 SampleCount   = 1;
         UInt16 ArraySize     = 1;
 
@@ -58,11 +58,12 @@ namespace FE::Osmium
     ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format)
     {
         ImageDesc desc{};
-        desc.BindFlags   = bindFlags;
-        desc.Dimension   = ImageDim::Image2D;
-        desc.ImageSize   = { width, height, 1 };
-        desc.ArraySize   = arraySize;
-        desc.ImageFormat = format;
+        desc.BindFlags     = bindFlags;
+        desc.Dimension     = ImageDim::Image2D;
+        desc.ImageSize     = { width, height, 1 };
+        desc.ArraySize     = arraySize;
+        desc.ImageFormat   = format;
+        desc.MipSliceCount = static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1;
         return desc;
     }
 
