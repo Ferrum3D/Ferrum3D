@@ -35,13 +35,15 @@ namespace FE::Osmium
             auto backBuffer   = MakeShared<VKImage>(*m_Device);
             backBuffer->Image = image;
             backBuffer->Desc  = ImageDesc::Img2D(ImageBindFlags::Color, width, height, m_Desc.Format);
+            backBuffer->Desc.MipSliceCount = 1;
             m_Images.Push(static_pointer_cast<IImage>(backBuffer));
 
             m_ImageViews.Push(backBuffer->CreateView(ImageAspectFlags::Color));
         }
 
-        auto depthImageDesc = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);
-        m_DepthImage        = dev.CreateImage(depthImageDesc);
+        auto depthImageDesc          = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);
+        depthImageDesc.MipSliceCount = 1;
+        m_DepthImage                 = dev.CreateImage(depthImageDesc);
         m_DepthImage->AllocateMemory(MemoryType::DeviceLocal);
         m_DepthImageView = m_DepthImage->CreateView(ImageAspectFlags::Depth);
 
