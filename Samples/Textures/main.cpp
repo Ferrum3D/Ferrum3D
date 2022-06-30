@@ -113,6 +113,7 @@ void RunExample()
         vsConstantBuffer->UpdateData(constantData.Data());
     }
 
+    auto textureView = textureImage->CreateView(HAL::ImageAspectFlags::Color);
     {
         auto transferComplete = device->CreateFence(HAL::FenceState::Reset);
         auto copyCmdBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
@@ -121,10 +122,10 @@ void RunExample()
         copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
 
         HAL::ResourceTransitionBarrierDesc barrier{};
-        barrier.Image                        = textureImage.GetRaw();
-        barrier.SubresourceRange.AspectFlags = HAL::ImageAspectFlags::Color;
-        barrier.StateBefore                  = HAL::ResourceState::Undefined;
-        barrier.StateAfter                   = HAL::ResourceState::TransferWrite;
+        barrier.Image            = textureImage.GetRaw();
+        barrier.SubresourceRange = textureView->GetDesc().SubresourceRange;
+        barrier.StateBefore      = HAL::ResourceState::Undefined;
+        barrier.StateAfter       = HAL::ResourceState::TransferWrite;
         copyCmdBuffer->ResourceTransitionBarriers({ barrier });
 
         auto size = textureImage->GetDesc().ImageSize;
@@ -138,7 +139,6 @@ void RunExample()
         transferComplete->WaitOnCPU();
     }
 
-    auto textureView    = textureImage->CreateView(HAL::ImageAspectFlags::Color);
     auto textureSampler = device->CreateSampler(HAL::SamplerDesc{});
 
     auto compiler = device->CreateShaderCompiler();
