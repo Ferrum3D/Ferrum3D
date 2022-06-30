@@ -116,6 +116,7 @@ set(SRC
     FeCore/Strings/Format.cpp
     FeCore/Strings/Format.h
     FeCore/Strings/String.h
+    FeCore/Strings/StringSlice.cpp
     FeCore/Strings/StringSlice.h
 
     FeCore/Time/DateTime.cpp

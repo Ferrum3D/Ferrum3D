@@ -150,7 +150,7 @@ TEST(Strings, Compare)
 
 TEST(Strings, Split)
 {
-    auto str = FE::String("abc def 123");
+    auto str   = FE::String("abc def 123");
     auto split = str.Split();
     ASSERT_EQ(split.Size(), 3);
     EXPECT_EQ(split[0], FE::StringSlice("abc"));
@@ -160,7 +160,7 @@ TEST(Strings, Split)
 
 TEST(Strings, SplitSpace)
 {
-    auto str = FE::String(" ");
+    auto str   = FE::String(" ");
     auto split = str.Split();
     ASSERT_EQ(split.Size(), 1);
     EXPECT_EQ(split[0], FE::StringSlice{});
@@ -168,14 +168,14 @@ TEST(Strings, SplitSpace)
 
 TEST(Strings, SplitEmpty)
 {
-    auto str = FE::String("");
+    auto str   = FE::String("");
     auto split = str.Split();
     ASSERT_EQ(split.Size(), 0);
 }
 
 TEST(Strings, SplitLines)
 {
-    auto str = FE::String("abc\ndef\r\n123");
+    auto str   = FE::String("abc\ndef\r\n123");
     auto split = str.SplitLines();
     ASSERT_EQ(split.Size(), 3);
     EXPECT_EQ(split[0], FE::StringSlice("abc"));
@@ -189,4 +189,87 @@ TEST(Strings, Strip)
     EXPECT_EQ(FE::String("    123    ").StripRight(), FE::StringSlice("    123"));
     EXPECT_EQ(FE::String("    123    ").StripLeft(), FE::StringSlice("123    "));
     EXPECT_EQ(FE::String(" \t \n \r   ").StripLeft(), FE::StringSlice{});
+}
+
+TEST(Strings, StartsWith)
+{
+    EXPECT_TRUE(FE::String("").StartsWith(""));
+    EXPECT_TRUE(FE::String("1234").StartsWith(""));
+    EXPECT_TRUE(FE::String("1234").StartsWith("1"));
+    EXPECT_TRUE(FE::String("1234").StartsWith("12"));
+    EXPECT_TRUE(FE::String("1234").StartsWith("1234"));
+    EXPECT_FALSE(FE::String("1234").StartsWith("21"));
+    EXPECT_FALSE(FE::String("1234").StartsWith("12345"));
+}
+
+TEST(Strings, EndsWith)
+{
+    EXPECT_TRUE(FE::String("").EndsWith(""));
+    EXPECT_TRUE(FE::String("1234").EndsWith(""));
+    EXPECT_TRUE(FE::String("1234").EndsWith("4"));
+    EXPECT_TRUE(FE::String("1234").EndsWith("34"));
+    EXPECT_TRUE(FE::String("1234").EndsWith("1234"));
+    EXPECT_FALSE(FE::String("1234").EndsWith("21"));
+    EXPECT_FALSE(FE::String("1234").EndsWith("12345"));
+}
+
+TEST(Strings, TryConvertTo)
+{
+    int i;
+    unsigned u;
+    float f;
+    bool b;
+    EXPECT_TRUE(FE::String("1").TryConvertTo<int>(i));
+    EXPECT_EQ(i, 1);
+    EXPECT_TRUE(FE::String("-2").TryConvertTo<int>(i));
+    EXPECT_EQ(i, -2);
+    EXPECT_TRUE(FE::String("3").TryConvertTo<unsigned>(u));
+    EXPECT_EQ(u, 3);
+    EXPECT_TRUE(FE::String("1.5").TryConvertTo<float>(f));
+    EXPECT_EQ(f, 1.5f);
+    EXPECT_TRUE(FE::String("-1.5").TryConvertTo<float>(f));
+    EXPECT_EQ(f, -1.5f);
+    EXPECT_TRUE(FE::String("false").TryConvertTo<bool>(b));
+    EXPECT_EQ(b, false);
+    EXPECT_TRUE(FE::String("true").TryConvertTo<bool>(b));
+    EXPECT_EQ(b, true);
+    EXPECT_FALSE(FE::String("").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("").TryConvertTo<bool>(b));
+    EXPECT_FALSE(FE::String("-").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("--123").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("123qq").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("qq123").TryConvertTo<int>(i));
+    EXPECT_FALSE(FE::String("-123").TryConvertTo<unsigned>(u));
+    EXPECT_FALSE(FE::String("--123").TryConvertTo<float>(f));
+    EXPECT_FALSE(FE::String("123..7").TryConvertTo<float>(f));
+    EXPECT_FALSE(FE::String("qq").TryConvertTo<bool>(b));
+}
+
+TEST(Strings, ConvertTo)
+{
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int8>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int16>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int32>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int64>(), 123);
+
+    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int8>(), -123);
+    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int16>(), -123);
+    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int32>(), -123);
+    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int64>(), -123);
+
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt8>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt16>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt32>(), 123);
+    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt64>(), 123);
+
+    EXPECT_EQ(FE::String("1.5").ConvertTo<FE::Float32>(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").ConvertTo<FE::Float32>(), -1.5f);
+
+    EXPECT_EQ(FE::String("1.5").ConvertTo<FE::Float64>(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").ConvertTo<FE::Float64>(), -1.5f);
+
+    EXPECT_EQ(FE::String("false").ConvertTo<bool>(), false);
+    EXPECT_EQ(FE::String("true").ConvertTo<bool>(), true);
+    EXPECT_EQ(FE::String("0").ConvertTo<bool>(), false);
+    EXPECT_EQ(FE::String("1").ConvertTo<bool>(), true);
 }
