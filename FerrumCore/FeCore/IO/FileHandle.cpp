@@ -41,7 +41,7 @@ namespace FE::IO
 
         if (shouldExist && !File::Exists(fileName))
         {
-            return ResultCode::FileExists;
+            return ResultCode::NoFileOrDirectory;
         }
 
         Close();
