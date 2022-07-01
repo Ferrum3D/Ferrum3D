@@ -250,16 +250,18 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix4x4F CreateProjection(float fovY, float aspect, float near, float far)
+        public static Matrix4x4F CreateProjection(float fovY, float aspectRatio, float near, float far)
         {
-            var focalLength = 1.0f / MathF.Tan(fovY / 2.0f);
+            var cotY = MathF.Cos(0.5f * fovY) / MathF.Sin(0.5f * fovY);
+            var cotX = cotY / aspectRatio;
+            var invFl = 1.0f / (far - near);
 
             return new Matrix4x4F
             {
-                Row0 = new Vector4F(focalLength / aspect, 0.0f, 0.0f, 0.0f),
-                Row1 = new Vector4F(0.0f, -focalLength, 0.0f, 0.0f),
-                Row2 = new Vector4F(0.0f, 0.0f, near / (far - near), far * near / (far - near)),
-                Row3 = new Vector4F(0.0f, 0.0f, -1.0f, 0.0f)
+                Row0 = new Vector4F(-cotX, 0.0f, 0.0f, 0.0f),
+                Row1 = new Vector4F(0.0f, cotY, 0.0f, 0.0f),
+                Row2 = new Vector4F(0.0f, 0.0f, far * invFl, -far * near * invFl),
+                Row3 = new Vector4F(0.0f, 0.0f, 1.0f, 0.0f)
             };
         }
 
