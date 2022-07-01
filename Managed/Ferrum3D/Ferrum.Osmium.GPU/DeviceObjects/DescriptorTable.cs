@@ -43,16 +43,16 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             UpdateNative(Handle, ref nativeWrite);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorTable_Destruct")]
         private static extern void DestructNative(IntPtr handle);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateSampler")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorTable_UpdateSampler")]
         private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteSampler.Native writeSampler);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateImage")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorTable_UpdateImage")]
         private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteImage.Native writeImage);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorTable_UpdateBuffer")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorTable_UpdateBuffer")]
         private static extern void UpdateNative(IntPtr handle, ref DescriptorWriteBuffer.Native writeBuffer);
 
         protected override void ReleaseUnmanagedResources()

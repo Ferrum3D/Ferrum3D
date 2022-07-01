@@ -23,10 +23,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 signalFence.Handle, flags);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandQueue_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandQueue_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandQueue_SubmitBuffers")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandQueue_SubmitBuffers")]
         private static extern void SubmitBuffersNative(IntPtr self, IntPtr buffers, IntPtr signalFence,
             SubmitFlags flags);
 

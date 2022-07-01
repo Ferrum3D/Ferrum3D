@@ -18,7 +18,7 @@ void RunExample()
 {
     auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
 
-    FE::DynamicLibrary osmiumLib("OsmiumGPU");
+    FE::DynamicLibrary osmiumLib("OsGPU");
     auto attachEnvironment = osmiumLib.GetFunction<HAL::AttachEnvironmentProc>("AttachEnvironment");
     attachEnvironment(&FE::Env::GetEnvironment());
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");

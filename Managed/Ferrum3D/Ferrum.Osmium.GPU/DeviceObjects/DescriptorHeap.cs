@@ -31,10 +31,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new DescriptorTable(AllocateDescriptorTableNative(Handle, descriptors, (uint)descriptors.Length));
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorHeap_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorHeap_Destruct")]
         private static extern void DestructNative(IntPtr handle);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IDescriptorHeap_AllocateDescriptorTable")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorHeap_AllocateDescriptorTable")]
         private static extern IntPtr AllocateDescriptorTableNative(IntPtr handle, DescriptorDesc[] d, uint count);
 
         protected override void ReleaseUnmanagedResources()

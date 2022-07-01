@@ -9,7 +9,7 @@ namespace FE::Osmium
         FE_DLL_EXPORT void AttachEnvironment(Env::Internal::IEnvironment* env)
         {
             Env::AttachEnvironment(*env);
-            g_OsmiumLib = MakeShared<DynamicLibrary>("OsmiumGPU");
+            g_OsmiumLib = MakeShared<DynamicLibrary>("OsGPU");
         }
 
         FE_DLL_EXPORT void DetachEnvironment()

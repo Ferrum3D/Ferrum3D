@@ -40,22 +40,22 @@ namespace Ferrum.Osmium.GPU.WindowSystem
             return viewport;
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_GetNativeHandle")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_GetNativeHandle")]
         private static extern IntPtr GetNativeHandleNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_CreateScissor")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_CreateScissor")]
         private static extern void CreateScissorNative(IntPtr self, out Scissor scissor);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_CreateViewport")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_CreateViewport")]
         private static extern void CreateViewportNative(IntPtr self, out Viewport viewport);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_PollEvents")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_PollEvents")]
         private static extern void PollEventsNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IWindow_CloseRequested")]
+        [DllImport("OsGPUBindings", EntryPoint = "IWindow_CloseRequested")]
         private static extern bool CloseRequestedNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

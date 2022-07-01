@@ -24,13 +24,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             AllocateMemoryNative(Handle, (int)memoryType);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IImage_CreateView")]
+        [DllImport("OsGPUBindings", EntryPoint = "IImage_CreateView")]
         private static extern IntPtr CreateViewNative(IntPtr self, ImageAspectFlags aspectFlags);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IImage_AllocateMemory")]
+        [DllImport("OsGPUBindings", EntryPoint = "IImage_AllocateMemory")]
         private static extern void AllocateMemoryNative(IntPtr self, int memoryType);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IImage_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IImage_Destruct")]
         private static extern void DestructNative(IntPtr handle);
 
         protected override void ReleaseUnmanagedResources()

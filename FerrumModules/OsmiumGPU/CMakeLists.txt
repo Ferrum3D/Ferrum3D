@@ -112,16 +112,16 @@ set(SRC
     # FERRUM_SORT_LINES END
 )
 
-add_library(OsmiumGPU SHARED ${SRC})
+add_library(OsGPU SHARED ${SRC})
 
-fe_configure_target(OsmiumGPU)
+fe_configure_target(OsGPU)
 
-target_include_directories(OsmiumGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
+target_include_directories(OsGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
 
-set_target_properties(OsmiumGPU PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsmiumGPU vulkan glfw dxc FeCore spirv-cross-core spirv-cross-hlsl)
+set_target_properties(OsGPU PROPERTIES FOLDER "Modules/Osmium")
+target_link_libraries(OsGPU vulkan glfw dxc FeCore spirv-cross-core spirv-cross-hlsl)
 
-get_property("TARGET_SOURCE_FILES" TARGET OsmiumGPU PROPERTY SOURCES)
+get_property("TARGET_SOURCE_FILES" TARGET OsGPU PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
 add_subdirectory(Bindings)

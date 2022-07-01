@@ -6,10 +6,10 @@ namespace Ferrum.Osmium.GPU
 {
     public class OsmiumGpuModule : IDisposable
     {
-        [DllImport("OsmiumBindings", EntryPoint = "AttachEnvironment")]
+        [DllImport("OsGPUBindings", EntryPoint = "AttachEnvironment")]
         private static extern void AttachEnvironment(IntPtr env);
         
-        [DllImport("OsmiumBindings", EntryPoint = "DetachEnvironment")]
+        [DllImport("OsGPUBindings", EntryPoint = "DetachEnvironment")]
         private static extern void DetachEnvironment();
 
         public OsmiumGpuModule(IntPtr environment)
@@ -20,7 +20,7 @@ namespace Ferrum.Osmium.GPU
         public void Dispose()
         {
             DetachEnvironment();
-            DynamicLibrary.UnloadModule("OsmiumBindings.dll");
+            DynamicLibrary.UnloadModule("OsGPUBindings.dll");
         }
     }
 }

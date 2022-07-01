@@ -129,22 +129,22 @@
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <Content Include="..\..\..\BuildRelease\Release\OsmiumBindings.dll">
-            <Link>OsmiumBindings.dll</Link>
+        <Content Include="..\..\..\BuildRelease\Release\OsGPUBindings.dll">
+            <Link>OsGPUBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="..\..\..\BuildRelease\Release\OsmiumGPU.dll">
-            <Link>OsmiumGPU.dll</Link>
+        <Content Include="..\..\..\BuildRelease\Release\OsGPU.dll">
+            <Link>OsGPU.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <Content Include="..\..\..\BuildDebug\Debug\OsmiumBindings.dll">
-            <Link>OsmiumBindings.dll</Link>
+        <Content Include="..\..\..\BuildDebug\Debug\OsGPUBindings.dll">
+            <Link>OsGPUBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="..\..\..\BuildDebug\Debug\OsmiumGPU.dll">
-            <Link>OsmiumGPU.dll</Link>
+        <Content Include="..\..\..\BuildDebug\Debug\OsGPU.dll">
+            <Link>OsGPU.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>

@@ -17,10 +17,10 @@ namespace Ferrum.Osmium.GPU.Shaders
             return NativeArray<byte>.FromHandle(CompileShaderNative(Handle, ref args));
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IShaderCompiler_CompileShader")]
+        [DllImport("OsGPUBindings", EntryPoint = "IShaderCompiler_CompileShader")]
         private static extern IntPtr CompileShaderNative(IntPtr self, ref Args args);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IShaderCompiler_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IShaderCompiler_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

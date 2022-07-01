@@ -8,58 +8,58 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public partial class CommandBuffer
     {
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Begin")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_Begin")]
         private static extern IntPtr BeginNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_End")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_End")]
         private static extern IntPtr EndNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_SetViewport")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_SetViewport")]
         private static extern void SetViewportNative(IntPtr self, ref Viewport viewport);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_SetScissor")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_SetScissor")]
         private static extern void SetScissorNative(IntPtr self, ref Scissor scissor);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_MemoryBarrier")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_MemoryBarrier")]
         private static extern void MemoryBarrierNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BeginRenderPass")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BeginRenderPass")]
         private static extern void BeginRenderPassNative(IntPtr self, IntPtr renderPass, IntPtr framebuffer,
             IntPtr clearValues, uint clearValueCount);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_EndRenderPass")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_EndRenderPass")]
         private static extern void EndRenderPassNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindVertexBuffer")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindVertexBuffer")]
         private static extern void BindVertexBufferNative(IntPtr self, uint slot, IntPtr buffer);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindIndexBuffer")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindIndexBuffer")]
         private static extern void BindIndexBufferNative(IntPtr self, IntPtr buffer);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindDescriptorTables")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindDescriptorTables")]
         private static extern void BindDescriptorTablesNative(IntPtr self, IntPtr[] descriptorTables, uint count,
             IntPtr pipeline);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBuffers")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_CopyBuffers")]
         private static extern void CopyBuffersNative(IntPtr self, IntPtr source, IntPtr dest,
             ref BufferCopyRegion region);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_ResourceTransitionBarriers")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_ResourceTransitionBarriers")]
         private static extern void ResourceTransitionBarriersNative(IntPtr self, IntPtr barriers, uint count);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_CopyBufferToImage")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_CopyBufferToImage")]
         private static extern void CopyBufferToImageNative(IntPtr self, IntPtr source, IntPtr dest,
             ref BufferImageCopyRegion region);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_Draw")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_Draw")]
         private static extern void DrawNative(IntPtr self, uint vertexCount, uint instanceCount, uint firstVertex,
             uint firstInstance);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_DrawIndexed")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_DrawIndexed")]
         private static extern void DrawIndexedNative(IntPtr self, uint indexCount, uint instanceCount, uint firstIndex,
             int vertexOffset, uint firstInstance);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ICommandBuffer_BindGraphicsPipeline")]
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindGraphicsPipeline")]
         private static extern void BindGraphicsPipelineNative(IntPtr self, IntPtr pipeline);
 
         public class Builder : IDisposable

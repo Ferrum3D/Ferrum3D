@@ -33,13 +33,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             GC.SuppressFinalize(this);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IInstance_Construct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IInstance_Construct")]
         private static extern IntPtr ConstructNative(ref Desc desc, int api);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IInstance_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IInstance_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IInstance_GetAdapters")]
+        [DllImport("OsGPUBindings", EntryPoint = "IInstance_GetAdapters")]
         private static extern void GetAdaptersNative(IntPtr self, IntPtr[] adapters, out int size);
 
         private void ReleaseUnmanagedResources()

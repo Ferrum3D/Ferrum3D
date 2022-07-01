@@ -37,22 +37,22 @@ namespace Ferrum.Osmium.Assets
             DataHandle = DataNative(Handle);
         }
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Load")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Load")]
         private static extern IntPtr LoadNative(IntPtr manager, string assetId);
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Data")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Data")]
         private static extern IntPtr DataNative(IntPtr self);
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Size")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Size")]
         private static extern ulong SizeNative(IntPtr self);
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Width")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Width")]
         private static extern int WidthNative(IntPtr self);
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Height")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Height")]
         private static extern int HeightNative(IntPtr self);
 
-        [DllImport("OsmiumAssetsBindings", EntryPoint = "ImageAssetStorage_Destruct")]
+        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

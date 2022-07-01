@@ -45,22 +45,22 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             PresentNative(Handle);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetRTVs")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetRTVs")]
         private static extern void GetRTVsNative(IntPtr self, IntPtr[] renderTargets, out uint count);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Present")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_Present")]
         private static extern void PresentNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetDesc")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetDesc")]
         private static extern void GetDescNative(IntPtr self, out DescNative desc);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetCurrentFrameIndex")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetCurrentFrameIndex")]
         private static extern uint GetCurrentFrameIndexNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "ISwapChain_GetCurrentImageIndex")]
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetCurrentImageIndex")]
         private static extern uint GetCurrentImageIndexNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

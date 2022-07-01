@@ -27,19 +27,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             ResetNative(Handle);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IFence_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IFence_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IFence_SignalOnCPU")]
+        [DllImport("OsGPUBindings", EntryPoint = "IFence_SignalOnCPU")]
         private static extern void SignalOnCPUNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IFence_WaitOnCPU")]
+        [DllImport("OsGPUBindings", EntryPoint = "IFence_WaitOnCPU")]
         private static extern void WaitOnCPUNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IFence_Reset")]
+        [DllImport("OsGPUBindings", EntryPoint = "IFence_Reset")]
         private static extern void ResetNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IFence_GetState")]
+        [DllImport("OsGPUBindings", EntryPoint = "IFence_GetState")]
         private static extern FenceState GetStateNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

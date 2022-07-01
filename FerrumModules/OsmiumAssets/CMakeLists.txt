@@ -18,16 +18,16 @@ set(SRC
     # FERRUM_SORT_LINES END
 )
 
-add_library(OsmiumAssets STATIC ${SRC})
+add_library(OsAssets STATIC ${SRC})
 
-fe_configure_target(OsmiumAssets)
+fe_configure_target(OsAssets)
 
-target_include_directories(OsmiumAssets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
+target_include_directories(OsAssets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
 
-set_target_properties(OsmiumAssets PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsmiumAssets FeCore stb assimp)
+set_target_properties(OsAssets PROPERTIES FOLDER "Modules/Osmium")
+target_link_libraries(OsAssets OsGPU FeCore stb assimp)
 
-get_property("TARGET_SOURCE_FILES" TARGET OsmiumAssets PROPERTY SOURCES)
+get_property("TARGET_SOURCE_FILES" TARGET OsAssets PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
 add_subdirectory(Bindings)

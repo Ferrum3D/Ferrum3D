@@ -35,7 +35,7 @@ void RunExample()
     assetManager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(FE::MakeShared<HAL::MeshAssetLoader>()));
     assetManager->AttachAssetProvider(static_pointer_cast<FE::Assets::IAssetProvider>(assetProvider));
 
-    FE::DynamicLibrary osmiumLib("OsmiumGPU");
+    FE::DynamicLibrary osmiumLib("OsGPU");
     auto attachEnvironment = osmiumLib.GetFunction<HAL::AttachEnvironmentProc>("AttachEnvironment");
     attachEnvironment(&FE::Env::GetEnvironment());
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");

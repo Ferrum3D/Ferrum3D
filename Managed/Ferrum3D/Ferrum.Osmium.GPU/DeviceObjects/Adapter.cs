@@ -25,13 +25,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return $"{Type} GPU adapter {Name}";
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IAdapter_CreateDevice")]
+        [DllImport("OsGPUBindings", EntryPoint = "IAdapter_CreateDevice")]
         private static extern IntPtr CreateDeviceNative(IntPtr self);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IAdapter_GetDesc")]
+        [DllImport("OsGPUBindings", EntryPoint = "IAdapter_GetDesc")]
         private static extern void GetDescNative(IntPtr self, out Desc desc);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IAdapter_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IAdapter_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()
