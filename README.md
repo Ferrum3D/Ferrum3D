@@ -1,7 +1,8 @@
 # Ferrum3D Engine
 [![GitHub license](https://img.shields.io/github/license/Ferrum3D/Ferrum3D?style=for-the-badge)](https://github.com/Ferrum3D/Ferrum3D/blob/main/LICENSE)
 
-**Ferrum3D** is a data-oriented, data-driven, and modular 3D game engine with C# support.
+**Ferrum3D** is a data-oriented, data-driven, and modular 3D graphics engine and game framework with C# support.
+It can be used for 2D/3D games and other real-time graphics applications.
 
 ## Getting the sources and building
 If you want to build the engine, run samples and tests you will need:
