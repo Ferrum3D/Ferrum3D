@@ -73,14 +73,14 @@ namespace Ferrum.Samples.Textures
         private static void RunExample()
         {
             using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
-            var instanceDesc = new Instance.Desc("Ferrum3D - Uniforms");
+            var instanceDesc = new Instance.Desc("Ferrum3D - Textures");
             using var instance = new Instance(instanceDesc, GraphicsApi.Vulkan);
             using var adapter = instance.Adapters.First();
             using var device = adapter.CreateDevice();
 
             using var graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
 
-            var windowDesc = new Window.Desc(800, 600, "Ferrum3D - Uniforms");
+            var windowDesc = new Window.Desc(800, 600, "Ferrum3D - Textures");
             using var window = device.CreateWindow(windowDesc);
 
             var swapChainDesc = new SwapChain.Desc(window, graphicsQueue);
