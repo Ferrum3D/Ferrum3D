@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Assets/AssetStorage.h>
+#include <FeCore/Containers/List.h>
 
 namespace FE::Osmium
 {
