@@ -33,7 +33,7 @@ namespace FE
         }
         else
         {
-            FE_LOG_ERROR("Library '{}' was not loaded due to an error", m_FullName);
+            FE_LOG_ERROR("Library '{}{}' was not loaded due to an error", fileName, FE_DLL_EXTENSION);
         }
     }
 
