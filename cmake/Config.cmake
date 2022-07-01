@@ -6,6 +6,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(FE_COMPILER_MSVC ON)
 endif()
 
+set(CMAKE_DEBUG_POSTFIX "")
+
 if (FE_COMPILER_MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
