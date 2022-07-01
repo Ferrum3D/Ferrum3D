@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Osmium.Assets
 {
@@ -16,10 +17,6 @@ namespace Ferrum.Osmium.Assets
 
         public IntPtr DataHandle { get; private set; }
         public Size ImageSize { get; private set; }
-
-        public ImageAsset() : base(IntPtr.Zero)
-        {
-        }
 
         public uint PixelValueAt(int row, int column)
         {

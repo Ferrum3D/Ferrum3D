@@ -5,7 +5,7 @@ namespace Ferrum.Core.Assets
 {
     public abstract class Asset : UnmanagedObject
     {
-        protected Asset(IntPtr handle) : base(handle)
+        protected Asset() : base(IntPtr.Zero)
         {
         }
 
