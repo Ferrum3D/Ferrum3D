@@ -2,6 +2,8 @@ set(SRC
     # FERRUM_SORT_LINES BEGIN
     Images/ImageAssetStorage.cpp
 
+    Meshes/MeshAssetStorage.cpp
+
     Module.cpp
     # FERRUM_SORT_LINES END
 )
