@@ -5,6 +5,7 @@
 #include <OsGPU/Image/ImageFormat.h>
 #include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Resource/BindFlags.h>
+#include <OsGPU/Resource/IResource.h>
 #include <cstdint>
 
 namespace FE::Osmium
@@ -97,7 +98,7 @@ namespace FE::Osmium
     class IImageView;
     class IDeviceMemory;
 
-    class IImage : public IObject
+    class IImage : public IResource
     {
     public:
         FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
