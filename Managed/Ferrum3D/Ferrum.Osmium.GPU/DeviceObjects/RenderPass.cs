@@ -13,7 +13,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IRenderPass_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IRenderPass_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

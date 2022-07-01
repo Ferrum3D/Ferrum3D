@@ -34,10 +34,10 @@ set(SRC
     # FERRUM_SORT_LINES END
 )
 
-add_library(OsmiumBindings SHARED ${SRC})
+add_library(OsGPUBindings SHARED ${SRC})
 
-set_target_properties(OsmiumBindings PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsmiumBindings OsmiumGPU FeCoreBindings)
+set_target_properties(OsGPUBindings PROPERTIES FOLDER "Modules/Osmium")
+target_link_libraries(OsGPUBindings OsGPU FeCoreBindings)
 
-get_property("TARGET_SOURCE_FILES" TARGET OsmiumBindings PROPERTY SOURCES)
+get_property("TARGET_SOURCE_FILES" TARGET OsGPUBindings PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

@@ -44,13 +44,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             UpdateDataNative(Handle, data, offset, size);
         }
 
-        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_AllocateMemory")]
+        [DllImport("OsGPUBindings", EntryPoint = "IBuffer_AllocateMemory")]
         private static extern void AllocateMemoryNative(IntPtr self, int memoryType);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_UpdateData")]
+        [DllImport("OsGPUBindings", EntryPoint = "IBuffer_UpdateData")]
         private static extern void UpdateDataNative(IntPtr self, IntPtr data, ulong offset, ulong size);
 
-        [DllImport("OsmiumBindings", EntryPoint = "IBuffer_Destruct")]
+        [DllImport("OsGPUBindings", EntryPoint = "IBuffer_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         protected override void ReleaseUnmanagedResources()

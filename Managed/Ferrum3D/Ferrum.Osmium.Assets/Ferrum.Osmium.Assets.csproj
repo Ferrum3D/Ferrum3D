@@ -65,14 +65,14 @@
     -->
 
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <Content Include="..\..\..\BuildRelease\Release\OsmiumAssetsBindings.dll">
-            <Link>OsmiumAssetsBindings.dll</Link>
+        <Content Include="..\..\..\BuildRelease\Release\OsAssetsBindings.dll">
+            <Link>OsAssetsBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <Content Include="..\..\..\BuildDebug\Debug\OsmiumAssetsBindings.dll">
-            <Link>OsmiumAssetsBindings.dll</Link>
+        <Content Include="..\..\..\BuildDebug\Debug\OsAssetsBindings.dll">
+            <Link>OsAssetsBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
