@@ -97,7 +97,7 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto before = VKConvert(barrier.StateBefore);
+            auto before = VKConvert(barrier.Image->GetCurrentState());
             auto after  = VKConvert(barrier.StateAfter);
             if (before == after)
             {
@@ -112,7 +112,7 @@ namespace FE::Osmium
             imageMemoryBarrier.image                   = img->Image;
             imageMemoryBarrier.subresourceRange        = VKConvert(barrier.SubresourceRange);
 
-            imageMemoryBarrier.srcAccessMask = GetAccessMask(barrier.StateBefore);
+            imageMemoryBarrier.srcAccessMask = GetAccessMask(barrier.Image->GetCurrentState());
             imageMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
 
             if (after == vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -120,6 +120,8 @@ namespace FE::Osmium
                 imageMemoryBarrier.srcAccessMask |= vk::AccessFlagBits::eHostWrite;
                 imageMemoryBarrier.srcAccessMask |= vk::AccessFlagBits::eTransferWrite;
             }
+
+            barrier.Image->SetCurrentState(barrier.StateAfter);
         }
 
         if (nativeBarriers.empty())

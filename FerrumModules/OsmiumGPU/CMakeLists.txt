@@ -82,6 +82,7 @@ set(SRC
     OsGPU/RenderPass/VKRenderPass.h
 
     OsGPU/Resource/BindFlags.h
+    OsGPU/Resource/IResource.h
     OsGPU/Resource/ResourceState.h
     OsGPU/Resource/ShaderResourceType.h
     OsGPU/Resource/VKResourceState.h

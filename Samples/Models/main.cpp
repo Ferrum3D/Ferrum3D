@@ -98,7 +98,8 @@ void RunExample()
         auto imageDesc = HAL::ImageDesc::Img2D(
             HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::ShaderRead, imageAsset->Width(), imageAsset->Height(),
             HAL::Format::R8G8B8A8_SRGB);
-        textureImage = device->CreateImage(imageDesc);
+        imageDesc.MipSliceCount = 1;
+        textureImage            = device->CreateImage(imageDesc);
         textureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
 
@@ -116,6 +117,9 @@ void RunExample()
         vsConstantBuffer->UpdateData(constantData.RowMajorData());
     }
 
+    auto textureView    = textureImage->CreateView(HAL::ImageAspectFlags::Color);
+    auto textureSampler = device->CreateSampler(HAL::SamplerDesc{});
+
     {
         auto transferComplete = device->CreateFence(HAL::FenceState::Reset);
         auto copyCmdBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
@@ -124,25 +128,20 @@ void RunExample()
         copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
 
         HAL::ResourceTransitionBarrierDesc barrier{};
-        barrier.Image                        = textureImage.GetRaw();
-        barrier.SubresourceRange.AspectFlags = HAL::ImageAspectFlags::Color;
-        barrier.StateBefore                  = HAL::ResourceState::Undefined;
-        barrier.StateAfter                   = HAL::ResourceState::TransferWrite;
+        barrier.Image            = textureImage.GetRaw();
+        barrier.SubresourceRange = textureView->GetDesc().SubresourceRange;
+        barrier.StateAfter       = HAL::ResourceState::TransferWrite;
         copyCmdBuffer->ResourceTransitionBarriers({ barrier });
 
         auto size = textureImage->GetDesc().ImageSize;
         copyCmdBuffer->CopyBufferToImage(textureStaging.GetRaw(), textureImage.GetRaw(), HAL::BufferImageCopyRegion(size));
 
-        barrier.StateBefore = HAL::ResourceState::TransferWrite;
-        barrier.StateAfter  = HAL::ResourceState::ShaderResource;
+        barrier.StateAfter = HAL::ResourceState::ShaderResource;
         copyCmdBuffer->ResourceTransitionBarriers({ barrier });
         copyCmdBuffer->End();
         transferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
         transferComplete->WaitOnCPU();
     }
-
-    auto textureView    = textureImage->CreateView(HAL::ImageAspectFlags::Color);
-    auto textureSampler = device->CreateSampler(HAL::SamplerDesc{});
 
     auto compiler = device->CreateShaderCompiler();
     HAL::ShaderCompilerArgs psArgs{};

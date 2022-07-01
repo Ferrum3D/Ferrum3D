@@ -29,7 +29,6 @@ namespace FE::Osmium
 
         IImage* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
-        ResourceState StateBefore = ResourceState::Undefined;
         ResourceState StateAfter  = ResourceState::Undefined;
     };
 } // namespace FE::Osmium

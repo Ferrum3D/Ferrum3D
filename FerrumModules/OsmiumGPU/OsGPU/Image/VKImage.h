@@ -12,6 +12,11 @@ namespace FE::Osmium
         VKDevice* m_Device;
         Shared<VKDeviceMemory> m_Memory;
 
+        ResourceState m_State;
+
+    protected:
+        void SetCurrentState(ResourceState state) override;
+
     public:
         vk::UniqueImage UniqueImage;
         vk::Image Image;
@@ -21,6 +26,8 @@ namespace FE::Osmium
 
         explicit VKImage(VKDevice& dev);
         VKImage(VKDevice& dev, const ImageDesc& desc);
+
+        [[nodiscard]] ResourceState GetCurrentState() const noexcept override;
 
         const ImageDesc& GetDesc() override;
         Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) override;
