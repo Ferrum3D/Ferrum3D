@@ -33,3 +33,5 @@ After you cloned the repository, run the setup script:
 
 It will set up all projects in all configurations, build them and run the triangle sample.
 To use the engine, you will need to reference the managed assemblies in your project.
+
+![Screenshot 1](images/screen1.png)
