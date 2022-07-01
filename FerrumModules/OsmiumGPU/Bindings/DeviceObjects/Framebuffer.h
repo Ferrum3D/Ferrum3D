@@ -9,10 +9,12 @@ namespace FE
 namespace FE::Osmium
 {
     class IRenderPass;
+    class IImageView;
 
     struct FramebufferDescBinding
     {
         IByteBuffer* RenderTargetViews;
+        IImageView* DepthStencilView;
         IRenderPass* RenderPass;
         UInt32 Width;
         UInt32 Height;

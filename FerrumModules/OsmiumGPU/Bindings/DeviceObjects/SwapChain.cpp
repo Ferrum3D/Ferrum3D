@@ -20,6 +20,12 @@ namespace FE::Osmium
             self->Present();
         }
 
+        FE_DLL_EXPORT IImageView* ISwapChain_GetDSV(ISwapChain* self)
+        {
+            auto result = self->GetDSV();
+            return result.Detach();
+        }
+
         FE_DLL_EXPORT void ISwapChain_GetRTVs(ISwapChain* self, IImageView** renderTargets, Int32* count)
         {
             auto result = self->GetRTVs();

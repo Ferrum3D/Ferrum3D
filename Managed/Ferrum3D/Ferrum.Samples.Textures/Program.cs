@@ -195,7 +195,7 @@ namespace Ferrum.Samples.Textures
                 var desc = new Framebuffer.Desc()
                     .WithRenderPass(renderPass)
                     .WithScissor(scissor)
-                    .WithRenderTargetViews(swapChain.RenderTargetViews[i]);
+                    .WithRenderTargetViews(null, swapChain.RenderTargetViews[i]);
 
                 framebuffers.Add(device.CreateFramebuffer(desc));
                 commandBuffers.Add(device.CreateCommandBuffer(CommandQueueClass.Graphics));
