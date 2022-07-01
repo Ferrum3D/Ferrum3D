@@ -9,6 +9,8 @@ namespace Ferrum.Core.Math
     public static class MathF
     {
         public const float Epsilon = 0.0001f;
+        public const float PI = (float)System.Math.PI;
+        public const float E = (float)System.Math.E;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float x)
