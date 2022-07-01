@@ -15,7 +15,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             Height = (ulong)height;
             Depth = (ulong)depth;
         }
-        
+
         public Size(ulong width, ulong height = 1, ulong depth = 1)
         {
             Width = width;

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.GPU.Common;
@@ -87,7 +86,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 MemoryBarrierNative(handle);
             }
 
-            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer, params ClearValueDesc[] clearValues)
+            public void BeginRenderPass(RenderPass renderPass, Framebuffer framebuffer,
+                params ClearValueDesc[] clearValues)
             {
                 unsafe
                 {

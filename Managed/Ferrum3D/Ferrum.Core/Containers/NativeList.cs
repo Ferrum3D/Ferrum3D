@@ -11,11 +11,9 @@ namespace Ferrum.Core.Containers
     {
         public int Count => (int)LongCount;
 
-        public long LongCount { get; private set; } = 0;
-
         public bool IsReadOnly => false;
 
-        private static readonly int elementSize = Marshal.SizeOf<T>();
+        public long LongCount { get; private set; }
 
         public int Capacity
         {
@@ -64,6 +62,8 @@ namespace Ferrum.Core.Containers
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => SetElementAt(index, ref value);
         }
+
+        private static readonly int elementSize = Marshal.SizeOf<T>();
 
         public NativeList() : base(IntPtr.Zero)
         {

@@ -40,7 +40,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             {
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
-                DescriptorTables =  NativeArray<IntPtr>.FromObjectCollection(desc.DescriptorTables)?.Detach() ?? IntPtr.Zero;
+                DescriptorTables = NativeArray<IntPtr>.FromObjectCollection(desc.DescriptorTables)?.Detach() ??
+                                   IntPtr.Zero;
                 Shaders = NativeArray<IntPtr>.FromObjectCollection(desc.Shaders)?.Detach() ?? IntPtr.Zero;
                 Rasterization = new RasterizationState.Native(desc.Rasterization);
                 DepthStencil = new DepthStencilState.Native(desc.DepthStencil);

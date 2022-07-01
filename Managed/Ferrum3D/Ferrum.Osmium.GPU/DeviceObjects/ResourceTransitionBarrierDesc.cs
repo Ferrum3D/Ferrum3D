@@ -9,7 +9,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public readonly ImageSubresourceRange SubresourceRange;
         public readonly ResourceState StateAfter;
 
-        public ResourceTransitionBarrierDesc(Image image, ImageSubresourceRange subresourceRange, ResourceState stateAfter)
+        public ResourceTransitionBarrierDesc(Image image, ImageSubresourceRange subresourceRange,
+            ResourceState stateAfter)
         {
             Image = image;
             SubresourceRange = subresourceRange;

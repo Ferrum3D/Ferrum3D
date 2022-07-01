@@ -12,13 +12,13 @@ struct VSOutput
 
 cbuffer Settings : register(b2, space0)
 {
-    float3 g_Offset;
-};
+float3 g_Offset;
+}
 
 VSOutput main(VSInput input)
 {
     VSOutput output;
-    output.pos = float4(input.pos + g_Offset, 1.0f);
+    output.pos      = float4(input.pos + g_Offset, 1.0f);
     output.texCoord = input.texCoord;
     return output;
 }

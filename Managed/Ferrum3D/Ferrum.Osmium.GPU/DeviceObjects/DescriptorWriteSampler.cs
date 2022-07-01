@@ -15,7 +15,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             Binding = binding;
             ArrayIndex = arrayIndex;
         }
-        
+
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct Native
         {

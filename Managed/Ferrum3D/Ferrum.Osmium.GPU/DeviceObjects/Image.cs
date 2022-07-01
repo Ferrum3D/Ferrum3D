@@ -6,14 +6,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Image : UnmanagedObject
     {
-        private ImageView defaultView;
-        private ImageView depthStencilView;
-
         public ImageView DefaultView =>
             defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Color)));
 
         public ImageView DepthStencilView =>
             depthStencilView ?? (depthStencilView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth)));
+
+        private ImageView defaultView;
+        private ImageView depthStencilView;
 
         public Image(IntPtr handle) : base(handle)
         {
