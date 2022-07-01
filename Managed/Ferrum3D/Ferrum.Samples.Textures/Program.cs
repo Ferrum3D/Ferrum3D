@@ -112,11 +112,9 @@ namespace Ferrum.Samples.Textures
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.Undefined,
-                        ResourceState.TransferWrite);
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.TransferWrite);
                     builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.TransferWrite,
-                        ResourceState.ShaderResource);
+                    builder.ResourceTransitionBarrier(textureImage, ResourceState.ShaderResource);
                 }
 
                 transferQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);

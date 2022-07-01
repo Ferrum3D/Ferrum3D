@@ -176,9 +176,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 }
             }
 
-            public void ResourceTransitionBarrier(Image image, ResourceState stateBefore, ResourceState stateAfter)
+            public void ResourceTransitionBarrier(Image image, ResourceState stateAfter)
             {
-                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, stateBefore, stateAfter));
+                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, stateAfter));
             }
 
             public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)
