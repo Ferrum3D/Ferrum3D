@@ -22,6 +22,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public IReadOnlyList<ImageView> RenderTargetViews => renderTargetViews;
 
         private readonly ImageView[] renderTargetViews;
+        public ImageView DepthStencilView { get; }
 
         private DescNative NativeDesc
         {
@@ -38,6 +39,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             var rtv = new IntPtr[rtvCount];
             GetRTVsNative(Handle, rtv, out _);
             renderTargetViews = rtv.Select(x => new ImageView(x)).ToArray();
+            DepthStencilView = new ImageView(GetDSVNative(Handle));
         }
 
         public void Present()
@@ -47,6 +49,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetRTVs")]
         private static extern void GetRTVsNative(IntPtr self, IntPtr[] renderTargets, out uint count);
+
+        [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_GetDSV")]
+        private static extern IntPtr GetDSVNative(IntPtr self);
 
         [DllImport("OsGPUBindings", EntryPoint = "ISwapChain_Present")]
         private static extern void PresentNative(IntPtr self);
@@ -70,6 +75,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 renderTargetViews[i].Dispose();
             }
 
+            DepthStencilView?.Dispose();
             DestructNative(Handle);
         }
 
