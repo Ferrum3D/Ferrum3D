@@ -10,7 +10,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public readonly ImageSubresource ImageSubresource;
         public readonly ulong BufferOffset;
 
-        public BufferImageCopyRegion(Offset imageOffset, Size imageSize, ImageSubresource imageSubresource, ulong bufferOffset)
+        public BufferImageCopyRegion(Offset imageOffset, Size imageSize, ImageSubresource imageSubresource,
+            ulong bufferOffset)
         {
             ImageOffset = imageOffset;
             ImageSize = imageSize;

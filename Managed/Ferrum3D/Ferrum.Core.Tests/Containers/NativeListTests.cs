@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 using NUnit.Framework;

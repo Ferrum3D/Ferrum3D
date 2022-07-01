@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Modules
 {
-    public class DynamicLibrary
+    public static class DynamicLibrary
     {
         public static void UnloadModule(string moduleName)
         {

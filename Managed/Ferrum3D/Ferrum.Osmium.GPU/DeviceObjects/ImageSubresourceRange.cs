@@ -5,15 +5,15 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct ImageSubresourceRange
     {
+        public static ImageSubresourceRange Default =
+            new ImageSubresourceRange(0, 0, 1, 1, ImageAspectFlags.Color);
+
         public readonly ushort MinMipSlice;
         public readonly ushort MinArraySlice;
         public readonly ushort MipSliceCount;
         public readonly ushort ArraySliceCount;
 
         public readonly ImageAspectFlags AspectFlags;
-
-        public static ImageSubresourceRange Default =
-            new ImageSubresourceRange(0, 0, 1, 1, ImageAspectFlags.Color);
 
         public ImageSubresourceRange(ushort minMipSlice, ushort minArraySlice, ushort mipSliceCount,
             ushort arraySliceCount, ImageAspectFlags aspectFlags)

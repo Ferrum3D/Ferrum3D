@@ -6,12 +6,6 @@ namespace Ferrum.Osmium.Assets
 {
     public class OsmiumAssetsModule : IDisposable
     {
-        [DllImport("OsAssetsBindings", EntryPoint = "AttachEnvironment")]
-        private static extern void AttachEnvironment(IntPtr environment);
-
-        [DllImport("OsAssetsBindings", EntryPoint = "DetachEnvironment")]
-        private static extern void DetachEnvironment();
-
         public OsmiumAssetsModule(IntPtr environment)
         {
             AttachEnvironment(environment);
@@ -22,5 +16,11 @@ namespace Ferrum.Osmium.Assets
             DetachEnvironment();
             DynamicLibrary.UnloadModule("OsAssetsBindings.dll");
         }
+
+        [DllImport("OsAssetsBindings", EntryPoint = "AttachEnvironment")]
+        private static extern void AttachEnvironment(IntPtr environment);
+
+        [DllImport("OsAssetsBindings", EntryPoint = "DetachEnvironment")]
+        private static extern void DetachEnvironment();
     }
 }
