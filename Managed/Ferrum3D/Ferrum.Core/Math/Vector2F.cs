@@ -5,14 +5,13 @@ using System.Runtime.InteropServices;
 namespace Ferrum.Core.Math
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector3F : IEquatable<Vector3F>
+    public struct Vector2F : IEquatable<Vector2F>
     {
-        public static Vector3F Zero => new(0);
-        public static Vector3F One => new(1);
+        public static Vector2F Zero => new(0);
+        public static Vector2F One => new(1);
 
-        public static Vector3F UnitX => new(1, 0, 0);
-        public static Vector3F UnitY => new(0, 1, 0);
-        public static Vector3F UnitZ => new(0, 0, 1);
+        public static Vector2F UnitX => new(1, 0);
+        public static Vector2F UnitY => new(0, 1);
 
         public float LengthSq
         {
@@ -20,7 +19,7 @@ namespace Ferrum.Core.Math
             get => Dot(this, this);
         }
 
-        public Vector3F Normalized
+        public Vector2F Normalized
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -33,7 +32,6 @@ namespace Ferrum.Core.Math
 
         public float X;
         public float Y;
-        public float Z;
 
         public float this[int index]
         {
@@ -46,8 +44,6 @@ namespace Ferrum.Core.Math
                         return X;
                     case 1:
                         return Y;
-                    case 2:
-                        return Z;
                     default:
                         throw new IndexOutOfRangeException(nameof(index));
                 }
@@ -62,9 +58,6 @@ namespace Ferrum.Core.Math
                         break;
                     case 1:
                         Y = value;
-                        break;
-                    case 2:
-                        Z = value;
                         break;
                     default:
                         throw new IndexOutOfRangeException(nameof(index));
@@ -81,94 +74,92 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F(float value) : this(value, value, value)
+        public Vector2F(float value) : this(value, value)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F(float x, float y, float z)
+        public Vector2F(float x, float y)
         {
             X = x;
             Y = y;
-            Z = z;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Dot(Vector3F other)
+        public float Dot(Vector2F other)
         {
             return Dot(this, other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Dot(Vector3F lhs, Vector3F rhs)
+        public static float Dot(Vector2F lhs, Vector2F rhs)
         {
-            return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z;
+            return lhs.X * rhs.X + lhs.Y * rhs.Y;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F LerpClamped(Vector3F dst, float f)
+        public Vector2F LerpClamped(Vector2F dst, float f)
         {
             return LerpClamped(this, dst, f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3F Lerp(Vector3F dst, float f)
+        public Vector2F Lerp(Vector2F dst, float f)
         {
             return Lerp(this, dst, f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F LerpClamped(Vector3F src, Vector3F dst, float f)
+        public static Vector2F LerpClamped(Vector2F src, Vector2F dst, float f)
         {
             return Lerp(src, dst, MathF.Saturate(f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F Lerp(Vector3F src, Vector3F dst, float f)
+        public static Vector2F Lerp(Vector2F src, Vector2F dst, float f)
         {
             return (dst - src) * f + src;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F MulEach(Vector3F lhs, Vector3F rhs)
+        public static Vector2F MulEach(Vector2F lhs, Vector2F rhs)
         {
-            return new Vector3F(lhs.X * rhs.X, lhs.Y * rhs.Y, lhs.Z * rhs.Z);
+            return new Vector2F(lhs.X * rhs.X, lhs.Y * rhs.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AreApproxEqual(Vector3F lhs, Vector3F rhs, float epsilon = MathF.Epsilon)
+        public static bool AreApproxEqual(Vector2F lhs, Vector2F rhs, float epsilon = MathF.Epsilon)
         {
             return MathF.AreApproxEqual(lhs.X, rhs.X)
-                   && MathF.AreApproxEqual(lhs.Y, rhs.Y)
-                   && MathF.AreApproxEqual(lhs.Z, rhs.Z);
+                   && MathF.AreApproxEqual(lhs.Y, rhs.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F operator -(Vector3F vector)
+        public static Vector2F operator -(Vector2F vector)
         {
-            return new Vector3F(-vector.X, -vector.Y, -vector.Z);
+            return new Vector2F(-vector.X, -vector.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F operator +(Vector3F lhs, Vector3F rhs)
+        public static Vector2F operator +(Vector2F lhs, Vector2F rhs)
         {
-            return new Vector3F(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
+            return new Vector2F(lhs.X + rhs.X, lhs.Y + rhs.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F operator -(Vector3F lhs, Vector3F rhs)
+        public static Vector2F operator -(Vector2F lhs, Vector2F rhs)
         {
-            return new Vector3F(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
+            return new Vector2F(lhs.X - rhs.X, lhs.Y - rhs.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F operator *(Vector3F vector, float f)
+        public static Vector2F operator *(Vector2F vector, float f)
         {
-            return new Vector3F(vector.X * f, vector.Y * f, vector.Z * f);
+            return new Vector2F(vector.X * f, vector.Y * f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3F operator /(Vector3F vector, float f)
+        public static Vector2F operator /(Vector2F vector, float f)
         {
             return vector * (1f / f);
         }
@@ -176,11 +167,11 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
-            return $"({X}; {Y}; {Z})";
+            return $"({X}; {Y})";
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(Vector3F other)
+        public bool Equals(Vector2F other)
         {
             return AreApproxEqual(this, other);
         }
@@ -188,7 +179,7 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            return obj is Vector3F other && Equals(other);
+            return obj is Vector2F other && Equals(other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -196,21 +187,18 @@ namespace Ferrum.Core.Math
         {
             unchecked
             {
-                var hashCode = X.GetHashCode();
-                hashCode = (hashCode * 397) ^ Y.GetHashCode();
-                hashCode = (hashCode * 397) ^ Z.GetHashCode();
-                return hashCode;
+                return (X.GetHashCode() * 397) ^ Y.GetHashCode();
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(Vector3F left, Vector3F right)
+        public static bool operator ==(Vector2F left, Vector2F right)
         {
             return left.Equals(right);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(Vector3F left, Vector3F right)
+        public static bool operator !=(Vector2F left, Vector2F right)
         {
             return !left.Equals(right);
         }

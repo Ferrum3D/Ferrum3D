@@ -322,7 +322,6 @@ namespace FE
 
     bool Vector4F::IsApproxEqualTo(const Vector4F& other, Float32 epsilon) const noexcept
     {
-        // TODO: move epsilon value to some <MathUtils.h>
         return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xffff);
     }
 

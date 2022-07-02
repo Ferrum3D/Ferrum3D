@@ -30,6 +30,9 @@ namespace FE
 
                 FE_FINLINE Float32x4(Float32 value);
 
+                //! \brief Set Data = { x, y, 0, 0 }
+                FE_FINLINE Float32x4(Float32 x, Float32 y);
+
                 //! \brief Set Data = { x, y, z, 0 }
                 FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z);
 
@@ -118,6 +121,11 @@ namespace FE
 
             FE_FINLINE Float32x4::Float32x4(Float32 value)
                 : Data(_mm_set_ps1(value))
+            {
+            }
+
+            FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y)
+                : Data(_mm_set_ps(0, 0, y, x))
             {
             }
 

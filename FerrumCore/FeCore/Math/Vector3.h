@@ -9,7 +9,7 @@
 namespace FE
 {
     //! \brief 3-dimensional vector.
-    class Vector3F
+    class Vector3F final
     {
         using TVec = SIMD::SSE::Float32x4;
 
@@ -303,7 +303,6 @@ namespace FE
 
     FE_FINLINE bool Vector3F::IsApproxEqualTo(const Vector3F& other, Float32 epsilon) const noexcept
     {
-        // TODO: move epsilon value to some <MathUtils.h>
         return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xfff);
     }
 
