@@ -91,6 +91,15 @@ namespace FE::Osmium
         }
     };
 
+    struct ImageBlitRegion
+    {
+        FE_STRUCT_RTTI(ImageBlitRegion, "2C89E05B-1BC1-4ACE-943C-6751EA5A4B7E");
+        ImageSubresource Source;
+        ImageSubresource Dest;
+        Offset SourceBounds[2];
+        Offset DestBounds[2];
+    };
+
     class IDescriptorTable;
     class IGraphicsPipeline;
     class IRenderPass;
@@ -125,6 +134,8 @@ namespace FE::Osmium
 
         virtual void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)           = 0;
         virtual void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) = 0;
+
+        virtual void BlitImage(IImage* source, IImage* dest, const ImageBlitRegion& region) = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
         virtual void DrawIndexed(
