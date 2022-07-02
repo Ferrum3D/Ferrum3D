@@ -23,5 +23,16 @@ namespace FE::Osmium
         ImageAspectFlags AspectFlags = ImageAspectFlags::All;
 
         FE_STRUCT_RTTI(ImageSubresourceRange, "93D87B09-78B5-40C9-8104-F06699FA6D10");
+
+        inline ImageSubresourceRange() = default;
+
+        inline ImageSubresourceRange(const ImageSubresource& subresource) // NOLINT(google-explicit-constructor)
+        {
+            AspectFlags     = static_cast<ImageAspectFlags>(1 << static_cast<UInt32>(subresource.Aspect));
+            MinMipSlice     = subresource.MipSlice;
+            MinArraySlice   = subresource.ArraySlice;
+            MipSliceCount   = 1;
+            ArraySliceCount = 1;
+        }
     };
 } // namespace FE::Osmium

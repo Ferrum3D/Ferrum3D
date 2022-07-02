@@ -3,9 +3,10 @@
 #include <OsGPU/Common/BaseTypes.h>
 #include <OsGPU/Image/ImageEnums.h>
 #include <OsGPU/Image/ImageFormat.h>
+#include <OsGPU/Image/ImageSubresource.h>
 #include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Resource/BindFlags.h>
-#include <OsGPU/Resource/IResource.h>
+#include <OsGPU/Resource/ResourceState.h>
 #include <cstdint>
 
 namespace FE::Osmium
@@ -98,7 +99,7 @@ namespace FE::Osmium
     class IImageView;
     class IDeviceMemory;
 
-    class IImage : public IResource
+    class IImage : public IObject
     {
     public:
         FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
@@ -110,5 +111,9 @@ namespace FE::Osmium
 
         virtual void AllocateMemory(MemoryType type)                                = 0;
         virtual void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) = 0;
+
+        virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state)         = 0;
+        [[nodiscard]] virtual ResourceState GetState(const ImageSubresourceRange& subresourceRange) const = 0;
+        [[nodiscard]] virtual ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const            = 0;
     };
 } // namespace FE::Osmium
