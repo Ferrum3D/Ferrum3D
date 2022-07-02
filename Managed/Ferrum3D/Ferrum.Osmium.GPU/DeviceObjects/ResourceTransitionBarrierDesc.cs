@@ -17,10 +17,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             StateAfter = stateAfter;
         }
 
-        public ResourceTransitionBarrierDesc(Image image, ResourceState stateAfter)
+        public ResourceTransitionBarrierDesc(Image image, ResourceState stateAfter, int mipSlice, int mipSliceCount)
         {
             Image = image;
-            SubresourceRange = ImageSubresourceRange.Default;
+            SubresourceRange = new ImageSubresourceRange(mipSlice, mipSliceCount, 0, 1, ImageAspectFlags.Color);
             StateAfter = stateAfter;
         }
 

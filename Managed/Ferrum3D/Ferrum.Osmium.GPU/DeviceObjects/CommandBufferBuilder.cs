@@ -50,6 +50,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private static extern void CopyBufferToImageNative(IntPtr self, IntPtr source, IntPtr dest,
             ref BufferImageCopyRegion region);
 
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BlitImage")]
+        private static extern void BlitImageNative(IntPtr self, IntPtr source, IntPtr dest,
+            ref ImageBlitRegion region);
+
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_Draw")]
         private static extern void DrawNative(IntPtr self, uint vertexCount, uint instanceCount, uint firstVertex,
             uint firstInstance);
@@ -150,6 +154,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 CopyBufferToImage(source, dest, new BufferImageCopyRegion(size));
             }
 
+            public void BlitImage(Image source, Image dest, ImageBlitRegion region)
+            {
+                BlitImageNative(handle, source.Handle, dest.Handle, ref region);
+            }
+
             public void ResourceTransitionBarriers(ResourceTransitionBarrierDesc[] barriers)
             {
                 var nativeBarriers = new ResourceTransitionBarrierDesc.Native[barriers.Length];
@@ -176,9 +185,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 }
             }
 
-            public void ResourceTransitionBarrier(Image image, ResourceState stateAfter)
+            public void TransitionImageLayout(Image image, ResourceState stateAfter,
+                ImageAspectFlags aspectFlags = ImageAspectFlags.Color)
             {
-                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, stateAfter));
+                var subresourceRange =
+                    new ImageSubresourceRange(0, image.MipSliceCount, 0, image.ArraySize, aspectFlags);
+                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, subresourceRange, stateAfter));
+            }
+
+            public void TransitionImageLayout(Image image, ResourceState stateAfter, int mipSlice,
+                int mipSliceCount = 1)
+            {
+                ResourceTransitionBarrier(
+                    new ResourceTransitionBarrierDesc(image, stateAfter, mipSlice, mipSliceCount));
             }
 
             public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)

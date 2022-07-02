@@ -87,6 +87,11 @@ namespace FE::Osmium
             self->CopyBufferToImage(source, dest, *region);
         }
 
+        FE_DLL_EXPORT void ICommandBuffer_BlitImage(ICommandBuffer* self, IImage* source, IImage* dest, ImageBlitRegion* region)
+        {
+            self->BlitImage(source, dest, *region);
+        }
+
         FE_DLL_EXPORT void ICommandBuffer_Draw(
             ICommandBuffer* self, UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
         {
