@@ -123,7 +123,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 BindIndexBufferNative(handle, indexBuffer.Handle);
             }
 
-            public void BindDescriptorTables(DescriptorTable[] descriptorTables, GraphicsPipeline pipeline)
+            public void BindDescriptorTables(GraphicsPipeline pipeline, params DescriptorTable[] descriptorTables)
             {
                 var handles = new IntPtr[descriptorTables.Length];
                 for (var i = 0; i < descriptorTables.Length; i++)

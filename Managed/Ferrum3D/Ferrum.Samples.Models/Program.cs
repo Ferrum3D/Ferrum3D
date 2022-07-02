@@ -170,7 +170,7 @@ namespace Ferrum.Samples.Models
 
                 using var builder = commandBuffers[i].Begin();
                 builder.BindGraphicsPipeline(pipeline);
-                builder.BindDescriptorTables(new[] { descriptorTable }, pipeline);
+                builder.BindDescriptorTables(pipeline, descriptorTable);
                 builder.SetViewport(viewport);
                 builder.SetScissor(scissor);
                 builder.BindVertexBuffer(0, vertexBuffer);
