@@ -63,6 +63,7 @@ set(SRC
     FeCore/Math/Half.h
     FeCore/Math/MathUtils.h
     FeCore/Math/Matrix4x4F.h
+    FeCore/Math/Vector2.h
     FeCore/Math/Vector3.h
     FeCore/Math/Vector4.h
     FeCore/Math/VectorMath.h
@@ -128,7 +129,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-    FeCore/Math/Vector2.h)
+)
 
 add_library(FeCore STATIC ${SRC})
 
