@@ -105,7 +105,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public static Desc Img2DArray(ImageBindFlags bindFlags, int width, int height, ushort arraySize,
                 Format format, bool useMipMaps = false)
             {
-                var mipSlices = 0u;
+                var mipSlices = 1u;
                 if (useMipMaps)
                 {
                     mipSlices = (uint)MathF.Floor(MathF.Log(Math.Max(width, height), 2)) + 1;
