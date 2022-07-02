@@ -13,24 +13,9 @@ using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Samples.Uniforms
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct Vertex
-    {
-        public readonly float X;
-        public readonly float Y;
-        public readonly float Z;
-
-        public Vertex(float x, float y, float z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-    }
-
     internal static class Program
     {
-        private static readonly Vertex[] vertexData =
+        private static readonly Vector3F[] vertexData =
         {
             new(-0.5f, -0.5f, 0.0f),
             new(+0.5f, +0.5f, 0.0f),
@@ -71,7 +56,7 @@ namespace Ferrum.Samples.Uniforms
             using var psConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, psConstantData);
             using var vsConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, vsConstantData);
 
-            var vertexSize = (ulong)(vertexData.Length * Marshal.SizeOf<Vertex>());
+            var vertexSize = (ulong)(vertexData.Length * Marshal.SizeOf<Vector3F>());
             var indexSize = (ulong)(indexData.Length * sizeof(uint));
 
             using var vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, vertexSize);

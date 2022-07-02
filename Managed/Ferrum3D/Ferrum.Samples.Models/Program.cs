@@ -19,8 +19,6 @@ namespace Ferrum.Samples.Models
 {
     internal static class Program
     {
-        private static readonly Matrix4x4F[] constantData = { new() };
-
         private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
             where T : unmanaged
         {
@@ -50,14 +48,15 @@ namespace Ferrum.Samples.Models
             using var swapChain = device.CreateSwapChain(swapChainDesc);
 
             var aspectRatio = swapChain.ImageWidth / (float)swapChain.ImageHeight;
-            constantData[0] = Matrix4x4F.Identity;
-            constantData[0] *= Matrix4x4F.CreateProjection(MathF.PI * 0.5f, aspectRatio, 0.1f, 10.0f);
-            constantData[0] *= Matrix4x4F.CreateRotationY(MathF.PI);
-            constantData[0] *= Matrix4x4F.CreateRotationX(-0.5f);
-            constantData[0] *= Matrix4x4F.CreateTranslation(new Vector3F(0.0f, 0.8f, -1.5f) * 2);
-            constantData[0] *= Matrix4x4F.CreateRotationY(MathF.PI * -1.3f);
+            var constantData = Matrix4x4F.Identity;
+            constantData *= Matrix4x4F.CreateProjection(MathF.PI * 0.5f, aspectRatio, 0.1f, 10.0f);
+            constantData *= Matrix4x4F.CreateRotationY(MathF.PI);
+            constantData *= Matrix4x4F.CreateRotationX(-0.5f);
+            constantData *= Matrix4x4F.CreateTranslation(new Vector3F(0.0f, 0.8f, -1.5f) * 2);
+            constantData *= Matrix4x4F.CreateRotationY(MathF.PI * -1.3f);
 
-            using var constantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, constantData);
+            using var constantBuffer =
+                CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, new[] { constantData });
 
             using var vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, meshAsset.VertexSize);
             vertexBuffer.AllocateMemory(MemoryType.DeviceLocal);

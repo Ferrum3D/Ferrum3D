@@ -16,22 +16,13 @@ namespace Ferrum.Samples.Triangle
     [StructLayout(LayoutKind.Sequential)]
     internal readonly struct Vertex
     {
-        public readonly float X;
-        public readonly float Y;
-        public readonly float Z;
+        public readonly Vector3F Position;
+        public readonly Vector3F Color;
 
-        public readonly float R;
-        public readonly float G;
-        public readonly float B;
-
-        public Vertex(float x, float y, float z, float r, float g, float b)
+        public Vertex(float x, float y, float z, Color color)
         {
-            X = x;
-            Y = y;
-            Z = z;
-            R = r;
-            G = g;
-            B = b;
+            Position = new Vector3F(x, y, z);
+            Color = color.GetVector3();
         }
     }
 
@@ -39,9 +30,9 @@ namespace Ferrum.Samples.Triangle
     {
         private static readonly Vertex[] vertexData =
         {
-            new(+0.0f, -0.5f, 0f, 1, 0, 0),
-            new(+0.5f, +0.5f, 0f, 0, 1, 0),
-            new(-0.5f, +0.5f, 0f, 0, 0, 1)
+            new(+0.0f, -0.5f, 0f, Colors.Red),
+            new(+0.5f, +0.5f, 0f, Colors.Green),
+            new(-0.5f, +0.5f, 0f, Colors.Blue)
         };
 
         private static void RunExample()
