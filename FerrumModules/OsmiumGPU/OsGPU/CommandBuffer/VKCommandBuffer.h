@@ -36,6 +36,8 @@ namespace FE::Osmium
         void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region) override;
         void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) override;
 
+        void BlitImage(IImage* source, IImage* dest, const ImageBlitRegion& region) override;
+
         void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) override;
         void DrawIndexed(
             UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) override;

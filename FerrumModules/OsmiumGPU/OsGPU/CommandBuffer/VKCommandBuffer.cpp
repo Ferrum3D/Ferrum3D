@@ -245,4 +245,36 @@ namespace FE::Osmium
 
         m_CommandBuffer->copyBufferToImage(nativeSrc, nativeDst, vk::ImageLayout::eTransferDstOptimal, { copy });
     }
+
+    void VKCommandBuffer::BlitImage(IImage* source, IImage* dest, const ImageBlitRegion& region)
+    {
+        auto nativeSrc = fe_assert_cast<VKImage*>(source)->Image;
+        auto nativeDst = fe_assert_cast<VKImage*>(dest)->Image;
+
+        auto srcSubresource = VKConvert(region.Source);
+        auto dstSubresource = VKConvert(region.Dest);
+
+        vk::ImageBlit nativeBlit{};
+        // SRC
+        nativeBlit.srcSubresource.aspectMask     = srcSubresource.aspectMask;
+        nativeBlit.srcSubresource.baseArrayLayer = srcSubresource.arrayLayer;
+        nativeBlit.srcSubresource.layerCount     = 1;
+        nativeBlit.srcSubresource.mipLevel       = srcSubresource.mipLevel;
+
+        nativeBlit.srcOffsets[0] = VKConvert(region.SourceBounds[0]);
+        nativeBlit.srcOffsets[1] = VKConvert(region.SourceBounds[1]);
+
+        // DEST
+        nativeBlit.dstSubresource.aspectMask     = dstSubresource.aspectMask;
+        nativeBlit.dstSubresource.baseArrayLayer = dstSubresource.arrayLayer;
+        nativeBlit.dstSubresource.layerCount     = 1;
+        nativeBlit.dstSubresource.mipLevel       = dstSubresource.mipLevel;
+
+        nativeBlit.dstOffsets[0] = VKConvert(region.DestBounds[0]);
+        nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);
+
+        m_CommandBuffer->blitImage(
+            nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst, VKConvert(dest->GetState(region.Dest)), 1,
+            &nativeBlit, vk::Filter::eLinear);
+    }
 } // namespace FE::Osmium
