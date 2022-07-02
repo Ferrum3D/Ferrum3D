@@ -97,21 +97,17 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             }
 
             public static Desc Img2D(ImageBindFlags bindFlags, int width, int height, Format format,
-                bool useMipMaps = false)
+                bool useMipMaps = false, uint sampleCount = 1)
             {
-                return Img2DArray(bindFlags, width, height, 1, format, useMipMaps);
+                var mips = useMipMaps ? (uint)MathF.Floor(MathF.Log(Math.Max(width, height), 2)) + 1 : 1;
+                return new Desc(new Size(width, height), format, ImageDim.Image2D, bindFlags, mips, sampleCount, 1);
             }
 
             public static Desc Img2DArray(ImageBindFlags bindFlags, int width, int height, ushort arraySize,
                 Format format, bool useMipMaps = false)
             {
-                var mipSlices = 1u;
-                if (useMipMaps)
-                {
-                    mipSlices = (uint)MathF.Floor(MathF.Log(Math.Max(width, height), 2)) + 1;
-                }
-
-                return new Desc(new Size(width, height), format, ImageDim.Image2D, bindFlags, mipSlices, 1, arraySize);
+                var mips = useMipMaps ? (uint)MathF.Floor(MathF.Log(Math.Max(width, height), 2)) + 1 : 1;
+                return new Desc(new Size(width, height), format, ImageDim.Image2D, bindFlags, mips, 1, arraySize);
             }
 
             public static Desc ImgCubemap(ImageBindFlags bindFlags, int width, Format format)
