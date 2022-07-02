@@ -39,6 +39,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             AllocateMemoryNative(Handle, (int)memoryType);
         }
 
+        public ImageBounds GetMipSliceBounds(int mipSlice)
+        {
+            return new ImageBounds(Offset.Zero, new Offset(Width >> mipSlice, Height >> mipSlice, 1));
+        }
+
         [DllImport("OsGPUBindings", EntryPoint = "IImage_CreateView")]
         private static extern IntPtr CreateViewNative(IntPtr self, ImageAspectFlags aspectFlags);
 
