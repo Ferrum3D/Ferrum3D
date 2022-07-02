@@ -274,7 +274,7 @@ namespace FE::Osmium
         nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);
 
         m_CommandBuffer->blitImage(
-            nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst, VKConvert(dest->GetState(region.Dest)), 1,
-            &nativeBlit, vk::Filter::eLinear);
+            nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst, VKConvert(dest->GetState(region.Dest)),
+            { nativeBlit }, vk::Filter::eLinear);
     }
 } // namespace FE::Osmium
