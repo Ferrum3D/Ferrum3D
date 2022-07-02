@@ -19,7 +19,7 @@ namespace FE
         virtual UInt32 AddStrongRef() = 0;
 
         //! \brief Remove a strong reference from object's reference counter.
-        //! 
+        //!
         //! If reference counter reaches zero the object will commit suicide by deallocating
         //! it's own memory and calling it's own destructor.
         //!
@@ -61,7 +61,12 @@ namespace FE
     public:
         FE_CLASS_RTTI(Object, "97E22B50-3B0D-4B70-A1DF-6665F6EF72A3");
 
+        Object() = default;
+
         virtual ~Object() = default;
+
+        Object(const Object&) = delete;
+        Object(Object&&)      = delete;
 
         inline UInt32 AddStrongRef() override
         {
