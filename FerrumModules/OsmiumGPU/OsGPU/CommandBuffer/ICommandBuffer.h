@@ -93,11 +93,12 @@ namespace FE::Osmium
 
     struct ImageBlitRegion
     {
-        FE_STRUCT_RTTI(ImageBlitRegion, "2C89E05B-1BC1-4ACE-943C-6751EA5A4B7E");
         ImageSubresource Source;
         ImageSubresource Dest;
         Offset SourceBounds[2];
         Offset DestBounds[2];
+
+        FE_STRUCT_RTTI(ImageBlitRegion, "2C89E05B-1BC1-4ACE-943C-6751EA5A4B7E");
     };
 
     class IDescriptorTable;

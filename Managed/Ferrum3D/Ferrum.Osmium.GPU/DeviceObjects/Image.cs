@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
@@ -12,11 +13,25 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public ImageView DepthStencilView =>
             depthStencilView ?? (depthStencilView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth)));
 
+        public long Width => (long)desc.ImageSize.Width;
+        public long Height => (long)desc.ImageSize.Height;
+        public long Depth => (long)desc.ImageSize.Depth;
+        public Size ImageSize => desc.ImageSize;
+
+        public Format ImageFormat => desc.ImageFormat;
+        public ImageDim Dimension => desc.Dimension;
+
+        public int MipSliceCount => (int)desc.MipSliceCount;
+        public int SampleCount => (int)desc.SampleCount;
+        public ushort ArraySize => desc.ArraySize;
+
         private ImageView defaultView;
         private ImageView depthStencilView;
+        private readonly Desc desc;
 
-        internal Image(IntPtr handle) : base(handle)
+        internal Image(IntPtr handle, Desc desc) : base(handle)
         {
+            this.desc = desc;
         }
 
         public void AllocateMemory(MemoryType memoryType)
@@ -50,18 +65,18 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             public readonly ImageBindFlags BindFlags;
 
-            public readonly uint MipLevelCount;
+            public readonly uint MipSliceCount;
             public readonly uint SampleCount;
             public readonly ushort ArraySize;
 
             public Desc(Size imageSize, Format imageFormat, ImageDim dimension, ImageBindFlags bindFlags,
-                uint mipLevelCount, uint sampleCount, ushort arraySize)
+                uint mipSliceCount, uint sampleCount, ushort arraySize)
             {
                 ImageSize = imageSize;
                 ImageFormat = imageFormat;
                 Dimension = dimension;
                 BindFlags = bindFlags;
-                MipLevelCount = mipLevelCount;
+                MipSliceCount = mipSliceCount;
                 SampleCount = sampleCount;
                 ArraySize = arraySize;
             }
@@ -76,15 +91,22 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return new Desc(new Size(width), format, ImageDim.Image1D, bindFlags, 1, 1, arraySize);
             }
 
-            public static Desc Img2D(ImageBindFlags bindFlags, int width, int height, Format format)
+            public static Desc Img2D(ImageBindFlags bindFlags, int width, int height, Format format,
+                bool useMipMaps = false)
             {
-                return Img2DArray(bindFlags, width, height, 1, format);
+                return Img2DArray(bindFlags, width, height, 1, format, useMipMaps);
             }
 
             public static Desc Img2DArray(ImageBindFlags bindFlags, int width, int height, ushort arraySize,
-                Format format)
+                Format format, bool useMipMaps = false)
             {
-                return new Desc(new Size(width, height), format, ImageDim.Image2D, bindFlags, 1, 1, arraySize);
+                var mipSlices = 0u;
+                if (useMipMaps)
+                {
+                    mipSlices = (uint)MathF.Floor(MathF.Log(Math.Max(width, height), 2)) + 1;
+                }
+
+                return new Desc(new Size(width, height), format, ImageDim.Image2D, bindFlags, mipSlices, 1, arraySize);
             }
 
             public static Desc ImgCubemap(ImageBindFlags bindFlags, int width, Format format)

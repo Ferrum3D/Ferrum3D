@@ -72,6 +72,17 @@ namespace Ferrum.Core.Math
             return (float)System.Math.Exp(x);
         }
 
+        public static float Log(float x, float newBase)
+        {
+            return (float)System.Math.Log(x, newBase);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Floor(float x)
+        {
+            return (float)System.Math.Floor(x);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AreApproxEqual(float lhs, float rhs, float epsilon = Epsilon)
         {

@@ -96,8 +96,8 @@ namespace Ferrum.Samples.Textures
             using var indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, indexSize);
             indexBuffer.AllocateMemory(MemoryType.DeviceLocal);
             using var textureImage = device.CreateImage(Image.Desc.Img2D(
-                ImageBindFlags.TransferWrite | ImageBindFlags.ShaderRead, imageAsset.Width, imageAsset.Height,
-                Format.R8G8B8A8_SRGB));
+                ImageBindFlags.TransferReadWrite | ImageBindFlags.ShaderRead, imageAsset.Width, imageAsset.Height,
+                Format.R8G8B8A8_SRGB, true));
             textureImage.AllocateMemory(MemoryType.DeviceLocal);
 
             using (var transferComplete = device.CreateFence(Fence.FenceState.Reset))
@@ -105,19 +105,33 @@ namespace Ferrum.Samples.Textures
                 using var vertexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, vertexData);
                 using var indexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, indexData);
                 using var textureStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, imageAsset);
-                using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Transfer);
-                using var transferQueue = device.GetCommandQueue(CommandQueueClass.Transfer);
+                using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Graphics);
 
                 using (var builder = commandBuffer.Begin())
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.TransferWrite);
+                    builder.TransitionImageLayout(textureImage, ResourceState.TransferWrite, 0);
                     builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.ShaderResource);
+                    builder.TransitionImageLayout(textureImage, ResourceState.TransferRead, 0);
+
+                    for (var i = 1; i < textureImage.MipSliceCount; ++i)
+                    {
+                        builder.TransitionImageLayout(textureImage, ResourceState.TransferWrite, i);
+                        var srcBounds = new ImageBounds(Offset.Zero,
+                            new Offset(textureImage.Width >> (i - 1), textureImage.Height >> (i - 1), 1));
+                        var dstBounds = new ImageBounds(Offset.Zero,
+                            new Offset(textureImage.Width >> i, textureImage.Height >> i, 1));
+                        var blitRegion = new ImageBlitRegion(new ImageSubresource(i - 1), new ImageSubresource(i),
+                            srcBounds, dstBounds);
+                        builder.BlitImage(textureImage, textureImage, blitRegion);
+                        builder.TransitionImageLayout(textureImage, ResourceState.TransferRead, i);
+                    }
+
+                    builder.TransitionImageLayout(textureImage, ResourceState.ShaderResource);
                 }
 
-                transferQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);
+                graphicsQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);
                 transferComplete.WaitOnCpu();
             }
 

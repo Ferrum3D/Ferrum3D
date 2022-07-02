@@ -24,7 +24,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public Image CreateImage(Image.Desc desc)
         {
-            return new Image(CreateImageNative(Handle, ref desc));
+            return new Image(CreateImageNative(Handle, ref desc), desc);
         }
 
         public DescriptorHeap CreateDescriptorHeap(DescriptorHeap.Desc desc)

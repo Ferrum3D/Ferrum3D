@@ -6,7 +6,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     public readonly struct ImageSubresourceRange
     {
         public static ImageSubresourceRange Default =
-            new ImageSubresourceRange(0, 0, 1, 1, ImageAspectFlags.Color);
+            new ImageSubresourceRange(0, 1, 0, 1, ImageAspectFlags.Color);
 
         public readonly ushort MinMipSlice;
         public readonly ushort MinArraySlice;
@@ -15,13 +15,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public readonly ImageAspectFlags AspectFlags;
 
-        public ImageSubresourceRange(ushort minMipSlice, ushort minArraySlice, ushort mipSliceCount,
-            ushort arraySliceCount, ImageAspectFlags aspectFlags)
+        public ImageSubresourceRange(int minMipSlice, int mipSliceCount, int minArraySlice,
+            int arraySliceCount, ImageAspectFlags aspectFlags)
         {
-            MinMipSlice = minMipSlice;
-            MinArraySlice = minArraySlice;
-            MipSliceCount = mipSliceCount;
-            ArraySliceCount = arraySliceCount;
+            MinMipSlice = (ushort)minMipSlice;
+            MipSliceCount = (ushort)mipSliceCount;
+            MinArraySlice = (ushort)minArraySlice;
+            ArraySliceCount = (ushort)arraySliceCount;
             AspectFlags = aspectFlags;
         }
     }

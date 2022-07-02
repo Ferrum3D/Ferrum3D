@@ -80,9 +80,9 @@ namespace Ferrum.Samples.Models
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, meshAsset.VertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, meshAsset.IndexSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.TransferWrite);
+                    builder.TransitionImageLayout(textureImage, ResourceState.TransferWrite);
                     builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
-                    builder.ResourceTransitionBarrier(textureImage, ResourceState.ShaderResource);
+                    builder.TransitionImageLayout(textureImage, ResourceState.ShaderResource);
                 }
 
                 transferQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);

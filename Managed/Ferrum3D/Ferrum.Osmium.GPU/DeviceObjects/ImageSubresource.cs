@@ -11,10 +11,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public readonly ImageAspect Aspect;
 
-        public ImageSubresource(ushort mipSlice, ushort arraySlice, ImageAspect aspect)
+        public ImageSubresource(int mipSlice, int arraySlice = 0, ImageAspect aspect = ImageAspect.Color)
         {
-            MipSlice = mipSlice;
-            ArraySlice = arraySlice;
+            MipSlice = (ushort)mipSlice;
+            ArraySlice = (ushort)arraySlice;
             Aspect = aspect;
         }
     }
