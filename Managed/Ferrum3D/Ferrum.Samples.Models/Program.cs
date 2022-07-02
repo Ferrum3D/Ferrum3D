@@ -31,14 +31,6 @@ namespace Ferrum.Samples.Models
             return stagingBuffer;
         }
 
-        private static Buffer CreateHostVisibleBuffer(BindFlags bindFlags, Device device, ImageAsset data)
-        {
-            var stagingBuffer = device.CreateBuffer(bindFlags, data.ByteSize);
-            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
-            stagingBuffer.UpdateData(data.DataHandle);
-            return stagingBuffer;
-        }
-
         private static void RunExample()
         {
             using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
@@ -65,7 +57,7 @@ namespace Ferrum.Samples.Models
             constantData[0] *= Matrix4x4F.CreateTranslation(new Vector3F(0.0f, 0.8f, -1.5f) * 2);
             constantData[0] *= Matrix4x4F.CreateRotationY(MathF.PI * -1.3f);
 
-            using var vsConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, constantData);
+            using var constantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, constantData);
 
             using var vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, meshAsset.VertexSize);
             vertexBuffer.AllocateMemory(MemoryType.DeviceLocal);
@@ -80,7 +72,7 @@ namespace Ferrum.Samples.Models
             {
                 using var vertexStagingBuffer = meshAsset.CreateVertexStagingBuffer(device);
                 using var indexStagingBuffer = meshAsset.CreateIndexStagingBuffer(device);
-                using var textureStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, imageAsset);
+                using var textureStagingBuffer = imageAsset.CreateStagingBuffer(device);
                 using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Transfer);
                 using var transferQueue = device.GetCommandQueue(CommandQueueClass.Transfer);
 
@@ -138,7 +130,7 @@ namespace Ferrum.Samples.Models
 
             descriptorTable.Update(0, textureSampler);
             descriptorTable.Update(1, textureImage.DefaultView);
-            descriptorTable.Update(2, vsConstantBuffer);
+            descriptorTable.Update(2, constantBuffer);
 
             var pipelineDesc = GraphicsPipeline.Desc.Default;
             pipelineDesc.InputLayout = new InputStreamLayout.Builder()

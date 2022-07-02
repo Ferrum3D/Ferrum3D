@@ -33,7 +33,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             }
         }
 
-        public SwapChain(IntPtr handle) : base(handle)
+        internal SwapChain(IntPtr handle) : base(handle)
         {
             GetRTVsNative(Handle, null, out var rtvCount);
             var rtv = new IntPtr[rtvCount];

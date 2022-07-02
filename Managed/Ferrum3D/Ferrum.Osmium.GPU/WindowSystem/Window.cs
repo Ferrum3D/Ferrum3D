@@ -16,7 +16,7 @@ namespace Ferrum.Osmium.GPU.WindowSystem
 
         private readonly Desc desc;
 
-        public Window(IntPtr handle, Desc desc) : base(handle)
+        internal Window(IntPtr handle, Desc desc) : base(handle)
         {
             this.desc = desc;
             NativeHandle = GetNativeHandleNative(Handle);

@@ -52,6 +52,14 @@ namespace Ferrum.Osmium.Assets
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
+        public Buffer CreateStagingBuffer(Device device)
+        {
+            var stagingBuffer = device.CreateBuffer(BindFlags.None, ByteSize);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(DataHandle);
+            return stagingBuffer;
+        }
+
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);

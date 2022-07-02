@@ -6,7 +6,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public partial class CommandBuffer : UnmanagedObject
     {
-        public CommandBuffer(IntPtr handle) : base(handle)
+        internal CommandBuffer(IntPtr handle) : base(handle)
         {
         }
 

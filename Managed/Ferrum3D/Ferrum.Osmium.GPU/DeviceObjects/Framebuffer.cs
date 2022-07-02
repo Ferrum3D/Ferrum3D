@@ -10,7 +10,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Framebuffer : UnmanagedObject
     {
-        public Framebuffer(IntPtr handle) : base(handle)
+        internal Framebuffer(IntPtr handle) : base(handle)
         {
         }
 

@@ -10,7 +10,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class GraphicsPipeline : UnmanagedObject
     {
-        public GraphicsPipeline(IntPtr handle) : base(handle)
+        internal GraphicsPipeline(IntPtr handle) : base(handle)
         {
         }
 
