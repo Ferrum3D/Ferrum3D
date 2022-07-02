@@ -97,22 +97,24 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto before = VKConvert(barrier.Image->GetCurrentState());
+            auto stateBefore =
+                barrier.Image->GetState(barrier.SubresourceRange.MinArraySlice, barrier.SubresourceRange.MinMipSlice);
+            auto before = VKConvert(stateBefore);
             auto after  = VKConvert(barrier.StateAfter);
             if (before == after)
             {
                 continue;
             }
 
-            vk::ImageMemoryBarrier& imageMemoryBarrier = nativeBarriers.emplace_back();
-            imageMemoryBarrier.oldLayout               = before;
-            imageMemoryBarrier.newLayout               = after;
-            imageMemoryBarrier.srcQueueFamilyIndex     = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex     = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.image                   = img->Image;
-            imageMemoryBarrier.subresourceRange        = VKConvert(barrier.SubresourceRange);
+            auto& imageMemoryBarrier               = nativeBarriers.emplace_back();
+            imageMemoryBarrier.oldLayout           = before;
+            imageMemoryBarrier.newLayout           = after;
+            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.image               = img->Image;
+            imageMemoryBarrier.subresourceRange    = VKConvert(barrier.SubresourceRange);
 
-            imageMemoryBarrier.srcAccessMask = GetAccessMask(barrier.Image->GetCurrentState());
+            imageMemoryBarrier.srcAccessMask = GetAccessMask(stateBefore);
             imageMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
 
             if (after == vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -121,7 +123,7 @@ namespace FE::Osmium
                 imageMemoryBarrier.srcAccessMask |= vk::AccessFlagBits::eTransferWrite;
             }
 
-            barrier.Image->SetCurrentState(barrier.StateAfter);
+            barrier.Image->SetState(barrier.SubresourceRange, barrier.StateAfter);
         }
 
         if (nativeBarriers.empty())

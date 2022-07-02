@@ -47,6 +47,7 @@ set(SRC
     OsGPU/Framebuffer/VKFramebuffer.h
 
     OsGPU/Image/IImage.h
+    OsGPU/Image/ImageBase.h
     OsGPU/Image/ImageEnums.h
     OsGPU/Image/ImageFormat.h
     OsGPU/Image/ImageSubresource.h
@@ -82,7 +83,6 @@ set(SRC
     OsGPU/RenderPass/VKRenderPass.h
 
     OsGPU/Resource/BindFlags.h
-    OsGPU/Resource/IResource.h
     OsGPU/Resource/ResourceState.h
     OsGPU/Resource/ShaderResourceType.h
     OsGPU/Resource/VKResourceState.h

@@ -9,7 +9,8 @@
 namespace FE::Osmium
 {
     VKImage::VKImage(VKDevice& dev)
-        : m_Device(&dev)
+        : ImageBase(1, 1)
+        , m_Device(&dev)
     {
     }
 
@@ -36,7 +37,8 @@ namespace FE::Osmium
     }
 
     VKImage::VKImage(VKDevice& dev, const ImageDesc& desc)
-        : m_Device(&dev)
+        : ImageBase(desc.ArraySize, static_cast<UInt16>(desc.MipSliceCount))
+        , m_Device(&dev)
         , Desc(desc)
     {
         vk::ImageCreateInfo imageCI{};
@@ -128,15 +130,5 @@ namespace FE::Osmium
     {
         m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
         m_Device->GetNativeDevice().bindImageMemory(Image, m_Memory->Memory.get(), offset);
-    }
-
-    ResourceState VKImage::GetCurrentState() const noexcept
-    {
-        return m_State;
-    }
-
-    void VKImage::SetCurrentState(ResourceState state)
-    {
-        m_State = state;
     }
 } // namespace FE::Osmium

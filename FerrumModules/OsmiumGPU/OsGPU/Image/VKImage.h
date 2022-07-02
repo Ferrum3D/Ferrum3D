@@ -1,21 +1,16 @@
 #pragma once
 #include <OsGPU/Common/VKConfig.h>
-#include <OsGPU/Image/IImage.h>
+#include <OsGPU/Image/ImageBase.h>
 
 namespace FE::Osmium
 {
     class VKDevice;
     class VKDeviceMemory;
 
-    class VKImage : public Object<IImage>
+    class VKImage : public ImageBase
     {
         VKDevice* m_Device;
         Shared<VKDeviceMemory> m_Memory;
-
-        ResourceState m_State;
-
-    protected:
-        void SetCurrentState(ResourceState state) override;
 
     public:
         vk::UniqueImage UniqueImage;
@@ -26,8 +21,6 @@ namespace FE::Osmium
 
         explicit VKImage(VKDevice& dev);
         VKImage(VKDevice& dev, const ImageDesc& desc);
-
-        [[nodiscard]] ResourceState GetCurrentState() const noexcept override;
 
         const ImageDesc& GetDesc() override;
         Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) override;
