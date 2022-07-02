@@ -100,9 +100,8 @@ void RunExample()
         textureStaging->UpdateData(imageAsset->Data());
 
         auto imageDesc = HAL::ImageDesc::Img2D(
-            HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::ShaderRead, imageAsset->Width(), imageAsset->Height(),
-            HAL::Format::R8G8B8A8_SRGB);
-        imageDesc.MipSliceCount = 1;
+            HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::TransferRead | HAL::ImageBindFlags::ShaderRead,
+            imageAsset->Width(), imageAsset->Height(), HAL::Format::R8G8B8A8_SRGB);
         textureImage = device->CreateImage(imageDesc);
         textureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
@@ -117,24 +116,58 @@ void RunExample()
     auto textureView = textureImage->CreateView(HAL::ImageAspectFlags::Color);
     {
         auto transferComplete = device->CreateFence(HAL::FenceState::Reset);
-        auto copyCmdBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
-        copyCmdBuffer->Begin();
-        copyCmdBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), vertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
-        copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
+        auto commandBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics);
+        commandBuffer->Begin();
+        commandBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), vertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
+        commandBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
 
         HAL::ResourceTransitionBarrierDesc barrier{};
-        barrier.Image            = textureImage.GetRaw();
-        barrier.SubresourceRange = textureView->GetDesc().SubresourceRange;
-        barrier.StateAfter       = HAL::ResourceState::TransferWrite;
-        copyCmdBuffer->ResourceTransitionBarriers({ barrier });
+        barrier.Image                        = textureImage.GetRaw();
+        barrier.SubresourceRange.AspectFlags = HAL::ImageAspectFlags::Color;
+        barrier.StateAfter                   = HAL::ResourceState::TransferWrite;
+        commandBuffer->ResourceTransitionBarriers({ barrier });
 
         auto size = textureImage->GetDesc().ImageSize;
-        copyCmdBuffer->CopyBufferToImage(textureStaging.GetRaw(), textureImage.GetRaw(), HAL::BufferImageCopyRegion(size));
+        commandBuffer->CopyBufferToImage(textureStaging.GetRaw(), textureImage.GetRaw(), HAL::BufferImageCopyRegion(size));
 
-        barrier.StateAfter  = HAL::ResourceState::ShaderResource;
-        copyCmdBuffer->ResourceTransitionBarriers({ barrier });
-        copyCmdBuffer->End();
-        transferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
+        barrier.StateAfter = HAL::ResourceState::TransferRead;
+        commandBuffer->ResourceTransitionBarriers({ barrier });
+
+        auto mipCount    = static_cast<FE::UInt16>(textureImage->GetDesc().MipSliceCount);
+        auto textureSize = textureImage->GetDesc().ImageSize;
+        for (FE::UInt16 i = 1; i < mipCount; ++i)
+        {
+            HAL::ResourceTransitionBarrierDesc mipBarrier{};
+            mipBarrier.Image                        = textureImage.GetRaw();
+            mipBarrier.SubresourceRange.AspectFlags = HAL::ImageAspectFlags::Color;
+            mipBarrier.SubresourceRange.MinMipSlice = i;
+            mipBarrier.StateAfter                   = HAL::ResourceState::TransferWrite;
+
+            HAL::ImageBlitRegion blitRegion{};
+            blitRegion.Source.Aspect   = HAL::ImageAspect::Color;
+            blitRegion.Source.MipSlice = i - 1;
+
+            blitRegion.SourceBounds[0] = {};
+            blitRegion.SourceBounds[1] = { FE::Int64(textureSize.Width >> (i - 1)), FE::Int64(textureSize.Height >> (i - 1)), 1 };
+
+            blitRegion.Dest.Aspect   = HAL::ImageAspect::Color;
+            blitRegion.Dest.MipSlice = i;
+
+            blitRegion.DestBounds[0] = {};
+            blitRegion.DestBounds[1] = { FE::Int64(textureSize.Width >> i), FE::Int64(textureSize.Height >> i), 1 };
+
+            commandBuffer->ResourceTransitionBarriers({ mipBarrier });
+            commandBuffer->BlitImage(textureImage.GetRaw(), textureImage.GetRaw(), blitRegion);
+
+            mipBarrier.StateAfter = HAL::ResourceState::TransferRead;
+            commandBuffer->ResourceTransitionBarriers({ mipBarrier });
+        }
+
+        barrier.SubresourceRange = textureView->GetDesc().SubresourceRange;
+        barrier.StateAfter = HAL::ResourceState::ShaderResource;
+        commandBuffer->ResourceTransitionBarriers({ barrier });
+        commandBuffer->End();
+        graphicsQueue->SubmitBuffers({ commandBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
         transferComplete->WaitOnCPU();
     }
 
