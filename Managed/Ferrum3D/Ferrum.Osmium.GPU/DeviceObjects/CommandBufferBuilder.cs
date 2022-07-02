@@ -185,7 +185,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 }
             }
 
-            public void TransitionImageLayout(Image image, ResourceState stateAfter,
+            public void TransitionResourceState(Image image, ResourceState stateAfter,
                 ImageAspectFlags aspectFlags = ImageAspectFlags.Color)
             {
                 var subresourceRange =
@@ -193,7 +193,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, subresourceRange, stateAfter));
             }
 
-            public void TransitionImageLayout(Image image, ResourceState stateAfter, int mipSlice,
+            public void TransitionResourceState(Image image, ResourceState stateAfter, int mipSlice,
                 int mipSliceCount = 1)
             {
                 ResourceTransitionBarrier(
