@@ -118,12 +118,8 @@ namespace Ferrum.Samples.Textures
                     for (var i = 1; i < textureImage.MipSliceCount; ++i)
                     {
                         builder.TransitionImageLayout(textureImage, ResourceState.TransferWrite, i);
-                        var srcBounds = new ImageBounds(Offset.Zero,
-                            new Offset(textureImage.Width >> (i - 1), textureImage.Height >> (i - 1), 1));
-                        var dstBounds = new ImageBounds(Offset.Zero,
-                            new Offset(textureImage.Width >> i, textureImage.Height >> i, 1));
                         var blitRegion = new ImageBlitRegion(new ImageSubresource(i - 1), new ImageSubresource(i),
-                            srcBounds, dstBounds);
+                            textureImage.GetMipSliceBounds(i - 1), textureImage.GetMipSliceBounds(i));
                         builder.BlitImage(textureImage, textureImage, blitRegion);
                         builder.TransitionImageLayout(textureImage, ResourceState.TransferRead, i);
                     }
