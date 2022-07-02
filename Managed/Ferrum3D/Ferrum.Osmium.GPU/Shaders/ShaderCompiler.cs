@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.GPU.Shaders
 {
     public class ShaderCompiler : UnmanagedObject
     {
-        public ShaderCompiler(IntPtr handle) : base(handle)
+        internal ShaderCompiler(IntPtr handle) : base(handle)
         {
         }
 

@@ -7,7 +7,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Sampler : UnmanagedObject
     {
-        public Sampler(IntPtr handle) : base(handle)
+        internal Sampler(IntPtr handle) : base(handle)
         {
         }
 

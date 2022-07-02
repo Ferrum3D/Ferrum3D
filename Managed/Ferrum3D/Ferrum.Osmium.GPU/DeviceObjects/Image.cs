@@ -15,7 +15,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private ImageView defaultView;
         private ImageView depthStencilView;
 
-        public Image(IntPtr handle) : base(handle)
+        internal Image(IntPtr handle) : base(handle)
         {
         }
 

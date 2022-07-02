@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class ShaderModule : UnmanagedObject
     {
-        public ShaderModule(IntPtr handle) : base(handle)
+        internal ShaderModule(IntPtr handle) : base(handle)
         {
         }
 

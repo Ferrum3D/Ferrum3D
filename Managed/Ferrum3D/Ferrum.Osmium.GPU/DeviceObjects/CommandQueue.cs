@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class CommandQueue : UnmanagedObject
     {
-        public CommandQueue(IntPtr handle) : base(handle)
+        internal CommandQueue(IntPtr handle) : base(handle)
         {
         }
 

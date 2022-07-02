@@ -9,7 +9,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class RenderPass : UnmanagedObject
     {
-        public RenderPass(IntPtr handle) : base(handle)
+        internal RenderPass(IntPtr handle) : base(handle)
         {
         }
 

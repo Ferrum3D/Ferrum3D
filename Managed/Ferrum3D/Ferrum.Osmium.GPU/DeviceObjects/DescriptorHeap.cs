@@ -22,7 +22,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
     public class DescriptorHeap : UnmanagedObject
     {
-        public DescriptorHeap(IntPtr handle) : base(handle)
+        internal DescriptorHeap(IntPtr handle) : base(handle)
         {
         }
 

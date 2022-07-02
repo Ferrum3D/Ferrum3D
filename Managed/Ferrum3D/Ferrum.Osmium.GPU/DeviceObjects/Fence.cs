@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     {
         public FenceState State => GetStateNative(Handle);
 
-        public Fence(IntPtr handle) : base(handle)
+        internal Fence(IntPtr handle) : base(handle)
         {
         }
 
