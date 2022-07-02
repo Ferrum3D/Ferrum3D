@@ -192,7 +192,13 @@ namespace Ferrum.Core.Math
         {
             return vector * (1f / f);
         }
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override string ToString()
+        {
+            return $"({X}; {Y}; {Z}; {W})";
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector4F other)
         {
@@ -219,9 +225,15 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override string ToString()
+        public static bool operator ==(Vector4F left, Vector4F right)
         {
-            return $"({X}; {Y}; {Z}; {W})";
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(Vector4F left, Vector4F right)
+        {
+            return !left.Equals(right);
         }
     }
 }

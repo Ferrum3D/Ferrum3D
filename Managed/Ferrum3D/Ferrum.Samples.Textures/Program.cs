@@ -20,21 +20,13 @@ namespace Ferrum.Samples.Textures
     [StructLayout(LayoutKind.Sequential)]
     internal struct Vertex
     {
-        public readonly float X;
-        public readonly float Y;
-        public readonly float Z;
-
-        public readonly float U;
-        public readonly float V;
+        public readonly Vector3F Position;
+        public readonly Vector2F TexCoord;
 
         public Vertex(float x, float y, float z, float u, float v)
         {
-            X = x;
-            Y = y;
-            Z = z;
-
-            U = u;
-            V = v;
+            Position = new Vector3F(x, y, z);
+            TexCoord = new Vector2F(u, v);
         }
     }
 
