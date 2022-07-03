@@ -24,7 +24,7 @@ namespace FE
         using Desc = HeapAllocatorDesc;
 
         HeapAllocator();
-        inline ~HeapAllocator() final = default;
+        inline ~HeapAllocator() noexcept override;
 
         //! \brief Initialize allocator with provided HeapAllocatorDesc.
         //!

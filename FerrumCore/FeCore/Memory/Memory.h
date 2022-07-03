@@ -240,7 +240,7 @@ namespace FE
         inline void deallocate(value_type* ptr, size_t n) noexcept
         {
             FE_STATIC_SRCPOS(position);
-            m_Instance->Deallocate(ptr, position, n);
+            m_Instance->Deallocate(ptr, position, n * sizeof(T));
         }
     };
 
