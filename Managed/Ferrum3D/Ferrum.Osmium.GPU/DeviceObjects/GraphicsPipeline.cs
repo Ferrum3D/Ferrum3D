@@ -25,6 +25,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct DescNative
         {
+            public readonly MultisampleState.Native Multisample;
             public readonly ColorBlendState.Native ColorBlend;
             public readonly InputStreamLayout.Native InputLayout;
             public readonly RasterizationState.Native Rasterization;
@@ -38,6 +39,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
             public DescNative(Desc desc)
             {
+                Multisample = new MultisampleState.Native(desc.Multisample);
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
                 DescriptorTables = NativeArray<IntPtr>.FromObjectCollection(desc.DescriptorTables)?.Detach() ??
@@ -54,10 +56,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public struct Desc
         {
-            public static Desc Default = new Desc(null, 0, null, null, RasterizationState.Default,
-                DepthStencilState.Default,
-                new ColorBlendState(), new InputStreamLayout(), new Viewport(), new Scissor());
+            public static Desc Default = new Desc(MultisampleState.None, null, 0, null, null,
+                RasterizationState.Default, DepthStencilState.Default, new ColorBlendState(), new InputStreamLayout(),
+                new Viewport(), new Scissor());
 
+            public MultisampleState Multisample;
             public RenderPass RenderPass;
             public uint SubpassIndex;
             public ShaderModule[] Shaders;
@@ -69,11 +72,12 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public Viewport Viewport;
             public Scissor Scissor;
 
-            public Desc(RenderPass renderPass, uint subpassIndex, ShaderModule[] shaders,
+            public Desc(MultisampleState multisample, RenderPass renderPass, uint subpassIndex, ShaderModule[] shaders,
                 DescriptorTable[] descriptorTables,
                 RasterizationState rasterization, DepthStencilState depthStencil, ColorBlendState colorBlend,
                 InputStreamLayout inputLayout, Viewport viewport, Scissor scissor)
             {
+                Multisample = multisample;
                 RenderPass = renderPass;
                 SubpassIndex = subpassIndex;
                 Shaders = shaders;

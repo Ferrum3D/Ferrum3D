@@ -8,6 +8,13 @@ namespace FE
 
 namespace FE::Osmium
 {
+    struct MultisampleStateBinding
+    {
+        Int32 SampleCount;
+        Float32 MinSampleShading;
+        Int32 SampleShadingEnabled;
+    };
+
     struct ColorBlendStateBinding
     {
         float BlendConstantX;
@@ -51,6 +58,7 @@ namespace FE::Osmium
 
     struct GraphicsPipelineDescBinding
     {
+        MultisampleStateBinding Multisample;
         ColorBlendStateBinding ColorBlend;
         InputStreamLayoutBinding InputLayout;
         RasterizationStateBinding Rasterization;

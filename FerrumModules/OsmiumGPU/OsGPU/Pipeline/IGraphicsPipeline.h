@@ -18,6 +18,7 @@ namespace FE::Osmium
         List<Shared<IDescriptorTable>> DescriptorTables;
         List<Shared<IShaderModule>> Shaders;
 
+        MultisampleState Multisample;
         RasterizationState Rasterization;
         DepthStencilState DepthStencil;
         ColorBlendState ColorBlend;

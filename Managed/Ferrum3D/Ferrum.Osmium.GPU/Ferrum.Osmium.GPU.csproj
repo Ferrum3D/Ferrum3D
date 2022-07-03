@@ -106,6 +106,7 @@
         <Compile Include="PipelineStates\CullingMode.cs" />
         <Compile Include="PipelineStates\CullingModeFlags.cs" />
         <Compile Include="PipelineStates\DepthStencilState.cs" />
+        <Compile Include="PipelineStates\MultisampleState.cs" />
         <Compile Include="PipelineStates\PipelineStageFlags.cs" />
         <Compile Include="PipelineStates\PolygonMode.cs" />
         <Compile Include="PipelineStates\RasterizationState.cs" />
