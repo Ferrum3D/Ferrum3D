@@ -3,6 +3,7 @@
 #include <OsGPU/Image/VKImageFormat.h>
 #include <OsGPU/RenderPass/VKRenderPass.h>
 #include <OsGPU/Resource/VKResourceState.h>
+#include <OsGPU/Pipeline/VKPipelineStates.h>
 
 namespace FE::Osmium
 {
@@ -62,8 +63,9 @@ namespace FE::Osmium
             depthStencilAttachmentRef.layout     = VKConvert(depthStencilAttachment.State);
             depthStencilAttachmentRef.attachment = depthStencilAttachment.Index;
 
-            refs.Input = BuildAttachmentReferences(i, AttachmentType::Input);
-            refs.RT    = BuildAttachmentReferences(i, AttachmentType::RenderTarget);
+            refs.Input   = BuildAttachmentReferences(i, AttachmentType::Input);
+            refs.RT      = BuildAttachmentReferences(i, AttachmentType::RenderTarget);
+            refs.Resolve = BuildAttachmentReferences(i, AttachmentType::MSAAResolve);
 
             auto& preserve = m_Desc.Subpasses[i].PreserveAttachments;
             refs.Preserve  = preserve.Empty() ? nullptr : preserve.Data();
@@ -100,6 +102,7 @@ namespace FE::Osmium
             nativeDesc.stencilStoreOp = VKConvert(attachmentDesc.StencilStoreOp);
             nativeDesc.initialLayout  = VKConvert(attachmentDesc.InitialState);
             nativeDesc.finalLayout    = VKConvert(attachmentDesc.FinalState);
+            nativeDesc.samples        = GetVKSampleCountFlags(attachmentDesc.SampleCount);
         }
 
         return result;
@@ -123,6 +126,7 @@ namespace FE::Osmium
 
             nativeDesc.colorAttachmentCount = static_cast<UInt32>(currentRefs.RT.size());
             nativeDesc.pColorAttachments    = currentRefs.RT.data();
+            nativeDesc.pResolveAttachments  = currentRefs.Resolve.data();
 
             nativeDesc.pDepthStencilAttachment =
                 currentRefs.DepthStencil.attachment == static_cast<UInt32>(-1) ? nullptr : &currentRefs.DepthStencil;
@@ -136,28 +140,28 @@ namespace FE::Osmium
     {
         Vector<vk::AttachmentReference> result;
 
-        SubpassDesc& currentSubpass = m_Desc.Subpasses[subpassIndex];
+        List<SubpassAttachment>* attachments;
         switch (attachmentType)
         {
         case AttachmentType::Input:
-            for (auto& inputAttachment : currentSubpass.InputAttachments)
-            {
-                auto& ref      = result.emplace_back();
-                ref.attachment = inputAttachment.Index;
-                ref.layout     = VKConvert(inputAttachment.State);
-            }
+            attachments = &m_Desc.Subpasses[subpassIndex].InputAttachments;
             break;
         case AttachmentType::RenderTarget:
-            for (auto& rtAttachment : currentSubpass.RenderTargetAttachments)
-            {
-                auto& ref      = result.emplace_back();
-                ref.attachment = rtAttachment.Index;
-                ref.layout     = VKConvert(rtAttachment.State);
-            }
+            attachments = &m_Desc.Subpasses[subpassIndex].RenderTargetAttachments;
+            break;
+        case AttachmentType::MSAAResolve:
+            attachments = &m_Desc.Subpasses[subpassIndex].MSAAResolveAttachments;
             break;
         default:
             FE_UNREACHABLE("Invalid AttachmentType, note that Preserve and DepthStencil attachments are not allowed here");
             return result;
+        }
+
+        for (auto& attachment : *attachments)
+        {
+            auto& ref      = result.emplace_back();
+            ref.attachment = attachment.Index;
+            ref.layout     = VKConvert(attachment.State);
         }
 
         return result;

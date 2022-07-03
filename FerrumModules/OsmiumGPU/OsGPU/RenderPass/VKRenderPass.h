@@ -59,6 +59,7 @@ namespace FE::Osmium
         {
             Vector<vk::AttachmentReference> Input;
             Vector<vk::AttachmentReference> RT;
+            Vector<vk::AttachmentReference> Resolve;
             UInt32* Preserve;
             vk::AttachmentReference DepthStencil;
         };

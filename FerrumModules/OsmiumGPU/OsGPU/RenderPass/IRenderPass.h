@@ -31,6 +31,8 @@ namespace FE::Osmium
         ResourceState InitialState = ResourceState::Undefined;
         ResourceState FinalState   = ResourceState::Undefined;
 
+        Int32 SampleCount = 1;
+
         FE_STRUCT_RTTI(AttachmentDesc, "0862DB39-25EE-49D5-8762-38AB54D489BC");
     };
 
@@ -56,13 +58,15 @@ namespace FE::Osmium
         Input,
         Preserve,
         DepthStencil,
-        RenderTarget
+        RenderTarget,
+        MSAAResolve
     };
 
     struct SubpassDesc
     {
         List<SubpassAttachment> InputAttachments;
         List<SubpassAttachment> RenderTargetAttachments;
+        List<SubpassAttachment> MSAAResolveAttachments;
         List<UInt32> PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
 

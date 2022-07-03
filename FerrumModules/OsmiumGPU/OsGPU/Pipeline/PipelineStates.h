@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Math/Vector4.h>
 #include <FeCore/Containers/List.h>
+#include <FeCore/Math/Vector4.h>
 #include <utility>
 
 namespace FE::Osmium
@@ -93,6 +93,22 @@ namespace FE::Osmium
         bool DepthClampEnabled    = false;
         bool DepthBiasEnabled     = false;
         bool RasterDiscardEnabled = false;
+    };
+
+    struct MultisampleState
+    {
+        Int32 SampleCount         = 1;
+        Float32 MinSampleShading  = 1.0f;
+        bool SampleShadingEnabled = false;
+
+        inline MultisampleState() = default;
+
+        inline MultisampleState(Int32 sampleCount, Float32 minSampleShading, bool sampleShadingEnabled)
+            : SampleCount(sampleCount)
+            , MinSampleShading(minSampleShading)
+            , SampleShadingEnabled(sampleShadingEnabled)
+        {
+        }
     };
 
     struct DepthStencilState

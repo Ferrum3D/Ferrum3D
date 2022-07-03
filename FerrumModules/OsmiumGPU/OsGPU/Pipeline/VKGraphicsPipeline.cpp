@@ -148,10 +148,12 @@ namespace FE::Osmium
 
     vk::PipelineMultisampleStateCreateInfo VKGraphicsPipeline::BuildMultisampleState()
     {
+        MultisampleState& multisample = m_Desc.Multisample;
+
         vk::PipelineMultisampleStateCreateInfo result{};
-        result.sampleShadingEnable   = false;
-        result.rasterizationSamples  = vk::SampleCountFlagBits::e1;
-        result.minSampleShading      = 1.0f;
+        result.sampleShadingEnable   = multisample.SampleShadingEnabled;
+        result.rasterizationSamples  = GetVKSampleCountFlags(multisample.SampleCount);
+        result.minSampleShading      = multisample.MinSampleShading;
         result.pSampleMask           = nullptr;
         result.alphaToCoverageEnable = false;
         result.alphaToOneEnable      = false;
@@ -161,12 +163,12 @@ namespace FE::Osmium
     vk::PipelineDepthStencilStateCreateInfo VKGraphicsPipeline::BuildDepthState() const
     {
         vk::PipelineDepthStencilStateCreateInfo result{};
-        result.depthTestEnable  = m_Desc.DepthStencil.DepthTestEnabled;
-        result.depthWriteEnable = m_Desc.DepthStencil.DepthWriteEnabled;
-        result.depthCompareOp   = VKConvert(m_Desc.DepthStencil.DepthCompareOp);
+        result.depthTestEnable       = m_Desc.DepthStencil.DepthTestEnabled;
+        result.depthWriteEnable      = m_Desc.DepthStencil.DepthWriteEnabled;
+        result.depthCompareOp        = VKConvert(m_Desc.DepthStencil.DepthCompareOp);
         result.depthBoundsTestEnable = false;
-        result.minDepthBounds = 0.0f;
-        result.maxDepthBounds = 1.0f;
+        result.minDepthBounds        = 0.0f;
+        result.maxDepthBounds        = 1.0f;
         return result;
     }
 

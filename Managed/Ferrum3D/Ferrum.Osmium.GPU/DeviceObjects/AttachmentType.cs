@@ -6,6 +6,7 @@
         Input,
         Preserve,
         DepthStencil,
-        RenderTarget
+        RenderTarget,
+        MsaaResolve
     }
 }

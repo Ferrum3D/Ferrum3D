@@ -1,9 +1,29 @@
 #pragma once
-#include <OsGPU/Pipeline/PipelineStates.h>
 #include <OsGPU/Pipeline/InputStreamLayout.h>
+#include <OsGPU/Pipeline/PipelineStates.h>
 
 namespace FE::Osmium
 {
+    inline vk::SampleCountFlagBits GetVKSampleCountFlags(Int32 sampleCount)
+    {
+        switch (sampleCount)
+        {
+        case 1:
+            return vk::SampleCountFlagBits::e1;
+        case 2:
+            return vk::SampleCountFlagBits::e2;
+        case 4:
+            return vk::SampleCountFlagBits::e4;
+        case 8:
+            return vk::SampleCountFlagBits::e8;
+        case 16:
+            return vk::SampleCountFlagBits::e16;
+        default:
+            FE_UNREACHABLE("Invalid Sample count");
+            return vk::SampleCountFlagBits::e1;
+        }
+    }
+
     inline vk::BlendOp VKConvert(BlendOperation source)
     {
         switch (source)
@@ -175,4 +195,4 @@ namespace FE::Osmium
             return static_cast<vk::VertexInputRate>(-1);
         }
     }
-}
+} // namespace FE::Osmium

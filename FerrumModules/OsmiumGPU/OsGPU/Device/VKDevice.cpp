@@ -102,6 +102,7 @@ namespace FE::Osmium
         deviceFeatures.geometryShader     = true;
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy  = true;
+        deviceFeatures.sampleRateShading  = true;
 
         vk::DeviceCreateInfo deviceCI{};
         deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.size());

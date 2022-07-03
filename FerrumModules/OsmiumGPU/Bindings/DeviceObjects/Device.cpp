@@ -80,6 +80,10 @@ namespace FE::Osmium
         FE_DLL_EXPORT IGraphicsPipeline* IDevice_CreateGraphicsPipeline(IDevice* self, GraphicsPipelineDescBinding* desc)
         {
             GraphicsPipelineDesc d{};
+            d.Multisample.SampleShadingEnabled = desc->Multisample.SampleShadingEnabled;
+            d.Multisample.SampleCount          = desc->Multisample.SampleCount;
+            d.Multisample.MinSampleShading     = desc->Multisample.MinSampleShading;
+
             d.ColorBlend.BlendConstants = Vector4F{ desc->ColorBlend.BlendConstantX, desc->ColorBlend.BlendConstantY,
                                                     desc->ColorBlend.BlendConstantZ, desc->ColorBlend.BlendConstantW };
             CopyFromByteBuffer(desc->ColorBlend.TargetBlendStates, d.ColorBlend.TargetBlendStates);
