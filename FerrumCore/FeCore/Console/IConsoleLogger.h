@@ -30,12 +30,12 @@ namespace FE::Debug
 
     //! \brief Interface that console loggers must implement.
     //!
-    //! All implementations must inherit from \ref FE::SingletonImplBase<IConsoleLogger>, not the interface directly.
-    //! The loggers work with UTF-8 encoding and must set up their internal stream to use unicode.\n
-    //! \n
+    //! All implementations must inherit from \ref FE::SharedInterfaceImplBase<IConsoleLogger>, not the interface directly.
+    //! The loggers work with UTF-8 encoding and must set up their internal stream to use unicode.<br>
+    //! <br>
     //! Usage:
     //! \code{.cpp}
-    //!     FE::Singleton<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
+    //!     FE::SharedInterface<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
     //! \endcode
     class IConsoleLogger : public IObject
     {

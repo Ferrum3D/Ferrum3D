@@ -13,7 +13,7 @@ set(SRC
     Memory/StackAllocator.cpp
 
     Modules/Environment.cpp
-    Modules/Singleton.cpp
+    Modules/SharedInterface.cpp
 
     RTTI/RTTI.cpp
 

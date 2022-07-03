@@ -93,7 +93,7 @@ namespace FE::Env
 
     //! \brief Get global environment instance.
     //!
-    //! Global environment must be created before any calls to this function. Unlike other singletons, the
+    //! Global environment must be created before any calls to this function. The
     //! environment won't be created automatically. This function will throw if the environment was not
     //! created and attached to this module.
     Internal::IEnvironment& GetEnvironment();
