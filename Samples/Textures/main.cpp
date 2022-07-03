@@ -101,7 +101,7 @@ void RunExample()
 
         auto imageDesc = HAL::ImageDesc::Img2D(
             HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::TransferRead | HAL::ImageBindFlags::ShaderRead,
-            imageAsset->Width(), imageAsset->Height(), HAL::Format::R8G8B8A8_SRGB);
+            imageAsset->Width(), imageAsset->Height(), HAL::Format::R8G8B8A8_SRGB, true);
         textureImage = device->CreateImage(imageDesc);
         textureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
@@ -164,7 +164,7 @@ void RunExample()
         }
 
         barrier.SubresourceRange = textureView->GetDesc().SubresourceRange;
-        barrier.StateAfter = HAL::ResourceState::ShaderResource;
+        barrier.StateAfter       = HAL::ResourceState::ShaderResource;
         commandBuffer->ResourceTransitionBarriers({ barrier });
         commandBuffer->End();
         graphicsQueue->SubmitBuffers({ commandBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);

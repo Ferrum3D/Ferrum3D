@@ -28,9 +28,11 @@ namespace FE::Osmium
 
         inline static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
-        inline static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format);
+        inline static ImageDesc Img2D(
+            ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps = false,
+            UInt32 sampleCount = 1);
         inline static ImageDesc Img2DArray(
-            ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format);
+            ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format, bool useMipMaps = false);
         inline static ImageDesc ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
         inline static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
@@ -52,12 +54,22 @@ namespace FE::Osmium
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format)
+    ImageDesc ImageDesc::Img2D(
+        ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps, UInt32 sampleCount)
     {
-        return ImageDesc::Img2DArray(bindFlags, width, height, 1, format);
+        ImageDesc desc{};
+        desc.BindFlags     = bindFlags;
+        desc.Dimension     = ImageDim::Image2D;
+        desc.ImageSize     = { width, height, 1 };
+        desc.ArraySize     = 1;
+        desc.ImageFormat   = format;
+        desc.SampleCount   = sampleCount;
+        desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        return desc;
     }
 
-    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format)
+    ImageDesc ImageDesc::Img2DArray(
+        ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format, bool useMipMaps)
     {
         ImageDesc desc{};
         desc.BindFlags     = bindFlags;
@@ -65,7 +77,7 @@ namespace FE::Osmium
         desc.ImageSize     = { width, height, 1 };
         desc.ArraySize     = arraySize;
         desc.ImageFormat   = format;
-        desc.MipSliceCount = static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1;
+        desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
         return desc;
     }
 
