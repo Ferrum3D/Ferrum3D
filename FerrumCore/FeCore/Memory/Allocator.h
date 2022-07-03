@@ -8,8 +8,8 @@ namespace FE
 {
     //! \brief Global allocator holder.
     //!
-    //! This class works just like \ref FE::Singleton<T>, but keeps the entire allocator object in an \ref Env::GlobalVariable<T>
-    //! and has some allocator-specific functions.
+    //! This class works just like \ref FE::SharedInterface<T>, but keeps the entire allocator
+    //! object in a \ref Env::GlobalVariable<T> and has some allocator-specific functions.
     //!
     //! TAlloc must derive from \ref FE::AllocatorBase.
     //!

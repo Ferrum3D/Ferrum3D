@@ -1,11 +1,11 @@
 #pragma once
 #include <FeCore/Console/IConsoleLogger.h>
-#include <FeCore/Modules/Singleton.h>
+#include <FeCore/Modules/SharedInterface.h>
 
 namespace FE::Debug
 {
     //! \brief Implementation of IConsoleLogger that prints messages to stdout.
-    class ConsoleLogger final : public FE::SingletonImplBase<IConsoleLogger>
+    class ConsoleLogger final : public FE::SharedInterfaceImplBase<IConsoleLogger>
     {
         LogMessageType m_DebugLevel = LogMessageType::All;
         FE::String m_Header         = FE::String(" ") + FE::FerrumEngineName + " [";

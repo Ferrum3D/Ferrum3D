@@ -95,7 +95,7 @@ namespace FE::Osmium
         debugCI.flags |= vk::DebugReportFlagBitsEXT::eError;
         debugCI.flags |= vk::DebugReportFlagBitsEXT::eDebug;
         debugCI.pfnCallback = &DebugReportCallback;
-        debugCI.pUserData   = FE::Singleton<FE::Debug::IConsoleLogger>::Get();
+        debugCI.pUserData   = FE::SharedInterface<FE::Debug::IConsoleLogger>::Get();
         m_Debug             = m_Instance->createDebugReportCallbackEXTUnique(debugCI);
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");

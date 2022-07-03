@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Modules/Singleton.h>
+#include <FeCore/Modules/SharedInterface.h>
 #include <functional>
 
 namespace FE
@@ -33,7 +33,7 @@ namespace FE
     };
 
     template<class TEvent>
-    class EventBus : public SingletonImplBase<IEventBus<TEvent>>
+    class EventBus : public SharedInterfaceImplBase<IEventBus<TEvent>>
     {
         Vector<EventHandler<TEvent>*> m_Handlers;
 
@@ -103,7 +103,7 @@ namespace FE
     template<class TEvent>
     EventBus<TEvent>* EventBus<TEvent>::Get()
     {
-        return fe_assert_cast<EventBus<TEvent>*>(FE::Singleton<IEventBus<TEvent>>::Get());
+        return fe_assert_cast<EventBus<TEvent>*>(FE::SharedInterface<IEventBus<TEvent>>::Get());
     }
 
     template<class TEvent>

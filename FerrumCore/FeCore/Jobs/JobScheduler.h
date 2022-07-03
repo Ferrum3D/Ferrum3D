@@ -3,7 +3,7 @@
 #include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/IJobScheduler.h>
 #include <FeCore/Jobs/Job.h>
-#include <FeCore/Modules/Singleton.h>
+#include <FeCore/Modules/SharedInterface.h>
 #include <FeCore/Parallel/Semaphore.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <deque>
@@ -137,7 +137,7 @@ namespace FE
     };
 
     class JobScheduler final
-        : public SingletonImplBase<IJobScheduler>
+        : public SharedInterfaceImplBase<IJobScheduler>
         , public EventBus<FrameEvents>::Handler
     {
         const UInt32 m_WorkerCount;

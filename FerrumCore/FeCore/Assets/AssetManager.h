@@ -1,10 +1,10 @@
 #pragma once
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Modules/Singleton.h>
+#include <FeCore/Modules/SharedInterface.h>
 
 namespace FE::Assets
 {
-    class AssetManager : public SingletonImplBase<IAssetManager>
+    class AssetManager : public SharedInterfaceImplBase<IAssetManager>
     {
         UnorderedMap<AssetType, Shared<IAssetLoader>> m_Loaders;
         Shared<IAssetProvider> m_Provider;
