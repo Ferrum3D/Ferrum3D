@@ -28,6 +28,8 @@ namespace FE
     {
     }
 
+    HeapAllocator::~HeapAllocator() noexcept = default;
+
     void HeapAllocator::Init(const Desc& desc)
     {
         rpmalloc_config_t conf{};
@@ -43,7 +45,7 @@ namespace FE
         Interlocked::Add(m_TotalUsage, size);
         FE_PROFILE_ALLOC(size, alignment, position);
         void* r = rpaligned_alloc(alignment, size);
-        FE_MALLOC_PRINT("Allocation: %u bytes, returned: %p", size, r);
+        FE_MALLOC_PRINT("Allocation: %llu bytes, returned: %p", size, r);
         return r;
     }
 
@@ -54,7 +56,7 @@ namespace FE
         Interlocked::Add(m_TotalUsage, -static_cast<SSize>(size));
         FE_PROFILE_DEALLOC(pointer, position, size);
         rpfree(pointer);
-        FE_MALLOC_PRINT("Deallocation: %u bytes at %p", size, pointer);
+        FE_MALLOC_PRINT("Deallocation: %llu bytes at %p", size, pointer);
     }
 
     void* HeapAllocator::Reallocate(
