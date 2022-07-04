@@ -11,6 +11,8 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+Docs/
+
 # ignore the build folder
 Build/
 BuildDebug/
