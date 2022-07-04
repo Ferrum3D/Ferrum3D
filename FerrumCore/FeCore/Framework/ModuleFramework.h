@@ -49,13 +49,13 @@ namespace FE
 
     struct ModuleInfo
     {
-        String Name;
-        String Description;
-        String Author;
+        const char* Name;
+        const char* Description;
+        const char* Author;
 
         inline ModuleInfo() = default;
 
-        inline ModuleInfo(const String& name, const String& description, const String& author)
+        inline ModuleInfo(const char* name, const char* description, const char* author)
             : Name(name)
             , Description(description)
             , Author(author)
@@ -70,8 +70,15 @@ namespace FE
     //!     class MyModule : public ModuleFramework<MyModule>
     //!     {
     //!     public:
-    //!         // Initialize module:
-    //!         void Initialize(const MyModuleDesc& desc) { FrameworkBase::Initialize(); ... }
+    //!         inline static constexpr const char* LibraryPath = "MyModule";
+    //!         virtual void Initialize(const MyModuleDesc& desc) = 0;
+    //!         virtual void Foo() = 0;
+    //!     };
+    //!
+    //!     class MyModuleImpl : public SharedInterfaceImplBase<MyModule>
+    //!     {
+    //!     public:
+    //!         void Initialize(const MyModuleDesc& desc) override { FrameworkBase::Initialize(); ... }
     //!     };
     //!
     //!     // Implement a function to create MyModule (or you can create a custom factory and use another way):
@@ -86,7 +93,7 @@ namespace FE
     template<class TModule>
     class ModuleFramework : public FrameworkBase
     {
-        ModuleInfo m_Info;
+        ModuleInfo m_Info{};
 
     protected:
         inline void SetInfo(const ModuleInfo& info)
