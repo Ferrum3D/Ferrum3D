@@ -39,6 +39,13 @@ set(SRC
     FeCore/EventBus/EventBus.h
     FeCore/EventBus/FrameEvents.h
 
+    FeCore/Framework/ApplicationFramework.cpp
+    FeCore/Framework/ApplicationFramework.h
+    FeCore/Framework/FrameworkBase.cpp
+    FeCore/Framework/FrameworkBase.h
+    FeCore/Framework/IFramework.h
+    FeCore/Framework/ModuleFramework.h
+
     FeCore/IO/BaseIO.cpp
     FeCore/IO/BaseIO.h
     FeCore/IO/FileHandle.cpp

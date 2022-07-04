@@ -61,6 +61,13 @@ namespace FE
             m_Instance.Reset();
         }
 
+        inline static void ReleaseFromCurrentModule()
+        {
+            FE_CORE_ASSERT(m_Instance, "SharedInterface instance was a nullptr");
+            std::unique_lock lk(m_Mutex);
+            m_Instance.Reset();
+        }
+
         //! \brief Get the registered instance.
         //!
         //! The function will try to find the instance in all attached modules and cache it in the current module.
@@ -84,22 +91,25 @@ namespace FE
     template<class T>
     std::shared_mutex SharedInterface<T>::m_Mutex;
 
-    //! \brief Helper class that registers and unregisters derived implementations of `T` in \ref SharedInterface.
-    template<class T>
-    struct SharedInterfaceImplBase : public Object<T>
+    //! \brief Helper class that registers and unregisters instance in SharedInterface.
+    //!
+    //! \tparam TBase - The base class to derive.
+    //! \tparam TInterface - The interface to register in SharedInterface.
+    template<class TBase, class TInterface = TBase>
+    struct SharedInterfaceImplBase : public Object<TBase>
     {
         FE_CLASS_RTTI(SharedInterfaceImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 
         //! \brief Calls \ref SharedInterface::Register.
         inline SharedInterfaceImplBase()
         {
-            SharedInterface<T>::Register(this);
+            SharedInterface<TInterface>::Register(static_cast<TInterface*>(this));
         }
 
         //! \brief Calls \ref SharedInterface::Unregister.
         inline virtual ~SharedInterfaceImplBase()
         {
-            SharedInterface<T>::Unregister();
+            SharedInterface<TInterface>::Unregister();
         }
     };
 } // namespace FE

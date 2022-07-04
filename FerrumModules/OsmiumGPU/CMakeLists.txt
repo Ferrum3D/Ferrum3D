@@ -109,8 +109,9 @@ set(SRC
     OsGPU/Window/IWindow.h
     OsGPU/Window/Window.cpp
     OsGPU/Window/Window.h
+    OsGPU/OsmiumGPUModule.cpp OsGPU/OsmiumGPUModule.h
     # FERRUM_SORT_LINES END
-)
+    )
 
 add_library(OsGPU SHARED ${SRC})
 

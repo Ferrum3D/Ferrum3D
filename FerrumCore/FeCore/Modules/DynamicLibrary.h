@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Object.h>
-#include <FeCore/Strings/StringSlice.h>
 #include <FeCore/Strings/String.h>
+#include <FeCore/Strings/StringSlice.h>
 
 namespace FE
 {
@@ -15,8 +15,11 @@ namespace FE
     public:
         FE_CLASS_RTTI(DynamicLibrary, "3A50F5DD-9055-4AD3-ABB5-7737644EB87C");
 
+        inline DynamicLibrary() = default;
         ~DynamicLibrary() override;
-        DynamicLibrary(StringSlice fileName);
+
+        bool LoadFrom(StringSlice fileName);
+        void Unload();
 
         template<class FPtr>
         inline FPtr GetFunction(StringSlice functionName)
@@ -25,4 +28,4 @@ namespace FE
             return proc ? reinterpret_cast<FPtr>(proc) : nullptr;
         }
     };
-}
+} // namespace FE
