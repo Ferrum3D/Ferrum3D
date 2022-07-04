@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Nikita Dubovikov
+ * Copyright 2022 Nikita Dubovikov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ class TestApplication final : public FE::ApplicationFramework
     FE::Shared<HAL::IDescriptorHeap> m_DescriptorHeap;
     FE::Shared<HAL::IDescriptorTable> m_DescriptorTable;
 
-    FE::Shared<HAL::IShaderCompiler> m_Compiler;
     FE::Shared<HAL::IShaderModule> m_PixelShader;
     FE::Shared<HAL::IShaderModule> m_VertexShader;
 
@@ -83,8 +82,8 @@ class TestApplication final : public FE::ApplicationFramework
     FE::Shared<HAL::IBuffer> m_IndexBuffer, m_VertexBuffer;
 
     FE::Shared<HAL::IWindow> m_Window;
-    HAL::Viewport m_Viewport;
-    HAL::Scissor m_Scissor;
+    HAL::Viewport m_Viewport{};
+    HAL::Scissor m_Scissor{};
 
     const FE::Int32 m_FrameBufferCount = 3;
 
@@ -168,11 +167,11 @@ public:
         m_Device        = m_Adapter->CreateDevice();
         m_GraphicsQueue = m_Device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
         m_TransferQueue = m_Device->GetCommandQueue(HAL::CommandQueueClass::Transfer);
-        m_Compiler      = m_Device->CreateShaderCompiler();
         m_Window        = m_Device->CreateWindow(HAL::WindowDesc{ Desc.WindowWidth, Desc.WindowHeight, "Test project" });
         m_Viewport      = m_Window->CreateViewport();
         m_Scissor       = m_Window->CreateScissor();
 
+        auto compiler = m_Device->CreateShaderCompiler();
         HAL::SwapChainDesc swapChainDesc{};
         swapChainDesc.ImageCount         = m_FrameBufferCount;
         swapChainDesc.ImageWidth         = m_Scissor.Width();
@@ -237,7 +236,7 @@ public:
         psArgs.FullPath   = "../../FerrumTestProject/Shaders/PixelShader.hlsl";
         auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
-        auto psByteCode   = m_Compiler->CompileShader(psArgs);
+        auto psByteCode   = compiler->CompileShader(psArgs);
 
         m_PixelShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
 
@@ -248,7 +247,7 @@ public:
         vsArgs.FullPath   = "../../FerrumTestProject/Shaders/VertexShader.hlsl";
         auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
-        auto vsByteCode   = m_Compiler->CompileShader(vsArgs);
+        auto vsByteCode   = compiler->CompileShader(vsArgs);
 
         m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
 
