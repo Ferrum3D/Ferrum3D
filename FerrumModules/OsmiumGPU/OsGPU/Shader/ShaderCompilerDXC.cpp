@@ -76,9 +76,9 @@ namespace FE::Osmium
     }
 
     ShaderCompilerDXC::ShaderCompilerDXC(GraphicsAPI api)
-        : m_Module("dxcompiler")
-        , m_API(api)
+        : m_API(api)
     {
+        m_Module.LoadFrom("dxcompiler");
     }
 
     Shared<IByteBuffer> ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)

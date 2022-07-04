@@ -14,7 +14,7 @@
 
 namespace FE
 {
-    DynamicLibrary::DynamicLibrary(StringSlice fileName)
+    bool DynamicLibrary::LoadFrom(StringSlice fileName)
     {
         m_FullName = fileName;
         m_FullName += FE_DLL_EXTENSION;
@@ -29,11 +29,13 @@ namespace FE
 
         if (m_NativeHandle)
         {
-            FE_LOG_MESSAGE("Loaded dynamic library '{}'", m_FullName);
+            FE_LOG_MESSAGE("Loaded a dynamic library from file '{}'", m_FullName);
+            return true;
         }
         else
         {
             FE_LOG_ERROR("Library '{}{}' was not loaded due to an error", fileName, FE_DLL_EXTENSION);
+            return false;
         }
     }
 
@@ -44,10 +46,19 @@ namespace FE
 
     DynamicLibrary::~DynamicLibrary()
     {
-        if (m_NativeHandle)
+        Unload();
+    }
+
+    void DynamicLibrary::Unload()
+    {
+        if (m_NativeHandle == nullptr)
         {
-            FE_FREE_LIBRARY(m_NativeHandle);
+            return;
         }
-        FE_LOG_MESSAGE("Unloaded dynamic library '{}'", m_FullName);
+
+        FE_FREE_LIBRARY(m_NativeHandle);
+        FE_LOG_MESSAGE("Unloaded dynamic library from file '{}'", m_FullName);
+        m_FullName = "";
+        m_NativeHandle = nullptr;
     }
 } // namespace FE
