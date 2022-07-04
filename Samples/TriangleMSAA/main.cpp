@@ -13,13 +13,14 @@ struct Vertex
 namespace HAL = FE::Osmium;
 
 inline constexpr const char* ExampleName = "Ferrum3D - Triangle with MSAA";
-inline constexpr FE::Int32 MSAASamples   = 4;
+inline constexpr FE::Int32 MSAASamples   = 8;
 
 void RunExample()
 {
     auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
 
-    FE::DynamicLibrary osmiumLib("OsGPU");
+    FE::DynamicLibrary osmiumLib;
+    osmiumLib.LoadFrom("OsGPU");
     auto attachEnvironment = osmiumLib.GetFunction<HAL::AttachEnvironmentProc>("AttachEnvironment");
     attachEnvironment(&FE::Env::GetEnvironment());
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
@@ -151,7 +152,7 @@ void RunExample()
         cmd->BeginRenderPass(
             renderPass.GetRaw(), framebuffer.GetRaw(),
             { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine }, HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
-        cmd->Draw(6, 1, 0, 0);
+        cmd->Draw(3, 1, 0, 0);
         cmd->EndRenderPass();
         cmd->End();
     }
