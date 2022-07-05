@@ -95,14 +95,14 @@ namespace FE
             return m_Data[idx];
         }
 
-        inline std::tuple<TString, T>& Push(TString&& key, T&& value)
+        inline std::tuple<TString, T>& Push(TString&& key, const T& value)
         {
             auto it    = FindIter(key);
             size_t idx = it - m_Data.begin();
             if (it != m_Data.end() && std::get<0>(*it) == key)
                 std::get<1>(*it) = value;
             else
-                m_Data.insert(it, std::make_tuple(std::move(key), std::move(value)));
+                m_Data.insert(it, std::make_tuple(std::move(key), value));
             return m_Data[idx];
         }
 
