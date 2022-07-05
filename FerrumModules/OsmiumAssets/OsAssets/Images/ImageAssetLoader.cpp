@@ -2,7 +2,7 @@
 #include <FeCore/Containers/List.h>
 #include <OsAssets/Images/ImageAssetLoader.h>
 #include <OsAssets/Images/ImageAssetStorage.h>
-#include <OsAssets/Images/StbImage.h>
+#include <OsAssets/Images/ImageLoaderImpl.h>
 
 namespace FE::Osmium
 {
