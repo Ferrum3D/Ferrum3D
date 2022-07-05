@@ -1,4 +1,4 @@
-#include <OsAssets/Images/StbImage.h>
+#include <OsAssets/Images/ImageLoaderImpl.h>
 
 // TODO: use custom allocator for stb
 #define STB_IMAGE_IMPLEMENTATION

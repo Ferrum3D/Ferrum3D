@@ -6,8 +6,8 @@ set(SRC
     OsAssets/Images/ImageAssetLoader.h
     OsAssets/Images/ImageAssetStorage.cpp
     OsAssets/Images/ImageAssetStorage.h
-    OsAssets/Images/StbImage.cpp
-    OsAssets/Images/StbImage.h
+    OsAssets/Images/ImageLoaderImpl.cpp
+    OsAssets/Images/ImageLoaderImpl.h
 
     OsAssets/Meshes/MeshAssetLoader.cpp
     OsAssets/Meshes/MeshAssetLoader.h
