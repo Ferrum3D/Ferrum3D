@@ -2,8 +2,8 @@
 #include <FeCore/Memory/BasicSystemAllocator.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Utils/SortedStringVector.h>
-#include <sstream>
 #include <cstdio>
+#include <sstream>
 
 namespace FE
 {
@@ -180,10 +180,19 @@ namespace FE::Env
             return;
 
         if (Internal::g_IsEnvOwner)
+        {
             GetEnvironment().Destroy();
-
-        Internal::g_EnvInstance = nullptr;
+            Internal::g_EnvInstance = nullptr;
+        }
     }
+
+    [[maybe_unused]] struct EnvironmentRelease
+    {
+        ~EnvironmentRelease()
+        {
+            DetachEnvironment();
+        }
+    } g_EnvRelease;
 
     bool EnvironmentAttached()
     {
