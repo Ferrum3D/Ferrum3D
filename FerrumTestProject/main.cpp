@@ -134,7 +134,6 @@ public:
     ~TestApplication() override
     {
         m_Device->WaitIdle();
-        FE::SharedInterface<HAL::OsmiumGPUModule>::ReleaseFromCurrentModule();
     }
 
     void Initialize(const FE::ApplicationDesc& desc) override
