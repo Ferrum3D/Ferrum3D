@@ -17,9 +17,4 @@ namespace FE::Osmium
             m_Data = nullptr;
         }
     }
-
-    Assets::AssetType ImageAssetStorage::GetAssetType() const
-    {
-        return ImageAssetLoader::AssetType;
-    }
 } // namespace FE::Osmium

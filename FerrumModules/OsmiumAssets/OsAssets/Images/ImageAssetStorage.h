@@ -49,7 +49,5 @@ namespace FE::Osmium
         {
             return m_Height;
         }
-
-        [[nodiscard]] Assets::AssetType GetAssetType() const override;
     };
 } // namespace FE::Osmium

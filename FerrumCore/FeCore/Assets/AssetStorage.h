@@ -54,9 +54,6 @@ namespace FE::Assets
             return true;
         }
 
-        //! \brief Get type of asset.
-        [[nodiscard]] virtual AssetType GetAssetType() const = 0;
-
         //! \brief Add a strong reference to the asset.
         inline void AddStrongRef()
         {
