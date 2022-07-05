@@ -15,6 +15,7 @@ namespace FE::Osmium
 
         inline void Initialize(const OsmiumGPUModuleDesc& desc) override
         {
+            FrameworkBase::Initialize();
             m_Desc = desc;
         }
 
