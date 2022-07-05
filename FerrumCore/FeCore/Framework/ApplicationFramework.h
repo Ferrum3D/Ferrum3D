@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Assets/IAssetManager.h>
 #include <FeCore/Console/ConsoleLogger.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Framework/FrameworkBase.h>
@@ -9,6 +10,7 @@ namespace FE
     struct ApplicationDesc
     {
         String Name;
+        String AssetDirectory;
         UInt32 WindowWidth  = 800;
         UInt32 WindowHeight = 600;
         bool Fullscreen     = false;
@@ -17,6 +19,18 @@ namespace FE
 
         inline ApplicationDesc(const String& name, UInt32 windowWidth = 800, UInt32 windowHeight = 600, bool fullscreen = false)
             : Name(name)
+            , AssetDirectory()
+            , WindowWidth(windowWidth)
+            , WindowHeight(windowHeight)
+            , Fullscreen(fullscreen)
+        {
+        }
+
+        inline ApplicationDesc(
+            const String& name, const String& assetDirectory, UInt32 windowWidth = 800, UInt32 windowHeight = 600,
+            bool fullscreen = false)
+            : Name(name)
+            , AssetDirectory(assetDirectory)
             , WindowWidth(windowWidth)
             , WindowHeight(windowHeight)
             , Fullscreen(fullscreen)
@@ -50,6 +64,7 @@ namespace FE
         Shared<Debug::ConsoleLogger> m_Logger;
         Shared<EventBus<FrameEvents>> m_FrameEventBus;
         Shared<JobScheduler> m_JobScheduler;
+        Shared<Assets::IAssetManager> m_AssetManager;
 
     protected:
         virtual void PollSystemEvents()   = 0;
@@ -79,7 +94,6 @@ namespace FE
         ::FE::GlobalAllocator<::FE::HeapAllocator>::Init(::FE::HeapAllocatorDesc{});                                             \
         int code = MainImpl();                                                                                                   \
         ::FE::GlobalAllocator<::FE::HeapAllocator>::Destroy();                                                                   \
-        ::FE::Env::DetachEnvironment();                                                                                          \
         return code;                                                                                                             \
     }                                                                                                                            \
     int MainImpl()

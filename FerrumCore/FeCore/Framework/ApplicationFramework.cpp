@@ -1,3 +1,6 @@
+#include <FeCore/Assets/AssetManager.h>
+#include <FeCore/Assets/AssetProviderDev.h>
+#include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/ApplicationFramework.h>
@@ -8,9 +11,20 @@ namespace FE
     {
         Desc = desc;
 
-        m_Logger        = FE::MakeShared<FE::Debug::ConsoleLogger>();
-        m_FrameEventBus = FE::MakeShared<FE::EventBus<FE::FrameEvents>>();
-        m_JobScheduler  = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
+        m_Logger        = MakeShared<Debug::ConsoleLogger>();
+        m_FrameEventBus = MakeShared<EventBus<FrameEvents>>();
+        m_JobScheduler  = MakeShared<JobScheduler>(std::thread::hardware_concurrency() - 1);
+
+        if (!Desc.AssetDirectory.Empty())
+        {
+            m_AssetManager     = MakeShared<Assets::AssetManager>();
+            auto assetProvider = MakeShared<Assets::AssetProviderDev>();
+            auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
+            assetRegistry->LoadAssetsFromFile(Desc.AssetDirectory / "FerrumAssetIndex");
+            assetProvider->AttachRegistry(assetRegistry);
+            m_AssetManager->AttachAssetProvider(assetProvider);
+        }
+
         FrameworkBase::Initialize();
     }
 
