@@ -15,10 +15,11 @@ set(SRC
     OsAssets/Meshes/MeshAssetStorage.h
     OsAssets/Meshes/MeshLoaderImpl.cpp
     OsAssets/Meshes/MeshLoaderImpl.h
+    OsAssets/OsmiumAssetsModule.cpp OsAssets/OsmiumAssetsModule.h
     # FERRUM_SORT_LINES END
-)
+    )
 
-add_library(OsAssets STATIC ${SRC})
+add_library(OsAssets SHARED ${SRC})
 
 fe_configure_target(OsAssets)
 

@@ -13,7 +13,6 @@ namespace FE
 
     public:
         typedef TModule* (*CreateModuleInstanceProc)(Env::Internal::IEnvironment* environment);
-        typedef void (*DetachModuleProc)();
 
         inline ModuleFrameworkFactoryImpl(StringSlice libraryPath) // NOLINT
             : m_LibraryPath(libraryPath)
@@ -36,14 +35,20 @@ namespace FE
             m_Library->LoadFrom(m_LibraryPath);
             auto CreateModuleInstance = m_Library->GetFunction<CreateModuleInstanceProc>("CreateModuleInstance");
             m_Module                  = CreateModuleInstance(&Env::GetEnvironment());
-            FE_LOG_MESSAGE("Loaded a dynamic module: {}", fe_nameof<TModule>());
+            FE_LOG_MESSAGE("Loaded a dynamic module: {}", fe_nameof(*m_Module));
         }
 
         inline void Unload() override
         {
+            if (!IsLoaded())
+            {
+                return;
+            }
+
+            FE_LOG_MESSAGE("Unloading a dynamic module: {}", fe_nameof(*m_Module));
             m_Module->ReleaseStrongRef();
             m_Library.Reset();
-            FE_LOG_MESSAGE("Unloaded a dynamic module: {}", fe_nameof<TModule>());
+            FE_LOG_MESSAGE("Done");
         }
     };
 
@@ -104,7 +109,10 @@ namespace FE
     public:
         FE_CLASS_RTTI(ModuleFramework, "ED879368-A819-4B8C-AF2C-848AEF12B99F");
 
-        ~ModuleFramework() override = default;
+        inline ~ModuleFramework() override
+        {
+            FrameworkBase::UnloadDependencies();
+        }
 
         inline ModuleFramework() = default;
 
