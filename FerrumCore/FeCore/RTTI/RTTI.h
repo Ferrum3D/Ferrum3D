@@ -30,7 +30,7 @@ namespace FE
                                                                                                                                  \
     inline static std::string_view FeRTTI_GetSName()                                                                             \
     {                                                                                                                            \
-        return ::FE::TypeName<name>();                                                                                                 \
+        return ::FE::TypeName<name>();                                                                                           \
     }
 
     //! \brief Define common RTTI functions for a class.
@@ -154,7 +154,7 @@ namespace FE
     //!
     //! For additional information see overload of \ref fe_nameof() without parameters.
     //!
-    //! \note The provided type must implement Ferrum3D RTTI system throgh \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
+    //! \note The provided type must implement Ferrum3D RTTI system through \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
     //!
     //! \tparam T - Type to get name of.
     //!

@@ -24,14 +24,15 @@ namespace FE
     template<class T>
     class SharedInterface
     {
-        static Env::GlobalVariable<T*> m_Instance;
+        static T* m_Instance;
+        static Env::GlobalVariable<T*> m_Owner;
         static std::shared_mutex m_Mutex;
 
         inline static void TryFind()
         {
             std::unique_lock lk(m_Mutex);
             Env::FindGlobalVariableByType<T*>().OnOk([&](const auto&, const auto& variable) {
-                m_Instance = variable;
+                m_Instance = *variable;
             });
         }
 
@@ -49,23 +50,16 @@ namespace FE
             FE_CORE_ASSERT(instance, "SharedInterface instance was a nullptr");
             FE_CORE_ASSERT(Get() == nullptr, "Couldn't register a SharedInterface instance twice");
             std::unique_lock lk(m_Mutex);
-            m_Instance = Env::CreateGlobalVariableByType<T*>(instance);
+            m_Owner = Env::CreateGlobalVariableByType<T*>(instance);
         }
 
         //! \brief Unregister the instance.
         inline static void Unregister()
         {
-            FE_CORE_ASSERT(m_Instance, "SharedInterface instance was a nullptr");
+            FE_CORE_ASSERT(m_Owner, "SharedInterface instance was a nullptr");
             std::unique_lock lk(m_Mutex);
-            *m_Instance = nullptr;
-            m_Instance.Reset();
-        }
-
-        inline static void ReleaseFromCurrentModule()
-        {
-            FE_CORE_ASSERT(m_Instance, "SharedInterface instance was a nullptr");
-            std::unique_lock lk(m_Mutex);
-            m_Instance.Reset();
+            *m_Owner = nullptr;
+            m_Owner.Reset();
         }
 
         //! \brief Get the registered instance.
@@ -80,13 +74,16 @@ namespace FE
                 TryFind();
             {
                 std::shared_lock lk(m_Mutex);
-                return m_Instance ? *m_Instance : nullptr;
+                return m_Instance;
             }
         }
     };
 
     template<class T>
-    Env::GlobalVariable<T*> SharedInterface<T>::m_Instance;
+    Env::GlobalVariable<T*> SharedInterface<T>::m_Owner;
+
+    template<class T>
+    T* SharedInterface<T>::m_Instance;
 
     template<class T>
     std::shared_mutex SharedInterface<T>::m_Mutex;
