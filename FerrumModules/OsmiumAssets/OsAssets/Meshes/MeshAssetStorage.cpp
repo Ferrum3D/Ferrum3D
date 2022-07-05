@@ -8,11 +8,6 @@ namespace FE::Osmium
     {
     }
 
-    Assets::AssetType MeshAssetStorage::GetAssetType() const
-    {
-        return MeshAssetLoader::AssetType;
-    }
-
     void MeshAssetStorage::Delete()
     {
         m_VertexBuffer.Clear();
