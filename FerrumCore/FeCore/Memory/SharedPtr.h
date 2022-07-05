@@ -54,6 +54,19 @@ namespace FE
             }
         }
 
+        //! \brief Copy a pointer (adds a strong reference to underlying object).
+        //!
+        //! \param [in] other - Pointer to copy.
+        template<class T1>
+        inline Shared(const Shared<T1>& other) noexcept
+            : m_Object(other.GetRaw())
+        {
+            if (m_Object)
+            {
+                m_Object->AddStrongRef();
+            }
+        }
+
         //! \brief Move a pointer (doesn't add a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to move.
@@ -63,7 +76,7 @@ namespace FE
             other.m_Object = nullptr;
         }
 
-        //! \brief Swap raw pointers of two objects without incrementing and descrementing ref-counters.
+        //! \brief Swap raw pointers of two objects without incrementing and decrementing ref-counters.
         inline void Swap(Shared& other)
         {
             auto* t        = other.m_Object;
