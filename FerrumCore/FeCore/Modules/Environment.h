@@ -221,15 +221,9 @@ namespace FE::Env
             }
 
             //! \brief Get underlying variable.
-            inline T& Get()
+            inline const T* Get() const
             {
-                return *reinterpret_cast<T*>(&m_Storage);
-            }
-
-            //! \brief Get underlying variable.
-            inline const T& Get() const
-            {
-                return *reinterpret_cast<const T*>(&m_Storage);
+                return reinterpret_cast<const T*>(&m_Storage);
             }
 
             //! \brief Add a reference to internal counter.
@@ -398,32 +392,18 @@ namespace FE::Env
             m_Storage       = t;
         }
 
-        inline T& operator*()
+        inline T& operator*() const
         {
             FE_CORE_ASSERT(m_Storage, "Global variable was empty");
             FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return m_Storage->Get();
+            return *const_cast<T*>(m_Storage->Get());
         }
 
-        inline T* operator->()
+        inline T* operator->() const
         {
             FE_CORE_ASSERT(m_Storage, "Global variable was empty");
             FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return &m_Storage->Get();
-        }
-
-        inline const T& operator*() const
-        {
-            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return m_Storage->Get();
-        }
-
-        inline const T* operator->() const
-        {
-            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return m_Storage->Get();
+            return const_cast<T*>(m_Storage->Get());
         }
 
         inline operator bool() const
