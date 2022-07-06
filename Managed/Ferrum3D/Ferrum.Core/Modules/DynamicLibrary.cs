@@ -4,8 +4,35 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Modules
 {
-    public static class DynamicLibrary
+    public class DynamicLibrary : IDisposable
     {
+        public string Name { get; private set; }
+        public IntPtr Handle { get; private set; }
+
+        public static DynamicLibrary FromPath(string name)
+        {
+            var result = new DynamicLibrary();
+            result.LoadFrom(name);
+            return result;
+        }
+
+        public void LoadFrom(string name)
+        {
+            Name = name;
+            Handle = LoadLibrary(name);
+        }
+
+        public void Dispose()
+        {
+            FreeLibrary(Handle);
+        }
+
+        public T GetFunction<T>(string name) where T : Delegate
+        {
+            var address = GetProcAddress(Handle, "MultiplyByTen");
+            return (T)Marshal.GetDelegateForFunctionPointer(address, typeof(T));
+        }
+
         public static void UnloadModule(string moduleName)
         {
             moduleName = moduleName.ToLower();
@@ -19,7 +46,13 @@ namespace Ferrum.Core.Modules
             }
         }
 
-        [DllImport("kernel32", SetLastError = true)]
-        private static extern bool FreeLibrary(IntPtr hModule);
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr LoadLibrary(string path);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetProcAddress(IntPtr handle, string name);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool FreeLibrary(IntPtr handle);
     }
 }
