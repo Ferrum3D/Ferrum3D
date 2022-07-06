@@ -19,6 +19,13 @@ namespace FE
         //! \brief True if the framework was loaded.
         virtual bool IsLoaded() = 0;
 
+        //! \brief True is the framework was loaded from this factory.
+        //!
+        //! IFrameworkFactory::Load() only actually loads the module if it was not loaded previously be another instance
+        //! of its factory. Multiple frameworks can depend on the same module, but it shouldn't be loaded and unloaded
+        //! multiple times. This function indicates that the module won't outlive the framework that owns this factory.
+        virtual bool IsOwner() = 0;
+
         //! \brief Load a framework.
         //!
         //! This function loads the framework to the memory, but doesn't initialize it and doesn't load its dependencies.
