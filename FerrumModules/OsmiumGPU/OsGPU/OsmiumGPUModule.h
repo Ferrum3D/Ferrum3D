@@ -25,7 +25,7 @@ namespace FE::Osmium
 
         inline static constexpr const char* LibraryPath = "OsGPU";
 
-        virtual void Initialize(const OsmiumGPUModuleDesc& desc) = 0;
+        virtual void Initialize(const OsmiumGPUModuleDesc& desc)       = 0;
         [[nodiscard]] virtual Shared<IInstance> CreateInstance() const = 0;
     };
 } // namespace FE::Osmium
