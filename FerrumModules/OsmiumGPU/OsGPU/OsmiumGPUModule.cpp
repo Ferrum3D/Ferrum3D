@@ -8,7 +8,7 @@ namespace FE::Osmium
         OsmiumGPUModuleDesc m_Desc;
 
     public:
-        FE_CLASS_RTTI(OsmiumGPUModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
+        FE_CLASS_RTTI(OsmiumGPUModuleImpl, "CB3A80B7-EED3-4FBF-8694-1ED61246234A");
 
         OsmiumGPUModuleImpl();
         ~OsmiumGPUModuleImpl() override = default;
