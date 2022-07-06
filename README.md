@@ -25,6 +25,7 @@ All the modules have the same structure, e.g. if the module is called *MyModule*
   - `Console` - Console loggers, functions for windows-specific UTF-8 initialization, colored text printing.
   - `Containers` - Custom data structures: `List<T>`, `IByteArray`, `ArraySlice<T>`, etc.
   - `EventBus` - Event bus and event handler implementation and basic events.
+  - `Framework` - Application and module frameworks: classes for managing dependencies of engine modules.
   - `IO` - Input/Output streams, filesystem utilities, etc.
   - `Jobs` - Job scheduler and basic jobs implementation.
   - `Math` - Math library: vectors, matrices, etc. Optimized with SIMD instructions.
