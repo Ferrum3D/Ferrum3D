@@ -24,6 +24,11 @@ namespace FE
             return SharedInterface<TModule>::Get() != nullptr;
         }
 
+        inline bool IsOwner() override
+        {
+            return m_Module != nullptr;
+        }
+
         inline void Load() override
         {
             if (IsLoaded())
@@ -40,7 +45,7 @@ namespace FE
 
         inline void Unload() override
         {
-            if (!IsLoaded())
+            if (!IsOwner())
             {
                 return;
             }
