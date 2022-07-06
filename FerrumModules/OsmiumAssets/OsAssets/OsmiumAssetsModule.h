@@ -1,5 +1,7 @@
 #pragma once
 #include <FeCore/Framework/ModuleFramework.h>
+#include <OsAssets/Meshes/MeshAssetStorage.h>
+#include <OsAssets/Images/ImageAssetStorage.h>
 
 namespace FE::Osmium
 {
