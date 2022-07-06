@@ -42,4 +42,9 @@ namespace FE::Osmium
         SetInfo(ModuleInfo("Osmium.Assets", "Osmium's asset loading module", "Ferrum3D"));
     }
 
+    extern "C" FE_DLL_EXPORT OsmiumAssetsModule* CreateModuleInstance(Env::Internal::IEnvironment* environment)
+    {
+        Env::AttachEnvironment(*environment);
+        return MakeShared<OsmiumAssetsModuleImpl>().Detach();
+    }
 } // namespace FE::Osmium
