@@ -5,6 +5,7 @@ using Ferrum.Core.Containers;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Framework;
 using Ferrum.Core.Math;
+using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
@@ -172,22 +173,7 @@ namespace Ferrum.Samples.Triangle
         protected override void OnExit()
         {
             device.WaitIdle();
-            
-            commandBuffers.Dispose();
-            commandQueue.Dispose();
-            framebuffers.Dispose();
-            pipeline.Dispose();
-            renderPass.Dispose();
-            vertexShader.Dispose();
-            pixelShader.Dispose();
-            fences.Dispose();
-            vertexBuffer.Dispose();
-            swapChain.Dispose();
-            window.Dispose();
-            graphicsQueue.Dispose();
-            device.Dispose();
-            adapter.Dispose();
-            instance.Dispose();
+            this.DisposeFields();
         }
     }
 
