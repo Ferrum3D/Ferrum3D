@@ -11,7 +11,7 @@ namespace Ferrum.Core.Console
 
         public ConsoleLogger()
         {
-            handle = InitLoggerNative();
+            handle = ConstructNative();
         }
 
         public void Dispose()
@@ -52,17 +52,17 @@ namespace Ferrum.Core.Console
 
         private static void ReleaseUnmanagedResources()
         {
-            DeinitLoggerNative(handle);
+            DestructNative(handle);
             handle = IntPtr.Zero;
         }
 
-        [DllImport("FeCoreBindings", EntryPoint = "InitLogger")]
-        private static extern IntPtr InitLoggerNative();
+        [DllImport("FeCoreBindings", EntryPoint = "IConsoleLogger_Construct")]
+        private static extern IntPtr ConstructNative();
 
-        [DllImport("FeCoreBindings", EntryPoint = "DeinitLogger")]
-        private static extern void DeinitLoggerNative(IntPtr self);
+        [DllImport("FeCoreBindings", EntryPoint = "IConsoleLogger_Destruct")]
+        private static extern void DestructNative(IntPtr self);
 
-        [DllImport("FeCoreBindings", EntryPoint = "ConsoleLogger_Log")]
+        [DllImport("FeCoreBindings", EntryPoint = "IConsoleLogger_Log")]
         private static extern void LogNative(IntPtr self, IntPtr message, int logType);
 
         ~ConsoleLogger()

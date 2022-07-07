@@ -27,13 +27,19 @@ namespace Ferrum.Core.Modules
             FreeLibrary(Handle);
         }
 
-        public T GetFunction<T>(string name) where T : Delegate
+        public Delegate GetFunction(string name, Type delegateType)
         {
-            var address = GetProcAddress(Handle, "MultiplyByTen");
-            return (T)Marshal.GetDelegateForFunctionPointer(address, typeof(T));
+            var address = GetProcAddress(Handle, name);
+            return Marshal.GetDelegateForFunctionPointer(address, delegateType);
         }
 
-        public static void UnloadModule(string moduleName)
+        public T GetFunction<T>(string name) where T : Delegate
+        {
+            var address = GetProcAddress(Handle, name);
+            return Marshal.GetDelegateForFunctionPointer<T>(address);
+        }
+
+        public static IntPtr GetLoadedModule(string moduleName)
         {
             moduleName = moduleName.ToLower();
             var mods = Process.GetCurrentProcess().Modules;
@@ -41,9 +47,11 @@ namespace Ferrum.Core.Modules
             {
                 if (mods[i].ModuleName?.ToLower() == moduleName)
                 {
-                    FreeLibrary(mods[i].BaseAddress);
+                    return mods[i].BaseAddress;
                 }
             }
+
+            return IntPtr.Zero;
         }
 
         [DllImport("kernel32.dll")]
@@ -53,6 +61,6 @@ namespace Ferrum.Core.Modules
         private static extern IntPtr GetProcAddress(IntPtr handle, string name);
 
         [DllImport("kernel32.dll")]
-        private static extern bool FreeLibrary(IntPtr handle);
+        public static extern bool FreeLibrary(IntPtr handle);
     }
 }

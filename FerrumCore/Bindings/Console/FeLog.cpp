@@ -1,25 +1,24 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Memory.h>
-#include <cstdio>
 
-namespace FE
+namespace FE::Debug
 {
     extern "C"
     {
-        FE_DLL_EXPORT void* InitLogger()
+        FE_DLL_EXPORT IConsoleLogger* IConsoleLogger_Construct()
         {
-            auto logger = MakeShared<Debug::ConsoleLogger>();
+            auto logger = MakeShared<ConsoleLogger>();
             return logger.Detach();
         }
 
-        FE_DLL_EXPORT void DeinitLogger(Debug::IConsoleLogger* logger)
+        FE_DLL_EXPORT void IConsoleLogger_Destruct(IConsoleLogger* self)
         {
-            logger->ReleaseStrongRef();
+            self->ReleaseStrongRef();
         }
 
-        FE_DLL_EXPORT void ConsoleLogger_Log(Debug::IConsoleLogger* logger, const char* message, Int32 logType)
+        FE_DLL_EXPORT void IConsoleLogger_Log(IConsoleLogger* self, const char* message, Int32 logType)
         {
-            logger->Log(static_cast<Debug::LogMessageType>(logType), "{}", StringSlice(message));
+            self->Log(static_cast<LogMessageType>(logType), "{}", StringSlice(message));
         }
     }
 }

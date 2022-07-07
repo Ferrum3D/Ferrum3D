@@ -5,44 +5,50 @@ using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.Framework
 {
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr CreateModuleInstanceNative(IntPtr environment);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void DestructModuleInstanceNative(IntPtr handle);
+    
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
-    public sealed class NativeModuleFrameworkFactory<TModule> : IFrameworkFactory
+    public abstract class NativeModuleFrameworkFactory<TModule> : IFrameworkFactory
     {
-        public static bool IsLoaded;
-        public static DynamicLibrary Library;
+        public static bool IsLoaded { get; private set; }
+        public static DynamicLibrary Library { get; private set; }
+        private static FrameworkBase framework;
+        private static IntPtr Handle { get; set; }
         private static string libraryName;
-        private static IntPtr handle;
 
         public NativeModuleFrameworkFactory(string libraryName)
         {
             NativeModuleFrameworkFactory<TModule>.libraryName = libraryName + "Bindings";
         }
 
-        public void Load()
+        public IFramework Load()
         {
             if (IsLoaded)
             {
-                return;
+                return framework;
             }
 
             IsLoaded = true;
             Library = DynamicLibrary.FromPath(libraryName);
             var createModuleInstance = Library.GetFunction<CreateModuleInstanceNative>("CreateModuleInstance");
-            handle = createModuleInstance(Engine.Environment);
+            Handle = createModuleInstance(Engine.Environment);
+            framework = CreateFramework(Handle);
+            return framework;
         }
 
         public void Unload()
         {
             IsLoaded = false;
+            framework.Dispose();
             var destructModuleInstance = Library.GetFunction<DestructModuleInstanceNative>("DestructModuleInstance");
-            destructModuleInstance(handle);
+            destructModuleInstance(Handle);
             Library.Dispose();
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate IntPtr CreateModuleInstanceNative(IntPtr environment);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void DestructModuleInstanceNative(IntPtr handle);
+        protected abstract FrameworkBase CreateFramework(IntPtr handle);
     }
 }
