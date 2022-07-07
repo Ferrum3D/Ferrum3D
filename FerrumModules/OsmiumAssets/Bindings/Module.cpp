@@ -1,26 +1,30 @@
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Modules/Environment.h>
-#include <FeCore/Modules/SharedInterface.h>
-#include <OsAssets/Images/ImageAssetLoader.h>
-#include <OsAssets/Meshes/MeshAssetLoader.h>
+#include <OsAssets/OsmiumAssetsModule.h>
 
 namespace FE::Osmium
 {
+    IFrameworkFactory* g_OsmiumAssetsModuleFactory;
+
     extern "C"
     {
-        FE_DLL_EXPORT void AttachEnvironment(FE::Env::Internal::IEnvironment* environment)
+        FE_DLL_EXPORT OsmiumAssetsModule* CreateModuleInstance(Env::Internal::IEnvironment* env)
         {
-            Env::AttachEnvironment(*environment);
-            auto manager = SharedInterface<Assets::IAssetManager>::Get();
-            manager->RegisterAssetLoader(static_pointer_cast<Assets::IAssetLoader>(MakeShared<ImageAssetLoader>()));
-            manager->RegisterAssetLoader(static_pointer_cast<Assets::IAssetLoader>(MakeShared<MeshAssetLoader>()));
+            Env::AttachEnvironment(*env);
+            g_OsmiumAssetsModuleFactory = OsmiumAssetsModule::CreateFactory().Detach();
+            g_OsmiumAssetsModuleFactory->Load();
+            return SharedInterface<OsmiumAssetsModule>::Get();
         }
 
-        FE_DLL_EXPORT void DetachEnvironment()
+        FE_DLL_EXPORT void DestructModuleInstance()
         {
-            auto manager = SharedInterface<Assets::IAssetManager>::Get();
-            manager->RemoveAssetLoader(ImageAssetLoader::AssetType);
-            manager->RemoveAssetLoader(MeshAssetLoader::AssetType);
+            g_OsmiumAssetsModuleFactory->Unload();
+            g_OsmiumAssetsModuleFactory->ReleaseStrongRef();
+            g_OsmiumAssetsModuleFactory = nullptr;
+        }
+
+        FE_DLL_EXPORT void OsmiumAssetsModule_Initialize(OsmiumAssetsModule* self, OsmiumAssetsModuleDesc* desc)
+        {
+            self->Initialize(*desc);
         }
     }
 } // namespace FE::Osmium
