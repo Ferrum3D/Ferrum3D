@@ -70,10 +70,18 @@
             <Link>OsAssetsBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
+        <Content Include="..\..\..\BuildRelease\Release\OsAssets.dll">
+            <Link>OsAssets.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <Content Include="..\..\..\BuildDebug\Debug\OsAssetsBindings.dll">
             <Link>OsAssetsBindings.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="..\..\..\BuildDebug\Debug\OsAssets.dll">
+            <Link>OsAssets.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
