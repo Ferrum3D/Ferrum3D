@@ -71,7 +71,7 @@ namespace Ferrum.Samples.Triangle
 
             graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
 
-            var windowDesc = new Window.Desc(800, 600, ApplicationName);
+            var windowDesc = new Window.Desc(desc.WindowWidth, desc.WindowHeight, ApplicationName);
             window = device.CreateWindow(windowDesc);
 
             var swapChainDesc = new SwapChain.Desc(window, graphicsQueue);
