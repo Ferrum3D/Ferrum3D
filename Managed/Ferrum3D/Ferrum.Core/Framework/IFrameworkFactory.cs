@@ -2,7 +2,7 @@
 {
     public interface IFrameworkFactory
     {
-        void Load();
+        IFramework Load();
         void Unload();
     }
 }

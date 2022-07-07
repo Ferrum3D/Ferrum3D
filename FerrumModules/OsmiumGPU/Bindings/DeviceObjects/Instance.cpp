@@ -1,22 +1,10 @@
-#include <FeCore/Modules/DynamicLibrary.h>
 #include <OsGPU/Adapter/IAdapter.h>
 #include <OsGPU/Instance/IInstance.h>
 
 namespace FE::Osmium
 {
-    extern Shared<DynamicLibrary> g_OsmiumLib;
-
     extern "C"
     {
-        FE_DLL_EXPORT IInstance* IInstance_Construct(InstanceDesc* desc, Int32 api)
-        {
-            auto attachEnvironment = g_OsmiumLib->GetFunction<AttachEnvironmentProc>("AttachEnvironment");
-            attachEnvironment(&FE::Env::GetEnvironment());
-            auto createGraphicsAPIInstance = g_OsmiumLib->GetFunction<CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
-
-            return createGraphicsAPIInstance(*desc, static_cast<GraphicsAPI>(api));
-        }
-
         FE_DLL_EXPORT void IInstance_GetAdapters(IInstance* self, IAdapter** adapters, Int32* size)
         {
             auto& a = self->GetAdapters();

@@ -3,6 +3,7 @@ using System.IO;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Console;
 using Ferrum.Core.EventBus;
+using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.Framework
 {
@@ -13,16 +14,18 @@ namespace Ferrum.Core.Framework
         private int exitCode;
         private bool stopRequested;
 
+        private Engine engine;
         private ConsoleLogger logger;
         private AssetManager assetManager;
         protected abstract bool CloseEventReceived { get; }
 
         protected virtual bool ShouldStop => CloseEventReceived || stopRequested;
 
-        public void Initialize(Desc desc)
+        public virtual void Initialize(Desc desc)
         {
             Descriptor = desc;
 
+            engine = new Engine();
             logger = new ConsoleLogger();
 
             if (desc.AssetDirectory != null)
@@ -58,6 +61,9 @@ namespace Ferrum.Core.Framework
         {
             OnExit();
             base.Dispose();
+            assetManager?.Dispose();
+            logger?.Dispose();
+            engine.Dispose();
         }
 
         protected abstract void PollSystemEvents();

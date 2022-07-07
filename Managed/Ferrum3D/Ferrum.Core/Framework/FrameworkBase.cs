@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Ferrum.Core.Framework
 {
     public abstract class FrameworkBase : IFramework, IDisposable
     {
         public bool IsInitialized { get; private set; }
-        private readonly List<IFrameworkFactory> frameworkDependencies = new();
+        private readonly HashSet<IFrameworkFactory> frameworkFactories = new();
+        private readonly List<IFramework> frameworkDependencies = new();
 
         public void Initialize()
         {
@@ -15,10 +18,10 @@ namespace Ferrum.Core.Framework
                 return;
             }
 
-            GetFrameworkDependencies(frameworkDependencies);
-            for (var i = 0; i < frameworkDependencies.Count; ++i)
+            GetFrameworkDependencies(frameworkFactories);
+            foreach (var factory in frameworkFactories)
             {
-                frameworkDependencies[i].Load();
+                frameworkDependencies.Add(factory.Load());
             }
 
             IsInitialized = true;
@@ -31,9 +34,9 @@ namespace Ferrum.Core.Framework
                 return;
             }
 
-            for (var i = 0; i < frameworkDependencies.Count; ++i)
+            foreach (var factory in frameworkFactories)
             {
-                frameworkDependencies[i].Unload();
+                factory.Unload();
             }
 
             IsInitialized = false;
@@ -42,9 +45,15 @@ namespace Ferrum.Core.Framework
         public virtual void Dispose()
         {
             UnloadDependencies();
+            GC.SuppressFinalize(this);
         }
 
-        protected virtual void GetFrameworkDependencies(List<IFrameworkFactory> dependencies)
+        protected TModule GetDependency<TModule>()
+        {
+            return frameworkDependencies.OfType<TModule>().First();
+        }
+
+        protected virtual void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
         {
         }
     }
