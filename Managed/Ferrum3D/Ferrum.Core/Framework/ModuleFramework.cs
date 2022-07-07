@@ -9,9 +9,10 @@ namespace Ferrum.Core.Framework
         public abstract DynamicLibrary Library { get; }
         protected IntPtr Handle;
 
-        protected NativeModuleFramework(string libraryName)
+        protected NativeModuleFramework(string libraryName, IntPtr handle)
         {
             LibraryName = libraryName;
+            Handle = handle;
         }
     }
 }

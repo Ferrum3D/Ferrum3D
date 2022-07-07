@@ -8,6 +8,30 @@ namespace Ferrum.Osmium.GPU
 {
     public class OsmiumGpuModule : NativeModuleFramework
     {
+        public override DynamicLibrary Library => Factory.Library;
+        private const string LibraryPath = "OsGPU";
+
+        private OsmiumGpuModule(IntPtr handle) : base(LibraryPath, handle)
+        {
+        }
+
+        public void Initialize(Desc desc)
+        {
+            base.Initialize();
+            InitializeNative(Handle, ref desc);
+        }
+
+        public Instance CreateInstance()
+        {
+            return new Instance(CreateInstanceNative(Handle));
+        }
+
+        [DllImport(LibraryPath + "Bindings", EntryPoint = "OsmiumGPUModule_Initialize")]
+        private static extern void InitializeNative(IntPtr self, ref Desc desc);
+
+        [DllImport(LibraryPath + "Bindings", EntryPoint = "OsmiumGPUModule_CreateInstance")]
+        private static extern IntPtr CreateInstanceNative(IntPtr self);
+
         public sealed class Factory : NativeModuleFrameworkFactory<OsmiumGpuModule>
         {
             public Factory() : base(LibraryPath)
@@ -19,30 +43,6 @@ namespace Ferrum.Osmium.GPU
                 return new OsmiumGpuModule(handle);
             }
         }
-        
-        public override DynamicLibrary Library => Factory.Library;
-        private const string LibraryPath = "OsGPU";
-
-        public OsmiumGpuModule(IntPtr handle) : base(LibraryPath)
-        {
-            Handle = handle;
-        }
-
-        public void Initialize(Desc desc)
-        {
-            InitializeNative(Handle, ref desc);
-        }
-
-        public Instance CreateInstance()
-        {
-            return new Instance(CreateInstanceNative(Handle));
-        }
-
-        [DllImport("OsGPUBindings", EntryPoint = "OsmiumGPUModule_Initialize")]
-        private static extern void InitializeNative(IntPtr self, ref Desc desc);
-
-        [DllImport("OsGPUBindings", EntryPoint = "OsmiumGPUModule_CreateInstance")]
-        private static extern IntPtr CreateInstanceNative(IntPtr self);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public readonly struct Desc
