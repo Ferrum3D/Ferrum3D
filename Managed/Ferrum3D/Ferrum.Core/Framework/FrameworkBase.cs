@@ -49,7 +49,7 @@ namespace Ferrum.Core.Framework
 
         protected TModule GetDependency<TModule>()
         {
-            return frameworkDependencies.OfType<TModule>().First();
+            return frameworkDependencies.OfType<TModule>().FirstOrDefault();
         }
 
         protected virtual void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
