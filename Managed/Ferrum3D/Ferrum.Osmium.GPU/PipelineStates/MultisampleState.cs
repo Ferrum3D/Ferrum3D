@@ -4,12 +4,11 @@ namespace Ferrum.Osmium.GPU.PipelineStates
 {
     public readonly struct MultisampleState
     {
+        public static readonly MultisampleState None = new MultisampleState(1, 1.0f, false);
+        public static readonly MultisampleState X4 = new MultisampleState(4, 0.2f, true);
         public readonly int SampleCount;
         public readonly float MinSampleShading;
         public readonly bool SampleShadingEnabled;
-
-        public static readonly MultisampleState None = new MultisampleState(1, 1.0f, false);
-        public static readonly MultisampleState X4 = new MultisampleState(4, 0.2f, true);
 
         private MultisampleState(int sampleCount, float minSampleShading, bool sampleShadingEnabled)
         {

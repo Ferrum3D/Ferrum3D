@@ -192,13 +192,13 @@ namespace Ferrum.Core.Math
         {
             return vector * (1f / f);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return $"({X}; {Y}; {Z}; {W})";
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector4F other)
         {

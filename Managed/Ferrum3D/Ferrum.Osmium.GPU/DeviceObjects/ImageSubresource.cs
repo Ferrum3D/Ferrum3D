@@ -5,7 +5,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct ImageSubresource
     {
-        public static ImageSubresource Default = new ImageSubresource(0, 0, ImageAspect.Color);
+        public static ImageSubresource Default = new ImageSubresource(0);
         public readonly ushort MipSlice;
         public readonly ushort ArraySlice;
 

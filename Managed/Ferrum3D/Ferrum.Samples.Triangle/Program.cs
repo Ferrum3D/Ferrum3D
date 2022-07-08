@@ -30,6 +30,8 @@ namespace Ferrum.Samples.Triangle
 
     internal class ExampleApplication : ApplicationFramework
     {
+        public const string ApplicationName = "Ferrum3D - Triangle";
+
         private static readonly Vertex[] vertexData =
         {
             new(+0.0f, -0.5f, 0f, Colors.Red),
@@ -37,7 +39,6 @@ namespace Ferrum.Samples.Triangle
             new(-0.5f, +0.5f, 0f, Colors.Blue)
         };
 
-        public const string ApplicationName = "Ferrum3D - Triangle";
         private Instance instance;
         private Adapter adapter;
         private Device device;
@@ -54,10 +55,7 @@ namespace Ferrum.Samples.Triangle
         private DisposableList<CommandBuffer> commandBuffers;
         private CommandQueue commandQueue;
 
-        protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
-        {
-            dependencies.Add(new OsmiumGpuModule.Factory());
-        }
+        protected override bool CloseEventReceived => window.CloseRequested;
 
         public override void Initialize(Desc desc)
         {
@@ -151,7 +149,10 @@ namespace Ferrum.Samples.Triangle
             commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
         }
 
-        protected override bool CloseEventReceived => window.CloseRequested;
+        protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
+        {
+            dependencies.Add(new OsmiumGpuModule.Factory());
+        }
 
         protected override void PollSystemEvents()
         {

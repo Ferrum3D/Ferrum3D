@@ -11,7 +11,7 @@ namespace Ferrum.Osmium.Assets
     {
         public override DynamicLibrary Library => Factory.Library;
         private const string LibraryPath = "OsAssets";
-        
+
         private OsmiumAssetsModule(IntPtr handle) : base(LibraryPath, handle)
         {
         }

@@ -20,9 +20,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public int CurrentImageIndex => (int)GetCurrentImageIndexNative(Handle);
 
         public IReadOnlyList<ImageView> RenderTargetViews => renderTargetViews;
+        public ImageView DepthStencilView { get; }
 
         private readonly ImageView[] renderTargetViews;
-        public ImageView DepthStencilView { get; }
 
         private DescNative NativeDesc
         {
