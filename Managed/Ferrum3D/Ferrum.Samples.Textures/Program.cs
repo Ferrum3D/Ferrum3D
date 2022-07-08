@@ -47,6 +47,7 @@ namespace Ferrum.Samples.Textures
         private static readonly uint[] indexData = { 0, 2, 3, 3, 2, 1 };
 
         private static readonly Vector3F[] vsConstantData = { new(0.3f, -0.4f, 0.0f) };
+        
         private Instance instance;
         private Adapter adapter;
         private Device device;
@@ -64,7 +65,6 @@ namespace Ferrum.Samples.Textures
         private DisposableList<Framebuffer> framebuffers;
         private DisposableList<CommandBuffer> commandBuffers;
         private CommandQueue commandQueue;
-        private ImageAsset imageAsset;
         private Image textureImage;
         private Sampler textureSampler;
         private DescriptorHeap descriptorHeap;
@@ -80,7 +80,7 @@ namespace Ferrum.Samples.Textures
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
             device = adapter.CreateDevice();
