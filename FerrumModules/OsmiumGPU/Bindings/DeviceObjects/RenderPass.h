@@ -19,6 +19,7 @@ namespace FE::Osmium
     {
         IByteBuffer* InputAttachments;
         IByteBuffer* RenderTargetAttachments;
+        IByteBuffer* MSAAResolveAttachments;
         IByteBuffer* PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
     };

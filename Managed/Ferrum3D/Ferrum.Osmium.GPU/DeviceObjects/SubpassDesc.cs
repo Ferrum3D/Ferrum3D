@@ -10,45 +10,58 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
     {
         public readonly List<SubpassAttachment> InputAttachments;
         public readonly List<SubpassAttachment> RenderTargetAttachments;
-        public readonly List<uint> PreserveAttachments;
+        public readonly List<SubpassAttachment> MsaaResolveAttachments;
+        public readonly List<int> PreserveAttachments;
         public readonly SubpassAttachment? DepthStencilAttachment;
 
         private SubpassDesc(List<SubpassAttachment> inputAttachments,
-            List<SubpassAttachment> renderTargetAttachments,
-            List<uint> preserveAttachments, SubpassAttachment? depthStencilAttachment)
+            List<SubpassAttachment> renderTargetAttachments, List<SubpassAttachment> msaaResolveAttachments,
+            List<int> preserveAttachments, SubpassAttachment? depthStencilAttachment)
         {
             InputAttachments = inputAttachments;
             RenderTargetAttachments = renderTargetAttachments;
+            MsaaResolveAttachments = msaaResolveAttachments;
             PreserveAttachments = preserveAttachments;
             DepthStencilAttachment = depthStencilAttachment;
         }
 
         public SubpassDesc WithDepthStencilAttachment(SubpassAttachment v)
         {
-            return new SubpassDesc(InputAttachments, RenderTargetAttachments, PreserveAttachments, v);
+            return new SubpassDesc(InputAttachments, RenderTargetAttachments, MsaaResolveAttachments,
+                PreserveAttachments, v);
         }
 
         public SubpassDesc WithInputAttachments(params SubpassAttachment[] v)
         {
-            return new SubpassDesc(v.ToList(), RenderTargetAttachments, PreserveAttachments, DepthStencilAttachment);
+            return new SubpassDesc(v.ToList(), RenderTargetAttachments, MsaaResolveAttachments, PreserveAttachments,
+                DepthStencilAttachment);
         }
 
         public SubpassDesc WithRenderTargetAttachments(params SubpassAttachment[] v)
         {
-            return new SubpassDesc(InputAttachments, v.ToList(), PreserveAttachments, DepthStencilAttachment);
+            return new SubpassDesc(InputAttachments, v.ToList(), MsaaResolveAttachments, PreserveAttachments,
+                DepthStencilAttachment);
         }
 
-        public SubpassDesc WithPreserveAttachments(params uint[] v)
+        public SubpassDesc WithMsaaResolveAttachments(params SubpassAttachment[] v)
         {
-            return new SubpassDesc(InputAttachments, RenderTargetAttachments, v.ToList(), DepthStencilAttachment);
+            return new SubpassDesc(InputAttachments, RenderTargetAttachments, v.ToList(), PreserveAttachments,
+                DepthStencilAttachment);
         }
 
-        internal SubpassDesc ReplaceNulls()
+        public SubpassDesc WithPreserveAttachments(params int[] v)
+        {
+            return new SubpassDesc(InputAttachments, RenderTargetAttachments, MsaaResolveAttachments, v.ToList(),
+                DepthStencilAttachment);
+        }
+
+        private SubpassDesc ReplaceNulls()
         {
             return new SubpassDesc(
                 InputAttachments ?? new List<SubpassAttachment>(),
                 RenderTargetAttachments ?? new List<SubpassAttachment>(),
-                PreserveAttachments ?? new List<uint>(),
+                MsaaResolveAttachments ?? new List<SubpassAttachment>(),
+                PreserveAttachments ?? new List<int>(),
                 DepthStencilAttachment ?? SubpassAttachment.None
             );
         }
@@ -58,6 +71,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             public readonly IntPtr InputAttachments;
             public readonly IntPtr RenderTargetAttachments;
+            public readonly IntPtr MSAAResolveAttachments;
             public readonly IntPtr PreserveAttachments;
             public readonly SubpassAttachment DepthStencilAttachment;
 
@@ -66,7 +80,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 desc = desc.ReplaceNulls();
                 InputAttachments = new NativeArray<SubpassAttachment>(desc.InputAttachments).Detach();
                 RenderTargetAttachments = new NativeArray<SubpassAttachment>(desc.RenderTargetAttachments).Detach();
-                PreserveAttachments = new NativeArray<uint>(desc.PreserveAttachments).Detach();
+                MSAAResolveAttachments = new NativeArray<SubpassAttachment>(desc.MsaaResolveAttachments).Detach();
+                PreserveAttachments = new NativeArray<int>(desc.PreserveAttachments).Detach();
                 DepthStencilAttachment = desc.DepthStencilAttachment ?? SubpassAttachment.None;
             }
         }
