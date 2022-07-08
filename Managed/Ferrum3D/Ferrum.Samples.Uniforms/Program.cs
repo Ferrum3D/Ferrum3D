@@ -1,20 +1,29 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Assets;
 using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
+using Ferrum.Core.EventBus;
+using Ferrum.Core.Framework;
 using Ferrum.Core.Math;
 using Ferrum.Core.Modules;
+using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.VertexInput;
 using Ferrum.Osmium.GPU.WindowSystem;
+using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Samples.Uniforms
 {
-    internal static class Program
+    internal class ExampleApplication : ApplicationFramework
     {
+        public const string ApplicationName = "Ferrum3D - Uniforms";
+
         private static readonly Vector3F[] vertexData =
         {
             new(-0.5f, -0.5f, 0.0f),
@@ -28,40 +37,56 @@ namespace Ferrum.Samples.Uniforms
         private static readonly Color[] psConstantData = { Colors.Gold };
         private static readonly Vector3F[] vsConstantData = { new(0.3f, -0.4f, 0.0f) };
 
-        private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
-            where T : unmanaged
-        {
-            var dataLength = (ulong)(data.Length * Marshal.SizeOf<T>());
-            var stagingBuffer = device.CreateBuffer(bindFlags, dataLength);
-            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
-            stagingBuffer.UpdateData(data);
-            return stagingBuffer;
-        }
+        private Instance instance;
+        private Adapter adapter;
+        private Device device;
+        private CommandQueue graphicsQueue;
+        private Window window;
+        private SwapChain swapChain;
+        private Buffer psConstantBuffer;
+        private Buffer vsConstantBuffer;
+        private Buffer indexBuffer;
+        private Buffer vertexBuffer;
+        private DisposableList<Fence> fences;
+        private ShaderModule pixelShader;
+        private ShaderModule vertexShader;
+        private RenderPass renderPass;
+        private GraphicsPipeline pipeline;
+        private DisposableList<Framebuffer> framebuffers;
+        private DisposableList<CommandBuffer> commandBuffers;
+        private CommandQueue commandQueue;
+        private DescriptorHeap descriptorHeap;
+        private DescriptorTable descriptorTable;
 
-        private static void RunExample()
-        {
-            var instanceDesc = new Instance.Desc("Ferrum3D - Uniforms");
-            using var instance = new Instance(instanceDesc, GraphicsApi.Vulkan);
-            using var adapter = instance.Adapters.First();
-            using var device = adapter.CreateDevice();
+        protected override bool CloseEventReceived => window.CloseRequested;
 
-            using var graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
+        public override void Initialize(Desc desc)
+        {
+            base.Initialize(desc);
+            var gpuModule = GetDependency<OsmiumGpuModule>();
+            gpuModule.Initialize(new OsmiumGpuModule.Desc(ApplicationName, GraphicsApi.Vulkan));
+            
+            instance = gpuModule.CreateInstance();
+            adapter = instance.Adapters.First();
+            device = adapter.CreateDevice();
+
+            graphicsQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
 
             var windowDesc = new Window.Desc(800, 600, "Ferrum3D - Uniforms");
-            using var window = device.CreateWindow(windowDesc);
+            window = device.CreateWindow(windowDesc);
 
             var swapChainDesc = new SwapChain.Desc(window, graphicsQueue);
-            using var swapChain = device.CreateSwapChain(swapChainDesc);
+            swapChain = device.CreateSwapChain(swapChainDesc);
 
-            using var psConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, psConstantData);
-            using var vsConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, vsConstantData);
+            psConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, psConstantData);
+            vsConstantBuffer = CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, vsConstantData);
 
             var vertexSize = (ulong)(vertexData.Length * Marshal.SizeOf<Vector3F>());
             var indexSize = (ulong)(indexData.Length * sizeof(uint));
 
-            using var vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, vertexSize);
+            vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, vertexSize);
             vertexBuffer.AllocateMemory(MemoryType.DeviceLocal);
-            using var indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, indexSize);
+            indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, indexSize);
             indexBuffer.AllocateMemory(MemoryType.DeviceLocal);
 
             using (var transferComplete = device.CreateFence(Fence.FenceState.Reset))
@@ -87,8 +112,8 @@ namespace Ferrum.Samples.Uniforms
             var psArgs = ShaderCompiler.Args.FromFile(ShaderStage.Pixel, "Assets/Shaders/PixelShader.hlsl");
             using var psBytecode = compiler.CompileShader(psArgs);
 
-            using var pixelShader = device.CreateShaderModule(ShaderStage.Pixel, psBytecode);
-            using var vertexShader = device.CreateShaderModule(ShaderStage.Vertex, vsBytecode);
+            pixelShader = device.CreateShaderModule(ShaderStage.Pixel, psBytecode);
+            vertexShader = device.CreateShaderModule(ShaderStage.Vertex, vsBytecode);
             compiler.Dispose();
 
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
@@ -98,7 +123,7 @@ namespace Ferrum.Samples.Uniforms
                 .WithAttachments(attachmentDesc)
                 .WithSubpasses(subpassDesc)
                 .WithSubpassDependencies(SubpassDependency.Default);
-            using var renderPass = device.CreateRenderPass(renderPassDesc);
+            renderPass = device.CreateRenderPass(renderPassDesc);
 
             var scissor = window.CreateScissor();
             var viewport = window.CreateViewport();
@@ -110,10 +135,10 @@ namespace Ferrum.Samples.Uniforms
                     new DescriptorSize(1, ShaderResourceType.ConstantBuffer)
                 );
 
-            using var descriptorHeap = device.CreateDescriptorHeap(descriptorHeapDesc);
+            descriptorHeap = device.CreateDescriptorHeap(descriptorHeapDesc);
             var psDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Pixel, 1);
             var vsDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Vertex, 1);
-            using var descriptorTable = descriptorHeap.AllocateDescriptorTable(psDescriptorDesc, vsDescriptorDesc);
+            descriptorTable = descriptorHeap.AllocateDescriptorTable(psDescriptorDesc, vsDescriptorDesc);
 
             descriptorTable.Update(0, psConstantBuffer);
             descriptorTable.Update(1, vsConstantBuffer);
@@ -133,24 +158,24 @@ namespace Ferrum.Samples.Uniforms
             pipelineDesc.Scissor = scissor;
             pipelineDesc.Viewport = viewport;
 
-            using var pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+            pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-            using var fences = new DisposableList<Fence>();
+            fences = new DisposableList<Fence>();
             for (var i = 0; i < swapChain.FrameCount; i++)
             {
                 fences.Add(device.CreateFence(Fence.FenceState.Signaled));
             }
 
-            using var framebuffers = new DisposableList<Framebuffer>();
-            using var commandBuffers = new DisposableList<CommandBuffer>();
+            framebuffers = new DisposableList<Framebuffer>();
+            commandBuffers = new DisposableList<CommandBuffer>();
             for (var i = 0; i < swapChain.ImageCount; i++)
             {
-                var desc = new Framebuffer.Desc()
+                var framebufferDesc = new Framebuffer.Desc()
                     .WithRenderPass(renderPass)
                     .WithScissor(scissor)
                     .WithRenderTargetViews(null, swapChain.RenderTargetViews[i]);
 
-                framebuffers.Add(device.CreateFramebuffer(desc));
+                framebuffers.Add(device.CreateFramebuffer(framebufferDesc));
                 commandBuffers.Add(device.CreateCommandBuffer(CommandQueueClass.Graphics));
 
                 using var builder = commandBuffers[i].Begin();
@@ -161,33 +186,59 @@ namespace Ferrum.Samples.Uniforms
                 builder.BindVertexBuffer(0, vertexBuffer);
                 builder.BindIndexBuffer(indexBuffer);
                 builder.BeginRenderPass(renderPass, framebuffers[i], Colors.MediumAquamarine);
-                builder.DrawIndexed(6, 1, 0, 0, 0);
+                builder.DrawIndexed(indexData.Length, 1, 0, 0, 0);
                 builder.EndRenderPass();
             }
 
-            using var commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
-            while (!window.CloseRequested)
-            {
-                var frameIndex = swapChain.CurrentFrameIndex;
-                fences[frameIndex].WaitOnCpu();
-                window.PollEvents();
-                var imageIndex = swapChain.CurrentImageIndex;
-                fences[swapChain.CurrentFrameIndex].Reset();
-                commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex],
-                    CommandQueue.SubmitFlags.FrameBeginEnd);
-                swapChain.Present();
-            }
-
-            device.WaitIdle();
+            commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
         }
 
-        private static void Main()
+        private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
+            where T : unmanaged
         {
-            using var engine = new Engine();
-            using var logger = new ConsoleLogger();
-            using var osmiumGpuModule = new OsmiumGpuModule(Engine.Environment);
+            var dataLength = (ulong)(data.Length * Marshal.SizeOf<T>());
+            var stagingBuffer = device.CreateBuffer(bindFlags, dataLength);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(data);
+            return stagingBuffer;
+        }
 
-            RunExample();
+        protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
+        {
+            dependencies.Add(new OsmiumGpuModule.Factory());
+        }
+
+        protected override void PollSystemEvents()
+        {
+            window.PollEvents();
+        }
+
+        protected override void Tick(FrameEventArgs frameEventArgs)
+        {
+            var frameIndex = swapChain.CurrentFrameIndex;
+            fences[frameIndex].WaitOnCpu();
+            window.PollEvents();
+            var imageIndex = swapChain.CurrentImageIndex;
+            fences[swapChain.CurrentFrameIndex].Reset();
+            commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex],
+                CommandQueue.SubmitFlags.FrameBeginEnd);
+            swapChain.Present();
+        }
+
+        protected override void OnExit()
+        {
+            device.WaitIdle();
+            this.DisposeFields();
+        }
+    }
+
+    internal static class Program
+    {
+        private static int Main()
+        {
+            using var app = new ExampleApplication();
+            app.Initialize(new ApplicationFramework.Desc(ExampleApplication.ApplicationName));
+            return app.RunMainLoop();
         }
     }
 }
