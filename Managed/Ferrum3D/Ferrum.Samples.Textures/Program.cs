@@ -47,7 +47,7 @@ namespace Ferrum.Samples.Textures
         private static readonly uint[] indexData = { 0, 2, 3, 3, 2, 1 };
 
         private static readonly Vector3F[] vsConstantData = { new(0.3f, -0.4f, 0.0f) };
-        
+
         private Instance instance;
         private Adapter adapter;
         private Device device;

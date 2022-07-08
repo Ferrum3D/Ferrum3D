@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Ferrum.Core.Assets;
-using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Framework;
 using Ferrum.Core.Math;
-using Ferrum.Core.Modules;
 using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
@@ -16,7 +12,6 @@ using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.VertexInput;
 using Ferrum.Osmium.GPU.WindowSystem;
-using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Samples.Uniforms
 {
@@ -65,7 +60,7 @@ namespace Ferrum.Samples.Uniforms
             base.Initialize(desc);
             var gpuModule = GetDependency<OsmiumGpuModule>();
             gpuModule.Initialize(new OsmiumGpuModule.Desc(ApplicationName, GraphicsApi.Vulkan));
-            
+
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
             device = adapter.CreateDevice();

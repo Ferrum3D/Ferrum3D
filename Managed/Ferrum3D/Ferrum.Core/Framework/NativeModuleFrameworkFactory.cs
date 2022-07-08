@@ -10,7 +10,7 @@ namespace Ferrum.Core.Framework
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void DestructModuleInstanceNative(IntPtr handle);
-    
+
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     public abstract class NativeModuleFrameworkFactory<TModule> : IFrameworkFactory
     {

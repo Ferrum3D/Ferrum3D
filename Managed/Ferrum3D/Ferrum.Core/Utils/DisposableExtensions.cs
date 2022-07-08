@@ -7,9 +7,9 @@ namespace Ferrum.Core.Utils
     public static class DisposableExtensions
     {
         /// <summary>
-        ///     Call <see cref="IDisposable.Dispose"/> on all fields of a class.
+        ///     Call <see cref="IDisposable.Dispose" /> on all fields of a class.
         /// </summary>
-        /// <param name="disposable">An instance of a class that implements <see cref="IDisposable"/>.</param>
+        /// <param name="disposable">An instance of a class that implements <see cref="IDisposable" />.</param>
         /// <typeparam name="T">Type of the class.</typeparam>
         public static void DisposeFields<T>(this T disposable)
             where T : IDisposable

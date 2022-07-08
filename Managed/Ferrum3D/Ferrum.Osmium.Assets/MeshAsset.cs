@@ -8,11 +8,27 @@ namespace Ferrum.Osmium.Assets
 {
     public sealed class MeshAsset : Asset
     {
+        public int IndexCount => (int)IndexSize / 4;
         public ulong VertexSize { get; private set; }
         public ulong IndexSize { get; private set; }
-        public int IndexCount => (int)IndexSize / 4;
         public IntPtr VertexData { get; private set; }
         public IntPtr IndexData { get; private set; }
+
+        public Buffer CreateVertexStagingBuffer(Device device)
+        {
+            var stagingBuffer = device.CreateBuffer(BindFlags.None, VertexSize);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(VertexData);
+            return stagingBuffer;
+        }
+
+        public Buffer CreateIndexStagingBuffer(Device device)
+        {
+            var stagingBuffer = device.CreateBuffer(BindFlags.None, IndexSize);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(IndexData);
+            return stagingBuffer;
+        }
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_Load")]
         private static extern IntPtr LoadNative(IntPtr manager, string assetId);
@@ -31,22 +47,6 @@ namespace Ferrum.Osmium.Assets
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_Destruct")]
         private static extern void DestructNative(IntPtr self);
-
-        public Buffer CreateVertexStagingBuffer(Device device)
-        {
-            var stagingBuffer = device.CreateBuffer(BindFlags.None, VertexSize);
-            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
-            stagingBuffer.UpdateData(VertexData);
-            return stagingBuffer;
-        }
-
-        public Buffer CreateIndexStagingBuffer(Device device)
-        {
-            var stagingBuffer = device.CreateBuffer(BindFlags.None, IndexSize);
-            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
-            stagingBuffer.UpdateData(IndexData);
-            return stagingBuffer;
-        }
 
         protected override void Initialize()
         {

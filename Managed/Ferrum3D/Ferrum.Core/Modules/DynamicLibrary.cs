@@ -55,12 +55,12 @@ namespace Ferrum.Core.Modules
         }
 
         [DllImport("kernel32.dll")]
+        public static extern bool FreeLibrary(IntPtr handle);
+
+        [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string path);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetProcAddress(IntPtr handle, string name);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool FreeLibrary(IntPtr handle);
     }
 }

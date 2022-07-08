@@ -15,6 +15,12 @@ namespace Ferrum.Core.Modules
             Environment = GetEnvironmentNative();
         }
 
+        public void Dispose()
+        {
+            ReleaseUnmanagedResources();
+            GC.SuppressFinalize(this);
+        }
+
         [DllImport("FeCoreBindings", EntryPoint = "Engine_Construct")]
         private static extern void ConstructNative();
 
@@ -23,12 +29,6 @@ namespace Ferrum.Core.Modules
 
         [DllImport("FeCoreBindings", EntryPoint = "Engine_GetEnvironment")]
         private static extern IntPtr GetEnvironmentNative();
-
-        public void Dispose()
-        {
-            ReleaseUnmanagedResources();
-            GC.SuppressFinalize(this);
-        }
 
         private static void ReleaseUnmanagedResources()
         {

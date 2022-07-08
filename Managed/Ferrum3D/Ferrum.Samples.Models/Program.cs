@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
-using Ferrum.Core.Console;
 using Ferrum.Core.Containers;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Framework;
 using Ferrum.Core.Math;
-using Ferrum.Core.Modules;
 using Ferrum.Core.Utils;
 using Ferrum.Osmium.Assets;
 using Ferrum.Osmium.GPU;
@@ -24,7 +22,7 @@ namespace Ferrum.Samples.Models
     internal class ExampleApplication : ApplicationFramework
     {
         public const string ApplicationName = "Ferrum3D - Models";
-        
+
         private Instance instance;
         private Adapter adapter;
         private Device device;
@@ -49,16 +47,6 @@ namespace Ferrum.Samples.Models
 
         protected override bool CloseEventReceived => window.CloseRequested;
 
-        private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
-            where T : unmanaged
-        {
-            var dataLength = (ulong)(data.Length * Marshal.SizeOf<T>());
-            var stagingBuffer = device.CreateBuffer(bindFlags, dataLength);
-            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
-            stagingBuffer.UpdateData(data);
-            return stagingBuffer;
-        }
-
         public override void Initialize(Desc desc)
         {
             base.Initialize(desc);
@@ -66,7 +54,7 @@ namespace Ferrum.Samples.Models
             gpuModule.Initialize(new OsmiumGpuModule.Desc(ApplicationName, GraphicsApi.Vulkan));
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
-            
+
             using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             using var meshAsset = Asset.Load<MeshAsset>(Guid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A"));
 
@@ -218,7 +206,17 @@ namespace Ferrum.Samples.Models
 
             commandQueue = device.GetCommandQueue(CommandQueueClass.Graphics);
         }
-        
+
+        private static Buffer CreateHostVisibleBuffer<T>(BindFlags bindFlags, Device device, T[] data)
+            where T : unmanaged
+        {
+            var dataLength = (ulong)(data.Length * Marshal.SizeOf<T>());
+            var stagingBuffer = device.CreateBuffer(bindFlags, dataLength);
+            stagingBuffer.AllocateMemory(MemoryType.HostVisible);
+            stagingBuffer.UpdateData(data);
+            return stagingBuffer;
+        }
+
         protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
         {
             dependencies.Add(new OsmiumGpuModule.Factory());
@@ -248,7 +246,7 @@ namespace Ferrum.Samples.Models
             this.DisposeFields();
         }
     }
-    
+
     internal static class Program
     {
         private static int Main()
