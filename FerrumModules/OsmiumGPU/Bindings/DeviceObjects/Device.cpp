@@ -151,6 +151,7 @@ namespace FE::Osmium
                 CopyFromByteBuffer(subpassBinding.InputAttachments, subpass.InputAttachments);
                 CopyFromByteBuffer(subpassBinding.PreserveAttachments, subpass.PreserveAttachments);
                 CopyFromByteBuffer(subpassBinding.RenderTargetAttachments, subpass.RenderTargetAttachments);
+                CopyFromByteBuffer(subpassBinding.MSAAResolveAttachments, subpass.MSAAResolveAttachments);
                 subpass.DepthStencilAttachment = subpassBinding.DepthStencilAttachment;
             }
             return self->CreateRenderPass(d).Detach();
