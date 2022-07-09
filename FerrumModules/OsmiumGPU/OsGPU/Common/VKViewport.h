@@ -4,9 +4,9 @@
 
 namespace FE::Osmium
 {
-    inline vk::Viewport VKConvert(const Viewport& viewport)
+    inline VkViewport VKConvert(const Viewport& viewport)
     {
-        vk::Viewport vp{};
+        VkViewport vp{};
         vp.x        = viewport.MinX;
         vp.y        = viewport.MinY;
         vp.width    = viewport.Width();
@@ -16,11 +16,11 @@ namespace FE::Osmium
         return vp;
     }
 
-    inline vk::Rect2D VKConvert(const Scissor& scissor)
+    inline VkRect2D VKConvert(const Scissor& scissor)
     {
-        vk::Rect2D rect{};
-        rect.offset = vk::Offset2D(scissor.MinX, scissor.MinY);
-        rect.extent = vk::Extent2D(scissor.Width(), scissor.Height());
+        VkRect2D rect{};
+        rect.offset = VkOffset2D{ scissor.MinX, scissor.MinY };
+        rect.extent = VkExtent2D{ static_cast<UInt32>(scissor.Width()), static_cast<UInt32>(scissor.Height()) };
         return rect;
     }
 } // namespace FE::Osmium

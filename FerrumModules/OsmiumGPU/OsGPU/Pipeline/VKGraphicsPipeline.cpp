@@ -15,24 +15,26 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_Desc(desc)
     {
-        Vector<vk::DescriptorSetLayout> setLayouts;
+        List<VkDescriptorSetLayout> setLayouts;
         for (auto& table : desc.DescriptorTables)
         {
             auto* vkTable = fe_assert_cast<VKDescriptorTable*>(table.GetRaw());
-            setLayouts.push_back(vkTable->GetNativeSetLayout());
+            setLayouts.Push(vkTable->GetNativeSetLayout());
         }
 
-        vk::PipelineLayoutCreateInfo layoutCI{};
-        layoutCI.pSetLayouts    = setLayouts.data();
-        layoutCI.setLayoutCount = static_cast<UInt32>(setLayouts.size());
-        m_Layout                = m_Device->GetNativeDevice().createPipelineLayoutUnique(layoutCI);
+        VkPipelineLayoutCreateInfo layoutCI{};
+        layoutCI.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        layoutCI.pSetLayouts    = setLayouts.Data();
+        layoutCI.setLayoutCount = static_cast<UInt32>(setLayouts.Size());
+        vkCreatePipelineLayout(m_Device->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &m_Layout);
 
-        vk::GraphicsPipelineCreateInfo pipelineCI{};
-        pipelineCI.layout = m_Layout.get();
+        VkGraphicsPipelineCreateInfo pipelineCI{};
+        pipelineCI.sType  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineCI.layout = m_Layout;
 
         auto shaderStages     = BuildShaderStages();
-        pipelineCI.stageCount = static_cast<UInt32>(shaderStages.size());
-        pipelineCI.pStages    = shaderStages.data();
+        pipelineCI.stageCount = static_cast<UInt32>(shaderStages.Size());
+        pipelineCI.pStages    = shaderStages.Data();
 
         VertexStates vertexStates{};
         BuildVertexStates(vertexStates);
@@ -54,18 +56,19 @@ namespace FE::Osmium
         auto depth                     = BuildDepthState();
         pipelineCI.pDepthStencilState  = &depth;
 
-        vk::DynamicState dynamicState[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+        VkDynamicState dynamicState[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
-        vk::PipelineDynamicStateCreateInfo dynamicStateCI{};
+        VkPipelineDynamicStateCreateInfo dynamicStateCI{};
+        dynamicStateCI.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicStateCI.dynamicStateCount = 2;
         dynamicStateCI.pDynamicStates    = dynamicState;
         pipelineCI.pDynamicState         = &dynamicStateCI;
 
-        pipelineCI.layout     = m_Layout.get();
+        pipelineCI.layout     = m_Layout;
         pipelineCI.renderPass = fe_assert_cast<VKRenderPass*>(m_Desc.RenderPass.GetRaw())->GetNativeRenderPass();
         pipelineCI.subpass    = m_Desc.SubpassIndex;
 
-        m_NativePipeline = m_Device->GetNativeDevice().createGraphicsPipelineUnique(nullptr, pipelineCI).value;
+        vkCreateGraphicsPipelines(m_Device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_NativePipeline);
     }
 
     void VKGraphicsPipeline::BuildVertexStates(VKGraphicsPipeline::VertexStates& states) const
@@ -75,7 +78,7 @@ namespace FE::Osmium
 
         for (size_t i = 0; i < buffers.Size(); ++i)
         {
-            auto& binding     = states.BindingDesc.emplace_back();
+            auto& binding     = states.BindingDesc.Emplace();
             binding.binding   = static_cast<UInt32>(i);
             binding.inputRate = VKConvert(buffers[i].InputRate);
             binding.stride    = buffers[i].Stride;
@@ -92,29 +95,31 @@ namespace FE::Osmium
 
         for (const auto& item : attributes)
         {
-            auto& attribute    = states.AttributeDesc.emplace_back();
+            auto& attribute    = states.AttributeDesc.Emplace();
             attribute.binding  = item.BufferIndex;
             attribute.location = vertexShader->GetReflection()->GetInputAttributeLocation(item.ShaderSemantic);
             attribute.offset   = item.Offset;
             attribute.format   = VKConvert(item.ElementFormat);
         }
 
-        states.VertexInput.pVertexBindingDescriptions      = states.BindingDesc.data();
-        states.VertexInput.vertexBindingDescriptionCount   = static_cast<UInt32>(states.BindingDesc.size());
-        states.VertexInput.pVertexAttributeDescriptions    = states.AttributeDesc.data();
-        states.VertexInput.vertexAttributeDescriptionCount = static_cast<UInt32>(states.AttributeDesc.size());
+        states.VertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        states.VertexInput.pVertexBindingDescriptions      = states.BindingDesc.Data();
+        states.VertexInput.vertexBindingDescriptionCount   = static_cast<UInt32>(states.BindingDesc.Size());
+        states.VertexInput.pVertexAttributeDescriptions    = states.AttributeDesc.Data();
+        states.VertexInput.vertexAttributeDescriptionCount = static_cast<UInt32>(states.AttributeDesc.Size());
 
+        states.InputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         states.InputAssembly.topology               = VKConvert(m_Desc.InputLayout.Topology);
         states.InputAssembly.primitiveRestartEnable = false;
     }
 
-    Vector<vk::PipelineShaderStageCreateInfo> VKGraphicsPipeline::BuildShaderStages()
+    List<VkPipelineShaderStageCreateInfo> VKGraphicsPipeline::BuildShaderStages()
     {
-        Vector<vk::PipelineShaderStageCreateInfo> result;
+        List<VkPipelineShaderStageCreateInfo> result;
         for (auto& shader : m_Desc.Shaders)
         {
             auto* vkShader = fe_assert_cast<VKShaderModule*>(shader.GetRaw());
-            result.push_back(vkShader->GetStageCI());
+            result.Push(vkShader->GetStageCI());
         }
 
         return result;
@@ -125,32 +130,35 @@ namespace FE::Osmium
         state.Viewport = VKConvert(m_Desc.Viewport);
         state.Scissor  = VKConvert(m_Desc.Scissor);
 
+        state.CreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         state.CreateInfo.pViewports    = &state.Viewport;
         state.CreateInfo.viewportCount = 1;
         state.CreateInfo.pScissors     = &state.Scissor;
         state.CreateInfo.scissorCount  = 1;
     }
 
-    vk::PipelineRasterizationStateCreateInfo VKGraphicsPipeline::BuildRasterizationState()
+    VkPipelineRasterizationStateCreateInfo VKGraphicsPipeline::BuildRasterizationState()
     {
         RasterizationState& rasterization = m_Desc.Rasterization;
 
-        vk::PipelineRasterizationStateCreateInfo result{};
+        VkPipelineRasterizationStateCreateInfo result{};
+        result.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         result.depthClampEnable        = rasterization.DepthClampEnabled;
         result.depthBiasEnable         = rasterization.DepthBiasEnabled;
         result.rasterizerDiscardEnable = rasterization.RasterDiscardEnabled;
         result.cullMode                = VKConvert(rasterization.CullMode);
         result.polygonMode             = VKConvert(rasterization.PolyMode);
         result.lineWidth               = 1.0f;
-        result.frontFace               = vk::FrontFace::eClockwise;
+        result.frontFace               = VK_FRONT_FACE_CLOCKWISE;
         return result;
     }
 
-    vk::PipelineMultisampleStateCreateInfo VKGraphicsPipeline::BuildMultisampleState()
+    VkPipelineMultisampleStateCreateInfo VKGraphicsPipeline::BuildMultisampleState()
     {
         MultisampleState& multisample = m_Desc.Multisample;
 
-        vk::PipelineMultisampleStateCreateInfo result{};
+        VkPipelineMultisampleStateCreateInfo result{};
+        result.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         result.sampleShadingEnable   = multisample.SampleShadingEnabled;
         result.rasterizationSamples  = GetVKSampleCountFlags(multisample.SampleCount);
         result.minSampleShading      = multisample.MinSampleShading;
@@ -160,9 +168,10 @@ namespace FE::Osmium
         return result;
     }
 
-    vk::PipelineDepthStencilStateCreateInfo VKGraphicsPipeline::BuildDepthState() const
+    VkPipelineDepthStencilStateCreateInfo VKGraphicsPipeline::BuildDepthState() const
     {
-        vk::PipelineDepthStencilStateCreateInfo result{};
+        VkPipelineDepthStencilStateCreateInfo result{};
+        result.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         result.depthTestEnable       = m_Desc.DepthStencil.DepthTestEnabled;
         result.depthWriteEnable      = m_Desc.DepthStencil.DepthWriteEnabled;
         result.depthCompareOp        = VKConvert(m_Desc.DepthStencil.DepthCompareOp);
@@ -172,11 +181,11 @@ namespace FE::Osmium
         return result;
     }
 
-    vk::PipelineColorBlendAttachmentState VKGraphicsPipeline::BuildBlendState(size_t attachmentIndex)
+    VkPipelineColorBlendAttachmentState VKGraphicsPipeline::BuildBlendState(size_t attachmentIndex)
     {
         auto& state = m_Desc.ColorBlend.TargetBlendStates[attachmentIndex];
 
-        vk::PipelineColorBlendAttachmentState result{};
+        VkPipelineColorBlendAttachmentState result{};
         result.blendEnable         = state.BlendEnabled;
         result.colorWriteMask      = VKConvert(state.ColorWriteFlags);
         result.srcColorBlendFactor = VKConvert(state.SourceFactor);
@@ -190,19 +199,26 @@ namespace FE::Osmium
 
     void VKGraphicsPipeline::BuildBlendState(VKGraphicsPipeline::BlendState& state)
     {
-        for (size_t i = 0; i < m_Desc.ColorBlend.TargetBlendStates.Size(); ++i)
+        for (USize i = 0; i < m_Desc.ColorBlend.TargetBlendStates.Size(); ++i)
         {
-            state.Attachments.push_back(BuildBlendState(i));
+            state.Attachments.Push(BuildBlendState(i));
         }
 
+        state.CreateInfo.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         state.CreateInfo.logicOpEnable   = false;
-        state.CreateInfo.logicOp         = vk::LogicOp::eCopy;
-        state.CreateInfo.pAttachments    = state.Attachments.data();
-        state.CreateInfo.attachmentCount = static_cast<UInt32>(state.Attachments.size());
+        state.CreateInfo.logicOp         = VK_LOGIC_OP_COPY;
+        state.CreateInfo.pAttachments    = state.Attachments.Data();
+        state.CreateInfo.attachmentCount = static_cast<UInt32>(state.Attachments.Size());
 
         state.CreateInfo.blendConstants[0] = m_Desc.ColorBlend.BlendConstants.X();
         state.CreateInfo.blendConstants[1] = m_Desc.ColorBlend.BlendConstants.Y();
         state.CreateInfo.blendConstants[2] = m_Desc.ColorBlend.BlendConstants.Z();
         state.CreateInfo.blendConstants[3] = m_Desc.ColorBlend.BlendConstants.W();
+    }
+
+    VKGraphicsPipeline::~VKGraphicsPipeline()
+    {
+        vkDestroyPipeline(m_Device->GetNativeDevice(), m_NativePipeline, VK_NULL_HANDLE);
+        vkDestroyPipelineLayout(m_Device->GetNativeDevice(), m_Layout, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

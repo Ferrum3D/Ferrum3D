@@ -336,6 +336,11 @@ namespace FE
             return m_End == m_Begin;
         }
 
+        [[nodiscard]] inline bool Any() const noexcept
+        {
+            return !Empty();
+        }
+
         //! \brief Reserve capacity for N elements. Does nothing if Capacity() >= N.
         //!
         //! \param [in] n - The capacity to reserve.

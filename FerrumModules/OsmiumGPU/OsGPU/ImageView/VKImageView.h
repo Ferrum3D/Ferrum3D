@@ -10,18 +10,19 @@ namespace FE::Osmium
     {
         ImageViewDesc m_Desc;
         VKDevice* m_Device;
-        vk::UniqueImageView m_NativeView;
+        VkImageView m_NativeView;
 
     public:
         VKImageView(VKDevice& dev, const ImageViewDesc& desc);
+        ~VKImageView() override;
 
         [[nodiscard]] const ImageViewDesc& GetDesc() const override;
 
-        [[nodiscard]] inline vk::ImageView& GetNativeView();
+        [[nodiscard]] inline VkImageView GetNativeView();
     };
 
-    inline vk::ImageView& VKImageView::GetNativeView()
+    inline VkImageView VKImageView::GetNativeView()
     {
-        return m_NativeView.get();
+        return m_NativeView;
     }
 } // namespace FE::Osmium

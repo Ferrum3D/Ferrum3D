@@ -10,7 +10,7 @@ namespace FE::Osmium
     class VKFramebuffer : public Object<IFramebuffer>
     {
         VKDevice* m_Device;
-        vk::UniqueFramebuffer m_NativeFramebuffer;
+        VkFramebuffer m_NativeFramebuffer;
         List<Shared<IImageView>> m_RTVs;
         FramebufferDesc m_Desc;
 
@@ -18,15 +18,16 @@ namespace FE::Osmium
         FE_CLASS_RTTI(VKFramebuffer, "E665C1C7-1AD2-48F3-AA54-08090EB5DC76");
 
         VKFramebuffer(VKDevice& dev, const FramebufferDesc& desc);
+        ~VKFramebuffer() override;
 
-        [[nodiscard]] inline vk::Framebuffer& GetNativeFramebuffer();
+        [[nodiscard]] inline VkFramebuffer GetNativeFramebuffer();
 
         [[nodiscard]] inline const FramebufferDesc& GetDesc() const override;
     };
 
-    inline vk::Framebuffer& VKFramebuffer::GetNativeFramebuffer()
+    inline VkFramebuffer VKFramebuffer::GetNativeFramebuffer()
     {
-        return m_NativeFramebuffer.get();
+        return m_NativeFramebuffer;
     }
 
     inline const FramebufferDesc& VKFramebuffer::GetDesc() const

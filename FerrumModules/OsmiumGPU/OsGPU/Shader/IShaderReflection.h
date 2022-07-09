@@ -20,7 +20,7 @@ namespace FE::Osmium
 
         ~IShaderReflection() override = default;
 
-        virtual Vector<ShaderInputAttribute> GetInputAttributes()      = 0;
+        virtual List<ShaderInputAttribute> GetInputAttributes()      = 0;
         virtual UInt32 GetInputAttributeLocation(StringSlice semantic) = 0;
     };
 } // namespace FE::Osmium

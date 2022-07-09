@@ -2,9 +2,24 @@
 #include <OsGPU/Adapter/VKAdapter.h>
 #include <OsGPU/Instance/VKInstance.h>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-
 #if FE_DEBUG
+FE::Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
+{
+    switch (static_cast<VkDebugReportFlagBitsEXT>(flags))
+    {
+    case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+    case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+        return FE::Debug::LogMessageType::Message;
+    case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+    case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+        return FE::Debug::LogMessageType::Warning;
+    case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+        return FE::Debug::LogMessageType::Error;
+    default:
+        return FE::Debug::LogMessageType::None;
+    }
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] FE::UInt64 object,
     [[maybe_unused]] size_t location, [[maybe_unused]] FE::Int32 messageCode, [[maybe_unused]] const char* pLayerPrefix,
@@ -21,24 +36,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         }
     }
 
-    FE::Debug::LogMessageType type = FE::Debug::LogMessageType::Message;
-    switch (static_cast<vk::DebugReportFlagBitsEXT>(flags))
-    {
-    case vk::DebugReportFlagBitsEXT::eInformation:
-    case vk::DebugReportFlagBitsEXT::eDebug:
-        type = FE::Debug::LogMessageType::Message;
-        break;
-    case vk::DebugReportFlagBitsEXT::eWarning:
-    case vk::DebugReportFlagBitsEXT::ePerformanceWarning:
-        type = FE::Debug::LogMessageType::Warning;
-        break;
-    case vk::DebugReportFlagBitsEXT::eError:
-        type = FE::Debug::LogMessageType::Error;
-        break;
-    default:
-        break;
-    }
-
+    auto type = GetLogMessageType(flags);
     static_cast<FE::Debug::IConsoleLogger*>(pUserData)->Log(type, "{}", message);
     return VK_FALSE;
 }
@@ -48,74 +46,89 @@ namespace FE::Osmium
 {
     VKInstance::~VKInstance()
     {
-        FE_LOG_MESSAGE("Vulkan instance destroyed successfully");
+        vkDestroyDebugReportCallbackEXT(m_Instance, m_Debug, VK_NULL_HANDLE);
+        vkDestroyInstance(m_Instance, VK_NULL_HANDLE);
+        FE_LOG_MESSAGE("Vulkan instance was destroyed");
     }
 
     VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
     {
-        auto vkGetInstanceProcAddr = m_Loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-
-        auto layers = vk::enumerateInstanceLayerProperties<StdHeapAllocator<vk::LayerProperties>>();
+        volkInitialize();
+        UInt32 layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        List<VkLayerProperties> layers(layerCount, VkLayerProperties{});
+        vkEnumerateInstanceLayerProperties(&layerCount, layers.Data());
         for (auto& layer : RequiredInstanceLayers)
         {
-            bool found = std::any_of(layers.begin(), layers.end(), [&](const vk::LayerProperties& props) {
-                return StringSlice(layer) == props.layerName.data();
+            auto layerSlice = StringSlice(layer);
+            bool found      = std::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
+                return layerSlice == props.layerName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layer);
+            FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layerSlice);
         }
 
-        auto extensions = vk::enumerateInstanceExtensionProperties<StdHeapAllocator<vk::ExtensionProperties>>();
+        UInt32 extensionCount;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        List<VkExtensionProperties> extensions(extensionCount, VkExtensionProperties{});
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.Data());
         for (auto& ext : RequiredInstanceExtensions)
         {
-            bool found = std::any_of(extensions.begin(), extensions.end(), [&](const vk::ExtensionProperties& props) {
-                return StringSlice(ext) == props.extensionName.data();
+            auto extSlice = StringSlice(ext);
+            bool found    = std::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
+                return extSlice == props.extensionName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance extension {} was not found", ext);
+            FE_ASSERT_MSG(found, "Vulkan instance extension {} was not found", extSlice);
         }
 
-        vk::ApplicationInfo appInfo{};
+        VkApplicationInfo appInfo{};
+        appInfo.sType            = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.apiVersion       = VK_API_VERSION_1_2;
         appInfo.pEngineName      = FerrumEngineName;
         appInfo.pApplicationName = desc.ApplicationName;
 
-        vk::InstanceCreateInfo instanceCI{};
+        VkInstanceCreateInfo instanceCI{};
+        instanceCI.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         instanceCI.pApplicationInfo        = &appInfo;
         instanceCI.enabledLayerCount       = static_cast<UInt32>(RequiredInstanceLayers.size());
         instanceCI.ppEnabledLayerNames     = RequiredInstanceLayers.data();
         instanceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = RequiredInstanceExtensions.data();
 
-        m_Instance = vk::createInstanceUnique(instanceCI);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(m_Instance.get());
+        vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_Instance);
+        volkLoadInstance(m_Instance);
 #if FE_DEBUG
-        vk::DebugReportCallbackCreateInfoEXT debugCI{};
-        debugCI.flags |= vk::DebugReportFlagBitsEXT::eWarning;
-        debugCI.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
-        debugCI.flags |= vk::DebugReportFlagBitsEXT::eError;
-        debugCI.flags |= vk::DebugReportFlagBitsEXT::eDebug;
+        VkDebugReportCallbackCreateInfoEXT debugCI{};
+        debugCI.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+        debugCI.flags |= VK_DEBUG_REPORT_WARNING_BIT_EXT;
+        debugCI.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        debugCI.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
+        debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
         debugCI.pfnCallback = &DebugReportCallback;
         debugCI.pUserData   = FE::SharedInterface<FE::Debug::IConsoleLogger>::Get();
-        m_Debug             = m_Instance->createDebugReportCallbackEXTUnique(debugCI);
+        vkCreateDebugReportCallbackEXT(m_Instance, &debugCI, VK_NULL_HANDLE, &m_Debug);
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");
 
-        auto vkAdapters = m_Instance->enumeratePhysicalDevices<StdHeapAllocator<vk::PhysicalDevice>>();
+        UInt32 adapterCount;
+        vkEnumeratePhysicalDevices(m_Instance, &adapterCount, nullptr);
+        List<VkPhysicalDevice> vkAdapters(adapterCount, VkPhysicalDevice{});
+        vkEnumeratePhysicalDevices(m_Instance, &adapterCount, vkAdapters.Data());
         for (auto& vkAdapter : vkAdapters)
         {
-            auto props = vkAdapter.getProperties();
-            FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", props.deviceName);
-            m_PhysicalDevices.push_back(static_pointer_cast<IAdapter>(MakeShared<VKAdapter>(*this, vkAdapter)));
+            VkPhysicalDeviceProperties props;
+            vkGetPhysicalDeviceProperties(vkAdapter, &props);
+            FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
+            m_Adapters.Push(MakeShared<VKAdapter>(*this, vkAdapter));
         }
     }
 
-    vk::Instance& VKInstance::GetNativeInstance()
+    VkInstance VKInstance::GetNativeInstance()
     {
-        return m_Instance.get();
+        return m_Instance;
     }
 
-    Vector<Shared<IAdapter>>& VKInstance::GetAdapters()
+    const List<Shared<IAdapter>>& VKInstance::GetAdapters() const
     {
-        return m_PhysicalDevices;
+        return m_Adapters;
     }
 } // namespace FE::Osmium

@@ -9,12 +9,13 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_Desc(desc)
     {
-        vk::SamplerCreateInfo samplerCI   = {};
-        samplerCI.magFilter               = vk::Filter::eLinear;
-        samplerCI.minFilter               = vk::Filter::eLinear;
-        samplerCI.borderColor             = vk::BorderColor::eIntOpaqueBlack;
+        VkSamplerCreateInfo samplerCI     = {};
+        samplerCI.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerCI.magFilter               = VK_FILTER_LINEAR;
+        samplerCI.minFilter               = VK_FILTER_LINEAR;
+        samplerCI.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerCI.unnormalizedCoordinates = VK_FALSE;
-        samplerCI.mipmapMode              = vk::SamplerMipmapMode::eLinear;
+        samplerCI.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         samplerCI.mipLodBias              = 0.0f;
         samplerCI.minLod                  = 0.0f;
         samplerCI.maxLod                  = 100000.0f;
@@ -31,32 +32,37 @@ namespace FE::Osmium
             break;
         case SamplerAnisotropy::MaxSupported:
             samplerCI.anisotropyEnable = true;
-            samplerCI.maxAnisotropy    = static_cast<VKAdapter&>(m_Device->GetAdapter()).Prop.limits.maxSamplerAnisotropy;
+            samplerCI.maxAnisotropy = fe_assert_cast<VKAdapter*>(&m_Device->GetAdapter())->Properties.limits.maxSamplerAnisotropy;
             break;
         }
 
         switch (desc.AddressMode)
         {
         case SamplerAddressMode::Repeat:
-            samplerCI.addressModeU = vk::SamplerAddressMode::eRepeat;
-            samplerCI.addressModeV = vk::SamplerAddressMode::eRepeat;
-            samplerCI.addressModeW = vk::SamplerAddressMode::eRepeat;
+            samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
             break;
         case SamplerAddressMode::Clamp:
-            samplerCI.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-            samplerCI.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-            samplerCI.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+            samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
             break;
         }
 
         samplerCI.compareEnable = desc.CompareEnable;
         samplerCI.compareOp     = VKConvert(desc.CompareOp);
 
-        Sampler = m_Device->GetNativeDevice().createSamplerUnique(samplerCI);
+        vkCreateSampler(m_Device->GetNativeDevice(), &samplerCI, VK_NULL_HANDLE, &Sampler);
     }
 
     const SamplerDesc& VKSampler::GetDesc()
     {
         return m_Desc;
+    }
+
+    VKSampler::~VKSampler()
+    {
+        vkDestroySampler(m_Device->GetNativeDevice(), Sampler, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

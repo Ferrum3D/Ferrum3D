@@ -13,32 +13,40 @@ namespace FE::Osmium
 
     void* VKBuffer::Map(UInt64 offset, UInt64 size)
     {
-        return m_Device->GetNativeDevice().mapMemory(m_Memory->Memory.get(), offset, size);
+        void* data;
+        FE_VK_ASSERT(vkMapMemory(m_Device->GetNativeDevice(), m_Memory->Memory, offset, size, 0, &data));
+        return data;
     }
 
     void VKBuffer::Unmap()
     {
-        m_Device->GetNativeDevice().unmapMemory(m_Memory->Memory.get());
+        vkUnmapMemory(m_Device->GetNativeDevice(), m_Memory->Memory);
     }
 
     void VKBuffer::AllocateMemory(MemoryType type)
     {
-        auto memoryRequirements = m_Device->GetNativeDevice().getBufferMemoryRequirements(Buffer.get());
+        VkMemoryRequirements memoryRequirements;
+        vkGetBufferMemoryRequirements(m_Device->GetNativeDevice(), Buffer, &memoryRequirements);
         MemoryAllocationDesc desc{};
         desc.Size = memoryRequirements.size;
         desc.Type = type;
         m_Memory  = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
-        BindMemory(static_pointer_cast<IDeviceMemory>(m_Memory), 0);
+        BindMemory(m_Memory, 0);
     }
 
     void VKBuffer::BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset)
     {
         m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
-        m_Device->GetNativeDevice().bindBufferMemory(Buffer.get(), m_Memory->Memory.get(), offset);
+        vkBindBufferMemory(m_Device->GetNativeDevice(), Buffer, m_Memory->Memory, offset);
     }
 
     const BufferDesc& VKBuffer::GetDesc() const
     {
         return Desc;
+    }
+
+    VKBuffer::~VKBuffer()
+    {
+        vkDestroyBuffer(m_Device->GetNativeDevice(), Buffer, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

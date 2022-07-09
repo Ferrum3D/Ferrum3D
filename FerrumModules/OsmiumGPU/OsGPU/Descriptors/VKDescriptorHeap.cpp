@@ -7,30 +7,36 @@ namespace FE::Osmium
     VKDescriptorHeap::VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc)
         : m_Device(&dev)
     {
-        Vector<vk::DescriptorPoolSize> sizes;
-        sizes.reserve(desc.Sizes.Size());
+        List<VkDescriptorPoolSize> sizes;
+        sizes.Reserve(desc.Sizes.Size());
         for (auto& size : desc.Sizes)
         {
-            auto& nativeSize           = sizes.emplace_back();
+            auto& nativeSize           = sizes.Emplace();
             nativeSize.descriptorCount = size.DescriptorCount;
             nativeSize.type            = GetDescriptorType(size.ResourceType);
         }
 
-        vk::DescriptorPoolCreateInfo poolCI{};
+        VkDescriptorPoolCreateInfo poolCI{};
+        poolCI.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolCI.maxSets       = desc.MaxTables;
-        poolCI.pPoolSizes    = sizes.data();
-        poolCI.poolSizeCount = static_cast<UInt32>(sizes.size());
+        poolCI.pPoolSizes    = sizes.Data();
+        poolCI.poolSizeCount = static_cast<UInt32>(sizes.Size());
 
-        m_NativePool = m_Device->GetNativeDevice().createDescriptorPoolUnique(poolCI);
+        vkCreateDescriptorPool(m_Device->GetNativeDevice(), &poolCI, VK_NULL_HANDLE, &m_NativePool);
     }
 
-    vk::DescriptorPool& VKDescriptorHeap::GetNativeDescriptorPool()
+    VkDescriptorPool VKDescriptorHeap::GetNativeDescriptorPool()
     {
-        return m_NativePool.get();
+        return m_NativePool;
     }
 
     Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const List<DescriptorDesc>& descriptors)
     {
-        return static_pointer_cast<IDescriptorTable>(MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors));
+        return MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
+    }
+
+    VKDescriptorHeap::~VKDescriptorHeap()
+    {
+        vkDestroyDescriptorPool(m_Device->GetNativeDevice(), m_NativePool, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

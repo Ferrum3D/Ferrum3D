@@ -6,45 +6,45 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    inline vk::PipelineStageFlags VKConvert(PipelineStageFlags source)
+    inline VkPipelineStageFlags VKConvert(PipelineStageFlags source)
     {
         switch (source)
         {
         case PipelineStageFlags::TopOfPipe:
-            return vk::PipelineStageFlagBits::eTopOfPipe;
+            return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         case PipelineStageFlags::DrawIndirect:
-            return vk::PipelineStageFlagBits::eDrawIndirect;
+            return VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         case PipelineStageFlags::VertexInput:
-            return vk::PipelineStageFlagBits::eVertexInput;
+            return VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
         case PipelineStageFlags::VertexShader:
-            return vk::PipelineStageFlagBits::eVertexShader;
+            return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
         case PipelineStageFlags::TessellationControlShader:
-            return vk::PipelineStageFlagBits::eTessellationControlShader;
+            return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
         case PipelineStageFlags::TessellationEvaluationShader:
-            return vk::PipelineStageFlagBits::eTessellationEvaluationShader;
+            return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
         case PipelineStageFlags::GeometryShader:
-            return vk::PipelineStageFlagBits::eGeometryShader;
+            return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
         case PipelineStageFlags::FragmentShader:
-            return vk::PipelineStageFlagBits::eFragmentShader;
+            return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         case PipelineStageFlags::EarlyFragmentTests:
-            return vk::PipelineStageFlagBits::eEarlyFragmentTests;
+            return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         case PipelineStageFlags::LateFragmentTests:
-            return vk::PipelineStageFlagBits::eLateFragmentTests;
+            return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         case PipelineStageFlags::ColorAttachmentOutput:
-            return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         case PipelineStageFlags::ComputeShader:
-            return vk::PipelineStageFlagBits::eComputeShader;
+            return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         case PipelineStageFlags::Transfer:
-            return vk::PipelineStageFlagBits::eTransfer;
+            return VK_PIPELINE_STAGE_TRANSFER_BIT;
         case PipelineStageFlags::BottomOfPipe:
-            return vk::PipelineStageFlagBits::eBottomOfPipe;
+            return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         case PipelineStageFlags::Host:
-            return vk::PipelineStageFlagBits::eHost;
+            return VK_PIPELINE_STAGE_HOST_BIT;
         case PipelineStageFlags::AllGraphics:
-            return vk::PipelineStageFlagBits::eAllGraphics;
+            return VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         default:
             FE_UNREACHABLE("Invalid PipelineStageFlags");
-            return static_cast<vk::PipelineStageFlagBits>(-1);
+            return VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         }
     }
 
@@ -53,35 +53,36 @@ namespace FE::Osmium
         VKDevice* m_Device;
         RenderPassDesc m_Desc;
 
-        vk::UniqueRenderPass m_NativeRenderPass;
+        VkRenderPass m_NativeRenderPass;
 
         struct SubpassAttachmentReferences
         {
-            Vector<vk::AttachmentReference> Input;
-            Vector<vk::AttachmentReference> RT;
-            Vector<vk::AttachmentReference> Resolve;
+            List<VkAttachmentReference> Input;
+            List<VkAttachmentReference> RT;
+            List<VkAttachmentReference> Resolve;
             UInt32* Preserve;
-            vk::AttachmentReference DepthStencil;
+            VkAttachmentReference DepthStencil;
         };
 
         void BuildNativeRenderPass();
-        Vector<vk::AttachmentDescription> BuildAttachmentDescriptions();
-        Vector<vk::SubpassDescription> BuildSubpassDescriptions(
-            Vector<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const;
-        Vector<vk::AttachmentReference> BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType);
-        Vector<vk::SubpassDependency> BuildSubpassDependencies();
+        List<VkAttachmentDescription> BuildAttachmentDescriptions();
+        List<VkSubpassDescription> BuildSubpassDescriptions(
+            List<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const;
+        List<VkAttachmentReference> BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType);
+        List<VkSubpassDependency> BuildSubpassDependencies();
 
     public:
         FE_CLASS_RTTI(VKRenderPass, "091A0BB6-816E-4144-AE03-D082C1C7B689");
 
         VKRenderPass(VKDevice& dev, const RenderPassDesc& desc);
+        ~VKRenderPass() override;
         UInt32 GetAttachmentCount() override;
 
-        inline vk::RenderPass& GetNativeRenderPass();
+        inline VkRenderPass& GetNativeRenderPass();
     };
 
-    inline vk::RenderPass& VKRenderPass::GetNativeRenderPass()
+    inline VkRenderPass& VKRenderPass::GetNativeRenderPass()
     {
-        return m_NativeRenderPass.get();
+        return m_NativeRenderPass;
     }
 } // namespace FE::Osmium

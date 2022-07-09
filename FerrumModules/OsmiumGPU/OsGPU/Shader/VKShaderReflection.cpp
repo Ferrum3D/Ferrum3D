@@ -75,13 +75,13 @@ namespace FE::Osmium
         }
     }
 
-    VKShaderReflection::VKShaderReflection(const Vector<UInt32>& byteCode)
+    VKShaderReflection::VKShaderReflection(const List<UInt32>& byteCode)
     {
-        auto compiler = SpvC::CompilerHLSL(byteCode.data(), byteCode.size());
+        auto compiler = SpvC::CompilerHLSL(byteCode.Data(), byteCode.Size());
         ParseInputAttributes(compiler);
     }
 
-    Vector<ShaderInputAttribute> VKShaderReflection::GetInputAttributes()
+    List<ShaderInputAttribute> VKShaderReflection::GetInputAttributes()
     {
         return m_InputAttributes;
     }
@@ -98,7 +98,7 @@ namespace FE::Osmium
                 --semanticSize;
             }
 
-            auto& current = m_InputAttributes.emplace_back();
+            auto& current = m_InputAttributes.Emplace();
             current.Location = compiler.get_decoration(resource.id, spv::DecorationLocation);
             current.ShaderSemantic = String(semantic.c_str(), semanticSize);
             current.ElementFormat = SPIRTypeToFormat(compiler.get_type(resource.base_type_id));

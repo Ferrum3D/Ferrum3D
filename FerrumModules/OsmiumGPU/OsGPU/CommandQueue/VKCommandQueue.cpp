@@ -9,7 +9,7 @@ namespace FE::Osmium
         : m_Desc(desc)
         , m_Device(&dev)
     {
-        m_Queue = m_Device->GetNativeDevice().getQueue(m_Desc.QueueFamilyIndex, m_Desc.QueueIndex);
+        vkGetDeviceQueue(m_Device->GetNativeDevice(), m_Desc.QueueFamilyIndex, m_Desc.QueueIndex, &m_Queue);
     }
 
     const VKCommandQueueDesc& VKCommandQueue::GetDesc() const
@@ -17,7 +17,7 @@ namespace FE::Osmium
         return m_Desc;
     }
 
-    vk::Queue VKCommandQueue::GetNativeQueue()
+    VkQueue VKCommandQueue::GetNativeQueue()
     {
         return m_Queue;
     }
@@ -29,17 +29,18 @@ namespace FE::Osmium
 
     void VKCommandQueue::SubmitBuffers(const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
     {
-        Vector<vk::CommandBuffer> nativeBuffers{};
-        nativeBuffers.reserve(buffers.Size());
+        List<VkCommandBuffer> nativeBuffers;
+        nativeBuffers.Reserve(buffers.Size());
         for (auto& buf : buffers)
         {
             auto* vkBuffer = fe_assert_cast<VKCommandBuffer*>(buf);
-            nativeBuffers.push_back(vkBuffer->GetNativeBuffer());
+            nativeBuffers.Push(vkBuffer->GetNativeBuffer());
         }
 
-        vk::SubmitInfo info{};
-        info.pCommandBuffers    = nativeBuffers.data();
-        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
+        VkSubmitInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        info.pCommandBuffers    = nativeBuffers.Data();
+        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.Size());
 
         if ((flags & SubmitFlags::FrameBegin) != SubmitFlags::None)
         {
@@ -50,10 +51,10 @@ namespace FE::Osmium
             info.signalSemaphoreCount = m_Device->GetSignalSemaphores(&info.pSignalSemaphores);
         }
 
-        Vector<vk::PipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, vk::PipelineStageFlagBits::eAllCommands);
-        info.pWaitDstStageMask = waitDstFlags.data();
+        List<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        info.pWaitDstStageMask = waitDstFlags.Data();
 
-        vk::Fence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : nullptr;
-        m_Queue.submit({ info }, vkFence);
+        VkFence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : VK_NULL_HANDLE;
+        vkQueueSubmit(m_Queue, 1, &info, vkFence);
     }
 } // namespace FE::Osmium

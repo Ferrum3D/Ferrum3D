@@ -25,7 +25,9 @@ namespace FE::Osmium
 
         BuildNativeSwapChain(instance);
 
-        auto images = m_Device->GetNativeDevice().getSwapchainImagesKHR<StdHeapAllocator<vk::Image>>(m_NativeSwapChain.get());
+        vkGetSwapchainImagesKHR(m_Device->GetNativeDevice(), m_NativeSwapChain, &m_Desc.ImageCount, nullptr);
+        List<VkImage> images(m_Desc.ImageCount, VK_NULL_HANDLE);
+        vkGetSwapchainImagesKHR(m_Device->GetNativeDevice(), m_NativeSwapChain, &m_Desc.ImageCount, images.Data());
 
         auto width    = m_Desc.ImageWidth;
         auto height   = m_Desc.ImageHeight;
@@ -40,54 +42,62 @@ namespace FE::Osmium
             m_ImageViews.Push(backBuffer->CreateView(ImageAspectFlags::Color));
         }
 
-        auto depthImageDesc          = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);
-        depthImageDesc.MipSliceCount = 1;
-        m_DepthImage                 = dev.CreateImage(depthImageDesc);
+        auto depthImageDesc = ImageDesc::Img2D(ImageBindFlags::Depth, width, height, Format::D32_SFloat);
+        m_DepthImage        = dev.CreateImage(depthImageDesc);
         m_DepthImage->AllocateMemory(MemoryType::DeviceLocal);
         m_DepthImageView = m_DepthImage->CreateView(ImageAspectFlags::Depth);
 
         for (USize i = 0; i < m_Desc.FrameCount; ++i)
         {
-            m_RenderFinishedSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));
-            m_ImageAvailableSemaphores.push_back(m_Device->GetNativeDevice().createSemaphoreUnique(vk::SemaphoreCreateInfo{}));
+            VkSemaphoreCreateInfo semaphoreCI{};
+            semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            vkCreateSemaphore(m_Device->GetNativeDevice(), &semaphoreCI, VK_NULL_HANDLE, &m_RenderFinishedSemaphores.Emplace());
+            vkCreateSemaphore(m_Device->GetNativeDevice(), &semaphoreCI, VK_NULL_HANDLE, &m_ImageAvailableSemaphores.Emplace());
         }
 
         AcquireNextImage(&m_ImageIndex);
-        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex].get();
-        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex].get();
+        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
+        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex];
     }
 
     void VKSwapChain::BuildNativeSwapChain(VKInstance& instance)
     {
 #if FE_WINDOWS
-        vk::Win32SurfaceCreateInfoKHR surfaceCI{};
+        VkWin32SurfaceCreateInfoKHR surfaceCI{};
+        surfaceCI.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         surfaceCI.hinstance = GetModuleHandle(nullptr);
         surfaceCI.hwnd      = static_cast<HWND>(m_Desc.NativeWindowHandle);
-        m_Surface           = instance.GetNativeInstance().createWin32SurfaceKHRUnique(surfaceCI);
+        vkCreateWin32SurfaceKHR(instance.GetNativeInstance(), &surfaceCI, VK_NULL_HANDLE, &m_Surface);
 #else
 #    error platform not supported
 #endif
 
-        auto& pd     = fe_assert_cast<VKAdapter*>(&m_Device->GetAdapter())->GetNativeAdapter();
-        auto formats = pd.getSurfaceFormatsKHR<StdHeapAllocator<vk::SurfaceFormatKHR>>(m_Surface.get());
-        FE_ASSERT(pd.getSurfaceSupportKHR(m_Queue->GetDesc().QueueFamilyIndex, m_Surface.get()));
+        auto pd = fe_assert_cast<VKAdapter*>(&m_Device->GetAdapter())->GetNativeAdapter();
+
+        UInt32 formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(pd, m_Surface, &formatCount, nullptr);
+        List formats(formatCount, VkSurfaceFormatKHR{});
+        vkGetPhysicalDeviceSurfaceFormatsKHR(pd, m_Surface, &formatCount, formats.Data());
+        VkBool32 formatSupported;
+        vkGetPhysicalDeviceSurfaceSupportKHR(pd, m_Queue->GetDesc().QueueFamilyIndex, m_Surface, &formatSupported);
+        FE_ASSERT(formatSupported);
 
         constexpr auto preferredFormat = Format::B8G8R8A8_SRGB;
-        m_ColorFormat.format           = vk::Format::eUndefined;
+        m_ColorFormat.format           = VK_FORMAT_UNDEFINED;
         for (auto& fmt : formats)
         {
-            if (fmt.format == preferredFormat && fmt.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+            if (fmt.format == preferredFormat && fmt.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
                 m_ColorFormat = fmt;
             }
         }
-        if (m_ColorFormat == vk::Format::eUndefined)
+        if (m_ColorFormat.format == VK_FORMAT_UNDEFINED)
         {
             FE_LOG_WARNING("SwapChain format {} is not supported, using the first supported one", preferredFormat);
-            m_ColorFormat = formats.front();
+            m_ColorFormat = formats.Front();
         }
 
-        m_Capabilities = pd.getSurfaceCapabilitiesKHR(m_Surface.get());
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pd, m_Surface, &m_Capabilities);
         if (!ValidateDimensions(m_Desc))
         {
             auto min    = m_Capabilities.minImageExtent;
@@ -100,13 +110,16 @@ namespace FE::Osmium
             m_Desc.ImageWidth  = width;
             m_Desc.ImageHeight = height;
         }
-        auto mode = vk::PresentModeKHR::eFifo;
+        auto mode = VK_PRESENT_MODE_FIFO_KHR;
 
         // If v-sync is disabled, try to use either immediate or mailbox (if supported).
         if (!m_Desc.VerticalSync)
         {
-            auto supportedModes = pd.getSurfacePresentModesKHR<StdHeapAllocator<vk::PresentModeKHR>>(m_Surface.get());
-            auto preferredModes = { vk::PresentModeKHR::eImmediate, vk::PresentModeKHR::eMailbox };
+            UInt32 supportedModeCount;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(pd, m_Surface, &supportedModeCount, nullptr);
+            List<VkPresentModeKHR> supportedModes(supportedModeCount, VkPresentModeKHR{});
+            vkGetPhysicalDeviceSurfacePresentModesKHR(pd, m_Surface, &supportedModeCount, supportedModes.Data());
+            auto preferredModes = { VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR };
 
             for (auto& supported : supportedModes)
             {
@@ -120,35 +133,51 @@ namespace FE::Osmium
             }
         }
 
-        if (mode == vk::PresentModeKHR::eFifo && !m_Desc.VerticalSync)
+        if (mode == VK_PRESENT_MODE_FIFO_KHR && !m_Desc.VerticalSync)
         {
             FE_LOG_WARNING("V-Sync is force enabled, because FIFO is the only supported present mode");
         }
 
-        vk::SwapchainCreateInfoKHR swapChainCI{};
-        swapChainCI.surface          = m_Surface.get();
+        VkSwapchainCreateInfoKHR swapChainCI{};
+        swapChainCI.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapChainCI.surface          = m_Surface;
         swapChainCI.imageArrayLayers = 1;
         swapChainCI.minImageCount    = m_Desc.ImageCount;
         swapChainCI.imageExtent      = m_Capabilities.currentExtent;
         swapChainCI.imageFormat      = m_ColorFormat.format;
         swapChainCI.imageColorSpace  = m_ColorFormat.colorSpace;
-        swapChainCI.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst
-            | vk::ImageUsageFlagBits::eInputAttachment;
-        swapChainCI.compositeAlpha        = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        swapChainCI.imageSharingMode      = vk::SharingMode::eExclusive;
-        swapChainCI.preTransform          = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+        swapChainCI.imageUsage =
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        swapChainCI.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapChainCI.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+        swapChainCI.preTransform          = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         swapChainCI.presentMode           = mode;
         swapChainCI.clipped               = true;
         swapChainCI.pQueueFamilyIndices   = &m_Queue->GetDesc().QueueFamilyIndex;
         swapChainCI.queueFamilyIndexCount = 1;
 
-        m_NativeSwapChain = m_Device->GetNativeDevice().createSwapchainKHRUnique(swapChainCI);
+        vkCreateSwapchainKHR(m_Device->GetNativeDevice(), &swapChainCI, VK_NULL_HANDLE, &m_NativeSwapChain);
 
         m_CurrentImageAvailableSemaphore = &m_Device->AddWaitSemaphore();
         m_CurrentRenderFinishedSemaphore = &m_Device->AddSignalSemaphore();
     }
 
-    VKSwapChain::~VKSwapChain() = default;
+    VKSwapChain::~VKSwapChain()
+    {
+        for (auto& semaphore : m_ImageAvailableSemaphores)
+        {
+            vkDestroySemaphore(m_Device->GetNativeDevice(), semaphore, VK_NULL_HANDLE);
+        }
+
+        for (auto& semaphore : m_RenderFinishedSemaphores)
+        {
+            vkDestroySemaphore(m_Device->GetNativeDevice(), semaphore, VK_NULL_HANDLE);
+        }
+
+        vkDestroySwapchainKHR(m_Device->GetNativeDevice(), m_NativeSwapChain, VK_NULL_HANDLE);
+        auto instance = fe_assert_cast<VKInstance*>(&m_Device->GetInstance())->GetNativeInstance();
+        vkDestroySurfaceKHR(instance, m_Surface, VK_NULL_HANDLE);
+    }
 
     const SwapChainDesc& VKSwapChain::GetDesc()
     {
@@ -177,25 +206,26 @@ namespace FE::Osmium
 
     void VKSwapChain::Present()
     {
-        vk::PresentInfoKHR presentInfo{};
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphores[m_FrameIndex].get();
+        presentInfo.pWaitSemaphores    = &m_RenderFinishedSemaphores[m_FrameIndex];
         presentInfo.swapchainCount     = 1;
-        presentInfo.pSwapchains        = &m_NativeSwapChain.get();
+        presentInfo.pSwapchains        = &m_NativeSwapChain;
         presentInfo.pImageIndices      = &m_ImageIndex;
-        FE_VK_ASSERT(m_Queue->GetNativeQueue().presentKHR(presentInfo));
+        FE_VK_ASSERT(vkQueuePresentKHR(m_Queue->GetNativeQueue(), &presentInfo));
 
         m_FrameIndex                      = (m_FrameIndex + 1) % m_Desc.FrameCount;
-        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex].get();
-        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex].get();
+        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
+        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex];
         AcquireNextImage(&m_ImageIndex);
     }
 
     void VKSwapChain::AcquireNextImage(UInt32* index)
     {
-        vk::Semaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex].get();
-        FE_VK_ASSERT(m_Device->GetNativeDevice().acquireNextImageKHR(
-            m_NativeSwapChain.get(), static_cast<UInt64>(-1), semaphore, nullptr, index));
+        VkSemaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex];
+        FE_VK_ASSERT(vkAcquireNextImageKHR(
+            m_Device->GetNativeDevice(), m_NativeSwapChain, static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
 
     List<Shared<IImageView>> VKSwapChain::GetRTVs()

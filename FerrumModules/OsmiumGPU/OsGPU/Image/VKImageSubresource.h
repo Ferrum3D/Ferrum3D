@@ -4,46 +4,46 @@
 
 namespace FE::Osmium
 {
-    inline vk::ImageAspectFlags VKConvert(ImageAspect aspect)
+    inline VkImageAspectFlags VKConvert(ImageAspect aspect)
     {
         switch(aspect)
         {
         case ImageAspect::Color:
-            return vk::ImageAspectFlagBits::eColor;
+            return VK_IMAGE_ASPECT_COLOR_BIT;
         case ImageAspect::Depth:
-            return vk::ImageAspectFlagBits::eDepth;
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
         case ImageAspect::Stencil:
-            return vk::ImageAspectFlagBits::eStencil;
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
         default:
             FE_UNREACHABLE("Unknown ImageAspect");
-            return static_cast<vk::ImageAspectFlagBits>(-1);
+            return VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
         }
     }
 
-    inline vk::ImageAspectFlags VKConvert(ImageAspectFlags aspect)
+    inline VkImageAspectFlags VKConvert(ImageAspectFlags aspect)
     {
-        vk::ImageAspectFlags result{};
+        VkImageAspectFlags result{};
         if ((aspect & ImageAspectFlags::Color) != ImageAspectFlags::None)
-            result |= vk::ImageAspectFlagBits::eColor;
+            result |= VK_IMAGE_ASPECT_COLOR_BIT;
         if ((aspect & ImageAspectFlags::Depth) != ImageAspectFlags::None)
-            result |= vk::ImageAspectFlagBits::eDepth;
+            result |= VK_IMAGE_ASPECT_DEPTH_BIT;
         if ((aspect & ImageAspectFlags::Stencil) != ImageAspectFlags::None)
-            result |= vk::ImageAspectFlagBits::eStencil;
+            result |= VK_IMAGE_ASPECT_STENCIL_BIT;
         return result;
     }
 
-    inline vk::ImageSubresource VKConvert(const ImageSubresource& subresource)
+    inline VkImageSubresource VKConvert(const ImageSubresource& subresource)
     {
-        vk::ImageSubresource result{};
+        VkImageSubresource result{};
         result.arrayLayer = subresource.ArraySlice;
         result.aspectMask = VKConvert(subresource.Aspect);
         result.mipLevel = subresource.MipSlice;
         return result;
     }
 
-    inline vk::ImageSubresourceRange VKConvert(const ImageSubresourceRange& range)
+    inline VkImageSubresourceRange VKConvert(const ImageSubresourceRange& range)
     {
-        vk::ImageSubresourceRange result{};
+        VkImageSubresourceRange result{};
         result.baseArrayLayer = range.MinArraySlice;
         result.layerCount     = range.ArraySliceCount;
         result.baseMipLevel   = range.MinMipSlice;

@@ -12,7 +12,7 @@ namespace FE::Osmium
         UInt32 FamilyIndex;
         UInt32 QueueCount;
         CommandQueueClass Class;
-        vk::UniqueCommandPool CmdPool;
+        VkCommandPool CmdPool;
 
         FE_STRUCT_RTTI(VKQueueFamilyData, "95E71464-EA4F-42C3-8838-881FCE46754D");
 
@@ -29,14 +29,14 @@ namespace FE::Osmium
 
     class VKDevice final : public Object<IDevice>
     {
-        vk::UniqueDevice m_NativeDevice;
-        vk::PhysicalDevice* m_NativeAdapter;
+        VkDevice m_NativeDevice;
+        VkPhysicalDevice m_NativeAdapter;
         VKAdapter* m_Adapter;
         VKInstance* m_Instance;
-        Vector<VKQueueFamilyData> m_QueueFamilyIndices;
+        List<VKQueueFamilyData> m_QueueFamilyIndices;
 
-        Vector<vk::Semaphore> m_WaitSemaphores;
-        Vector<vk::Semaphore> m_SignalSemaphores;
+        List<VkSemaphore> m_WaitSemaphores;
+        List<VkSemaphore> m_SignalSemaphores;
 
         void FindQueueFamilies();
 
@@ -44,36 +44,37 @@ namespace FE::Osmium
         FE_CLASS_RTTI(VKDevice, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
 
         explicit VKDevice(VKAdapter& adapter);
-        vk::Device& GetNativeDevice();
+        ~VKDevice() override;
+        VkDevice GetNativeDevice();
 
-        UInt32 FindMemoryType(UInt32 typeBits, vk::MemoryPropertyFlags properties);
+        UInt32 FindMemoryType(UInt32 typeBits, VkMemoryPropertyFlags properties);
 
-        inline vk::CommandPool& GetCommandPool(CommandQueueClass cmdQueueClass)
+        inline VkCommandPool GetCommandPool(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
                 if (queue.Class == cmdQueueClass)
                 {
-                    return queue.CmdPool.get();
+                    return queue.CmdPool;
                 }
             }
 
             FE_UNREACHABLE("Couldn't find command pool");
-            return m_QueueFamilyIndices.front().CmdPool.get();
+            return m_QueueFamilyIndices.Front().CmdPool;
         }
 
-        inline vk::CommandPool& GetCommandPool(UInt32 queueFamilyIndex)
+        inline VkCommandPool GetCommandPool(UInt32 queueFamilyIndex)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
                 if (queue.FamilyIndex == queueFamilyIndex)
                 {
-                    return queue.CmdPool.get();
+                    return queue.CmdPool;
                 }
             }
 
             FE_UNREACHABLE("Couldn't find command pool");
-            return m_QueueFamilyIndices.front().CmdPool.get();
+            return m_QueueFamilyIndices.Front().CmdPool;
         }
 
         inline UInt32 GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
@@ -90,10 +91,10 @@ namespace FE::Osmium
             return static_cast<UInt32>(-1);
         }
 
-        vk::Semaphore& AddWaitSemaphore();
-        vk::Semaphore& AddSignalSemaphore();
-        UInt32 GetWaitSemaphores(const vk::Semaphore** semaphores);
-        UInt32 GetSignalSemaphores(const vk::Semaphore** semaphores);
+        VkSemaphore& AddWaitSemaphore();
+        VkSemaphore& AddSignalSemaphore();
+        UInt32 GetWaitSemaphores(const VkSemaphore** semaphores);
+        UInt32 GetSignalSemaphores(const VkSemaphore** semaphores);
 
         void WaitIdle() override;
         IAdapter& GetAdapter() override;

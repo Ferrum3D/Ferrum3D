@@ -8,15 +8,15 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_Desc(desc)
     {
-        m_ByteCode.resize((m_Desc.ByteCodeSize + 3) / 4);
-        memcpy(m_ByteCode.data(), m_Desc.ByteCode, m_Desc.ByteCodeSize);
+        m_ByteCode.Resize((m_Desc.ByteCodeSize + 3) / 4);
+        memcpy(m_ByteCode.Data(), m_Desc.ByteCode, m_Desc.ByteCodeSize);
 
-        vk::ShaderModuleCreateInfo shaderCI{};
+        VkShaderModuleCreateInfo shaderCI{};
+        shaderCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         shaderCI.codeSize = m_Desc.ByteCodeSize;
-        shaderCI.pCode    = m_ByteCode.data();
+        shaderCI.pCode    = m_ByteCode.Data();
 
-        auto nativeDev = m_Device->GetNativeDevice();
-        m_NativeModule = nativeDev.createShaderModuleUnique(shaderCI);
+        vkCreateShaderModule(m_Device->GetNativeDevice(), &shaderCI, VK_NULL_HANDLE, &m_NativeModule);
     }
 
     const ShaderModuleDesc& VKShaderModule::GetDesc() const
@@ -24,10 +24,11 @@ namespace FE::Osmium
         return m_Desc;
     }
 
-    vk::PipelineShaderStageCreateInfo VKShaderModule::GetStageCI()
+    VkPipelineShaderStageCreateInfo VKShaderModule::GetStageCI()
     {
-        vk::PipelineShaderStageCreateInfo info{};
-        info.module = m_NativeModule.get();
+        VkPipelineShaderStageCreateInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        info.module = m_NativeModule;
         info.pName  = m_Desc.EntryPoint.Data();
         info.stage  = VKConvert(m_Desc.Stage);
         return info;
@@ -41,5 +42,10 @@ namespace FE::Osmium
         }
 
         return m_Reflection.GetRaw();
+    }
+
+    VKShaderModule::~VKShaderModule()
+    {
+        vkDestroyShaderModule(m_Device->GetNativeDevice(), m_NativeModule, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium
