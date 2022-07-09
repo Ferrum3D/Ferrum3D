@@ -18,77 +18,78 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_IsUpdating(false)
     {
-        auto& nativeDevice = m_Device->GetNativeDevice();
-        vk::CommandBufferAllocateInfo allocateInfo{};
-        allocateInfo.commandPool        = m_Device->GetCommandPool(cmdQueueClass);
+        auto nativeDevice = m_Device->GetNativeDevice();
+        m_CommandPool     = m_Device->GetCommandPool(cmdQueueClass);
+        VkCommandBufferAllocateInfo allocateInfo{};
+        allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocateInfo.commandPool        = m_CommandPool;
         allocateInfo.commandBufferCount = 1;
-        allocateInfo.level              = vk::CommandBufferLevel::ePrimary;
+        allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-        using Allocator = StdHeapAllocator<vk::UniqueCommandBuffer>;
-        auto buffers    = nativeDevice.allocateCommandBuffersUnique<VULKAN_HPP_DEFAULT_DISPATCHER_TYPE, Allocator>(allocateInfo);
-        m_CommandBuffer = std::move(buffers.front());
+        vkAllocateCommandBuffers(nativeDevice, &allocateInfo, &m_CommandBuffer);
     }
 
     VKCommandBuffer::VKCommandBuffer(VKDevice& dev, UInt32 queueFamilyIndex)
         : m_Device(&dev)
         , m_IsUpdating(false)
     {
-        auto& nativeDevice = m_Device->GetNativeDevice();
-        vk::CommandBufferAllocateInfo allocateInfo{};
-        allocateInfo.commandPool        = m_Device->GetCommandPool(queueFamilyIndex);
+        auto nativeDevice = m_Device->GetNativeDevice();
+        m_CommandPool     = m_Device->GetCommandPool(queueFamilyIndex);
+        VkCommandBufferAllocateInfo allocateInfo{};
+        allocateInfo.commandPool        = m_CommandPool;
         allocateInfo.commandBufferCount = 1;
-        allocateInfo.level              = vk::CommandBufferLevel::ePrimary;
+        allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-        using Allocator = StdHeapAllocator<vk::UniqueCommandBuffer>;
-        auto buffers    = nativeDevice.allocateCommandBuffersUnique<VULKAN_HPP_DEFAULT_DISPATCHER_TYPE, Allocator>(allocateInfo);
-        m_CommandBuffer = std::move(buffers.front());
+        vkAllocateCommandBuffers(nativeDevice, &allocateInfo, &m_CommandBuffer);
     }
 
-    vk::CommandBuffer& VKCommandBuffer::GetNativeBuffer()
+    VkCommandBuffer VKCommandBuffer::GetNativeBuffer()
     {
-        return m_CommandBuffer.get();
+        return m_CommandBuffer;
     }
 
     void VKCommandBuffer::Begin()
     {
         FE_ASSERT(!m_IsUpdating);
         m_IsUpdating = true;
-        m_CommandBuffer->begin(vk::CommandBufferBeginInfo{});
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        vkBeginCommandBuffer(m_CommandBuffer, &beginInfo);
     }
 
     void VKCommandBuffer::End()
     {
         FE_ASSERT(m_IsUpdating);
         m_IsUpdating = false;
-        m_CommandBuffer->end();
+        vkEndCommandBuffer(m_CommandBuffer);
     }
 
     void VKCommandBuffer::Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
     {
-        m_CommandBuffer->draw(vertexCount, instanceCount, firstVertex, firstInstance);
+        vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void VKCommandBuffer::DrawIndexed(
         UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance)
     {
-        m_CommandBuffer->drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void VKCommandBuffer::SetViewport(const Viewport& viewport)
     {
-        vk::Viewport vp = VKConvert(viewport);
-        m_CommandBuffer->setViewport(0, 1, &vp);
+        auto vp = VKConvert(viewport);
+        vkCmdSetViewport(m_CommandBuffer, 0, 1, &vp);
     }
 
     void VKCommandBuffer::SetScissor(const Scissor& scissor)
     {
-        vk::Rect2D rect = VKConvert(scissor);
-        m_CommandBuffer->setScissor(0, 1, &rect);
+        auto rect = VKConvert(scissor);
+        vkCmdSetScissor(m_CommandBuffer, 0, 1, &rect);
     }
 
     void VKCommandBuffer::ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers)
     {
-        Vector<vk::ImageMemoryBarrier> nativeBarriers;
+        List<VkImageMemoryBarrier> nativeBarriers;
         for (auto& barrier : barriers)
         {
             auto* img = fe_dynamic_cast<VKImage*>(barrier.Image);
@@ -106,7 +107,8 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto& imageMemoryBarrier               = nativeBarriers.emplace_back();
+            auto& imageMemoryBarrier               = nativeBarriers.Emplace();
+            imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             imageMemoryBarrier.oldLayout           = before;
             imageMemoryBarrier.newLayout           = after;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -117,50 +119,54 @@ namespace FE::Osmium
             imageMemoryBarrier.srcAccessMask = GetAccessMask(stateBefore);
             imageMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
 
-            if (after == vk::ImageLayout::eShaderReadOnlyOptimal)
+            if (after == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             {
-                imageMemoryBarrier.srcAccessMask |= vk::AccessFlagBits::eHostWrite;
-                imageMemoryBarrier.srcAccessMask |= vk::AccessFlagBits::eTransferWrite;
+                imageMemoryBarrier.srcAccessMask |= VK_ACCESS_HOST_WRITE_BIT;
+                imageMemoryBarrier.srcAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
             }
 
             barrier.Image->SetState(barrier.SubresourceRange, barrier.StateAfter);
         }
 
-        if (nativeBarriers.empty())
+        if (nativeBarriers.Empty())
         {
             return;
         }
 
-        m_CommandBuffer->pipelineBarrier(
-            vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion,
-            0, nullptr, 0, nullptr, static_cast<UInt32>(nativeBarriers.size()), nativeBarriers.data());
+        vkCmdPipelineBarrier(
+            m_CommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
+            0, nullptr, 0, nullptr, static_cast<UInt32>(nativeBarriers.Size()), nativeBarriers.Data());
     }
 
     void VKCommandBuffer::MemoryBarrier()
     {
-        vk::MemoryBarrier barrier{};
-        barrier.dstAccessMask = barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
-        m_CommandBuffer->pipelineBarrier(
-            vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, vk::DependencyFlagBits::eByRegion,
-            1, &barrier, 0, nullptr, 0, nullptr);
+        VkMemoryBarrier nativeBarrier{};
+        nativeBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        nativeBarrier.dstAccessMask = nativeBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(
+            m_CommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
+            1, &nativeBarrier, 0, nullptr, 0, nullptr);
     }
 
     void VKCommandBuffer::BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
     {
-        Vector<vk::DescriptorSet> nativeSets;
+        List<VkDescriptorSet> nativeSets;
         for (auto& table : descriptorTables)
         {
-            nativeSets.push_back(fe_assert_cast<VKDescriptorTable*>(table)->GetNativeSet());
+            nativeSets.Push(fe_assert_cast<VKDescriptorTable*>(table)->GetNativeSet());
         }
 
         auto* vkPipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline);
-        m_CommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkPipeline->GetNativeLayout(), 0, nativeSets, {});
+        vkCmdBindDescriptorSets(
+            m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetNativeLayout(), 0, static_cast<UInt32>(nativeSets.Size()),
+            nativeSets.Data(), 0, nullptr);
     }
 
     void VKCommandBuffer::BeginRenderPass(
         IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues)
     {
-        Vector<vk::ClearValue> vkClearValues{};
+        Vector<VkClearValue> vkClearValues{};
         for (const auto& clearValue : clearValues)
         {
             auto& vkClearValue = vkClearValues.emplace_back();
@@ -178,58 +184,59 @@ namespace FE::Osmium
             }
         }
 
-        vk::RenderPassBeginInfo info{};
+        VkRenderPassBeginInfo info{};
+        info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
         info.renderPass        = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
         info.clearValueCount   = static_cast<UInt32>(vkClearValues.size());
         info.pClearValues      = vkClearValues.data();
-        info.renderArea.offset = vk::Offset2D{ 0, 0 };
-        info.renderArea.extent = vk::Extent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
-        m_CommandBuffer->beginRenderPass(info, vk::SubpassContents::eInline);
+        info.renderArea.offset = VkOffset2D{ 0, 0 };
+        info.renderArea.extent = VkExtent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
+        vkCmdBeginRenderPass(m_CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
     }
 
     void VKCommandBuffer::EndRenderPass()
     {
-        m_CommandBuffer->endRenderPass();
+        vkCmdEndRenderPass(m_CommandBuffer);
     }
 
     void VKCommandBuffer::BindGraphicsPipeline(IGraphicsPipeline* pipeline)
     {
-        auto& nativePipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline)->GetNativePipeline();
-        m_CommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, nativePipeline);
+        auto nativePipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline)->GetNativePipeline();
+        vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, nativePipeline);
     }
 
     void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer)
     {
-        auto nativeBuffer     = fe_assert_cast<VKBuffer*>(buffer)->Buffer.get();
-        vk::DeviceSize offset = 0;
-        m_CommandBuffer->bindVertexBuffers(slot, { nativeBuffer }, { offset });
+        auto nativeBuffer   = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &offset);
     }
 
     void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer)
     {
-        auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer.get();
-        m_CommandBuffer->bindIndexBuffer(nativeBuffer, 0, vk::IndexType::eUint32);
+        auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
+        vkCmdBindIndexBuffer(m_CommandBuffer, nativeBuffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     void VKCommandBuffer::CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)
     {
-        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer.get();
-        auto nativeDst = fe_assert_cast<VKBuffer*>(dest)->Buffer.get();
+        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer;
+        auto nativeDst = fe_assert_cast<VKBuffer*>(dest)->Buffer;
 
-        vk::BufferCopy copy{};
+        VkBufferCopy copy{};
         copy.size      = region.Size;
         copy.dstOffset = region.DestOffset;
         copy.srcOffset = region.SourceOffset;
-        m_CommandBuffer->copyBuffer(nativeSrc, nativeDst, { copy });
+        vkCmdCopyBuffer(m_CommandBuffer, nativeSrc, nativeDst, 1, &copy);
     }
 
     void VKCommandBuffer::CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region)
     {
-        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer.get();
+        auto nativeSrc = fe_assert_cast<VKBuffer*>(source)->Buffer;
         auto nativeDst = fe_assert_cast<VKImage*>(dest)->Image;
 
-        vk::BufferImageCopy copy{};
+        VkBufferImageCopy copy{};
         copy.bufferOffset      = region.BufferOffset;
         copy.bufferRowLength   = 0;
         copy.bufferImageHeight = 0;
@@ -243,7 +250,7 @@ namespace FE::Osmium
         copy.imageOffset = VKConvert(region.ImageOffset);
         copy.imageExtent = VKConvert(region.ImageSize);
 
-        m_CommandBuffer->copyBufferToImage(nativeSrc, nativeDst, vk::ImageLayout::eTransferDstOptimal, { copy });
+        vkCmdCopyBufferToImage(m_CommandBuffer, nativeSrc, nativeDst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
 
     void VKCommandBuffer::BlitImage(IImage* source, IImage* dest, const ImageBlitRegion& region)
@@ -254,7 +261,7 @@ namespace FE::Osmium
         auto srcSubresource = VKConvert(region.Source);
         auto dstSubresource = VKConvert(region.Dest);
 
-        vk::ImageBlit nativeBlit{};
+        VkImageBlit nativeBlit{};
         // SRC
         nativeBlit.srcSubresource.aspectMask     = srcSubresource.aspectMask;
         nativeBlit.srcSubresource.baseArrayLayer = srcSubresource.arrayLayer;
@@ -273,8 +280,13 @@ namespace FE::Osmium
         nativeBlit.dstOffsets[0] = VKConvert(region.DestBounds[0]);
         nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);
 
-        m_CommandBuffer->blitImage(
-            nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst, VKConvert(dest->GetState(region.Dest)),
-            { nativeBlit }, vk::Filter::eLinear);
+        vkCmdBlitImage(
+            m_CommandBuffer, nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst,
+            VKConvert(dest->GetState(region.Dest)), 1, &nativeBlit, VK_FILTER_LINEAR);
+    }
+
+    VKCommandBuffer::~VKCommandBuffer()
+    {
+        vkFreeCommandBuffers(m_Device->GetNativeDevice(), m_CommandPool, 1, &m_CommandBuffer);
     }
 } // namespace FE::Osmium

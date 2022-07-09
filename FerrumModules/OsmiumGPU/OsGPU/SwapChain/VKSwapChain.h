@@ -14,10 +14,10 @@ namespace FE::Osmium
         VKCommandQueue* m_Queue;
         SwapChainDesc m_Desc;
 
-        vk::UniqueSurfaceKHR m_Surface;
-        vk::UniqueSwapchainKHR m_NativeSwapChain;
-        vk::SurfaceFormatKHR m_ColorFormat;
-        vk::SurfaceCapabilitiesKHR m_Capabilities;
+        VkSurfaceKHR m_Surface;
+        VkSwapchainKHR m_NativeSwapChain;
+        VkSurfaceFormatKHR m_ColorFormat;
+        VkSurfaceCapabilitiesKHR m_Capabilities;
 
         Shared<IImage> m_DepthImage;
         Shared<IImageView> m_DepthImageView;
@@ -25,14 +25,14 @@ namespace FE::Osmium
         List<Shared<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
-        Vector<vk::UniqueSemaphore> m_ImageAvailableSemaphores;
-        Vector<vk::UniqueSemaphore> m_RenderFinishedSemaphores;
+        List<VkSemaphore> m_ImageAvailableSemaphores;
+        List<VkSemaphore> m_RenderFinishedSemaphores;
         UInt32 m_FrameIndex;
 
-        vk::Semaphore* m_CurrentImageAvailableSemaphore;
-        vk::Semaphore* m_CurrentRenderFinishedSemaphore;
+        VkSemaphore* m_CurrentImageAvailableSemaphore;
+        VkSemaphore* m_CurrentRenderFinishedSemaphore;
 
-        bool ValidateDimensions(const SwapChainDesc& swapChainDesc) const;
+        [[nodiscard]] bool ValidateDimensions(const SwapChainDesc& swapChainDesc) const;
         void BuildNativeSwapChain(VKInstance& instance);
         void AcquireNextImage(UInt32* index);
 

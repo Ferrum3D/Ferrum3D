@@ -10,58 +10,59 @@ namespace FE::Osmium
     {
         VKDevice* m_Device;
 
-        vk::UniquePipelineLayout m_Layout;
-        vk::UniquePipeline m_NativePipeline;
+        VkPipelineLayout m_Layout;
+        VkPipeline m_NativePipeline;
 
         GraphicsPipelineDesc m_Desc;
 
         struct VertexStates
         {
-            vk::PipelineVertexInputStateCreateInfo VertexInput{};
-            vk::PipelineInputAssemblyStateCreateInfo InputAssembly{};
+            VkPipelineVertexInputStateCreateInfo VertexInput{};
+            VkPipelineInputAssemblyStateCreateInfo InputAssembly{};
 
-            Vector<vk::VertexInputBindingDescription> BindingDesc{};
-            Vector<vk::VertexInputAttributeDescription> AttributeDesc{};
+            List<VkVertexInputBindingDescription> BindingDesc{};
+            List<VkVertexInputAttributeDescription> AttributeDesc{};
         };
 
         struct ViewportState
         {
-            vk::PipelineViewportStateCreateInfo CreateInfo{};
-            vk::Viewport Viewport;
-            vk::Rect2D Scissor;
+            VkPipelineViewportStateCreateInfo CreateInfo{};
+            VkViewport Viewport;
+            VkRect2D Scissor;
         };
 
         struct BlendState
         {
-            Vector<vk::PipelineColorBlendAttachmentState> Attachments{};
-            vk::PipelineColorBlendStateCreateInfo CreateInfo{};
+            List<VkPipelineColorBlendAttachmentState> Attachments{};
+            VkPipelineColorBlendStateCreateInfo CreateInfo{};
         };
 
-        Vector<vk::PipelineShaderStageCreateInfo> BuildShaderStages();
+        List<VkPipelineShaderStageCreateInfo> BuildShaderStages();
         void BuildVertexStates(VertexStates& states) const;
         void BuildViewportState(ViewportState& state) const;
         void BuildBlendState(BlendState& state);
-        vk::PipelineColorBlendAttachmentState BuildBlendState(size_t attachmentIndex);
-        vk::PipelineRasterizationStateCreateInfo BuildRasterizationState();
-        vk::PipelineMultisampleStateCreateInfo BuildMultisampleState();
-        [[nodiscard]] vk::PipelineDepthStencilStateCreateInfo BuildDepthState() const;
+        VkPipelineColorBlendAttachmentState BuildBlendState(size_t attachmentIndex);
+        VkPipelineRasterizationStateCreateInfo BuildRasterizationState();
+        VkPipelineMultisampleStateCreateInfo BuildMultisampleState();
+        [[nodiscard]] VkPipelineDepthStencilStateCreateInfo BuildDepthState() const;
 
     public:
         FE_CLASS_RTTI(VKGraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");
 
         VKGraphicsPipeline(VKDevice& dev, const GraphicsPipelineDesc& desc);
+        ~VKGraphicsPipeline() override;
 
-        inline vk::Pipeline& GetNativePipeline();
-        inline vk::PipelineLayout& GetNativeLayout();
+        inline VkPipeline GetNativePipeline();
+        inline VkPipelineLayout GetNativeLayout();
     };
 
-    inline vk::Pipeline& VKGraphicsPipeline::GetNativePipeline()
+    inline VkPipeline VKGraphicsPipeline::GetNativePipeline()
     {
-        return m_NativePipeline.get();
+        return m_NativePipeline;
     }
 
-    inline vk::PipelineLayout& VKGraphicsPipeline::GetNativeLayout()
+    inline VkPipelineLayout VKGraphicsPipeline::GetNativeLayout()
     {
-        return m_Layout.get();
+        return m_Layout;
     }
 } // namespace FE::Osmium

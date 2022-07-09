@@ -6,22 +6,22 @@
 
 namespace FE::Osmium
 {
-    inline vk::ImageViewType VKConvert(ImageDim dim, bool isArray)
+    inline VkImageViewType VKConvert(ImageDim dim, bool isArray)
     {
         switch (dim)
         {
         case ImageDim::Image1D:
-            return isArray ? vk::ImageViewType::e1DArray : vk::ImageViewType::e1D;
+            return isArray ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
         case ImageDim::Image2D:
-            return isArray ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+            return isArray ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         case ImageDim::Image3D:
             FE_ASSERT_MSG(!isArray, "Array of 3D images is not allowed");
-            return vk::ImageViewType::e3D;
+            return VK_IMAGE_VIEW_TYPE_3D;
         case ImageDim::ImageCubemap:
-            return isArray ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
+            return isArray ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
         default:
             FE_UNREACHABLE("Invalid ImageDim");
-            return vk::ImageViewType::e2D;
+            return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
         }
     }
 
@@ -34,12 +34,18 @@ namespace FE::Osmium
         : m_Desc(desc)
         , m_Device(&dev)
     {
-        vk::ImageViewCreateInfo viewCI{};
-        viewCI.components       = vk::ComponentMapping();
+        VkImageViewCreateInfo viewCI{};
+        viewCI.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewCI.components       = VkComponentMapping{};
         viewCI.format           = VKConvert(desc.Format);
         viewCI.image            = fe_assert_cast<VKImage*>(desc.Image.GetRaw())->Image;
         viewCI.viewType         = VKConvert(desc.Dimension, desc.SubresourceRange.ArraySliceCount != 1);
         viewCI.subresourceRange = VKConvert(desc.SubresourceRange);
-        m_NativeView            = m_Device->GetNativeDevice().createImageViewUnique(viewCI);
+        vkCreateImageView(m_Device->GetNativeDevice(), &viewCI, VK_NULL_HANDLE, &m_NativeView);
+    }
+
+    VKImageView::~VKImageView()
+    {
+        vkDestroyImageView(m_Device->GetNativeDevice(), m_NativeView, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

@@ -6,17 +6,17 @@ namespace FE::Osmium
 {
     class VKInstance;
 
-    inline AdapterType VKConvert(const vk::PhysicalDeviceType& src) noexcept
+    inline AdapterType VKConvert(VkPhysicalDeviceType src) noexcept
     {
         switch (src)
         {
-        case vk::PhysicalDeviceType::eIntegratedGpu:
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
             return AdapterType::Integrated;
-        case vk::PhysicalDeviceType::eDiscreteGpu:
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
             return AdapterType::Discrete;
-        case vk::PhysicalDeviceType::eVirtualGpu:
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
             return AdapterType::Virtual;
-        case vk::PhysicalDeviceType::eCpu:
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
             return AdapterType::CPU;
         default:
             return AdapterType::None;
@@ -27,16 +27,17 @@ namespace FE::Osmium
     {
         AdapterDesc m_Desc;
         VKInstance* m_Instance;
-        vk::PhysicalDevice m_VkAdapter;
+        VkPhysicalDevice m_VkAdapter;
 
     public:
         FE_CLASS_RTTI(VKAdapter, "4054CC7E-C6EB-4A43-B326-E85C32BED38C");
 
-        vk::PhysicalDeviceProperties Prop;
+        VkPhysicalDeviceProperties Properties;
 
-        VKAdapter(VKInstance& instance, const vk::PhysicalDevice& vkAdapter);
+        VKAdapter(VKInstance& instance, VkPhysicalDevice vkAdapter);
+        ~VKAdapter() override = default;
 
-        vk::PhysicalDevice& GetNativeAdapter();
+        VkPhysicalDevice GetNativeAdapter();
         AdapterDesc& GetDesc() override;
         Shared<IDevice> CreateDevice() override;
         IInstance& GetInstance() override;

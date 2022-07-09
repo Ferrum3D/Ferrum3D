@@ -16,7 +16,7 @@ namespace FE::Osmium
     struct AdapterDesc
     {
         FE_STRUCT_RTTI(AdapterDesc, "11A8F0B5-48A0-4F1A-9023-8B3F65F2ECE1");
-        String Name;
+        const char* Name;
         AdapterType Type;
     };
 

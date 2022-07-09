@@ -9,7 +9,8 @@ namespace FE::Osmium
     class VKCommandBuffer : public Object<ICommandBuffer>
     {
         VKDevice* m_Device;
-        vk::UniqueCommandBuffer m_CommandBuffer;
+        VkCommandBuffer m_CommandBuffer;
+        VkCommandPool m_CommandPool;
         bool m_IsUpdating;
 
     public:
@@ -17,8 +18,9 @@ namespace FE::Osmium
 
         VKCommandBuffer(VKDevice& dev, CommandQueueClass cmdQueueClass);
         VKCommandBuffer(VKDevice& dev, UInt32 queueFamilyIndex);
+        ~VKCommandBuffer() override;
 
-        vk::CommandBuffer& GetNativeBuffer();
+        VkCommandBuffer GetNativeBuffer();
 
         void Begin() override;
         void End() override;

@@ -28,7 +28,7 @@ void RunExample()
     auto instance =
         FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
     instance->ReleaseStrongRef();
-    auto adapter       = instance->GetAdapters().front();
+    auto adapter       = instance->GetAdapters().Front();
     auto device        = adapter->CreateDevice();
     auto graphicsQueue = device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
 

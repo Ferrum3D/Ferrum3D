@@ -7,43 +7,43 @@ namespace FE::Osmium
 {
     class VKShaderReflection;
 
-    inline vk::ShaderStageFlags VKConvert(ShaderStageFlags source)
+    inline VkShaderStageFlags VKConvert(ShaderStageFlags source)
     {
-        auto result = static_cast<vk::ShaderStageFlags>(0);
+        auto result = 0;
 #define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
     if ((source & ShaderStageFlags::ferrum) != ShaderStageFlags::None)                                                           \
-        result |= vk::ShaderStageFlagBits::vulkan
+        result |= VK_SHADER_STAGE_ ## vulkan ## _BIT
 
-        FE_CVT_ENTRY(Pixel, eFragment);
-        FE_CVT_ENTRY(Vertex, eVertex);
-        FE_CVT_ENTRY(Hull, eTessellationControl);
-        FE_CVT_ENTRY(Domain, eTessellationEvaluation);
-        FE_CVT_ENTRY(Geometry, eGeometry);
-        FE_CVT_ENTRY(Compute, eCompute);
+        FE_CVT_ENTRY(Pixel, FRAGMENT);
+        FE_CVT_ENTRY(Vertex, VERTEX);
+        FE_CVT_ENTRY(Hull, TESSELLATION_CONTROL);
+        FE_CVT_ENTRY(Domain, TESSELLATION_EVALUATION);
+        FE_CVT_ENTRY(Geometry, GEOMETRY);
+        FE_CVT_ENTRY(Compute, COMPUTE);
 #undef FE_CVT_ENTRY
 
         return result;
     }
 
-    inline vk::ShaderStageFlagBits VKConvert(ShaderStage source)
+    inline VkShaderStageFlagBits VKConvert(ShaderStage source)
     {
         switch (source)
         {
         case ShaderStage::Vertex:
-            return vk::ShaderStageFlagBits::eVertex;
+            return VK_SHADER_STAGE_VERTEX_BIT;
         case ShaderStage::Pixel:
-            return vk::ShaderStageFlagBits::eFragment;
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
         case ShaderStage::Hull:
-            return vk::ShaderStageFlagBits::eTessellationControl;
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         case ShaderStage::Domain:
-            return vk::ShaderStageFlagBits::eTessellationEvaluation;
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         case ShaderStage::Geometry:
-            return vk::ShaderStageFlagBits::eGeometry;
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
         case ShaderStage::Compute:
-            return vk::ShaderStageFlagBits::eCompute;
+            return VK_SHADER_STAGE_COMPUTE_BIT;
         default:
             FE_UNREACHABLE("Invalid ShaderStage");
-            return static_cast<vk::ShaderStageFlagBits>(-1);
+            return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
         }
     }
 
@@ -51,9 +51,9 @@ namespace FE::Osmium
 
     class VKShaderModule : public Object<IShaderModule>
     {
-        Vector<UInt32> m_ByteCode;
+        List<UInt32> m_ByteCode;
         ShaderModuleDesc m_Desc;
-        vk::UniqueShaderModule m_NativeModule;
+        VkShaderModule m_NativeModule;
         VKDevice* m_Device;
         Shared<VKShaderReflection> m_Reflection;
 
@@ -61,10 +61,11 @@ namespace FE::Osmium
         FE_CLASS_RTTI(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");
 
         VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc);
+        ~VKShaderModule() override;
 
-        const ShaderModuleDesc& GetDesc() const override;
+        [[nodiscard]] const ShaderModuleDesc& GetDesc() const override;
 
-        vk::PipelineShaderStageCreateInfo GetStageCI();
+        VkPipelineShaderStageCreateInfo GetStageCI();
         IShaderReflection* GetReflection() override;
     };
 } // namespace FE::Osmium

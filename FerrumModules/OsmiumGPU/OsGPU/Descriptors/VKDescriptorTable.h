@@ -11,10 +11,10 @@ namespace FE::Osmium
     class VKDescriptorTable : public Object<IDescriptorTable>
     {
         VKDevice* m_Device;
-        VKDescriptorHeap* m_Heap;
+        Shared<VKDescriptorHeap> m_Heap;
 
-        vk::UniqueDescriptorSetLayout m_Layout;
-        vk::DescriptorSet m_Set;
+        VkDescriptorSetLayout m_Layout;
+        VkDescriptorSet m_Set;
 
         List<DescriptorDesc> m_Descriptors;
 
@@ -22,22 +22,23 @@ namespace FE::Osmium
         FE_CLASS_RTTI(VKDescriptorTable, "262CD421-E748-4F4C-A732-2ABB951D486A");
 
         VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors);
+        ~VKDescriptorTable() override;
 
         void Update(const DescriptorWriteBuffer& descriptorWriteBuffer) override;
         void Update(const DescriptorWriteImage& descriptorWriteBuffer) override;
         void Update(const DescriptorWriteSampler& descriptorWriteBuffer) override;
 
-        inline vk::DescriptorSet& GetNativeSet();
-        inline vk::DescriptorSetLayout& GetNativeSetLayout();
+        inline VkDescriptorSet GetNativeSet();
+        inline VkDescriptorSetLayout GetNativeSetLayout();
     };
 
-    inline vk::DescriptorSet& VKDescriptorTable::GetNativeSet()
+    inline VkDescriptorSet VKDescriptorTable::GetNativeSet()
     {
         return m_Set;
     }
 
-    inline vk::DescriptorSetLayout& VKDescriptorTable::GetNativeSetLayout()
+    inline VkDescriptorSetLayout VKDescriptorTable::GetNativeSetLayout()
     {
-        return m_Layout.get();
+        return m_Layout;
     }
 }

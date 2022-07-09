@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
+#include <FeCore/Containers/List.h>
 #include <OsGPU/Common/BaseTypes.h>
 
 namespace FE::Osmium
@@ -27,7 +27,7 @@ namespace FE::Osmium
 
         FE_CLASS_RTTI(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
-        virtual Vector<Shared<IAdapter>>& GetAdapters() = 0;
+        [[nodiscard]] virtual const List<Shared<IAdapter>>& GetAdapters() const = 0;
     };
 
     typedef void (*AttachEnvironmentProc)(Env::Internal::IEnvironment* environment);

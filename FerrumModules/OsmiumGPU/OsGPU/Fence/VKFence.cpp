@@ -7,10 +7,10 @@ namespace FE::Osmium
     VKFence::VKFence(VKDevice& dev, FenceState initialState)
         : m_Device(&dev)
     {
-        vk::FenceCreateInfo fenceCI{};
-        fenceCI.flags =
-            initialState == FenceState::Reset ? static_cast<vk::FenceCreateFlagBits>(0) : vk::FenceCreateFlagBits::eSignaled;
-        m_NativeFence = m_Device->GetNativeDevice().createFenceUnique(fenceCI);
+        VkFenceCreateInfo fenceCI{};
+        fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceCI.flags = initialState == FenceState::Reset ? 0 : VK_FENCE_CREATE_SIGNALED_BIT;
+        vkCreateFence(m_Device->GetNativeDevice(), &fenceCI, VK_NULL_HANDLE, &m_NativeFence);
     }
 
     void VKFence::SignalOnCPU()
@@ -21,21 +21,27 @@ namespace FE::Osmium
 
     void VKFence::WaitOnCPU()
     {
-        FE_VK_ASSERT(m_Device->GetNativeDevice().waitForFences({ m_NativeFence.get() }, false, static_cast<UInt64>(-1)));
+        vkWaitForFences(m_Device->GetNativeDevice(), 1, &m_NativeFence, false, 10000000000);
     }
 
     void VKFence::Reset()
     {
-        m_Device->GetNativeDevice().resetFences({ m_NativeFence.get() });
+        vkResetFences(m_Device->GetNativeDevice(), 1, &m_NativeFence);
     }
 
     FenceState VKFence::GetState()
     {
-        return FenceState::Signaled;
+        auto status = vkGetFenceStatus(m_Device->GetNativeDevice(), m_NativeFence);
+        return status == VK_SUCCESS ? FenceState::Signaled : FenceState::Reset;
     }
 
-    vk::Fence& VKFence::GetNativeFence()
+    VkFence VKFence::GetNativeFence()
     {
-        return m_NativeFence.get();
+        return m_NativeFence;
+    }
+
+    VKFence::~VKFence()
+    {
+        vkDestroyFence(m_Device->GetNativeDevice(), m_NativeFence, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

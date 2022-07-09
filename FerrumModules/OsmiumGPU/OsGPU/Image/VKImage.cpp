@@ -5,6 +5,7 @@
 #include <OsGPU/Image/VKImageFormat.h>
 #include <OsGPU/ImageView/VKImageView.h>
 #include <OsGPU/Memory/VKDeviceMemory.h>
+#include <OsGPU/Pipeline/VKPipelineStates.h>
 
 namespace FE::Osmium
 {
@@ -41,51 +42,52 @@ namespace FE::Osmium
         , m_Device(&dev)
         , Desc(desc)
     {
-        vk::ImageCreateInfo imageCI{};
-        vk::ImageUsageFlags usage{};
+        VkImageCreateInfo imageCI{};
+        imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        VkImageUsageFlags usage{};
         if ((desc.BindFlags & ImageBindFlags::Depth) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
+            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::Stencil) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst;
+            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::ShaderRead) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eSampled;
+            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::Color) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::UnorderedAccess) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eStorage;
+            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::TransferWrite) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eTransferDst;
+            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
         if ((desc.BindFlags & ImageBindFlags::TransferRead) != ImageBindFlags::None)
         {
-            usage |= vk::ImageUsageFlagBits::eTransferSrc;
+            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
         switch (desc.Dimension)
         {
         case ImageDim::Image1D:
-            imageCI.imageType = vk::ImageType::e1D;
+            imageCI.imageType = VK_IMAGE_TYPE_1D;
             break;
         case ImageDim::ImageCubemap:
             FE_ASSERT_MSG(desc.ArraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.ArraySize);
-            imageCI.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+            imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             [[fallthrough]];
         case ImageDim::Image2D:
-            imageCI.imageType = vk::ImageType::e2D;
+            imageCI.imageType = VK_IMAGE_TYPE_2D;
             break;
         case ImageDim::Image3D:
-            imageCI.imageType = vk::ImageType::e3D;
+            imageCI.imageType = VK_IMAGE_TYPE_3D;
             break;
         default:
             FE_UNREACHABLE("Unknown image dimension");
@@ -106,19 +108,20 @@ namespace FE::Osmium
         imageCI.mipLevels     = desc.MipSliceCount;
         imageCI.arrayLayers   = desc.ArraySize;
         imageCI.format        = VKConvert(desc.ImageFormat);
-        imageCI.tiling        = vk::ImageTiling::eOptimal;
-        imageCI.initialLayout = vk::ImageLayout::eUndefined;
+        imageCI.tiling        = VK_IMAGE_TILING_OPTIMAL;
+        imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageCI.usage         = usage;
-        imageCI.samples       = static_cast<vk::SampleCountFlagBits>(desc.SampleCount);
-        imageCI.sharingMode   = vk::SharingMode::eExclusive;
+        imageCI.samples       = GetVKSampleCountFlags(desc.SampleCount);
+        imageCI.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
-        UniqueImage = m_Device->GetNativeDevice().createImageUnique(imageCI);
-        Image       = UniqueImage.get();
+        vkCreateImage(m_Device->GetNativeDevice(), &imageCI, VK_NULL_HANDLE, &Image);
+        m_Owned = true;
     }
 
     void VKImage::AllocateMemory(MemoryType type)
     {
-        auto memoryRequirements = m_Device->GetNativeDevice().getImageMemoryRequirements(Image);
+        VkMemoryRequirements memoryRequirements;
+        vkGetImageMemoryRequirements(m_Device->GetNativeDevice(), Image, &memoryRequirements);
         MemoryAllocationDesc desc{};
         desc.Size = memoryRequirements.size;
         desc.Type = type;
@@ -129,6 +132,14 @@ namespace FE::Osmium
     void VKImage::BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset)
     {
         m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
-        m_Device->GetNativeDevice().bindImageMemory(Image, m_Memory->Memory.get(), offset);
+        vkBindImageMemory(m_Device->GetNativeDevice(), Image, m_Memory->Memory, offset);
+    }
+
+    VKImage::~VKImage()
+    {
+        if (m_Owned)
+        {
+            vkDestroyImage(m_Device->GetNativeDevice(), Image, VK_NULL_HANDLE);
+        }
     }
 } // namespace FE::Osmium

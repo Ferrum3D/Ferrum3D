@@ -2,9 +2,9 @@
 #include <OsGPU/Descriptors/VKDescriptorHeap.h>
 #include <OsGPU/Descriptors/VKDescriptorTable.h>
 #include <OsGPU/Device/VKDevice.h>
-#include <OsGPU/Shader/VKShaderModule.h>
 #include <OsGPU/ImageView/VKImageView.h>
 #include <OsGPU/Sampler/VKSampler.h>
+#include <OsGPU/Shader/VKShaderModule.h>
 
 namespace FE::Osmium
 {
@@ -13,82 +13,94 @@ namespace FE::Osmium
         , m_Heap(&heap)
         , m_Descriptors(descriptors)
     {
-        Vector<vk::DescriptorSetLayoutBinding> bindings;
-        for (USize i = 0; i < m_Descriptors.Size(); ++i)
+        List<VkDescriptorSetLayoutBinding> bindings;
+        for (UInt32 i = 0; i < m_Descriptors.Size(); ++i)
         {
             auto& desc    = m_Descriptors[i];
-            auto& binding = bindings.emplace_back();
+            auto& binding = bindings.Emplace();
 
-            binding.binding         = static_cast<UInt32>(i);
+            binding.binding         = i;
             binding.descriptorCount = desc.Count;
             binding.descriptorType  = GetDescriptorType(desc.ResourceType);
             binding.stageFlags      = VKConvert(desc.Stage);
         }
 
-        vk::DescriptorSetLayoutCreateInfo layoutCI{};
-        layoutCI.bindingCount = static_cast<UInt32>(bindings.size());
-        layoutCI.pBindings    = bindings.data();
-        m_Layout              = m_Device->GetNativeDevice().createDescriptorSetLayoutUnique(layoutCI);
+        VkDescriptorSetLayoutCreateInfo layoutCI{};
+        layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutCI.bindingCount = static_cast<UInt32>(bindings.Size());
+        layoutCI.pBindings    = bindings.Data();
+        vkCreateDescriptorSetLayout(m_Device->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &m_Layout);
 
-        vk::DescriptorSetAllocateInfo info{};
+        VkDescriptorSetAllocateInfo info{};
+        info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         info.descriptorPool     = m_Heap->GetNativeDescriptorPool();
         info.descriptorSetCount = 1;
-        info.pSetLayouts        = &m_Layout.get();
+        info.pSetLayouts        = &m_Layout;
 
-        auto sets = m_Device->GetNativeDevice().allocateDescriptorSets<StdHeapAllocator<vk::DescriptorSet>>(info);
-        m_Set     = sets.back();
+        vkAllocateDescriptorSets(m_Device->GetNativeDevice(), &info, &m_Set);
     }
 
     void VKDescriptorTable::Update(const DescriptorWriteBuffer& descriptorWriteBuffer)
     {
         auto vkBuffer = fe_assert_cast<VKBuffer*>(descriptorWriteBuffer.Buffer);
-        vk::DescriptorBufferInfo info{};
-        info.buffer = vkBuffer->Buffer.get();
+        VkDescriptorBufferInfo info{};
+        info.buffer = vkBuffer->Buffer;
         info.offset = descriptorWriteBuffer.Offset;
         info.range  = descriptorWriteBuffer.Range == static_cast<UInt32>(-1) ? VK_WHOLE_SIZE : descriptorWriteBuffer.Range;
 
-        vk::WriteDescriptorSet write{};
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteBuffer.Binding].ResourceType);
         write.descriptorCount = 1;
         write.dstArrayElement = descriptorWriteBuffer.ArrayIndex;
         write.dstBinding      = descriptorWriteBuffer.Binding;
         write.dstSet          = m_Set;
         write.pBufferInfo     = &info;
-        m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
+        vkUpdateDescriptorSets(m_Device->GetNativeDevice(), 1, &write, 0, nullptr);
     }
 
     void VKDescriptorTable::Update(const DescriptorWriteImage& descriptorWriteImage)
     {
         auto vkView = fe_assert_cast<VKImageView*>(descriptorWriteImage.View);
-        vk::DescriptorImageInfo info{};
-        info.imageView = vkView->GetNativeView();
-        info.sampler = VK_NULL_HANDLE;
-        info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        VkDescriptorImageInfo info{};
+        info.imageView   = vkView->GetNativeView();
+        info.sampler     = VK_NULL_HANDLE;
+        info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        vk::WriteDescriptorSet write{};
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteImage.Binding].ResourceType);
         write.descriptorCount = 1;
         write.dstArrayElement = descriptorWriteImage.ArrayIndex;
         write.dstBinding      = descriptorWriteImage.Binding;
         write.dstSet          = m_Set;
-        write.pImageInfo     = &info;
-        m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
+        write.pImageInfo      = &info;
+        vkUpdateDescriptorSets(m_Device->GetNativeDevice(), 1, &write, 0, nullptr);
     }
 
     void VKDescriptorTable::Update(const DescriptorWriteSampler& descriptorWriteSampler)
     {
         auto vkSampler = fe_assert_cast<VKSampler*>(descriptorWriteSampler.Sampler);
-        vk::DescriptorImageInfo info{};
+        VkDescriptorImageInfo info{};
         info.imageView = VK_NULL_HANDLE;
-        info.sampler = vkSampler->Sampler.get();
+        info.sampler   = vkSampler->Sampler;
 
-        vk::WriteDescriptorSet write{};
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType  = GetDescriptorType(m_Descriptors[descriptorWriteSampler.Binding].ResourceType);
         write.descriptorCount = 1;
         write.dstArrayElement = descriptorWriteSampler.ArrayIndex;
         write.dstBinding      = descriptorWriteSampler.Binding;
         write.dstSet          = m_Set;
-        write.pImageInfo     = &info;
-        m_Device->GetNativeDevice().updateDescriptorSets({ write }, {});
+        write.pImageInfo      = &info;
+        vkUpdateDescriptorSets(m_Device->GetNativeDevice(), 1, &write, 0, nullptr);
+    }
+
+    VKDescriptorTable::~VKDescriptorTable()
+    {
+        // It is invalid to call vkFreeDescriptorSets() with a pool created without setting
+        // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT.
+        // vkFreeDescriptorSets(m_Device->GetNativeDevice(), m_Heap->GetNativeDescriptorPool(), 1, &m_Set);
+        vkDestroyDescriptorSetLayout(m_Device->GetNativeDevice(), m_Layout, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

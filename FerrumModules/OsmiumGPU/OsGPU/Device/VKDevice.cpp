@@ -31,33 +31,36 @@ namespace FE::Osmium
             });
         };
 
-        auto families = m_NativeAdapter->getQueueFamilyProperties<StdHeapAllocator<vk::QueueFamilyProperties>>();
-        for (size_t i = 0; i < families.size(); ++i)
+        UInt32 familyCount;
+        vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, nullptr);
+        List<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
+        vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, families.Data());
+        for (USize i = 0; i < families.Size(); ++i)
         {
-            auto graphics = vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eGraphics;
-            auto compute  = vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute;
-            auto copy     = vk::QueueFlagBits::eTransfer;
-            auto idx      = static_cast<UInt32>(i);
+            UInt32 graphics = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            UInt32 compute  = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
+            UInt32 copy     = VK_QUEUE_TRANSFER_BIT;
 
+            auto idx = static_cast<UInt32>(i);
             if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(CommandQueueClass::Graphics))
             {
-                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Graphics));
+                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Graphics));
             }
             else if ((families[i].queueFlags & compute) == compute && !hasQueueFamily(CommandQueueClass::Compute))
             {
-                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Compute));
+                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Compute));
             }
             else if ((families[i].queueFlags & copy) == copy && !hasQueueFamily(CommandQueueClass::Transfer))
             {
-                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Transfer));
+                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Transfer));
             }
         }
     }
 
-    UInt32 VKDevice::FindMemoryType(UInt32 typeBits, vk::MemoryPropertyFlags properties)
+    UInt32 VKDevice::FindMemoryType(UInt32 typeBits, VkMemoryPropertyFlags properties)
     {
-        vk::PhysicalDeviceMemoryProperties memProperties;
-        m_Adapter->GetNativeAdapter().getMemoryProperties(&memProperties);
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(m_NativeAdapter, &memProperties);
 
         for (UInt32 i = 0; i < memProperties.memoryTypeCount; ++i)
         {
@@ -73,63 +76,69 @@ namespace FE::Osmium
 
     VKDevice::VKDevice(VKAdapter& adapter)
         : m_Adapter(&adapter)
-        , m_NativeAdapter(&adapter.GetNativeAdapter())
-        , m_Instance(fe_dynamic_cast<VKInstance*>(&adapter.GetInstance()))
+        , m_NativeAdapter(adapter.GetNativeAdapter())
+        , m_Instance(fe_assert_cast<VKInstance*>(&adapter.GetInstance()))
     {
-        FE_LOG_MESSAGE("Creating Vulkan Device on GPU: {}...", m_Adapter->GetDesc().Name);
+        FE_LOG_MESSAGE("Creating Vulkan Device on GPU: {}...", StringSlice(m_Adapter->GetDesc().Name));
         FindQueueFamilies();
 
-        auto availableExt = m_NativeAdapter->enumerateDeviceExtensionProperties<StdHeapAllocator<vk::ExtensionProperties>>();
+        UInt32 availableExtCount;
+        vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, nullptr);
+        List<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
+        vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, availableExt.Data());
         for (auto& ext : RequiredDeviceExtensions)
         {
-            bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const vk::ExtensionProperties& props) {
-                return StringSlice(ext) == props.extensionName.data();
+            bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const VkExtensionProperties& props) {
+                return StringSlice(ext) == props.extensionName;
             });
             FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", String(ext));
         }
 
         constexpr Float32 queuePriority = 1.0f;
-        Vector<vk::DeviceQueueCreateInfo> queuesCI{};
+        List<VkDeviceQueueCreateInfo> queuesCI{};
         for (auto& queue : m_QueueFamilyIndices)
         {
-            vk::DeviceQueueCreateInfo& queueCI = queuesCI.emplace_back();
-            queueCI.queueFamilyIndex           = queue.FamilyIndex;
-            queueCI.queueCount                 = 1;
-            queueCI.pQueuePriorities           = &queuePriority;
+            auto& queueCI            = queuesCI.Emplace();
+            queueCI.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCI.queueFamilyIndex = queue.FamilyIndex;
+            queueCI.queueCount       = 1;
+            queueCI.pQueuePriorities = &queuePriority;
         }
 
-        vk::PhysicalDeviceFeatures deviceFeatures{};
+        VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.geometryShader     = true;
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy  = true;
         deviceFeatures.sampleRateShading  = true;
 
-        vk::DeviceCreateInfo deviceCI{};
-        deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.size());
-        deviceCI.pQueueCreateInfos       = queuesCI.data();
+        VkDeviceCreateInfo deviceCI{};
+        deviceCI.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.Size());
+        deviceCI.pQueueCreateInfos       = queuesCI.Data();
         deviceCI.pEnabledFeatures        = &deviceFeatures;
         deviceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
 
-        m_NativeDevice = m_NativeAdapter->createDeviceUnique(deviceCI);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(m_NativeDevice.get());
+        vkCreateDevice(m_NativeAdapter, &deviceCI, VK_NULL_HANDLE, &m_NativeDevice);
+        volkLoadDevice(m_NativeDevice);
 
         for (auto& queue : m_QueueFamilyIndices)
         {
-            vk::CommandPoolCreateInfo poolCI{};
+            VkCommandPoolCreateInfo poolCI{};
+            poolCI.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             poolCI.queueFamilyIndex = queue.FamilyIndex;
-            queue.CmdPool           = m_NativeDevice->createCommandPoolUnique(poolCI);
+            vkCreateCommandPool(m_NativeDevice, &poolCI, VK_NULL_HANDLE, &queue.CmdPool);
         }
     }
 
-    vk::Device& VKDevice::GetNativeDevice()
+    VkDevice VKDevice::GetNativeDevice()
     {
-        return m_NativeDevice.get();
+        return m_NativeDevice;
     }
 
     Shared<IFence> VKDevice::CreateFence(FenceState state)
     {
-        return static_pointer_cast<IFence>(MakeShared<VKFence>(*this, state));
+        return MakeShared<VKFence>(*this, state);
     }
 
     Shared<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
@@ -137,17 +146,17 @@ namespace FE::Osmium
         VKCommandQueueDesc desc{};
         desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
         desc.QueueIndex       = 0;
-        return static_pointer_cast<ICommandQueue>(MakeShared<VKCommandQueue>(*this, desc));
+        return MakeShared<VKCommandQueue>(*this, desc);
     }
 
     Shared<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
-        return static_pointer_cast<ICommandBuffer>(MakeShared<VKCommandBuffer>(*this, cmdQueueClass));
+        return MakeShared<VKCommandBuffer>(*this, cmdQueueClass);
     }
 
     Shared<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
     {
-        return static_pointer_cast<ISwapChain>(MakeShared<VKSwapChain>(*this, desc));
+        return MakeShared<VKSwapChain>(*this, desc);
     }
 
     Shared<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
@@ -156,40 +165,40 @@ namespace FE::Osmium
         desc.Size   = size;
         auto buffer = MakeShared<VKBuffer>(*this, desc);
 
-        vk::BufferCreateInfo bufferCI{};
+        VkBufferCreateInfo bufferCI{};
+        bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCI.size  = size;
-        bufferCI.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
+        bufferCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
         if ((bindFlags & BindFlags::ShaderResource) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+            bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
         if ((bindFlags & BindFlags::UnorderedAccess) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
-            bufferCI.usage |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         }
         if ((bindFlags & BindFlags::VertexBuffer) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
         if ((bindFlags & BindFlags::IndexBuffer) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         }
         if ((bindFlags & BindFlags::ConstantBuffer) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
         if ((bindFlags & BindFlags::IndirectDrawArgs) != BindFlags::None)
         {
-            bufferCI.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
+            bufferCI.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
-        buffer->Buffer = m_NativeDevice->createBufferUnique(bufferCI);
-
-        return static_pointer_cast<IBuffer>(buffer);
+        vkCreateBuffer(m_NativeDevice, &bufferCI, VK_NULL_HANDLE, &buffer->Buffer);
+        return buffer;
     }
 
     IInstance& VKDevice::GetInstance()
@@ -204,7 +213,7 @@ namespace FE::Osmium
 
     Shared<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
     {
-        return static_pointer_cast<IShaderModule>(MakeShared<VKShaderModule>(*this, desc));
+        return MakeShared<VKShaderModule>(*this, desc);
     }
 
     Shared<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
@@ -214,59 +223,59 @@ namespace FE::Osmium
 
     Shared<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
     {
-        return static_pointer_cast<IRenderPass>(MakeShared<VKRenderPass>(*this, desc));
+        return MakeShared<VKRenderPass>(*this, desc);
     }
 
     Shared<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
     {
-        return static_pointer_cast<IDescriptorHeap>(MakeShared<VKDescriptorHeap>(*this, desc));
+        return MakeShared<VKDescriptorHeap>(*this, desc);
     }
 
     Shared<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
-        return static_pointer_cast<IShaderCompiler>(MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan));
+        return MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan);
     }
 
     Shared<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
     {
-        return static_pointer_cast<IGraphicsPipeline>(MakeShared<VKGraphicsPipeline>(*this, desc));
+        return MakeShared<VKGraphicsPipeline>(*this, desc);
     }
 
     Shared<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
     {
-        return static_pointer_cast<IImageView>(MakeShared<VKImageView>(*this, desc));
+        return MakeShared<VKImageView>(*this, desc);
     }
 
     Shared<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
     {
-        return static_pointer_cast<IFramebuffer>(MakeShared<VKFramebuffer>(*this, desc));
+        return MakeShared<VKFramebuffer>(*this, desc);
     }
 
     void VKDevice::WaitIdle()
     {
-        m_NativeDevice->waitIdle();
+        vkDeviceWaitIdle(m_NativeDevice);
     }
 
-    vk::Semaphore& VKDevice::AddWaitSemaphore()
+    VkSemaphore& VKDevice::AddWaitSemaphore()
     {
-        return m_WaitSemaphores.emplace_back();
+        return m_WaitSemaphores.Emplace();
     }
 
-    vk::Semaphore& VKDevice::AddSignalSemaphore()
+    VkSemaphore& VKDevice::AddSignalSemaphore()
     {
-        return m_SignalSemaphores.emplace_back();
+        return m_SignalSemaphores.Emplace();
     }
 
-    UInt32 VKDevice::GetWaitSemaphores(const vk::Semaphore** semaphores)
+    UInt32 VKDevice::GetWaitSemaphores(const VkSemaphore** semaphores)
     {
-        *semaphores = m_WaitSemaphores.data();
-        return static_cast<UInt32>(m_WaitSemaphores.size());
+        *semaphores = m_WaitSemaphores.Data();
+        return static_cast<UInt32>(m_WaitSemaphores.Size());
     }
 
-    UInt32 VKDevice::GetSignalSemaphores(const vk::Semaphore** semaphores)
+    UInt32 VKDevice::GetSignalSemaphores(const VkSemaphore** semaphores)
     {
-        *semaphores = m_SignalSemaphores.data();
-        return static_cast<UInt32>(m_SignalSemaphores.size());
+        *semaphores = m_SignalSemaphores.Data();
+        return static_cast<UInt32>(m_SignalSemaphores.Size());
     }
 
     Shared<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
@@ -276,11 +285,21 @@ namespace FE::Osmium
 
     Shared<IImage> VKDevice::CreateImage(const ImageDesc& desc)
     {
-        return static_pointer_cast<IImage>(MakeShared<VKImage>(*this, desc));
+        return MakeShared<VKImage>(*this, desc);
     }
 
     Shared<ISampler> VKDevice::CreateSampler(const SamplerDesc& desc)
     {
-        return static_pointer_cast<ISampler>(MakeShared<VKSampler>(*this, desc));
+        return MakeShared<VKSampler>(*this, desc);
+    }
+
+    VKDevice::~VKDevice()
+    {
+        for (auto& family : m_QueueFamilyIndices)
+        {
+            vkDestroyCommandPool(m_NativeDevice, family.CmdPool, VK_NULL_HANDLE);
+        }
+
+        vkDestroyDevice(m_NativeDevice, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

@@ -6,42 +6,43 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    inline vk::DescriptorType GetDescriptorType(ShaderResourceType type)
+    inline VkDescriptorType GetDescriptorType(ShaderResourceType type)
     {
         switch (type)
         {
         case ShaderResourceType::ConstantBuffer:
-            return vk::DescriptorType::eUniformBuffer;
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         case ShaderResourceType::TextureSRV:
-            return vk::DescriptorType::eSampledImage;
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         case ShaderResourceType::TextureUAV:
-            return vk::DescriptorType::eStorageImage;
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         case ShaderResourceType::BufferSRV:
-            return vk::DescriptorType::eUniformTexelBuffer;
+            return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
         case ShaderResourceType::BufferUAV:
-            return vk::DescriptorType::eStorageTexelBuffer;
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         case ShaderResourceType::Sampler:
-            return vk::DescriptorType::eSampler;
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
         case ShaderResourceType::InputAttachment:
-            return vk::DescriptorType::eInputAttachment;
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         default:
             FE_UNREACHABLE("Invalid ShaderResourceType");
-            return static_cast<vk::DescriptorType>(-1);
+            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
         }
     }
 
     class VKDescriptorHeap : public Object<IDescriptorHeap>
     {
-        vk::UniqueDescriptorPool m_NativePool;
+        VkDescriptorPool m_NativePool;
         VKDevice* m_Device;
 
     public:
         FE_CLASS_RTTI(VKDescriptorHeap, "5AFA0C8B-35EE-4B53-9144-C3BD5A8AA51D");
 
         VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc);
+        ~VKDescriptorHeap() override;
 
         Shared<IDescriptorTable> AllocateDescriptorTable(const List<DescriptorDesc>& descriptors) override;
 
-        vk::DescriptorPool& GetNativeDescriptorPool();
+        VkDescriptorPool GetNativeDescriptorPool();
     };
 } // namespace FE::Osmium

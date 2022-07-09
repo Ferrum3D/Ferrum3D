@@ -9,22 +9,28 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_Desc(desc)
     {
-        Vector<vk::ImageView> nativeRTVs;
+        List<VkImageView> nativeRTVs;
         m_RTVs = desc.RenderTargetViews;
         for (auto& view : desc.RenderTargetViews)
         {
             auto* vkView = fe_assert_cast<VKImageView*>(view.GetRaw());
-            nativeRTVs.push_back(vkView->GetNativeView());
+            nativeRTVs.Push(vkView->GetNativeView());
         }
 
-        vk::FramebufferCreateInfo framebufferCI{};
+        VkFramebufferCreateInfo framebufferCI{};
+        framebufferCI.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferCI.renderPass      = fe_assert_cast<VKRenderPass*>(desc.RenderPass.GetRaw())->GetNativeRenderPass();
-        framebufferCI.attachmentCount = static_cast<UInt32>(nativeRTVs.size());
-        framebufferCI.pAttachments    = nativeRTVs.data();
+        framebufferCI.attachmentCount = static_cast<UInt32>(nativeRTVs.Size());
+        framebufferCI.pAttachments    = nativeRTVs.Data();
         framebufferCI.width           = desc.Width;
         framebufferCI.height          = desc.Height;
         framebufferCI.layers          = 1;
 
-        m_NativeFramebuffer = m_Device->GetNativeDevice().createFramebufferUnique(framebufferCI);
+        vkCreateFramebuffer(m_Device->GetNativeDevice(), &framebufferCI, VK_NULL_HANDLE, &m_NativeFramebuffer);
+    }
+
+    VKFramebuffer::~VKFramebuffer()
+    {
+        vkDestroyFramebuffer(m_Device->GetNativeDevice(), m_NativeFramebuffer, VK_NULL_HANDLE);
     }
 } // namespace FE::Osmium

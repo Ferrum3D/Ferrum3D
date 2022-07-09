@@ -4,26 +4,25 @@
 
 namespace FE::Osmium
 {
-    inline vk::AccessFlags GetAccessMask(ResourceState state)
+    inline VkAccessFlags GetAccessMask(ResourceState state)
     {
         static auto Conversions = []() {
-            std::array<vk::AccessFlags, static_cast<size_t>(Format::Count)> result{};
-            using Bits = vk::AccessFlagBits;
+            std::array<VkAccessFlags, static_cast<size_t>(Format::Count)> result{};
             // clang-format off
-            result[static_cast<USize>(ResourceState::Undefined)]        = static_cast<Bits>(0);
-            result[static_cast<USize>(ResourceState::Common)]           = static_cast<Bits>(0);
-            result[static_cast<USize>(ResourceState::VertexBuffer)]     = Bits::eVertexAttributeRead;
-            result[static_cast<USize>(ResourceState::ConstantBuffer)]   = Bits::eUniformRead;
-            result[static_cast<USize>(ResourceState::IndexBuffer)]      = Bits::eIndexRead;
-            result[static_cast<USize>(ResourceState::RenderTarget)]     = Bits::eColorAttachmentRead | Bits::eColorAttachmentWrite;
-            result[static_cast<USize>(ResourceState::UnorderedAccess)]  = Bits::eShaderRead | Bits::eShaderWrite;
-            result[static_cast<USize>(ResourceState::DepthWrite)]       = Bits::eDepthStencilAttachmentRead | Bits::eDepthStencilAttachmentWrite;
-            result[static_cast<USize>(ResourceState::DepthRead)]        = Bits::eDepthStencilAttachmentRead;
-            result[static_cast<USize>(ResourceState::ShaderResource)]   = Bits::eShaderRead;
-            result[static_cast<USize>(ResourceState::IndirectArgument)] = Bits::eIndirectCommandRead;
-            result[static_cast<USize>(ResourceState::TransferWrite)]    = Bits::eTransferWrite;
-            result[static_cast<USize>(ResourceState::TransferRead)]     = Bits::eTransferRead;
-            result[static_cast<USize>(ResourceState::Present)]          = Bits::eMemoryRead;
+            result[static_cast<USize>(ResourceState::Undefined)]        = VK_FLAGS_NONE;
+            result[static_cast<USize>(ResourceState::Common)]           = VK_FLAGS_NONE;
+            result[static_cast<USize>(ResourceState::VertexBuffer)]     = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+            result[static_cast<USize>(ResourceState::ConstantBuffer)]   = VK_ACCESS_UNIFORM_READ_BIT;
+            result[static_cast<USize>(ResourceState::IndexBuffer)]      = VK_ACCESS_INDEX_READ_BIT;
+            result[static_cast<USize>(ResourceState::RenderTarget)]     = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            result[static_cast<USize>(ResourceState::UnorderedAccess)]  = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            result[static_cast<USize>(ResourceState::DepthWrite)]       = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            result[static_cast<USize>(ResourceState::DepthRead)]        = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            result[static_cast<USize>(ResourceState::ShaderResource)]   = VK_ACCESS_SHADER_READ_BIT;
+            result[static_cast<USize>(ResourceState::IndirectArgument)] = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+            result[static_cast<USize>(ResourceState::TransferWrite)]    = VK_ACCESS_TRANSFER_WRITE_BIT;
+            result[static_cast<USize>(ResourceState::TransferRead)]     = VK_ACCESS_TRANSFER_READ_BIT;
+            result[static_cast<USize>(ResourceState::Present)]          = VK_ACCESS_MEMORY_READ_BIT;
             // clang-format on
             return result;
         }();
@@ -31,20 +30,20 @@ namespace FE::Osmium
         return Conversions[static_cast<USize>(state)];
     }
 
-    inline vk::ImageLayout VKConvert(ResourceState state)
+    inline VkImageLayout VKConvert(ResourceState state)
     {
         static auto Conversions = []() {
-            std::array<vk::ImageLayout, static_cast<size_t>(Format::Count)> result{};
-            result[static_cast<USize>(ResourceState::Undefined)]       = vk::ImageLayout::eUndefined;
-            result[static_cast<USize>(ResourceState::Common)]          = vk::ImageLayout::eGeneral;
-            result[static_cast<USize>(ResourceState::RenderTarget)]    = vk::ImageLayout::eColorAttachmentOptimal;
-            result[static_cast<USize>(ResourceState::UnorderedAccess)] = vk::ImageLayout::eGeneral;
-            result[static_cast<USize>(ResourceState::DepthRead)]       = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-            result[static_cast<USize>(ResourceState::DepthWrite)]      = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-            result[static_cast<USize>(ResourceState::ShaderResource)]  = vk::ImageLayout::eShaderReadOnlyOptimal;
-            result[static_cast<USize>(ResourceState::TransferRead)]    = vk::ImageLayout::eTransferSrcOptimal;
-            result[static_cast<USize>(ResourceState::TransferWrite)]   = vk::ImageLayout::eTransferDstOptimal;
-            result[static_cast<USize>(ResourceState::Present)]         = vk::ImageLayout::ePresentSrcKHR;
+            std::array<VkImageLayout, static_cast<size_t>(Format::Count)> result{};
+            result[static_cast<USize>(ResourceState::Undefined)]       = VK_IMAGE_LAYOUT_UNDEFINED;
+            result[static_cast<USize>(ResourceState::Common)]          = VK_IMAGE_LAYOUT_GENERAL;
+            result[static_cast<USize>(ResourceState::RenderTarget)]    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            result[static_cast<USize>(ResourceState::UnorderedAccess)] = VK_IMAGE_LAYOUT_GENERAL;
+            result[static_cast<USize>(ResourceState::DepthRead)]       = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            result[static_cast<USize>(ResourceState::DepthWrite)]      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            result[static_cast<USize>(ResourceState::ShaderResource)]  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            result[static_cast<USize>(ResourceState::TransferRead)]    = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            result[static_cast<USize>(ResourceState::TransferWrite)]   = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            result[static_cast<USize>(ResourceState::Present)]         = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             return result;
         }();
 

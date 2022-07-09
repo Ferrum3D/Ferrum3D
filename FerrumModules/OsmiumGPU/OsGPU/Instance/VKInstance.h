@@ -6,13 +6,10 @@ namespace FE::Osmium
 {
     class VKInstance : public Object<IInstance>
     {
-        // Destructors of class members in C++ are called in reverse order
-        // so the loader must be declared first to be destructed after the instance
-        vk::DynamicLoader m_Loader;
-        vk::UniqueInstance m_Instance;
-        vk::UniqueDebugReportCallbackEXT m_Debug;
+        VkInstance m_Instance;
+        VkDebugReportCallbackEXT m_Debug;
 
-        Vector<Shared<IAdapter>> m_PhysicalDevices;
+        List<Shared<IAdapter>> m_Adapters;
 
     public:
         FE_CLASS_RTTI(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
@@ -20,8 +17,8 @@ namespace FE::Osmium
         explicit VKInstance(const InstanceDesc& desc);
         ~VKInstance() override;
 
-        vk::Instance& GetNativeInstance();
+        VkInstance GetNativeInstance();
 
-        Vector<Shared<IAdapter>>& GetAdapters() override;
+        [[nodiscard]] const List<Shared<IAdapter>>& GetAdapters() const override;
     };
 } // namespace FE::Osmium

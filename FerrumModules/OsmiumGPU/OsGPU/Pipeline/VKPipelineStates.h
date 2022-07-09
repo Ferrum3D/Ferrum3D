@@ -4,195 +4,195 @@
 
 namespace FE::Osmium
 {
-    inline vk::SampleCountFlagBits GetVKSampleCountFlags(Int32 sampleCount)
+    inline VkSampleCountFlagBits GetVKSampleCountFlags(Int32 sampleCount)
     {
         switch (sampleCount)
         {
         case 1:
-            return vk::SampleCountFlagBits::e1;
+            return VK_SAMPLE_COUNT_1_BIT;
         case 2:
-            return vk::SampleCountFlagBits::e2;
+            return VK_SAMPLE_COUNT_2_BIT;
         case 4:
-            return vk::SampleCountFlagBits::e4;
+            return VK_SAMPLE_COUNT_4_BIT;
         case 8:
-            return vk::SampleCountFlagBits::e8;
+            return VK_SAMPLE_COUNT_8_BIT;
         case 16:
-            return vk::SampleCountFlagBits::e16;
+            return VK_SAMPLE_COUNT_16_BIT;
         default:
             FE_UNREACHABLE("Invalid Sample count");
-            return vk::SampleCountFlagBits::e1;
+            return VK_SAMPLE_COUNT_1_BIT;
         }
     }
 
-    inline vk::BlendOp VKConvert(BlendOperation source)
+    inline VkBlendOp VKConvert(BlendOperation source)
     {
         switch (source)
         {
         case BlendOperation::Add:
-            return vk::BlendOp::eAdd;
+            return VK_BLEND_OP_ADD;
         case BlendOperation::Subtract:
-            return vk::BlendOp::eSubtract;
+            return VK_BLEND_OP_SUBTRACT;
         case BlendOperation::ReverseSubtract:
-            return vk::BlendOp::eReverseSubtract;
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
         case BlendOperation::Min:
-            return vk::BlendOp::eMin;
+            return VK_BLEND_OP_MIN;
         case BlendOperation::Max:
-            return vk::BlendOp::eMax;
+            return VK_BLEND_OP_MAX;
         default:
             FE_UNREACHABLE("Invalid BlendOp");
-            return static_cast<vk::BlendOp>(-1);
+            return VK_BLEND_OP_MAX_ENUM;
         }
     }
 
-    inline vk::BlendFactor VKConvert(BlendFactor source)
+    inline VkBlendFactor VKConvert(BlendFactor source)
     {
         switch (source)
         {
         case BlendFactor::Zero:
-            return vk::BlendFactor::eZero;
+            return VK_BLEND_FACTOR_ZERO;
         case BlendFactor::One:
-            return vk::BlendFactor::eOne;
+            return VK_BLEND_FACTOR_ONE;
         case BlendFactor::SrcColor:
-            return vk::BlendFactor::eSrcColor;
+            return VK_BLEND_FACTOR_SRC_COLOR;
         case BlendFactor::OneMinusSrcColor:
-            return vk::BlendFactor::eOneMinusSrcColor;
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
         case BlendFactor::DstColor:
-            return vk::BlendFactor::eDstColor;
+            return VK_BLEND_FACTOR_DST_COLOR;
         case BlendFactor::OneMinusDstColor:
-            return vk::BlendFactor::eOneMinusDstColor;
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
         case BlendFactor::SrcAlpha:
-            return vk::BlendFactor::eSrcAlpha;
+            return VK_BLEND_FACTOR_SRC_ALPHA;
         case BlendFactor::OneMinusSrcAlpha:
-            return vk::BlendFactor::eOneMinusSrcAlpha;
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         case BlendFactor::DstAlpha:
-            return vk::BlendFactor::eDstAlpha;
+            return VK_BLEND_FACTOR_DST_ALPHA;
         case BlendFactor::OneMinusDstAlpha:
-            return vk::BlendFactor::eOneMinusDstAlpha;
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
         case BlendFactor::ConstantColor:
-            return vk::BlendFactor::eConstantColor;
+            return VK_BLEND_FACTOR_CONSTANT_COLOR;
         case BlendFactor::OneMinusConstantColor:
-            return vk::BlendFactor::eOneMinusConstantColor;
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
         case BlendFactor::ConstantAlpha:
-            return vk::BlendFactor::eConstantAlpha;
+            return VK_BLEND_FACTOR_CONSTANT_ALPHA;
         case BlendFactor::OneMinusConstantAlpha:
-            return vk::BlendFactor::eOneMinusConstantAlpha;
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
         case BlendFactor::SrcAlphaSaturate:
-            return vk::BlendFactor::eSrcAlphaSaturate;
+            return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
         case BlendFactor::Src1Color:
-            return vk::BlendFactor::eSrc1Color;
+            return VK_BLEND_FACTOR_SRC1_COLOR;
         case BlendFactor::OneMinusSrc1Color:
-            return vk::BlendFactor::eOneMinusSrc1Color;
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
         case BlendFactor::Src1Alpha:
-            return vk::BlendFactor::eSrc1Alpha;
+            return VK_BLEND_FACTOR_SRC1_ALPHA;
         case BlendFactor::OneMinusSrc1Alpha:
-            return vk::BlendFactor::eOneMinusSrc1Alpha;
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
         default:
             FE_UNREACHABLE("Invalid BlendFactor");
-            return static_cast<vk::BlendFactor>(-1);
+            return VK_BLEND_FACTOR_MAX_ENUM;
         }
     }
 
-    inline vk::ColorComponentFlags VKConvert(ColorComponentFlags source)
+    inline VkColorComponentFlags VKConvert(ColorComponentFlags source)
     {
-        auto result = static_cast<vk::ColorComponentFlags>(0);
+        auto result = static_cast<VkColorComponentFlags>(0);
 #define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
     if ((source & ColorComponentFlags::ferrum) != ColorComponentFlags::None)                                                     \
-    result |= vk::ColorComponentFlagBits::vulkan
-        FE_CVT_ENTRY(Red, eR);
-        FE_CVT_ENTRY(Green, eG);
-        FE_CVT_ENTRY(Blue, eB);
-        FE_CVT_ENTRY(Alpha, eA);
+    result |= VK_COLOR_COMPONENT_ ## vulkan ## _BIT
+        FE_CVT_ENTRY(Red, R);
+        FE_CVT_ENTRY(Green, G);
+        FE_CVT_ENTRY(Blue, B);
+        FE_CVT_ENTRY(Alpha, A);
 #undef FE_CVT_ENTRY
         return result;
     }
 
-    inline vk::CompareOp VKConvert(CompareOp source)
+    inline VkCompareOp VKConvert(CompareOp source)
     {
         switch (source)
         {
         case CompareOp::Never:
-            return vk::CompareOp::eNever;
+            return VK_COMPARE_OP_NEVER;
         case CompareOp::Always:
-            return vk::CompareOp::eAlways;
+            return VK_COMPARE_OP_ALWAYS;
         case CompareOp::Less:
-            return vk::CompareOp::eLess;
+            return VK_COMPARE_OP_LESS;
         case CompareOp::Equal:
-            return vk::CompareOp::eEqual;
+            return VK_COMPARE_OP_EQUAL;
         case CompareOp::LessEqual:
-            return vk::CompareOp::eLessOrEqual;
+            return VK_COMPARE_OP_LESS_OR_EQUAL;
         case CompareOp::Greater:
-            return vk::CompareOp::eGreater;
+            return VK_COMPARE_OP_GREATER;
         case CompareOp::NotEqual:
-            return vk::CompareOp::eNotEqual;
+            return VK_COMPARE_OP_NOT_EQUAL;
         case CompareOp::GreaterEqual:
-            return vk::CompareOp::eGreaterOrEqual;
+            return VK_COMPARE_OP_GREATER_OR_EQUAL;
         default:
             FE_UNREACHABLE("Invalid CompareOp");
-            return static_cast<vk::CompareOp>(-1);
+            return VK_COMPARE_OP_MAX_ENUM;
         }
     }
 
-    inline vk::PolygonMode VKConvert(PolygonMode source)
+    inline VkPolygonMode VKConvert(PolygonMode source)
     {
         switch (source)
         {
         case PolygonMode::Fill:
-            return vk::PolygonMode::eFill;
+            return VK_POLYGON_MODE_FILL;
         case PolygonMode::Line:
-            return vk::PolygonMode::eLine;
+            return VK_POLYGON_MODE_LINE;
         case PolygonMode::Point:
-            return vk::PolygonMode::ePoint;
+            return VK_POLYGON_MODE_POINT;
         default:
             FE_UNREACHABLE("Invalid PolygonMode");
-            return static_cast<vk::PolygonMode>(-1);
+            return VK_POLYGON_MODE_MAX_ENUM;
         }
     }
 
-    inline vk::CullModeFlags VKConvert(CullingModeFlags source)
+    inline VkCullModeFlags VKConvert(CullingModeFlags source)
     {
-        auto result = static_cast<vk::CullModeFlags>(0);
+        auto result = 0;
         if ((source & CullingModeFlags::Front) != CullingModeFlags::None)
         {
-            result |= vk::CullModeFlagBits::eFront;
+            result |= VK_CULL_MODE_FRONT_BIT;
         }
         if ((source & CullingModeFlags::Back) != CullingModeFlags::None)
         {
-            result |= vk::CullModeFlagBits::eBack;
+            result |= VK_CULL_MODE_BACK_BIT;
         }
         return result;
     }
 
-    inline vk::PrimitiveTopology VKConvert(PrimitiveTopology source)
+    inline VkPrimitiveTopology VKConvert(PrimitiveTopology source)
     {
         switch (source)
         {
         case PrimitiveTopology::PointList:
-            return vk::PrimitiveTopology::ePointList;
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         case PrimitiveTopology::LineList:
-            return vk::PrimitiveTopology::eLineList;
+            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
         case PrimitiveTopology::LineStrip:
-            return vk::PrimitiveTopology::eLineStrip;
+            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
         case PrimitiveTopology::TriangleList:
-            return vk::PrimitiveTopology::eTriangleList;
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         case PrimitiveTopology::TriangleStrip:
-            return vk::PrimitiveTopology::eTriangleStrip;
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         default:
             FE_UNREACHABLE("Invalid PrimitiveTopology");
-            return static_cast<vk::PrimitiveTopology>(-1);
+            return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         }
     }
 
-    inline vk::VertexInputRate VKConvert(InputStreamRate source)
+    inline VkVertexInputRate VKConvert(InputStreamRate source)
     {
         switch (source)
         {
         case InputStreamRate::PerVertex:
-            return vk::VertexInputRate::eVertex;
+            return VK_VERTEX_INPUT_RATE_VERTEX;
         case InputStreamRate::PerInstance:
-            return vk::VertexInputRate::eInstance;
+            return VK_VERTEX_INPUT_RATE_INSTANCE;
         default:
             FE_UNREACHABLE("Invalid InputStreamRate");
-            return static_cast<vk::VertexInputRate>(-1);
+            return VK_VERTEX_INPUT_RATE_MAX_ENUM;
         }
     }
 } // namespace FE::Osmium
