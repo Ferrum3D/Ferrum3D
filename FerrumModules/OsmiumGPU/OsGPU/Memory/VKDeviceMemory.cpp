@@ -40,4 +40,16 @@ namespace FE::Osmium
     {
         vkFreeMemory(m_Device->GetNativeDevice(), Memory, VK_NULL_HANDLE);
     }
+
+    void* VKDeviceMemory::Map(USize offset, USize size)
+    {
+        void* data;
+        FE_VK_ASSERT(vkMapMemory(m_Device->GetNativeDevice(), Memory, offset, size, 0, &data));
+        return data;
+    }
+
+    void VKDeviceMemory::Unmap()
+    {
+        vkUnmapMemory(m_Device->GetNativeDevice(), Memory);
+    }
 } // namespace FE::Osmium

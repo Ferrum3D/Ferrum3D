@@ -1,11 +1,10 @@
 #pragma once
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Memory/MemoryType.h>
+#include <OsGPU/Memory/DeviceMemorySlice.h>
 
 namespace FE::Osmium
 {
-    class IDeviceMemory;
-
     struct BufferDesc
     {
         FE_STRUCT_RTTI(BufferDesc, "2932FBE9-01B0-49C0-BDD5-ED0AD1A29F43");
@@ -26,7 +25,7 @@ namespace FE::Osmium
 
         virtual void AllocateMemory(MemoryType type) = 0;
 
-        virtual void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) = 0;
+        virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
 
         [[nodiscard]] virtual const BufferDesc& GetDesc() const = 0;
 

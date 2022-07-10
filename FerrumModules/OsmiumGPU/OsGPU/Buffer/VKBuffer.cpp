@@ -13,14 +13,12 @@ namespace FE::Osmium
 
     void* VKBuffer::Map(UInt64 offset, UInt64 size)
     {
-        void* data;
-        FE_VK_ASSERT(vkMapMemory(m_Device->GetNativeDevice(), m_Memory->Memory, offset, size, 0, &data));
-        return data;
+        return m_Memory.Map(offset, size);
     }
 
     void VKBuffer::Unmap()
     {
-        vkUnmapMemory(m_Device->GetNativeDevice(), m_Memory->Memory);
+        m_Memory.Unmap();
     }
 
     void VKBuffer::AllocateMemory(MemoryType type)
@@ -28,16 +26,17 @@ namespace FE::Osmium
         VkMemoryRequirements memoryRequirements;
         vkGetBufferMemoryRequirements(m_Device->GetNativeDevice(), Buffer, &memoryRequirements);
         MemoryAllocationDesc desc{};
-        desc.Size = memoryRequirements.size;
-        desc.Type = type;
-        m_Memory  = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
-        BindMemory(m_Memory, 0);
+        desc.Size   = memoryRequirements.size;
+        desc.Type   = type;
+        auto memory = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
+        BindMemory(DeviceMemorySlice(memory.GetRaw()));
     }
 
-    void VKBuffer::BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset)
+    void VKBuffer::BindMemory(const DeviceMemorySlice& memory)
     {
-        m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
-        vkBindBufferMemory(m_Device->GetNativeDevice(), Buffer, m_Memory->Memory, offset);
+        m_Memory      = memory;
+        auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory.GetRaw())->Memory;
+        vkBindBufferMemory(m_Device->GetNativeDevice(), Buffer, vkMemory, memory.ByteOffset);
     }
 
     const BufferDesc& VKBuffer::GetDesc() const
