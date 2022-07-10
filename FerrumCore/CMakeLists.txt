@@ -137,7 +137,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-)
+    FeCore/Allocators/LinearAllocator.h)
 
 add_library(FeCore STATIC ${SRC})
 
