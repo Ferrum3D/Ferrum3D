@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Math/Vector4.h>
 #include <utility>
 
@@ -132,18 +132,18 @@ namespace FE::Osmium
 
     struct ColorBlendState
     {
-        List<TargetColorBlending> TargetBlendStates{};
+        ArraySlice<TargetColorBlending> TargetBlendStates{};
         Vector4F BlendConstants{};
 
         inline ColorBlendState() = default;
 
-        inline ColorBlendState(const List<TargetColorBlending>& targetBlendStates)
+        inline ColorBlendState(const ArraySlice<TargetColorBlending>& targetBlendStates)
             : TargetBlendStates(targetBlendStates)
             , BlendConstants(0)
         {
         }
 
-        inline ColorBlendState(const List<TargetColorBlending>& targetBlendStates, const Vector4F& constants)
+        inline ColorBlendState(const ArraySlice<TargetColorBlending>& targetBlendStates, const Vector4F& constants)
             : TargetBlendStates(targetBlendStates)
             , BlendConstants(constants)
         {

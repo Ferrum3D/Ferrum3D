@@ -2,7 +2,7 @@
 
 namespace FE::Osmium
 {
-    const char* VKResultToString(VkResult result)
+    StringSlice VKResultToString(VkResult result)
     {
         switch (result)
         {
@@ -51,7 +51,7 @@ namespace FE::Osmium
             MAKE_STRING(VK_RESULT_MAX_ENUM);
 #undef MAKE_STRING
         default:
-            return "";
+            return "< UNKNOWN >";
         }
     }
 } // namespace FE::Osmium

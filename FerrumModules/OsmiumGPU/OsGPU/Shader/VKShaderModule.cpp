@@ -8,12 +8,12 @@ namespace FE::Osmium
         : m_Device(&dev)
         , m_Desc(desc)
     {
-        m_ByteCode.Resize((m_Desc.ByteCodeSize + 3) / 4);
-        memcpy(m_ByteCode.Data(), m_Desc.ByteCode, m_Desc.ByteCodeSize);
+        m_ByteCode.Resize((m_Desc.ByteCode.Length() + 3) / 4);
+        memcpy(m_ByteCode.Data(), m_Desc.ByteCode.Data(), m_Desc.ByteCode.Length());
 
         VkShaderModuleCreateInfo shaderCI{};
         shaderCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        shaderCI.codeSize = m_Desc.ByteCodeSize;
+        shaderCI.codeSize = m_Desc.ByteCode.Length();
         shaderCI.pCode    = m_ByteCode.Data();
 
         vkCreateShaderModule(m_Device->GetNativeDevice(), &shaderCI, VK_NULL_HANDLE, &m_NativeModule);

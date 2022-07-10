@@ -60,7 +60,7 @@ namespace FE::Osmium
             List<VkAttachmentReference> Input;
             List<VkAttachmentReference> RT;
             List<VkAttachmentReference> Resolve;
-            UInt32* Preserve;
+            const UInt32* Preserve;
             VkAttachmentReference DepthStencil;
         };
 

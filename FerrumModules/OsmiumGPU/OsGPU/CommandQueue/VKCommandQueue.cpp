@@ -22,15 +22,15 @@ namespace FE::Osmium
         return m_Queue;
     }
 
-    void VKCommandQueue::SignalFence(const Shared<IFence>& fence)
+    void VKCommandQueue::SignalFence(IFence* fence)
     {
         SubmitBuffers({}, fence, SubmitFlags::None);
     }
 
-    void VKCommandQueue::SubmitBuffers(const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags)
+    void VKCommandQueue::SubmitBuffers(const ArraySlice<ICommandBuffer*>& buffers, IFence* signalFence, SubmitFlags flags)
     {
         List<VkCommandBuffer> nativeBuffers;
-        nativeBuffers.Reserve(buffers.Size());
+        nativeBuffers.Reserve(buffers.Length());
         for (auto& buf : buffers)
         {
             auto* vkBuffer = fe_assert_cast<VKCommandBuffer*>(buf);
@@ -54,7 +54,7 @@ namespace FE::Osmium
         List<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         info.pWaitDstStageMask = waitDstFlags.Data();
 
-        VkFence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence.GetRaw())->GetNativeFence() : VK_NULL_HANDLE;
+        VkFence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence)->GetNativeFence() : VK_NULL_HANDLE;
         vkQueueSubmit(m_Queue, 1, &info, vkFence);
     }
 } // namespace FE::Osmium

@@ -25,11 +25,11 @@ namespace FE::Osmium
         void Begin() override;
         void End() override;
 
-        void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
+        void BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) override;
         void BindGraphicsPipeline(IGraphicsPipeline* pipeline) override;
 
         void BeginRenderPass(
-            IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues) override;
+            IRenderPass* renderPass, IFramebuffer* framebuffer, const ArraySlice<ClearValueDesc>& clearValues) override;
         void EndRenderPass() override;
 
         void BindVertexBuffer(UInt32 slot, IBuffer* buffer) override;
@@ -47,7 +47,7 @@ namespace FE::Osmium
         void SetViewport(const Viewport& viewport) override;
         void SetScissor(const Scissor& scissor) override;
 
-        void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) override;
+        void ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers) override;
         void MemoryBarrier() override;
     };
 } // namespace FE::Osmium

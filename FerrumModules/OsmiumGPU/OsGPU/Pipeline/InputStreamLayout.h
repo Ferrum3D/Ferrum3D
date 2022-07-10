@@ -98,12 +98,12 @@ namespace FE::Osmium
             return m_Attributes;
         }
 
-        inline const List<InputStreamBufferDesc>& GetBuffers() const
+        [[nodiscard]] inline const List<InputStreamBufferDesc>& GetBuffers() const
         {
             return m_Buffers;
         }
 
-        inline const List<InputStreamAttributeDesc>& GetAttributes() const
+        [[nodiscard]] inline const List<InputStreamAttributeDesc>& GetAttributes() const
         {
             return m_Attributes;
         }
@@ -115,7 +115,7 @@ namespace FE::Osmium
                 return false;
             }
 
-            for (size_t i = 0; i < m_Buffers.Size(); ++i)
+            for (USize i = 0; i < m_Buffers.Size(); ++i)
             {
                 if (m_Buffers[i] != rhs.m_Buffers[i])
                 {
@@ -123,7 +123,7 @@ namespace FE::Osmium
                 }
             }
 
-            for (size_t i = 0; i < m_Attributes.Size(); ++i)
+            for (USize i = 0; i < m_Attributes.Size(); ++i)
             {
                 if (m_Attributes[i] != rhs.m_Attributes[i])
                 {

@@ -87,7 +87,7 @@ namespace FE::Osmium
         vkCmdSetScissor(m_CommandBuffer, 0, 1, &rect);
     }
 
-    void VKCommandBuffer::ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers)
+    void VKCommandBuffer::ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers)
     {
         List<VkImageMemoryBarrier> nativeBarriers;
         for (auto& barrier : barriers)
@@ -149,7 +149,7 @@ namespace FE::Osmium
             1, &nativeBarrier, 0, nullptr, 0, nullptr);
     }
 
-    void VKCommandBuffer::BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
+    void VKCommandBuffer::BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
     {
         List<VkDescriptorSet> nativeSets;
         for (auto& table : descriptorTables)
@@ -164,7 +164,7 @@ namespace FE::Osmium
     }
 
     void VKCommandBuffer::BeginRenderPass(
-        IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues)
+        IRenderPass* renderPass, IFramebuffer* framebuffer, const ArraySlice<ClearValueDesc>& clearValues)
     {
         Vector<VkClearValue> vkClearValues{};
         for (const auto& clearValue : clearValues)

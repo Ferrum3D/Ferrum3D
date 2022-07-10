@@ -29,7 +29,7 @@ namespace FE
 
         //! \brief Create from a C-style array.
         //!
-        //! \param [in] array - A pointer to the array.
+        //! \param [in] array  - A pointer to the array.
         //! \param [in] length - Length of the array.
         inline ArraySlice(const T* array, USize length)
             : m_Begin(array)
@@ -44,10 +44,19 @@ namespace FE
         //! \brief Create from a C-style array.
         //!
         //! \param [in] begin - A pointer to the array.
-        //! \param [in] end - A pointer to the element after array that won't be included.
+        //! \param [in] end   - A pointer to the element after array that won't be included.
         inline ArraySlice(const T* begin, const T* end)
             : m_Begin(begin)
             , m_End(end)
+        {
+        }
+
+        //! \brief Create from a std::initializer_list.
+        //!
+        //! \param [in] lst - An initializer list to create the ArraySlice from.
+        inline ArraySlice(std::initializer_list<T> lst)
+            : m_Begin(lst.begin())
+            , m_End(lst.end())
         {
         }
 
@@ -66,11 +75,13 @@ namespace FE
         {
             *this = other;
             other.Reset();
+            return *this;
         }
 
         //! \brief Create from a std::array.
         //!
         //! \tparam N - Length of the array.
+        //!
         //! \param [in] array - The array.
         template<USize N>
         inline ArraySlice(const std::array<T, N>& array) // NOLINT
@@ -100,7 +111,7 @@ namespace FE
         //! \brief Create a subslice.
         //!
         //! \param [in] beginIndex - First index of the subslice to create.
-        //! \param [in] endIndex - The first index past the subslice to create.
+        //! \param [in] endIndex   - The first index past the subslice to create.
         //!
         //! \return The created subslice.
         inline ArraySlice operator()(USize beginIndex, USize endIndex) const noexcept
@@ -151,6 +162,13 @@ namespace FE
             USize size = std::min(Length(), destination.Length());
             memcpy(destination.Data(), Data(), size * sizeof(T));
             return size;
+        }
+
+        inline List<T> ToList() const
+        {
+            List<T> result;
+            result.Assign(m_Begin, m_End);
+            return result;
         }
 
         [[nodiscard]] inline const T* begin() const

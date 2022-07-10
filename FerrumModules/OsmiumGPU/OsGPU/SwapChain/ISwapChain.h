@@ -40,7 +40,7 @@ namespace FE::Osmium
         virtual IImage* GetImage(UInt32 index) = 0;
         virtual IImage* GetCurrentImage()      = 0;
 
-        virtual List<Shared<IImageView>> GetRTVs() = 0;
-        virtual Shared<IImageView> GetDSV()        = 0;
+        virtual List<IImageView*> GetRTVs() = 0;
+        virtual IImageView* GetDSV()        = 0;
     };
 } // namespace FE::Osmium

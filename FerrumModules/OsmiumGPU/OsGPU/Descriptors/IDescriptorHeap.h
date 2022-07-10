@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <OsGPU/Descriptors/DescriptorDesc.h>
 
 namespace FE::Osmium
@@ -22,7 +22,7 @@ namespace FE::Osmium
 
     struct DescriptorHeapDesc
     {
-        List<DescriptorSize> Sizes;
+        ArraySlice<DescriptorSize> Sizes;
         UInt32 MaxTables = 0;
 
         FE_STRUCT_RTTI(DescriptorHeapDesc, "CAB78665-9C43-41B4-9E51-36ACBB293B32");
@@ -37,6 +37,6 @@ namespace FE::Osmium
 
         ~IDescriptorHeap() override = default;
 
-        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const List<DescriptorDesc>& descriptors) = 0;
+        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) = 0;
     };
 } // namespace FE::Osmium

@@ -123,16 +123,17 @@ namespace FE::Osmium
         VkMemoryRequirements memoryRequirements;
         vkGetImageMemoryRequirements(m_Device->GetNativeDevice(), Image, &memoryRequirements);
         MemoryAllocationDesc desc{};
-        desc.Size = memoryRequirements.size;
-        desc.Type = type;
-        m_Memory  = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
-        BindMemory(static_pointer_cast<IDeviceMemory>(m_Memory), 0);
+        desc.Size   = memoryRequirements.size;
+        desc.Type   = type;
+        auto memory = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
+        BindMemory(DeviceMemorySlice(memory.GetRaw()));
     }
 
-    void VKImage::BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset)
+    void VKImage::BindMemory(const DeviceMemorySlice& memory)
     {
-        m_Memory = static_pointer_cast<VKDeviceMemory>(memory);
-        vkBindImageMemory(m_Device->GetNativeDevice(), Image, m_Memory->Memory, offset);
+        m_Memory      = memory;
+        auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory.GetRaw())->Memory;
+        vkBindImageMemory(m_Device->GetNativeDevice(), Image, vkMemory, memory.ByteOffset);
     }
 
     VKImage::~VKImage()

@@ -64,10 +64,10 @@ namespace FE::Osmium
 
     struct SubpassDesc
     {
-        List<SubpassAttachment> InputAttachments;
-        List<SubpassAttachment> RenderTargetAttachments;
-        List<SubpassAttachment> MSAAResolveAttachments;
-        List<UInt32> PreserveAttachments;
+        ArraySlice<SubpassAttachment> InputAttachments;
+        ArraySlice<SubpassAttachment> RenderTargetAttachments;
+        ArraySlice<SubpassAttachment> MSAAResolveAttachments;
+        ArraySlice<UInt32> PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
 
         FE_STRUCT_RTTI(SubpassDesc, "8A770B89-4A7B-43C8-B2C5-1503DF4B547D");
@@ -88,9 +88,9 @@ namespace FE::Osmium
 
     struct RenderPassDesc
     {
-        List<SubpassDesc> Subpasses;
-        List<AttachmentDesc> Attachments;
-        List<SubpassDependency> SubpassDependencies;
+        ArraySlice<SubpassDesc> Subpasses;
+        ArraySlice<AttachmentDesc> Attachments;
+        ArraySlice<SubpassDependency> SubpassDependencies;
 
         FE_STRUCT_RTTI(RenderPassDesc, "41AC7F3A-6A7C-4A85-8D11-3D6E0B5B70AD");
     };

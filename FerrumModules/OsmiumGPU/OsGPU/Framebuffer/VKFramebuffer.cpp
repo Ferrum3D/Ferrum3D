@@ -10,10 +10,9 @@ namespace FE::Osmium
         , m_Desc(desc)
     {
         List<VkImageView> nativeRTVs;
-        m_RTVs = desc.RenderTargetViews;
         for (auto& view : desc.RenderTargetViews)
         {
-            auto* vkView = fe_assert_cast<VKImageView*>(view.GetRaw());
+            auto* vkView = fe_assert_cast<VKImageView*>(view);
             nativeRTVs.Push(vkView->GetNativeView());
         }
 

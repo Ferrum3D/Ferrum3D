@@ -12,11 +12,11 @@ namespace FE::Osmium
 
     struct GraphicsPipelineDesc
     {
-        Shared<IRenderPass> RenderPass;
+        IRenderPass* RenderPass;
         UInt32 SubpassIndex;
 
-        List<Shared<IDescriptorTable>> DescriptorTables;
-        List<Shared<IShaderModule>> Shaders;
+        ArraySlice<IDescriptorTable*> DescriptorTables;
+        ArraySlice<IShaderModule*> Shaders;
 
         MultisampleState Multisample;
         RasterizationState Rasterization;
