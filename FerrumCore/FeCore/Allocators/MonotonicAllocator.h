@@ -130,7 +130,7 @@ namespace FE
         }
 
         FE_PROFILE_ALLOC(size, alignment, position);
-        void* result     = AlignUp(m_CurrentPointer, alignment);
+        void* result     = AlignUpPtr(m_CurrentPointer, alignment);
         m_CurrentPointer = reinterpret_cast<Int8*>(result) + size;
         return result;
     }
