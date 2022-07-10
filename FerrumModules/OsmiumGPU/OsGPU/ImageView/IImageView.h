@@ -13,7 +13,7 @@ namespace FE::Osmium
 
         ImageSubresourceRange SubresourceRange;
         Format Format = Format::None;
-        Shared<IImage> Image;
+        IImage* Image = nullptr;
         ImageDim Dimension = ImageDim::Image2D;
     };
 

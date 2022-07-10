@@ -8,10 +8,10 @@
 
 namespace FE::Osmium
 {
-    VKDescriptorTable::VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const List<DescriptorDesc>& descriptors)
+    VKDescriptorTable::VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const ArraySlice<DescriptorDesc>& descriptors)
         : m_Device(&dev)
         , m_Heap(&heap)
-        , m_Descriptors(descriptors)
+        , m_Descriptors(descriptors.ToList())
     {
         List<VkDescriptorSetLayoutBinding> bindings;
         for (UInt32 i = 0; i < m_Descriptors.Size(); ++i)

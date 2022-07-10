@@ -12,7 +12,7 @@ namespace FE::Osmium
         UInt32 Width{};
         UInt32 Height{};
 
-        FE::StringSlice Title{};
+        StringSlice Title{};
     };
 
     class IWindow : public IObject

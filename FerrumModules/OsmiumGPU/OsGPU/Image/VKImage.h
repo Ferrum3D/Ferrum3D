@@ -10,7 +10,7 @@ namespace FE::Osmium
     class VKImage : public ImageBase
     {
         VKDevice* m_Device;
-        Shared<VKDeviceMemory> m_Memory;
+        DeviceMemorySlice m_Memory;
         bool m_Owned = false;
 
     public:
@@ -27,6 +27,6 @@ namespace FE::Osmium
         Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) override;
 
         void AllocateMemory(MemoryType type) override;
-        void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) override;
+        void BindMemory(const DeviceMemorySlice& memory) override;
     };
 } // namespace FE::Osmium

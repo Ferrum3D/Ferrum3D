@@ -46,7 +46,7 @@ namespace FE::Osmium
 
     UInt32 VKRenderPass::GetAttachmentCount()
     {
-        return static_cast<UInt32>(m_Desc.Attachments.Size());
+        return static_cast<UInt32>(m_Desc.Attachments.Length());
     }
 
     void VKRenderPass::BuildNativeRenderPass()
@@ -54,7 +54,7 @@ namespace FE::Osmium
         auto attachmentDescriptions = BuildAttachmentDescriptions();
 
         List<SubpassAttachmentReferences> subpassAttachmentReferences;
-        for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.Size()); ++i)
+        for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.Length()); ++i)
         {
             auto& refs = subpassAttachmentReferences.Emplace();
 
@@ -113,9 +113,9 @@ namespace FE::Osmium
         List<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const
     {
         List<VkSubpassDescription> result;
-        result.Reserve(m_Desc.Subpasses.Size());
+        result.Reserve(m_Desc.Subpasses.Length());
 
-        for (size_t i = 0; i < m_Desc.Subpasses.Size(); ++i)
+        for (size_t i = 0; i < m_Desc.Subpasses.Length(); ++i)
         {
             auto& currentRefs = subpassAttachmentReferences[i];
 
@@ -141,7 +141,7 @@ namespace FE::Osmium
     {
         List<VkAttachmentReference> result;
 
-        List<SubpassAttachment>* attachments;
+        const ArraySlice<SubpassAttachment>* attachments;
         switch (attachmentType)
         {
         case AttachmentType::Input:
@@ -173,7 +173,7 @@ namespace FE::Osmium
         List<VkSubpassDependency> result;
 
         static auto validateSubpassIndex = [this](UInt32 index) {
-            return index < m_Desc.Subpasses.Size() ? index : VK_SUBPASS_EXTERNAL;
+            return index < m_Desc.Subpasses.Length() ? index : VK_SUBPASS_EXTERNAL;
         };
 
         for (auto& dependency : m_Desc.SubpassDependencies)

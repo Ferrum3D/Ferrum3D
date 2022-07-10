@@ -27,7 +27,7 @@ class ExampleApplication final : public FE::ApplicationFramework
     FE::Shared<HAL::IRenderPass> m_RenderPass;
     FE::Shared<HAL::ISwapChain> m_SwapChain;
     FE::Shared<HAL::IGraphicsPipeline> m_Pipeline;
-    FE::List<FE::Shared<HAL::IImageView>> m_RTVs;
+    FE::List<HAL::IImageView*> m_RTVs;
 
     FE::Shared<HAL::IDescriptorHeap> m_DescriptorHeap;
     FE::Shared<HAL::IDescriptorTable> m_DescriptorTable;
@@ -68,7 +68,7 @@ protected:
         auto imageIndex = m_SwapChain->GetCurrentImageIndex();
         m_Fences[m_SwapChain->GetCurrentFrameIndex()]->Reset();
         m_GraphicsQueue->SubmitBuffers(
-            { m_CommandBuffers[imageIndex].GetRaw() }, m_Fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+            { m_CommandBuffers[imageIndex].GetRaw() }, m_Fences[frameIndex].GetRaw(), HAL::SubmitFlags::FrameBeginEnd);
         m_SwapChain->Present();
     }
 
@@ -190,7 +190,7 @@ public:
             barrier.StateAfter = HAL::ResourceState::ShaderResource;
             copyCmdBuffer->ResourceTransitionBarriers({ barrier });
             copyCmdBuffer->End();
-            m_TransferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
+            m_TransferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, transferComplete.GetRaw(), HAL::SubmitFlags::None);
             transferComplete->WaitOnCPU();
         }
 
@@ -229,21 +229,25 @@ public:
         depthAttachmentDesc.InitialState = HAL::ResourceState::Undefined;
         depthAttachmentDesc.FinalState   = HAL::ResourceState::DepthWrite;
 
-        renderPassDesc.Attachments = { attachmentDesc, depthAttachmentDesc };
+        auto attachments           = FE::List{ attachmentDesc, depthAttachmentDesc };
+        renderPassDesc.Attachments = attachments;
 
         HAL::SubpassDesc subpassDesc{};
-        subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
-        renderPassDesc.Subpasses            = { subpassDesc };
+        auto renderTargetAttachment         = HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0);
+        subpassDesc.RenderTargetAttachments = FE::ArraySlice(&renderTargetAttachment, 1);
+        renderPassDesc.Subpasses            = FE::ArraySlice(&subpassDesc, 1);
         HAL::SubpassDependency dependency{};
-        renderPassDesc.SubpassDependencies = { dependency };
+        renderPassDesc.SubpassDependencies = FE::ArraySlice(&dependency, 1);
         m_RenderPass                       = m_Device->CreateRenderPass(renderPassDesc);
 
         HAL::DescriptorHeapDesc descriptorHeapDesc{};
         descriptorHeapDesc.MaxTables = 1;
-        descriptorHeapDesc.Sizes     = { HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
-                                         HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
-                                         HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
-        m_DescriptorHeap             = m_Device->CreateDescriptorHeap(descriptorHeapDesc);
+
+        auto descriptorHeapSizes = FE::List{ HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
+                                             HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
+                                             HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
+        descriptorHeapDesc.Sizes = descriptorHeapSizes;
+        m_DescriptorHeap         = m_Device->CreateDescriptorHeap(descriptorHeapDesc);
 
         HAL::DescriptorDesc psSamplerDescriptorDesc(HAL::ShaderResourceType::Sampler, HAL::ShaderStageFlags::Pixel, 1);
         HAL::DescriptorDesc psTextureDescriptorDesc(HAL::ShaderResourceType::TextureSRV, HAL::ShaderStageFlags::Pixel, 1);
@@ -269,11 +273,13 @@ public:
                                        .Build()
                                        .Build();
 
-        pipelineDesc.RenderPass       = m_RenderPass;
+        pipelineDesc.RenderPass       = m_RenderPass.GetRaw();
         pipelineDesc.SubpassIndex     = 0;
         pipelineDesc.ColorBlend       = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
-        pipelineDesc.Shaders          = { m_PixelShader, m_VertexShader };
-        pipelineDesc.DescriptorTables = { m_DescriptorTable };
+        auto shaders                  = FE::List{ m_PixelShader.GetRaw(), m_VertexShader.GetRaw() };
+        pipelineDesc.Shaders          = FE::ArraySlice(shaders);
+        auto descriptorTable          = m_DescriptorTable.GetRaw();
+        pipelineDesc.DescriptorTables = FE::ArraySlice(&descriptorTable, 1);
         pipelineDesc.Viewport         = m_Viewport;
         pipelineDesc.Scissor          = m_Scissor;
         pipelineDesc.Rasterization    = HAL::RasterizationState{};
@@ -290,11 +296,12 @@ public:
             m_Fences.Push(m_Device->CreateFence(HAL::FenceState::Signaled));
 
         m_RTVs = m_SwapChain->GetRTVs();
-        for (size_t i = 0; i < m_SwapChain->GetImageCount(); ++i)
+        for (FE::USize i = 0; i < m_SwapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
             framebufferDesc.RenderPass        = m_RenderPass.GetRaw();
-            framebufferDesc.RenderTargetViews = { m_RTVs[i], m_SwapChain->GetDSV() };
+            auto views                        = FE::List{ m_RTVs[i], m_SwapChain->GetDSV() };
+            framebufferDesc.RenderTargetViews = views;
             framebufferDesc.Width             = m_Scissor.Width();
             framebufferDesc.Height            = m_Scissor.Height();
             auto framebuffer                  = m_Framebuffers.Push(m_Device->CreateFramebuffer(framebufferDesc));
@@ -307,8 +314,8 @@ public:
             cmd->SetScissor(m_Scissor);
             cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw());
             cmd->BindIndexBuffer(m_IndexBuffer.GetRaw());
-            FE::List<HAL::ClearValueDesc> clearValues = { HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
-                                                          HAL::ClearValueDesc::CreateDepthStencilValue() };
+            auto clearValues = FE::List{ HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
+                                         HAL::ClearValueDesc::CreateDepthStencilValue() };
             cmd->BeginRenderPass(m_RenderPass.GetRaw(), framebuffer.GetRaw(), clearValues);
             cmd->DrawIndexed(meshAsset->IndexSize() / sizeof(FE::UInt32), 1, 0, 0, 0);
             cmd->EndRenderPass();

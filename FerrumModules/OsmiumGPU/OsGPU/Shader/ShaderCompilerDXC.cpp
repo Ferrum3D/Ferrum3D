@@ -174,6 +174,6 @@ namespace FE::Osmium
             }
         }
 
-        return static_pointer_cast<IByteBuffer>(MakeShared<ByteBuffer>(std::move(returnValue)));
+        return MakeShared<ByteBuffer>(std::move(returnValue));
     }
 } // namespace FE::Osmium

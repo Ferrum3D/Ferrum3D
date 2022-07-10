@@ -228,14 +228,21 @@ namespace FE::Osmium
             m_Device->GetNativeDevice(), m_NativeSwapChain, static_cast<UInt64>(-1), semaphore, nullptr, index));
     }
 
-    List<Shared<IImageView>> VKSwapChain::GetRTVs()
+    List<IImageView*> VKSwapChain::GetRTVs()
     {
-        return m_ImageViews;
+        List<IImageView*> result;
+        result.Reserve(m_ImageViews.Size());
+        for (auto& view : m_ImageViews)
+        {
+            result.Push(view.GetRaw());
+        }
+
+        return result;
     }
 
-    Shared<IImageView> VKSwapChain::GetDSV()
+    IImageView* VKSwapChain::GetDSV()
     {
-        return m_DepthImageView;
+        return m_DepthImageView.GetRaw();
     }
 
     UInt32 VKSwapChain::GetCurrentFrameIndex()

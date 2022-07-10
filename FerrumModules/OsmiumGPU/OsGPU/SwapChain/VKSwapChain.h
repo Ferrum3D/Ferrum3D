@@ -50,7 +50,7 @@ namespace FE::Osmium
         IImage* GetCurrentImage() override;
         void Present() override;
 
-        List<Shared<IImageView>> GetRTVs() override;
-        Shared<IImageView> GetDSV() override;
+        List<IImageView*> GetRTVs() override;
+        IImageView* GetDSV() override;
     };
 } // namespace FE::Osmium

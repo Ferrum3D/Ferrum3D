@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Memory/SharedPtr.h>
 
 namespace FE::Osmium
@@ -11,7 +11,7 @@ namespace FE::Osmium
     {
         FE_STRUCT_RTTI(FramebufferDesc, "0A969932-5EFF-401E-9318-1C77D190E8A9");
 
-        List<Shared<IImageView>> RenderTargetViews{};
+        ArraySlice<IImageView*> RenderTargetViews{};
         Shared<IImageView> DepthStencilView{};
         Shared<IRenderPass> RenderPass{};
         UInt32 Width  = 0;

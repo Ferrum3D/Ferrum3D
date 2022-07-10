@@ -38,7 +38,7 @@ namespace FE::Osmium
         viewCI.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCI.components       = VkComponentMapping{};
         viewCI.format           = VKConvert(desc.Format);
-        viewCI.image            = fe_assert_cast<VKImage*>(desc.Image.GetRaw())->Image;
+        viewCI.image            = fe_assert_cast<VKImage*>(desc.Image)->Image;
         viewCI.viewType         = VKConvert(desc.Dimension, desc.SubresourceRange.ArraySliceCount != 1);
         viewCI.subresourceRange = VKConvert(desc.SubresourceRange);
         vkCreateImageView(m_Device->GetNativeDevice(), &viewCI, VK_NULL_HANDLE, &m_NativeView);

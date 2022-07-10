@@ -26,8 +26,8 @@ namespace FE::Osmium
         VKCommandQueue(VKDevice& dev, const VKCommandQueueDesc& desc);
         ~VKCommandQueue() override = default;
 
-        void SignalFence(const Shared<IFence>& fence) override;
-        void SubmitBuffers(const List<ICommandBuffer*>& buffers, const Shared<IFence>& signalFence, SubmitFlags flags) override;
+        void SignalFence(IFence* fence) override;
+        void SubmitBuffers(const ArraySlice<ICommandBuffer*>& buffers, IFence* signalFence, SubmitFlags flags) override;
 
         [[nodiscard]] const VKCommandQueueDesc& GetDesc() const;
         VkQueue GetNativeQueue();

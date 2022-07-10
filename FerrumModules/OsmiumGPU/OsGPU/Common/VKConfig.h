@@ -33,5 +33,5 @@ namespace FE::Osmium
         std::array{ VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, FE_VK_SURFACE_EXT };
 
-    const char* VKResultToString(VkResult result);
+    StringSlice VKResultToString(VkResult result);
 } // namespace FE::Osmium

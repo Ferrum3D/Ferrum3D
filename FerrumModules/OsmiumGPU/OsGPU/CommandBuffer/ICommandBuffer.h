@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Common/Viewport.h>
@@ -120,15 +120,15 @@ namespace FE::Osmium
         virtual void SetViewport(const Viewport& viewport) = 0;
         virtual void SetScissor(const Scissor& scissor)    = 0;
 
-        virtual void ResourceTransitionBarriers(const List<ResourceTransitionBarrierDesc>& barriers) = 0;
-        virtual void MemoryBarrier()                                                                 = 0;
+        virtual void ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers) = 0;
+        virtual void MemoryBarrier()                                                                       = 0;
 
-        virtual void BindDescriptorTables(const List<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
-        virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                  = 0;
+        virtual void BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
+        virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                        = 0;
 
         virtual void BeginRenderPass(
-            IRenderPass* renderPass, IFramebuffer* framebuffer, const List<ClearValueDesc>& clearValues) = 0;
-        virtual void EndRenderPass()                                                                     = 0;
+            IRenderPass* renderPass, IFramebuffer* framebuffer, const ArraySlice<ClearValueDesc>& clearValues) = 0;
+        virtual void EndRenderPass()                                                                           = 0;
 
         virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer) = 0;
         virtual void BindIndexBuffer(IBuffer* buffer)               = 0;

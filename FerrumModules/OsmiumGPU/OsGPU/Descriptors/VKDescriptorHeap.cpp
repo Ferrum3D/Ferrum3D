@@ -8,7 +8,7 @@ namespace FE::Osmium
         : m_Device(&dev)
     {
         List<VkDescriptorPoolSize> sizes;
-        sizes.Reserve(desc.Sizes.Size());
+        sizes.Reserve(desc.Sizes.Length());
         for (auto& size : desc.Sizes)
         {
             auto& nativeSize           = sizes.Emplace();
@@ -30,7 +30,7 @@ namespace FE::Osmium
         return m_NativePool;
     }
 
-    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const List<DescriptorDesc>& descriptors)
+    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors)
     {
         return MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
     }

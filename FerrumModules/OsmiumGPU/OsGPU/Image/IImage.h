@@ -5,6 +5,7 @@
 #include <OsGPU/Image/ImageFormat.h>
 #include <OsGPU/Image/ImageSubresource.h>
 #include <OsGPU/Memory/MemoryType.h>
+#include <OsGPU/Memory/DeviceMemorySlice.h>
 #include <OsGPU/Resource/BindFlags.h>
 #include <OsGPU/Resource/ResourceState.h>
 #include <cstdint>
@@ -121,8 +122,8 @@ namespace FE::Osmium
         virtual const ImageDesc& GetDesc()                                  = 0;
         virtual Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) = 0;
 
-        virtual void AllocateMemory(MemoryType type)                                = 0;
-        virtual void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) = 0;
+        virtual void AllocateMemory(MemoryType type)             = 0;
+        virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
 
         virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state)         = 0;
         [[nodiscard]] virtual ResourceState GetState(const ImageSubresourceRange& subresourceRange) const = 0;

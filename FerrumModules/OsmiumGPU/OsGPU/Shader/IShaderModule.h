@@ -3,6 +3,7 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Shader/ShaderStage.h>
 #include <FeCore/Containers/IByteBuffer.h>
+#include <FeCore/Containers/ArraySlice.h>
 
 namespace FE::Osmium
 {
@@ -10,8 +11,7 @@ namespace FE::Osmium
 
     struct ShaderModuleDesc
     {
-        const UInt8* ByteCode = nullptr;
-        USize ByteCodeSize = 0;
+        ArraySlice<UInt8> ByteCode;
         String EntryPoint;
         ShaderStage Stage = ShaderStage::Vertex;
 
@@ -20,8 +20,7 @@ namespace FE::Osmium
         inline ShaderModuleDesc() = default;
 
         inline ShaderModuleDesc(ShaderStage stage, const Shared<IByteBuffer>& byteCode)
-            : ByteCode(byteCode->Data())
-            , ByteCodeSize(byteCode->Size())
+            : ByteCode(byteCode->Data(), byteCode->Size())
             , EntryPoint("main")
             , Stage(stage)
         {

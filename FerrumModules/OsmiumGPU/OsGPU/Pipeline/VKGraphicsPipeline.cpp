@@ -18,7 +18,7 @@ namespace FE::Osmium
         List<VkDescriptorSetLayout> setLayouts;
         for (auto& table : desc.DescriptorTables)
         {
-            auto* vkTable = fe_assert_cast<VKDescriptorTable*>(table.GetRaw());
+            auto* vkTable = fe_assert_cast<VKDescriptorTable*>(table);
             setLayouts.Push(vkTable->GetNativeSetLayout());
         }
 
@@ -65,7 +65,7 @@ namespace FE::Osmium
         pipelineCI.pDynamicState         = &dynamicStateCI;
 
         pipelineCI.layout     = m_Layout;
-        pipelineCI.renderPass = fe_assert_cast<VKRenderPass*>(m_Desc.RenderPass.GetRaw())->GetNativeRenderPass();
+        pipelineCI.renderPass = fe_assert_cast<VKRenderPass*>(m_Desc.RenderPass)->GetNativeRenderPass();
         pipelineCI.subpass    = m_Desc.SubpassIndex;
 
         vkCreateGraphicsPipelines(m_Device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_NativePipeline);
@@ -89,7 +89,7 @@ namespace FE::Osmium
         {
             if (shader->GetDesc().Stage == ShaderStage::Vertex)
             {
-                vertexShader = shader.GetRaw();
+                vertexShader = shader;
             }
         }
 
@@ -118,7 +118,7 @@ namespace FE::Osmium
         List<VkPipelineShaderStageCreateInfo> result;
         for (auto& shader : m_Desc.Shaders)
         {
-            auto* vkShader = fe_assert_cast<VKShaderModule*>(shader.GetRaw());
+            auto* vkShader = fe_assert_cast<VKShaderModule*>(shader);
             result.Push(vkShader->GetStageCI());
         }
 
@@ -199,7 +199,7 @@ namespace FE::Osmium
 
     void VKGraphicsPipeline::BuildBlendState(VKGraphicsPipeline::BlendState& state)
     {
-        for (USize i = 0; i < m_Desc.ColorBlend.TargetBlendStates.Size(); ++i)
+        for (USize i = 0; i < m_Desc.ColorBlend.TargetBlendStates.Length(); ++i)
         {
             state.Attachments.Push(BuildBlendState(i));
         }
