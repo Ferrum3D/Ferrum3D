@@ -140,7 +140,7 @@ namespace FE
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
-    inline T* AlignUp(const T* x, USize align)
+    inline T* AlignUpPtr(const T* x, USize align)
     {
         return reinterpret_cast<T*>(AlignUp(reinterpret_cast<USize>(x), align));
     }
@@ -170,7 +170,7 @@ namespace FE
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
-    inline constexpr T* AlignDown(const T* x, USize align)
+    inline constexpr T* AlignDownPtr(const T* x, USize align)
     {
         return reinterpret_cast<T*>(AlignDown(reinterpret_cast<USize>(x), align));
     }
