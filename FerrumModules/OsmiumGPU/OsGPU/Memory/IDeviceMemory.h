@@ -19,6 +19,8 @@ namespace FE::Osmium
 
         ~IDeviceMemory() override = default;
 
+        virtual void* Map(USize offset, USize size) = 0;
+        virtual void Unmap() = 0;
         virtual const MemoryAllocationDesc& GetDesc() = 0;
     };
 } // namespace FE::Osmium

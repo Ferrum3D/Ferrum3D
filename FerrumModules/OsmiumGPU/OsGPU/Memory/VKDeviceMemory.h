@@ -19,6 +19,8 @@ namespace FE::Osmium
         VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc);
         ~VKDeviceMemory() override;
 
+        void* Map(USize offset, USize size) override;
+        void Unmap() override;
         const MemoryAllocationDesc& GetDesc() override;
     };
 } // namespace FE::Osmium

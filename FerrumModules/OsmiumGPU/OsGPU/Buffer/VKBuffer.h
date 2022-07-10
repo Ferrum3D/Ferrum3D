@@ -10,7 +10,7 @@ namespace FE::Osmium
     class VKBuffer : public Object<IBuffer>
     {
         VKDevice* m_Device;
-        Shared<VKDeviceMemory> m_Memory;
+        DeviceMemorySlice m_Memory;
 
     public:
         FE_CLASS_RTTI(VKBuffer, "CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");
@@ -25,7 +25,7 @@ namespace FE::Osmium
         void Unmap() override;
 
         void AllocateMemory(MemoryType type) override;
-        void BindMemory(const Shared<IDeviceMemory>& memory, UInt64 offset) override;
+        void BindMemory(const DeviceMemorySlice& memory) override;
 
         [[nodiscard]] const BufferDesc& GetDesc() const override;
     };
