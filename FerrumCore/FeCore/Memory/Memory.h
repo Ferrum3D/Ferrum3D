@@ -52,8 +52,8 @@ namespace FE
     template<class T, class TAllocator, class... Args>
     inline Shared<T> AllocateShared(Args&&... args)
     {
-        constexpr size_t counterSize = AlignUp(sizeof(ReferenceCounter), alignof(T));
-        constexpr size_t wholeSize   = sizeof(T) + counterSize;
+        USize counterSize = AlignUp(sizeof(ReferenceCounter), alignof(T));
+        USize wholeSize   = sizeof(T) + counterSize;
 
         IAllocator* allocator = &FE::GlobalAllocator<TAllocator>::Get();
         UInt8* ptr            = static_cast<UInt8*>(allocator->Allocate(wholeSize, alignof(T), FE_SRCPOS()));
