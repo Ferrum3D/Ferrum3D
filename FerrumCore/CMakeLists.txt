@@ -84,6 +84,7 @@ set(SRC
     FeCore/Memory/IAllocator.h
     FeCore/Memory/IBasicAllocator.h
     FeCore/Memory/Memory.h
+    FeCore/Memory/NullableHandle.h
     FeCore/Memory/Object.h
     FeCore/Memory/ReferenceCounter.h
     FeCore/Memory/SharedPtr.h

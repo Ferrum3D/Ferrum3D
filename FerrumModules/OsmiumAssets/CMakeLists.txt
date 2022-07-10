@@ -1,6 +1,8 @@
 set(SRC
     # FERRUM_SORT_LINES BEGIN
     OsAssets/OsmiumAssets.h
+    OsAssets/OsmiumAssetsModule.cpp
+    OsAssets/OsmiumAssetsModule.h
 
     OsAssets/Images/ImageAssetLoader.cpp
     OsAssets/Images/ImageAssetLoader.h
@@ -15,9 +17,8 @@ set(SRC
     OsAssets/Meshes/MeshAssetStorage.h
     OsAssets/Meshes/MeshLoaderImpl.cpp
     OsAssets/Meshes/MeshLoaderImpl.h
-    OsAssets/OsmiumAssetsModule.cpp OsAssets/OsmiumAssetsModule.h
     # FERRUM_SORT_LINES END
-    )
+)
 
 add_library(OsAssets SHARED ${SRC})
 
