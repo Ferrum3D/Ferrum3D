@@ -29,7 +29,7 @@ namespace FE
     {
         IAllocator* ParentAllocator = nullptr; //!< Allocator used to allocate internal blocks. Defaults to HeapAllocator.
         UInt32 MaxBlockCount        = 64;      //!< Maximum number of blocks to allocate. Each new block will be twice as big
-                                               //!< as previous block. Defaults to ParentAllocator.
+                                               //!< as previous block.
         USize InitialBlockSize = 1024;         //!< Initial block size, will be two times larger for second block.
         USize MaxGrowCount     = 8;            //!< Block size will grow MaximumGrowCount at max.
     };
@@ -76,7 +76,7 @@ namespace FE
 
     template<class TMutex>
     MonotonicAllocator<TMutex>::MonotonicAllocator()
-        : AllocatorBase("Monotonic allocator", "Local allocator that allocates monotonically from a large block")
+        : AllocatorBase("Monotonic allocator", "Local allocator that allocates monotonically from large blocks")
         , m_CurrentPointer(nullptr)
         , m_TotalUsage(0)
         , m_CurrentBlock(nullptr)

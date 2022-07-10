@@ -129,8 +129,8 @@ namespace FE
     //!
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
-    template<class T>
-    inline constexpr T AlignUp(T x, T align)
+    template<class T, class U = T>
+    inline T AlignUp(T x, U align)
     {
         return (x + (align - 1u)) & ~(align - 1u);
     }
@@ -140,7 +140,7 @@ namespace FE
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
-    inline constexpr T* AlignUp(const T* x, USize align)
+    inline T* AlignUp(const T* x, USize align)
     {
         return reinterpret_cast<T*>(AlignUp(reinterpret_cast<USize>(x), align));
     }
@@ -159,8 +159,8 @@ namespace FE
     //!
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
-    template<class T>
-    inline constexpr T AlignDown(T x, T align)
+    template<class T, class U = T>
+    inline T AlignDown(T x, U align)
     {
         return (x & ~(align - 1));
     }

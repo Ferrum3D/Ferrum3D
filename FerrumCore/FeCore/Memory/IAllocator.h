@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
+#include <FeCore/Memory/NullableHandle.h>
 #include <FeCore/RTTI/RTTI.h>
 
 namespace FE
@@ -8,12 +9,13 @@ namespace FE
     //!
     //! This interface provides members like `Allocate()` and `Deallocate()`, but doesn't provide functions like `GetName()`.
     //! Allocator description, name and profiling are defined in \ref AllocatorBase class and \ref IAllocatorInfo.
-    class IAllocator
+    template<class THandle>
+    class IGenericAllocator
     {
     public:
-        FE_CLASS_RTTI(IAllocator, "F747D71B-3E32-43B0-84C7-DDA8377F5D8A");
+        FE_CLASS_RTTI(IGenericAllocator, "F747D71B-3E32-43B0-84C7-DDA8377F5D8A");
 
-        inline virtual ~IAllocator() = default;
+        inline virtual ~IGenericAllocator() = default;
 
         //! \brief Allocate a block of memory with specified size and alignment.
         //!
@@ -22,7 +24,7 @@ namespace FE
         //! \param [in] position  - Position in source file where allocation was requested.
         //!
         //! \return The pointer to the allocated block.
-        [[nodiscard]] virtual void* Allocate(USize size, USize alignment, const SourcePosition& position) = 0;
+        [[nodiscard]] virtual THandle Allocate(USize size, USize alignment, const SourcePosition& position) = 0;
 
         //! \brief Deallocate memory at pointer.
         //!
@@ -36,7 +38,7 @@ namespace FE
         //! \param [in] pointer  - Pointer returned by IAllocator::Allocate function.
         //! \param [in] position - Position in source file where deallocation was requested.
         //! \param [in] size     - Size of allocated block (optional).
-        virtual void Deallocate(void* pointer, const SourcePosition& position, USize size = 0) = 0;
+        virtual void Deallocate(THandle pointer, const SourcePosition& position, USize size = 0) = 0;
 
         //! \brief Reallocate a block of memory.
         //!
@@ -51,8 +53,8 @@ namespace FE
         //! \param [in] oldSize      - Size of already allocated block that will be deallocated.
         //!
         //! \return The pointer to the allocated block.
-        [[nodiscard]] virtual void* Reallocate(
-            void* pointer, const SourcePosition& position, USize newSize, USize newAlignment, USize oldSize = 0) = 0;
+        [[nodiscard]] virtual THandle Reallocate(
+            THandle pointer, const SourcePosition& position, USize newSize, USize newAlignment, USize oldSize = 0) = 0;
 
         //! \brief Query size of previously allocated block.
         //!
@@ -64,7 +66,7 @@ namespace FE
         //! \param [in] pointer - Pointer to a block of memory.
         //!
         //! \return Size of specified block.
-        [[nodiscard]] virtual USize SizeOfBlock(void* pointer) = 0;
+        [[nodiscard]] virtual USize SizeOfBlock(THandle pointer) = 0;
 
         //! \brief Try to free some unused memory from an allocator.
         //!
@@ -88,6 +90,54 @@ namespace FE
         [[nodiscard]] virtual USize MaxBlockSize() const = 0;
     };
 
+    using IAllocator = IGenericAllocator<void*>;
+
+    template<class THandle>
+    struct AllocationHandleTraits
+    {
+        inline static bool IsNull([[maybe_unused]] THandle handle) {}
+        inline static THandle Advance([[maybe_unused]] THandle handle, [[maybe_unused]] USize byteCount) {}
+        inline static SSize Difference([[maybe_unused]] THandle lhs, [[maybe_unused]] THandle rhs) {}
+    };
+
+    template<>
+    struct AllocationHandleTraits<void*>
+    {
+        inline static bool IsNull(void* handle)
+        {
+            return handle == nullptr;
+        }
+
+        inline static void* Advance(void* handle, USize byteCount)
+        {
+            return static_cast<Int8*>(handle) + byteCount;
+        }
+
+        inline static SSize Difference(void* lhs, void* rhs)
+        {
+            return static_cast<Int8*>(lhs) - static_cast<Int8*>(rhs);
+        }
+    };
+
+    template<>
+    struct AllocationHandleTraits<NullableHandle>
+    {
+        inline static bool IsNull(NullableHandle handle)
+        {
+            return handle.IsNull();
+        }
+
+        inline static NullableHandle Advance(NullableHandle handle, USize byteCount)
+        {
+            return handle + byteCount;
+        }
+
+        inline static SSize Difference(NullableHandle lhs, NullableHandle rhs)
+        {
+            return static_cast<SSize>(lhs.ToOffset()) - static_cast<SSize>(rhs.ToOffset());
+        }
+    };
+
     //! \brief Interface for allocator info.
     //!
     //! Provides information like name and description.
@@ -109,10 +159,5 @@ namespace FE
         //!
         //! \return True if allocator was initialized and is ready to use.
         [[nodiscard]] virtual bool Initialized() const noexcept = 0;
-
-        //! \brief Get allocator interface.
-        //!
-        //! \see IAllocator
-        [[nodiscard]] virtual IAllocator* Get() noexcept = 0;
     };
 } // namespace FE

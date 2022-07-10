@@ -15,7 +15,7 @@ namespace FE
 
         inline void Lock() noexcept {}
 
-        inline bool TryLock() const noexcept // NOLINT
+        [[nodiscard]] inline bool TryLock() const noexcept // NOLINT
         {
             return true;
         }

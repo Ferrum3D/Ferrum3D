@@ -103,5 +103,33 @@ namespace FE
         {
             return lhs.m_Handle >= rhs.m_Handle;
         }
+
+        inline friend NullableHandle operator+(const NullableHandle& handle, USize offset)
+        {
+            return NullableHandle(handle.m_Handle + offset);
+        }
+
+        inline friend NullableHandle operator-(const NullableHandle& handle, USize offset)
+        {
+            return NullableHandle(handle.m_Handle - offset);
+        }
+
+        inline NullableHandle& operator+=(USize offset)
+        {
+            m_Handle += offset;
+            return *this;
+        }
+
+        inline NullableHandle& operator-=(USize offset)
+        {
+            m_Handle -= offset;
+            return *this;
+        }
     };
+
+    template<>
+    inline NullableHandle AlignUp<NullableHandle, USize>(NullableHandle x, USize align)
+    {
+        return NullableHandle::FromOffset((x.ToOffset() + (align - 1u)) & ~(align - 1u));
+    }
 } // namespace FE
