@@ -23,7 +23,7 @@ namespace FE
         //! \param [in] description - Description of allocator.
         AllocatorBase(const char* name, const char* description) noexcept;
 
-        inline virtual ~AllocatorBase() = default;
+        inline ~AllocatorBase() override = default;
 
         //=========================================================================================
         // IAllocatorInfo
