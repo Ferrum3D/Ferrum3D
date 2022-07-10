@@ -8,10 +8,10 @@ namespace FE::Osmium
         FE_DLL_EXPORT void IInstance_GetAdapters(IInstance* self, IAdapter** adapters, Int32* size)
         {
             auto& a = self->GetAdapters();
-            *size   = static_cast<Int32>(a.size());
+            *size   = static_cast<Int32>(a.Size());
             if (adapters)
             {
-                for (USize i = 0; i < a.size(); ++i)
+                for (USize i = 0; i < a.Size(); ++i)
                 {
                     adapters[i] = a[i].Detach();
                 }
