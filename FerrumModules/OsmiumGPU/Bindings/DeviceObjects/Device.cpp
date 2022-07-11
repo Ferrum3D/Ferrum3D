@@ -15,6 +15,7 @@
 #include <OsGPU/Framebuffer/IFramebuffer.h>
 #include <OsGPU/Image/IImage.h>
 #include <OsGPU/ImageView/IImageView.h>
+#include <OsGPU/Resource/ITransientResourceHeap.h>
 #include <OsGPU/Sampler/ISampler.h>
 #include <OsGPU/Shader/IShaderCompiler.h>
 #include <OsGPU/Shader/IShaderModule.h>
@@ -28,6 +29,11 @@ namespace FE::Osmium
         FE_DLL_EXPORT void IDevice_WaitIdle(IDevice* self)
         {
             self->WaitIdle();
+        }
+
+        FE_DLL_EXPORT ITransientResourceHeap* IDevice_CreateTransientResourceHeap(IDevice* self, TransientResourceHeapDesc* desc)
+        {
+            return self->CreateTransientResourceHeap(*desc).Detach();
         }
 
         FE_DLL_EXPORT IDescriptorHeap* IDevice_CreateDescriptorHeap(IDevice* self, DescriptorHeapDescBinding* desc)
@@ -145,7 +151,7 @@ namespace FE::Osmium
                 ArraySliceFromByteBuffer(subpassBinding.MSAAResolveAttachments, subpass.MSAAResolveAttachments);
                 subpass.DepthStencilAttachment = subpassBinding.DepthStencilAttachment;
             }
-            d.Subpasses = s;
+            d.Subpasses  = s;
             auto* result = self->CreateRenderPass(d).Detach();
             desc->Attachments->ReleaseStrongRef();
             desc->SubpassDependencies->ReleaseStrongRef();
