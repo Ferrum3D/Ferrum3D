@@ -14,6 +14,7 @@ namespace FE::Osmium
         bool m_Owned = false;
 
     public:
+        VkMemoryRequirements MemoryRequirements;
         VkImage Image;
         ImageDesc Desc;
 

@@ -16,6 +16,7 @@ namespace FE::Osmium
         FE_CLASS_RTTI(VKBuffer, "CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");
 
         BufferDesc Desc;
+        VkMemoryRequirements MemoryRequirements;
         VkBuffer Buffer;
 
         VKBuffer(VKDevice& dev, const BufferDesc& desc);

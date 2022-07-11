@@ -12,6 +12,7 @@
 #include <OsGPU/Instance/VKInstance.h>
 #include <OsGPU/Pipeline/VKGraphicsPipeline.h>
 #include <OsGPU/RenderPass/VKRenderPass.h>
+#include <OsGPU/Resource/VKTransientResourceHeap.h>
 #include <OsGPU/Sampler/VKSampler.h>
 #include <OsGPU/Shader/ShaderCompilerDXC.h>
 #include <OsGPU/Shader/VKShaderModule.h>
@@ -159,45 +160,44 @@ namespace FE::Osmium
         return MakeShared<VKSwapChain>(*this, desc);
     }
 
-    Shared<IBuffer> VKDevice::CreateBuffer(BindFlags bindFlags, UInt64 size)
+    Shared<IBuffer> VKDevice::CreateBuffer(const BufferDesc& desc)
     {
-        BufferDesc desc{};
-        desc.Size   = size;
         auto buffer = MakeShared<VKBuffer>(*this, desc);
 
         VkBufferCreateInfo bufferCI{};
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferCI.size  = size;
+        bufferCI.size  = desc.Size;
         bufferCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-        if ((bindFlags & BindFlags::ShaderResource) != BindFlags::None)
+        if ((desc.Flags & BindFlags::ShaderResource) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
             bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
-        if ((bindFlags & BindFlags::UnorderedAccess) != BindFlags::None)
+        if ((desc.Flags & BindFlags::UnorderedAccess) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         }
-        if ((bindFlags & BindFlags::VertexBuffer) != BindFlags::None)
+        if ((desc.Flags & BindFlags::VertexBuffer) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
-        if ((bindFlags & BindFlags::IndexBuffer) != BindFlags::None)
+        if ((desc.Flags & BindFlags::IndexBuffer) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         }
-        if ((bindFlags & BindFlags::ConstantBuffer) != BindFlags::None)
+        if ((desc.Flags & BindFlags::ConstantBuffer) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
-        if ((bindFlags & BindFlags::IndirectDrawArgs) != BindFlags::None)
+        if ((desc.Flags & BindFlags::IndirectDrawArgs) != BindFlags::None)
         {
             bufferCI.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
         vkCreateBuffer(m_NativeDevice, &bufferCI, VK_NULL_HANDLE, &buffer->Buffer);
+        vkGetBufferMemoryRequirements(m_NativeDevice, buffer->Buffer, &buffer->MemoryRequirements);
         return buffer;
     }
 
@@ -301,5 +301,49 @@ namespace FE::Osmium
         }
 
         vkDestroyDevice(m_NativeDevice, VK_NULL_HANDLE);
+    }
+
+    VkMemoryRequirements VKDevice::GetRenderTargetMemoryRequirements()
+    {
+        if (m_RenderTargetMemoryRequirements.size == 0)
+        {
+            auto bindFlags                   = ImageBindFlags::Color | ImageBindFlags::ShaderRead;
+            auto image                       = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
+            auto* vkImage                    = fe_assert_cast<VKImage*>(image.GetRaw());
+            m_RenderTargetMemoryRequirements = vkImage->MemoryRequirements;
+        }
+
+        return m_RenderTargetMemoryRequirements;
+    }
+
+    VkMemoryRequirements VKDevice::GetBufferMemoryRequirements()
+    {
+        if (m_BufferMemoryRequirements.size == 0)
+        {
+            auto bindFlags             = BindFlags::ConstantBuffer | BindFlags::ShaderResource;
+            auto buffer                = CreateBuffer(BufferDesc(1, bindFlags));
+            auto* vkBuffer             = fe_assert_cast<VKBuffer*>(buffer.GetRaw());
+            m_BufferMemoryRequirements = vkBuffer->MemoryRequirements;
+        }
+
+        return m_BufferMemoryRequirements;
+    }
+
+    VkMemoryRequirements VKDevice::GetImageMemoryRequirements()
+    {
+        if (m_ImageMemoryRequirements.size == 0)
+        {
+            auto bindFlags            = ImageBindFlags::UnorderedAccess | ImageBindFlags::ShaderRead;
+            auto image                = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
+            auto* vkImage             = fe_assert_cast<VKImage*>(image.GetRaw());
+            m_ImageMemoryRequirements = vkImage->MemoryRequirements;
+        }
+
+        return m_ImageMemoryRequirements;
+    }
+
+    Shared<ITransientResourceHeap> VKDevice::CreateTransientResourceHeap(const TransientResourceHeapDesc& desc)
+    {
+        return MakeShared<VKTransientResourceHeap>(*this, desc);
     }
 } // namespace FE::Osmium

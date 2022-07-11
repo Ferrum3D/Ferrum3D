@@ -38,6 +38,10 @@ namespace FE::Osmium
         List<VkSemaphore> m_WaitSemaphores;
         List<VkSemaphore> m_SignalSemaphores;
 
+        VkMemoryRequirements m_ImageMemoryRequirements;
+        VkMemoryRequirements m_RenderTargetMemoryRequirements;
+        VkMemoryRequirements m_BufferMemoryRequirements;
+
         void FindQueueFamilies();
 
     public:
@@ -91,6 +95,10 @@ namespace FE::Osmium
             return static_cast<UInt32>(-1);
         }
 
+        VkMemoryRequirements GetImageMemoryRequirements();
+        VkMemoryRequirements GetRenderTargetMemoryRequirements();
+        VkMemoryRequirements GetBufferMemoryRequirements();
+
         VkSemaphore& AddWaitSemaphore();
         VkSemaphore& AddSignalSemaphore();
         UInt32 GetWaitSemaphores(const VkSemaphore** semaphores);
@@ -103,7 +111,7 @@ namespace FE::Osmium
         Shared<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass) override;
         Shared<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) override;
         Shared<ISwapChain> CreateSwapChain(const SwapChainDesc& desc) override;
-        Shared<IBuffer> CreateBuffer(BindFlags bindFlags, UInt64 size) override;
+        Shared<IBuffer> CreateBuffer(const BufferDesc& desc) override;
         Shared<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc) override;
         Shared<IRenderPass> CreateRenderPass(const RenderPassDesc& desc) override;
         Shared<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) override;
@@ -115,5 +123,6 @@ namespace FE::Osmium
         Shared<IWindow> CreateWindow(const WindowDesc& desc) override;
         Shared<IImage> CreateImage(const ImageDesc& desc) override;
         Shared<ISampler> CreateSampler(const SamplerDesc& desc) override;
+        Shared<ITransientResourceHeap> CreateTransientResourceHeap(const TransientResourceHeapDesc& desc) override;
     };
 } // namespace FE::Osmium

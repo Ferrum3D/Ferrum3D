@@ -23,12 +23,10 @@ namespace FE::Osmium
 
     void VKBuffer::AllocateMemory(MemoryType type)
     {
-        VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(m_Device->GetNativeDevice(), Buffer, &memoryRequirements);
         MemoryAllocationDesc desc{};
-        desc.Size   = memoryRequirements.size;
+        desc.Size   = MemoryRequirements.size;
         desc.Type   = type;
-        auto memory = MakeShared<VKDeviceMemory>(*m_Device, memoryRequirements.memoryTypeBits, desc);
+        auto memory = MakeShared<VKDeviceMemory>(*m_Device, MemoryRequirements.memoryTypeBits, desc);
         BindMemory(DeviceMemorySlice(memory.GetRaw()));
     }
 
