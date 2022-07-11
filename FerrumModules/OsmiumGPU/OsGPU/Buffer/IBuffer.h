@@ -1,7 +1,8 @@
 #pragma once
 #include <FeCore/Memory/SharedPtr.h>
-#include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Memory/DeviceMemorySlice.h>
+#include <OsGPU/Memory/MemoryType.h>
+#include <OsGPU/Resource/BindFlags.h>
 
 namespace FE::Osmium
 {
@@ -49,3 +50,17 @@ namespace FE::Osmium
         Unmap();
     }
 } // namespace FE::Osmium
+
+namespace std
+{
+    template<>
+    struct hash<FE::Osmium::BufferDesc>
+    {
+        inline size_t operator()(const FE::Osmium::BufferDesc& desc)
+        {
+            size_t seed = 0;
+            FE::HashCombine(seed, desc.Size, static_cast<int>(desc.Flags));
+            return seed;
+        }
+    };
+} // namespace std

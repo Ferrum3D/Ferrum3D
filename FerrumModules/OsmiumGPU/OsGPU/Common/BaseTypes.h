@@ -88,3 +88,17 @@ namespace FE::Osmium
         }
     };
 } // namespace FE::Osmium
+
+namespace std
+{
+    template<>
+    struct std::hash<FE::Osmium::Size>
+    {
+        inline size_t operator()(const FE::Osmium::Size& size) const noexcept
+        {
+            size_t seed = 0;
+            FE::HashCombine(seed, size.Width, size.Height, size.Depth);
+            return seed;
+        }
+    };
+} // namespace std
