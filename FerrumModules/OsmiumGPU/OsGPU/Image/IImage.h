@@ -4,8 +4,8 @@
 #include <OsGPU/Image/ImageEnums.h>
 #include <OsGPU/Image/ImageFormat.h>
 #include <OsGPU/Image/ImageSubresource.h>
-#include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Memory/DeviceMemorySlice.h>
+#include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Resource/BindFlags.h>
 #include <OsGPU/Resource/ResourceState.h>
 #include <cstdint>
@@ -29,11 +29,10 @@ namespace FE::Osmium
 
         inline static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
-        inline static ImageDesc Img2D(
-            ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps = false,
-            UInt32 sampleCount = 1);
-        inline static ImageDesc Img2DArray(
-            ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format, bool useMipMaps = false);
+        inline static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format,
+                                      bool useMipMaps = false, UInt32 sampleCount = 1);
+        inline static ImageDesc Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format,
+                                           bool useMipMaps = false);
         inline static ImageDesc ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format);
         inline static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
         inline static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
@@ -55,8 +54,8 @@ namespace FE::Osmium
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2D(
-        ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps, UInt32 sampleCount)
+    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps,
+                               UInt32 sampleCount)
     {
         ImageDesc desc{};
         desc.BindFlags     = bindFlags;
@@ -69,8 +68,8 @@ namespace FE::Osmium
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2DArray(
-        ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format, bool useMipMaps)
+    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format,
+                                    bool useMipMaps)
     {
         ImageDesc desc{};
         desc.BindFlags     = bindFlags;
@@ -130,3 +129,24 @@ namespace FE::Osmium
         [[nodiscard]] virtual ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const            = 0;
     };
 } // namespace FE::Osmium
+
+namespace std
+{
+    template<>
+    struct std::hash<FE::Osmium::ImageDesc>
+    {
+        inline size_t operator()(const FE::Osmium::ImageDesc& desc) const noexcept
+        {
+            size_t seed = 0;
+            FE::HashCombine(seed,
+                            desc.ImageSize,
+                            desc.ImageFormat,
+                            desc.Dimension,
+                            desc.BindFlags,
+                            desc.MipSliceCount,
+                            desc.SampleCount,
+                            desc.ArraySize);
+            return seed;
+        }
+    };
+} // namespace std
