@@ -82,9 +82,19 @@ namespace FE
             m_EndCap = nullptr;
         }
 
-        inline static void CopyData(T* dest, const T* src, size_t count) noexcept
+        inline static void MoveData(T* dest, T* src, size_t count) noexcept
         {
-            memcpy(dest, src, count * sizeof(T));
+            if constexpr (std::is_trivially_copyable_v<T>)
+            {
+                memcpy(dest, src, count * sizeof(T));
+            }
+            else
+            {
+                for (USize i = 0; i < count; ++i)
+                {
+                    new (&dest[i]) T(std::move(src[i]));
+                }
+            }
         }
 
         [[nodiscard]] inline USize Recommend(USize newSize) const noexcept
@@ -116,7 +126,7 @@ namespace FE
             T* newBegin = Allocate(newCap);
             T* newEnd   = newBegin + Size();
 
-            CopyData(newBegin, m_Begin, Size());
+            MoveData(newBegin, m_Begin, Size());
             VDeallocate();
 
             m_Begin  = newBegin;
