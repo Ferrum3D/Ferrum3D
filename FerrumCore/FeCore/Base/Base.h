@@ -192,6 +192,16 @@ namespace FE
         return static_cast<T>(mask << leftShift);
     }
 
+    inline void HashCombine(std::size_t& /* seed */) {}
+
+    template<typename T, typename... Args>
+    inline void HashCombine(std::size_t& seed, const T& value, const Args&... args)
+    {
+        std::hash<T> hasher;
+        seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        HashCombine(seed, args...);
+    }
+
 #if FE_DEBUG
     //! \brief Assertion without loggers, used in modules on which loggers depend.
     //!
