@@ -57,7 +57,7 @@ namespace FE::Osmium
             m_Cache.AddObject(descHash, result);
 
             DeviceMemorySlice memory{};
-            memory.Memory     = m_Memory;
+            memory.Memory     = m_Memory.GetRaw();
             memory.ByteSize   = desc.Descriptor.Size;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
