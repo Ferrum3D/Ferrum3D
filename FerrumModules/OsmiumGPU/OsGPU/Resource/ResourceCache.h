@@ -38,6 +38,11 @@ namespace FE::Osmium
     public:
         inline ResourceCache() = default;
 
+        inline ~ResourceCache()
+        {
+            Clear();
+        }
+
         inline void SetCapacity(USize capacity)
         {
             while (m_CacheQueue.size() >= capacity)
@@ -48,7 +53,15 @@ namespace FE::Osmium
             m_Capacity = capacity;
         }
 
-        inline USize Capacity()
+        inline void Clear()
+        {
+            while (!m_CacheQueue.empty())
+            {
+                ReleaseObject();
+            }
+        }
+
+        inline USize Capacity() const
         {
             return m_Capacity;
         }
