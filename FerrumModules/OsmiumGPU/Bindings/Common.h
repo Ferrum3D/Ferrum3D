@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/IByteBuffer.h>
 #include <FeCore/Containers/List.h>
 
@@ -19,5 +20,11 @@ namespace FE::Osmium
             memcpy(dst.Data(), src->Data(), src->Size());
             src->ReleaseStrongRef();
         }
+    }
+
+    template<class T>
+    inline void ArraySliceFromByteBuffer(IByteBuffer* src, ArraySlice<T>& dst)
+    {
+        dst = ArraySlice<T>(reinterpret_cast<T*>(src->Data()), reinterpret_cast<T*>(src->Data() + src->Size()));
     }
 } // namespace FE::Osmium

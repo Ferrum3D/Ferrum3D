@@ -34,8 +34,10 @@ namespace FE::Osmium
         {
             DescriptorHeapDesc d;
             d.MaxTables = desc->MaxSets;
-            CopyFromByteBuffer(desc->Sizes, d.Sizes);
-            return self->CreateDescriptorHeap(d).Detach();
+            ArraySliceFromByteBuffer(desc->Sizes, d.Sizes);
+            auto* result = self->CreateDescriptorHeap(d).Detach();
+            desc->Sizes->ReleaseStrongRef();
+            return result;
         }
 
         FE_DLL_EXPORT ICommandBuffer* IDevice_CreateCommandBuffer(IDevice* self, CommandQueueClass queueClass)
@@ -57,19 +59,15 @@ namespace FE::Osmium
         {
             FramebufferDesc d{};
 
-            List<IImageView*> rtv;
-            CopyFromByteBuffer(desc->RenderTargetViews, rtv);
-            d.RenderTargetViews.Reserve(rtv.Size());
-            for (auto& r : rtv)
-            {
-                d.RenderTargetViews.Push(r);
-            }
+            ArraySliceFromByteBuffer(desc->RenderTargetViews, d.RenderTargetViews);
 
             d.RenderPass = desc->RenderPass;
             d.Width      = desc->Width;
             d.Height     = desc->Height;
 
-            return self->CreateFramebuffer(d).Detach();
+            auto* result = self->CreateFramebuffer(d).Detach();
+            desc->RenderTargetViews->ReleaseStrongRef();
+            return result;
         }
 
         FE_DLL_EXPORT IFence* IDevice_CreateFence(IDevice* self, FenceState state)
@@ -84,9 +82,11 @@ namespace FE::Osmium
             d.Multisample.SampleCount          = desc->Multisample.SampleCount;
             d.Multisample.MinSampleShading     = desc->Multisample.MinSampleShading;
 
-            d.ColorBlend.BlendConstants = Vector4F{ desc->ColorBlend.BlendConstantX, desc->ColorBlend.BlendConstantY,
-                                                    desc->ColorBlend.BlendConstantZ, desc->ColorBlend.BlendConstantW };
-            CopyFromByteBuffer(desc->ColorBlend.TargetBlendStates, d.ColorBlend.TargetBlendStates);
+            d.ColorBlend.BlendConstants = Vector4F{ desc->ColorBlend.BlendConstantX,
+                                                    desc->ColorBlend.BlendConstantY,
+                                                    desc->ColorBlend.BlendConstantZ,
+                                                    desc->ColorBlend.BlendConstantW };
+            ArraySliceFromByteBuffer(desc->ColorBlend.TargetBlendStates, d.ColorBlend.TargetBlendStates);
 
             d.InputLayout.Topology = desc->InputLayout.Topology;
             CopyFromByteBuffer(desc->InputLayout.Buffers, d.InputLayout.GetBuffers());
@@ -117,59 +117,61 @@ namespace FE::Osmium
 
             d.RenderPass = desc->RenderPass;
 
-            List<IDescriptorTable*> descriptorTables;
-            CopyFromByteBuffer(desc->DescriptorTables, descriptorTables);
-            d.DescriptorTables.Reserve(descriptorTables.Size());
-            for (auto* descriptorTable : descriptorTables)
-            {
-                d.DescriptorTables.Push(descriptorTable);
-            }
-
-            List<IShaderModule*> shaders;
-            CopyFromByteBuffer(desc->Shaders, shaders);
-            d.Shaders.Reserve(shaders.Size());
-            for (auto* shader : shaders)
-            {
-                d.Shaders.Push(shader);
-            }
-
+            ArraySliceFromByteBuffer(desc->DescriptorTables, d.DescriptorTables);
+            ArraySliceFromByteBuffer(desc->Shaders, d.Shaders);
             d.SubpassIndex = desc->SubpassIndex;
 
-            return self->CreateGraphicsPipeline(d).Detach();
+            auto* result = self->CreateGraphicsPipeline(d).Detach();
+            desc->ColorBlend.TargetBlendStates->ReleaseStrongRef();
+            desc->DescriptorTables->ReleaseStrongRef();
+            desc->Shaders->ReleaseStrongRef();
+            return result;
         }
 
         FE_DLL_EXPORT IRenderPass* IDevice_CreateRenderPass(IDevice* self, RenderPassDescBinding* desc)
         {
             RenderPassDesc d{};
-            CopyFromByteBuffer(desc->Attachments, d.Attachments);
-            CopyFromByteBuffer(desc->SubpassDependencies, d.SubpassDependencies);
-            List<SubpassDescBinding> subpasses;
-            CopyFromByteBuffer(desc->Subpasses, subpasses);
+            ArraySliceFromByteBuffer(desc->Attachments, d.Attachments);
+            ArraySliceFromByteBuffer(desc->SubpassDependencies, d.SubpassDependencies);
+            ArraySlice<SubpassDescBinding> subpasses;
+            ArraySliceFromByteBuffer(desc->Subpasses, subpasses);
+            List<SubpassDesc> s;
             for (auto& subpassBinding : subpasses)
             {
-                auto& subpass = d.Subpasses.Emplace();
-                CopyFromByteBuffer(subpassBinding.InputAttachments, subpass.InputAttachments);
-                CopyFromByteBuffer(subpassBinding.PreserveAttachments, subpass.PreserveAttachments);
-                CopyFromByteBuffer(subpassBinding.RenderTargetAttachments, subpass.RenderTargetAttachments);
-                CopyFromByteBuffer(subpassBinding.MSAAResolveAttachments, subpass.MSAAResolveAttachments);
+                auto& subpass = s.Emplace();
+                ArraySliceFromByteBuffer(subpassBinding.InputAttachments, subpass.InputAttachments);
+                ArraySliceFromByteBuffer(subpassBinding.PreserveAttachments, subpass.PreserveAttachments);
+                ArraySliceFromByteBuffer(subpassBinding.RenderTargetAttachments, subpass.RenderTargetAttachments);
+                ArraySliceFromByteBuffer(subpassBinding.MSAAResolveAttachments, subpass.MSAAResolveAttachments);
                 subpass.DepthStencilAttachment = subpassBinding.DepthStencilAttachment;
             }
-            return self->CreateRenderPass(d).Detach();
+            d.Subpasses = s;
+            auto* result = self->CreateRenderPass(d).Detach();
+            desc->Attachments->ReleaseStrongRef();
+            desc->SubpassDependencies->ReleaseStrongRef();
+            for (auto& subpassBinding : subpasses)
+            {
+                subpassBinding.InputAttachments->ReleaseStrongRef();
+                subpassBinding.PreserveAttachments->ReleaseStrongRef();
+                subpassBinding.RenderTargetAttachments->ReleaseStrongRef();
+                subpassBinding.MSAAResolveAttachments->ReleaseStrongRef();
+            }
+            desc->Subpasses->ReleaseStrongRef();
+            return result;
         }
 
         FE_DLL_EXPORT IShaderModule* IDevice_CreateShaderModule(IDevice* self, ShaderModuleDescBinding* desc)
         {
             ShaderModuleDesc d;
-            d.ByteCode     = desc->ByteCode;
-            d.ByteCodeSize = desc->ByteCodeSize;
-            d.EntryPoint   = desc->EntryPoint;
-            d.Stage        = static_cast<ShaderStage>(desc->Stage);
+            d.ByteCode   = ArraySlice(desc->ByteCode, desc->ByteCodeSize);
+            d.EntryPoint = desc->EntryPoint;
+            d.Stage      = static_cast<ShaderStage>(desc->Stage);
             return self->CreateShaderModule(d).Detach();
         }
 
-        FE_DLL_EXPORT IBuffer* IDevice_CreateBuffer(IDevice* self, Int32 bindFlags, UInt64 size)
+        FE_DLL_EXPORT IBuffer* IDevice_CreateBuffer(IDevice* self, BufferDesc* desc)
         {
-            return self->CreateBuffer(static_cast<BindFlags>(bindFlags), size).Detach();
+            return self->CreateBuffer(*desc).Detach();
         }
 
         FE_DLL_EXPORT ISwapChain* IDevice_CreateSwapChain(IDevice* self, SwapChainDesc* desc)

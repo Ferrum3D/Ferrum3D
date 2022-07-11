@@ -78,14 +78,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new ShaderModule(CreateShaderModuleNative(Handle, ref nativeDesc));
         }
 
+        public Buffer CreateBuffer(Buffer.Desc desc)
+        {
+            return new Buffer(CreateBufferNative(Handle, ref desc));
+        }
+
         public Buffer CreateBuffer(BindFlags flags, ulong size)
         {
-            return new Buffer(CreateBufferNative(Handle, (int)flags, size));
+            return CreateBuffer(new Buffer.Desc(size, flags));
         }
 
         public Buffer CreateBuffer(BindFlags flags, int size)
         {
-            return CreateBuffer(flags, (ulong)size);
+            return CreateBuffer(new Buffer.Desc((ulong)size, flags));
         }
 
         public ShaderCompiler CreateShaderCompiler()

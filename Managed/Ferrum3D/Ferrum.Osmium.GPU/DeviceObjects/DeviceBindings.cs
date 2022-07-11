@@ -34,7 +34,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private static extern IntPtr CreateShaderModuleNative(IntPtr self, ref ShaderModule.DescNative desc);
 
         [DllImport("OsGPUBindings", EntryPoint = "IDevice_CreateBuffer")]
-        private static extern IntPtr CreateBufferNative(IntPtr self, int bindFlags, ulong size);
+        private static extern IntPtr CreateBufferNative(IntPtr self, ref Buffer.Desc desc);
 
         [DllImport("OsGPUBindings", EntryPoint = "IDevice_CreateSwapChain")]
         private static extern IntPtr CreateSwapChainNative(IntPtr self, ref SwapChain.DescNative desc);
