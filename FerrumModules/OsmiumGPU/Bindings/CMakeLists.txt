@@ -22,6 +22,7 @@ set(SRC
     DeviceObjects/RenderPass.h
     DeviceObjects/Sampler.cpp
     DeviceObjects/SwapChain.cpp
+    DeviceObjects/TransientResourceHeap.cpp
 
     Module.cpp
 
