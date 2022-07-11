@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     struct DeviceMemorySlice final
     {
-        Shared<IDeviceMemory> Memory;
+        IDeviceMemory* Memory;
         USize ByteOffset = 0;
         USize ByteSize = 0;
 

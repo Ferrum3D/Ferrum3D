@@ -27,13 +27,14 @@ namespace FE::Osmium
         desc.Size   = MemoryRequirements.size;
         desc.Type   = type;
         auto memory = MakeShared<VKDeviceMemory>(*m_Device, MemoryRequirements.memoryTypeBits, desc);
-        BindMemory(DeviceMemorySlice(memory.GetRaw()));
+        BindMemory(DeviceMemorySlice(memory.Detach()));
+        m_MemoryOwned = true;
     }
 
     void VKBuffer::BindMemory(const DeviceMemorySlice& memory)
     {
         m_Memory      = memory;
-        auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory.GetRaw())->Memory;
+        auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory)->Memory;
         vkBindBufferMemory(m_Device->GetNativeDevice(), Buffer, vkMemory, memory.ByteOffset);
     }
 
@@ -45,5 +46,9 @@ namespace FE::Osmium
     VKBuffer::~VKBuffer()
     {
         vkDestroyBuffer(m_Device->GetNativeDevice(), Buffer, VK_NULL_HANDLE);
+        if (m_MemoryOwned)
+        {
+            m_Memory.Memory->ReleaseStrongRef();
+        }
     }
 } // namespace FE::Osmium

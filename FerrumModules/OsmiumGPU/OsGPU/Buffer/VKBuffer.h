@@ -11,6 +11,7 @@ namespace FE::Osmium
     {
         VKDevice* m_Device;
         DeviceMemorySlice m_Memory;
+        bool m_MemoryOwned = false;
 
     public:
         FE_CLASS_RTTI(VKBuffer, "CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");

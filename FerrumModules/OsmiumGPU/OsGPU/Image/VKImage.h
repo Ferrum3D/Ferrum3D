@@ -11,6 +11,7 @@ namespace FE::Osmium
     {
         VKDevice* m_Device;
         DeviceMemorySlice m_Memory;
+        bool m_MemoryOwned = false;
         bool m_Owned = false;
 
     public:
