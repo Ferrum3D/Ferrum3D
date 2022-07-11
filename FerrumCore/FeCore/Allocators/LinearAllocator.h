@@ -36,7 +36,7 @@ namespace FE
             m_CurrentOffset = desc.StartOffset;
         }
 
-        inline THandle Allocate(USize size, USize alignment, const SourcePosition& position) override
+        inline THandle Allocate(USize size, USize alignment, [[maybe_unused]] const SourcePosition& position) override
         {
             FE_PROFILE_ALLOC(size, alignment, position);
 

@@ -133,3 +133,15 @@ namespace FE
         return NullableHandle::FromOffset((x.ToOffset() + (align - 1u)) & ~(align - 1u));
     }
 } // namespace FE
+
+namespace std
+{
+    template<>
+    struct hash<FE::NullableHandle>
+    {
+        inline size_t operator()(const FE::NullableHandle& handle) const noexcept
+        {
+            return hash<size_t>{}(handle.ToOffset());
+        }
+    };
+}

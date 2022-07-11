@@ -9,7 +9,16 @@ namespace FE::Osmium
     struct BufferDesc
     {
         FE_STRUCT_RTTI(BufferDesc, "2932FBE9-01B0-49C0-BDD5-ED0AD1A29F43");
-        UInt64 Size;
+        UInt64 Size     = 0;
+        BindFlags Flags = BindFlags::None;
+
+        inline BufferDesc() = default;
+
+        inline BufferDesc(UInt64 size, BindFlags bindFlags)
+        {
+            Size  = size;
+            Flags = bindFlags;
+        }
     };
 
     class IBuffer : public IObject

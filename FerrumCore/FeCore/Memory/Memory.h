@@ -5,6 +5,7 @@
 #include <FeCore/Memory/UniquePtr.h>
 #include <memory>
 #include <unordered_map>
+#include <deque>
 
 namespace FE
 {
@@ -263,6 +264,9 @@ namespace FE
     //! \brief An alias for `std::vector` that uses \ref HeapAllocator through \ref StdHeapAllocator.
     template<class T>
     using Vector = std::vector<T, StdHeapAllocator<T>>;
+
+    template<class T>
+    using Deque = std::deque<T, StdHeapAllocator<T>>;
 
     //! \brief An alias for `std::unordered_map` that uses \ref HeapAllocator through \ref StdHeapAllocator.
     template<class TKey, class TValue, class THasher = std::hash<TKey>, class TEq = std::equal_to<TKey>>

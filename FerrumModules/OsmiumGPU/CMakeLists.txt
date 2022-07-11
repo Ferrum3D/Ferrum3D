@@ -67,6 +67,7 @@ set(SRC
     OsGPU/Instance/VKInstance.cpp
     OsGPU/Instance/VKInstance.h
 
+    OsGPU/Memory/DeviceMemorySlice.h
     OsGPU/Memory/IDeviceMemory.h
     OsGPU/Memory/MemoryType.h
     OsGPU/Memory/VKDeviceMemory.cpp
@@ -111,9 +112,8 @@ set(SRC
     OsGPU/Window/IWindow.h
     OsGPU/Window/Window.cpp
     OsGPU/Window/Window.h
-    OsGPU/Memory/DeviceMemorySlice.h
     # FERRUM_SORT_LINES END
-    )
+    OsGPU/Resource/ITransientResourceHeap.h OsGPU/Resource/TransientResourceHeapBase.cpp OsGPU/Resource/TransientResourceHeapBase.h OsGPU/Resource/ResourceCache.h OsGPU/Resource/VKTransientResourceHeap.cpp OsGPU/Resource/VKTransientResourceHeap.h)
 
 add_library(OsGPU SHARED ${SRC})
 
