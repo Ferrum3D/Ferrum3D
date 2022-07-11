@@ -57,5 +57,18 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             DestructNative(Handle);
         }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public readonly struct Desc
+        {
+            private readonly ulong Size;
+            private readonly BindFlags Flags;
+
+            public Desc(ulong size, BindFlags flags)
+            {
+                Size = size;
+                Flags = flags;
+            }
+        }
     }
 }
