@@ -15,7 +15,7 @@ namespace FE::Osmium
         m_Memory = AllocateMemoryImpl();
         GPULinearAllocator::Desc allocatorDesc{};
         allocatorDesc.StartOffset = NullableHandle::Zero();
-        allocatorDesc.GCLatency   = 3;
+        allocatorDesc.GCLatency   = 0;
         allocatorDesc.Capacity    = m_Desc.HeapSize;
         m_Allocator.Init(allocatorDesc);
         m_Cache.SetCapacity(m_Desc.CacheSize);
@@ -83,5 +83,9 @@ namespace FE::Osmium
         FE_ASSERT_MSG(resourceType == m_Desc.TypeFlags, "Transient heap type is not compatible");
         auto& resource = m_RegisteredResources[resourceID];
         m_Allocator.Deallocate(resource.Handle, FE_SRCPOS(), resource.Size);
+        if (--m_CreatedResourceCount == 0)
+        {
+            m_Allocator.CollectGarbageForce();
+        }
     }
 } // namespace FE::Osmium
