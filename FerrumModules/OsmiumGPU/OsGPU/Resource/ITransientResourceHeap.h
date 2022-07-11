@@ -18,19 +18,35 @@ namespace FE::Osmium
         UInt64 HeapSize                 = 512 * 1024;
         UInt64 Alignment                = 256;
         Int32 CacheSize                 = 256;
-        TransientResourceType TypeFlags = TransientResourceType::None;
+        TransientResourceType TypeFlags = TransientResourceType::Buffer;
     };
 
     struct TransientImageDesc
     {
         ImageDesc Descriptor;
         UInt64 ResourceID = 0;
+
+        inline TransientImageDesc() = default;
+
+        inline TransientImageDesc(const ImageDesc& descriptor, UInt64 resourceId)
+            : Descriptor(descriptor)
+            , ResourceID(resourceId)
+        {
+        }
     };
 
     struct TransientBufferDesc
     {
         BufferDesc Descriptor;
         UInt64 ResourceID = 0;
+
+        inline TransientBufferDesc() = default;
+
+        inline TransientBufferDesc(const BufferDesc& descriptor, UInt64 resourceId)
+            : Descriptor(descriptor)
+            , ResourceID(resourceId)
+        {
+        }
     };
 
     class IImage;

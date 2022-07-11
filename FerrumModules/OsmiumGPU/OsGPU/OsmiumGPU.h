@@ -8,14 +8,15 @@
 #include <OsGPU/Device/IDevice.h>
 #include <OsGPU/Fence/IFence.h>
 #include <OsGPU/Framebuffer/IFramebuffer.h>
-#include <OsGPU/ImageView/IImageView.h>
 #include <OsGPU/Image/IImage.h>
+#include <OsGPU/ImageView/IImageView.h>
 #include <OsGPU/Instance/IInstance.h>
 #include <OsGPU/Pipeline/IGraphicsPipeline.h>
 #include <OsGPU/Pipeline/InputLayoutBuilder.h>
 #include <OsGPU/RenderPass/IRenderPass.h>
+#include <OsGPU/Resource/ITransientResourceHeap.h>
+#include <OsGPU/Sampler/ISampler.h>
 #include <OsGPU/Shader/IShaderCompiler.h>
 #include <OsGPU/Shader/IShaderModule.h>
 #include <OsGPU/SwapChain/ISwapChain.h>
 #include <OsGPU/Window/IWindow.h>
-#include <OsGPU/Sampler/ISampler.h>
