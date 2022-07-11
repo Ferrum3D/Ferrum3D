@@ -23,8 +23,8 @@ namespace FE::Osmium
             auto d = self->GetDesc();
 
             // TODO: Get rid of CoTaskMemAlloc() and copy the string only on C# side, since it is constant
-            String name = d.Name;
-            auto result = (LPSTR)CoTaskMemAlloc(name.Size() + 1);
+            StringSlice name = d.Name;
+            auto result = static_cast<LPSTR>(CoTaskMemAlloc(name.Size() + 1));
             StringCchCopyA(result, name.Size() + 1, name.Data());
 
             desc->Name = result;
