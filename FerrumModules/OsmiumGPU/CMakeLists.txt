@@ -86,9 +86,15 @@ set(SRC
     OsGPU/RenderPass/VKRenderPass.h
 
     OsGPU/Resource/BindFlags.h
+    OsGPU/Resource/ITransientResourceHeap.h
+    OsGPU/Resource/ResourceCache.h
     OsGPU/Resource/ResourceState.h
     OsGPU/Resource/ShaderResourceType.h
+    OsGPU/Resource/TransientResourceHeapBase.cpp
+    OsGPU/Resource/TransientResourceHeapBase.h
     OsGPU/Resource/VKResourceState.h
+    OsGPU/Resource/VKTransientResourceHeap.cpp
+    OsGPU/Resource/VKTransientResourceHeap.h
 
     OsGPU/Sampler/ISampler.h
     OsGPU/Sampler/VKSampler.cpp
@@ -113,7 +119,7 @@ set(SRC
     OsGPU/Window/Window.cpp
     OsGPU/Window/Window.h
     # FERRUM_SORT_LINES END
-    OsGPU/Resource/ITransientResourceHeap.h OsGPU/Resource/TransientResourceHeapBase.cpp OsGPU/Resource/TransientResourceHeapBase.h OsGPU/Resource/ResourceCache.h OsGPU/Resource/VKTransientResourceHeap.cpp OsGPU/Resource/VKTransientResourceHeap.h)
+)
 
 add_library(OsGPU SHARED ${SRC})
 
