@@ -128,5 +128,17 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return new Desc(new Size(width, height, depth), format, ImageDim.Image3D, bindFlags, 1, 1, 1);
             }
         }
+
+        public ImageSubresourceRange CreateSubresourceRange()
+        {
+            return new ImageSubresourceRange(0, MipSliceCount, 0, ArraySize, GetAspectFlagsFromViews());
+        }
+
+        private ImageAspectFlags GetAspectFlagsFromViews()
+        {
+            return depthStencilView != null
+                ? ImageAspectFlags.DepthStencil
+                : ImageAspectFlags.Color;
+        }
     }
 }

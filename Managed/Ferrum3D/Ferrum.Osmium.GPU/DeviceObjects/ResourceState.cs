@@ -15,6 +15,7 @@
         IndirectArgument,
         TransferWrite,
         TransferRead,
-        Present
+        Present,
+        Automatic
     }
 }

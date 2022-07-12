@@ -98,8 +98,10 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto stateBefore =
-                barrier.Image->GetState(barrier.SubresourceRange.MinArraySlice, barrier.SubresourceRange.MinMipSlice);
+            auto stateBefore = barrier.StateBefore == ResourceState::Automatic
+                ? barrier.Image->GetState(barrier.SubresourceRange.MinArraySlice, barrier.SubresourceRange.MinMipSlice)
+                : barrier.StateBefore;
+
             auto before = VKConvert(stateBefore);
             auto after  = VKConvert(barrier.StateAfter);
             if (before == after)
@@ -233,7 +235,7 @@ namespace FE::Osmium
 
     void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer, UInt64 byteOffset)
     {
-        auto nativeBuffer   = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
+        auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
         vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &byteOffset);
     }
 

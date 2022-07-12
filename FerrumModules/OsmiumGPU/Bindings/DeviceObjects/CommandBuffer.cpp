@@ -33,9 +33,7 @@ namespace FE::Osmium
         FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(ICommandBuffer* self,
                                                                      ResourceTransitionBarrierDesc* barriers, UInt32 count)
         {
-            List<ResourceTransitionBarrierDesc> list;
-            list.Assign(barriers, barriers + count);
-            self->ResourceTransitionBarriers(list);
+            self->ResourceTransitionBarriers(ArraySlice(barriers, barriers + count));
         }
 
         FE_DLL_EXPORT void ICommandBuffer_MemoryBarrier(ICommandBuffer* self)
@@ -47,6 +45,7 @@ namespace FE::Osmium
                                                           IFramebuffer* framebuffer, ClearValueDesc* clearValues,
                                                           UInt32 clearValueCount)
         {
+            // Copy is need to align color's SIMD type
             List<ClearValueDesc> list;
             list.Assign(clearValues, clearValues + clearValueCount);
             self->BeginRenderPass(renderPass, framebuffer, list);
