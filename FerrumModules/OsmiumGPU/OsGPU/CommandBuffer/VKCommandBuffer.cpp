@@ -69,8 +69,8 @@ namespace FE::Osmium
         vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
-    void VKCommandBuffer::DrawIndexed(
-        UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance)
+    void VKCommandBuffer::DrawIndexed(UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset,
+                                      UInt32 firstInstance)
     {
         vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
@@ -133,9 +133,16 @@ namespace FE::Osmium
             return;
         }
 
-        vkCmdPipelineBarrier(
-            m_CommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
-            0, nullptr, 0, nullptr, static_cast<UInt32>(nativeBarriers.Size()), nativeBarriers.Data());
+        vkCmdPipelineBarrier(m_CommandBuffer,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                             VK_DEPENDENCY_BY_REGION_BIT,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             static_cast<UInt32>(nativeBarriers.Size()),
+                             nativeBarriers.Data());
     }
 
     void VKCommandBuffer::MemoryBarrier()
@@ -144,9 +151,16 @@ namespace FE::Osmium
         nativeBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         nativeBarrier.dstAccessMask = nativeBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 
-        vkCmdPipelineBarrier(
-            m_CommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
-            1, &nativeBarrier, 0, nullptr, 0, nullptr);
+        vkCmdPipelineBarrier(m_CommandBuffer,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                             VK_DEPENDENCY_BY_REGION_BIT,
+                             1,
+                             &nativeBarrier,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr);
     }
 
     void VKCommandBuffer::BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
@@ -158,13 +172,18 @@ namespace FE::Osmium
         }
 
         auto* vkPipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline);
-        vkCmdBindDescriptorSets(
-            m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetNativeLayout(), 0, static_cast<UInt32>(nativeSets.Size()),
-            nativeSets.Data(), 0, nullptr);
+        vkCmdBindDescriptorSets(m_CommandBuffer,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                vkPipeline->GetNativeLayout(),
+                                0,
+                                static_cast<UInt32>(nativeSets.Size()),
+                                nativeSets.Data(),
+                                0,
+                                nullptr);
     }
 
-    void VKCommandBuffer::BeginRenderPass(
-        IRenderPass* renderPass, IFramebuffer* framebuffer, const ArraySlice<ClearValueDesc>& clearValues)
+    void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer,
+                                          const ArraySlice<ClearValueDesc>& clearValues)
     {
         Vector<VkClearValue> vkClearValues{};
         for (const auto& clearValue : clearValues)
@@ -206,17 +225,31 @@ namespace FE::Osmium
         vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, nativePipeline);
     }
 
-    void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer)
-    {
-        auto nativeBuffer   = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &offset);
-    }
-
-    void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer)
+    void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer, UInt64 byteOffset)
     {
         auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
-        vkCmdBindIndexBuffer(m_CommandBuffer, nativeBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(m_CommandBuffer, nativeBuffer, byteOffset, VK_INDEX_TYPE_UINT32);
+    }
+
+    void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer, UInt64 byteOffset)
+    {
+        auto nativeBuffer   = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
+        vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &byteOffset);
+    }
+
+    void VKCommandBuffer::BindVertexBuffers(UInt32 startSlot, const ArraySlice<IBuffer*>& buffers,
+                                            const ArraySlice<UInt64>& offsets)
+    {
+        FE_ASSERT_MSG(buffers.Length() == offsets.Length(), "Number of buffers must be the same as number of offsets");
+
+        List<VkBuffer> nativeBuffers(buffers.Length(), VK_NULL_HANDLE);
+        for (USize i = 0; i < buffers.Length(); ++i)
+        {
+            nativeBuffers[i] = fe_assert_cast<VKBuffer*>(buffers[i])->Buffer;
+        }
+
+        vkCmdBindVertexBuffers(
+            m_CommandBuffer, startSlot, static_cast<UInt32>(nativeBuffers.Size()), nativeBuffers.Data(), offsets.Data());
     }
 
     void VKCommandBuffer::CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)
@@ -280,9 +313,14 @@ namespace FE::Osmium
         nativeBlit.dstOffsets[0] = VKConvert(region.DestBounds[0]);
         nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);
 
-        vkCmdBlitImage(
-            m_CommandBuffer, nativeSrc, VKConvert(source->GetState(region.Source)), nativeDst,
-            VKConvert(dest->GetState(region.Dest)), 1, &nativeBlit, VK_FILTER_LINEAR);
+        vkCmdBlitImage(m_CommandBuffer,
+                       nativeSrc,
+                       VKConvert(source->GetState(region.Source)),
+                       nativeDst,
+                       VKConvert(dest->GetState(region.Dest)),
+                       1,
+                       &nativeBlit,
+                       VK_FILTER_LINEAR);
     }
 
     VKCommandBuffer::~VKCommandBuffer()

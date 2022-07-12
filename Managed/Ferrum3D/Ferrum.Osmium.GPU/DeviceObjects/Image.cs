@@ -5,7 +5,7 @@ using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Image : UnmanagedObject
+    public class Image : Resource
     {
         public ImageView DefaultView =>
             defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Color)));
@@ -24,6 +24,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public int MipSliceCount => (int)desc.MipSliceCount;
         public int SampleCount => (int)desc.SampleCount;
         public ushort ArraySize => desc.ArraySize;
+
+        public ImageBindFlags BindFlags => desc.BindFlags;
 
         private ImageView defaultView;
         private ImageView depthStencilView;

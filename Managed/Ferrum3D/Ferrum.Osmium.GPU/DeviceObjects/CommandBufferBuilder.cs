@@ -29,11 +29,15 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_EndRenderPass")]
         private static extern void EndRenderPassNative(IntPtr self);
 
+        [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindVertexBuffers")]
+        private static extern void BindVertexBuffersNative(IntPtr self, uint startSlot, uint slotCount, IntPtr buffers,
+            IntPtr offsets);
+
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindVertexBuffer")]
-        private static extern void BindVertexBufferNative(IntPtr self, uint slot, IntPtr buffer);
+        private static extern void BindVertexBufferNative(IntPtr self, uint slot, IntPtr buffer, ulong byteOffset);
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindIndexBuffer")]
-        private static extern void BindIndexBufferNative(IntPtr self, IntPtr buffer);
+        private static extern void BindIndexBufferNative(IntPtr self, IntPtr buffer, ulong byteOffset);
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_BindDescriptorTables")]
         private static extern void BindDescriptorTablesNative(IntPtr self, IntPtr[] descriptorTables, uint count,
@@ -113,14 +117,19 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 EndRenderPassNative(handle);
             }
 
-            public void BindVertexBuffer(int slot, Buffer vertexBuffer)
+            public unsafe void BindVertexBuffers(uint startSlot, uint slotCount, IntPtr* bufferHandles, ulong* offsets)
             {
-                BindVertexBufferNative(handle, (uint)slot, vertexBuffer.Handle);
+                BindVertexBuffersNative(handle, startSlot, slotCount, new IntPtr(bufferHandles), new IntPtr(offsets));
             }
 
-            public void BindIndexBuffer(Buffer indexBuffer)
+            public void BindVertexBuffer(uint slot, Buffer vertexBuffer, ulong byteOffset = 0)
             {
-                BindIndexBufferNative(handle, indexBuffer.Handle);
+                BindVertexBufferNative(handle, slot, vertexBuffer.Handle, byteOffset);
+            }
+
+            public void BindIndexBuffer(Buffer indexBuffer, ulong byteOffset = 0)
+            {
+                BindIndexBufferNative(handle, indexBuffer.Handle, byteOffset);
             }
 
             public void BindDescriptorTables(GraphicsPipeline pipeline, params DescriptorTable[] descriptorTables)
@@ -200,16 +209,15 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                     new ResourceTransitionBarrierDesc(image, stateAfter, mipSlice, mipSliceCount));
             }
 
-            public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)
+            public void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
             {
-                DrawNative(handle, (uint)vertexCount, (uint)instanceCount, (uint)firstVertex, (uint)firstInstance);
+                DrawNative(handle, vertexCount, instanceCount, firstVertex, firstInstance);
             }
 
-            public void DrawIndexed(int indexCount, int instanceCount, int firstIndex, int vertexOffset,
-                int firstInstance)
+            public void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, int vertexOffset,
+                uint firstInstance)
             {
-                DrawIndexedNative(handle, (uint)indexCount, (uint)instanceCount, (uint)firstIndex, vertexOffset,
-                    (uint)firstInstance);
+                DrawIndexedNative(handle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
             }
 
             public void BindGraphicsPipeline(GraphicsPipeline pipeline)

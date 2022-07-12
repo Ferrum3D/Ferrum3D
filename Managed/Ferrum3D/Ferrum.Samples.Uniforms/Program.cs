@@ -181,7 +181,7 @@ namespace Ferrum.Samples.Uniforms
                 builder.BindVertexBuffer(0, vertexBuffer);
                 builder.BindIndexBuffer(indexBuffer);
                 builder.BeginRenderPass(renderPass, framebuffers[i], Colors.MediumAquamarine);
-                builder.DrawIndexed(indexData.Length, 1, 0, 0, 0);
+                builder.DrawIndexed((uint)indexData.Length, 1, 0, 0, 0);
                 builder.EndRenderPass();
             }
 

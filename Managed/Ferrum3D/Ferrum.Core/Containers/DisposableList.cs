@@ -13,6 +13,8 @@ namespace Ferrum.Core.Containers
                 var elem = this[i];
                 elem.Dispose();
             }
+
+            Clear();
         }
     }
 }

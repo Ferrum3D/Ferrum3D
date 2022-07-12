@@ -81,8 +81,8 @@ namespace FE::Osmium
         {
         }
 
-        inline BufferImageCopyRegion(
-            UInt64 buffetOffset, struct ImageSubresource imageSubresource, Offset imageOffset, Size imageSize)
+        inline BufferImageCopyRegion(UInt64 buffetOffset, struct ImageSubresource imageSubresource, Offset imageOffset,
+                                     Size imageSize)
             : BufferOffset(buffetOffset)
             , ImageSubresource(imageSubresource)
             , ImageOffset(imageOffset)
@@ -126,12 +126,14 @@ namespace FE::Osmium
         virtual void BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
         virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                        = 0;
 
-        virtual void BeginRenderPass(
-            IRenderPass* renderPass, IFramebuffer* framebuffer, const ArraySlice<ClearValueDesc>& clearValues) = 0;
-        virtual void EndRenderPass()                                                                           = 0;
+        virtual void BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer,
+                                     const ArraySlice<ClearValueDesc>& clearValues) = 0;
+        virtual void EndRenderPass()                                                = 0;
 
-        virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer) = 0;
-        virtual void BindIndexBuffer(IBuffer* buffer)               = 0;
+        virtual void BindIndexBuffer(IBuffer* buffer, UInt64 byteOffset)               = 0;
+        virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer, UInt64 byteOffset) = 0;
+        virtual void BindVertexBuffers(UInt32 startSlot, const ArraySlice<IBuffer*>& buffers,
+                                       const ArraySlice<UInt64>& offsets)               = 0;
 
         virtual void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)           = 0;
         virtual void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) = 0;
@@ -139,7 +141,7 @@ namespace FE::Osmium
         virtual void BlitImage(IImage* source, IImage* dest, const ImageBlitRegion& region) = 0;
 
         virtual void Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance) = 0;
-        virtual void DrawIndexed(
-            UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance) = 0;
+        virtual void DrawIndexed(UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset,
+                                 UInt32 firstInstance)                                                        = 0;
     };
 } // namespace FE::Osmium

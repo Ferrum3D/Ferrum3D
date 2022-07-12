@@ -330,7 +330,7 @@ public:
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
             cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw());
-            cmd->BindIndexBuffer(m_IndexBuffer.GetRaw());
+            cmd->BindIndexBuffer(m_IndexBuffer.GetRaw(), 0);
             cmd->BeginRenderPass(m_RenderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::Coral } });
             cmd->DrawIndexed(6, 1, 0, 0, 0);
             cmd->EndRenderPass();

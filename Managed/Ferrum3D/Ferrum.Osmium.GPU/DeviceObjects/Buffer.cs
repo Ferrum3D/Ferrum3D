@@ -4,7 +4,7 @@ using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
-    public class Buffer : UnmanagedObject
+    public class Buffer : Resource
     {
         internal Buffer(IntPtr handle) : base(handle)
         {

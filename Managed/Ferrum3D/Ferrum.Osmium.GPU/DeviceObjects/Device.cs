@@ -12,6 +12,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
         }
 
+        public TransientResourceHeap CreateTransientResourceHeap(TransientResourceHeap.Desc desc)
+        {
+            return new TransientResourceHeap(CreateTransientResourceHeapNative(Handle, ref desc));
+        }
+
         public CommandBuffer CreateCommandBuffer(CommandQueueClass cmdQueueClass)
         {
             return new CommandBuffer(CreateCommandBufferNative(Handle, cmdQueueClass));

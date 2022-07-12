@@ -142,7 +142,7 @@ namespace Ferrum.Samples.Triangle
                 builder.SetScissor(scissor);
                 builder.BindVertexBuffer(0, vertexBuffer);
                 builder.BeginRenderPass(renderPass, framebuffers[i], Colors.MediumAquamarine);
-                builder.Draw(vertexData.Length, 1, 0, 0);
+                builder.Draw((uint)vertexData.Length, 1, 0, 0);
                 builder.EndRenderPass();
             }
 

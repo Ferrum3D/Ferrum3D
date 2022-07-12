@@ -67,6 +67,46 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Pow(int x, int y)
+        {
+            switch (y)
+            {
+                case 0:
+                    return 1;
+                case 1:
+                    return x;
+                default:
+                    var h = Pow(x, y >> 1);
+                    if ((y & 1) == 0)
+                    {
+                        return h * h;
+                    }
+
+                    return h * h * x;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong Pow(ulong x, ulong y)
+        {
+            switch (y)
+            {
+                case 0:
+                    return 1;
+                case 1:
+                    return x;
+                default:
+                    var h = Pow(x, y >> 1);
+                    if ((y & 1) == 0)
+                    {
+                        return h * h;
+                    }
+
+                    return h * h * x;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Exp(float x)
         {
             return (float)System.Math.Exp(x);
