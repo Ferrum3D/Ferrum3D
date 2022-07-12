@@ -8,7 +8,7 @@ namespace Ferrum.Osmium.Assets
 {
     public sealed class MeshAsset : Asset
     {
-        public int IndexCount => (int)IndexSize / 4;
+        public uint IndexCount => (uint)IndexSize / 4;
         public ulong VertexSize { get; private set; }
         public ulong IndexSize { get; private set; }
         public IntPtr VertexData { get; private set; }

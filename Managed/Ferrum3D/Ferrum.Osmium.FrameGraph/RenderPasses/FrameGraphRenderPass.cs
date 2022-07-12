@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using Ferrum.Osmium.FrameGraph.CommandLists;
 using Ferrum.Osmium.FrameGraph.FrameGraph;
 using Ferrum.Osmium.FrameGraph.Resources;
+using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.RenderPasses
 {
@@ -16,6 +18,14 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
         private readonly List<FrameGraphResource> creates = new();
         private readonly List<FrameGraphResource> writes = new();
         private readonly List<FrameGraphResource> reads = new();
+
+        private readonly List<ResourceTransitionBarrierDesc>[] barriers =
+            new List<ResourceTransitionBarrierDesc>[(int)BarrierSlot.Count];
+
+        internal void AddBarrier(BarrierSlot slot, in ResourceTransitionBarrierDesc barrier)
+        {
+            barriers[(int)slot].Add(barrier);
+        }
 
         internal int RemoveReference()
         {
@@ -42,6 +52,29 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
             writes.Add(resource);
         }
 
-        protected internal abstract void Initialize(FrameGraphBuilder builder);
+        internal void Initialize(FrameGraphBuilder builder)
+        {
+            SetupDependencies(builder);
+        }
+
+        internal void Execute(FrameGraphRenderContext context)
+        {
+            var builder = context.CommandList.NativeBuilder;
+            for (var i = 0; i < barriers.Length; ++i)
+            {
+                builder.ResourceTransitionBarriers(barriers[i].ToArray());
+            }
+
+            RecordCommands(context.CommandList);
+        }
+
+        protected abstract void SetupDependencies(FrameGraphBuilder builder);
+        protected abstract void RecordCommands(CommandList commandList);
+
+        internal enum BarrierSlot
+        {
+            Aliasing,
+            Count
+        }
     }
 }

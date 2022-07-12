@@ -119,20 +119,20 @@ public:
         FE::UInt64 vertexSize, indexSize;
         {
             vertexSize          = meshAsset->VertexSize();
-            vertexBufferStaging = m_Device->CreateBuffer(HAL::BindFlags::None, vertexSize);
+            vertexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
             vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             vertexBufferStaging->UpdateData(meshAsset->VertexData());
 
-            m_VertexBuffer = m_Device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
+            m_VertexBuffer = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer));
             m_VertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
             indexSize          = meshAsset->IndexSize();
-            indexBufferStaging = m_Device->CreateBuffer(HAL::BindFlags::None, indexSize);
+            indexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
             indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             indexBufferStaging->UpdateData(meshAsset->IndexData());
 
-            m_IndexBuffer = m_Device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
+            m_IndexBuffer = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::IndexBuffer));
             m_IndexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
 
@@ -142,7 +142,7 @@ public:
                 FE::Assets::Asset<HAL::ImageAssetStorage>(FE::Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             imageAsset.LoadSync();
 
-            textureStaging = m_Device->CreateBuffer(HAL::BindFlags::None, imageAsset->Size());
+            textureStaging = m_Device->CreateBuffer(HAL::BufferDesc(imageAsset->Size(), HAL::BindFlags::None));
             textureStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             textureStaging->UpdateData(imageAsset->Data());
 
@@ -163,7 +163,7 @@ public:
             constantData *= FE::Matrix4x4F::CreateRotationX(-0.5f);
             constantData *= FE::Matrix4x4F::CreateTranslation(FE::Vector3F(0.0f, 0.8f, -1.5f) * 2);
             constantData *= FE::Matrix4x4F::CreateRotationY(FE::Constants::PI * -1.3f);
-            m_ConstantBuffer = m_Device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(constantData));
+            m_ConstantBuffer = m_Device->CreateBuffer(HAL::BufferDesc(sizeof(constantData), HAL::BindFlags::ConstantBuffer));
             m_ConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             m_ConstantBuffer->UpdateData(constantData.RowMajorData());
         }
@@ -312,8 +312,8 @@ public:
             cmd->BindDescriptorTables({ m_DescriptorTable.GetRaw() }, m_Pipeline.GetRaw());
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
-            cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw());
-            cmd->BindIndexBuffer(m_IndexBuffer.GetRaw());
+            cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw(), 0);
+            cmd->BindIndexBuffer(m_IndexBuffer.GetRaw(), 0);
             auto clearValues = FE::List{ HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
                                          HAL::ClearValueDesc::CreateDepthStencilValue() };
             cmd->BeginRenderPass(m_RenderPass.GetRaw(), framebuffer.GetRaw(), clearValues);

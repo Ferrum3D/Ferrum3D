@@ -30,8 +30,8 @@ namespace FE::Osmium
             self->SetScissor(*rect);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(
-            ICommandBuffer* self, ResourceTransitionBarrierDesc* barriers, UInt32 count)
+        FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(ICommandBuffer* self,
+                                                                     ResourceTransitionBarrierDesc* barriers, UInt32 count)
         {
             List<ResourceTransitionBarrierDesc> list;
             list.Assign(barriers, barriers + count);
@@ -43,9 +43,9 @@ namespace FE::Osmium
             self->MemoryBarrier();
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_BeginRenderPass(
-            ICommandBuffer* self, IRenderPass* renderPass, IFramebuffer* framebuffer, ClearValueDesc* clearValues,
-            UInt32 clearValueCount)
+        FE_DLL_EXPORT void ICommandBuffer_BeginRenderPass(ICommandBuffer* self, IRenderPass* renderPass,
+                                                          IFramebuffer* framebuffer, ClearValueDesc* clearValues,
+                                                          UInt32 clearValueCount)
         {
             List<ClearValueDesc> list;
             list.Assign(clearValues, clearValues + clearValueCount);
@@ -57,32 +57,37 @@ namespace FE::Osmium
             self->EndRenderPass();
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_BindVertexBuffer(ICommandBuffer* self, UInt32 slot, IBuffer* buffer)
+        FE_DLL_EXPORT void ICommandBuffer_BindVertexBuffers(ICommandBuffer* self, UInt32 startSlot, UInt32 slotCount,
+                                                            IBuffer** buffers, UInt64* offsets)
         {
-            self->BindVertexBuffer(slot, buffer);
+            self->BindVertexBuffers(
+                startSlot, ArraySlice(buffers, buffers + slotCount), ArraySlice(offsets, offsets + slotCount));
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_BindIndexBuffer(ICommandBuffer* self, IBuffer* buffer)
+        FE_DLL_EXPORT void ICommandBuffer_BindVertexBuffer(ICommandBuffer* self, UInt32 slot, IBuffer* buffer, UInt64 byteOffset)
         {
-            self->BindIndexBuffer(buffer);
+            self->BindVertexBuffer(slot, buffer, byteOffset);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_BindDescriptorTables(
-            ICommandBuffer* self, IDescriptorTable** descriptorTables, UInt32 descriptorTableCount, IGraphicsPipeline* pipeline)
+        FE_DLL_EXPORT void ICommandBuffer_BindIndexBuffer(ICommandBuffer* self, IBuffer* buffer, UInt64 byteOffset)
         {
-            List<IDescriptorTable*> d;
-            d.Assign(descriptorTables, descriptorTables + descriptorTableCount);
-            self->BindDescriptorTables(d, pipeline);
+            self->BindIndexBuffer(buffer, byteOffset);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_CopyBuffers(
-            ICommandBuffer* self, IBuffer* source, IBuffer* dest, BufferCopyRegion* region)
+        FE_DLL_EXPORT void ICommandBuffer_BindDescriptorTables(ICommandBuffer* self, IDescriptorTable** descriptorTables,
+                                                               UInt32 descriptorTableCount, IGraphicsPipeline* pipeline)
+        {
+            self->BindDescriptorTables(ArraySlice(descriptorTables, descriptorTables + descriptorTableCount), pipeline);
+        }
+
+        FE_DLL_EXPORT void ICommandBuffer_CopyBuffers(ICommandBuffer* self, IBuffer* source, IBuffer* dest,
+                                                      BufferCopyRegion* region)
         {
             self->CopyBuffers(source, dest, *region);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_CopyBufferToImage(
-            ICommandBuffer* self, IBuffer* source, IImage* dest, BufferImageCopyRegion* region)
+        FE_DLL_EXPORT void ICommandBuffer_CopyBufferToImage(ICommandBuffer* self, IBuffer* source, IImage* dest,
+                                                            BufferImageCopyRegion* region)
         {
             self->CopyBufferToImage(source, dest, *region);
         }
@@ -92,15 +97,14 @@ namespace FE::Osmium
             self->BlitImage(source, dest, *region);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_Draw(
-            ICommandBuffer* self, UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
+        FE_DLL_EXPORT void ICommandBuffer_Draw(ICommandBuffer* self, UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex,
+                                               UInt32 firstInstance)
         {
             self->Draw(vertexCount, instanceCount, firstVertex, firstInstance);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_DrawIndexed(
-            ICommandBuffer* self, UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset,
-            UInt32 firstInstance)
+        FE_DLL_EXPORT void ICommandBuffer_DrawIndexed(ICommandBuffer* self, UInt32 indexCount, UInt32 instanceCount,
+                                                      UInt32 firstIndex, Int32 vertexOffset, UInt32 firstInstance)
         {
             self->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
         }

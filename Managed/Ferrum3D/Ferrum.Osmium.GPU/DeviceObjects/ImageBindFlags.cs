@@ -17,6 +17,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         TransferRead = 1 << 5,
         TransferWrite = 1 << 6,
 
+        DepthStencil = Depth | Stencil,
         TransferReadWrite = TransferRead | TransferWrite
     }
 }
