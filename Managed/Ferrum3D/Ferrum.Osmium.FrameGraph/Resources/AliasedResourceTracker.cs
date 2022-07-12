@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Ferrum.Core.Modules;
+using Ferrum.Osmium.FrameGraph.RenderPasses;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
@@ -60,6 +61,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                                 ++i;
                             }
                         }
+
                         break;
                     case AliasedResourceDesc.Intersection.None:
                         // The barrier is not needed if the resources do not overlap
@@ -95,8 +97,9 @@ namespace Ferrum.Osmium.FrameGraph.Resources
 
             barriers.Add((oldResource, newResource));
 
-            const ImageBindFlags imageWrite = ImageBindFlags.UnorderedAccess | ImageBindFlags.Color | ImageBindFlags.DepthStencil | ImageBindFlags.TransferWrite;
-            
+            const ImageBindFlags imageWrite = ImageBindFlags.UnorderedAccess | ImageBindFlags.Color |
+                                              ImageBindFlags.DepthStencil | ImageBindFlags.TransferWrite;
+
             switch (oldResource.Resource)
             {
                 case Buffer buffer:
@@ -104,15 +107,17 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                 case Image image:
                     if ((image.BindFlags & imageWrite) != 0)
                     {
-                        
+                        var barrier = new ResourceTransitionBarrierDesc(image, image.CreateSubresourceRange(),
+                            ResourceState.Undefined, ResourceState.Common);
+                        newResource.Creator.AddBarrier(FrameGraphRenderPass.BarrierSlot.Aliasing, barrier);
                     }
+
                     break;
                 default:
                     throw new Exception("Unknown resource type");
             }
-            
+
             // TODO: it is possible that the render passes use different hardware queues we need to synchronize
-            
         }
     }
 }

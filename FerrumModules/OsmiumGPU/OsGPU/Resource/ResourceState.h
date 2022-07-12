@@ -18,7 +18,8 @@ namespace FE::Osmium
         IndirectArgument,
         TransferWrite,
         TransferRead,
-        Present
+        Present,
+        Automatic
     };
 
     class IImage;
@@ -29,6 +30,7 @@ namespace FE::Osmium
 
         IImage* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
+        ResourceState StateBefore  = ResourceState::Automatic;
         ResourceState StateAfter  = ResourceState::Undefined;
     };
 } // namespace FE::Osmium
