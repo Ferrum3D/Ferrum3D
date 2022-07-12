@@ -1,4 +1,3 @@
-#include <OsGPU/Buffer/VKBuffer.h>
 #include <OsGPU/Device/IDevice.h>
 #include <OsGPU/Resource/TransientResourceHeapBase.h>
 
@@ -21,16 +20,18 @@ namespace FE::Osmium
         m_Cache.SetCapacity(m_Desc.CacheSize);
     }
 
-    Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc)
+    Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
         // We need a way to get image memory size given a descriptor.
         (void)desc;
+        (void)stats;
         FE_UNREACHABLE("Unimplemented!");
         return nullptr;
     }
 
-    Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc)
+    Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc,
+                                                            TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
         auto address = m_Allocator.Allocate(desc.Descriptor.Size, m_Desc.Alignment, FE_SRCPOS());
@@ -65,6 +66,8 @@ namespace FE::Osmium
 
         m_RegisteredResources[desc.ResourceID] = RegisteredResourceInfo(result, address, desc.Descriptor.Size);
 
+        stats.MinOffset = address.ToOffset();
+        stats.MaxOffset = address.ToOffset() + desc.Descriptor.Size - 1;
         return result;
     }
 
@@ -87,5 +90,17 @@ namespace FE::Osmium
         {
             m_Allocator.CollectGarbageForce();
         }
+    }
+
+    Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc)
+    {
+        TransientResourceAllocationStats stats{};
+        return CreateImage(desc, stats);
+    }
+
+    Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc)
+    {
+        TransientResourceAllocationStats stats{};
+        return CreateBuffer(desc, stats);
     }
 } // namespace FE::Osmium

@@ -12,14 +12,16 @@ namespace FE::Osmium
         self->Allocate();
     }
 
-    FE_DLL_EXPORT IImage* ITransientResourceHeap_CreateImage(ITransientResourceHeap* self, TransientImageDesc* desc)
+    FE_DLL_EXPORT IImage* ITransientResourceHeap_CreateImage(ITransientResourceHeap* self, TransientImageDesc* desc,
+                                                             TransientResourceAllocationStats* stats)
     {
-        return self->CreateImage(*desc).Detach();
+        return self->CreateImage(*desc, *stats).Detach();
     }
 
-    FE_DLL_EXPORT IBuffer* ITransientResourceHeap_CreateBuffer(ITransientResourceHeap* self, TransientBufferDesc* desc)
+    FE_DLL_EXPORT IBuffer* ITransientResourceHeap_CreateBuffer(ITransientResourceHeap* self, TransientBufferDesc* desc,
+                                                               TransientResourceAllocationStats* stats)
     {
-        return self->CreateBuffer(*desc).Detach();
+        return self->CreateBuffer(*desc, *stats).Detach();
     }
 
     FE_DLL_EXPORT void ITransientResourceHeap_ReleaseImage(ITransientResourceHeap* self, UInt64 resourceID)

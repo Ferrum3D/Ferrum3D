@@ -49,6 +49,12 @@ namespace FE::Osmium
         }
     };
 
+    struct TransientResourceAllocationStats
+    {
+        UInt64 MinOffset;
+        UInt64 MaxOffset;
+    };
+
     class IImage;
     class IBuffer;
 
@@ -62,6 +68,12 @@ namespace FE::Osmium
 
         [[nodiscard]] virtual Shared<IImage> CreateImage(const TransientImageDesc& desc)    = 0;
         [[nodiscard]] virtual Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc) = 0;
+
+        [[nodiscard]] virtual Shared<IImage> CreateImage(const TransientImageDesc& desc,
+                                                         TransientResourceAllocationStats& stats) = 0;
+
+        [[nodiscard]] virtual Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc,
+                                                           TransientResourceAllocationStats& stats) = 0;
 
         virtual void ReleaseImage(UInt64 resourceID)  = 0;
         virtual void ReleaseBuffer(UInt64 resourceID) = 0;

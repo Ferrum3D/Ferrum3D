@@ -20,7 +20,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             LastUser = lastUser;
             HeapOffsetMin = heapOffsetMin;
             HeapOffsetMax = heapOffsetMax;
-            this.Resource = resource;
+            Resource = resource;
         }
 
         public Intersection Intersect(in AliasedResourceDesc newResource)
