@@ -15,9 +15,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             AllocateNative(Handle);
         }
 
-        public bool TryCreateImage(TransientImageDesc desc, out Image image)
+        public bool TryCreateImage(TransientImageDesc desc, out Image image, out AllocationStats stats)
         {
-            var handle = CreateImageNative(Handle, ref desc);
+            var handle = CreateImageNative(Handle, ref desc, out stats);
             if (handle == IntPtr.Zero)
             {
                 image = null;
@@ -28,9 +28,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return true;
         }
 
-        public bool TryCreateBuffer(TransientBufferDesc desc, out Buffer buffer)
+        public bool TryCreateBuffer(TransientBufferDesc desc, out Buffer buffer, out AllocationStats stats)
         {
-            var handle = CreateBufferNative(Handle, ref desc);
+            var handle = CreateBufferNative(Handle, ref desc, out stats);
             if (handle == IntPtr.Zero)
             {
                 buffer = null;
@@ -50,6 +50,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             ReleaseBufferNative(Handle, resourceId);
         }
+        
+        [StructLayout(LayoutKind.Sequential)]
+        public readonly struct AllocationStats
+        {
+            public readonly ulong MinOffset;
+            public readonly ulong MaxOffset;
+        }
 
         [DllImport("OsGPUBindings", EntryPoint = "ITransientResourceHeap_Destruct")]
         private static extern void DestructNative(IntPtr self);
@@ -58,10 +65,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private static extern void AllocateNative(IntPtr self);
 
         [DllImport("OsGPUBindings", EntryPoint = "ITransientResourceHeap_CreateImage")]
-        private static extern IntPtr CreateImageNative(IntPtr self, ref TransientImageDesc desc);
+        private static extern IntPtr CreateImageNative(IntPtr self, ref TransientImageDesc desc, out AllocationStats stats);
 
         [DllImport("OsGPUBindings", EntryPoint = "ITransientResourceHeap_CreateBuffer")]
-        private static extern IntPtr CreateBufferNative(IntPtr self, ref TransientBufferDesc desc);
+        private static extern IntPtr CreateBufferNative(IntPtr self, ref TransientBufferDesc desc, out AllocationStats stats);
 
         [DllImport("OsGPUBindings", EntryPoint = "ITransientResourceHeap_ReleaseImage")]
         private static extern IntPtr ReleaseImageNative(IntPtr self, ulong resourceId);

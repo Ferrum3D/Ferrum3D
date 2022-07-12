@@ -49,9 +49,10 @@ namespace FE::Osmium
         ~TransientResourceHeapBase() override = default;
 
         void Allocate() override;
-
         Shared<IImage> CreateImage(const TransientImageDesc& desc) override;
         Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc) override;
+        Shared<IImage> CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats) override;
+        Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats) override;
 
         void ReleaseImage(UInt64 resourceID) override;
         void ReleaseBuffer(UInt64 resourceID) override;

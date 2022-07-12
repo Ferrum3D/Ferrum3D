@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Math;
+using Ferrum.Osmium.FrameGraph.RenderPasses;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
@@ -13,10 +14,30 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         public Desc Descriptor { get; }
 
         private readonly DisposableList<TransientResourceHeap> heapPages = new();
-        private readonly Dictionary<ulong, TransientResourceHeap> resourceIdToHeapMap = new();
+        private readonly List<AliasedResourceTracker> pageResourceTrackers = new();
+        private readonly Dictionary<ulong, ResourceInfo> resourceIdToInfoMap = new();
         private readonly Device device;
 
         private ulong bytesAllocated;
+
+        private readonly struct ResourceInfo
+        {
+            public readonly int HeapIndex;
+            public readonly FrameGraphRenderPass Pass;
+            public readonly ulong HeapOffsetMin;
+            public readonly ulong HeapOffsetMax;
+            public readonly Resource Resource;
+
+            public ResourceInfo(int heapIndex, FrameGraphRenderPass pass, ulong heapOffsetMin, ulong heapOffsetMax,
+                Resource resource)
+            {
+                HeapIndex = heapIndex;
+                Pass = pass;
+                HeapOffsetMin = heapOffsetMin;
+                HeapOffsetMax = heapOffsetMax;
+                Resource = resource;
+            }
+        }
 
         private float PageGrowFactor => Descriptor.AllocationPolicy == AllocationPolicy.AllocatePages
             ? Descriptor.PageGrowFactor
@@ -29,15 +50,16 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             AddHeapPage();
         }
 
-        public Image AllocateImage(in TransientImageDesc desc)
+        public Image AllocateImage(in TransientImageDesc desc, FrameGraphRenderPass pass)
         {
             var result = null as Image;
-            var heap = null as TransientResourceHeap;
-            foreach (var page in heapPages)
+            var heapIndex = 0;
+            var allocationStats = new TransientResourceHeap.AllocationStats();
+            for (var i = 0; i < heapPages.Count; i++)
             {
-                if (page.TryCreateImage(desc, out result))
+                if (heapPages[i].TryCreateImage(desc, out result, out allocationStats))
                 {
-                    heap = page;
+                    heapIndex = i;
                     break;
                 }
             }
@@ -51,8 +73,8 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                                                        "an image: Fixed size allocation policy was used");
                     case AllocationPolicy.AllocatePages:
                         AddHeapPage();
-                        heap = heapPages.Last();
-                        heap.TryCreateImage(desc, out result);
+                        heapIndex = heapPages.Count - 1;
+                        heapPages[heapIndex].TryCreateImage(desc, out result, out allocationStats);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -64,19 +86,21 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                 throw new OutOfMemoryException("Transient image allocation failed");
             }
 
-            resourceIdToHeapMap[desc.ResourceID] = heap;
+            resourceIdToInfoMap[desc.ResourceID] =
+                new ResourceInfo(heapIndex, pass, allocationStats.MinOffset, allocationStats.MaxOffset, result);
             return result;
         }
 
-        public Buffer AllocateBuffer(in TransientBufferDesc desc)
+        public Buffer AllocateBuffer(in TransientBufferDesc desc, FrameGraphRenderPass pass)
         {
             var result = null as Buffer;
-            var heap = null as TransientResourceHeap;
-            foreach (var page in heapPages)
+            var heapIndex = 0;
+            var allocationStats = new TransientResourceHeap.AllocationStats();
+            for (var i = 0; i < heapPages.Count; i++)
             {
-                if (page.TryCreateBuffer(desc, out result))
+                if (heapPages[i].TryCreateBuffer(desc, out result, out allocationStats))
                 {
-                    heap = page;
+                    heapIndex = i;
                     break;
                 }
             }
@@ -90,8 +114,8 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                                                        "buffer: Fixed size allocation policy was used");
                     case AllocationPolicy.AllocatePages:
                         AddHeapPage();
-                        heap = heapPages.Last();
-                        heap.TryCreateBuffer(desc, out result);
+                        heapIndex = heapPages.Count - 1;
+                        heapPages[heapIndex].TryCreateBuffer(desc, out result, out allocationStats);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -103,30 +127,32 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                 throw new OutOfMemoryException("Transient buffer allocation failed");
             }
 
-            resourceIdToHeapMap[desc.ResourceID] = heap;
+            resourceIdToInfoMap[desc.ResourceID] =
+                new ResourceInfo(heapIndex, pass, allocationStats.MinOffset, allocationStats.MaxOffset, result);
             return result;
         }
 
-        public void ReleaseImage(ulong resourceId)
+        private void ReleaseResource(ulong resourceId, Action<TransientResourceHeap> resourceReleaser, FrameGraphRenderPass pass)
         {
-            if (!resourceIdToHeapMap.TryGetValue(resourceId, out var heap))
+            if (!resourceIdToInfoMap.TryGetValue(resourceId, out var info))
             {
                 throw new ArgumentException($"The resource {resourceId} was not allocated with this allocator");
             }
 
-            heap.ReleaseImage(resourceId);
-            resourceIdToHeapMap.Remove(resourceId);
+            pageResourceTrackers[info.HeapIndex]
+                .Add(new AliasedResourceDesc(info.Pass, pass, info.HeapOffsetMin, info.HeapOffsetMax, info.Resource));
+            resourceReleaser(heapPages[info.HeapIndex]);
+            resourceIdToInfoMap.Remove(resourceId);
         }
 
-        public void ReleaseBuffer(ulong resourceId)
+        public void ReleaseImage(ulong resourceId, FrameGraphRenderPass pass)
         {
-            if (!resourceIdToHeapMap.TryGetValue(resourceId, out var heap))
-            {
-                throw new ArgumentException($"The resource {resourceId} was not allocated with this allocator");
-            }
+            ReleaseResource(resourceId, heap => heap.ReleaseImage(resourceId), pass);
+        }
 
-            heap.ReleaseBuffer(resourceId);
-            resourceIdToHeapMap.Remove(resourceId);
+        public void ReleaseBuffer(ulong resourceId, FrameGraphRenderPass pass)
+        {
+            ReleaseResource(resourceId, heap => heap.ReleaseBuffer(resourceId), pass);
         }
 
         public void Dispose()
@@ -150,6 +176,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             var pageDesc = new TransientResourceHeap.Desc(size, Descriptor.Alignment, Descriptor.PageCacheSize,
                 Descriptor.AllocatedResourceType);
             heapPages.Add(device.CreateTransientResourceHeap(pageDesc));
+            pageResourceTrackers.Add(new AliasedResourceTracker());
         }
 
         private void ReleaseUnmanagedResources()
