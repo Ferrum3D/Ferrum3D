@@ -56,6 +56,12 @@ namespace FE
             }
         }
 
+        //! \brief Get cache capacity.
+        [[nodiscard]] inline USize Capacity() const
+        {
+            return m_Capacity;
+        }
+
         //! \brief Emplace a key-value pair to the cache.
         //!
         //! \param [in] key  - The key to associate the value with.
