@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Ferrum.Core.Modules;
 using Ferrum.Osmium.FrameGraph.RenderPasses;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;

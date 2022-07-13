@@ -5,6 +5,7 @@ set(SRC
 
     Common/TestCommon.h
 
+    Containers/LRUCacheMap.cpp
     Containers/List.cpp
 
     Math/Matrix4x4.cpp
