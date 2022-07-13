@@ -477,14 +477,15 @@ namespace FE::Env
         using Var         = GlobalVariable<T>;
         using StorageType = typename GlobalVariable<T>::StorageType;
 
-        return GetEnvironment().FindVariable(name).Match(
-            [&](const Internal::VariableOk&, void* ptr) {
-                Var variable(reinterpret_cast<StorageType*>(ptr));
-                return ptr == nullptr ? Result<Var>::Err() : Result<Var>::Ok(std::move(variable));
-            },
-            [&](const Internal::VariableError&) {
-                return Result<Var>::Err();
-            });
+        auto result = GetEnvironment().FindVariable(name);
+        if (result.IsOk())
+        {
+            void* ptr = result.Unwrap();
+            Var variable(reinterpret_cast<StorageType*>(ptr));
+            return ptr == nullptr ? Result<Var>::Err() : Result<Var>::Ok(std::move(variable));
+        }
+
+        return Result<Var>::Err();
     }
 
     template<class T>

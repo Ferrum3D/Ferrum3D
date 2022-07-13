@@ -7,7 +7,7 @@
 namespace FE
 {
     template<class T, class TError = EmptyStruct, class TOk = EmptyStruct>
-    class Result
+    class Result final
     {
         using OkVariant = std::tuple<TOk, T>;
 
@@ -24,7 +24,7 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(Result, "87C787E0-D455-4480-8BB8-E7ACAD4738ED");
+        FE_STRUCT_RTTI(Result, "87C787E0-D455-4480-8BB8-E7ACAD4738ED");
 
         inline Result() = default;
 
@@ -88,38 +88,6 @@ namespace FE
 
         /**
          * @brief 
-         * @tparam FOk 
-         * @tparam FError 
-         * @param okAction f(const TOk&, const T&)
-         * @param errAction f(const TError&)
-         * @return 
-         */
-        template<class FOk, class FError>
-        inline auto Match(FOk&& okAction, FError&& errAction) -> typename std::invoke_result<FError, const TError&>::type
-        {
-            using OkReturn  = typename std::invoke_result<FOk, const TOk&, const T&>::type;
-            using ErrReturn = typename std::invoke_result<FError, const TError&>::type;
-            static_assert(std::is_same_v<OkReturn, ErrReturn>, "Both actions must return the same type");
-
-            if (IsOk())
-            {
-                const auto& [res, data] = std::get<OkVariant>(m_Data);
-                if constexpr (std::is_same_v<OkReturn, void>)
-                    okAction(res, data);
-                else
-                    return okAction(res, data);
-            }
-            else
-            {
-                if constexpr (std::is_same_v<OkReturn, void>)
-                    errAction(std::get<TError>(m_Data));
-                else
-                    return errAction(std::get<TError>(m_Data));
-            }
-        }
-
-        /**
-         * @brief 
          * @tparam F 
          * @param action f(const TOk&, const T&)
          * @return 
@@ -127,7 +95,10 @@ namespace FE
         template<class F>
         inline auto OnOk(F&& action) -> typename std::invoke_result<F, const TOk&, const T&>::type
         {
-            return Match(std::forward<F>(action), [](auto) {});
+            if (IsOk())
+            {
+                return action(std::get<0>(std::get<OkVariant>(m_Data)), std::get<1>(std::get<OkVariant>(m_Data)));
+            }
         }
 
         /**
@@ -139,7 +110,10 @@ namespace FE
         template<class F>
         inline auto OnErr(F&& action) -> typename std::invoke_result<F, const TError&>::type
         {
-            return Match([](auto) {}, std::forward<F>(action));
+            if (!IsOk())
+            {
+                return action(std::get<TError>(m_Data));
+            }
         }
     };
 } // namespace FE
