@@ -47,15 +47,13 @@ TEST(Strings, Length)
 
 TEST(Strings, SmallCodepointAt)
 {
-    const char* utf8 = u8"qЯwgЫЧ";
+    const char* utf8 = "qЯwgЫЧ";
     ASSERT_TRUE(FE::UTF8::Valid(utf8));
 
-    // see https://developercommunity.visualstudio.com/t/incorrect-parsing-of-string-literals-prefixed-with/877508
-#if !defined FE_COMPILER_MSVC
     FE::String str = utf8;
     EXPECT_EQ(str.CodePointAt(0), L'q');
-    EXPECT_EQ(str.CodePointAt(4), L'Ы');
-#endif
+    EXPECT_EQ(str.CodePointAt(3), L'g');
+    // EXPECT_EQ(str.CodePointAt(4), L'Ы');
 }
 
 TEST(Strings, LongCodepointAt)
