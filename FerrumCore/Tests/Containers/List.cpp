@@ -155,6 +155,33 @@ TEST(List, MoveObject)
     EXPECT_EQ(lst.Pop(), "123");
 }
 
+TEST(List, Remove)
+{
+    auto allocatedBefore = FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated();
+    {
+        auto lst = List<FE::String>{}.Append("1").Append("2").Append("3").Append("4").Append("5").Append("6");
+        lst.Remove("2");
+        EXPECT_EQ(lst[0], "1");
+        EXPECT_EQ(lst[1], "3");
+        EXPECT_EQ(lst[2], "4");
+        EXPECT_EQ(lst[3], "5");
+        EXPECT_EQ(lst[4], "6");
+        lst.RemoveAt(0);
+        EXPECT_EQ(lst[0], "3");
+        EXPECT_EQ(lst[1], "4");
+        EXPECT_EQ(lst[2], "5");
+        EXPECT_EQ(lst[3], "6");
+        lst.RemoveAt(3);
+        EXPECT_EQ(lst[0], "3");
+        EXPECT_EQ(lst[1], "4");
+        EXPECT_EQ(lst[2], "5");
+        lst.RemoveAt(1);
+        EXPECT_EQ(lst[0], "3");
+        EXPECT_EQ(lst[1], "5");
+    }
+    EXPECT_EQ(FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated(), allocatedBefore);
+}
+
 TEST(List, Reserve)
 {
     List<int> lst;
