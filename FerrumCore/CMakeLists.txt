@@ -35,6 +35,7 @@ set(SRC
     FeCore/Containers/ByteBuffer.cpp
     FeCore/Containers/ByteBuffer.h
     FeCore/Containers/IByteBuffer.h
+    FeCore/Containers/LRUCacheMap.h
     FeCore/Containers/List.h
 
     FeCore/EventBus/EventBus.h
