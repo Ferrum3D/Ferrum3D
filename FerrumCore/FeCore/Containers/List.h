@@ -394,6 +394,51 @@ namespace FE
             ConstructAtEnd(n - Size(), x);
         }
 
+        inline SSize IndexOf(const T& value) const
+        {
+            auto size = static_cast<SSize>(Size());
+            for (SSize i = 0; i < size; ++i)
+            {
+                if (m_Begin[i] == value)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        inline void RemoveAt(USize index)
+        {
+            FE_CORE_ASSERT(index < Size(), "Invalid index");
+            if constexpr (std::is_trivially_copyable_v<T>)
+            {
+                memmove(m_Begin + index, m_Begin + index + 1, Size() - index - 1);
+            }
+            else
+            {
+                auto size = Size();
+                for (USize i = index; i < size - 1; ++i)
+                {
+                    m_Begin[i] = m_Begin[i + 1];
+                }
+            }
+
+            DestructAtEnd(m_End - 1);
+        }
+
+        inline bool Remove(const T& value)
+        {
+            auto index = IndexOf(value);
+            if (index == -1)
+            {
+                return false;
+            }
+
+            RemoveAt(static_cast<USize>(index));
+            return true;
+        }
+
         //! \bried Swap two lists.
         inline void Swap(List<T>& other)
         {
