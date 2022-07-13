@@ -120,8 +120,9 @@ namespace FE::Osmium
         virtual void SetViewport(const Viewport& viewport) = 0;
         virtual void SetScissor(const Scissor& scissor)    = 0;
 
-        virtual void ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers) = 0;
-        virtual void MemoryBarrier()                                                                       = 0;
+        virtual void ResourceTransitionBarriers(const ArraySlice<ImageBarrierDesc>& imageBarriers,
+                                                const ArraySlice<BufferBarrierDesc>& bufferBarriers) = 0;
+        virtual void MemoryBarrier()                                                                 = 0;
 
         virtual void BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline) = 0;
         virtual void BindGraphicsPipeline(IGraphicsPipeline* pipeline)                                                        = 0;
@@ -133,7 +134,7 @@ namespace FE::Osmium
         virtual void BindIndexBuffer(IBuffer* buffer, UInt64 byteOffset)               = 0;
         virtual void BindVertexBuffer(UInt32 slot, IBuffer* buffer, UInt64 byteOffset) = 0;
         virtual void BindVertexBuffers(UInt32 startSlot, const ArraySlice<IBuffer*>& buffers,
-                                       const ArraySlice<UInt64>& offsets)               = 0;
+                                       const ArraySlice<UInt64>& offsets)              = 0;
 
         virtual void CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)           = 0;
         virtual void CopyBufferToImage(IBuffer* source, IImage* dest, const BufferImageCopyRegion& region) = 0;

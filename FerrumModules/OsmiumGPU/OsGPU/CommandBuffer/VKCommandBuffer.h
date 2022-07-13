@@ -48,7 +48,8 @@ namespace FE::Osmium
         void SetViewport(const Viewport& viewport) override;
         void SetScissor(const Scissor& scissor) override;
 
-        void ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers) override;
+        virtual void ResourceTransitionBarriers(const ArraySlice<ImageBarrierDesc>& imageBarriers,
+                                                const ArraySlice<BufferBarrierDesc>& bufferBarriers) override;
         void MemoryBarrier() override;
     };
 } // namespace FE::Osmium
