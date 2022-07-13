@@ -141,7 +141,7 @@ namespace FE
         , public EventBus<FrameEvents>::Handler
     {
         const UInt32 m_WorkerCount;
-        Vector<SchedulerThreadInfo*> m_Threads;
+        List<SchedulerThreadInfo*> m_Threads;
         JobGlobalQueue m_GlobalQueue;
 
         Semaphore m_Semaphore;

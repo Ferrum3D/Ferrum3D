@@ -53,15 +53,15 @@ void RunExample()
     FE::Shared<HAL::IBuffer> vertexBuffer;
     {
         // clang-format off
-        FE::Vector<Vertex> vertexData = {
+        FE::List<Vertex> vertexData = {
             {{+0.4f, -0.5f, 0}, {1, 0, 0}},
             {{+0.5f, +0.5f, 0}, {0, 1, 0}},
             {{-0.5f, +0.4f, 0}, {0, 0, 1}}
         };
         // clang-format on
-        vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.size() * sizeof(Vertex));
+        vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.Size() * sizeof(Vertex));
         vertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-        vertexBuffer->UpdateData(vertexData.data());
+        vertexBuffer->UpdateData(vertexData.Data());
     }
 
     auto compiler = device->CreateShaderCompiler();
@@ -127,13 +127,13 @@ void RunExample()
 
     auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
-    FE::Vector<FE::Shared<HAL::IFence>> fences;
+    FE::List<FE::Shared<HAL::IFence>> fences;
     for (size_t i = 0; i < swapChain->GetDesc().FrameCount; ++i)
-        fences.push_back(device->CreateFence(HAL::FenceState::Signaled));
+        fences.Push(device->CreateFence(HAL::FenceState::Signaled));
 
     auto RTVs = swapChain->GetRTVs();
-    FE::Vector<FE::Shared<HAL::IFramebuffer>> framebuffers;
-    FE::Vector<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
+    FE::List<FE::Shared<HAL::IFramebuffer>> framebuffers;
+    FE::List<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
     for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
     {
         HAL::FramebufferDesc framebufferDesc{};
@@ -141,9 +141,9 @@ void RunExample()
         framebufferDesc.RenderTargetViews = { colorImageView, RTVs[i] };
         framebufferDesc.Width             = scissor.Width();
         framebufferDesc.Height            = scissor.Height();
-        auto framebuffer                  = framebuffers.emplace_back(device->CreateFramebuffer(framebufferDesc));
+        auto framebuffer                  = framebuffers.Emplace(device->CreateFramebuffer(framebufferDesc));
 
-        auto& cmd = commandBuffers.emplace_back(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
+        auto& cmd = commandBuffers.Emplace(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
         cmd->Begin();
         cmd->BindGraphicsPipeline(pipeline.GetRaw());
         cmd->SetViewport(viewport);

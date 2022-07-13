@@ -20,7 +20,7 @@ namespace FE
         m_OneFrameAllocators[1].Init(desc);
 
         auto& allocator = m_ThreadInfoAllocator;
-        m_Threads.reserve(m_WorkerCount);
+        m_Threads.Reserve(m_WorkerCount);
         for (UInt32 i = 0; i < workerCount; ++i)
         {
             auto* thread = new (allocator.Allocate(sizeof(SchedulerThreadInfo), 16, FE_SRCPOS())) SchedulerThreadInfo;
@@ -28,7 +28,7 @@ namespace FE
             thread->WorkerID = i;
             thread->Thread   = std::thread(&JobScheduler::WorkerThreadProcess, this, i);
             thread->ThreadID = thread->Thread.get_id();
-            m_Threads.push_back(thread);
+            m_Threads.Push(thread);
         }
 
         m_Semaphore.Release(GetWorkerCount());
@@ -118,7 +118,7 @@ namespace FE
             auto& allocator  = m_ThreadInfoAllocator;
             auto* thread     = new (allocator.Allocate(sizeof(SchedulerThreadInfo), 16, FE_SRCPOS())) SchedulerThreadInfo;
             thread->ThreadID = std::this_thread::get_id();
-            m_Threads.push_back(thread);
+            m_Threads.Push(thread);
             m_CurrentThreadInfo = thread;
         }
         return m_CurrentThreadInfo;
@@ -174,7 +174,7 @@ namespace FE
 
     void JobScheduler::OnFrameStart(const FrameEventArgs& args)
     {
-        auto reset = Interlocked::Exchange(m_FrameIndex, args.FrameIndex % 2);
+        auto reset = Interlocked::Exchange(m_FrameIndex, static_cast<Int32>(args.FrameIndex & 1));
         m_OneFrameAllocators[reset].ResetAll();
     }
 

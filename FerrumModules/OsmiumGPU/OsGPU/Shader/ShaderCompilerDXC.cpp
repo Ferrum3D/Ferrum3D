@@ -116,36 +116,47 @@ namespace FE::Osmium
 
         IncludeHandler includeHandler(baseDirectory, library);
 
-        Vector<DxcDefine> defines;
-        defines.push_back(DxcDefine{ L"FE_VULKAN", L"1" });
+        List<DxcDefine> defines;
+        defines.Push(DxcDefine{ L"FE_VULKAN", L"1" });
 
 #if FE_DEBUG
-        defines.push_back(DxcDefine{ L"FE_DEBUG", L"1" });
+        defines.Push(DxcDefine{ L"FE_DEBUG", L"1" });
 #else
-        defines.push_back(DxcDefine{ L"FE_DEBUG", L"0" });
+        defines.Push(DxcDefine{ L"FE_DEBUG", L"0" });
 #endif
-        auto defineCount = static_cast<UInt32>(defines.size());
+        auto defineCount = static_cast<UInt32>(defines.Size());
 
-        Vector<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
+        List<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
         if (m_API == GraphicsAPI::Vulkan)
         {
-            compileArgs.insert(
-                compileArgs.end(),
-                { L"-spirv",
-                  // TODO: for some reason vulkan1.2 doesn't work, validation layers say:
-                  // "Invalid SPIR-V binary version 1.5 for target environment SPIR-V 1.3 (under Vulkan 1.1 semantics)"
-                  L"-fspv-target-env=vulkan1.1", L"-fspv-extension=KHR", L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1",
-                  L"-fspv-extension=SPV_GOOGLE_user_type", L"-fvk-use-dx-layout", L"-fspv-extension=SPV_EXT_descriptor_indexing",
-                  L"-fspv-reflect", L"-Od" });
+            compileArgs
+                .Append(L"-spirv")
+                // TODO: for some reason vulkan1.2 doesn't work, validation layers say:
+                // "Invalid SPIR-V binary version 1.5 for target environment SPIR-V 1.3 (under Vulkan 1.1 semantics)"
+                .Append(L"-fspv-target-env=vulkan1.1")
+                .Append(L"-fspv-extension=KHR")
+                .Append(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1")
+                .Append(L"-fspv-extension=SPV_GOOGLE_user_type")
+                .Append(L"-fvk-use-dx-layout")
+                .Append(L"-fspv-extension=SPV_EXT_descriptor_indexing")
+                .Append(L"-fspv-reflect")
+                .Append(L"-Od");
         }
-        auto argsCount = static_cast<UInt32>(compileArgs.size());
+        auto argsCount = static_cast<UInt32>(compileArgs.Size());
 
         auto entryPoint = args.EntryPoint.ToWideString();
         auto profile    = GetTargetProfile(args.Stage, args.Version);
         CComPtr<IDxcOperationResult> compileResult;
-        result = compiler->Compile(
-            source, shaderName.c_str(), entryPoint.c_str(), profile.c_str(), compileArgs.data(), argsCount, defines.data(),
-            defineCount, &includeHandler, &compileResult);
+        result = compiler->Compile(source,
+                                   shaderName.c_str(),
+                                   entryPoint.c_str(),
+                                   profile.c_str(),
+                                   compileArgs.Data(),
+                                   argsCount,
+                                   defines.Data(),
+                                   defineCount,
+                                   &includeHandler,
+                                   &compileResult);
         if (SUCCEEDED(result))
         {
             HRESULT status;

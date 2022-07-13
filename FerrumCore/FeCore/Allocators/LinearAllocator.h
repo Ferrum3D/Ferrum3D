@@ -55,7 +55,7 @@ namespace FE
             }
 
             m_CurrentOffset = address;
-            return address;
+            return alignedPtr;
         }
 
         inline void Deallocate(THandle /* pointer */, const SourcePosition& /* position */, USize /* size */) override
