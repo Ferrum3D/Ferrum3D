@@ -6,8 +6,14 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Buffer : Resource
     {
-        internal Buffer(IntPtr handle) : base(handle)
+        public ulong Size => Descriptor.Size;
+        public BindFlags BindFlags => Descriptor.Flags;
+
+        public Desc Descriptor { get; }
+
+        internal Buffer(IntPtr handle, in Desc desc) : base(handle)
         {
+            Descriptor = desc;
         }
 
         public void AllocateMemory(MemoryType memoryType)
@@ -61,8 +67,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         public readonly struct Desc
         {
-            private readonly ulong Size;
-            private readonly BindFlags Flags;
+            public readonly ulong Size;
+            public readonly BindFlags Flags;
 
             public Desc(ulong size, BindFlags flags)
             {

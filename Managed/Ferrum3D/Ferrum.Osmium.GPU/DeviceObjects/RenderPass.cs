@@ -28,7 +28,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly IntPtr Attachments;
             public readonly IntPtr SubpassDependencies;
 
-            public DescNative(Desc desc)
+            public DescNative(in Desc desc)
             {
                 var subpasses = desc.Subpasses.Select(x => new SubpassDesc.Native(x)).ToList();
                 Subpasses = new NativeArray<SubpassDesc.Native>(subpasses).Detach();

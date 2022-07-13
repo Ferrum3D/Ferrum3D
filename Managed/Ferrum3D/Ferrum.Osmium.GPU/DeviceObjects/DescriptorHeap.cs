@@ -47,7 +47,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly IntPtr Sizes;
             public readonly uint MaxTables;
 
-            public DescNative(Desc desc)
+            public DescNative(in Desc desc)
             {
                 Sizes = new NativeArray<DescriptorSize>(desc.Sizes).Detach();
                 MaxTables = (uint)desc.MaxTables;

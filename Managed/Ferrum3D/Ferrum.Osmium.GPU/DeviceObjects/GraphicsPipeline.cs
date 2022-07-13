@@ -37,7 +37,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly IntPtr Shaders;
             public readonly uint SubpassIndex;
 
-            public DescNative(Desc desc)
+            public DescNative(in Desc desc)
             {
                 Multisample = new MultisampleState.Native(desc.Multisample);
                 RenderPass = desc.RenderPass.Handle;

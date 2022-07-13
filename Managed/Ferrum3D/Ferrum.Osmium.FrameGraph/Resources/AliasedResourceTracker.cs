@@ -102,13 +102,14 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             switch (oldResource.Resource)
             {
                 case Buffer buffer:
+                    newResource.Creator.AddBarrier(FrameGraphRenderPass.BarrierSlot.Aliasing,
+                        new BufferBarrierDesc(buffer, ResourceState.Undefined, ResourceState.Common));
                     break;
                 case Image image:
                     if ((image.BindFlags & imageWrite) != 0)
                     {
-                        var barrier = new ResourceTransitionBarrierDesc(image, image.CreateSubresourceRange(),
-                            ResourceState.Undefined, ResourceState.Common);
-                        newResource.Creator.AddBarrier(FrameGraphRenderPass.BarrierSlot.Aliasing, barrier);
+                        newResource.Creator.AddBarrier(FrameGraphRenderPass.BarrierSlot.Aliasing,
+                            new ImageBarrierDesc(image, ResourceState.Undefined, ResourceState.Common));
                     }
 
                     break;

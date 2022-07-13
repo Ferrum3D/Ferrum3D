@@ -30,10 +30,12 @@ namespace FE::Osmium
             self->SetScissor(*rect);
         }
 
-        FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(ICommandBuffer* self,
-                                                                     ResourceTransitionBarrierDesc* barriers, UInt32 count)
+        FE_DLL_EXPORT void ICommandBuffer_ResourceTransitionBarriers(ICommandBuffer* self, ImageBarrierDesc* imageBarriers,
+                                                                     UInt32 imageCount, BufferBarrierDesc* bufferBarriers,
+                                                                     UInt32 bufferCount)
         {
-            self->ResourceTransitionBarriers(ArraySlice(barriers, barriers + count));
+            self->ResourceTransitionBarriers(ArraySlice(imageBarriers, imageBarriers + imageCount),
+                                             ArraySlice(bufferBarriers, bufferBarriers + bufferCount));
         }
 
         FE_DLL_EXPORT void ICommandBuffer_MemoryBarrier(ICommandBuffer* self)

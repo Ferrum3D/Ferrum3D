@@ -32,13 +32,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new Image(CreateImageNative(Handle, ref desc), desc);
         }
 
-        public DescriptorHeap CreateDescriptorHeap(DescriptorHeap.Desc desc)
+        public DescriptorHeap CreateDescriptorHeap(in DescriptorHeap.Desc desc)
         {
             var nativeDesc = new DescriptorHeap.DescNative(desc);
             return new DescriptorHeap(CreateDescriptorHeapNative(Handle, ref nativeDesc));
         }
 
-        public Framebuffer CreateFramebuffer(Framebuffer.Desc desc)
+        public Framebuffer CreateFramebuffer(in Framebuffer.Desc desc)
         {
             var nativeDesc = new Framebuffer.DescNative(desc);
             return new Framebuffer(CreateFramebufferNative(Handle, ref nativeDesc));
@@ -54,13 +54,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new CommandQueue(GetCommandQueueNative(Handle, (int)cmdQueueClass));
         }
 
-        public GraphicsPipeline CreateGraphicsPipeline(GraphicsPipeline.Desc desc)
+        public GraphicsPipeline CreateGraphicsPipeline(in GraphicsPipeline.Desc desc)
         {
             var nativeDesc = new GraphicsPipeline.DescNative(desc);
             return new GraphicsPipeline(CreateGraphicsPipelineNative(Handle, ref nativeDesc));
         }
 
-        public RenderPass CreateRenderPass(RenderPass.Desc desc)
+        public RenderPass CreateRenderPass(in RenderPass.Desc desc)
         {
             var nativeDesc = new RenderPass.DescNative(desc);
             return new RenderPass(CreateRenderPassNative(Handle, ref nativeDesc));
@@ -85,7 +85,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public Buffer CreateBuffer(Buffer.Desc desc)
         {
-            return new Buffer(CreateBufferNative(Handle, ref desc));
+            return new Buffer(CreateBufferNative(Handle, ref desc), desc);
         }
 
         public Buffer CreateBuffer(BindFlags flags, ulong size)
