@@ -94,8 +94,8 @@ void MergeSortImplAsync(FE::ArraySliceMut<Int32> array, FE::ArraySliceMut<Int32>
 
 void ParallelSort(FE::ArraySliceMut<Int32> array)
 {
-    FE::Vector<Int32> space;
-    space.resize(array.Length());
+    FE::List<Int32> space;
+    space.Resize(array.Length());
     MergeSortImplAsync(array, FE::ArraySliceMut(space));
 }
 
@@ -132,13 +132,13 @@ int main()
         auto jobScheduler = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
 
         const USize length = 2'000'000;
-        FE::Vector<Int32> values1, values2;
-        values1.reserve(length);
+        FE::List<Int32> values1, values2;
+        values1.Reserve(length);
         for (Int32 i = 0; i < length; ++i)
         {
-            values1.push_back(distribution(mt));
+            values1.Push(distribution(mt));
         }
-        values2.resize(length);
+        values2.Resize(length);
         FE::ArraySlice(values1).CopyDataTo(FE::ArraySliceMut(values2));
 
         auto parallel = MeasureTime([&values1]() {

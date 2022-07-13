@@ -189,17 +189,17 @@ public:
         FE::UInt64 vertexSize, indexSize;
         {
             // clang-format off
-            FE::Vector<Vertex> vertexData = {
+            FE::List<Vertex> vertexData = {
                 { {-0.5f, -0.5f, 0.0f}, {1.0f, 0.1f, 0.1f} },
                 { {+0.5f, +0.5f, 0.0f}, {0.1f, 1.0f, 0.1f} },
                 { {+0.5f, -0.5f, 0.0f}, {0.1f, 0.1f, 1.0f} },
                 { {-0.5f, +0.5f, 0.0f}, {1.0f, 1.0f, 0.1f} }
             };
             // clang-format on
-            vertexSize          = vertexData.size() * sizeof(Vertex);
+            vertexSize          = vertexData.Size() * sizeof(Vertex);
             vertexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
             vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
-            vertexBufferStaging->UpdateData(vertexData.data());
+            vertexBufferStaging->UpdateData(vertexData.Data());
 
             m_VertexBuffer = m_ResourceHeap->CreateBuffer(
                 HAL::TransientBufferDesc(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer), 0));
@@ -329,7 +329,7 @@ public:
             cmd->BindDescriptorTables({ m_DescriptorTable.GetRaw() }, m_Pipeline.GetRaw());
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
-            cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw());
+            cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw(), 0);
             cmd->BindIndexBuffer(m_IndexBuffer.GetRaw(), 0);
             cmd->BeginRenderPass(m_RenderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::Coral } });
             cmd->DrawIndexed(6, 1, 0, 0, 0);

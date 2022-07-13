@@ -187,10 +187,10 @@ namespace FE::Osmium
     void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer,
                                           const ArraySlice<ClearValueDesc>& clearValues)
     {
-        Vector<VkClearValue> vkClearValues{};
+        List<VkClearValue> vkClearValues{};
         for (const auto& clearValue : clearValues)
         {
-            auto& vkClearValue = vkClearValues.emplace_back();
+            auto& vkClearValue = vkClearValues.Emplace();
             if (clearValue.IsDepth)
             {
                 vkClearValue.depthStencil.depth   = clearValue.DepthValue;
@@ -209,8 +209,8 @@ namespace FE::Osmium
         info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
         info.renderPass        = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
-        info.clearValueCount   = static_cast<UInt32>(vkClearValues.size());
-        info.pClearValues      = vkClearValues.data();
+        info.clearValueCount   = static_cast<UInt32>(vkClearValues.Size());
+        info.pClearValues      = vkClearValues.Data();
         info.renderArea.offset = VkOffset2D{ 0, 0 };
         info.renderArea.extent = VkExtent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
         vkCmdBeginRenderPass(m_CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);

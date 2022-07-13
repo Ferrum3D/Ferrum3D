@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Containers/List.h>
 #include <functional>
 
 namespace FE
@@ -35,7 +36,7 @@ namespace FE
     template<class TEvent>
     class EventBus : public SharedInterfaceImplBase<IEventBus<TEvent>>
     {
-        Vector<EventHandler<TEvent>*> m_Handlers;
+        List<EventHandler<TEvent>*> m_Handlers;
 
         template<class F, class... Args>
         inline void SendEventInternal(F&& function, Args&&... args);
@@ -79,13 +80,13 @@ namespace FE
     template<class TEvent>
     void FE::EventBus<TEvent>::RegisterHandlerInternal(Handler* handler)
     {
-        m_Handlers.push_back(handler);
+        m_Handlers.Push(handler);
     }
 
     template<class TEvent>
     void FE::EventBus<TEvent>::UnregisterHandlerInternal(Handler* handler)
     {
-        m_Handlers.erase(std::find(m_Handlers.begin(), m_Handlers.end(), handler));
+        m_Handlers.Remove(handler);
     }
 
     template<class TEvent>

@@ -110,15 +110,15 @@ public:
         m_SwapChain                      = m_Device->CreateSwapChain(swapChainDesc);
         {
             // clang-format off
-            FE::Vector<Vertex> vertexData = {
+            FE::List<Vertex> vertexData = {
                 {{+0.0, -0.5, 0}, {1, 0, 0}},
                 {{+0.5, +0.5, 0}, {0, 1, 0}},
                 {{-0.5, +0.5, 0}, {0, 0, 1}}
             };
             // clang-format on
-            m_VertexBuffer = m_Device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.size() * sizeof(Vertex));
+            m_VertexBuffer = m_Device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.Size() * sizeof(Vertex));
             m_VertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
-            m_VertexBuffer->UpdateData(vertexData.data());
+            m_VertexBuffer->UpdateData(vertexData.Data());
         }
 
         auto compiler = m_Device->CreateShaderCompiler();
