@@ -36,4 +36,18 @@ namespace FE::Osmium
         : TransientResourceHeapBase(dev, desc)
     {
     }
+
+    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const BufferDesc& desc, USize& byteSize)
+    {
+        byteSize = desc.Size;
+        return m_Allocator.Allocate(desc.Size, m_Desc.Alignment, FE_SRCPOS());
+    }
+
+    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const ImageDesc& desc, USize& byteSize)
+    {
+        auto* vkDevice = fe_assert_cast<VKDevice*>(m_Device);
+        auto requirements = vkDevice->GetImageMemoryRequirements(desc);
+        byteSize = requirements.size;
+        return m_Allocator.Allocate(requirements.size, requirements.alignment, FE_SRCPOS());
+    }
 }
