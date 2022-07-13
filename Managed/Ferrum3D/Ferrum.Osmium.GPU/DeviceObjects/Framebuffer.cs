@@ -31,7 +31,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly uint Width;
             public readonly uint Height;
 
-            public DescNative(Desc desc)
+            public DescNative(in Desc desc)
             {
                 RenderTargetViews = NativeArray<IntPtr>.FromObjectCollection(desc.RenderTargetViews).Detach();
                 DepthStencilView = desc.DepthStencilView?.Handle ?? IntPtr.Zero;

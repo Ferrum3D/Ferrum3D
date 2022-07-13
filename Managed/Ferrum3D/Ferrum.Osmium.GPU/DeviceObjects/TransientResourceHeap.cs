@@ -37,7 +37,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 return false;
             }
 
-            buffer = new Buffer(handle);
+            buffer = new Buffer(handle, desc.Descriptor);
             return true;
         }
 

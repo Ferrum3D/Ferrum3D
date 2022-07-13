@@ -118,20 +118,20 @@ namespace Ferrum.Samples.Textures
                 {
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
-                    builder.TransitionResourceState(textureImage, ResourceState.TransferWrite, 0);
+                    builder.TransitionImageState(textureImage, ResourceState.TransferWrite, 0);
                     builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
-                    builder.TransitionResourceState(textureImage, ResourceState.TransferRead, 0);
+                    builder.TransitionImageState(textureImage, ResourceState.TransferRead, 0);
 
                     for (var i = 1; i < textureImage.MipSliceCount; ++i)
                     {
-                        builder.TransitionResourceState(textureImage, ResourceState.TransferWrite, i);
+                        builder.TransitionImageState(textureImage, ResourceState.TransferWrite, i);
                         var blitRegion = new ImageBlitRegion(new ImageSubresource(i - 1), new ImageSubresource(i),
                             textureImage.GetMipSliceBounds(i - 1), textureImage.GetMipSliceBounds(i));
                         builder.BlitImage(textureImage, textureImage, blitRegion);
-                        builder.TransitionResourceState(textureImage, ResourceState.TransferRead, i);
+                        builder.TransitionImageState(textureImage, ResourceState.TransferRead, i);
                     }
 
-                    builder.TransitionResourceState(textureImage, ResourceState.ShaderResource);
+                    builder.TransitionImageState(textureImage, ResourceState.ShaderResource);
                 }
 
                 graphicsQueue.SubmitBuffers(commandBuffer, transferComplete, CommandQueue.SubmitFlags.None);

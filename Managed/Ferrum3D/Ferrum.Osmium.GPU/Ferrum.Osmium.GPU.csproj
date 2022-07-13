@@ -50,6 +50,7 @@
         <Compile Include="DeviceObjects\AttachmentType.cs" />
         <Compile Include="DeviceObjects\BindFlags.cs" />
         <Compile Include="DeviceObjects\Buffer.cs" />
+        <Compile Include="DeviceObjects\BufferBarrierDesc.cs" />
         <Compile Include="DeviceObjects\BufferCopyRegion.cs" />
         <Compile Include="DeviceObjects\BufferImageCopyRegion.cs" />
         <Compile Include="DeviceObjects\ClearValueDesc.cs" />
@@ -87,7 +88,7 @@
         <Compile Include="DeviceObjects\RenderPass.cs" />
         <Compile Include="DeviceObjects\Resource.cs" />
         <Compile Include="DeviceObjects\ResourceState.cs" />
-        <Compile Include="DeviceObjects\ResourceTransitionBarrierDesc.cs" />
+        <Compile Include="DeviceObjects\ImageBarrierDesc.cs" />
         <Compile Include="DeviceObjects\Sampler.cs" />
         <Compile Include="DeviceObjects\SamplerAddressMode.cs" />
         <Compile Include="DeviceObjects\SamplerAnisotropy.cs" />

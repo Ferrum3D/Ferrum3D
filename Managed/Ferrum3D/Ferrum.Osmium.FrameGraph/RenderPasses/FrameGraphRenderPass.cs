@@ -19,12 +19,30 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
         private readonly List<FrameGraphResource> writes = new();
         private readonly List<FrameGraphResource> reads = new();
 
-        private readonly List<ResourceTransitionBarrierDesc>[] barriers =
-            new List<ResourceTransitionBarrierDesc>[(int)BarrierSlot.Count];
+        private readonly List<BufferBarrierDesc>[] bufferBarriers =
+            new List<BufferBarrierDesc>[(int)BarrierSlot.Count];
 
-        internal void AddBarrier(BarrierSlot slot, in ResourceTransitionBarrierDesc barrier)
+        private readonly List<ImageBarrierDesc>[] imageBarriers =
+            new List<ImageBarrierDesc>[(int)BarrierSlot.Count];
+
+        internal BufferBarrierDesc[] GetBufferBarriers(BarrierSlot slot)
         {
-            barriers[(int)slot].Add(barrier);
+            return bufferBarriers[(int)slot].ToArray();
+        }
+
+        internal ImageBarrierDesc[] GetImageBarriers(BarrierSlot slot)
+        {
+            return imageBarriers[(int)slot].ToArray();
+        }
+
+        internal void AddBarrier(BarrierSlot slot, in BufferBarrierDesc barrier)
+        {
+            bufferBarriers[(int)slot].Add(barrier);
+        }
+
+        internal void AddBarrier(BarrierSlot slot, in ImageBarrierDesc barrier)
+        {
+            imageBarriers[(int)slot].Add(barrier);
         }
 
         internal int RemoveReference()
@@ -60,10 +78,7 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
         internal void Execute(FrameGraphRenderContext context)
         {
             var builder = context.CommandList.NativeBuilder;
-            for (var i = 0; i < barriers.Length; ++i)
-            {
-                builder.ResourceTransitionBarriers(barriers[i].ToArray());
-            }
+            builder.ResourceTransitionBarriers(GetImageBarriers(BarrierSlot.Aliasing), GetBufferBarriers(BarrierSlot.Aliasing));
 
             RecordCommands(context.CommandList);
         }

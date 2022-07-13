@@ -48,7 +48,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             ref BufferCopyRegion region);
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_ResourceTransitionBarriers")]
-        private static extern void ResourceTransitionBarriersNative(IntPtr self, IntPtr barriers, uint count);
+        private static extern void ResourceTransitionBarriersNative(IntPtr self, IntPtr imageBarriers, uint imageCount,
+            IntPtr bufferBarriers, uint bufferCount);
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandBuffer_CopyBufferToImage")]
         private static extern void CopyBufferToImageNative(IntPtr self, IntPtr source, IntPtr dest,
@@ -168,45 +169,59 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 BlitImageNative(handle, source.Handle, dest.Handle, ref region);
             }
 
-            public void ResourceTransitionBarriers(ResourceTransitionBarrierDesc[] barriers)
+            public void ResourceTransitionBarriers(ImageBarrierDesc[] imageBarriers, BufferBarrierDesc[] bufferBarriers)
             {
-                var nativeBarriers = new ResourceTransitionBarrierDesc.Native[barriers.Length];
-                for (var i = 0; i < barriers.Length; ++i)
-                {
-                    nativeBarriers[i] = new ResourceTransitionBarrierDesc.Native(barriers[i]);
-                }
-
                 unsafe
                 {
-                    fixed (ResourceTransitionBarrierDesc.Native* ptr = nativeBarriers)
+                    fixed (ImageBarrierDesc* ip = imageBarriers)
+                    fixed (BufferBarrierDesc* bp = bufferBarriers)
                     {
-                        ResourceTransitionBarriersNative(handle, new IntPtr(ptr), (uint)nativeBarriers.Length);
+                        ResourceTransitionBarriersNative(handle, new IntPtr(ip), (uint)imageBarriers.Length,
+                            new IntPtr(bp), (uint)bufferBarriers.Length);
                     }
                 }
             }
 
-            public void ResourceTransitionBarrier(ResourceTransitionBarrierDesc barrier)
+            public void TransitionImageState(in ImageBarrierDesc barrier)
             {
-                var nativeBarrier = new ResourceTransitionBarrierDesc.Native(barrier);
                 unsafe
                 {
-                    ResourceTransitionBarriersNative(handle, new IntPtr(&nativeBarrier), 1u);
+                    fixed (ImageBarrierDesc* p = &barrier)
+                    {
+                        ResourceTransitionBarriersNative(handle, new IntPtr(p), 1u, IntPtr.Zero, 0);
+                    }
                 }
             }
 
-            public void TransitionResourceState(Image image, ResourceState stateAfter,
+            public void TransitionBufferState(in BufferBarrierDesc barrier)
+            {
+                unsafe
+                {
+                    fixed (BufferBarrierDesc* p = &barrier)
+                    {
+                        ResourceTransitionBarriersNative(handle, IntPtr.Zero, 0, new IntPtr(p), 1u);
+                    }
+                }
+            }
+
+            public void TransitionBufferState(Buffer buffer, ResourceState stateBefore, ResourceState stateAfter)
+            {
+                TransitionBufferState(new BufferBarrierDesc(buffer, 0, buffer.Size, stateBefore, stateAfter));
+            }
+
+            public void TransitionImageState(Image image, ResourceState stateAfter,
                 ImageAspectFlags aspectFlags = ImageAspectFlags.Color)
             {
                 var subresourceRange =
                     new ImageSubresourceRange(0, image.MipSliceCount, 0, image.ArraySize, aspectFlags);
-                ResourceTransitionBarrier(new ResourceTransitionBarrierDesc(image, subresourceRange, stateAfter));
+                TransitionImageState(new ImageBarrierDesc(image, subresourceRange, stateAfter));
             }
 
-            public void TransitionResourceState(Image image, ResourceState stateAfter, int mipSlice,
+            public void TransitionImageState(Image image, ResourceState stateAfter, int mipSlice,
                 int mipSliceCount = 1)
             {
-                ResourceTransitionBarrier(
-                    new ResourceTransitionBarrierDesc(image, stateAfter, mipSlice, mipSliceCount));
+                TransitionImageState(
+                    new ImageBarrierDesc(image, stateAfter, mipSlice, mipSliceCount));
             }
 
             public void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
