@@ -87,12 +87,14 @@ namespace FE::Osmium
         vkCmdSetScissor(m_CommandBuffer, 0, 1, &rect);
     }
 
-    void VKCommandBuffer::ResourceTransitionBarriers(const ArraySlice<ResourceTransitionBarrierDesc>& barriers)
+    void VKCommandBuffer::ResourceTransitionBarriers(const ArraySlice<ImageBarrierDesc>& imageBarriers,
+                                                     const ArraySlice<BufferBarrierDesc>& bufferBarriers)
     {
-        List<VkImageMemoryBarrier> nativeBarriers;
-        for (auto& barrier : barriers)
+        List<VkImageMemoryBarrier> nativeImageBarriers;
+        List<VkBufferMemoryBarrier> nativeBufferBarriers;
+        for (auto& barrier : imageBarriers)
         {
-            auto* img = fe_dynamic_cast<VKImage*>(barrier.Image);
+            auto* img = fe_assert_cast<VKImage*>(barrier.Image);
             if (img == nullptr)
             {
                 continue;
@@ -109,7 +111,7 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto& imageMemoryBarrier               = nativeBarriers.Emplace();
+            auto& imageMemoryBarrier               = nativeImageBarriers.Emplace();
             imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             imageMemoryBarrier.oldLayout           = before;
             imageMemoryBarrier.newLayout           = after;
@@ -130,7 +132,36 @@ namespace FE::Osmium
             barrier.Image->SetState(barrier.SubresourceRange, barrier.StateAfter);
         }
 
-        if (nativeBarriers.Empty())
+        for (auto& barrier : bufferBarriers)
+        {
+            auto* buffer = fe_assert_cast<VKBuffer*>(barrier.Buffer);
+            if (buffer == nullptr)
+            {
+                continue;
+            }
+
+            FE_ASSERT_MSG(barrier.StateBefore != ResourceState::Automatic,
+                          "Automatic resource state management is currently "
+                          "not supported for buffers");
+
+            if (barrier.StateBefore == barrier.StateAfter)
+            {
+                continue;
+            }
+
+            auto& bufferMemoryBarrier               = nativeBufferBarriers.Emplace();
+            bufferMemoryBarrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            bufferMemoryBarrier.buffer              = buffer->Buffer;
+            bufferMemoryBarrier.offset              = barrier.Offset;
+            bufferMemoryBarrier.size                = barrier.Size;
+
+            bufferMemoryBarrier.srcAccessMask = GetAccessMask(barrier.StateBefore);
+            bufferMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
+        }
+
+        if (nativeImageBarriers.Empty())
         {
             return;
         }
@@ -141,10 +172,10 @@ namespace FE::Osmium
                              VK_DEPENDENCY_BY_REGION_BIT,
                              0,
                              nullptr,
-                             0,
-                             nullptr,
-                             static_cast<UInt32>(nativeBarriers.Size()),
-                             nativeBarriers.Data());
+                             static_cast<UInt32>(nativeBufferBarriers.Size()),
+                             nativeBufferBarriers.Data(),
+                             static_cast<UInt32>(nativeImageBarriers.Size()),
+                             nativeImageBarriers.Data());
     }
 
     void VKCommandBuffer::MemoryBarrier()

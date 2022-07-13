@@ -178,17 +178,17 @@ public:
             copyCmdBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), m_VertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
             copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), m_IndexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
 
-            HAL::ResourceTransitionBarrierDesc barrier{};
+            HAL::ImageBarrierDesc barrier{};
             barrier.Image            = m_TextureImage.GetRaw();
             barrier.SubresourceRange = m_TextureView->GetDesc().SubresourceRange;
             barrier.StateAfter       = HAL::ResourceState::TransferWrite;
-            copyCmdBuffer->ResourceTransitionBarriers({ barrier });
+            copyCmdBuffer->ResourceTransitionBarriers({ barrier }, {});
 
             auto size = m_TextureImage->GetDesc().ImageSize;
             copyCmdBuffer->CopyBufferToImage(textureStaging.GetRaw(), m_TextureImage.GetRaw(), HAL::BufferImageCopyRegion(size));
 
             barrier.StateAfter = HAL::ResourceState::ShaderResource;
-            copyCmdBuffer->ResourceTransitionBarriers({ barrier });
+            copyCmdBuffer->ResourceTransitionBarriers({ barrier }, {});
             copyCmdBuffer->End();
             m_TransferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, transferComplete.GetRaw(), HAL::SubmitFlags::None);
             transferComplete->WaitOnCPU();
