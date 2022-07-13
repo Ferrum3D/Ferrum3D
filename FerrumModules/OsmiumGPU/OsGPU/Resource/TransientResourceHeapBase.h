@@ -40,6 +40,8 @@ namespace FE::Osmium
         TransientResourceHeapBase(IDevice& dev, const TransientResourceHeapDesc& desc);
 
         virtual Shared<IDeviceMemory> AllocateMemoryImpl() = 0;
+        virtual NullableHandle AllocateResourceMemory(const BufferDesc& desc, USize& byteSize) = 0;
+        virtual NullableHandle AllocateResourceMemory(const ImageDesc& desc, USize& byteSize) = 0;
 
         void ReleaseResource(UInt64 resourceID, TransientResourceType resourceType);
 

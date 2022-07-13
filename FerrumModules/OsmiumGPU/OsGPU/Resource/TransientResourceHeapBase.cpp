@@ -23,18 +23,50 @@ namespace FE::Osmium
     Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
-        // We need a way to get image memory size given a descriptor.
-        (void)desc;
-        (void)stats;
-        FE_UNREACHABLE("Unimplemented!");
-        return nullptr;
+        USize allocationSize;
+        auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
+        if (address.IsNull())
+        {
+            return nullptr;
+        }
+
+        FE_ASSERT_MSG(m_CreatedResourceCount < m_Cache.Capacity(), "Resource cache overflow");
+        m_CreatedResourceCount++;
+
+        size_t descHash = 0;
+        HashCombine(descHash, desc, address);
+
+        IImage* result;
+        if (IObject* cached = m_Cache.FindObject(descHash))
+        {
+            result = fe_assert_cast<IImage*>(cached);
+        }
+        else
+        {
+            auto newImage = m_Device->CreateImage(desc.Descriptor);
+            result         = newImage.GetRaw();
+            m_Cache.AddObject(descHash, result);
+
+            DeviceMemorySlice memory{};
+            memory.Memory     = m_Memory.GetRaw();
+            memory.ByteSize   = allocationSize;
+            memory.ByteOffset = address.ToOffset();
+            result->BindMemory(memory);
+        }
+
+        m_RegisteredResources[desc.ResourceID] = RegisteredResourceInfo(result, address, allocationSize);
+
+        stats.MinOffset = address.ToOffset();
+        stats.MaxOffset = address.ToOffset() + allocationSize - 1;
+        return result;
     }
 
     Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc,
                                                             TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
-        auto address = m_Allocator.Allocate(desc.Descriptor.Size, m_Desc.Alignment, FE_SRCPOS());
+        USize allocationSize;
+        auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
         if (address.IsNull())
         {
             return nullptr;
@@ -59,15 +91,15 @@ namespace FE::Osmium
 
             DeviceMemorySlice memory{};
             memory.Memory     = m_Memory.GetRaw();
-            memory.ByteSize   = desc.Descriptor.Size;
+            memory.ByteSize   = allocationSize;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
         }
 
-        m_RegisteredResources[desc.ResourceID] = RegisteredResourceInfo(result, address, desc.Descriptor.Size);
+        m_RegisteredResources[desc.ResourceID] = RegisteredResourceInfo(result, address, allocationSize);
 
         stats.MinOffset = address.ToOffset();
-        stats.MaxOffset = address.ToOffset() + desc.Descriptor.Size - 1;
+        stats.MaxOffset = address.ToOffset() + allocationSize - 1;
         return result;
     }
 

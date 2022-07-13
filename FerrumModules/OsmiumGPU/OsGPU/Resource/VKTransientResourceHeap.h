@@ -9,6 +9,8 @@ namespace FE::Osmium
     {
     protected:
         Shared<IDeviceMemory> AllocateMemoryImpl() override;
+        NullableHandle AllocateResourceMemory(const BufferDesc& desc, USize& byteSize) override;
+        NullableHandle AllocateResourceMemory(const ImageDesc& desc, USize& byteSize) override;
 
     public:
         FE_CLASS_RTTI(VKTransientResourceHeap, "CEE0A24C-3F26-4B18-B4C9-EA9566635D9E");

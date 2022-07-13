@@ -130,6 +130,8 @@ namespace FE::Osmium
             poolCI.queueFamilyIndex = queue.FamilyIndex;
             vkCreateCommandPool(m_NativeDevice, &poolCI, VK_NULL_HANDLE, &queue.CmdPool);
         }
+
+        m_ImageMemoryRequirementsByDesc.SetCapacity(1024);
     }
 
     VkDevice VKDevice::GetNativeDevice()
@@ -327,6 +329,22 @@ namespace FE::Osmium
         }
 
         return m_BufferMemoryRequirements;
+    }
+
+    VkMemoryRequirements VKDevice::GetImageMemoryRequirements(const ImageDesc& desc)
+    {
+        VkMemoryRequirements result{};
+        USize hash = 0;
+        HashCombine(hash, desc);
+        if (m_ImageMemoryRequirementsByDesc.TryGetValue(hash, result))
+        {
+            return result;
+        }
+
+        auto image    = CreateImage(desc);
+        auto* vkImage = fe_assert_cast<VKImage*>(image.GetRaw());
+        m_ImageMemoryRequirementsByDesc.Emplace(hash, vkImage->MemoryRequirements);
+        return vkImage->MemoryRequirements;
     }
 
     VkMemoryRequirements VKDevice::GetImageMemoryRequirements()

@@ -2,6 +2,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Device/IDevice.h>
+#include <FeCore/Containers/LRUCacheMap.h>
 
 namespace FE::Osmium
 {
@@ -38,6 +39,7 @@ namespace FE::Osmium
         List<VkSemaphore> m_WaitSemaphores;
         List<VkSemaphore> m_SignalSemaphores;
 
+        LRUCacheMap<USize, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
         VkMemoryRequirements m_ImageMemoryRequirements;
         VkMemoryRequirements m_RenderTargetMemoryRequirements;
         VkMemoryRequirements m_BufferMemoryRequirements;
@@ -95,6 +97,7 @@ namespace FE::Osmium
             return static_cast<UInt32>(-1);
         }
 
+        VkMemoryRequirements GetImageMemoryRequirements(const ImageDesc& desc);
         VkMemoryRequirements GetImageMemoryRequirements();
         VkMemoryRequirements GetRenderTargetMemoryRequirements();
         VkMemoryRequirements GetBufferMemoryRequirements();
