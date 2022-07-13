@@ -45,11 +45,6 @@ namespace FE::Assets
             : AssetStorage(loader)
         {
         }
-
-        [[nodiscard]] AssetType GetAssetType() const override
-        {
-            return m_Loader->GetAssetType();
-        }
     };
 
     AssetStorage* TestAssetLoader::CreateStorage()
