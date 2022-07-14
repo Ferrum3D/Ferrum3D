@@ -4,12 +4,13 @@
 #include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Common/Viewport.h>
 #include <OsGPU/Resource/ResourceState.h>
+#include <array>
 
 namespace FE::Osmium
 {
     struct ClearValueDesc
     {
-        Color ColorValue    = Colors::Black;
+        std::array<Float32, 4> ColorValue;
         Float32 DepthValue  = 0;
         UInt32 StencilValue = 0;
         bool IsDepth        = false;
@@ -17,8 +18,11 @@ namespace FE::Osmium
         inline static ClearValueDesc CreateColorValue(const Color& color)
         {
             ClearValueDesc result{};
-            result.ColorValue = color;
-            result.IsDepth    = false;
+            for (USize i = 0; i < result.ColorValue.size(); ++i)
+            {
+                result.ColorValue[i] = color[i];
+            }
+            result.IsDepth = false;
             return result;
         }
 

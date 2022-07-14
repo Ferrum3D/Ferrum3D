@@ -229,10 +229,10 @@ namespace FE::Osmium
             }
             else
             {
-                vkClearValue.color.float32[0] = clearValue.ColorValue.R32();
-                vkClearValue.color.float32[1] = clearValue.ColorValue.G32();
-                vkClearValue.color.float32[2] = clearValue.ColorValue.B32();
-                vkClearValue.color.float32[3] = clearValue.ColorValue.A32();
+                for (USize i = 0; i < clearValue.ColorValue.size(); ++i)
+                {
+                    vkClearValue.color.float32[i] = clearValue.ColorValue[i];
+                }
             }
         }
 
