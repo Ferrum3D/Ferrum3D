@@ -18,14 +18,14 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
 
         public void SetRenderTarget(Image renderTarget)
         {
-            var resource = new FrameGraphImageResource(renderTarget, Resources.Count);
+            var resource = new FrameGraphImageResource(renderTarget, (ulong)Resources.Count);
             Resources.Add(resource);
             RenderTarget = resource;
         }
 
         public void SetDepthStencil(Image depthStencil)
         {
-            var resource = new FrameGraphImageResource(depthStencil, Resources.Count);
+            var resource = new FrameGraphImageResource(depthStencil, (ulong)Resources.Count);
             Resources.Add(resource);
             DepthStencil = resource;
         }

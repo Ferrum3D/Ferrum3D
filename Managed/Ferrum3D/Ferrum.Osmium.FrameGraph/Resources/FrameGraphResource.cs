@@ -7,7 +7,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
 {
     public abstract class FrameGraphResource : IDisposable
     {
-        internal int Id { get; }
+        internal ulong Id { get; }
         internal FrameGraphRenderPass Creator { get; }
         internal bool IsTransient => Creator != null;
 
@@ -19,7 +19,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         private readonly List<FrameGraphRenderPass> readers = new();
         private readonly List<FrameGraphRenderPass> writers = new();
 
-        protected FrameGraphResource(int id, FrameGraphRenderPass creator)
+        protected FrameGraphResource(ulong id, FrameGraphRenderPass creator)
         {
             Id = id;
             Creator = creator;
@@ -34,8 +34,6 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         {
             writers.Add(renderPass);
         }
-
-        internal abstract void CreateRealResource(Device device);
 
         public abstract void Dispose();
 

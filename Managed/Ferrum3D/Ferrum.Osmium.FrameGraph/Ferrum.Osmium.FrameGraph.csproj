@@ -55,10 +55,12 @@
         <Compile Include="RenderPasses\FrameGraphRenderPass.cs" />
         <Compile Include="Resources\AliasedResourceDesc.cs" />
         <Compile Include="Resources\AliasedResourceTracker.cs" />
+        <Compile Include="Resources\FrameGraphBufferResource.cs" />
         <Compile Include="Resources\FrameGraphImageResource.cs" />
         <Compile Include="Resources\FrameGraphResource.cs" />
         <Compile Include="Resources\FrameGraphResourceType.cs" />
         <Compile Include="Resources\TransientResourceAllocator.cs" />
+        <Compile Include="Resources\TransientResourceSystem.cs" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Ferrum.Core\Ferrum.Core.csproj">

@@ -6,23 +6,17 @@ namespace Ferrum.Osmium.FrameGraph.Resources
 {
     public sealed class FrameGraphImageResource : FrameGraphResource
     {
-        public Image RealImage { get; private set; }
-        private readonly Image.Desc desc;
+        public Image RealImage { get; internal set; }
+        public readonly Image.Desc Descriptor;
 
-        internal FrameGraphImageResource(Image realImage, int id) : base(id, null)
+        internal FrameGraphImageResource(Image realImage, ulong id) : base(id, null)
         {
             RealImage = realImage;
         }
 
-        internal FrameGraphImageResource(Image.Desc desc, int id, FrameGraphRenderPass creator) : base(id, creator)
+        internal FrameGraphImageResource(Image.Desc descriptor, ulong id, FrameGraphRenderPass creator) : base(id, creator)
         {
-            this.desc = desc;
-        }
-
-        internal override void CreateRealResource(Device device)
-        {
-            Debug.Assert(IsTransient);
-            RealImage = device.CreateImage(desc);
+            Descriptor = descriptor;
         }
 
         public override void Dispose()
