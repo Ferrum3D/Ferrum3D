@@ -31,6 +31,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         private ImageView depthStencilView;
         private readonly Desc desc;
 
+        internal Image(IntPtr handle) : base(handle)
+        {
+            GetDescNative(handle, out desc);
+        }
+
         internal Image(IntPtr handle, Desc desc) : base(handle)
         {
             this.desc = desc;
@@ -45,6 +50,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             return new ImageBounds(Offset.Zero, new Offset(Width >> mipSlice, Height >> mipSlice, 1));
         }
+
+        [DllImport("OsGPUBindings", EntryPoint = "IImage_GetDesc")]
+        private static extern void GetDescNative(IntPtr self, out Desc desc);
 
         [DllImport("OsGPUBindings", EntryPoint = "IImage_CreateView")]
         private static extern IntPtr CreateViewNative(IntPtr self, ImageAspectFlags aspectFlags);
