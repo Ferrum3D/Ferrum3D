@@ -14,7 +14,6 @@ namespace FE::Osmium
     struct FramebufferDescBinding
     {
         IByteBuffer* RenderTargetViews;
-        IImageView* DepthStencilView;
         IRenderPass* RenderPass;
         UInt32 Width;
         UInt32 Height;

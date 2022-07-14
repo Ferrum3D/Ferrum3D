@@ -47,10 +47,7 @@ namespace FE::Osmium
                                                           IFramebuffer* framebuffer, ClearValueDesc* clearValues,
                                                           UInt32 clearValueCount)
         {
-            // Copy is need to align color's SIMD type
-            List<ClearValueDesc> list;
-            list.Assign(clearValues, clearValues + clearValueCount);
-            self->BeginRenderPass(renderPass, framebuffer, list);
+            self->BeginRenderPass(renderPass, framebuffer, ArraySlice(clearValues, clearValues + clearValueCount));
         }
 
         FE_DLL_EXPORT void ICommandBuffer_EndRenderPass(ICommandBuffer* self)
