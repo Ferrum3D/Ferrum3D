@@ -9,6 +9,7 @@ namespace Ferrum.Osmium.FrameGraph.Resources
     {
         internal ulong Id { get; }
         internal FrameGraphRenderPass Creator { get; }
+        internal FrameGraphRenderPass Deleter { get; set; }
         internal bool IsTransient => Creator != null;
 
         internal IReadOnlyList<FrameGraphRenderPass> Readers => readers;

@@ -9,6 +9,7 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
     public abstract class FrameGraphRenderPass
     {
         internal IReadOnlyList<FrameGraphResource> Creates => creates;
+        internal IReadOnlyList<FrameGraphResource> Deletes => deletes;
         internal IReadOnlyList<FrameGraphResource> Writes => writes;
         internal IReadOnlyList<FrameGraphResource> Reads => reads;
 
@@ -16,14 +17,13 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
         protected internal virtual bool CullImmune => false;
 
         private readonly List<FrameGraphResource> creates = new();
+        private readonly List<FrameGraphResource> deletes = new();
         private readonly List<FrameGraphResource> writes = new();
         private readonly List<FrameGraphResource> reads = new();
 
-        private readonly List<BufferBarrierDesc>[] bufferBarriers =
-            new List<BufferBarrierDesc>[(int)BarrierSlot.Count];
+        private readonly List<BufferBarrierDesc>[] bufferBarriers = new List<BufferBarrierDesc>[(int)BarrierSlot.Count];
 
-        private readonly List<ImageBarrierDesc>[] imageBarriers =
-            new List<ImageBarrierDesc>[(int)BarrierSlot.Count];
+        private readonly List<ImageBarrierDesc>[] imageBarriers = new List<ImageBarrierDesc>[(int)BarrierSlot.Count];
 
         internal BufferBarrierDesc[] GetBufferBarriers(BarrierSlot slot)
         {
@@ -60,6 +60,11 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
             creates.Add(resource);
         }
 
+        internal void DeleteResource(FrameGraphResource resource)
+        {
+            deletes.Add(resource);
+        }
+
         internal void ReadResource(FrameGraphResource resource)
         {
             reads.Add(resource);
@@ -75,9 +80,20 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
             SetupDependencies(builder);
         }
 
-        internal void AllocateResources()
+        internal void BeginExecute(TransientResourceSystem transientResourceSystem)
         {
-            
+            foreach (var resource in creates)
+            {
+                transientResourceSystem.AllocateResource(resource);
+            }
+        }
+
+        internal void EndExecute(TransientResourceSystem transientResourceSystem)
+        {
+            foreach (var resource in deletes)
+            {
+                transientResourceSystem.DeallocateResource(resource);
+            }
         }
 
         internal void Execute(FrameGraphRenderContext context)

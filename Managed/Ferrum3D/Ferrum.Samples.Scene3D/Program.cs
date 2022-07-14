@@ -13,7 +13,7 @@ namespace Ferrum.Samples.Scene3D
         public override void Initialize(Desc desc)
         {
             base.Initialize(desc);
-            frameGraph = new FrameGraph();
+            frameGraph = new FrameGraph(Device);
         }
 
         protected override void Tick(FrameEventArgs frameEventArgs)
