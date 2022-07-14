@@ -75,6 +75,11 @@ namespace Ferrum.Osmium.FrameGraph.RenderPasses
             SetupDependencies(builder);
         }
 
+        internal void AllocateResources()
+        {
+            
+        }
+
         internal void Execute(FrameGraphRenderContext context)
         {
             var builder = context.CommandList.NativeBuilder;

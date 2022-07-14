@@ -50,6 +50,11 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             AddHeapPage();
         }
 
+        public Image AllocateImage(in Image.Desc desc, ulong id, FrameGraphRenderPass pass)
+        {
+            return AllocateImage(new TransientImageDesc(desc, id), pass);
+        }
+
         public Image AllocateImage(in TransientImageDesc desc, FrameGraphRenderPass pass)
         {
             var result = null as Image;
@@ -89,6 +94,11 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             resourceIdToInfoMap[desc.ResourceID] =
                 new ResourceInfo(heapIndex, pass, allocationStats.MinOffset, allocationStats.MaxOffset, result);
             return result;
+        }
+
+        public Buffer AllocateBuffer(in Buffer.Desc desc, ulong id, FrameGraphRenderPass pass)
+        {
+            return AllocateBuffer(new TransientBufferDesc(desc, id), pass);
         }
 
         public Buffer AllocateBuffer(in TransientBufferDesc desc, FrameGraphRenderPass pass)

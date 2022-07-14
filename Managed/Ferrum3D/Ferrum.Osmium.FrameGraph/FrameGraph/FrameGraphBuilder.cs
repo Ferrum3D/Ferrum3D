@@ -15,9 +15,16 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
             this.renderPass = renderPass;
         }
 
+        public FrameGraphBufferResource CreateBuffer(in Buffer.Desc desc)
+        {
+            var result = new FrameGraphBufferResource(desc, (ulong)frameGraph.Resources.Count, renderPass);
+            frameGraph.Resources.Add(result);
+            return result;
+        }
+
         public FrameGraphImageResource CreateImage(in Image.Desc desc)
         {
-            var result = new FrameGraphImageResource(desc, frameGraph.Resources.Count, renderPass);
+            var result = new FrameGraphImageResource(desc, (ulong)frameGraph.Resources.Count, renderPass);
             frameGraph.Resources.Add(result);
             return result;
         }

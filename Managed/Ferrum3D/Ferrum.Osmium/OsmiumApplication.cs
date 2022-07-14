@@ -15,6 +15,8 @@ namespace Ferrum.Osmium
         protected Adapter Adapter { get; private set; }
         protected Device Device { get; private set; }
         protected Window Window { get; private set; }
+        protected SwapChain SwapChain { get; private set; }
+        protected CommandQueue GraphicsQueue { get; private set; }
 
         protected override bool CloseEventReceived => Window.CloseRequested;
 
@@ -30,8 +32,13 @@ namespace Ferrum.Osmium
             Adapter = Instance.Adapters.First();
             Device = Adapter.CreateDevice();
 
+            GraphicsQueue = Device.GetCommandQueue(CommandQueueClass.Graphics);
+
             var windowDesc = new Window.Desc(desc.WindowWidth, desc.WindowHeight, desc.Name);
             Window = Device.CreateWindow(windowDesc);
+
+            var swapChainDesc = new SwapChain.Desc(Window, GraphicsQueue);
+            SwapChain = Device.CreateSwapChain(swapChainDesc);
         }
 
         protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
