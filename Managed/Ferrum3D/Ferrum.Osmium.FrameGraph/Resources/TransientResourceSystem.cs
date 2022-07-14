@@ -3,7 +3,7 @@ using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.Resources
 {
-    public class TransientResourceSystem
+    public class TransientResourceSystem : IDisposable
     {
         private readonly TransientResourceAllocator imageAllocator;
         private readonly TransientResourceAllocator bufferAllocator;
@@ -30,6 +30,27 @@ namespace Ferrum.Osmium.FrameGraph.Resources
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        public void DeallocateResource(FrameGraphResource resource)
+        {
+            switch (resource)
+            {
+                case FrameGraphImageResource image:
+                    imageAllocator.ReleaseImage(image.Id, image.Deleter);
+                    break;
+                case FrameGraphBufferResource buffer:
+                    bufferAllocator.ReleaseBuffer(buffer.Id, buffer.Deleter);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void Dispose()
+        {
+            imageAllocator.Dispose();
+            bufferAllocator.Dispose();
         }
     }
 }

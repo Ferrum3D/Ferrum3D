@@ -11,10 +11,15 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
     public sealed class FrameGraph : IDisposable
     {
         internal readonly DisposableList<FrameGraphResource> Resources = new();
+        internal readonly List<FrameGraphRenderPass> RenderPasses = new();
+        internal readonly TransientResourceSystem TransientResourceSystem;
         public FrameGraphImageResource RenderTarget { get; private set; }
         public FrameGraphImageResource DepthStencil { get; private set; }
 
-        private readonly List<FrameGraphRenderPass> renderPasses = new();
+        public FrameGraph(Device device)
+        {
+            TransientResourceSystem = new TransientResourceSystem(device);
+        }
 
         public void SetRenderTarget(Image renderTarget)
         {
@@ -32,7 +37,7 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
 
         public void RegisterRenderPass(FrameGraphRenderPass renderPass)
         {
-            renderPasses.Add(renderPass);
+            RenderPasses.Add(renderPass);
             var builder = new FrameGraphBuilder(this, renderPass);
             renderPass.Initialize(builder);
         }
@@ -41,11 +46,63 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
         {
             InitializeReferenceCounters();
             CullRenderPasses();
+            FinishCompilation();
         }
 
         public void Dispose()
         {
             Resources.Dispose();
+            TransientResourceSystem.Dispose();
+        }
+
+        private void FinishCompilation()
+        {
+            for (var i = 0; i < RenderPasses.Count; ++i)
+            {
+                var pass = RenderPasses[i];
+                if (pass.ReferenceCount == 0 && !pass.CullImmune)
+                {
+                    continue;
+                }
+
+                for (var j = 0; j < pass.Creates.Count; ++j)
+                {
+                    if (pass.Creates[i].Readers.Any() || pass.Creates[i].Writers.Any())
+                    {
+                        continue;
+                    }
+
+                    pass.Creates[i].Deleter = pass;
+                    pass.DeleteResource(pass.Creates[i]);
+                }
+
+                foreach (var resource in pass.Reads.Concat(pass.Writes))
+                {
+                    if (!resource.IsTransient)
+                    {
+                        continue;
+                    }
+
+                    var lastIndex = -1;
+                    if (resource.Readers.Any())
+                    {
+                        lastIndex = RenderPasses.IndexOf(resource.Readers.Last());
+                    }
+
+                    if (resource.Writers.Any())
+                    {
+                        lastIndex = Math.Max(lastIndex, RenderPasses.IndexOf(resource.Writers.Last()));
+                    }
+
+                    if (lastIndex == -1 || RenderPasses[lastIndex] != pass)
+                    {
+                        continue;
+                    }
+
+                    resource.Deleter = pass;
+                    pass.DeleteResource(resource);
+                }
+            }
         }
 
         private void CullRenderPasses()
@@ -90,9 +147,9 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
 
         private void InitializeReferenceCounters()
         {
-            for (var i = 0; i < renderPasses.Count; ++i)
+            for (var i = 0; i < RenderPasses.Count; ++i)
             {
-                renderPasses[i].CalculateInitialReferenceCount();
+                RenderPasses[i].CalculateInitialReferenceCount();
             }
 
             for (var i = 0; i < Resources.Count; ++i)
