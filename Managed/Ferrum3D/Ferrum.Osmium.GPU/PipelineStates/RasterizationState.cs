@@ -21,7 +21,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
         }
 
         public RasterizationState(bool depthClampEnabled, bool depthBiasEnabled, bool rasterDiscardEnabled,
-            CullingModeFlags cullMode, PolygonMode polyMode)
+            CullingModeFlags cullMode, PolygonMode polyMode = PolygonMode.Fill)
         {
             DepthClampEnabled = depthClampEnabled;
             DepthBiasEnabled = depthBiasEnabled;

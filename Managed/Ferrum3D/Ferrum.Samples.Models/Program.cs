@@ -124,10 +124,12 @@ namespace Ferrum.Samples.Models
             compiler.Dispose();
 
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
+            var depthAttachmentDesc = new AttachmentDesc(Format.D32_SFloat, ResourceState.Undefined, ResourceState.DepthWrite);
             var subpassDesc = new SubpassDesc()
-                .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0));
+                .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0))
+                .WithDepthStencilAttachment(new SubpassAttachment(ResourceState.DepthWrite, 1));
             var renderPassDesc = new RenderPass.Desc()
-                .WithAttachments(attachmentDesc)
+                .WithAttachments(attachmentDesc, depthAttachmentDesc)
                 .WithSubpasses(subpassDesc)
                 .WithSubpassDependencies(SubpassDependency.Default);
             renderPass = device.CreateRenderPass(renderPassDesc);
@@ -166,9 +168,10 @@ namespace Ferrum.Samples.Models
             pipelineDesc.ColorBlend = new ColorBlendState(TargetColorBlending.Default);
             pipelineDesc.Shaders = new[] { pixelShader, vertexShader };
             pipelineDesc.DescriptorTables = new[] { descriptorTable };
-            pipelineDesc.Rasterization = new RasterizationState(CullingModeFlags.Back);
+            pipelineDesc.Rasterization = new RasterizationState(CullingModeFlags.None);
             pipelineDesc.Scissor = scissor;
             pipelineDesc.Viewport = viewport;
+            pipelineDesc.DepthStencil = new DepthStencilState(true, true, CompareOp.Less);
 
             pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
@@ -185,7 +188,7 @@ namespace Ferrum.Samples.Models
                 var framebufferDesc = new Framebuffer.Desc()
                     .WithRenderPass(renderPass)
                     .WithScissor(scissor)
-                    .WithRenderTargetViews(swapChain.DepthStencilView, swapChain.RenderTargetViews[i]);
+                    .WithRenderTargetViews(swapChain.RenderTargetViews[i], swapChain.DepthStencilView);
 
                 framebuffers.Add(device.CreateFramebuffer(framebufferDesc));
                 commandBuffers.Add(device.CreateCommandBuffer(CommandQueueClass.Graphics));
