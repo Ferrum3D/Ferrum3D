@@ -235,6 +235,7 @@ public:
         HAL::SubpassDesc subpassDesc{};
         auto renderTargetAttachment         = HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0);
         subpassDesc.RenderTargetAttachments = FE::ArraySlice(&renderTargetAttachment, 1);
+        subpassDesc.DepthStencilAttachment  = HAL::SubpassAttachment(HAL::ResourceState::DepthWrite, 1);
         renderPassDesc.Subpasses            = FE::ArraySlice(&subpassDesc, 1);
         HAL::SubpassDependency dependency{};
         renderPassDesc.SubpassDependencies = FE::ArraySlice(&dependency, 1);
