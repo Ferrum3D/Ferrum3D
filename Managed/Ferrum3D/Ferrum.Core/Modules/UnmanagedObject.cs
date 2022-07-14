@@ -5,6 +5,7 @@ namespace Ferrum.Core.Modules
     public abstract class UnmanagedObject : IDisposable
     {
         public IntPtr Handle { get; private protected set; }
+        public bool IsOwned { get; set; } = true;
 
         protected UnmanagedObject(IntPtr handle)
         {
@@ -26,7 +27,7 @@ namespace Ferrum.Core.Modules
 
         private void ReleaseHandle()
         {
-            if (Handle == IntPtr.Zero)
+            if (Handle == IntPtr.Zero || !IsOwned)
             {
                 return;
             }

@@ -124,7 +124,8 @@ namespace Ferrum.Samples.Models
             compiler.Dispose();
 
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
-            var depthAttachmentDesc = new AttachmentDesc(Format.D32_SFloat, ResourceState.Undefined, ResourceState.DepthWrite);
+            var depthAttachmentDesc = new AttachmentDesc(swapChain.DepthStencilView.Format, ResourceState.Undefined,
+                ResourceState.DepthWrite);
             var subpassDesc = new SubpassDesc()
                 .WithRenderTargetAttachments(new SubpassAttachment(ResourceState.RenderTarget, 0))
                 .WithDepthStencilAttachment(new SubpassAttachment(ResourceState.DepthWrite, 1));
