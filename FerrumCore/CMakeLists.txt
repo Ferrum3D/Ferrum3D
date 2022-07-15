@@ -39,6 +39,11 @@ set(SRC
     FeCore/Containers/LRUCacheMap.h
     FeCore/Containers/List.h
 
+    FeCore/ECS/ComponentType.h
+    FeCore/ECS/Entity.h
+    FeCore/ECS/EntityArchetype.cpp
+    FeCore/ECS/EntityArchetype.h
+
     FeCore/EventBus/EventBus.h
     FeCore/EventBus/FrameEvents.h
 
@@ -137,7 +142,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-)
+    FeCore/ECS/ComponentStorage.cpp FeCore/ECS/ComponentStorage.h FeCore/ECS/ECSCommon.h FeCore/Containers/SparseStorage.h)
 
 add_library(FeCore STATIC ${SRC})
 
