@@ -45,7 +45,7 @@ namespace FE::ECS
             return ECSResult::Success;
         }
 
-        return ECSResult::EntityNotFound;
+        return ECSResult::ComponentNotFound;
     }
 
     ECSResult ComponentStorage::RemoveComponent(UInt32 id)
@@ -63,6 +63,6 @@ namespace FE::ECS
             return ECSResult::Success;
         }
 
-        return ECSResult::EntityNotFound;
+        return ECSResult::ComponentNotFound;
     }
 } // namespace FE::ECS
