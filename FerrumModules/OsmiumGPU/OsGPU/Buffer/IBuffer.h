@@ -60,16 +60,4 @@ namespace FE::Osmium
     }
 } // namespace FE::Osmium
 
-namespace std
-{
-    template<>
-    struct hash<FE::Osmium::BufferDesc>
-    {
-        inline size_t operator()(const FE::Osmium::BufferDesc& desc)
-        {
-            size_t seed = 0;
-            FE::HashCombine(seed, desc.Size, static_cast<int>(desc.Flags));
-            return seed;
-        }
-    };
-} // namespace std
+FE_MAKE_HASHABLE(FE::Osmium::BufferDesc, , desc.Size, static_cast<int>(desc.Flags));

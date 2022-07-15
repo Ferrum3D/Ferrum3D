@@ -130,23 +130,5 @@ namespace FE::Osmium
     };
 } // namespace FE::Osmium
 
-namespace std
-{
-    template<>
-    struct std::hash<FE::Osmium::ImageDesc>
-    {
-        inline size_t operator()(const FE::Osmium::ImageDesc& desc) const noexcept
-        {
-            size_t seed = 0;
-            FE::HashCombine(seed,
-                            desc.ImageSize,
-                            desc.ImageFormat,
-                            desc.Dimension,
-                            desc.BindFlags,
-                            desc.MipSliceCount,
-                            desc.SampleCount,
-                            desc.ArraySize);
-            return seed;
-        }
-    };
-} // namespace std
+FE_MAKE_HASHABLE(FE::Osmium::ImageDesc, , desc.ImageSize, desc.ImageFormat, desc.Dimension, desc.BindFlags, desc.MipSliceCount,
+                 desc.SampleCount, desc.ArraySize);
