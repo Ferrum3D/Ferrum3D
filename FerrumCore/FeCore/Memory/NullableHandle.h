@@ -68,6 +68,11 @@ namespace FE
             return m_Handle != static_cast<USize>(-1);
         }
 
+        [[nodiscard]] inline operator bool() const // NOLINT(google-explicit-constructor)
+        {
+            return IsValid();
+        }
+
         //! \brief Reset the value to NULL.
         inline void Reset()
         {
@@ -144,4 +149,4 @@ namespace std
             return hash<size_t>{}(handle.ToOffset());
         }
     };
-}
+} // namespace std
