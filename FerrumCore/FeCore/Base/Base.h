@@ -37,6 +37,14 @@ namespace FE
     inline constexpr bool IsDebugBuild = false;
 #endif
 
+    //! \brief Returns true if the engine should validate function parameters, internal state, etc.
+    //!
+    //! This function just returns IsDebugBuild constant, but the compiler won't warn about the expression that's always true.
+    inline bool ValidationEnabled()
+    {
+        return IsDebugBuild;
+    }
+
     //! \brief Engine version.
     inline constexpr struct
     {
@@ -215,7 +223,7 @@ namespace FE
         template<Template>                                                                                                       \
         struct hash<TypeName>                                                                                                    \
         {                                                                                                                        \
-            inline size_t operator()(const TypeName& desc) const noexcept                                                        \
+            inline size_t operator()(const TypeName& value) const noexcept                                                       \
             {                                                                                                                    \
                 size_t seed = 0;                                                                                                 \
                 ::FE::HashCombine(seed, __VA_ARGS__);                                                                            \
