@@ -121,9 +121,6 @@ set(SRC
     FeCore/SIMD/Scalar/Float32x4.h
     FeCore/SIMD/Scalar/Int32x4.h
 
-    FeCore/Scene/Entity.h
-    FeCore/Scene/Scene.h
-
     FeCore/Strings/FeUnicode.h
     FeCore/Strings/Format.cpp
     FeCore/Strings/Format.h
