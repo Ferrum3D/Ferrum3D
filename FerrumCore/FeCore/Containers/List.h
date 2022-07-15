@@ -6,6 +6,9 @@
 namespace FE
 {
     //! \brief A List of elements stored contiguously in memory. Can grow when out of memory.
+    //!
+    //! Memory allocations in the list are always aligned to 16 bytes. It means that the pointer to the first element
+    //! has 16-byte alignment, but the rest are stored tightly packed.
     template<class T>
     class List final
     {
@@ -368,7 +371,7 @@ namespace FE
         //! \brief Resize the container.
         //!
         //! If Size() < n, will construct new elements on the back to fit size.
-        //! If Size() > n, Will destruct the fit size.
+        //! If Size() > n, Will destruct to fit size.
         //!
         //! \param [in] n - The new size of the container.
         inline void Resize(USize n)
@@ -379,7 +382,7 @@ namespace FE
         //! \brief Resize the container.
         //!
         //! If Size() < n, will construct new elements on the back to fit size.
-        //! If Size() > n, Will destruct the fit size.
+        //! If Size() > n, Will destruct to fit size.
         //!
         //! \param [in] n - The new size of the container.
         //! \param [in] x - The element to copy to the new elements (if any were added).
