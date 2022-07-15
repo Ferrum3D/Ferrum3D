@@ -13,6 +13,12 @@ namespace FE
         Int32 GCLatency;
     };
 
+    //! \brief Generic linear allocator.
+    //!
+    //! This class represents a linear allocator with generic handle that can be either a raw pointer or a
+    //! NullableHandle. It doesn't read from the allocated memory which makes it useful for GPU allocations, unlike
+    //! the MonotonicAllocator. Also it doesn't really allocate any memory. It is initialized with a handle that points
+    //! to the start of a pre-allocated block of memory (which can be stored on CPU or GPU).
     template<class THandle>
     class GenericLinearAllocator : public GenericAllocatorBase<THandle>
     {
