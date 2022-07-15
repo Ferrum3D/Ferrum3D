@@ -346,6 +346,7 @@ namespace FE
             return m_End == m_Begin;
         }
 
+        //! \brief Check if the container has any elements.
         [[nodiscard]] inline bool Any() const noexcept
         {
             return !Empty();
@@ -394,6 +395,9 @@ namespace FE
             ConstructAtEnd(n - Size(), x);
         }
 
+        //! \brief Find a value if the container and return its index or -1.
+        //!
+        //! \param [in] value - The value to find.
         inline SSize IndexOf(const T& value) const
         {
             auto size = static_cast<SSize>(Size());
@@ -408,6 +412,7 @@ namespace FE
             return -1;
         }
 
+        //! \brief Remove value at index, will move all right values by one to the left.
         inline void RemoveAt(USize index)
         {
             FE_CORE_ASSERT(index < Size(), "Invalid index");
@@ -427,6 +432,21 @@ namespace FE
             DestructAtEnd(m_End - 1);
         }
 
+        //! \brief Remove value at index, will swap the last value with the removed value.
+        inline void SwapRemoveAt(USize index)
+        {
+            FE_CORE_ASSERT(index < Size(), "Invalid index");
+            if (Size() == 1)
+            {
+                Clear();
+                return;
+            }
+
+            std::swap(m_Begin[index], m_Begin[Size() - 1]);
+            DestructAtEnd(m_End - 1);
+        }
+
+        //! \brief Remove the value, will move all right values by one to the left.
         inline bool Remove(const T& value)
         {
             auto index = IndexOf(value);
@@ -436,6 +456,19 @@ namespace FE
             }
 
             RemoveAt(static_cast<USize>(index));
+            return true;
+        }
+
+        //! \brief Remove the value, will swap the last value with the removed value.
+        inline bool SwapRemove(const T& value)
+        {
+            auto index = IndexOf(value);
+            if (index == -1)
+            {
+                return false;
+            }
+
+            SwapRemoveAt(static_cast<USize>(index));
             return true;
         }
 
