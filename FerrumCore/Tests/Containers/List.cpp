@@ -161,23 +161,64 @@ TEST(List, Remove)
     {
         auto lst = List<FE::String>{}.Append("1").Append("2").Append("3").Append("4").Append("5").Append("6");
         lst.Remove("2");
+        EXPECT_EQ(lst.Size(), 5);
         EXPECT_EQ(lst[0], "1");
         EXPECT_EQ(lst[1], "3");
         EXPECT_EQ(lst[2], "4");
         EXPECT_EQ(lst[3], "5");
         EXPECT_EQ(lst[4], "6");
+
         lst.RemoveAt(0);
+        EXPECT_EQ(lst.Size(), 4);
         EXPECT_EQ(lst[0], "3");
         EXPECT_EQ(lst[1], "4");
         EXPECT_EQ(lst[2], "5");
         EXPECT_EQ(lst[3], "6");
+
         lst.RemoveAt(3);
+        EXPECT_EQ(lst.Size(), 3);
         EXPECT_EQ(lst[0], "3");
         EXPECT_EQ(lst[1], "4");
         EXPECT_EQ(lst[2], "5");
+
         lst.RemoveAt(1);
+        EXPECT_EQ(lst.Size(), 2);
         EXPECT_EQ(lst[0], "3");
         EXPECT_EQ(lst[1], "5");
+    }
+    EXPECT_EQ(FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated(), allocatedBefore);
+}
+
+TEST(List, SwapRemove)
+{
+    auto allocatedBefore = FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated();
+    {
+        auto lst = List<FE::String>{}.Append("1").Append("2").Append("3").Append("4").Append("5").Append("6");
+        lst.SwapRemove("2");
+        EXPECT_EQ(lst.Size(), 5);
+        EXPECT_EQ(lst[0], "1");
+        EXPECT_EQ(lst[1], "6");
+        EXPECT_EQ(lst[2], "3");
+        EXPECT_EQ(lst[3], "4");
+        EXPECT_EQ(lst[4], "5");
+
+        lst.SwapRemoveAt(0);
+        EXPECT_EQ(lst.Size(), 4);
+        EXPECT_EQ(lst[0], "5");
+        EXPECT_EQ(lst[1], "6");
+        EXPECT_EQ(lst[2], "3");
+        EXPECT_EQ(lst[3], "4");
+
+        lst.SwapRemoveAt(3);
+        EXPECT_EQ(lst.Size(), 3);
+        EXPECT_EQ(lst[0], "5");
+        EXPECT_EQ(lst[1], "6");
+        EXPECT_EQ(lst[2], "3");
+
+        lst.SwapRemoveAt(1);
+        EXPECT_EQ(lst.Size(), 2);
+        EXPECT_EQ(lst[0], "5");
+        EXPECT_EQ(lst[1], "3");
     }
     EXPECT_EQ(FE::GlobalAllocator<FE::HeapAllocator>::Get().TotalAllocated(), allocatedBefore);
 }
