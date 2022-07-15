@@ -19,6 +19,6 @@ namespace FE::ECS
         Success,
         AllocationError,
         EntityExists,
-        EntityNotFound
+        ComponentNotFound
     };
 } // namespace FE::ECS
