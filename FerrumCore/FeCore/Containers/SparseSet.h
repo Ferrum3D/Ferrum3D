@@ -16,9 +16,14 @@ namespace FE
         std::tuple_element_t<I, SparseSetEntry>& get()
         {
             if constexpr (I == 0)
+            {
                 return m_Key;
+            }
+
             if constexpr (I == 1)
+            {
                 return m_Value;
+            }
         }
 
         inline SparseSetEntry() = default;
@@ -122,6 +127,8 @@ namespace FE
         template<class... Args>
         inline bool Emplace(const TKey& key, Args&&... args)
         {
+            FE_CORE_ASSERT(key < Capacity(), "SparseSet overflow");
+
             if (auto denseIndex = DenseIndex(key))
             {
                 m_Dense[denseIndex.ToOffset()].Value() = TValue(std::forward<Args>(args)...);
@@ -164,6 +171,11 @@ namespace FE
             return true;
         }
 
+        //! \brief Remove a value from the SparseSet by key.
+        //!
+        //! \param [in] key - The key to remove.
+        //!
+        //! \return True if the key was found and removed.
         inline bool Remove(const TKey& key)
         {
             if (auto denseIndex = DenseIndex(key))
@@ -205,6 +217,16 @@ namespace FE
         [[nodiscard]] inline USize Capacity() const
         {
             return m_Sparse.Size();
+        }
+
+        [[nodiscard]] inline auto begin()
+        {
+            return m_Dense.begin();
+        }
+
+        [[nodiscard]] inline auto end()
+        {
+            return m_Dense.end();
         }
     };
 } // namespace FE
