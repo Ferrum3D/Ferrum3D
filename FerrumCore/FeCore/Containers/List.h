@@ -388,8 +388,14 @@ namespace FE
         //! \param [in] x - The element to copy to the new elements (if any were added).
         inline void Resize(USize n, const T& x)
         {
+            auto size = Size();
+            if (n == size)
+            {
+                return;
+            }
+
             Reserve(n);
-            if (Size() > n)
+            if (size > n)
             {
                 DestructAtEnd(m_Begin + n);
                 return;
