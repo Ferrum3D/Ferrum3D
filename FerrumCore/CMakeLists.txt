@@ -30,6 +30,7 @@ set(SRC
     FeCore/Console/FeLog.h
     FeCore/Console/IConsoleLogger.h
 
+    FeCore/Containers/SparseSet.h
     FeCore/Containers/ArraySlice.h
     FeCore/Containers/ArraySliceMut.h
     FeCore/Containers/ByteBuffer.cpp

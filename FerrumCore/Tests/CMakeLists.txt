@@ -1,5 +1,5 @@
 set(SRC
-	# FERRUM_SORT_LINES BEGIN
+    # FERRUM_SORT_LINES BEGIN
     Assets/AssetManager.cpp
     Assets/TestAssetLoader.h
 
@@ -7,6 +7,7 @@ set(SRC
 
     Containers/LRUCacheMap.cpp
     Containers/List.cpp
+    Containers/SparseSet.cpp
 
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
