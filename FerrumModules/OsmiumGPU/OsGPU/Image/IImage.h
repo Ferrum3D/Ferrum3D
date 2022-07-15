@@ -130,5 +130,5 @@ namespace FE::Osmium
     };
 } // namespace FE::Osmium
 
-FE_MAKE_HASHABLE(FE::Osmium::ImageDesc, , desc.ImageSize, desc.ImageFormat, desc.Dimension, desc.BindFlags, desc.MipSliceCount,
-                 desc.SampleCount, desc.ArraySize);
+FE_MAKE_HASHABLE(FE::Osmium::ImageDesc, , value.ImageSize, value.ImageFormat, value.Dimension, value.BindFlags,
+                 value.MipSliceCount, value.SampleCount, value.ArraySize);

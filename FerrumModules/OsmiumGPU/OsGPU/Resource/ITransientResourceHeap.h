@@ -80,5 +80,5 @@ namespace FE::Osmium
     };
 } // namespace FE::Osmium
 
-FE_MAKE_HASHABLE(FE::Osmium::TransientImageDesc, , desc.Descriptor, desc.ResourceID);
-FE_MAKE_HASHABLE(FE::Osmium::TransientBufferDesc, , desc.Descriptor, desc.ResourceID);
+FE_MAKE_HASHABLE(FE::Osmium::TransientImageDesc, , value.Descriptor, value.ResourceID);
+FE_MAKE_HASHABLE(FE::Osmium::TransientBufferDesc, , value.Descriptor, value.ResourceID);

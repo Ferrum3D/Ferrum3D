@@ -120,7 +120,7 @@ namespace FE
     //!         // members...
     //!     };
     //!
-    //!     const char* fooName = fe_nameof<Foo<int>>(); // "Foo" - not "Foo<int>"!
+    //!     auto fooName = fe_nameof<Foo<int>>(); // "Foo" - not "Foo<int>"!
     //! \endcode
     //!
     //! \note The provided type must implement Ferrum3D RTTI system through \ref FE_CLASS_RTTI or \ref FE_STRUCT_RTTI.
@@ -142,14 +142,16 @@ namespace FE
     //! \code{.cpp}
     //!     class Base
     //!     {
+    //!     public:
     //!         FE_CLASS_RTTI(Base, "AB26B8C7-827F-4212-88B4-F71A5EFD6EEB");
     //!     };
     //!     class Derived : public Base
     //!     {
+    //!     public:
     //!         FE_CLASS_RTTI(Derived, "68CCD7DF-507F-4F3B-9EC3-001EEB33EB55");
     //!     };
     //!
-    //!     const char* derivedName = fe_nameof(*static_cast<Base*>(new Derived)); // "Derived"
+    //!     auto derivedName = fe_nameof(*static_cast<Base*>(new Derived)); // "Derived"
     //! \endcode
     //!
     //! For additional information see overload of \ref fe_nameof() without parameters.

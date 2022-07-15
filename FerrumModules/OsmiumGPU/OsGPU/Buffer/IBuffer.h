@@ -60,4 +60,4 @@ namespace FE::Osmium
     }
 } // namespace FE::Osmium
 
-FE_MAKE_HASHABLE(FE::Osmium::BufferDesc, , desc.Size, static_cast<int>(desc.Flags));
+FE_MAKE_HASHABLE(FE::Osmium::BufferDesc, , value.Size, static_cast<int>(value.Flags));
