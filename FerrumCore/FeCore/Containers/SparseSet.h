@@ -127,7 +127,7 @@ namespace FE
         template<class... Args>
         inline bool Emplace(const TKey& key, Args&&... args)
         {
-            FE_CORE_ASSERT(key < Capacity(), "SparseSet overflow");
+            Reserve(key + 1);
 
             if (auto denseIndex = DenseIndex(key))
             {
@@ -194,18 +194,17 @@ namespace FE
             return false;
         }
 
-        //! \brief Reset the SparseSet.
-        //!
-        //! Remove all elements and set a new capacity.
+        //! \brief Change capacity of the SparseSet.
         //!
         //! \param [in] capacity - The new capacity.
-        inline void Reset(USize capacity)
+        inline void Reserve(USize capacity)
         {
-            m_Dense.Clear();
-            m_Dense.Shrink();
+            if (capacity >= Capacity())
+            {
+                return;
+            }
+
             m_Dense.Reserve(capacity);
-            m_Sparse.Clear();
-            m_Sparse.Shrink();
             m_Sparse.Resize(capacity, static_cast<USize>(-1));
         }
 
