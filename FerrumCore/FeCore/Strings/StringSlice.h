@@ -27,9 +27,11 @@ namespace FE
         bool TryToFloatImpl(Float64& result) const;
 
         template<class T>
-        inline static constexpr bool is_signed_integer_v = std::is_signed_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+        inline static constexpr bool is_signed_integer_v =
+            std::is_signed_v<T>&& std::is_integral_v<T> && !std::is_same_v<T, bool>;
         template<class T>
-        inline static constexpr bool is_unsigned_integer_v = std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+        inline static constexpr bool is_unsigned_integer_v =
+            std::is_unsigned_v<T>&& std::is_integral_v<T> && !std::is_same_v<T, bool>;
 
     public:
         FE_STRUCT_RTTI(StringSlice, "DCBAE48D-8751-4F0C-96F9-99866394482B");
@@ -121,15 +123,28 @@ namespace FE
         {
         }
 
-        inline constexpr StringSlice(const TChar* data, size_t size) noexcept
+        inline constexpr StringSlice(const TChar* data, USize size) noexcept
             : m_Data(data)
             , m_Size(size)
+        {
+        }
+
+        inline constexpr StringSlice(const std::string_view& stringView) noexcept
+            : m_Data(stringView.data())
+            , m_Size(stringView.size())
         {
         }
 
         inline constexpr StringSlice(const TChar* data) noexcept
             : m_Data(data)
             , m_Size(data == nullptr ? 0 : std::char_traits<TChar>::length(data))
+        {
+        }
+
+        template<USize S>
+        inline constexpr StringSlice(const TChar (&data)[S]) noexcept
+            : m_Data(data)
+            , m_Size(S)
         {
         }
 
@@ -355,7 +370,8 @@ namespace FE
         }
 
         template<class TFloat>
-        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, TFloat> TryConvertTo(TFloat& result) const noexcept
+        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, TFloat> TryConvertTo(
+            TFloat& result) const noexcept
         {
             Float64 temp;
             auto ret = TryToFloatImpl(temp);
