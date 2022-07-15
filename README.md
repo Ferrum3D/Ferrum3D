@@ -23,7 +23,8 @@ All the modules have the same structure, e.g. if the module is called *MyModule*
   - `Assets` - Classes for streaming and managing app assets.
   - `Base` - Basic platform- and compiler-specific `#define`s, enum operators etc. Used everywhere in the engine.
   - `Console` - Console loggers, functions for windows-specific UTF-8 initialization, colored text printing.
-  - `Containers` - Custom data structures: `List<T>`, `IByteArray`, `ArraySlice<T>`, etc.
+  - `Containers` - Custom data structures: `List<T>`, `ArraySlice<T>`, `SparseSet<T>`, etc.
+  - `ECS` - Data oriented Entity Component System implementation.
   - `EventBus` - Event bus and event handler implementation and basic events.
   - `Framework` - Application and module frameworks: classes for managing dependencies of engine modules.
   - `IO` - Input/Output streams, filesystem utilities, etc.
