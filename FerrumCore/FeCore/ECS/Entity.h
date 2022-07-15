@@ -45,7 +45,7 @@ namespace FE::ECS
 
         inline operator bool() const // NOLINT(google-explicit-constructor)
         {
-            return IsNull();
+            return !IsNull();
         }
     };
 } // namespace FE::ECS
