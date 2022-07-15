@@ -194,12 +194,34 @@ namespace FE
 
     inline void HashCombine(std::size_t& /* seed */) {}
 
+    //! \brief Combine hashes of specified values with seed.
+    //!
+    //! \tparam Args - Types of values.
+    //!
+    //! \param [in,out] seed - Initial hash value to combine with.
+    //! \param [in]     args - The values to calculate hash of.
     template<typename T, typename... Args>
     inline void HashCombine(std::size_t& seed, const T& value, const Args&... args)
     {
         std::hash<T> hasher;
         seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         HashCombine(seed, args...);
+    }
+
+    //! \brief Define std::hash<> for a type.
+#define FE_MAKE_HASHABLE(TypeName, Template, ...)                                                                                \
+    namespace std                                                                                                                \
+    {                                                                                                                            \
+        template<Template>                                                                                                       \
+        struct hash<TypeName>                                                                                                    \
+        {                                                                                                                        \
+            inline size_t operator()(const TypeName& desc) const noexcept                                                        \
+            {                                                                                                                    \
+                size_t seed = 0;                                                                                                 \
+                ::FE::HashCombine(seed, __VA_ARGS__);                                                                            \
+                return seed;                                                                                                     \
+            }                                                                                                                    \
+        };                                                                                                                       \
     }
 
 #if FE_DEBUG

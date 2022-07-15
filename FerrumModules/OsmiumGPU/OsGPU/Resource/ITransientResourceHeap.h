@@ -80,27 +80,5 @@ namespace FE::Osmium
     };
 } // namespace FE::Osmium
 
-namespace std
-{
-    template<>
-    struct std::hash<FE::Osmium::TransientImageDesc>
-    {
-        inline size_t operator()(const FE::Osmium::TransientImageDesc& desc) const noexcept
-        {
-            size_t seed = 0;
-            FE::HashCombine(seed, desc.Descriptor, desc.ResourceID);
-            return seed;
-        }
-    };
-
-    template<>
-    struct std::hash<FE::Osmium::TransientBufferDesc>
-    {
-        inline size_t operator()(const FE::Osmium::TransientBufferDesc& desc) const noexcept
-        {
-            size_t seed = 0;
-            FE::HashCombine(seed, desc.Descriptor, desc.ResourceID);
-            return seed;
-        }
-    };
-} // namespace std
+FE_MAKE_HASHABLE(FE::Osmium::TransientImageDesc, , desc.Descriptor, desc.ResourceID);
+FE_MAKE_HASHABLE(FE::Osmium::TransientBufferDesc, , desc.Descriptor, desc.ResourceID);
