@@ -5,11 +5,8 @@ namespace FE::ECS
 {
     namespace EntityConstants
     {
-        //! \brief Number of bits that store entity archetype index.
-        inline constexpr UInt32 ArchetypeBitCount = 16;
-
-        //! \brief Number of bits that store entity ID within an archetype.
-        inline constexpr UInt32 EntityIDBitCount = 32 - ArchetypeBitCount;
+        inline constexpr UInt32 VersionBitCount  = 10;
+        inline constexpr UInt32 EntityIDBitCount = 32 - VersionBitCount;
     } // namespace EntityConstants
 
     using EntityID = UInt32;
@@ -18,7 +15,7 @@ namespace FE::ECS
     {
         Success,
         AllocationError,
-        EntityExists,
-        ComponentNotFound
+        OutOfRangeError,
+        ComponentNotFoundError
     };
 } // namespace FE::ECS
