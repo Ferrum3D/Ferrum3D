@@ -40,20 +40,63 @@ namespace FE::ECS
     //!
     //! The archetypes are built automatically by the Entity Component System when an entity with previously unknown
     //! archetype is created.
-    class EntityArchetype : public Object<IObject>
+    class EntityArchetype final
     {
         friend class EntityArchetypeBuilder;
 
+        inline static constexpr USize ChunkByteSize = 16 * 1024;
+
         List<ComponentType> m_Layout;
+        USize m_EntitySize = 0;
+        USize m_HashCode   = 0;
+        USize m_ChunkCount = 0;
+
+        void InitInternal();
 
     public:
-        FE_CLASS_RTTI(EntityArchetype, "EC825348-557C-4728-A44B-9CB7FCADA938");
+        FE_STRUCT_RTTI(EntityArchetype, "EC825348-557C-4728-A44B-9CB7FCADA938");
 
         inline EntityArchetype() = default;
 
         //! \brief Create a new entity archetype from a list of component types.
         EntityArchetype(const ArraySlice<ComponentType>& layout); // NOLINT(google-explicit-constructor)
-        inline ~EntityArchetype() override = default;
+        inline ~EntityArchetype() = default;
+
+        //! \brief Get sum of sizes of all component types in the archetype.
+        [[nodiscard]] USize EntitySize() const
+        {
+            return m_EntitySize;
+        }
+
+        //! \brief Get the number of entities of this archetype that can be stored in a single ArchetypeChunk.
+        [[nodiscard]] USize ChunkCapacity() const
+        {
+            return ChunkByteSize / m_EntitySize;
+        }
+
+        //! \brief Get number of chunks currently allocated for this archetype.
+        [[nodiscard]] USize ChunkCount() const
+        {
+            return m_ChunkCount;
+        }
+
+        //! \brief Get number of component types in the archetype.
+        [[nodiscard]] USize ComponentTypeCount() const
+        {
+            return m_Layout.Size();
+        }
+
+        //! \brief Get component types in the archetype.
+        [[nodiscard]] ArraySlice<ComponentType> ComponentTypes() const
+        {
+            return m_Layout;
+        }
+
+        //! \brief Get combination of all component type hashes from the archetype.
+        [[nodiscard]] USize GetHash() const
+        {
+            return m_HashCode;
+        }
     };
 
     //! \brief This class helps building instances of EntityArchetype.
@@ -67,31 +110,39 @@ namespace FE::ECS
     //! ```
     class EntityArchetypeBuilder
     {
-        Shared<EntityArchetype> m_Archetype;
+        EntityArchetype m_Archetype;
 
     public:
-        inline EntityArchetypeBuilder()
-        {
-            m_Archetype = MakeShared<EntityArchetype>();
-        }
-
         //! \brief Add a component type to EntityArchetype.
         inline void AddComponentType(const ComponentType& componentType)
         {
-            m_Archetype->m_Layout.Push(componentType);
+            m_Archetype.m_Layout.Push(componentType);
         }
 
         //! \brief Add a component type to EntityArchetype.
         template<class T>
         inline void AddComponentType()
         {
-            m_Archetype->m_Layout.Push(ComponentType::Create<T>());
+            m_Archetype.m_Layout.Push(ComponentType::Create<T>());
         }
 
         //! \brief Build entity archetype.
-        inline Shared<EntityArchetype> Build()
+        inline EntityArchetype Build()
         {
+            m_Archetype.InitInternal();
             return m_Archetype;
         }
     };
 } // namespace FE::ECS
+
+namespace std
+{
+    template<>
+    struct hash<FE::ECS::EntityArchetype>
+    {
+        inline size_t operator()(const FE::ECS::EntityArchetype& value) const noexcept
+        {
+            return value.GetHash();
+        }
+    };
+} // namespace std
