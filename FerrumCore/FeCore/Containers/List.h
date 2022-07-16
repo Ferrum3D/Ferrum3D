@@ -311,6 +311,32 @@ namespace FE
             return *this;
         }
 
+        //! \brief Append a C-style array to the back of the container.
+        //!
+        //! \param [in] n    - The number of elements to append.
+        //! \param [in] data - The data to be appended.
+        //!
+        //! \return The reference to the container.
+        inline List& Append(USize n, const T* data)
+        {
+            if constexpr (std::is_trivially_copyable_v<T>)
+            {
+                AppendImpl(n);
+                memcpy(m_End, data, n);
+                m_End += n;
+            }
+            else
+            {
+                Reserve(Size() + n);
+                for (USize i = 0; i < n; ++i)
+                {
+                    Push(data[i]);
+                }
+            }
+
+            return *this;
+        }
+
         //! \brief Construct an element in place at back of the container.
         //!
         //! \tparam Args - Types of the arguments.
@@ -504,6 +530,29 @@ namespace FE
             }
 
             AppendImpl(0, true);
+        }
+
+        template<class TMember>
+        inline void SortByMember(TMember T::*member, bool descending = false)
+        {
+            if (descending)
+            {
+                Sort([member](const T& lhs, const T& rhs) {
+                    return lhs.*member > rhs.*member;
+                });
+            }
+            else
+            {
+                Sort([member](const T& lhs, const T& rhs) {
+                    return lhs.*member < rhs.*member;
+                });
+            }
+        }
+
+        template<class F>
+        inline void Sort(F&& f)
+        {
+            std::sort(m_Begin, m_End, std::forward<F>(f));
         }
 
         //! \brief Sort elements in the container.
