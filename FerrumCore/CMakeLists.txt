@@ -30,7 +30,6 @@ set(SRC
     FeCore/Console/FeLog.h
     FeCore/Console/IConsoleLogger.h
 
-    FeCore/Containers/SparseSet.h
     FeCore/Containers/ArraySlice.h
     FeCore/Containers/ArraySliceMut.h
     FeCore/Containers/ByteBuffer.cpp
@@ -38,8 +37,15 @@ set(SRC
     FeCore/Containers/IByteBuffer.h
     FeCore/Containers/LRUCacheMap.h
     FeCore/Containers/List.h
+    FeCore/Containers/SparseSet.h
+    FeCore/Containers/SparseStorage.h
 
+    FeCore/ECS/ArchetypeChunk.cpp
+    FeCore/ECS/ArchetypeChunk.h
+    FeCore/ECS/ComponentStorage.cpp
+    FeCore/ECS/ComponentStorage.h
     FeCore/ECS/ComponentType.h
+    FeCore/ECS/ECSCommon.h
     FeCore/ECS/Entity.h
     FeCore/ECS/EntityArchetype.cpp
     FeCore/ECS/EntityArchetype.h
@@ -142,7 +148,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-    FeCore/ECS/ComponentStorage.cpp FeCore/ECS/ComponentStorage.h FeCore/ECS/ECSCommon.h FeCore/Containers/SparseStorage.h)
+)
 
 add_library(FeCore STATIC ${SRC})
 
