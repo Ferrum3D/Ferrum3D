@@ -13,6 +13,11 @@ namespace FE::ECS
 
         FE_STRUCT_RTTI(ComponentType, "D98BE686-B494-4C6A-82A2-D2EE6CDCEC2E");
 
+        [[nodiscard]] inline USize AlignedSize() const
+        {
+            return AlignUp(DataSize, Alignment);
+        }
+
         //! \brief Create a ComponentType for a particular component.
         //!
         //! \tparam T - C++ type of the component. Must implement FE_STRUCT_RTTI.
