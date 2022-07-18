@@ -26,7 +26,7 @@ set(SRC
 
     main.cpp
     # FERRUM_SORT_LINES END
-)
+    ECS/EntityRegistry.cpp)
 
 add_executable(FeCoreTests ${SRC})
 
