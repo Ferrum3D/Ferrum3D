@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
@@ -19,15 +20,21 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public void SubmitBuffers(IEnumerable<CommandBuffer> buffers, Fence signalFence, SubmitFlags flags)
         {
-            SubmitBuffersNative(Handle, NativeArray<IntPtr>.FromObjectCollection(buffers).Detach(),
-                signalFence.Handle, flags);
+            var b = buffers.Select(x => x.Handle).ToArray();
+            unsafe
+            {
+                fixed (IntPtr* ptr = b)
+                {
+                    SubmitBuffersNative(Handle, new IntPtr(ptr), b.Length, signalFence.Handle, flags);
+                }
+            }
         }
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandQueue_Destruct")]
         private static extern void DestructNative(IntPtr self);
 
         [DllImport("OsGPUBindings", EntryPoint = "ICommandQueue_SubmitBuffers")]
-        private static extern void SubmitBuffersNative(IntPtr self, IntPtr buffers, IntPtr signalFence,
+        private static extern void SubmitBuffersNative(IntPtr self, IntPtr buffers, int bufferCount, IntPtr signalFence,
             SubmitFlags flags);
 
         protected override void ReleaseUnmanagedResources()

@@ -33,8 +33,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             public readonly Viewport Viewport;
             public readonly Scissor Scissor;
             public readonly IntPtr RenderPass;
-            public readonly IntPtr DescriptorTables;
-            public readonly IntPtr Shaders;
+            public readonly ByteBuffer.Native DescriptorTables;
+            public readonly ByteBuffer.Native Shaders;
             public readonly uint SubpassIndex;
 
             public DescNative(in Desc desc)
@@ -42,9 +42,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
                 Multisample = new MultisampleState.Native(desc.Multisample);
                 RenderPass = desc.RenderPass.Handle;
                 SubpassIndex = desc.SubpassIndex;
-                DescriptorTables = NativeArray<IntPtr>.FromObjectCollection(desc.DescriptorTables)?.Detach() ??
-                                   IntPtr.Zero;
-                Shaders = NativeArray<IntPtr>.FromObjectCollection(desc.Shaders)?.Detach() ?? IntPtr.Zero;
+                DescriptorTables = NativeArray<IntPtr>.FromObjectCollection(desc.DescriptorTables).Detach();
+                Shaders = NativeArray<IntPtr>.FromObjectCollection(desc.Shaders).Detach();
                 Rasterization = new RasterizationState.Native(desc.Rasterization);
                 DepthStencil = new DepthStencilState.Native(desc.DepthStencil);
                 ColorBlend = new ColorBlendState.Native(desc.ColorBlend);

@@ -1,10 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
-
-namespace FE
-{
-    class IByteBuffer;
-}
+#include <FeCore/Containers/ByteBuffer.h>
 
 namespace FE::Osmium
 {
@@ -13,7 +9,7 @@ namespace FE::Osmium
 
     struct FramebufferDescBinding
     {
-        IByteBuffer* RenderTargetViews;
+        ByteBuffer RenderTargetViews;
         IRenderPass* RenderPass;
         UInt32 Width;
         UInt32 Height;

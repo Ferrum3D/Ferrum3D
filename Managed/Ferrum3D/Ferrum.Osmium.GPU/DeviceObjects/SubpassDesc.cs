@@ -69,10 +69,10 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         internal struct Native
         {
-            public readonly IntPtr InputAttachments;
-            public readonly IntPtr RenderTargetAttachments;
-            public readonly IntPtr MSAAResolveAttachments;
-            public readonly IntPtr PreserveAttachments;
+            public readonly ByteBuffer.Native InputAttachments;
+            public readonly ByteBuffer.Native RenderTargetAttachments;
+            public readonly ByteBuffer.Native MSAAResolveAttachments;
+            public readonly ByteBuffer.Native PreserveAttachments;
             public readonly SubpassAttachment DepthStencilAttachment;
 
             public Native(SubpassDesc desc)

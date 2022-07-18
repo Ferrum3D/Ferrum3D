@@ -1,10 +1,6 @@
 #pragma once
 #include <OsGPU/Pipeline/IGraphicsPipeline.h>
-
-namespace FE
-{
-    class IByteBuffer;
-}
+#include <FeCore/Containers/ByteBuffer.h>
 
 namespace FE::Osmium
 {
@@ -21,15 +17,15 @@ namespace FE::Osmium
         float BlendConstantY;
         float BlendConstantZ;
         float BlendConstantW;
-        IByteBuffer* TargetBlendStates;
+        ByteBuffer TargetBlendStates;
     };
 
     class IGraphicsPipeline;
 
     struct InputStreamLayoutBinding
     {
-        IByteBuffer* Buffers;
-        IByteBuffer* Attributes;
+        ByteBuffer Buffers;
+        ByteBuffer Attributes;
         PrimitiveTopology Topology;
     };
 
@@ -67,8 +63,8 @@ namespace FE::Osmium
         Scissor Scissor;
 
         IRenderPass* RenderPass;
-        IByteBuffer* DescriptorTables;
-        IByteBuffer* Shaders;
+        ByteBuffer DescriptorTables;
+        ByteBuffer Shaders;
 
         UInt32 SubpassIndex;
     };

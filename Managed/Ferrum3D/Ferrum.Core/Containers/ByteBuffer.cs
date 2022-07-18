@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Containers
 {
-    internal static class ByteBuffer
+    public static class ByteBuffer
     {
         [DllImport("FeCoreBindings", EntryPoint = "ByteBuffer_Construct")]
         internal static extern void ConstructNative(ulong size, ref Native result);

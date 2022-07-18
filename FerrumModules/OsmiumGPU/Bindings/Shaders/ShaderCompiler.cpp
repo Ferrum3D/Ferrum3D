@@ -1,4 +1,4 @@
-#include <FeCore/Containers/IByteBuffer.h>
+#include <FeCore/Containers/ByteBuffer.h>
 #include <OsGPU/Shader/IShaderCompiler.h>
 
 namespace FE::Osmium
@@ -14,7 +14,8 @@ namespace FE::Osmium
             const char* FullPath;
         };
 
-        FE_DLL_EXPORT IByteBuffer* IShaderCompiler_CompileShader(IShaderCompiler* self, ShaderCompilerArgsBinding* args)
+        FE_DLL_EXPORT void IShaderCompiler_CompileShader(IShaderCompiler* self, ShaderCompilerArgsBinding* args,
+                                                         ByteBuffer* result)
         {
             ShaderCompilerArgs a;
             a.Version    = args->Version;
@@ -23,7 +24,7 @@ namespace FE::Osmium
             a.EntryPoint = args->EntryPoint;
             a.FullPath   = args->FullPath;
 
-            return self->CompileShader(a).Detach();
+            *result = self->CompileShader(a);
         }
 
         FE_DLL_EXPORT void IShaderCompiler_Destruct(IShaderCompiler* self)
