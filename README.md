@@ -35,7 +35,6 @@ All the modules have the same structure, e.g. if the module is called *MyModule*
   - `Parallel` - Synchronization primitives.
   - `RTTI` - Lightweight RTTI system and fast `fe_dynamic_cast` implementation.
   - `SIMD` - Abstraction on top of SSE instructions and `__m128`.
-  - `Scene` - Entity component system. `TODO`
   - `Strings` - Custom String implementation with "small-string" optimization (up to 24 characters) and string formatting library.
   - `Time` - `DateTime` and `TimeSpan` implementation.
   - `Utils` - Various utilities: UUID, `Result<T>`, etc.
