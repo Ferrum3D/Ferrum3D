@@ -8,8 +8,8 @@ namespace FE::ECS
     {
         FE::StringSlice Name; //!< Name of component, must be a static string.
         TypeID Type;          //!< ID of component's type.
-        USize Alignment;      //!< Alignment of component data.
-        USize DataSize;       //!< Size of component data.
+        UInt32 Alignment;     //!< Alignment of component data.
+        UInt32 DataSize;      //!< Size of component data.
 
         FE_STRUCT_RTTI(ComponentType, "D98BE686-B494-4C6A-82A2-D2EE6CDCEC2E");
 
@@ -29,9 +29,19 @@ namespace FE::ECS
             ComponentType result;
             result.Name      = fe_nameof<T>();
             result.Type      = fe_typeid<T>();
-            result.Alignment = alignof(T);
-            result.DataSize  = sizeof(T);
+            result.Alignment = static_cast<UInt32>(alignof(T));
+            result.DataSize  = static_cast<UInt32>(sizeof(T));
             return result;
+        }
+
+        inline friend bool operator==(const ComponentType& lhs, const ComponentType& rhs)
+        {
+            return lhs.Type == rhs.Type;
+        }
+
+        inline friend bool operator!=(const ComponentType& lhs, const ComponentType& rhs)
+        {
+            return !(rhs == lhs);
         }
     };
 } // namespace FE::ECS
