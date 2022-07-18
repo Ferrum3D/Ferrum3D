@@ -73,6 +73,11 @@ namespace FE
 
         inline static void Deallocate(T* c, USize s) noexcept
         {
+            if (c == nullptr)
+            {
+                return;
+            }
+
             FE_STATIC_SRCPOS(position);
             GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position, s);
         }
@@ -641,6 +646,18 @@ namespace FE
         {
             FE_CORE_ASSERT(I == Size(), "Tuple size must match List size");
             return AsTupleImpl(std::make_index_sequence<I>{});
+        }
+
+        //! \brief Get the pointer to the first element of the container and reset.
+        //!
+        //! \note The caller is responsible to deallocate the memory.
+        [[nodiscard]] inline T* DetachData() noexcept
+        {
+            auto result = m_Begin;
+            m_Begin     = nullptr;
+            m_End       = nullptr;
+            m_EndCap    = nullptr;
+            return result;
         }
 
         inline T* begin() noexcept

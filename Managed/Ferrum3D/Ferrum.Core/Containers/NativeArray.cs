@@ -8,11 +8,24 @@ using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.Containers
 {
-    public sealed class NativeArray<T> : ByteBuffer, IReadOnlyList<T>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeArray<T> : IReadOnlyList<T>, IDisposable
         where T : unmanaged
     {
-        public int Count => (int)SizeNative(Handle) / elementSize;
-        public long LongCount => (long)SizeNative(Handle) / elementSize;
+        public static readonly NativeArray<T> Empty;
+        public int Count => (int)GetSize();
+        public long LongCount => GetSize();
+
+        public IntPtr DataPointer
+        {
+            get
+            {
+                unsafe
+                {
+                    return new IntPtr(Handle.Begin);
+                }
+            }
+        }
 
         public T this[int index]
         {
@@ -23,17 +36,21 @@ namespace Ferrum.Core.Containers
             set => SetElementAt(index, ref value);
         }
 
+        internal ByteBuffer.Native Handle;
+
         private static readonly int elementSize = Marshal.SizeOf<T>();
 
-        public NativeArray(long size) : base(size * elementSize)
+        public NativeArray(long size)
+        {
+            Handle = new ByteBuffer.Native();
+            ByteBuffer.ConstructNative((ulong)(size * elementSize), ref Handle);
+        }
+
+        public NativeArray(int size) : this((long)size)
         {
         }
 
-        public NativeArray(int size) : base(size * elementSize)
-        {
-        }
-
-        public NativeArray(IReadOnlyList<T> collection) : base(collection.Count * elementSize)
+        public NativeArray(IReadOnlyList<T> collection) : this(collection.Count)
         {
             for (var i = 0; i < collection.Count; ++i)
             {
@@ -42,22 +59,12 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        private NativeArray(IntPtr handle) : base(handle)
-        {
-        }
-
         public static NativeArray<IntPtr> FromObjectCollection<TObject>(IEnumerable<TObject> collection)
             where TObject : UnmanagedObject
         {
             return collection != null
                 ? new NativeArray<IntPtr>(collection.Select(x => x.Handle).ToArray())
-                : null;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static NativeArray<T> FromHandle(IntPtr handle)
-        {
-            return new NativeArray<T>(handle);
+                : NativeArray<IntPtr>.Empty;
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -65,6 +72,26 @@ namespace Ferrum.Core.Containers
             for (var i = 0; i < Count; ++i)
             {
                 yield return ElementAtUnchecked(i);
+            }
+        }
+
+        internal ByteBuffer.Native Detach()
+        {
+            var handle = Handle;
+            Handle = new ByteBuffer.Native();
+            return handle;
+        }
+
+        public void Dispose()
+        {
+            ByteBuffer.DestructNative(ref Handle);
+        }
+
+        private long GetSize()
+        {
+            unsafe
+            {
+                return (T*)Handle.End - (T*)Handle.Begin;
             }
         }
 

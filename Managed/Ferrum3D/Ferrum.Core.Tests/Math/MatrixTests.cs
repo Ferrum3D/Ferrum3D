@@ -16,7 +16,6 @@ namespace Ferrum.Core.Tests.Math
             var r1 = Matrix4x4F.MultiplyManaged(l, r);
             var r2 = l * r;
             Assert.IsTrue(Matrix4x4F.AreApproxEqual(r1, r2));
-            Assert.IsFalse(r1 == r2);
         }
 
         private static Matrix4x4F CreateRandomMatrix()
