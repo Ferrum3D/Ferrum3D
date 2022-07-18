@@ -46,6 +46,80 @@ namespace FE::ECS
         m_Chunks.SwapRemoveAt(idx);
     }
 
+    void EntityArchetype::CollectGarbage()
+    {
+        List<ArchetypeChunk*> newChunks;
+        for (ArchetypeChunk*& chunk : m_Chunks)
+        {
+            if (chunk->Empty())
+            {
+                chunk->Deallocate();
+            }
+            else
+            {
+                newChunks.Push(chunk);
+            }
+        }
+
+        m_Chunks.Swap(newChunks);
+    }
+
+    ECSResult EntityArchetype::CreateEntity(UInt32& id, ArchetypeChunk** chunk)
+    {
+        ++m_Version;
+        for (auto* c : m_Chunks)
+        {
+            auto result = c->AllocateEntity(id);
+
+            switch (result)
+            {
+            case ECSResult::Success:
+                *chunk = c;
+                return ECSResult::Success;
+            case ECSResult::OutOfMemoryError:
+                continue;
+            default:
+                FE_UNREACHABLE("Unknown error: {}", static_cast<UInt32>(result));
+                continue;
+            }
+        }
+
+        *chunk = AllocateChunk();
+        return (*chunk)->AllocateEntity(id);
+    }
+
+    ECSResult EntityArchetype::DestroyEntity(UInt32 id, ArchetypeChunk* chunk)
+    {
+        if (ValidationEnabled())
+        {
+            FE_ASSERT_MSG(m_Chunks.IndexOf(chunk) != -1, "The chunk doesn't belong to this archetype.");
+        }
+
+        auto result = chunk->DeallocateEntity(id);
+        if (result == ECSResult::Success)
+        {
+            ++m_Version;
+        }
+
+        return result;
+    }
+
+    ECSResult EntityArchetype::UpdateComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source)
+    {
+        auto result = chunk->UpdateComponent(entityID, typeID, source);
+        if (result == ECSResult::Success)
+        {
+            ++m_Version;
+        }
+
+        return result;
+    }
+
+    ECSResult EntityArchetype::CopyComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination)
+    {
+        return chunk->CopyComponent(entityID, typeID, destination);
+    }
+
     EntityArchetypeMatch EntityArchetype::Match(const EntityArchetype& other)
     {
         USize matchCount = 0;
