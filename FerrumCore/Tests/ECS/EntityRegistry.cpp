@@ -45,7 +45,7 @@ TEST(EntityRegistry, CreateEntity)
 {
     auto registry = FE::MakeShared<EntityRegistry>();
     List<Entity> entities;
-    entities.Resize(1024, Entity::Null());
+    entities.Resize(64 * 1024, Entity::Null());
     registry->CreateEntities(ArraySliceMut(entities));
 }
 
@@ -63,4 +63,15 @@ TEST(EntityRegistry, AddComponent)
     EXPECT_EQ(registry->GetComponent<TestPositionComponent>(entity1), (TestPositionComponent{ 1, 2 }));
     EXPECT_EQ(registry->GetComponent<TestRotationComponent>(entity1), (TestRotationComponent{ 9 }));
     EXPECT_EQ(registry->GetComponent<TestPositionComponent>(entity2), (TestPositionComponent{ 3, 4 }));
+}
+
+TEST(EntityRegistry, InvalidAfterDestroy)
+{
+    auto registry = FE::MakeShared<EntityRegistry>();
+    auto entity1  = registry->CreateEntity();
+    EXPECT_TRUE(registry->IsValid(entity1));
+    registry->AddComponent(entity1, TestPositionComponent{ 1, 2 });
+    registry->AddComponent(entity1, TestRotationComponent{ 9 });
+    registry->DestroyEntity(entity1);
+    EXPECT_FALSE(registry->IsValid(entity1));
 }

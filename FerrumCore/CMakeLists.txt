@@ -32,9 +32,7 @@ set(SRC
 
     FeCore/Containers/ArraySlice.h
     FeCore/Containers/ArraySliceMut.h
-    FeCore/Containers/ByteBuffer.cpp
     FeCore/Containers/ByteBuffer.h
-    FeCore/Containers/IByteBuffer.h
     FeCore/Containers/LRUCacheMap.h
     FeCore/Containers/List.h
     FeCore/Containers/SparseSet.h

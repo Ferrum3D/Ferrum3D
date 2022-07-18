@@ -81,7 +81,7 @@ namespace FE::Osmium
         m_Module.LoadFrom("dxcompiler");
     }
 
-    Shared<IByteBuffer> ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
+    ByteBuffer ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
     {
         auto sepIter       = args.FullPath.FindLastOf('/');
         auto shaderName    = StringSlice(sepIter + 1, args.FullPath.end()).ToWideString();
@@ -185,6 +185,6 @@ namespace FE::Osmium
             }
         }
 
-        return MakeShared<ByteBuffer>(std::move(returnValue));
+        return ByteBuffer(std::move(returnValue));
     }
 } // namespace FE::Osmium

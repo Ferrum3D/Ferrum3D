@@ -1,13 +1,9 @@
 #pragma once
+#include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
 #include <OsGPU/Common/BaseTypes.h>
 #include <OsGPU/Shader/ShaderStage.h>
-
-namespace FE
-{
-    class IByteBuffer;
-}
 
 namespace FE::Osmium
 {
@@ -45,6 +41,6 @@ namespace FE::Osmium
 
         ~IShaderCompiler() override = default;
 
-        virtual Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) = 0;
+        virtual ByteBuffer CompileShader(const ShaderCompilerArgs& args) = 0;
     };
 } // namespace FE::Osmium

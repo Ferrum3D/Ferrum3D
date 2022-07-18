@@ -1,33 +1,24 @@
-#include <FeCore/Memory/Memory.h>
 #include <FeCore/Containers/ByteBuffer.h>
+#include <FeCore/Memory/Memory.h>
 
 namespace FE
 {
     extern "C"
     {
-        FE_DLL_EXPORT IByteBuffer* IByteBuffer_Construct(USize size)
+        FE_DLL_EXPORT void ByteBuffer_Construct(USize size, ByteBuffer* result)
         {
-            return MakeShared<ByteBuffer>(size).Detach();
+            *result = ByteBuffer(size);
         }
 
-        FE_DLL_EXPORT void IByteBuffer_Destruct(IByteBuffer* self)
+        FE_DLL_EXPORT void ByteBuffer_Destruct(ByteBuffer* self)
         {
-            self->ReleaseStrongRef();
+            self->~ByteBuffer();
         }
 
-        FE_DLL_EXPORT UInt8* IByteBuffer_Data(IByteBuffer* self)
+        FE_DLL_EXPORT void ByteBuffer_CopyTo(ByteBuffer* self, ByteBuffer* dest)
         {
-            return self->Data();
-        }
-
-        FE_DLL_EXPORT USize IByteBuffer_Size(IByteBuffer* self)
-        {
-            return self->Size();
-        }
-
-        FE_DLL_EXPORT void IByteBuffer_CopyTo(IByteBuffer* self, IByteBuffer* dest)
-        {
-            self->CopyTo(dest);
+            auto length = std::max(self->Size(), dest->Size());
+            memcpy(dest->Data(), self->Data(), length);
         }
     }
-}
+} // namespace FE

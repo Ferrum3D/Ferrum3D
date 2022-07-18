@@ -6,12 +6,24 @@ using System.Runtime.InteropServices;
 
 namespace Ferrum.Core.Containers
 {
-    public sealed class NativeList<T> : ByteBuffer, IList<T>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeList<T> : IList<T>, IDisposable
         where T : unmanaged
     {
         public int Count => (int)LongCount;
 
         public bool IsReadOnly => false;
+
+        public IntPtr DataPointer
+        {
+            get
+            {
+                unsafe
+                {
+                    return new IntPtr(Handle.Begin);
+                }
+            }
+        }
 
         public long LongCount { get; private set; }
 
@@ -23,7 +35,7 @@ namespace Ferrum.Core.Containers
 
         public long LongCapacity
         {
-            get => Handle == IntPtr.Zero ? 0 : (long)SizeNative(Handle) / elementSize;
+            get => GetSize();
             set
             {
                 if (value < Count)
@@ -38,19 +50,20 @@ namespace Ferrum.Core.Containers
 
                 if (value <= 0)
                 {
-                    DestructNative(Handle);
-                    Handle = IntPtr.Zero;
+                    ByteBuffer.DestructNative(ref Handle);
+                    Handle = new ByteBuffer.Native();
                     return;
                 }
 
-                var newData = new NativeArray<T>(value);
-                if (Handle != IntPtr.Zero)
+                var newData = new ByteBuffer.Native();
+                ByteBuffer.ConstructNative((ulong)(value * elementSize), ref newData);
+                if (DataPointer != IntPtr.Zero)
                 {
-                    CopyToNative(Handle, newData.Handle);
-                    DestructNative(Handle);
+                    ByteBuffer.CopyToNative(ref Handle, ref newData);
+                    ByteBuffer.DestructNative(ref Handle);
                 }
 
-                Handle = newData.Detach();
+                Handle = newData;
             }
         }
 
@@ -63,13 +76,11 @@ namespace Ferrum.Core.Containers
             set => SetElementAt(index, ref value);
         }
 
+        private ByteBuffer.Native Handle;
+
         private static readonly int elementSize = Marshal.SizeOf<T>();
 
-        public NativeList() : base(IntPtr.Zero)
-        {
-        }
-
-        public NativeList(IEnumerable<T> collection) : base(IntPtr.Zero)
+        public NativeList(IEnumerable<T> collection) : this()
         {
             if (collection is IReadOnlyList<T> c)
             {
@@ -91,11 +102,14 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        public NativeList(long capacity) : base(capacity * elementSize)
+        public NativeList(long capacity)
         {
+            Handle = new ByteBuffer.Native();
+            ByteBuffer.ConstructNative((ulong)(capacity * elementSize), ref Handle);
+            LongCount = 0;
         }
 
-        public NativeList(int capacity) : base(capacity * elementSize)
+        public NativeList(int capacity) : this((long)capacity)
         {
         }
 
@@ -214,6 +228,19 @@ namespace Ferrum.Core.Containers
             {
                 var elem = ElementAtUnchecked(i);
                 SetElementAtUnchecked(i - 1, ref elem);
+            }
+        }
+
+        public void Dispose()
+        {
+            ByteBuffer.DestructNative(ref Handle);
+        }
+
+        private long GetSize()
+        {
+            unsafe
+            {
+                return (T*)Handle.End - (T*)Handle.Begin;
             }
         }
 

@@ -19,6 +19,6 @@ namespace FE::Osmium
 
         explicit ShaderCompilerDXC(GraphicsAPI api);
 
-        Shared<IByteBuffer> CompileShader(const ShaderCompilerArgs& args) override;
+        ByteBuffer CompileShader(const ShaderCompilerArgs& args) override;
     };
 } // namespace FE::Osmium

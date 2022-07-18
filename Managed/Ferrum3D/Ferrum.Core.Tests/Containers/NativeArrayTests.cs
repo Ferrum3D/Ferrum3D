@@ -7,14 +7,6 @@ namespace Ferrum.Core.Tests.Containers
     [TestFixture]
     public class NativeArrayTests
     {
-        private Engine engine;
-
-        [SetUp]
-        public void Setup()
-        {
-            engine = new Engine();
-        }
-
         [Test]
         [TestCase(new[] { 1, 2, 3 })]
         [TestCase(new[] { 1 })]
@@ -50,19 +42,14 @@ namespace Ferrum.Core.Tests.Containers
         [Test]
         public void SetByIndex()
         {
-            using var nativeArray = new NativeArray<int>(2);
+            var nativeArray = new NativeArray<int>(2);
             nativeArray[0] = int.MinValue;
             nativeArray[1] = 0;
             nativeArray[2] = int.MinValue;
             Assert.AreEqual(int.MinValue, nativeArray[0]);
             Assert.AreEqual(0, nativeArray[1]);
             Assert.AreEqual(int.MinValue, nativeArray[2]);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            engine.Dispose();
+            nativeArray.Dispose();
         }
     }
 }
