@@ -49,6 +49,11 @@ set(SRC
     FeCore/ECS/Entity.h
     FeCore/ECS/EntityArchetype.cpp
     FeCore/ECS/EntityArchetype.h
+    FeCore/ECS/EntityQuery.h
+    FeCore/ECS/EntityRegistry.cpp
+    FeCore/ECS/EntityRegistry.h
+    FeCore/ECS/World.cpp
+    FeCore/ECS/World.h
 
     FeCore/EventBus/EventBus.h
     FeCore/EventBus/FrameEvents.h
