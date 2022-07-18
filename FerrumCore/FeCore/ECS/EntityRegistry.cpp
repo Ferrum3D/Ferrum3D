@@ -256,7 +256,13 @@ namespace FE::ECS
 
     ArraySlice<ComponentType> EntityRegistry::GetComponentTypes(Entity entity)
     {
-        return m_Archetypes[m_Data[entity.GetID()].ArchetypeID].ComponentTypes();
+        auto& data = m_Data[entity.GetID()];
+        if (data.IsEmpty())
+        {
+            return {};
+        }
+
+        return m_Archetypes[data.ArchetypeID].ComponentTypes();
     }
 
     bool EntityRegistry::HasComponent(Entity entity, const ComponentType& componentType)
