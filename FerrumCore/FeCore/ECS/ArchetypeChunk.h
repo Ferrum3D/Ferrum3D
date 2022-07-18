@@ -16,7 +16,6 @@ namespace FE::ECS
     //! \brief Entity archetype chunk. A chunk of memory that stores entities with components of the same archetype.
     class ArchetypeChunk final
     {
-        EntityArchetype* m_Archetype = nullptr;
         USize m_Capacity             = 0;
         List<Int8> m_Data;
         List<ComponentStorage> m_ComponentStorages;
@@ -112,12 +111,6 @@ namespace FE::ECS
         [[nodiscard]] inline bool Full() const
         {
             return m_ComponentStorages.Any() && m_ComponentStorages.Front().Count() == m_Capacity;
-        }
-
-        //! \brief Get the associated archetype.
-        [[nodiscard]] inline EntityArchetype* GetArchetype() const
-        {
-            return m_Archetype;
         }
     };
 } // namespace FE::ECS
