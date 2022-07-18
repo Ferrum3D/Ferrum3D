@@ -30,7 +30,7 @@ namespace FE::ECS
 
         ComponentStorageDesc m_Desc;
         ArraySliceMut<Int8> m_Data;
-        USize m_Count = 0;
+        UInt32 m_Count = 0;
 
         inline void AllocateComponentUnchecked()
         {

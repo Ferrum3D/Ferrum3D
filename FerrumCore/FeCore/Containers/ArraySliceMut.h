@@ -49,17 +49,9 @@ namespace FE
         inline ArraySliceMut(const ArraySliceMut& other)            = default;
         inline ArraySliceMut& operator=(const ArraySliceMut& other) = default;
 
-        inline ArraySliceMut(ArraySliceMut&& other) noexcept
-            : ArraySliceMut(other.m_Begin, other.m_End)
-        {
-            other.Reset();
-        }
-
-        inline ArraySliceMut& operator=(ArraySliceMut&& other) noexcept
-        {
-            *this = other;
-            other.Reset();
-        }
+        //! \brief Move constructor.
+        inline ArraySliceMut(ArraySliceMut&& other) noexcept            = default;
+        inline ArraySliceMut& operator=(ArraySliceMut&& other) noexcept = default;
 
         //! \brief Create from a std::array.
         //!

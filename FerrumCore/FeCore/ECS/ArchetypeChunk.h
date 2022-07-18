@@ -4,6 +4,7 @@
 namespace FE::ECS
 {
     class EntityArchetype;
+    class ArchetypeChunk;
 
     //! \brief Entity archetype chunk descriptor.
     struct ArchetypeChunkDesc
@@ -12,7 +13,7 @@ namespace FE::ECS
         EntityArchetype* Archetype = nullptr;   //!< The archetype this chunk is attached to.
     };
 
-    //! \brief Entity archetype chunk. A chunk of memory that stores entities components of the same archetype.
+    //! \brief Entity archetype chunk. A chunk of memory that stores entities with components of the same archetype.
     class ArchetypeChunk final
     {
         EntityArchetype* m_Archetype = nullptr;
@@ -20,10 +21,28 @@ namespace FE::ECS
         List<Int8> m_Data;
         List<ComponentStorage> m_ComponentStorages;
 
+        UInt32 m_Version = 0;
+
+        inline ArchetypeChunk() = default;
+
     public:
         FE_STRUCT_RTTI(ArchetypeChunk, "8D700C4F-6DAE-4C92-A6D5-0B3EB53BF592");
 
-        inline ArchetypeChunk() = default;
+        // !\brief allocate an Archetype chunk, doesn't call Init().
+        inline static ArchetypeChunk* Allocate()
+        {
+            FE_STATIC_SRCPOS(position);
+            void* ptr = GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(ArchetypeChunk), alignof(ArchetypeChunk), position);
+            return new (ptr) ArchetypeChunk;
+        }
+
+        //! \brief Deallocate the chunk, the instance is no longer valid after the call.
+        inline void Deallocate()
+        {
+            this->~ArchetypeChunk();
+            FE_STATIC_SRCPOS(position);
+            GlobalAllocator<HeapAllocator>::Get().Deallocate(this, position, sizeof(ArchetypeChunk));
+        }
 
         void Init(const ArchetypeChunkDesc& desc);
 
@@ -37,12 +56,19 @@ namespace FE::ECS
         //! \param [in] entityID - The internal ID of entity (within the chunk).
         ECSResult DeallocateEntity(UInt32 entityID);
 
-        //! \brief Retrieve the pointer to the component to get/set its data.
+        //! \brief Retrieve the pointer to the component to set its data.
         //!
-        //! \param [in] entityID      - The internal ID of entity (within the chunk).
-        //! \param [in] typeID        - The ID of component type.
-        //! \param [in] componentData - The data of component to be copied.
-        ECSResult ComponentData(UInt32 entityID, const TypeID& typeID, void** componentData);
+        //! \param [in] entityID - The internal ID of entity (within the chunk).
+        //! \param [in] typeID   - The ID of component type.
+        //! \param [in] source   - The data of component to be copied.
+        ECSResult UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source);
+
+        //! \brief Retrieve the pointer to the component to set its data.
+        //!
+        //! \param [in] entityID    - The internal ID of entity (within the chunk).
+        //! \param [in] typeID      - The ID of component type.
+        //! \param [in] destination - The buffer to copy the component data to.
+        ECSResult CopyComponent(UInt32 entityID, const TypeID& typeID, void* destination);
 
         //! \brief Get allocated entity count.
         [[nodiscard]] inline USize Count() const
@@ -57,16 +83,31 @@ namespace FE::ECS
             return m_ComponentStorages.Front().Count();
         }
 
+        //! \brief Get the version of the chunk - a number that gets incremented after every change.
+        [[nodiscard]] inline UInt32 Version() const
+        {
+            return m_Version;
+        }
+
+        //! \brief Check if the chunk has been changed after the specified version. Same as `version != chunk.Version()`
+        [[nodiscard]] inline bool DidChange(UInt32 version) const
+        {
+            return m_Version != version;
+        }
+
+        //! \brief Check if the chunk is doesn't store any entities.
         [[nodiscard]] inline bool Empty() const
         {
             return m_ComponentStorages.Empty() || m_ComponentStorages.Front().Count() == 0;
         }
 
+        //! \brief Check if the chunk is full of entities.
         [[nodiscard]] inline bool Full() const
         {
             return m_ComponentStorages.Any() && m_ComponentStorages.Front().Count() == m_Capacity;
         }
 
+        //! \brief Get the associated archetype.
         [[nodiscard]] inline EntityArchetype* GetArchetype() const
         {
             return m_Archetype;
