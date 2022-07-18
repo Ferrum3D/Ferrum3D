@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/ECS/ECSCommon.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <limits>
 
 namespace FE::ECS
@@ -28,14 +28,19 @@ namespace FE::ECS
             return Entity(static_cast<EntityID>(-1));
         }
 
-        inline static Entity Create(EntityID entityID)
+        inline static Entity Create(EntityID entityID, EntityID version)
         {
-            return Entity(entityID);
+            return Entity(entityID | (version << EntityConstants::EntityIDBitCount));
         }
 
         [[nodiscard]] inline EntityID GetID() const
         {
-            return m_ID;
+            return m_ID & EntityConstants::EntityIDMask;
+        }
+
+        [[nodiscard]] inline EntityID GetVersion() const
+        {
+            return (m_ID & EntityConstants::VersionMask) >> EntityConstants::EntityIDBitCount;
         }
 
         [[nodiscard]] inline bool IsNull() const
@@ -43,7 +48,7 @@ namespace FE::ECS
             return m_ID == static_cast<EntityID>(-1);
         }
 
-        inline operator bool() const // NOLINT(google-explicit-constructor)
+        inline explicit operator bool() const
         {
             return !IsNull();
         }
