@@ -532,8 +532,14 @@ namespace FE
             AppendImpl(0, true);
         }
 
+        //! \brief Sort elements in the container using a member of T as sorting key.
+        //!
+        //! \tparam TMember - Type of pointer to member (must implement relational operators).
+        //!
+        //! \param [in] member     - Pointer to member to use as sorting key.
+        //! \param [in] descending - True if the List must be sorted in descending order.
         template<class TMember>
-        inline void SortByMember(TMember T::*member, bool descending = false)
+        inline void SortByMember(TMember member, bool descending = false)
         {
             if (descending)
             {
@@ -549,6 +555,16 @@ namespace FE
             }
         }
 
+        //! \brief Sort elements in the container by predicate.
+        //!
+        //! Predicate signature:
+        //! \code{.cpp}
+        //!     bool pred(const T& left, const T& right);
+        //! \endcode
+        //!
+        //! \tparam F - Type of the predicate.
+        //!
+        //! \param [in] f - A functor to use as the sorting predicate.
         template<class F>
         inline void Sort(F&& f)
         {
@@ -619,6 +635,7 @@ namespace FE
             return m_Begin;
         }
 
+        //! \brief Convert a list to a tuple that contains all of its elements. Asserts that `I == Size()`.
         template<USize I>
         [[nodiscard]] inline auto AsTuple() const
         {
