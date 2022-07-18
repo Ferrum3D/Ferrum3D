@@ -9,13 +9,12 @@ namespace FE::ECS
         FE_ASSERT_MSG(desc.Archetype, "Archetype cannot be null");
         FE_ASSERT_MSG(desc.ByteSize > 0, "Size of archetype chunk must be greater than zero");
 
-        m_Archetype = desc.Archetype;
         m_Data.Resize(desc.ByteSize);
 
-        m_Capacity = m_Archetype->ChunkCapacity();
+        m_Capacity = desc.Archetype->ChunkCapacity();
 
         USize beginIndex = 0;
-        for (auto& type : m_Archetype->ComponentTypes())
+        for (auto& type : desc.Archetype->ComponentTypes())
         {
             auto nextIndex = m_Capacity * type.AlignedSize();
 
