@@ -14,6 +14,7 @@ namespace FE::ECS
     enum class ECSResult
     {
         Success,
+        OutOfMemoryError,
         AllocationError,
         OutOfRangeError,
         ComponentNotFoundError

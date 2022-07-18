@@ -30,10 +30,11 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::AllocateEntity(UInt32& entityID)
     {
+        ++m_Version;
         entityID = static_cast<UInt32>(m_ComponentStorages.Front().Count());
         if (entityID == m_Capacity)
         {
-            return ECSResult::AllocationError;
+            return ECSResult::OutOfMemoryError;
         }
 
         for (auto& storage : m_ComponentStorages)
@@ -44,10 +45,10 @@ namespace FE::ECS
         return ECSResult::Success;
     }
 
-    ECSResult ArchetypeChunk::ComponentData(UInt32 entityID, const TypeID& typeID, void** componentData)
+    ECSResult ArchetypeChunk::UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source)
     {
-        *componentData = nullptr;
-        if (Full())
+        ++m_Version;
+        if (entityID >= Count())
         {
             return ECSResult::OutOfRangeError;
         }
@@ -56,7 +57,30 @@ namespace FE::ECS
         {
             if (storage.CheckTypeID(typeID))
             {
-                storage.ComponentData(entityID, componentData);
+                void* data;
+                storage.ComponentData(entityID, &data);
+                memcpy(data, source, storage.ElementSize());
+                return ECSResult::Success;
+            }
+        }
+
+        return ECSResult::ComponentNotFoundError;
+    }
+
+    ECSResult ArchetypeChunk::CopyComponent(UInt32 entityID, const TypeID& typeID, void* destination)
+    {
+        if (entityID >= Count())
+        {
+            return ECSResult::OutOfRangeError;
+        }
+
+        for (auto& storage : m_ComponentStorages)
+        {
+            if (storage.CheckTypeID(typeID))
+            {
+                void* data;
+                storage.ComponentData(entityID, &data);
+                memcpy(destination, data, storage.ElementSize());
                 return ECSResult::Success;
             }
         }
@@ -66,9 +90,17 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::DeallocateEntity(UInt32 entityID)
     {
+        ++m_Version;
+        if (entityID >= Count())
+        {
+            return ECSResult::OutOfRangeError;
+        }
+
         for (auto& storage : m_ComponentStorages)
         {
-            storage.
+            storage.RemoveComponent(entityID);
         }
+
+        return ECSResult::Success;
     }
 } // namespace FE::ECS

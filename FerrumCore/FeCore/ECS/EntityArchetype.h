@@ -5,6 +5,15 @@
 
 namespace FE::ECS
 {
+    class ArchetypeChunk;
+
+    enum class EntityArchetypeMatch
+    {
+        None, //!< None of the components match.
+        Some, //!< Some components are present.
+        All   //!< All components are present.
+    };
+
     //! \brief Describes an entity archetype - a collection of component types and associated component data pools.
     //!
     //! Entity archetype is a unique combination of component types (see \ref ComponentType). A component is contained
@@ -49,7 +58,8 @@ namespace FE::ECS
         List<ComponentType> m_Layout;
         USize m_EntitySize = 0;
         USize m_HashCode   = 0;
-        USize m_ChunkCount = 0;
+
+        List<ArchetypeChunk*> m_Chunks;
 
         void InitInternal();
 
@@ -60,7 +70,10 @@ namespace FE::ECS
 
         //! \brief Create a new entity archetype from a list of component types.
         EntityArchetype(const ArraySlice<ComponentType>& layout); // NOLINT(google-explicit-constructor)
-        inline ~EntityArchetype() = default;
+        ~EntityArchetype();
+
+        ArchetypeChunk* AllocateChunk();
+        void DeallocateChunk(ArchetypeChunk* chunk);
 
         //! \brief Get sum of sizes of all component types in the archetype.
         [[nodiscard]] USize EntitySize() const
@@ -77,7 +90,7 @@ namespace FE::ECS
         //! \brief Get number of chunks currently allocated for this archetype.
         [[nodiscard]] USize ChunkCount() const
         {
-            return m_ChunkCount;
+            return m_Chunks.Size();
         }
 
         //! \brief Get number of component types in the archetype.
@@ -96,6 +109,20 @@ namespace FE::ECS
         [[nodiscard]] USize GetHash() const
         {
             return m_HashCode;
+        }
+
+        //! \brief Match the archetype against another one.
+        //!
+        //! \param [in] other - The other archetype.
+        //!
+        //! \see EntityArchetypeMatch
+        EntityArchetypeMatch Match(const EntityArchetype& other);
+
+        friend bool operator==(const EntityArchetype& lhs, const EntityArchetype& rhs);
+
+        inline friend bool operator!=(const EntityArchetype& lhs, const EntityArchetype& rhs)
+        {
+            return !(rhs == lhs);
         }
     };
 
