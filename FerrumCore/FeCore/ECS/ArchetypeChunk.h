@@ -56,19 +56,26 @@ namespace FE::ECS
         //! \param [in] entityID - The internal ID of entity (within the chunk).
         ECSResult DeallocateEntity(UInt32 entityID);
 
-        //! \brief Retrieve the pointer to the component to set its data.
+        //! \brief Set component data.
         //!
         //! \param [in] entityID - The internal ID of entity (within the chunk).
         //! \param [in] typeID   - The ID of component type.
         //! \param [in] source   - The data of component to be copied.
         ECSResult UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source);
 
-        //! \brief Retrieve the pointer to the component to set its data.
+        //! \brief Get component data.
         //!
         //! \param [in] entityID    - The internal ID of entity (within the chunk).
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
         ECSResult CopyComponent(UInt32 entityID, const TypeID& typeID, void* destination);
+
+        //! \brief Copy component data to another chunk.
+        //!
+        //! \param [in] entityID    - The internal ID of entity (within the chunk).
+        //! \param [in] typeID      - The ID of component type.
+        //! \param [in] destination - The buffer to copy the component data to.
+        ECSResult CopyComponentToChunk(UInt32 entityID, const TypeID& typeID, ArchetypeChunk* chunk);
 
         //! \brief Get allocated entity count.
         [[nodiscard]] inline USize Count() const

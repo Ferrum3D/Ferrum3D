@@ -30,7 +30,6 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::AllocateEntity(UInt32& entityID)
     {
-        ++m_Version;
         entityID = static_cast<UInt32>(m_ComponentStorages.Front().Count());
         if (entityID == m_Capacity)
         {
@@ -42,12 +41,12 @@ namespace FE::ECS
             storage.AllocateComponentUnchecked();
         }
 
+        ++m_Version;
         return ECSResult::Success;
     }
 
     ECSResult ArchetypeChunk::UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source)
     {
-        ++m_Version;
         if (entityID >= Count())
         {
             return ECSResult::OutOfRangeError;
@@ -60,6 +59,7 @@ namespace FE::ECS
                 void* data;
                 storage.ComponentData(entityID, &data);
                 memcpy(data, source, storage.ElementSize());
+                ++m_Version;
                 return ECSResult::Success;
             }
         }
@@ -88,9 +88,43 @@ namespace FE::ECS
         return ECSResult::ComponentNotFoundError;
     }
 
+    ECSResult ArchetypeChunk::CopyComponentToChunk(UInt32 entityID, const TypeID& typeID, ArchetypeChunk* chunk)
+    {
+        if (entityID >= Count())
+        {
+            return ECSResult::OutOfRangeError;
+        }
+
+        void* destination = nullptr;
+        for (auto& storage : chunk->m_ComponentStorages)
+        {
+            if (storage.CheckTypeID(typeID))
+            {
+                storage.ComponentData(entityID, &destination);
+            }
+        }
+
+        if (destination == nullptr)
+        {
+            return ECSResult::ComponentNotFoundError;
+        }
+
+        for (auto& storage : m_ComponentStorages)
+        {
+            if (storage.CheckTypeID(typeID))
+            {
+                void* data;
+                storage.ComponentData(entityID, &data);
+                memcpy(destination, data, storage.ElementSize());
+                return ECSResult::Success;
+            }
+        }
+
+        return ECSResult::ComponentNotFoundError;
+    }
+
     ECSResult ArchetypeChunk::DeallocateEntity(UInt32 entityID)
     {
-        ++m_Version;
         if (entityID >= Count())
         {
             return ECSResult::OutOfRangeError;
@@ -101,6 +135,7 @@ namespace FE::ECS
             storage.RemoveComponent(entityID);
         }
 
+        ++m_Version;
         return ECSResult::Success;
     }
 } // namespace FE::ECS
