@@ -63,7 +63,7 @@ namespace FE
             return std::get<0>(std::get<OkVariant>(m_Data));
         }
 
-        inline operator bool()
+        inline explicit operator bool()
         {
             return IsOk();
         }

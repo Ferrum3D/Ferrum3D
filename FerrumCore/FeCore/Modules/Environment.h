@@ -406,7 +406,7 @@ namespace FE::Env
             return const_cast<T*>(m_Storage->Get());
         }
 
-        inline operator bool() const
+        inline explicit operator bool() const
         {
             return m_Storage;
         }
