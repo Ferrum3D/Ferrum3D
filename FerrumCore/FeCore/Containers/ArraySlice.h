@@ -126,6 +126,25 @@ namespace FE
             return m_Begin[index];
         }
 
+        [[nodiscard]] inline SSize IndexOf(const T& value) const
+        {
+            auto length = static_cast<SSize>(Length());
+            for (SSize i = 0; i < length; ++i)
+            {
+                if (value == m_Begin[i])
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        [[nodiscard]] inline bool Contains(const T& value)
+        {
+            return IndexOf(value) != -1;
+        }
+
         //! \bried Length of the slice.
         [[nodiscard]] inline USize Length() const
         {
