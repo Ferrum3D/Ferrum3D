@@ -115,7 +115,7 @@ namespace FE::Assets
         }
 
         //! \brief Check if the asset is valid.
-        inline operator bool() const
+        inline explicit operator bool() const
         {
             return m_Storage && m_Storage->IsAlive();
         }

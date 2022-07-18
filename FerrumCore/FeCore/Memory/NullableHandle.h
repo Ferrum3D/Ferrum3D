@@ -68,7 +68,7 @@ namespace FE
             return m_Handle != static_cast<USize>(-1);
         }
 
-        [[nodiscard]] inline operator bool() const // NOLINT(google-explicit-constructor)
+        [[nodiscard]] inline explicit operator bool() const // NOLINT(google-explicit-constructor)
         {
             return IsValid();
         }

@@ -155,7 +155,7 @@ namespace FE
             return GetRaw();
         }
 
-        inline operator bool() const
+        inline explicit operator bool() const
         {
             return m_Object;
         }
