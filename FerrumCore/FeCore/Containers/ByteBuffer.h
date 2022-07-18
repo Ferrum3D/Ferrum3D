@@ -113,5 +113,10 @@ namespace FE
         {
             return m_End - m_Begin;
         }
+
+        inline void Clear()
+        {
+            Deallocate();
+        }
     };
 } // namespace FE

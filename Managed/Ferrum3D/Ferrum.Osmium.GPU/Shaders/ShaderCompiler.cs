@@ -14,11 +14,12 @@ namespace Ferrum.Osmium.GPU.Shaders
 
         public NativeArray<byte> CompileShader(Args args)
         {
-            return NativeArray<byte>.FromHandle(CompileShaderNative(Handle, ref args));
+            CompileShaderNative(Handle, ref args, out var handle);
+            return NativeArray<byte>.FromHandle(handle);
         }
 
         [DllImport("OsGPUBindings", EntryPoint = "IShaderCompiler_CompileShader")]
-        private static extern IntPtr CompileShaderNative(IntPtr self, ref Args args);
+        private static extern IntPtr CompileShaderNative(IntPtr self, ref Args args, out ByteBuffer.Native result);
 
         [DllImport("OsGPUBindings", EntryPoint = "IShaderCompiler_Destruct")]
         private static extern void DestructNative(IntPtr self);

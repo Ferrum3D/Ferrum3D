@@ -42,7 +42,7 @@ namespace FE::Osmium
             d.MaxTables = desc->MaxSets;
             ArraySliceFromByteBuffer(desc->Sizes, d.Sizes);
             auto* result = self->CreateDescriptorHeap(d).Detach();
-            desc->Sizes->ReleaseStrongRef();
+            desc->Sizes.Clear();
             return result;
         }
 
@@ -72,7 +72,7 @@ namespace FE::Osmium
             d.Height     = desc->Height;
 
             auto* result = self->CreateFramebuffer(d).Detach();
-            desc->RenderTargetViews->ReleaseStrongRef();
+            desc->RenderTargetViews.Clear();
             return result;
         }
 
@@ -128,9 +128,9 @@ namespace FE::Osmium
             d.SubpassIndex = desc->SubpassIndex;
 
             auto* result = self->CreateGraphicsPipeline(d).Detach();
-            desc->ColorBlend.TargetBlendStates->ReleaseStrongRef();
-            desc->DescriptorTables->ReleaseStrongRef();
-            desc->Shaders->ReleaseStrongRef();
+            desc->ColorBlend.TargetBlendStates.Clear();
+            desc->DescriptorTables.Clear();
+            desc->Shaders.Clear();
             return result;
         }
 
@@ -139,7 +139,7 @@ namespace FE::Osmium
             RenderPassDesc d{};
             ArraySliceFromByteBuffer(desc->Attachments, d.Attachments);
             ArraySliceFromByteBuffer(desc->SubpassDependencies, d.SubpassDependencies);
-            ArraySlice<SubpassDescBinding> subpasses;
+            ArraySliceMut<SubpassDescBinding> subpasses;
             ArraySliceFromByteBuffer(desc->Subpasses, subpasses);
             List<SubpassDesc> s;
             for (auto& subpassBinding : subpasses)
@@ -153,16 +153,16 @@ namespace FE::Osmium
             }
             d.Subpasses  = s;
             auto* result = self->CreateRenderPass(d).Detach();
-            desc->Attachments->ReleaseStrongRef();
-            desc->SubpassDependencies->ReleaseStrongRef();
+            desc->Attachments.Clear();
+            desc->SubpassDependencies.Clear();
             for (auto& subpassBinding : subpasses)
             {
-                subpassBinding.InputAttachments->ReleaseStrongRef();
-                subpassBinding.PreserveAttachments->ReleaseStrongRef();
-                subpassBinding.RenderTargetAttachments->ReleaseStrongRef();
-                subpassBinding.MSAAResolveAttachments->ReleaseStrongRef();
+                subpassBinding.InputAttachments.Clear();
+                subpassBinding.PreserveAttachments.Clear();
+                subpassBinding.RenderTargetAttachments.Clear();
+                subpassBinding.MSAAResolveAttachments.Clear();
             }
-            desc->Subpasses->ReleaseStrongRef();
+            desc->Subpasses.Clear();
             return result;
         }
 

@@ -44,7 +44,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         internal readonly struct DescNative
         {
-            public readonly IntPtr Sizes;
+            public readonly ByteBuffer.Native Sizes;
             public readonly uint MaxTables;
 
             public DescNative(in Desc desc)

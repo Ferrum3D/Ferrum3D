@@ -25,7 +25,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         public struct DescNative
         {
-            public readonly IntPtr RenderTargetViews;
+            public readonly ByteBuffer.Native RenderTargetViews;
             public readonly IntPtr RenderPass;
             public readonly uint Width;
             public readonly uint Height;

@@ -57,8 +57,8 @@ namespace Ferrum.Osmium.GPU.VertexInput
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct Native
         {
-            public readonly IntPtr Buffers;
-            public readonly IntPtr Attributes;
+            public readonly ByteBuffer.Native Buffers;
+            public readonly ByteBuffer.Native Attributes;
             public readonly PrimitiveTopology Topology;
 
             public Native(InputStreamLayout layout)

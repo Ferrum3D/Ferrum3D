@@ -30,7 +30,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
             public readonly float BlendConstantY;
             public readonly float BlendConstantZ;
             public readonly float BlendConstantW;
-            public readonly IntPtr TargetBlendStates;
+            public readonly ByteBuffer.Native TargetBlendStates;
 
             public Native(ColorBlendState state)
             {

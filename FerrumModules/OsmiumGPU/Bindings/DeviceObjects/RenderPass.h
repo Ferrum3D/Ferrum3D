@@ -1,26 +1,22 @@
 #pragma once
 #include <OsGPU/RenderPass/IRenderPass.h>
-
-namespace FE
-{
-    class IByteBuffer;
-}
+#include <FeCore/Containers/ByteBuffer.h>
 
 namespace FE::Osmium
 {
     struct RenderPassDescBinding
     {
-        IByteBuffer* Subpasses;
-        IByteBuffer* Attachments;
-        IByteBuffer* SubpassDependencies;
+        ByteBuffer Subpasses;
+        ByteBuffer Attachments;
+        ByteBuffer SubpassDependencies;
     };
 
     struct SubpassDescBinding
     {
-        IByteBuffer* InputAttachments;
-        IByteBuffer* RenderTargetAttachments;
-        IByteBuffer* MSAAResolveAttachments;
-        IByteBuffer* PreserveAttachments;
+        ByteBuffer InputAttachments;
+        ByteBuffer RenderTargetAttachments;
+        ByteBuffer MSAAResolveAttachments;
+        ByteBuffer PreserveAttachments;
         SubpassAttachment DepthStencilAttachment;
     };
 } // namespace FE::Osmium

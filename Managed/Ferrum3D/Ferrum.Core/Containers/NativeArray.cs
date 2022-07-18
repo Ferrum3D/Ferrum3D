@@ -59,6 +59,13 @@ namespace Ferrum.Core.Containers
             }
         }
 
+        public static NativeArray<T> FromHandle(in ByteBuffer.Native handle)
+        {
+            var result = new NativeArray<T>();
+            result.Handle = handle;
+            return result;
+        }
+
         public static NativeArray<IntPtr> FromObjectCollection<TObject>(IEnumerable<TObject> collection)
             where TObject : UnmanagedObject
         {
@@ -75,7 +82,7 @@ namespace Ferrum.Core.Containers
             }
         }
 
-        internal ByteBuffer.Native Detach()
+        public ByteBuffer.Native Detach()
         {
             var handle = Handle;
             Handle = new ByteBuffer.Native();

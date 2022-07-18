@@ -24,9 +24,9 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         internal readonly struct DescNative
         {
-            public readonly IntPtr Subpasses;
-            public readonly IntPtr Attachments;
-            public readonly IntPtr SubpassDependencies;
+            public readonly ByteBuffer.Native Subpasses;
+            public readonly ByteBuffer.Native Attachments;
+            public readonly ByteBuffer.Native SubpassDependencies;
 
             public DescNative(in Desc desc)
             {
