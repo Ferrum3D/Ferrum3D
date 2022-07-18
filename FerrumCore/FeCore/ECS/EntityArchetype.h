@@ -124,7 +124,7 @@ namespace FE::ECS
         //! \param [in] chunk       - The chunk where the entity was allocated.
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        inline ECSResult CopyComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
+        ECSResult CopyComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
 
         //! \brief Get the version of the archetype - a number that gets incremented after every change.
         [[nodiscard]] inline UInt32 Version() const
