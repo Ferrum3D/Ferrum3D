@@ -65,6 +65,11 @@ namespace FE
 
         inline NullableHandle DenseIndex(const TKey& key) const
         {
+            if (m_Sparse.Size() <= key)
+            {
+                return NullableHandle::Null();
+            }
+
             auto denseIndex = m_Sparse[key];
             if (denseIndex < m_Dense.Size())
             {
