@@ -22,6 +22,11 @@ namespace FE::ECS
     public:
         FE_STRUCT_RTTI(Entity, "9D635A82-7AC3-40AB-BCA5-A0FDE06F9282");
 
+        inline Entity()
+            : Entity(static_cast<EntityID>(-1))
+        {
+        }
+
         //! \brief Create a NULL entity that doesn't actually point to any entity.
         inline static Entity Null()
         {
