@@ -196,7 +196,8 @@ namespace FE
     template<class T>
     inline constexpr T MakeMask(T bitCount, T leftShift)
     {
-        auto mask = bitCount == 64 ? static_cast<T>(-1) : ((1 << bitCount) - 1);
+        auto typeBitCount = sizeof(T) * 8;
+        auto mask         = bitCount == typeBitCount ? static_cast<T>(-1) : ((1 << bitCount) - 1);
         return static_cast<T>(mask << leftShift);
     }
 
