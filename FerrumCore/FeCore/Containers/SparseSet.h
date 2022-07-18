@@ -199,7 +199,7 @@ namespace FE
         //! \param [in] capacity - The new capacity.
         inline void Reserve(USize capacity)
         {
-            if (capacity >= Capacity())
+            if (capacity <= Capacity())
             {
                 return;
             }
