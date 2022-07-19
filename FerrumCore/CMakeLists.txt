@@ -50,6 +50,7 @@ set(SRC
     FeCore/ECS/EntityQuery.h
     FeCore/ECS/EntityRegistry.cpp
     FeCore/ECS/EntityRegistry.h
+    FeCore/ECS/ISystem.h
     FeCore/ECS/World.cpp
     FeCore/ECS/World.h
 
