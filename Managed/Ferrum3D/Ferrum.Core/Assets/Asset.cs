@@ -18,7 +18,7 @@ namespace Ferrum.Core.Assets
             return result;
         }
 
-        protected abstract IntPtr LoadByIdImpl(IntPtr manager, Guid assetId);
+        protected abstract IntPtr LoadByIdImpl(IntPtr manager, in Guid assetId);
 
         protected virtual void Initialize()
         {

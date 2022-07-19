@@ -239,8 +239,7 @@ namespace Ferrum.Samples.Models
             window.PollEvents();
             var imageIndex = swapChain.CurrentImageIndex;
             fences[swapChain.CurrentFrameIndex].Reset();
-            commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex],
-                CommandQueue.SubmitFlags.FrameBeginEnd);
+            commandQueue.SubmitBuffers(commandBuffers[imageIndex], fences[frameIndex], CommandQueue.SubmitFlags.FrameBeginEnd);
             swapChain.Present();
         }
 

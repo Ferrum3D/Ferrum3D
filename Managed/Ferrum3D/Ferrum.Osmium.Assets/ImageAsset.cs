@@ -43,7 +43,7 @@ namespace Ferrum.Osmium.Assets
         }
 
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Load")]
-        private static extern IntPtr LoadNative(IntPtr manager, string assetId);
+        private static extern IntPtr LoadNative(IntPtr manager, in Guid assetId);
 
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Data")]
         private static extern IntPtr DataNative(IntPtr self);
@@ -65,9 +65,9 @@ namespace Ferrum.Osmium.Assets
             DestructNative(Handle);
         }
 
-        protected override IntPtr LoadByIdImpl(IntPtr manager, Guid assetId)
+        protected override IntPtr LoadByIdImpl(IntPtr manager, in Guid assetId)
         {
-            return LoadNative(manager, assetId.ToString());
+            return LoadNative(manager, in assetId);
         }
     }
 }
