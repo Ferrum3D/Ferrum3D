@@ -4,6 +4,18 @@
 #include <cctype>
 #include <string_view>
 
+#if FE_WINDOWS
+#    include <guiddef.h>
+#else
+typedef struct _GUID
+{
+    unsigned long Data1;
+    unsigned short Data2;
+    unsigned short Data3;
+    unsigned char Data4[8];
+} GUID;
+#endif
+
 namespace FE
 {
     //! \brief A struct to work with UUIDs.
@@ -24,6 +36,16 @@ namespace FE
             return *this;
         }
 
+        inline static UUID FromGUID(const GUID& value) noexcept
+        {
+            UUID result;
+            memcpy(result.Data.data(), &value, 16);
+            *reinterpret_cast<UInt32*>(&result.Data[0]) = FE_BYTE_SWAP_UINT32(*reinterpret_cast<UInt32*>(&result.Data[0]));
+            *reinterpret_cast<UInt16*>(&result.Data[4]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<UInt16*>(&result.Data[4]));
+            *reinterpret_cast<UInt16*>(&result.Data[6]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<UInt16*>(&result.Data[6]));
+            return result;
+        }
+
         //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline explicit UUID(const char* str) noexcept
         {
@@ -32,7 +54,7 @@ namespace FE
                 return static_cast<UInt8>(std::find(digits, digits + 16, std::toupper(c)) - digits);
             };
 
-            size_t idx = 0;
+            USize idx  = 0;
             auto parse = [&](Int32 n) {
                 for (Int32 i = 0; i < n; ++i)
                 {
