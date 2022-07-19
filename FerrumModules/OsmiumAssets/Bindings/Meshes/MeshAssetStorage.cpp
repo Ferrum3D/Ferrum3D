@@ -5,9 +5,9 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT MeshAssetStorage* MeshAssetStorage_Load(Assets::IAssetManager* manager, const char* assetID)
+        FE_DLL_EXPORT MeshAssetStorage* MeshAssetStorage_Load(Assets::IAssetManager* manager, const GUID* assetID)
         {
-            return fe_assert_cast<MeshAssetStorage*>(manager->LoadAsset(Assets::AssetID(assetID)));
+            return fe_assert_cast<MeshAssetStorage*>(manager->LoadAsset(UUID::FromGUID(*assetID)));
         }
 
         FE_DLL_EXPORT UInt32 MeshAssetStorage_VertexSize(MeshAssetStorage* self)
