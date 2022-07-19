@@ -13,6 +13,10 @@
 #    define FE_ALIGNED_MALLOC(size, alignment) _aligned_malloc(size, alignment)
 #    define FE_ALIGNED_FREE(ptr) _aligned_free(ptr)
 
+#    define FE_BYTE_SWAP_UINT16(value) _byteswap_ushort(value)
+#    define FE_BYTE_SWAP_UINT32(value) _byteswap_ulong(value)
+#    define FE_BYTE_SWAP_UINT64(value) _byteswap_uint64(value)
+
 #    define FE_DLL_EXPORT __declspec(dllexport)
 #    define FE_DLL_IMPORT __declspec(dllimport)
 
@@ -26,6 +30,10 @@
 
 #    define FE_ALIGNED_MALLOC(size, alignment) ::memalign(alignment, size)
 #    define FE_ALIGNED_FREE(ptr) ::free(ptr)
+
+#    define FE_BYTE_SWAP_UINT16(value) __builtin_bswap16(value)
+#    define FE_BYTE_SWAP_UINT32(value) __builtin_bswap32(value)
+#    define FE_BYTE_SWAP_UINT64(value) __builtin_bswap64(value)
 
 #    define FE_DLL_EXPORT __attribute__((visibility("default")))
 #    define FE_DLL_IMPORT __attribute__((visibility("default")))
