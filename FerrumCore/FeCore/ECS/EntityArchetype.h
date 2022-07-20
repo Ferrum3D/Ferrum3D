@@ -66,13 +66,13 @@ namespace FE::ECS
 
         void InitInternal();
 
+        //! \brief Create a new entity archetype from a list of component types.
+        explicit EntityArchetype(const ArraySlice<ComponentType>& layout);
+
     public:
         FE_STRUCT_RTTI(EntityArchetype, "EC825348-557C-4728-A44B-9CB7FCADA938");
 
         inline EntityArchetype() = default;
-
-        //! \brief Create a new entity archetype from a list of component types.
-        EntityArchetype(const ArraySlice<ComponentType>& layout); // NOLINT(google-explicit-constructor)
         ~EntityArchetype();
 
         inline EntityArchetype(const EntityArchetype& other) = default;

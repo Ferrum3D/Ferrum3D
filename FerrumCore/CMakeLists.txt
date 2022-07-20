@@ -23,6 +23,8 @@ set(SRC
     FeCore/Base/PlatformInclude.h
     FeCore/Base/PlatformTraits.h
 
+    FeCore/Components/PositionComponent.h
+
     FeCore/Console/Console.cpp
     FeCore/Console/Console.h
     FeCore/Console/ConsoleLogger.cpp

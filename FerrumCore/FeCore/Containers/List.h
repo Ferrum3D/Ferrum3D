@@ -476,13 +476,11 @@ namespace FE
         inline void SwapRemoveAt(USize index)
         {
             FE_CORE_ASSERT(index < Size(), "Invalid index");
-            if (Size() == 1)
+            if (index < Size() - 1)
             {
-                Clear();
-                return;
+                std::swap(m_Begin[index], m_Begin[Size() - 1]);
             }
 
-            std::swap(m_Begin[index], m_Begin[Size() - 1]);
             DestructAtEnd(m_End - 1);
         }
 

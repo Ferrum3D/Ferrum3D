@@ -7,6 +7,10 @@ set(SRC
 
     Containers/ByteBuffer.cpp
 
+    ECS/ComponentType.h
+    ECS/EntityQuery.cpp
+    ECS/EntityRegistry.cpp
+
     Math/Matrix4x4F.cpp
 
     Modules/Engine.cpp

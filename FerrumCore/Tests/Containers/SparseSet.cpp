@@ -72,4 +72,11 @@ TEST(SparseSet, Remove)
 
     EXPECT_EQ(sparseSet[0], "Zero");
     EXPECT_EQ(sparseSet[2], "Two");
+
+    sparseSet.Remove(0);
+    sparseSet.Remove(2);
+
+    EXPECT_FALSE(sparseSet.Contains(0));
+    EXPECT_FALSE(sparseSet.Contains(1));
+    EXPECT_FALSE(sparseSet.Contains(2));
 }
