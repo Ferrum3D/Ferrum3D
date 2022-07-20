@@ -187,7 +187,7 @@ namespace FE
             {
                 auto idx = denseIndex.ToOffset();
                 m_Dense.SwapRemoveAt(idx);
-                if (m_Dense.Any())
+                if (m_Dense.Size() > idx)
                 {
                     m_Sparse[m_Dense[idx].Key()] = idx;
                 }

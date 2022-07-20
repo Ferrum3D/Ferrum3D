@@ -13,7 +13,7 @@ namespace FE::ECS
         struct EntityData
         {
             ArchetypeChunk* Chunk = nullptr;
-            Int32 ArchetypeID     = 0;
+            Int32 ArchetypeID     = -1;
             UInt32 EntityID       = 0;
 
             [[nodiscard]] inline bool IsEmpty() const

@@ -6,7 +6,6 @@ namespace FE::ECS
     //! \brief Describes a type of component.
     struct ComponentType
     {
-        FE::StringSlice Name; //!< Name of component, must be a static string.
         TypeID Type;          //!< ID of component's type.
         UInt32 Alignment;     //!< Alignment of component data.
         UInt32 DataSize;      //!< Size of component data.
@@ -27,7 +26,6 @@ namespace FE::ECS
         inline static ComponentType Create()
         {
             ComponentType result;
-            result.Name      = fe_nameof<T>();
             result.Type      = fe_typeid<T>();
             result.Alignment = static_cast<UInt32>(alignof(T));
             result.DataSize  = static_cast<UInt32>(sizeof(T));
