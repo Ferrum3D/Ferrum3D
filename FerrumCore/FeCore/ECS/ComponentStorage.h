@@ -82,7 +82,9 @@ namespace FE::ECS
         //! \brief Find a component in the storage and remove it.
         //!
         //! \param [in] id - The ID of the component to remove.
-        void RemoveComponent(UInt32 id);
+        //!
+        //! \return Index of the component that was moved to the place of removed one or -1.
+        Int32 RemoveComponent(UInt32 id);
 
         //! \brief Add an instance of component to the storage.
         //!

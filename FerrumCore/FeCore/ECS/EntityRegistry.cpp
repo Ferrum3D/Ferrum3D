@@ -15,19 +15,19 @@ namespace FE::ECS
 
         auto newArchetype = EntityArchetypeBuilder(componentTypes).AddComponentType(componentType).Build();
 
-        Int32 selectedArchetype = -1;
+        Int16 selectedArchetype = -1;
         for (USize i = 0; i < m_Archetypes.Size(); ++i)
         {
             if (newArchetype == m_Archetypes[i])
             {
-                selectedArchetype = static_cast<Int32>(i);
+                selectedArchetype = static_cast<Int16>(i);
                 break;
             }
         }
 
         if (selectedArchetype == -1)
         {
-            selectedArchetype = static_cast<Int32>(m_Archetypes.Size());
+            selectedArchetype = static_cast<Int16>(m_Archetypes.Size());
             m_Archetypes.Push(newArchetype);
         }
 
@@ -63,19 +63,19 @@ namespace FE::ECS
 
         auto newArchetype = EntityArchetypeBuilder(componentTypes).Build();
 
-        Int32 selectedArchetype = -1;
+        Int16 selectedArchetype = -1;
         for (USize i = 0; i < m_Archetypes.Size(); ++i)
         {
             if (newArchetype == m_Archetypes[i])
             {
-                selectedArchetype = static_cast<Int32>(i);
+                selectedArchetype = static_cast<Int16>(i);
                 break;
             }
         }
 
         if (selectedArchetype == -1)
         {
-            selectedArchetype = static_cast<Int32>(m_Archetypes.Size());
+            selectedArchetype = static_cast<Int16>(m_Archetypes.Size());
             m_Archetypes.Push(newArchetype);
         }
 
@@ -83,7 +83,7 @@ namespace FE::ECS
         return true;
     }
 
-    void EntityRegistry::MoveToArchetype(Entity entity, Int32 archetypeIndex)
+    void EntityRegistry::MoveToArchetype(Entity entity, Int16 archetypeIndex)
     {
         auto& srcData = m_Data[entity.GetID()];
         EntityData data{};
@@ -91,7 +91,7 @@ namespace FE::ECS
 
         if (archetypeIndex >= 0)
         {
-            m_Archetypes[archetypeIndex].CreateEntity(data.EntityID, &data.Chunk);
+            FE_ASSERT(m_Archetypes[archetypeIndex].CreateEntity(data.EntityID, &data.Chunk) == ECSResult::Success);
 
             if (!srcData.IsEmpty())
             {
@@ -99,14 +99,14 @@ namespace FE::ECS
                 {
                     // If some components won't be found in either chunk, it will just return ComponentNotFoundError,
                     // so we do not check if the component exists
-                    srcData.Chunk->CopyComponentToChunk(srcData.EntityID, type.Type, data.Chunk);
+                    srcData.Chunk->CopyComponentToChunk(srcData.EntityID, data.EntityID, type.Type, data.Chunk);
                 }
             }
         }
 
         if (!srcData.IsEmpty())
         {
-            m_Archetypes[srcData.ArchetypeID].DestroyEntity(srcData.EntityID, srcData.Chunk);
+            FE_ASSERT(m_Archetypes[srcData.ArchetypeID].DestroyEntity(srcData.EntityID, srcData.Chunk) == ECSResult::Success);
         }
 
         m_Data[entity.GetID()] = data;
@@ -137,19 +137,19 @@ namespace FE::ECS
     {
         auto archetype = EntityArchetypeBuilder(componentTypes).Build();
 
-        Int32 selectedArchetype = -1;
+        Int16 selectedArchetype = -1;
         for (USize i = 0; i < m_Archetypes.Size(); ++i)
         {
             if (archetype == m_Archetypes[i])
             {
-                selectedArchetype = static_cast<Int32>(i);
+                selectedArchetype = static_cast<Int16>(i);
                 break;
             }
         }
 
         if (selectedArchetype == -1)
         {
-            selectedArchetype = static_cast<Int32>(m_Archetypes.Size());
+            selectedArchetype = static_cast<Int16>(m_Archetypes.Size());
             m_Archetypes.Push(archetype);
         }
 
@@ -161,7 +161,7 @@ namespace FE::ECS
     Entity EntityRegistry::CreateEntity(EntityArchetype* archetype)
     {
         auto entity            = CreateEntity();
-        auto selectedArchetype = static_cast<Int32>(m_Archetypes.IndexOf(*archetype));
+        auto selectedArchetype = static_cast<Int16>(m_Archetypes.IndexOf(*archetype));
 
         FE_ASSERT_MSG(selectedArchetype != -1, "The archetype was not created from the registry");
 
@@ -177,7 +177,7 @@ namespace FE::ECS
 
         for (auto& type : m_Archetypes[srcData.ArchetypeID].ComponentTypes())
         {
-            srcData.Chunk->CopyComponentToChunk(srcData.EntityID, type.Type, dstData.Chunk);
+            srcData.Chunk->CopyComponentToChunk(srcData.EntityID, dstData.EntityID, type.Type, dstData.Chunk);
         }
 
         return result;
@@ -195,19 +195,19 @@ namespace FE::ECS
     {
         auto archetype = EntityArchetypeBuilder(componentTypes).Build();
 
-        Int32 selectedArchetype = -1;
+        Int16 selectedArchetype = -1;
         for (USize i = 0; i < m_Archetypes.Size(); ++i)
         {
             if (archetype == m_Archetypes[i])
             {
-                selectedArchetype = static_cast<Int32>(i);
+                selectedArchetype = static_cast<Int16>(i);
                 break;
             }
         }
 
         if (selectedArchetype == -1)
         {
-            selectedArchetype = static_cast<Int32>(m_Archetypes.Size());
+            selectedArchetype = static_cast<Int16>(m_Archetypes.Size());
             m_Archetypes.Push(archetype);
         }
 
@@ -220,7 +220,7 @@ namespace FE::ECS
 
     void EntityRegistry::CreateEntities(EntityArchetype* archetype, ArraySliceMut<Entity> entities)
     {
-        auto selectedArchetype = static_cast<Int32>(m_Archetypes.IndexOf(*archetype));
+        auto selectedArchetype = static_cast<Int16>(m_Archetypes.IndexOf(*archetype));
 
         FE_ASSERT_MSG(selectedArchetype != -1, "The archetype was not created from the registry");
 

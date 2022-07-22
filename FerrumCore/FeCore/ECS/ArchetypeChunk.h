@@ -16,13 +16,22 @@ namespace FE::ECS
     //! \brief Entity archetype chunk. A chunk of memory that stores entities with components of the same archetype.
     class ArchetypeChunk final
     {
-        USize m_Capacity             = 0;
+        USize m_Capacity = 0;
         List<Int8> m_Data;
         List<ComponentStorage> m_ComponentStorages;
 
+        List<UInt16> m_EntityIndices;
+
         UInt32 m_Version = 0;
 
+        UInt16 m_EntityID = 0;
+
         inline ArchetypeChunk() = default;
+
+        inline UInt16 GetEntityID()
+        {
+            return m_EntityID++;
+        }
 
     public:
         FE_STRUCT_RTTI(ArchetypeChunk, "8D700C4F-6DAE-4C92-A6D5-0B3EB53BF592");
@@ -48,33 +57,34 @@ namespace FE::ECS
         //! \brief Allocate entity data.
         //!
         //! \param [out] entityID - The internal ID of entity (within the chunk).
-        ECSResult AllocateEntity(UInt32& entityID);
+        ECSResult AllocateEntity(UInt16& entityID);
 
         //! \brief Deallocate entity data.
         //!
         //! \param [in] entityID - The internal ID of entity (within the chunk).
-        ECSResult DeallocateEntity(UInt32 entityID);
+        ECSResult DeallocateEntity(UInt16 entityID);
 
         //! \brief Set component data.
         //!
         //! \param [in] entityID - The internal ID of entity (within the chunk).
         //! \param [in] typeID   - The ID of component type.
         //! \param [in] source   - The data of component to be copied.
-        ECSResult UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source);
+        ECSResult UpdateComponent(UInt16 entityID, const TypeID& typeID, const void* source);
 
         //! \brief Get component data.
         //!
         //! \param [in] entityID    - The internal ID of entity (within the chunk).
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponent(UInt32 entityID, const TypeID& typeID, void* destination);
+        ECSResult CopyComponent(UInt16 entityID, const TypeID& typeID, void* destination);
 
         //! \brief Copy component data to another chunk.
         //!
-        //! \param [in] entityID    - The internal ID of entity (within the chunk).
+        //! \param [in] srcEntityID - The internal ID of entity (within the chunk).
+        //! \param [in] dstEntityID - The internal ID of entity (within the chunk).
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponentToChunk(UInt32 entityID, const TypeID& typeID, ArchetypeChunk* chunk);
+        ECSResult CopyComponentToChunk(UInt16 srcEntityID, UInt16 dstEntityID, const TypeID& typeID, ArchetypeChunk* chunk);
 
         //! \brief Get allocated entity count.
         [[nodiscard]] inline USize Count() const

@@ -63,7 +63,7 @@ namespace FE::ECS
         m_Chunks.Swap(newChunks);
     }
 
-    ECSResult EntityArchetype::CreateEntity(UInt32& id, ArchetypeChunk** chunk)
+    ECSResult EntityArchetype::CreateEntity(UInt16& id, ArchetypeChunk** chunk)
     {
         ++m_Version;
         for (auto* c : m_Chunks)
@@ -87,7 +87,7 @@ namespace FE::ECS
         return (*chunk)->AllocateEntity(id);
     }
 
-    ECSResult EntityArchetype::DestroyEntity(UInt32 id, ArchetypeChunk* chunk)
+    ECSResult EntityArchetype::DestroyEntity(UInt16 id, ArchetypeChunk* chunk)
     {
         if (ValidationEnabled())
         {
@@ -103,7 +103,7 @@ namespace FE::ECS
         return result;
     }
 
-    ECSResult EntityArchetype::UpdateComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source)
+    ECSResult EntityArchetype::UpdateComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source)
     {
         auto result = chunk->UpdateComponent(entityID, typeID, source);
         if (result == ECSResult::Success)
@@ -114,7 +114,7 @@ namespace FE::ECS
         return result;
     }
 
-    ECSResult EntityArchetype::CopyComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination)
+    ECSResult EntityArchetype::CopyComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination)
     {
         return chunk->CopyComponent(entityID, typeID, destination);
     }
