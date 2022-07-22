@@ -2,6 +2,8 @@
 #include <FeCore/ECS/Entity.h>
 #include <FeCore/ECS/EntityArchetype.h>
 #include <FeCore/ECS/EntityRegistry.h>
+#include <FeCore/ECS/ArchetypeChunk.h>
+#include <functional>
 
 namespace FE::ECS
 {
@@ -20,16 +22,18 @@ namespace FE::ECS
 
     public:
         //! \brief Add a component type to EntityQuery.
-        inline void AddComponentType(const ComponentType& componentType)
+        inline EntityQueryBuilder& AddComponentType(const ComponentType& componentType)
         {
             m_ComponentTypes->m_Layout.Push(componentType);
+            return *this;
         }
 
         //! \brief Add a component type to EntityQuery.
         template<class T>
-        inline void AddComponentType()
+        inline EntityQueryBuilder& AddComponentType()
         {
             m_ComponentTypes->m_Layout.Push(ComponentType::Create<T>());
+            return *this;
         }
 
         //! \brief Build entity archetype.
@@ -50,6 +54,12 @@ namespace FE::ECS
         EntityArchetype m_IncludeNone;
         EntityArchetype m_IncludeAll;
         EntityArchetype m_IncludeAny;
+
+        template<class T>
+        inline T* GetComponent(ComponentStorage* storage, USize index)
+        {
+            return storage->GetComponent<T>(index);
+        }
 
     public:
         FE_STRUCT_RTTI(EntityQuery, "BB78DEF5-2D28-4E85-9E78-3CD1E7263B45");
@@ -74,9 +84,57 @@ namespace FE::ECS
             return { &m_IncludeAny, this };
         }
 
-        inline void Update()
+        inline void NoneOf(ArraySlice<ComponentType> components)
+        {
+            m_IncludeNone.m_Layout.Append(components.Length(), components.Data());
+        }
+
+        inline void AllOf(ArraySlice<ComponentType> components)
+        {
+            m_IncludeAll.m_Layout.Append(components.Length(), components.Data());
+        }
+
+        inline void AnyOf(ArraySlice<ComponentType> components)
+        {
+            m_IncludeAny.m_Layout.Append(components.Length(), components.Data());
+        }
+
+        inline EntityQuery& Update()
         {
             m_Registry->UpdateEntityQuery(this);
+            return *this;
+        }
+
+        template<class... Types>
+        inline void ForEach(const std::function<void(Types&...)>& function)
+        {
+            auto types = std::make_tuple(fe_typeid<Types>()...);
+
+            for (auto* archetype : m_Archetypes)
+            {
+                for (auto* chunk : archetype->m_Chunks)
+                {
+                    auto storages = std::apply(
+                        [chunk](auto... args) {
+                            return std::make_tuple(chunk->GetComponentStorage(args)...);
+                        },
+                        types);
+
+                    for (USize i = 0; i < chunk->Count(); ++i)
+                    {
+                        auto components = std::apply(
+                            [i, this](auto... args) {
+                                return std::make_tuple(GetComponent<Types>(args, i)...);
+                            },
+                            storages);
+                        std::apply(
+                            [&function](auto... args) {
+                                function((*args)...);
+                            },
+                            components);
+                    }
+                }
+            }
         }
     };
 } // namespace FE::ECS

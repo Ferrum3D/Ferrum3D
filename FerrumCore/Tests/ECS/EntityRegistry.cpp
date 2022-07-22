@@ -1,11 +1,12 @@
 #include <FeCore/Components/PositionComponent.h>
+#include <FeCore/ECS/EntityQuery.h>
 #include <FeCore/ECS/EntityRegistry.h>
 #include <gtest/gtest.h>
 
 using namespace FE::ECS;
-using FE::fe_typeid;
 using FE::ArraySlice;
 using FE::ArraySliceMut;
+using FE::fe_typeid;
 using FE::List;
 
 struct TestComponent
@@ -63,21 +64,69 @@ TEST(EntityRegistry, InvalidAfterDestroy)
 TEST(EntityRegistry, CloneEntity)
 {
     auto registry = FE::MakeShared<EntityRegistry>();
-    auto entity = registry->CreateEntity();
+    auto entity   = registry->CreateEntity();
     registry->AddComponent(entity, PositionComponent(1, 2, 3));
-    registry->AddComponent(entity, TestComponent { 4 });
+    registry->AddComponent(entity, TestComponent{ 4 });
     auto clone = registry->CloneEntity(entity);
     EXPECT_EQ(registry->GetComponent<PositionComponent>(entity), registry->GetComponent<PositionComponent>(clone));
     EXPECT_EQ(registry->GetComponent<TestComponent>(entity).TestData, registry->GetComponent<TestComponent>(clone).TestData);
+}
+
+TEST(EntityRegistry, UpdateQuery)
+{
+    const int count = 16 * 1024;
+
+    auto registry = FE::MakeShared<EntityRegistry>();
+    List<Entity> entities(count, Entity::Null());
+    registry->CreateEntities(ArraySliceMut(entities));
+    registry->AddComponent<PositionComponent>(entities);
+    registry->AddComponent<TestComponent>(ArraySlice(entities)(0, count / 2));
+
+    for (FE::USize i = 0; i < entities.Size(); ++i)
+    {
+        registry->SetComponent(entities[i],
+                               PositionComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
+        if (i < count / 2)
+        {
+            registry->SetComponent(entities[i], TestComponent{ static_cast<float>(i) * 10 });
+        }
+    }
+
+    // clang-format off
+    auto query1 =
+        EntityQuery(registry.GetRaw())
+            .AllOf()
+                .AddComponentType<PositionComponent>()
+                .AddComponentType<TestComponent>()
+            .Build()
+        .Update();
+    auto query2 =
+        EntityQuery(registry.GetRaw())
+            .AllOf()
+                .AddComponentType<PositionComponent>()
+            .Build()
+        .Update();
+    // clang-format on
+
+    FE::USize entityCount1 = 0;
+    FE::USize entityCount2 = 0;
+
+    query1.ForEach(std::function([&entityCount1](PositionComponent& pos, TestComponent& test) {
+        entityCount1++;
+    }));
+
+    query2.ForEach(std::function([&entityCount2](PositionComponent& pos) {
+        entityCount2++;
+    }));
+
+    EXPECT_EQ(entityCount1, count / 2);
+    EXPECT_EQ(entityCount2, count);
 }
 
 TEST(EntityRegistry, HandleMultipleArchetypeChunks)
 {
     // Create a lot of components, that do not fit into a single chunk
     const int count = 16 * 1024;
-
-    [[maybe_unused]] const FE::TypeID& positionType = fe_typeid<PositionComponent>();
-    [[maybe_unused]] const FE::TypeID& testType = fe_typeid<TestComponent>();
 
     auto registry = FE::MakeShared<EntityRegistry>();
     List<Entity> entities(count, Entity::Null());
@@ -87,7 +136,8 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
 
     for (FE::USize i = 0; i < entities.Size(); ++i)
     {
-        registry->SetComponent(entities[i], PositionComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
+        registry->SetComponent(entities[i],
+                               PositionComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
         registry->SetComponent(entities[i], TestComponent{ static_cast<float>(i) * 10 });
     }
 
