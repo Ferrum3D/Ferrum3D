@@ -86,6 +86,14 @@ namespace FE::ECS
         //! \return Index of the component that was moved to the place of removed one or -1.
         Int32 RemoveComponent(UInt32 id);
 
+        template<class T>
+        inline T* GetComponent(UInt32 id)
+        {
+            void* result;
+            ComponentData(id, &result);
+            return static_cast<T*>(result);
+        }
+
         //! \brief Add an instance of component to the storage.
         //!
         //! \tparam T - The type of the component, must be trivial!

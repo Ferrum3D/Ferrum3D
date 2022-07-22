@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/ECS/ComponentStorage.h>
+#include <functional>
 
 namespace FE::ECS
 {
@@ -81,6 +82,19 @@ namespace FE::ECS
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
         ECSResult CopyComponentToChunk(UInt16 srcEntityID, UInt16 dstEntityID, const TypeID& typeID, ArchetypeChunk* chunk);
+
+        inline ComponentStorage* GetComponentStorage(const TypeID& typeID)
+        {
+            for (auto& storage : m_ComponentStorages)
+            {
+                if (storage.CheckTypeID(typeID))
+                {
+                    return &storage;
+                }
+            }
+
+            return nullptr;
+        }
 
         //! \brief Get allocated entity count.
         [[nodiscard]] inline USize Count() const

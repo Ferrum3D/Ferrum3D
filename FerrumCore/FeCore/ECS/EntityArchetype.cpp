@@ -126,7 +126,7 @@ namespace FE::ECS
         {
             for (USize j = 0; j < other.ComponentTypeCount(); ++j)
             {
-                if (m_Layout[i].Type == other.m_Layout[i].Type)
+                if (m_Layout[i].Type == other.m_Layout[j].Type)
                 {
                     ++matchCount;
                 }

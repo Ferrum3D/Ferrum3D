@@ -53,6 +53,7 @@ namespace FE::ECS
     {
         friend class EntityArchetypeBuilder;
         friend class EntityQueryBuilder;
+        friend class EntityQuery;
 
         inline static constexpr USize ChunkByteSize = 16 * 1024;
 
@@ -88,6 +89,11 @@ namespace FE::ECS
 
         ArchetypeChunk* AllocateChunk();
         void DeallocateChunk(ArchetypeChunk* chunk);
+
+        inline ArraySlice<ArchetypeChunk*> Chunks()
+        {
+            return m_Chunks;
+        }
 
         //! \brief Deallocate all unused chunks.
         void CollectGarbage();

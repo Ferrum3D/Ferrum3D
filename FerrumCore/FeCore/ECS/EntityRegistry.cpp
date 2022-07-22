@@ -244,9 +244,9 @@ namespace FE::ECS
         query->m_Archetypes.Clear();
         for (auto& archetype : m_Archetypes)
         {
-            if (archetype.Match(query->m_IncludeNone) == EntityArchetypeMatch::None
-                && archetype.Match(query->m_IncludeAll) == EntityArchetypeMatch::All
-                && archetype.Match(query->m_IncludeAny) == EntityArchetypeMatch::Some)
+            if ((query->m_IncludeNone.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeNone) == EntityArchetypeMatch::None)
+                && (query->m_IncludeAll.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeAll) == EntityArchetypeMatch::All)
+                && (query->m_IncludeAny.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeAny) == EntityArchetypeMatch::Some))
             {
                 query->m_Archetypes.Push(&archetype);
             }
