@@ -50,7 +50,7 @@ TEST(LRUCacheMap, SetCapacity)
     }
 }
 
-TEST(LRUCache, Operator)
+TEST(LRUCacheMap, Operator)
 {
     LRUCacheMap<int, int> cache(1);
     cache.Emplace(0, 0);
