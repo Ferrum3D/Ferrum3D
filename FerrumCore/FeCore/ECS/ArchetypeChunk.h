@@ -21,17 +21,13 @@ namespace FE::ECS
         List<ComponentStorage> m_ComponentStorages;
 
         List<UInt16> m_EntityIndices;
+        List<UInt16> m_EntityIDs;
+
+        List<UInt16> m_FreeList;
 
         UInt32 m_Version = 0;
 
-        UInt16 m_EntityID = 0;
-
         inline ArchetypeChunk() = default;
-
-        inline UInt16 GetEntityID()
-        {
-            return m_EntityID++;
-        }
 
     public:
         FE_STRUCT_RTTI(ArchetypeChunk, "8D700C4F-6DAE-4C92-A6D5-0B3EB53BF592");

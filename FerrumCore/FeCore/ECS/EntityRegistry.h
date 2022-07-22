@@ -23,12 +23,19 @@ namespace FE::ECS
         };
 
         SparseSet<EntityID, EntityData> m_Data;
-        SparseSet<EntityID, EntityID> m_VersionTable;
+        List<EntityID> m_VersionTable;
         List<EntityArchetype> m_Archetypes;
+
+        List<EntityID> m_FreeList;
 
         EntityID m_EntityID = 0;
         inline EntityID GetEntityID()
         {
+            if (m_FreeList.Any())
+            {
+                return m_FreeList.Pop();
+            }
+
             return m_EntityID++;
         }
 

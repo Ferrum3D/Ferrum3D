@@ -13,6 +13,13 @@ namespace FE::ECS
 
         m_Capacity = desc.Archetype->ChunkCapacity();
 
+        m_EntityIDs.Resize(m_Capacity);
+        m_FreeList.Resize(m_Capacity);
+        for (UInt16 i = 0; i < static_cast<UInt16>(m_Capacity); ++i)
+        {
+            m_FreeList[i] = i;
+        }
+
         USize beginIndex = 0;
         for (auto& type : desc.Archetype->ComponentTypes())
         {
@@ -36,13 +43,14 @@ namespace FE::ECS
             return ECSResult::OutOfMemoryError;
         }
 
-        entityID = GetEntityID();
+        entityID = m_FreeList.Pop();
         if (m_EntityIndices.Size() < entityID + 1)
         {
             m_EntityIndices.Resize(entityID + 1, static_cast<UInt16>(-1));
         }
 
         m_EntityIndices[entityID] = entityIndex;
+        m_EntityIDs[entityIndex]  = entityID;
 
         for (auto& storage : m_ComponentStorages)
         {
@@ -142,8 +150,9 @@ namespace FE::ECS
             return ECSResult::OutOfRangeError;
         }
 
-        auto entityIndex      = m_EntityIndices[entityID];
+        auto entityIndex          = m_EntityIndices[entityID];
         m_EntityIndices[entityID] = static_cast<UInt16>(-1);
+        m_FreeList.Push(entityID);
 
         Int32 moveIndex = -1;
         for (auto& storage : m_ComponentStorages)
@@ -153,8 +162,8 @@ namespace FE::ECS
 
         if (moveIndex != -1)
         {
-            // TODO: O(n) entity delete, make it O(1)
-            m_EntityIndices[m_EntityIndices.IndexOf(static_cast<UInt16>(moveIndex))] = entityIndex;
+            m_EntityIndices[m_EntityIDs[moveIndex]] = entityIndex;
+            m_EntityIDs[entityIndex]                = m_EntityIDs[moveIndex];
         }
 
         ++m_Version;

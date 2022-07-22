@@ -111,7 +111,7 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
         EXPECT_TRUE(registry->HasComponent<PositionComponent>(entities[i]));
         EXPECT_FALSE(registry->HasComponent<TestComponent>(entities[i]));
         EXPECT_EQ(static_cast<float>(i), registry->GetComponent<PositionComponent>(entities[i]).X);
-//        EXPECT_EQ(static_cast<float>(i) * 2, registry->GetComponent<PositionComponent>(entities[i]).Y);
-//        EXPECT_EQ(static_cast<float>(i) * 3, registry->GetComponent<PositionComponent>(entities[i]).Z);
+        EXPECT_EQ(static_cast<float>(i) * 2, registry->GetComponent<PositionComponent>(entities[i]).Y);
+        ASSERT_EQ(static_cast<float>(i) * 3, registry->GetComponent<PositionComponent>(entities[i]).Z);
     }
 }

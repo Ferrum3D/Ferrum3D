@@ -125,9 +125,9 @@ namespace FE::ECS
         auto id = GetEntityID();
         m_Data.Emplace(id);
         UInt32 version = 0;
-        if (!m_VersionTable.TryGetAt(id, version))
+        if (m_VersionTable.Size() < id + 1)
         {
-            m_VersionTable.Insert(id, 0);
+            m_VersionTable.Resize(id + 1, 0);
         }
 
         return Entity::Create(id, version);
@@ -262,6 +262,7 @@ namespace FE::ECS
             m_Archetypes[data.ArchetypeID].DestroyEntity(data.EntityID, data.Chunk);
         }
         m_Data.Remove(entity.GetID());
+        m_FreeList.Push(entity.GetID());
     }
 
     void EntityRegistry::DestroyEntities(ArraySlice<Entity> entities)
