@@ -26,17 +26,18 @@ namespace FE::ECS
         memcpy(&m_Data[id * ElementSize()], componentData, m_Desc.Type.DataSize);
     }
 
-    void ComponentStorage::RemoveComponent(UInt32 id)
+    Int32 ComponentStorage::RemoveComponent(UInt32 id)
     {
-        if (m_Count == 1)
+        Int32 result = -1;
+        if (id < m_Count - 1)
         {
-            m_Count = 0;
+            result = static_cast<UInt16>(m_Count - 1);
+            UpdateComponentImpl(&m_Data[result * ElementSize()], id);
         }
-        else
-        {
-            UpdateComponentImpl(&m_Data[m_Data.Length() - ElementSize()], id);
-            --m_Count;
-        }
+
+        --m_Count;
+
+        return result;
     }
 
     void ComponentStorage::ComponentData(UInt32 id, void** componentData)

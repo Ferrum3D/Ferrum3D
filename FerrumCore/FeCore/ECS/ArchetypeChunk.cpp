@@ -16,7 +16,7 @@ namespace FE::ECS
         USize beginIndex = 0;
         for (auto& type : desc.Archetype->ComponentTypes())
         {
-            auto nextIndex = m_Capacity * type.AlignedSize();
+            auto nextIndex = beginIndex + m_Capacity * type.AlignedSize();
 
             ComponentStorageDesc storageDesc;
             storageDesc.Data = FE::ArraySliceMut(m_Data)(beginIndex, nextIndex);
@@ -27,13 +27,22 @@ namespace FE::ECS
         }
     }
 
-    ECSResult ArchetypeChunk::AllocateEntity(UInt32& entityID)
+    ECSResult ArchetypeChunk::AllocateEntity(UInt16& entityID)
     {
-        entityID = static_cast<UInt32>(m_ComponentStorages.Front().Count());
-        if (entityID == m_Capacity)
+        auto entityIndex = static_cast<UInt16>(m_ComponentStorages.Front().Count());
+
+        if (entityIndex == m_Capacity)
         {
             return ECSResult::OutOfMemoryError;
         }
+
+        entityID = GetEntityID();
+        if (m_EntityIndices.Size() < entityID + 1)
+        {
+            m_EntityIndices.Resize(entityID + 1, static_cast<UInt16>(-1));
+        }
+
+        m_EntityIndices[entityID] = entityIndex;
 
         for (auto& storage : m_ComponentStorages)
         {
@@ -44,19 +53,21 @@ namespace FE::ECS
         return ECSResult::Success;
     }
 
-    ECSResult ArchetypeChunk::UpdateComponent(UInt32 entityID, const TypeID& typeID, const void* source)
+    ECSResult ArchetypeChunk::UpdateComponent(UInt16 entityID, const TypeID& typeID, const void* source)
     {
-        if (entityID >= Count())
+        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
+
+        auto entityIndex = m_EntityIndices[entityID];
 
         for (auto& storage : m_ComponentStorages)
         {
             if (storage.CheckTypeID(typeID))
             {
                 void* data;
-                storage.ComponentData(entityID, &data);
+                storage.ComponentData(entityIndex, &data);
                 memcpy(data, source, storage.ElementSize());
                 ++m_Version;
                 return ECSResult::Success;
@@ -66,19 +77,21 @@ namespace FE::ECS
         return ECSResult::ComponentNotFoundError;
     }
 
-    ECSResult ArchetypeChunk::CopyComponent(UInt32 entityID, const TypeID& typeID, void* destination)
+    ECSResult ArchetypeChunk::CopyComponent(UInt16 entityID, const TypeID& typeID, void* destination)
     {
-        if (entityID >= Count())
+        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
+
+        auto entityIndex = m_EntityIndices[entityID];
 
         for (auto& storage : m_ComponentStorages)
         {
             if (storage.CheckTypeID(typeID))
             {
                 void* data;
-                storage.ComponentData(entityID, &data);
+                storage.ComponentData(entityIndex, &data);
                 memcpy(destination, data, storage.ElementSize());
                 return ECSResult::Success;
             }
@@ -87,19 +100,19 @@ namespace FE::ECS
         return ECSResult::ComponentNotFoundError;
     }
 
-    ECSResult ArchetypeChunk::CopyComponentToChunk(UInt32 entityID, const TypeID& typeID, ArchetypeChunk* chunk)
+    ECSResult ArchetypeChunk::CopyComponentToChunk(UInt16 srcEntityID, UInt16 dstEntityID, const TypeID& typeID,
+                                                   ArchetypeChunk* chunk)
     {
-        if (entityID >= Count())
-        {
-            return ECSResult::OutOfRangeError;
-        }
+        auto srcEntityIndex = m_EntityIndices[srcEntityID];
+        auto dstEntityIndex = chunk->m_EntityIndices[dstEntityID];
 
         void* destination = nullptr;
         for (auto& storage : chunk->m_ComponentStorages)
         {
             if (storage.CheckTypeID(typeID))
             {
-                storage.ComponentData(entityID, &destination);
+                storage.ComponentData(dstEntityIndex, &destination);
+                break;
             }
         }
 
@@ -113,7 +126,7 @@ namespace FE::ECS
             if (storage.CheckTypeID(typeID))
             {
                 void* data;
-                storage.ComponentData(entityID, &data);
+                storage.ComponentData(srcEntityIndex, &data);
                 memcpy(destination, data, storage.ElementSize());
                 return ECSResult::Success;
             }
@@ -122,16 +135,26 @@ namespace FE::ECS
         return ECSResult::ComponentNotFoundError;
     }
 
-    ECSResult ArchetypeChunk::DeallocateEntity(UInt32 entityID)
+    ECSResult ArchetypeChunk::DeallocateEntity(UInt16 entityID)
     {
-        if (entityID >= Count())
+        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
 
+        auto entityIndex      = m_EntityIndices[entityID];
+        m_EntityIndices[entityID] = static_cast<UInt16>(-1);
+
+        Int32 moveIndex = -1;
         for (auto& storage : m_ComponentStorages)
         {
-            storage.RemoveComponent(entityID);
+            moveIndex = storage.RemoveComponent(entityIndex);
+        }
+
+        if (moveIndex != -1)
+        {
+            // TODO: O(n) entity delete, make it O(1)
+            m_EntityIndices[m_EntityIndices.IndexOf(static_cast<UInt16>(moveIndex))] = entityIndex;
         }
 
         ++m_Version;

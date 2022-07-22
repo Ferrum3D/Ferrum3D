@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Ferrum.Core.Components;
+using Ferrum.Core.Console;
 using Ferrum.Core.Entities;
 using NUnit.Framework;
 
@@ -27,7 +28,7 @@ namespace Ferrum.Core.Tests.Entities
         [Test]
         public void CreateEntities()
         {
-            const int count = 1024;
+            const int count = 64 * 1024;
 
             using var registry = new EntityRegistry();
             var entities = registry.CreateEntities(count);
@@ -99,7 +100,7 @@ namespace Ferrum.Core.Tests.Entities
 
             for (var i = 0; i < entities.Count; ++i)
             {
-                registry.SetComponent(entities[i], new PositionComponent(i, 1, i * 2));
+                registry.SetComponent(entities[i], new PositionComponent(1, i, i * 2));
                 registry.SetComponent(entities[i], new TestComponent { TestData = i * 10 });
             }
 
@@ -108,8 +109,8 @@ namespace Ferrum.Core.Tests.Entities
                 Assert.IsTrue(registry.HasComponent<PositionComponent>(entities[i]));
                 Assert.IsTrue(registry.HasComponent<TestComponent>(entities[i]));
                 Assert.AreEqual(i * 10, registry.GetComponent<TestComponent>(entities[i]).TestData);
-                Assert.AreEqual(i, registry.GetComponent<PositionComponent>(entities[i]).X);
-                Assert.AreEqual(1, registry.GetComponent<PositionComponent>(entities[i]).Y);
+                Assert.AreEqual(1, registry.GetComponent<PositionComponent>(entities[i]).X);
+                Assert.AreEqual(i, registry.GetComponent<PositionComponent>(entities[i]).Y);
                 Assert.AreEqual(i * 2, registry.GetComponent<PositionComponent>(entities[i]).Z);
             }
 
@@ -122,8 +123,8 @@ namespace Ferrum.Core.Tests.Entities
             {
                 Assert.IsTrue(registry.HasComponent<PositionComponent>(entities[i]));
                 Assert.IsFalse(registry.HasComponent<TestComponent>(entities[i]));
-                Assert.AreEqual(i, registry.GetComponent<PositionComponent>(entities[i]).X);
-                Assert.AreEqual(1, registry.GetComponent<PositionComponent>(entities[i]).Y);
+                Assert.AreEqual(1, registry.GetComponent<PositionComponent>(entities[i]).X);
+                Assert.AreEqual(i, registry.GetComponent<PositionComponent>(entities[i]).Y);
                 Assert.AreEqual(i * 2, registry.GetComponent<PositionComponent>(entities[i]).Z);
             }
         }

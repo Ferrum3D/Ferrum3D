@@ -13,8 +13,8 @@ namespace FE::ECS
         struct EntityData
         {
             ArchetypeChunk* Chunk = nullptr;
-            Int32 ArchetypeID     = -1;
-            UInt32 EntityID       = 0;
+            Int16 ArchetypeID     = -1;
+            UInt16 EntityID       = 0;
 
             [[nodiscard]] inline bool IsEmpty() const
             {
@@ -32,7 +32,7 @@ namespace FE::ECS
             return m_EntityID++;
         }
 
-        void MoveToArchetype(Entity entity, Int32 archetypeIndex);
+        void MoveToArchetype(Entity entity, Int16 archetypeIndex);
 
     public:
         FE_CLASS_RTTI(EntityRegistry, "1A7583F3-7C99-4CDF-9C41-27B303C82134");

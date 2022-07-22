@@ -98,7 +98,7 @@ namespace FE::ECS
         //!
         //! \param [out] id    - The ID of the created entity local to the archetype chunk.
         //! \param [out] chunk - The chunk where the entity was allocated.
-        ECSResult CreateEntity(UInt32& id, ArchetypeChunk** chunk);
+        ECSResult CreateEntity(UInt16& id, ArchetypeChunk** chunk);
 
         //! \brief Destroy the entity.
         //!
@@ -108,7 +108,7 @@ namespace FE::ECS
         //!
         //! \param [in] id    - The ID of the entity to destroy local to the archetype chunk.
         //! \param [in] chunk - The chunk where the entity was allocated.
-        ECSResult DestroyEntity(UInt32 id, ArchetypeChunk* chunk);
+        ECSResult DestroyEntity(UInt16 id, ArchetypeChunk* chunk);
 
         //! \brief Retrieve the pointer to the component to set its data.
         //!
@@ -116,7 +116,7 @@ namespace FE::ECS
         //! \param [in] chunk    - The chunk where the entity was allocated.
         //! \param [in] typeID   - The ID of component type.
         //! \param [in] source   - The data of component to be copied.
-        ECSResult UpdateComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source);
+        ECSResult UpdateComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source);
 
         //! \brief Retrieve the pointer to the component to get its data.
         //!
@@ -124,7 +124,7 @@ namespace FE::ECS
         //! \param [in] chunk       - The chunk where the entity was allocated.
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponent(UInt32 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
+        ECSResult CopyComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
 
         //! \brief Get the version of the archetype - a number that gets incremented after every change.
         [[nodiscard]] inline UInt32 Version() const

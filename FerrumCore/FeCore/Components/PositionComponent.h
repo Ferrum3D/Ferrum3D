@@ -49,5 +49,15 @@ namespace FE::ECS
         {
             return { X, Y, Z, 0 };
         }
+
+        friend bool operator==(const PositionComponent& lhs, const PositionComponent& rhs)
+        {
+            return lhs.X == rhs.X && lhs.Y == rhs.Y && lhs.Z == rhs.Z;
+        }
+
+        friend bool operator!=(const PositionComponent& lhs, const PositionComponent& rhs)
+        {
+            return !(rhs == lhs);
+        }
     };
 } // namespace FE::ECS
