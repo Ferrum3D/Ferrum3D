@@ -92,30 +92,25 @@ TEST(EntityRegistry, UpdateQuery)
         }
     }
 
-    // clang-format off
-    auto query1 =
-        EntityQuery(registry.GetRaw())
-            .AllOf()
-                .AddComponentType<PositionComponent>()
-                .AddComponentType<TestComponent>()
-            .Build()
-        .Update();
-    auto query2 =
-        EntityQuery(registry.GetRaw())
-            .AllOf()
-                .AddComponentType<PositionComponent>()
-            .Build()
-        .Update();
-    // clang-format on
+    auto query1 = FE::MakeShared<EntityQuery>(registry.GetRaw());
+    query1->AllOf<PositionComponent, TestComponent>().Update();
+
+    auto query2 = FE::MakeShared<EntityQuery>(registry.GetRaw());
+    query2->AllOf<PositionComponent>().Update();
 
     FE::USize entityCount1 = 0;
     FE::USize entityCount2 = 0;
 
-    query1.ForEach(std::function([&entityCount1](PositionComponent& pos, TestComponent& test) {
+    query1->ForEach(std::function([&entityCount1](PositionComponent& pos, TestComponent& test) {
+        EXPECT_EQ(pos.Y, pos.X * 2);
+        EXPECT_EQ(pos.Z, pos.X * 3);
+        EXPECT_EQ(test.TestData, pos.X * 10);
         entityCount1++;
     }));
 
-    query2.ForEach(std::function([&entityCount2](PositionComponent& pos) {
+    query2->ForEach(std::function([&entityCount2](PositionComponent& pos) {
+        EXPECT_EQ(pos.Y, pos.X * 2);
+        EXPECT_EQ(pos.Z, pos.X * 3);
         entityCount2++;
     }));
 

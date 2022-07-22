@@ -52,7 +52,6 @@ namespace FE::ECS
     class EntityArchetype final
     {
         friend class EntityArchetypeBuilder;
-        friend class EntityQueryBuilder;
         friend class EntityQuery;
 
         inline static constexpr USize ChunkByteSize = 16 * 1024;

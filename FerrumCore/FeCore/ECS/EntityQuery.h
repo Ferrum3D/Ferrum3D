@@ -1,50 +1,14 @@
 #pragma once
+#include <FeCore/ECS/ArchetypeChunk.h>
 #include <FeCore/ECS/Entity.h>
 #include <FeCore/ECS/EntityArchetype.h>
 #include <FeCore/ECS/EntityRegistry.h>
-#include <FeCore/ECS/ArchetypeChunk.h>
 #include <functional>
 
 namespace FE::ECS
 {
-    class EntityQueryBuilder
-    {
-        friend class EntityQuery;
-
-        EntityArchetype* m_ComponentTypes;
-        EntityQuery* m_Query;
-
-        inline EntityQueryBuilder(EntityArchetype* componentTypes, EntityQuery* query)
-            : m_ComponentTypes(componentTypes)
-            , m_Query(query)
-        {
-        }
-
-    public:
-        //! \brief Add a component type to EntityQuery.
-        inline EntityQueryBuilder& AddComponentType(const ComponentType& componentType)
-        {
-            m_ComponentTypes->m_Layout.Push(componentType);
-            return *this;
-        }
-
-        //! \brief Add a component type to EntityQuery.
-        template<class T>
-        inline EntityQueryBuilder& AddComponentType()
-        {
-            m_ComponentTypes->m_Layout.Push(ComponentType::Create<T>());
-            return *this;
-        }
-
-        //! \brief Build entity archetype.
-        inline EntityQuery& Build()
-        {
-            return *m_Query;
-        }
-    };
-
     //! \brief Entity query allows to iterate over a group of selected entities and their components.
-    class EntityQuery final
+    class EntityQuery : public Object<IObject>
     {
         friend class EntityRegistry;
 
@@ -69,19 +33,25 @@ namespace FE::ECS
         {
         }
 
-        inline EntityQueryBuilder NoneOf()
+        template<class... Types>
+        inline EntityQuery& NoneOf()
         {
-            return { &m_IncludeNone, this };
+            NoneOf({ ComponentType::Create<Types>()... });
+            return *this;
         }
 
-        inline EntityQueryBuilder AllOf()
+        template<class... Types>
+        inline EntityQuery& AllOf()
         {
-            return { &m_IncludeAll, this };
+            AllOf({ ComponentType::Create<Types>()... });
+            return *this;
         }
 
-        inline EntityQueryBuilder AnyOf()
+        template<class... Types>
+        inline EntityQuery& AnyOf()
         {
-            return { &m_IncludeAny, this };
+            AnyOf({ ComponentType::Create<Types>()... });
+            return *this;
         }
 
         inline void NoneOf(ArraySlice<ComponentType> components)
