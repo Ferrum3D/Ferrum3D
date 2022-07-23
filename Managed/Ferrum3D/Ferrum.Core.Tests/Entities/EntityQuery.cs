@@ -44,7 +44,7 @@ namespace Ferrum.Core.Tests.Entities
                 test = new TestComponent { TestData = test.TestData * 10 };
             });
 
-            // Query component pairs (pos, test), but use ony the position by reusing the same query object
+            // Query component pairs (pos, test), but use only the position by reusing the same query object
             query1.ForEach((ref Position3DComponent pos) =>
             {
                 Assert.IsTrue(pos.X <= 0);

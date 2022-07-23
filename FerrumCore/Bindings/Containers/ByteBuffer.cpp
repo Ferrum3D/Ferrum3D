@@ -17,7 +17,7 @@ namespace FE
 
         FE_DLL_EXPORT void ByteBuffer_CopyTo(ByteBuffer* self, ByteBuffer* dest)
         {
-            auto length = std::max(self->Size(), dest->Size());
+            auto length = std::min(self->Size(), dest->Size());
             memcpy(dest->Data(), self->Data(), length);
         }
     }
