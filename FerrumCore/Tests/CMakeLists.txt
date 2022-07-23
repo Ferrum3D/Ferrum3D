@@ -9,6 +9,8 @@ set(SRC
     Containers/List.cpp
     Containers/SparseSet.cpp
 
+    ECS/EntityRegistry.cpp
+
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
 
@@ -26,7 +28,7 @@ set(SRC
 
     main.cpp
     # FERRUM_SORT_LINES END
-    ECS/EntityRegistry.cpp)
+)
 
 add_executable(FeCoreTests ${SRC})
 
