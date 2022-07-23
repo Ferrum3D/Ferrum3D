@@ -542,7 +542,8 @@ namespace FE
         //! \param [in] member     - Pointer to member to use as sorting key.
         //! \param [in] descending - True if the List must be sorted in descending order.
         template<class TMember>
-        inline void SortByMember(TMember member, bool descending = false)
+        inline void SortByMember(TMember member,
+                                 std::enable_if_t<std::is_member_object_pointer_v<TMember>, bool> descending = false)
         {
             if (descending)
             {
@@ -554,6 +555,24 @@ namespace FE
             {
                 Sort([member](const T& lhs, const T& rhs) {
                     return lhs.*member < rhs.*member;
+                });
+            }
+        }
+
+        template<class TMember>
+        inline void SortByMember(TMember member,
+                                 std::enable_if_t<std::is_member_function_pointer_v<TMember>, bool> descending = false)
+        {
+            if (descending)
+            {
+                Sort([member](const T& lhs, const T& rhs) {
+                    return std::invoke(member, lhs) > std::invoke(member, rhs);
+                });
+            }
+            else
+            {
+                Sort([member](const T& lhs, const T& rhs) {
+                    return std::invoke(member, lhs) < std::invoke(member, rhs);
                 });
             }
         }
