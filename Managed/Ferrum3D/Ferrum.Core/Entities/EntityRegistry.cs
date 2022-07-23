@@ -153,11 +153,6 @@ namespace Ferrum.Core.Entities
             return result;
         }
 
-        public void UpdateEntityQuery(EntityQuery entityQuery)
-        {
-            throw new NotImplementedException();
-        }
-
         public void DestroyEntity(Entity entity)
         {
             DestroyEntityNative(Handle, in entity);

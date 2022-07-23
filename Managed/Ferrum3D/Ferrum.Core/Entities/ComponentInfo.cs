@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -19,6 +20,10 @@ namespace Ferrum.Core.Entities
         }
 
         public static bool IsUnmanaged { get; private set; }
+
+        public static Guid Type => ComponentType.Type;
+        public static uint Alignment => ComponentType.Alignment;
+        public static uint DataSize => ComponentType.DataSize;
 
         private static ComponentType componentType;
         private static bool initialized;
