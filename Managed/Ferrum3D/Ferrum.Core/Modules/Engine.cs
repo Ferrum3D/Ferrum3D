@@ -10,6 +10,14 @@ namespace Ferrum.Core.Modules
 
         public Engine()
         {
+            unsafe
+            {
+                if (sizeof(IntPtr) != sizeof(ulong))
+                {
+                    throw new Exception("The engine can only work on 64 bit systems");
+                }
+            }
+            
             library.LoadFrom("FeCoreBindings");
             ConstructNative();
             Environment = GetEnvironmentNative();
