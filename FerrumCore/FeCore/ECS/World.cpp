@@ -11,7 +11,7 @@ namespace FE::ECS
 
     void World::RegisterSystem(ISystem* system)
     {
-        FE_ASSERT(m_Systems.IndexOf(system) == -1);
+        FE_ASSERT_MSG(m_Systems.IndexOf(system) == -1, "System was already registered");
         m_Systems.Push(system)->OnCreate();
     }
 

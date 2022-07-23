@@ -154,7 +154,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-)
+    FeCore/ECS/ComponentSystem.h FeCore/Components/LocalToWorldComponent.h FeCore/Systems/TransformSystem.cpp FeCore/Systems/TransformSystem.h FeCore/Systems/CallbackSystem.h FeCore/Systems/CallbackSystem.cpp)
 
 add_library(FeCore STATIC ${SRC})
 

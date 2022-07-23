@@ -51,6 +51,7 @@
         <Compile Include="Containers\NativeList.cs" />
         <Compile Include="Entities\ArchetypeChunk.cs" />
         <Compile Include="Entities\ComponentAttribute.cs" />
+        <Compile Include="Entities\ComponentSystem.cs" />
         <Compile Include="Entities\ComponentType.cs" />
         <Compile Include="Entities\ComponentInfo.cs" />
         <Compile Include="Entities\Entity.cs" />
@@ -58,6 +59,7 @@
         <Compile Include="Entities\EntityQueryDelegate.cs" />
         <Compile Include="Entities\EntityRegistry.cs" />
         <Compile Include="Entities\EntityRegistryBindings.cs" />
+        <Compile Include="Entities\World.cs" />
         <Compile Include="EventBus\FrameEventArgs.cs" />
         <Compile Include="Framework\ApplicationFramework.cs" />
         <Compile Include="Framework\FrameworkBase.cs" />

@@ -16,7 +16,7 @@ set(SRC
 
     Modules/Engine.cpp
     # FERRUM_SORT_LINES END
-)
+    ECS/CallbackSystem.cpp ECS/World.cpp)
 
 add_library(FeCoreBindings SHARED ${SRC})
 

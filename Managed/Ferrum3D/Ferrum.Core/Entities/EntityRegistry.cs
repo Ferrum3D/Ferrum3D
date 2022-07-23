@@ -10,6 +10,15 @@ namespace Ferrum.Core.Entities
         {
         }
 
+        private EntityRegistry(IntPtr handle) : base(handle)
+        {
+        }
+
+        public static EntityRegistry FromHandle(IntPtr handle)
+        {
+            return new EntityRegistry(handle);
+        }
+
         public uint GetCurrentEntityVersion(Entity entity)
         {
             return GetCurrentEntityVersionNative(Handle, in entity);

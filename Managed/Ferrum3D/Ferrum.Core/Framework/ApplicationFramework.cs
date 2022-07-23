@@ -2,6 +2,7 @@
 using System.IO;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Console;
+using Ferrum.Core.Entities;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Modules;
 
@@ -17,6 +18,7 @@ namespace Ferrum.Core.Framework
         private Engine engine;
         private ConsoleLogger logger;
         private AssetManager assetManager;
+        private World world;
         protected abstract bool CloseEventReceived { get; }
 
         protected virtual bool ShouldStop => CloseEventReceived || stopRequested;
@@ -32,6 +34,8 @@ namespace Ferrum.Core.Framework
             {
                 assetManager = new AssetManager(Path.Combine(desc.AssetDirectory, "FerrumAssetIndex"));
             }
+
+            world = new World();
 
             Initialize();
         }
@@ -61,6 +65,7 @@ namespace Ferrum.Core.Framework
         {
             OnExit();
             base.Dispose();
+            world?.Dispose();
             assetManager?.Dispose();
             logger?.Dispose();
             engine.Dispose();
