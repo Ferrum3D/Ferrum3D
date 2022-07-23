@@ -7,6 +7,7 @@ set(SRC
 
     Containers/ByteBuffer.cpp
 
+    ECS/ArchetypeChunk.cpp
     ECS/ComponentType.h
     ECS/EntityQuery.cpp
     ECS/EntityRegistry.cpp
