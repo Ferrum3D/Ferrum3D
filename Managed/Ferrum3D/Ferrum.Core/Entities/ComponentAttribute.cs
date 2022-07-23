@@ -6,7 +6,7 @@ namespace Ferrum.Core.Entities
     public class ComponentAttribute : Attribute
     {
         public Guid Type { get; }
-        public uint Alignment { get; set; } = 16;
+        public uint Alignment { get; set; } = 4;
         public bool Unmanaged { get; set; }
 
         public ComponentAttribute(string typeId)
