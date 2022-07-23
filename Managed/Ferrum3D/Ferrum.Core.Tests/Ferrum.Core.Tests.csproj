@@ -251,7 +251,9 @@
   <ItemGroup>
     <Compile Include="Containers\NativeArrayTests.cs" />
     <Compile Include="Containers\NativeListTests.cs" />
+    <Compile Include="Entities\EntityQuery.cs" />
     <Compile Include="Entities\EntityRegistryTests.cs" />
+    <Compile Include="Entities\TestComponent.cs" />
     <Compile Include="GlobalSetup.cs" />
     <Compile Include="Math\MathTests.cs" />
     <Compile Include="Math\MatrixTests.cs" />

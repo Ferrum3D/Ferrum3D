@@ -42,18 +42,20 @@
     <ItemGroup>
         <Compile Include="Assets\Asset.cs" />
         <Compile Include="Assets\AssetManager.cs" />
-        <Compile Include="Components\PositionComponent.cs" />
+        <Compile Include="Components\Position3DComponent.cs" />
         <Compile Include="Console\ConsoleLogger.cs" />
         <Compile Include="Console\LogMessageType.cs" />
         <Compile Include="Containers\ByteBuffer.cs" />
         <Compile Include="Containers\DisposableList.cs" />
         <Compile Include="Containers\NativeArray.cs" />
         <Compile Include="Containers\NativeList.cs" />
+        <Compile Include="Entities\ArchetypeChunk.cs" />
         <Compile Include="Entities\ComponentAttribute.cs" />
         <Compile Include="Entities\ComponentType.cs" />
         <Compile Include="Entities\ComponentInfo.cs" />
         <Compile Include="Entities\Entity.cs" />
         <Compile Include="Entities\EntityQuery.cs" />
+        <Compile Include="Entities\EntityQueryDelegate.cs" />
         <Compile Include="Entities\EntityRegistry.cs" />
         <Compile Include="Entities\EntityRegistryBindings.cs" />
         <Compile Include="EventBus\FrameEventArgs.cs" />
