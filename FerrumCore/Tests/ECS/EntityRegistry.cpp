@@ -118,6 +118,32 @@ TEST(EntityRegistry, UpdateQuery)
     EXPECT_EQ(entityCount2, count);
 }
 
+TEST(EntityRegistry, ReuseEntityIDs)
+{
+    const int count = 16 * 1024;
+
+    auto registry = FE::MakeShared<EntityRegistry>();
+    List<Entity> entities(count, Entity::Null());
+    registry->CreateEntities(ArraySliceMut(entities));
+    entities.SortByMember(&Entity::GetID);
+
+    for (FE::USize i = 0; i < entities.Size(); ++i)
+    {
+        EXPECT_EQ(entities[i].GetVersion(), 0);
+        ASSERT_EQ(entities[i].GetID(), i);
+    }
+
+    registry->DestroyEntities(entities);
+    registry->CreateEntities(ArraySliceMut(entities));
+    entities.SortByMember(&Entity::GetID);
+
+    for (FE::USize i = 0; i < entities.Size(); ++i)
+    {
+        EXPECT_EQ(entities[i].GetVersion(), 1);
+        ASSERT_EQ(entities[i].GetID(), i);
+    }
+}
+
 TEST(EntityRegistry, HandleMultipleArchetypeChunks)
 {
     // Create a lot of components, that do not fit into a single chunk
