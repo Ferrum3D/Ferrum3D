@@ -30,10 +30,6 @@ namespace Ferrum.Core.Tests.Entities
             query1.All = ComponentType.CreateList<Position3DComponent, TestComponent>();
             query1.Update();
 
-            using var query2 = registry.CreateQuery();
-            query2.All = ComponentType.CreateList<Position3DComponent>();
-            query2.Update();
-
             var entityCount1 = 0;
             var entityCount2 = 0;
 
@@ -48,6 +44,7 @@ namespace Ferrum.Core.Tests.Entities
                 test = new TestComponent { TestData = test.TestData * 10 };
             });
 
+            // Query component pairs (pos, test), but use ony the position by reusing the same query object
             query1.ForEach((ref Position3DComponent pos) =>
             {
                 Assert.IsTrue(pos.X <= 0);
@@ -56,7 +53,7 @@ namespace Ferrum.Core.Tests.Entities
                 pos = new Position3DComponent(pos.AsVector3F() * -1);
             });
 
-            query2.ForEach((ref Position3DComponent pos) =>
+            registry.ForEach((ref Position3DComponent pos) =>
             {
                 ++entityCount2;
                 Assert.AreEqual(pos.Y, pos.X * 2);
