@@ -5,7 +5,7 @@ using Ferrum.Core.Math;
 namespace Ferrum.Core.Components
 {
     [StructLayout(LayoutKind.Sequential)]
-    [Component("1F3CD11C-5547-4773-9941-082C257C6729", Alignment = 8, Unmanaged = true)]
+    [Component("1F3CD11C-5547-4773-9941-082C257C6729", Unmanaged = true)]
     public readonly struct PositionComponent
     {
         public readonly float X;

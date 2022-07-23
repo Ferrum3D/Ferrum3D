@@ -3,7 +3,7 @@
 
 namespace FE::ECS
 {
-    struct alignas(8) PositionComponent
+    struct alignas(4) PositionComponent
     {
         float X = 0.0f;
         float Y = 0.0f;
