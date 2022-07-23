@@ -56,17 +56,17 @@ namespace FE::ECS
 
         inline void NoneOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeNone.m_Layout.Append(components.Length(), components.Data());
+            m_IncludeNone.m_Layout.Assign(components.begin(), components.end());
         }
 
         inline void AllOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeAll.m_Layout.Append(components.Length(), components.Data());
+            m_IncludeAll.m_Layout.Assign(components.begin(), components.end());
         }
 
         inline void AnyOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeAny.m_Layout.Append(components.Length(), components.Data());
+            m_IncludeAny.m_Layout.Assign(components.begin(), components.end());
         }
 
         inline EntityQuery& Update()
