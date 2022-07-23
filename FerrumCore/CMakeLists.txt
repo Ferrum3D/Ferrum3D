@@ -23,6 +23,7 @@ set(SRC
     FeCore/Base/PlatformInclude.h
     FeCore/Base/PlatformTraits.h
 
+    FeCore/Components/LocalToWorldComponent.h
     FeCore/Components/PositionComponent.h
 
     FeCore/Console/Console.cpp
@@ -44,6 +45,7 @@ set(SRC
     FeCore/ECS/ArchetypeChunk.h
     FeCore/ECS/ComponentStorage.cpp
     FeCore/ECS/ComponentStorage.h
+    FeCore/ECS/ComponentSystem.h
     FeCore/ECS/ComponentType.h
     FeCore/ECS/ECSCommon.h
     FeCore/ECS/Entity.h
@@ -145,6 +147,11 @@ set(SRC
     FeCore/Strings/StringSlice.cpp
     FeCore/Strings/StringSlice.h
 
+    FeCore/Systems/CallbackSystem.cpp
+    FeCore/Systems/CallbackSystem.h
+    FeCore/Systems/TransformSystem.cpp
+    FeCore/Systems/TransformSystem.h
+
     FeCore/Time/DateTime.cpp
     FeCore/Time/DateTime.h
     FeCore/Time/TimeSpan.h
@@ -154,7 +161,7 @@ set(SRC
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
-    FeCore/ECS/ComponentSystem.h FeCore/Components/LocalToWorldComponent.h FeCore/Systems/TransformSystem.cpp FeCore/Systems/TransformSystem.h FeCore/Systems/CallbackSystem.h FeCore/Systems/CallbackSystem.cpp)
+)
 
 add_library(FeCore STATIC ${SRC})
 

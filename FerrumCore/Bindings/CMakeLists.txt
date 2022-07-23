@@ -8,15 +8,17 @@ set(SRC
     Containers/ByteBuffer.cpp
 
     ECS/ArchetypeChunk.cpp
+    ECS/CallbackSystem.cpp
     ECS/ComponentType.h
     ECS/EntityQuery.cpp
     ECS/EntityRegistry.cpp
+    ECS/World.cpp
 
     Math/Matrix4x4F.cpp
 
     Modules/Engine.cpp
     # FERRUM_SORT_LINES END
-    ECS/CallbackSystem.cpp ECS/World.cpp)
+)
 
 add_library(FeCoreBindings SHARED ${SRC})
 
