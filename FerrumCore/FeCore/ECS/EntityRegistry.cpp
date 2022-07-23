@@ -130,6 +130,8 @@ namespace FE::ECS
             m_VersionTable.Resize(id + 1, 0);
         }
 
+        version = m_VersionTable[id];
+
         return Entity::Create(id, version);
     }
 
@@ -244,9 +246,12 @@ namespace FE::ECS
         query->m_Archetypes.Clear();
         for (auto& archetype : m_Archetypes)
         {
-            if ((query->m_IncludeNone.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeNone) == EntityArchetypeMatch::None)
-                && (query->m_IncludeAll.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeAll) == EntityArchetypeMatch::All)
-                && (query->m_IncludeAny.ComponentTypeCount() == 0 || archetype.Match(query->m_IncludeAny) == EntityArchetypeMatch::Some))
+            if ((query->m_IncludeNone.ComponentTypeCount() == 0
+                 || archetype.Match(query->m_IncludeNone) == EntityArchetypeMatch::None)
+                && (query->m_IncludeAll.ComponentTypeCount() == 0
+                    || archetype.Match(query->m_IncludeAll) == EntityArchetypeMatch::All)
+                && (query->m_IncludeAny.ComponentTypeCount() == 0
+                    || archetype.Match(query->m_IncludeAny) == EntityArchetypeMatch::Some))
             {
                 query->m_Archetypes.Push(&archetype);
             }
