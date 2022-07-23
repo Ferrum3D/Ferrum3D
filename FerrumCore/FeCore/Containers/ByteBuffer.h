@@ -99,6 +99,15 @@ namespace FE
             m_Begin = data.DetachData();
         }
 
+        template<class T>
+        [[nodiscard]] inline static ByteBuffer MoveList(List<T>&& data) noexcept
+        {
+            ByteBuffer result;
+            result.m_End   = reinterpret_cast<UInt8*>(data.end());
+            result.m_Begin = reinterpret_cast<UInt8*>(data.DetachData());
+            return result;
+        }
+
         [[nodiscard]] inline UInt8* Data()
         {
             return m_Begin;
