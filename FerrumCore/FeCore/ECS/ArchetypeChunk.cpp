@@ -30,7 +30,7 @@ namespace FE::ECS
             storageDesc.Type = type;
             m_ComponentStorages.Emplace().Init(storageDesc);
 
-            beginIndex = nextIndex + 1;
+            beginIndex = nextIndex;
         }
     }
 
