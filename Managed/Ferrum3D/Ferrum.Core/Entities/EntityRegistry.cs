@@ -168,6 +168,11 @@ namespace Ferrum.Core.Entities
             DestroyEntitiesNative(Handle, entities.DataPointer, entities.Count);
         }
 
+        public EntityQuery CreateQuery()
+        {
+            return new EntityQuery(Handle);
+        }
+
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
