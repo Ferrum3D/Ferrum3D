@@ -96,11 +96,6 @@ namespace FE::ECS
             self->CloneEntity(*entity, ArraySliceMut(entities, entities + entityCount));
         }
 
-        FE_DLL_EXPORT void EntityRegistry_UpdateEntityQuery(EntityRegistry* self, EntityQuery* query)
-        {
-            self->UpdateEntityQuery(query);
-        }
-
         FE_DLL_EXPORT void EntityRegistry_DestroyEntity(EntityRegistry* self, Entity* entity)
         {
             self->DestroyEntity(*entity);
@@ -122,8 +117,8 @@ namespace FE::ECS
             return self->CopyComponent(*entity, componentType->Convert(), destination);
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_UpdateComponent(EntityRegistry* self, Entity* entity, ComponentTypeBinding* componentType,
-                                           const void* source)
+        FE_DLL_EXPORT bool EntityRegistry_UpdateComponent(EntityRegistry* self, Entity* entity,
+                                                          ComponentTypeBinding* componentType, const void* source)
         {
             return self->UpdateComponent(*entity, componentType->Convert(), source);
         }
