@@ -57,6 +57,12 @@ namespace FE::ECS
             return m_Count;
         }
 
+        //! \brief Get pointer to internal storage.
+        [[nodiscard]] inline void* Data()
+        {
+            return m_Data.Data();
+        }
+
         [[nodiscard]] inline bool CheckTypeID(const TypeID& typeID) const
         {
             return m_Desc.Type.Type == typeID;
