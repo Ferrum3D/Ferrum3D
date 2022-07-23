@@ -168,6 +168,44 @@ namespace Ferrum.Core.Entities
             return new EntityQuery(Handle);
         }
 
+        public void ForEach<T1>(EntityQueryDelegate<T1> f)
+            where T1 : unmanaged
+        {
+            var query = CreateQuery();
+            query.All = ComponentType.CreateList<T1>();
+            query.ForEach(f);
+        }
+
+        public void ForEach<T1, T2>(EntityQueryDelegate<T1, T2> f)
+            where T1 : unmanaged
+            where T2 : unmanaged
+        {
+            var query = CreateQuery();
+            query.All = ComponentType.CreateList<T1, T2>();
+            query.ForEach(f);
+        }
+
+        public void ForEach<T1, T2, T3>(EntityQueryDelegate<T1, T2, T3> f)
+            where T1 : unmanaged
+            where T2 : unmanaged
+            where T3 : unmanaged
+        {
+            var query = CreateQuery();
+            query.All = ComponentType.CreateList<T1, T2, T3>();
+            query.ForEach(f);
+        }
+
+        public void ForEach<T1, T2, T3, T4>(EntityQueryDelegate<T1, T2, T3, T4> f)
+            where T1 : unmanaged
+            where T2 : unmanaged
+            where T3 : unmanaged
+            where T4 : unmanaged
+        {
+            var query = CreateQuery();
+            query.All = ComponentType.CreateList<T1, T2, T3, T4>();
+            query.ForEach(f);
+        }
+
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
