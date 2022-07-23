@@ -10,7 +10,14 @@ namespace FE::ECS
 
     void EntityArchetype::InitInternal()
     {
-        m_Layout.SortByMember(&ComponentType::Alignment, true);
+        m_Layout.Sort([](const ComponentType& lhs, const ComponentType& rhs){
+            if (lhs.Alignment == rhs.Alignment)
+            {
+                return std::hash<TypeID>{}(lhs.Type) > std::hash<TypeID>{}(rhs.Type);
+            }
+
+            return lhs.Alignment > rhs.Alignment;
+        });
 
         for (USize i = 0; i < m_Layout.Size(); ++i)
         {
