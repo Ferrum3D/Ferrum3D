@@ -1,4 +1,5 @@
 #include <Bindings/ECS/ComponentType.h>
+#include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/ECS/EntityQuery.h>
 
 namespace FE::ECS
@@ -44,6 +45,16 @@ namespace FE::ECS
             }
 
             self->AnyOf(types);
+        }
+
+        FE_DLL_EXPORT void EntityQuery_Update(EntityQuery* self)
+        {
+            self->Update();
+        }
+
+        FE_DLL_EXPORT void EntityQuery_GetChunks(EntityQuery* self, ByteBuffer* result)
+        {
+            *result = ByteBuffer::MoveList(self->GetChunks());
         }
 
         FE_DLL_EXPORT void EntityQuery_Destruct(EntityQuery* self)

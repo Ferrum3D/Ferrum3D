@@ -75,6 +75,21 @@ namespace FE::ECS
             return *this;
         }
 
+        inline List<ArchetypeChunk*> GetChunks()
+        {
+            List<ArchetypeChunk*> result;
+
+            for (auto* archetype : m_Archetypes)
+            {
+                for (auto* chunk : archetype->m_Chunks)
+                {
+                    result.Push(chunk);
+                }
+            }
+
+            return result;
+        }
+
         template<class... Types>
         inline void ForEach(const std::function<void(Types&...)>& function)
         {
