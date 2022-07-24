@@ -6,7 +6,7 @@ namespace Ferrum.Core.Modules
     public class Engine : IDisposable
     {
         public static IntPtr Environment { get; private set; }
-        private static readonly DynamicLibrary library = new();
+        public static DynamicLibrary CoreModuleLibrary { get; } = new();
 
         public Engine()
         {
@@ -17,8 +17,8 @@ namespace Ferrum.Core.Modules
                     throw new Exception("The engine can only work on 64 bit systems");
                 }
             }
-            
-            library.LoadFrom("FeCoreBindings");
+
+            CoreModuleLibrary.LoadFrom("FeCoreBindings");
             ConstructNative();
             Environment = GetEnvironmentNative();
         }
@@ -47,7 +47,7 @@ namespace Ferrum.Core.Modules
 
             DestructNative();
             Environment = IntPtr.Zero;
-            library.Dispose();
+            CoreModuleLibrary.Dispose();
         }
 
         ~Engine()

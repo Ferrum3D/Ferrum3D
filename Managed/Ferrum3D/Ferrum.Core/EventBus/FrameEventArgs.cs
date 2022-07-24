@@ -1,5 +1,8 @@
-﻿namespace Ferrum.Core.EventBus
+﻿using System.Runtime.InteropServices;
+
+namespace Ferrum.Core.EventBus
 {
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct FrameEventArgs
     {
         public readonly uint FrameIndex;

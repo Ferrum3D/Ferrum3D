@@ -20,7 +20,7 @@ namespace FE::ECS
         ~ComponentSystem() override = default;
 
         void OnCreate() override {}
-        void OnUpdate(const FrameEventArgs& args) override {}
+        void OnUpdate(const FrameEventArgs& /* args */) override {}
         void OnDestroy() override {}
 
         [[nodiscard]] inline EntityRegistry* Registry() const

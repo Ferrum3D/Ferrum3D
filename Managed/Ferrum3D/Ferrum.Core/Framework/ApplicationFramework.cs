@@ -2,6 +2,7 @@
 using System.IO;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Console;
+using Ferrum.Core.Containers;
 using Ferrum.Core.Entities;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Modules;
@@ -17,6 +18,7 @@ namespace Ferrum.Core.Framework
 
         private Engine engine;
         private ConsoleLogger logger;
+        private DisposableList<EventBusBase> eventBuses = new();
         private AssetManager assetManager;
         private World world;
         protected abstract bool CloseEventReceived { get; }
@@ -29,6 +31,8 @@ namespace Ferrum.Core.Framework
 
             engine = new Engine();
             logger = new ConsoleLogger();
+            
+            eventBuses.Add(new FrameEventBus());
 
             if (desc.AssetDirectory != null)
             {
@@ -67,6 +71,7 @@ namespace Ferrum.Core.Framework
             base.Dispose();
             world?.Dispose();
             assetManager?.Dispose();
+            eventBuses.Dispose();
             logger?.Dispose();
             engine.Dispose();
         }

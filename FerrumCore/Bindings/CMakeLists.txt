@@ -17,8 +17,9 @@ set(SRC
     Math/Matrix4x4F.cpp
 
     Modules/Engine.cpp
+    EventBus/FrameEventBus.cpp
     # FERRUM_SORT_LINES END
-)
+    )
 
 add_library(FeCoreBindings SHARED ${SRC})
 
