@@ -15,14 +15,31 @@ namespace Ferrum.Osmium.GPU.Descriptors
 
         public DescriptorTable AllocateDescriptorTable(params DescriptorDesc[] descriptors)
         {
-            return new DescriptorTable(AllocateDescriptorTableNative(Handle, descriptors, (uint)descriptors.Length));
+            unsafe
+            {
+                fixed (DescriptorDesc* ptr = descriptors)
+                {
+                    var handle = AllocateDescriptorTableNative(Handle, new IntPtr(ptr), (uint)descriptors.Length);
+                    return handle == IntPtr.Zero
+                        ? null
+                        : new DescriptorTable(handle);
+                }
+            }
+        }
+
+        public void Reset()
+        {
+            ResetNative(Handle);
         }
 
         [DllImport("OsGPUBindings", EntryPoint = "IDescriptorHeap_Destruct")]
-        private static extern void DestructNative(IntPtr handle);
+        private static extern void DestructNative(IntPtr self);
+
+        [DllImport("OsGPUBindings", EntryPoint = "IDescriptorHeap_Reset")]
+        private static extern void ResetNative(IntPtr self);
 
         [DllImport("OsGPUBindings", EntryPoint = "IDescriptorHeap_AllocateDescriptorTable")]
-        private static extern IntPtr AllocateDescriptorTableNative(IntPtr handle, DescriptorDesc[] d, uint count);
+        private static extern IntPtr AllocateDescriptorTableNative(IntPtr handle, IntPtr d, uint count);
 
         protected override void ReleaseUnmanagedResources()
         {
@@ -49,6 +66,12 @@ namespace Ferrum.Osmium.GPU.Descriptors
             private Desc(List<DescriptorSize> sizes, int maxTables)
             {
                 Sizes = sizes;
+                MaxTables = maxTables;
+            }
+
+            public Desc(IEnumerable<DescriptorSize> sizes, int maxTables)
+            {
+                Sizes = sizes.ToList();
                 MaxTables = maxTables;
             }
 

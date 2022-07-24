@@ -43,6 +43,8 @@ namespace FE::Osmium
 
         Shared<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) override;
 
+        void Reset() override;
+
         VkDescriptorPool GetNativeDescriptorPool();
     };
 } // namespace FE::Osmium

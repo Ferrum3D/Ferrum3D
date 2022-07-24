@@ -10,9 +10,15 @@ namespace FE::Osmium
             self->ReleaseStrongRef();
         }
 
-        FE_DLL_EXPORT IDescriptorTable* IDescriptorHeap_AllocateDescriptorTable(IDescriptorHeap* self, DescriptorDesc* descs, UInt32 count)
+        FE_DLL_EXPORT void IDescriptorHeap_Reset(IDescriptorHeap* self)
+        {
+            self->Reset();
+        }
+
+        FE_DLL_EXPORT IDescriptorTable* IDescriptorHeap_AllocateDescriptorTable(IDescriptorHeap* self, DescriptorDesc* descs,
+                                                                                UInt32 count)
         {
             return self->AllocateDescriptorTable(ArraySlice(descs, descs + count)).Detach();
         }
     }
-}
+} // namespace FE::Osmium

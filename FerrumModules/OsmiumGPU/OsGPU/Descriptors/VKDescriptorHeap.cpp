@@ -32,11 +32,17 @@ namespace FE::Osmium
 
     Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors)
     {
-        return MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
+        auto result = MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
+        return result->GetNativeSet() == VK_NULL_HANDLE ? nullptr : result;
     }
 
     VKDescriptorHeap::~VKDescriptorHeap()
     {
         vkDestroyDescriptorPool(m_Device->GetNativeDevice(), m_NativePool, VK_NULL_HANDLE);
+    }
+
+    void VKDescriptorHeap::Reset()
+    {
+        vkResetDescriptorPool(m_Device->GetNativeDevice(), m_NativePool, VK_FLAGS_NONE);
     }
 } // namespace FE::Osmium

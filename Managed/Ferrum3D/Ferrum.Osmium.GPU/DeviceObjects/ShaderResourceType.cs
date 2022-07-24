@@ -9,6 +9,7 @@
         BufferSrv,
         BufferUav,
         Sampler,
-        InputAttachment
+        InputAttachment,
+        Count
     }
 }
