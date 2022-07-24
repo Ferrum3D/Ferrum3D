@@ -59,6 +59,7 @@
         <Compile Include="CommandLists\VertexBufferSlice.cs" />
         <Compile Include="FrameGraph\FrameGraph.cs" />
         <Compile Include="FrameGraph\FrameGraphBuilder.cs" />
+        <Compile Include="Pipeline\GraphicsPipelineState.cs" />
         <Compile Include="Pipeline\IPipelineState.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RenderPasses\FrameGraphRenderContext.cs" />

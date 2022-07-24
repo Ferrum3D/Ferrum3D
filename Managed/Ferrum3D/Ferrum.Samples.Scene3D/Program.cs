@@ -22,6 +22,7 @@ namespace Ferrum.Samples.Scene3D
 
         protected override void Tick(FrameEventArgs frameEventArgs)
         {
+            frameGraph.Compile();
         }
 
         protected override void OnExit()

@@ -1,8 +1,9 @@
-﻿using Ferrum.Osmium.GPU.DeviceObjects;
+﻿using System;
+using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.Pipeline
 {
-    public interface IPipelineState
+    public interface IPipelineState : IDisposable
     {
         internal void Bind(CommandBuffer.Builder commandBufferBuilder);
     }

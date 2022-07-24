@@ -7,8 +7,8 @@ namespace Ferrum.Osmium.FrameGraph.CommandLists
     public struct DrawItem
     {
         public readonly IPipelineState PipelineState;
-        public readonly IndexBufferSlice Indices;
         public readonly DrawArguments Arguments;
+        public readonly IndexBufferSlice Indices;
         public readonly List<VertexBufferSlice> Vertices;
         // public readonly ShaderResources ShaderResources;
         public readonly Viewport Viewport;
