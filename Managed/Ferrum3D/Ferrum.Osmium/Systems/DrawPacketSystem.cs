@@ -15,5 +15,10 @@ namespace Ferrum.Osmium.Systems
                 ConsoleLogger.LogMessage($"{localToWorld.Matrix} --- DT = {DeltaTime} --- ID = {FrameIndex}");
             }, query);
         }
+
+        public override void OnDestroy()
+        {
+            query.Dispose();
+        }
     }
 }
