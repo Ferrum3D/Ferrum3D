@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
-namespace Ferrum.Osmium.GPU.DeviceObjects
+namespace Ferrum.Osmium.GPU.Descriptors
 {
     public readonly struct DescriptorWriteBuffer
     {

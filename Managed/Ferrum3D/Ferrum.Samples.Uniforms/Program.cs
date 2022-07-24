@@ -7,6 +7,7 @@ using Ferrum.Core.Framework;
 using Ferrum.Core.Math;
 using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU;
+using Ferrum.Osmium.GPU.Descriptors;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;

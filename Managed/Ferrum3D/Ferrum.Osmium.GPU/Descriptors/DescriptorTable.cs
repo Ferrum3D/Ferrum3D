@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Modules;
+using Ferrum.Osmium.GPU.DeviceObjects;
+using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
-namespace Ferrum.Osmium.GPU.DeviceObjects
+namespace Ferrum.Osmium.GPU.Descriptors
 {
     public class DescriptorTable : UnmanagedObject
     {

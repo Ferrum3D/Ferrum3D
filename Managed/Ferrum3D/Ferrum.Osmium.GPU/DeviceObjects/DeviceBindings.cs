@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Osmium.GPU.Descriptors;
 using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects

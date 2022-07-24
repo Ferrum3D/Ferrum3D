@@ -5,21 +5,8 @@ using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 
-namespace Ferrum.Osmium.GPU.DeviceObjects
+namespace Ferrum.Osmium.GPU.Descriptors
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public readonly struct DescriptorSize
-    {
-        public readonly uint DescriptorCount;
-        public readonly ShaderResourceType ResourceType;
-
-        public DescriptorSize(int descriptorCount, ShaderResourceType resourceType)
-        {
-            DescriptorCount = (uint)descriptorCount;
-            ResourceType = resourceType;
-        }
-    }
-
     public class DescriptorHeap : UnmanagedObject
     {
         internal DescriptorHeap(IntPtr handle) : base(handle)
