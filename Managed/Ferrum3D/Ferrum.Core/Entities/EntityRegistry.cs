@@ -177,42 +177,50 @@ namespace Ferrum.Core.Entities
             return new EntityQuery(Handle);
         }
 
-        public void ForEach<T1>(EntityQueryDelegate<T1> f)
+        public EntityQuery ForEach<T1>(EntityQueryDelegate<T1> f, EntityQuery query = null)
             where T1 : unmanaged
         {
-            var query = CreateQuery();
+            query ??= CreateQuery();
             query.All = ComponentType.CreateList<T1>();
+            query.Update();
             query.ForEach(f);
+            return query;
         }
 
-        public void ForEach<T1, T2>(EntityQueryDelegate<T1, T2> f)
+        public EntityQuery ForEach<T1, T2>(EntityQueryDelegate<T1, T2> f, EntityQuery query = null)
             where T1 : unmanaged
             where T2 : unmanaged
         {
-            var query = CreateQuery();
+            query ??= CreateQuery();
             query.All = ComponentType.CreateList<T1, T2>();
+            query.Update();
             query.ForEach(f);
+            return query;
         }
 
-        public void ForEach<T1, T2, T3>(EntityQueryDelegate<T1, T2, T3> f)
+        public EntityQuery ForEach<T1, T2, T3>(EntityQueryDelegate<T1, T2, T3> f, EntityQuery query = null)
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged
         {
-            var query = CreateQuery();
+            query ??= CreateQuery();
             query.All = ComponentType.CreateList<T1, T2, T3>();
+            query.Update();
             query.ForEach(f);
+            return query;
         }
 
-        public void ForEach<T1, T2, T3, T4>(EntityQueryDelegate<T1, T2, T3, T4> f)
+        public EntityQuery ForEach<T1, T2, T3, T4>(EntityQueryDelegate<T1, T2, T3, T4> f, EntityQuery query = null)
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged
             where T4 : unmanaged
         {
-            var query = CreateQuery();
+            query ??= CreateQuery();
             query.All = ComponentType.CreateList<T1, T2, T3, T4>();
+            query.Update();
             query.ForEach(f);
+            return query;
         }
 
         protected override void ReleaseUnmanagedResources()

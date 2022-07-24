@@ -9,21 +9,29 @@ namespace Ferrum.Core.Entities
     {
         public EntityRegistry EntityRegistry { get; internal set; }
 
-        internal FrameEventArgs frameEventArgs;
+        private FrameEventArgs frameEventArgs;
 
         protected float DeltaTime => frameEventArgs.DeltaTime;
         protected uint FrameIndex => frameEventArgs.FrameIndex;
 
+        private CreateCallback createCallback;
+        private DestroyCallback destroyCallback;
+        private UpdateCallback updateCallback;
+
         protected ComponentSystem()
             : base(ConstructNative())
         {
-            SetCreateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(new CreateCallback(OnCreate)));
-            SetDestroyCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(new DestroyCallback(OnDestroy)));
-            SetUpdateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(new UpdateCallback((in FrameEventArgs args) =>
+            createCallback = new CreateCallback(OnCreate);
+            destroyCallback = new DestroyCallback(OnDestroy);
+            updateCallback = new UpdateCallback((in FrameEventArgs args) =>
             {
                 frameEventArgs = args;
                 OnUpdate();
-            })));
+            });
+
+            SetCreateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(createCallback));
+            SetDestroyCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(destroyCallback));
+            SetUpdateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(updateCallback));
         }
 
         public virtual void OnCreate()

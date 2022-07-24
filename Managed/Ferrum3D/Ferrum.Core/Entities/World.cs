@@ -7,14 +7,14 @@ namespace Ferrum.Core.Entities
     public class World : IDisposable
     {
         public static IntPtr Handle { get; private set; }
+        internal static EntityRegistry EntityRegistry { get; private set; }
 
-        private static EntityRegistry registry;
-        private readonly Dictionary<Type, ComponentSystem> systems = new();
+        private static readonly Dictionary<Type, ComponentSystem> systems = new();
 
         public World()
         {
             Handle = ConstructNative();
-            registry = EntityRegistry.FromHandle(GetRegistryNative(Handle));
+            EntityRegistry = EntityRegistry.FromHandle(GetRegistryNative(Handle));
             RegisterCoreSystemsNative(Handle);
         }
 
@@ -22,14 +22,17 @@ namespace Ferrum.Core.Entities
         {
             foreach (var system in systems.Values)
             {
-                system.OnDestroy();
+                UnregisterSystemNative(Handle, system.Handle);
+                system.Dispose();
             }
+            
+            systems.Clear();
 
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }
 
-        public void RegisterSystem<T>(T system)
+        public static void RegisterSystem<T>(T system)
             where T : ComponentSystem
         {
             if (systems.ContainsKey(typeof(T)))
@@ -38,11 +41,11 @@ namespace Ferrum.Core.Entities
             }
 
             systems[typeof(T)] = system;
-            system.EntityRegistry = registry;
+            system.EntityRegistry = EntityRegistry;
             RegisterSystemNative(Handle, system.Handle);
         }
 
-        public void UnregisterSystem<T>()
+        public static void UnregisterSystem<T>()
         {
             if (!systems.TryGetValue(typeof(T), out var system))
             {
@@ -71,7 +74,7 @@ namespace Ferrum.Core.Entities
         [DllImport("FeCoreBindings", EntryPoint = "World_RegisterSystem")]
         private static extern void RegisterSystemNative(IntPtr self, IntPtr system);
 
-        [DllImport("FeCoreBindings", EntryPoint = "World_RegisterSystem")]
+        [DllImport("FeCoreBindings", EntryPoint = "World_UnregisterSystem")]
         private static extern void UnregisterSystemNative(IntPtr self, IntPtr system);
 
         [DllImport("FeCoreBindings", EntryPoint = "World_Destruct")]

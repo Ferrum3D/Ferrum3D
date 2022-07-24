@@ -1,4 +1,6 @@
-﻿using Ferrum.Core.EventBus;
+﻿using Ferrum.Core.Components;
+using Ferrum.Core.Entities;
+using Ferrum.Core.EventBus;
 using Ferrum.Core.Framework;
 using Ferrum.Osmium;
 using Ferrum.Osmium.FrameGraph.FrameGraph;
@@ -14,6 +16,8 @@ namespace Ferrum.Samples.Scene3D
         {
             base.Initialize(desc);
             frameGraph = new FrameGraph(Device);
+            var entity = EntityRegistry.CreateEntity(ComponentType.CreateList<Position3DComponent, LocalToWorldComponent>());
+            EntityRegistry.SetComponent(entity, new Position3DComponent(1, 2, 3));
         }
 
         protected override void Tick(FrameEventArgs frameEventArgs)

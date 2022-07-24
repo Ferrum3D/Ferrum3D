@@ -42,6 +42,7 @@
     <ItemGroup>
         <Compile Include="Assets\Asset.cs" />
         <Compile Include="Assets\AssetManager.cs" />
+        <Compile Include="Components\LocalToWorldComponent.cs" />
         <Compile Include="Components\Position3DComponent.cs" />
         <Compile Include="Console\ConsoleLogger.cs" />
         <Compile Include="Console\LogMessageType.cs" />
