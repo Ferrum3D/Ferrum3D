@@ -12,12 +12,13 @@ namespace Ferrum.Osmium.Systems
         {
             query = EntityRegistry.ForEach((ref LocalToWorldComponent localToWorld) =>
             {
-                ConsoleLogger.LogMessage($"{localToWorld.Matrix} --- DT = {DeltaTime} --- ID = {FrameIndex}");
+                // ConsoleLogger.LogMessage($"{localToWorld.Matrix} --- DT = {DeltaTime} --- ID = {FrameIndex}");
             }, query);
         }
 
         public override void OnDestroy()
         {
+            ConsoleLogger.LogMessage(FrameIndex.ToString());
             query.Dispose();
         }
     }
