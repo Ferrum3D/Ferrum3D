@@ -2,7 +2,7 @@
 
 namespace FE::ECS
 {
-    void TransformSystem::OnUpdate(const FrameEventArgs& args)
+    void TransformSystem::OnUpdate(const FrameEventArgs& /* args */)
     {
         m_Query->Update();
         m_Query->ForEach(std::function([](LocalToWorldComponent& localToWorld, const Position3DComponent& pos) {

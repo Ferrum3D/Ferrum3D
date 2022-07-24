@@ -20,7 +20,7 @@ namespace FE::ECS
         EntityArchetype m_IncludeAny;
 
         template<class T>
-        inline T* GetComponent(ComponentStorage* storage, USize index)
+        inline T* GetComponent(ComponentStorage* storage, UInt32 index)
         {
             return storage->GetComponent<T>(index);
         }
@@ -105,7 +105,7 @@ namespace FE::ECS
                         },
                         types);
 
-                    for (USize i = 0; i < chunk->Count(); ++i)
+                    for (UInt32 i = 0; i < chunk->Count(); ++i)
                     {
                         auto components = std::apply(
                             [i, this](auto... args) {
