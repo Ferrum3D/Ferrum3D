@@ -9,7 +9,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [DllImport("OsGPUBindings", EntryPoint = "IDevice_CreateCommandBuffer")]
         private static extern IntPtr CreateCommandBufferNative(IntPtr self, CommandQueueClass cmdQueueClass);
 
-        [DllImport("OsGPUBindings", EntryPoint = "IDevice_TransientResourceHeap")]
+        [DllImport("OsGPUBindings", EntryPoint = "IDevice_CreateTransientResourceHeap")]
         private static extern IntPtr CreateTransientResourceHeapNative(IntPtr self, ref TransientResourceHeap.Desc desc);
 
         [DllImport("OsGPUBindings", EntryPoint = "IDevice_CreateSampler")]

@@ -24,7 +24,13 @@ namespace Ferrum.Core.Modules
 
         public void Dispose()
         {
+            if (Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
             FreeLibrary(Handle);
+            Handle = IntPtr.Zero;
         }
 
         public Delegate GetFunction(string name, Type delegateType)
@@ -33,7 +39,8 @@ namespace Ferrum.Core.Modules
             return Marshal.GetDelegateForFunctionPointer(address, delegateType);
         }
 
-        public T GetFunction<T>(string name) where T : Delegate
+        public T GetFunction<T>(string name)
+            where T : Delegate
         {
             var address = GetProcAddress(Handle, name);
             return Marshal.GetDelegateForFunctionPointer<T>(address);

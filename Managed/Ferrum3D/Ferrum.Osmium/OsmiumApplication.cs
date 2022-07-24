@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Ferrum.Core.Entities;
 using Ferrum.Core.Framework;
 using Ferrum.Core.Utils;
 using Ferrum.Osmium.Assets;
 using Ferrum.Osmium.GPU;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.WindowSystem;
+using Ferrum.Osmium.Systems;
 
 namespace Ferrum.Osmium
 {
@@ -39,6 +41,8 @@ namespace Ferrum.Osmium
 
             var swapChainDesc = new SwapChain.Desc(Window, GraphicsQueue);
             SwapChain = Device.CreateSwapChain(swapChainDesc);
+
+            World.RegisterSystem(new DrawPacketSystem());
         }
 
         protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)

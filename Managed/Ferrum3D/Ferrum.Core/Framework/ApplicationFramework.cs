@@ -12,15 +12,18 @@ namespace Ferrum.Core.Framework
     public abstract class ApplicationFramework : FrameworkBase
     {
         public Desc Descriptor { get; private set; }
+        public EntityRegistry EntityRegistry { get; private set; }
+        
         private uint frameCounter;
         private int exitCode;
         private bool stopRequested;
 
         private Engine engine;
         private ConsoleLogger logger;
-        private DisposableList<EventBusBase> eventBuses = new();
+        private readonly DisposableList<EventBusBase> eventBuses = new();
         private AssetManager assetManager;
         private World world;
+
         protected abstract bool CloseEventReceived { get; }
 
         protected virtual bool ShouldStop => CloseEventReceived || stopRequested;
@@ -40,6 +43,7 @@ namespace Ferrum.Core.Framework
             }
 
             world = new World();
+            EntityRegistry = World.EntityRegistry;
 
             Initialize();
         }
@@ -52,7 +56,12 @@ namespace Ferrum.Core.Framework
             while (!ShouldStop)
             {
                 PollSystemEvents();
-                Tick(new FrameEventArgs(frameCounter++, sw.ElapsedMilliseconds / 1000f));
+                var eventArgs = new FrameEventArgs(frameCounter++, sw.ElapsedMilliseconds / 1000f);
+                FrameEventBus.OnFrameStart(in eventArgs);
+                FrameEventBus.OnUpdate(in eventArgs);
+                Tick(eventArgs);
+                FrameEventBus.OnLateUpdate(in eventArgs);
+                FrameEventBus.OnFrameEnd(in eventArgs);
                 sw.Restart();
             }
 
