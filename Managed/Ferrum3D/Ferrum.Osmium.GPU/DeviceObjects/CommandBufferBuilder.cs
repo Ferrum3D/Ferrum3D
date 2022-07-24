@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.GPU.Common;
+using Ferrum.Osmium.GPU.Descriptors;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {

@@ -52,6 +52,13 @@
     <ItemGroup>
         <Compile Include="Common\Scissor.cs" />
         <Compile Include="Common\Viewport.cs" />
+        <Compile Include="Descriptors\DescriptorDesc.cs" />
+        <Compile Include="Descriptors\DescriptorHeap.cs" />
+        <Compile Include="Descriptors\DescriptorSize.cs" />
+        <Compile Include="Descriptors\DescriptorTable.cs" />
+        <Compile Include="Descriptors\DescriptorWriteBuffer.cs" />
+        <Compile Include="Descriptors\DescriptorWriteImage.cs" />
+        <Compile Include="Descriptors\DescriptorWriteSampler.cs" />
         <Compile Include="DeviceObjects\Adapter.cs" />
         <Compile Include="DeviceObjects\AdapterType.cs" />
         <Compile Include="DeviceObjects\AttachmentDesc.cs" />
@@ -68,12 +75,6 @@
         <Compile Include="DeviceObjects\CommandBufferBuilder.cs" />
         <Compile Include="DeviceObjects\CommandQueue.cs" />
         <Compile Include="DeviceObjects\CommandQueueClass.cs" />
-        <Compile Include="DeviceObjects\DescriptorDesc.cs" />
-        <Compile Include="DeviceObjects\DescriptorHeap.cs" />
-        <Compile Include="DeviceObjects\DescriptorTable.cs" />
-        <Compile Include="DeviceObjects\DescriptorWriteBuffer.cs" />
-        <Compile Include="DeviceObjects\DescriptorWriteImage.cs" />
-        <Compile Include="DeviceObjects\DescriptorWriteSampler.cs" />
         <Compile Include="DeviceObjects\Device.cs" />
         <Compile Include="DeviceObjects\DeviceBindings.cs" />
         <Compile Include="DeviceObjects\Fence.cs" />

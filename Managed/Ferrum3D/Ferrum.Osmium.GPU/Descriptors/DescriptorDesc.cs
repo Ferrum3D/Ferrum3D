@@ -1,7 +1,8 @@
 ﻿using System.Runtime.InteropServices;
+using Ferrum.Osmium.GPU.DeviceObjects;
 using Ferrum.Osmium.GPU.Shaders;
 
-namespace Ferrum.Osmium.GPU.DeviceObjects
+namespace Ferrum.Osmium.GPU.Descriptors
 {
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct DescriptorDesc

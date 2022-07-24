@@ -1,6 +1,7 @@
 ﻿using System;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
+using Ferrum.Osmium.GPU.Descriptors;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.WindowSystem;
 

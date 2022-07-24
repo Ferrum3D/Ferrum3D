@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 using Ferrum.Osmium.GPU.Common;
+using Ferrum.Osmium.GPU.Descriptors;
 using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.VertexInput;
 
