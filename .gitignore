@@ -17,6 +17,7 @@ Docs/
 Build/
 BuildDebug/
 BuildRelease/
+BuildProfile/
 **/*/obj/
 **/*/bin/
 

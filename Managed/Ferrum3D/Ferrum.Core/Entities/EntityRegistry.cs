@@ -180,8 +180,12 @@ namespace Ferrum.Core.Entities
         public EntityQuery ForEach<T1>(EntityQueryDelegate<T1> f, EntityQuery query = null)
             where T1 : unmanaged
         {
-            query ??= CreateQuery();
-            query.All = ComponentType.CreateList<T1>();
+            if (query is null)
+            {
+                query = CreateQuery();
+                query.All = ComponentType.CreateList<T1>();
+            }
+
             query.Update();
             query.ForEach(f);
             return query;
