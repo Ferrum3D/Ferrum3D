@@ -52,6 +52,7 @@
     <ItemGroup>
         <Compile Include="Common\Scissor.cs" />
         <Compile Include="Common\Viewport.cs" />
+        <Compile Include="Descriptors\DescriptorAllocator.cs" />
         <Compile Include="Descriptors\DescriptorDesc.cs" />
         <Compile Include="Descriptors\DescriptorHeap.cs" />
         <Compile Include="Descriptors\DescriptorSize.cs" />
