@@ -43,7 +43,7 @@ namespace Ferrum.Samples.Models
         private CommandQueue commandQueue;
         private Image textureImage;
         private Sampler textureSampler;
-        private DescriptorHeap descriptorHeap;
+        private DescriptorAllocator descriptorAllocator;
         private DescriptorTable descriptorTable;
 
         protected override bool CloseEventReceived => window.CloseRequested;
@@ -139,20 +139,12 @@ namespace Ferrum.Samples.Models
             var scissor = window.CreateScissor();
             var viewport = window.CreateViewport();
 
-            var descriptorHeapDesc = new DescriptorHeap.Desc()
-                .WithMaxTables(2)
-                .WithSizes(
-                    new DescriptorSize(1, ShaderResourceType.Sampler),
-                    new DescriptorSize(1, ShaderResourceType.TextureSrv),
-                    new DescriptorSize(1, ShaderResourceType.ConstantBuffer)
-                );
-
-            descriptorHeap = device.CreateDescriptorHeap(descriptorHeapDesc);
-            var descriptorSamplerDesc = new DescriptorDesc(ShaderResourceType.Sampler, ShaderStageFlags.Pixel, 1);
-            var descriptorImageDesc = new DescriptorDesc(ShaderResourceType.TextureSrv, ShaderStageFlags.Pixel, 1);
-            var vsDescriptorDesc = new DescriptorDesc(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Vertex, 1);
-            descriptorTable =
-                descriptorHeap.AllocateDescriptorTable(descriptorSamplerDesc, descriptorImageDesc, vsDescriptorDesc);
+            descriptorAllocator = new DescriptorAllocator(device);
+            descriptorTable = descriptorAllocator.Begin()
+                .Bind(ShaderResourceType.Sampler, ShaderStageFlags.Pixel, 1)
+                .Bind(ShaderResourceType.TextureSrv, ShaderStageFlags.Pixel, 1)
+                .Bind(ShaderResourceType.ConstantBuffer, ShaderStageFlags.Vertex, 1)
+                .End();
 
             descriptorTable.Update(0, textureSampler);
             descriptorTable.Update(1, textureImage.DefaultView);
