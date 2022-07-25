@@ -48,6 +48,12 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Drawing\DrawItemCompareOp.cs" />
+        <Compile Include="Drawing\DrawItemSortKey.cs" />
+        <Compile Include="Drawing\DrawItemSortSettings.cs" />
+        <Compile Include="Drawing\DrawPacket.cs" />
+        <Compile Include="Drawing\RenderView.cs" />
+        <Compile Include="Drawing\RenderViewType.cs" />
         <Compile Include="OsmiumApplication.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Systems\DrawPacketSystem.cs" />

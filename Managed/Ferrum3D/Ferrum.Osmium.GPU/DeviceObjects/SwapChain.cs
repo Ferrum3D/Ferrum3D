@@ -16,6 +16,8 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         public bool VerticalSync => NativeDesc.VerticalSync;
         public Format Format => (Format)NativeDesc.Format;
 
+        public float AspectRatio => ImageWidth / (float)ImageHeight;
+
         public int CurrentFrameIndex => (int)GetCurrentFrameIndexNative(Handle);
         public int CurrentImageIndex => (int)GetCurrentImageIndexNative(Handle);
 
