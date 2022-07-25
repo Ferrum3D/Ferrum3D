@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Ferrum.Core.Containers;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Ferrum.Osmium.GPU.Shaders;
 
 namespace Ferrum.Osmium.GPU.Descriptors
 {
@@ -11,8 +12,8 @@ namespace Ferrum.Osmium.GPU.Descriptors
         private readonly Device device;
 
         private readonly float[] descriptorSizes = new float[(int)ShaderResourceType.Count];
-        private readonly DisposableList<DescriptorHeap> freeHeaps;
-        private readonly DisposableList<DescriptorHeap> usedHeaps;
+        private readonly DisposableList<DescriptorHeap> freeHeaps = new();
+        private readonly DisposableList<DescriptorHeap> usedHeaps = new();
         private DescriptorHeap currentHeap;
 
         public DescriptorAllocator(Device device)
@@ -28,7 +29,12 @@ namespace Ferrum.Osmium.GPU.Descriptors
             descriptorSizes[(int)ShaderResourceType.InputAttachment] = 0.5f;
         }
 
-        public DescriptorTable AllocateTable(DescriptorDesc[] descriptors)
+        public Builder Begin()
+        {
+            return new Builder { Allocator = this };
+        }
+
+        private DescriptorTable AllocateTable(DescriptorDesc[] descriptors)
         {
             var result = currentHeap?.AllocateDescriptorTable(descriptors);
 
@@ -76,9 +82,27 @@ namespace Ferrum.Osmium.GPU.Descriptors
         private DescriptorHeap CreateHeap(int count)
         {
             var sizes = descriptorSizes
-                .Select((x, i) => new DescriptorSize((int)(count * x), (ShaderResourceType)i));
+                .Select((x, i) => new DescriptorSize((int)(count * x), (ShaderResourceType)i))
+                .Where(x => x.ResourceType != ShaderResourceType.None);
 
             return device.CreateDescriptorHeap(new DescriptorHeap.Desc(sizes, count));
+        }
+
+        public sealed class Builder
+        {
+            internal DescriptorAllocator Allocator;
+            private readonly List<DescriptorDesc> descriptors = new();
+
+            public Builder Bind(ShaderResourceType resourceType, ShaderStageFlags stage, uint count)
+            {
+                descriptors.Add(new DescriptorDesc(resourceType, stage, count));
+                return this;
+            }
+
+            public DescriptorTable End()
+            {
+                return Allocator.AllocateTable(descriptors.ToArray());
+            }
         }
     }
 }
