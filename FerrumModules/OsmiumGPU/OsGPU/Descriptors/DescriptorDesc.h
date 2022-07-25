@@ -79,3 +79,5 @@ namespace FE::Osmium
         UInt32 Count;
     };
 }
+
+FE_MAKE_HASHABLE(FE::Osmium::DescriptorDesc, , value.ResourceType, value.Stage, value.Count);

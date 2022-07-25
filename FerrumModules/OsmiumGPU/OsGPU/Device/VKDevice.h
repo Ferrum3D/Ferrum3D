@@ -1,8 +1,10 @@
 #pragma once
 #include <FeCore/Console/FeLog.h>
-#include <OsGPU/Common/VKConfig.h>
-#include <OsGPU/Device/IDevice.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/LRUCacheMap.h>
+#include <OsGPU/Common/VKConfig.h>
+#include <OsGPU/Descriptors/DescriptorDesc.h>
+#include <OsGPU/Device/IDevice.h>
 
 namespace FE::Osmium
 {
@@ -25,6 +27,40 @@ namespace FE::Osmium
         }
     };
 
+    class DescriptorSetLayoutData final
+    {
+        VkDescriptorSetLayout m_SetLayout;
+        UInt32 m_RefCount;
+
+    public:
+        FE_STRUCT_RTTI(DescriptorSetLayoutData, "93EA161C-0BC6-45F6-962B-8A21259DFE2B");
+
+        inline DescriptorSetLayoutData() = default;
+
+        inline DescriptorSetLayoutData(VkDescriptorSetLayout layout)
+            : m_SetLayout(layout)
+            , m_RefCount(1)
+        {
+        }
+
+        [[nodiscard]] inline VkDescriptorSetLayout SetLayout()
+        {
+            ++m_RefCount;
+            return m_SetLayout;
+        }
+
+        [[nodiscard]] inline bool Release(VkDevice device)
+        {
+            if (--m_RefCount == 0)
+            {
+                vkDestroyDescriptorSetLayout(device, m_SetLayout, VK_NULL_HANDLE);
+                return true;
+            }
+
+            return false;
+        }
+    };
+
     class VKInstance;
     class VKCommandBuffer;
 
@@ -39,6 +75,7 @@ namespace FE::Osmium
         List<VkSemaphore> m_WaitSemaphores;
         List<VkSemaphore> m_SignalSemaphores;
 
+        UnorderedMap<USize, DescriptorSetLayoutData> m_DescriptorSetLayouts;
         LRUCacheMap<USize, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
         VkMemoryRequirements m_ImageMemoryRequirements;
         VkMemoryRequirements m_RenderTargetMemoryRequirements;
@@ -54,6 +91,9 @@ namespace FE::Osmium
         VkDevice GetNativeDevice();
 
         UInt32 FindMemoryType(UInt32 typeBits, VkMemoryPropertyFlags properties);
+
+        VkDescriptorSetLayout GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, USize& key);
+        void ReleaseDescriptorSetLayout(USize key);
 
         inline VkCommandPool GetCommandPool(CommandQueueClass cmdQueueClass)
         {
