@@ -13,23 +13,7 @@ namespace FE::Osmium
         , m_Heap(&heap)
         , m_Descriptors(descriptors.ToList())
     {
-        List<VkDescriptorSetLayoutBinding> bindings;
-        for (UInt32 i = 0; i < m_Descriptors.Size(); ++i)
-        {
-            auto& desc    = m_Descriptors[i];
-            auto& binding = bindings.Emplace();
-
-            binding.binding         = i;
-            binding.descriptorCount = desc.Count;
-            binding.descriptorType  = GetDescriptorType(desc.ResourceType);
-            binding.stageFlags      = VKConvert(desc.Stage);
-        }
-
-        VkDescriptorSetLayoutCreateInfo layoutCI{};
-        layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutCI.bindingCount = static_cast<UInt32>(bindings.Size());
-        layoutCI.pBindings    = bindings.Data();
-        vkCreateDescriptorSetLayout(m_Device->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &m_Layout);
+        m_Layout = m_Device->GetDescriptorSetLayout(descriptors, m_LayoutHash);
 
         VkDescriptorSetAllocateInfo info{};
         info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -101,6 +85,6 @@ namespace FE::Osmium
         // It is invalid to call vkFreeDescriptorSets() with a pool created without setting
         // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT.
         // vkFreeDescriptorSets(m_Device->GetNativeDevice(), m_Heap->GetNativeDescriptorPool(), 1, &m_Set);
-        vkDestroyDescriptorSetLayout(m_Device->GetNativeDevice(), m_Layout, VK_NULL_HANDLE);
+        m_Device->ReleaseDescriptorSetLayout(m_LayoutHash);
     }
 } // namespace FE::Osmium

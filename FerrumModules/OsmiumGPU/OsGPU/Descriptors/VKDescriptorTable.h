@@ -1,7 +1,7 @@
 #pragma once
-#include <OsGPU/Descriptors/IDescriptorTable.h>
-#include <OsGPU/Common/VKConfig.h>
 #include <FeCore/Containers/List.h>
+#include <OsGPU/Common/VKConfig.h>
+#include <OsGPU/Descriptors/IDescriptorTable.h>
 
 namespace FE::Osmium
 {
@@ -15,6 +15,8 @@ namespace FE::Osmium
 
         VkDescriptorSetLayout m_Layout;
         VkDescriptorSet m_Set;
+
+        USize m_LayoutHash;
 
         List<DescriptorDesc> m_Descriptors;
 
@@ -41,4 +43,4 @@ namespace FE::Osmium
     {
         return m_Layout;
     }
-}
+} // namespace FE::Osmium

@@ -1,4 +1,5 @@
 #include <FeCore/Console/FeLog.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <OsGPU/Adapter/VKAdapter.h>
 #include <OsGPU/Buffer/VKBuffer.h>
 #include <OsGPU/CommandBuffer/VKCommandBuffer.h>
@@ -363,5 +364,59 @@ namespace FE::Osmium
     Shared<ITransientResourceHeap> VKDevice::CreateTransientResourceHeap(const TransientResourceHeapDesc& desc)
     {
         return MakeShared<VKTransientResourceHeap>(*this, desc);
+    }
+
+    inline USize GetSetLayoutHash(const ArraySlice<DescriptorDesc>& descriptors)
+    {
+        USize result = 0;
+        for (auto& descriptor : descriptors)
+        {
+            HashCombine(result, descriptor);
+        }
+
+        return result;
+    }
+
+    VkDescriptorSetLayout VKDevice::GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, USize& key)
+    {
+        key = GetSetLayoutHash(descriptors);
+        VkDescriptorSetLayout layout;
+
+        if (m_DescriptorSetLayouts.find(key) == m_DescriptorSetLayouts.end())
+        {
+            List<VkDescriptorSetLayoutBinding> bindings;
+            for (UInt32 i = 0; i < descriptors.Length(); ++i)
+            {
+                auto& desc    = descriptors[i];
+                auto& binding = bindings.Emplace();
+
+                binding.binding         = i;
+                binding.descriptorCount = desc.Count;
+                binding.descriptorType  = GetDescriptorType(desc.ResourceType);
+                binding.stageFlags      = VKConvert(desc.Stage);
+            }
+
+            VkDescriptorSetLayoutCreateInfo layoutCI{};
+            layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutCI.bindingCount = static_cast<UInt32>(bindings.Size());
+            layoutCI.pBindings    = bindings.Data();
+            vkCreateDescriptorSetLayout(m_NativeDevice, &layoutCI, VK_NULL_HANDLE, &layout);
+
+            m_DescriptorSetLayouts[key] = DescriptorSetLayoutData(layout);
+        }
+        else
+        {
+            layout = m_DescriptorSetLayouts[key].SetLayout();
+        }
+
+        return layout;
+    }
+
+    void VKDevice::ReleaseDescriptorSetLayout(USize key)
+    {
+        if (m_DescriptorSetLayouts[key].Release(m_NativeDevice))
+        {
+            m_DescriptorSetLayouts.erase(key);
+        }
     }
 } // namespace FE::Osmium
