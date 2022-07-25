@@ -204,6 +204,12 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Distance(Vector3F left, Vector3F right)
+        {
+            return (right - left).Length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector3F left, Vector3F right)
         {
             return left.Equals(right);

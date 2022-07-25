@@ -71,9 +71,8 @@ namespace Ferrum.Samples.Models
             var swapChainDesc = new SwapChain.Desc(window, graphicsQueue);
             swapChain = device.CreateSwapChain(swapChainDesc);
 
-            var aspectRatio = swapChain.ImageWidth / (float)swapChain.ImageHeight;
             var constantData = Matrix4x4F.Identity;
-            constantData *= Matrix4x4F.CreateProjection(MathF.PI * 0.5f, aspectRatio, 0.1f, 10.0f);
+            constantData *= Matrix4x4F.CreateProjection(MathF.PI * 0.5f, swapChain.AspectRatio, 0.1f, 10.0f);
             constantData *= Matrix4x4F.CreateRotationY(MathF.PI);
             constantData *= Matrix4x4F.CreateRotationX(-0.5f);
             constantData *= Matrix4x4F.CreateTranslation(new Vector3F(0.0f, 0.8f, -1.5f) * 2);
