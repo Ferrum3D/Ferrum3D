@@ -92,6 +92,7 @@ set(SRC
     FeCore/Math/Half.h
     FeCore/Math/MathUtils.h
     FeCore/Math/Matrix4x4F.h
+    FeCore/Math/Quaternion.h
     FeCore/Math/Vector2.h
     FeCore/Math/Vector3.h
     FeCore/Math/Vector4.h

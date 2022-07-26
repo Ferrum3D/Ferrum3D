@@ -1,9 +1,10 @@
 #pragma once
+#include <FeCore/Math/Quaternion.h>
 #include <FeCore/Math/Vector4.h>
 
 namespace FE
 {
-    class Matrix4x4F
+    class Matrix4x4F final
     {
         inline static constexpr size_t RowCount = 4;
 
@@ -19,20 +20,24 @@ namespace FE
         [[nodiscard]] FE_FINLINE static Matrix4x4F GetZero() noexcept;
         [[nodiscard]] FE_FINLINE static Matrix4x4F GetIdentity() noexcept;
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F FromRows(
-            const Vector4F& row0, const Vector4F& row1, const Vector4F& row2, const Vector4F& row3);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F FromColumns(
-            const Vector4F& column0, const Vector4F& column1, const Vector4F& column2, const Vector4F& column3);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2,
+                                                            const Vector4F& row3);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
+                                                               const Vector4F& column2, const Vector4F& column3);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationX(Float32 angle);
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationY(Float32 angle);
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationZ(Float32 angle);
+
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotation(const Quaternion& quaternion);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateScale(const Vector3F& scale);
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(const Vector4F& diagonal);
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(Float32 x, Float32 y, Float32 z, Float32 w);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
+
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTransform(const Quaternion& rotation, const Vector3F& translation);
 
         // Vulkan-compatible
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(Float32 fovY, Float32 aspectRatio, Float32 near, Float32 far);
@@ -81,8 +86,8 @@ namespace FE
 
         [[nodiscard]] FE_FINLINE Float32 Determinant() const;
 
-        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(
-            const Matrix4x4F& other, Float32 epsilon = Constants::Epsilon) const noexcept;
+        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Matrix4x4F& other,
+                                                      Float32 epsilon = Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FINLINE bool operator==(const Matrix4x4F& other) const noexcept;
         [[nodiscard]] FE_FINLINE bool operator!=(const Matrix4x4F& other) const noexcept;
@@ -90,8 +95,8 @@ namespace FE
 
     namespace Internal
     {
-        FE_FINLINE void SIMDMatrix4x4Multiply(
-            const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r, SIMD::SSE::Float32x4* out)
+        FE_FINLINE void SIMDMatrix4x4Multiply(const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r,
+                                              SIMD::SSE::Float32x4* out)
         {
             // clang-format off
             out[0] = l[0].Broadcast<3>() * r[3] + (l[0].Broadcast<2>() * r[2] + (l[0].Broadcast<1>() * r[1] + (l[0].Broadcast<0>() * r[0])));
@@ -101,8 +106,8 @@ namespace FE
             // clang-format on
         }
 
-        FE_FINLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(
-            const SIMD::SSE::Float32x4* matrix, SIMD::SSE::Float32x4 vector)
+        FE_FINLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(const SIMD::SSE::Float32x4* matrix,
+                                                                    SIMD::SSE::Float32x4 vector)
         {
             using namespace SIMD::SSE;
             Float32x4 prod1 = matrix[0] * vector;
@@ -151,8 +156,8 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::FromColumns(
-        const Vector4F& column0, const Vector4F& column1, const Vector4F& column2, const Vector4F& column3)
+    Matrix4x4F Matrix4x4F::FromColumns(const Vector4F& column0, const Vector4F& column1, const Vector4F& column2,
+                                       const Vector4F& column3)
     {
         Matrix4x4F matrix{};
         matrix.SetColumn(0, column0);
@@ -198,6 +203,26 @@ namespace FE
         return matrix;
     }
 
+    Matrix4x4F Matrix4x4F::CreateRotation(const Quaternion& q)
+    {
+        auto wx2 = 2.0f * q.W() * q.X();
+        auto wy2 = 2.0f * q.W() * q.Y();
+        auto wz2 = 2.0f * q.W() * q.Z();
+        auto xx2 = 2.0f * q.X() * q.X();
+        auto xy2 = 2.0f * q.X() * q.Y();
+        auto xz2 = 2.0f * q.X() * q.Z();
+        auto yy2 = 2.0f * q.Y() * q.Y();
+        auto yz2 = 2.0f * q.Y() * q.Z();
+        auto zz2 = 2.0f * q.Z() * q.Z();
+
+        Matrix4x4F matrix{};
+        matrix.SetRow(0, 1.0f - yy2 - zz2, xy2 - wz2, xz2 + wy2, 0);
+        matrix.SetRow(1, xy2 + wz2, 1.0f - xx2 - zz2, yz2 - wx2, 0);
+        matrix.SetRow(2, xz2 - wy2, yz2 + wx2, 1.0f - xx2 - yy2, 0);
+        matrix.SetRow(3, 0, 0, 0, 1);
+        return matrix;
+    }
+
     Matrix4x4F Matrix4x4F::CreateScale(const Vector3F& scale)
     {
         return CreateDiagonal(Vector4F(scale));
@@ -225,6 +250,13 @@ namespace FE
         matrix.SetRow(1, 0.0f, 1.0f, 0.0f, translation.Y());
         matrix.SetRow(2, 0.0f, 0.0f, 1.0f, translation.Z());
         matrix.SetRow(3, 0.0f, 0.0f, 0.0f, 1.0f);
+        return matrix;
+    }
+
+    Matrix4x4F Matrix4x4F::CreateTransform(const Quaternion& rotation, const Vector3F& translation)
+    {
+        auto matrix = CreateRotation(rotation);
+        matrix.SetColumn(3, translation);
         return matrix;
     }
 
