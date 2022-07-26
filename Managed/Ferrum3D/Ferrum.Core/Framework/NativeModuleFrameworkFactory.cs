@@ -13,10 +13,11 @@ namespace Ferrum.Core.Framework
 
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     public abstract class NativeModuleFrameworkFactory<TModule> : IFrameworkFactory
+        where TModule : NativeModuleFramework
     {
         public static bool IsLoaded { get; private set; }
         public static DynamicLibrary Library { get; private set; }
-        private static FrameworkBase framework;
+        public static TModule Instance { get; private set; }
         private static IntPtr Handle { get; set; }
         private static string libraryName;
 
@@ -29,26 +30,26 @@ namespace Ferrum.Core.Framework
         {
             if (IsLoaded)
             {
-                return framework;
+                return Instance;
             }
 
             IsLoaded = true;
             Library = DynamicLibrary.FromPath(libraryName);
             var createModuleInstance = Library.GetFunction<CreateModuleInstanceNative>("CreateModuleInstance");
             Handle = createModuleInstance(Engine.Environment);
-            framework = CreateFramework(Handle);
-            return framework;
+            Instance = CreateFramework(Handle);
+            return Instance;
         }
 
         public void Unload()
         {
             IsLoaded = false;
-            framework.Dispose();
+            Instance.Dispose();
             var destructModuleInstance = Library.GetFunction<DestructModuleInstanceNative>("DestructModuleInstance");
             destructModuleInstance(Handle);
             Library.Dispose();
         }
 
-        protected abstract FrameworkBase CreateFramework(IntPtr handle);
+        protected abstract TModule CreateFramework(IntPtr handle);
     }
 }

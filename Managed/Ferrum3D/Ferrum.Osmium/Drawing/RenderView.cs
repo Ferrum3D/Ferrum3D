@@ -1,14 +1,10 @@
 ﻿using Ferrum.Core.Math;
-using Ferrum.Osmium.GPU.DeviceObjects;
-using Ferrum.Osmium.GPU.WindowSystem;
 
 namespace Ferrum.Osmium.Drawing
 {
     public sealed class RenderView
     {
         public RenderViewType Type { get; }
-
-        public SwapChain SwapChain { get; }
 
         public Matrix4x4F ViewMatrix
         {
@@ -103,17 +99,16 @@ namespace Ferrum.Osmium.Drawing
         private float nearClippingPlane = 0.1f;
         private float farClippingPlane = 1000.0f;
 
-        private RenderView(RenderViewType type, SwapChain swapChain = null)
+        private RenderView(RenderViewType type)
         {
             Type = type;
-            SwapChain = swapChain;
         }
 
-        public static RenderView CreateMainCamera(Window window, SwapChain swapChain)
+        public static RenderView CreateCamera(float aspectRatio)
         {
-            return new RenderView(RenderViewType.Camera, swapChain)
+            return new RenderView(RenderViewType.Camera)
             {
-                aspectRatio = swapChain.AspectRatio,
+                aspectRatio = aspectRatio,
                 SortSettings = new DrawItemSortSettings(DrawItemCompareOp.Less)
             };
         }

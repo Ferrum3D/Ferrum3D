@@ -6,10 +6,10 @@ namespace Ferrum.Core.Entities
 {
     public class World : IDisposable
     {
-        public static IntPtr Handle { get; private set; }
-        internal static EntityRegistry EntityRegistry { get; private set; }
+        public IntPtr Handle { get; private set; }
+        public EntityRegistry EntityRegistry { get; private set; }
 
-        private static readonly Dictionary<Type, ComponentSystem> systems = new();
+        private readonly Dictionary<Type, ComponentSystem> systems = new();
 
         public World()
         {
@@ -32,7 +32,7 @@ namespace Ferrum.Core.Entities
             GC.SuppressFinalize(this);
         }
 
-        public static void RegisterSystem<T>(T system)
+        public void RegisterSystem<T>(T system)
             where T : ComponentSystem
         {
             if (systems.ContainsKey(typeof(T)))
@@ -45,7 +45,7 @@ namespace Ferrum.Core.Entities
             RegisterSystemNative(Handle, system.Handle);
         }
 
-        public static void UnregisterSystem<T>()
+        public void UnregisterSystem<T>()
         {
             if (!systems.TryGetValue(typeof(T), out var system))
             {
@@ -56,7 +56,7 @@ namespace Ferrum.Core.Entities
             systems.Remove(typeof(T));
         }
 
-        private static void ReleaseUnmanagedResources()
+        private void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
             Handle = IntPtr.Zero;
