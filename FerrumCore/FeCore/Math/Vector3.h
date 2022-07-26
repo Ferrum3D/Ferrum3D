@@ -318,7 +318,7 @@ namespace FE
 
     FE_FINLINE Vector3F Vector3F::operator-() const noexcept
     {
-        return Vector3F(1.0f - m_Value);
+        return Vector3F(m_Value.Negate());
     }
 
     FE_FINLINE Vector3F Vector3F::operator+(const Vector3F& other) const noexcept

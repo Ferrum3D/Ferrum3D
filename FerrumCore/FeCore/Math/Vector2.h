@@ -286,7 +286,7 @@ namespace FE
 
     FE_FINLINE Vector2F Vector2F::operator-() const noexcept
     {
-        return Vector2F(1.0f - m_Value);
+        return Vector2F(m_Value.Negate());
     }
 
     FE_FINLINE Vector2F Vector2F::operator+(const Vector2F& other) const noexcept

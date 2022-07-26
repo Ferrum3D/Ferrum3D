@@ -8,7 +8,7 @@
 namespace FE
 {
     //! \brief 4-dimensional vector.
-    class Vector4F
+    class Vector4F final
     {
         using TVec = SIMD::SSE::Float32x4;
 
@@ -337,7 +337,7 @@ namespace FE
 
     Vector4F Vector4F::operator-() const noexcept
     {
-        return Vector4F(1.0f - m_Value);
+        return Vector4F(m_Value.Negate());
     }
 
     Vector4F Vector4F::operator+(const Vector4F& other) const noexcept
