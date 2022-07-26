@@ -18,6 +18,18 @@ namespace Ferrum.Core.Tests.Math
             Assert.IsTrue(Matrix4x4F.AreApproxEqual(r1, r2));
         }
 
+        [Test]
+        public void VectorTransformation()
+        {
+            var vector = new Vector3F(0, 1, 0);
+            var translation = new Vector3F(0, 0, 1);
+            var rotation = Quaternion.CreateRotationX(MathF.PI / 4);
+            var matrix = Matrix4x4F.CreateRotation(rotation)
+                         * Matrix4x4F.CreateTranslation(translation);
+            var transformed = matrix * vector;
+            Assert.AreEqual(new Vector3F(0, 0, MathF.Sqrt(2)), transformed);
+        }
+
         private static Matrix4x4F CreateRandomMatrix()
         {
             var matrix = new Matrix4x4F();

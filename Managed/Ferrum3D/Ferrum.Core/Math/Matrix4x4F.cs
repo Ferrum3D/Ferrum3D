@@ -378,6 +378,12 @@ namespace Ferrum.Core.Math
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3F operator *(Matrix4x4F lhs, Vector3F rhs)
+        {
+            return (lhs * new Vector4F(rhs)).GetVector3();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4F operator *(Matrix4x4F lhs, Vector4F rhs)
         {
             MultiplyNative(ref lhs, ref rhs, out var result);
