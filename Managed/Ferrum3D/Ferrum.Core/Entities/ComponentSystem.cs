@@ -1,49 +1,80 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Ferrum.Core.EventBus;
 using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.Entities
 {
+    [SuppressMessage("ReSharper", "PrivateFieldCanBeConvertedToLocalVariable")]
     public abstract class ComponentSystem : UnmanagedObject
     {
         public EntityRegistry EntityRegistry { get; internal set; }
 
         private FrameEventArgs frameEventArgs;
 
+        private readonly List<ComponentSubsystem> subsystems = new();
+
         protected float DeltaTime => frameEventArgs.DeltaTime;
         protected uint FrameIndex => frameEventArgs.FrameIndex;
 
-        private CreateCallback createCallback;
-        private DestroyCallback destroyCallback;
-        private UpdateCallback updateCallback;
+        // These delegates must be stored in fields of the class to prevent GC to collect them before calls from unmanaged code
+        private readonly CreateCallback createCallback;
+        private readonly DestroyCallback destroyCallback;
+        private readonly UpdateCallback updateCallback;
 
         protected ComponentSystem()
             : base(ConstructNative())
         {
-            createCallback = new CreateCallback(OnCreate);
-            destroyCallback = new DestroyCallback(OnDestroy);
-            updateCallback = new UpdateCallback((in FrameEventArgs args) =>
-            {
-                frameEventArgs = args;
-                OnUpdate();
-            });
+            createCallback = OnCreate;
+            destroyCallback = OnDestroyImpl;
+            updateCallback = OnUpdateImpl;
 
             SetCreateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(createCallback));
             SetDestroyCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(destroyCallback));
             SetUpdateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(updateCallback));
         }
 
-        public virtual void OnCreate()
+        protected void AddSubsystem(ComponentSubsystem subsystem)
+        {
+            subsystem.ParentSystem = this;
+            subsystem.OnCreate();
+            subsystems.Add(subsystem);
+        }
+
+        protected virtual void OnCreate()
         {
         }
 
-        public virtual void OnUpdate()
+        protected virtual void OnUpdate()
         {
         }
 
-        public virtual void OnDestroy()
+        protected virtual void OnDestroy()
         {
+        }
+
+        private void OnUpdateImpl(in FrameEventArgs eventArgs)
+        {
+            frameEventArgs = eventArgs;
+
+            foreach (var subsystem in subsystems)
+            {
+                subsystem.OnUpdate();
+            }
+
+            OnUpdate();
+        }
+
+        private void OnDestroyImpl()
+        {
+            foreach (var subsystem in subsystems)
+            {
+                subsystem.OnDestroy();
+            }
+
+            OnDestroy();
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

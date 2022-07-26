@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using Ferrum.Core.Components;
-using Ferrum.Core.Console;
 using Ferrum.Core.Entities;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.Drawing;
@@ -15,7 +13,7 @@ namespace Ferrum.Osmium.Systems
         public IReadOnlyList<ulong> ItemLayers;
         public IReadOnlyList<RenderView> RenderViews;
 
-        public override void OnUpdate()
+        protected override void OnUpdate()
         {
             for (var i = 0; i < RenderViews.Count; ++i)
             {

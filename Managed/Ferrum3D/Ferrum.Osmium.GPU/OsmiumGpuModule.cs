@@ -38,7 +38,7 @@ namespace Ferrum.Osmium.GPU
             {
             }
 
-            protected override FrameworkBase CreateFramework(IntPtr handle)
+            protected override OsmiumGpuModule CreateFramework(IntPtr handle)
             {
                 return new OsmiumGpuModule(handle);
             }

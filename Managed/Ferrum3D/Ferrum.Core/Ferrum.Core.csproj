@@ -62,6 +62,7 @@
         <Compile Include="Containers\NativeList.cs" />
         <Compile Include="Entities\ArchetypeChunk.cs" />
         <Compile Include="Entities\ComponentAttribute.cs" />
+        <Compile Include="Entities\ComponentSubsystem.cs" />
         <Compile Include="Entities\ComponentSystem.cs" />
         <Compile Include="Entities\ComponentType.cs" />
         <Compile Include="Entities\ComponentInfo.cs" />

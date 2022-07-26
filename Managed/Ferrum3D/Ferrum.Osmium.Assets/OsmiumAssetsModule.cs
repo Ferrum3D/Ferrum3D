@@ -32,7 +32,7 @@ namespace Ferrum.Osmium.Assets
             {
             }
 
-            protected override FrameworkBase CreateFramework(IntPtr handle)
+            protected override OsmiumAssetsModule CreateFramework(IntPtr handle)
             {
                 return new OsmiumAssetsModule(handle);
             }
