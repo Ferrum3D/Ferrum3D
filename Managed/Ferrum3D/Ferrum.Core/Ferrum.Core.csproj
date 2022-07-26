@@ -86,6 +86,8 @@
         <Compile Include="Math\MathF.cs" />
         <Compile Include="Math\Matrix4x4F.cs" />
         <Compile Include="Math\Matrix4x4FBindings.cs" />
+        <Compile Include="Math\Quaternion.cs" />
+        <Compile Include="Math\QuaternionBindings.cs" />
         <Compile Include="Math\Vector2F.cs" />
         <Compile Include="Math\Vector3F.cs" />
         <Compile Include="Math\Vector4F.cs" />

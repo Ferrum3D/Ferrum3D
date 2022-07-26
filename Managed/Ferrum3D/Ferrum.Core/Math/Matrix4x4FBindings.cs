@@ -30,6 +30,21 @@ namespace Ferrum.Core.Math
 
         [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_VectorMultiply")]
         private static extern void MultiplyNative(ref Matrix4x4F lhs, ref Vector4F rhs, out Vector4F result);
+        
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_CreateRotationX")]
+        private static extern void CreateRotationXNative(float angle, out Matrix4x4F result);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_CreateRotationY")]
+        private static extern void CreateRotationYNative(float angle, out Matrix4x4F result);
+        
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_CreateRotation")]
+        private static extern void CreateRotationNative(in Quaternion rotation, out Matrix4x4F result);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_CreateTransform")]
+        private static extern void CreateTransformNative(in Quaternion rotation, in Vector4F position, out Matrix4x4F result);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_CreateRotationZ")]
+        private static extern void CreateRotationZNative(float angle, out Matrix4x4F result);
 
         [DllImport("FeCoreBindings", EntryPoint = "Matrix4x4F_Determinant")]
         private static extern float DeterminantNative(ref Matrix4x4F matrix);

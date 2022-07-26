@@ -17,6 +17,7 @@ set(SRC
     EventBus/FrameEventBus.cpp
 
     Math/Matrix4x4F.cpp
+    Math/Quaternion.cpp
 
     Modules/Engine.cpp
     # FERRUM_SORT_LINES END
