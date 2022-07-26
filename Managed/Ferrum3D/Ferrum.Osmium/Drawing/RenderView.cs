@@ -12,7 +12,7 @@ namespace Ferrum.Osmium.Drawing
             {
                 if (needUpdateView)
                 {
-                    viewMatrix = Matrix4x4F.CreateTranslation(position);
+                    viewMatrix = Matrix4x4F.CreateTransform(rotation, position);
                     needUpdateView = false;
                 }
 
@@ -40,6 +40,16 @@ namespace Ferrum.Osmium.Drawing
             set
             {
                 position = value;
+                needUpdateView = true;
+            }
+        }
+
+        public Quaternion Rotation
+        {
+            get => rotation;
+            set
+            {
+                rotation = value;
                 needUpdateView = true;
             }
         }
@@ -93,6 +103,7 @@ namespace Ferrum.Osmium.Drawing
         private bool needUpdateProjection = true;
 
         private Vector3F position;
+        private Quaternion rotation;
 
         private float fieldOfView = MathF.PI * 0.5f;
         private float aspectRatio = 1.0f;
@@ -131,6 +142,26 @@ namespace Ferrum.Osmium.Drawing
         public void TranslateZ(float z)
         {
             Position += Vector3F.UnitZ * z;
+        }
+
+        public void Rotate(Vector3F axis, float angle)
+        {
+            Rotation *= Quaternion.FromAxisAngle(axis, angle);
+        }
+
+        public void RotateX(float x)
+        {
+            Rotation *= Quaternion.CreateRotationX(x);
+        }
+
+        public void RotateY(float y)
+        {
+            Rotation *= Quaternion.CreateRotationY(y);
+        }
+
+        public void RotateZ(float z)
+        {
+            Rotation *= Quaternion.CreateRotationZ(z);
         }
     }
 }

@@ -162,43 +162,22 @@ namespace Ferrum.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F CreateRotationX(float angle)
         {
-            var s = MathF.Sin(angle);
-            var c = MathF.Cos(angle);
-            return new Matrix4x4F
-            {
-                Row0 = Vector4F.UnitX,
-                Row1 = new Vector4F(0.0f, c, -s, 0.0f),
-                Row2 = new Vector4F(0.0f, s, +c, 0.0f),
-                Row3 = Vector4F.UnitW
-            };
+            CreateRotationXNative(angle, out var matrix);
+            return matrix;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F CreateRotationY(float angle)
         {
-            var s = MathF.Sin(angle);
-            var c = MathF.Cos(angle);
-            return new Matrix4x4F
-            {
-                Row0 = new Vector4F(+c, 0.0f, s, 0.0f),
-                Row1 = Vector4F.UnitY,
-                Row2 = new Vector4F(-s, 0.0f, c, 0.0f),
-                Row3 = Vector4F.UnitW
-            };
+            CreateRotationYNative(angle, out var matrix);
+            return matrix;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4F CreateRotationZ(float angle)
         {
-            var s = MathF.Sin(angle);
-            var c = MathF.Cos(angle);
-            return new Matrix4x4F
-            {
-                Row0 = new Vector4F(c, -s, 0.0f, 0.0f),
-                Row1 = new Vector4F(s, +c, 0.0f, 0.0f),
-                Row2 = Vector4F.UnitZ,
-                Row3 = Vector4F.UnitW
-            };
+            CreateRotationZNative(angle, out var matrix);
+            return matrix;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -247,6 +226,20 @@ namespace Ferrum.Core.Math
                 Row2 = new Vector4F(0.0f, 0.0f, 1.0f, translation.Z),
                 Row3 = new Vector4F(0.0f, 0.0f, 0.0f, 1.0f)
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Matrix4x4F CreateRotation(Quaternion quaternion)
+        {
+            CreateRotationNative(quaternion, out var matrix);
+            return matrix;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Matrix4x4F CreateTransform(Quaternion quaternion, Vector3F position)
+        {
+            CreateTransformNative(quaternion, new Vector4F(position), out var matrix);
+            return matrix;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
