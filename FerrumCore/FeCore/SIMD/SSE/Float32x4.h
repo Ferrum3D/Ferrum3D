@@ -118,6 +118,8 @@ namespace FE::SIMD::SSE
         [[nodiscard]] FE_FINLINE Float32x4 NegateXYZ() const noexcept;
 
         [[nodiscard]] FE_FINLINE Float32x4 NegateW() const noexcept;
+
+        [[nodiscard]] FE_FINLINE Float32x4 Negate() const noexcept;
     };
 
     FE_FINLINE Float32x4::Float32x4(__m128 value)
@@ -375,6 +377,17 @@ namespace FE::SIMD::SSE
         alignas(16) static constexpr Int32 values[] = { static_cast<Int32>(0x00000000),
                                                         static_cast<Int32>(0x00000000),
                                                         static_cast<Int32>(0x00000000),
+                                                        static_cast<Int32>(0x80000000) };
+
+        static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
+        return *this ^ Float32x4(mask);
+    }
+
+    Float32x4 Float32x4::Negate() const noexcept
+    {
+        alignas(16) static constexpr Int32 values[] = { static_cast<Int32>(0x80000000),
+                                                        static_cast<Int32>(0x80000000),
+                                                        static_cast<Int32>(0x80000000),
                                                         static_cast<Int32>(0x80000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
