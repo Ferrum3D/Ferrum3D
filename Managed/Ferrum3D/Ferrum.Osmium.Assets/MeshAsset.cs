@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
-using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
@@ -42,6 +41,15 @@ namespace Ferrum.Osmium.Assets
             return stagingBuffer;
         }
 
+        public MeshAsset WithNativePointer(IntPtr pointer)
+        {
+            return new MeshAsset(pointer,
+                VertexSizeNative(pointer),
+                IndexSizeNative(pointer),
+                VertexDataNative(pointer),
+                IndexDataNative(pointer));
+        }
+
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_VertexSize")]
         private static extern ulong VertexSizeNative(IntPtr self);
 
@@ -53,14 +61,5 @@ namespace Ferrum.Osmium.Assets
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_IndexData")]
         private static extern IntPtr IndexDataNative(IntPtr self);
-
-        public MeshAsset WithNativePointer(IntPtr pointer)
-        {
-            return new MeshAsset(pointer,
-                VertexSizeNative(pointer),
-                IndexSizeNative(pointer),
-                VertexDataNative(pointer),
-                IndexDataNative(pointer));
-        }
     }
 }

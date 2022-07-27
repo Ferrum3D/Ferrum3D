@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
@@ -16,7 +15,6 @@ using Ferrum.Osmium.GPU.PipelineStates;
 using Ferrum.Osmium.GPU.Shaders;
 using Ferrum.Osmium.GPU.VertexInput;
 using Ferrum.Osmium.GPU.WindowSystem;
-using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Samples.Textures
 {
