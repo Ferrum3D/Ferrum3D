@@ -15,6 +15,7 @@ namespace Ferrum.Core.Framework
         public EntityRegistry EntityRegistry { get; private set; }
 
         public static ApplicationFramework Instance { get; private set; }
+        public World World { get; private set; }
         
         private uint frameCounter;
         private int exitCode;
@@ -24,7 +25,6 @@ namespace Ferrum.Core.Framework
         private ConsoleLogger logger;
         private readonly DisposableList<EventBusBase> eventBuses = new();
         private AssetManager assetManager;
-        protected World World;
 
         protected abstract bool CloseEventReceived { get; }
 
