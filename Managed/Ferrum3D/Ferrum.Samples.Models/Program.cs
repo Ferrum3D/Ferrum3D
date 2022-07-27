@@ -56,8 +56,8 @@ namespace Ferrum.Samples.Models
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
-            using var meshAsset = Asset.Load<MeshAsset>(Guid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A"));
+            using var imageAsset = Asset.Load<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            using var meshAsset = Asset.Load<MeshAsset>(Uuid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A"));
 
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();

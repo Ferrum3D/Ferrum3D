@@ -1,4 +1,3 @@
-#include <Bindings/ECS/ComponentType.h>
 #include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/ECS/EntityQuery.h>
 
@@ -11,40 +10,19 @@ namespace FE::ECS
             return MakeShared<EntityQuery>(registry).Detach();
         }
 
-        FE_DLL_EXPORT void EntityQuery_NoneOf(EntityQuery* self, ComponentTypeBinding* componentTypes, UInt32 componentTypeCount)
+        FE_DLL_EXPORT void EntityQuery_NoneOf(EntityQuery* self, ComponentType* componentTypes, UInt32 componentTypeCount)
         {
-            List<ComponentType> types;
-            types.Reserve(componentTypeCount);
-            for (USize i = 0; i < componentTypeCount; ++i)
-            {
-                types.Push(componentTypes[i].Convert());
-            }
-
-            self->NoneOf(types);
+            self->NoneOf(ArraySlice(componentTypes, componentTypeCount));
         }
 
-        FE_DLL_EXPORT void EntityQuery_AllOf(EntityQuery* self, ComponentTypeBinding* componentTypes, UInt32 componentTypeCount)
+        FE_DLL_EXPORT void EntityQuery_AllOf(EntityQuery* self, ComponentType* componentTypes, UInt32 componentTypeCount)
         {
-            List<ComponentType> types;
-            types.Reserve(componentTypeCount);
-            for (USize i = 0; i < componentTypeCount; ++i)
-            {
-                types.Push(componentTypes[i].Convert());
-            }
-
-            self->AllOf(types);
+            self->AllOf(ArraySlice(componentTypes, componentTypeCount));
         }
 
-        FE_DLL_EXPORT void EntityQuery_AnyOf(EntityQuery* self, ComponentTypeBinding* componentTypes, UInt32 componentTypeCount)
+        FE_DLL_EXPORT void EntityQuery_AnyOf(EntityQuery* self, ComponentType* componentTypes, UInt32 componentTypeCount)
         {
-            List<ComponentType> types;
-            types.Reserve(componentTypeCount);
-            for (USize i = 0; i < componentTypeCount; ++i)
-            {
-                types.Push(componentTypes[i].Convert());
-            }
-
-            self->AnyOf(types);
+            self->AnyOf(ArraySlice(componentTypes, componentTypeCount));
         }
 
         FE_DLL_EXPORT void EntityQuery_Update(EntityQuery* self)

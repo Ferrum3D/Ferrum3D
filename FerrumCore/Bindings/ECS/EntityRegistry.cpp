@@ -1,4 +1,3 @@
-#include <Bindings/ECS/ComponentType.h>
 #include <FeCore/ECS/EntityRegistry.h>
 
 namespace FE::ECS
@@ -25,27 +24,26 @@ namespace FE::ECS
             return self->IsValid(*entity);
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_AddComponent(EntityRegistry* self, Entity* entity, ComponentTypeBinding* componentType)
+        FE_DLL_EXPORT bool EntityRegistry_AddComponent(EntityRegistry* self, Entity* entity, ComponentType* componentType)
         {
-            return self->AddComponent(*entity, componentType->Convert());
+            return self->AddComponent(*entity, *componentType);
         }
 
         FE_DLL_EXPORT void EntityRegistry_AddComponentToEntities(EntityRegistry* self, Entity* entities, UInt32 entityCount,
-                                                                 ComponentTypeBinding* componentType)
+                                                                 ComponentType* componentType)
         {
-            return self->AddComponent(ArraySlice(entities, entities + entityCount), componentType->Convert());
+            return self->AddComponent(ArraySlice(entities, entities + entityCount), *componentType);
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_RemoveComponent(EntityRegistry* self, Entity* entity,
-                                                          ComponentTypeBinding* componentType)
+        FE_DLL_EXPORT bool EntityRegistry_RemoveComponent(EntityRegistry* self, Entity* entity, ComponentType* componentType)
         {
-            return self->RemoveComponent(*entity, componentType->Convert());
+            return self->RemoveComponent(*entity, *componentType);
         }
 
         FE_DLL_EXPORT void EntityRegistry_RemoveComponentFromEntities(EntityRegistry* self, Entity* entities, UInt32 entityCount,
-                                                                      ComponentTypeBinding* componentType)
+                                                                      ComponentType* componentType)
         {
-            return self->RemoveComponent(ArraySlice(entities, entities + entityCount), componentType->Convert());
+            return self->RemoveComponent(ArraySlice(entities, entities + entityCount), *componentType);
         }
 
         FE_DLL_EXPORT void EntityRegistry_CreateEntity(EntityRegistry* self, Entity* result)
@@ -53,17 +51,10 @@ namespace FE::ECS
             *result = self->CreateEntity();
         }
 
-        FE_DLL_EXPORT void EntityRegistry_CreateEntityWithComponents(EntityRegistry* self, ComponentTypeBinding* componentTypes,
+        FE_DLL_EXPORT void EntityRegistry_CreateEntityWithComponents(EntityRegistry* self, ComponentType* componentTypes,
                                                                      UInt32 componentTypeCount, Entity* result)
         {
-            List<ComponentType> types;
-            types.Reserve(componentTypeCount);
-            for (USize i = 0; i < componentTypeCount; ++i)
-            {
-                types.Push(componentTypes[i].Convert());
-            }
-
-            *result = self->CreateEntity(types);
+            *result = self->CreateEntity(ArraySlice(componentTypes, componentTypeCount));
         }
 
         FE_DLL_EXPORT void EntityRegistry_CloneEntity(EntityRegistry* self, Entity* entity, Entity* result)
@@ -76,18 +67,11 @@ namespace FE::ECS
             self->CreateEntities(ArraySliceMut(entities, entities + entityCount));
         }
 
-        FE_DLL_EXPORT void EntityRegistry_CreateEntitiesWithComponents(EntityRegistry* self, ComponentTypeBinding* componentTypes,
+        FE_DLL_EXPORT void EntityRegistry_CreateEntitiesWithComponents(EntityRegistry* self, ComponentType* componentTypes,
                                                                        UInt32 componentTypeCount, Entity* entities,
                                                                        UInt32 entityCount)
         {
-            List<ComponentType> types;
-            types.Reserve(componentTypeCount);
-            for (USize i = 0; i < componentTypeCount; ++i)
-            {
-                types.Push(componentTypes[i].Convert());
-            }
-
-            self->CreateEntities(types, ArraySliceMut(entities, entities + entityCount));
+            self->CreateEntities(ArraySlice(componentTypes, componentTypeCount), ArraySliceMut(entities, entities + entityCount));
         }
 
         FE_DLL_EXPORT void EntityRegistry_CloneEntityToArray(EntityRegistry* self, Entity* entity, Entity* entities,
@@ -106,21 +90,21 @@ namespace FE::ECS
             self->DestroyEntities(ArraySlice(entities, entities + entityCount));
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_HasComponent(EntityRegistry* self, Entity* entity, ComponentTypeBinding* componentType)
+        FE_DLL_EXPORT bool EntityRegistry_HasComponent(EntityRegistry* self, Entity* entity, ComponentType* componentType)
         {
-            return self->HasComponent(*entity, componentType->Convert());
+            return self->HasComponent(*entity, *componentType);
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_CopyComponent(EntityRegistry* self, Entity* entity, ComponentTypeBinding* componentType,
+        FE_DLL_EXPORT bool EntityRegistry_CopyComponent(EntityRegistry* self, Entity* entity, ComponentType* componentType,
                                                         void* destination)
         {
-            return self->CopyComponent(*entity, componentType->Convert(), destination);
+            return self->CopyComponent(*entity, *componentType, destination);
         }
 
-        FE_DLL_EXPORT bool EntityRegistry_UpdateComponent(EntityRegistry* self, Entity* entity,
-                                                          ComponentTypeBinding* componentType, const void* source)
+        FE_DLL_EXPORT bool EntityRegistry_UpdateComponent(EntityRegistry* self, Entity* entity, ComponentType* componentType,
+                                                          const void* source)
         {
-            return self->UpdateComponent(*entity, componentType->Convert(), source);
+            return self->UpdateComponent(*entity, *componentType, source);
         }
     }
 } // namespace FE::ECS

@@ -9,7 +9,6 @@ set(SRC
 
     ECS/ArchetypeChunk.cpp
     ECS/CallbackSystem.cpp
-    ECS/ComponentType.h
     ECS/EntityQuery.cpp
     ECS/EntityRegistry.cpp
     ECS/World.cpp
@@ -20,6 +19,8 @@ set(SRC
     Math/Quaternion.cpp
 
     Modules/Engine.cpp
+
+    Utils/UUID.cpp
     # FERRUM_SORT_LINES END
 )
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
+using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
@@ -31,7 +32,7 @@ namespace Ferrum.Osmium.Assets
         }
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_Load")]
-        private static extern IntPtr LoadNative(IntPtr manager, in Guid assetId);
+        private static extern IntPtr LoadNative(IntPtr manager, in Uuid assetId);
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_VertexSize")]
         private static extern ulong VertexSizeNative(IntPtr self);
@@ -61,7 +62,7 @@ namespace Ferrum.Osmium.Assets
             DestructNative(Handle);
         }
 
-        protected override IntPtr LoadByIdImpl(IntPtr manager, in Guid assetId)
+        protected override IntPtr LoadByIdImpl(IntPtr manager, in Uuid assetId)
         {
             return LoadNative(manager, in assetId);
         }

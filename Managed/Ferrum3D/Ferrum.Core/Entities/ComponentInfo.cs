@@ -20,7 +20,7 @@ namespace Ferrum.Core.Entities
             }
         }
 
-        public static Guid Type => ComponentType.Type;
+        public static Uuid Type => ComponentType.Type;
         public static uint Alignment => ComponentType.Alignment;
         public static uint DataSize => ComponentType.DataSize;
 

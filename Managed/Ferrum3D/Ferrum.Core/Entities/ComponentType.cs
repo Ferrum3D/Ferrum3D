@@ -7,18 +7,18 @@ namespace Ferrum.Core.Entities
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct ComponentType
     {
-        public readonly Guid Type;
+        public readonly Uuid Type;
         public readonly uint Alignment;
         public readonly uint DataSize;
 
-        private ComponentType(Guid type, uint alignment, uint dataSize)
+        private ComponentType(in Uuid type, uint alignment, uint dataSize)
         {
             Type = type;
             Alignment = alignment;
             DataSize = dataSize;
         }
 
-        public static ComponentType Create<T>(in Guid type, uint alignment)
+        public static ComponentType Create<T>(in Uuid type, uint alignment)
             where T : unmanaged
         {
             return new ComponentType(type, alignment, NativeUtils.USizeOf<T>());

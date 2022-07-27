@@ -14,18 +14,24 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public void SubmitBuffers(CommandBuffer buffer, Fence signalFence, SubmitFlags flags)
         {
-            SubmitBuffers(new[] { buffer }, signalFence, flags);
-        }
-
-        public void SubmitBuffers(IEnumerable<CommandBuffer> buffers, Fence signalFence, SubmitFlags flags)
-        {
-            var b = buffers.Select(x => x.Handle).ToArray();
             unsafe
             {
-                fixed (IntPtr* ptr = b)
+                var bufferHandle = buffer.Handle;
+                SubmitBuffersNative(Handle, new IntPtr(&bufferHandle), 1, signalFence.Handle, flags);
+            }
+        }
+
+        public void SubmitBuffers(CommandBuffer[] buffers, Fence signalFence, SubmitFlags flags)
+        {
+            unsafe
+            {
+                var ptr = stackalloc IntPtr[buffers.Length];
+                for (var i = 0; i < buffers.Length; ++i)
                 {
-                    SubmitBuffersNative(Handle, new IntPtr(ptr), b.Length, signalFence.Handle, flags);
+                    ptr[i] = buffers[i].Handle;
                 }
+
+                SubmitBuffersNative(Handle, new IntPtr(ptr), buffers.Length, signalFence.Handle, flags);
             }
         }
 
