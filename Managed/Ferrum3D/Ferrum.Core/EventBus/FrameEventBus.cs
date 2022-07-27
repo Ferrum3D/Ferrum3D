@@ -1,13 +1,9 @@
 ﻿using System.Runtime.InteropServices;
-using Ferrum.Core.Modules;
 
 namespace Ferrum.Core.EventBus
 {
     public class FrameEventBus : EventBusBase
     {
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void EventDelegateNative(in FrameEventArgs eventArgs);
-
         public static EventDelegateNative OnFrameStart { get; private set; }
         public static EventDelegateNative OnUpdate { get; private set; }
         public static EventDelegateNative OnLateUpdate { get; private set; }
@@ -20,5 +16,8 @@ namespace Ferrum.Core.EventBus
             OnLateUpdate = GetSendEventEntryPoint<EventDelegateNative>(nameof(OnLateUpdate));
             OnFrameEnd = GetSendEventEntryPoint<EventDelegateNative>(nameof(OnFrameEnd));
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void EventDelegateNative(in FrameEventArgs eventArgs);
     }
 }

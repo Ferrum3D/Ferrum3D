@@ -77,15 +77,6 @@ namespace Ferrum.Core.Entities
             OnDestroy();
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void CreateCallback();
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void UpdateCallback(in FrameEventArgs frameEventArgs);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void DestroyCallback();
-
         [DllImport("FeCoreBindings", EntryPoint = "CallbackSystem_Construct")]
         private static extern IntPtr ConstructNative();
 
@@ -105,5 +96,14 @@ namespace Ferrum.Core.Entities
         {
             DestructNative(Handle);
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void CreateCallback();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void UpdateCallback(in FrameEventArgs frameEventArgs);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void DestroyCallback();
     }
 }

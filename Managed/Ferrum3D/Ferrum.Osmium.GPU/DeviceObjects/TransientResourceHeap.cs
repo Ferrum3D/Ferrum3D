@@ -50,13 +50,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         {
             ReleaseBufferNative(Handle, resourceId);
         }
-        
-        [StructLayout(LayoutKind.Sequential)]
-        public readonly struct AllocationStats
-        {
-            public readonly ulong MinOffset;
-            public readonly ulong MaxOffset;
-        }
 
         [DllImport("OsGPUBindings", EntryPoint = "ITransientResourceHeap_Destruct")]
         private static extern void DestructNative(IntPtr self);
@@ -79,6 +72,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         protected override void ReleaseUnmanagedResources()
         {
             DestructNative(Handle);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public readonly struct AllocationStats
+        {
+            public readonly ulong MinOffset;
+            public readonly ulong MaxOffset;
         }
 
         [StructLayout(LayoutKind.Sequential)]

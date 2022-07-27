@@ -5,8 +5,8 @@ namespace Ferrum.Osmium.FrameGraph.Resources
 {
     public class FrameGraphBufferResource : FrameGraphResource
     {
-        public Buffer RealBuffer { get; internal set; }
         public readonly Buffer.Desc Descriptor;
+        public Buffer RealBuffer { get; internal set; }
 
         internal FrameGraphBufferResource(Buffer realBuffer, ulong id) : base(id, null)
         {

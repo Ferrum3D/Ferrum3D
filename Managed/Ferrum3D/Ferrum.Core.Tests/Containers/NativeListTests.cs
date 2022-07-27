@@ -1,7 +1,5 @@
 ﻿using System.Linq;
 using Ferrum.Core.Containers;
-using Ferrum.Core.Modules;
-using Ferrum.Core.Utils;
 using NUnit.Framework;
 
 namespace Ferrum.Core.Tests.Containers
@@ -119,6 +117,7 @@ namespace Ferrum.Core.Tests.Containers
             {
                 Assert.AreEqual(nativeArray[i], sourceArray[i]);
             }
+
             nativeArray.Dispose();
         }
 

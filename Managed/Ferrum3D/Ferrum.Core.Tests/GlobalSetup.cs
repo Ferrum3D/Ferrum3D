@@ -16,7 +16,7 @@ namespace Ferrum.Core.Tests
             engine = new Engine();
             logger = new ConsoleLogger();
         }
-    
+
         [OneTimeTearDown]
         public void TearDown()
         {

@@ -24,6 +24,10 @@ namespace Ferrum.Core.Math
             }
         }
 
+        public Quaternion Conjugated => new(-X, -Y, -Z, W);
+
+        public Quaternion Inverse => Conjugated / LengthSq;
+
         public Vector3F Euler
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,10 +43,6 @@ namespace Ferrum.Core.Math
                 }
             }
         }
-
-        public Quaternion Conjugated => new(-X, -Y, -Z, W);
-
-        public Quaternion Inverse => Conjugated / LengthSq;
 
         public float X;
         public float Y;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Ferrum.Core.Containers;
 using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects

@@ -1,5 +1,4 @@
 ﻿using Ferrum.Core.Containers;
-using Ferrum.Core.Modules;
 using NUnit.Framework;
 
 namespace Ferrum.Core.Tests.Containers

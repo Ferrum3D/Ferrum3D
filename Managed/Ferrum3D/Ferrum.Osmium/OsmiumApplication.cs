@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Ferrum.Core.Entities;
 using Ferrum.Core.Framework;
 using Ferrum.Core.Utils;
 using Ferrum.Osmium.Assets;
@@ -43,7 +42,7 @@ namespace Ferrum.Osmium
 
             var swapChainDesc = new SwapChain.Desc(Window, GraphicsQueue);
             SwapChain = Device.CreateSwapChain(swapChainDesc);
-            
+
             World.RegisterSystem(new DrawPacketSystem
             {
                 RenderViews = Array.Empty<RenderView>()

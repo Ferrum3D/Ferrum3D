@@ -34,20 +34,6 @@ namespace Ferrum.Osmium.GPU.Descriptors
             return new Builder { Allocator = this };
         }
 
-        private DescriptorTable AllocateTable(DescriptorDesc[] descriptors)
-        {
-            var result = currentHeap?.AllocateDescriptorTable(descriptors);
-
-            if (result is null)
-            {
-                currentHeap = GetHeap();
-                usedHeaps.Add(currentHeap);
-                result = currentHeap.AllocateDescriptorTable(descriptors);
-            }
-
-            return result;
-        }
-
         public void ResetHeaps()
         {
             foreach (var heap in usedHeaps)
@@ -65,6 +51,20 @@ namespace Ferrum.Osmium.GPU.Descriptors
             currentHeap = null;
             freeHeaps.Dispose();
             usedHeaps.Dispose();
+        }
+
+        private DescriptorTable AllocateTable(DescriptorDesc[] descriptors)
+        {
+            var result = currentHeap?.AllocateDescriptorTable(descriptors);
+
+            if (result is null)
+            {
+                currentHeap = GetHeap();
+                usedHeaps.Add(currentHeap);
+                result = currentHeap.AllocateDescriptorTable(descriptors);
+            }
+
+            return result;
         }
 
         private DescriptorHeap GetHeap()

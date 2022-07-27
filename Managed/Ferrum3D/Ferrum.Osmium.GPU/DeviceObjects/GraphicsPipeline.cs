@@ -56,7 +56,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
 
         public struct Desc
         {
-            public static Desc Default = new Desc(MultisampleState.None, null, 0, null, null,
+            public static Desc Default = new(MultisampleState.None, null, 0, null, null,
                 RasterizationState.Default, DepthStencilState.Default, new ColorBlendState(), new InputStreamLayout(),
                 new Viewport(), new Scissor());
 

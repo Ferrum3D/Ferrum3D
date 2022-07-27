@@ -9,12 +9,6 @@ namespace Ferrum.Core.EventBus
         private readonly string prefix;
         private readonly DynamicLibrary moduleLibrary;
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate IntPtr ConstructEventBusNative();
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void DestructEventBusNative(IntPtr self);
-
         protected EventBusBase(string eventClassName, DynamicLibrary library = null)
             : base(IntPtr.Zero)
         {
@@ -39,5 +33,11 @@ namespace Ferrum.Core.EventBus
         {
             GetEntryPoint<DestructEventBusNative>("Destruct")(Handle);
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr ConstructEventBusNative();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void DestructEventBusNative(IntPtr self);
     }
 }

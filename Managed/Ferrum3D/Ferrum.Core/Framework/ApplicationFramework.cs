@@ -11,12 +11,11 @@ namespace Ferrum.Core.Framework
 {
     public abstract class ApplicationFramework : FrameworkBase
     {
+        public static ApplicationFramework Instance { get; private set; }
         public Desc Descriptor { get; private set; }
         public EntityRegistry EntityRegistry { get; private set; }
-
-        public static ApplicationFramework Instance { get; private set; }
         public World World { get; private set; }
-        
+
         private uint frameCounter;
         private int exitCode;
         private bool stopRequested;
@@ -36,7 +35,7 @@ namespace Ferrum.Core.Framework
 
             engine = new Engine();
             logger = new ConsoleLogger();
-            
+
             eventBuses.Add(new FrameEventBus());
 
             if (desc.AssetDirectory != null)

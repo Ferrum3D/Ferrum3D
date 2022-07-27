@@ -9,7 +9,9 @@ namespace Ferrum.Osmium.FrameGraph.CommandLists
         public readonly IPipelineState PipelineState;
         public readonly DrawArguments Arguments;
         public readonly IndexBufferSlice Indices;
+
         public readonly List<VertexBufferSlice> Vertices;
+
         // public readonly ShaderResources ShaderResources;
         public readonly Viewport Viewport;
         public readonly Scissor Scissor;

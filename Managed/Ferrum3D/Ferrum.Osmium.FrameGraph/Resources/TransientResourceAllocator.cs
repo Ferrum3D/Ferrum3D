@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Ferrum.Core.Containers;
 using Ferrum.Core.Math;
 using Ferrum.Osmium.FrameGraph.RenderPasses;
@@ -19,25 +18,6 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         private readonly Device device;
 
         private ulong bytesAllocated;
-
-        private readonly struct ResourceInfo
-        {
-            public readonly int HeapIndex;
-            public readonly FrameGraphRenderPass Pass;
-            public readonly ulong HeapOffsetMin;
-            public readonly ulong HeapOffsetMax;
-            public readonly Resource Resource;
-
-            public ResourceInfo(int heapIndex, FrameGraphRenderPass pass, ulong heapOffsetMin, ulong heapOffsetMax,
-                Resource resource)
-            {
-                HeapIndex = heapIndex;
-                Pass = pass;
-                HeapOffsetMin = heapOffsetMin;
-                HeapOffsetMax = heapOffsetMax;
-                Resource = resource;
-            }
-        }
 
         private float PageGrowFactor => Descriptor.AllocationPolicy == AllocationPolicy.AllocatePages
             ? Descriptor.PageGrowFactor
@@ -142,19 +122,6 @@ namespace Ferrum.Osmium.FrameGraph.Resources
             return result;
         }
 
-        private void ReleaseResource(ulong resourceId, Action<TransientResourceHeap> resourceReleaser, FrameGraphRenderPass pass)
-        {
-            if (!resourceIdToInfoMap.TryGetValue(resourceId, out var info))
-            {
-                throw new ArgumentException($"The resource {resourceId} was not allocated with this allocator");
-            }
-
-            pageResourceTrackers[info.HeapIndex]
-                .Add(new AliasedResourceDesc(info.Pass, pass, info.HeapOffsetMin, info.HeapOffsetMax, info.Resource));
-            resourceReleaser(heapPages[info.HeapIndex]);
-            resourceIdToInfoMap.Remove(resourceId);
-        }
-
         public void ReleaseImage(ulong resourceId, FrameGraphRenderPass pass)
         {
             ReleaseResource(resourceId, heap => heap.ReleaseImage(resourceId), pass);
@@ -169,6 +136,19 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         {
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
+        }
+
+        private void ReleaseResource(ulong resourceId, Action<TransientResourceHeap> resourceReleaser, FrameGraphRenderPass pass)
+        {
+            if (!resourceIdToInfoMap.TryGetValue(resourceId, out var info))
+            {
+                throw new ArgumentException($"The resource {resourceId} was not allocated with this allocator");
+            }
+
+            pageResourceTrackers[info.HeapIndex]
+                .Add(new AliasedResourceDesc(info.Pass, pass, info.HeapOffsetMin, info.HeapOffsetMax, info.Resource));
+            resourceReleaser(heapPages[info.HeapIndex]);
+            resourceIdToInfoMap.Remove(resourceId);
         }
 
         private void AddHeapPage()
@@ -192,6 +172,25 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         private void ReleaseUnmanagedResources()
         {
             heapPages.Dispose();
+        }
+
+        private readonly struct ResourceInfo
+        {
+            public readonly int HeapIndex;
+            public readonly FrameGraphRenderPass Pass;
+            public readonly ulong HeapOffsetMin;
+            public readonly ulong HeapOffsetMax;
+            public readonly Resource Resource;
+
+            public ResourceInfo(int heapIndex, FrameGraphRenderPass pass, ulong heapOffsetMin, ulong heapOffsetMax,
+                Resource resource)
+            {
+                HeapIndex = heapIndex;
+                Pass = pass;
+                HeapOffsetMin = heapOffsetMin;
+                HeapOffsetMax = heapOffsetMax;
+                Resource = resource;
+            }
         }
 
         public enum AllocationPolicy

@@ -20,11 +20,11 @@ namespace Ferrum.Core.Entities
             }
         }
 
-        public static bool IsUnmanaged { get; private set; }
-
         public static Guid Type => ComponentType.Type;
         public static uint Alignment => ComponentType.Alignment;
         public static uint DataSize => ComponentType.DataSize;
+
+        public static bool IsUnmanaged { get; private set; }
 
         private static ComponentType componentType;
         private static bool initialized;

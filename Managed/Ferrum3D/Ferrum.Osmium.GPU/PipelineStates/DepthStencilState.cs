@@ -4,7 +4,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
 {
     public readonly struct DepthStencilState
     {
-        public static DepthStencilState Default = new DepthStencilState(false, false, CompareOp.Less);
+        public static DepthStencilState Default = new(false, false, CompareOp.Less);
         public readonly CompareOp DepthCompareOp;
         public readonly bool DepthTestEnabled;
         public readonly bool DepthWriteEnabled;

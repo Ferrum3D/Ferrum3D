@@ -5,8 +5,8 @@ namespace Ferrum.Core.Modules
 {
     public class Engine : IDisposable
     {
-        public static IntPtr Environment { get; private set; }
         public static DynamicLibrary CoreModuleLibrary { get; } = new();
+        public static IntPtr Environment { get; private set; }
 
         public Engine()
         {

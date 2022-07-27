@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Ferrum.Core.Components;
-using Ferrum.Core.Console;
 using Ferrum.Core.Entities;
 using NUnit.Framework;
 
@@ -105,12 +104,12 @@ namespace Ferrum.Core.Tests.Entities
                 Assert.IsTrue(registry.HasComponent<Position3DComponent>(entities[i]));
                 Assert.IsTrue(registry.HasComponent<Position2DComponent>(entities[i]));
                 Assert.IsTrue(registry.HasComponent<TestComponent>(entities[i]));
-                
+
                 Assert.AreEqual(i * 10, registry.GetComponent<TestComponent>(entities[i]).TestData);
-                
+
                 Assert.AreEqual(i * 3, registry.GetComponent<Position2DComponent>(entities[i]).X);
                 Assert.AreEqual(i * 4, registry.GetComponent<Position2DComponent>(entities[i]).Y);
-                
+
                 Assert.AreEqual(1, registry.GetComponent<Position3DComponent>(entities[i]).X);
                 Assert.AreEqual(i, registry.GetComponent<Position3DComponent>(entities[i]).Y);
                 Assert.AreEqual(i * 2, registry.GetComponent<Position3DComponent>(entities[i]).Z);
