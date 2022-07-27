@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Entities

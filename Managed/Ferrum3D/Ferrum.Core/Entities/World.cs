@@ -6,8 +6,8 @@ namespace Ferrum.Core.Entities
 {
     public class World : IDisposable
     {
-        public IntPtr Handle { get; private set; }
         public EntityRegistry EntityRegistry { get; }
+        public IntPtr Handle { get; private set; }
 
         private readonly Dictionary<Type, ComponentSystem> systems = new();
 

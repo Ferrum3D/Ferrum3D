@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
 using Ferrum.Core.Math;
-using Ferrum.Core.Utils;
 using Ferrum.Osmium.GPU.DeviceObjects;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 

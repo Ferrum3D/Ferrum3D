@@ -47,8 +47,8 @@ namespace Ferrum.Core.Utils
 
         public override bool Equals(object obj)
         {
-            return obj is Uuid u && Equals(u) ||
-                   obj is Guid g && Equals(FromGuid(g));
+            return (obj is Uuid u && Equals(u)) ||
+                   (obj is Guid g && Equals(FromGuid(g)));
         }
 
         public override int GetHashCode()
