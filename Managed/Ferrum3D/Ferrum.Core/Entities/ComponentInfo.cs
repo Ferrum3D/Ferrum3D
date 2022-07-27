@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Entities
 {
@@ -37,7 +38,10 @@ namespace Ferrum.Core.Entities
             }
 
             var attribute = typeof(T).GetCustomAttribute<ComponentAttribute>();
-            componentType = ComponentType.Create<T>(attribute.Type, attribute.Alignment);
+            var alignment = attribute.Alignment == 0
+                ? NativeUtils.AlignOf<T>()
+                : attribute.Alignment;
+            componentType = ComponentType.Create<T>(attribute.Type, alignment);
             IsUnmanaged = attribute.Unmanaged;
             initialized = true;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Entities
 {
@@ -17,10 +18,10 @@ namespace Ferrum.Core.Entities
             DataSize = dataSize;
         }
 
-        public static ComponentType Create<T>(in Guid type, uint alignment = 16)
+        public static ComponentType Create<T>(in Guid type, uint alignment)
             where T : unmanaged
         {
-            return new ComponentType(type, alignment, (uint)Marshal.SizeOf<T>());
+            return new ComponentType(type, alignment, NativeUtils.USizeOf<T>());
         }
 
         public static ComponentType[] CreateList<T>()
