@@ -22,7 +22,7 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
         [StructLayout(LayoutKind.Sequential)]
         public readonly struct Desc
         {
-            public static readonly Desc Default = new Desc(SamplerAddressMode.Repeat, SamplerAnisotropy.MaxSupported,
+            public static readonly Desc Default = new(SamplerAddressMode.Repeat, SamplerAnisotropy.MaxSupported,
                 CompareOp.Always, false);
 
             public readonly SamplerAddressMode AddressMode;

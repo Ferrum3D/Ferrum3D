@@ -63,15 +63,15 @@ namespace Ferrum.Osmium.GPU.Descriptors
             public readonly List<DescriptorSize> Sizes;
             public readonly int MaxTables;
 
-            private Desc(List<DescriptorSize> sizes, int maxTables)
-            {
-                Sizes = sizes;
-                MaxTables = maxTables;
-            }
-
             public Desc(IEnumerable<DescriptorSize> sizes, int maxTables)
             {
                 Sizes = sizes.ToList();
+                MaxTables = maxTables;
+            }
+
+            private Desc(List<DescriptorSize> sizes, int maxTables)
+            {
+                Sizes = sizes;
                 MaxTables = maxTables;
             }
 

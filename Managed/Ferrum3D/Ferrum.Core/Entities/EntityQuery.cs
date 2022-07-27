@@ -76,7 +76,7 @@ namespace Ferrum.Core.Entities
                 {
                     var p1 = chunks[i].OffsetOf<T1>();
                     var p2 = chunks[i].OffsetOf<T2>();
-                    
+
                     for (var j = 0; j < chunks[i].Count; ++j)
                     {
                         f(ref p1[j], ref p2[j]);
@@ -120,7 +120,7 @@ namespace Ferrum.Core.Entities
                     var p2 = chunks[i].OffsetOf<T2>();
                     var p3 = chunks[i].OffsetOf<T3>();
                     var p4 = chunks[i].OffsetOf<T4>();
-                    
+
                     for (var j = 0; j < chunks[i].Count; ++j)
                     {
                         f(ref p1[j], ref p2[j], ref p3[j], ref p4[j]);

@@ -18,7 +18,7 @@ float4x4 g_MVP;
 VSOutput main(VSInput input)
 {
     VSOutput output;
-    output.pos      = mul(float4(input.pos, 1.0f), g_MVP);
+    output.pos = mul(float4(input.pos, 1.0f), g_MVP);
     output.texCoord = input.texCoord;
     return output;
 }

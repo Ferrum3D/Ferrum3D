@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Ferrum.Osmium.FrameGraph.RenderPasses;
-using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.Resources
 {
@@ -9,11 +8,11 @@ namespace Ferrum.Osmium.FrameGraph.Resources
     {
         internal ulong Id { get; }
         internal FrameGraphRenderPass Creator { get; }
-        internal FrameGraphRenderPass Deleter { get; set; }
         internal bool IsTransient => Creator != null;
 
         internal IReadOnlyList<FrameGraphRenderPass> Readers => readers;
         internal IReadOnlyList<FrameGraphRenderPass> Writers => writers;
+        internal FrameGraphRenderPass Deleter { get; set; }
 
         internal int ReferenceCount { get; set; }
 

@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Math;
-using Ferrum.Core.Modules;
 
 namespace Ferrum.Osmium.GPU.DeviceObjects
 {
     public class Image : Resource
     {
-        public ImageView DefaultView =>
-            defaultView ?? (defaultView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Color)));
+        public ImageView DefaultView => defaultView ??= new ImageView(CreateViewNative(Handle, ImageAspectFlags.Color));
 
-        public ImageView DepthStencilView =>
-            depthStencilView ?? (depthStencilView = new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth)));
+        public ImageView DepthStencilView => depthStencilView ??= new ImageView(CreateViewNative(Handle, ImageAspectFlags.Depth));
 
         public long Width => (long)desc.ImageSize.Width;
         public long Height => (long)desc.ImageSize.Height;
@@ -51,6 +48,11 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             return new ImageBounds(Offset.Zero, new Offset(Width >> mipSlice, Height >> mipSlice, 1));
         }
 
+        public ImageSubresourceRange CreateSubresourceRange()
+        {
+            return new ImageSubresourceRange(0, MipSliceCount, 0, ArraySize, GetAspectFlagsFromViews());
+        }
+
         [DllImport("OsGPUBindings", EntryPoint = "IImage_GetDesc")]
         private static extern void GetDescNative(IntPtr self, out Desc desc);
 
@@ -68,6 +70,13 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             defaultView?.Dispose();
             depthStencilView?.Dispose();
             DestructNative(Handle);
+        }
+
+        private ImageAspectFlags GetAspectFlagsFromViews()
+        {
+            return depthStencilView != null
+                ? ImageAspectFlags.DepthStencil
+                : ImageAspectFlags.Color;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -135,18 +144,6 @@ namespace Ferrum.Osmium.GPU.DeviceObjects
             {
                 return new Desc(new Size(width, height, depth), format, ImageDim.Image3D, bindFlags, 1, 1, 1);
             }
-        }
-
-        public ImageSubresourceRange CreateSubresourceRange()
-        {
-            return new ImageSubresourceRange(0, MipSliceCount, 0, ArraySize, GetAspectFlagsFromViews());
-        }
-
-        private ImageAspectFlags GetAspectFlagsFromViews()
-        {
-            return depthStencilView != null
-                ? ImageAspectFlags.DepthStencil
-                : ImageAspectFlags.Color;
         }
     }
 }

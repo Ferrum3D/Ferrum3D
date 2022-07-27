@@ -17,7 +17,6 @@ namespace Ferrum.GameFramework
             gpuModule.Initialize(new OsmiumGpuModule.Desc(desc.Name, GraphicsApi.Vulkan));
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule?.Initialize(new OsmiumAssetsModule.Desc());
-
         }
     }
 }

@@ -6,15 +6,14 @@ namespace Ferrum.Core.Entities
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct ArchetypeChunk
     {
+        public ulong LongCount => CountNative(handle);
+        public int Count => (int)CountNative(handle);
         private readonly IntPtr handle;
 
         internal ArchetypeChunk(IntPtr handle)
         {
             this.handle = handle;
         }
-
-        public ulong LongCount => CountNative(handle);
-        public int Count => (int)CountNative(handle);
 
         public unsafe T* OffsetOf<T>()
             where T : unmanaged

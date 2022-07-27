@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Ferrum.Core.Containers;
@@ -13,8 +12,8 @@ namespace Ferrum.Osmium.GPU.VertexInput
         public IReadOnlyList<InputStreamAttributeDesc> Attributes => attributes;
 
         public PrimitiveTopology Topology { get; private set; }
-        private readonly List<InputStreamBufferDesc> buffers = new List<InputStreamBufferDesc>();
-        private readonly List<InputStreamAttributeDesc> attributes = new List<InputStreamAttributeDesc>();
+        private readonly List<InputStreamBufferDesc> buffers = new();
+        private readonly List<InputStreamAttributeDesc> attributes = new();
 
         public override bool Equals(object obj)
         {
@@ -73,7 +72,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
 
         public class BufferBuilder
         {
-            internal readonly List<InputStreamAttributeDesc> Attributes = new List<InputStreamAttributeDesc>();
+            internal readonly List<InputStreamAttributeDesc> Attributes = new();
             internal InputStreamBufferDesc Buffer;
             internal uint Offset;
             private readonly Builder parent;
@@ -103,7 +102,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
         public class Builder
         {
             private readonly PrimitiveTopology topology;
-            private readonly List<BufferBuilder> buffers = new List<BufferBuilder>();
+            private readonly List<BufferBuilder> buffers = new();
 
             public Builder(PrimitiveTopology topology = PrimitiveTopology.TriangleList)
             {

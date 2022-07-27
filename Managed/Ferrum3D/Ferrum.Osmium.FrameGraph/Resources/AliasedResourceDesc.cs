@@ -8,10 +8,10 @@ namespace Ferrum.Osmium.FrameGraph.Resources
         public readonly FrameGraphRenderPass Creator;
         public readonly FrameGraphRenderPass LastUser;
 
+        public readonly Resource Resource;
+
         public ulong HeapOffsetMin { get; internal set; }
         public ulong HeapOffsetMax { get; internal set; }
-
-        public readonly Resource Resource;
 
         public AliasedResourceDesc(FrameGraphRenderPass creator, FrameGraphRenderPass lastUser, ulong heapOffsetMin,
             ulong heapOffsetMax, Resource resource)

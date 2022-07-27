@@ -4,7 +4,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
 {
     public readonly struct RasterizationState
     {
-        public static RasterizationState Default = new RasterizationState(CullingModeFlags.None);
+        public static RasterizationState Default = new(CullingModeFlags.None);
         public readonly CullingModeFlags CullMode;
         public readonly PolygonMode PolyMode;
         public readonly bool DepthClampEnabled;

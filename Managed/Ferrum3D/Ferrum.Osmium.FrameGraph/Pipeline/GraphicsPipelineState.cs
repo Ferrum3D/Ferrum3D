@@ -1,5 +1,4 @@
-﻿using System;
-using Ferrum.Osmium.GPU.DeviceObjects;
+﻿using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.Pipeline
 {
@@ -9,17 +8,16 @@ namespace Ferrum.Osmium.FrameGraph.Pipeline
 
         public GraphicsPipelineState(Device device)
         {
-            
-        }
-
-        void IPipelineState.Bind(CommandBuffer.Builder commandBufferBuilder)
-        {
-            commandBufferBuilder.BindGraphicsPipeline(pipeline);
         }
 
         public void Dispose()
         {
             pipeline.Dispose();
+        }
+
+        void IPipelineState.Bind(CommandBuffer.Builder commandBufferBuilder)
+        {
+            commandBufferBuilder.BindGraphicsPipeline(pipeline);
         }
     }
 }

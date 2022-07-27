@@ -1,13 +1,12 @@
-﻿using System.Diagnostics;
-using Ferrum.Osmium.FrameGraph.RenderPasses;
+﻿using Ferrum.Osmium.FrameGraph.RenderPasses;
 using Ferrum.Osmium.GPU.DeviceObjects;
 
 namespace Ferrum.Osmium.FrameGraph.Resources
 {
     public sealed class FrameGraphImageResource : FrameGraphResource
     {
-        public Image RealImage { get; internal set; }
         public readonly Image.Desc Descriptor;
+        public Image RealImage { get; internal set; }
 
         internal FrameGraphImageResource(Image realImage, ulong id) : base(id, null)
         {

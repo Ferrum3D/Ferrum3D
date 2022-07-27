@@ -5,7 +5,7 @@ namespace Ferrum.Osmium.GPU.PipelineStates
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct TargetColorBlending
     {
-        public static TargetColorBlending Default = new TargetColorBlending(ColorComponentFlags.All, false,
+        public static TargetColorBlending Default = new(ColorComponentFlags.All, false,
             BlendFactor.One, BlendFactor.Zero, BlendOperation.Add,
             BlendFactor.One, BlendFactor.Zero, BlendOperation.Add);
 

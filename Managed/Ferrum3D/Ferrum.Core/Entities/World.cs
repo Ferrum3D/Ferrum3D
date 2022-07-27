@@ -7,7 +7,7 @@ namespace Ferrum.Core.Entities
     public class World : IDisposable
     {
         public IntPtr Handle { get; private set; }
-        public EntityRegistry EntityRegistry { get; private set; }
+        public EntityRegistry EntityRegistry { get; }
 
         private readonly Dictionary<Type, ComponentSystem> systems = new();
 
@@ -25,7 +25,7 @@ namespace Ferrum.Core.Entities
                 UnregisterSystemNative(Handle, system.Handle);
                 system.Dispose();
             }
-            
+
             systems.Clear();
 
             ReleaseUnmanagedResources();
