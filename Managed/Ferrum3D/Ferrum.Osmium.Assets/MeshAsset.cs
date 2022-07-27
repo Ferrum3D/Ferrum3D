@@ -7,13 +7,24 @@ using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Osmium.Assets
 {
-    public sealed class MeshAsset : Asset
+    public readonly struct MeshAsset : IAssetStorage<MeshAsset>
     {
         public uint IndexCount => (uint)IndexSize / 4;
-        public ulong VertexSize { get; private set; }
-        public ulong IndexSize { get; private set; }
-        public IntPtr VertexData { get; private set; }
-        public IntPtr IndexData { get; private set; }
+        public ulong VertexSize { get; }
+        public ulong IndexSize { get; }
+        public IntPtr VertexData { get; }
+        public IntPtr IndexData { get; }
+
+        public IntPtr Handle { get; }
+
+        private MeshAsset(IntPtr handle, ulong vertexSize, ulong indexSize, IntPtr vertexData, IntPtr indexData)
+        {
+            Handle = handle;
+            VertexSize = vertexSize;
+            IndexSize = indexSize;
+            VertexData = vertexData;
+            IndexData = indexData;
+        }
 
         public Buffer CreateVertexStagingBuffer(Device device)
         {
@@ -31,9 +42,6 @@ namespace Ferrum.Osmium.Assets
             return stagingBuffer;
         }
 
-        [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_Load")]
-        private static extern IntPtr LoadNative(IntPtr manager, in Uuid assetId);
-
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_VertexSize")]
         private static extern ulong VertexSizeNative(IntPtr self);
 
@@ -46,25 +54,13 @@ namespace Ferrum.Osmium.Assets
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_IndexData")]
         private static extern IntPtr IndexDataNative(IntPtr self);
 
-        [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_Destruct")]
-        private static extern void DestructNative(IntPtr self);
-
-        protected override void Initialize()
+        public MeshAsset WithNativePointer(IntPtr pointer)
         {
-            VertexSize = VertexSizeNative(Handle);
-            IndexSize = IndexSizeNative(Handle);
-            VertexData = VertexDataNative(Handle);
-            IndexData = IndexDataNative(Handle);
-        }
-
-        protected override void ReleaseUnmanagedResources()
-        {
-            DestructNative(Handle);
-        }
-
-        protected override IntPtr LoadByIdImpl(IntPtr manager, in Uuid assetId)
-        {
-            return LoadNative(manager, in assetId);
+            return new MeshAsset(pointer,
+                VertexSizeNative(pointer),
+                IndexSizeNative(pointer),
+                VertexDataNative(pointer),
+                IndexDataNative(pointer));
         }
     }
 }

@@ -49,6 +49,8 @@ namespace Ferrum.Samples.Textures
 
         private static readonly Vector3F[] vsConstantData = { new(0.3f, -0.4f, 0.0f) };
 
+        private AssetRef<ImageAsset> imageAsset;
+
         private Instance instance;
         private Adapter adapter;
         private Device device;
@@ -81,7 +83,9 @@ namespace Ferrum.Samples.Textures
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            using var imageAsset = Asset.Load<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            imageAsset = new AssetRef<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            imageAsset.LoadSync();
+
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
             device = adapter.CreateDevice();
@@ -104,7 +108,7 @@ namespace Ferrum.Samples.Textures
             indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, indexSize);
             indexBuffer.AllocateMemory(MemoryType.DeviceLocal);
             textureImage = device.CreateImage(Image.Desc.Img2D(
-                ImageBindFlags.TransferReadWrite | ImageBindFlags.ShaderRead, imageAsset.Width, imageAsset.Height,
+                ImageBindFlags.TransferReadWrite | ImageBindFlags.ShaderRead, imageAsset.Storage.Width, imageAsset.Storage.Height,
                 Format.R8G8B8A8_SRGB, true));
             textureImage.AllocateMemory(MemoryType.DeviceLocal);
 
@@ -112,7 +116,7 @@ namespace Ferrum.Samples.Textures
             {
                 using var vertexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, vertexData);
                 using var indexStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, indexData);
-                using var textureStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, imageAsset);
+                using var textureStagingBuffer = CreateHostVisibleBuffer(BindFlags.None, device, imageAsset.Storage);
                 using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Graphics);
 
                 using (var builder = commandBuffer.Begin())
@@ -120,7 +124,7 @@ namespace Ferrum.Samples.Textures
                     builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, vertexSize);
                     builder.CopyBuffers(indexStagingBuffer, indexBuffer, indexSize);
                     builder.TransitionImageState(textureImage, ResourceState.TransferWrite, 0);
-                    builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
+                    builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.Storage.ImageSize);
                     builder.TransitionImageState(textureImage, ResourceState.TransferRead, 0);
 
                     for (var i = 1; i < textureImage.MipSliceCount; ++i)
@@ -242,7 +246,7 @@ namespace Ferrum.Samples.Textures
             return stagingBuffer;
         }
 
-        private static Buffer CreateHostVisibleBuffer(BindFlags bindFlags, Device device, ImageAsset data)
+        private static Buffer CreateHostVisibleBuffer(BindFlags bindFlags, Device device, in ImageAsset data)
         {
             var stagingBuffer = device.CreateBuffer(bindFlags, data.ByteSize);
             stagingBuffer.AllocateMemory(MemoryType.HostVisible);
