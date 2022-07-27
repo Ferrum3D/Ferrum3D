@@ -5,11 +5,6 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT ImageAssetStorage* ImageAssetStorage_Load(Assets::IAssetManager* manager, const UUID* assetID)
-        {
-            return fe_assert_cast<ImageAssetStorage*>(manager->LoadAsset(*assetID));
-        }
-
         FE_DLL_EXPORT const UInt8* ImageAssetStorage_Data(ImageAssetStorage* self)
         {
             return self->Data();
@@ -28,11 +23,6 @@ namespace FE::Osmium
         FE_DLL_EXPORT USize ImageAssetStorage_Size(ImageAssetStorage* self)
         {
             return self->Size();
-        }
-
-        FE_DLL_EXPORT void ImageAssetStorage_Destruct(ImageAssetStorage* self)
-        {
-            self->ReleaseStrongRef();
         }
     }
 } // namespace FE::Osmium

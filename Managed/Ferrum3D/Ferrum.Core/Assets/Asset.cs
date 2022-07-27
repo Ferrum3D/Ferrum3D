@@ -1,28 +1,67 @@
 ﻿using System;
-using Ferrum.Core.Modules;
+using System.Runtime.InteropServices;
+using Ferrum.Core.Console;
+using Ferrum.Core.Containers;
 using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Assets
 {
-    public abstract class Asset : UnmanagedObject
+    public interface IAssetStorage<out T>
     {
-        protected Asset() : base(IntPtr.Zero)
+        T WithNativePointer(IntPtr pointer);
+    }
+
+    internal static class AssetBindings
+    {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativeData
         {
+            public Uuid AssetId;
+            public IntPtr Storage;
         }
 
-        public static TAsset Load<TAsset>(in Uuid assetId)
-            where TAsset : Asset, new()
+        [DllImport("FeCoreBindings", EntryPoint = "Asset_AddStrongRef")]
+        public static extern void AddStrongRefNative(ref NativeData self);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Asset_ReleaseStrongRef")]
+        public static extern void ReleaseStrongRefNative(ref NativeData self);
+
+        [DllImport("FeCoreBindings", EntryPoint = "Asset_LoadSync")]
+        public static extern void LoadSyncNative(ref NativeData self);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AssetRef<T> : IDisposable
+        where T : unmanaged, IAssetStorage<T>
+    {
+        public T Storage { get; private set; }
+        private AssetBindings.NativeData nativeData;
+
+        public AssetRef(in Uuid id)
         {
-            var result = new TAsset();
-            result.Handle = result.LoadByIdImpl(AssetManager.Handle, in assetId);
-            result.Initialize();
-            return result;
+            nativeData.AssetId = id;
+            nativeData.Storage = IntPtr.Zero;
+            Storage = new T();
         }
 
-        protected abstract IntPtr LoadByIdImpl(IntPtr manager, in Uuid assetId);
-
-        protected virtual void Initialize()
+        public AssetRef<T> Copy()
         {
+            AssetBindings.AddStrongRefNative(ref nativeData);
+            return new AssetRef<T>
+            {
+                nativeData = nativeData
+            };
+        }
+
+        public void LoadSync()
+        {
+            AssetBindings.LoadSyncNative(ref nativeData);
+            Storage = Storage.WithNativePointer(nativeData.Storage);
+        }
+
+        public void Dispose()
+        {
+            AssetBindings.ReleaseStrongRefNative(ref nativeData);
         }
     }
 }

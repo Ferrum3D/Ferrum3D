@@ -22,7 +22,7 @@ set(SRC
 
     Utils/UUID.cpp
     # FERRUM_SORT_LINES END
-)
+    Assets/Asset.cpp)
 
 add_library(FeCoreBindings SHARED ${SRC})
 

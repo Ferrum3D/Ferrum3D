@@ -24,6 +24,9 @@ namespace Ferrum.Samples.Models
     {
         public const string ApplicationName = "Ferrum3D - Models";
 
+        private AssetRef<MeshAsset> meshAsset;
+        private AssetRef<ImageAsset> imageAsset;
+
         private Instance instance;
         private Adapter adapter;
         private Device device;
@@ -56,8 +59,10 @@ namespace Ferrum.Samples.Models
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            using var imageAsset = Asset.Load<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
-            using var meshAsset = Asset.Load<MeshAsset>(Uuid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A"));
+            imageAsset = new AssetRef<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            imageAsset.LoadSync();
+            meshAsset = new AssetRef<MeshAsset>(Uuid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A"));
+            meshAsset.LoadSync();
 
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
@@ -81,29 +86,29 @@ namespace Ferrum.Samples.Models
             constantBuffer =
                 CreateHostVisibleBuffer(BindFlags.ConstantBuffer, device, new[] { constantData });
 
-            vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, meshAsset.VertexSize);
+            vertexBuffer = device.CreateBuffer(BindFlags.VertexBuffer, meshAsset.Storage.VertexSize);
             vertexBuffer.AllocateMemory(MemoryType.DeviceLocal);
-            indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, meshAsset.IndexSize);
+            indexBuffer = device.CreateBuffer(BindFlags.IndexBuffer, meshAsset.Storage.IndexSize);
             indexBuffer.AllocateMemory(MemoryType.DeviceLocal);
             textureImage = device.CreateImage(Image.Desc.Img2D(
-                ImageBindFlags.TransferWrite | ImageBindFlags.ShaderRead, imageAsset.Width, imageAsset.Height,
+                ImageBindFlags.TransferWrite | ImageBindFlags.ShaderRead, imageAsset.Storage.Width, imageAsset.Storage.Height,
                 Format.R8G8B8A8_SRGB));
             textureImage.AllocateMemory(MemoryType.DeviceLocal);
 
             using (var transferComplete = device.CreateFence(Fence.FenceState.Reset))
             {
-                using var vertexStagingBuffer = meshAsset.CreateVertexStagingBuffer(device);
-                using var indexStagingBuffer = meshAsset.CreateIndexStagingBuffer(device);
-                using var textureStagingBuffer = imageAsset.CreateStagingBuffer(device);
+                using var vertexStagingBuffer = meshAsset.Storage.CreateVertexStagingBuffer(device);
+                using var indexStagingBuffer = meshAsset.Storage.CreateIndexStagingBuffer(device);
+                using var textureStagingBuffer = imageAsset.Storage.CreateStagingBuffer(device);
                 using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Transfer);
                 using var transferQueue = device.GetCommandQueue(CommandQueueClass.Transfer);
 
                 using (var builder = commandBuffer.Begin())
                 {
-                    builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, meshAsset.VertexSize);
-                    builder.CopyBuffers(indexStagingBuffer, indexBuffer, meshAsset.IndexSize);
+                    builder.CopyBuffers(vertexStagingBuffer, vertexBuffer, meshAsset.Storage.VertexSize);
+                    builder.CopyBuffers(indexStagingBuffer, indexBuffer, meshAsset.Storage.IndexSize);
                     builder.TransitionImageState(textureImage, ResourceState.TransferWrite);
-                    builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.ImageSize);
+                    builder.CopyBufferToImage(textureStagingBuffer, textureImage, imageAsset.Storage.ImageSize);
                     builder.TransitionImageState(textureImage, ResourceState.ShaderResource);
                 }
 
@@ -196,7 +201,7 @@ namespace Ferrum.Samples.Models
                 builder.BeginRenderPass(renderPass, framebuffers[i],
                     ClearValueDesc.CreateColorValue(Colors.MediumAquamarine),
                     ClearValueDesc.CreateDepthStencilValue());
-                builder.DrawIndexed(meshAsset.IndexCount, 1, 0, 0, 0);
+                builder.DrawIndexed(meshAsset.Storage.IndexCount, 1, 0, 0, 0);
                 builder.EndRenderPass();
             }
 

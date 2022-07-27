@@ -8,16 +8,27 @@ using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Osmium.Assets
 {
-    public sealed class ImageAsset : Asset
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct ImageAsset : IAssetStorage<ImageAsset>
     {
         public Color this[int row, int column] => Color.FromUInt32(PixelValueAt(row, column));
 
         public int Width => (int)ImageSize.Width;
         public int Height => (int)ImageSize.Height;
-        public ulong ByteSize { get; private set; }
+        public ulong ByteSize { get; }
 
-        public IntPtr DataHandle { get; private set; }
-        public Size ImageSize { get; private set; }
+        public IntPtr DataHandle { get; }
+        public Size ImageSize { get; }
+
+        public IntPtr Handle { get; }
+
+        private ImageAsset(IntPtr handle, Size imageSize, ulong byteSize, IntPtr dataHandle)
+        {
+            Handle = handle;
+            ImageSize = imageSize;
+            ByteSize = byteSize;
+            DataHandle = dataHandle;
+        }
 
         public uint PixelValueAt(int row, int column)
         {
@@ -36,15 +47,13 @@ namespace Ferrum.Osmium.Assets
             return stagingBuffer;
         }
 
-        protected override void Initialize()
+        public ImageAsset WithNativePointer(IntPtr pointer)
         {
-            ImageSize = new Size(WidthNative(Handle), HeightNative(Handle));
-            ByteSize = SizeNative(Handle);
-            DataHandle = DataNative(Handle);
+            return new ImageAsset(pointer,
+                new Size(WidthNative(pointer), HeightNative(pointer)),
+                SizeNative(pointer),
+                DataNative(pointer));
         }
-
-        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Load")]
-        private static extern IntPtr LoadNative(IntPtr manager, in Uuid assetId);
 
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Data")]
         private static extern IntPtr DataNative(IntPtr self);
@@ -57,18 +66,5 @@ namespace Ferrum.Osmium.Assets
 
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Height")]
         private static extern int HeightNative(IntPtr self);
-
-        [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Destruct")]
-        private static extern void DestructNative(IntPtr self);
-
-        protected override void ReleaseUnmanagedResources()
-        {
-            DestructNative(Handle);
-        }
-
-        protected override IntPtr LoadByIdImpl(IntPtr manager, in Uuid assetId)
-        {
-            return LoadNative(manager, in assetId);
-        }
     }
 }
