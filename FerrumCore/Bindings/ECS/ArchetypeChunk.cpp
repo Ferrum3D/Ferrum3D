@@ -4,9 +4,9 @@ namespace FE::ECS
 {
     extern "C"
     {
-        FE_DLL_EXPORT void* ArchetypeChunk_OffsetOf(ArchetypeChunk* self, GUID* typeID)
+        FE_DLL_EXPORT void* ArchetypeChunk_OffsetOf(ArchetypeChunk* self, const UUID* typeID)
         {
-            return self->GetComponentStorage(TypeID::FromGUID(*typeID))->Data();
+            return self->GetComponentStorage(*typeID)->Data();
         }
 
         FE_DLL_EXPORT USize ArchetypeChunk_Count(ArchetypeChunk* self)

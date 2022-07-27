@@ -81,7 +81,7 @@ namespace Ferrum.Samples.Textures
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            using var imageAsset = Asset.Load<ImageAsset>(Guid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            using var imageAsset = Asset.Load<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
             device = adapter.CreateDevice();

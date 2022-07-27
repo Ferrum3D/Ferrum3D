@@ -19,7 +19,7 @@ typedef struct _GUID
 namespace FE
 {
     //! \brief A struct to work with UUIDs.
-    struct alignas(16) UUID
+    struct alignas(8) UUID
     {
         std::array<UInt8, 16> Data{};
 

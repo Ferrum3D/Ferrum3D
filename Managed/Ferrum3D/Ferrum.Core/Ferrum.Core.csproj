@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -43,62 +43,63 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="System"/>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
-        <Reference Include="System.Xml"/>
+        <Reference Include="System" />
+        <Reference Include="System.Core" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Assets\Asset.cs"/>
-        <Compile Include="Assets\AssetManager.cs"/>
-        <Compile Include="Components\LocalToWorldComponent.cs"/>
-        <Compile Include="Components\Position2DComponent.cs"/>
-        <Compile Include="Components\Position3DComponent.cs"/>
-        <Compile Include="Console\ConsoleLogger.cs"/>
-        <Compile Include="Console\LogMessageType.cs"/>
-        <Compile Include="Containers\ByteBuffer.cs"/>
-        <Compile Include="Containers\DisposableList.cs"/>
-        <Compile Include="Containers\NativeArray.cs"/>
-        <Compile Include="Containers\NativeList.cs"/>
-        <Compile Include="Entities\ArchetypeChunk.cs"/>
-        <Compile Include="Entities\ComponentAttribute.cs"/>
-        <Compile Include="Entities\ComponentSubsystem.cs"/>
-        <Compile Include="Entities\ComponentSystem.cs"/>
-        <Compile Include="Entities\ComponentType.cs"/>
-        <Compile Include="Entities\ComponentInfo.cs"/>
-        <Compile Include="Entities\Entity.cs"/>
-        <Compile Include="Entities\EntityQuery.cs"/>
-        <Compile Include="Entities\EntityQueryDelegate.cs"/>
-        <Compile Include="Entities\EntityRegistry.cs"/>
-        <Compile Include="Entities\EntityRegistryBindings.cs"/>
-        <Compile Include="Entities\World.cs"/>
-        <Compile Include="EventBus\EventBusBase.cs"/>
-        <Compile Include="EventBus\FrameEventArgs.cs"/>
-        <Compile Include="EventBus\FrameEventBus.cs"/>
-        <Compile Include="Framework\ApplicationFramework.cs"/>
-        <Compile Include="Framework\FrameworkBase.cs"/>
-        <Compile Include="Framework\IFramework.cs"/>
-        <Compile Include="Framework\IFrameworkFactory.cs"/>
-        <Compile Include="Framework\ModuleFramework.cs"/>
-        <Compile Include="Framework\NativeModuleFrameworkFactory.cs"/>
-        <Compile Include="Math\Color.cs"/>
-        <Compile Include="Math\Colors.cs"/>
-        <Compile Include="Math\MathF.cs"/>
-        <Compile Include="Math\Matrix4x4F.cs"/>
-        <Compile Include="Math\Matrix4x4FBindings.cs"/>
-        <Compile Include="Math\Quaternion.cs"/>
-        <Compile Include="Math\QuaternionBindings.cs"/>
-        <Compile Include="Math\Vector2F.cs"/>
-        <Compile Include="Math\Vector3F.cs"/>
-        <Compile Include="Math\Vector4F.cs"/>
-        <Compile Include="Modules\DynamicLibrary.cs"/>
-        <Compile Include="Modules\Engine.cs"/>
-        <Compile Include="Modules\UnmanagedObject.cs"/>
-        <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="Utils\DisposableExtensions.cs"/>
-        <Compile Include="Utils\EnumerableExtensions.cs"/>
-        <Compile Include="Utils\NativeUtils.cs"/>
-        <Compile Include="Utils\StringExtensions.cs"/>
+        <Compile Include="Assets\Asset.cs" />
+        <Compile Include="Assets\AssetManager.cs" />
+        <Compile Include="Components\LocalToWorldComponent.cs" />
+        <Compile Include="Components\Position2DComponent.cs" />
+        <Compile Include="Components\Position3DComponent.cs" />
+        <Compile Include="Console\ConsoleLogger.cs" />
+        <Compile Include="Console\LogMessageType.cs" />
+        <Compile Include="Containers\ByteBuffer.cs" />
+        <Compile Include="Containers\DisposableList.cs" />
+        <Compile Include="Containers\NativeArray.cs" />
+        <Compile Include="Containers\NativeList.cs" />
+        <Compile Include="Entities\ArchetypeChunk.cs" />
+        <Compile Include="Entities\ComponentAttribute.cs" />
+        <Compile Include="Entities\ComponentSubsystem.cs" />
+        <Compile Include="Entities\ComponentSystem.cs" />
+        <Compile Include="Entities\ComponentType.cs" />
+        <Compile Include="Entities\ComponentInfo.cs" />
+        <Compile Include="Entities\Entity.cs" />
+        <Compile Include="Entities\EntityQuery.cs" />
+        <Compile Include="Entities\EntityQueryDelegate.cs" />
+        <Compile Include="Entities\EntityRegistry.cs" />
+        <Compile Include="Entities\EntityRegistryBindings.cs" />
+        <Compile Include="Entities\World.cs" />
+        <Compile Include="EventBus\EventBusBase.cs" />
+        <Compile Include="EventBus\FrameEventArgs.cs" />
+        <Compile Include="EventBus\FrameEventBus.cs" />
+        <Compile Include="Framework\ApplicationFramework.cs" />
+        <Compile Include="Framework\FrameworkBase.cs" />
+        <Compile Include="Framework\IFramework.cs" />
+        <Compile Include="Framework\IFrameworkFactory.cs" />
+        <Compile Include="Framework\ModuleFramework.cs" />
+        <Compile Include="Framework\NativeModuleFrameworkFactory.cs" />
+        <Compile Include="Math\Color.cs" />
+        <Compile Include="Math\Colors.cs" />
+        <Compile Include="Math\MathF.cs" />
+        <Compile Include="Math\Matrix4x4F.cs" />
+        <Compile Include="Math\Matrix4x4FBindings.cs" />
+        <Compile Include="Math\Quaternion.cs" />
+        <Compile Include="Math\QuaternionBindings.cs" />
+        <Compile Include="Math\Vector2F.cs" />
+        <Compile Include="Math\Vector3F.cs" />
+        <Compile Include="Math\Vector4F.cs" />
+        <Compile Include="Modules\DynamicLibrary.cs" />
+        <Compile Include="Modules\Engine.cs" />
+        <Compile Include="Modules\UnmanagedObject.cs" />
+        <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Utils\DisposableExtensions.cs" />
+        <Compile Include="Utils\EnumerableExtensions.cs" />
+        <Compile Include="Utils\NativeUtils.cs" />
+        <Compile Include="Utils\StringExtensions.cs" />
+        <Compile Include="Utils\Uuid.cs" />
     </ItemGroup>
     <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Content Include="..\..\..\BuildRelease\Release\FeCoreBindings.dll">
@@ -118,7 +119,7 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
          Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Entities
 {
@@ -21,13 +22,13 @@ namespace Ferrum.Core.Entities
             return (T*)OffsetOf(ComponentInfo<T>.Type);
         }
 
-        public IntPtr OffsetOf(in Guid typeId)
+        public IntPtr OffsetOf(in Uuid typeId)
         {
             return OffsetOfNative(handle, in typeId);
         }
 
         [DllImport("FeCoreBindings", EntryPoint = "ArchetypeChunk_OffsetOf")]
-        private static extern IntPtr OffsetOfNative(IntPtr self, in Guid typeId);
+        private static extern IntPtr OffsetOfNative(IntPtr self, in Uuid typeId);
 
         [DllImport("FeCoreBindings", EntryPoint = "ArchetypeChunk_Count")]
         private static extern ulong CountNative(IntPtr self);
