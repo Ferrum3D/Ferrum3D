@@ -356,8 +356,28 @@ namespace FE::Osmium
                        VK_FILTER_LINEAR);
     }
 
+    class VKCommandBufferDeleter final : public IVKObjectDeleter
+    {
+        VkCommandBuffer m_Buffer;
+        VkCommandPool m_Pool;
+
+    public:
+        inline VKCommandBufferDeleter(VkCommandBuffer buffer, VkCommandPool pool)
+            : m_Buffer(buffer)
+            , m_Pool(pool)
+        {
+        }
+
+        void Delete(VKDevice* device) override;
+    };
+
+    void VKCommandBufferDeleter::Delete(VKDevice* device)
+    {
+        vkFreeCommandBuffers(device->GetNativeDevice(), m_Pool, 1, &m_Buffer);
+    }
+
     VKCommandBuffer::~VKCommandBuffer()
     {
-        vkFreeCommandBuffers(m_Device->GetNativeDevice(), m_CommandPool, 1, &m_CommandBuffer);
+        m_Device->QueueObjectDelete<VKCommandBufferDeleter>(m_CommandBuffer, m_CommandPool);
     }
 } // namespace FE::Osmium

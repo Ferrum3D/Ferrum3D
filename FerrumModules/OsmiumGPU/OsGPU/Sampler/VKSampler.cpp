@@ -61,8 +61,10 @@ namespace FE::Osmium
         return m_Desc;
     }
 
+    FE_VK_OBJECT_DELETER(Sampler);
+
     VKSampler::~VKSampler()
     {
-        vkDestroySampler(m_Device->GetNativeDevice(), Sampler, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(Sampler, Sampler);
     }
 } // namespace FE::Osmium

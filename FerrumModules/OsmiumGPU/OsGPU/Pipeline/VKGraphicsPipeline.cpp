@@ -216,9 +216,12 @@ namespace FE::Osmium
         state.CreateInfo.blendConstants[3] = m_Desc.ColorBlend.BlendConstants.W();
     }
 
+    FE_VK_OBJECT_DELETER(Pipeline);
+    FE_VK_OBJECT_DELETER(PipelineLayout);
+
     VKGraphicsPipeline::~VKGraphicsPipeline()
     {
-        vkDestroyPipeline(m_Device->GetNativeDevice(), m_NativePipeline, VK_NULL_HANDLE);
-        vkDestroyPipelineLayout(m_Device->GetNativeDevice(), m_Layout, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(Pipeline, m_NativePipeline);
+        FE_DELETE_VK_OBJECT(PipelineLayout, m_Layout);
     }
 } // namespace FE::Osmium
