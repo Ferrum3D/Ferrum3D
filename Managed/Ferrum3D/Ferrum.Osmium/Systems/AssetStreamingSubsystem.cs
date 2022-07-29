@@ -39,6 +39,7 @@ namespace Ferrum.Osmium.Systems
 
                 mesh.AssetStreamerHandle = ParentSystem.AssetStreamer.AddAsset<Mesh>(mesh.MeshAssetId);
                 ParentSystem.AssetStreamer.GetAsset<Mesh>(mesh.AssetStreamerHandle).Flags = mesh.MeshFlags;
+                ParentSystem.AssetStreamer.QueueLoad(mesh.AssetStreamerHandle);
             });
         }
 

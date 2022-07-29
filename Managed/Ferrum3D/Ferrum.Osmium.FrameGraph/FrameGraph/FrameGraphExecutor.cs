@@ -41,13 +41,19 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
             FrameGraph = new FrameGraph(Device);
         }
 
-        public void Tick()
+        public void Begin()
+        {
+            Window.PollEvents();
+        }
+
+        public void Execute()
         {
             FrameGraph.Compile();
         }
 
         public void Dispose()
         {
+            Device.WaitIdle();
             FrameGraph.Dispose();
             Window.Dispose();
             SwapChain.Dispose();

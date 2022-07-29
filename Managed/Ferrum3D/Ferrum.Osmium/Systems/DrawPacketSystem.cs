@@ -47,5 +47,10 @@ namespace Ferrum.Osmium.Systems
                 RenderViews[i].DrawPacket = builder.End();
             }
         }
+
+        protected override void OnDestroy()
+        {
+            query.Dispose();
+        }
     }
 }

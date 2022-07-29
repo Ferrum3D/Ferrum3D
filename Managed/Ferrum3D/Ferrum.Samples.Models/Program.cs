@@ -222,7 +222,7 @@ namespace Ferrum.Samples.Models
             dependencies.Add(new OsmiumAssetsModule.Factory());
         }
 
-        protected override void PollSystemEvents()
+        protected override void BeginFrame()
         {
             window.PollEvents();
         }

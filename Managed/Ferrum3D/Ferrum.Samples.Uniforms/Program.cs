@@ -204,7 +204,7 @@ namespace Ferrum.Samples.Uniforms
             dependencies.Add(new OsmiumGpuModule.Factory());
         }
 
-        protected override void PollSystemEvents()
+        protected override void BeginFrame()
         {
             window.PollEvents();
         }

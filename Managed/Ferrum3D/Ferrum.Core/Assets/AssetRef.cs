@@ -5,16 +5,15 @@ using Ferrum.Core.Utils;
 namespace Ferrum.Core.Assets
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct AssetRef<T> : IDisposable
+    public readonly struct AssetRef<T> : IDisposable
         where T : unmanaged, IAssetStorage<T>
     {
-        public T Storage { get; private set; }
+        public readonly T Storage;
         public Uuid AssetId => asset.AssetId;
         private readonly Asset asset;
 
         public AssetRef(in Asset asset)
         {
-            asset.AddStrongRef();
             this.asset = asset;
             Storage = new T();
         }
@@ -26,21 +25,29 @@ namespace Ferrum.Core.Assets
             Storage = new T();
         }
 
-        public readonly AssetRef<T> Copy()
+        private AssetRef(in Asset asset, in T storage)
         {
+            this.asset = asset;
+            Storage = storage;
+        }
+
+        public AssetRef<T> Copy()
+        {
+            asset.AddStrongRef();
             return new AssetRef<T>(asset);
         }
 
-        public void LoadSync()
+        public AssetRef<T> LoadSync()
         {
-            asset.LoadSync();
-            Storage = Storage.WithNativePointer(asset.Storage);
+            var a = asset.LoadSync();
+            var s = Storage;
+            return new AssetRef<T>(a, s.WithNativePointer(a.Storage));
         }
 
-        public void Reset()
+        public AssetRef<T> Reset()
         {
-            asset.ReleaseStrongRef();
-            Storage = Storage.Reset();
+            Dispose();
+            return new AssetRef<T>();
         }
 
         public void Dispose()

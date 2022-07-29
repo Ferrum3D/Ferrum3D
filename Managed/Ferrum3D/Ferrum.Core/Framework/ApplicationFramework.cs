@@ -13,9 +13,7 @@ namespace Ferrum.Core.Framework
     {
         public static ApplicationFramework Instance { get; private set; }
         public Desc Descriptor { get; private set; }
-        public EntityRegistry EntityRegistry { get; private set; }
-        public World World { get; private set; }
-
+        
         private uint frameCounter;
         private int exitCode;
         private bool stopRequested;
@@ -43,9 +41,6 @@ namespace Ferrum.Core.Framework
                 assetManager = new AssetManager(Path.Combine(desc.AssetDirectory, "FerrumAssetIndex"));
             }
 
-            World = new World();
-            EntityRegistry = World.EntityRegistry;
-
             Initialize();
             Instance = this;
         }
@@ -57,7 +52,7 @@ namespace Ferrum.Core.Framework
 
             while (!ShouldStop)
             {
-                PollSystemEvents();
+                BeginFrame();
                 var eventArgs = new FrameEventArgs(frameCounter++, sw.ElapsedMilliseconds / 1000f);
                 FrameEventBus.OnFrameStart(in eventArgs);
                 FrameEventBus.OnUpdate(in eventArgs);
@@ -80,7 +75,6 @@ namespace Ferrum.Core.Framework
         {
             OnExit();
             base.Dispose();
-            World?.Dispose();
             assetManager?.Dispose();
             eventBuses.Dispose();
             logger?.Dispose();
@@ -88,7 +82,7 @@ namespace Ferrum.Core.Framework
             Instance = null;
         }
 
-        protected abstract void PollSystemEvents();
+        protected abstract void BeginFrame();
         protected abstract void Tick(FrameEventArgs frameEventArgs);
         protected abstract void OnExit();
 
