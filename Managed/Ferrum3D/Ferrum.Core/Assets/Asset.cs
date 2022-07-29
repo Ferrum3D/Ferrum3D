@@ -20,9 +20,11 @@ namespace Ferrum.Core.Assets
             ReleaseStrongRefNative(in this);
         }
 
-        public readonly void LoadSync()
+        public readonly Asset LoadSync()
         {
-            LoadSyncNative(in this);
+            var result = this;
+            LoadSyncNative(ref result);
+            return result;
         }
 
         [DllImport("FeCoreBindings", EntryPoint = "Asset_AddStrongRef")]
@@ -32,6 +34,6 @@ namespace Ferrum.Core.Assets
         private static extern void ReleaseStrongRefNative(in Asset self);
 
         [DllImport("FeCoreBindings", EntryPoint = "Asset_LoadSync")]
-        private static extern void LoadSyncNative(in Asset self);
+        private static extern void LoadSyncNative(ref Asset self);
     }
 }

@@ -1,34 +1,26 @@
 ﻿using Ferrum.Core.Components;
 using Ferrum.Core.Entities;
-using Ferrum.Core.EventBus;
 using Ferrum.Core.Framework;
-using Ferrum.Osmium;
-using Ferrum.Osmium.FrameGraph.FrameGraph;
+using Ferrum.Core.Utils;
+using Ferrum.GameFramework;
+using Ferrum.Osmium.Components;
 
 namespace Ferrum.Samples.Scene3D
 {
-    internal class ExampleApplication : OsmiumApplication
+    internal class ExampleApplication : GameApplication
     {
         public const string ApplicationName = "Ferrum3D - 3D Scene";
-        private FrameGraph frameGraph;
 
         public override void Initialize(Desc desc)
         {
             base.Initialize(desc);
-            frameGraph = new FrameGraph(Device);
-            var entity = EntityRegistry.CreateEntity(ComponentType.CreateList<Position3DComponent, LocalToWorldComponent>());
+            var componentTypes = ComponentType.CreateList<Position3DComponent, LocalToWorldComponent, RenderMeshComponent>();
+            var entity = EntityRegistry.CreateEntity(componentTypes);
             EntityRegistry.SetComponent(entity, new Position3DComponent(1, 2, 3));
-        }
-
-        protected override void Tick(FrameEventArgs frameEventArgs)
-        {
-            frameGraph.Compile();
-        }
-
-        protected override void OnExit()
-        {
-            frameGraph.Dispose();
-            base.OnExit();
+            EntityRegistry.SetComponent(entity, new RenderMeshComponent
+            {
+                MeshAssetId = Uuid.Parse("884FEDDD-141D-49A0-92B2-38B519403D0A")
+            });
         }
     }
 
@@ -37,7 +29,8 @@ namespace Ferrum.Samples.Scene3D
         private static int Main()
         {
             using var app = new ExampleApplication();
-            app.Initialize(new ApplicationFramework.Desc(ExampleApplication.ApplicationName));
+            app.Initialize(new ApplicationFramework.Desc(ExampleApplication.ApplicationName,
+                "../../../Ferrum.Samples.Models/Assets", 1280, 720));
             return app.RunMainLoop();
         }
     }

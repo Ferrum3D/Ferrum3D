@@ -1,6 +1,8 @@
 ﻿using System;
 using Ferrum.Core.Entities;
+using Ferrum.Osmium.AssetStreaming;
 using Ferrum.Osmium.Drawing;
+using Ferrum.Osmium.FrameGraph.CommandLists;
 using Ferrum.Osmium.FrameGraph.FrameGraph;
 using Ferrum.Osmium.Systems;
 
@@ -22,10 +24,23 @@ namespace Ferrum.GameFramework
 
             var drawPacketSystem = new DrawPacketSystem
             {
-                RenderViews = new[] { MainCameraView }
+                RenderViews = new[] { MainCameraView },
+                DrawItems = Array.Empty<DrawItem>(),
+                AssetStreamer = new AssetStreamer(),
+                FrameGraphExecutor = FrameGraphExecutor
             };
 
             EntityWorld.RegisterSystem(drawPacketSystem);
+        }
+
+        public void Begin()
+        {
+            FrameGraphExecutor.Begin();
+        }
+
+        public void Tick()
+        {
+            FrameGraphExecutor.Execute();
         }
 
         public void Dispose()

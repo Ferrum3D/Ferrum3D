@@ -42,11 +42,6 @@ namespace Ferrum.Osmium
 
             var swapChainDesc = new SwapChain.Desc(Window, GraphicsQueue);
             SwapChain = Device.CreateSwapChain(swapChainDesc);
-
-            World.RegisterSystem(new DrawPacketSystem
-            {
-                RenderViews = Array.Empty<RenderView>()
-            });
         }
 
         protected override void GetFrameworkDependencies(ICollection<IFrameworkFactory> dependencies)
@@ -58,7 +53,7 @@ namespace Ferrum.Osmium
             }
         }
 
-        protected override void PollSystemEvents()
+        protected override void BeginFrame()
         {
             Window.PollEvents();
         }

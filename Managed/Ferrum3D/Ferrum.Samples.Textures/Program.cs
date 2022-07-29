@@ -258,7 +258,7 @@ namespace Ferrum.Samples.Textures
             dependencies.Add(new OsmiumAssetsModule.Factory());
         }
 
-        protected override void PollSystemEvents()
+        protected override void BeginFrame()
         {
             window.PollEvents();
         }
