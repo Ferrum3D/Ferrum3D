@@ -137,11 +137,13 @@ namespace FE::Osmium
         vkBindImageMemory(m_Device->GetNativeDevice(), Image, vkMemory, memory.ByteOffset);
     }
 
+    FE_VK_OBJECT_DELETER(Image);
+
     VKImage::~VKImage()
     {
         if (m_Owned)
         {
-            vkDestroyImage(m_Device->GetNativeDevice(), Image, VK_NULL_HANDLE);
+            FE_DELETE_VK_OBJECT(Image, Image);
         }
         if (m_MemoryOwned)
         {

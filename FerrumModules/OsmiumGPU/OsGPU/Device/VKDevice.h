@@ -2,6 +2,8 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/LRUCacheMap.h>
+#include <FeCore/EventBus/EventBus.h>
+#include <FeCore/EventBus/FrameEvents.h>
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Descriptors/DescriptorDesc.h>
 #include <OsGPU/Device/IDevice.h>
@@ -27,6 +29,39 @@ namespace FE::Osmium
         }
     };
 
+    class VKDevice;
+
+    class IVKObjectDeleter
+    {
+    public:
+        UInt32 FramesLeft = 3;
+
+        virtual ~IVKObjectDeleter() = default;
+
+        virtual void Delete(VKDevice* device) = 0;
+    };
+
+#define FE_VK_OBJECT_DELETER(obj)                                                                                                \
+    class Osmium_Vulkan_##obj##_Deleter final : public IVKObjectDeleter                                                          \
+    {                                                                                                                            \
+        Vk##obj m_##obj;                                                                                                         \
+                                                                                                                                 \
+    public:                                                                                                                      \
+        inline explicit Osmium_Vulkan_##obj##_Deleter(Vk##obj handle)                                                            \
+            : m_##obj(handle)                                                                                                    \
+        {                                                                                                                        \
+        }                                                                                                                        \
+                                                                                                                                 \
+        void Delete(VKDevice* device) override;                                                                                  \
+    };                                                                                                                           \
+                                                                                                                                 \
+    void Osmium_Vulkan_##obj##_Deleter::Delete(VKDevice* device)                                                                 \
+    {                                                                                                                            \
+        vkDestroy##obj(device->GetNativeDevice(), m_##obj, VK_NULL_HANDLE);                                                      \
+    }
+
+#define FE_DELETE_VK_OBJECT(obj, name) m_Device->QueueObjectDelete<Osmium_Vulkan_##obj##_Deleter>(name);
+
     class DescriptorSetLayoutData final
     {
         VkDescriptorSetLayout m_SetLayout;
@@ -37,7 +72,7 @@ namespace FE::Osmium
 
         inline DescriptorSetLayoutData() = default;
 
-        inline DescriptorSetLayoutData(VkDescriptorSetLayout layout)
+        inline explicit DescriptorSetLayoutData(VkDescriptorSetLayout layout)
             : m_SetLayout(layout)
             , m_RefCount(1)
         {
@@ -64,7 +99,9 @@ namespace FE::Osmium
     class VKInstance;
     class VKCommandBuffer;
 
-    class VKDevice final : public Object<IDevice>
+    class VKDevice final
+        : public Object<IDevice>
+        , public EventBus<FrameEvents>::Handler
     {
         VkDevice m_NativeDevice;
         VkPhysicalDevice m_NativeAdapter;
@@ -80,6 +117,8 @@ namespace FE::Osmium
         VkMemoryRequirements m_ImageMemoryRequirements;
         VkMemoryRequirements m_RenderTargetMemoryRequirements;
         VkMemoryRequirements m_BufferMemoryRequirements;
+
+        List<IVKObjectDeleter*> m_PendingDelete;
 
         void FindQueueFamilies();
 
@@ -136,6 +175,17 @@ namespace FE::Osmium
             FE_UNREACHABLE("Couldn't find queue family");
             return static_cast<UInt32>(-1);
         }
+
+        template<class T, class... Args>
+        inline T* QueueObjectDelete(Args&&... args)
+        {
+            auto* deleter = new (GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(T), alignof(T), FE_SRCPOS()))
+                T(std::forward<Args>(args)...);
+            m_PendingDelete.Push(deleter);
+            return deleter;
+        }
+
+        void OnFrameEnd(const FrameEventArgs& args) override;
 
         VkMemoryRequirements GetImageMemoryRequirements(const ImageDesc& desc);
         VkMemoryRequirements GetImageMemoryRequirements();

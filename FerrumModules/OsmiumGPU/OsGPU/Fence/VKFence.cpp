@@ -40,8 +40,10 @@ namespace FE::Osmium
         return m_NativeFence;
     }
 
+    FE_VK_OBJECT_DELETER(Fence);
+
     VKFence::~VKFence()
     {
-        vkDestroyFence(m_Device->GetNativeDevice(), m_NativeFence, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(Fence, m_NativeFence);
     }
 } // namespace FE::Osmium

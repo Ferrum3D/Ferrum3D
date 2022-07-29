@@ -192,8 +192,10 @@ namespace FE::Osmium
         return result;
     }
 
+    FE_VK_OBJECT_DELETER(RenderPass);
+
     VKRenderPass::~VKRenderPass()
     {
-        vkDestroyRenderPass(m_Device->GetNativeDevice(), m_NativeRenderPass, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(RenderPass, m_NativeRenderPass);
     }
 } // namespace FE::Osmium

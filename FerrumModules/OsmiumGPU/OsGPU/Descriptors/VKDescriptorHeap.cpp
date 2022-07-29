@@ -36,9 +36,11 @@ namespace FE::Osmium
         return result->GetNativeSet() == VK_NULL_HANDLE ? nullptr : result;
     }
 
+    FE_VK_OBJECT_DELETER(DescriptorPool);
+
     VKDescriptorHeap::~VKDescriptorHeap()
     {
-        vkDestroyDescriptorPool(m_Device->GetNativeDevice(), m_NativePool, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(DescriptorPool, m_NativePool);
     }
 
     void VKDescriptorHeap::Reset()

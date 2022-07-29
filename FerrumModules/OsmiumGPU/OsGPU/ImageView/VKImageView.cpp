@@ -44,8 +44,10 @@ namespace FE::Osmium
         vkCreateImageView(m_Device->GetNativeDevice(), &viewCI, VK_NULL_HANDLE, &m_NativeView);
     }
 
+    FE_VK_OBJECT_DELETER(ImageView);
+
     VKImageView::~VKImageView()
     {
-        vkDestroyImageView(m_Device->GetNativeDevice(), m_NativeView, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(ImageView, m_NativeView);
     }
 } // namespace FE::Osmium

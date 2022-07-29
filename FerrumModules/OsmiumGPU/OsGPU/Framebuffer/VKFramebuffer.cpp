@@ -28,8 +28,10 @@ namespace FE::Osmium
         vkCreateFramebuffer(m_Device->GetNativeDevice(), &framebufferCI, VK_NULL_HANDLE, &m_NativeFramebuffer);
     }
 
+    FE_VK_OBJECT_DELETER(Framebuffer);
+
     VKFramebuffer::~VKFramebuffer()
     {
-        vkDestroyFramebuffer(m_Device->GetNativeDevice(), m_NativeFramebuffer, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(Framebuffer, m_NativeFramebuffer);
     }
 } // namespace FE::Osmium

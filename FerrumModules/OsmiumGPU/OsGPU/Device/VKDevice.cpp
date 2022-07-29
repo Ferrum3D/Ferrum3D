@@ -298,6 +298,14 @@ namespace FE::Osmium
 
     VKDevice::~VKDevice()
     {
+        for (auto& deleter : m_PendingDelete)
+        {
+            deleter->Delete(this);
+            deleter->~IVKObjectDeleter();
+            GlobalAllocator<HeapAllocator>::Get().Deallocate(deleter, FE_SRCPOS(), 0);
+            FE_LOG_MESSAGE("Deleted object at {}", deleter);
+        }
+
         for (auto& family : m_QueueFamilyIndices)
         {
             vkDestroyCommandPool(m_NativeDevice, family.CmdPool, VK_NULL_HANDLE);
@@ -417,6 +425,26 @@ namespace FE::Osmium
         if (m_DescriptorSetLayouts[key].Release(m_NativeDevice))
         {
             m_DescriptorSetLayouts.erase(key);
+        }
+    }
+
+    void VKDevice::OnFrameEnd(const FrameEventArgs& /* args */)
+    {
+        for (USize i = 0; i < m_PendingDelete.Size();)
+        {
+            FE_LOG_MESSAGE(
+                "Trying to delete object at {}, frames left: {}...", m_PendingDelete[i], m_PendingDelete[i]->FramesLeft);
+            if (--m_PendingDelete[i]->FramesLeft > 0)
+            {
+                ++i;
+                continue;
+            }
+
+            m_PendingDelete[i]->Delete(this);
+            m_PendingDelete[i]->~IVKObjectDeleter();
+            GlobalAllocator<HeapAllocator>::Get().Deallocate(m_PendingDelete[i], FE_SRCPOS(), 0);
+            FE_LOG_MESSAGE("Deleted object at {}", m_PendingDelete[i]);
+            m_PendingDelete.SwapRemoveAt(i);
         }
     }
 } // namespace FE::Osmium

@@ -43,9 +43,11 @@ namespace FE::Osmium
         return Desc;
     }
 
+    FE_VK_OBJECT_DELETER(Buffer);
+
     VKBuffer::~VKBuffer()
     {
-        vkDestroyBuffer(m_Device->GetNativeDevice(), Buffer, VK_NULL_HANDLE);
+        FE_DELETE_VK_OBJECT(Buffer, Buffer);
         if (m_MemoryOwned)
         {
             m_Memory.Memory->ReleaseStrongRef();

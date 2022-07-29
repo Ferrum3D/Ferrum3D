@@ -36,9 +36,27 @@ namespace FE::Osmium
         return m_Desc;
     }
 
+    class VKMemoryDeleter final : public IVKObjectDeleter
+    {
+        VkDeviceMemory m_Memory;
+
+    public:
+        inline explicit VKMemoryDeleter(VkDeviceMemory memory)
+            : m_Memory(memory)
+        {
+        }
+
+        void Delete(VKDevice* device) override;
+    };
+
+    void VKMemoryDeleter::Delete(VKDevice* device)
+    {
+        vkFreeMemory(device->GetNativeDevice(), m_Memory, VK_NULL_HANDLE);
+    }
+
     VKDeviceMemory::~VKDeviceMemory()
     {
-        vkFreeMemory(m_Device->GetNativeDevice(), Memory, VK_NULL_HANDLE);
+        m_Device->QueueObjectDelete<VKMemoryDeleter>(Memory);
     }
 
     void* VKDeviceMemory::Map(USize offset, USize size)
