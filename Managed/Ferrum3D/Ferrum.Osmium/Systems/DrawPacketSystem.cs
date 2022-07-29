@@ -51,6 +51,7 @@ namespace Ferrum.Osmium.Systems
         protected override void OnDestroy()
         {
             query.Dispose();
+            AssetStreamer.Dispose();
         }
     }
 }

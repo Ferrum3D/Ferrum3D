@@ -45,6 +45,11 @@ namespace Ferrum.Osmium.Systems
 
         private void LoadAssets()
         {
+            if (!ParentSystem.AssetStreamer.HasUpdateWork)
+            {
+                return;
+            }
+
             using var commandBuffer = device.CreateCommandBuffer(CommandQueueClass.Transfer);
             using var fence = device.CreateFence(Fence.FenceState.Reset);
 

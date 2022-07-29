@@ -11,7 +11,7 @@ namespace Ferrum.Core.Containers
             for (var i = 0; i < Count; i++)
             {
                 var elem = this[i];
-                elem.Dispose();
+                elem?.Dispose();
             }
 
             Clear();
