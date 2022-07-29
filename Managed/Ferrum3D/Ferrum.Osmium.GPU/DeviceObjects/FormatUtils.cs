@@ -2,7 +2,7 @@
 {
     public static class FormatUtils
     {
-        public static uint GetSize(this Format format)
+        public static int GetSize(this Format format)
         {
             switch (format)
             {

@@ -11,7 +11,10 @@ namespace Ferrum.Osmium.GPU.VertexInput
         public IReadOnlyList<InputStreamBufferDesc> Buffers => buffers;
         public IReadOnlyList<InputStreamAttributeDesc> Attributes => attributes;
 
+        public int ByteStride => buffers.Sum(x => x.Stride);
+
         public PrimitiveTopology Topology { get; private set; }
+        
         private readonly List<InputStreamBufferDesc> buffers = new();
         private readonly List<InputStreamAttributeDesc> attributes = new();
 
@@ -74,12 +77,12 @@ namespace Ferrum.Osmium.GPU.VertexInput
         {
             internal readonly List<InputStreamAttributeDesc> Attributes = new();
             internal InputStreamBufferDesc Buffer;
-            internal uint Offset;
+            internal int Offset;
             private readonly Builder parent;
 
-            private readonly uint index;
+            private readonly int index;
 
-            internal BufferBuilder(InputStreamRate inputRate, uint index, Builder parent)
+            internal BufferBuilder(InputStreamRate inputRate, int index, Builder parent)
             {
                 Buffer = Buffer.WithInputRate(inputRate);
                 this.index = index;
@@ -111,7 +114,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
 
             public BufferBuilder AddBuffer(InputStreamRate inputRate)
             {
-                buffers.Add(new BufferBuilder(inputRate, (uint)buffers.Count, this));
+                buffers.Add(new BufferBuilder(inputRate, buffers.Count, this));
                 return buffers.Last();
             }
 

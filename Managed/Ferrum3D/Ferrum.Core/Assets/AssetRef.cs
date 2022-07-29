@@ -9,6 +9,7 @@ namespace Ferrum.Core.Assets
         where T : unmanaged, IAssetStorage<T>
     {
         public T Storage { get; private set; }
+        public Uuid AssetId => asset.AssetId;
         private readonly Asset asset;
 
         public AssetRef(in Asset asset)
@@ -34,6 +35,12 @@ namespace Ferrum.Core.Assets
         {
             asset.LoadSync();
             Storage = Storage.WithNativePointer(asset.Storage);
+        }
+
+        public void Reset()
+        {
+            asset.ReleaseStrongRef();
+            Storage = Storage.Reset();
         }
 
         public void Dispose()

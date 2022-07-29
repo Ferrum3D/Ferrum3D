@@ -14,7 +14,7 @@ namespace Ferrum.Core.Entities
 
         private FrameEventArgs frameEventArgs;
 
-        private readonly List<ComponentSubsystem> subsystems = new();
+        private readonly List<IComponentSubsystem> subsystems = new();
 
         protected float DeltaTime => frameEventArgs.DeltaTime;
         protected uint FrameIndex => frameEventArgs.FrameIndex;
@@ -36,14 +36,19 @@ namespace Ferrum.Core.Entities
             SetUpdateCallbackNative(Handle, Marshal.GetFunctionPointerForDelegate(updateCallback));
         }
 
-        protected void AddSubsystem(ComponentSubsystem subsystem)
+        protected void AddSubsystem<T>(ComponentSubsystem<T> subsystem)
+            where T : ComponentSystem
         {
-            subsystem.ParentSystem = this;
+            subsystem.ParentSystem = this as T;
             subsystem.OnCreate();
             subsystems.Add(subsystem);
         }
 
         protected virtual void OnCreate()
+        {
+        }
+
+        protected virtual void OnFrameInit()
         {
         }
 
@@ -58,6 +63,8 @@ namespace Ferrum.Core.Entities
         private void OnUpdateImpl(in FrameEventArgs eventArgs)
         {
             frameEventArgs = eventArgs;
+
+            OnFrameInit();
 
             foreach (var subsystem in subsystems)
             {

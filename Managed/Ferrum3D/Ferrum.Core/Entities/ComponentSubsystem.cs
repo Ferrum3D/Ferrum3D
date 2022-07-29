@@ -1,8 +1,9 @@
 ﻿namespace Ferrum.Core.Entities
 {
-    public abstract class ComponentSubsystem
+    public abstract class ComponentSubsystem<TParent> : IComponentSubsystem
+        where TParent : ComponentSystem
     {
-        protected internal ComponentSystem ParentSystem { get; internal set; }
+        protected internal TParent ParentSystem { get; internal set; }
 
         public virtual void OnCreate()
         {

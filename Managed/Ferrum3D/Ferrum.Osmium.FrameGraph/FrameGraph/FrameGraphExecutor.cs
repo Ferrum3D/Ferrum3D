@@ -15,6 +15,7 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
         public Window Window { get; }
         public SwapChain SwapChain { get; }
         public CommandQueue GraphicsQueue { get; }
+        public CommandQueue TransferQueue { get; }
 
         private readonly Instance instance;
         private readonly Adapter adapter;
@@ -28,6 +29,7 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
             Device = adapter.CreateDevice();
 
             GraphicsQueue = Device.GetCommandQueue(CommandQueueClass.Graphics);
+            TransferQueue = Device.GetCommandQueue(CommandQueueClass.Transfer);
 
             var desc = ApplicationFramework.Instance.Descriptor;
             var windowDesc = new Window.Desc(desc.WindowWidth, desc.WindowHeight, desc.Name);
@@ -50,6 +52,7 @@ namespace Ferrum.Osmium.FrameGraph.FrameGraph
             Window.Dispose();
             SwapChain.Dispose();
             GraphicsQueue.Dispose();
+            TransferQueue.Dispose();
             Device.Dispose();
             adapter.Dispose();
             instance.Dispose();
