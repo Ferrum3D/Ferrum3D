@@ -11,6 +11,8 @@ namespace Ferrum.Osmium.AssetStreaming
 {
     public sealed class AssetStreamer : IDisposable
     {
+        public bool HasUpdateWork => pendingLoadToCpuMemory.Any() || pendingLoadToGpuMemory.Any() || pendingUnload.Any();
+
         private readonly DisposableList<IStreamedAsset> assets = new() { null };
         private readonly List<Handle> pendingLoadToCpuMemory = new();
         private readonly List<Handle> pendingLoadToGpuMemory = new();
