@@ -7,10 +7,12 @@ namespace Ferrum.Osmium.FrameGraph.CommandLists
         public readonly Buffer Buffer;
         public readonly ulong ByteOffset;
         public readonly ulong ByteSize;
-        public readonly uint ByteStride;
-        public ulong VertexCount => ByteSize / ByteStride;
+        public readonly int ByteStride;
+        public ulong VertexCount => ByteSize / (uint)ByteStride;
 
-        public VertexBufferSlice(Buffer buffer, ulong byteOffset, ulong byteSize, uint byteStride)
+        public static readonly VertexBufferSlice Empty = new(null, 0, 0, 0);
+
+        public VertexBufferSlice(Buffer buffer, ulong byteOffset, ulong byteSize, int byteStride)
         {
             Buffer = buffer;
             ByteOffset = byteOffset;

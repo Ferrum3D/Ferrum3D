@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Ferrum.Core.Assets;
 using Ferrum.Osmium.GPU.DeviceObjects;
+using Ferrum.Osmium.GPU.VertexInput;
 using Buffer = Ferrum.Osmium.GPU.DeviceObjects.Buffer;
 
 namespace Ferrum.Osmium.Assets
@@ -15,6 +16,13 @@ namespace Ferrum.Osmium.Assets
         public IntPtr IndexData { get; }
 
         public IntPtr Handle { get; }
+
+        public static readonly InputStreamLayout InputStreamLayout = new InputStreamLayout.Builder()
+            .AddBuffer(InputStreamRate.PerVertex)
+            .AddAttribute(Format.R32G32B32_SFloat, "POSITION")
+            .AddAttribute(Format.R32G32_SFloat, "TEXCOORD")
+            .Build()
+            .Build();
 
         private MeshAsset(IntPtr handle, ulong vertexSize, ulong indexSize, IntPtr vertexData, IntPtr indexData)
         {
@@ -48,6 +56,11 @@ namespace Ferrum.Osmium.Assets
                 IndexSizeNative(pointer),
                 VertexDataNative(pointer),
                 IndexDataNative(pointer));
+        }
+
+        public MeshAsset Reset()
+        {
+            return new MeshAsset();
         }
 
         [DllImport("OsAssetsBindings", EntryPoint = "MeshAssetStorage_VertexSize")]

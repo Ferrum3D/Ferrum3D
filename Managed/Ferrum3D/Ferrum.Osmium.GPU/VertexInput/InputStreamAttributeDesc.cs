@@ -6,11 +6,11 @@ namespace Ferrum.Osmium.GPU.VertexInput
     public readonly struct InputStreamAttributeDesc
     {
         public readonly string ShaderSemantic;
-        public readonly uint BufferIndex;
-        public readonly uint Offset;
+        public readonly int BufferIndex;
+        public readonly int Offset;
         public readonly Format ElementFormat;
 
-        public InputStreamAttributeDesc(string shaderSemantic, uint bufferIndex, uint offset, Format elementFormat)
+        public InputStreamAttributeDesc(string shaderSemantic, int bufferIndex, int offset, Format elementFormat)
         {
             ShaderSemantic = shaderSemantic;
             BufferIndex = bufferIndex;
@@ -56,8 +56,8 @@ namespace Ferrum.Osmium.GPU.VertexInput
         [StructLayout(LayoutKind.Sequential)]
         internal struct Native
         {
-            public readonly uint BufferIndex;
-            public readonly uint Offset;
+            public readonly int BufferIndex;
+            public readonly int Offset;
             public readonly Format ElementFormat;
             public unsafe fixed byte ShaderSemantic[32];
 

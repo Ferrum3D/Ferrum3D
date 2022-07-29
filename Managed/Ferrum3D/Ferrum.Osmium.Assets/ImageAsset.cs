@@ -54,6 +54,11 @@ namespace Ferrum.Osmium.Assets
                 DataNative(pointer));
         }
 
+        public ImageAsset Reset()
+        {
+            return new ImageAsset();
+        }
+
         [DllImport("OsAssetsBindings", EntryPoint = "ImageAssetStorage_Data")]
         private static extern IntPtr DataNative(IntPtr self);
 

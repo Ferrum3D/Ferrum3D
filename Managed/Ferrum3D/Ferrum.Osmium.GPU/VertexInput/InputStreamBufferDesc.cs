@@ -5,10 +5,10 @@ namespace Ferrum.Osmium.GPU.VertexInput
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct InputStreamBufferDesc
     {
-        public readonly uint Stride;
+        public readonly int Stride;
         public readonly InputStreamRate InputRate;
 
-        public InputStreamBufferDesc(uint stride, InputStreamRate inputRate)
+        public InputStreamBufferDesc(int stride, InputStreamRate inputRate)
         {
             Stride = stride;
             InputRate = inputRate;
@@ -19,7 +19,7 @@ namespace Ferrum.Osmium.GPU.VertexInput
             return new InputStreamBufferDesc(Stride, inputRate);
         }
 
-        public InputStreamBufferDesc WithStride(uint stride)
+        public InputStreamBufferDesc WithStride(int stride)
         {
             return new InputStreamBufferDesc(stride, InputRate);
         }

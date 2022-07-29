@@ -1,17 +1,37 @@
 ﻿using System.Collections.Generic;
+using Ferrum.Core.Components;
 using Ferrum.Core.Entities;
 using Ferrum.Core.Math;
+using Ferrum.Osmium.AssetStreaming;
+using Ferrum.Osmium.Components;
 using Ferrum.Osmium.Drawing;
 using Ferrum.Osmium.FrameGraph.CommandLists;
+using Ferrum.Osmium.FrameGraph.FrameGraph;
 
 namespace Ferrum.Osmium.Systems
 {
     public class DrawPacketSystem : ComponentSystem
     {
+        public AssetStreamer AssetStreamer;
+        public FrameGraphExecutor FrameGraphExecutor;
         public IReadOnlyList<DrawItem> DrawItems;
         public IReadOnlyList<Vector3F> ItemPositions;
         public IReadOnlyList<ulong> ItemLayers;
         public IReadOnlyList<RenderView> RenderViews;
+
+        private EntityQuery query;
+
+        protected override void OnCreate()
+        {
+            query = EntityRegistry.CreateQuery();
+            query.All = ComponentType.CreateList<RenderMeshComponent, LocalToWorldComponent>();
+            AddSubsystem(new AssetStreamingSubsystem(query));
+        }
+
+        protected override void OnFrameInit()
+        {
+            query.Update();
+        }
 
         protected override void OnUpdate()
         {
