@@ -25,10 +25,7 @@ namespace FE::Fmt
 
         virtual void Format(String& buffer, void* value) const override final
         {
-            if constexpr (std::is_pointer_v<T>)
-                Format(buffer, reinterpret_cast<T>(value));
-            else
-                Format(buffer, *reinterpret_cast<T*>(value));
+            Format(buffer, *reinterpret_cast<T*>(value));
         }
     };
 
@@ -38,7 +35,15 @@ namespace FE::Fmt
         void Format(String& buffer, const T& value) const override
         {
             std::stringstream ss;
-            ss << value;
+            if constexpr (std::is_pointer_v<T>)
+            {
+                ss << "0x" << std::hex << reinterpret_cast<USize>(value);
+            }
+            else
+            {
+                ss << value;
+            }
+
             auto v = ss.str();
             buffer.Append(v.data(), v.size());
         }
