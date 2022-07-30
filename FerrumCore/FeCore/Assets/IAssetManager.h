@@ -28,8 +28,15 @@ namespace FE::Assets
         //!
         //! This is useful to clean up the AssetManager after a module that attached its own asset loaders.
         //!
-        //! \param [in] assetType - The the of the asset associated with the loader to remove.
-        virtual void RemoveAssetLoader(AssetType assetType) = 0;
+        //! \param [in] assetType - The type of the asset associated with the loader to remove.
+        virtual void RemoveAssetLoader(const AssetType& assetType) = 0;
+
+        //! \brief Get registered loader for a specified asset type.
+        //!
+        //! \param [in] assetType - The type of the asset associated with the loader to return.
+        //!
+        //! \return The asset loader that loads assets with specified type.
+        virtual IAssetLoader* GetAssetLoader(const AssetType& assetType) = 0;
 
         //! \brief Register an instance of IAssetProvider.
         //!

@@ -35,7 +35,7 @@ namespace FE::Fmt
         void Format(String& buffer, const T& value) const override
         {
             std::stringstream ss;
-            if constexpr (std::is_pointer_v<T>)
+            if constexpr (std::is_pointer_v<T> && !std::is_same_v<T, const char*>)
             {
                 ss << "0x" << std::hex << reinterpret_cast<USize>(value);
             }

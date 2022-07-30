@@ -16,6 +16,8 @@ namespace FE::Assets
         [[nodiscard]] inline AssetType GetAssetType() const override;
         [[nodiscard]] inline AssetStorage* CreateStorage() override;
         inline void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) override;
+        void LoadRawAsset(const List<AssetMetadataField>& metadata) override;
+        void SaveAsset(AssetStorage* storage, IO::IStream* assetStream) override;
     };
 
     AssetType TestAssetLoader::GetAssetType() const
@@ -60,10 +62,14 @@ namespace FE::Assets
         testStorage->Data = String(length, '\0');
         assetStream->ReadToBuffer(testStorage->Data.Data(), length);
     }
+
+    void TestAssetLoader::LoadRawAsset(const List<AssetMetadataField>& /* metadata */) {}
+
+    void TestAssetLoader::SaveAsset(AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
 } // namespace FE::Assets
 
 inline constexpr auto assetPath1 = "../Assets/TestAsset1.txt";
-inline static auto assetID1 = FE::Assets::AssetID("AB008D2B-4287-4E63-BB5B-0433BF966B7E");
+inline static auto assetID1      = FE::Assets::AssetID("AB008D2B-4287-4E63-BB5B-0433BF966B7E");
 
 inline constexpr auto assetPath2 = "../Assets/TestAsset2.txt";
-inline static auto assetID2 = FE::Assets::AssetID("EDA4E058-9342-472F-9BB6-64306F489FD9");
+inline static auto assetID2      = FE::Assets::AssetID("EDA4E058-9342-472F-9BB6-64306F489FD9");
