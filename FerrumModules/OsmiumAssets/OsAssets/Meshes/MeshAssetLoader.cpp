@@ -32,6 +32,13 @@ namespace FE::Osmium
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 
-    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */, IO::IStream* /* assetStream */) {}
+    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */,
+                                       Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */)
+    {
+    }
     void MeshAssetLoader::SaveAsset(Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
+    ArraySlice<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadatFields()
+    {
+        return {};
+    }
 } // namespace FE::Osmium

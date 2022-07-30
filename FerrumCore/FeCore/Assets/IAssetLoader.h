@@ -10,6 +10,7 @@ namespace FE::Assets
     enum class AssetMetadataType
     {
         String,
+        Bool,
         Int,
         UInt,
         Float,
@@ -21,6 +22,7 @@ namespace FE::Assets
     // clang-format off
     template<AssetMetadataType T> struct CppTypeForAssetMetadataType          { using Type = void;     };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::String>  { using Type = String;   };
+    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Bool>    { using Type = bool;     };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Int>     { using Type = Int64;    };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UInt>    { using Type = UInt64;   };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Float>   { using Type = Float32;  };
@@ -32,19 +34,30 @@ namespace FE::Assets
     class AssetMetadataField
     {
         FE_PUSH_MSVC_WARNING(4324)
-        std::variant<Vector3F, Vector4F, String, UUID, Int64, UInt64, Float32> m_Value;
+        std::variant<Vector4F, Vector3F, String, UUID, Int64, UInt64, Float32, bool> m_Value;
         String m_Key;
         AssetMetadataType m_Type;
+        bool m_Required;
         FE_POP_MSVC_WARNING
 
     public:
         template<AssetMetadataType T>
-        inline AssetMetadataField Create(const StringSlice& key, const StringSlice& value)
+        inline static AssetMetadataField Create(const StringSlice& key,
+                                                const typename CppTypeForAssetMetadataType<T>::Type& value, bool require = false)
         {
             AssetMetadataField result;
-            result.m_Key   = key;
-            result.m_Value = value.ConvertTo<typename CppTypeForAssetMetadataType<T>::Type>();
-            result.m_Type  = T;
+            result.m_Key      = key;
+            result.m_Value    = value;
+            result.m_Type     = T;
+            result.m_Required = require;
+            return result;
+        }
+
+        template<AssetMetadataType T>
+        inline void SetValue(const typename CppTypeForAssetMetadataType<T>::Type& value)
+        {
+            FE_CORE_ASSERT(T == m_Type, "Invalid asset metadata type");
+            m_Value = value;
         }
 
         [[nodiscard]] inline const String& GetKey() const
@@ -52,11 +65,26 @@ namespace FE::Assets
             return m_Key;
         }
 
+        [[nodiscard]] inline AssetMetadataType GetType() const
+        {
+            return m_Type;
+        }
+
         template<AssetMetadataType T>
         [[nodiscard]] inline const typename CppTypeForAssetMetadataType<T>::Type& GetValue() const
         {
             FE_CORE_ASSERT(T == m_Type, "Invalid asset metadata type");
             return std::get<typename CppTypeForAssetMetadataType<T>::Type>(m_Value);
+        }
+
+        [[nodiscard]] inline bool IsRequired() const
+        {
+            return m_Required;
+        }
+
+        [[nodiscard]] inline bool IsOptional() const
+        {
+            return !m_Required;
         }
     };
 
@@ -87,6 +115,11 @@ namespace FE::Assets
         //! \param [in] assetStream - Stream to load asset from.
         virtual void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) = 0;
 
+        //! \brief Get asset metadata fields that can be applied to this asset loader.
+        //!
+        //! \return A list of asset metadata fields.
+        virtual ArraySlice<AssetMetadataField> GetAssetMetadataFields() = 0;
+
         //! \brief Load asset from raw data.
         //!
         //! The metadata is a list of key-value pairs loaded from *.meta.json files from project directory.
@@ -96,7 +129,7 @@ namespace FE::Assets
         //!
         //! \param [in] metadata    - Raw asset metadata.
         //! \param [in] assetStream - Stream to load asset from.
-        virtual void LoadRawAsset(const List<AssetMetadataField>& metadata, IO::IStream* assetStream) = 0;
+        virtual void LoadRawAsset(const List<AssetMetadataField>& metadata, AssetStorage* storage, IO::IStream* assetStream) = 0;
 
         //! \brief Save asset to stream.
         //!

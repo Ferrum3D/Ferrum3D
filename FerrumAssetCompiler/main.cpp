@@ -3,7 +3,12 @@
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
+#include <FeCore/IO/FileStream.h>
 #include <FeCore/Memory/Memory.h>
+
+#define RAPIDJSON_SSE2
+#define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseCommentsFlag
+#include <rapidjson/document.h>
 
 namespace FE::Assets
 {
@@ -31,11 +36,233 @@ Supported commands:
         Console::PrintToStdout(Fmt::Format(HeaderTemplate, FerrumVersion.Major, FerrumVersion.Minor, FerrumVersion.Patch));
     }
 
+    template<AssetMetadataType T>
+    bool TryConvertArrayToVector(const rapidjson::Value& value, typename CppTypeForAssetMetadataType<T>::Type& vector)
+    {
+        auto arr            = value.GetArray();
+        const USize vecSize = T == AssetMetadataType::Vector3 ? 3 : 4;
+        if (arr.Size() != vecSize)
+        {
+            return false;
+        }
+
+        for (USize i = 0; i < arr.Size(); ++i)
+        {
+            if (!arr[i].IsFloat())
+            {
+                return false;
+            }
+
+            vector(i) = arr[i].GetFloat();
+        }
+
+        return true;
+    }
+
+    List<AssetMetadataField> ReadMetadataForAsset(const StringSlice& assetFilePath, IAssetLoader** assetLoader)
+    {
+        auto metadataPath = Fmt::Format("{}.meta.json", assetFilePath);
+        if (!IO::File::Exists(metadataPath))
+        {
+            return {};
+        }
+
+        auto contents = IO::File::ReadAllText(metadataPath);
+
+        rapidjson::Document doc;
+        if (doc.ParseInsitu(contents.Data()).HasParseError())
+        {
+            USize lineNumber = 1;
+            for (auto c : StringSlice(contents.Data(), contents.Data() + doc.GetErrorOffset()))
+            {
+                if (c == '\n')
+                {
+                    lineNumber++;
+                }
+            }
+
+            FE_FATAL_ERROR("Error while parsing asset metadata in file: {} at line: {}", metadataPath, lineNumber);
+        }
+
+        FE_EXPECT_OR_FATAL_ERROR(doc.HasMember("AssetType") && doc["AssetType"].IsString(),
+                                 "Asset type not found or has invalid format in asset metadata in file: {}",
+                                 metadataPath);
+
+        StringSlice assetTypeStr = doc["AssetType"].GetString();
+        Assets::AssetType assetType;
+        FE_EXPECT_OR_FATAL_ERROR(assetTypeStr.TryConvertTo(assetType),
+                                 "Asset type has invalid format in asset metadata in file: {}. It must be a UUID",
+                                 metadataPath);
+
+        auto* loader = SharedInterface<Assets::IAssetManager>::Get()->GetAssetLoader(assetType);
+        if (assetLoader)
+        {
+            *assetLoader = loader;
+        }
+
+        auto metadata = loader->GetAssetMetadataFields().ToList();
+        for (auto& field : metadata)
+        {
+            auto fieldSet = false;
+            if (doc.HasMember(field.GetKey().Data()))
+            {
+                auto& value = doc[field.GetKey().Data()];
+                switch (value.GetType())
+                {
+                case rapidjson::kNullType:
+                    FE_LOG_WARNING("Asset metadata in file: {}: `Null` is not a valid metadata field.", metadataPath);
+                    break;
+                case rapidjson::kFalseType:
+                    if (field.GetType() == AssetMetadataType::Bool)
+                    {
+                        field.SetValue<AssetMetadataType::Bool>(false);
+                        fieldSet = true;
+                    }
+                    break;
+                case rapidjson::kTrueType:
+                    if (field.GetType() == AssetMetadataType::Bool)
+                    {
+                        field.SetValue<AssetMetadataType::Bool>(true);
+                        fieldSet = true;
+                    }
+                    break;
+                case rapidjson::kObjectType:
+                    FE_LOG_WARNING("Asset metadata in file: {}: `Object` is not a valid metadata field.", metadataPath);
+                    break;
+                case rapidjson::kArrayType:
+                    {
+                        if (field.GetType() == AssetMetadataType::Vector4)
+                        {
+                            Vector4F vec4;
+                            if (TryConvertArrayToVector<AssetMetadataType::Vector4>(value, vec4))
+                            {
+                                field.SetValue<AssetMetadataType::Vector4>(vec4);
+                                fieldSet = true;
+                            }
+                        }
+                        else
+                        {
+                            Vector3F vec3;
+                            if (TryConvertArrayToVector<AssetMetadataType::Vector3>(value, vec3))
+                            {
+                                field.SetValue<AssetMetadataType::Vector3>(vec3);
+                                fieldSet = true;
+                            }
+                        }
+                        if (!fieldSet)
+                        {
+                            FE_LOG_WARNING("Asset metadata in file: {}: `Array` is not a valid metadata field.", metadataPath);
+                        }
+                    }
+                    break;
+                case rapidjson::kStringType:
+                    {
+                        StringSlice s = value.GetString();
+                        UUID uuid;
+                        if (s.TryConvertTo(uuid) && field.GetType() == AssetMetadataType::UUID)
+                        {
+                            field.SetValue<AssetMetadataType::UUID>(uuid);
+                            fieldSet = true;
+                        }
+                        else if (field.GetType() == AssetMetadataType::String)
+                        {
+                            field.SetValue<AssetMetadataType::String>(s);
+                            fieldSet = true;
+                        }
+                    }
+                    break;
+                case rapidjson::kNumberType:
+                    if (field.GetType() == AssetMetadataType::UInt)
+                    {
+                        field.SetValue<AssetMetadataType::UInt>(value.GetUint64());
+                        fieldSet = true;
+                    }
+                    else if (field.GetType() == AssetMetadataType::Int)
+                    {
+                        field.SetValue<AssetMetadataType::Int>(value.GetInt64());
+                        fieldSet = true;
+                    }
+                    else if (field.GetType() == AssetMetadataType::Int)
+                    {
+                        field.SetValue<AssetMetadataType::Float>(value.GetFloat());
+                        fieldSet = true;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (fieldSet)
+            {
+                doc.RemoveMember(field.GetKey().Data());
+            }
+            else
+            {
+                FE_EXPECT_OR_FATAL_ERROR(
+                    field.IsOptional(), "A required parameter not found in asset metadata in file: {}", metadataPath);
+                continue;
+            }
+        }
+
+        List<StringSlice> unusedMembers;
+        for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it)
+        {
+            unusedMembers.Push(it->name.GetString());
+        }
+
+        FE_LOG_WARNING("These fields in asset metadata file {} where unused: ", metadataPath, String::Join(", ", unusedMembers));
+
+        return metadata;
+    }
+
+    void ProcessOneFile(const StringSlice& file, IO::IStream* outStream,
+                        const ArraySlice<std::pair<String, String>>& additionalMetadata)
+    {
+        IAssetLoader* loader = nullptr;
+
+        FE_ASSERT(additionalMetadata.Empty()); // TODO
+
+        auto metadata = ReadMetadataForAsset(file, &loader);
+
+        auto fileHandle = MakeShared<IO::FileHandle>();
+        auto stream     = MakeShared<IO::FileStream>(fileHandle);
+        FE_IO_ASSERT(stream->Open(file, IO::OpenMode::ReadOnly));
+
+        Shared<AssetStorage> storage = loader->CreateStorage();
+        storage->ReleaseStrongRef();
+        loader->LoadRawAsset(metadata, storage.GetRaw(), stream.GetRaw());
+
+        loader->SaveAsset(storage.GetRaw(), outStream);
+    }
+
     int CompileCommand(const ArraySlice<StringSlice>& args)
     {
-        FE_LOG_ERROR("Compilation not implemented!");
-        Console::PrintToStdout(String::Join("\n", args));
-        return 1;
+        List<StringSlice> files;
+        List<std::pair<String, String>> additionalMetadata;
+        for (auto& arg : args)
+        {
+            if (arg.StartsWith("-D"))
+            {
+                auto [key, value] = arg(2, arg.Size()).Split('=').AsTuple<2>();
+                additionalMetadata.Push(std::make_pair(key, value));
+            }
+            else
+            {
+                files.Push(arg);
+            }
+        }
+
+        for (auto& file : files)
+        {
+            auto fileHandle = MakeShared<IO::FileHandle>();
+            auto stream     = MakeShared<IO::FileStream>(fileHandle);
+            FE_IO_ASSERT(stream->Open(Fmt::Format("{}.compiled.pak", file), IO::OpenMode::Create));
+
+            ProcessOneFile(file, stream.GetRaw(), additionalMetadata);
+        }
+
+        return 0;
     }
 
     int BuildCommand(const ArraySlice<StringSlice>& args)
