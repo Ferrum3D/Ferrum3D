@@ -15,5 +15,7 @@ namespace FE::Osmium
         [[nodiscard]] Assets::AssetType GetAssetType() const override;
         [[nodiscard]] Assets::AssetStorage* CreateStorage() override;
         void LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream) override;
+        void LoadRawAsset(const List<Assets::AssetMetadataField>& metadata, IO::IStream* assetStream) override;
+        void SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream) override;
     };
 } // namespace FE::Osmium
