@@ -17,7 +17,7 @@ All the modules have the same structure, e.g. if the module is called *MyModule*
   - `CMakeLists.txt` - `add_library(MyModule SHARED ...)`, `add_subdirectory(Bindings)`, `add_subdirectory(Tests)`.
 
 ## Engine structure
-- `FerrumAssetCompiler` - A command line utility to compress assets for release mode. `TODO`
+- `FerrumAssetCompiler` - A command line utility to compile assets to the format usable by Ferrum3D.
 - `FerrumCore` - The engine core. All the modules connect to it.
   - `Allocators` - A collection of allocators for different purposes.
   - `Assets` - Classes for streaming and managing app assets.

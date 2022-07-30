@@ -172,7 +172,7 @@ fe_enable_sse_for_target(FeCore)
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
-target_link_libraries(FeCore rpmalloc entt)
+target_link_libraries(FeCore rpmalloc)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
