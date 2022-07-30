@@ -163,9 +163,8 @@ namespace FE
             ptr[count] = '\0';
         }
 
-        inline void GrowAndReplace(
-            size_t oldCap, size_t deltaCap, size_t oldSize, size_t copyCount, size_t delCount, size_t addCount,
-            const TChar* newChars)
+        inline void GrowAndReplace(size_t oldCap, size_t deltaCap, size_t oldSize, size_t copyCount, size_t delCount,
+                                   size_t addCount, const TChar* newChars)
         {
             TChar* oldData = Data();
             size_t cap     = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
@@ -614,6 +613,16 @@ namespace FE
             auto ptr  = Data();
             auto size = Size();
             return Iterator(ptr + size);
+        }
+    };
+
+    template<>
+    struct ValueParser<String> : std::true_type
+    {
+        inline static bool TryConvert(const StringSlice& str, String& result)
+        {
+            result = str;
+            return true;
         }
     };
 } // namespace FE
