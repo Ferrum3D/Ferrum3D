@@ -35,4 +35,7 @@ namespace FE::Osmium
 
         FE_UNREACHABLE("{}", result.GetError());
     }
+
+    void ImageAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */, IO::IStream* /* assetStream */) {}
+    void ImageAssetLoader::SaveAsset(Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
 } // namespace FE::Osmium

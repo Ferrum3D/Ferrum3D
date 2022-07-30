@@ -31,4 +31,7 @@ namespace FE::Osmium
             buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, imageStorage->m_VertexCount);
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
+
+    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */, IO::IStream* /* assetStream */) {}
+    void MeshAssetLoader::SaveAsset(Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
 } // namespace FE::Osmium
