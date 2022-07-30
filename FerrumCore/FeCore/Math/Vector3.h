@@ -63,6 +63,7 @@ namespace FE
 
         [[nodiscard]] FE_FINLINE Float32 operator[](size_t index) const noexcept;
 
+        [[nodiscard]] FE_FINLINE Float32& operator()(size_t index) noexcept;
         [[nodiscard]] FE_FINLINE Float32 operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of three floats (components of the vector).
@@ -203,6 +204,11 @@ namespace FE
     }
 
     FE_FINLINE Float32 Vector3F::operator[](size_t index) const noexcept
+    {
+        return m_Values[index];
+    }
+
+    FE_FINLINE Float32& Vector3F::operator()(size_t index) noexcept
     {
         return m_Values[index];
     }
