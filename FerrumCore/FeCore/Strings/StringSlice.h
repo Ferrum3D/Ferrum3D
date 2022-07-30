@@ -15,6 +15,11 @@ namespace FE
     using UTF8::TCodepoint;
     using UTF8::TCodepointTraits;
 
+    template<class T>
+    struct ValueParser : std::false_type
+    {
+    };
+
     //! \brief A slice of \ref String.
     class StringSlice final
     {
@@ -397,6 +402,12 @@ namespace FE
         }
 
         template<class T>
+        [[nodiscard]] inline std::enable_if_t<ValueParser<T>::value, bool> TryConvertTo(T& result) const noexcept
+        {
+            return ValueParser<T>::TryConvert(*this, result);
+        }
+
+        template<class T>
         [[nodiscard]] inline T ConvertTo() const
         {
             T result;
@@ -461,6 +472,20 @@ namespace FE
     {
         return lhs.Size() == rhs.Size() && lhs.Compare(rhs) >= 0;
     }
+
+    template<>
+    struct ValueParser<UUID> : std::true_type
+    {
+        inline static bool TryConvert(const StringSlice& str, UUID& result)
+        {
+            if (str.Length() != 36)
+            {
+                return false;
+            }
+
+            return UUID::TryParse(str.Data(), result, false);
+        }
+    };
 } // namespace FE
 
 namespace std

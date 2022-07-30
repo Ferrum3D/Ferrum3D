@@ -49,29 +49,51 @@ namespace FE
         //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline explicit UUID(const char* str) noexcept
         {
+            FE_CORE_ASSERT(TryParse(str, *this), "Invalid format");
+        }
+
+        inline static bool TryParse(const char* str, UUID& result, bool assertLength = true)
+        {
             static char digits[]    = "0123456789ABCDEF";
             constexpr auto getValue = [](char c) {
                 return static_cast<UInt8>(std::find(digits, digits + 16, std::toupper(c)) - digits);
             };
 
             USize idx  = 0;
-            auto parse = [&](Int32 n) {
+            auto parse = [&](Int32 n) -> bool {
                 for (Int32 i = 0; i < n; ++i)
                 {
-                    Data[idx] = getValue(*str++) << 4;
-                    Data[idx++] |= getValue(*str++) & 0x0F;
+                    auto v1 = getValue(*str++);
+                    if (v1 >= 16)
+                        return false;
+
+                    auto v2 = getValue(*str++);
+                    if (v2 >= 16)
+                        return false;
+
+                    result.Data[idx] = v1 << 4;
+                    result.Data[idx++] |= v2 & 0x0F;
                 }
+
+                return true;
             };
 
-            parse(4);
-            FE_CORE_ASSERT(*str++ == '-', "Invalid format");
-            parse(2);
-            FE_CORE_ASSERT(*str++ == '-', "Invalid format");
-            parse(2);
-            FE_CORE_ASSERT(*str++ == '-', "Invalid format");
-            parse(2);
-            FE_CORE_ASSERT(*str++ == '-', "Invalid format");
-            parse(6);
+            // clang-format off
+            if (!parse(4))       return false;
+            if (*str++ != '-')   return false;
+            if (!parse(2))       return false;
+            if (*str++ != '-')   return false;
+            if (!parse(2))       return false;
+            if (*str++ != '-')   return false;
+            if (!parse(2))       return false;
+            if (*str++ != '-')   return false;
+            if (!parse(6))       return false;
+            // clang-format on
+
+            if (*str != '\0' && assertLength)
+                return false;
+
+            return true;
         }
     };
 
