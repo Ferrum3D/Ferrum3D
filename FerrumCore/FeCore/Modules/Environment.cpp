@@ -54,10 +54,10 @@ namespace FE::Env
             {
                 Console::Init();
                 Console::SetColor(Console::Color::Green);
-                std::stringstream ss;
-                ss << "====================[ Ferrum v" << FerrumVersion.Major << "." << FerrumVersion.Minor;
-                ss << " Global environment created ]====================\n";
-                puts(ss.str().c_str());
+                // std::stringstream ss;
+                // ss << "====================[ Ferrum v" << FerrumVersion.Major << "." << FerrumVersion.Minor;
+                // ss << " Global environment created ]====================\n";
+                // puts(ss.str().c_str());
                 Console::ResetColor();
             }
 
@@ -67,8 +67,8 @@ namespace FE::Env
                 return FindVariableNoLock(name);
             }
 
-            inline VariableResult CreateVariable(
-                std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) override
+            inline VariableResult CreateVariable(std::vector<char>&& name, size_t size, size_t alignment,
+                                                 std::string_view& nameView) override
             {
                 UniqueLocker lk(m_Lock);
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
@@ -113,14 +113,14 @@ namespace FE::Env
             inline void Destroy() override
             {
                 Console::SetColor(Console::Color::Green);
-                puts("\n\n====================[ Ferrum3D Global environment destroyed ]=====================");
+                // puts("\n\n====================[ Ferrum3D Global environment destroyed ]=====================");
                 Console::ResetColor();
                 int leaked = 0;
                 for (auto& var : m_Map)
                     if (std::get<1>(var))
                         ++leaked;
 
-                if (leaked)
+                if (leaked && ValidationEnabled())
                 {
                     printf("Variables leaked: %i, destroying them manually...\n", leaked);
                     Console::SetColor(Console::Color::Red);
