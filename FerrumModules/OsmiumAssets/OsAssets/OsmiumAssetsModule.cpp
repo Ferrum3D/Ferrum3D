@@ -2,13 +2,11 @@
 #include <OsAssets/Images/ImageAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/OsmiumAssetsModule.h>
-#include <OsGPU/OsmiumGPUModule.h>
 
 namespace FE::Osmium
 {
-    void OsmiumAssetsModule::GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& dependencies)
+    void OsmiumAssetsModule::GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& /* dependencies */)
     {
-        dependencies.Push(OsmiumGPUModule::CreateFactory());
     }
 
     class OsmiumAssetsModuleImpl : public SharedInterfaceImplBase<OsmiumAssetsModule>

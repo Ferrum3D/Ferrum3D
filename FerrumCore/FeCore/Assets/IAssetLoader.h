@@ -89,13 +89,14 @@ namespace FE::Assets
 
         //! \brief Load asset from raw data.
         //!
-        //! The metadata is a list of key-value pairs loaded from json files from project directory.
+        //! The metadata is a list of key-value pairs loaded from *.meta.json files from project directory.
         //! The fields of metadata are defined by asset type specification. This function is used by the asset compiler
         //! to load raw files like png-images or fbx-meshes into an asset storage and then save them back to the disk
         //! in engine's format.
         //!
-        //! \param [in] metadata - Raw asset metadata.
-        virtual void LoadRawAsset(const List<AssetMetadataField>& metadata) = 0;
+        //! \param [in] metadata    - Raw asset metadata.
+        //! \param [in] assetStream - Stream to load asset from.
+        virtual void LoadRawAsset(const List<AssetMetadataField>& metadata, IO::IStream* assetStream) = 0;
 
         //! \brief Save asset to stream.
         //!
