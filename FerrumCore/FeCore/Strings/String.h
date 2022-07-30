@@ -1,6 +1,6 @@
 #pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Memory/Allocator.h>
 #include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -592,6 +592,28 @@ namespace FE
             for (TCodepoint cp : *this)
             {
                 result += static_cast<wchar_t>(cp);
+            }
+
+            return result;
+        }
+
+        [[nodiscard]] inline static String Join(const StringSlice& separator, const ArraySlice<StringSlice>& strings)
+        {
+            String result;
+            USize capacity = 0;
+            for (auto& string : strings)
+            {
+                capacity += string.Size() + separator.Size();
+            }
+
+            result.Reserve(capacity);
+            for (USize i = 0; i < strings.Length(); ++i)
+            {
+                result.Append(strings[i]);
+                if (i != strings.Length() - 1)
+                {
+                    result.Append(separator);
+                }
             }
 
             return result;
