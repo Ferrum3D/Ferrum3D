@@ -574,7 +574,7 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline T TryConvertTo(T& result)
+        [[nodiscard]] inline bool TryConvertTo(T& result)
         {
             return StringSlice(Data(), Size()).TryConvertTo<T>(result);
         }
