@@ -452,6 +452,14 @@ namespace FE
             return -1;
         }
 
+        //! \brief Check if a value is present in the list.
+        //!
+        //! \param [in] value - The value to check for.
+        inline bool Contains(const T& value) const
+        {
+            return IndexOf(value) != -1;
+        }
+
         //! \brief Remove value at index, will move all right values by one to the left.
         inline void RemoveAt(USize index)
         {
