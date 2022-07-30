@@ -30,8 +30,13 @@ namespace FE::Assets
         return storage;
     }
 
-    void AssetManager::RemoveAssetLoader(AssetType assetType)
+    void AssetManager::RemoveAssetLoader(const AssetType& assetType)
     {
         m_Loaders.erase(assetType);
+    }
+
+    IAssetLoader* AssetManager::GetAssetLoader(const AssetType& assetType)
+    {
+        return m_Loaders[assetType].GetRaw();
     }
 } // namespace FE::Assets
