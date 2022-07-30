@@ -16,8 +16,9 @@ namespace FE::Assets
         [[nodiscard]] inline AssetType GetAssetType() const override;
         [[nodiscard]] inline AssetStorage* CreateStorage() override;
         inline void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) override;
-        void LoadRawAsset(const List<AssetMetadataField>& metadata, IO::IStream* assetStream) override;
+        void LoadRawAsset(const List<AssetMetadataField>& metadata, AssetStorage* storage, IO::IStream* assetStream) override;
         void SaveAsset(AssetStorage* storage, IO::IStream* assetStream) override;
+        ArraySlice<AssetMetadataField> GetAssetMetadatFields() override;
     };
 
     AssetType TestAssetLoader::GetAssetType() const
@@ -63,9 +64,17 @@ namespace FE::Assets
         assetStream->ReadToBuffer(testStorage->Data.Data(), length);
     }
 
-    void TestAssetLoader::LoadRawAsset(const List<AssetMetadataField>& /* metadata */, IO::IStream* /* assetStream */) {}
+    void TestAssetLoader::LoadRawAsset(const List<AssetMetadataField>& /* metadata */, AssetStorage* /* storage */,
+                                       IO::IStream* /* assetStream */)
+    {
+    }
 
     void TestAssetLoader::SaveAsset(AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
+
+    ArraySlice<AssetMetadataField> TestAssetLoader::GetAssetMetadatFields()
+    {
+        return {};
+    }
 } // namespace FE::Assets
 
 inline constexpr auto assetPath1 = "../Assets/TestAsset1.txt";
