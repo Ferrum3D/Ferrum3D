@@ -35,12 +35,12 @@ namespace FE::UTF8
          */
         static void* utf8_decode(void* buf, UInt32* c, int* e) noexcept
         {
-            static const char lengths[]  = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            static const char lengths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                             0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
-            static const int masks[]     = { 0x00, 0x7f, 0x1f, 0x0f, 0x07 };
-            static const UInt32 mins[] = { 4194304, 0, 128, 2048, 65536 };
-            static const int shiftc[]    = { 0, 18, 12, 6, 0 };
-            static const int shifte[]    = { 0, 6, 4, 2, 0 };
+            static const int masks[]    = { 0x00, 0x7f, 0x1f, 0x0f, 0x07 };
+            static const UInt32 mins[]  = { 4194304, 0, 128, 2048, 65536 };
+            static const int shiftc[]   = { 0, 18, 12, 6, 0 };
+            static const int shifte[]   = { 0, 6, 4, 2, 0 };
 
             unsigned char* s = (unsigned char*)buf;
             int len          = lengths[s[0] >> 3];
@@ -86,7 +86,7 @@ namespace FE::UTF8
 
     inline TCodepoint DecodePrior(const TChar*& it) noexcept
     {
-        UInt32 c = 0;
+        UInt32 c          = 0;
         int e             = 1;
         const TChar* iter = it;
         int maxlen        = 3;
@@ -125,6 +125,33 @@ namespace FE::UTF8
         return length1 < length2 ? -1 : 1;
     }
 
+    inline bool AreEqual(const TChar* lhs, const TChar* rhs, size_t length1, size_t length2, bool caseSensitive = true) noexcept
+    {
+        if (length1 != length2)
+        {
+            return false;
+        }
+
+        auto normalizeChar = [caseSensitive](TCodepoint cp) -> TCodepoint {
+            if (caseSensitive)
+            {
+                return cp;
+            }
+
+            return std::isalpha(static_cast<char>(cp)) ? std::tolower(static_cast<char>(cp)) : cp;
+        };
+
+        for (; 0 < length1; --length1, Decode(lhs), Decode(rhs))
+        {
+            if (normalizeChar(*lhs) != normalizeChar(*rhs))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     inline size_t Length(const TChar* str, size_t byteLen) noexcept
     {
         size_t result = 0;
@@ -135,7 +162,9 @@ namespace FE::UTF8
 
     inline void Advance(const TChar*& str, size_t n) noexcept
     {
-        while (n-- && Decode(str)) {}
+        while (n-- && Decode(str))
+        {
+        }
     }
 
     inline bool Valid(const TChar* str) noexcept
