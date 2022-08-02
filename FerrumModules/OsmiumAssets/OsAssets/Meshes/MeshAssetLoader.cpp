@@ -25,6 +25,7 @@ namespace FE::Osmium
     {
         auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
         BinarySerializer serializer(assetStream);
+        serializer.WriteArray(ArraySlice(imageStorage->m_Components));
         serializer.WriteArray(ArraySlice(imageStorage->m_IndexBuffer));
         serializer.WriteArray(ArraySlice(imageStorage->m_VertexBuffer));
     }
@@ -33,6 +34,7 @@ namespace FE::Osmium
     {
         auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
         BinarySerializer serializer(assetStream);
+        serializer.ReadArray(imageStorage->m_Components);
         serializer.ReadArray(imageStorage->m_IndexBuffer);
         serializer.ReadArray(imageStorage->m_VertexBuffer);
     }
@@ -83,7 +85,9 @@ namespace FE::Osmium
                                componentFieldName,
                                i,
                                i);
-                components.SwapRemoveAt(i);
+
+                // It should not be SwapRemoveAt(i), because we need to keep the order anyway
+                components.RemoveAt(i);
             }
             else
             {
@@ -108,7 +112,7 @@ namespace FE::Osmium
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 
-    ArraySlice<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadatFields()
+    ArraySlice<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadataFields()
     {
         char name[componentFieldName.Size() + 1];
         if (m_MetadataFields.Empty())
