@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Assets/AssetStorage.h>
-#include <FeCore/Containers/List.h>
+#include <FeCore/Containers/ArraySlice.h>
+#include <OsAssets/Meshes/MeshLoaderImpl.h>
 
 namespace FE::Osmium
 {
@@ -10,6 +11,7 @@ namespace FE::Osmium
 
         List<Float32> m_VertexBuffer;
         List<UInt32> m_IndexBuffer;
+        List<MeshVertexComponent> m_Components;
 
         explicit MeshAssetStorage(MeshAssetLoader* loader);
 
@@ -18,6 +20,11 @@ namespace FE::Osmium
 
     public:
         FE_CLASS_RTTI(MeshAssetStorage, "A34FEF78-A485-4B5D-969C-CFA52B949C9C");
+
+        [[nodiscard]] inline ArraySlice<MeshVertexComponent> VertexComponents() const noexcept
+        {
+            return m_Components;
+        }
 
         [[nodiscard]] inline UInt32 VertexSize() const noexcept
         {
