@@ -157,6 +157,7 @@ set(SRC
     FeCore/Time/DateTime.h
     FeCore/Time/TimeSpan.h
 
+    FeCore/Utils/BinarySerializer.h
     FeCore/Utils/BoolPointer.h
     FeCore/Utils/Result.h
     FeCore/Utils/SortedStringVector.h
