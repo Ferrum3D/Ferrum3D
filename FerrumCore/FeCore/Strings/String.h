@@ -383,6 +383,13 @@ namespace FE
             return StringSlice(begin, end - begin);
         }
 
+        [[nodiscard]] inline StringSlice ASCIISubstring(size_t beginIndex, size_t endIndex) const
+        {
+            auto begin = Data() + beginIndex;
+            auto end   = Data() + endIndex;
+            return StringSlice(begin, end - begin);
+        }
+
         inline void Reserve(size_t reserve) noexcept
         {
             size_t cap = Capacity();
@@ -553,24 +560,29 @@ namespace FE
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        [[nodiscard]] inline bool StartsWith(StringSlice prefix) const noexcept
+        [[nodiscard]] inline bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
+        {
+            return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
+        }
+
+        [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
             {
                 return false;
             }
 
-            return UTF8::Compare(Data(), prefix.Data(), prefix.Size(), prefix.Size()) == 0;
+            return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline bool EndsWith(StringSlice suffix) const noexcept
+        [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
             {
                 return false;
             }
 
-            return UTF8::Compare(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size()) == 0;
+            return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
         template<class T>

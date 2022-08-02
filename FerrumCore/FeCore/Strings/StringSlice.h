@@ -244,24 +244,24 @@ namespace FE
             return FindFirstOf(search) != end();
         }
 
-        [[nodiscard]] inline bool StartsWith(StringSlice prefix) const noexcept
+        [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
             {
                 return false;
             }
 
-            return UTF8::Compare(Data(), prefix.Data(), prefix.Size(), prefix.Size()) == 0;
+            return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline bool EndsWith(StringSlice suffix) const noexcept
+        [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
             {
                 return false;
             }
 
-            return UTF8::Compare(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size()) == 0;
+            return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
         [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
@@ -354,6 +354,11 @@ namespace FE
         [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
+        }
+
+        [[nodiscard]] inline bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
+        {
+            return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
 
         template<class TInt>
