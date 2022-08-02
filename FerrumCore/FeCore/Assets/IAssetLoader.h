@@ -118,7 +118,7 @@ namespace FE::Assets
         //! \brief Get asset metadata fields that can be applied to this asset loader.
         //!
         //! \return A list of asset metadata fields.
-        virtual ArraySlice<AssetMetadataField> GetAssetMetadataFields() = 0;
+        virtual List<AssetMetadataField> GetAssetMetadataFields() = 0;
 
         //! \brief Load asset from raw data.
         //!

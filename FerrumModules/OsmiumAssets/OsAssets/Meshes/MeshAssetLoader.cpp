@@ -76,6 +76,11 @@ namespace FE::Osmium
             }
         }
 
+        while (components.Back() == MeshVertexComponent::None)
+        {
+            components.RemoveBack();
+        }
+
         for (USize i = 0; i < components.Size();)
         {
             if (components[i] == MeshVertexComponent::None)
@@ -101,20 +106,23 @@ namespace FE::Osmium
             return;
         }
 
-        auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
+        auto* meshStorage  = static_cast<MeshAssetStorage*>(storage);
         auto length        = assetStream->Length();
         List<Int8> buffer(length, 0);
         assetStream->ReadToBuffer(buffer.Data(), length);
 
         UInt32 vertexCount;
         auto result =
-            LoadMeshFromMemory(buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, vertexCount);
+            LoadMeshFromMemory(buffer, components, meshStorage->m_VertexBuffer, meshStorage->m_IndexBuffer, vertexCount);
+        meshStorage->m_Components = components;
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 
-    ArraySlice<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadataFields()
+    List<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadataFields()
     {
-        char name[componentFieldName.Size() + 1];
+        char name[componentFieldName.Size() + 2];
+        memcpy(name, componentFieldName.Data(), componentFieldName.Size());
+        name[componentFieldName.Size() + 1] = 0;
         if (m_MetadataFields.Empty())
         {
             for (char i = 0; i < 8; ++i)

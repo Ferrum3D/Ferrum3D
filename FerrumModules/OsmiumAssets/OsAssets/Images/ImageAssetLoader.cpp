@@ -19,14 +19,28 @@ namespace FE::Osmium
         return new (p) ImageAssetStorage(this);
     }
 
+    void ImageAssetLoader::SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
+    {
+        auto* imageStorage = static_cast<ImageAssetStorage*>(storage);
+        Internal::WriteImageToStream(imageStorage->Data(), imageStorage->Width(), imageStorage->Height(), assetStream);
+    }
+
     void ImageAssetLoader::LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
+    {
+        LoadRawAsset({}, storage, assetStream);
+    }
+
+    void ImageAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */, Assets::AssetStorage* storage,
+                                        IO::IStream* assetStream)
     {
         auto* imageStorage = static_cast<ImageAssetStorage*>(storage);
         auto length        = assetStream->Length();
         List<UInt8> buffer(length, 0);
         assetStream->ReadToBuffer(buffer.Data(), length);
 
-        auto result = Internal::LoadImageFromMemory(buffer.Data(), length, imageStorage->m_Width, imageStorage->m_Height);
+        Int32 channels;
+        auto result =
+            Internal::LoadImageFromMemory(buffer.Data(), length, imageStorage->m_Width, imageStorage->m_Height, channels);
         if (result.IsOk())
         {
             imageStorage->m_Data = result.Unwrap();
@@ -36,12 +50,7 @@ namespace FE::Osmium
         FE_UNREACHABLE("{}", result.GetError());
     }
 
-    void ImageAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */,
-                                        Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */)
-    {
-    }
-    void ImageAssetLoader::SaveAsset(Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
-    ArraySlice<Assets::AssetMetadataField> ImageAssetLoader::GetAssetMetadatFields()
+    List<Assets::AssetMetadataField> ImageAssetLoader::GetAssetMetadataFields()
     {
         return {};
     }

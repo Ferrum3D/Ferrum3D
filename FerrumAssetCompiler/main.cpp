@@ -3,8 +3,10 @@
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
+#include <FeCore/Framework/ApplicationFramework.h>
 #include <FeCore/IO/FileStream.h>
 #include <FeCore/Memory/Memory.h>
+#include <OsAssets/OsmiumAssetsModule.h>
 
 #define RAPIDJSON_SSE2
 #define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseCommentsFlag
@@ -46,7 +48,7 @@ Supported commands:
             return false;
         }
 
-        for (USize i = 0; i < arr.Size(); ++i)
+        for (rapidjson::SizeType i = 0; i < arr.Size(); ++i)
         {
             if (!arr[i].IsFloat())
             {
@@ -64,6 +66,7 @@ Supported commands:
         auto metadataPath = Fmt::Format("{}.meta.json", assetFilePath);
         if (!IO::File::Exists(metadataPath))
         {
+            FE_LOG_WARNING("Metadata file {} not found, metadata for the asset will be empty", metadataPath);
             return {};
         }
 
@@ -84,23 +87,27 @@ Supported commands:
             FE_FATAL_ERROR("Error while parsing asset metadata in file: {} at line: {}", metadataPath, lineNumber);
         }
 
-        FE_EXPECT_OR_FATAL_ERROR(doc.HasMember("AssetType") && doc["AssetType"].IsString(),
-                                 "Asset type not found or has invalid format in asset metadata in file: {}",
+        FE_EXPECT_OR_FATAL_ERROR(doc.HasMember("asset-type") && doc["asset-type"].IsString(),
+                                 "`asset-type` not found or has invalid format in asset metadata in file: {}",
                                  metadataPath);
 
-        StringSlice assetTypeStr = doc["AssetType"].GetString();
+        StringSlice assetTypeStr = doc["asset-type"].GetString();
         Assets::AssetType assetType;
         FE_EXPECT_OR_FATAL_ERROR(assetTypeStr.TryConvertTo(assetType),
-                                 "Asset type has invalid format in asset metadata in file: {}. It must be a UUID",
+                                 "`asset-type` has invalid format in asset metadata in file: {}. It must be a UUID",
                                  metadataPath);
 
+        doc.RemoveMember("asset-type");
+
         auto* loader = SharedInterface<Assets::IAssetManager>::Get()->GetAssetLoader(assetType);
+        // TODO: fix crash here: FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader for `{}` not found", assetType);
+        FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader not found: `{}`", assetType);
         if (assetLoader)
         {
             *assetLoader = loader;
         }
 
-        auto metadata = loader->GetAssetMetadataFields().ToList();
+        auto metadata = loader->GetAssetMetadataFields();
         for (auto& field : metadata)
         {
             auto fieldSet = false;
@@ -199,8 +206,10 @@ Supported commands:
             }
             else
             {
-                FE_EXPECT_OR_FATAL_ERROR(
-                    field.IsOptional(), "A required parameter not found in asset metadata in file: {}", metadataPath);
+                FE_EXPECT_OR_FATAL_ERROR(field.IsOptional(),
+                                         "A required parameter `{}` not found in asset metadata in file: {}",
+                                         field.GetKey(),
+                                         metadataPath);
                 continue;
             }
         }
@@ -211,7 +220,11 @@ Supported commands:
             unusedMembers.Push(it->name.GetString());
         }
 
-        FE_LOG_WARNING("These fields in asset metadata file {} where unused: ", metadataPath, String::Join(", ", unusedMembers));
+        if (unusedMembers.Any())
+        {
+            FE_LOG_WARNING(
+                "These fields in asset metadata file {} where unused: ", metadataPath, String::Join(", ", unusedMembers));
+        }
 
         return metadata;
     }
@@ -238,7 +251,7 @@ Supported commands:
 
     int CompileCommand(const ArraySlice<StringSlice>& args)
     {
-        List<StringSlice> files;
+        List<String> files;
         List<std::pair<String, String>> additionalMetadata;
         for (auto& arg : args)
         {
@@ -249,7 +262,7 @@ Supported commands:
             }
             else
             {
-                files.Push(arg);
+                files.Push(IO::Directory::GetCurrentDirectory() / arg);
             }
         }
 
@@ -274,13 +287,6 @@ Supported commands:
 
     int RunCompiler(int argc, char** argv)
     {
-        auto logger        = MakeShared<Debug::ConsoleLogger>();
-        auto assetManager  = MakeShared<AssetManager>();
-        auto assetProvider = MakeShared<AssetProviderDev>();
-        auto assetRegistry = MakeShared<AssetRegistry>();
-        assetProvider->AttachRegistry(assetRegistry);
-        assetManager->AttachAssetProvider(assetProvider);
-
         List<StringSlice> args;
         args.Reserve(argc - 1);
         for (USize i = 1; i < argc; ++i)
@@ -316,12 +322,49 @@ Supported commands:
     }
 } // namespace FE::Assets
 
-int main(int argc, char** argv)
+class CompilerApplication : public FE::ApplicationFramework
 {
-    FE::Env::CreateEnvironment();
-    FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
-    int code = FE::Assets::RunCompiler(argc, argv);
-    FE::Console::PrintToStdout("\n");
-    FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
-    return code;
+    int m_Argc;
+    char** m_Argv;
+
+protected:
+    inline void PollSystemEvents() override {}
+
+    inline bool CloseEventReceived() override
+    {
+        return false;
+    }
+
+private:
+    inline void Tick(const FE::FrameEventArgs& frameEventArgs) override
+    {
+        ApplicationFramework::Tick(frameEventArgs);
+        Stop(FE::Assets::RunCompiler(m_Argc, m_Argv));
+    }
+
+    inline void GetFrameworkDependencies(FE::List<FE::Shared<FE::IFrameworkFactory>>& dependencies) override
+    {
+        dependencies.Push(FE::Osmium::OsmiumAssetsModule::CreateFactory());
+    }
+
+public:
+    inline CompilerApplication(int argc, char** argv)
+        : m_Argc(argc)
+        , m_Argv(argv)
+    {
+    }
+
+    void Initialize(const FE::ApplicationDesc& desc) override
+    {
+        ApplicationFramework::Initialize(desc);
+        auto assetsModule = FE::SharedInterface<FE::Osmium::OsmiumAssetsModule>::Get();
+        assetsModule->Initialize(FE::Osmium::OsmiumAssetsModuleDesc{});
+    }
+};
+
+FE_APP_MAIN()
+{
+    auto app = FE::MakeShared<CompilerApplication>(argc, argv);
+    app->Initialize(FE::ApplicationDesc("Ferrum3D Asset compiler"));
+    return app->RunMainLoop();
 }

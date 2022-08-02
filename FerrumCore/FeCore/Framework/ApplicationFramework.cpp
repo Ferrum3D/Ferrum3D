@@ -15,15 +15,15 @@ namespace FE
         m_FrameEventBus = MakeShared<EventBus<FrameEvents>>();
         m_JobScheduler  = MakeShared<JobScheduler>(std::thread::hardware_concurrency() - 1);
 
+        m_AssetManager     = MakeShared<Assets::AssetManager>();
+        auto assetProvider = MakeShared<Assets::AssetProviderDev>();
         if (!Desc.AssetDirectory.Empty())
         {
-            m_AssetManager     = MakeShared<Assets::AssetManager>();
-            auto assetProvider = MakeShared<Assets::AssetProviderDev>();
             auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
             assetRegistry->LoadAssetsFromFile(Desc.AssetDirectory / "FerrumAssetIndex");
             assetProvider->AttachRegistry(assetRegistry);
-            m_AssetManager->AttachAssetProvider(assetProvider);
         }
+        m_AssetManager->AttachAssetProvider(assetProvider);
 
         FrameworkBase::Initialize();
     }
