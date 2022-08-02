@@ -26,9 +26,8 @@ namespace FE
         {
         }
 
-        inline ApplicationDesc(
-            const String& name, const String& assetDirectory, UInt32 windowWidth = 800, UInt32 windowHeight = 600,
-            bool fullscreen = false)
+        inline ApplicationDesc(const String& name, const String& assetDirectory, UInt32 windowWidth = 800,
+                               UInt32 windowHeight = 600, bool fullscreen = false)
             : Name(name)
             , AssetDirectory(assetDirectory)
             , WindowWidth(windowWidth)
@@ -87,14 +86,14 @@ namespace FE
     };
 
 #define FE_APP_MAIN()                                                                                                            \
-    int MainImpl();                                                                                                              \
-    int main()                                                                                                                   \
+    int MainImpl(int argc, char** argv);                                                                                         \
+    int main(int argc, char** argv)                                                                                              \
     {                                                                                                                            \
         ::FE::Env::CreateEnvironment();                                                                                          \
         ::FE::GlobalAllocator<::FE::HeapAllocator>::Init(::FE::HeapAllocatorDesc{});                                             \
-        int code = MainImpl();                                                                                                   \
+        int code = MainImpl(argc, argv);                                                                                         \
         ::FE::GlobalAllocator<::FE::HeapAllocator>::Destroy();                                                                   \
         return code;                                                                                                             \
     }                                                                                                                            \
-    int MainImpl()
+    int MainImpl([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 } // namespace FE

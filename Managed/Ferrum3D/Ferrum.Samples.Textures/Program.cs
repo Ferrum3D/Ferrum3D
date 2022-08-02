@@ -81,8 +81,7 @@ namespace Ferrum.Samples.Textures
             var assetsModule = GetDependency<OsmiumAssetsModule>();
             assetsModule.Initialize(new OsmiumAssetsModule.Desc());
 
-            imageAsset = new AssetRef<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1"));
-            imageAsset.LoadSync();
+            imageAsset = new AssetRef<ImageAsset>(Uuid.Parse("94FC6391-4656-4BE7-844D-8D87680A00F1")).LoadSync();
 
             instance = gpuModule.CreateInstance();
             adapter = instance.Adapters.First();
@@ -287,7 +286,7 @@ namespace Ferrum.Samples.Textures
         private static int Main()
         {
             using var app = new ExampleApplication();
-            app.Initialize(new ApplicationFramework.Desc(ExampleApplication.ApplicationName, "Assets"));
+            app.Initialize(new ApplicationFramework.Desc(ExampleApplication.ApplicationName, "../../Assets"));
             return app.RunMainLoop();
         }
     }

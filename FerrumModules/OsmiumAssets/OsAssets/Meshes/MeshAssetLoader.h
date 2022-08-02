@@ -20,6 +20,6 @@ namespace FE::Osmium
         void LoadRawAsset(const List<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
                           IO::IStream* assetStream) override;
         void SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream) override;
-        ArraySlice<Assets::AssetMetadataField> GetAssetMetadataFields() override;
+        List<Assets::AssetMetadataField> GetAssetMetadataFields() override;
     };
 } // namespace FE::Osmium

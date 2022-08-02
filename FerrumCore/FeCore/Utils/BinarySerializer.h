@@ -14,8 +14,13 @@ namespace FE
         {
         }
 
+        inline USize Write(const void* data, USize size)
+        {
+            return m_Stream->WriteFromBuffer(data, size);
+        }
+
         template<class T>
-        inline USize Write(const T& value)
+        inline USize Write(T value)
         {
             return m_Stream->WriteFromBuffer(&value, sizeof(T));
         }
@@ -38,7 +43,8 @@ namespace FE
         inline USize WriteArray(const ArraySlice<T>& array)
         {
             auto length = array.Length() * sizeof(T);
-            return Write<USize>(array.Length()) + m_Stream->WriteFromBuffer(array.Data(), length);
+            Write<USize>(array.Length());
+            return m_Stream->WriteFromBuffer(array.Data(), length) + sizeof(USize);
         }
 
         template<class T>
