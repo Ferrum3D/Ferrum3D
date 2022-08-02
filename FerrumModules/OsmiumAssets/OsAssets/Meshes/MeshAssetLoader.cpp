@@ -1,10 +1,13 @@
 #include <FeCore/Console/FeLog.h>
+#include <FeCore/Utils/BinarySerializer.h>
 #include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Meshes/MeshLoaderImpl.h>
 
 namespace FE::Osmium
 {
+    inline constexpr StringSlice componentFieldName = "vertex-component-";
+
     Assets::AssetType MeshAssetLoader::AssetType = Assets::AssetType("77ADC20F-B033-4B55-8498-48B59BB92C08");
 
     Assets::AssetType MeshAssetLoader::GetAssetType() const
@@ -18,27 +21,105 @@ namespace FE::Osmium
         return new (p) MeshAssetStorage(this);
     }
 
+    void MeshAssetLoader::SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
+    {
+        auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
+        BinarySerializer serializer(assetStream);
+        serializer.WriteArray(ArraySlice(imageStorage->m_IndexBuffer));
+        serializer.WriteArray(ArraySlice(imageStorage->m_VertexBuffer));
+    }
+
     void Osmium::MeshAssetLoader::LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
     {
-        List<MeshVertexComponent> components = { MeshVertexComponent::Position3F, MeshVertexComponent::TextureCoordinate2F };
+        auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
+        BinarySerializer serializer(assetStream);
+        serializer.ReadArray(imageStorage->m_IndexBuffer);
+        serializer.ReadArray(imageStorage->m_VertexBuffer);
+    }
+
+    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
+                                       IO::IStream* assetStream)
+    {
+        List<MeshVertexComponent> components;
+        for (auto& field : metadata)
+        {
+            if (field.GetKey().StartsWith(componentFieldName))
+            {
+                auto index = field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).ConvertTo<USize>();
+
+                if (components.Size() <= index)
+                {
+                    components.Resize(index + 1, MeshVertexComponent::None);
+                }
+
+#define FE_PARSE_COMPONENT_ENUM(_name)                                                                                           \
+    (field.GetValue<Assets::AssetMetadataType::String>().IsEqualTo(#_name, false))                                               \
+    {                                                                                                                            \
+        components[index] = MeshVertexComponent::_name;                                                                          \
+    }
+                // clang-format off
+                if FE_PARSE_COMPONENT_ENUM(Position3F)
+                else if FE_PARSE_COMPONENT_ENUM(Normal3F)
+                else if FE_PARSE_COMPONENT_ENUM(Tangent3F)
+                else if FE_PARSE_COMPONENT_ENUM(Bitangent3F)
+                else if FE_PARSE_COMPONENT_ENUM(TextureCoordinate2F)
+                else if FE_PARSE_COMPONENT_ENUM(Color3F)
+                else if FE_PARSE_COMPONENT_ENUM(Color4F)
+                else if FE_PARSE_COMPONENT_ENUM(Dummy1F)
+                else if FE_PARSE_COMPONENT_ENUM(Dummy2F)
+                else if FE_PARSE_COMPONENT_ENUM(Dummy3F)
+                else if FE_PARSE_COMPONENT_ENUM(Dummy4F)
+                    // clang-format on
+#undef FE_PARSE_COMPONENT_ENUM
+            }
+        }
+
+        for (USize i = 0; i < components.Size();)
+        {
+            if (components[i] == MeshVertexComponent::None)
+            {
+                // TODO: string format argument indices
+                FE_LOG_WARNING("Mesh asset metadata: {}{} was not specified, but components with index >= {} where specified",
+                               componentFieldName,
+                               i,
+                               i);
+                components.SwapRemoveAt(i);
+            }
+            else
+            {
+                ++i;
+            }
+        }
+
+        if (components.Empty())
+        {
+            FE_LOG_ERROR("The must have at least one vertex component");
+            return;
+        }
 
         auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
         auto length        = assetStream->Length();
         List<Int8> buffer(length, 0);
         assetStream->ReadToBuffer(buffer.Data(), length);
 
-        auto result = LoadMeshFromMemory(
-            buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, imageStorage->m_VertexCount);
+        UInt32 vertexCount;
+        auto result =
+            LoadMeshFromMemory(buffer, components, imageStorage->m_VertexBuffer, imageStorage->m_IndexBuffer, vertexCount);
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 
-    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */,
-                                       Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */)
-    {
-    }
-    void MeshAssetLoader::SaveAsset(Assets::AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
     ArraySlice<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadatFields()
     {
-        return {};
+        char name[componentFieldName.Size() + 1];
+        if (m_MetadataFields.Empty())
+        {
+            for (char i = 0; i < 8; ++i)
+            {
+                name[componentFieldName.Size()] = static_cast<char>('0' + i);
+                m_MetadataFields.Push(Assets::AssetMetadataField::Create<Assets::AssetMetadataType::String>(name, "", i == 0));
+            }
+        }
+
+        return m_MetadataFields;
     }
 } // namespace FE::Osmium

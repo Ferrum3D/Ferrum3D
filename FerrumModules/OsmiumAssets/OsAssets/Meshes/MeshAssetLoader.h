@@ -5,6 +5,8 @@ namespace FE::Osmium
 {
     class MeshAssetLoader : public Object<Assets::IAssetLoader>
     {
+        List<Assets::AssetMetadataField> m_MetadataFields;
+
     public:
         FE_CLASS_RTTI(MeshAssetLoader, "7A4E500E-9AEC-4B3A-A6F0-16B47299ECA2");
 

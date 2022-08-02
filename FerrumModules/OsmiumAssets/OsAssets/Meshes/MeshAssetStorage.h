@@ -9,7 +9,6 @@ namespace FE::Osmium
         friend class MeshAssetLoader;
 
         List<Float32> m_VertexBuffer;
-        UInt32 m_VertexCount = 0;
         List<UInt32> m_IndexBuffer;
 
         explicit MeshAssetStorage(MeshAssetLoader* loader);
