@@ -1,6 +1,14 @@
 #include <OsAssets/Images/ImageLoaderImpl.h>
 
-// TODO: use custom allocator for stb
+#define STBI_MALLOC(sz) FE::GlobalAllocator<FE::HeapAllocator>::Get().Allocate(sz, 8, FE_SRCPOS())
+#define STBI_REALLOC_SIZED(p, oldsz, newsz)                                                                                      \
+    FE::GlobalAllocator<FE::HeapAllocator>::Get().Reallocate(p, FE_SRCPOS(), newsz, 8, oldsz)
+#define STBI_FREE(p) FE::GlobalAllocator<FE::HeapAllocator>::Get().Deallocate(p, FE_SRCPOS())
+
+#define STBIW_MALLOC(sz) STBI_MALLOC(sz)
+#define STBIW_REALLOC_SIZED(p, oldsz, newsz) STBI_REALLOC_SIZED(p, oldsz, newsz)
+#define STBIW_FREE(p) STBI_FREE(p)
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
