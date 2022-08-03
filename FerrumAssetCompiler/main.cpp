@@ -365,6 +365,7 @@ public:
 FE_APP_MAIN()
 {
     auto app = FE::MakeShared<CompilerApplication>(argc, argv);
-    app->Initialize(FE::ApplicationDesc("Ferrum3D Asset compiler"));
+    app->Initialize(
+        FE::ApplicationDesc("Ferrum3D Asset compiler", FE::Debug::LogMessageType::Warning | FE::Debug::LogMessageType::Error));
     return app->RunMainLoop();
 }
