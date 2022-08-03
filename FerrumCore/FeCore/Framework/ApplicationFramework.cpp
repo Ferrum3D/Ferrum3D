@@ -12,6 +12,7 @@ namespace FE
         Desc = desc;
 
         m_Logger        = MakeShared<Debug::ConsoleLogger>();
+        m_Logger->SetDebugLevel(desc.LogSeverity);
         m_FrameEventBus = MakeShared<EventBus<FrameEvents>>();
         m_JobScheduler  = MakeShared<JobScheduler>(std::thread::hardware_concurrency() - 1);
 
