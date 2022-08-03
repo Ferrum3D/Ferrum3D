@@ -399,12 +399,13 @@ namespace FE
             reserve        = Recommend(reserve);
             TChar* newData = Allocate(reserve + 1);
             TChar* oldData = Data();
-            CopyData(newData, oldData, Size() + 1);
+            auto oldSize = Size();
+            CopyData(newData, oldData, oldSize + 1);
             if (IsLong())
                 Deallocate(oldData, cap);
 
             SetLCap(reserve + 1);
-            SetLSize(Size());
+            SetLSize(oldSize);
             m_Data.L.Data = newData;
         }
 

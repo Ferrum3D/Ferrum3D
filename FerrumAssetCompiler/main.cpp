@@ -100,8 +100,7 @@ Supported commands:
         doc.RemoveMember("asset-type");
 
         auto* loader = SharedInterface<Assets::IAssetManager>::Get()->GetAssetLoader(assetType);
-        // TODO: fix crash here: FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader for `{}` not found", assetType);
-        FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader not found: `{}`", assetType);
+        FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader for `{}` not found", assetType);
         if (assetLoader)
         {
             *assetLoader = loader;
