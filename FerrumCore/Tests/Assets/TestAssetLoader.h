@@ -18,7 +18,7 @@ namespace FE::Assets
         inline void LoadAsset(AssetStorage* storage, IO::IStream* assetStream) override;
         void LoadRawAsset(const List<AssetMetadataField>& metadata, AssetStorage* storage, IO::IStream* assetStream) override;
         void SaveAsset(AssetStorage* storage, IO::IStream* assetStream) override;
-        ArraySlice<AssetMetadataField> GetAssetMetadatFields() override;
+        List<AssetMetadataField> GetAssetMetadataFields() override;
     };
 
     AssetType TestAssetLoader::GetAssetType() const
@@ -71,7 +71,7 @@ namespace FE::Assets
 
     void TestAssetLoader::SaveAsset(AssetStorage* /* storage */, IO::IStream* /* assetStream */) {}
 
-    ArraySlice<AssetMetadataField> TestAssetLoader::GetAssetMetadatFields()
+    List<AssetMetadataField> TestAssetLoader::GetAssetMetadataFields()
     {
         return {};
     }
