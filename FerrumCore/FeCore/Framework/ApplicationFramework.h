@@ -11,9 +11,10 @@ namespace FE
     {
         String Name;
         String AssetDirectory;
-        UInt32 WindowWidth  = 800;
-        UInt32 WindowHeight = 600;
-        bool Fullscreen     = false;
+        UInt32 WindowWidth                = 800;
+        UInt32 WindowHeight               = 600;
+        Debug::LogMessageType LogSeverity = Debug::LogMessageType::All;
+        bool Fullscreen                   = false;
 
         inline ApplicationDesc() = default;
 
@@ -23,6 +24,12 @@ namespace FE
             , WindowWidth(windowWidth)
             , WindowHeight(windowHeight)
             , Fullscreen(fullscreen)
+        {
+        }
+
+        inline ApplicationDesc(const String& name, Debug::LogMessageType logSeverity)
+            : Name(name)
+            , LogSeverity(logSeverity)
         {
         }
 
