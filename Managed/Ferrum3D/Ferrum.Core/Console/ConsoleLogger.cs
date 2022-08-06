@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Ferrum.Core.Containers;
 
 namespace Ferrum.Core.Console
 {
@@ -22,17 +23,9 @@ namespace Ferrum.Core.Console
 
         public static void Log(string message, LogMessageType messageType)
         {
-            var bytes = Encoding.Unicode.GetBytes(message);
-            bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF8, bytes)
-                .Append((byte)0)
-                .ToArray();
-            unsafe
-            {
-                fixed (byte* ptr = bytes)
-                {
-                    LogNative(handle, new IntPtr(ptr), (int)messageType);
-                }
-            }
+            var s = new NativeString(message);
+            LogNative(handle, s.DataPointer, (int)messageType);
+            s.Dispose();
         }
 
         public static void LogMessage(string message)

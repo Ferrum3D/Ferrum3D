@@ -62,6 +62,7 @@
         <Compile Include="Containers\DisposableList.cs" />
         <Compile Include="Containers\NativeArray.cs" />
         <Compile Include="Containers\NativeList.cs" />
+        <Compile Include="Containers\NativeString.cs" />
         <Compile Include="Entities\ArchetypeChunk.cs" />
         <Compile Include="Entities\ComponentAttribute.cs" />
         <Compile Include="Entities\ComponentSubsystem.cs" />

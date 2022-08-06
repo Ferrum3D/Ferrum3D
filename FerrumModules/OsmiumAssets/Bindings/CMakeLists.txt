@@ -6,7 +6,7 @@ set(SRC
 
     Module.cpp
     # FERRUM_SORT_LINES END
-)
+    Shaders/ShaderAssetStorage.cpp)
 
 add_library(OsAssetsBindings SHARED ${SRC})
 
