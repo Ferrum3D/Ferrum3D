@@ -1,6 +1,7 @@
 from scripts.common.ferrum_files import get_ferrum_files
 import uuid
 import re
+from termcolor import cprint
 
 
 class RttiDeclaration:
@@ -30,7 +31,8 @@ def proc_line(line_text, line_number, file_name, uuid_str):
         prev_idx = declarations.index(decl)
         prev = declarations[prev_idx]
         print('=' * 80)
-        print(f"Validation error at line {line_number} of file {file_name}: "
+        cprint('Validation error ', 'red', end='')
+        print(f"at line {line_number} of file {file_name}: "
               + "the specified UUID was declared twice")
         print(f"Note: First declaration was at line {prev.line_number} of file {prev.filename}")
         print(f"Note: The UUID was {uuid_str}")
