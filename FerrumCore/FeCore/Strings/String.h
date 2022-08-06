@@ -598,9 +598,9 @@ namespace FE
             return StringSlice(Data(), Size()).ConvertTo<T>();
         }
 
-        [[nodiscard]] inline std::wstring ToWideString() const
+        [[nodiscard]] inline WString ToWideString() const
         {
-            std::wstring result;
+            WString result;
             result.reserve(Length());
             for (TCodepoint cp : *this)
             {

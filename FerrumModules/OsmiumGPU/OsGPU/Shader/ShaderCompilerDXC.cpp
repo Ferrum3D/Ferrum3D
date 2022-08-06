@@ -8,11 +8,11 @@ namespace FE::Osmium
     class IncludeHandler : public IDxcIncludeHandler
     {
         AtomicInt32 m_RefCounter;
-        std::wstring m_BasePath;
+        WString m_BasePath;
         IDxcLibrary* m_Library;
 
     public:
-        inline IncludeHandler(const std::wstring& basePath, IDxcLibrary* library)
+        inline IncludeHandler(const WString& basePath, IDxcLibrary* library)
             : m_BasePath(basePath)
             , m_Library(library)
             , m_RefCounter(0)
@@ -36,7 +36,7 @@ namespace FE::Osmium
 
         inline HRESULT LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource) override
         {
-            std::wstring path = m_BasePath + pFilename;
+            auto path = m_BasePath + pFilename;
             CComPtr<IDxcBlobEncoding> source;
             HRESULT result = m_Library->CreateBlobFromFile(path.c_str(), nullptr, &source);
 
@@ -46,9 +46,9 @@ namespace FE::Osmium
         }
     };
 
-    inline std::wstring GetTargetProfile(ShaderStage stage, HLSLShaderVersion version)
+    inline WString GetTargetProfile(ShaderStage stage, HLSLShaderVersion version)
     {
-        std::wstringstream result;
+        std::basic_stringstream<wchar_t, std::char_traits<wchar_t>, StdHeapAllocator<wchar_t>> result;
         switch (stage)
         {
         case ShaderStage::Vertex:
