@@ -261,6 +261,9 @@ namespace FE
     template<class T>
     using StdHeapAllocator = StdAllocator<T, HeapAllocator>;
 
+    //! \brief An alias for `std::wstring` that uses \ref HeapAllocator through \ref StdHeapAllocator.
+    using WString = std::basic_string<wchar_t, std::char_traits<wchar_t>, StdHeapAllocator<wchar_t>>;
+
     //! \brief An alias for `std::vector` that uses \ref HeapAllocator through \ref StdHeapAllocator.
     template<class T>
     using Vector = std::vector<T, StdHeapAllocator<T>>;
