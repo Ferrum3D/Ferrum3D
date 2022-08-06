@@ -17,6 +17,11 @@ set(SRC
     OsAssets/Meshes/MeshAssetStorage.h
     OsAssets/Meshes/MeshLoaderImpl.cpp
     OsAssets/Meshes/MeshLoaderImpl.h
+
+    OsAssets/Shaders/ShaderAssetLoader.cpp
+    OsAssets/Shaders/ShaderAssetLoader.h
+    OsAssets/Shaders/ShaderAssetStorage.cpp
+    OsAssets/Shaders/ShaderAssetStorage.h
     # FERRUM_SORT_LINES END
 )
 
