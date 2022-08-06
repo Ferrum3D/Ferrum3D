@@ -34,28 +34,36 @@ namespace Ferrum.Osmium.GPU.Shaders
         {
             public readonly HlslVersion Version;
             public readonly ShaderStage Stage;
-            public readonly string SourceCode;
-            public readonly string EntryPoint;
-            public readonly string FullPath;
+            public readonly NativeString SourceCode;
+            public readonly NativeString EntryPoint;
+            public readonly NativeString FullPath;
 
-            public Args(HlslVersion version, ShaderStage stage, string sourceCode, string entryPoint, string fullPath)
+            private Args(HlslVersion version, ShaderStage stage, NativeString sourceCode, string entryPoint, string fullPath)
             {
                 Version = version;
                 Stage = stage;
                 SourceCode = sourceCode;
-                EntryPoint = entryPoint;
-                FullPath = fullPath;
+                EntryPoint = new NativeString(entryPoint);
+                FullPath = new NativeString(fullPath);
             }
 
-            public static Args FromFile(ShaderStage stage, string filePath, string entryPoint = "main")
-            {
-                return new Args(HlslVersion.V6, stage, File.ReadAllText(filePath), entryPoint, filePath);
-            }
-
-            public static Args FromFile(ShaderStage stage, string filePath, HlslVersion version,
+            public static Args FromSourceCode(ShaderStage stage, NativeString sourceCode, string fullPath,
                 string entryPoint = "main")
             {
-                return new Args(version, stage, File.ReadAllText(filePath), entryPoint, filePath);
+                return new Args(HlslVersion.V6, stage, sourceCode, entryPoint, fullPath);
+            }
+
+            public static Args FromFile(ShaderStage stage, string fullPath, string entryPoint = "main")
+            {
+                var code = new NativeString(File.ReadAllText(fullPath));
+                return new Args(HlslVersion.V6, stage, code, entryPoint, fullPath);
+            }
+
+            public static Args FromFile(ShaderStage stage, string fullPath, HlslVersion version,
+                string entryPoint = "main")
+            {
+                var code = new NativeString(File.ReadAllText(fullPath));
+                return new Args(version, stage, code, entryPoint, fullPath);
             }
         }
     }

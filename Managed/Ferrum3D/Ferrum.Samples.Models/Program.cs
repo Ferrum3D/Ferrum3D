@@ -115,14 +115,17 @@ namespace Ferrum.Samples.Models
             textureSampler = device.CreateSampler(Sampler.Desc.Default);
 
             var compiler = device.CreateShaderCompiler();
-            var vsArgs = ShaderCompiler.Args.FromFile(ShaderStage.Vertex, "../../Assets/Shaders/VertexShader.hlsl");
-            using var vsBytecode = compiler.CompileShader(vsArgs);
-            var psArgs = ShaderCompiler.Args.FromFile(ShaderStage.Pixel, "../../Assets/Shaders/PixelShader.hlsl");
-            using var psBytecode = compiler.CompileShader(psArgs);
+
+            var vsAsset = new AssetRef<ShaderAsset>(Uuid.Parse("7C8B7FDD-3CE8-4286-A4C1-03D8A07CF338")).LoadSync();
+            var psAsset = new AssetRef<ShaderAsset>(Uuid.Parse("90B76162-0BF0-45DF-A58B-13AFC834C551")).LoadSync();
+            using var vsBytecode = vsAsset.Storage.Compile(compiler, ShaderStage.Vertex);
+            using var psBytecode = psAsset.Storage.Compile(compiler, ShaderStage.Pixel);
+            psAsset.Dispose();
+            vsAsset.Dispose();
+            compiler.Dispose();
 
             pixelShader = device.CreateShaderModule(ShaderStage.Pixel, psBytecode);
             vertexShader = device.CreateShaderModule(ShaderStage.Vertex, vsBytecode);
-            compiler.Dispose();
 
             var attachmentDesc = new AttachmentDesc(swapChain.Format, ResourceState.Undefined, ResourceState.Present);
             var depthAttachmentDesc = new AttachmentDesc(swapChain.DepthStencilView.Format, ResourceState.Undefined,

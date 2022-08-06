@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/List.h>
+#include <FeCore/Strings/String.h>
 
 namespace FE
 {
@@ -105,6 +106,21 @@ namespace FE
             ByteBuffer result;
             result.m_End   = reinterpret_cast<UInt8*>(data.end());
             result.m_Begin = reinterpret_cast<UInt8*>(data.DetachData());
+            return result;
+        }
+
+        template<class T>
+        [[nodiscard]] inline static ByteBuffer CopyList(const ArraySlice<T>& data) noexcept
+        {
+            ByteBuffer result(data.Length());
+            memcpy(result.m_Begin, data.Data(), data.Length());
+            return result;
+        }
+
+        [[nodiscard]] inline static ByteBuffer CopyString(const StringSlice& data) noexcept
+        {
+            ByteBuffer result(data.Size());
+            memcpy(result.m_Begin, data.Data(), data.Size());
             return result;
         }
 

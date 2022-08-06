@@ -9,9 +9,9 @@ namespace FE::Osmium
         {
             HLSLShaderVersion Version;
             ShaderStage Stage;
-            const char* SourceCode;
-            const char* EntryPoint;
-            const char* FullPath;
+            ByteBuffer SourceCode;
+            ByteBuffer EntryPoint;
+            ByteBuffer FullPath;
         };
 
         FE_DLL_EXPORT void IShaderCompiler_CompileShader(IShaderCompiler* self, ShaderCompilerArgsBinding* args,
@@ -20,9 +20,9 @@ namespace FE::Osmium
             ShaderCompilerArgs a;
             a.Version    = args->Version;
             a.Stage      = args->Stage;
-            a.SourceCode = args->SourceCode;
-            a.EntryPoint = args->EntryPoint;
-            a.FullPath   = args->FullPath;
+            a.SourceCode = reinterpret_cast<const char*>(args->SourceCode.Data());
+            a.EntryPoint = reinterpret_cast<const char*>(args->EntryPoint.Data());
+            a.FullPath   = reinterpret_cast<const char*>(args->FullPath.Data());
 
             *result = self->CompileShader(a);
         }

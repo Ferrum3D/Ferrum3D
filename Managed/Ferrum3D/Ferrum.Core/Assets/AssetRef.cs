@@ -52,6 +52,8 @@ namespace Ferrum.Core.Assets
 
         public void Dispose()
         {
+            var s = Storage;
+            s.Reset();
             asset.ReleaseStrongRef();
         }
     }
