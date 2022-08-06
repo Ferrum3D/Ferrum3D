@@ -2,6 +2,7 @@
 #include <FeCore/Framework/ModuleFramework.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Images/ImageAssetStorage.h>
+#include <OsAssets/Shaders/ShaderAssetStorage.h>
 
 namespace FE::Osmium
 {

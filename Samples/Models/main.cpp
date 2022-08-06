@@ -146,9 +146,10 @@ public:
             textureStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             textureStaging->UpdateData(imageAsset->Data());
 
-            auto imageDesc = HAL::ImageDesc::Img2D(
-                HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::ShaderRead, imageAsset->Width(), imageAsset->Height(),
-                HAL::Format::R8G8B8A8_SRGB);
+            auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::TransferWrite | HAL::ImageBindFlags::ShaderRead,
+                                                   imageAsset->Width(),
+                                                   imageAsset->Height(),
+                                                   HAL::Format::R8G8B8A8_SRGB);
 
             m_TextureImage = m_Device->CreateImage(imageDesc);
             m_TextureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
@@ -199,16 +200,21 @@ public:
         shaderArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         shaderArgs.EntryPoint = "main";
 
+        auto vertexShaderAsset =
+            FE::Assets::Asset<HAL::ShaderAssetStorage>(FE::Assets::AssetID("7C8B7FDD-3CE8-4286-A4C1-03D8A07CF338"));
+        vertexShaderAsset.LoadSync();
+        auto pixelShaderAsset =
+            FE::Assets::Asset<HAL::ShaderAssetStorage>(FE::Assets::AssetID("90B76162-0BF0-45DF-A58B-13AFC834C551"));
+        pixelShaderAsset.LoadSync();
+
         shaderArgs.Stage      = HAL::ShaderStage::Pixel;
         shaderArgs.FullPath   = "../../Samples/Models/Shaders/PixelShader.hlsl";
-        auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
-        shaderArgs.SourceCode = source;
+        shaderArgs.SourceCode = pixelShaderAsset->GetSourceCode();
         auto psByteCode       = compiler->CompileShader(shaderArgs);
 
         shaderArgs.Stage      = HAL::ShaderStage::Vertex;
         shaderArgs.FullPath   = "../../Samples/Models/Shaders/VertexShader.hlsl";
-        source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
-        shaderArgs.SourceCode = source;
+        shaderArgs.SourceCode = vertexShaderAsset->GetSourceCode();
         auto vsByteCode       = compiler->CompileShader(shaderArgs);
         compiler.Reset();
 
