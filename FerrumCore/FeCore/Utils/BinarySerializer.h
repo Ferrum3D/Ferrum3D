@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/IO/IStream.h>
+#include <FeCore/Strings/String.h>
 
 namespace FE
 {
@@ -47,6 +48,12 @@ namespace FE
             return m_Stream->WriteFromBuffer(array.Data(), length) + sizeof(USize);
         }
 
+        inline USize WriteString(StringSlice string)
+        {
+            Write<USize>(string.Size());
+            return m_Stream->WriteFromBuffer(string.Data(), string.Size());
+        }
+
         template<class T>
         inline USize ReadArray(List<T>& buffer)
         {
@@ -60,6 +67,19 @@ namespace FE
             List<T> buffer;
             ReadArray<T>(buffer);
             return buffer;
+        }
+
+        inline USize ReadString(String& string)
+        {
+            string = String(Read<USize>(), '\0');
+            return m_Stream->ReadToBuffer(string.Data(), string.Size());
+        }
+
+        inline String ReadString()
+        {
+            String string;
+            ReadString(string);
+            return string;
         }
     };
 } // namespace FE
