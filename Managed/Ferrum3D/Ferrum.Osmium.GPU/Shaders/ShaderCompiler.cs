@@ -30,7 +30,7 @@ namespace Ferrum.Osmium.GPU.Shaders
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public readonly struct Args
+        public readonly struct Args : IDisposable
         {
             public readonly HlslVersion Version;
             public readonly ShaderStage Stage;
@@ -64,6 +64,16 @@ namespace Ferrum.Osmium.GPU.Shaders
             {
                 var code = new NativeString(File.ReadAllText(fullPath));
                 return new Args(version, stage, code, entryPoint, fullPath);
+            }
+
+            public void Dispose()
+            {
+                var s = SourceCode;
+                s.Dispose();
+                var e = EntryPoint;
+                e.Dispose();
+                var f = FullPath;
+                f.Dispose();
             }
         }
     }
