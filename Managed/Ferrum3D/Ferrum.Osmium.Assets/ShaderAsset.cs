@@ -31,7 +31,8 @@ namespace Ferrum.Osmium.Assets
 
         public NativeArray<byte> Compile(ShaderCompiler compiler, ShaderStage stage, string entryPoint = "main")
         {
-            return compiler.CompileShader(ShaderCompiler.Args.FromSourceCode(stage, SourceCode, "../shader.hlsl", entryPoint));
+            using var args = ShaderCompiler.Args.FromSourceCode(stage, SourceCode, "../shader.hlsl", entryPoint);
+            return compiler.CompileShader(args);
         }
 
         [DllImport("OsAssetsBindings", EntryPoint = "ShaderAssetStorage_GetSourceCode")]
