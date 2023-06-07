@@ -20,17 +20,19 @@ FE::Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
     }
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-    VkDebugReportFlagsEXT flags, [[maybe_unused]] VkDebugReportObjectTypeEXT objectType, [[maybe_unused]] FE::UInt64 object,
-    [[maybe_unused]] size_t location, [[maybe_unused]] FE::Int32 messageCode, [[maybe_unused]] const char* pLayerPrefix,
-    const char* pMessage, void* pUserData)
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
+                                                          [[maybe_unused]] VkDebugReportObjectTypeEXT objectType,
+                                                          [[maybe_unused]] FE::UInt64 object, [[maybe_unused]] size_t location,
+                                                          [[maybe_unused]] FE::Int32 messageCode,
+                                                          [[maybe_unused]] const char* pLayerPrefix, const char* pMessage,
+                                                          void* pUserData)
 {
-    constexpr static auto ignoredMessages = std::array{ "VUID-VkShaderModuleCreateInfo-pCode-04147" };
+    constexpr static auto ignoredMessages = std::array{ "VUID-VkShaderModuleCreateInfo-pCode-04147", "Device Extension:" };
 
-    std::string_view message = pMessage;
+    FE::StringSlice message = pMessage;
     for (auto& msg : ignoredMessages)
     {
-        if (message.find(msg) != std::string_view::npos)
+        if (message.StartsWith(msg))
         {
             return VK_FALSE;
         }
@@ -104,7 +106,7 @@ namespace FE::Osmium
         debugCI.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
         debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
         debugCI.pfnCallback = &DebugReportCallback;
-        debugCI.pUserData   = FE::SharedInterface<FE::Debug::IConsoleLogger>::Get();
+        debugCI.pUserData   = FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get();
         vkCreateDebugReportCallbackEXT(m_Instance, &debugCI, VK_NULL_HANDLE, &m_Debug);
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");

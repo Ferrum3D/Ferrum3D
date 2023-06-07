@@ -7,22 +7,21 @@ namespace FE
 {
     //! \brief This class provides interface to access registered instance of a class.
     //!
-    //! This class doesn't own the registered class, memory is managed by the user.
-    //! It is similar to the singleton pattern, but the instance can be shared between
-    //! different modules and is created and destroyed explicitly.
+    //! Doesn't own the registered class, memory is managed by the user.
+    //! The instance can be shared between different modules and is created and destroyed explicitly.
     //!
     //! Example:
     //! \code{.cpp}
     //!     class IFoo { ... };
-    //!     class Foo : public SharedInterfaceImplBase<IFoo> { ... };
+    //!     class Foo : public ServiceLocatorImplBase<IFoo> { ... };
     //!
     //!     Foo* owner = new Foo;
-    //!     IFoo* instance = SharedInterface<IFoo>::Get();
+    //!     IFoo* instance = ServiceLocator<IFoo>::Get();
     //! \endcode
     //!
     //! \tparam T Type of the interface.
     template<class T>
-    class SharedInterface
+    class ServiceLocator
     {
         static T* m_Instance;
         static Env::GlobalVariable<T*> m_Owner;
@@ -37,7 +36,7 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(SharedInterface<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
+        FE_CLASS_RTTI(ServiceLocator<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
 
         //! \brief Register the instance.
         //!
@@ -47,8 +46,8 @@ namespace FE
         //! \param [in] instance - The instance to register.
         inline static void Register(T* instance)
         {
-            FE_CORE_ASSERT(instance, "SharedInterface instance was a nullptr");
-            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register a SharedInterface instance twice");
+            FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");
+            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register a ServiceLocator instance twice");
             std::unique_lock lk(m_Mutex);
             m_Owner = Env::CreateGlobalVariableByType<T*>(instance);
         }
@@ -56,7 +55,7 @@ namespace FE
         //! \brief Unregister the instance.
         inline static void Unregister()
         {
-            FE_CORE_ASSERT(m_Owner, "SharedInterface instance was a nullptr");
+            FE_CORE_ASSERT(m_Owner, "ServiceLocator instance was a nullptr");
             std::unique_lock lk(m_Mutex);
             *m_Owner = nullptr;
             m_Owner.Reset();
@@ -71,7 +70,9 @@ namespace FE
         inline static T* Get()
         {
             if (!m_Instance)
+            {
                 TryFind();
+            }
             {
                 std::shared_lock lk(m_Mutex);
                 return m_Instance;
@@ -80,33 +81,33 @@ namespace FE
     };
 
     template<class T>
-    Env::GlobalVariable<T*> SharedInterface<T>::m_Owner;
+    Env::GlobalVariable<T*> ServiceLocator<T>::m_Owner;
 
     template<class T>
-    T* SharedInterface<T>::m_Instance;
+    T* ServiceLocator<T>::m_Instance;
 
     template<class T>
-    std::shared_mutex SharedInterface<T>::m_Mutex;
+    std::shared_mutex ServiceLocator<T>::m_Mutex;
 
-    //! \brief Helper class that registers and unregisters instance in SharedInterface.
+    //! \brief Helper class that registers and unregisters instance in ServiceLocator.
     //!
     //! \tparam TBase - The base class to derive.
-    //! \tparam TInterface - The interface to register in SharedInterface.
+    //! \tparam TInterface - The interface to register in ServiceLocator.
     template<class TBase, class TInterface = TBase>
-    struct SharedInterfaceImplBase : public Object<TBase>
+    struct ServiceLocatorImplBase : public Object<TBase>
     {
-        FE_CLASS_RTTI(SharedInterfaceImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
+        FE_CLASS_RTTI(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 
-        //! \brief Calls \ref SharedInterface::Register.
-        inline SharedInterfaceImplBase()
+        //! \brief Calls \ref ServiceLocator::Register.
+        inline ServiceLocatorImplBase()
         {
-            SharedInterface<TInterface>::Register(static_cast<TInterface*>(this));
+            ServiceLocator<TInterface>::Register(static_cast<TInterface*>(this));
         }
 
-        //! \brief Calls \ref SharedInterface::Unregister.
-        inline virtual ~SharedInterfaceImplBase()
+        //! \brief Calls \ref ServiceLocator::Unregister.
+        inline virtual ~ServiceLocatorImplBase()
         {
-            SharedInterface<TInterface>::Unregister();
+            ServiceLocator<TInterface>::Unregister();
         }
     };
 } // namespace FE

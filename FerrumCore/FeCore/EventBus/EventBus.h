@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/Modules/SharedInterface.h>
 #include <FeCore/Containers/List.h>
+#include <FeCore/Memory/Memory.h>
+#include <FeCore/Modules/ServiceLocator.h>
 #include <functional>
 
 namespace FE
@@ -34,7 +34,7 @@ namespace FE
     };
 
     template<class TEvent>
-    class EventBus : public SharedInterfaceImplBase<IEventBus<TEvent>>
+    class EventBus : public ServiceLocatorImplBase<IEventBus<TEvent>>
     {
         List<EventHandler<TEvent>*> m_Handlers;
 
@@ -104,7 +104,7 @@ namespace FE
     template<class TEvent>
     EventBus<TEvent>* EventBus<TEvent>::Get()
     {
-        return fe_assert_cast<EventBus<TEvent>*>(FE::SharedInterface<IEventBus<TEvent>>::Get());
+        return fe_assert_cast<EventBus<TEvent>*>(FE::ServiceLocator<IEventBus<TEvent>>::Get());
     }
 
     template<class TEvent>

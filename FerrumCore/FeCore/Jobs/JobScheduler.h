@@ -1,11 +1,11 @@
 #pragma once
 #include <FeCore/Allocators/MonotonicAllocator.h>
+#include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/IJobScheduler.h>
 #include <FeCore/Jobs/Job.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Parallel/Semaphore.h>
-#include <FeCore/EventBus/EventBus.h>
 #include <deque>
 #include <thread>
 
@@ -137,7 +137,7 @@ namespace FE
     };
 
     class JobScheduler final
-        : public SharedInterfaceImplBase<IJobScheduler>
+        : public ServiceLocatorImplBase<IJobScheduler>
         , public EventBus<FrameEvents>::Handler
     {
         const UInt32 m_WorkerCount;

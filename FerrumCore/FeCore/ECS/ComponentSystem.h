@@ -14,7 +14,7 @@ namespace FE::ECS
 
         inline ComponentSystem()
         {
-            m_Registry = SharedInterface<IWorld>::Get()->Registry();
+            m_Registry = ServiceLocator<IWorld>::Get()->Registry();
         }
 
         ~ComponentSystem() override = default;

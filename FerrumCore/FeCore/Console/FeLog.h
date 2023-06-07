@@ -4,13 +4,13 @@
 namespace FE
 {
     //! brief Log a message using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_MESSAGE(...) ::FE::SharedInterface<::FE::Debug::IConsoleLogger>::Get()->LogMessage(__VA_ARGS__)
+#define FE_LOG_MESSAGE(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogMessage(__VA_ARGS__)
 
     //! \brief Log an error using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_ERROR(...) ::FE::SharedInterface<::FE::Debug::IConsoleLogger>::Get()->LogError(__VA_ARGS__)
+#define FE_LOG_ERROR(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogError(__VA_ARGS__)
 
     //! \brief Log a warning using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_WARNING(...) ::FE::SharedInterface<::FE::Debug::IConsoleLogger>::Get()->LogWarning(__VA_ARGS__)
+#define FE_LOG_WARNING(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogWarning(__VA_ARGS__)
 
     //! \brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
 #define FE_ASSERT(expr)                                                                                                          \

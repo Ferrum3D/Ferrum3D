@@ -118,7 +118,7 @@ set(SRC
     FeCore/Modules/DynamicLibrary.h
     FeCore/Modules/Environment.cpp
     FeCore/Modules/Environment.h
-    FeCore/Modules/SharedInterface.h
+    FeCore/Modules/ServiceLocator.h
 
     FeCore/Parallel/AtomicFlags.h
     FeCore/Parallel/Interlocked.cpp

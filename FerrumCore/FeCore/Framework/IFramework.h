@@ -3,7 +3,7 @@
 #include <FeCore/Containers/List.h>
 #include <FeCore/Memory/Object.h>
 #include <FeCore/Modules/DynamicLibrary.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE
@@ -30,7 +30,7 @@ namespace FE
         //!
         //! This function loads the framework to the memory, but doesn't initialize it and doesn't load its dependencies.
         //!
-        //! Since all frameworks implement SharedInterface, it doesn't return anything.
+        //! Since all frameworks implement ServiceLocator, it doesn't return anything.
         virtual void Load() = 0;
 
         //! \brief Unload a framework.

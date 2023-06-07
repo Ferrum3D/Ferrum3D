@@ -2,7 +2,7 @@
 #include <FeCore/ECS/EntityRegistry.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::ECS
 {
@@ -19,7 +19,7 @@ namespace FE::ECS
         virtual EntityRegistry* Registry() = 0;
     };
 
-    class World final : public SharedInterfaceImplBase<IWorld>, public EventBus<FrameEvents>::Handler
+    class World final : public ServiceLocatorImplBase<IWorld>, public EventBus<FrameEvents>::Handler
     {
         List<Shared<ISystem>> m_Systems;
         Shared<EntityRegistry> m_Registry;

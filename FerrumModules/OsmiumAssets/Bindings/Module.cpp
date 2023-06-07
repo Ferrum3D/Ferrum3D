@@ -12,7 +12,7 @@ namespace FE::Osmium
             Env::AttachEnvironment(*env);
             g_OsmiumAssetsModuleFactory = OsmiumAssetsModule::CreateFactory().Detach();
             g_OsmiumAssetsModuleFactory->Load();
-            return SharedInterface<OsmiumAssetsModule>::Get();
+            return ServiceLocator<OsmiumAssetsModule>::Get();
         }
 
         FE_DLL_EXPORT void DestructModuleInstance()

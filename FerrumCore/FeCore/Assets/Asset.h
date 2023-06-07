@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/Assets/WeakAsset.h>
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Assets/WeakAsset.h>
+#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::Assets
 {
@@ -117,7 +117,7 @@ namespace FE::Assets
         //! \see IAssetManager::LoadAsset
         inline void LoadSync()
         {
-            m_Storage = static_cast<T*>(SharedInterface<IAssetManager>::Get()->LoadAsset(m_ID));
+            m_Storage = static_cast<T*>(ServiceLocator<IAssetManager>::Get()->LoadAsset(m_ID));
         }
 
         inline T& operator*()

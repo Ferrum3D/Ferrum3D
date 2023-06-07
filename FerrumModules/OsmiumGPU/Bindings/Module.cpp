@@ -11,7 +11,7 @@ namespace FE::Osmium
             Env::AttachEnvironment(*env);
             g_OsmiumGPUModuleFactory = OsmiumGPUModule::CreateFactory().Detach();
             g_OsmiumGPUModuleFactory->Load();
-            return SharedInterface<OsmiumGPUModule>::Get();
+            return ServiceLocator<OsmiumGPUModule>::Get();
         }
 
         FE_DLL_EXPORT void DestructModuleInstance()

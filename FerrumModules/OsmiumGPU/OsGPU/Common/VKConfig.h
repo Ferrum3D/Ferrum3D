@@ -27,7 +27,7 @@
 
 namespace FE::Osmium
 {
-    constexpr auto RequiredInstanceLayers = std::array{ "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_standard_validation" };
+    constexpr auto RequiredInstanceLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
 
     constexpr auto RequiredInstanceExtensions =
         std::array{ VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME,

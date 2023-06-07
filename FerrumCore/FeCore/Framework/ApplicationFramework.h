@@ -59,9 +59,9 @@ namespace FE
     //!     }
     //!
     //!     // To refer to the app instance (e.g. to exit):
-    //!     SharedInterface<ApplicationFramework>::Get().Stop(errorCode);
+    //!     ServiceLocator<ApplicationFramework>::Get().Stop(errorCode);
     //! \endcode
-    class ApplicationFramework : public SharedInterfaceImplBase<FrameworkBase, ApplicationFramework>
+    class ApplicationFramework : public ServiceLocatorImplBase<FrameworkBase, ApplicationFramework>
     {
         UInt32 m_FrameCounter = 0;
         Int32 m_ExitCode      = 0;
