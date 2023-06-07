@@ -2,7 +2,7 @@
 #include <FeCore/Jobs/IJobScheduler.h>
 #include <FeCore/Jobs/JobTree.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE
 {
@@ -211,7 +211,7 @@ namespace FE
         if (value == 0)
         {
             SetExecutionState(JobExecutionState::Pending);
-            SharedInterface<IJobScheduler>::Get()->ScheduleJob(this);
+            ServiceLocator<IJobScheduler>::Get()->ScheduleJob(this);
         }
         return static_cast<Int16>(value);
     }
@@ -235,6 +235,6 @@ namespace FE
     void Job::Complete()
     {
         Schedule();
-        SharedInterface<IJobScheduler>::Get()->SuspendUntilComplete(this);
+        ServiceLocator<IJobScheduler>::Get()->SuspendUntilComplete(this);
     }
 } // namespace FE

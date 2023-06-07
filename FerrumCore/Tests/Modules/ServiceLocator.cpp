@@ -1,11 +1,11 @@
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 #include <Tests/Common/TestCommon.h>
 
 class ISingletonObject : public FE::IObject
 {
 };
 
-class SingletonObject : public FE::SharedInterfaceImplBase<ISingletonObject>
+class SingletonObject : public FE::ServiceLocatorImplBase<ISingletonObject>
 {
     std::shared_ptr<MockConstructors> m_Mock;
 
@@ -34,7 +34,7 @@ public:
     }
 };
 
-TEST(SharedInterface, CreateDelete)
+TEST(ServiceLocator, CreateDelete)
 {
     auto mock = std::make_shared<MockConstructors>();
     EXPECT_CALL(*mock, Construct()).Times(1);
@@ -43,5 +43,5 @@ TEST(SharedInterface, CreateDelete)
     EXPECT_CALL(*mock, Move()).Times(0);
     auto obj = std::make_unique<SingletonObject>(mock);
 
-    ASSERT_EQ(obj.get(), FE::SharedInterface<ISingletonObject>::Get());
+    ASSERT_EQ(obj.get(), FE::ServiceLocator<ISingletonObject>::Get());
 }

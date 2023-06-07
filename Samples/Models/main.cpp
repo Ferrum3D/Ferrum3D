@@ -89,10 +89,10 @@ public:
     void Initialize(const FE::ApplicationDesc& desc) override
     {
         ApplicationFramework::Initialize(desc);
-        auto module = FE::SharedInterface<HAL::OsmiumGPUModule>::Get();
+        auto module = FE::ServiceLocator<HAL::OsmiumGPUModule>::Get();
         module->Initialize(HAL::OsmiumGPUModuleDesc(ExampleName, HAL::GraphicsAPI::Vulkan));
 
-        auto assetsModule = FE::SharedInterface<HAL::OsmiumAssetsModule>::Get();
+        auto assetsModule = FE::ServiceLocator<HAL::OsmiumAssetsModule>::Get();
         assetsModule->Initialize(HAL::OsmiumAssetsModuleDesc{});
 
         m_Instance      = module->CreateInstance();

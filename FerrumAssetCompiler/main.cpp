@@ -99,7 +99,7 @@ Supported commands:
 
         doc.RemoveMember("asset-type");
 
-        auto* loader = SharedInterface<Assets::IAssetManager>::Get()->GetAssetLoader(assetType);
+        auto* loader = ServiceLocator<Assets::IAssetManager>::Get()->GetAssetLoader(assetType);
         FE_EXPECT_OR_FATAL_ERROR(loader != nullptr, "Asset loader for `{}` not found", assetType);
         if (assetLoader)
         {
@@ -356,7 +356,7 @@ public:
     void Initialize(const FE::ApplicationDesc& desc) override
     {
         ApplicationFramework::Initialize(desc);
-        auto assetsModule = FE::SharedInterface<FE::Osmium::OsmiumAssetsModule>::Get();
+        auto assetsModule = FE::ServiceLocator<FE::Osmium::OsmiumAssetsModule>::Get();
         assetsModule->Initialize(FE::Osmium::OsmiumAssetsModuleDesc{});
     }
 };

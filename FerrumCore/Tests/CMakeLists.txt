@@ -17,7 +17,7 @@ set(SRC
     Memory/StackAllocator.cpp
 
     Modules/Environment.cpp
-    Modules/SharedInterface.cpp
+    Modules/ServiceLocator.cpp
 
     RTTI/RTTI.cpp
 

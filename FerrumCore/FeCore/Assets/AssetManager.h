@@ -1,10 +1,10 @@
 #pragma once
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Modules/SharedInterface.h>
+#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::Assets
 {
-    class AssetManager : public SharedInterfaceImplBase<IAssetManager>
+    class AssetManager : public ServiceLocatorImplBase<IAssetManager>
     {
         UnorderedMap<AssetType, Shared<IAssetLoader>> m_Loaders;
         Shared<IAssetProvider> m_Provider;

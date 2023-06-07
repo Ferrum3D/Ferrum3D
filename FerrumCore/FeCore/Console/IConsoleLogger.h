@@ -35,7 +35,7 @@ namespace FE::Debug
     //! <br>
     //! Usage:
     //! \code{.cpp}
-    //!     FE::SharedInterface<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
+    //!     FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
     //! \endcode
     class IConsoleLogger : public IObject
     {

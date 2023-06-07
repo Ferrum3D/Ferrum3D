@@ -3,7 +3,7 @@
 
 namespace FE::Osmium
 {
-    class OsmiumGPUModuleImpl : public SharedInterfaceImplBase<OsmiumGPUModule>
+    class OsmiumGPUModuleImpl : public ServiceLocatorImplBase<OsmiumGPUModule>
     {
         OsmiumGPUModuleDesc m_Desc;
 

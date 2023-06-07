@@ -21,7 +21,7 @@ namespace FE
 
         inline bool IsLoaded() override
         {
-            return SharedInterface<TModule>::Get() != nullptr;
+            return ServiceLocator<TModule>::Get() != nullptr;
         }
 
         inline bool IsOwner() override
@@ -95,7 +95,7 @@ namespace FE
     //!     extern "C" FE_DLL_EXPORT MyModule* CreateModuleInstance(Env::Internal::IEnvironment* environment) { ... }
     //!
     //!     // To refer to the module instance:
-    //!     MyModule& mod = SharedInterface<MyModule>::Get();
+    //!     MyModule& mod = ServiceLocator<MyModule>::Get();
     //!
     //!     // To add as a framework dependency in FrameworkBase::GetFrameworkDependencies():
     //!     dependencies.Push(MyModule::CreateFactory());
