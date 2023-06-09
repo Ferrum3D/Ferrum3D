@@ -40,6 +40,7 @@ TEST(UUID, TryParse)
 
     EXPECT_FALSE(FE::UUID::TryParse("", result));
     EXPECT_FALSE(FE::UUID::TryParse("something weird", result));
+    EXPECT_FALSE(FE::UUID::TryParse("something weird", result, false));
 
     // G - invalid character in different positions
     EXPECT_FALSE(FE::UUID::TryParse("62E1B7A1-C14A-4129-AC57-7E77289123EG", result));

@@ -160,6 +160,7 @@ set(SRC
     FeCore/Utils/BinarySerializer.h
     FeCore/Utils/BoolPointer.h
     FeCore/Utils/Result.h
+    FeCore/Utils/ResultExp.h
     FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
