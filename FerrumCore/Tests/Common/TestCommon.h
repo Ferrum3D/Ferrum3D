@@ -1,6 +1,8 @@
 #pragma once
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <utility>
 
 class MockConstructors
 {
@@ -14,10 +16,11 @@ public:
 class AllocateObject
 {
     std::shared_ptr<MockConstructors> m_Mock;
+
 public:
     AllocateObject(std::shared_ptr<MockConstructors> mock) noexcept
     {
-        m_Mock = mock;
+        m_Mock = std::move(mock);
         m_Mock->Construct();
     }
 
@@ -29,12 +32,16 @@ public:
 
     AllocateObject(AllocateObject&& other) noexcept
     {
-        m_Mock = other.m_Mock;
+        m_Mock       = other.m_Mock;
+        other.m_Mock = nullptr;
         m_Mock->Move();
     }
 
     ~AllocateObject() noexcept
     {
-        m_Mock->Destruct();
+        if (m_Mock)
+        {
+            m_Mock->Destruct();
+        }
     }
 };
