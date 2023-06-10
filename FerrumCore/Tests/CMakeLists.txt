@@ -24,8 +24,8 @@ set(SRC
     Strings/Format.cpp
     Strings/String.cpp
 
-    Utils/UUID.cpp
     Utils/Result.cpp
+    Utils/UUID.cpp
 
     main.cpp
     # FERRUM_SORT_LINES END
