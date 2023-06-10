@@ -1,13 +1,12 @@
 #include <FeCore/Strings/StringSlice.h>
-#include <cctype>
 
 namespace FE
 {
-    bool StringSlice::TryToUIntImpl(UInt64& result) const
+    ParseError StringSlice::TryToUIntImpl(UInt64& result) const
     {
         if (Size() == 0)
         {
-            return false;
+            return ParseErrorCode::UnexpectedEnd;
         }
 
         const TChar* ptr    = Data();
@@ -18,7 +17,7 @@ namespace FE
         {
             if (ptr == endPtr)
             {
-                return true;
+                return ParseErrorCode::None;
             }
 
             if (*ptr <= '9' && *ptr >= '0')
@@ -28,20 +27,18 @@ namespace FE
             }
             else
             {
-                return false;
+                return { ParseErrorCode::InvalidSyntax, static_cast<USize>(ptr - Data()) };
             }
 
             ++ptr;
         }
-
-        return false;
     }
 
-    bool StringSlice::TryToIntImpl(Int64& result) const
+    ParseError StringSlice::TryToIntImpl(Int64& result) const
     {
         if (Size() == 0)
         {
-            return false;
+            return ParseErrorCode::UnexpectedEnd;
         }
 
         const TChar* ptr    = Data();
@@ -56,7 +53,7 @@ namespace FE
 
         if (endPtr - ptr == 0)
         {
-            return false;
+            return { ParseErrorCode::UnexpectedEnd, 1 };
         }
 
         result = 0;
@@ -68,7 +65,8 @@ namespace FE
                 {
                     result = -result;
                 }
-                return true;
+
+                return ParseErrorCode::None;
             }
 
             if (*ptr <= '9' && *ptr >= '0')
@@ -78,20 +76,18 @@ namespace FE
             }
             else
             {
-                return false;
+                return { ParseErrorCode::InvalidSyntax, static_cast<USize>(ptr - Data()) };
             }
 
             ++ptr;
         }
-
-        return false;
     }
 
-    bool StringSlice::TryToFloatImpl(Float64& result) const
+    ParseError StringSlice::TryToFloatImpl(Float64& result) const
     {
         if (Size() < 1)
         {
-            return false;
+            return ParseErrorCode::UnexpectedEnd;
         }
 
         auto foundDot = false;
@@ -102,28 +98,28 @@ namespace FE
             slice = StringSlice(slice.Data() + 1, slice.Size() - 1);
         }
 
+        USize position = 0;
         for (auto c : slice)
         {
             if (c == '.')
             {
                 if (foundDot)
                 {
-                    return false;
+                    return { ParseErrorCode::InvalidSyntax, position };
                 }
 
                 foundDot = true;
-                continue;
             }
-
-            if (c <= '9' && c >= '0')
+            else if (c > '9' || c < '0')
             {
+                return { ParseErrorCode::InvalidSyntax, position };
                 continue;
             }
 
-            return false;
+            ++position;
         }
 
         result = std::strtod(Data(), nullptr);
-        return true;
+        return ParseErrorCode::None;
     }
 } // namespace FE

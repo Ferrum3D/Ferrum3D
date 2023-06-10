@@ -403,7 +403,7 @@ namespace FE
             reserve        = Recommend(reserve);
             TChar* newData = Allocate(reserve + 1);
             TChar* oldData = Data();
-            auto oldSize = Size();
+            auto oldSize   = Size();
             CopyData(newData, oldData, oldSize + 1);
             if (IsLong())
                 Deallocate(oldData);
@@ -591,15 +591,9 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline bool TryConvertTo(T& result)
+        [[nodiscard]] inline Result<T, ParseError> Parse()
         {
-            return StringSlice(Data(), Size()).TryConvertTo<T>(result);
-        }
-
-        template<class T>
-        [[nodiscard]] inline T ConvertTo()
-        {
-            return StringSlice(Data(), Size()).ConvertTo<T>();
+            return StringSlice(Data(), Size()).Parse<T>();
         }
 
         [[nodiscard]] inline WString ToWideString() const

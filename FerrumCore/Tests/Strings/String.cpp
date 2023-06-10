@@ -234,66 +234,56 @@ TEST(Strings, EndsWith)
     EXPECT_FALSE(FE::String("1234").EndsWith("12345"));
 }
 
-TEST(Strings, TryConvertTo)
+TEST(Strings, ParseErrors)
 {
-    int i;
-    char c;
-    unsigned u;
-    float f;
-    bool b;
-    EXPECT_TRUE(FE::String("1").TryConvertTo<int>(i));
-    EXPECT_EQ(i, 1);
-    EXPECT_TRUE(FE::String("-2").TryConvertTo<int>(i));
-    EXPECT_EQ(i, -2);
-    EXPECT_TRUE(FE::String("3").TryConvertTo<unsigned>(u));
-    EXPECT_EQ(u, 3);
-    EXPECT_TRUE(FE::String("1.5").TryConvertTo<float>(f));
-    EXPECT_EQ(f, 1.5f);
-    EXPECT_TRUE(FE::String("-1.5").TryConvertTo<float>(f));
-    EXPECT_EQ(f, -1.5f);
-    EXPECT_TRUE(FE::String("false").TryConvertTo<bool>(b));
-    EXPECT_EQ(b, false);
-    EXPECT_TRUE(FE::String("true").TryConvertTo<bool>(b));
-    EXPECT_EQ(b, true);
-    EXPECT_FALSE(FE::String("").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("").TryConvertTo<bool>(b));
-    EXPECT_FALSE(FE::String("-").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("--123").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("300").TryConvertTo<char>(c));
-    EXPECT_FALSE(FE::String("123123123123123").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("123qq").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("qq123").TryConvertTo<int>(i));
-    EXPECT_FALSE(FE::String("-123").TryConvertTo<unsigned>(u));
-    EXPECT_FALSE(FE::String("--123").TryConvertTo<float>(f));
-    EXPECT_FALSE(FE::String("123..7").TryConvertTo<float>(f));
-    EXPECT_FALSE(FE::String("qq").TryConvertTo<bool>(b));
+#define EXPECT_PARSE_ERR(expr, code, pos) EXPECT_EQ(expr, ::FE::ParseError(code, pos))
+
+    EXPECT_EQ(FE::String("1").Parse<int>().Unwrap(), 1);
+    EXPECT_EQ(FE::String("-2").Parse<int>().Unwrap(), -2);
+    EXPECT_EQ(FE::String("3").Parse<unsigned>().Unwrap(), 3);
+    EXPECT_EQ(FE::String("1.5").Parse<float>().Unwrap(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<float>().Unwrap(), -1.5f);
+    EXPECT_EQ(FE::String("false").Parse<bool>().Unwrap(), false);
+    EXPECT_EQ(FE::String("true").Parse<bool>().Unwrap(), true);
+    EXPECT_PARSE_ERR(FE::String("").Parse<int>().UnwrapErr(), FE::ParseErrorCode::UnexpectedEnd, 0);
+    EXPECT_PARSE_ERR(FE::String("").Parse<bool>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("-").Parse<int>().UnwrapErr(), FE::ParseErrorCode::UnexpectedEnd, 1);
+    EXPECT_PARSE_ERR(FE::String("--123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 1);
+    EXPECT_PARSE_ERR(FE::String("300").Parse<char>().UnwrapErr(), FE::ParseErrorCode::Overflow, 0);
+    EXPECT_PARSE_ERR(FE::String("123123123123123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::Overflow, 0);
+    EXPECT_PARSE_ERR(FE::String("123qq").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 3);
+    EXPECT_PARSE_ERR(FE::String("qq123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("-123").Parse<unsigned>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("--123").Parse<float>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("123..7").Parse<float>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 4);
+    EXPECT_PARSE_ERR(FE::String("qq").Parse<bool>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
 }
 
-TEST(Strings, ConvertTo)
+TEST(Strings, Parse)
 {
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int8>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int16>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int32>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::Int64>(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::Int8>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::Int16>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::Int32>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::Int64>().Unwrap(), 123);
 
-    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int8>(), -123);
-    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int16>(), -123);
-    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int32>(), -123);
-    EXPECT_EQ(FE::String("-123").ConvertTo<FE::Int64>(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<FE::Int8>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<FE::Int16>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<FE::Int32>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<FE::Int64>().Unwrap(), -123);
 
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt8>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt16>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt32>(), 123);
-    EXPECT_EQ(FE::String("123").ConvertTo<FE::UInt64>(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::UInt8>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::UInt16>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::UInt32>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<FE::UInt64>().Unwrap(), 123);
 
-    EXPECT_EQ(FE::String("1.5").ConvertTo<FE::Float32>(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").ConvertTo<FE::Float32>(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<FE::Float32>().Unwrap(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<FE::Float32>().Unwrap(), -1.5f);
 
-    EXPECT_EQ(FE::String("1.5").ConvertTo<FE::Float64>(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").ConvertTo<FE::Float64>(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<FE::Float64>().Unwrap(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<FE::Float64>().Unwrap(), -1.5f);
 
-    EXPECT_EQ(FE::String("false").ConvertTo<bool>(), false);
-    EXPECT_EQ(FE::String("true").ConvertTo<bool>(), true);
-    EXPECT_EQ(FE::String("0").ConvertTo<bool>(), false);
-    EXPECT_EQ(FE::String("1").ConvertTo<bool>(), true);
+    EXPECT_EQ(FE::String("false").Parse<bool>().Unwrap(), false);
+    EXPECT_EQ(FE::String("true").Parse<bool>().Unwrap(), true);
+    EXPECT_EQ(FE::String("0").Parse<bool>().Unwrap(), false);
+    EXPECT_EQ(FE::String("1").Parse<bool>().Unwrap(), true);
 }
