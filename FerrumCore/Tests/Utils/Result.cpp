@@ -13,15 +13,15 @@ auto TryNumber(FE::Int32 number) -> FE::Result<FE::Int32, NumberError>
 {
     if (number > 1000)
     {
-        return FE::Result<FE::Int32, NumberError>::Err(NumberError::GreaterThan1000);
+        return FE::Err(NumberError::GreaterThan1000);
     }
 
     if (number > 100)
     {
-        return FE::Result<FE::Int32, NumberError>::Err(NumberError::GreaterThan100);
+        return FE::Err(NumberError::GreaterThan100);
     }
 
-    return FE::Result<FE::Int32, NumberError>::Ok(number);
+    return number;
 }
 
 FE::Int32 Increment(FE::Int32 value)
@@ -151,10 +151,10 @@ auto MockResult(const std::shared_ptr<MockConstructors>& mock, bool ok) -> FE::R
 {
     if (ok)
     {
-        return FE::Result<AllocateObject, FE::Int32>::Ok(AllocateObject(mock));
+        return AllocateObject(mock);
     }
 
-    return FE::Result<AllocateObject, FE::Int32>::Err(0);
+    return FE::Err(0);
 }
 
 TEST(Result, Contruct)
