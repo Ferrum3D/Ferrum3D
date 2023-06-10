@@ -5,30 +5,33 @@
 
 namespace FE
 {
+    template<class T>
+    struct Err
+    {
+        T Value;
+
+        inline Err(const T& value) // NOLINT(google-explicit-constructor)
+            : Value(value)
+        {
+        }
+
+        inline Err(T&& value) // NOLINT(google-explicit-constructor)
+            : Value(value)
+        {
+        }
+    };
+
     template<class T, class TError>
     class Result final
     {
         std::variant<T, TError> m_Data;
 
-        struct CreateFromValue
-        {
-        };
         struct CreateFromError
         {
         };
 
-        inline Result(CreateFromValue, const T& value)
-            : m_Data(value)
-        {
-        }
-
         inline Result(CreateFromError, const TError& error)
             : m_Data(error)
-        {
-        }
-
-        inline Result(CreateFromValue, T&& value)
-            : m_Data(std::move(value))
         {
         }
 
@@ -42,6 +45,26 @@ namespace FE
 
         inline Result() = default;
 
+        inline Result(const T& value) // NOLINT(google-explicit-constructor)
+            : m_Data(value)
+        {
+        }
+
+        inline Result(T&& value) // NOLINT(google-explicit-constructor)
+            : m_Data(std::move(value))
+        {
+        }
+
+        inline Result(const Err<TError>& error) // NOLINT(google-explicit-constructor)
+            : m_Data(error.Value)
+        {
+        }
+
+        inline Result(Err<TError>&& error) // NOLINT(google-explicit-constructor)
+            : m_Data(std::move(error.Value))
+        {
+        }
+
         inline Result(const Result& other)     = default;
         inline Result(Result&& other) noexcept = default;
 
@@ -50,12 +73,12 @@ namespace FE
 
         inline static Result Ok(const T& value)
         {
-            return Result(CreateFromValue{}, value);
+            return Result(value);
         }
 
         inline static Result Ok(T&& value)
         {
-            return Result(CreateFromValue{}, std::move(value));
+            return Result(std::move(value));
         }
 
         inline static Result Err(const TError& error)
