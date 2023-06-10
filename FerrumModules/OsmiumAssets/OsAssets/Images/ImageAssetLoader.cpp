@@ -47,7 +47,7 @@ namespace FE::Osmium
             return;
         }
 
-        FE_UNREACHABLE("{}", result.GetError());
+        FE_UNREACHABLE("{}", result.UnwrapErr());
     }
 
     List<Assets::AssetMetadataField> ImageAssetLoader::GetAssetMetadataFields()

@@ -1,26 +1,43 @@
 #pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Strings/FeUnicode.h>
-#include <tuple>
+#include <FeCore/RTTI/RTTI.h>
 #include <variant>
 
 namespace FE
 {
-    template<class T, class TError = EmptyStruct, class TOk = EmptyStruct>
-    class Result final
+    template<class T>
+    struct Err
     {
-        using OkVariant = std::tuple<TOk, T>;
+        T Value;
 
-        std::variant<OkVariant, TError> m_Data;
-
-        inline Result(OkVariant&& data)
+        inline Err(const T& value) // NOLINT(google-explicit-constructor)
+            : Value(value)
         {
-            m_Data = std::move(data);
         }
 
-        inline Result(TError&& data)
+        inline Err(T&& value) // NOLINT(google-explicit-constructor)
+            : Value(value)
         {
-            m_Data = std::move(data);
+        }
+    };
+
+    template<class T, class TError>
+    class Result final
+    {
+        std::variant<T, TError> m_Data;
+
+        struct CreateFromError
+        {
+        };
+
+        inline Result(CreateFromError, const TError& error)
+            : m_Data(error)
+        {
+        }
+
+        inline Result(CreateFromError, TError&& error)
+            : m_Data(std::move(error))
+        {
         }
 
     public:
@@ -28,92 +45,173 @@ namespace FE
 
         inline Result() = default;
 
-        template<class... Args>
-        inline static Result Ok(const T& value, Args&&... args)
+        inline Result(const T& value) // NOLINT(google-explicit-constructor)
+            : m_Data(value)
         {
-            return Result(std::make_tuple(TOk(std::forward<Args>(args)...), value));
         }
 
-        template<class... Args>
-        inline static Result Ok(T&& value, Args&&... args)
+        inline Result(T&& value) // NOLINT(google-explicit-constructor)
+            : m_Data(std::move(value))
         {
-            return Result(std::make_tuple(TOk(std::forward<Args>(args)...), std::move(value)));
         }
 
-        template<class... Args>
-        inline static Result Err(Args&&... args)
+        inline Result(const Err<TError>& error) // NOLINT(google-explicit-constructor)
+            : m_Data(error.Value)
         {
-            return Result(TError(std::forward<Args>(args)...));
         }
 
-        inline bool IsOk()
+        inline Result(Err<TError>&& error) // NOLINT(google-explicit-constructor)
+            : m_Data(std::move(error.Value))
+        {
+        }
+
+        inline Result(const Result& other)     = default;
+        inline Result(Result&& other) noexcept = default;
+
+        inline Result& operator=(const Result& other)     = default;
+        inline Result& operator=(Result&& other) noexcept = default;
+
+        inline static Result Ok(const T& value)
+        {
+            return Result(value);
+        }
+
+        inline static Result Ok(T&& value)
+        {
+            return Result(std::move(value));
+        }
+
+        inline static Result Err(const TError& error)
+        {
+            return Result(CreateFromError{}, error);
+        }
+
+        inline static Result Err(TError&& error)
+        {
+            return Result(CreateFromError{}, std::move(error));
+        }
+
+        [[nodiscard]] inline bool IsOk() const
         {
             return m_Data.index() == 0;
         }
 
-        inline TError GetError()
+        [[nodiscard]] inline bool IsErr() const
         {
-            FE_CORE_ASSERT(!IsOk(), "GetError() called on OK result");
+            return !IsOk();
+        }
+
+        inline TError UnwrapErr() const
+        {
+            return ExpectErr("UnwrapErr() called on OK result");
+        }
+
+        inline TError ExpectErr(const char* msg) const
+        {
+            FE_CORE_ASSERT(IsErr(), msg);
             return std::get<TError>(m_Data);
         }
 
-        inline TOk GetOk()
-        {
-            FE_CORE_ASSERT(IsOk(), "GetOk() called on error result");
-            return std::get<0>(std::get<OkVariant>(m_Data));
-        }
-
-        inline explicit operator bool()
+        [[nodiscard]] inline explicit operator bool() const
         {
             return IsOk();
         }
 
-        inline T Unwrap()
-        {
-            FE_CORE_ASSERT(IsOk(), "Unwrap() called on error result");
-            return std::get<1>(std::get<OkVariant>(m_Data));
-        }
-
-        inline T Expect(const char* msg)
-        {
-            FE_CORE_ASSERT(IsOk(), msg);
-            return std::get<1>(std::get<OkVariant>(m_Data));
-        }
-
-        inline OkVariant ExpectEx(const char* msg)
-        {
-            FE_CORE_ASSERT(IsOk(), msg);
-            return std::get<OkVariant>(m_Data);
-        }
-
-        /**
-         * @brief 
-         * @tparam F 
-         * @param action f(const TOk&, const T&)
-         * @return 
-        */
-        template<class F>
-        inline auto OnOk(F&& action) -> typename std::invoke_result<F, const TOk&, const T&>::type
+        [[nodiscard]] inline T UnwrapOr(const T& defaultValue) const
         {
             if (IsOk())
             {
-                return action(std::get<0>(std::get<OkVariant>(m_Data)), std::get<1>(std::get<OkVariant>(m_Data)));
+                return std::get<T>(m_Data);
             }
+
+            return defaultValue;
         }
 
-        /**
-         * @brief 
-         * @tparam F 
-         * @param action f(const TError&)
-         * @return 
-        */
-        template<class F>
-        inline auto OnErr(F&& action) -> typename std::invoke_result<F, const TError&>::type
+        [[nodiscard]] inline T UnwrapOrDefault() const
         {
-            if (!IsOk())
+            if (IsOk())
             {
-                return action(std::get<TError>(m_Data));
+                return std::get<T>(m_Data);
             }
+
+            return {};
+        }
+
+        inline T Unwrap() const
+        {
+            return Expect("Unwrap() called on error result");
+        }
+
+        inline T Expect(const char* msg) const
+        {
+            FE_CORE_ASSERT(IsOk(), msg);
+            return std::get<T>(m_Data);
+        }
+
+        template<class F>
+        inline constexpr auto OrElse(F&& f) const& -> Result<T, TError>
+        {
+            using ResultType = Result<T, TError>;
+
+            return IsOk() ? ResultType::Ok(std::get<T>(m_Data))
+                          : ResultType::Err(std::invoke(std::forward<F>(f), std::get<TError>(m_Data)));
+        }
+
+        template<class F>
+        inline constexpr auto OrElse(F&& f) && -> Result<T, TError>
+        {
+            using ResultType = Result<T, TError>;
+
+            return IsOk() ? ResultType::Ok(static_cast<T&&>(std::get<T>(m_Data)))
+                          : ResultType::Err(std::invoke(std::forward<F>(f), static_cast<TError&&>(std::get<TError>(m_Data))));
+        }
+
+        template<class F>
+        inline constexpr auto AndThen(F&& f) const& -> Result<T, TError>
+        {
+            using ResultType = Result<T, TError>;
+
+            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), std::get<T>(m_Data)))
+                          : ResultType::Err(std::get<TError>(m_Data));
+        }
+
+        template<class F>
+        inline constexpr auto AndThen(F&& f) && -> Result<T, TError>
+        {
+            using ResultType = Result<T, TError>;
+
+            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), static_cast<T&&>(std::get<T>(m_Data))))
+                          : ResultType::Err(static_cast<TError&&>(std::get<TError>(m_Data)));
+        }
+
+        template<class F>
+        [[nodiscard]] inline constexpr auto Map(F&& f) const& -> Result<std::invoke_result_t<F, const T&>, TError>
+        {
+            using InvokeResultType = std::invoke_result_t<F, const T&>;
+            using ResultType       = Result<InvokeResultType, TError>;
+
+            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), std::get<T>(m_Data)))
+                          : ResultType::Err(std::get<TError>(m_Data));
+        }
+
+        template<class F>
+        [[nodiscard]] inline constexpr auto Map(F&& f) && -> Result<std::invoke_result_t<F, T&&>, TError>
+        {
+            using InvokeResultType = std::invoke_result_t<F, T&&>;
+            using ResultType       = Result<InvokeResultType, TError>;
+
+            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), static_cast<T&&>(std::get<T>(m_Data))))
+                          : ResultType::Err(static_cast<TError&&>(std::get<TError>(m_Data)));
         }
     };
+
+#define FE_CHECK_RESULT(...)                                                                                                     \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        if ((__VA_ARGS__).IsErr())                                                                                               \
+        {                                                                                                                        \
+            return ::FE::Err((__VA_ARGS__).UnwrapErr());                                                                         \
+        }                                                                                                                        \
+    }                                                                                                                            \
+    while (0)
 } // namespace FE

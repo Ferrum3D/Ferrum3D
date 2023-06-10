@@ -21,8 +21,9 @@ namespace FE
 
         inline static void TryFind()
         {
-            Env::FindGlobalVariableByType<TAlloc>().OnOk([&](const auto&, const auto& variable) {
+            Env::FindGlobalVariableByType<TAlloc>().AndThen([&](auto variable) {
                 m_Instance = variable;
+                return variable;
             });
         }
 

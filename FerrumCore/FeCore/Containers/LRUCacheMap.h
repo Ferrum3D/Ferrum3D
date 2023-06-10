@@ -29,15 +29,16 @@ namespace FE
         //! \param [in] key - The key to find.
         //!
         //! \return Result value that is Result::Ok() if the value was in the cache.
-        inline Result<TValue> operator[](const TKey& key)
+        inline Result<TValue, bool> operator[](const TKey& key)
         {
             TValue value;
             if (TryGetValue(key, value))
             {
-                return Result<TValue>::Ok(value);
+                return value;
             }
 
-            return Result<TValue>::Err();
+            // TODO: maybe use optional here
+            return Err(false);
         }
 
         //!\ brief Change capacity of the cache, will remove least recently used when shrinking.

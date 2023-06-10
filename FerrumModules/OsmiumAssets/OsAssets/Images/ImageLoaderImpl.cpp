@@ -21,10 +21,10 @@ namespace FE::Osmium::Internal
         UInt8* result = stbi_load_from_memory(data, static_cast<int>(length), &width, &height, &channels, STBI_rgb_alpha);
         if (result)
         {
-            return Result<UInt8*, StringSlice>::Ok(result);
+            return result;
         }
 
-        return Result<UInt8*, StringSlice>::Err(stbi_failure_reason());
+        return Err(StringSlice(stbi_failure_reason()));
     }
 
     void WriteImageToStream(const UInt8* data, Int32 width, Int32 height, IO::IStream* stream)
