@@ -1,6 +1,29 @@
 #include <FeCore/Console/FeLog.h>
 #include <gtest/gtest.h>
 
+TEST(Strings, AssignmentFreesMemory)
+{
+    auto& alloc = FE::GlobalAllocator<FE::HeapAllocator>::Get();
+    auto before = alloc.TotalAllocated();
+    {
+        FE::String str = "loooooooooooooooooooooooooooooooooooooooooong123";
+        str            = FE::String("loooooooooooooooooooooooooooooooooooooooooong321");
+    }
+    EXPECT_EQ(before, alloc.TotalAllocated());
+    {
+        FE::String str1 = "loooooooooooooooooooooooooooooooooooooooooong123";
+        FE::String str2 = "loooooooooooooooooooooooooooooooooooooooooong321";
+        str2            = str1;
+    }
+    EXPECT_EQ(before, alloc.TotalAllocated());
+    {
+        FE::String str1 = "loooooooooooooooooooooooooooooooooooooooooong123";
+        FE::String str2 = FE::String("loooooooooooooooooooooooooooooooooooooooooong321");
+        str2            = str1;
+    }
+    EXPECT_EQ(before, alloc.TotalAllocated());
+}
+
 TEST(Strings, EmptySizeCapacity)
 {
     FE::String str;
