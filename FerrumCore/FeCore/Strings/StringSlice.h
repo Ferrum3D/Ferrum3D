@@ -15,6 +15,64 @@ namespace FE
     using UTF8::TCodepoint;
     using UTF8::TCodepointTraits;
 
+    enum class ParseErrorCode : UInt32
+    {
+        None,
+        Overflow,
+        InvalidSyntax,
+        UnexpectedEnd
+    };
+
+    class ParseError final
+    {
+        // In case of 32-bit data
+        // | 4-bit error code | 28-bit position |
+        UInt32 m_Data;
+
+        inline static constexpr UInt32 PositionByteCount = sizeof(UInt32) - 4;
+
+    public:
+        inline ParseError(ParseErrorCode code) noexcept // NOLINT(google-explicit-constructor)
+            : ParseError(code, 0)
+        {
+        }
+
+        inline ParseError(ParseErrorCode code, USize position) noexcept
+            : m_Data(static_cast<UInt32>(position) | (static_cast<UInt32>(code) << PositionByteCount))
+        {
+        }
+
+        [[nodiscard]] inline ParseErrorCode GetCode() const noexcept
+        {
+            return static_cast<ParseErrorCode>(m_Data >> PositionByteCount);
+        }
+
+        [[nodiscard]] inline UInt32 GetPosition() const noexcept
+        {
+            return m_Data & MakeMask(PositionByteCount, 0u);
+        }
+
+        inline friend bool operator==(ParseError parseError, ParseErrorCode code) noexcept
+        {
+            return parseError.GetCode() == code;
+        }
+
+        inline friend bool operator!=(ParseError parseError, ParseErrorCode code) noexcept
+        {
+            return parseError.GetCode() != code;
+        }
+
+        inline friend bool operator==(ParseError lhs, ParseError rhs) noexcept
+        {
+            return lhs.GetCode() == rhs.GetCode() && lhs.GetPosition() == rhs.GetPosition();
+        }
+
+        inline friend bool operator!=(ParseError lhs, ParseError rhs) noexcept
+        {
+            return lhs.GetCode() != rhs.GetCode() && lhs.GetPosition() != rhs.GetPosition();
+        }
+    };
+
     template<class T>
     struct ValueParser : std::false_type
     {
@@ -26,17 +84,88 @@ namespace FE
         const TChar* m_Data;
         size_t m_Size;
 
-        bool TryToIntImpl(Int64& result) const;
-        bool TryToUIntImpl(UInt64& result) const;
+        ParseError TryToIntImpl(Int64& result) const;
+        ParseError TryToUIntImpl(UInt64& result) const;
 
-        bool TryToFloatImpl(Float64& result) const;
+        ParseError TryToFloatImpl(Float64& result) const;
 
         template<class T>
         inline static constexpr bool is_signed_integer_v =
-            std::is_signed_v<T>&& std::is_integral_v<T> && !std::is_same_v<T, bool>;
+            std::is_signed_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
         template<class T>
         inline static constexpr bool is_unsigned_integer_v =
-            std::is_unsigned_v<T>&& std::is_integral_v<T> && !std::is_same_v<T, bool>;
+            std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+
+        template<class TInt>
+        [[nodiscard]] inline std::enable_if_t<is_signed_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
+        {
+            Int64 temp;
+            auto ret = TryToIntImpl(temp);
+            if (ret != ParseErrorCode::None)
+            {
+                return ret;
+            }
+
+            result = static_cast<TInt>(temp);
+            if (result != temp)
+            {
+                return ParseErrorCode::Overflow;
+            }
+
+            return ParseErrorCode::None;
+        }
+
+        template<class TInt>
+        [[nodiscard]] inline std::enable_if_t<is_unsigned_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
+        {
+            UInt64 temp;
+            auto ret = TryToUIntImpl(temp);
+            if (ret != ParseErrorCode::None)
+            {
+                return ret;
+            }
+
+            result = static_cast<TInt>(temp);
+            if (result != temp)
+            {
+                return ParseErrorCode::Overflow;
+            }
+
+            return ParseErrorCode::None;
+        }
+
+        template<class TFloat>
+        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, ParseError> ParseImpl(
+            TFloat& result) const noexcept
+        {
+            Float64 temp;
+            auto ret = TryToFloatImpl(temp);
+            result   = static_cast<TFloat>(temp);
+            return ret;
+        }
+
+        template<class TBool>
+        [[nodiscard]] inline std::enable_if_t<std::is_same_v<TBool, bool>, ParseError> ParseImpl(TBool& result) const noexcept
+        {
+            if (*this == "true" || *this == "1")
+            {
+                result = true;
+                return ParseErrorCode::None;
+            }
+            if (*this == "false" || *this == "0")
+            {
+                result = false;
+                return ParseErrorCode::None;
+            }
+
+            return ParseErrorCode::InvalidSyntax;
+        }
+
+        template<class T>
+        [[nodiscard]] inline std::enable_if_t<ValueParser<T>::value, ParseError> ParseImpl(T& result) const noexcept
+        {
+            return ValueParser<T>::TryConvert(*this, result);
+        }
 
     public:
         FE_STRUCT_RTTI(StringSlice, "DCBAE48D-8751-4F0C-96F9-99866394482B");
@@ -361,63 +490,17 @@ namespace FE
             return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
 
-        template<class TInt>
-        [[nodiscard]] inline std::enable_if_t<is_signed_integer_v<TInt>, TInt> TryConvertTo(TInt& result) const noexcept
-        {
-            Int64 temp;
-            auto ret = TryToIntImpl(temp);
-            result   = static_cast<TInt>(temp);
-            return ret && result == temp;
-        }
-
-        template<class TInt>
-        [[nodiscard]] inline std::enable_if_t<is_unsigned_integer_v<TInt>, TInt> TryConvertTo(TInt& result) const noexcept
-        {
-            UInt64 temp;
-            auto ret = TryToUIntImpl(temp);
-            result   = static_cast<TInt>(temp);
-            return ret && result == temp;
-        }
-
-        template<class TFloat>
-        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, TFloat> TryConvertTo(
-            TFloat& result) const noexcept
-        {
-            Float64 temp;
-            auto ret = TryToFloatImpl(temp);
-            result   = static_cast<TFloat>(temp);
-            return ret;
-        }
-
-        template<class TBool>
-        [[nodiscard]] inline std::enable_if_t<std::is_same_v<TBool, bool>, TBool> TryConvertTo(TBool& result) const noexcept
-        {
-            if (*this == "true" || *this == "1")
-            {
-                result = true;
-                return true;
-            }
-            if (*this == "false" || *this == "0")
-            {
-                result = false;
-                return true;
-            }
-
-            return false;
-        }
-
         template<class T>
-        [[nodiscard]] inline std::enable_if_t<ValueParser<T>::value, bool> TryConvertTo(T& result) const noexcept
-        {
-            return ValueParser<T>::TryConvert(*this, result);
-        }
-
-        template<class T>
-        [[nodiscard]] inline T ConvertTo() const
+        [[nodiscard]] inline Result<T, ParseError> Parse() const
         {
             T result;
-            FE_CORE_ASSERT(TryConvertTo(result), "Attempt to parse an invalid value");
-            return result;
+            auto err = ParseImpl(result);
+            if (err == ParseErrorCode::None)
+            {
+                return result;
+            }
+
+            return Err(err);
         }
 
         [[nodiscard]] inline WString ToWideString() const
@@ -481,14 +564,14 @@ namespace FE
     template<>
     struct ValueParser<UUID> : std::true_type
     {
-        inline static bool TryConvert(const StringSlice& str, UUID& result)
+        inline static ParseError TryConvert(const StringSlice& str, UUID& result)
         {
             if (str.Length() != 36)
             {
-                return false;
+                return { ParseErrorCode::UnexpectedEnd, str.Length() - 1 };
             }
 
-            return UUID::TryParse(str.Data(), result, false);
+            return UUID::TryParse(str.Data(), result, false) ? ParseErrorCode::None : ParseErrorCode::InvalidSyntax;
         }
     };
 } // namespace FE
