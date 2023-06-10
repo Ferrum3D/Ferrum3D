@@ -41,10 +41,12 @@ namespace FE::Env
                     auto& vec = std::get<0>(*it);
                     auto view = std::string_view(vec.data(), vec.size());
                     if (view == name)
-                        return VariableResult::Ok(std::get<1>(*it), VariableOk::Found);
+                    {
+                        return std::make_tuple(std::get<1>(*it), VariableOk::Found);
+                    }
                 }
 
-                return VariableResult::Err(VariableError::NotFound);
+                return Err(VariableError::NotFound);
             }
 
         public:
@@ -83,7 +85,7 @@ namespace FE::Env
 
                 auto& [str, ptr] = m_Map.Push(std::move(name), storage);
                 nameView         = std::string_view(str.data(), str.size());
-                return VariableResult::Ok(storage, VariableOk::Created);
+                return std::make_tuple(storage, VariableOk::Created);
             }
 
             inline VariableResult RemoveVariable(std::string_view name) override
@@ -91,9 +93,11 @@ namespace FE::Env
                 UniqueLocker lk(m_Lock);
                 auto it = m_Map.FindIter(name);
                 if (it == m_Map.end())
-                    return VariableResult::Err(VariableError::NotFound);
+                {
+                    return Err(VariableError::NotFound);
+                }
 
-                auto result = VariableResult::Ok(std::get<1>(*it), VariableOk::Removed);
+                auto result = std::make_tuple(std::get<1>(*it), VariableOk::Removed);
 
                 // Don't erase the variable as std::vector<...>.erase() is a very expensive operation (requires
                 // moving half the vector to the left).
@@ -117,8 +121,12 @@ namespace FE::Env
                 Console::ResetColor();
                 int leaked = 0;
                 for (auto& var : m_Map)
+                {
                     if (std::get<1>(var))
+                    {
                         ++leaked;
+                    }
+                }
 
                 if (leaked && ValidationEnabled())
                 {
@@ -136,6 +144,7 @@ namespace FE::Env
                         }
                     }
                 }
+
                 m_Allocator->Deallocate(this);
             }
         };
@@ -144,7 +153,9 @@ namespace FE::Env
     void CreateEnvironment(IBasicAllocator* allocator)
     {
         if (Internal::g_EnvInstance)
+        {
             return;
+        }
 
         if (!allocator)
         {
@@ -177,7 +188,9 @@ namespace FE::Env
     void DetachEnvironment()
     {
         if (!Internal::g_EnvInstance)
+        {
             return;
+        }
 
         if (Internal::g_IsEnvOwner)
         {

@@ -30,8 +30,9 @@ namespace FE
         inline static void TryFind()
         {
             std::unique_lock lk(m_Mutex);
-            Env::FindGlobalVariableByType<T*>().OnOk([&](const auto&, const auto& variable) {
+            Env::FindGlobalVariableByType<T*>().AndThen([&](auto variable) {
                 m_Instance = *variable;
+                return variable;
             });
         }
 

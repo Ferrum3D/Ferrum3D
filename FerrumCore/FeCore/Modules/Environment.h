@@ -2,9 +2,9 @@
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/MathUtils.h>
 #include <FeCore/Memory/IBasicAllocator.h>
+#include <FeCore/Parallel/Locker.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Utils/Result.h>
-#include <FeCore/Parallel/Locker.h>
 #include <array>
 #include <mutex>
 #include <vector>
@@ -19,6 +19,14 @@ namespace FE::Env
         // Internal interface, implemented only once, used internally in this namespace only.
         class IEnvironment;
     } // namespace Internal
+
+    //! \brief Type of error returned by environment functions.
+    enum class VariableError : UInt8
+    {
+        NotFound,       //!< Variable was not found.
+        AllocationError //!< Couldn't allocate variable because of an allocation error.
+                        //!< This is typically a fatal unrecoverable error, but some allocators can collect garbage.
+    };
 
     //! \brief Create a variable by unique name.
     //!
@@ -72,7 +80,7 @@ namespace FE::Env
     //! \param [in] name - Unique name of variable to find.
     //! \return The result that can contain the variable.
     template<class T>
-    Result<GlobalVariable<T>> FindGlobalVariable(std::string_view name);
+    Result<GlobalVariable<T>, VariableError> FindGlobalVariable(std::string_view name);
 
     //! \brief Find global variable by its name.
     //!
@@ -81,7 +89,7 @@ namespace FE::Env
     //! \tparam T - Type of variable to find.
     //! \return The result that can contain the variable.
     template<class T>
-    Result<GlobalVariable<T>> FindGlobalVariableByType();
+    Result<GlobalVariable<T>, VariableError> FindGlobalVariableByType();
 
     //! \brief Create global environment.
     //!
@@ -121,14 +129,6 @@ namespace FE::Env
     //! \internal
     namespace Internal
     {
-        //! \brief Type of error returned by environment functions.
-        enum class VariableError : UInt8
-        {
-            NotFound,       //!< Variable was not found.
-            AllocationError //!< Couldn't allocate variable because of an allocation error.
-                            //!< This is typically a fatal unrecoverable error, but some allocators can collect garbage.
-        };
-
         //! \brief Type of success result returned by environment functions.
         enum class VariableOk : UInt8
         {
@@ -138,7 +138,7 @@ namespace FE::Env
         };
 
         //! \brief Specialization of \ref Result that uses \ref VariableError and \ref VariableOk
-        using VariableResult = Result<void*, VariableError, VariableOk>;
+        using VariableResult = Result<std::tuple<void*, VariableOk>, VariableError>;
 
         //! \brief Environment interface.
         //!
@@ -155,8 +155,8 @@ namespace FE::Env
 
             //! \brief Create a global variable.
             //! \see FE::Env::CreateGlobalVariable
-            virtual VariableResult CreateVariable(
-                std::vector<char>&& name, size_t size, size_t alignment, std::string_view& nameView) = 0;
+            virtual VariableResult CreateVariable(std::vector<char>&& name, size_t size, size_t alignment,
+                                                  std::string_view& nameView) = 0;
 
             //! \brief Remove a global variable.
             //! \see FE::Env::RemoveGlobalVariable
@@ -264,17 +264,21 @@ namespace FE::Env
         inline GlobalVariableStorage<T>* AllocateVariableStorage(std::vector<char>&& name)
         {
             std::string_view nameView;
-            auto [ok, data] =
+            auto [data, ok] =
                 GetEnvironment()
                     .CreateVariable(
                         std::move(name), sizeof(GlobalVariableStorage<T>), alignof(GlobalVariableStorage<T>), nameView)
-                    .ExpectEx("Couldn't create variable");
+                    .Expect("Couldn't create variable");
 
             GlobalVariableStorage<T>* storage = nullptr;
             if (ok == Internal::VariableOk::Created)
+            {
                 storage = new (data) GlobalVariableStorage<T>(nameView);
+            }
             else if (ok == Internal::VariableOk::Found)
+            {
                 storage = reinterpret_cast<GlobalVariableStorage<T>*>(data);
+            }
 
             return storage;
         }
@@ -472,24 +476,24 @@ namespace FE::Env
     }
 
     template<class T>
-    inline Result<GlobalVariable<T>> FindGlobalVariable(std::string_view name)
+    inline Result<GlobalVariable<T>, VariableError> FindGlobalVariable(std::string_view name)
     {
         using Var         = GlobalVariable<T>;
         using StorageType = typename GlobalVariable<T>::StorageType;
 
         auto result = GetEnvironment().FindVariable(name);
-        if (result.IsOk())
+        FE_CHECK_RESULT(result);
+        void* ptr = std::get<0>(result.Unwrap());
+        if (ptr == nullptr)
         {
-            void* ptr = result.Unwrap();
-            Var variable(reinterpret_cast<StorageType*>(ptr));
-            return ptr == nullptr ? Result<Var>::Err() : Result<Var>::Ok(std::move(variable));
+            return Err(VariableError::NotFound);
         }
 
-        return Result<Var>::Err();
+        return Var(reinterpret_cast<StorageType*>(ptr));
     }
 
     template<class T>
-    inline Result<GlobalVariable<T>> FindGlobalVariableByType()
+    inline Result<GlobalVariable<T>, VariableError> FindGlobalVariableByType()
     {
         auto typeName = TypeName<std::remove_pointer_t<T>>();
         std::vector<char> str{};
@@ -497,7 +501,9 @@ namespace FE::Env
         size_t size = 0;
         str[size++] = '#';
         for (char c : typeName)
+        {
             str[size++] = c;
+        }
 
         return FindGlobalVariable<T>(std::string_view(str.data(), str.size()));
     }
