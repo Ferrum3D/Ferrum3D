@@ -652,10 +652,10 @@ namespace FE
     template<>
     struct ValueParser<String> : std::true_type
     {
-        inline static bool TryConvert(const StringSlice& str, String& result)
+        inline static ParseError TryConvert(const StringSlice& str, String& result)
         {
             result = str;
-            return true;
+            return ParseErrorCode::None;
         }
     };
 } // namespace FE
