@@ -113,10 +113,10 @@ namespace FE
             return static_cast<TChar*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, position));
         }
 
-        inline static void Deallocate(TChar* c, size_t s) noexcept
+        inline static void Deallocate(TChar* c) noexcept
         {
             FE_STATIC_SRCPOS(position);
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position, s);
+            GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position);
         }
 
         inline static void CopyData(TChar* dest, const TChar* src, size_t size) noexcept
@@ -177,7 +177,7 @@ namespace FE
             if (copySize)
                 CopyData(newData + copyCount + addCount, oldData + delCount, copySize);
             if (oldCap + 1 != MinCapacity)
-                Deallocate(oldData, oldCap);
+                Deallocate(oldData);
             m_Data.L.Data = (newData);
             SetLCap(cap + 1);
             oldSize = copyCount + addCount + copySize;
@@ -262,6 +262,8 @@ namespace FE
 
         inline String& operator=(const String& other) noexcept
         {
+            Clear();
+            Shrink();
             if (!other.IsLong())
                 m_Data = other.m_Data;
             else
@@ -277,6 +279,8 @@ namespace FE
 
         inline String& operator=(String&& other) noexcept
         {
+            Clear();
+            Shrink();
             m_Data = other.m_Data;
             other.Zero();
             return *this;
@@ -306,7 +310,7 @@ namespace FE
         {
             if (IsLong())
             {
-                Deallocate(m_Data.L.Data, GetLCap());
+                Deallocate(m_Data.L.Data);
             }
         }
 
@@ -402,7 +406,7 @@ namespace FE
             auto oldSize = Size();
             CopyData(newData, oldData, oldSize + 1);
             if (IsLong())
-                Deallocate(oldData, cap);
+                Deallocate(oldData);
 
             SetLCap(reserve + 1);
             SetLSize(oldSize);
@@ -423,7 +427,7 @@ namespace FE
                 TChar* oldData = m_Data.L.Data;
 
                 CopyData(newData, oldData, size + 1);
-                Deallocate(oldData, cap);
+                Deallocate(oldData);
                 SetSSize(size);
             }
             else
@@ -432,7 +436,7 @@ namespace FE
                 TChar* oldData = m_Data.L.Data;
 
                 CopyData(newData, oldData, size + 1);
-                Deallocate(oldData, cap);
+                Deallocate(oldData);
 
                 SetLCap(reserve + 1);
                 SetLSize(size);
