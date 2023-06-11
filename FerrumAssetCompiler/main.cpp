@@ -92,10 +92,11 @@ Supported commands:
                                  metadataPath);
 
         StringSlice assetTypeStr = doc["asset-type"].GetString();
-        Assets::AssetType assetType;
-        FE_EXPECT_OR_FATAL_ERROR(assetTypeStr.TryConvertTo(assetType),
-                                 "`asset-type` has invalid format in asset metadata in file: {}. It must be a UUID",
-                                 metadataPath);
+
+        auto assetType = assetTypeStr.Parse<Assets::AssetType>().UnwrapOrElse([&metadataPath](auto) {
+            FE_UNREACHABLE("`asset-type` has invalid format in asset metadata in file: {}. It must be a UUID", metadataPath);
+            return Assets::AssetType{};
+        });
 
         doc.RemoveMember("asset-type");
 
@@ -164,10 +165,10 @@ Supported commands:
                 case rapidjson::kStringType:
                     {
                         StringSlice s = value.GetString();
-                        UUID uuid;
-                        if (s.TryConvertTo(uuid) && field.GetType() == AssetMetadataType::UUID)
+                        auto uuid     = s.Parse<UUID>();
+                        if (uuid && field.GetType() == AssetMetadataType::UUID)
                         {
-                            field.SetValue<AssetMetadataType::UUID>(uuid);
+                            field.SetValue<AssetMetadataType::UUID>(uuid.Unwrap());
                             fieldSet = true;
                         }
                         else if (field.GetType() == AssetMetadataType::String)
