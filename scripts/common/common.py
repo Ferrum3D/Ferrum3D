@@ -3,7 +3,7 @@ import subprocess
 
 def get_vs_path():
     # TODO: Can be in a different path, check all possibilities
-    return r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community'
+    return r'C:\Program Files\Microsoft Visual Studio\2022\Community'
 
 
 def run_command(arguments, *, return_stdout=False, hide_output=True, working_directory=None):

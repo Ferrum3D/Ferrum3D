@@ -7,7 +7,7 @@ namespace FE
     //!
     //! Every pointer allocated with rpmalloc is 16-bytes aligned, so the 4 least significant bits
     //! of the pointer will always be 0. The BoolPointer class uses the fact to store a boolean
-    //! value in the least significant bit. We don't use other 3 buts here, because we want other
+    //! value in the least significant bit. We don't use other 3 bits here, because we want other
     //! types of alignment to work with this class too. Only the HeapAllocator can guarantee 16-byte
     //! alignment.
     //!
