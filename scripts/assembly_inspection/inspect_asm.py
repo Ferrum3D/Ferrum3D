@@ -28,6 +28,7 @@ def run_clang_command(filename, output):
     clang = 'clang++'
     if sys.platform == 'win32':
         clang = get_vs_path() + r'\VC\Tools\Llvm\x64\bin' + os.sep + clang + '.exe'
+    print(clang)
     args = [
         clang,
         '-O3',
@@ -36,7 +37,7 @@ def run_clang_command(filename, output):
         '-DFE_SSE41_SUPPORTED=1', '-DFE_SSE3_SUPPORTED=1', '-DFE_FINLINE=__cdecl',
         filename,
         # TODO: generalize include directory for different projects
-        f'-I..{os.sep}FeCore',
+        f'-I..{os.sep}FerrumCore',
         '-o', output
     ]
     code = run_command(args)
@@ -49,14 +50,14 @@ def inspect_assembly(filename: str):
     source_file = filename
     if filename.endswith('.h'):
         source_file = f'{filename[:-2]}_temp_copy.cpp'
-        output_file = f'{filename[:-2]}.s'
+        output_file = f'{filename[:-2]}.asm'
         with open(filename) as f:
             code = [line for line in f if '#pragma once' not in line]
         with open(source_file, 'w') as f:
             f.writelines(code)
         del code
     elif filename.endswith('.cpp'):
-        output_file = f'{filename[:-4]}.s'
+        output_file = f'{filename[:-4]}.asm'
     else:
         print('Only C++ source files and headers are allowed')
         return False
