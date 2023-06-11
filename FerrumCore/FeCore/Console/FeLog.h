@@ -36,7 +36,7 @@ namespace FE
     }                                                                                                                            \
     while (0)
 
-    //! \brief Log an error and break th attached debugger or exit with error code.
+    //! \brief Log an error and break the attached debugger or exit with error code.
     //!
     //! Works just like FE_ASSERT_MSG, but indicates that the user input causes this error and doesn't print debug information
     //! like line number or source file name.

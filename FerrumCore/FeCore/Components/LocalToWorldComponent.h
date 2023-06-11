@@ -3,9 +3,13 @@
 
 namespace FE::ECS
 {
+    //! \brief Local-to-World matrix component.
+    //!
+    //! This component stores a single Matrix4x4F that allows to transform vectors from local object
+    //! coordinate system to the global coordinate system.
     struct alignas(16) LocalToWorldComponent
     {
-        Matrix4x4F Matrix;
+        Matrix4x4F Matrix; //!< The Local-to-World matrix.
 
         FE_STRUCT_RTTI(LocalToWorldComponent, "79E8B950-E483-45F7-B08B-07DABC47D3DA");
 
