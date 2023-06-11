@@ -3,10 +3,13 @@
 
 namespace FE::ECS
 {
+    //! \brief 2 dimensional position component.
+    //!
+    //! This component stores X and Y coordinates of an entity.
     struct alignas(4) Position2DComponent
     {
-        float X = 0.0f;
-        float Y = 0.0f;
+        float X = 0.0f; //!< X coordinate of the entity's position.
+        float Y = 0.0f; //!< Y coordinate of the entity's position.
 
         FE_STRUCT_RTTI(Position2DComponent, "930DFC8B-1340-4C39-A0A9-CD44F0E2E5D6");
 
@@ -59,11 +62,14 @@ namespace FE::ECS
         }
     };
 
+    //! \brief 3 dimensional position component.
+    //!
+    //! This component stores X, Y and Z coordinates of an entity.
     struct alignas(4) Position3DComponent
     {
-        float X = 0.0f;
-        float Y = 0.0f;
-        float Z = 0.0f;
+        float X = 0.0f; //!< X coordinate of the entity's position.
+        float Y = 0.0f; //!< Y coordinate of the entity's position.
+        float Z = 0.0f; //!< Z coordinate of the entity's position.
 
         FE_STRUCT_RTTI(Position3DComponent, "1F3CD11C-5547-4773-9941-082C257C6729");
 

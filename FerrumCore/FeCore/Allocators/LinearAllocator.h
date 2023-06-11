@@ -5,12 +5,13 @@
 
 namespace FE
 {
+    //! \brief Generic linear allocator descriptor.
     template<class THandle>
     struct GenericLinearAllocatorDesc
     {
-        THandle StartOffset;
-        USize Capacity;
-        Int32 GCLatency;
+        THandle StartOffset; //!< Pointer to the start of the pre-allocated block of memory.
+        USize Capacity;      //!< Capacity of the allocator, i.e. size of the pre-allocated block.
+        Int32 GCLatency;     //!< How many garbage collection iterations it takes to clear allocated memory.
     };
 
     //! \brief Generic linear allocator.
@@ -69,9 +70,8 @@ namespace FE
             // Do nothing here, the memory is freed only from CollectGarbage();
         }
 
-        inline THandle Reallocate(
-            THandle /* pointer */, const SourcePosition& position, USize newSize, USize newAlignment,
-            USize /* oldSize */) override
+        inline THandle Reallocate(THandle /* pointer */, const SourcePosition& position, USize newSize, USize newAlignment,
+                                  USize /* oldSize */) override
         {
             return Allocate(newSize, newAlignment, position);
         }
@@ -99,6 +99,7 @@ namespace FE
             }
         }
 
+        //! \brief Force garbage collect. Clears all memory.
         inline void CollectGarbageForce()
         {
             m_CurrentOffset = m_Desc.StartOffset;

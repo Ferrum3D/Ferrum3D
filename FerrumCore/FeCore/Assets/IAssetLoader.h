@@ -7,6 +7,7 @@
 
 namespace FE::Assets
 {
+    //! \brief Type of a field in asset metadata.
     enum class AssetMetadataType
     {
         String,
@@ -31,6 +32,9 @@ namespace FE::Assets
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UUID>    { using Type = UUID;     };
     // clang-format on
 
+    //! \brief A field in asset metadata.
+    //!
+    //! Stores a key (which is String) and a value (some AssetMetadataType).
     class AssetMetadataField
     {
         FE_PUSH_MSVC_WARNING(4324)
@@ -41,6 +45,15 @@ namespace FE::Assets
         FE_POP_MSVC_WARNING
 
     public:
+        //! \brief Create an asset metadata field from a key-value pair.
+        //!
+        //! \tparam T - AssetMetadataType that corresponds to the value.
+        //!
+        //! \param [in] key - The key of the created metadata field.
+        //! \param [in] value - The value of the created metadata field.
+        //! \param [in] require - True if the created field is required.
+        //!
+        //! \return The created metadata field.
         template<AssetMetadataType T>
         inline static AssetMetadataField Create(const StringSlice& key,
                                                 const typename CppTypeForAssetMetadataType<T>::Type& value, bool require = false)
@@ -53,6 +66,13 @@ namespace FE::Assets
             return result;
         }
 
+        //! \brief Set field value.
+        //!
+        //! \tparam T - AssetMetadataType that corresponds to the value.
+        //!
+        //! \param [in] value - New value of the metadata field.
+        //!
+        //! The type of the value to set must match the type of the current value in this field.
         template<AssetMetadataType T>
         inline void SetValue(const typename CppTypeForAssetMetadataType<T>::Type& value)
         {
@@ -60,16 +80,23 @@ namespace FE::Assets
             m_Value = value;
         }
 
+        //! \brief Get key of the metadata field.
         [[nodiscard]] inline const String& GetKey() const
         {
             return m_Key;
         }
 
+        //! \brief Get type of the metadata field.
         [[nodiscard]] inline AssetMetadataType GetType() const
         {
             return m_Type;
         }
 
+        //! \brief Get value of the metadata field.
+        //!
+        //! \tparam T - AssetMetadataType that corresponds to the value.
+        //!
+        //! The type of the value to get must match the type of the current value in this field.
         template<AssetMetadataType T>
         [[nodiscard]] inline const typename CppTypeForAssetMetadataType<T>::Type& GetValue() const
         {
@@ -77,11 +104,13 @@ namespace FE::Assets
             return std::get<typename CppTypeForAssetMetadataType<T>::Type>(m_Value);
         }
 
+        //! \brief Check if this metadata field is required.
         [[nodiscard]] inline bool IsRequired() const
         {
             return m_Required;
         }
 
+        //! \brief Check if this metadata field is optional.
         [[nodiscard]] inline bool IsOptional() const
         {
             return !m_Required;

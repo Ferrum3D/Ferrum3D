@@ -193,6 +193,10 @@ namespace FE
         return (x & ~(A - 1));
     }
 
+    //! \brief Create a bitmask.
+    //!
+    //! \param [in] bitCount  - The number of ones in the created mask.
+    //! \param [in] leftShift - The number of zeros to the right of the created mask.
     template<class T>
     inline constexpr T MakeMask(T bitCount, T leftShift)
     {
