@@ -47,7 +47,8 @@ namespace FE::Osmium
         {
             if (field.GetKey().StartsWith(componentFieldName))
             {
-                auto index = field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).ConvertTo<USize>();
+                auto index =
+                    field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).Parse<USize>().Unwrap();
 
                 if (components.Size() <= index)
                 {
@@ -106,8 +107,8 @@ namespace FE::Osmium
             return;
         }
 
-        auto* meshStorage  = static_cast<MeshAssetStorage*>(storage);
-        auto length        = assetStream->Length();
+        auto* meshStorage = static_cast<MeshAssetStorage*>(storage);
+        auto length       = assetStream->Length();
         List<Int8> buffer(length, 0);
         assetStream->ReadToBuffer(buffer.Data(), length);
 
