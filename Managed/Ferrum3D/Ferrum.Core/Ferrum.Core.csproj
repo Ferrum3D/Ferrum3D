@@ -1,135 +1,36 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{CC7645FD-8F2D-48D6-9E8A-8DD770862C66}</ProjectGuid>
-        <OutputType>Library</OutputType>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>Ferrum.Core</RootNamespace>
-        <AssemblyName>Ferrum.Core</AssemblyName>
-        <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <LangVersion>9</LangVersion>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <PlatformTarget>x64</PlatformTarget>
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>full</DebugType>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\Debug\</OutputPath>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <PlatformTarget>x64</PlatformTarget>
-        <DebugType>pdbonly</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Release\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Profile|AnyCPU' ">
-        <PlatformTarget>x64</PlatformTarget>
-        <DebugType>pdbonly</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Profile\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <ItemGroup>
-        <Reference Include="System" />
-        <Reference Include="System.Core" />
-        <Reference Include="System.Data" />
-        <Reference Include="System.Xml" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="Assets\Asset.cs" />
-        <Compile Include="Assets\AssetManager.cs" />
-        <Compile Include="Assets\AssetRef.cs" />
-        <Compile Include="Assets\IAssetStorage.cs" />
-        <Compile Include="Components\LocalToWorldComponent.cs" />
-        <Compile Include="Components\Position2DComponent.cs" />
-        <Compile Include="Components\Position3DComponent.cs" />
-        <Compile Include="Console\ConsoleLogger.cs" />
-        <Compile Include="Console\LogMessageType.cs" />
-        <Compile Include="Containers\ByteBuffer.cs" />
-        <Compile Include="Containers\DisposableList.cs" />
-        <Compile Include="Containers\NativeArray.cs" />
-        <Compile Include="Containers\NativeList.cs" />
-        <Compile Include="Containers\NativeString.cs" />
-        <Compile Include="Entities\ArchetypeChunk.cs" />
-        <Compile Include="Entities\ComponentAttribute.cs" />
-        <Compile Include="Entities\ComponentSubsystem.cs" />
-        <Compile Include="Entities\ComponentSystem.cs" />
-        <Compile Include="Entities\ComponentType.cs" />
-        <Compile Include="Entities\ComponentInfo.cs" />
-        <Compile Include="Entities\Entity.cs" />
-        <Compile Include="Entities\EntityQuery.cs" />
-        <Compile Include="Entities\EntityQueryDelegate.cs" />
-        <Compile Include="Entities\EntityRegistry.cs" />
-        <Compile Include="Entities\EntityRegistryBindings.cs" />
-        <Compile Include="Entities\IComponentSubsystem.cs" />
-        <Compile Include="Entities\World.cs" />
-        <Compile Include="EventBus\EventBusBase.cs" />
-        <Compile Include="EventBus\FrameEventArgs.cs" />
-        <Compile Include="EventBus\FrameEventBus.cs" />
-        <Compile Include="Framework\ApplicationFramework.cs" />
-        <Compile Include="Framework\FrameworkBase.cs" />
-        <Compile Include="Framework\IFramework.cs" />
-        <Compile Include="Framework\IFrameworkFactory.cs" />
-        <Compile Include="Framework\ModuleFramework.cs" />
-        <Compile Include="Framework\NativeModuleFrameworkFactory.cs" />
-        <Compile Include="Math\Color.cs" />
-        <Compile Include="Math\Colors.cs" />
-        <Compile Include="Math\MathF.cs" />
-        <Compile Include="Math\Matrix4x4F.cs" />
-        <Compile Include="Math\Matrix4x4FBindings.cs" />
-        <Compile Include="Math\Quaternion.cs" />
-        <Compile Include="Math\QuaternionBindings.cs" />
-        <Compile Include="Math\Vector2F.cs" />
-        <Compile Include="Math\Vector3F.cs" />
-        <Compile Include="Math\Vector4F.cs" />
-        <Compile Include="Modules\DynamicLibrary.cs" />
-        <Compile Include="Modules\Engine.cs" />
-        <Compile Include="Modules\UnmanagedObject.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs" />
-        <Compile Include="Utils\DisposableExtensions.cs" />
-        <Compile Include="Utils\EnumerableExtensions.cs" />
-        <Compile Include="Utils\NativeUtils.cs" />
-        <Compile Include="Utils\StringExtensions.cs" />
-        <Compile Include="Utils\Uuid.cs" />
-    </ItemGroup>
-    <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+
+    <ItemGroup Condition=" '$(Configuration)' == 'Release' ">
         <Content Include="..\..\..\BuildRelease\Release\FeCoreBindings.dll">
             <Link>FeCoreBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-    <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Profile|AnyCPU' ">
+    <ItemGroup Condition=" '$(Configuration)' == 'Profile' ">
         <Content Include="..\..\..\BuildProfile\RelWithDebInfo\FeCoreBindings.dll">
             <Link>FeCoreBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-    <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
         <Content Include="..\..\..\BuildDebug\Debug\FeCoreBindings.dll">
             <Link>FeCoreBindings.dll</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-         Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-    -->
-
 </Project>
