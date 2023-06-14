@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Console;
 
@@ -43,13 +44,13 @@ public partial class ConsoleLogger : IDisposable
         handle = nint.Zero;
     }
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial nint IConsoleLogger_Construct();
 
-    [DllImport("FeCoreBindings")]
+    [DllImport(Libraries.FerrumCore)]
     private static extern void IConsoleLogger_Destruct(nint self);
 
-    [LibraryImport("FeCoreBindings", StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport(Libraries.FerrumCore, StringMarshalling = StringMarshalling.Utf8)]
     private static partial void IConsoleLogger_Log(nint self, string message, int logType);
 
     ~ConsoleLogger()
