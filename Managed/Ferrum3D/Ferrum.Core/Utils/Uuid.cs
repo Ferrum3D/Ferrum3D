@@ -75,15 +75,15 @@ public partial struct Uuid : IEquatable<Uuid>
         return !left.Equals(right);
     }
 
-    [DllImport("FeCoreBindings")]
+    [DllImport(Libraries.FerrumCore)]
     private static extern void UUID_FromGUID(in Guid guid, out Uuid result);
 
-    [LibraryImport("FeCoreBindings", StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport(Libraries.FerrumCore, StringMarshalling = StringMarshalling.Utf8)]
     private static partial void UUID_FromString(string s, out Uuid result);
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial void UUID_ToString(in Uuid self, nint result);
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial ulong UUID_GetHash(in Uuid self);
 }

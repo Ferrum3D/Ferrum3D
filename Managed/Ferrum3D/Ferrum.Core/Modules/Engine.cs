@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Modules;
 
@@ -28,13 +29,13 @@ public sealed partial class Engine : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial void Engine_Construct();
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial void Engine_Destruct();
 
-    [LibraryImport("FeCoreBindings")]
+    [LibraryImport(Libraries.FerrumCore)]
     private static partial nint Engine_GetEnvironment();
 
     private static void ReleaseUnmanagedResources()

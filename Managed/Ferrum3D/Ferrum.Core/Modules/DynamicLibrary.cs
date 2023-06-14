@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Ferrum.Core.Utils;
 
 namespace Ferrum.Core.Modules;
 
@@ -60,12 +61,12 @@ public sealed class DynamicLibrary : IDisposable
         return nint.Zero;
     }
 
-    [DllImport("kernel32.dll")]
+    [DllImport(Libraries.Kernel32)]
     private static extern bool FreeLibrary(nint handle);
 
-    [DllImport("kernel32.dll")]
+    [DllImport(Libraries.Kernel32)]
     private static extern nint LoadLibrary(string path);
 
-    [DllImport("kernel32.dll")]
+    [DllImport(Libraries.Kernel32)]
     private static extern nint GetProcAddress(nint handle, string name);
 }
