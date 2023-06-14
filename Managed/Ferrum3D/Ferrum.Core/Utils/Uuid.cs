@@ -75,8 +75,8 @@ public partial struct Uuid : IEquatable<Uuid>
         return !left.Equals(right);
     }
 
-    [LibraryImport("FeCoreBindings")]
-    private static partial void UUID_FromGUID(in Guid guid, out Uuid result);
+    [DllImport("FeCoreBindings")]
+    private static extern void UUID_FromGUID(in Guid guid, out Uuid result);
 
     [LibraryImport("FeCoreBindings", StringMarshalling = StringMarshalling.Utf8)]
     private static partial void UUID_FromString(string s, out Uuid result);
