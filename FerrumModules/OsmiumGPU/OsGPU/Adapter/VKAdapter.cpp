@@ -23,7 +23,7 @@ namespace FE::Osmium
         return m_VkAdapter;
     }
 
-    Shared<IDevice> VKAdapter::CreateDevice()
+    Rc<IDevice> VKAdapter::CreateDevice()
     {
         return MakeShared<VKDevice>(*this);
     }

@@ -20,7 +20,7 @@ namespace FE::Osmium
         return Desc;
     }
 
-    Shared<IImageView> VKImage::CreateView(ImageAspectFlags aspectFlags)
+    Rc<IImageView> VKImage::CreateView(ImageAspectFlags aspectFlags)
     {
         ImageSubresourceRange range{};
         range.ArraySliceCount = Desc.ArraySize;

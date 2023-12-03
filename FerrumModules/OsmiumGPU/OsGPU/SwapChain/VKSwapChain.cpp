@@ -196,12 +196,12 @@ namespace FE::Osmium
 
     IImage* VKSwapChain::GetImage(UInt32 index)
     {
-        return m_Images[index].GetRaw();
+        return m_Images[index].Get();
     }
 
     IImage* VKSwapChain::GetCurrentImage()
     {
-        return m_Images[m_ImageIndex].GetRaw();
+        return m_Images[m_ImageIndex].Get();
     }
 
     void VKSwapChain::Present()
@@ -234,7 +234,7 @@ namespace FE::Osmium
         result.Reserve(m_ImageViews.Size());
         for (auto& view : m_ImageViews)
         {
-            result.Push(view.GetRaw());
+            result.Push(view.Get());
         }
 
         return result;
@@ -242,7 +242,7 @@ namespace FE::Osmium
 
     IImageView* VKSwapChain::GetDSV()
     {
-        return m_DepthImageView.GetRaw();
+        return m_DepthImageView.Get();
     }
 
     UInt32 VKSwapChain::GetCurrentFrameIndex()

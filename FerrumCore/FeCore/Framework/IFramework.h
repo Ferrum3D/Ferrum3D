@@ -58,7 +58,7 @@ namespace FE
         //! \brief Get list of factories for all dependencies.
         //!
         //! \param [out] dependencies - The list of dependencies. New entries must be added to it.
-        virtual void GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& dependencies) = 0;
+        virtual void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) = 0;
 
         //! \brief Basic framework initialization. Loads dependencies, sets initialized flag to true.
         virtual void Initialize() = 0;

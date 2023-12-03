@@ -3,6 +3,7 @@
 #include <FeCore/Jobs/JobTree.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/ServiceLocator.h>
+#include <atomic>
 
 namespace FE
 {
@@ -68,27 +69,27 @@ namespace FE
     //! without calling every job's destructor. Also these jobs must be completed in time of a single frame.
     class Job
     {
-        AtomicInt16 m_Flags{};
+        std::atomic<UInt16> m_Flags{};
 
         // There will probably be a lot of small jobs in the engine, so I choose too pack bits together
         // and reduce size of job's data as much as possible.
 
-        inline static constexpr Int16 PriorityBitCount        = 2;
-        inline static constexpr Int16 StateBitCount           = 2;
-        inline static constexpr Int16 DependencyCountBitCount = 16 - PriorityBitCount - StateBitCount;
+        inline static constexpr UInt16 PriorityBitCount        = 2;
+        inline static constexpr UInt16 StateBitCount           = 2;
+        inline static constexpr UInt16 DependencyCountBitCount = 16 - PriorityBitCount - StateBitCount;
 
-        inline static constexpr Int16 DependencyCountShift = 0;
-        inline static constexpr Int16 PriorityShift        = DependencyCountShift;
-        inline static constexpr Int16 StateShift           = PriorityShift + PriorityBitCount;
+        inline static constexpr UInt16 DependencyCountShift = 0;
+        inline static constexpr UInt16 PriorityShift        = DependencyCountBitCount;
+        inline static constexpr UInt16 StateShift           = PriorityShift + PriorityBitCount;
 
-        inline static constexpr Int16 DependencyCountMask = MakeMask(DependencyCountBitCount, DependencyCountShift);
-        inline static constexpr Int16 PriorityMask        = MakeMask(PriorityBitCount, PriorityShift);
-        inline static constexpr Int16 StateMask           = MakeMask(StateBitCount, StateShift);
+        inline static constexpr UInt16 DependencyCountMask = MakeMask(DependencyCountBitCount, DependencyCountShift);
+        inline static constexpr UInt16 PriorityMask        = MakeMask(PriorityBitCount, PriorityShift);
+        inline static constexpr UInt16 StateMask           = MakeMask(StateBitCount, StateShift);
 
         inline void SetExecutionState(JobExecutionState state);
 
-        inline Int16 IncrementDependencyCount();
-        inline Int16 DecrementDependencyCount();
+        inline UInt16 IncrementDependencyCount();
+        inline UInt16 DecrementDependencyCount();
 
     protected:
         BoolPointer<JobTree> m_TreeEmptyPair;
@@ -152,10 +153,10 @@ namespace FE
     Job::Job(JobPriority priority, bool isEmpty)
         : m_TreeEmptyPair(nullptr, isEmpty)
     {
-        Int16 value = static_cast<Int16>(priority) << PriorityShift;
+        UInt16 value = static_cast<UInt16>(priority) << PriorityShift;
         value |= 1 << DependencyCountShift;
-        value |= static_cast<Int16>(JobExecutionState::NotReady) << StateShift;
-        Interlocked::Exchange(m_Flags, value);
+        value |= static_cast<UInt16>(JobExecutionState::NotReady) << StateShift;
+        m_Flags.store(value, std::memory_order_relaxed);
     }
 
     void Job::AttachToTree(JobTree* tree)
@@ -171,27 +172,27 @@ namespace FE
 
     void Job::SetExecutionState(JobExecutionState state)
     {
-        Int16 cleared = Interlocked::Load(m_Flags) & ~StateMask;
-        Int16 value   = static_cast<Int16>(state) << StateShift;
-        Interlocked::Exchange(m_Flags, value | cleared);
+        UInt16 initial = m_Flags.load();
+        UInt16 value   = static_cast<UInt16>(state) << StateShift;
+        while (!m_Flags.compare_exchange_weak(initial, value | (initial & ~StateMask)));
     }
 
     JobExecutionState Job::GetExecutionState() const
     {
-        Int16 value = Interlocked::Load(m_Flags) & StateMask;
+        UInt16 value = m_Flags.load(std::memory_order_relaxed) & StateMask;
         return static_cast<JobExecutionState>(value >> StateShift);
     }
 
     void Job::SetPriority(JobPriority priority)
     {
-        Int16 cleared = Interlocked::Load(m_Flags) & ~PriorityMask;
-        Int16 value   = static_cast<Int16>(priority) << PriorityShift;
-        Interlocked::Exchange(m_Flags, value | cleared);
+        UInt16 initial = m_Flags.load();
+        UInt16 value   = static_cast<UInt16>(priority) << PriorityShift;
+        while (!m_Flags.compare_exchange_weak(initial, value | (initial & ~PriorityMask)));
     }
 
     JobPriority Job::GetPriority() const
     {
-        Int16 value = Interlocked::Load(m_Flags) & PriorityMask;
+        UInt16 value = m_Flags.load(std::memory_order_relaxed) & PriorityMask;
         return static_cast<JobPriority>(value >> PriorityShift);
     }
 
@@ -200,20 +201,20 @@ namespace FE
         DecrementDependencyCount();
     }
 
-    Int16 Job::IncrementDependencyCount()
+    UInt16 Job::IncrementDependencyCount()
     {
-        return (Interlocked::Increment(m_Flags) & DependencyCountMask) >> DependencyCountShift;
+        return (++m_Flags & DependencyCountMask) >> DependencyCountShift;
     }
 
-    Int16 Job::DecrementDependencyCount()
+    UInt16 Job::DecrementDependencyCount()
     {
-        auto value = (Interlocked::Decrement(m_Flags) & DependencyCountMask) >> DependencyCountShift;
+        auto value = (--m_Flags & DependencyCountMask) >> DependencyCountShift;
         if (value == 0)
         {
             SetExecutionState(JobExecutionState::Pending);
             ServiceLocator<IJobScheduler>::Get()->ScheduleJob(this);
         }
-        return static_cast<Int16>(value);
+        return static_cast<UInt16>(value);
     }
 
     void Job::ExecuteInternal(const JobExecutionContext& context)

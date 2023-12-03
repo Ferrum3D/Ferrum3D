@@ -8,7 +8,7 @@ namespace FE::ECS
 {
     class TransformSystem final : public ComponentSystem
     {
-        Shared<EntityQuery> m_Query;
+        Rc<EntityQuery> m_Query;
 
     public:
         FE_CLASS_RTTI(TransformSystem, "0E8270F1-6D58-4D56-9519-A3A306E93FA1");

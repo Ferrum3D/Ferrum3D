@@ -27,7 +27,7 @@ namespace FE::Osmium
 
         FE_CLASS_RTTI(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
-        [[nodiscard]] virtual const List<Shared<IAdapter>>& GetAdapters() const = 0;
+        [[nodiscard]] virtual const List<Rc<IAdapter>>& GetAdapters() const = 0;
     };
 
     typedef void (*AttachEnvironmentProc)(Env::Internal::IEnvironment* environment);

@@ -3,7 +3,7 @@
 
 namespace FE::Assets
 {
-    void AssetProviderDev::AttachRegistry(const Shared<AssetRegistry>& registry)
+    void AssetProviderDev::AttachRegistry(const Rc<AssetRegistry>& registry)
     {
         m_Registry = registry;
     }
@@ -13,7 +13,7 @@ namespace FE::Assets
         m_Registry.Reset();
     }
 
-    Shared<IO::IStream> AssetProviderDev::CreateAssetLoadingStream(const AssetID& assetID)
+    Rc<IO::IStream> AssetProviderDev::CreateAssetLoadingStream(const AssetID& assetID)
     {
         FE_ASSERT_MSG(m_Registry, "Registry was not attached");
         auto fileName = m_Registry->GetAssetFilePath(assetID);

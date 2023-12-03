@@ -119,7 +119,7 @@ namespace FE::Osmium
         ~IImage() override = default;
 
         virtual const ImageDesc& GetDesc()                                  = 0;
-        virtual Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) = 0;
+        virtual Rc<IImageView> CreateView(ImageAspectFlags aspectFlags) = 0;
 
         virtual void AllocateMemory(MemoryType type)             = 0;
         virtual void BindMemory(const DeviceMemorySlice& memory) = 0;

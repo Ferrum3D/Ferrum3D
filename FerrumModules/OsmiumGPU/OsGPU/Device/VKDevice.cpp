@@ -140,12 +140,12 @@ namespace FE::Osmium
         return m_NativeDevice;
     }
 
-    Shared<IFence> VKDevice::CreateFence(FenceState state)
+    Rc<IFence> VKDevice::CreateFence(FenceState state)
     {
         return MakeShared<VKFence>(*this, state);
     }
 
-    Shared<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
+    Rc<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
     {
         VKCommandQueueDesc desc{};
         desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
@@ -153,17 +153,17 @@ namespace FE::Osmium
         return MakeShared<VKCommandQueue>(*this, desc);
     }
 
-    Shared<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
+    Rc<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
         return MakeShared<VKCommandBuffer>(*this, cmdQueueClass);
     }
 
-    Shared<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
+    Rc<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
     {
         return MakeShared<VKSwapChain>(*this, desc);
     }
 
-    Shared<IBuffer> VKDevice::CreateBuffer(const BufferDesc& desc)
+    Rc<IBuffer> VKDevice::CreateBuffer(const BufferDesc& desc)
     {
         auto buffer = MakeShared<VKBuffer>(*this, desc);
 
@@ -214,42 +214,42 @@ namespace FE::Osmium
         return *m_Adapter;
     }
 
-    Shared<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
+    Rc<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
     {
         return MakeShared<VKShaderModule>(*this, desc);
     }
 
-    Shared<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
+    Rc<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
     {
         return MakeShared<VKCommandBuffer>(*this, queueFamilyIndex);
     }
 
-    Shared<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
+    Rc<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
     {
         return MakeShared<VKRenderPass>(*this, desc);
     }
 
-    Shared<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
+    Rc<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
     {
         return MakeShared<VKDescriptorHeap>(*this, desc);
     }
 
-    Shared<IShaderCompiler> VKDevice::CreateShaderCompiler()
+    Rc<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
         return MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan);
     }
 
-    Shared<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
+    Rc<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
     {
         return MakeShared<VKGraphicsPipeline>(*this, desc);
     }
 
-    Shared<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
+    Rc<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
     {
         return MakeShared<VKImageView>(*this, desc);
     }
 
-    Shared<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
+    Rc<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
     {
         return MakeShared<VKFramebuffer>(*this, desc);
     }
@@ -281,17 +281,17 @@ namespace FE::Osmium
         return static_cast<UInt32>(m_SignalSemaphores.Size());
     }
 
-    Shared<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
+    Rc<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
     {
         return static_pointer_cast<IWindow>(MakeShared<Window>(desc));
     }
 
-    Shared<IImage> VKDevice::CreateImage(const ImageDesc& desc)
+    Rc<IImage> VKDevice::CreateImage(const ImageDesc& desc)
     {
         return MakeShared<VKImage>(*this, desc);
     }
 
-    Shared<ISampler> VKDevice::CreateSampler(const SamplerDesc& desc)
+    Rc<ISampler> VKDevice::CreateSampler(const SamplerDesc& desc)
     {
         return MakeShared<VKSampler>(*this, desc);
     }
@@ -320,7 +320,7 @@ namespace FE::Osmium
         {
             auto bindFlags                   = ImageBindFlags::Color | ImageBindFlags::ShaderRead;
             auto image                       = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
-            auto* vkImage                    = fe_assert_cast<VKImage*>(image.GetRaw());
+            auto* vkImage                    = fe_assert_cast<VKImage*>(image.Get());
             m_RenderTargetMemoryRequirements = vkImage->MemoryRequirements;
         }
 
@@ -333,7 +333,7 @@ namespace FE::Osmium
         {
             auto bindFlags             = BindFlags::ConstantBuffer | BindFlags::ShaderResource;
             auto buffer                = CreateBuffer(BufferDesc(1, bindFlags));
-            auto* vkBuffer             = fe_assert_cast<VKBuffer*>(buffer.GetRaw());
+            auto* vkBuffer             = fe_assert_cast<VKBuffer*>(buffer.Get());
             m_BufferMemoryRequirements = vkBuffer->MemoryRequirements;
         }
 
@@ -351,7 +351,7 @@ namespace FE::Osmium
         }
 
         auto image    = CreateImage(desc);
-        auto* vkImage = fe_assert_cast<VKImage*>(image.GetRaw());
+        auto* vkImage = fe_assert_cast<VKImage*>(image.Get());
         m_ImageMemoryRequirementsByDesc.Emplace(hash, vkImage->MemoryRequirements);
         return vkImage->MemoryRequirements;
     }
@@ -362,14 +362,14 @@ namespace FE::Osmium
         {
             auto bindFlags            = ImageBindFlags::UnorderedAccess | ImageBindFlags::ShaderRead;
             auto image                = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
-            auto* vkImage             = fe_assert_cast<VKImage*>(image.GetRaw());
+            auto* vkImage             = fe_assert_cast<VKImage*>(image.Get());
             m_ImageMemoryRequirements = vkImage->MemoryRequirements;
         }
 
         return m_ImageMemoryRequirements;
     }
 
-    Shared<ITransientResourceHeap> VKDevice::CreateTransientResourceHeap(const TransientResourceHeapDesc& desc)
+    Rc<ITransientResourceHeap> VKDevice::CreateTransientResourceHeap(const TransientResourceHeapDesc& desc)
     {
         return MakeShared<VKTransientResourceHeap>(*this, desc);
     }

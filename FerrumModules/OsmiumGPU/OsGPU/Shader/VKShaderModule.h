@@ -55,7 +55,7 @@ namespace FE::Osmium
         ShaderModuleDesc m_Desc;
         VkShaderModule m_NativeModule;
         VKDevice* m_Device;
-        Shared<VKShaderReflection> m_Reflection;
+        Rc<VKShaderReflection> m_Reflection;
 
     public:
         FE_CLASS_RTTI(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");

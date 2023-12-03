@@ -7,7 +7,7 @@ namespace FE
 {
     class BinarySerializer final
     {
-        Shared<IO::IStream> m_Stream;
+        Rc<IO::IStream> m_Stream;
 
     public:
         inline explicit BinarySerializer(IO::IStream* stream)

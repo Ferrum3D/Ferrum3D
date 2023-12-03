@@ -8,7 +8,7 @@ namespace FE::Osmium
     class VKTransientResourceHeap : public TransientResourceHeapBase
     {
     protected:
-        Shared<IDeviceMemory> AllocateMemoryImpl() override;
+        Rc<IDeviceMemory> AllocateMemoryImpl() override;
         NullableHandle AllocateResourceMemory(const BufferDesc& desc, USize& byteSize) override;
         NullableHandle AllocateResourceMemory(const ImageDesc& desc, USize& byteSize) override;
 

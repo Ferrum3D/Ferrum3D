@@ -11,7 +11,7 @@ namespace FE::Osmium
     class VKDescriptorTable : public Object<IDescriptorTable>
     {
         VKDevice* m_Device;
-        Shared<VKDescriptorHeap> m_Heap;
+        Rc<VKDescriptorHeap> m_Heap;
 
         VkDescriptorSetLayout m_Layout;
         VkDescriptorSet m_Set;

@@ -41,7 +41,7 @@ namespace FE::Osmium
         VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc);
         ~VKDescriptorHeap() override;
 
-        Shared<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) override;
+        Rc<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) override;
 
         void Reset() override;
 

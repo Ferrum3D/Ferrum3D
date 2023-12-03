@@ -4,7 +4,7 @@
 
 namespace FE::Osmium
 {
-    Shared<IDeviceMemory> VKTransientResourceHeap::AllocateMemoryImpl()
+    Rc<IDeviceMemory> VKTransientResourceHeap::AllocateMemoryImpl()
     {
         VkMemoryRequirements requirements;
         auto* vkDevice = fe_assert_cast<VKDevice*>(m_Device);

@@ -7,7 +7,7 @@ namespace FE::Osmium
 {
     class ResourceCache final
     {
-        LRUCacheMap<USize, Shared<IObject>> m_Cache;
+        LRUCacheMap<USize, Rc<IObject>> m_Cache;
 
     public:
         inline ResourceCache() = default;
@@ -29,10 +29,10 @@ namespace FE::Osmium
 
         inline IObject* FindObject(USize descHash)
         {
-            Shared<IObject> result;
+            Rc<IObject> result;
             if (m_Cache.TryGetValue(descHash, result))
             {
-                return result.GetRaw();
+                return result.Get();
             }
 
             return nullptr;

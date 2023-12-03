@@ -50,26 +50,26 @@ namespace FE::Osmium
         [[nodiscard]] virtual IAdapter& GetAdapter()   = 0;
         [[nodiscard]] virtual IInstance& GetInstance() = 0;
 
-        [[nodiscard]] virtual Shared<IFence> CreateFence(FenceState state) = 0;
+        [[nodiscard]] virtual Rc<IFence> CreateFence(FenceState state) = 0;
 
-        [[nodiscard]] virtual Shared<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass)      = 0;
-        [[nodiscard]] virtual Shared<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) = 0;
+        [[nodiscard]] virtual Rc<ICommandQueue> GetCommandQueue(CommandQueueClass cmdQueueClass)      = 0;
+        [[nodiscard]] virtual Rc<ICommandBuffer> CreateCommandBuffer(CommandQueueClass cmdQueueClass) = 0;
 
-        [[nodiscard]] virtual Shared<ISwapChain> CreateSwapChain(const SwapChainDesc& desc)       = 0;
-        [[nodiscard]] virtual Shared<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) = 0;
-        [[nodiscard]] virtual Shared<IWindow> CreateWindow(const WindowDesc& desc)                = 0;
+        [[nodiscard]] virtual Rc<ISwapChain> CreateSwapChain(const SwapChainDesc& desc)       = 0;
+        [[nodiscard]] virtual Rc<IFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) = 0;
+        [[nodiscard]] virtual Rc<IWindow> CreateWindow(const WindowDesc& desc)                = 0;
 
-        [[nodiscard]] virtual Shared<IBuffer> CreateBuffer(const BufferDesc& desc)          = 0;
-        [[nodiscard]] virtual Shared<IImageView> CreateImageView(const ImageViewDesc& desc) = 0;
-        [[nodiscard]] virtual Shared<IImage> CreateImage(const ImageDesc& desc)             = 0;
-        [[nodiscard]] virtual Shared<ISampler> CreateSampler(const SamplerDesc& desc)       = 0;
-        [[nodiscard]] virtual Shared<ITransientResourceHeap> CreateTransientResourceHeap(
+        [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const BufferDesc& desc)          = 0;
+        [[nodiscard]] virtual Rc<IImageView> CreateImageView(const ImageViewDesc& desc) = 0;
+        [[nodiscard]] virtual Rc<IImage> CreateImage(const ImageDesc& desc)             = 0;
+        [[nodiscard]] virtual Rc<ISampler> CreateSampler(const SamplerDesc& desc)       = 0;
+        [[nodiscard]] virtual Rc<ITransientResourceHeap> CreateTransientResourceHeap(
             const TransientResourceHeapDesc& desc) = 0;
 
-        [[nodiscard]] virtual Shared<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc)             = 0;
-        [[nodiscard]] virtual Shared<IRenderPass> CreateRenderPass(const RenderPassDesc& desc)                   = 0;
-        [[nodiscard]] virtual Shared<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc)       = 0;
-        [[nodiscard]] virtual Shared<IShaderCompiler> CreateShaderCompiler()                                     = 0;
-        [[nodiscard]] virtual Shared<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
+        [[nodiscard]] virtual Rc<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc)             = 0;
+        [[nodiscard]] virtual Rc<IRenderPass> CreateRenderPass(const RenderPassDesc& desc)                   = 0;
+        [[nodiscard]] virtual Rc<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc)       = 0;
+        [[nodiscard]] virtual Rc<IShaderCompiler> CreateShaderCompiler()                                     = 0;
+        [[nodiscard]] virtual Rc<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     };
 } // namespace FE::Osmium

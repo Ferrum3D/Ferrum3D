@@ -9,7 +9,7 @@ namespace FE::Osmium
         VkInstance m_Instance;
         VkDebugReportCallbackEXT m_Debug;
 
-        List<Shared<IAdapter>> m_Adapters;
+        List<Rc<IAdapter>> m_Adapters;
 
     public:
         FE_CLASS_RTTI(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
@@ -19,6 +19,6 @@ namespace FE::Osmium
 
         VkInstance GetNativeInstance();
 
-        [[nodiscard]] const List<Shared<IAdapter>>& GetAdapters() const override;
+        [[nodiscard]] const List<Rc<IAdapter>>& GetAdapters() const override;
     };
 } // namespace FE::Osmium

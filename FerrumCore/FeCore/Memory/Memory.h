@@ -39,10 +39,10 @@ namespace FE
         return AllocateUnique<T, HeapAllocator>(std::forward<Args>(args)...);
     }
 
-    //! \brief Create a \ref Shared<T>.
+    //! \brief Create a \ref Rc<T>.
     //!
     //! This function allocates storage for \ref ReferenceCounter and an object of type T.
-    //! It attaches reference counter to the allocated object and returns an instance of \ref Shared<T>.
+    //! It attaches reference counter to the allocated object and returns an instance of \ref Rc<T>.
     //!
     //! \param [in] args   - Arguments to call constructor of T with.
     //! \tparam T          - Type of object to allocate.
@@ -51,7 +51,7 @@ namespace FE
     //!
     //! \return An instance of \ref RefCountPtr that holds the allocated object of type T.
     template<class T, class TAllocator, class... Args>
-    inline Shared<T> AllocateShared(Args&&... args)
+    inline Rc<T> AllocateShared(Args&&... args)
     {
         USize counterSize = AlignUp(sizeof(ReferenceCounter), alignof(T));
         USize wholeSize   = sizeof(T) + counterSize;
@@ -62,13 +62,13 @@ namespace FE
 
         T* object = new (ptr + counterSize) T(std::forward<Args>(args)...);
         object->AttachRefCounter(counter);
-        return Shared<T>(object);
+        return Rc<T>(object);
     }
 
-    //! \brief Create a \ref Shared<T>.
+    //! \brief Create a \ref Rc<T>.
     //!
     //! This function allocates storage for \ref ReferenceCounter and an object of type T.
-    //! It attaches reference counter to the allocated object and returns an instance of \ref Shared<T>.
+    //! It attaches reference counter to the allocated object and returns an instance of \ref Rc<T>.
     //!
     //! \param [in] args   - Arguments to call constructor of T with.
     //! \tparam T          - Type of object to allocate.
@@ -76,15 +76,15 @@ namespace FE
     //!
     //! \return An instance of \ref RefCountPtr that holds the allocated object of type T.
     template<class T, class... Args>
-    inline Shared<T> MakeShared(Args&&... args)
+    inline Rc<T> MakeShared(Args&&... args)
     {
         return AllocateShared<T, FE::HeapAllocator>(std::forward<Args>(args)...);
     }
 
-    //! \brief Perform `static_cast` of \ref Shared<T>.
+    //! \brief Perform `static_cast` of \ref Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a static_cast to TDest.
-    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! This function retrieves a raw pointer using \ref Rc::Get() and does a static_cast to TDest.
+    //! The result pointer is then used to create a new \ref Rc<T>.\n
     //! It can be used to cast a derived class to base.
     //!
     //! \note To cast a base class to derived, use \ref fe_dynamic_cast.
@@ -93,11 +93,11 @@ namespace FE
     //! \tparam TDest   - The type of result pointer.
     //! \tparam TSrc    - The type of source pointer.
     //!
-    //! \return An instance of \ref Shared<TDest> that holds the same object but statically casted.
+    //! \return An instance of \ref Rc<TDest> that holds the same object but statically casted.
     template<class TDest, class TSrc>
-    inline Shared<TDest> static_pointer_cast(const Shared<TSrc>& src)
+    inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
     {
-        return Shared<TDest>(static_cast<TDest*>(src.GetRaw()));
+        return Rc<TDest>(static_cast<TDest*>(src.Get()));
     }
 
     //! \brief Perform `static_cast` of \ref Unique<T>.
@@ -119,10 +119,10 @@ namespace FE
         return Unique<TDest>(static_cast<TDest*>(src.Detach()));
     }
 
-    //! \brief Perform \ref fe_dynamic_cast of \ref Shared<T>.
+    //! \brief Perform \ref fe_dynamic_cast of \ref Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a fe_dynamic_cast to TDest.
-    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! This function retrieves a raw pointer using \ref Rc::Get() and does a fe_dynamic_cast to TDest.
+    //! The result pointer is then used to create a new \ref Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
     //! \note To cast a derived class to base, use `static_cast`.
@@ -131,11 +131,11 @@ namespace FE
     //! \tparam TDest   - The type of result pointer.
     //! \tparam TSrc    - The type of source pointer.
     //!
-    //! \return An instance of \ref Shared<TDest> that holds the same object but dynamically casted.
+    //! \return An instance of \ref Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
-    inline Shared<TDest> dynamic_pointer_cast(const Shared<TSrc>& src)
+    inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
-        return Shared<TDest>(fe_dynamic_cast<TDest*>(src.GetRaw()));
+        return Rc<TDest>(fe_dynamic_cast<TDest*>(src.Get()));
     }
 
     //! \brief Perform \ref fe_dynamic_cast of \ref Unique<T>.
@@ -157,10 +157,10 @@ namespace FE
         return Unique<TDest>(fe_dynamic_cast<TDest*>(src.Detach()));
     }
 
-    //! \brief Perform \ref fe_assert_cast of \ref Shared<T>.
+    //! \brief Perform \ref fe_assert_cast of \ref Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Shared::GetRaw() and does a fe_assert_cast to TDest.
-    //! The result pointer is then used to create a new \ref Shared<T>.\n
+    //! This function retrieves a raw pointer using \ref Rc::Get() and does a fe_assert_cast to TDest.
+    //! The result pointer is then used to create a new \ref Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
     //! \note You must be sure that dynamic cast from TSrc to TDest will succeed.
@@ -169,11 +169,11 @@ namespace FE
     //! \tparam TDest   - The type of result pointer.
     //! \tparam TSrc    - The type of source pointer.
     //!
-    //! \return An instance of \ref Shared<TDest> that holds the same object but dynamically casted.
+    //! \return An instance of \ref Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
-    inline Shared<TDest> assert_pointer_cast(const Shared<TSrc>& src)
+    inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {
-        return Shared<TDest>(fe_assert_cast<TDest*>(src.GetRaw()));
+        return Rc<TDest>(fe_assert_cast<TDest*>(src.Get()));
     }
 
     //! \brief Perform \ref fe_assert_cast of \ref Unique<T>.

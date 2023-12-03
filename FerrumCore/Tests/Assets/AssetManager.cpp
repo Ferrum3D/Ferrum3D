@@ -20,7 +20,7 @@ TEST(AssetLoader, LoadAsset)
     auto file   = FE::MakeShared<FE::IO::FileHandle>();
     auto stream = FE::MakeShared<FE::IO::FileStream>(std::move(file));
     FE_IO_ASSERT(stream->Open(assetPath1, FE::IO::OpenMode::ReadOnly));
-    loader->LoadAsset(storage, stream.GetRaw());
+    loader->LoadAsset(storage, stream.Get());
     EXPECT_EQ(storage->Data, FE::IO::File::ReadAllText(assetPath1));
     storage->ReleaseStrongRef();
     EXPECT_EQ(deleteCount, 1);

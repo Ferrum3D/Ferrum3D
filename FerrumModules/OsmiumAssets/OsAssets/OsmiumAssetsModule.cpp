@@ -6,7 +6,7 @@
 
 namespace FE::Osmium
 {
-    void OsmiumAssetsModule::GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& /* dependencies */) {}
+    void OsmiumAssetsModule::GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& /* dependencies */) {}
 
     class OsmiumAssetsModuleImpl : public ServiceLocatorImplBase<OsmiumAssetsModule>
     {

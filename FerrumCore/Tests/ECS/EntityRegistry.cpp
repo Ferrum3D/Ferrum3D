@@ -92,10 +92,10 @@ TEST(EntityRegistry, UpdateQuery)
         }
     }
 
-    auto query1 = FE::MakeShared<EntityQuery>(registry.GetRaw());
+    auto query1 = FE::MakeShared<EntityQuery>(registry.Get());
     query1->AllOf<Position3DComponent, TestComponent>().Update();
 
-    auto query2 = FE::MakeShared<EntityQuery>(registry.GetRaw());
+    auto query2 = FE::MakeShared<EntityQuery>(registry.Get());
     query2->AllOf<Position3DComponent>().Update();
 
     FE::USize entityCount1 = 0;

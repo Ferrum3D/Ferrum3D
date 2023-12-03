@@ -41,7 +41,7 @@ namespace FE::Osmium
             m_Reflection = MakeShared<VKShaderReflection>(m_ByteCode);
         }
 
-        return m_Reflection.GetRaw();
+        return m_Reflection.Get();
     }
 
     FE_VK_OBJECT_DELETER(ShaderModule);

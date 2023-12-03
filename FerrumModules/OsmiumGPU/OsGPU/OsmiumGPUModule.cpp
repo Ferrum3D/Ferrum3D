@@ -19,7 +19,7 @@ namespace FE::Osmium
             m_Desc = desc;
         }
 
-        [[nodiscard]] Shared<IInstance> CreateInstance() const override;
+        [[nodiscard]] Rc<IInstance> CreateInstance() const override;
     };
 
     OsmiumGPUModuleImpl::OsmiumGPUModuleImpl()
@@ -27,7 +27,7 @@ namespace FE::Osmium
         SetInfo(ModuleInfo("Osmium.GPU", "Osmium's hardware abstraction layer", "Ferrum3D"));
     }
 
-    Shared<IInstance> OsmiumGPUModuleImpl::CreateInstance() const
+    Rc<IInstance> OsmiumGPUModuleImpl::CreateInstance() const
     {
         InstanceDesc desc{};
         desc.ApplicationName = m_Desc.ApplicationName;

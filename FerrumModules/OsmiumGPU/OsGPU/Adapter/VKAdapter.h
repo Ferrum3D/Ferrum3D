@@ -39,7 +39,7 @@ namespace FE::Osmium
 
         VkPhysicalDevice GetNativeAdapter();
         AdapterDesc& GetDesc() override;
-        Shared<IDevice> CreateDevice() override;
+        Rc<IDevice> CreateDevice() override;
         IInstance& GetInstance() override;
     };
 } // namespace FE::Osmium

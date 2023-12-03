@@ -8,7 +8,7 @@ namespace FE
     class ModuleFrameworkFactoryImpl : public Object<IFrameworkFactory>
     {
         StringSlice m_LibraryPath;
-        Shared<DynamicLibrary> m_Library;
+        Rc<DynamicLibrary> m_Library;
         TModule* m_Module = nullptr;
 
     public:
@@ -122,7 +122,7 @@ namespace FE
         inline ModuleFramework() = default;
 
         using Factory = ModuleFrameworkFactoryImpl<TModule>;
-        inline static Shared<IFrameworkFactory> CreateFactory()
+        inline static Rc<IFrameworkFactory> CreateFactory()
         {
             return static_pointer_cast<IFrameworkFactory>(MakeShared<Factory>(TModule::LibraryPath));
         }

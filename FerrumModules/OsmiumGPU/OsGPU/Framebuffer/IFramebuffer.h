@@ -12,7 +12,7 @@ namespace FE::Osmium
         FE_STRUCT_RTTI(FramebufferDesc, "0A969932-5EFF-401E-9318-1C77D190E8A9");
 
         ArraySlice<IImageView*> RenderTargetViews{};
-        Shared<IRenderPass> RenderPass{};
+        Rc<IRenderPass> RenderPass{};
         UInt32 Width  = 0;
         UInt32 Height = 0;
     };

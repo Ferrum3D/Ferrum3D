@@ -6,10 +6,10 @@ namespace FE
     class FrameworkBase : public IFramework
     {
         bool m_IsInitialized = false;
-        List<Shared<IFrameworkFactory>> m_Dependencies;
+        List<Rc<IFrameworkFactory>> m_Dependencies;
 
     protected:
-        void GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& dependencies) override;
+        void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) override;
         void Initialize() final;
         void UnloadDependencies() override;
 

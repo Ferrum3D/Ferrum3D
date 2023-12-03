@@ -14,15 +14,15 @@ namespace FE
     //! \note T _must_ inherit from \ref IObject.
     //! \see ReferenceCounter
     template<class T>
-    class Shared final
+    class Rc final
     {
         T* m_Object;
 
     public:
-        FE_STRUCT_RTTI(Shared, "FFF4F2AF-4AAA-49F6-AE7A-D28ED39C794E");
+        FE_STRUCT_RTTI(Rc, "FFF4F2AF-4AAA-49F6-AE7A-D28ED39C794E");
 
         //! \brief Create a _null_ reference counted pointer.
-        inline Shared() noexcept
+        inline Rc() noexcept
             : m_Object(nullptr)
         {
         }
@@ -33,7 +33,7 @@ namespace FE
         //!
         //! \note It is valid to use this constructor on a raw object since the object itself stores
         //!       The pointer to \ref ReferenceCounter instance.
-        inline Shared(T* object) noexcept
+        inline Rc(T* object) noexcept
             : m_Object(object)
         {
             if (m_Object)
@@ -45,7 +45,7 @@ namespace FE
         //! \brief Copy a pointer (adds a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to copy.
-        inline Shared(const Shared& other) noexcept
+        inline Rc(const Rc& other) noexcept
             : m_Object(other.m_Object)
         {
             if (m_Object)
@@ -58,8 +58,8 @@ namespace FE
         //!
         //! \param [in] other - Pointer to copy.
         template<class T1>
-        inline Shared(const Shared<T1>& other) noexcept
-            : m_Object(other.GetRaw())
+        inline Rc(const Rc<T1>& other) noexcept
+            : m_Object(other.Get())
         {
             if (m_Object)
             {
@@ -70,14 +70,14 @@ namespace FE
         //! \brief Move a pointer (doesn't add a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to move.
-        inline Shared(Shared&& other) noexcept
+        inline Rc(Rc&& other) noexcept
             : m_Object(other.m_Object)
         {
             other.m_Object = nullptr;
         }
 
         //! \brief Swap raw pointers of two objects without incrementing and decrementing ref-counters.
-        inline void Swap(Shared& other)
+        inline void Swap(Rc& other)
         {
             auto* t        = other.m_Object;
             other.m_Object = m_Object;
@@ -87,28 +87,28 @@ namespace FE
         //! \brief Copy a pointer (adds a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to copy.
-        inline Shared& operator=(const Shared& other)
+        inline Rc& operator=(const Rc& other)
         {
-            Shared(other).Swap(*this);
+            Rc(other).Swap(*this);
             return *this;
         }
 
         //! \brief Move a pointer (doesn't add a strong reference to underlying object).
         //!
         //! \param [in] other - Pointer to move.
-        inline Shared& operator=(Shared&& other) noexcept
+        inline Rc& operator=(Rc&& other) noexcept
         {
-            Shared(std::move(other)).Swap(*this);
+            Rc(std::move(other)).Swap(*this);
             return *this;
         }
 
         //! \brief Set a pointer to _null_.
         inline void Reset()
         {
-            Shared{}.Swap(*this);
+            Rc{}.Swap(*this);
         }
 
-        inline ~Shared()
+        inline ~Rc()
         {
             if (m_Object)
             {
@@ -130,29 +130,29 @@ namespace FE
         }
 
         //! \brief Get underlying raw pointer.
-        inline T* GetRaw() const
+        inline T* Get() const
         {
             return m_Object;
         }
 
         inline T& operator*()
         {
-            return *GetRaw();
+            return *Get();
         }
 
         inline T* operator->()
         {
-            return GetRaw();
+            return Get();
         }
 
         inline const T& operator*() const
         {
-            return *GetRaw();
+            return *Get();
         }
 
         inline const T* operator->() const
         {
-            return GetRaw();
+            return Get();
         }
 
         inline explicit operator bool() const
@@ -162,37 +162,37 @@ namespace FE
     };
 
     template<class T>
-    inline bool operator==(const Shared<T>& lhs, std::nullptr_t)
+    inline bool operator==(const Rc<T>& lhs, std::nullptr_t)
     {
-        return lhs.GetRaw() == nullptr;
+        return lhs.Get() == nullptr;
     }
 
     template<class T>
-    inline bool operator!=(const Shared<T>& lhs, std::nullptr_t)
+    inline bool operator!=(const Rc<T>& lhs, std::nullptr_t)
     {
         return !(lhs == nullptr);
     }
 
     template<class T>
-    inline bool operator==(std::nullptr_t, const Shared<T>& rhs)
+    inline bool operator==(std::nullptr_t, const Rc<T>& rhs)
     {
-        return rhs.GetRaw() == nullptr;
+        return rhs.Get() == nullptr;
     }
 
     template<class T>
-    inline bool operator!=(std::nullptr_t, const Shared<T>& rhs)
+    inline bool operator!=(std::nullptr_t, const Rc<T>& rhs)
     {
         return !(nullptr == rhs);
     }
 
     template<class T1, class T2>
-    inline bool operator==(const Shared<T1>& lhs, const Shared<T2>& rhs)
+    inline bool operator==(const Rc<T1>& lhs, const Rc<T2>& rhs)
     {
-        return static_cast<IObject*>(lhs.GetRaw()) == static_cast<IObject*>(rhs.GetRaw());
+        return static_cast<IObject*>(lhs.Get()) == static_cast<IObject*>(rhs.Get());
     }
 
     template<class T1, class T2>
-    inline bool operator!=(const Shared<T1>& lhs, const Shared<T2>& rhs)
+    inline bool operator!=(const Rc<T1>& lhs, const Rc<T2>& rhs)
     {
         return !(lhs == rhs);
     }
