@@ -16,7 +16,7 @@ namespace FE::Assets
         ~IAssetProvider() override = default;
 
         //! \brief Create asset loading stream for given asset ID.
-        virtual Shared<IO::IStream> CreateAssetLoadingStream(const AssetID& assetID) = 0;
+        virtual Rc<IO::IStream> CreateAssetLoadingStream(const AssetID& assetID) = 0;
 
         //! \brief Returns asset type of given asset ID.
         //!

@@ -21,8 +21,8 @@ namespace FE::ECS
 
     class World final : public ServiceLocatorImplBase<IWorld>, public EventBus<FrameEvents>::Handler
     {
-        List<Shared<ISystem>> m_Systems;
-        Shared<EntityRegistry> m_Registry;
+        List<Rc<ISystem>> m_Systems;
+        Rc<EntityRegistry> m_Registry;
 
     public:
         FE_CLASS_RTTI(World, "1937CC6F-4309-4EF4-9AB2-014ABC269FBE");

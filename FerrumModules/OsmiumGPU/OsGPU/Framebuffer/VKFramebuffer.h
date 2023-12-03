@@ -11,7 +11,7 @@ namespace FE::Osmium
     {
         VKDevice* m_Device;
         VkFramebuffer m_NativeFramebuffer;
-        List<Shared<IImageView>> m_RTVs;
+        List<Rc<IImageView>> m_RTVs;
         FramebufferDesc m_Desc;
 
     public:

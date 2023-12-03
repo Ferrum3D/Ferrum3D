@@ -30,7 +30,7 @@ namespace FE::Osmium
         return m_NativePool;
     }
 
-    Shared<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors)
+    Rc<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors)
     {
         auto result = MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
         return result->GetNativeSet() == VK_NULL_HANDLE ? nullptr : result;

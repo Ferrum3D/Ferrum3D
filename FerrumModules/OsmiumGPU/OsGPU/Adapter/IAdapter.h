@@ -31,6 +31,6 @@ namespace FE::Osmium
         ~IAdapter() override                   = default;
         virtual IInstance& GetInstance()       = 0;
         virtual AdapterDesc& GetDesc()         = 0;
-        virtual Shared<IDevice> CreateDevice() = 0;
+        virtual Rc<IDevice> CreateDevice() = 0;
     };
 } // namespace FE::Osmium

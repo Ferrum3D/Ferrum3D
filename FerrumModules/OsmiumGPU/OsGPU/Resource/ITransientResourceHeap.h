@@ -66,13 +66,13 @@ namespace FE::Osmium
 
         inline virtual void Allocate() = 0;
 
-        [[nodiscard]] virtual Shared<IImage> CreateImage(const TransientImageDesc& desc)    = 0;
-        [[nodiscard]] virtual Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc) = 0;
+        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc)    = 0;
+        [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc) = 0;
 
-        [[nodiscard]] virtual Shared<IImage> CreateImage(const TransientImageDesc& desc,
+        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc,
                                                          TransientResourceAllocationStats& stats) = 0;
 
-        [[nodiscard]] virtual Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc,
+        [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc,
                                                            TransientResourceAllocationStats& stats) = 0;
 
         virtual void ReleaseImage(UInt64 resourceID)  = 0;

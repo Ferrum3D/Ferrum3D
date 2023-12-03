@@ -37,7 +37,7 @@ namespace FE::Osmium
 
         ~IDescriptorHeap() override = default;
 
-        virtual Shared<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) = 0;
+        virtual Rc<IDescriptorTable> AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors) = 0;
 
         virtual void Reset() = 0;
     };

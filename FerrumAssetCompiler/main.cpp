@@ -242,11 +242,11 @@ Supported commands:
         auto stream     = MakeShared<IO::FileStream>(fileHandle);
         FE_IO_ASSERT(stream->Open(file, IO::OpenMode::ReadOnly));
 
-        Shared<AssetStorage> storage = loader->CreateStorage();
+        Rc<AssetStorage> storage = loader->CreateStorage();
         storage->ReleaseStrongRef();
-        loader->LoadRawAsset(metadata, storage.GetRaw(), stream.GetRaw());
+        loader->LoadRawAsset(metadata, storage.Get(), stream.Get());
 
-        loader->SaveAsset(storage.GetRaw(), outStream);
+        loader->SaveAsset(storage.Get(), outStream);
     }
 
     int CompileCommand(const ArraySlice<StringSlice>& args)
@@ -272,7 +272,7 @@ Supported commands:
             auto stream     = MakeShared<IO::FileStream>(fileHandle);
             FE_IO_ASSERT(stream->Open(Fmt::Format("{}.compiled.pak", file), IO::OpenMode::Create));
 
-            ProcessOneFile(file, stream.GetRaw(), additionalMetadata);
+            ProcessOneFile(file, stream.Get(), additionalMetadata);
         }
 
         return 0;
@@ -342,7 +342,7 @@ private:
         Stop(FE::Assets::RunCompiler(m_Argc, m_Argv));
     }
 
-    inline void GetFrameworkDependencies(FE::List<FE::Shared<FE::IFrameworkFactory>>& dependencies) override
+    inline void GetFrameworkDependencies(FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
     {
         dependencies.Push(FE::Osmium::OsmiumAssetsModule::CreateFactory());
     }

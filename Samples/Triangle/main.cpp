@@ -1,4 +1,4 @@
-#include <FeCore/Containers/IByteBuffer.h>
+#include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/Framework/ApplicationFramework.h>
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
@@ -18,27 +18,27 @@ inline constexpr const char* ExampleName = "Ferrum3D - Triangle";
 
 class TestApplication final : public FE::ApplicationFramework
 {
-    FE::Shared<HAL::IInstance> m_Instance;
-    FE::Shared<HAL::IAdapter> m_Adapter;
-    FE::Shared<HAL::IDevice> m_Device;
+    FE::Rc<HAL::IInstance> m_Instance;
+    FE::Rc<HAL::IAdapter> m_Adapter;
+    FE::Rc<HAL::IDevice> m_Device;
 
-    FE::List<FE::Shared<HAL::IFence>> m_Fences;
-    FE::List<FE::Shared<HAL::IFramebuffer>> m_Framebuffers;
-    FE::List<FE::Shared<HAL::ICommandBuffer>> m_CommandBuffers;
-    FE::Shared<HAL::ICommandQueue> m_GraphicsQueue;
-    FE::Shared<HAL::ICommandQueue> m_TransferQueue;
+    FE::List<FE::Rc<HAL::IFence>> m_Fences;
+    FE::List<FE::Rc<HAL::IFramebuffer>> m_Framebuffers;
+    FE::List<FE::Rc<HAL::ICommandBuffer>> m_CommandBuffers;
+    FE::Rc<HAL::ICommandQueue> m_GraphicsQueue;
+    FE::Rc<HAL::ICommandQueue> m_TransferQueue;
 
-    FE::Shared<HAL::IRenderPass> m_RenderPass;
-    FE::Shared<HAL::ISwapChain> m_SwapChain;
-    FE::Shared<HAL::IGraphicsPipeline> m_Pipeline;
-    FE::List<FE::Shared<HAL::IImageView>> m_RTVs;
+    FE::Rc<HAL::IRenderPass> m_RenderPass;
+    FE::Rc<HAL::ISwapChain> m_SwapChain;
+    FE::Rc<HAL::IGraphicsPipeline> m_Pipeline;
+    FE::List<HAL::IImageView*> m_RTVs;
 
-    FE::Shared<HAL::IShaderModule> m_PixelShader;
-    FE::Shared<HAL::IShaderModule> m_VertexShader;
+    FE::Rc<HAL::IShaderModule> m_PixelShader;
+    FE::Rc<HAL::IShaderModule> m_VertexShader;
 
-    FE::Shared<HAL::IBuffer> m_VertexBuffer;
+    FE::Rc<HAL::IBuffer> m_VertexBuffer;
 
-    FE::Shared<HAL::IWindow> m_Window;
+    FE::Rc<HAL::IWindow> m_Window;
     HAL::Viewport m_Viewport{};
     HAL::Scissor m_Scissor{};
 
@@ -69,11 +69,11 @@ protected:
         auto imageIndex = m_SwapChain->GetCurrentImageIndex();
         m_Fences[m_SwapChain->GetCurrentFrameIndex()]->Reset();
         m_GraphicsQueue->SubmitBuffers(
-            { m_CommandBuffers[imageIndex].GetRaw() }, m_Fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+            { m_CommandBuffers[imageIndex].Get() }, m_Fences[frameIndex].Get(), HAL::SubmitFlags::FrameBeginEnd);
         m_SwapChain->Present();
     }
 
-    void GetFrameworkDependencies(FE::List<FE::Shared<FE::IFrameworkFactory>>& dependencies) override
+    void GetFrameworkDependencies(FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
     {
         dependencies.Push(HAL::OsmiumGPUModule::CreateFactory());
     }
@@ -105,7 +105,7 @@ public:
         swapChainDesc.ImageWidth         = m_Scissor.Width();
         swapChainDesc.ImageHeight        = m_Scissor.Height();
         swapChainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
-        swapChainDesc.Queue              = m_GraphicsQueue.GetRaw();
+        swapChainDesc.Queue              = m_GraphicsQueue.Get();
         swapChainDesc.VerticalSync       = false;
         m_SwapChain                      = m_Device->CreateSwapChain(swapChainDesc);
         {
@@ -116,7 +116,11 @@ public:
                 {{-0.5, +0.5, 0}, {0, 0, 1}}
             };
             // clang-format on
-            m_VertexBuffer = m_Device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.Size() * sizeof(Vertex));
+
+            HAL::BufferDesc bufferDesc{};
+            bufferDesc.Flags = HAL::BindFlags::VertexBuffer;
+            bufferDesc.Size  = vertexData.Size() * sizeof(Vertex);
+            m_VertexBuffer   = m_Device->CreateBuffer(bufferDesc);
             m_VertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             m_VertexBuffer->UpdateData(vertexData.Data());
         }
@@ -165,10 +169,12 @@ public:
                                        .Build()
                                        .Build();
 
-        pipelineDesc.RenderPass             = m_RenderPass;
+        FE::List shaders{ m_PixelShader.Get(), m_VertexShader.Get() };
+
+        pipelineDesc.RenderPass             = m_RenderPass.Get();
         pipelineDesc.SubpassIndex           = 0;
         pipelineDesc.ColorBlend             = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
-        pipelineDesc.Shaders                = { m_PixelShader, m_VertexShader };
+        pipelineDesc.Shaders                = shaders;
         pipelineDesc.Rasterization          = HAL::RasterizationState{};
         pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
         pipelineDesc.Scissor                = m_Scissor;
@@ -177,13 +183,15 @@ public:
         m_Pipeline = m_Device->CreateGraphicsPipeline(pipelineDesc);
 
         for (FE::USize i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
+        {
             m_Fences.Push(m_Device->CreateFence(HAL::FenceState::Signaled));
+        }
 
         m_RTVs = m_SwapChain->GetRTVs();
         for (FE::USize i = 0; i < m_SwapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
-            framebufferDesc.RenderPass        = m_RenderPass.GetRaw();
+            framebufferDesc.RenderPass        = m_RenderPass.Get();
             framebufferDesc.RenderTargetViews = { m_RTVs[i] };
             framebufferDesc.Width             = m_Scissor.Width();
             framebufferDesc.Height            = m_Scissor.Height();
@@ -191,12 +199,13 @@ public:
 
             auto& cmd = m_CommandBuffers.Push(m_Device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
             cmd->Begin();
-            cmd->BindGraphicsPipeline(m_Pipeline.GetRaw());
+            cmd->BindGraphicsPipeline(m_Pipeline.Get());
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
-            cmd->BindVertexBuffer(0, m_VertexBuffer.GetRaw());
-            cmd->BeginRenderPass(
-                m_RenderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
+            cmd->BindVertexBuffer(0, m_VertexBuffer.Get(), 0);
+            cmd->BeginRenderPass(m_RenderPass.Get(),
+                                 framebuffer.Get(),
+                                 { HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine) });
             cmd->Draw(3, 1, 0, 0);
             cmd->EndRenderPass();
             cmd->End();

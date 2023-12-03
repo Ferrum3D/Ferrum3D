@@ -1,8 +1,10 @@
-#include <FeCore/Containers/IByteBuffer.h>
+#include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <OsGPU/OsmiumGPU.h>
+#include <FeCore/EventBus/EventBus.h>
+#include <FeCore/EventBus/FrameEvents.h>
 
 struct Vertex
 {
@@ -18,6 +20,7 @@ inline constexpr FE::Int32 MSAASamples   = 8;
 void RunExample()
 {
     auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
+    auto eventBus = FE::MakeShared<FE::EventBus<FE::FrameEvents>>();
 
     FE::DynamicLibrary osmiumLib;
     osmiumLib.LoadFrom("OsGPU");
@@ -26,7 +29,7 @@ void RunExample()
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
     auto instance =
-        FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
+        FE::Rc<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
     instance->ReleaseStrongRef();
     auto adapter       = instance->GetAdapters().Front();
     auto device        = adapter->CreateDevice();
@@ -41,7 +44,7 @@ void RunExample()
     swapChainDesc.ImageWidth         = scissor.Width();
     swapChainDesc.ImageHeight        = scissor.Height();
     swapChainDesc.NativeWindowHandle = window->GetNativeHandle();
-    swapChainDesc.Queue              = graphicsQueue.GetRaw();
+    swapChainDesc.Queue              = graphicsQueue.Get();
     auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
     auto colorImageDesc = HAL::ImageDesc::Img2D(
@@ -50,7 +53,7 @@ void RunExample()
     colorImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
     auto colorImageView = colorImage->CreateView(HAL::ImageAspectFlags::Color);
 
-    FE::Shared<HAL::IBuffer> vertexBuffer;
+    FE::Rc<HAL::IBuffer> vertexBuffer;
     {
         // clang-format off
         FE::List<Vertex> vertexData = {
@@ -59,7 +62,7 @@ void RunExample()
             {{-0.5f, +0.4f, 0}, {0, 0, 1}}
         };
         // clang-format on
-        vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexData.Size() * sizeof(Vertex));
+        vertexBuffer = device->CreateBuffer(HAL::BufferDesc{ vertexData.Size() * sizeof(Vertex), HAL::BindFlags::VertexBuffer });
         vertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
         vertexBuffer->UpdateData(vertexData.Data());
     }
@@ -115,10 +118,12 @@ void RunExample()
                                    .Build()
                                    .Build();
 
-    pipelineDesc.RenderPass             = renderPass;
+    FE::List shaders{ pixelShader.Get(), vertexShader.Get() };
+
+    pipelineDesc.RenderPass             = renderPass.Get();
     pipelineDesc.SubpassIndex           = 0;
     pipelineDesc.ColorBlend             = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
-    pipelineDesc.Shaders                = { pixelShader, vertexShader };
+    pipelineDesc.Shaders                = shaders;
     pipelineDesc.Multisample            = HAL::MultisampleState(MSAASamples, 0.2f, true);
     pipelineDesc.Rasterization          = HAL::RasterizationState{};
     pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
@@ -127,31 +132,34 @@ void RunExample()
 
     auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
-    FE::List<FE::Shared<HAL::IFence>> fences;
+    FE::List<FE::Rc<HAL::IFence>> fences;
     for (size_t i = 0; i < swapChain->GetDesc().FrameCount; ++i)
         fences.Push(device->CreateFence(HAL::FenceState::Signaled));
 
     auto RTVs = swapChain->GetRTVs();
-    FE::List<FE::Shared<HAL::IFramebuffer>> framebuffers;
-    FE::List<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
+    FE::List<FE::Rc<HAL::IFramebuffer>> framebuffers;
+    FE::List<FE::Rc<HAL::ICommandBuffer>> commandBuffers;
     for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
     {
+        FE::List framebufferRTVs{ colorImageView.Get(), RTVs[i] };
+
         HAL::FramebufferDesc framebufferDesc{};
-        framebufferDesc.RenderPass        = renderPass.GetRaw();
-        framebufferDesc.RenderTargetViews = { colorImageView, RTVs[i] };
+        framebufferDesc.RenderPass        = renderPass.Get();
+        framebufferDesc.RenderTargetViews = framebufferRTVs;
         framebufferDesc.Width             = scissor.Width();
         framebufferDesc.Height            = scissor.Height();
         auto framebuffer                  = framebuffers.Emplace(device->CreateFramebuffer(framebufferDesc));
 
         auto& cmd = commandBuffers.Emplace(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
         cmd->Begin();
-        cmd->BindGraphicsPipeline(pipeline.GetRaw());
+        cmd->BindGraphicsPipeline(pipeline.Get());
         cmd->SetViewport(viewport);
         cmd->SetScissor(scissor);
-        cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
-        cmd->BeginRenderPass(
-            renderPass.GetRaw(), framebuffer.GetRaw(),
-            { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine }, HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
+        cmd->BindVertexBuffer(0, vertexBuffer.Get(), 0);
+        cmd->BeginRenderPass(renderPass.Get(),
+                             framebuffer.Get(),
+                             { HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
+                               HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine) });
         cmd->Draw(3, 1, 0, 0);
         cmd->EndRenderPass();
         cmd->End();
@@ -166,7 +174,7 @@ void RunExample()
         auto imageIndex = swapChain->GetCurrentImageIndex();
         fences[swapChain->GetCurrentFrameIndex()]->Reset();
         graphicsQueue->SubmitBuffers(
-            { commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+            { commandBuffers[imageIndex].Get() }, fences[frameIndex].Get(), HAL::SubmitFlags::FrameBeginEnd);
         swapChain->Present();
     }
 

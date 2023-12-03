@@ -20,7 +20,7 @@ namespace FE::Osmium
         m_Cache.SetCapacity(m_Desc.CacheSize);
     }
 
-    Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
+    Rc<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
         USize allocationSize;
@@ -44,11 +44,11 @@ namespace FE::Osmium
         else
         {
             auto newImage = m_Device->CreateImage(desc.Descriptor);
-            result         = newImage.GetRaw();
+            result         = newImage.Get();
             m_Cache.AddObject(descHash, result);
 
             DeviceMemorySlice memory{};
-            memory.Memory     = m_Memory.GetRaw();
+            memory.Memory     = m_Memory.Get();
             memory.ByteSize   = allocationSize;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
@@ -61,7 +61,7 @@ namespace FE::Osmium
         return result;
     }
 
-    Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc,
+    Rc<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc,
                                                             TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
@@ -86,11 +86,11 @@ namespace FE::Osmium
         else
         {
             auto newBuffer = m_Device->CreateBuffer(desc.Descriptor);
-            result         = newBuffer.GetRaw();
+            result         = newBuffer.Get();
             m_Cache.AddObject(descHash, result);
 
             DeviceMemorySlice memory{};
-            memory.Memory     = m_Memory.GetRaw();
+            memory.Memory     = m_Memory.Get();
             memory.ByteSize   = allocationSize;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
@@ -124,13 +124,13 @@ namespace FE::Osmium
         }
     }
 
-    Shared<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc)
+    Rc<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc)
     {
         TransientResourceAllocationStats stats{};
         return CreateImage(desc, stats);
     }
 
-    Shared<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc)
+    Rc<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc)
     {
         TransientResourceAllocationStats stats{};
         return CreateBuffer(desc, stats);

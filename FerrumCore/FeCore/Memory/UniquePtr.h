@@ -7,7 +7,7 @@ namespace FE
     //! \brief Unique smart pointer.
     //!
     //! This smart pointer doesn't allow multiple references to same object, will automatically delete
-    //! the object it holds using \ref TAlloc global allocator. Unlike \ref Shared<T> this class
+    //! the object it holds using \ref TAlloc global allocator. Unlike \ref Rc<T> this class
     //! works with any type, so there's no requirement that \ref T must inherit from \ref IObject.
     //!
     //! \tparam T      - Type of object to hold.

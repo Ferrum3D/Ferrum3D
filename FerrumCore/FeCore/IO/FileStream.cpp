@@ -69,12 +69,12 @@ namespace FE::IO
         return m_Handle->Open(fileName, openMode);
     }
 
-    FileStream::FileStream(const Shared<FileHandle>& file)
+    FileStream::FileStream(const Rc<FileHandle>& file)
         : m_Handle(file)
     {
     }
 
-    FileStream::FileStream(Shared<FileHandle>&& file)
+    FileStream::FileStream(Rc<FileHandle>&& file)
         : m_Handle(std::move(file))
     {
     }

@@ -22,7 +22,7 @@ void RunExample()
     auto createGraphicsAPIInstance = osmiumLib.GetFunction<HAL::CreateGraphicsAPIInstanceProc>("CreateGraphicsAPIInstance");
 
     auto instance =
-        FE::Shared<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
+        FE::Rc<HAL::IInstance>(createGraphicsAPIInstance(HAL::InstanceDesc{ ExampleName }, HAL::GraphicsAPI::Vulkan));
     instance->ReleaseStrongRef();
     auto adapter       = instance->GetAdapters().front();
     auto device        = adapter->CreateDevice();
@@ -38,12 +38,12 @@ void RunExample()
     swapChainDesc.ImageWidth         = scissor.Width();
     swapChainDesc.ImageHeight        = scissor.Height();
     swapChainDesc.NativeWindowHandle = window->GetNativeHandle();
-    swapChainDesc.Queue              = graphicsQueue.GetRaw();
+    swapChainDesc.Queue              = graphicsQueue.Get();
     auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
-    FE::Shared<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
-    FE::Shared<HAL::IBuffer> psConstantBuffer, vsConstantBuffer;
-    FE::Shared<HAL::IBuffer> indexBuffer, vertexBuffer;
+    FE::Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
+    FE::Rc<HAL::IBuffer> psConstantBuffer, vsConstantBuffer;
+    FE::Rc<HAL::IBuffer> indexBuffer, vertexBuffer;
     FE::UInt64 vertexSize, indexSize;
     {
         // clang-format off
@@ -90,10 +90,10 @@ void RunExample()
         auto transferComplete = device->CreateFence(HAL::FenceState::Reset);
         auto copyCmdBuffer    = device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
         copyCmdBuffer->Begin();
-        copyCmdBuffer->CopyBuffers(vertexBufferStaging.GetRaw(), vertexBuffer.GetRaw(), HAL::BufferCopyRegion(vertexSize));
-        copyCmdBuffer->CopyBuffers(indexBufferStaging.GetRaw(), indexBuffer.GetRaw(), HAL::BufferCopyRegion(indexSize));
+        copyCmdBuffer->CopyBuffers(vertexBufferStaging.Get(), vertexBuffer.Get(), HAL::BufferCopyRegion(vertexSize));
+        copyCmdBuffer->CopyBuffers(indexBufferStaging.Get(), indexBuffer.Get(), HAL::BufferCopyRegion(indexSize));
         copyCmdBuffer->End();
-        transferQueue->SubmitBuffers({ copyCmdBuffer.GetRaw() }, { transferComplete }, HAL::SubmitFlags::None);
+        transferQueue->SubmitBuffers({ copyCmdBuffer.Get() }, { transferComplete }, HAL::SubmitFlags::None);
         transferComplete->WaitOnCPU();
     }
 
@@ -150,10 +150,10 @@ void RunExample()
     HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
     auto descriptorTable = descriptorHeap->AllocateDescriptorTable({ psDescriptorDesc, vsDescriptorDesc });
 
-    HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.GetRaw() };
+    HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.Get() };
     descriptorTable->Update(descriptorWrite);
     descriptorWrite.Binding = 1;
-    descriptorWrite.Buffer  = vsConstantBuffer.GetRaw();
+    descriptorWrite.Buffer  = vsConstantBuffer.Get();
     descriptorTable->Update(descriptorWrite);
 
     HAL::GraphicsPipelineDesc pipelineDesc{};
@@ -176,19 +176,19 @@ void RunExample()
 
     auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 
-    FE::List<FE::Shared<HAL::IFence>> fences;
+    FE::List<FE::Rc<HAL::IFence>> fences;
     for (size_t i = 0; i < swapChain->GetDesc().FrameCount; ++i)
     {
         fences.Push(device->CreateFence(HAL::FenceState::Signaled));
     }
 
     auto RTVs = swapChain->GetRTVs();
-    FE::List<FE::Shared<HAL::IFramebuffer>> framebuffers;
-    FE::List<FE::Shared<HAL::ICommandBuffer>> commandBuffers;
+    FE::List<FE::Rc<HAL::IFramebuffer>> framebuffers;
+    FE::List<FE::Rc<HAL::ICommandBuffer>> commandBuffers;
     for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
     {
         HAL::FramebufferDesc framebufferDesc{};
-        framebufferDesc.RenderPass        = renderPass.GetRaw();
+        framebufferDesc.RenderPass        = renderPass.Get();
         framebufferDesc.RenderTargetViews = { RTVs[i] };
         framebufferDesc.Width             = scissor.Width();
         framebufferDesc.Height            = scissor.Height();
@@ -196,13 +196,13 @@ void RunExample()
 
         auto& cmd = commandBuffers.Emplace(device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
         cmd->Begin();
-        cmd->BindGraphicsPipeline(pipeline.GetRaw());
-        cmd->BindDescriptorTables({ descriptorTable.GetRaw() }, pipeline.GetRaw());
+        cmd->BindGraphicsPipeline(pipeline.Get());
+        cmd->BindDescriptorTables({ descriptorTable.Get() }, pipeline.Get());
         cmd->SetViewport(viewport);
         cmd->SetScissor(scissor);
-        cmd->BindVertexBuffer(0, vertexBuffer.GetRaw());
-        cmd->BindIndexBuffer(indexBuffer.GetRaw());
-        cmd->BeginRenderPass(renderPass.GetRaw(), framebuffer.GetRaw(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
+        cmd->BindVertexBuffer(0, vertexBuffer.Get());
+        cmd->BindIndexBuffer(indexBuffer.Get());
+        cmd->BeginRenderPass(renderPass.Get(), framebuffer.Get(), { HAL::ClearValueDesc{ FE::Colors::MediumAquamarine } });
         cmd->DrawIndexed(6, 1, 0, 0, 0);
         cmd->EndRenderPass();
         cmd->End();
@@ -217,7 +217,7 @@ void RunExample()
         auto imageIndex = swapChain->GetCurrentImageIndex();
         fences[swapChain->GetCurrentFrameIndex()]->Reset();
         graphicsQueue->SubmitBuffers(
-            { commandBuffers[imageIndex].GetRaw() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
+            { commandBuffers[imageIndex].Get() }, fences[frameIndex], HAL::SubmitFlags::FrameBeginEnd);
         swapChain->Present();
     }
 

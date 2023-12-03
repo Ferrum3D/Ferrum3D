@@ -6,11 +6,11 @@ namespace FE::IO
 {
     class FileStream : public StreamBase
     {
-        Shared<FileHandle> m_Handle;
+        Rc<FileHandle> m_Handle;
 
     public:
-        explicit FileStream(const Shared<FileHandle>& file);
-        explicit FileStream(Shared<FileHandle>&& file);
+        explicit FileStream(const Rc<FileHandle>& file);
+        explicit FileStream(Rc<FileHandle>&& file);
 
         ~FileStream() override = default;
 

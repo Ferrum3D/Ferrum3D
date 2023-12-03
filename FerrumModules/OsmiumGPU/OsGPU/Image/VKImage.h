@@ -26,7 +26,7 @@ namespace FE::Osmium
         ~VKImage() override;
 
         const ImageDesc& GetDesc() override;
-        Shared<IImageView> CreateView(ImageAspectFlags aspectFlags) override;
+        Rc<IImageView> CreateView(ImageAspectFlags aspectFlags) override;
 
         void AllocateMemory(MemoryType type) override;
         void BindMemory(const DeviceMemorySlice& memory) override;

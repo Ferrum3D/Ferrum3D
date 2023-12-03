@@ -31,6 +31,6 @@ namespace FE::ECS
 
     EntityRegistry* World::Registry()
     {
-        return m_Registry.GetRaw();
+        return m_Registry.Get();
     }
 } // namespace FE::ECS

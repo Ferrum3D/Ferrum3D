@@ -53,7 +53,7 @@ namespace FE::Osmium
         FE_LOG_MESSAGE("Vulkan instance was destroyed");
     }
 
-    VKInstance::VKInstance([[maybe_unused]] const InstanceDesc& desc)
+    VKInstance::VKInstance(const InstanceDesc& desc)
     {
         volkInitialize();
         UInt32 layerCount;
@@ -129,7 +129,7 @@ namespace FE::Osmium
         return m_Instance;
     }
 
-    const List<Shared<IAdapter>>& VKInstance::GetAdapters() const
+    const List<Rc<IAdapter>>& VKInstance::GetAdapters() const
     {
         return m_Adapters;
     }

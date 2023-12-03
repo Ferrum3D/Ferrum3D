@@ -1,5 +1,5 @@
-#include <FeCore/Parallel/Semaphore.h>
 #include <FeCore/Base/PlatformInclude.h>
+#include <FeCore/Parallel/Semaphore.h>
 
 namespace FE
 {
@@ -13,7 +13,8 @@ namespace FE
         CloseHandle(m_NativeSemaphore);
     }
 
-    void Semaphore::Acquire() {
+    void Semaphore::Acquire()
+    {
         WaitForSingleObject(m_NativeSemaphore, static_cast<DWORD>(-1));
     }
 
@@ -21,4 +22,4 @@ namespace FE
     {
         ReleaseSemaphore(m_NativeSemaphore, count, nullptr);
     }
-}
+} // namespace FE

@@ -14,4 +14,4 @@ namespace FE
         void Acquire();
         void Release(UInt32 count = 1);
     };
-}
+} // namespace FE

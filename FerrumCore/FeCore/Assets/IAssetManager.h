@@ -22,7 +22,7 @@ namespace FE::Assets
         //! \brief Register an instance of IAssetLoader.
         //!
         //! \param [in] loader - The loader to register.
-        virtual void RegisterAssetLoader(Shared<IAssetLoader> loader) = 0;
+        virtual void RegisterAssetLoader(Rc<IAssetLoader> loader) = 0;
 
         //! \brief Remove an instance of IAssetLoader.
         //!
@@ -41,7 +41,7 @@ namespace FE::Assets
         //! \brief Register an instance of IAssetProvider.
         //!
         //! \param[in] provider - The provider to register.
-        virtual void AttachAssetProvider(Shared<IAssetProvider> provider) = 0;
+        virtual void AttachAssetProvider(Rc<IAssetProvider> provider) = 0;
 
         //! \brief Detach the attached instance of IAssetProvider.
         virtual void DetachAssetProvider() = 0;

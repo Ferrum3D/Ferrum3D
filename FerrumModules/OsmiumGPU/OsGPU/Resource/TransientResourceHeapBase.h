@@ -33,13 +33,13 @@ namespace FE::Osmium
         IDevice* m_Device;
         GPULinearAllocator m_Allocator;
         ResourceCache m_Cache;
-        Shared<IDeviceMemory> m_Memory;
+        Rc<IDeviceMemory> m_Memory;
         UInt32 m_CreatedResourceCount = 0;
         UnorderedMap<UInt64, RegisteredResourceInfo> m_RegisteredResources;
 
         TransientResourceHeapBase(IDevice& dev, const TransientResourceHeapDesc& desc);
 
-        virtual Shared<IDeviceMemory> AllocateMemoryImpl() = 0;
+        virtual Rc<IDeviceMemory> AllocateMemoryImpl() = 0;
         virtual NullableHandle AllocateResourceMemory(const BufferDesc& desc, USize& byteSize) = 0;
         virtual NullableHandle AllocateResourceMemory(const ImageDesc& desc, USize& byteSize) = 0;
 
@@ -51,10 +51,10 @@ namespace FE::Osmium
         ~TransientResourceHeapBase() override = default;
 
         void Allocate() override;
-        Shared<IImage> CreateImage(const TransientImageDesc& desc) override;
-        Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc) override;
-        Shared<IImage> CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats) override;
-        Shared<IBuffer> CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats) override;
+        Rc<IImage> CreateImage(const TransientImageDesc& desc) override;
+        Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc) override;
+        Rc<IImage> CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats) override;
+        Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats) override;
 
         void ReleaseImage(UInt64 resourceID) override;
         void ReleaseBuffer(UInt64 resourceID) override;

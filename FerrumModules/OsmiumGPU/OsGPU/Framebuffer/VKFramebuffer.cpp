@@ -18,7 +18,7 @@ namespace FE::Osmium
 
         VkFramebufferCreateInfo framebufferCI{};
         framebufferCI.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCI.renderPass      = fe_assert_cast<VKRenderPass*>(desc.RenderPass.GetRaw())->GetNativeRenderPass();
+        framebufferCI.renderPass      = fe_assert_cast<VKRenderPass*>(desc.RenderPass.Get())->GetNativeRenderPass();
         framebufferCI.attachmentCount = static_cast<UInt32>(nativeRTVs.Size());
         framebufferCI.pAttachments    = nativeRTVs.Data();
         framebufferCI.width           = desc.Width;

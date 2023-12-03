@@ -3,6 +3,7 @@
 #include <FeCore/Memory/IAllocator.h>
 #include <FeCore/Parallel/Interlocked.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <atomic>
 
 namespace FE
 {
@@ -34,9 +35,9 @@ namespace FE
     //! This layout is used for better locality and performance: it groups two allocations into one.
     //! The internal reference counting system also supports copying shared pointers using their raw pointers:
     //! \code{.cpp}
-    //!     Shared<MyObject> ptr1 = MakeShared<MyObject>(); // refcount = 1
-    //!     Shared<MyObject> ptr2 = ptr1;                   // refcount = 2 <-- Valid for std::shared_ptr too
-    //!     Shared<MyObject> ptr3 = ptr1.GetRaw();          // refcount = 3 <-- Also valid here!
+    //!     Rc<MyObject> ptr1 = MakeShared<MyObject>(); // refcount = 1
+    //!     Rc<MyObject> ptr2 = ptr1;                   // refcount = 2 <-- Valid for std::shared_ptr too
+    //!     Rc<MyObject> ptr3 = ptr1.Get();             // refcount = 3 <-- Also valid here!
     //! \endcode
     //!
     //! It also has some limitations: the objects must inherit from \ref IObject and all allocations must be
@@ -45,7 +46,7 @@ namespace FE
     //! reference counter.
     class ReferenceCounter final
     {
-        AtomicInt32 m_StrongRefCount;
+        std::atomic<UInt32> m_StrongRefCount;
         mutable IAllocator* m_Allocator;
 
     public:
@@ -66,7 +67,7 @@ namespace FE
         //! \brief Add a strong reference to the counter.
         inline UInt32 AddStrongRef()
         {
-            return Interlocked::Increment(m_StrongRefCount);
+            return ++m_StrongRefCount;
         }
 
         //! \brief Remove a strong reference from the counter.
@@ -81,13 +82,14 @@ namespace FE
         template<class F>
         inline UInt32 ReleaseStrongRef(F&& destroyCallback)
         {
-            if (Interlocked::Decrement(m_StrongRefCount) == 0)
+            UInt32 result = --m_StrongRefCount;
+            if (result == 0)
             {
                 destroyCallback();
                 m_Allocator->Deallocate(this, FE_SRCPOS());
             }
 
-            return m_StrongRefCount;
+            return result;
         }
     };
 } // namespace FE

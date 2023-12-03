@@ -19,10 +19,10 @@ namespace FE::Osmium
         VkSurfaceFormatKHR m_ColorFormat;
         VkSurfaceCapabilitiesKHR m_Capabilities;
 
-        Shared<IImage> m_DepthImage;
-        Shared<IImageView> m_DepthImageView;
-        List<Shared<IImage>> m_Images;
-        List<Shared<IImageView>> m_ImageViews;
+        Rc<IImage> m_DepthImage;
+        Rc<IImageView> m_DepthImageView;
+        List<Rc<IImage>> m_Images;
+        List<Rc<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
         List<VkSemaphore> m_ImageAvailableSemaphores;

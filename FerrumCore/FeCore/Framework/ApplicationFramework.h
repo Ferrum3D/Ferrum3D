@@ -67,10 +67,10 @@ namespace FE
         Int32 m_ExitCode      = 0;
         bool m_StopRequested  = false;
 
-        Shared<Debug::ConsoleLogger> m_Logger;
-        Shared<EventBus<FrameEvents>> m_FrameEventBus;
-        Shared<JobScheduler> m_JobScheduler;
-        Shared<Assets::IAssetManager> m_AssetManager;
+        Rc<Debug::ConsoleLogger> m_Logger;
+        Rc<EventBus<FrameEvents>> m_FrameEventBus;
+        Rc<JobScheduler> m_JobScheduler;
+        Rc<Assets::IAssetManager> m_AssetManager;
 
     protected:
         virtual void PollSystemEvents()   = 0;

@@ -13,7 +13,7 @@ namespace FE::Osmium
     class OsmiumAssetsModule : public ModuleFramework<OsmiumAssetsModule>
     {
     protected:
-        void GetFrameworkDependencies(List<Shared<IFrameworkFactory>>& dependencies) override;
+        void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) override;
 
     public:
         ~OsmiumAssetsModule() override = default;
