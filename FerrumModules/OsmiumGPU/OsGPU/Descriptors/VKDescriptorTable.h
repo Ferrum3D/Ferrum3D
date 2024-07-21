@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Descriptors/IDescriptorTable.h>
 
@@ -8,7 +7,7 @@ namespace FE::Osmium
     class VKDevice;
     class VKDescriptorHeap;
 
-    class VKDescriptorTable : public Object<IDescriptorTable>
+    class VKDescriptorTable : public IDescriptorTable
     {
         VKDevice* m_Device;
         Rc<VKDescriptorHeap> m_Heap;
@@ -18,7 +17,7 @@ namespace FE::Osmium
 
         USize m_LayoutHash;
 
-        List<DescriptorDesc> m_Descriptors;
+        eastl::vector<DescriptorDesc> m_Descriptors;
 
     public:
         FE_CLASS_RTTI(VKDescriptorTable, "262CD421-E748-4F4C-A732-2ABB951D486A");

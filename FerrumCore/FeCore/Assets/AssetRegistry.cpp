@@ -1,4 +1,4 @@
-#include <FeCore/Assets/AssetRegistry.h>
+﻿#include <FeCore/Assets/AssetRegistry.h>
 #include <FeCore/IO/FileHandle.h>
 
 namespace FE::Assets
@@ -9,7 +9,10 @@ namespace FE::Assets
         auto content = IO::File::ReadAllText(fileName);
         for (auto line : content.SplitLines())
         {
-            auto [id, type, file] = line.Split().AsTuple<3>();
+            const eastl::vector<StringSlice> split = line.Split();
+            const StringSlice id = split[0];
+            const StringSlice type = split[1];
+            const StringSlice file = split[2];
             AddAsset(AssetID(id), AssetType(type), parentDir / file);
         }
 

@@ -1,4 +1,4 @@
-#include <OsAssets/Meshes/MeshAssetLoader.h>
+﻿#include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
 
 namespace FE::Osmium
@@ -10,7 +10,7 @@ namespace FE::Osmium
 
     void MeshAssetStorage::Delete()
     {
-        m_VertexBuffer.Clear();
-        m_IndexBuffer.Clear();
+        m_VertexBuffer.clear();
+        m_IndexBuffer.clear();
     }
 } // namespace FE::Osmium

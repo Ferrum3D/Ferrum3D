@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetCommon.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/SpinMutex.h>
+#include <FeCore/Parallel/SpinLock.h>
 
 namespace FE::Assets
 {
@@ -15,7 +15,7 @@ namespace FE::Assets
     //! The AssetStorage class is responsible for reference counting and deleting the data after its reference count reaches 0.
     class AssetStorage
     {
-        SpinMutex m_Mutex;
+        SpinLock m_Mutex;
         UInt32 m_StrongRefCount;
         UInt32 m_WeakRefCount;
 
@@ -57,7 +57,7 @@ namespace FE::Assets
         //! \brief Add a strong reference to the asset.
         inline void AddStrongRef()
         {
-            UniqueLocker lk(m_Mutex);
+            std::unique_lock lk(m_Mutex);
             ++m_StrongRefCount;
             ++m_WeakRefCount;
         }
@@ -65,7 +65,7 @@ namespace FE::Assets
         //! \brief Remove a strong reference from the asset.
         inline void ReleaseStrongRef()
         {
-            UniqueLocker lk(m_Mutex);
+            std::unique_lock lk(m_Mutex);
 
             if (--m_StrongRefCount == 0)
             {
@@ -73,29 +73,27 @@ namespace FE::Assets
             }
             if (--m_WeakRefCount == 0)
             {
-                lk.Unlock();
-                this->~AssetStorage();
-                GlobalAllocator<HeapAllocator>::Get().Deallocate(this, FE_SRCPOS());
+                lk.unlock();
+                Memory::DefaultDelete(this);
             }
         }
 
         //! \brief Add a weak reference to the asset.
         inline void AddWeakRef()
         {
-            UniqueLocker lk(m_Mutex);
+            std::unique_lock lk(m_Mutex);
             ++m_WeakRefCount;
         }
 
         //! \brief Remove a weak reference from the asset.
         inline void ReleaseWeakRef()
         {
-            UniqueLocker lk(m_Mutex);
+            std::unique_lock lk(m_Mutex);
             // Every strong reference holds a weak reference too, so if the weak counter reaches zero we can safely delete storage
             if (--m_WeakRefCount == 0)
             {
-                lk.Unlock();
-                this->~AssetStorage();
-                GlobalAllocator<HeapAllocator>::Get().Deallocate(this, FE_SRCPOS());
+                lk.unlock();
+                Memory::DefaultDelete(this);
             }
         }
     };

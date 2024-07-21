@@ -1,4 +1,4 @@
-#include <OsGPU/Instance/VKInstance.h>
+﻿#include <OsGPU/Instance/VKInstance.h>
 #include <OsGPU/OsmiumGPUModule.h>
 
 namespace FE::Osmium
@@ -35,7 +35,7 @@ namespace FE::Osmium
         switch (m_Desc.API)
         {
         case GraphicsAPI::Vulkan:
-            return static_pointer_cast<IInstance>(MakeShared<VKInstance>(desc)).Detach();
+            return static_cast<IInstance*>(Rc<VKInstance>::DefaultNew(desc));
         default:
             FE_UNREACHABLE("Invalid value: GraphicsAPI({})", static_cast<Int32>(m_Desc.API));
             break;
@@ -46,6 +46,6 @@ namespace FE::Osmium
     extern "C" FE_DLL_EXPORT OsmiumGPUModule* CreateModuleInstance(Env::Internal::IEnvironment* environment)
     {
         Env::AttachEnvironment(*environment);
-        return MakeShared<OsmiumGPUModuleImpl>().Detach();
+        return Rc<OsmiumGPUModuleImpl>::DefaultNew();
     }
 } // namespace FE::Osmium

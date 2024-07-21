@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/Object.h>
+﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <shared_mutex>
 
@@ -95,7 +94,7 @@ namespace FE
     //! \tparam TBase - The base class to derive.
     //! \tparam TInterface - The interface to register in ServiceLocator.
     template<class TBase, class TInterface = TBase>
-    struct ServiceLocatorImplBase : public Object<TBase>
+    struct ServiceLocatorImplBase : public TBase
     {
         FE_CLASS_RTTI(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 

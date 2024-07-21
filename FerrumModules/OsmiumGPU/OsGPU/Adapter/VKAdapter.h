@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Adapter/IAdapter.h>
 #include <OsGPU/Common/VKConfig.h>
 
@@ -23,7 +23,7 @@ namespace FE::Osmium
         }
     }
 
-    class VKAdapter : public Object<IAdapter>
+    class VKAdapter : public IAdapter
     {
         AdapterDesc m_Desc;
         VKInstance* m_Instance;

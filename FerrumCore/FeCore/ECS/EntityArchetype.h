@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/ECS/ComponentType.h>
-#include <FeCore/Memory/SharedPtr.h>
+#include <FeCore/Memory/RefCount.h>
 
 namespace FE::ECS
 {
@@ -54,13 +54,13 @@ namespace FE::ECS
         friend class EntityArchetypeBuilder;
         friend class EntityQuery;
 
-        inline static constexpr USize ChunkByteSize = 16 * 1024;
+        inline static constexpr uint32_t ChunkByteSize = 16 * 1024;
 
-        List<ComponentType> m_Layout;
-        USize m_EntitySize = 0;
-        USize m_HashCode   = 0;
+        eastl::vector<ComponentType> m_Layout;
+        uint32_t m_EntitySize = 0;
+        USize m_HashCode = 0;
 
-        List<ArchetypeChunk*> m_Chunks;
+        eastl::vector<ArchetypeChunk*> m_Chunks;
 
         UInt32 m_Version = 0;
 
@@ -79,11 +79,11 @@ namespace FE::ECS
 
         inline EntityArchetype(EntityArchetype&& other) noexcept
         {
-            m_Layout     = std::move(other.m_Layout);
+            m_Layout = std::move(other.m_Layout);
             m_EntitySize = other.m_EntitySize;
-            m_HashCode   = other.m_HashCode;
-            m_Chunks     = std::move(other.m_Chunks);
-            m_Version    = other.m_Version;
+            m_HashCode = other.m_HashCode;
+            m_Chunks = std::move(other.m_Chunks);
+            m_Version = other.m_Version;
         }
 
         ArchetypeChunk* AllocateChunk();
@@ -150,7 +150,7 @@ namespace FE::ECS
         }
 
         //! \brief Get the number of entities of this archetype that can be stored in a single ArchetypeChunk.
-        [[nodiscard]] USize ChunkCapacity() const
+        [[nodiscard]] uint32_t ChunkCapacity() const
         {
             return ChunkByteSize / m_EntitySize;
         }
@@ -158,13 +158,13 @@ namespace FE::ECS
         //! \brief Get number of chunks currently allocated for this archetype.
         [[nodiscard]] USize ChunkCount() const
         {
-            return m_Chunks.Size();
+            return m_Chunks.size();
         }
 
         //! \brief Get number of component types in the archetype.
         [[nodiscard]] USize ComponentTypeCount() const
         {
-            return m_Layout.Size();
+            return m_Layout.size();
         }
 
         //! \brief Get component types in the archetype.
@@ -218,7 +218,7 @@ namespace FE::ECS
         //! \brief Add a component type to EntityArchetype.
         inline EntityArchetypeBuilder& AddComponentType(const ComponentType& componentType)
         {
-            m_Archetype.m_Layout.Push(componentType);
+            m_Archetype.m_Layout.push_back(componentType);
             return *this;
         }
 
@@ -226,7 +226,7 @@ namespace FE::ECS
         template<class T>
         inline EntityArchetypeBuilder& AddComponentType()
         {
-            m_Archetype.m_Layout.Push(ComponentType::Create<T>());
+            m_Archetype.m_Layout.push_back(ComponentType::Create<T>());
             return *this;
         }
 
@@ -239,14 +239,11 @@ namespace FE::ECS
     };
 } // namespace FE::ECS
 
-namespace std
+template<>
+struct eastl::hash<FE::ECS::EntityArchetype>
 {
-    template<>
-    struct hash<FE::ECS::EntityArchetype>
+    inline size_t operator()(const FE::ECS::EntityArchetype& value) const noexcept
     {
-        inline size_t operator()(const FE::ECS::EntityArchetype& value) const noexcept
-        {
-            return value.GetHash();
-        }
-    };
-} // namespace std
+        return value.GetHash();
+    }
+};

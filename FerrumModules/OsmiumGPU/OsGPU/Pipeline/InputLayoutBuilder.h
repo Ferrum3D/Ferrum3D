@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Pipeline/InputStreamLayout.h>
 
 namespace FE::Osmium
@@ -9,15 +9,15 @@ namespace FE::Osmium
 
         InputLayoutBuilder* m_Parent = nullptr;
         InputStreamBufferDesc m_Buffer{};
-        List<InputStreamAttributeDesc> m_Attributes;
+        eastl::vector<InputStreamAttributeDesc> m_Attributes;
 
-        UInt32 m_Index  = 0;
+        UInt32 m_Index = 0;
         UInt32 m_Offset = 0;
 
     public:
         inline InputLayoutBufferBuilder& AddAttribute(Format format, const FE::String& semantic)
         {
-            m_Attributes.Emplace(semantic, m_Index, m_Offset, format);
+            m_Attributes.emplace_back(semantic, m_Index, m_Offset, format);
             m_Offset += GetFormatSize(format);
             return *this;
         }
@@ -37,7 +37,7 @@ namespace FE::Osmium
     class InputLayoutBuilder
     {
         PrimitiveTopology m_Topology;
-        List<InputLayoutBufferBuilder> m_Buffers;
+        eastl::vector<InputLayoutBufferBuilder> m_Buffers;
 
     public:
         explicit InputLayoutBuilder(PrimitiveTopology topology = PrimitiveTopology::TriangleList)
@@ -47,10 +47,10 @@ namespace FE::Osmium
 
         inline InputLayoutBufferBuilder& AddBuffer(InputStreamRate inputRate)
         {
-            auto& result              = m_Buffers.Emplace();
+            auto& result = m_Buffers.emplace_back();
             result.m_Buffer.InputRate = inputRate;
-            result.m_Index            = static_cast<UInt32>(m_Buffers.Size() - 1);
-            result.m_Parent           = this;
+            result.m_Index = static_cast<UInt32>(m_Buffers.size() - 1);
+            result.m_Parent = this;
 
             return result;
         }

@@ -1,3 +1,4 @@
+﻿#include <EASTL/sort.h>
 #include <FeCore/ECS/ArchetypeChunk.h>
 #include <FeCore/ECS/EntityArchetype.h>
 
@@ -5,21 +6,21 @@ namespace FE::ECS
 {
     EntityArchetype::EntityArchetype(const ArraySlice<ComponentType>& layout)
     {
-        m_Layout.Assign(layout.Data(), layout.Data() + layout.Length());
+        m_Layout.assign(layout.Data(), layout.Data() + layout.Length());
     }
 
     void EntityArchetype::InitInternal()
     {
-        m_Layout.Sort([](const ComponentType& lhs, const ComponentType& rhs){
+        eastl::sort(m_Layout.begin(), m_Layout.end(), [](const ComponentType& lhs, const ComponentType& rhs) {
             if (lhs.Alignment == rhs.Alignment)
             {
-                return std::hash<TypeID>{}(lhs.Type) > std::hash<TypeID>{}(rhs.Type);
+                return eastl::hash<TypeID>{}(lhs.Type) > eastl::hash<TypeID>{}(rhs.Type);
             }
 
             return lhs.Alignment > rhs.Alignment;
         });
 
-        for (USize i = 0; i < m_Layout.Size(); ++i)
+        for (uint32_t i = 0; i < m_Layout.size(); ++i)
         {
             FE_ASSERT_MSG(i == 0 || m_Layout[i].Type != m_Layout[i - 1].Type,
                           "Same component type added twice to the same archetype");
@@ -40,21 +41,22 @@ namespace FE::ECS
     {
         ArchetypeChunkDesc desc{};
         desc.Archetype = this;
-        m_Chunks.Emplace(ArchetypeChunk::Allocate())->Init(desc);
-        return m_Chunks.Back();
+        m_Chunks.push_back(ArchetypeChunk::Allocate());
+        m_Chunks.back()->Init(desc);
+        return m_Chunks.back();
     }
 
     void EntityArchetype::DeallocateChunk(ArchetypeChunk* chunk)
     {
-        auto idx = m_Chunks.IndexOf(chunk);
-        FE_ASSERT_MSG(idx != 1, "Couldn't find ArchetypeChunk: {}", chunk);
-        m_Chunks[idx]->Deallocate();
-        m_Chunks.SwapRemoveAt(idx);
+        auto it = eastl::find(m_Chunks.begin(), m_Chunks.end(), chunk);
+        FE_ASSERT_MSG(it != m_Chunks.end(), "Couldn't find ArchetypeChunk: {}", chunk);
+        (*it)->Deallocate();
+        m_Chunks.erase_unsorted(it);
     }
 
     void EntityArchetype::CollectGarbage()
     {
-        List<ArchetypeChunk*> newChunks;
+        eastl::vector<ArchetypeChunk*> newChunks;
         for (ArchetypeChunk*& chunk : m_Chunks)
         {
             if (chunk->Empty())
@@ -63,11 +65,11 @@ namespace FE::ECS
             }
             else
             {
-                newChunks.Push(chunk);
+                newChunks.push_back(chunk);
             }
         }
 
-        m_Chunks.Swap(newChunks);
+        m_Chunks = std::move(newChunks);
     }
 
     ECSResult EntityArchetype::CreateEntity(UInt16& id, ArchetypeChunk** chunk)
@@ -96,11 +98,6 @@ namespace FE::ECS
 
     ECSResult EntityArchetype::DestroyEntity(UInt16 id, ArchetypeChunk* chunk)
     {
-        if (ValidationEnabled())
-        {
-            FE_ASSERT_MSG(m_Chunks.IndexOf(chunk) != -1, "The chunk doesn't belong to this archetype.");
-        }
-
         auto result = chunk->DeallocateEntity(id);
         if (result == ECSResult::Success)
         {
@@ -129,9 +126,9 @@ namespace FE::ECS
     EntityArchetypeMatch EntityArchetype::Match(const EntityArchetype& other)
     {
         USize matchCount = 0;
-        for (USize i = 0; i < ComponentTypeCount(); ++i)
+        for (uint32_t i = 0; i < ComponentTypeCount(); ++i)
         {
-            for (USize j = 0; j < other.ComponentTypeCount(); ++j)
+            for (uint32_t j = 0; j < other.ComponentTypeCount(); ++j)
             {
                 if (m_Layout[i].Type == other.m_Layout[j].Type)
                 {
@@ -155,7 +152,7 @@ namespace FE::ECS
             return false;
         }
 
-        for (USize i = 0; i < lhs.ComponentTypeCount(); ++i)
+        for (uint32_t i = 0; i < lhs.ComponentTypeCount(); ++i)
         {
             // This is valid since all component types are sorted
             if (lhs.m_Layout[i].Type != rhs.m_Layout[i].Type)

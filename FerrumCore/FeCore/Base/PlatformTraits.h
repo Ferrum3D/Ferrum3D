@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <csignal>
-#include <malloc.h>
 
 #if defined _WIN32 || defined _WIN64 || defined _WINDOWS
 #    define FE_WINDOWS 1
@@ -9,9 +8,6 @@
 #    define FE_EXE_EXTENSION ".exe"
 #    define FE_PATH_SEPARATOR '\\'
 #    define FE_OS_NAME "Windows"
-
-#    define FE_ALIGNED_MALLOC(size, alignment) _aligned_malloc(size, alignment)
-#    define FE_ALIGNED_FREE(ptr) _aligned_free(ptr)
 
 #    define FE_BYTE_SWAP_UINT16(value) _byteswap_ushort(value)
 #    define FE_BYTE_SWAP_UINT32(value) _byteswap_ulong(value)
@@ -27,9 +23,6 @@
 #    define FE_EXE_EXTENSION ""
 #    define FE_PATH_SEPARATOR '/'
 #    define FE_OS_NAME "Linux"
-
-#    define FE_ALIGNED_MALLOC(size, alignment) ::memalign(alignment, size)
-#    define FE_ALIGNED_FREE(ptr) ::free(ptr)
 
 #    define FE_BYTE_SWAP_UINT16(value) __builtin_bswap16(value)
 #    define FE_BYTE_SWAP_UINT32(value) __builtin_bswap32(value)

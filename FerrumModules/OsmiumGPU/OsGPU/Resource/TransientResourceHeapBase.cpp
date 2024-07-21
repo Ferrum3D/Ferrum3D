@@ -1,4 +1,4 @@
-#include <OsGPU/Device/IDevice.h>
+﻿#include <OsGPU/Device/IDevice.h>
 #include <OsGPU/Resource/TransientResourceHeapBase.h>
 
 namespace FE::Osmium
@@ -12,11 +12,7 @@ namespace FE::Osmium
     void TransientResourceHeapBase::Allocate()
     {
         m_Memory = AllocateMemoryImpl();
-        GPULinearAllocator::Desc allocatorDesc{};
-        allocatorDesc.StartOffset = NullableHandle::Zero();
-        allocatorDesc.GCLatency   = 0;
-        allocatorDesc.Capacity    = m_Desc.HeapSize;
-        m_Allocator.Init(allocatorDesc);
+        m_Allocator.Init(m_Desc.HeapSize);
         m_Cache.SetCapacity(m_Desc.CacheSize);
     }
 
@@ -37,19 +33,19 @@ namespace FE::Osmium
         HashCombine(descHash, desc, address);
 
         IImage* result;
-        if (IObject* cached = m_Cache.FindObject(descHash))
+        if (auto* cached = m_Cache.FindObject(descHash))
         {
             result = fe_assert_cast<IImage*>(cached);
         }
         else
         {
             auto newImage = m_Device->CreateImage(desc.Descriptor);
-            result         = newImage.Get();
+            result = newImage.Get();
             m_Cache.AddObject(descHash, result);
 
             DeviceMemorySlice memory{};
-            memory.Memory     = m_Memory.Get();
-            memory.ByteSize   = allocationSize;
+            memory.Memory = m_Memory.Get();
+            memory.ByteSize = allocationSize;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
         }
@@ -61,8 +57,7 @@ namespace FE::Osmium
         return result;
     }
 
-    Rc<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc,
-                                                            TransientResourceAllocationStats& stats)
+    Rc<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
         USize allocationSize;
@@ -79,19 +74,19 @@ namespace FE::Osmium
         HashCombine(descHash, desc, address);
 
         IBuffer* result;
-        if (IObject* cached = m_Cache.FindObject(descHash))
+        if (auto* cached = m_Cache.FindObject(descHash))
         {
             result = fe_assert_cast<IBuffer*>(cached);
         }
         else
         {
             auto newBuffer = m_Device->CreateBuffer(desc.Descriptor);
-            result         = newBuffer.Get();
+            result = newBuffer.Get();
             m_Cache.AddObject(descHash, result);
 
             DeviceMemorySlice memory{};
-            memory.Memory     = m_Memory.Get();
-            memory.ByteSize   = allocationSize;
+            memory.Memory = m_Memory.Get();
+            memory.ByteSize = allocationSize;
             memory.ByteOffset = address.ToOffset();
             result->BindMemory(memory);
         }
@@ -117,10 +112,10 @@ namespace FE::Osmium
     {
         FE_ASSERT_MSG(resourceType == m_Desc.TypeFlags, "Transient heap type is not compatible");
         auto& resource = m_RegisteredResources[resourceID];
-        m_Allocator.Deallocate(resource.Handle, FE_SRCPOS(), resource.Size);
+        m_Allocator.Deallocate(resource.Handle, resource.Size);
         if (--m_CreatedResourceCount == 0)
         {
-            m_Allocator.CollectGarbageForce();
+            m_Allocator.Reset();
         }
     }
 

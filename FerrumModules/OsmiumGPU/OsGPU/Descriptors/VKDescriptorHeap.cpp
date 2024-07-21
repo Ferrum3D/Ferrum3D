@@ -1,4 +1,4 @@
-#include <OsGPU/Descriptors/VKDescriptorHeap.h>
+﻿#include <OsGPU/Descriptors/VKDescriptorHeap.h>
 #include <OsGPU/Descriptors/VKDescriptorTable.h>
 #include <OsGPU/Device/VKDevice.h>
 
@@ -7,20 +7,20 @@ namespace FE::Osmium
     VKDescriptorHeap::VKDescriptorHeap(VKDevice& dev, const DescriptorHeapDesc& desc)
         : m_Device(&dev)
     {
-        List<VkDescriptorPoolSize> sizes;
-        sizes.Reserve(desc.Sizes.Length());
+        eastl::vector<VkDescriptorPoolSize> sizes;
+        sizes.reserve(desc.Sizes.Length());
         for (auto& size : desc.Sizes)
         {
-            auto& nativeSize           = sizes.Emplace();
+            auto& nativeSize = sizes.push_back();
             nativeSize.descriptorCount = size.DescriptorCount;
-            nativeSize.type            = GetDescriptorType(size.ResourceType);
+            nativeSize.type = GetDescriptorType(size.ResourceType);
         }
 
         VkDescriptorPoolCreateInfo poolCI{};
-        poolCI.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCI.maxSets       = desc.MaxTables;
-        poolCI.pPoolSizes    = sizes.Data();
-        poolCI.poolSizeCount = static_cast<UInt32>(sizes.Size());
+        poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolCI.maxSets = desc.MaxTables;
+        poolCI.pPoolSizes = sizes.data();
+        poolCI.poolSizeCount = static_cast<UInt32>(sizes.size());
 
         vkCreateDescriptorPool(m_Device->GetNativeDevice(), &poolCI, VK_NULL_HANDLE, &m_NativePool);
     }
@@ -32,7 +32,7 @@ namespace FE::Osmium
 
     Rc<IDescriptorTable> VKDescriptorHeap::AllocateDescriptorTable(const ArraySlice<DescriptorDesc>& descriptors)
     {
-        auto result = MakeShared<VKDescriptorTable>(*m_Device, *this, descriptors);
+        Rc result = Rc<VKDescriptorTable>::DefaultNew(*m_Device, *this, descriptors);
         return result->GetNativeSet() == VK_NULL_HANDLE ? nullptr : result;
     }
 

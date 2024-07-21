@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Pipeline/IGraphicsPipeline.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKGraphicsPipeline : public Object<IGraphicsPipeline>
+    class VKGraphicsPipeline : public IGraphicsPipeline
     {
         VKDevice* m_Device;
 
@@ -20,8 +20,8 @@ namespace FE::Osmium
             VkPipelineVertexInputStateCreateInfo VertexInput{};
             VkPipelineInputAssemblyStateCreateInfo InputAssembly{};
 
-            List<VkVertexInputBindingDescription> BindingDesc{};
-            List<VkVertexInputAttributeDescription> AttributeDesc{};
+            eastl::vector<VkVertexInputBindingDescription> BindingDesc{};
+            eastl::vector<VkVertexInputAttributeDescription> AttributeDesc{};
         };
 
         struct ViewportState
@@ -33,15 +33,15 @@ namespace FE::Osmium
 
         struct BlendState
         {
-            List<VkPipelineColorBlendAttachmentState> Attachments{};
+            eastl::vector<VkPipelineColorBlendAttachmentState> Attachments{};
             VkPipelineColorBlendStateCreateInfo CreateInfo{};
         };
 
-        List<VkPipelineShaderStageCreateInfo> BuildShaderStages();
+        eastl::vector<VkPipelineShaderStageCreateInfo> BuildShaderStages();
         void BuildVertexStates(VertexStates& states) const;
         void BuildViewportState(ViewportState& state) const;
         void BuildBlendState(BlendState& state);
-        VkPipelineColorBlendAttachmentState BuildBlendState(size_t attachmentIndex);
+        VkPipelineColorBlendAttachmentState BuildBlendState(uint32_t attachmentIndex);
         VkPipelineRasterizationStateCreateInfo BuildRasterizationState();
         VkPipelineMultisampleStateCreateInfo BuildMultisampleState();
         [[nodiscard]] VkPipelineDepthStencilStateCreateInfo BuildDepthState() const;

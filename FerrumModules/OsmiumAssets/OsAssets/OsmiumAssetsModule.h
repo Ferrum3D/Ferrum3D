@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Framework/ModuleFramework.h>
-#include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Images/ImageAssetStorage.h>
+#include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Shaders/ShaderAssetStorage.h>
 
 namespace FE::Osmium
@@ -13,7 +13,7 @@ namespace FE::Osmium
     class OsmiumAssetsModule : public ModuleFramework<OsmiumAssetsModule>
     {
     protected:
-        void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) override;
+        void GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& dependencies) override;
 
     public:
         ~OsmiumAssetsModule() override = default;
@@ -22,4 +22,4 @@ namespace FE::Osmium
 
         virtual void Initialize(const OsmiumAssetsModuleDesc& desc) = 0;
     };
-}
+} // namespace FE::Osmium

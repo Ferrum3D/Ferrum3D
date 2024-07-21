@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Framework/IFramework.h>
 
 namespace FE
@@ -6,10 +6,10 @@ namespace FE
     class FrameworkBase : public IFramework
     {
         bool m_IsInitialized = false;
-        List<Rc<IFrameworkFactory>> m_Dependencies;
+        eastl::vector<Rc<IFrameworkFactory>> m_Dependencies;
 
     protected:
-        void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) override;
+        void GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& dependencies) override;
         void Initialize() final;
         void UnloadDependencies() override;
 

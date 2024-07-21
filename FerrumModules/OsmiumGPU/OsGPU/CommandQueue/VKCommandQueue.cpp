@@ -1,4 +1,4 @@
-#include <OsGPU/CommandBuffer/VKCommandBuffer.h>
+﻿#include <OsGPU/CommandBuffer/VKCommandBuffer.h>
 #include <OsGPU/CommandQueue/VKCommandQueue.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Fence/VKFence.h>
@@ -29,18 +29,18 @@ namespace FE::Osmium
 
     void VKCommandQueue::SubmitBuffers(const ArraySlice<ICommandBuffer*>& buffers, IFence* signalFence, SubmitFlags flags)
     {
-        List<VkCommandBuffer> nativeBuffers;
-        nativeBuffers.Reserve(buffers.Length());
+        eastl::vector<VkCommandBuffer> nativeBuffers;
+        nativeBuffers.reserve(buffers.Length());
         for (auto& buf : buffers)
         {
             auto* vkBuffer = fe_assert_cast<VKCommandBuffer*>(buf);
-            nativeBuffers.Push(vkBuffer->GetNativeBuffer());
+            nativeBuffers.push_back(vkBuffer->GetNativeBuffer());
         }
 
         VkSubmitInfo info{};
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        info.pCommandBuffers    = nativeBuffers.Data();
-        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.Size());
+        info.pCommandBuffers = nativeBuffers.data();
+        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
 
         if ((flags & SubmitFlags::FrameBegin) != SubmitFlags::None)
         {
@@ -51,8 +51,8 @@ namespace FE::Osmium
             info.signalSemaphoreCount = m_Device->GetSignalSemaphores(&info.pSignalSemaphores);
         }
 
-        List<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        info.pWaitDstStageMask = waitDstFlags.Data();
+        eastl::vector<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        info.pWaitDstStageMask = waitDstFlags.data();
 
         VkFence vkFence = signalFence ? fe_assert_cast<VKFence*>(signalFence)->GetNativeFence() : VK_NULL_HANDLE;
         vkQueueSubmit(m_Queue, 1, &info, vkFence);

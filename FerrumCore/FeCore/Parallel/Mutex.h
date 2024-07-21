@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Parallel/Interlocked.h>
+﻿#pragma once
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {
@@ -10,18 +10,19 @@ namespace FE
         NullMutex(const NullMutex&) = delete;
         NullMutex& operator=(const NullMutex&) = delete;
 
-        NullMutex()  = default;
+        NullMutex() = default;
         ~NullMutex() = default;
 
-        inline void Lock() noexcept {}
+        inline void lock() noexcept {}
 
-        [[nodiscard]] inline bool TryLock() const noexcept // NOLINT
+        [[nodiscard]] inline bool try_lock() const noexcept // NOLINT
         {
             return true;
         }
 
-        inline void Unlock() noexcept {}
+        inline void unlock() noexcept {}
     };
+
 
     class Mutex final
     {
@@ -35,8 +36,8 @@ namespace FE
         Mutex() noexcept;
         ~Mutex();
 
-        void Lock() noexcept;
-        bool TryLock();
-        void Unlock();
+        void lock() noexcept;
+        bool try_lock();
+        void unlock();
     };
 } // namespace FE

@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <FeCore/Strings/String.h>
 
 namespace FE::Osmium
@@ -23,7 +22,7 @@ namespace FE::Osmium
     class IInstance;
     class IDevice;
 
-    class IAdapter : public IObject
+    class IAdapter : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IAdapter, "860B2CCD-3918-4943-8D49-33040D76EA0D");

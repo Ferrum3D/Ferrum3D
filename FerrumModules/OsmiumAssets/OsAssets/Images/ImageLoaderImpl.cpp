@@ -1,9 +1,8 @@
-#include <OsAssets/Images/ImageLoaderImpl.h>
+﻿#include <OsAssets/Images/ImageLoaderImpl.h>
 
-#define STBI_MALLOC(sz) FE::GlobalAllocator<FE::HeapAllocator>::Get().Allocate(sz, 8, FE_SRCPOS())
-#define STBI_REALLOC_SIZED(p, oldsz, newsz)                                                                                      \
-    FE::GlobalAllocator<FE::HeapAllocator>::Get().Reallocate(p, FE_SRCPOS(), newsz, 8, oldsz)
-#define STBI_FREE(p) FE::GlobalAllocator<FE::HeapAllocator>::Get().Deallocate(p, FE_SRCPOS())
+#define STBI_MALLOC(sz) FE::Memory::DefaultAllocate(sz)
+#define STBI_REALLOC_SIZED(p, oldsz, newsz) FE::Memory::DefaultReallocate(p, newsz)
+#define STBI_FREE(p) FE::Memory::DefaultFree(p)
 
 #define STBIW_MALLOC(sz) STBI_MALLOC(sz)
 #define STBIW_REALLOC_SIZED(p, oldsz, newsz) STBI_REALLOC_SIZED(p, oldsz, newsz)

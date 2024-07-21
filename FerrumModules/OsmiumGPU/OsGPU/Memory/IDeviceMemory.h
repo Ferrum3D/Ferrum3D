@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/Object.h>
+﻿#pragma once
 #include <OsGPU/Memory/MemoryType.h>
 
 namespace FE::Osmium
@@ -12,7 +11,7 @@ namespace FE::Osmium
         FE_STRUCT_RTTI(MemoryAllocationDesc, "45CEEF1A-B382-4F7E-8FA2-69891C98E773");
     };
 
-    class IDeviceMemory : public IObject
+    class IDeviceMemory : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IDeviceMemory, "52A70884-939E-42DF-B406-26AC86B8DD51");

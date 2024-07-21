@@ -6,7 +6,7 @@ namespace FE
     struct FrameEventArgs
     {
         UInt32 FrameIndex;
-        Float32 DeltaTime;
+        float DeltaTime;
     };
 
     class FrameEvents

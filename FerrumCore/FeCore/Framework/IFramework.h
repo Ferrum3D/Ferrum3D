@@ -1,7 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/List.h>
-#include <FeCore/Memory/Object.h>
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -11,7 +9,7 @@ namespace FE
     class IFramework;
 
     //! \brief A class that loads, unloads frameworks and holds a DynamicLibrary instance if needed.
-    class IFrameworkFactory : public IObject
+    class IFrameworkFactory : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IFrameworkFactory, "4937DF6A-5A41-4881-9C30-123A486C647C");
@@ -52,13 +50,13 @@ namespace FE
     //!
     //! If the framework is not a dependency of any other framework and is not a DLL, e.g. it is an ApplicationFramework,
     //! it can be created manually.
-    class IFramework : public IObject
+    class IFramework : public Memory::RefCountedObjectBase
     {
     protected:
         //! \brief Get list of factories for all dependencies.
         //!
         //! \param [out] dependencies - The list of dependencies. New entries must be added to it.
-        virtual void GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& dependencies) = 0;
+        virtual void GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& dependencies) = 0;
 
         //! \brief Basic framework initialization. Loads dependencies, sets initialized flag to true.
         virtual void Initialize() = 0;

@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <OsGPU/Image/ImageFormat.h>
 #include <OsGPU/Image/ImageSubresource.h>
 
@@ -17,7 +16,7 @@ namespace FE::Osmium
         ImageDim Dimension = ImageDim::Image2D;
     };
 
-    class IImageView : public IObject
+    class IImageView : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IImageView, "16C72764-BC1D-4745-A83E-51D021ACA35D");

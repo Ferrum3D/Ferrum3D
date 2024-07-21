@@ -1,12 +1,13 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/IAssetManager.h>
+#include <FeCore/Containers/HashTables.h>
 #include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::Assets
 {
     class AssetManager : public ServiceLocatorImplBase<IAssetManager>
     {
-        UnorderedMap<AssetType, Rc<IAssetLoader>> m_Loaders;
+        festd::unordered_dense_map<AssetType, Rc<IAssetLoader>> m_Loaders;
         Rc<IAssetProvider> m_Provider;
 
     public:

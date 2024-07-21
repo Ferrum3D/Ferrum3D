@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Shader/IShaderModule.h>
@@ -12,7 +12,7 @@ namespace FE::Osmium
         auto result = 0;
 #define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
     if ((source & ShaderStageFlags::ferrum) != ShaderStageFlags::None)                                                           \
-        result |= VK_SHADER_STAGE_ ## vulkan ## _BIT
+    result |= VK_SHADER_STAGE_##vulkan##_BIT
 
         FE_CVT_ENTRY(Pixel, FRAGMENT);
         FE_CVT_ENTRY(Vertex, VERTEX);
@@ -49,9 +49,9 @@ namespace FE::Osmium
 
     class VKDevice;
 
-    class VKShaderModule : public Object<IShaderModule>
+    class VKShaderModule : public IShaderModule
     {
-        List<UInt32> m_ByteCode;
+        eastl::vector<UInt32> m_ByteCode;
         ShaderModuleDesc m_Desc;
         VkShaderModule m_NativeModule;
         VKDevice* m_Device;

@@ -1,9 +1,11 @@
+﻿#include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/ServiceLocator.h>
 #include <Tests/Common/TestCommon.h>
 
-class ISingletonObject : public FE::IObject
+class ISingletonObject : public FE::Memory::RefCountedObjectBase
 {
 };
+
 
 class SingletonObject : public FE::ServiceLocatorImplBase<ISingletonObject>
 {

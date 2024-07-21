@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/CommandQueue/ICommandQueue.h>
 #include <OsGPU/Common/VKConfig.h>
 
@@ -14,7 +14,7 @@ namespace FE::Osmium
         UInt32 QueueIndex;
     };
 
-    class VKCommandQueue : public Object<ICommandQueue>
+    class VKCommandQueue : public ICommandQueue
     {
         VKDevice* m_Device;
         VkQueue m_Queue;

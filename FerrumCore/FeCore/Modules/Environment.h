@@ -1,8 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/MathUtils.h>
-#include <FeCore/Memory/IBasicAllocator.h>
-#include <FeCore/Parallel/Locker.h>
+#include <FeCore/Parallel/SpinLock.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Utils/Result.h>
 #include <array>
@@ -93,11 +92,8 @@ namespace FE::Env
 
     //! \brief Create global environment.
     //!
-    //! A custom allocator can be provided. If the provided allocator was `nullptr`, aligned versions
-    //! of `malloc()` and `free()` will be used to allocate storage for global variables.
-    //!
     //! \param [in] allocator - Custom allocator.
-    void CreateEnvironment(IBasicAllocator* allocator = nullptr);
+    void CreateEnvironment();
 
     //! \brief Get global environment instance.
     //!
@@ -162,9 +158,6 @@ namespace FE::Env
             //! \see FE::Env::RemoveGlobalVariable
             virtual VariableResult RemoveVariable(std::string_view name) = 0;
 
-            //! \brief Get the allocator currently used by the environment.
-            virtual FE::IBasicAllocator* GetAllocator() = 0;
-
             //! \brief Destroy the environment.
             virtual void Destroy() = 0;
         };
@@ -176,7 +169,7 @@ namespace FE::Env
             std::string_view m_Name;
             UInt32 m_RefCount;
             std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
-            SpinMutex m_Mutex;
+            SpinLock m_Mutex;
             bool m_IsConstructed;
 
             friend class GlobalVariable<T>;
@@ -199,7 +192,7 @@ namespace FE::Env
             template<class... Args>
             inline void Construct(Args&&... args)
             {
-                UniqueLocker lk(m_Mutex);
+                std::unique_lock lk(m_Mutex);
                 new (&m_Storage) T(std::forward<Args>(args)...);
                 m_IsConstructed = true;
             }
@@ -207,7 +200,7 @@ namespace FE::Env
             //! \brief Call variable's destructor. This function does _not_ deallocate memory.
             inline void Destruct()
             {
-                UniqueLocker lk(m_Mutex);
+                std::unique_lock lk(m_Mutex);
                 reinterpret_cast<T*>(&m_Storage)->~T();
                 m_IsConstructed = false;
             }
@@ -229,7 +222,7 @@ namespace FE::Env
             //! \brief Add a reference to internal counter.
             inline void AddRef()
             {
-                UniqueLocker lk(m_Mutex);
+                std::unique_lock lk(m_Mutex);
                 ++m_RefCount;
             }
 
@@ -238,19 +231,18 @@ namespace FE::Env
             //! This function will call variable's destructor and deallocate memory if the reference counter reaches zero.
             inline void Release()
             {
-                UniqueLocker lk(m_Mutex);
+                std::unique_lock lk(m_Mutex);
 
                 if (--m_RefCount == 0)
                 {
-                    auto& env       = FE::Env::GetEnvironment();
-                    auto* allocator = env.GetAllocator();
+                    auto& env = FE::Env::GetEnvironment();
                     env.RemoveVariable(m_Name);
 
                     if (m_IsConstructed)
                         reinterpret_cast<T*>(&m_Storage)->~T();
 
-                    lk.Unlock();
-                    allocator->Deallocate(this);
+                    lk.unlock();
+                    Memory::DefaultFree(this);
                 }
             }
         };
@@ -391,9 +383,16 @@ namespace FE::Env
         //! \param [in] other - The variable to swap the content with.
         inline void Swap(GlobalVariable& other)
         {
-            auto* t         = other.m_Storage;
+            auto* t = other.m_Storage;
             other.m_Storage = m_Storage;
-            m_Storage       = t;
+            m_Storage = t;
+        }
+
+        inline T* Get() const
+        {
+            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
+            return const_cast<T*>(m_Storage->Get());
         }
 
         inline T& operator*() const
@@ -444,7 +443,7 @@ namespace FE::Env
     template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariableByType(Args&&... args)
     {
-        std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>();
+        std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>;
         std::vector<char> str;
         str.reserve(typeName.length() + 2);
         str.push_back('#');
@@ -478,7 +477,7 @@ namespace FE::Env
     template<class T>
     inline Result<GlobalVariable<T>, VariableError> FindGlobalVariable(std::string_view name)
     {
-        using Var         = GlobalVariable<T>;
+        using Var = GlobalVariable<T>;
         using StorageType = typename GlobalVariable<T>::StorageType;
 
         auto result = GetEnvironment().FindVariable(name);
@@ -495,10 +494,10 @@ namespace FE::Env
     template<class T>
     inline Result<GlobalVariable<T>, VariableError> FindGlobalVariableByType()
     {
-        auto typeName = TypeName<std::remove_pointer_t<T>>();
-        std::vector<char> str{};
-        str.resize(typeName.length() + 2);
-        size_t size = 0;
+        const std::string_view typeName = TypeName<std::remove_pointer_t<T>>;
+        eastl::vector<char> str{};
+        str.resize(static_cast<uint32_t>(typeName.length()) + 2);
+        uint32_t size = 0;
         str[size++] = '#';
         for (char c : typeName)
         {

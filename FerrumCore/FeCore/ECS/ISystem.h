@@ -1,10 +1,9 @@
-#pragma once
-#include <FeCore/Memory/Object.h>
+﻿#pragma once
 #include <FeCore/EventBus/FrameEvents.h>
 
 namespace FE::ECS
 {
-    class ISystem : public IObject
+    class ISystem : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(ISystem, "71ADC4BC-A185-47B5-89FA-08F5427158C7");

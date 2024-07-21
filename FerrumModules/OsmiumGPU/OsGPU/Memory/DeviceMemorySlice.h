@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <OsGPU/Memory/IDeviceMemory.h>
 
 namespace FE::Osmium

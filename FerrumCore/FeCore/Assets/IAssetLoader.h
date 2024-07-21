@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 #include <FeCore/IO/IStream.h>
 #include <FeCore/Math/Vector4.h>
@@ -26,7 +26,7 @@ namespace FE::Assets
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Bool>    { using Type = bool;     };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Int>     { using Type = Int64;    };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UInt>    { using Type = UInt64;   };
-    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Float>   { using Type = Float32;  };
+    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Float>   { using Type = float;  };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Vector3> { using Type = Vector3F; };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Vector4> { using Type = Vector4F; };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UUID>    { using Type = UUID;     };
@@ -38,7 +38,7 @@ namespace FE::Assets
     class AssetMetadataField
     {
         FE_PUSH_MSVC_WARNING(4324)
-        std::variant<Vector4F, Vector3F, String, UUID, Int64, UInt64, Float32, bool> m_Value;
+        std::variant<Vector4F, Vector3F, String, UUID, Int64, UInt64, float, bool> m_Value;
         String m_Key;
         AssetMetadataType m_Type;
         bool m_Required;
@@ -59,9 +59,9 @@ namespace FE::Assets
                                                 const typename CppTypeForAssetMetadataType<T>::Type& value, bool require = false)
         {
             AssetMetadataField result;
-            result.m_Key      = key;
-            result.m_Value    = value;
-            result.m_Type     = T;
+            result.m_Key = key;
+            result.m_Value = value;
+            result.m_Type = T;
             result.m_Required = require;
             return result;
         }
@@ -120,7 +120,7 @@ namespace FE::Assets
     //! \brief Asset loader interface.
     //!
     //! Asset loaders are responsible for loading assets from streams.
-    class IAssetLoader : public IObject
+    class IAssetLoader : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IAssetLoader, "D0DE4F16-0C3C-44E9-9215-CBC6FC98EB22");
@@ -147,7 +147,7 @@ namespace FE::Assets
         //! \brief Get asset metadata fields that can be applied to this asset loader.
         //!
         //! \return A list of asset metadata fields.
-        virtual List<AssetMetadataField> GetAssetMetadataFields() = 0;
+        virtual eastl::vector<AssetMetadataField> GetAssetMetadataFields() = 0;
 
         //! \brief Load asset from raw data.
         //!
@@ -158,7 +158,8 @@ namespace FE::Assets
         //!
         //! \param [in] metadata    - Raw asset metadata.
         //! \param [in] assetStream - Stream to load asset from.
-        virtual void LoadRawAsset(const List<AssetMetadataField>& metadata, AssetStorage* storage, IO::IStream* assetStream) = 0;
+        virtual void LoadRawAsset(const eastl::vector<AssetMetadataField>& metadata, AssetStorage* storage,
+                                  IO::IStream* assetStream) = 0;
 
         //! \brief Save asset to stream.
         //!

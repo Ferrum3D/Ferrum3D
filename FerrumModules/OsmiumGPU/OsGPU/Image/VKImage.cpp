@@ -1,4 +1,4 @@
-#include <OsGPU/Common/VKBaseTypes.h>
+﻿#include <OsGPU/Common/VKBaseTypes.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Image/ImageSubresource.h>
 #include <OsGPU/Image/VKImage.h>
@@ -24,15 +24,15 @@ namespace FE::Osmium
     {
         ImageSubresourceRange range{};
         range.ArraySliceCount = Desc.ArraySize;
-        range.MinArraySlice   = 0;
-        range.MinMipSlice     = 0;
-        range.MipSliceCount   = static_cast<UInt16>(Desc.MipSliceCount);
-        range.AspectFlags     = aspectFlags;
+        range.MinArraySlice = 0;
+        range.MinMipSlice = 0;
+        range.MipSliceCount = static_cast<UInt16>(Desc.MipSliceCount);
+        range.AspectFlags = aspectFlags;
 
         ImageViewDesc desc{};
-        desc.Format           = Desc.ImageFormat;
-        desc.Image            = this;
-        desc.Dimension        = Desc.Dimension;
+        desc.Format = Desc.ImageFormat;
+        desc.Image = this;
+        desc.Dimension = Desc.Dimension;
         desc.SubresourceRange = range;
         return m_Device->CreateImageView(desc);
     }
@@ -105,14 +105,14 @@ namespace FE::Osmium
             FE_LOG_WARNING("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
             imageCI.extent.depth = 1;
         }
-        imageCI.mipLevels     = desc.MipSliceCount;
-        imageCI.arrayLayers   = desc.ArraySize;
-        imageCI.format        = VKConvert(desc.ImageFormat);
-        imageCI.tiling        = VK_IMAGE_TILING_OPTIMAL;
+        imageCI.mipLevels = desc.MipSliceCount;
+        imageCI.arrayLayers = desc.ArraySize;
+        imageCI.format = VKConvert(desc.ImageFormat);
+        imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCI.usage         = usage;
-        imageCI.samples       = GetVKSampleCountFlags(desc.SampleCount);
-        imageCI.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+        imageCI.usage = usage;
+        imageCI.samples = GetVKSampleCountFlags(desc.SampleCount);
+        imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         vkCreateImage(m_Device->GetNativeDevice(), &imageCI, VK_NULL_HANDLE, &Image);
         m_Owned = true;
@@ -123,16 +123,16 @@ namespace FE::Osmium
     void VKImage::AllocateMemory(MemoryType type)
     {
         MemoryAllocationDesc desc{};
-        desc.Size   = MemoryRequirements.size;
-        desc.Type   = type;
-        auto memory = MakeShared<VKDeviceMemory>(*m_Device, MemoryRequirements.memoryTypeBits, desc);
+        desc.Size = MemoryRequirements.size;
+        desc.Type = type;
+        Rc memory = Rc<VKDeviceMemory>::DefaultNew(*m_Device, MemoryRequirements.memoryTypeBits, desc);
         BindMemory(DeviceMemorySlice(memory.Detach()));
         m_MemoryOwned = true;
     }
 
     void VKImage::BindMemory(const DeviceMemorySlice& memory)
     {
-        m_Memory      = memory;
+        m_Memory = memory;
         auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory)->Memory;
         vkBindImageMemory(m_Device->GetNativeDevice(), Image, vkMemory, memory.ByteOffset);
     }
@@ -147,7 +147,7 @@ namespace FE::Osmium
         }
         if (m_MemoryOwned)
         {
-            m_Memory.Memory->ReleaseStrongRef();
+            m_Memory.Memory->Release();
         }
     }
 } // namespace FE::Osmium

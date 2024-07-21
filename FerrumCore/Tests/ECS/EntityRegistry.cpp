@@ -1,3 +1,4 @@
+﻿#include <EASTL/sort.h>
 #include <FeCore/Components/PositionComponent.h>
 #include <FeCore/ECS/EntityQuery.h>
 #include <FeCore/ECS/EntityRegistry.h>
@@ -7,7 +8,6 @@ using namespace FE::ECS;
 using FE::ArraySlice;
 using FE::ArraySliceMut;
 using FE::fe_typeid;
-using FE::List;
 
 struct TestComponent
 {
@@ -28,17 +28,17 @@ struct TestComponent
 
 TEST(EntityRegistry, CreateEntity)
 {
-    auto registry = FE::MakeShared<EntityRegistry>();
-    List<Entity> entities;
-    entities.Resize(64 * 1024, Entity::Null());
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    eastl::vector<Entity> entities;
+    entities.resize(64 * 1024, Entity::Null());
     registry->CreateEntities(ArraySliceMut(entities));
 }
 
 TEST(EntityRegistry, AddComponent)
 {
-    auto registry = FE::MakeShared<EntityRegistry>();
-    auto entity1  = registry->CreateEntity();
-    auto entity2  = registry->CreateEntity();
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    auto entity1 = registry->CreateEntity();
+    auto entity2 = registry->CreateEntity();
     registry->AddComponent(entity1, Position3DComponent{ 1, 2, 99 });
     registry->AddComponent(entity1, TestComponent{ 9 });
     registry->AddComponent(entity2, Position3DComponent{ 3, 4, 99 });
@@ -52,8 +52,8 @@ TEST(EntityRegistry, AddComponent)
 
 TEST(EntityRegistry, InvalidAfterDestroy)
 {
-    auto registry = FE::MakeShared<EntityRegistry>();
-    auto entity1  = registry->CreateEntity();
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    auto entity1 = registry->CreateEntity();
     EXPECT_TRUE(registry->IsValid(entity1));
     registry->AddComponent(entity1, Position3DComponent{ 1, 2, 99 });
     registry->AddComponent(entity1, TestComponent{ 9 });
@@ -63,8 +63,8 @@ TEST(EntityRegistry, InvalidAfterDestroy)
 
 TEST(EntityRegistry, CloneEntity)
 {
-    auto registry = FE::MakeShared<EntityRegistry>();
-    auto entity   = registry->CreateEntity();
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    auto entity = registry->CreateEntity();
     registry->AddComponent(entity, Position3DComponent(1, 2, 3));
     registry->AddComponent(entity, TestComponent{ 4 });
     auto clone = registry->CloneEntity(entity);
@@ -76,13 +76,13 @@ TEST(EntityRegistry, UpdateQuery)
 {
     const int count = 16 * 1024;
 
-    auto registry = FE::MakeShared<EntityRegistry>();
-    List<Entity> entities(count, Entity::Null());
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    eastl::vector<Entity> entities(count, Entity::Null());
     registry->CreateEntities(ArraySliceMut(entities));
     registry->AddComponent<Position3DComponent>(entities);
     registry->AddComponent<TestComponent>(ArraySlice(entities)(0, count / 2));
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         registry->SetComponent(entities[i],
                                Position3DComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
@@ -92,10 +92,10 @@ TEST(EntityRegistry, UpdateQuery)
         }
     }
 
-    auto query1 = FE::MakeShared<EntityQuery>(registry.Get());
+    FE::Rc query1 = FE::Rc<EntityQuery>::DefaultNew(registry.Get());
     query1->AllOf<Position3DComponent, TestComponent>().Update();
 
-    auto query2 = FE::MakeShared<EntityQuery>(registry.Get());
+    FE::Rc query2 = FE::Rc<EntityQuery>::DefaultNew(registry.Get());
     query2->AllOf<Position3DComponent>().Update();
 
     FE::USize entityCount1 = 0;
@@ -122,12 +122,14 @@ TEST(EntityRegistry, ReuseEntityIDs)
 {
     const int count = 16 * 1024;
 
-    auto registry = FE::MakeShared<EntityRegistry>();
-    List<Entity> entities(count, Entity::Null());
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    eastl::vector<Entity> entities(count, Entity::Null());
     registry->CreateEntities(ArraySliceMut(entities));
-    entities.SortByMember(&Entity::GetID);
+    eastl::sort(entities.begin(), entities.end(), [](const Entity& lhs, const Entity& rhs) {
+        return lhs.GetID() < rhs.GetID();
+    });
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         EXPECT_EQ(entities[i].GetVersion(), 0);
         ASSERT_EQ(entities[i].GetID(), i);
@@ -135,9 +137,11 @@ TEST(EntityRegistry, ReuseEntityIDs)
 
     registry->DestroyEntities(entities);
     registry->CreateEntities(ArraySliceMut(entities));
-    entities.SortByMember(&Entity::GetID);
+    eastl::sort(entities.begin(), entities.end(), [](const Entity& lhs, const Entity& rhs) {
+        return lhs.GetID() < rhs.GetID();
+    });
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         EXPECT_EQ(entities[i].GetVersion(), 1);
         ASSERT_EQ(entities[i].GetID(), i);
@@ -149,20 +153,20 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
     // Create a lot of components, that do not fit into a single chunk
     const int count = 16 * 1024;
 
-    auto registry = FE::MakeShared<EntityRegistry>();
-    List<Entity> entities(count, Entity::Null());
+    FE::Rc registry = FE::Rc<EntityRegistry>::DefaultNew();
+    eastl::vector<Entity> entities(count, Entity::Null());
     registry->CreateEntities(ArraySliceMut(entities));
     registry->AddComponent<Position3DComponent>(entities);
     registry->AddComponent<TestComponent>(entities);
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         registry->SetComponent(entities[i],
                                Position3DComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
         registry->SetComponent(entities[i], TestComponent{ static_cast<float>(i) * 10 });
     }
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         EXPECT_TRUE(registry->HasComponent<Position3DComponent>(entities[i]));
         EXPECT_TRUE(registry->HasComponent<TestComponent>(entities[i]));
@@ -172,12 +176,12 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
         ASSERT_EQ(static_cast<float>(i) * 3, registry->GetComponent<Position3DComponent>(entities[i]).Z);
     }
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         ASSERT_TRUE(registry->RemoveComponent<TestComponent>(entities[i]));
     }
 
-    for (FE::USize i = 0; i < entities.Size(); ++i)
+    for (FE::USize i = 0; i < entities.size(); ++i)
     {
         EXPECT_TRUE(registry->HasComponent<Position3DComponent>(entities[i]));
         EXPECT_FALSE(registry->HasComponent<TestComponent>(entities[i]));

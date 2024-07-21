@@ -1,4 +1,4 @@
-#include <FeCore/Jobs/JobScheduler.h>
+﻿#include <FeCore/Jobs/JobScheduler.h>
 
 namespace FE
 {
@@ -10,25 +10,15 @@ namespace FE
         , m_ShouldExit(0)
         , m_FrameIndex(0)
     {
-        MonotonicAllocatorDesc desc{};
-        desc.InitialBlockSize = AlignUp<alignof(SchedulerThreadInfo)>(sizeof(SchedulerThreadInfo)) * MaxThreadCount;
-        desc.MaxBlockCount    = 1;
-        m_ThreadInfoAllocator.Init(desc);
-        desc.InitialBlockSize = 1024;
-        desc.MaxBlockCount    = 32;
-        m_OneFrameAllocators[0].Init(desc);
-        m_OneFrameAllocators[1].Init(desc);
-
-        auto& allocator = m_ThreadInfoAllocator;
-        m_Threads.Reserve(m_WorkerCount);
+        m_Threads.reserve(m_WorkerCount);
         for (UInt32 i = 0; i < workerCount; ++i)
         {
-            auto* thread = new (allocator.Allocate(sizeof(SchedulerThreadInfo), 16, FE_SRCPOS())) SchedulerThreadInfo;
+            auto* thread = Memory::DefaultNew<SchedulerThreadInfo>();
 
             thread->WorkerID = i;
-            thread->Thread   = std::thread(&JobScheduler::WorkerThreadProcess, this, i);
+            thread->Thread = std::thread(&JobScheduler::WorkerThreadProcess, this, i);
             thread->ThreadID = thread->Thread.get_id();
-            m_Threads.Push(thread);
+            m_Threads.push_back(thread);
         }
 
         m_Semaphore.Release(GetWorkerCount());
@@ -65,17 +55,16 @@ namespace FE
 
     JobScheduler::~JobScheduler() noexcept
     {
-        Interlocked::Exchange(m_ShouldExit, 1);
+        m_ShouldExit = true;
         for (UInt32 i = 0; i < m_WorkerCount; ++i)
         {
             m_Threads[i]->WaitSemaphore.Release();
             m_Threads[i]->Thread.join();
         }
-        auto& allocator = m_ThreadInfoAllocator;
+
         for (auto t : m_Threads)
         {
-            t->~SchedulerThreadInfo();
-            allocator.Deallocate(t, FE_SRCPOS(), sizeof(SchedulerThreadInfo));
+            Memory::DefaultDelete(t);
         }
     }
 
@@ -83,7 +72,6 @@ namespace FE
     {
         m_Semaphore.Acquire();
         m_CurrentThreadInfo = m_Threads[id];
-        GlobalAllocator<HeapAllocator>::ThreadInit();
         ProcessJobs(nullptr);
     }
 
@@ -115,10 +103,9 @@ namespace FE
         }
         if (!m_CurrentThreadInfo)
         {
-            auto& allocator  = m_ThreadInfoAllocator;
-            auto* thread     = new (allocator.Allocate(sizeof(SchedulerThreadInfo), 16, FE_SRCPOS())) SchedulerThreadInfo;
+            auto* thread = Memory::DefaultNew<SchedulerThreadInfo>();
             thread->ThreadID = std::this_thread::get_id();
-            m_Threads.Push(thread);
+            m_Threads.push_back(thread);
             m_CurrentThreadInfo = thread;
         }
         return m_CurrentThreadInfo;
@@ -126,13 +113,13 @@ namespace FE
 
     void JobScheduler::NotifyWorker()
     {
-        while (Interlocked::Load(m_SleepingWorkerCount))
+        while (m_SleepingWorkerCount)
         {
             for (UInt32 i = 0; i < m_WorkerCount; ++i)
             {
-                if (Interlocked::Exchange(m_Threads[i]->IsSleeping, 0) == 1)
+                if (m_Threads[i]->IsSleeping.exchange(false) == true)
                 {
-                    Interlocked::Decrement(m_SleepingWorkerCount);
+                    --m_SleepingWorkerCount;
                     m_Threads[i]->WaitSemaphore.Release();
                 }
             }
@@ -166,16 +153,9 @@ namespace FE
         return nullptr;
     }
 
-    void* JobScheduler::OneFrameAllocate(USize size, USize alignment)
-    {
-        auto index = Interlocked::Load(m_FrameIndex);
-        return m_OneFrameAllocators[index].Allocate(size, alignment, FE_SRCPOS());
-    }
-
     void JobScheduler::OnFrameStart(const FrameEventArgs& args)
     {
-        auto reset = Interlocked::Exchange(m_FrameIndex, static_cast<Int32>(args.FrameIndex & 1));
-        m_OneFrameAllocators[reset].ResetAll();
+        m_FrameIndex = static_cast<Int32>(args.FrameIndex & 1);
     }
 
     void JobScheduler::SuspendUntilComplete(Job* job)
@@ -186,7 +166,7 @@ namespace FE
     void JobScheduler::ProcessJobs(Job* waitJob)
     {
         auto shouldExit = [this]() {
-            return Interlocked::Load(m_ShouldExit) == 1;
+            return m_ShouldExit == 1;
         };
         auto waitJobReady = [waitJob]() {
             return waitJob && waitJob->GetExecutionState() == JobExecutionState::Complete;
@@ -213,8 +193,8 @@ namespace FE
 
                 if (m_GlobalQueue.Empty())
                 {
-                    Interlocked::Increment(m_SleepingWorkerCount);
-                    Interlocked::Exchange(m_CurrentThreadInfo->IsSleeping, 1);
+                    ++m_SleepingWorkerCount;
+                    m_CurrentThreadInfo->IsSleeping = true;
                     m_CurrentThreadInfo->WaitJob = waitJob;
                     m_CurrentThreadInfo->WaitSemaphore.Acquire();
 

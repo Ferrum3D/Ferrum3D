@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/ServiceLocator.h>
 #include <functional>
@@ -27,7 +26,7 @@ namespace FE
     };
 
     template<class>
-    class IEventBus : public IObject
+    class IEventBus : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IEventBus, "953EC245-BCDD-467C-B1C1-E3CFCB582F4D");
@@ -36,7 +35,7 @@ namespace FE
     template<class TEvent>
     class EventBus : public ServiceLocatorImplBase<IEventBus<TEvent>>
     {
-        List<EventHandler<TEvent>*> m_Handlers;
+        eastl::vector<EventHandler<TEvent>*> m_Handlers;
 
         template<class F, class... Args>
         inline void SendEventInternal(F&& function, Args&&... args);
@@ -80,13 +79,13 @@ namespace FE
     template<class TEvent>
     void FE::EventBus<TEvent>::RegisterHandlerInternal(Handler* handler)
     {
-        m_Handlers.Push(handler);
+        m_Handlers.push_back(handler);
     }
 
     template<class TEvent>
     void FE::EventBus<TEvent>::UnregisterHandlerInternal(Handler* handler)
     {
-        m_Handlers.Remove(handler);
+        m_Handlers.erase(eastl::find(m_Handlers.begin(), m_Handlers.end(), handler));
     }
 
     template<class TEvent>

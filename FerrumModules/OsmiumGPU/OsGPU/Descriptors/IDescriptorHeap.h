@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySlice.h>
 #include <OsGPU/Descriptors/DescriptorDesc.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     struct DescriptorSize
     {
-        UInt32 DescriptorCount          = 0;
+        UInt32 DescriptorCount = 0;
         ShaderResourceType ResourceType = ShaderResourceType::None;
 
         DescriptorSize() = default;
@@ -30,7 +30,7 @@ namespace FE::Osmium
 
     class IDescriptorTable;
 
-    class IDescriptorHeap : public IObject
+    class IDescriptorHeap : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IDescriptorHeap, "B6F00D47-B483-4919-87F9-25348091482F");

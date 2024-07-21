@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/IAssetManager.h>
 #include <FeCore/Console/ConsoleLogger.h>
 #include <FeCore/EventBus/EventBus.h>
@@ -97,9 +97,7 @@ namespace FE
     int main(int argc, char** argv)                                                                                              \
     {                                                                                                                            \
         ::FE::Env::CreateEnvironment();                                                                                          \
-        ::FE::GlobalAllocator<::FE::HeapAllocator>::Init(::FE::HeapAllocatorDesc{});                                             \
         int code = MainImpl(argc, argv);                                                                                         \
-        ::FE::GlobalAllocator<::FE::HeapAllocator>::Destroy();                                                                   \
         return code;                                                                                                             \
     }                                                                                                                            \
     int MainImpl([[maybe_unused]] int argc, [[maybe_unused]] char** argv)

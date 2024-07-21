@@ -1,4 +1,4 @@
-#include <FeCore/Assets/AssetManager.h>
+﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Console/FeLog.h>
@@ -35,13 +35,13 @@ Supported commands:
 
     void PrintHeader()
     {
-        Console::PrintToStdout(Fmt::Format(HeaderTemplate, FerrumVersion.Major, FerrumVersion.Minor, FerrumVersion.Patch));
+        Console::PrintToStdout(Fmt::Format(HeaderTemplate, 1, 1, 0));
     }
 
     template<AssetMetadataType T>
     bool TryConvertArrayToVector(const rapidjson::Value& value, typename CppTypeForAssetMetadataType<T>::Type& vector)
     {
-        auto arr            = value.GetArray();
+        auto arr = value.GetArray();
         const USize vecSize = T == AssetMetadataType::Vector3 ? 3 : 4;
         if (arr.Size() != vecSize)
         {
@@ -61,7 +61,7 @@ Supported commands:
         return true;
     }
 
-    List<AssetMetadataField> ReadMetadataForAsset(const StringSlice& assetFilePath, IAssetLoader** assetLoader)
+    eastl::vector<AssetMetadataField> ReadMetadataForAsset(const StringSlice& assetFilePath, IAssetLoader** assetLoader)
     {
         auto metadataPath = Fmt::Format("{}.meta.json", assetFilePath);
         if (!IO::File::Exists(metadataPath))
@@ -165,7 +165,7 @@ Supported commands:
                 case rapidjson::kStringType:
                     {
                         StringSlice s = value.GetString();
-                        auto uuid     = s.Parse<UUID>();
+                        auto uuid = s.Parse<UUID>();
                         if (uuid && field.GetType() == AssetMetadataType::UUID)
                         {
                             field.SetValue<AssetMetadataType::UUID>(uuid.Unwrap());
@@ -214,13 +214,13 @@ Supported commands:
             }
         }
 
-        List<StringSlice> unusedMembers;
+        eastl::vector<StringSlice> unusedMembers;
         for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it)
         {
-            unusedMembers.Push(it->name.GetString());
+            unusedMembers.push_back(it->name.GetString());
         }
 
-        if (unusedMembers.Any())
+        if (!unusedMembers.empty())
         {
             FE_LOG_WARNING(
                 "These fields in asset metadata file {} where unused: ", metadataPath, String::Join(", ", unusedMembers));
@@ -238,8 +238,8 @@ Supported commands:
 
         auto metadata = ReadMetadataForAsset(file, &loader);
 
-        auto fileHandle = MakeShared<IO::FileHandle>();
-        auto stream     = MakeShared<IO::FileStream>(fileHandle);
+        Rc fileHandle = Rc<IO::FileHandle>::DefaultNew();
+        Rc stream = Rc<IO::FileStream>::DefaultNew(fileHandle);
         FE_IO_ASSERT(stream->Open(file, IO::OpenMode::ReadOnly));
 
         Rc<AssetStorage> storage = loader->CreateStorage();
@@ -251,25 +251,27 @@ Supported commands:
 
     int CompileCommand(const ArraySlice<StringSlice>& args)
     {
-        List<String> files;
-        List<std::pair<String, String>> additionalMetadata;
+        eastl::vector<String> files;
+        eastl::vector<std::pair<String, String>> additionalMetadata;
         for (auto& arg : args)
         {
             if (arg.StartsWith("-D"))
             {
-                auto [key, value] = arg(2, arg.Size()).Split('=').AsTuple<2>();
-                additionalMetadata.Push(std::make_pair(key, value));
+                const auto split = arg(2, arg.Size()).Split('=');
+                const StringSlice key = split[0];
+                const StringSlice value = split[1];
+                additionalMetadata.push_back(std::make_pair(key, value));
             }
             else
             {
-                files.Push(IO::Directory::GetCurrentDirectory() / arg);
+                files.push_back(IO::Directory::GetCurrentDirectory() / arg);
             }
         }
 
         for (auto& file : files)
         {
-            auto fileHandle = MakeShared<IO::FileHandle>();
-            auto stream     = MakeShared<IO::FileStream>(fileHandle);
+            Rc fileHandle = Rc<IO::FileHandle>::DefaultNew();
+            Rc stream = Rc<IO::FileStream>::DefaultNew(fileHandle);
             FE_IO_ASSERT(stream->Open(Fmt::Format("{}.compiled.pak", file), IO::OpenMode::Create));
 
             ProcessOneFile(file, stream.Get(), additionalMetadata);
@@ -287,21 +289,25 @@ Supported commands:
 
     int RunCompiler(int argc, char** argv)
     {
-        List<StringSlice> args;
-        args.Reserve(argc - 1);
+        eastl::vector<StringSlice> args;
+        args.reserve(argc - 1);
         for (USize i = 1; i < argc; ++i)
         {
-            args.Push(argv[i]);
+            args.push_back(argv[i]);
         }
 
-        if (args.Size() == 0 || args.Contains("--help") || args.Contains("-h"))
+        const auto containsArg = [&args](StringSlice arg) {
+            return eastl::find(args.begin(), args.end(), arg) != args.end();
+        };
+
+        if (args.size() == 0 || containsArg("--help") || containsArg("-h"))
         {
             PrintHeader();
             Console::PrintToStdout(HelpMessage);
             return 0;
         }
 
-        if (args.Contains("--version") || args.Contains("-v"))
+        if (containsArg("--version") || containsArg("-v"))
         {
             PrintHeader();
             Console::PrintToStdout(CopyrightMessage);
@@ -310,11 +316,11 @@ Supported commands:
 
         if (args[0] == "compile")
         {
-            return CompileCommand(ArraySlice(args)(1, args.Size()));
+            return CompileCommand(ArraySlice(args)(1, args.size()));
         }
         else if (args[0] == "build")
         {
-            return BuildCommand(ArraySlice(args)(1, args.Size()));
+            return BuildCommand(ArraySlice(args)(1, args.size()));
         }
 
         FE_LOG_ERROR("Invalid command: {}", args[0]);
@@ -342,9 +348,9 @@ private:
         Stop(FE::Assets::RunCompiler(m_Argc, m_Argv));
     }
 
-    inline void GetFrameworkDependencies(FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
+    inline void GetFrameworkDependencies(eastl::vector<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
     {
-        dependencies.Push(FE::Osmium::OsmiumAssetsModule::CreateFactory());
+        dependencies.push_back(FE::Osmium::OsmiumAssetsModule::CreateFactory());
     }
 
 public:
@@ -364,8 +370,8 @@ public:
 
 FE_APP_MAIN()
 {
-    auto app = FE::MakeShared<CompilerApplication>(argc, argv);
-    app->Initialize(
-        FE::ApplicationDesc("Ferrum3D Asset compiler", FE::Debug::LogMessageType::Warning | FE::Debug::LogMessageType::Error));
+    using namespace FE;
+    Rc app = Rc<CompilerApplication>::DefaultNew(argc, argv);
+    app->Initialize(ApplicationDesc("Ferrum3D Asset compiler", Debug::LogMessageType::Warning | Debug::LogMessageType::Error));
     return app->RunMainLoop();
 }

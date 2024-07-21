@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/Console.h>
-#include <FeCore/Memory/Object.h>
 #include <FeCore/Strings/Format.h>
 
 namespace FE::Debug
@@ -37,7 +36,7 @@ namespace FE::Debug
     //! \code{.cpp}
     //!     FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get()->LogMessage("Hello, {}!", "World");
     //! \endcode
-    class IConsoleLogger : public IObject
+    class IConsoleLogger : public Memory::RefCountedObjectBase
     {
     protected:
         //! \brief Protected implementation of \ref IConsoleLogger::Print.

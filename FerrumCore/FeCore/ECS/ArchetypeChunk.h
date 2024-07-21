@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/ECS/ComponentStorage.h>
 #include <functional>
 
@@ -10,21 +10,21 @@ namespace FE::ECS
     //! \brief Entity archetype chunk descriptor.
     struct ArchetypeChunkDesc
     {
-        USize ByteSize             = 16 * 1024; //!< Size of chunk in bytes.
-        EntityArchetype* Archetype = nullptr;   //!< The archetype this chunk is attached to.
+        uint32_t ByteSize = 16 * 1024;        //!< Size of chunk in bytes.
+        EntityArchetype* Archetype = nullptr; //!< The archetype this chunk is attached to.
     };
 
     //! \brief Entity archetype chunk. A chunk of memory that stores entities with components of the same archetype.
     class ArchetypeChunk final
     {
-        USize m_Capacity = 0;
-        List<Int8> m_Data;
-        List<ComponentStorage> m_ComponentStorages;
+        uint32_t m_Capacity = 0;
+        eastl::vector<Int8> m_Data;
+        eastl::vector<ComponentStorage> m_ComponentStorages;
 
-        List<UInt16> m_EntityIndices;
-        List<UInt16> m_EntityIDs;
+        eastl::vector<UInt16> m_EntityIndices;
+        eastl::vector<UInt16> m_EntityIDs;
 
-        List<UInt16> m_FreeList;
+        eastl::vector<UInt16> m_FreeList;
 
         UInt32 m_Version = 0;
 
@@ -36,17 +36,14 @@ namespace FE::ECS
         // !\brief allocate an Archetype chunk, doesn't call Init().
         inline static ArchetypeChunk* Allocate()
         {
-            FE_STATIC_SRCPOS(position);
-            void* ptr = GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(ArchetypeChunk), alignof(ArchetypeChunk), position);
+            void* ptr = Memory::DefaultAllocate(sizeof(ArchetypeChunk), alignof(ArchetypeChunk));
             return new (ptr) ArchetypeChunk;
         }
 
         //! \brief Deallocate the chunk, the instance is no longer valid after the call.
         inline void Deallocate()
         {
-            this->~ArchetypeChunk();
-            FE_STATIC_SRCPOS(position);
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(this, position, sizeof(ArchetypeChunk));
+            Memory::DefaultDelete(this);
         }
 
         void Init(const ArchetypeChunkDesc& desc);
@@ -97,16 +94,16 @@ namespace FE::ECS
         }
 
         //! \brief Get allocated entity count.
-        [[nodiscard]] inline USize Count() const
+        [[nodiscard]] inline uint32_t Count() const
         {
-            if (m_ComponentStorages.Empty())
+            if (m_ComponentStorages.empty())
             {
                 return 0;
             }
 
             // Since all entities within the chunk have the same set of components, it doesn't matter what storage
             // to use to get the entity count: number of components of any type is the number of entities.
-            return m_ComponentStorages.Front().Count();
+            return m_ComponentStorages.front().Count();
         }
 
         //! \brief Get the version of the chunk - a number that gets incremented after every change.
@@ -124,13 +121,13 @@ namespace FE::ECS
         //! \brief Check if the chunk is doesn't store any entities.
         [[nodiscard]] inline bool Empty() const
         {
-            return m_ComponentStorages.Empty() || m_ComponentStorages.Front().Count() == 0;
+            return m_ComponentStorages.empty() || m_ComponentStorages.front().Count() == 0;
         }
 
         //! \brief Check if the chunk is full of entities.
         [[nodiscard]] inline bool Full() const
         {
-            return m_ComponentStorages.Any() && m_ComponentStorages.Front().Count() == m_Capacity;
+            return !m_ComponentStorages.empty() && m_ComponentStorages.front().Count() == m_Capacity;
         }
     };
 } // namespace FE::ECS

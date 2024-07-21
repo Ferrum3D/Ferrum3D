@@ -1,4 +1,4 @@
-#include <FeCore/Systems/TransformSystem.h>
+﻿#include <FeCore/Systems/TransformSystem.h>
 
 namespace FE::ECS
 {
@@ -12,7 +12,7 @@ namespace FE::ECS
 
     void TransformSystem::OnCreate()
     {
-        m_Query = MakeShared<EntityQuery>(Registry());
+        m_Query = Rc<EntityQuery>::DefaultNew(Registry());
         m_Query->AllOf<LocalToWorldComponent, Position3DComponent>();
     }
 } // namespace FE::ECS

@@ -1,7 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/RTTI/RTTI.h>
-#include <FeCore/Containers/List.h>
 #include <OsGPU/Image/ImageFormat.h>
 
 namespace FE::Osmium
@@ -67,68 +66,64 @@ namespace FE::Osmium
         }
 
         FE::String ShaderSemantic;
-        UInt32 BufferIndex   = 0;
-        UInt32 Offset        = 0;
+        UInt32 BufferIndex = 0;
+        UInt32 Offset = 0;
         Format ElementFormat = Format::None;
     };
 
     class InputStreamLayout
     {
-        List<InputStreamBufferDesc> m_Buffers;
-        List<InputStreamAttributeDesc> m_Attributes;
+        eastl::vector<InputStreamBufferDesc> m_Buffers;
+        eastl::vector<InputStreamAttributeDesc> m_Attributes;
 
     public:
         inline void PushBuffer(const InputStreamBufferDesc& bufferDesc)
         {
-            m_Buffers.Push(bufferDesc);
+            m_Buffers.push_back(bufferDesc);
         }
 
         inline void PushAttribute(const InputStreamAttributeDesc& attributeDesc)
         {
-            m_Attributes.Push(attributeDesc);
+            m_Attributes.push_back(attributeDesc);
         }
 
-        inline List<InputStreamBufferDesc>& GetBuffers()
+        inline eastl::vector<InputStreamBufferDesc>& GetBuffers()
         {
             return m_Buffers;
         }
 
-        inline List<InputStreamAttributeDesc>& GetAttributes()
+        inline eastl::vector<InputStreamAttributeDesc>& GetAttributes()
         {
             return m_Attributes;
         }
 
-        [[nodiscard]] inline const List<InputStreamBufferDesc>& GetBuffers() const
+        [[nodiscard]] inline const eastl::vector<InputStreamBufferDesc>& GetBuffers() const
         {
             return m_Buffers;
         }
 
-        [[nodiscard]] inline const List<InputStreamAttributeDesc>& GetAttributes() const
+        [[nodiscard]] inline const eastl::vector<InputStreamAttributeDesc>& GetAttributes() const
         {
             return m_Attributes;
         }
 
         bool operator==(const InputStreamLayout& rhs) const
         {
-            if (m_Buffers.Size() != rhs.m_Buffers.Size() || m_Attributes.Size() != rhs.m_Attributes.Size())
+            if (m_Buffers.size() != rhs.m_Buffers.size() || m_Attributes.size() != rhs.m_Attributes.size())
             {
                 return false;
             }
 
-            for (USize i = 0; i < m_Buffers.Size(); ++i)
+            for (uint32_t i = 0; i < m_Buffers.size(); ++i)
             {
                 if (m_Buffers[i] != rhs.m_Buffers[i])
-                {
                     return false;
-                }
             }
 
-            for (USize i = 0; i < m_Attributes.Size(); ++i)
+            for (uint32_t i = 0; i < m_Attributes.size(); ++i)
             {
                 if (m_Attributes[i] != rhs.m_Attributes[i])
-                {
                     return false;
-                }
             }
 
             return Topology == rhs.Topology;

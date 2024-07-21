@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/ECS/ISystem.h>
 #include <functional>
 
 namespace FE::ECS
 {
-    class CallbackSystem final : public Object<ISystem>
+    class CallbackSystem final : public ISystem
     {
     public:
         typedef void (*CreateProc)();

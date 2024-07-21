@@ -1,20 +1,20 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 
 namespace FE
 {
     namespace Constants
     {
-        inline constexpr Float32 PI = 3.14159265358979323f;
-        inline constexpr Float32 Epsilon = 0.0001f;
+        inline constexpr float PI = 3.14159265358979323f;
+        inline constexpr float Epsilon = 0.0001f;
     }
 
-    FE_FINLINE constexpr Float32 ToRadians(Float32 degrees) noexcept
+    FE_FINLINE constexpr float ToRadians(float degrees) noexcept
     {
         return degrees * Constants::PI / 180.f;
     }
 
-    FE_FINLINE constexpr Float32 ToDegrees(Float32 radians) noexcept
+    FE_FINLINE constexpr float ToDegrees(float radians) noexcept
     {
         return radians * 180.f / Constants::PI;
     }

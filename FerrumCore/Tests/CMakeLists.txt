@@ -1,4 +1,4 @@
-set(SRC
+﻿set(SRC
     # FERRUM_SORT_LINES BEGIN
     Assets/AssetManager.cpp
     Assets/TestAssetLoader.h
@@ -6,15 +6,12 @@ set(SRC
     Common/TestCommon.h
 
     Containers/LRUCacheMap.cpp
-    Containers/List.cpp
     Containers/SparseSet.cpp
 
     ECS/EntityRegistry.cpp
 
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
-
-    Memory/StackAllocator.cpp
 
     Modules/Environment.cpp
     Modules/ServiceLocator.cpp
@@ -42,4 +39,5 @@ target_link_libraries(FeCoreTests gtest gmock FeCore)
 get_property("TARGET_SOURCE_FILES" TARGET FeCoreTests PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
+include(GoogleTest)
 gtest_discover_tests(FeCoreTests)

@@ -1,4 +1,4 @@
-#include <FeCore/Utils/BinarySerializer.h>
+﻿#include <FeCore/Utils/BinarySerializer.h>
 #include <OsAssets/Shaders/ShaderAssetLoader.h>
 #include <OsAssets/Shaders/ShaderAssetStorage.h>
 
@@ -13,8 +13,7 @@ namespace FE::Osmium
 
     Assets::AssetStorage* ShaderAssetLoader::CreateStorage()
     {
-        auto* p = GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(ShaderAssetStorage), MaximumAlignment, FE_SRCPOS());
-        return new (p) ShaderAssetStorage(this);
+        return Memory::DefaultNew<ShaderAssetStorage>(this);
     }
 
     void ShaderAssetLoader::SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
@@ -31,15 +30,15 @@ namespace FE::Osmium
         serializer.ReadString(shaderStorage->SourceCode);
     }
 
-    void ShaderAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& /* metadata */, Assets::AssetStorage* storage,
-                                         IO::IStream* assetStream)
+    void ShaderAssetLoader::LoadRawAsset(const eastl::vector<Assets::AssetMetadataField>& /* metadata */,
+                                         Assets::AssetStorage* storage, IO::IStream* assetStream)
     {
-        auto* shaderStorage       = static_cast<ShaderAssetStorage*>(storage);
+        auto* shaderStorage = static_cast<ShaderAssetStorage*>(storage);
         shaderStorage->SourceCode = String(assetStream->Length(), '\0');
         assetStream->ReadToBuffer(shaderStorage->SourceCode.Data(), shaderStorage->SourceCode.Size());
     }
 
-    List<Assets::AssetMetadataField> ShaderAssetLoader::GetAssetMetadataFields()
+    eastl::vector<Assets::AssetMetadataField> ShaderAssetLoader::GetAssetMetadataFields()
     {
         return {};
     }

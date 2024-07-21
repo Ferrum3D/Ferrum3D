@@ -1,8 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Containers/ArraySlice.h>
-#include <FeCore/Memory/Allocator.h>
-#include <FeCore/Memory/HeapAllocator.h>
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE
@@ -88,35 +86,27 @@ namespace FE
             }
         }
 
-        inline static constexpr size_t Alignment = 16;
-
         inline static size_t Recommend(size_t s) noexcept
         {
             if (s < MinCapacity)
-            {
                 return MinCapacity - 1;
-            }
 
-            size_t guess = FE::AlignUp<Alignment / sizeof(TChar)>(s + 1) - 1;
+            size_t guess = FE::AlignUp<Memory::kDefaultAlignment / sizeof(TChar)>(s + 1) - 1;
 
             if (guess == MinCapacity)
-            {
                 ++guess;
-            }
 
             return guess;
         }
 
         inline static TChar* Allocate(size_t s) noexcept
         {
-            FE_STATIC_SRCPOS(position);
-            return static_cast<TChar*>(GlobalAllocator<HeapAllocator>::Get().Allocate(s, Alignment, position));
+            return static_cast<TChar*>(Memory::DefaultAllocate(s));
         }
 
         inline static void Deallocate(TChar* c) noexcept
         {
-            FE_STATIC_SRCPOS(position);
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(c, position);
+            Memory::DefaultFree(c);
         }
 
         inline static void CopyData(TChar* dest, const TChar* src, size_t size) noexcept
@@ -140,7 +130,7 @@ namespace FE
             else
             {
                 size_t newCap = Recommend(size);
-                newPtr        = Allocate(newCap + 1);
+                newPtr = Allocate(newCap + 1);
                 m_Data.L.Data = newPtr;
                 SetLCap(newCap + 1);
                 SetLSize(size);
@@ -167,7 +157,7 @@ namespace FE
                                    size_t addCount, const TChar* newChars)
         {
             TChar* oldData = Data();
-            size_t cap     = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
+            size_t cap = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
             TChar* newData = Allocate(cap + 1);
             if (copyCount)
                 CopyData(newData, oldData, copyCount);
@@ -186,8 +176,6 @@ namespace FE
         }
 
     public:
-        FE_STRUCT_RTTI(String, "340DE9B8-EC27-4248-9E0D-7D40330E8EBA");
-
         class Iterator
         {
             friend class String;
@@ -195,10 +183,10 @@ namespace FE
 
         public:
             using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type   = std::ptrdiff_t;
-            using value_type        = TCodepoint;
-            using pointer           = const TCodepoint*;
-            using reference         = const TCodepoint&;
+            using difference_type = std::ptrdiff_t;
+            using value_type = TCodepoint;
+            using pointer = const TCodepoint*;
+            using reference = const TCodepoint&;
 
             inline Iterator(const TChar* iter)
                 : m_Iter(iter)
@@ -334,8 +322,8 @@ namespace FE
         // O(N)
         [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
         {
-            auto begin     = Data();
-            auto end       = begin + Size() + 1;
+            auto begin = Data();
+            auto end = begin + Size() + 1;
             size_t cpIndex = 0;
             for (auto iter = begin; iter != end; UTF8::Decode(iter), ++cpIndex)
             {
@@ -381,7 +369,7 @@ namespace FE
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
         {
             auto begin = Data();
-            auto end   = Data();
+            auto end = Data();
             UTF8::Advance(begin, beginIndex);
             UTF8::Advance(end, endIndex);
             return StringSlice(begin, end - begin);
@@ -390,7 +378,7 @@ namespace FE
         [[nodiscard]] inline StringSlice ASCIISubstring(size_t beginIndex, size_t endIndex) const
         {
             auto begin = Data() + beginIndex;
-            auto end   = Data() + endIndex;
+            auto end = Data() + endIndex;
             return StringSlice(begin, end - begin);
         }
 
@@ -400,10 +388,10 @@ namespace FE
             if (cap >= reserve)
                 return;
 
-            reserve        = Recommend(reserve);
+            reserve = Recommend(reserve);
             TChar* newData = Allocate(reserve + 1);
             TChar* oldData = Data();
-            auto oldSize   = Size();
+            auto oldSize = Size();
             CopyData(newData, oldData, oldSize + 1);
             if (IsLong())
                 Deallocate(oldData);
@@ -415,8 +403,8 @@ namespace FE
 
         inline void Shrink() noexcept
         {
-            size_t cap     = Capacity();
-            size_t size    = Size();
+            size_t cap = Capacity();
+            size_t size = Size();
             size_t reserve = Recommend(size);
             if (reserve == cap)
                 return;
@@ -459,7 +447,7 @@ namespace FE
             }
 
             size_t size = Size();
-            size_t cap  = Capacity();
+            size_t cap = Capacity();
             if (cap - size >= count)
             {
                 TChar* data = Data();
@@ -535,12 +523,12 @@ namespace FE
             return StringSlice(Data(), Size()).FindLastOf(search).m_Iter;
         }
 
-        [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
+        [[nodiscard]] inline eastl::vector<StringSlice> Split(TCodepoint c = ' ') const
         {
             return StringSlice(Data(), Size()).Split(c);
         }
 
-        [[nodiscard]] inline List<StringSlice> SplitLines() const
+        [[nodiscard]] inline eastl::vector<StringSlice> SplitLines() const
         {
             return StringSlice(Data(), Size()).SplitLines();
         }
@@ -596,18 +584,6 @@ namespace FE
             return StringSlice(Data(), Size()).Parse<T>();
         }
 
-        [[nodiscard]] inline WString ToWideString() const
-        {
-            WString result;
-            result.reserve(Length());
-            for (TCodepoint cp : *this)
-            {
-                result += static_cast<wchar_t>(cp);
-            }
-
-            return result;
-        }
-
         [[nodiscard]] inline static String Join(const StringSlice& separator, const ArraySlice<StringSlice>& strings)
         {
             String result;
@@ -618,7 +594,7 @@ namespace FE
             }
 
             result.Reserve(capacity);
-            for (USize i = 0; i < strings.Length(); ++i)
+            for (uint32_t i = 0; i < strings.Length(); ++i)
             {
                 result.Append(strings[i]);
                 if (i != strings.Length() - 1)
@@ -643,7 +619,7 @@ namespace FE
 
         [[nodiscard]] inline Iterator end() const noexcept
         {
-            auto ptr  = Data();
+            auto ptr = Data();
             auto size = Size();
             return Iterator(ptr + size);
         }

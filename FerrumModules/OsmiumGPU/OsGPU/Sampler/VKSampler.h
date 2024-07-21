@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Sampler/ISampler.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKSampler : public Object<ISampler>
+    class VKSampler : public ISampler
     {
         VKDevice* m_Device;
         SamplerDesc m_Desc;

@@ -1,9 +1,9 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <OsGPU/Adapter/VKAdapter.h>
 #include <OsGPU/Instance/VKInstance.h>
 
 #if FE_DEBUG
-FE::Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
+static FE::Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
 {
     switch (static_cast<VkDebugReportFlagBitsEXT>(flags))
     {
@@ -58,12 +58,12 @@ namespace FE::Osmium
         volkInitialize();
         UInt32 layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        List<VkLayerProperties> layers(layerCount, VkLayerProperties{});
-        vkEnumerateInstanceLayerProperties(&layerCount, layers.Data());
+        eastl::vector<VkLayerProperties> layers(layerCount, VkLayerProperties{});
+        vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
         for (auto& layer : RequiredInstanceLayers)
         {
             auto layerSlice = StringSlice(layer);
-            bool found      = std::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
+            bool found = eastl::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
                 return layerSlice == props.layerName;
             });
             FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layerSlice);
@@ -71,29 +71,29 @@ namespace FE::Osmium
 
         UInt32 extensionCount;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        List<VkExtensionProperties> extensions(extensionCount, VkExtensionProperties{});
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.Data());
+        eastl::vector<VkExtensionProperties> extensions(extensionCount, VkExtensionProperties{});
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
         for (auto& ext : RequiredInstanceExtensions)
         {
             auto extSlice = StringSlice(ext);
-            bool found    = std::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
+            bool found = eastl::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
                 return extSlice == props.extensionName;
             });
             FE_ASSERT_MSG(found, "Vulkan instance extension {} was not found", extSlice);
         }
 
         VkApplicationInfo appInfo{};
-        appInfo.sType            = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.apiVersion       = VK_API_VERSION_1_2;
-        appInfo.pEngineName      = FerrumEngineName;
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.apiVersion = VK_API_VERSION_1_2;
+        appInfo.pEngineName = "Ferrum3D";
         appInfo.pApplicationName = desc.ApplicationName;
 
         VkInstanceCreateInfo instanceCI{};
-        instanceCI.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instanceCI.pApplicationInfo        = &appInfo;
-        instanceCI.enabledLayerCount       = static_cast<UInt32>(RequiredInstanceLayers.size());
-        instanceCI.ppEnabledLayerNames     = RequiredInstanceLayers.data();
-        instanceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredInstanceExtensions.size());
+        instanceCI.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        instanceCI.pApplicationInfo = &appInfo;
+        instanceCI.enabledLayerCount = static_cast<UInt32>(RequiredInstanceLayers.size());
+        instanceCI.ppEnabledLayerNames = RequiredInstanceLayers.data();
+        instanceCI.enabledExtensionCount = static_cast<UInt32>(RequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = RequiredInstanceExtensions.data();
 
         vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_Instance);
@@ -106,21 +106,21 @@ namespace FE::Osmium
         debugCI.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
         debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
         debugCI.pfnCallback = &DebugReportCallback;
-        debugCI.pUserData   = FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get();
+        debugCI.pUserData = FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get();
         vkCreateDebugReportCallbackEXT(m_Instance, &debugCI, VK_NULL_HANDLE, &m_Debug);
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");
 
         UInt32 adapterCount;
         vkEnumeratePhysicalDevices(m_Instance, &adapterCount, nullptr);
-        List<VkPhysicalDevice> vkAdapters(adapterCount, VkPhysicalDevice{});
-        vkEnumeratePhysicalDevices(m_Instance, &adapterCount, vkAdapters.Data());
+        eastl::vector<VkPhysicalDevice> vkAdapters(adapterCount, VkPhysicalDevice{});
+        vkEnumeratePhysicalDevices(m_Instance, &adapterCount, vkAdapters.data());
         for (auto& vkAdapter : vkAdapters)
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(vkAdapter, &props);
             FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
-            m_Adapters.Push(MakeShared<VKAdapter>(*this, vkAdapter));
+            m_Adapters.push_back(Rc<VKAdapter>::DefaultNew(*this, vkAdapter));
         }
     }
 
@@ -129,7 +129,7 @@ namespace FE::Osmium
         return m_Instance;
     }
 
-    const List<Rc<IAdapter>>& VKInstance::GetAdapters() const
+    const eastl::vector<Rc<IAdapter>>& VKInstance::GetAdapters() const
     {
         return m_Adapters;
     }

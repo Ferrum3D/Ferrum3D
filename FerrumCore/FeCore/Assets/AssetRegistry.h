@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 #include <FeCore/Strings/String.h>
-#include <unordered_map>
+#include <FeCore/Containers/HashTables.h>
 
 namespace FE::Assets
 {
@@ -11,10 +11,10 @@ namespace FE::Assets
     //! It can be loaded from game assets directory or filled manually. The \ref IAssetProvider
     //! will use file names returned by this class to give \ref IAssetLoader streams to load
     //! assets from.
-    class AssetRegistry : public Object<IObject>
+    class AssetRegistry : public Memory::RefCountedObjectBase
     {
-        UnorderedMap<AssetID, String> m_AssetFiles;
-        UnorderedMap<AssetID, AssetType> m_AssetTypes;
+        festd::unordered_dense_map<AssetID, String> m_AssetFiles;
+        festd::unordered_dense_map<AssetID, AssetType> m_AssetTypes;
 
     public:
         FE_CLASS_RTTI(AssetRegistry, "35D62039-49D0-48AE-9AD7-ADA816B945F5");

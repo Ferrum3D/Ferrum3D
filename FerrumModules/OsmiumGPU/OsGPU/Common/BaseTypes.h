@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Base/Base.h>
+﻿#pragma once
+#include <FeCore/Memory/Memory.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <cstdint>
 
@@ -89,16 +89,14 @@ namespace FE::Osmium
     };
 } // namespace FE::Osmium
 
-namespace std
+
+template<>
+struct eastl::hash<FE::Osmium::Size>
 {
-    template<>
-    struct std::hash<FE::Osmium::Size>
+    inline size_t operator()(const FE::Osmium::Size& size) const noexcept
     {
-        inline size_t operator()(const FE::Osmium::Size& size) const noexcept
-        {
-            size_t seed = 0;
-            FE::HashCombine(seed, size.Width, size.Height, size.Depth);
-            return seed;
-        }
-    };
-} // namespace std
+        size_t seed = 0;
+        FE::HashCombine(seed, size.Width, size.Height, size.Depth);
+        return seed;
+    }
+};

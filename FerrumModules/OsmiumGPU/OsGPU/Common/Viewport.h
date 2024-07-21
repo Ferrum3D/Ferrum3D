@@ -1,22 +1,20 @@
-#pragma once
-#include <FeCore/Memory/Object.h>
+﻿#pragma once
+#include <FeCore/Base/Base.h>
 
 namespace FE::Osmium
 {
     struct Viewport
     {
-        Float32 MinX;
-        Float32 MinY;
-        Float32 MinZ;
-        Float32 MaxX;
-        Float32 MaxY;
-        Float32 MaxZ;
-
-        FE_STRUCT_RTTI(Viewport, "0BD79E66-6539-4AD3-A6DC-66066B56C5BF");
+        float MinX;
+        float MinY;
+        float MinZ;
+        float MaxX;
+        float MaxY;
+        float MaxZ;
 
         Viewport() = default;
 
-        inline Viewport(Float32 minX, Float32 maxX, Float32 minY, Float32 maxY, Float32 minZ = 0, Float32 maxZ = 1.0f)
+        inline Viewport(float minX, float maxX, float minY, float maxY, float minZ = 0, float maxZ = 1.0f)
             : MinX(minX)
             , MinY(minY)
             , MinZ(minZ)
@@ -26,17 +24,17 @@ namespace FE::Osmium
         {
         }
 
-        [[nodiscard]] inline Float32 Width() const noexcept
+        [[nodiscard]] inline float Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        [[nodiscard]] inline Float32 Height() const noexcept
+        [[nodiscard]] inline float Height() const noexcept
         {
             return MaxY - MinY;
         }
 
-        [[nodiscard]] inline Float32 Depth() const noexcept
+        [[nodiscard]] inline float Depth() const noexcept
         {
             return MaxZ - MinZ;
         }
@@ -44,22 +42,22 @@ namespace FE::Osmium
 
     struct Scissor
     {
-        Int32 MinX;
-        Int32 MinY;
-        Int32 MaxX;
-        Int32 MaxY;
+        int32_t MinX;
+        int32_t MinY;
+        int32_t MaxX;
+        int32_t MaxY;
 
         Scissor() = default;
 
         inline explicit Scissor(const Viewport& viewport)
-            : MinX(static_cast<Int32>(viewport.MinX))
-            , MinY(static_cast<Int32>(viewport.MinY))
-            , MaxX(static_cast<Int32>(viewport.MaxX))
-            , MaxY(static_cast<Int32>(viewport.MaxY))
+            : MinX(static_cast<int32_t>(viewport.MinX))
+            , MinY(static_cast<int32_t>(viewport.MinY))
+            , MaxX(static_cast<int32_t>(viewport.MaxX))
+            , MaxY(static_cast<int32_t>(viewport.MaxY))
         {
         }
 
-        inline Scissor(Int32 minX, Int32 maxX, Int32 minY, Int32 maxY)
+        inline Scissor(int32_t minX, int32_t maxX, int32_t minY, int32_t maxY)
             : MinX(minX)
             , MinY(minY)
             , MaxX(maxX)
@@ -67,16 +65,14 @@ namespace FE::Osmium
         {
         }
 
-        FE_STRUCT_RTTI(Scissor, "BC7244C7-821B-4044-B408-219A2BE1A955");
-
-        [[nodiscard]] inline Int32 Width() const noexcept
+        [[nodiscard]] inline int32_t Width() const noexcept
         {
             return MaxX - MinX;
         }
 
-        [[nodiscard]] inline Int32 Height() const noexcept
+        [[nodiscard]] inline int32_t Height() const noexcept
         {
             return MaxY - MinY;
         }
     };
-}
+} // namespace FE::Osmium

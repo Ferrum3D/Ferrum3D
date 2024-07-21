@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <OsGPU/Resource/ShaderResourceType.h>
 #include <OsGPU/Shader/ShaderStage.h>
 
@@ -15,18 +14,21 @@ namespace FE::Osmium
 
         inline DescriptorWriteBuffer() = default;
 
-        inline explicit DescriptorWriteBuffer(IBuffer* buffer, UInt32 offset = 0, UInt32 range = static_cast<UInt32>(-1))
+        inline explicit DescriptorWriteBuffer(IBuffer* buffer, UInt32 offset = 0, UInt32 range = static_cast<UInt32>(-1),
+                                              UInt32 binding = 0, UInt32 arrayIndex = 0)
             : Buffer(buffer)
-            , Range(range)
+            , Binding(binding)
+            , ArrayIndex(arrayIndex)
             , Offset(offset)
+            , Range(range)
         {
         }
 
-        IBuffer* Buffer = nullptr;
-        UInt32 Binding = 0;
+        IBuffer* Buffer   = nullptr;
+        UInt32 Binding    = 0;
         UInt32 ArrayIndex = 0;
-        UInt32 Offset = 0;
-        UInt32 Range = static_cast<UInt32>(-1);
+        UInt32 Offset     = 0;
+        UInt32 Range      = static_cast<UInt32>(-1);
     };
 
     struct DescriptorWriteImage
@@ -35,13 +37,15 @@ namespace FE::Osmium
 
         inline DescriptorWriteImage() = default;
 
-        inline explicit DescriptorWriteImage(IImageView* imageView)
+        inline explicit DescriptorWriteImage(IImageView* imageView, UInt32 binding = 0, UInt32 arrayIndex = 0)
             : View(imageView)
+            , Binding(binding)
+            , ArrayIndex(arrayIndex)
         {
         }
 
-        IImageView* View = nullptr;
-        UInt32 Binding = 0;
+        IImageView* View  = nullptr;
+        UInt32 Binding    = 0;
         UInt32 ArrayIndex = 0;
     };
 
@@ -51,13 +55,15 @@ namespace FE::Osmium
 
         inline DescriptorWriteSampler() = default;
 
-        inline explicit DescriptorWriteSampler(ISampler* sampler)
+        inline explicit DescriptorWriteSampler(ISampler* sampler, UInt32 binding = 0, UInt32 arrayIndex = 0)
             : Sampler(sampler)
+            , Binding(binding)
+            , ArrayIndex(arrayIndex)
         {
         }
 
         ISampler* Sampler = nullptr;
-        UInt32 Binding = 0;
+        UInt32 Binding    = 0;
         UInt32 ArrayIndex = 0;
     };
 
@@ -78,6 +84,6 @@ namespace FE::Osmium
         ShaderStageFlags Stage;
         UInt32 Count;
     };
-}
+} // namespace FE::Osmium
 
 FE_MAKE_HASHABLE(FE::Osmium::DescriptorDesc, , value.ResourceType, value.Stage, value.Count);

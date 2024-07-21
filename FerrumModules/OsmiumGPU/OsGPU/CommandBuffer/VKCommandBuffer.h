@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/CommandBuffer/ICommandBuffer.h>
 #include <OsGPU/Common/VKConfig.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKCommandBuffer : public Object<ICommandBuffer>
+    class VKCommandBuffer : public ICommandBuffer
     {
         VKDevice* m_Device;
         VkCommandBuffer m_CommandBuffer;

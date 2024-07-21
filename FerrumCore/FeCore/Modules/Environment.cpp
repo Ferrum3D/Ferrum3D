@@ -1,5 +1,5 @@
-#include <FeCore/Console/Console.h>
-#include <FeCore/Memory/BasicSystemAllocator.h>
+﻿#include <FeCore/Console/Console.h>
+#include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Utils/SortedStringVector.h>
 #include <cstdio>
@@ -21,17 +21,35 @@ namespace FE::Env
 {
     namespace Internal
     {
+        class DefaultMemoryResource final : public std::pmr::memory_resource
+        {
+        public:
+            inline void* do_allocate(size_t size, size_t alignment) override
+            {
+                return Memory::DefaultAllocate(size, alignment);
+            }
+
+            inline void do_deallocate(void* p, size_t, size_t) override
+            {
+                Memory::DefaultFree(p);
+            }
+
+            inline bool do_is_equal(const memory_resource&) const noexcept override
+            {
+                return false;
+            }
+        };
+
         static IEnvironment* g_EnvInstance = nullptr;
-        static bool g_IsEnvOwner           = false;
+        static bool g_IsEnvOwner = false;
 
         class Environment : public IEnvironment
         {
-            using Allocator = StdBasicAllocator<std::tuple<std::vector<char>, void*>>;
-            using Map       = SortedStringVector<void*, std::vector<char>, std::string_view, Allocator>;
+            using Map = SortedStringVector<void*, std::vector<char>, std::string_view>;
 
-            FE::IBasicAllocator* m_Allocator = nullptr;
             Map m_Map;
             Mutex m_Lock;
+            DefaultMemoryResource m_DefaultMemoryResource;
 
             inline VariableResult FindVariableNoLock(std::string_view name)
             {
@@ -50,10 +68,10 @@ namespace FE::Env
             }
 
         public:
-            inline Environment(FE::IBasicAllocator* allocator)
-                : m_Allocator(allocator)
-                , m_Map(Allocator(allocator))
+            inline Environment()
             {
+                std::pmr::set_default_resource(&m_DefaultMemoryResource);
+
                 Console::Init();
                 Console::SetColor(Console::Color::Green);
                 // std::stringstream ss;
@@ -63,34 +81,39 @@ namespace FE::Env
                 Console::ResetColor();
             }
 
+            inline std::pmr::memory_resource* GetDefaultMemoryResource()
+            {
+                return &m_DefaultMemoryResource;
+            }
+
             inline VariableResult FindVariable(std::string_view name) override
             {
-                UniqueLocker lk(m_Lock);
+                std::unique_lock lk(m_Lock);
                 return FindVariableNoLock(name);
             }
 
             inline VariableResult CreateVariable(std::vector<char>&& name, size_t size, size_t alignment,
                                                  std::string_view& nameView) override
             {
-                UniqueLocker lk(m_Lock);
+                std::unique_lock lk(m_Lock);
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
                 if (find.IsOk())
                 {
                     return find;
                 }
 
-                void* storage = m_Allocator->Allocate(size, alignment);
+                void* storage = Memory::DefaultAllocate(size, alignment);
                 if (!storage)
                     return VariableResult::Err(VariableError::AllocationError);
 
                 auto& [str, ptr] = m_Map.Push(std::move(name), storage);
-                nameView         = std::string_view(str.data(), str.size());
+                nameView = std::string_view(str.data(), str.size());
                 return std::make_tuple(storage, VariableOk::Created);
             }
 
             inline VariableResult RemoveVariable(std::string_view name) override
             {
-                UniqueLocker lk(m_Lock);
+                std::unique_lock lk(m_Lock);
                 auto it = m_Map.FindIter(name);
                 if (it == m_Map.end())
                 {
@@ -109,11 +132,6 @@ namespace FE::Env
                 return result;
             }
 
-            inline FE::IBasicAllocator* GetAllocator() override
-            {
-                return m_Allocator;
-            }
-
             inline void Destroy() override
             {
                 Console::SetColor(Console::Color::Green);
@@ -128,7 +146,8 @@ namespace FE::Env
                     }
                 }
 
-                if (leaked && ValidationEnabled())
+#if FE_DEBUG
+                if (leaked)
                 {
                     printf("Variables leaked: %i, destroying them manually...\n", leaked);
                     Console::SetColor(Console::Color::Red);
@@ -140,41 +159,31 @@ namespace FE::Env
                         if (std::get<1>(var))
                         {
                             printf("Freeing variable \"%s\"...\n", std::get<0>(var).data());
-                            m_Allocator->Deallocate(std::get<1>(var));
+                            Memory::DefaultFree(std::get<1>(var));
                         }
                     }
                 }
+#endif
 
-                m_Allocator->Deallocate(this);
+                Memory::DefaultFree(this);
             }
         };
     } // namespace Internal
 
-    void CreateEnvironment(IBasicAllocator* allocator)
+    void CreateEnvironment()
     {
         if (Internal::g_EnvInstance)
         {
             return;
         }
 
-        if (!allocator)
-        {
-            static BasicSystemAllocator sysAlloc;
-            allocator = &sysAlloc;
-        }
-
-        Internal::g_IsEnvOwner  = true;
-        Internal::g_EnvInstance = new (allocator->Allocate(sizeof(Internal::Environment), alignof(Internal::Environment)))
-            Internal::Environment(allocator);
+        Internal::g_IsEnvOwner = true;
+        Internal::g_EnvInstance = Memory::DefaultNew<Internal::Environment>();
     }
 
     Internal::IEnvironment& GetEnvironment()
     {
-        if (!Internal::g_EnvInstance)
-        {
-            FE_CORE_ASSERT(Internal::g_EnvInstance, "Environment must be created explicitly");
-            // CreateEnvironment(nullptr);
-        }
+        FE_CORE_ASSERT(Internal::g_EnvInstance, "Environment must be created explicitly");
         return *Internal::g_EnvInstance;
     }
 
@@ -183,6 +192,7 @@ namespace FE::Env
         DetachEnvironment();
 
         Internal::g_EnvInstance = &instance;
+        std::pmr::set_default_resource(static_cast<Internal::Environment&>(instance).GetDefaultMemoryResource());
     }
 
     void DetachEnvironment()

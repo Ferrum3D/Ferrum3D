@@ -24,16 +24,16 @@ namespace FE::SIMD::SSE
 
         FE_FINLINE Float32x4(__m128 value);
 
-        FE_FINLINE Float32x4(Float32 value);
+        FE_FINLINE Float32x4(float value);
 
         //! \brief Set Data = { x, y, 0, 0 }
-        FE_FINLINE Float32x4(Float32 x, Float32 y);
+        FE_FINLINE Float32x4(float x, float y);
 
         //! \brief Set Data = { x, y, z, 0 }
-        FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z);
+        FE_FINLINE Float32x4(float x, float y, float z);
 
         //! \brief Set Data = { x, y, z, w }
-        FE_FINLINE Float32x4(Float32 x, Float32 y, Float32 z, Float32 w);
+        FE_FINLINE Float32x4(float x, float y, float z, float w);
 
         //! \brief Get { 0, 0, 0, 0 }
         FE_FINLINE static Float32x4 GetZero() noexcept;
@@ -48,16 +48,16 @@ namespace FE::SIMD::SSE
         FE_FINLINE Float32x4 Broadcast() const noexcept;
 
         template<size_t I>
-        FE_FINLINE Float32 Select() const noexcept;
+        FE_FINLINE float Select() const noexcept;
 
         template<>
-        FE_FINLINE Float32 Select<0>() const noexcept;
+        FE_FINLINE float Select<0>() const noexcept;
 
         template<size_t I>
         FE_FINLINE Float32x4 Replace(Float32x4 other) const noexcept;
 
         template<size_t I>
-        FE_FINLINE Float32x4 Replace(Float32 value) const noexcept;
+        FE_FINLINE Float32x4 Replace(float value) const noexcept;
 
         FE_FINLINE Float32x4 Floor() const noexcept;
 
@@ -127,22 +127,22 @@ namespace FE::SIMD::SSE
     {
     }
 
-    FE_FINLINE Float32x4::Float32x4(Float32 value)
+    FE_FINLINE Float32x4::Float32x4(float value)
         : Data(_mm_set_ps1(value))
     {
     }
 
-    FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y)
+    FE_FINLINE Float32x4::Float32x4(float x, float y)
         : Data(_mm_set_ps(0, 0, y, x))
     {
     }
 
-    FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y, Float32 z)
+    FE_FINLINE Float32x4::Float32x4(float x, float y, float z)
         : Data(_mm_set_ps(0, z, y, x))
     {
     }
 
-    FE_FINLINE Float32x4::Float32x4(Float32 x, Float32 y, Float32 z, Float32 w)
+    FE_FINLINE Float32x4::Float32x4(float x, float y, float z, float w)
         : Data(_mm_set_ps(w, z, y, x))
     {
     }
@@ -175,14 +175,14 @@ namespace FE::SIMD::SSE
     }
 
     template<size_t I>
-    FE_FINLINE Float32 Float32x4::Select() const noexcept
+    FE_FINLINE float Float32x4::Select() const noexcept
     {
         static_assert(I < 4);
         return _mm_cvtss_f32(Broadcast<I>());
     }
 
     template<>
-    FE_FINLINE Float32 Float32x4::Select<0>() const noexcept
+    FE_FINLINE float Float32x4::Select<0>() const noexcept
     {
         return _mm_cvtss_f32(Data);
     }
@@ -198,7 +198,7 @@ namespace FE::SIMD::SSE
     }
 
     template<size_t I>
-    FE_FINLINE Float32x4 Float32x4::Replace(Float32 value) const noexcept
+    FE_FINLINE Float32x4 Float32x4::Replace(float value) const noexcept
     {
         return Replace<I>(Float32x4(value));
     }

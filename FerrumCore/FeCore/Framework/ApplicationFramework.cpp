@@ -1,4 +1,4 @@
-#include <FeCore/Assets/AssetManager.h>
+﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/EventBus/EventBus.h>
@@ -11,16 +11,16 @@ namespace FE
     {
         Desc = desc;
 
-        m_Logger        = MakeShared<Debug::ConsoleLogger>();
+        m_Logger = Rc<Debug::ConsoleLogger>::DefaultNew();
         m_Logger->SetDebugLevel(desc.LogSeverity);
-        m_FrameEventBus = MakeShared<EventBus<FrameEvents>>();
-        m_JobScheduler  = MakeShared<JobScheduler>(std::thread::hardware_concurrency() - 1);
+        m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
+        m_JobScheduler = Rc<JobScheduler>::DefaultNew(std::thread::hardware_concurrency() - 1);
 
-        m_AssetManager     = MakeShared<Assets::AssetManager>();
-        auto assetProvider = MakeShared<Assets::AssetProviderDev>();
+        m_AssetManager = Rc<Assets::AssetManager>::DefaultNew();
+        Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();
         if (!Desc.AssetDirectory.Empty())
         {
-            auto assetRegistry = FE::MakeShared<FE::Assets::AssetRegistry>();
+            Rc assetRegistry = Rc<Assets::AssetRegistry>::DefaultNew();
             assetRegistry->LoadAssetsFromFile(Desc.AssetDirectory / "FerrumAssetIndex");
             assetProvider->AttachRegistry(assetRegistry);
         }
@@ -32,7 +32,7 @@ namespace FE
     Int32 ApplicationFramework::RunMainLoop()
     {
         FrameEventArgs frameEventArgs{};
-        frameEventArgs.DeltaTime  = 0.1f;
+        frameEventArgs.DeltaTime = 0.1f;
         frameEventArgs.FrameIndex = 0;
 
         auto ts = std::chrono::high_resolution_clock::now();
@@ -40,8 +40,8 @@ namespace FE
         {
             auto getDelta = [](std::chrono::high_resolution_clock::time_point ts) {
                 auto now = std::chrono::high_resolution_clock::now();
-                auto ms  = std::chrono::duration_cast<std::chrono::microseconds>(now - ts).count();
-                return static_cast<FE::Float32>(ms) / 1'000'000;
+                auto ms = std::chrono::duration_cast<std::chrono::microseconds>(now - ts).count();
+                return static_cast<float>(ms) / 1'000'000;
             };
 
             PollSystemEvents();
@@ -73,7 +73,7 @@ namespace FE
 
     void ApplicationFramework::Stop(Int32 exitCode)
     {
-        m_ExitCode      = exitCode;
+        m_ExitCode = exitCode;
         m_StopRequested = true;
     }
 

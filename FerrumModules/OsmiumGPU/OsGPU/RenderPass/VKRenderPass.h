@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/RenderPass/IRenderPass.h>
 
@@ -48,7 +48,7 @@ namespace FE::Osmium
         }
     }
 
-    class VKRenderPass : public Object<IRenderPass>
+    class VKRenderPass : public IRenderPass
     {
         VKDevice* m_Device;
         RenderPassDesc m_Desc;
@@ -57,19 +57,19 @@ namespace FE::Osmium
 
         struct SubpassAttachmentReferences
         {
-            List<VkAttachmentReference> Input;
-            List<VkAttachmentReference> RT;
-            List<VkAttachmentReference> Resolve;
+            eastl::vector<VkAttachmentReference> Input;
+            eastl::vector<VkAttachmentReference> RT;
+            eastl::vector<VkAttachmentReference> Resolve;
             const UInt32* Preserve;
             VkAttachmentReference DepthStencil;
         };
 
         void BuildNativeRenderPass();
-        List<VkAttachmentDescription> BuildAttachmentDescriptions();
-        List<VkSubpassDescription> BuildSubpassDescriptions(
-            List<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const;
-        List<VkAttachmentReference> BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType);
-        List<VkSubpassDependency> BuildSubpassDependencies();
+        eastl::vector<VkAttachmentDescription> BuildAttachmentDescriptions();
+        eastl::vector<VkSubpassDescription> BuildSubpassDescriptions(
+            eastl::vector<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const;
+        eastl::vector<VkAttachmentReference> BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType);
+        eastl::vector<VkSubpassDependency> BuildSubpassDependencies();
 
     public:
         FE_CLASS_RTTI(VKRenderPass, "091A0BB6-816E-4144-AE03-D082C1C7B689");

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/IO/IStream.h>
 #include <FeCore/Strings/String.h>
@@ -55,16 +55,16 @@ namespace FE
         }
 
         template<class T>
-        inline USize ReadArray(List<T>& buffer)
+        inline USize ReadArray(eastl::vector<T>& buffer)
         {
-            buffer.Resize(Read<USize>());
-            return m_Stream->ReadToBuffer(buffer.Data(), buffer.Size() * sizeof(T)) + sizeof(USize);
+            buffer.resize(static_cast<uint32_t>(Read<USize>()));
+            return m_Stream->ReadToBuffer(buffer.data(), buffer.size() * sizeof(T)) + sizeof(USize);
         }
 
         template<class T>
-        inline List<T> ReadArray()
+        inline eastl::vector<T> ReadArray()
         {
-            List<T> buffer;
+            eastl::vector<T> buffer;
             ReadArray<T>(buffer);
             return buffer;
         }

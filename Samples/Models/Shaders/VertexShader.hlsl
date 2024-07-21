@@ -12,7 +12,7 @@ struct VSOutput
 
 cbuffer Settings : register(b2, space0)
 {
-float4x4 g_MVP;
+    float4x4 g_MVP;
 }
 
 VSOutput main(VSInput input)

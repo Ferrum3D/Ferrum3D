@@ -1,6 +1,6 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
 #include <FeCore/Strings/FeUnicode.h>
+#include <FeCore/Utils/Result.h>
 #include <cassert>
 #include <codecvt>
 #include <locale>
@@ -87,7 +87,7 @@ namespace FE
         ParseError TryToIntImpl(Int64& result) const;
         ParseError TryToUIntImpl(UInt64& result) const;
 
-        ParseError TryToFloatImpl(Float64& result) const;
+        ParseError TryToFloatImpl(double& result) const;
 
         template<class T>
         inline static constexpr bool is_signed_integer_v =
@@ -138,9 +138,9 @@ namespace FE
         [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, ParseError> ParseImpl(
             TFloat& result) const noexcept
         {
-            Float64 temp;
+            double temp;
             auto ret = TryToFloatImpl(temp);
-            result   = static_cast<TFloat>(temp);
+            result = static_cast<TFloat>(temp);
             return ret;
         }
 
@@ -168,8 +168,6 @@ namespace FE
         }
 
     public:
-        FE_STRUCT_RTTI(StringSlice, "DCBAE48D-8751-4F0C-96F9-99866394482B");
-
         class Iterator
         {
             friend class StringSlice;
@@ -178,10 +176,10 @@ namespace FE
 
         public:
             using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type   = std::ptrdiff_t;
-            using value_type        = TCodepoint;
-            using pointer           = const TCodepoint*;
-            using reference         = const TCodepoint&;
+            using difference_type = std::ptrdiff_t;
+            using value_type = TCodepoint;
+            using pointer = const TCodepoint*;
+            using reference = const TCodepoint&;
 
             inline Iterator(const TChar* iter)
                 : m_Iter(iter)
@@ -307,7 +305,7 @@ namespace FE
         inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
         {
             auto begin = Data();
-            auto end   = Data();
+            auto end = Data();
             UTF8::Advance(begin, beginIndex);
             UTF8::Advance(end, endIndex);
             return StringSlice(begin, end - begin);
@@ -323,8 +321,8 @@ namespace FE
         // O(N)
         [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
         {
-            auto begin     = Data();
-            auto end       = begin + Size() + 1;
+            auto begin = Data();
+            auto end = begin + Size() + 1;
             size_t cpIndex = 0;
             for (auto iter = begin; iter != end; UTF8::Decode(iter), ++cpIndex)
             {
@@ -342,9 +340,7 @@ namespace FE
             for (auto iter = start; iter != e; ++iter)
             {
                 if (*iter == search)
-                {
                     return iter;
-                }
             }
             return e;
         }
@@ -356,14 +352,12 @@ namespace FE
 
         [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
         {
-            auto e      = end();
+            auto e = end();
             auto result = e;
             for (auto iter = begin(); iter != e; ++iter)
             {
                 if (*iter == search)
-                {
                     result = iter;
-                }
             }
             return result;
         }
@@ -376,9 +370,7 @@ namespace FE
         [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
-            {
                 return false;
-            }
 
             return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
@@ -386,45 +378,39 @@ namespace FE
         [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
-            {
                 return false;
-            }
 
             return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline List<StringSlice> Split(TCodepoint c = ' ') const
+        [[nodiscard]] inline eastl::vector<StringSlice> Split(TCodepoint c = ' ') const
         {
-            List<StringSlice> result;
+            eastl::vector<StringSlice> result;
             auto current = begin();
             while (current != end())
             {
                 auto cPos = FindFirstOf(current, c);
-                result.Emplace(current.m_Iter, cPos.m_Iter - current.m_Iter);
+                result.emplace_back(current.m_Iter, cPos.m_Iter - current.m_Iter);
                 current = cPos;
                 if (current != end())
-                {
                     ++current;
-                }
             }
 
             return result;
         }
 
-        [[nodiscard]] inline List<StringSlice> SplitLines() const
+        [[nodiscard]] inline eastl::vector<StringSlice> SplitLines() const
         {
-            List<StringSlice> result;
+            eastl::vector<StringSlice> result;
             auto current = begin();
             while (current != end())
             {
                 auto cPos = FindFirstOf(current, '\n');
                 auto line = StringSlice(current.m_Iter, cPos.m_Iter - current.m_Iter).StripRight("\r");
-                result.Emplace(line);
+                result.push_back(line);
                 current = cPos;
                 if (current != end())
-                {
                     ++current;
-                }
             }
 
             return result;
@@ -433,18 +419,14 @@ namespace FE
         [[nodiscard]] inline StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
         {
             if (Size() == 0)
-            {
                 return {};
-            }
 
             auto endIter = end();
-            auto result  = begin();
+            auto result = begin();
             for (auto iter = begin(); iter != endIter; ++iter)
             {
                 if (!chars.Contains(*iter))
-                {
                     break;
-                }
 
                 result = iter;
                 ++result;
@@ -456,18 +438,14 @@ namespace FE
         [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
         {
             if (Size() == 0)
-            {
                 return {};
-            }
 
             auto beginIter = begin();
-            auto result    = end();
+            auto result = end();
             for (auto iter = --end(); iter != beginIter; --iter)
             {
                 if (!chars.Contains(*iter))
-                {
                     break;
-                }
 
                 result = iter;
             }
@@ -501,18 +479,6 @@ namespace FE
             }
 
             return Err(err);
-        }
-
-        [[nodiscard]] inline WString ToWideString() const
-        {
-            WString result;
-            result.reserve(Length());
-            for (TCodepoint cp : *this)
-            {
-                result += static_cast<wchar_t>(cp);
-            }
-
-            return result;
         }
 
         [[nodiscard]] inline explicit operator UUID() const noexcept

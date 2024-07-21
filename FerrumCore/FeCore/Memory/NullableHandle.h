@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 
 namespace FE
@@ -139,14 +139,11 @@ namespace FE
     }
 } // namespace FE
 
-namespace std
+template<>
+struct eastl::hash<FE::NullableHandle>
 {
-    template<>
-    struct hash<FE::NullableHandle>
+    inline size_t operator()(const FE::NullableHandle& handle) const noexcept
     {
-        inline size_t operator()(const FE::NullableHandle& handle) const noexcept
-        {
-            return hash<size_t>{}(handle.ToOffset());
-        }
-    };
-} // namespace std
+        return eastl::hash<size_t>{}(handle.ToOffset());
+    }
+};

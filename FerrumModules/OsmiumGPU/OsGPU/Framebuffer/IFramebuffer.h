@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySlice.h>
-#include <FeCore/Memory/SharedPtr.h>
 
 namespace FE::Osmium
 {
@@ -17,7 +16,7 @@ namespace FE::Osmium
         UInt32 Height = 0;
     };
 
-    class IFramebuffer : public IObject
+    class IFramebuffer : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IFramebuffer, "CDF97657-3843-4767-AA28-FAEF82702000");

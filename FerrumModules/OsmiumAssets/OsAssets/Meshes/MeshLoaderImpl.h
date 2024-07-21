@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
+#include <FeCore/Base/Base.h>
 
 namespace FE::Osmium
 {
@@ -30,7 +30,6 @@ namespace FE::Osmium
     //! \param [out] vertexCount  - The number of vertices in the loaded mesh.
     //!
     //! \return True if the mesh was loaded successfully.
-    bool LoadMeshFromMemory(
-        const List<Int8>& fileData, const List<MeshVertexComponent>& components, List<Float32>& vertexBuffer,
-        List<UInt32>& indexBuffer, UInt32& vertexCount);
+    bool LoadMeshFromMemory(const eastl::vector<Int8>& fileData, const eastl::vector<MeshVertexComponent>& components,
+                            eastl::vector<float>& vertexBuffer, eastl::vector<UInt32>& indexBuffer, UInt32& vertexCount);
 } // namespace FE::Osmium

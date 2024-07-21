@@ -1,4 +1,4 @@
-#include <OsGPU/Adapter/VKAdapter.h>
+﻿#include <OsGPU/Adapter/VKAdapter.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Instance/VKInstance.h>
 
@@ -25,7 +25,7 @@ namespace FE::Osmium
 
     Rc<IDevice> VKAdapter::CreateDevice()
     {
-        return MakeShared<VKDevice>(*this);
+        return Rc<VKDevice>::DefaultNew(*this);
     }
 
     IInstance& VKAdapter::GetInstance()

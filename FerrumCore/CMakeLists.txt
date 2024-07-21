@@ -1,8 +1,5 @@
-set(SRC
+﻿set(SRC
     # FERRUM_SORT_LINES BEGIN
-    FeCore/Allocators/LinearAllocator.h
-    FeCore/Allocators/MonotonicAllocator.h
-
     FeCore/Assets/Asset.h
     FeCore/Assets/AssetCommon.h
     FeCore/Assets/AssetManager.cpp
@@ -19,6 +16,7 @@ set(SRC
 
     FeCore/Base/Base.h
     FeCore/Base/CompilerTraits.h
+    FeCore/Base/Hash.h
     FeCore/Base/Platform.h
     FeCore/Base/PlatformInclude.h
     FeCore/Base/PlatformTraits.h
@@ -36,8 +34,9 @@ set(SRC
     FeCore/Containers/ArraySlice.h
     FeCore/Containers/ArraySliceMut.h
     FeCore/Containers/ByteBuffer.h
+    FeCore/Containers/HashTables.h
     FeCore/Containers/LRUCacheMap.h
-    FeCore/Containers/List.h
+
     FeCore/Containers/SparseSet.h
     FeCore/Containers/SparseStorage.h
 
@@ -98,21 +97,10 @@ set(SRC
     FeCore/Math/Vector4.h
     FeCore/Math/VectorMath.h
 
-    FeCore/Memory/Allocator.h
-    FeCore/Memory/AllocatorBase.cpp
-    FeCore/Memory/AllocatorBase.h
-    FeCore/Memory/BasicSystemAllocator.h
-    FeCore/Memory/HeapAllocator.cpp
-    FeCore/Memory/HeapAllocator.h
-    FeCore/Memory/IAllocator.h
-    FeCore/Memory/IBasicAllocator.h
     FeCore/Memory/Memory.h
+    FeCore/Memory/Memory.cpp
     FeCore/Memory/NullableHandle.h
-    FeCore/Memory/Object.h
-    FeCore/Memory/ReferenceCounter.h
-    FeCore/Memory/SharedPtr.h
-    FeCore/Memory/StackAllocator.h
-    FeCore/Memory/UniquePtr.h
+    FeCore/Memory/RefCount.h
 
     FeCore/Modules/DynamicLibrary.cpp
     FeCore/Modules/DynamicLibrary.h
@@ -121,14 +109,11 @@ set(SRC
     FeCore/Modules/ServiceLocator.h
 
     FeCore/Parallel/AtomicFlags.h
-    FeCore/Parallel/Interlocked.cpp
-    FeCore/Parallel/Interlocked.h
-    FeCore/Parallel/Locker.h
     FeCore/Parallel/Mutex.cpp
     FeCore/Parallel/Mutex.h
     FeCore/Parallel/Semaphore.cpp
     FeCore/Parallel/Semaphore.h
-    FeCore/Parallel/SpinMutex.h
+    FeCore/Parallel/SpinLock.h
 
     FeCore/RTTI/RTTI.h
 
@@ -173,10 +158,9 @@ fe_enable_sse_for_target(FeCore)
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
-target_link_libraries(FeCore rpmalloc)
+target_link_libraries(FeCore mimalloc EASTL unordered_dense)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
 
 add_subdirectory(Tests)
-add_subdirectory(Bindings)

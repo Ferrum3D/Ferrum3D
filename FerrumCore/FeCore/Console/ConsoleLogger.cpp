@@ -1,4 +1,4 @@
-#include <FeCore/Console/ConsoleLogger.h>
+﻿#include <FeCore/Console/ConsoleLogger.h>
 #include <FeCore/Time/DateTime.h>
 
 namespace FE::Debug
@@ -26,7 +26,7 @@ namespace FE::Debug
         if ((type & m_DebugLevel) == LogMessageType::None)
             return;
 
-        UniqueLocker lk(FE::Console::StdoutMutex);
+        const std::unique_lock lk{ FE::Console::StdoutMutex };
         auto date = FE::DateTime::Now().ToString("[%m/%d %T]") + m_Header;
         //PrintImpl(Fmt::Format("logger #{} ", reinterpret_cast<USize>(static_cast<void*>(this))));
         PrintImpl(date);

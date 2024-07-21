@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/IO/BaseIO.h>
 #include <FeCore/Memory/Memory.h>
 
 namespace FE::IO
 {
     //! \brief Base interface for I/O streams.
-    class IStream : public IObject
+    class IStream : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IStream, "FD697DC5-020E-4998-ADF2-9DFAF48E2A75");

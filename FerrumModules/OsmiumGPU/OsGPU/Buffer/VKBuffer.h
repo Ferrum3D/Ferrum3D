@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Buffer/IBuffer.h>
 #include <OsGPU/Common/VKConfig.h>
 
@@ -7,7 +7,7 @@ namespace FE::Osmium
     class VKDevice;
     class VKDeviceMemory;
 
-    class VKBuffer : public Object<IBuffer>
+    class VKBuffer : public IBuffer
     {
         VKDevice* m_Device;
         DeviceMemorySlice m_Memory;

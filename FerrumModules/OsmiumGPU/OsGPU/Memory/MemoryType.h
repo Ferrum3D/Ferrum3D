@@ -1,4 +1,6 @@
-#pragma once
+﻿#pragma once
+#include <FeCore/Base/Base.h>
+#include <FeCore/Memory/Memory.h>
 
 namespace FE::Osmium
 {

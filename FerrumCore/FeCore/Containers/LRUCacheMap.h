@@ -1,5 +1,8 @@
-#pragma once
+﻿#pragma once
+#include <EASTL/list.h>
+#include <FeCore/Containers/HashTables.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Utils/Result.h>
 
 namespace FE
 {
@@ -7,8 +10,8 @@ namespace FE
     template<class TKey, class TValue>
     class LRUCacheMap final
     {
-        UnorderedMap<TKey, typename LinkedList<std::pair<TKey, TValue>>::iterator> m_Map;
-        LinkedList<std::pair<TKey, TValue>> m_Queue;
+        festd::unordered_dense_map<TKey, typename eastl::list<std::pair<TKey, TValue>>::iterator> m_Map;
+        eastl::list<std::pair<TKey, TValue>> m_Queue;
         USize m_Capacity = 0;
 
     public:
@@ -41,7 +44,7 @@ namespace FE
             return Err(false);
         }
 
-        //!\ brief Change capacity of the cache, will remove least recently used when shrinking.
+        //! \brief Change capacity of the cache, will remove least recently used when shrinking.
         //!
         //! \param [in] capacity - The new capacity.
         inline void SetCapacity(USize capacity)

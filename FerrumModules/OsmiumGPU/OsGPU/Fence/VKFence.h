@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Fence/IFence.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKFence : public Object<IFence>
+    class VKFence : public IFence
     {
         VkFence m_NativeFence;
         VKDevice* m_Device;
