@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetRegistry.h>
 #include <FeCore/Assets/IAssetProvider.h>
 
@@ -7,7 +7,7 @@ namespace FE::Assets
     //! \brief Asset provider that loads assets directly from disk.
     //!
     //! This class is used to load assets directly from disk. It can only be used in development mode.
-    class AssetProviderDev : public Object<IAssetProvider>
+    class AssetProviderDev : public IAssetProvider
     {
         Rc<AssetRegistry> m_Registry;
 

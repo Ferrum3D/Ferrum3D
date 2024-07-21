@@ -1,11 +1,10 @@
-#pragma once
-#include <FeCore/Memory/Object.h>
+﻿#pragma once
 #include <FeCore/Strings/String.h>
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE
 {
-    class DynamicLibrary : public Object<IObject>
+    class DynamicLibrary : public Memory::RefCountedObjectBase
     {
         void* m_NativeHandle = nullptr;
         String m_FullName;

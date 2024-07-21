@@ -1,4 +1,4 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Math/VectorMath.h>
 #include <OsAssets/Meshes/MeshLoaderImpl.h>
 #include <assimp/Importer.hpp>
@@ -35,12 +35,11 @@ namespace FE::Osmium
         }
     }
 
-    bool LoadMeshFromMemory(
-        const List<Int8>& fileData, const List<MeshVertexComponent>& components, List<Float32>& vertexBuffer,
-        List<UInt32>& indexBuffer, UInt32& vertexCount)
+    bool LoadMeshFromMemory(const eastl::vector<Int8>& fileData, const eastl::vector<MeshVertexComponent>& components,
+                            eastl::vector<float>& vertexBuffer, eastl::vector<UInt32>& indexBuffer, UInt32& vertexCount)
     {
         Assimp::Importer Importer;
-        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.Data(), fileData.Size(), g_PostProcessFlags, ".fbx");
+        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), g_PostProcessFlags, ".fbx");
         if (!pScene)
         {
             String error = Importer.GetErrorString();
@@ -49,7 +48,7 @@ namespace FE::Osmium
         }
 
         vertexCount = 0;
-        UInt32 indexCount  = 0;
+        UInt32 indexCount = 0;
 
         UInt32 vertexBufferSize = 0;
         for (auto component : components)
@@ -63,7 +62,7 @@ namespace FE::Osmium
         }
 
         vertexBufferSize *= vertexCount;
-        vertexBuffer.Resize(vertexBufferSize);
+        vertexBuffer.resize(vertexBufferSize);
 
         Vector3F scale{ 0.01f, 0.01f, 0.01f };
         UInt32 vbIndex = 0;
@@ -79,10 +78,10 @@ namespace FE::Osmium
 
             for (UInt32 j = 0; j < mesh->mNumVertices; ++j)
             {
-                const aiVector3D* pPos       = &mesh->mVertices[j];
-                const aiVector3D* pNormal    = &mesh->mNormals[j];
-                const aiVector3D* pTexCoord  = mesh->HasTextureCoords(0) ? &mesh->mTextureCoords[0][j] : &Zero3D;
-                const aiVector3D* pTangent   = mesh->HasTangentsAndBitangents() ? &mesh->mTangents[j] : &Zero3D;
+                const aiVector3D* pPos = &mesh->mVertices[j];
+                const aiVector3D* pNormal = &mesh->mNormals[j];
+                const aiVector3D* pTexCoord = mesh->HasTextureCoords(0) ? &mesh->mTextureCoords[0][j] : &Zero3D;
+                const aiVector3D* pTangent = mesh->HasTangentsAndBitangents() ? &mesh->mTangents[j] : &Zero3D;
                 const aiVector3D* pBiTangent = mesh->HasTangentsAndBitangents() ? &mesh->mBitangents[j] : &Zero3D;
 
                 for (auto& component : components)
@@ -143,7 +142,7 @@ namespace FE::Osmium
                 }
             }
 
-            auto indexBase = static_cast<UInt32>(indexBuffer.Size());
+            auto indexBase = static_cast<UInt32>(indexBuffer.size());
             for (UInt32 j = 0; j < mesh->mNumFaces; ++j)
             {
                 const aiFace& face = mesh->mFaces[j];
@@ -152,9 +151,9 @@ namespace FE::Osmium
                     continue;
                 }
 
-                indexBuffer.Push(indexBase + face.mIndices[0]);
-                indexBuffer.Push(indexBase + face.mIndices[1]);
-                indexBuffer.Push(indexBase + face.mIndices[2]);
+                indexBuffer.push_back(indexBase + face.mIndices[0]);
+                indexBuffer.push_back(indexBase + face.mIndices[1]);
+                indexBuffer.push_back(indexBase + face.mIndices[2]);
                 indexCount += 3;
             }
         }

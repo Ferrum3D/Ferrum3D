@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Parallel/Interlocked.h>
+﻿#pragma once
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {
@@ -15,38 +15,34 @@ namespace FE
     template<class T>
     class BoolPointer
     {
-        AtomicInt64 m_Data;
+        std::atomic<uint64_t> m_Data = 0;
 
         inline static constexpr UInt64 PointerMask = static_cast<UInt64>(-1) ^ 1;
         inline static constexpr UInt64 BooleanMask = ~PointerMask;
 
     public:
-        FE_FINLINE BoolPointer() // NOLINT
-        {
-            Interlocked::Exchange(m_Data, 0);
-        }
+        FE_FINLINE BoolPointer() = default;
 
-        FE_FINLINE BoolPointer(T* pointer, bool boolean) // NOLINT
+        FE_FINLINE BoolPointer(T* pointer, bool boolean)
         {
-            auto value = reinterpret_cast<Int64>(pointer) | (boolean ? 1 : 0);
-            Interlocked::Exchange(m_Data, value);
+            m_Data = reinterpret_cast<Int64>(pointer) | (boolean ? 1 : 0);
         }
 
         FE_FINLINE void SetPointer(T* pointer)
         {
-            auto value = Interlocked::Load(m_Data) & BooleanMask;
-            Interlocked::Exchange(m_Data, value | reinterpret_cast<Int64>(pointer));
+            const uint64_t value = m_Data & BooleanMask;
+            m_Data = value | reinterpret_cast<Int64>(pointer);
         }
 
         FE_FINLINE void SetBool(bool boolean)
         {
-            auto value = Interlocked::Load(m_Data) & PointerMask;
-            Interlocked::Exchange(m_Data, value | (boolean ? 1 : 0));
+            const uint64_t value = m_Data & PointerMask;
+            m_Data = value | (boolean ? 1 : 0);
         }
 
         [[nodiscard]] FE_FINLINE T* GetPointer() const
         {
-            return reinterpret_cast<T*>(Interlocked::Load(m_Data));
+            return reinterpret_cast<T*>(m_Data & PointerMask);
         }
 
         [[nodiscard]] FE_FINLINE bool GetBool() const
@@ -54,4 +50,4 @@ namespace FE
             return m_Data & BooleanMask;
         }
     };
-}
+} // namespace FE

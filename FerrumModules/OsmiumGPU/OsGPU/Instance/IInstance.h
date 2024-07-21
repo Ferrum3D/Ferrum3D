@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
+#include <FeCore/Modules/Environment.h>
 #include <OsGPU/Common/BaseTypes.h>
 
 namespace FE::Osmium
@@ -20,14 +20,14 @@ namespace FE::Osmium
 
     class IAdapter;
 
-    class IInstance : public IObject
+    class IInstance : public Memory::RefCountedObjectBase
     {
     public:
         ~IInstance() override = default;
 
         FE_CLASS_RTTI(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
-        [[nodiscard]] virtual const List<Rc<IAdapter>>& GetAdapters() const = 0;
+        [[nodiscard]] virtual const eastl::vector<Rc<IAdapter>>& GetAdapters() const = 0;
     };
 
     typedef void (*AttachEnvironmentProc)(Env::Internal::IEnvironment* environment);

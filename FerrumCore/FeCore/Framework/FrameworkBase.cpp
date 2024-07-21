@@ -1,4 +1,4 @@
-#include <FeCore/Framework/FrameworkBase.h>
+﻿#include <FeCore/Framework/FrameworkBase.h>
 
 namespace FE
 {
@@ -7,7 +7,7 @@ namespace FE
         return m_IsInitialized;
     }
 
-    void FrameworkBase::GetFrameworkDependencies([[maybe_unused]] FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) {}
+    void FrameworkBase::GetFrameworkDependencies([[maybe_unused]] eastl::vector<FE::Rc<FE::IFrameworkFactory>>& dependencies) {}
 
     void FrameworkBase::Initialize()
     {

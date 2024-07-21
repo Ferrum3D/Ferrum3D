@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetCommon.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE::Assets
 {
@@ -12,7 +13,7 @@ namespace FE::Assets
     //!
     //! This interface is used to load assets. It uses the attached providers and loaders to get data streams
     //! and initialize asset storages.
-    class IAssetManager : public IObject
+    class IAssetManager : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IAssetManager, "7FC7D500-5CE4-4BF7-8030-1A5A4A16832C");

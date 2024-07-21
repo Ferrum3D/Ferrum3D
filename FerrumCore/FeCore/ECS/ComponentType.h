@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE::ECS
@@ -6,13 +6,13 @@ namespace FE::ECS
     //! \brief Describes a type of component.
     struct ComponentType
     {
-        TypeID Type;          //!< ID of component's type.
-        UInt32 Alignment;     //!< Alignment of component data.
-        UInt32 DataSize;      //!< Size of component data.
+        TypeID Type;      //!< ID of component's type.
+        UInt32 Alignment; //!< Alignment of component data.
+        UInt32 DataSize;  //!< Size of component data.
 
         FE_STRUCT_RTTI(ComponentType, "D98BE686-B494-4C6A-82A2-D2EE6CDCEC2E");
 
-        [[nodiscard]] inline USize AlignedSize() const
+        [[nodiscard]] inline uint32_t AlignedSize() const
         {
             return AlignUp(DataSize, Alignment);
         }
@@ -26,9 +26,9 @@ namespace FE::ECS
         inline static ComponentType Create()
         {
             ComponentType result;
-            result.Type      = fe_typeid<T>();
+            result.Type = fe_typeid<T>();
             result.Alignment = static_cast<UInt32>(alignof(T));
-            result.DataSize  = static_cast<UInt32>(sizeof(T));
+            result.DataSize = static_cast<UInt32>(sizeof(T));
             return result;
         }
 

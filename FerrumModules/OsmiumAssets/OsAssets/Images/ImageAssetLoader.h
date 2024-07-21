@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/IAssetLoader.h>
 
 namespace FE::Osmium
 {
-    class ImageAssetLoader : public Object<Assets::IAssetLoader>
+    class ImageAssetLoader : public Assets::IAssetLoader
     {
     public:
         FE_CLASS_RTTI(ImageAssetLoader, "20BA2066-1FC7-46E4-9708-B45CE3EE177C");
@@ -15,9 +15,9 @@ namespace FE::Osmium
         [[nodiscard]] Assets::AssetType GetAssetType() const override;
         [[nodiscard]] Assets::AssetStorage* CreateStorage() override;
         void LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream) override;
-        void LoadRawAsset(const List<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
+        void LoadRawAsset(const eastl::vector<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
                           IO::IStream* assetStream) override;
         void SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream) override;
-        List<Assets::AssetMetadataField> GetAssetMetadataFields() override;
+        eastl::vector<Assets::AssetMetadataField> GetAssetMetadataFields() override;
     };
 } // namespace FE::Osmium

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Memory/IDeviceMemory.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKDeviceMemory : public Object<IDeviceMemory>
+    class VKDeviceMemory : public IDeviceMemory
     {
         VKDevice* m_Device;
         MemoryAllocationDesc m_Desc;

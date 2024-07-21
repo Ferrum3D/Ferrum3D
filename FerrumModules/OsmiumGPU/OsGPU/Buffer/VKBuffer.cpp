@@ -1,4 +1,4 @@
-#include <OsGPU/Buffer/VKBuffer.h>
+﻿#include <OsGPU/Buffer/VKBuffer.h>
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Memory/VKDeviceMemory.h>
@@ -24,17 +24,18 @@ namespace FE::Osmium
     void VKBuffer::AllocateMemory(MemoryType type)
     {
         MemoryAllocationDesc desc{};
-        desc.Size   = MemoryRequirements.size;
-        desc.Type   = type;
-        auto memory = MakeShared<VKDeviceMemory>(*m_Device, MemoryRequirements.memoryTypeBits, desc);
-        BindMemory(DeviceMemorySlice(memory.Detach()));
+        desc.Size = MemoryRequirements.size;
+        desc.Type = type;
+        VKDeviceMemory* memory = Rc<VKDeviceMemory>::DefaultNew(*m_Device, MemoryRequirements.memoryTypeBits, desc);
+        memory->AddRef();
+        BindMemory(DeviceMemorySlice(memory));
         m_MemoryOwned = true;
     }
 
     void VKBuffer::BindMemory(const DeviceMemorySlice& memory)
     {
-        m_Memory      = memory;
-        auto vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory)->Memory;
+        m_Memory = memory;
+        const VkDeviceMemory vkMemory = fe_assert_cast<VKDeviceMemory*>(memory.Memory)->Memory;
         vkBindBufferMemory(m_Device->GetNativeDevice(), Buffer, vkMemory, memory.ByteOffset);
     }
 
@@ -50,7 +51,7 @@ namespace FE::Osmium
         FE_DELETE_VK_OBJECT(Buffer, Buffer);
         if (m_MemoryOwned)
         {
-            m_Memory.Memory->ReleaseStrongRef();
+            m_Memory.Memory->Release();
         }
     }
 } // namespace FE::Osmium

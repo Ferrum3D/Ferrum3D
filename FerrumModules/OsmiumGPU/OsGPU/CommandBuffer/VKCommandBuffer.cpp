@@ -1,4 +1,4 @@
-#include <OsGPU/Buffer/VKBuffer.h>
+﻿#include <OsGPU/Buffer/VKBuffer.h>
 #include <OsGPU/CommandBuffer/VKCommandBuffer.h>
 #include <OsGPU/Common/VKBaseTypes.h>
 #include <OsGPU/Common/VKViewport.h>
@@ -19,12 +19,12 @@ namespace FE::Osmium
         , m_IsUpdating(false)
     {
         auto nativeDevice = m_Device->GetNativeDevice();
-        m_CommandPool     = m_Device->GetCommandPool(cmdQueueClass);
+        m_CommandPool = m_Device->GetCommandPool(cmdQueueClass);
         VkCommandBufferAllocateInfo allocateInfo{};
-        allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocateInfo.commandPool        = m_CommandPool;
+        allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocateInfo.commandPool = m_CommandPool;
         allocateInfo.commandBufferCount = 1;
-        allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
         vkAllocateCommandBuffers(nativeDevice, &allocateInfo, &m_CommandBuffer);
     }
@@ -34,11 +34,11 @@ namespace FE::Osmium
         , m_IsUpdating(false)
     {
         auto nativeDevice = m_Device->GetNativeDevice();
-        m_CommandPool     = m_Device->GetCommandPool(queueFamilyIndex);
+        m_CommandPool = m_Device->GetCommandPool(queueFamilyIndex);
         VkCommandBufferAllocateInfo allocateInfo{};
-        allocateInfo.commandPool        = m_CommandPool;
+        allocateInfo.commandPool = m_CommandPool;
         allocateInfo.commandBufferCount = 1;
-        allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
         vkAllocateCommandBuffers(nativeDevice, &allocateInfo, &m_CommandBuffer);
     }
@@ -90,8 +90,8 @@ namespace FE::Osmium
     void VKCommandBuffer::ResourceTransitionBarriers(const ArraySlice<ImageBarrierDesc>& imageBarriers,
                                                      const ArraySlice<BufferBarrierDesc>& bufferBarriers)
     {
-        List<VkImageMemoryBarrier> nativeImageBarriers;
-        List<VkBufferMemoryBarrier> nativeBufferBarriers;
+        eastl::vector<VkImageMemoryBarrier> nativeImageBarriers;
+        eastl::vector<VkBufferMemoryBarrier> nativeBufferBarriers;
         for (auto& barrier : imageBarriers)
         {
             auto* img = fe_assert_cast<VKImage*>(barrier.Image);
@@ -105,20 +105,20 @@ namespace FE::Osmium
                 : barrier.StateBefore;
 
             auto before = VKConvert(stateBefore);
-            auto after  = VKConvert(barrier.StateAfter);
+            auto after = VKConvert(barrier.StateAfter);
             if (before == after)
             {
                 continue;
             }
 
-            auto& imageMemoryBarrier               = nativeImageBarriers.Emplace();
-            imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            imageMemoryBarrier.oldLayout           = before;
-            imageMemoryBarrier.newLayout           = after;
+            auto& imageMemoryBarrier = nativeImageBarriers.push_back();
+            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageMemoryBarrier.oldLayout = before;
+            imageMemoryBarrier.newLayout = after;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.image               = img->Image;
-            imageMemoryBarrier.subresourceRange    = VKConvert(barrier.SubresourceRange);
+            imageMemoryBarrier.image = img->Image;
+            imageMemoryBarrier.subresourceRange = VKConvert(barrier.SubresourceRange);
 
             imageMemoryBarrier.srcAccessMask = GetAccessMask(stateBefore);
             imageMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
@@ -149,19 +149,19 @@ namespace FE::Osmium
                 continue;
             }
 
-            auto& bufferMemoryBarrier               = nativeBufferBarriers.Emplace();
-            bufferMemoryBarrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            auto& bufferMemoryBarrier = nativeBufferBarriers.push_back();
+            bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            bufferMemoryBarrier.buffer              = buffer->Buffer;
-            bufferMemoryBarrier.offset              = barrier.Offset;
-            bufferMemoryBarrier.size                = barrier.Size;
+            bufferMemoryBarrier.buffer = buffer->Buffer;
+            bufferMemoryBarrier.offset = barrier.Offset;
+            bufferMemoryBarrier.size = barrier.Size;
 
             bufferMemoryBarrier.srcAccessMask = GetAccessMask(barrier.StateBefore);
             bufferMemoryBarrier.dstAccessMask = GetAccessMask(barrier.StateAfter);
         }
 
-        if (nativeImageBarriers.Empty())
+        if (nativeImageBarriers.empty())
         {
             return;
         }
@@ -172,16 +172,16 @@ namespace FE::Osmium
                              VK_DEPENDENCY_BY_REGION_BIT,
                              0,
                              nullptr,
-                             static_cast<UInt32>(nativeBufferBarriers.Size()),
-                             nativeBufferBarriers.Data(),
-                             static_cast<UInt32>(nativeImageBarriers.Size()),
-                             nativeImageBarriers.Data());
+                             static_cast<UInt32>(nativeBufferBarriers.size()),
+                             nativeBufferBarriers.data(),
+                             static_cast<UInt32>(nativeImageBarriers.size()),
+                             nativeImageBarriers.data());
     }
 
     void VKCommandBuffer::MemoryBarrier()
     {
         VkMemoryBarrier nativeBarrier{};
-        nativeBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        nativeBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         nativeBarrier.dstAccessMask = nativeBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 
         vkCmdPipelineBarrier(m_CommandBuffer,
@@ -198,10 +198,10 @@ namespace FE::Osmium
 
     void VKCommandBuffer::BindDescriptorTables(const ArraySlice<IDescriptorTable*>& descriptorTables, IGraphicsPipeline* pipeline)
     {
-        List<VkDescriptorSet> nativeSets;
+        eastl::vector<VkDescriptorSet> nativeSets;
         for (auto& table : descriptorTables)
         {
-            nativeSets.Push(fe_assert_cast<VKDescriptorTable*>(table)->GetNativeSet());
+            nativeSets.push_back(fe_assert_cast<VKDescriptorTable*>(table)->GetNativeSet());
         }
 
         auto* vkPipeline = fe_assert_cast<VKGraphicsPipeline*>(pipeline);
@@ -209,8 +209,8 @@ namespace FE::Osmium
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 vkPipeline->GetNativeLayout(),
                                 0,
-                                static_cast<UInt32>(nativeSets.Size()),
-                                nativeSets.Data(),
+                                static_cast<UInt32>(nativeSets.size()),
+                                nativeSets.data(),
                                 0,
                                 nullptr);
     }
@@ -218,18 +218,18 @@ namespace FE::Osmium
     void VKCommandBuffer::BeginRenderPass(IRenderPass* renderPass, IFramebuffer* framebuffer,
                                           const ArraySlice<ClearValueDesc>& clearValues)
     {
-        List<VkClearValue> vkClearValues{};
+        eastl::vector<VkClearValue> vkClearValues{};
         for (const auto& clearValue : clearValues)
         {
-            auto& vkClearValue = vkClearValues.Emplace();
+            auto& vkClearValue = vkClearValues.push_back();
             if (clearValue.IsDepth)
             {
-                vkClearValue.depthStencil.depth   = clearValue.DepthValue;
+                vkClearValue.depthStencil.depth = clearValue.DepthValue;
                 vkClearValue.depthStencil.stencil = clearValue.StencilValue;
             }
             else
             {
-                for (USize i = 0; i < clearValue.ColorValue.size(); ++i)
+                for (uint32_t i = 0; i < clearValue.ColorValue.size(); ++i)
                 {
                     vkClearValue.color.float32[i] = clearValue.ColorValue[i];
                 }
@@ -237,11 +237,11 @@ namespace FE::Osmium
         }
 
         VkRenderPassBeginInfo info{};
-        info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        info.framebuffer       = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
-        info.renderPass        = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
-        info.clearValueCount   = static_cast<UInt32>(vkClearValues.Size());
-        info.pClearValues      = vkClearValues.Data();
+        info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        info.framebuffer = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
+        info.renderPass = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
+        info.clearValueCount = static_cast<UInt32>(vkClearValues.size());
+        info.pClearValues = vkClearValues.data();
         info.renderArea.offset = VkOffset2D{ 0, 0 };
         info.renderArea.extent = VkExtent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
         vkCmdBeginRenderPass(m_CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
@@ -275,14 +275,14 @@ namespace FE::Osmium
     {
         FE_ASSERT_MSG(buffers.Length() == offsets.Length(), "Number of buffers must be the same as number of offsets");
 
-        List<VkBuffer> nativeBuffers(buffers.Length(), VK_NULL_HANDLE);
-        for (USize i = 0; i < buffers.Length(); ++i)
+        eastl::vector<VkBuffer> nativeBuffers(buffers.Length(), VK_NULL_HANDLE);
+        for (uint32_t i = 0; i < buffers.Length(); ++i)
         {
             nativeBuffers[i] = fe_assert_cast<VKBuffer*>(buffers[i])->Buffer;
         }
 
         vkCmdBindVertexBuffers(
-            m_CommandBuffer, startSlot, static_cast<UInt32>(nativeBuffers.Size()), nativeBuffers.Data(), offsets.Data());
+            m_CommandBuffer, startSlot, static_cast<UInt32>(nativeBuffers.size()), nativeBuffers.data(), offsets.Data());
     }
 
     void VKCommandBuffer::CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)
@@ -291,7 +291,7 @@ namespace FE::Osmium
         auto nativeDst = fe_assert_cast<VKBuffer*>(dest)->Buffer;
 
         VkBufferCopy copy{};
-        copy.size      = region.Size;
+        copy.size = region.Size;
         copy.dstOffset = region.DestOffset;
         copy.srcOffset = region.SourceOffset;
         vkCmdCopyBuffer(m_CommandBuffer, nativeSrc, nativeDst, 1, &copy);
@@ -303,15 +303,15 @@ namespace FE::Osmium
         auto nativeDst = fe_assert_cast<VKImage*>(dest)->Image;
 
         VkBufferImageCopy copy{};
-        copy.bufferOffset      = region.BufferOffset;
-        copy.bufferRowLength   = 0;
+        copy.bufferOffset = region.BufferOffset;
+        copy.bufferRowLength = 0;
         copy.bufferImageHeight = 0;
 
-        auto subresource                     = VKConvert(region.ImageSubresource);
-        copy.imageSubresource.aspectMask     = subresource.aspectMask;
-        copy.imageSubresource.mipLevel       = subresource.mipLevel;
+        auto subresource = VKConvert(region.ImageSubresource);
+        copy.imageSubresource.aspectMask = subresource.aspectMask;
+        copy.imageSubresource.mipLevel = subresource.mipLevel;
         copy.imageSubresource.baseArrayLayer = subresource.arrayLayer;
-        copy.imageSubresource.layerCount     = 1;
+        copy.imageSubresource.layerCount = 1;
 
         copy.imageOffset = VKConvert(region.ImageOffset);
         copy.imageExtent = VKConvert(region.ImageSize);
@@ -329,19 +329,19 @@ namespace FE::Osmium
 
         VkImageBlit nativeBlit{};
         // SRC
-        nativeBlit.srcSubresource.aspectMask     = srcSubresource.aspectMask;
+        nativeBlit.srcSubresource.aspectMask = srcSubresource.aspectMask;
         nativeBlit.srcSubresource.baseArrayLayer = srcSubresource.arrayLayer;
-        nativeBlit.srcSubresource.layerCount     = 1;
-        nativeBlit.srcSubresource.mipLevel       = srcSubresource.mipLevel;
+        nativeBlit.srcSubresource.layerCount = 1;
+        nativeBlit.srcSubresource.mipLevel = srcSubresource.mipLevel;
 
         nativeBlit.srcOffsets[0] = VKConvert(region.SourceBounds[0]);
         nativeBlit.srcOffsets[1] = VKConvert(region.SourceBounds[1]);
 
         // DEST
-        nativeBlit.dstSubresource.aspectMask     = dstSubresource.aspectMask;
+        nativeBlit.dstSubresource.aspectMask = dstSubresource.aspectMask;
         nativeBlit.dstSubresource.baseArrayLayer = dstSubresource.arrayLayer;
-        nativeBlit.dstSubresource.layerCount     = 1;
-        nativeBlit.dstSubresource.mipLevel       = dstSubresource.mipLevel;
+        nativeBlit.dstSubresource.layerCount = 1;
+        nativeBlit.dstSubresource.mipLevel = dstSubresource.mipLevel;
 
         nativeBlit.dstOffsets[0] = VKConvert(region.DestBounds[0]);
         nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);

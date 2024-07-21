@@ -1,8 +1,8 @@
-#pragma once
-#include <FeCore/Strings/StringSlice.h>
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Base/Platform.h>
-#include <FeCore/Parallel/Locker.h>
+#include <FeCore/Parallel/Mutex.h>
+#include <FeCore/Strings/StringSlice.h>
 
 namespace FE::Console
 {
@@ -11,39 +11,39 @@ namespace FE::Console
     {
         Default = 0xff,
 #ifdef FE_WINDOWS
-        Black   = 0x0,
-        Navy    = 0x1,
-        Green   = 0x2,
-        Teal    = 0x3,
-        Maroon  = 0x4,
-        Purple  = 0x5,
-        Olive   = 0x6,
-        Silver  = 0x7,
-        Gray    = 0x8,
-        Blue    = 0x9,
-        Lime    = 0xa,
-        Aqua    = 0xb,
-        Red     = 0xc,
+        Black = 0x0,
+        Navy = 0x1,
+        Green = 0x2,
+        Teal = 0x3,
+        Maroon = 0x4,
+        Purple = 0x5,
+        Olive = 0x6,
+        Silver = 0x7,
+        Gray = 0x8,
+        Blue = 0x9,
+        Lime = 0xa,
+        Aqua = 0xb,
+        Red = 0xc,
         Fuchsia = 0xd,
-        Yellow  = 0xe,
-        White   = 0xf
+        Yellow = 0xe,
+        White = 0xf
 #else
-        Black   = 0,
-        Navy    = 4,
-        Green   = 2,
-        Teal    = 6,
-        Maroon  = 1,
-        Purple  = 5,
-        Olive   = 3,
-        Silver  = 7,
-        Gray    = 8,
-        Blue    = 12,
-        Lime    = 10,
-        Aqua    = 14,
-        Red     = 9,
+        Black = 0,
+        Navy = 4,
+        Green = 2,
+        Teal = 6,
+        Maroon = 1,
+        Purple = 5,
+        Olive = 3,
+        Silver = 7,
+        Gray = 8,
+        Blue = 12,
+        Lime = 10,
+        Aqua = 14,
+        Red = 9,
         Fuchsia = 13,
-        Yellow  = 11,
-        White   = 15
+        Yellow = 11,
+        White = 15
 #endif
     };
 

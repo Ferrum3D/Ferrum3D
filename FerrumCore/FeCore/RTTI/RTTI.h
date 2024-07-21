@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Utils/UUID.h>
 #include <cstddef>
@@ -30,7 +30,7 @@ namespace FE
                                                                                                                                  \
     inline static std::string_view FeRTTI_GetSName()                                                                             \
     {                                                                                                                            \
-        return ::FE::TypeName<name>();                                                                                           \
+        return ::FE::TypeName<name>;                                                                                             \
     }
 
     //! \brief Define common RTTI functions for a class.
@@ -54,7 +54,7 @@ namespace FE
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
     inline virtual std::string_view FeRTTI_GetName() const                                                                       \
     {                                                                                                                            \
-        return ::FE::TypeName<name>();                                                                                           \
+        return ::FE::TypeName<name>;                                                                                             \
     }                                                                                                                            \
                                                                                                                                  \
     inline virtual ::FE::TypeID FeRTTI_GetID() const                                                                             \

@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <OsGPU/Common/BaseTypes.h>
 #include <OsGPU/Image/ImageEnums.h>
 #include <OsGPU/Image/ImageFormat.h>
@@ -22,8 +21,8 @@ namespace FE::Osmium
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
         UInt32 MipSliceCount = 1;
-        UInt32 SampleCount   = 1;
-        UInt16 ArraySize     = 1;
+        UInt32 SampleCount = 1;
+        UInt16 ArraySize = 1;
 
         FE_STRUCT_RTTI(ImageDesc, "1B7CB069-C763-49D0-9CEA-088681802761");
 
@@ -46,11 +45,11 @@ namespace FE::Osmium
     ImageDesc ImageDesc::Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
     {
         ImageDesc desc{};
-        desc.BindFlags   = bindFlags;
-        desc.Dimension   = ImageDim::Image1D;
+        desc.BindFlags = bindFlags;
+        desc.Dimension = ImageDim::Image1D;
         desc.ImageFormat = format;
-        desc.ImageSize   = { width, 1, 1 };
-        desc.ArraySize   = arraySize;
+        desc.ImageSize = { width, 1, 1 };
+        desc.ArraySize = arraySize;
         return desc;
     }
 
@@ -58,12 +57,12 @@ namespace FE::Osmium
                                UInt32 sampleCount)
     {
         ImageDesc desc{};
-        desc.BindFlags     = bindFlags;
-        desc.Dimension     = ImageDim::Image2D;
-        desc.ImageSize     = { width, height, 1 };
-        desc.ArraySize     = 1;
-        desc.ImageFormat   = format;
-        desc.SampleCount   = sampleCount;
+        desc.BindFlags = bindFlags;
+        desc.Dimension = ImageDim::Image2D;
+        desc.ImageSize = { width, height, 1 };
+        desc.ArraySize = 1;
+        desc.ImageFormat = format;
+        desc.SampleCount = sampleCount;
         desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
         return desc;
     }
@@ -72,11 +71,11 @@ namespace FE::Osmium
                                     bool useMipMaps)
     {
         ImageDesc desc{};
-        desc.BindFlags     = bindFlags;
-        desc.Dimension     = ImageDim::Image2D;
-        desc.ImageSize     = { width, height, 1 };
-        desc.ArraySize     = arraySize;
-        desc.ImageFormat   = format;
+        desc.BindFlags = bindFlags;
+        desc.Dimension = ImageDim::Image2D;
+        desc.ImageSize = { width, height, 1 };
+        desc.ArraySize = arraySize;
+        desc.ImageFormat = format;
         desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
         return desc;
     }
@@ -89,10 +88,10 @@ namespace FE::Osmium
     ImageDesc ImageDesc::ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
     {
         ImageDesc desc;
-        desc.BindFlags   = bindFlags;
-        desc.Dimension   = ImageDim::ImageCubemap;
-        desc.ImageSize   = { width, width, 1 };
-        desc.ArraySize   = 6 * arraySize;
+        desc.BindFlags = bindFlags;
+        desc.Dimension = ImageDim::ImageCubemap;
+        desc.ImageSize = { width, width, 1 };
+        desc.ArraySize = 6 * arraySize;
         desc.ImageFormat = format;
         return desc;
     }
@@ -100,10 +99,10 @@ namespace FE::Osmium
     ImageDesc ImageDesc::Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format)
     {
         ImageDesc desc{};
-        desc.BindFlags   = bindFlags;
-        desc.Dimension   = ImageDim::Image3D;
-        desc.ImageSize   = { width, height, depth };
-        desc.ArraySize   = 1;
+        desc.BindFlags = bindFlags;
+        desc.Dimension = ImageDim::Image3D;
+        desc.ImageSize = { width, height, depth };
+        desc.ArraySize = 1;
         desc.ImageFormat = format;
         return desc;
     }
@@ -111,22 +110,22 @@ namespace FE::Osmium
     class IImageView;
     class IDeviceMemory;
 
-    class IImage : public IObject
+    class IImage : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
 
         ~IImage() override = default;
 
-        virtual const ImageDesc& GetDesc()                                  = 0;
+        virtual const ImageDesc& GetDesc() = 0;
         virtual Rc<IImageView> CreateView(ImageAspectFlags aspectFlags) = 0;
 
-        virtual void AllocateMemory(MemoryType type)             = 0;
+        virtual void AllocateMemory(MemoryType type) = 0;
         virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
 
-        virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state)         = 0;
+        virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state) = 0;
         [[nodiscard]] virtual ResourceState GetState(const ImageSubresourceRange& subresourceRange) const = 0;
-        [[nodiscard]] virtual ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const            = 0;
+        [[nodiscard]] virtual ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const = 0;
     };
 } // namespace FE::Osmium
 

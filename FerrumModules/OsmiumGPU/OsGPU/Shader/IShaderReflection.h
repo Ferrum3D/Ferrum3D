@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <OsGPU/Image/ImageFormat.h>
 
@@ -13,14 +13,14 @@ namespace FE::Osmium
         Format ElementFormat;
     };
 
-    class IShaderReflection : public IObject
+    class IShaderReflection : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IShaderReflection, "9ECFF14F-1D5A-4997-B6D5-735E935A9D64");
 
         ~IShaderReflection() override = default;
 
-        virtual List<ShaderInputAttribute> GetInputAttributes()      = 0;
+        virtual eastl::vector<ShaderInputAttribute> GetInputAttributes() = 0;
         virtual UInt32 GetInputAttributeLocation(StringSlice semantic) = 0;
     };
 } // namespace FE::Osmium

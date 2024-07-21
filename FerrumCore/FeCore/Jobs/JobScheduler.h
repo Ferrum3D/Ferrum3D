@@ -1,10 +1,11 @@
-#pragma once
-#include <FeCore/Allocators/MonotonicAllocator.h>
+﻿#pragma once
+#include <EASTL/deque.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/IJobScheduler.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Modules/ServiceLocator.h>
+#include <FeCore/Parallel/Mutex.h>
 #include <FeCore/Parallel/Semaphore.h>
 #include <deque>
 #include <thread>
@@ -13,8 +14,7 @@ namespace FE
 {
     class JobGlobalQueue
     {
-        using DequeAllocator = StdHeapAllocator<Job*>;
-        std::deque<Job*, DequeAllocator> m_Deque;
+        std::deque<Job*> m_Deque;
         Mutex m_Mutex;
 
     public:
@@ -25,13 +25,13 @@ namespace FE
 
     bool JobGlobalQueue::Empty()
     {
-        Locker lk(m_Mutex);
+        std::lock_guard lk(m_Mutex);
         return m_Deque.empty();
     }
 
     void JobGlobalQueue::Enqueue(Job* job)
     {
-        Locker lk(m_Mutex);
+        std::lock_guard lk(m_Mutex);
         constexpr auto compare = [](Job* lhs, Job* rhs) {
             return lhs->GetPriority() > rhs->GetPriority();
         };
@@ -42,7 +42,7 @@ namespace FE
 
     Job* JobGlobalQueue::Dequeue()
     {
-        Locker lk(m_Mutex);
+        std::lock_guard lk(m_Mutex);
         if (!m_Deque.empty())
         {
             auto* t = m_Deque.front();
@@ -54,8 +54,7 @@ namespace FE
 
     class JobWorkerQueue
     {
-        using DequeAllocator = StdHeapAllocator<Job*>;
-        std::deque<Job*, DequeAllocator> m_Deque;
+        std::deque<Job*> m_Deque;
         Mutex m_Mutex;
 
         inline Job* GetFrontNoLock();
@@ -80,7 +79,7 @@ namespace FE
 
     void JobWorkerQueue::Enqueue(Job* job)
     {
-        Locker lk(m_Mutex);
+        std::lock_guard lk(m_Mutex);
         constexpr auto compare = [](Job* lhs, Job* rhs) {
             return lhs->GetPriority() > rhs->GetPriority();
         };
@@ -91,7 +90,7 @@ namespace FE
 
     Job* JobWorkerQueue::SelfSteal()
     {
-        Locker lk(m_Mutex);
+        std::lock_guard lk(m_Mutex);
         return GetFrontNoLock();
     }
 
@@ -100,10 +99,10 @@ namespace FE
         auto pauseCount = 1;
         for (Int32 i = 0; i < 16; ++i)
         {
-            if (m_Mutex.TryLock())
+            if (m_Mutex.try_lock())
             {
                 auto* front = GetFrontNoLock();
-                m_Mutex.Unlock();
+                m_Mutex.unlock();
                 return front;
             }
             if (pauseCount > 32)
@@ -127,7 +126,7 @@ namespace FE
         UInt32 WorkerID = static_cast<UInt32>(-1);
         std::thread::id ThreadID;
         Semaphore WaitSemaphore;
-        AtomicInt32 IsSleeping;
+        std::atomic<bool> IsSleeping;
         Job* WaitJob;
 
         [[nodiscard]] inline bool IsWorker() const noexcept
@@ -141,16 +140,14 @@ namespace FE
         , public EventBus<FrameEvents>::Handler
     {
         const UInt32 m_WorkerCount;
-        List<SchedulerThreadInfo*> m_Threads;
+        eastl::vector<SchedulerThreadInfo*> m_Threads;
         JobGlobalQueue m_GlobalQueue;
 
         Semaphore m_Semaphore;
-        AtomicInt32 m_SleepingWorkerCount;
-        AtomicInt32 m_ShouldExit;
+        std::atomic<int32_t> m_SleepingWorkerCount;
+        std::atomic<bool> m_ShouldExit;
 
-        AtomicInt32 m_FrameIndex;
-        MonotonicAllocatorAsync m_OneFrameAllocators[2];
-        MonotonicAllocatorSync m_ThreadInfoAllocator;
+        std::atomic<int32_t> m_FrameIndex;
 
         static thread_local SchedulerThreadInfo* m_CurrentThreadInfo;
         inline static constexpr UInt32 MaxThreadCount = 32;
@@ -170,8 +167,6 @@ namespace FE
 
         [[nodiscard]] UInt32 GetWorkerCount() const override;
         [[nodiscard]] UInt32 GetWorkerID() const override;
-
-        void* OneFrameAllocate(USize size, USize alignment) override;
 
         void ScheduleJob(Job* job) override;
         void SuspendUntilComplete(Job* job) override;

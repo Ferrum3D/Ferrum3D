@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/ECS/EntityRegistry.h>
 #include <FeCore/ECS/ISystem.h>
 #include <FeCore/ECS/World.h>
 
 namespace FE::ECS
 {
-    class ComponentSystem : public Object<ISystem>
+    class ComponentSystem : public ISystem
     {
         EntityRegistry* m_Registry;
 

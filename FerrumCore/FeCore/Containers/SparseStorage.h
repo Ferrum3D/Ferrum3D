@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
 #include <FeCore/Memory/NullableHandle.h>
 
 namespace FE
@@ -32,12 +31,12 @@ namespace FE
 
         inline SparseStorageDesc(USize alignment, USize valueSize,
                                  SparseStorageAllocationPolicy allocationPolicy = SparseStorageAllocationPolicy::PreAllocate,
-                                 USize capacity                                 = 256)
+                                 USize capacity = 256)
         {
             ValueByteAlignment = alignment;
-            ValueByteSize      = valueSize;
-            Capacity           = capacity;
-            AllocationPolicy   = allocationPolicy;
+            ValueByteSize = valueSize;
+            Capacity = capacity;
+            AllocationPolicy = allocationPolicy;
         }
     };
 
@@ -64,8 +63,8 @@ namespace FE
         SSize m_ChunkSize = -1;
         SSize m_KeyOffset = -1;
 
-        List<USize> m_Sparse;
-        List<Int8> m_Dense;
+        eastl::vector<USize> m_Sparse;
+        eastl::vector<Int8> m_Dense;
 
         [[nodiscard]] inline void* GetEntryValue(USize index)
         {
@@ -87,7 +86,7 @@ namespace FE
         inline NullableHandle DenseIndex(const TKey& key) const
         {
             auto denseIndex = m_Sparse[key];
-            if (denseIndex < m_Dense.Size())
+            if (denseIndex < m_Dense.size())
             {
                 if (GetEntryKey(denseIndex) == key)
                 {
@@ -137,8 +136,8 @@ namespace FE
 
             if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::FirstUseAllocate && Capacity() == 0)
             {
-                m_Sparse.Resize(m_Desc.Capacity, static_cast<USize>(-1));
-                m_Dense.Reserve(m_Desc.Capacity * m_ChunkSize);
+                m_Sparse.resize(m_Desc.Capacity, static_cast<USize>(-1));
+                m_Dense.reserve(m_Desc.Capacity * m_ChunkSize);
             }
 
             if (auto denseIndex = DenseIndex(key))
@@ -148,13 +147,16 @@ namespace FE
             }
             else
             {
-                if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::Dynamic && m_Sparse.Size() <= key)
+                if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::Dynamic && m_Sparse.size() <= key)
                 {
-                    m_Sparse.Append(key - m_Sparse.Size() + 1, static_cast<USize>(-1));
+                    for (uint32_t i = 0; i < key - m_Sparse.size() + 1; ++i)
+                        m_Sparse.push_back(static_cast<USize>(-1));
                 }
 
-                auto n = m_Dense.Size() / m_ChunkSize;
-                m_Dense.Append(m_ChunkSize, -1);
+                auto n = m_Dense.size() / m_ChunkSize;
+                for (uint32_t i = 0; i < m_ChunkSize; ++i)
+                    m_Dense.push_back(-1);
+
                 GetEntryKey(n) = key;
                 memcpy(GetEntryValue(n), value, m_Desc.ValueByteSize);
                 m_Sparse[key] = n;
@@ -193,8 +195,8 @@ namespace FE
                 auto idx = denseIndex.ToOffset();
                 if (m_Dense.Size() > 1)
                 {
-                    memcpy(GetEntryValue(idx), GetEntryValue(m_Dense.Size() - m_ChunkSize), m_ChunkSize);
-                    m_Dense.Resize(m_Dense.Size() - m_ChunkSize);
+                    memcpy(GetEntryValue(idx), GetEntryValue(m_Dense.size() - m_ChunkSize), m_ChunkSize);
+                    m_Dense.resize(m_Dense.Size() - m_ChunkSize);
                     m_Sparse[GetEntryKey(idx)] = idx;
                 }
 
@@ -220,40 +222,38 @@ namespace FE
 
             if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::FirstUseAllocate)
             {
-                if (m_Dense.Size() == 0)
+                if (m_Dense.size() == 0)
                 {
-                    m_Dense.Clear();
-                    m_Dense.Shrink();
+                    m_Dense.clear();
+                    m_Dense.shrink_to_fit();
 
-                    m_Sparse.Clear();
-                    m_Sparse.Shrink();
+                    m_Sparse.clear();
+                    m_Sparse.shrink_to_fit();
                 }
 
                 return;
             }
 
-            m_Dense.Shrink();
+            m_Dense.shrink_to_fit();
 
             USize lastIndex = 0;
-            for (USize i = 0; i < m_Sparse.Size(); ++i)
+            for (USize i = 0; i < m_Sparse.size(); ++i)
             {
                 if (Contains(static_cast<TKey>(i)))
-                {
                     lastIndex = i;
-                }
             }
 
-            m_Sparse.Resize(lastIndex + 1);
+            m_Sparse.resize(lastIndex + 1);
         }
 
         [[nodiscard]] inline USize Size() const
         {
-            return m_Dense.Size() / m_ChunkSize;
+            return m_Dense.size() / m_ChunkSize;
         }
 
         [[nodiscard]] inline USize Capacity() const
         {
-            return m_Sparse.Size();
+            return m_Sparse.size();
         }
     };
 } // namespace FE

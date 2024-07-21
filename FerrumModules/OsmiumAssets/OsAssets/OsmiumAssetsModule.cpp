@@ -1,4 +1,4 @@
-#include <FeCore/Assets/IAssetManager.h>
+﻿#include <FeCore/Assets/IAssetManager.h>
 #include <OsAssets/Images/ImageAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/OsmiumAssetsModule.h>
@@ -6,7 +6,7 @@
 
 namespace FE::Osmium
 {
-    void OsmiumAssetsModule::GetFrameworkDependencies(List<Rc<IFrameworkFactory>>& /* dependencies */) {}
+    void OsmiumAssetsModule::GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& /* dependencies */) {}
 
     class OsmiumAssetsModuleImpl : public ServiceLocatorImplBase<OsmiumAssetsModule>
     {
@@ -31,9 +31,9 @@ namespace FE::Osmium
             m_Desc = desc;
 
             auto* manager = ServiceLocator<Assets::IAssetManager>::Get();
-            manager->RegisterAssetLoader(MakeShared<ImageAssetLoader>());
-            manager->RegisterAssetLoader(MakeShared<MeshAssetLoader>());
-            manager->RegisterAssetLoader(MakeShared<ShaderAssetLoader>());
+            manager->RegisterAssetLoader(Rc<ImageAssetLoader>::DefaultNew());
+            manager->RegisterAssetLoader(Rc<MeshAssetLoader>::DefaultNew());
+            manager->RegisterAssetLoader(Rc<ShaderAssetLoader>::DefaultNew());
         }
     };
 
@@ -45,6 +45,6 @@ namespace FE::Osmium
     extern "C" FE_DLL_EXPORT OsmiumAssetsModule* CreateModuleInstance(Env::Internal::IEnvironment* environment)
     {
         Env::AttachEnvironment(*environment);
-        return MakeShared<OsmiumAssetsModuleImpl>().Detach();
+        return Rc{ Rc<OsmiumAssetsModuleImpl>::DefaultNew() }.Detach();
     }
 } // namespace FE::Osmium

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/ECS/EntityRegistry.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
@@ -8,7 +8,7 @@ namespace FE::ECS
 {
     class ISystem;
 
-    class IWorld : public IObject
+    class IWorld : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IWorld, "DCA8359C-CDD0-4555-8B87-2D2F5915476F");
@@ -19,9 +19,11 @@ namespace FE::ECS
         virtual EntityRegistry* Registry() = 0;
     };
 
-    class World final : public ServiceLocatorImplBase<IWorld>, public EventBus<FrameEvents>::Handler
+    class World final
+        : public ServiceLocatorImplBase<IWorld>
+        , public EventBus<FrameEvents>::Handler
     {
-        List<Rc<ISystem>> m_Systems;
+        eastl::vector<Rc<ISystem>> m_Systems;
         Rc<EntityRegistry> m_Registry;
 
     public:

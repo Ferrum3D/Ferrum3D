@@ -1,11 +1,11 @@
+﻿#include <FeCore/Console/FeLog.h>
 #include <OsGPU/Shader/VKShaderReflection.h>
-#include <FeCore/Console/FeLog.h>
 
 namespace FE::Osmium
 {
     namespace SpvC = spirv_cross;
 
-    inline Format SPIRTypeToFormat(const SpvC::SPIRType& type)
+    inline static Format SPIRTypeToFormat(const SpvC::SPIRType& type)
     {
         switch (type.basetype)
         {
@@ -75,13 +75,13 @@ namespace FE::Osmium
         }
     }
 
-    VKShaderReflection::VKShaderReflection(const List<UInt32>& byteCode)
+    VKShaderReflection::VKShaderReflection(const eastl::vector<UInt32>& byteCode)
     {
-        auto compiler = SpvC::CompilerHLSL(byteCode.Data(), byteCode.Size());
+        auto compiler = SpvC::CompilerHLSL(byteCode.data(), byteCode.size());
         ParseInputAttributes(compiler);
     }
 
-    List<ShaderInputAttribute> VKShaderReflection::GetInputAttributes()
+    eastl::vector<ShaderInputAttribute> VKShaderReflection::GetInputAttributes()
     {
         return m_InputAttributes;
     }
@@ -98,7 +98,7 @@ namespace FE::Osmium
                 --semanticSize;
             }
 
-            auto& current = m_InputAttributes.Emplace();
+            auto& current = m_InputAttributes.push_back();
             current.Location = compiler.get_decoration(resource.id, spv::DecorationLocation);
             current.ShaderSemantic = String(semantic.c_str(), semanticSize);
             current.ElementFormat = SPIRTypeToFormat(compiler.get_type(resource.base_type_id));
@@ -118,4 +118,4 @@ namespace FE::Osmium
         FE_UNREACHABLE("Shader semantic \"{}\" not found in input attributes", semantic);
         return 0;
     }
-}
+} // namespace FE::Osmium

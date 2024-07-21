@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySliceMut.h>
 
 namespace FE
@@ -31,7 +31,7 @@ namespace FE
         //!
         //! \param [in] array  - A pointer to the array.
         //! \param [in] length - Length of the array.
-        inline ArraySlice(const T* array, USize length)
+        inline ArraySlice(const T* array, uint32_t length)
             : m_Begin(array)
             , m_End(array + length)
         {
@@ -61,7 +61,7 @@ namespace FE
         }
 
         //! \brief Copy constructor.
-        inline ArraySlice(const ArraySlice& other)            = default;
+        inline ArraySlice(const ArraySlice& other) = default;
         inline ArraySlice& operator=(const ArraySlice& other) = default;
 
         //! \brief Move constructor.
@@ -93,18 +93,9 @@ namespace FE
         //! \brief Create from a Vector<T>.
         //!
         //! \param [in] vector - The vector.
-        inline ArraySlice(const Vector<T>& vector) // NOLINT
+        inline ArraySlice(const eastl::vector<T>& vector) // NOLINT
             : m_Begin(vector.data())
             , m_End(vector.data() + vector.size())
-        {
-        }
-
-        //! \brief Create from a List<T>.
-        //!
-        //! \param [in] list - The list.
-        inline ArraySlice(const List<T>& list) // NOLINT
-            : m_Begin(list.Data())
-            , m_End(list.Data() + list.Size())
         {
         }
 
@@ -114,13 +105,13 @@ namespace FE
         //! \param [in] endIndex   - The first index past the subslice to create.
         //!
         //! \return The created subslice.
-        inline ArraySlice operator()(USize beginIndex, USize endIndex) const noexcept
+        inline ArraySlice operator()(uint32_t beginIndex, uint32_t endIndex) const noexcept
         {
             FE_CORE_ASSERT(beginIndex < Length() && endIndex <= Length(), "Index out of range");
             return ArraySlice(m_Begin + beginIndex, m_Begin + endIndex);
         }
 
-        inline const T& operator[](USize index) const noexcept
+        inline const T& operator[](uint32_t index) const noexcept
         {
             FE_CORE_ASSERT(index < Length(), "Index out of range");
             return m_Begin[index];
@@ -146,9 +137,9 @@ namespace FE
         }
 
         //! \bried Length of the slice.
-        [[nodiscard]] inline USize Length() const
+        [[nodiscard]] inline uint32_t Length() const
         {
-            return m_End - m_Begin;
+            return static_cast<uint32_t>(m_End - m_Begin);
         }
 
         //! \brief Check if the slice is empty.
@@ -176,18 +167,11 @@ namespace FE
         //! \param [in] destination - The slice to copy the data to.
         //!
         //! \return The number of elements copied.
-        inline USize CopyDataTo(ArraySliceMut<T> destination) const
+        inline uint32_t CopyDataTo(ArraySliceMut<T> destination) const
         {
-            USize size = std::min(Length(), destination.Length());
+            const uint32_t size = std::min(Length(), destination.Length());
             memcpy(destination.Data(), Data(), size * sizeof(T));
             return size;
-        }
-
-        inline List<T> ToList() const
-        {
-            List<T> result;
-            result.Assign(m_Begin, m_End);
-            return result;
         }
 
         [[nodiscard]] inline const T* begin() const

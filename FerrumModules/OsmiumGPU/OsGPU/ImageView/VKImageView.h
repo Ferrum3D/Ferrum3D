@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/ImageView/IImageView.h>
 #include <OsGPU/Common/VKConfig.h>
 
@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     class VKDevice;
 
-    class VKImageView : public Object<IImageView>
+    class VKImageView : public IImageView
     {
         ImageViewDesc m_Desc;
         VKDevice* m_Device;

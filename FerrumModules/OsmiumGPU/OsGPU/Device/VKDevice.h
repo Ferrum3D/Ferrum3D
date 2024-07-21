@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/LRUCacheMap.h>
@@ -100,25 +100,25 @@ namespace FE::Osmium
     class VKCommandBuffer;
 
     class VKDevice final
-        : public Object<IDevice>
+        : public IDevice
         , public EventBus<FrameEvents>::Handler
     {
         VkDevice m_NativeDevice;
         VkPhysicalDevice m_NativeAdapter;
         VKAdapter* m_Adapter;
         VKInstance* m_Instance;
-        List<VKQueueFamilyData> m_QueueFamilyIndices;
+        eastl::vector<VKQueueFamilyData> m_QueueFamilyIndices;
 
-        List<VkSemaphore> m_WaitSemaphores;
-        List<VkSemaphore> m_SignalSemaphores;
+        eastl::vector<VkSemaphore> m_WaitSemaphores;
+        eastl::vector<VkSemaphore> m_SignalSemaphores;
 
-        UnorderedMap<USize, DescriptorSetLayoutData> m_DescriptorSetLayouts;
+        festd::unordered_dense_map<USize, DescriptorSetLayoutData> m_DescriptorSetLayouts;
         LRUCacheMap<USize, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
         VkMemoryRequirements m_ImageMemoryRequirements;
         VkMemoryRequirements m_RenderTargetMemoryRequirements;
         VkMemoryRequirements m_BufferMemoryRequirements;
 
-        List<IVKObjectDeleter*> m_PendingDelete;
+        eastl::vector<IVKObjectDeleter*> m_PendingDelete;
 
         void FindQueueFamilies();
 
@@ -145,7 +145,7 @@ namespace FE::Osmium
             }
 
             FE_UNREACHABLE("Couldn't find command pool");
-            return m_QueueFamilyIndices.Front().CmdPool;
+            return m_QueueFamilyIndices.front().CmdPool;
         }
 
         inline VkCommandPool GetCommandPool(UInt32 queueFamilyIndex)
@@ -159,7 +159,7 @@ namespace FE::Osmium
             }
 
             FE_UNREACHABLE("Couldn't find command pool");
-            return m_QueueFamilyIndices.Front().CmdPool;
+            return m_QueueFamilyIndices.front().CmdPool;
         }
 
         inline UInt32 GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
@@ -179,9 +179,8 @@ namespace FE::Osmium
         template<class T, class... Args>
         inline T* QueueObjectDelete(Args&&... args)
         {
-            auto* deleter = new (GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(T), alignof(T), FE_SRCPOS()))
-                T(std::forward<Args>(args)...);
-            m_PendingDelete.Push(deleter);
+            auto* deleter = Memory::DefaultNew<T>(std::forward<Args>(args)...);
+            m_PendingDelete.push_back(deleter);
             return deleter;
         }
 

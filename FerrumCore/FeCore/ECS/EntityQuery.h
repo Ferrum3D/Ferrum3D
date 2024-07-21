@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/ECS/ArchetypeChunk.h>
 #include <FeCore/ECS/Entity.h>
 #include <FeCore/ECS/EntityArchetype.h>
@@ -8,12 +8,12 @@
 namespace FE::ECS
 {
     //! \brief Entity query allows to iterate over a group of selected entities and their components.
-    class EntityQuery : public Object<IObject>
+    class EntityQuery : public Memory::RefCountedObjectBase
     {
         friend class EntityRegistry;
 
         EntityRegistry* m_Registry;
-        List<EntityArchetype*> m_Archetypes;
+        eastl::vector<EntityArchetype*> m_Archetypes;
 
         EntityArchetype m_IncludeNone;
         EntityArchetype m_IncludeAll;
@@ -56,17 +56,17 @@ namespace FE::ECS
 
         inline void NoneOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeNone.m_Layout.Assign(components.begin(), components.end());
+            m_IncludeNone.m_Layout.assign(components.begin(), components.end());
         }
 
         inline void AllOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeAll.m_Layout.Assign(components.begin(), components.end());
+            m_IncludeAll.m_Layout.assign(components.begin(), components.end());
         }
 
         inline void AnyOf(ArraySlice<ComponentType> components)
         {
-            m_IncludeAny.m_Layout.Assign(components.begin(), components.end());
+            m_IncludeAny.m_Layout.assign(components.begin(), components.end());
         }
 
         inline EntityQuery& Update()
@@ -75,15 +75,15 @@ namespace FE::ECS
             return *this;
         }
 
-        inline List<ArchetypeChunk*> GetChunks()
+        inline eastl::vector<ArchetypeChunk*> GetChunks()
         {
-            List<ArchetypeChunk*> result;
+            eastl::vector<ArchetypeChunk*> result;
 
             for (auto* archetype : m_Archetypes)
             {
                 for (auto* chunk : archetype->m_Chunks)
                 {
-                    result.Push(chunk);
+                    result.push_back(chunk);
                 }
             }
 

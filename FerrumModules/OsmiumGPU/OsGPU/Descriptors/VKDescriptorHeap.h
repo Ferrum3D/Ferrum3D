@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Descriptors/IDescriptorHeap.h>
 
@@ -30,7 +30,7 @@ namespace FE::Osmium
         }
     }
 
-    class VKDescriptorHeap : public Object<IDescriptorHeap>
+    class VKDescriptorHeap : public IDescriptorHeap
     {
         VkDescriptorPool m_NativePool;
         VKDevice* m_Device;

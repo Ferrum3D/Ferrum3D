@@ -1,6 +1,6 @@
-#include <OsGPU/Resource/VKTransientResourceHeap.h>
-#include <OsGPU/Device/VKDevice.h>
+﻿#include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Memory/VKDeviceMemory.h>
+#include <OsGPU/Resource/VKTransientResourceHeap.h>
 
 namespace FE::Osmium
 {
@@ -29,7 +29,7 @@ namespace FE::Osmium
         MemoryAllocationDesc desc{};
         desc.Size = m_Desc.HeapSize;
         desc.Type = MemoryType::DeviceLocal;
-        return MakeShared<VKDeviceMemory>(*vkDevice, requirements.memoryTypeBits, desc);
+        return Rc<VKDeviceMemory>::DefaultNew(*vkDevice, requirements.memoryTypeBits, desc);
     }
 
     VKTransientResourceHeap::VKTransientResourceHeap(VKDevice& dev, const TransientResourceHeapDesc& desc)
@@ -40,7 +40,7 @@ namespace FE::Osmium
     NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const BufferDesc& desc, USize& byteSize)
     {
         byteSize = desc.Size;
-        return m_Allocator.Allocate(desc.Size, m_Desc.Alignment, FE_SRCPOS());
+        return m_Allocator.Allocate(desc.Size, m_Desc.Alignment);
     }
 
     NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const ImageDesc& desc, USize& byteSize)
@@ -48,6 +48,6 @@ namespace FE::Osmium
         auto* vkDevice = fe_assert_cast<VKDevice*>(m_Device);
         auto requirements = vkDevice->GetImageMemoryRequirements(desc);
         byteSize = requirements.size;
-        return m_Allocator.Allocate(requirements.size, requirements.alignment, FE_SRCPOS());
+        return m_Allocator.Allocate(requirements.size, requirements.alignment);
     }
-}
+} // namespace FE::Osmium

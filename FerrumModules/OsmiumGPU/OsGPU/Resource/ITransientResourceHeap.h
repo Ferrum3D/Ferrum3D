@@ -1,5 +1,4 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
 #include <OsGPU/Buffer/IBuffer.h>
 #include <OsGPU/Image/IImage.h>
 
@@ -15,9 +14,9 @@ namespace FE::Osmium
 
     struct TransientResourceHeapDesc
     {
-        UInt64 HeapSize                 = 512 * 1024;
-        UInt64 Alignment                = 256;
-        Int32 CacheSize                 = 256;
+        UInt64 HeapSize = 512 * 1024;
+        UInt64 Alignment = 256;
+        Int32 CacheSize = 256;
         TransientResourceType TypeFlags = TransientResourceType::Buffer;
     };
 
@@ -58,7 +57,7 @@ namespace FE::Osmium
     class IImage;
     class IBuffer;
 
-    class ITransientResourceHeap : public IObject
+    class ITransientResourceHeap : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(ITransientResourceHeap, "DA9D43A4-0EB2-45A4-96B4-714D89A34242");
@@ -66,16 +65,15 @@ namespace FE::Osmium
 
         inline virtual void Allocate() = 0;
 
-        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc)    = 0;
+        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc) = 0;
         [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc) = 0;
 
-        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc,
-                                                         TransientResourceAllocationStats& stats) = 0;
+        [[nodiscard]] virtual Rc<IImage> CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats) = 0;
 
         [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc,
-                                                           TransientResourceAllocationStats& stats) = 0;
+                                                       TransientResourceAllocationStats& stats) = 0;
 
-        virtual void ReleaseImage(UInt64 resourceID)  = 0;
+        virtual void ReleaseImage(UInt64 resourceID) = 0;
         virtual void ReleaseBuffer(UInt64 resourceID) = 0;
     };
 } // namespace FE::Osmium

@@ -1,4 +1,4 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
 #include <OsGPU/Adapter/VKAdapter.h>
 #include <OsGPU/Buffer/VKBuffer.h>
@@ -35,26 +35,26 @@ namespace FE::Osmium
 
         UInt32 familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, nullptr);
-        List<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
-        vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, families.Data());
-        for (USize i = 0; i < families.Size(); ++i)
+        eastl::vector<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
+        vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, families.data());
+        for (uint32_t i = 0; i < families.size(); ++i)
         {
             UInt32 graphics = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
-            UInt32 compute  = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
-            UInt32 copy     = VK_QUEUE_TRANSFER_BIT;
+            UInt32 compute = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
+            UInt32 copy = VK_QUEUE_TRANSFER_BIT;
 
             auto idx = static_cast<UInt32>(i);
             if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(CommandQueueClass::Graphics))
             {
-                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Graphics));
+                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Graphics));
             }
             else if ((families[i].queueFlags & compute) == compute && !hasQueueFamily(CommandQueueClass::Compute))
             {
-                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Compute));
+                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Compute));
             }
             else if ((families[i].queueFlags & copy) == copy && !hasQueueFamily(CommandQueueClass::Transfer))
             {
-                m_QueueFamilyIndices.Push(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Transfer));
+                m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Transfer));
             }
         }
     }
@@ -86,8 +86,8 @@ namespace FE::Osmium
 
         UInt32 availableExtCount;
         vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, nullptr);
-        List<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
-        vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, availableExt.Data());
+        eastl::vector<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
+        vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, availableExt.data());
         for (auto& ext : RequiredDeviceExtensions)
         {
             bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const VkExtensionProperties& props) {
@@ -96,29 +96,29 @@ namespace FE::Osmium
             FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", String(ext));
         }
 
-        constexpr Float32 queuePriority = 1.0f;
-        List<VkDeviceQueueCreateInfo> queuesCI{};
+        constexpr float queuePriority = 1.0f;
+        eastl::vector<VkDeviceQueueCreateInfo> queuesCI{};
         for (auto& queue : m_QueueFamilyIndices)
         {
-            auto& queueCI            = queuesCI.Emplace();
-            queueCI.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            auto& queueCI = queuesCI.push_back();
+            queueCI.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCI.queueFamilyIndex = queue.FamilyIndex;
-            queueCI.queueCount       = 1;
+            queueCI.queueCount = 1;
             queueCI.pQueuePriorities = &queuePriority;
         }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.geometryShader     = true;
+        deviceFeatures.geometryShader = true;
         deviceFeatures.tessellationShader = true;
-        deviceFeatures.samplerAnisotropy  = true;
-        deviceFeatures.sampleRateShading  = true;
+        deviceFeatures.samplerAnisotropy = true;
+        deviceFeatures.sampleRateShading = true;
 
         VkDeviceCreateInfo deviceCI{};
-        deviceCI.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCI.queueCreateInfoCount    = static_cast<UInt32>(queuesCI.Size());
-        deviceCI.pQueueCreateInfos       = queuesCI.Data();
-        deviceCI.pEnabledFeatures        = &deviceFeatures;
-        deviceCI.enabledExtensionCount   = static_cast<UInt32>(RequiredDeviceExtensions.size());
+        deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceCI.queueCreateInfoCount = static_cast<UInt32>(queuesCI.size());
+        deviceCI.pQueueCreateInfos = queuesCI.data();
+        deviceCI.pEnabledFeatures = &deviceFeatures;
+        deviceCI.enabledExtensionCount = static_cast<UInt32>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
 
         vkCreateDevice(m_NativeAdapter, &deviceCI, VK_NULL_HANDLE, &m_NativeDevice);
@@ -127,7 +127,7 @@ namespace FE::Osmium
         for (auto& queue : m_QueueFamilyIndices)
         {
             VkCommandPoolCreateInfo poolCI{};
-            poolCI.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolCI.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             poolCI.queueFamilyIndex = queue.FamilyIndex;
             vkCreateCommandPool(m_NativeDevice, &poolCI, VK_NULL_HANDLE, &queue.CmdPool);
         }
@@ -142,34 +142,34 @@ namespace FE::Osmium
 
     Rc<IFence> VKDevice::CreateFence(FenceState state)
     {
-        return MakeShared<VKFence>(*this, state);
+        return Rc<VKFence>::DefaultNew(*this, state);
     }
 
     Rc<ICommandQueue> VKDevice::GetCommandQueue(CommandQueueClass cmdQueueClass)
     {
         VKCommandQueueDesc desc{};
         desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
-        desc.QueueIndex       = 0;
-        return MakeShared<VKCommandQueue>(*this, desc);
+        desc.QueueIndex = 0;
+        return Rc<VKCommandQueue>::DefaultNew(*this, desc);
     }
 
     Rc<ICommandBuffer> VKDevice::CreateCommandBuffer(CommandQueueClass cmdQueueClass)
     {
-        return MakeShared<VKCommandBuffer>(*this, cmdQueueClass);
+        return Rc<VKCommandBuffer>::DefaultNew(*this, cmdQueueClass);
     }
 
     Rc<ISwapChain> VKDevice::CreateSwapChain(const SwapChainDesc& desc)
     {
-        return MakeShared<VKSwapChain>(*this, desc);
+        return Rc<VKSwapChain>::DefaultNew(*this, desc);
     }
 
     Rc<IBuffer> VKDevice::CreateBuffer(const BufferDesc& desc)
     {
-        auto buffer = MakeShared<VKBuffer>(*this, desc);
+        Rc buffer = Rc<VKBuffer>::DefaultNew(*this, desc);
 
         VkBufferCreateInfo bufferCI{};
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferCI.size  = desc.Size;
+        bufferCI.size = desc.Size;
         bufferCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
         if ((desc.Flags & BindFlags::ShaderResource) != BindFlags::None)
@@ -216,42 +216,42 @@ namespace FE::Osmium
 
     Rc<IShaderModule> VKDevice::CreateShaderModule(const ShaderModuleDesc& desc)
     {
-        return MakeShared<VKShaderModule>(*this, desc);
+        return Rc<VKShaderModule>::DefaultNew(*this, desc);
     }
 
     Rc<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
     {
-        return MakeShared<VKCommandBuffer>(*this, queueFamilyIndex);
+        return Rc<VKCommandBuffer>::DefaultNew(*this, queueFamilyIndex);
     }
 
     Rc<IRenderPass> VKDevice::CreateRenderPass(const RenderPassDesc& desc)
     {
-        return MakeShared<VKRenderPass>(*this, desc);
+        return Rc<VKRenderPass>::DefaultNew(*this, desc);
     }
 
     Rc<IDescriptorHeap> VKDevice::CreateDescriptorHeap(const DescriptorHeapDesc& desc)
     {
-        return MakeShared<VKDescriptorHeap>(*this, desc);
+        return Rc<VKDescriptorHeap>::DefaultNew(*this, desc);
     }
 
     Rc<IShaderCompiler> VKDevice::CreateShaderCompiler()
     {
-        return MakeShared<ShaderCompilerDXC>(GraphicsAPI::Vulkan);
+        return Rc<ShaderCompilerDXC>::DefaultNew(GraphicsAPI::Vulkan);
     }
 
     Rc<IGraphicsPipeline> VKDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& desc)
     {
-        return MakeShared<VKGraphicsPipeline>(*this, desc);
+        return Rc<VKGraphicsPipeline>::DefaultNew(*this, desc);
     }
 
     Rc<IImageView> VKDevice::CreateImageView(const ImageViewDesc& desc)
     {
-        return MakeShared<VKImageView>(*this, desc);
+        return Rc<VKImageView>::DefaultNew(*this, desc);
     }
 
     Rc<IFramebuffer> VKDevice::CreateFramebuffer(const FramebufferDesc& desc)
     {
-        return MakeShared<VKFramebuffer>(*this, desc);
+        return Rc<VKFramebuffer>::DefaultNew(*this, desc);
     }
 
     void VKDevice::WaitIdle()
@@ -261,39 +261,39 @@ namespace FE::Osmium
 
     VkSemaphore& VKDevice::AddWaitSemaphore()
     {
-        return m_WaitSemaphores.Emplace();
+        return m_WaitSemaphores.push_back();
     }
 
     VkSemaphore& VKDevice::AddSignalSemaphore()
     {
-        return m_SignalSemaphores.Emplace();
+        return m_SignalSemaphores.push_back();
     }
 
     UInt32 VKDevice::GetWaitSemaphores(const VkSemaphore** semaphores)
     {
-        *semaphores = m_WaitSemaphores.Data();
-        return static_cast<UInt32>(m_WaitSemaphores.Size());
+        *semaphores = m_WaitSemaphores.data();
+        return static_cast<UInt32>(m_WaitSemaphores.size());
     }
 
     UInt32 VKDevice::GetSignalSemaphores(const VkSemaphore** semaphores)
     {
-        *semaphores = m_SignalSemaphores.Data();
-        return static_cast<UInt32>(m_SignalSemaphores.Size());
+        *semaphores = m_SignalSemaphores.data();
+        return static_cast<UInt32>(m_SignalSemaphores.size());
     }
 
     Rc<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
     {
-        return static_pointer_cast<IWindow>(MakeShared<Window>(desc));
+        return Rc<Window>::DefaultNew(desc);
     }
 
     Rc<IImage> VKDevice::CreateImage(const ImageDesc& desc)
     {
-        return MakeShared<VKImage>(*this, desc);
+        return Rc<VKImage>::DefaultNew(*this, desc);
     }
 
     Rc<ISampler> VKDevice::CreateSampler(const SamplerDesc& desc)
     {
-        return MakeShared<VKSampler>(*this, desc);
+        return Rc<VKSampler>::DefaultNew(*this, desc);
     }
 
     VKDevice::~VKDevice()
@@ -301,8 +301,7 @@ namespace FE::Osmium
         for (auto& deleter : m_PendingDelete)
         {
             deleter->Delete(this);
-            deleter->~IVKObjectDeleter();
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(deleter, FE_SRCPOS(), 0);
+            Memory::DefaultDelete(deleter);
             FE_LOG_MESSAGE("Deleted object at {}", deleter);
         }
 
@@ -318,9 +317,9 @@ namespace FE::Osmium
     {
         if (m_RenderTargetMemoryRequirements.size == 0)
         {
-            auto bindFlags                   = ImageBindFlags::Color | ImageBindFlags::ShaderRead;
-            auto image                       = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
-            auto* vkImage                    = fe_assert_cast<VKImage*>(image.Get());
+            auto bindFlags = ImageBindFlags::Color | ImageBindFlags::ShaderRead;
+            auto image = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
+            auto* vkImage = fe_assert_cast<VKImage*>(image.Get());
             m_RenderTargetMemoryRequirements = vkImage->MemoryRequirements;
         }
 
@@ -331,9 +330,9 @@ namespace FE::Osmium
     {
         if (m_BufferMemoryRequirements.size == 0)
         {
-            auto bindFlags             = BindFlags::ConstantBuffer | BindFlags::ShaderResource;
-            auto buffer                = CreateBuffer(BufferDesc(1, bindFlags));
-            auto* vkBuffer             = fe_assert_cast<VKBuffer*>(buffer.Get());
+            auto bindFlags = BindFlags::ConstantBuffer | BindFlags::ShaderResource;
+            auto buffer = CreateBuffer(BufferDesc(1, bindFlags));
+            auto* vkBuffer = fe_assert_cast<VKBuffer*>(buffer.Get());
             m_BufferMemoryRequirements = vkBuffer->MemoryRequirements;
         }
 
@@ -350,7 +349,7 @@ namespace FE::Osmium
             return result;
         }
 
-        auto image    = CreateImage(desc);
+        auto image = CreateImage(desc);
         auto* vkImage = fe_assert_cast<VKImage*>(image.Get());
         m_ImageMemoryRequirementsByDesc.Emplace(hash, vkImage->MemoryRequirements);
         return vkImage->MemoryRequirements;
@@ -360,9 +359,9 @@ namespace FE::Osmium
     {
         if (m_ImageMemoryRequirements.size == 0)
         {
-            auto bindFlags            = ImageBindFlags::UnorderedAccess | ImageBindFlags::ShaderRead;
-            auto image                = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
-            auto* vkImage             = fe_assert_cast<VKImage*>(image.Get());
+            auto bindFlags = ImageBindFlags::UnorderedAccess | ImageBindFlags::ShaderRead;
+            auto image = CreateImage(ImageDesc::Img2D(bindFlags, 1, 1, Format::R8G8B8A8_UNorm));
+            auto* vkImage = fe_assert_cast<VKImage*>(image.Get());
             m_ImageMemoryRequirements = vkImage->MemoryRequirements;
         }
 
@@ -371,7 +370,7 @@ namespace FE::Osmium
 
     Rc<ITransientResourceHeap> VKDevice::CreateTransientResourceHeap(const TransientResourceHeapDesc& desc)
     {
-        return MakeShared<VKTransientResourceHeap>(*this, desc);
+        return Rc<VKTransientResourceHeap>::DefaultNew(*this, desc);
     }
 
     inline USize GetSetLayoutHash(const ArraySlice<DescriptorDesc>& descriptors)
@@ -392,22 +391,22 @@ namespace FE::Osmium
 
         if (m_DescriptorSetLayouts.find(key) == m_DescriptorSetLayouts.end())
         {
-            List<VkDescriptorSetLayoutBinding> bindings;
+            eastl::vector<VkDescriptorSetLayoutBinding> bindings;
             for (UInt32 i = 0; i < descriptors.Length(); ++i)
             {
-                auto& desc    = descriptors[i];
-                auto& binding = bindings.Emplace();
+                auto& desc = descriptors[i];
+                auto& binding = bindings.push_back();
 
-                binding.binding         = i;
+                binding.binding = i;
                 binding.descriptorCount = desc.Count;
-                binding.descriptorType  = GetDescriptorType(desc.ResourceType);
-                binding.stageFlags      = VKConvert(desc.Stage);
+                binding.descriptorType = GetDescriptorType(desc.ResourceType);
+                binding.stageFlags = VKConvert(desc.Stage);
             }
 
             VkDescriptorSetLayoutCreateInfo layoutCI{};
-            layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutCI.bindingCount = static_cast<UInt32>(bindings.Size());
-            layoutCI.pBindings    = bindings.Data();
+            layoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutCI.bindingCount = static_cast<UInt32>(bindings.size());
+            layoutCI.pBindings = bindings.data();
             vkCreateDescriptorSetLayout(m_NativeDevice, &layoutCI, VK_NULL_HANDLE, &layout);
 
             m_DescriptorSetLayouts[key] = DescriptorSetLayoutData(layout);
@@ -430,7 +429,7 @@ namespace FE::Osmium
 
     void VKDevice::OnFrameEnd(const FrameEventArgs& /* args */)
     {
-        for (USize i = 0; i < m_PendingDelete.Size();)
+        for (uint32_t i = 0; i < m_PendingDelete.size();)
         {
             FE_LOG_MESSAGE(
                 "Trying to delete object at {}, frames left: {}...", m_PendingDelete[i], m_PendingDelete[i]->FramesLeft);
@@ -441,10 +440,9 @@ namespace FE::Osmium
             }
 
             m_PendingDelete[i]->Delete(this);
-            m_PendingDelete[i]->~IVKObjectDeleter();
-            GlobalAllocator<HeapAllocator>::Get().Deallocate(m_PendingDelete[i], FE_SRCPOS(), 0);
+            Memory::DefaultDelete(m_PendingDelete[i]);
             FE_LOG_MESSAGE("Deleted object at {}", m_PendingDelete[i]);
-            m_PendingDelete.SwapRemoveAt(i);
+            m_PendingDelete.erase_unsorted(m_PendingDelete.begin() + i);
         }
     }
 } // namespace FE::Osmium

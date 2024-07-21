@@ -1,18 +1,20 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ByteBuffer.h>
 #include <OsGPU/Shader/ShaderCompilerDXC.h>
 #include <d3d12shader.h>
+
+FE_PUSH_MSVC_WARNING(4244)
 
 namespace FE::Osmium
 {
     class IncludeHandler : public IDxcIncludeHandler
     {
-        AtomicInt32 m_RefCounter;
-        WString m_BasePath;
+        std::atomic<int32_t> m_RefCounter;
+        std::pmr::wstring m_BasePath; // TODO: remove this
         IDxcLibrary* m_Library;
 
     public:
-        inline IncludeHandler(const WString& basePath, IDxcLibrary* library)
+        inline IncludeHandler(const std::pmr::wstring& basePath, IDxcLibrary* library)
             : m_BasePath(basePath)
             , m_Library(library)
             , m_RefCounter(0)
@@ -26,12 +28,12 @@ namespace FE::Osmium
 
         inline ULONG AddRef() override
         {
-            return Interlocked::Increment(m_RefCounter);
+            return ++m_RefCounter;
         }
 
         inline ULONG Release() override
         {
-            return Interlocked::Decrement(m_RefCounter);
+            return --m_RefCounter;
         }
 
         inline HRESULT LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource) override
@@ -46,9 +48,9 @@ namespace FE::Osmium
         }
     };
 
-    inline WString GetTargetProfile(ShaderStage stage, HLSLShaderVersion version)
+    inline static std::pmr::wstring GetTargetProfile(ShaderStage stage, HLSLShaderVersion version)
     {
-        std::basic_stringstream<wchar_t, std::char_traits<wchar_t>, StdHeapAllocator<wchar_t>> result;
+        std::basic_stringstream<wchar_t, std::char_traits<wchar_t>, Memory::StdDefaultAllocator<wchar_t>> result;
         switch (stage)
         {
         case ShaderStage::Vertex:
@@ -72,7 +74,7 @@ namespace FE::Osmium
         }
 
         result << version.Major << L'_' << version.Minor;
-        return result.str();
+        return std::pmr::wstring{ result.str() };
     }
 
     ShaderCompilerDXC::ShaderCompilerDXC(GraphicsAPI api)
@@ -83,9 +85,9 @@ namespace FE::Osmium
 
     ByteBuffer ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
     {
-        auto sepIter       = args.FullPath.FindLastOf('/');
-        auto shaderName    = StringSlice(sepIter + 1, args.FullPath.end()).ToWideString();
-        auto baseDirectory = StringSlice(args.FullPath.begin(), sepIter).ToWideString();
+        auto sepIter = args.FullPath.FindLastOf('/');
+        const std::pmr::wstring shaderName(sepIter + 1, args.FullPath.end());
+        const std::pmr::wstring baseDirectory(args.FullPath.begin(), sepIter);
 
         auto createInstance = m_Module.GetFunction<DxcCreateInstanceProc>("DxcCreateInstance");
 
@@ -107,7 +109,7 @@ namespace FE::Osmium
 
         CComPtr<IDxcBlobEncoding> source;
         auto sourceSize = static_cast<UInt32>(args.SourceCode.Size());
-        result          = library->CreateBlobWithEncodingFromPinned(args.SourceCode.Data(), sourceSize, CP_UTF8, &source);
+        result = library->CreateBlobWithEncodingFromPinned(args.SourceCode.Data(), sourceSize, CP_UTF8, &source);
         if (FAILED(result))
         {
             FE_LOG_ERROR("Couldn't create a DXC Blob encoding");
@@ -116,44 +118,44 @@ namespace FE::Osmium
 
         IncludeHandler includeHandler(baseDirectory, library);
 
-        List<DxcDefine> defines;
-        defines.Push(DxcDefine{ L"FE_VULKAN", L"1" });
+        eastl::vector<DxcDefine> defines;
+        defines.push_back(DxcDefine{ L"FE_VULKAN", L"1" });
 
 #if FE_DEBUG
-        defines.Push(DxcDefine{ L"FE_DEBUG", L"1" });
+        defines.push_back(DxcDefine{ L"FE_DEBUG", L"1" });
 #else
-        defines.Push(DxcDefine{ L"FE_DEBUG", L"0" });
+        defines.push_back(DxcDefine{ L"FE_DEBUG", L"0" });
 #endif
-        auto defineCount = static_cast<UInt32>(defines.Size());
+        auto defineCount = static_cast<UInt32>(defines.size());
 
-        List<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
+        eastl::vector<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
         if (m_API == GraphicsAPI::Vulkan)
         {
-            compileArgs
-                .Append(L"-spirv")
-                // TODO: for some reason vulkan1.2 doesn't work, validation layers say:
-                // "Invalid SPIR-V binary version 1.5 for target environment SPIR-V 1.3 (under Vulkan 1.1 semantics)"
-                .Append(L"-fspv-target-env=vulkan1.1")
-                .Append(L"-fspv-extension=KHR")
-                .Append(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1")
-                .Append(L"-fspv-extension=SPV_GOOGLE_user_type")
-                .Append(L"-fvk-use-dx-layout")
-                .Append(L"-fspv-extension=SPV_EXT_descriptor_indexing")
-                .Append(L"-fspv-reflect")
-                .Append(L"-Od");
+            compileArgs.push_back(L"-spirv");
+            // TODO: for some reason vulkan1.2 doesn't work, validation layers say:
+            // "Invalid SPIR-V binary version 1.5 for target environment SPIR-V 1.3 (under Vulkan 1.1 semantics)"
+            compileArgs.push_back(L"-fspv-target-env=vulkan1.1");
+            compileArgs.push_back(L"-fspv-extension=KHR");
+            compileArgs.push_back(L"-fspv-extension=SPV_GOOGLE_hlsl_functionality1");
+            compileArgs.push_back(L"-fspv-extension=SPV_GOOGLE_user_type");
+            compileArgs.push_back(L"-fvk-use-dx-layout");
+            compileArgs.push_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
+            compileArgs.push_back(L"-fspv-reflect");
+            compileArgs.push_back(L"-Od");
         }
-        auto argsCount = static_cast<UInt32>(compileArgs.Size());
 
-        auto entryPoint = args.EntryPoint.ToWideString();
-        auto profile    = GetTargetProfile(args.Stage, args.Version);
+        auto argsCount = static_cast<UInt32>(compileArgs.size());
+
+        std::pmr::wstring entryPoint{ args.EntryPoint.begin(), args.EntryPoint.end() };
+        auto profile = GetTargetProfile(args.Stage, args.Version);
         CComPtr<IDxcOperationResult> compileResult;
         result = compiler->Compile(source,
                                    shaderName.c_str(),
                                    entryPoint.c_str(),
                                    profile.c_str(),
-                                   compileArgs.Data(),
+                                   compileArgs.data(),
                                    argsCount,
-                                   defines.Data(),
+                                   defines.data(),
                                    defineCount,
                                    &includeHandler,
                                    &compileResult);
@@ -166,13 +168,13 @@ namespace FE::Osmium
             }
         }
 
-        List<UInt8> returnValue;
+        eastl::vector<UInt8> returnValue;
         if (SUCCEEDED(result))
         {
             CComPtr<IDxcBlob> byteCode;
             FE_ASSERT(SUCCEEDED(compileResult->GetResult(&byteCode)));
             auto bufferPtr = static_cast<UInt8*>(byteCode->GetBufferPointer());
-            returnValue.Assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
+            returnValue.assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
         }
         else
         {
@@ -188,3 +190,5 @@ namespace FE::Osmium
         return ByteBuffer(std::move(returnValue));
     }
 } // namespace FE::Osmium
+
+FE_POP_MSVC_WARNING

@@ -1,4 +1,4 @@
-#include <FeCore/Assets/AssetProviderDev.h>
+﻿#include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/IO/FileStream.h>
 
 namespace FE::Assets
@@ -17,7 +17,7 @@ namespace FE::Assets
     {
         FE_ASSERT_MSG(m_Registry, "Registry was not attached");
         auto fileName = m_Registry->GetAssetFilePath(assetID);
-        auto stream = MakeShared<IO::FileStream>(MakeShared<IO::FileHandle>());
+        Rc stream = Rc<IO::FileStream>::DefaultNew(Rc<IO::FileHandle>::DefaultNew());
         FE_IO_ASSERT(stream->Open(fileName, IO::OpenMode::ReadWrite));
         return static_pointer_cast<IO::IStream>(stream);
     }

@@ -1,4 +1,4 @@
-#include <OsGPU/CommandBuffer/VKCommandBuffer.h>
+﻿#include <OsGPU/CommandBuffer/VKCommandBuffer.h>
 #include <OsGPU/Device/VKDevice.h>
 #include <OsGPU/Image/VKImageFormat.h>
 #include <OsGPU/Pipeline/VKPipelineStates.h>
@@ -7,7 +7,7 @@
 
 namespace FE::Osmium
 {
-    VkAttachmentLoadOp VKConvert(AttachmentLoadOp source)
+    static VkAttachmentLoadOp VKConvert(AttachmentLoadOp source)
     {
         switch (source)
         {
@@ -23,7 +23,7 @@ namespace FE::Osmium
         }
     }
 
-    VkAttachmentStoreOp VKConvert(AttachmentStoreOp source)
+    static VkAttachmentStoreOp VKConvert(AttachmentStoreOp source)
     {
         switch (source)
         {
@@ -53,81 +53,81 @@ namespace FE::Osmium
     {
         auto attachmentDescriptions = BuildAttachmentDescriptions();
 
-        List<SubpassAttachmentReferences> subpassAttachmentReferences;
+        eastl::vector<SubpassAttachmentReferences> subpassAttachmentReferences;
         for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.Length()); ++i)
         {
-            auto& refs = subpassAttachmentReferences.Emplace();
+            auto& refs = subpassAttachmentReferences.push_back();
 
-            auto& depthStencilAttachmentRef      = refs.DepthStencil;
-            auto& depthStencilAttachment         = m_Desc.Subpasses[i].DepthStencilAttachment;
-            depthStencilAttachmentRef.layout     = VKConvert(depthStencilAttachment.State);
+            auto& depthStencilAttachmentRef = refs.DepthStencil;
+            auto& depthStencilAttachment = m_Desc.Subpasses[i].DepthStencilAttachment;
+            depthStencilAttachmentRef.layout = VKConvert(depthStencilAttachment.State);
             depthStencilAttachmentRef.attachment = depthStencilAttachment.Index;
 
-            refs.Input   = BuildAttachmentReferences(i, AttachmentType::Input);
-            refs.RT      = BuildAttachmentReferences(i, AttachmentType::RenderTarget);
+            refs.Input = BuildAttachmentReferences(i, AttachmentType::Input);
+            refs.RT = BuildAttachmentReferences(i, AttachmentType::RenderTarget);
             refs.Resolve = BuildAttachmentReferences(i, AttachmentType::MSAAResolve);
 
             auto& preserve = m_Desc.Subpasses[i].PreserveAttachments;
-            refs.Preserve  = preserve.Empty() ? nullptr : preserve.Data();
+            refs.Preserve = preserve.Empty() ? nullptr : preserve.Data();
         }
 
         auto subpassDescriptions = BuildSubpassDescriptions(subpassAttachmentReferences);
         auto subpassDependencies = BuildSubpassDependencies();
 
         VkRenderPassCreateInfo renderPassCI{};
-        renderPassCI.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassCI.attachmentCount = static_cast<UInt32>(attachmentDescriptions.Size());
-        renderPassCI.pAttachments    = attachmentDescriptions.Data();
+        renderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassCI.attachmentCount = static_cast<UInt32>(attachmentDescriptions.size());
+        renderPassCI.pAttachments = attachmentDescriptions.data();
 
-        renderPassCI.dependencyCount = static_cast<UInt32>(subpassDependencies.Size());
-        renderPassCI.pDependencies   = subpassDependencies.Data();
+        renderPassCI.dependencyCount = static_cast<UInt32>(subpassDependencies.size());
+        renderPassCI.pDependencies = subpassDependencies.data();
 
-        renderPassCI.subpassCount = static_cast<UInt32>(subpassDescriptions.Size());
-        renderPassCI.pSubpasses   = subpassDescriptions.Data();
+        renderPassCI.subpassCount = static_cast<UInt32>(subpassDescriptions.size());
+        renderPassCI.pSubpasses = subpassDescriptions.data();
 
         vkCreateRenderPass(m_Device->GetNativeDevice(), &renderPassCI, VK_NULL_HANDLE, &m_NativeRenderPass);
     }
 
-    List<VkAttachmentDescription> VKRenderPass::BuildAttachmentDescriptions()
+    eastl::vector<VkAttachmentDescription> VKRenderPass::BuildAttachmentDescriptions()
     {
-        List<VkAttachmentDescription> result;
-        result.Reserve(GetAttachmentCount());
+        eastl::vector<VkAttachmentDescription> result;
+        result.reserve(GetAttachmentCount());
 
         for (const auto& attachmentDesc : m_Desc.Attachments)
         {
-            auto& nativeDesc          = result.Emplace();
-            nativeDesc.format         = VKConvert(attachmentDesc.Format);
-            nativeDesc.loadOp         = VKConvert(attachmentDesc.LoadOp);
-            nativeDesc.storeOp        = VKConvert(attachmentDesc.StoreOp);
-            nativeDesc.stencilLoadOp  = VKConvert(attachmentDesc.StencilLoadOp);
+            auto& nativeDesc = result.push_back();
+            nativeDesc.format = VKConvert(attachmentDesc.Format);
+            nativeDesc.loadOp = VKConvert(attachmentDesc.LoadOp);
+            nativeDesc.storeOp = VKConvert(attachmentDesc.StoreOp);
+            nativeDesc.stencilLoadOp = VKConvert(attachmentDesc.StencilLoadOp);
             nativeDesc.stencilStoreOp = VKConvert(attachmentDesc.StencilStoreOp);
-            nativeDesc.initialLayout  = VKConvert(attachmentDesc.InitialState);
-            nativeDesc.finalLayout    = VKConvert(attachmentDesc.FinalState);
-            nativeDesc.samples        = GetVKSampleCountFlags(attachmentDesc.SampleCount);
+            nativeDesc.initialLayout = VKConvert(attachmentDesc.InitialState);
+            nativeDesc.finalLayout = VKConvert(attachmentDesc.FinalState);
+            nativeDesc.samples = GetVKSampleCountFlags(attachmentDesc.SampleCount);
         }
 
         return result;
     }
 
-    List<VkSubpassDescription> VKRenderPass::BuildSubpassDescriptions(
-        List<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const
+    eastl::vector<VkSubpassDescription> VKRenderPass::BuildSubpassDescriptions(
+        eastl::vector<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const
     {
-        List<VkSubpassDescription> result;
-        result.Reserve(m_Desc.Subpasses.Length());
+        eastl::vector<VkSubpassDescription> result;
+        result.reserve(m_Desc.Subpasses.Length());
 
-        for (size_t i = 0; i < m_Desc.Subpasses.Length(); ++i)
+        for (uint32_t i = 0; i < m_Desc.Subpasses.Length(); ++i)
         {
             auto& currentRefs = subpassAttachmentReferences[i];
 
-            auto& nativeDesc             = result.Emplace();
+            auto& nativeDesc = result.push_back();
             nativeDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-            nativeDesc.inputAttachmentCount = static_cast<UInt32>(currentRefs.Input.Size());
-            nativeDesc.pInputAttachments    = currentRefs.Input.Data();
+            nativeDesc.inputAttachmentCount = static_cast<UInt32>(currentRefs.Input.size());
+            nativeDesc.pInputAttachments = currentRefs.Input.data();
 
-            nativeDesc.colorAttachmentCount = static_cast<UInt32>(currentRefs.RT.Size());
-            nativeDesc.pColorAttachments    = currentRefs.RT.Data();
-            nativeDesc.pResolveAttachments  = currentRefs.Resolve.Data();
+            nativeDesc.colorAttachmentCount = static_cast<UInt32>(currentRefs.RT.size());
+            nativeDesc.pColorAttachments = currentRefs.RT.data();
+            nativeDesc.pResolveAttachments = currentRefs.Resolve.data();
 
             nativeDesc.pDepthStencilAttachment =
                 currentRefs.DepthStencil.attachment == static_cast<UInt32>(-1) ? nullptr : &currentRefs.DepthStencil;
@@ -137,9 +137,10 @@ namespace FE::Osmium
         return result;
     }
 
-    List<VkAttachmentReference> VKRenderPass::BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType)
+    eastl::vector<VkAttachmentReference> VKRenderPass::BuildAttachmentReferences(UInt32 subpassIndex,
+                                                                                 AttachmentType attachmentType)
     {
-        List<VkAttachmentReference> result;
+        eastl::vector<VkAttachmentReference> result;
 
         const ArraySlice<SubpassAttachment>* attachments;
         switch (attachmentType)
@@ -160,17 +161,17 @@ namespace FE::Osmium
 
         for (auto& attachment : *attachments)
         {
-            auto& ref      = result.Emplace();
+            auto& ref = result.push_back();
             ref.attachment = attachment.Index;
-            ref.layout     = VKConvert(attachment.State);
+            ref.layout = VKConvert(attachment.State);
         }
 
         return result;
     }
 
-    List<VkSubpassDependency> VKRenderPass::BuildSubpassDependencies()
+    eastl::vector<VkSubpassDependency> VKRenderPass::BuildSubpassDependencies()
     {
-        List<VkSubpassDependency> result;
+        eastl::vector<VkSubpassDependency> result;
 
         static auto validateSubpassIndex = [this](UInt32 index) {
             return index < m_Desc.Subpasses.Length() ? index : VK_SUBPASS_EXTERNAL;
@@ -178,14 +179,14 @@ namespace FE::Osmium
 
         for (auto& dependency : m_Desc.SubpassDependencies)
         {
-            auto& nativeDependency      = result.Emplace();
+            auto& nativeDependency = result.push_back();
             nativeDependency.srcSubpass = validateSubpassIndex(dependency.SourceSubpassIndex);
             nativeDependency.dstSubpass = validateSubpassIndex(dependency.DestinationSubpassIndex);
 
-            nativeDependency.srcStageMask  = VKConvert(dependency.SourcePipelineStage);
+            nativeDependency.srcStageMask = VKConvert(dependency.SourcePipelineStage);
             nativeDependency.srcAccessMask = GetAccessMask(dependency.SourceState);
 
-            nativeDependency.dstStageMask  = VKConvert(dependency.DestinationPipelineStage);
+            nativeDependency.dstStageMask = VKConvert(dependency.DestinationPipelineStage);
             nativeDependency.dstAccessMask = GetAccessMask(dependency.DestinationState);
         }
 

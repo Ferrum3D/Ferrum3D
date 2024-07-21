@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <array>
 #include <cctype>
@@ -54,12 +54,12 @@ namespace FE
 
         inline static bool TryParse(const char* str, UUID& result, bool assertLength = true)
         {
-            static char digits[]    = "0123456789ABCDEF";
+            static char digits[] = "0123456789ABCDEF";
             constexpr auto getValue = [](char c) {
                 return static_cast<UInt8>(std::find(digits, digits + 16, std::toupper(c)) - digits);
             };
 
-            USize idx  = 0;
+            USize idx = 0;
             auto parse = [&](Int32 n) -> bool {
                 for (Int32 i = 0; i < n; ++i)
                 {
@@ -108,17 +108,12 @@ namespace FE
     }
 } // namespace FE
 
-namespace std
+//!\ brief Calculate hash of a \ref FE::UUID.
+template<>
+struct eastl::hash<FE::UUID>
 {
-    // TODO: Get rid of std::hash, we need compile-time hash calculation.
-
-    //!\ brief Calculate hash of a \ref FE::UUID.
-    template<>
-    struct hash<FE::UUID>
+    inline size_t operator()(const FE::UUID& value) const noexcept
     {
-        inline size_t operator()(const FE::UUID& value) const noexcept
-        {
-            return hash<string_view>{}(string_view(reinterpret_cast<const char*>(value.Data.data()), value.Data.size()));
-        }
-    };
-} // namespace std
+        return FE::DefaultHash(value.Data.data(), value.Data.size());
+    }
+};

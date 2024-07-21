@@ -1,7 +1,6 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
+#include <EASTL/array.h>
 #include <FeCore/Memory/Memory.h>
-#include <array>
 
 namespace FE
 {
@@ -25,7 +24,7 @@ namespace FE
         //!
         //! \param [in] array - A pointer to the array.
         //! \param [in] length - Length of the array.
-        inline ArraySliceMut(T* array, USize length)
+        inline ArraySliceMut(T* array, uint32_t length)
             : m_Begin(array)
             , m_End(array + length)
         {
@@ -46,11 +45,11 @@ namespace FE
         }
 
         //! \brief Copy constructor.
-        inline ArraySliceMut(const ArraySliceMut& other)            = default;
+        inline ArraySliceMut(const ArraySliceMut& other) = default;
         inline ArraySliceMut& operator=(const ArraySliceMut& other) = default;
 
         //! \brief Move constructor.
-        inline ArraySliceMut(ArraySliceMut&& other) noexcept            = default;
+        inline ArraySliceMut(ArraySliceMut&& other) noexcept = default;
         inline ArraySliceMut& operator=(ArraySliceMut&& other) noexcept = default;
 
         //! \brief Create from a std::array.
@@ -58,7 +57,7 @@ namespace FE
         //! \tparam N - Length of the array.
         //! \param [in] array - The array.
         template<USize N>
-        inline explicit ArraySliceMut(std::array<T, N>& array)
+        inline explicit ArraySliceMut(eastl::array<T, N>& array)
             : m_Begin(array.data())
             , m_End(array.data() + array.size())
         {
@@ -67,18 +66,9 @@ namespace FE
         //! \brief Create from a Vector<T>.
         //!
         //! \param [in] vector - The vector.
-        inline explicit ArraySliceMut(Vector<T>& vector)
+        inline explicit ArraySliceMut(eastl::vector<T>& vector)
             : m_Begin(vector.data())
             , m_End(vector.data() + vector.size())
-        {
-        }
-
-        //! \brief Create from a List<T>.
-        //!
-        //! \param [in] list - The list.
-        inline explicit ArraySliceMut(List<T>& list)
-            : m_Begin(list.Data())
-            , m_End(list.Data() + list.Size())
         {
         }
 
@@ -88,22 +78,22 @@ namespace FE
         //! \param [in] endIndex - The first index past the subslice to create.
         //!
         //! \return The created subslice.
-        inline ArraySliceMut operator()(USize beginIndex, USize endIndex) noexcept
+        inline ArraySliceMut operator()(uint32_t beginIndex, uint32_t endIndex) noexcept
         {
             FE_CORE_ASSERT(beginIndex < Length() && endIndex <= Length(), "Index out of range");
             return ArraySliceMut(m_Begin + beginIndex, m_Begin + endIndex);
         }
 
-        inline T& operator[](USize index) noexcept
+        inline T& operator[](uint32_t index) noexcept
         {
             FE_CORE_ASSERT(index < Length(), "Index out of range");
             return m_Begin[index];
         }
 
         //! \bried Length of the slice.
-        [[nodiscard]] inline USize Length() const
+        [[nodiscard]] inline uint32_t Length() const
         {
-            return m_End - m_Begin;
+            return static_cast<uint32_t>(m_End - m_Begin);
         }
 
         //! \brief Check if the slice is empty.
@@ -137,9 +127,9 @@ namespace FE
         //! \param [in] destination - The slice to copy the data to.
         //!
         //! \return The number of elements copied.
-        inline USize CopyDataTo(ArraySliceMut<T> destination) const
+        inline uint32_t CopyDataTo(ArraySliceMut<T> destination) const
         {
-            USize size = std::min(Length(), destination.Length());
+            const uint32_t size = std::min(Length(), destination.Length());
             memcpy(destination.Data(), Data(), size * sizeof(T));
             return size;
         }

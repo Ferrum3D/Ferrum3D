@@ -1,14 +1,13 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/ArraySlice.h>
-#include <FeCore/Memory/Object.h>
 
 namespace FE::Osmium
 {
     enum class SubmitFlags
     {
-        None          = 0,
-        FrameBegin    = 1 << 0,
-        FrameEnd      = 1 << 1,
+        None = 0,
+        FrameBegin = 1 << 0,
+        FrameEnd = 1 << 1,
         FrameBeginEnd = FrameBegin | FrameEnd
     };
 
@@ -17,7 +16,7 @@ namespace FE::Osmium
     class ICommandBuffer;
     class IFence;
 
-    class ICommandQueue : public IObject
+    class ICommandQueue : public Memory::RefCountedObjectBase
     {
     public:
         ~ICommandQueue() override = default;

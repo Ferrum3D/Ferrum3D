@@ -1,27 +1,28 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <gtest/gtest.h>
+#include <mimalloc.h>
 
 TEST(Strings, AssignmentFreesMemory)
 {
-    auto& alloc = FE::GlobalAllocator<FE::HeapAllocator>::Get();
-    auto before = alloc.TotalAllocated();
+    // TODO: memory stats
+    // auto before = alloc.TotalAllocated();
     {
         FE::String str = "loooooooooooooooooooooooooooooooooooooooooong123";
-        str            = FE::String("loooooooooooooooooooooooooooooooooooooooooong321");
+        str = FE::String("loooooooooooooooooooooooooooooooooooooooooong321");
     }
-    EXPECT_EQ(before, alloc.TotalAllocated());
+    // EXPECT_EQ(before, alloc.TotalAllocated());
     {
         FE::String str1 = "loooooooooooooooooooooooooooooooooooooooooong123";
         FE::String str2 = "loooooooooooooooooooooooooooooooooooooooooong321";
-        str2            = str1;
+        str2 = str1;
     }
-    EXPECT_EQ(before, alloc.TotalAllocated());
+    // EXPECT_EQ(before, alloc.TotalAllocated());
     {
         FE::String str1 = "loooooooooooooooooooooooooooooooooooooooooong123";
         FE::String str2 = FE::String("loooooooooooooooooooooooooooooooooooooooooong321");
-        str2            = str1;
+        str2 = str1;
     }
-    EXPECT_EQ(before, alloc.TotalAllocated());
+    // EXPECT_EQ(before, alloc.TotalAllocated());
 }
 
 TEST(Strings, EmptySizeCapacity)
@@ -41,7 +42,7 @@ TEST(Strings, SmallSizeCapacity)
 TEST(Strings, LongSizeCapacity)
 {
     const char* cstr = "loooooooooooooooooooooooooooooooooooooooooong";
-    FE::String str   = cstr;
+    FE::String str = cstr;
     ASSERT_GE(str.Capacity(), 35);
     ASSERT_EQ(str.Size(), strlen(cstr));
 }
@@ -63,7 +64,7 @@ TEST(Strings, LongByteAt)
 TEST(Strings, Length)
 {
     FE::String smalls = "0123";
-    FE::String longs  = "loooooooooooooooooooooooooooooooooooong";
+    FE::String longs = "loooooooooooooooooooooooooooooooooooong";
     EXPECT_EQ(smalls.Length(), 4);
     EXPECT_EQ(longs.Length(), 39);
 }
@@ -84,11 +85,9 @@ TEST(Strings, LongCodepointAt)
     const char* utf8 = u8"loooooooooooooooooooooooooooooooooooong qЯwgЫЧ";
     ASSERT_TRUE(FE::UTF8::Valid(utf8));
 
-#if !defined FE_COMPILER_MSVC
     FE::String str = utf8;
     EXPECT_EQ(str.CodePointAt(40), L'q');
     EXPECT_EQ(str.CodePointAt(44), L'Ы');
-#endif
 }
 
 TEST(Strings, Equals)
@@ -171,9 +170,9 @@ TEST(Strings, Compare)
 
 TEST(Strings, Split)
 {
-    auto str   = FE::String("abc def 123");
+    auto str = FE::String("abc def 123");
     auto split = str.Split();
-    ASSERT_EQ(split.Size(), 3);
+    ASSERT_EQ(split.size(), 3);
     EXPECT_EQ(split[0], FE::StringSlice("abc"));
     EXPECT_EQ(split[1], FE::StringSlice("def"));
     EXPECT_EQ(split[2], FE::StringSlice("123"));
@@ -181,24 +180,24 @@ TEST(Strings, Split)
 
 TEST(Strings, SplitSpace)
 {
-    auto str   = FE::String(" ");
+    auto str = FE::String(" ");
     auto split = str.Split();
-    ASSERT_EQ(split.Size(), 1);
+    ASSERT_EQ(split.size(), 1);
     EXPECT_EQ(split[0], FE::StringSlice{});
 }
 
 TEST(Strings, SplitEmpty)
 {
-    auto str   = FE::String("");
+    auto str = FE::String("");
     auto split = str.Split();
-    ASSERT_EQ(split.Size(), 0);
+    ASSERT_EQ(split.size(), 0);
 }
 
 TEST(Strings, SplitLines)
 {
-    auto str   = FE::String("abc\ndef\r\n123");
+    auto str = FE::String("abc\ndef\r\n123");
     auto split = str.SplitLines();
-    ASSERT_EQ(split.Size(), 3);
+    ASSERT_EQ(split.size(), 3);
     EXPECT_EQ(split[0], FE::StringSlice("abc"));
     EXPECT_EQ(split[1], FE::StringSlice("def"));
     EXPECT_EQ(split[2], FE::StringSlice("123"));
@@ -276,11 +275,11 @@ TEST(Strings, Parse)
     EXPECT_EQ(FE::String("123").Parse<FE::UInt32>().Unwrap(), 123);
     EXPECT_EQ(FE::String("123").Parse<FE::UInt64>().Unwrap(), 123);
 
-    EXPECT_EQ(FE::String("1.5").Parse<FE::Float32>().Unwrap(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").Parse<FE::Float32>().Unwrap(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<float>().Unwrap(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<float>().Unwrap(), -1.5f);
 
-    EXPECT_EQ(FE::String("1.5").Parse<FE::Float64>().Unwrap(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").Parse<FE::Float64>().Unwrap(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<double>().Unwrap(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<double>().Unwrap(), -1.5f);
 
     EXPECT_EQ(FE::String("false").Parse<bool>().Unwrap(), false);
     EXPECT_EQ(FE::String("true").Parse<bool>().Unwrap(), true);

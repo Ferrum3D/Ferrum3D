@@ -34,7 +34,7 @@ namespace FE::Osmium
         FE_STRUCT_RTTI(ShaderCompilerArgs, "58A284CE-87C0-4142-AF5B-86539F015382");
     };
 
-    class IShaderCompiler : public IObject
+    class IShaderCompiler : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IShaderCompiler, "F3D5E284-1DBF-40CC-9790-7D97FA69B18D");

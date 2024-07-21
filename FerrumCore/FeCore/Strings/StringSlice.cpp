@@ -1,4 +1,4 @@
-#include <FeCore/Strings/StringSlice.h>
+﻿#include <FeCore/Strings/StringSlice.h>
 
 namespace FE
 {
@@ -9,7 +9,7 @@ namespace FE
             return ParseErrorCode::UnexpectedEnd;
         }
 
-        const TChar* ptr    = Data();
+        const TChar* ptr = Data();
         const TChar* endPtr = Data() + Size();
 
         result = 0;
@@ -41,9 +41,9 @@ namespace FE
             return ParseErrorCode::UnexpectedEnd;
         }
 
-        const TChar* ptr    = Data();
+        const TChar* ptr = Data();
         const TChar* endPtr = Data() + Size();
-        auto isNegative     = false;
+        auto isNegative = false;
 
         if (*ptr == '-')
         {
@@ -83,7 +83,7 @@ namespace FE
         }
     }
 
-    ParseError StringSlice::TryToFloatImpl(Float64& result) const
+    ParseError StringSlice::TryToFloatImpl(double& result) const
     {
         if (Size() < 1)
         {

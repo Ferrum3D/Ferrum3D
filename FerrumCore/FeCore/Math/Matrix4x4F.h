@@ -25,37 +25,37 @@ namespace FE
         [[nodiscard]] FE_FINLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
                                                                const Vector4F& column2, const Vector4F& column3);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationX(Float32 angle);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationY(Float32 angle);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationZ(Float32 angle);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationX(float angle);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationY(float angle);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationZ(float angle);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotation(const Quaternion& quaternion);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateScale(const Vector3F& scale);
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(const Vector4F& diagonal);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(Float32 x, Float32 y, Float32 z, Float32 w);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(float x, float y, float z, float w);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
 
         [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTransform(const Quaternion& rotation, const Vector3F& translation);
 
         // Vulkan-compatible
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(Float32 fovY, Float32 aspectRatio, Float32 near, Float32 far);
+        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(float fovY, float aspectRatio, float near, float far);
 
-        [[nodiscard]] FE_FINLINE const Float32* RowMajorData() const;
+        [[nodiscard]] FE_FINLINE const float* RowMajorData() const;
 
-        [[nodiscard]] FE_FINLINE Float32 operator()(size_t row, size_t column) const;
-        [[nodiscard]] FE_FINLINE Float32& operator()(size_t row, size_t column);
+        [[nodiscard]] FE_FINLINE float operator()(size_t row, size_t column) const;
+        [[nodiscard]] FE_FINLINE float& operator()(size_t row, size_t column);
 
         [[nodiscard]] FE_FINLINE Vector4F GetRow(size_t index) const;
         FE_FINLINE void SetRow(size_t index, const Vector4F& vector);
-        FE_FINLINE void SetRow(size_t index, Float32 x, Float32 y, Float32 z, Float32 w);
-        FE_FINLINE void SetRow(size_t index, const Vector3F& vector, Float32 w = 1.0f);
+        FE_FINLINE void SetRow(size_t index, float x, float y, float z, float w);
+        FE_FINLINE void SetRow(size_t index, const Vector3F& vector, float w = 1.0f);
 
         [[nodiscard]] FE_FINLINE Vector4F GetColumn(size_t index) const;
         FE_FINLINE void SetColumn(size_t index, const Vector4F& vector);
-        FE_FINLINE void SetColumn(size_t index, Float32 x, Float32 y, Float32 z, Float32 w);
-        FE_FINLINE void SetColumn(size_t index, const Vector3F& vector, Float32 w = 1.0f);
+        FE_FINLINE void SetColumn(size_t index, float x, float y, float z, float w);
+        FE_FINLINE void SetColumn(size_t index, const Vector3F& vector, float w = 1.0f);
 
         [[nodiscard]] FE_FINLINE Vector4F GetBasisX() const;
         [[nodiscard]] FE_FINLINE Vector4F GetBasisY() const;
@@ -64,14 +64,14 @@ namespace FE
         [[nodiscard]] FE_FINLINE Matrix4x4F operator+(const Matrix4x4F& other) const;
         [[nodiscard]] FE_FINLINE Matrix4x4F operator-(const Matrix4x4F& other) const;
         [[nodiscard]] FE_FINLINE Matrix4x4F operator*(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator*(Float32 f) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator/(Float32 f) const;
+        [[nodiscard]] FE_FINLINE Matrix4x4F operator*(float f) const;
+        [[nodiscard]] FE_FINLINE Matrix4x4F operator/(float f) const;
 
         FE_FINLINE Matrix4x4F& operator+=(const Matrix4x4F& other);
         FE_FINLINE Matrix4x4F& operator-=(const Matrix4x4F& other);
         FE_FINLINE Matrix4x4F& operator*=(const Matrix4x4F& other);
-        FE_FINLINE Matrix4x4F& operator*=(Float32 f);
-        FE_FINLINE Matrix4x4F& operator/=(Float32 f);
+        FE_FINLINE Matrix4x4F& operator*=(float f);
+        FE_FINLINE Matrix4x4F& operator/=(float f);
 
         [[nodiscard]] FE_FINLINE Matrix4x4F operator-() const;
 
@@ -84,10 +84,10 @@ namespace FE
         [[nodiscard]] FE_FINLINE Matrix4x4F InverseTransform() const;
         FE_FINLINE void InvertTransform();
 
-        [[nodiscard]] FE_FINLINE Float32 Determinant() const;
+        [[nodiscard]] FE_FINLINE float Determinant() const;
 
         [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Matrix4x4F& other,
-                                                      Float32 epsilon = Constants::Epsilon) const noexcept;
+                                                      float epsilon = Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FINLINE bool operator==(const Matrix4x4F& other) const noexcept;
         [[nodiscard]] FE_FINLINE bool operator!=(const Matrix4x4F& other) const noexcept;
@@ -118,7 +118,7 @@ namespace FE
             return prod1.HorizontalAdd(prod2).HorizontalAdd(prod3.HorizontalAdd(prod4));
         }
 
-        FE_FINLINE Float32 SIMDMatrix3x3Determinant(const Vector3F* matrix)
+        FE_FINLINE float SIMDMatrix3x3Determinant(const Vector3F* matrix)
         {
             // Cross and Dot are already SIMD-optimized
             //                  | a1 a2 a3 |
@@ -167,10 +167,10 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::CreateRotationX(Float32 angle)
+    Matrix4x4F Matrix4x4F::CreateRotationX(float angle)
     {
-        Float32 s = std::sin(angle);
-        Float32 c = std::cos(angle);
+        float s = std::sin(angle);
+        float c = std::cos(angle);
         Matrix4x4F matrix{};
         matrix.SetRow(0, Vector4F::GetUnitX());
         matrix.SetRow(1, 0.0f, c, -s, 0.0f);
@@ -179,10 +179,10 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::CreateRotationY(Float32 angle)
+    Matrix4x4F Matrix4x4F::CreateRotationY(float angle)
     {
-        Float32 s = std::sin(angle);
-        Float32 c = std::cos(angle);
+        float s = std::sin(angle);
+        float c = std::cos(angle);
         Matrix4x4F matrix{};
         matrix.SetRow(0, +c, 0.0f, s, 0.0f);
         matrix.SetRow(1, Vector4F::GetUnitY());
@@ -191,10 +191,10 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::CreateRotationZ(Float32 angle)
+    Matrix4x4F Matrix4x4F::CreateRotationZ(float angle)
     {
-        Float32 s = std::sin(angle);
-        Float32 c = std::cos(angle);
+        float s = std::sin(angle);
+        float c = std::cos(angle);
         Matrix4x4F matrix{};
         matrix.SetRow(0, c, -s, 0.0f, 0.0f);
         matrix.SetRow(1, s, +c, 0.0f, 0.0f);
@@ -233,7 +233,7 @@ namespace FE
         return CreateDiagonal(diagonal.X(), diagonal.Y(), diagonal.Z(), diagonal.W());
     }
 
-    Matrix4x4F Matrix4x4F::CreateDiagonal(Float32 x, Float32 y, Float32 z, Float32 w)
+    Matrix4x4F Matrix4x4F::CreateDiagonal(float x, float y, float z, float w)
     {
         Matrix4x4F matrix{};
         matrix.SetRow(0, x, 0.0f, 0.0f, 0.0f);
@@ -260,13 +260,13 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::CreateProjection(Float32 fovY, Float32 aspectRatio, Float32 near, Float32 far)
+    Matrix4x4F Matrix4x4F::CreateProjection(float fovY, float aspectRatio, float near, float far)
     {
         Matrix4x4F matrix{};
 
-        Float32 cotY  = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
-        Float32 cotX  = cotY / aspectRatio;
-        Float32 invFl = 1.0f / (far - near);
+        float cotY  = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
+        float cotX  = cotY / aspectRatio;
+        float invFl = 1.0f / (far - near);
         matrix.SetRow(0, -cotX, 0.0f, 0.0f, 0.0f);
         matrix.SetRow(1, 0.0f, cotY, 0.0f, 0.0f);
         matrix.SetRow(2, 0.0f, 0.0f, far * invFl, -far * near * invFl);
@@ -274,17 +274,17 @@ namespace FE
         return matrix;
     }
 
-    const Float32* Matrix4x4F::RowMajorData() const
+    const float* Matrix4x4F::RowMajorData() const
     {
         return m_Data[0].Data();
     }
 
-    Float32 Matrix4x4F::operator()(size_t row, size_t column) const
+    float Matrix4x4F::operator()(size_t row, size_t column) const
     {
         return m_Data[row][column];
     }
 
-    Float32& Matrix4x4F::operator()(size_t row, size_t column)
+    float& Matrix4x4F::operator()(size_t row, size_t column)
     {
         return m_Data[row](column);
     }
@@ -299,12 +299,12 @@ namespace FE
         m_Data[index] = vector;
     }
 
-    void Matrix4x4F::SetRow(size_t index, Float32 x, Float32 y, Float32 z, Float32 w)
+    void Matrix4x4F::SetRow(size_t index, float x, float y, float z, float w)
     {
         m_Data[index] = Vector4F(x, y, z, w);
     }
 
-    void Matrix4x4F::SetRow(size_t index, const Vector3F& vector, Float32 w)
+    void Matrix4x4F::SetRow(size_t index, const Vector3F& vector, float w)
     {
         m_Data[index] = Vector4F(vector, w);
     }
@@ -322,7 +322,7 @@ namespace FE
         m_Data[3](index) = vector.W();
     }
 
-    void Matrix4x4F::SetColumn(size_t index, Float32 x, Float32 y, Float32 z, Float32 w)
+    void Matrix4x4F::SetColumn(size_t index, float x, float y, float z, float w)
     {
         m_Data[0](index) = x;
         m_Data[1](index) = y;
@@ -330,7 +330,7 @@ namespace FE
         m_Data[3](index) = w;
     }
 
-    void Matrix4x4F::SetColumn(size_t index, const Vector3F& vector, Float32 w)
+    void Matrix4x4F::SetColumn(size_t index, const Vector3F& vector, float w)
     {
         m_Data[0](index) = vector.X();
         m_Data[1](index) = vector.Y();
@@ -397,7 +397,7 @@ namespace FE
         return *this;
     }
 
-    Matrix4x4F Matrix4x4F::operator*(Float32 f) const
+    Matrix4x4F Matrix4x4F::operator*(float f) const
     {
         Matrix4x4F matrix{};
         matrix.SetRow(0, m_Data[0] * f);
@@ -407,7 +407,7 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F Matrix4x4F::operator/(Float32 f) const
+    Matrix4x4F Matrix4x4F::operator/(float f) const
     {
         Matrix4x4F matrix{};
         matrix.SetRow(0, m_Data[0] / f);
@@ -417,13 +417,13 @@ namespace FE
         return matrix;
     }
 
-    Matrix4x4F& Matrix4x4F::operator*=(Float32 f)
+    Matrix4x4F& Matrix4x4F::operator*=(float f)
     {
         *this = *this * f;
         return *this;
     }
 
-    Matrix4x4F& Matrix4x4F::operator/=(Float32 f)
+    Matrix4x4F& Matrix4x4F::operator/=(float f)
     {
         *this = *this / f;
         return *this;
@@ -462,7 +462,7 @@ namespace FE
         *this = Transposed();
     }
 
-    bool Matrix4x4F::IsApproxEqualTo(const Matrix4x4F& other, Float32 epsilon) const noexcept
+    bool Matrix4x4F::IsApproxEqualTo(const Matrix4x4F& other, float epsilon) const noexcept
     {
         for (size_t i = 0; i < RowCount; ++i)
         {
@@ -493,7 +493,7 @@ namespace FE
         return !(*this == other);
     }
 
-    Float32 Matrix4x4F::Determinant() const
+    float Matrix4x4F::Determinant() const
     {
         static constexpr auto det3 = [](const Vector3F& a, const Vector3F& b, const Vector3F& c) {
             std::array<Vector3F, 3> m3{ a, b, c };

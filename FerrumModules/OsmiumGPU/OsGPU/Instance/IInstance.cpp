@@ -1,4 +1,4 @@
-#include <OsGPU/Instance/IInstance.h>
+﻿#include <OsGPU/Instance/IInstance.h>
 #include <OsGPU/Instance/VKInstance.h>
 
 namespace FE::Osmium
@@ -15,7 +15,7 @@ namespace FE::Osmium
         case GraphicsAPI::None:
             break;
         case GraphicsAPI::Vulkan:
-            return static_pointer_cast<IInstance>(MakeShared<VKInstance>(desc)).Detach();
+            return Rc{ Rc<VKInstance>::DefaultNew(desc) }.Detach();
         default:
             break;
         }

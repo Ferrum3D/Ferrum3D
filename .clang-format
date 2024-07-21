@@ -1,8 +1,8 @@
-Language: Cpp
+﻿Language: Cpp
 
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AlignEscapedNewlines: Right
@@ -58,7 +58,7 @@ IndentCaseLabels: false
 IndentPPDirectives: AfterHash
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
-MaxEmptyLinesToKeep: 1
+MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All
 PenaltyReturnTypeOnItsOwnLine: 99999
 PointerAlignment: Left

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 #include <FeCore/IO/IStream.h>
 
@@ -8,7 +8,7 @@ namespace FE::Assets
     //!
     //! Asset provider is responsible for creating asset loading streams for given asset ID.
     //! It is used by IAssetManager.
-    class IAssetProvider : public IObject
+    class IAssetProvider : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IAssetProvider, "69148A5C-20A3-4255-868D-97DEE5319E84");

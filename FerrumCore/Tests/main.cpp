@@ -1,4 +1,4 @@
-#include <FeCore/Modules/Environment.h>
+﻿#include <FeCore/Modules/Environment.h>
 #include <FeCore/Memory/Memory.h>
 #include <gtest/gtest.h>
 #include <FeCore/Console/FeLog.h>
@@ -6,14 +6,12 @@
 int main(int argc, char** argv)
 {
     FE::Env::CreateEnvironment();
-    FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
     int ret = 0;
     {
-        auto logger = FE::MakeShared<FE::Debug::ConsoleLogger>();
+        FE::Rc logger = FE::Rc<FE::Debug::ConsoleLogger>::DefaultNew();
         ::testing::FLAGS_gtest_print_utf8 = true;
         ::testing::InitGoogleTest(&argc, argv);
         ret = RUN_ALL_TESTS();
     }
-    FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
     return ret;
 }

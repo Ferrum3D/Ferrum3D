@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Memory/SharedPtr.h>
 #include <OsGPU/Shader/ShaderStage.h>
 #include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/Containers/ArraySlice.h>
@@ -27,7 +26,7 @@ namespace FE::Osmium
         }
     };
 
-    class IShaderModule : public IObject
+    class IShaderModule : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IShaderModule, "0040A2EF-9D25-42AC-9A95-B3F8D4288E49");

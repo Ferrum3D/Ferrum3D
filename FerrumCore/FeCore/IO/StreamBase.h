@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/IO/IStream.h>
 #include <FeCore/Console/FeLog.h>
 
 namespace FE::IO
 {
-    class StreamBase : public Object<IStream>
+    class StreamBase : public IStream
     {
     public:
         FE_CLASS_RTTI(StreamBase, "2F74FF8D-4D81-44BE-962A-9D30669E03C8");

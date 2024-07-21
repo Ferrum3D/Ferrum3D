@@ -1,34 +1,34 @@
-#include <FeCore/ECS/ArchetypeChunk.h>
+﻿#include <FeCore/ECS/ArchetypeChunk.h>
 #include <FeCore/ECS/EntityArchetype.h>
 
 namespace FE::ECS
 {
     void ArchetypeChunk::Init(const ArchetypeChunkDesc& desc)
     {
-        FE_ASSERT_MSG(m_Data.Empty(), "Archetype chunk must be initialized only once");
+        FE_ASSERT_MSG(m_Data.empty(), "Archetype chunk must be initialized only once");
         FE_ASSERT_MSG(desc.Archetype, "Archetype cannot be null");
         FE_ASSERT_MSG(desc.ByteSize > 0, "Size of archetype chunk must be greater than zero");
 
-        m_Data.Resize(desc.ByteSize);
+        m_Data.resize(desc.ByteSize);
 
         m_Capacity = desc.Archetype->ChunkCapacity();
 
-        m_EntityIDs.Resize(m_Capacity);
-        m_FreeList.Resize(m_Capacity);
+        m_EntityIDs.resize(static_cast<uint32_t>(m_Capacity));
+        m_FreeList.resize(static_cast<uint32_t>(m_Capacity));
         for (UInt16 i = 0; i < static_cast<UInt16>(m_Capacity); ++i)
         {
             m_FreeList[i] = i;
         }
 
-        USize beginIndex = 0;
+        uint32_t beginIndex = 0;
         for (auto& type : desc.Archetype->ComponentTypes())
         {
-            auto nextIndex = beginIndex + m_Capacity * type.AlignedSize();
+            const uint32_t nextIndex = beginIndex + m_Capacity * type.AlignedSize();
 
             ComponentStorageDesc storageDesc;
             storageDesc.Data = FE::ArraySliceMut(m_Data)(beginIndex, nextIndex);
             storageDesc.Type = type;
-            m_ComponentStorages.Emplace().Init(storageDesc);
+            m_ComponentStorages.push_back().Init(storageDesc);
 
             beginIndex = nextIndex;
         }
@@ -36,21 +36,22 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::AllocateEntity(UInt16& entityID)
     {
-        auto entityIndex = static_cast<UInt16>(m_ComponentStorages.Front().Count());
+        auto entityIndex = static_cast<UInt16>(m_ComponentStorages.front().Count());
 
         if (entityIndex == m_Capacity)
         {
             return ECSResult::OutOfMemoryError;
         }
 
-        entityID = m_FreeList.Pop();
-        if (m_EntityIndices.Size() < entityID + 1)
+        entityID = m_FreeList.back();
+        m_FreeList.pop_back();
+        if (m_EntityIndices.size() < static_cast<uint32_t>(entityID + 1))
         {
-            m_EntityIndices.Resize(entityID + 1, static_cast<UInt16>(-1));
+            m_EntityIndices.resize(entityID + 1, static_cast<UInt16>(-1));
         }
 
         m_EntityIndices[entityID] = entityIndex;
-        m_EntityIDs[entityIndex]  = entityID;
+        m_EntityIDs[entityIndex] = entityID;
 
         for (auto& storage : m_ComponentStorages)
         {
@@ -63,7 +64,7 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::UpdateComponent(UInt16 entityID, const TypeID& typeID, const void* source)
     {
-        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
+        if (entityID >= m_EntityIndices.size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
@@ -87,7 +88,7 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::CopyComponent(UInt16 entityID, const TypeID& typeID, void* destination)
     {
-        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
+        if (entityID >= m_EntityIndices.size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
@@ -145,14 +146,14 @@ namespace FE::ECS
 
     ECSResult ArchetypeChunk::DeallocateEntity(UInt16 entityID)
     {
-        if (entityID >= m_EntityIndices.Size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
+        if (entityID >= m_EntityIndices.size() || m_EntityIndices[entityID] == static_cast<UInt16>(-1))
         {
             return ECSResult::OutOfRangeError;
         }
 
-        auto entityIndex          = m_EntityIndices[entityID];
+        auto entityIndex = m_EntityIndices[entityID];
         m_EntityIndices[entityID] = static_cast<UInt16>(-1);
-        m_FreeList.Push(entityID);
+        m_FreeList.push_back(entityID);
 
         Int32 moveIndex = -1;
         for (auto& storage : m_ComponentStorages)
@@ -163,7 +164,7 @@ namespace FE::ECS
         if (moveIndex != -1)
         {
             m_EntityIndices[m_EntityIDs[moveIndex]] = entityIndex;
-            m_EntityIDs[entityIndex]                = m_EntityIDs[moveIndex];
+            m_EntityIDs[entityIndex] = m_EntityIDs[moveIndex];
         }
 
         ++m_Version;

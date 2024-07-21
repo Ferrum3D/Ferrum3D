@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -19,12 +19,10 @@ namespace FE
         }
     };
 
-    template<
-        class T, class TString = std::string, class TStrView = std::string_view,
-        class TAllocator = std::allocator<std::tuple<TString, T>>>
+    template<class T, class TString = std::string, class TStrView = std::string_view>
     class SortedStringVector
     {
-        std::vector<std::tuple<TString, T>, TAllocator> m_Data;
+        eastl::vector<std::tuple<TString, T>> m_Data;
 
         inline static constexpr auto Compare = [](const std::tuple<TString, T>& lhs, const TStrView& rhs) -> bool {
             auto& str = std::get<0>(lhs);
@@ -34,13 +32,8 @@ namespace FE
     public:
         FE_CLASS_RTTI(SortedStringVector, "926CCA36-7C1E-4F18-A081-9BE1E79DBD5C");
 
-        using iterator       = decltype(m_Data.begin());
+        using iterator = decltype(m_Data.begin());
         using const_iterator = decltype(m_Data.cbegin());
-
-        inline SortedStringVector(TAllocator allocator)
-            : m_Data(allocator)
-        {
-        }
 
         inline const T& operator[](const TStrView& str) const
         {
@@ -86,8 +79,8 @@ namespace FE
 
         inline std::tuple<TString, T>& Push(const TString& key, const T& value)
         {
-            auto it    = FindIter(key);
-            size_t idx = it - m_Data.begin();
+            auto it = FindIter(key);
+            uint32_t idx = static_cast<uint32_t>(it - m_Data.begin());
             if (it != m_Data.end() && std::get<0>(*it) == key)
                 std::get<1>(*it) = value;
             else
@@ -97,8 +90,8 @@ namespace FE
 
         inline std::tuple<TString, T>& Push(TString&& key, const T& value)
         {
-            auto it    = FindIter(key);
-            size_t idx = it - m_Data.begin();
+            auto it = FindIter(key);
+            uint32_t idx = static_cast<uint32_t>(it - m_Data.begin());
             if (it != m_Data.end() && std::get<0>(*it) == key)
                 std::get<1>(*it) = value;
             else

@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Allocators/LinearAllocator.h>
+﻿#pragma once
+#include <FeCore/Containers/HashTables.h>
 #include <OsGPU/Memory/IDeviceMemory.h>
 #include <OsGPU/Resource/ITransientResourceHeap.h>
 #include <OsGPU/Resource/ResourceCache.h>
@@ -8,24 +8,54 @@ namespace FE::Osmium
 {
     class IDevice;
 
-    using GPULinearAllocator = GenericLinearAllocator<NullableHandle>;
+    class GPULinearAllocator final
+    {
+        size_t m_Size = 0;
+        NullableHandle m_Offset = {};
 
-    class TransientResourceHeapBase : public Object<ITransientResourceHeap>
+    public:
+        void Init(size_t size)
+        {
+            FE_ASSERT(m_Size == 0);
+            m_Size = size;
+            Reset();
+        }
+
+        NullableHandle Allocate(size_t size, size_t alignment)
+        {
+            FE_ASSERT(m_Offset.IsValid());
+            const size_t address = AlignUp(m_Offset.ToOffset(), alignment);
+            m_Offset = NullableHandle::FromOffset(address + size);
+            return NullableHandle::FromOffset(address);
+        }
+
+        void Deallocate(NullableHandle, size_t)
+        {
+            // do nothing
+        }
+
+        void Reset()
+        {
+            m_Offset = NullableHandle::Zero();
+        }
+    };
+
+    class TransientResourceHeapBase : public ITransientResourceHeap
     {
     protected:
         struct RegisteredResourceInfo
         {
-            IObject* Resource     = nullptr;
+            Memory::RefCountedObjectBase* Resource = nullptr;
             NullableHandle Handle = NullableHandle::Null();
-            USize Size            = 0;
+            USize Size = 0;
 
             inline RegisteredResourceInfo() = default;
 
-            inline RegisteredResourceInfo(IObject* resource, NullableHandle handle, USize size)
+            inline RegisteredResourceInfo(Memory::RefCountedObjectBase* resource, NullableHandle handle, USize size)
             {
                 Resource = resource;
-                Handle   = handle;
-                Size     = size;
+                Handle = handle;
+                Size = size;
             }
         };
 
@@ -35,7 +65,7 @@ namespace FE::Osmium
         ResourceCache m_Cache;
         Rc<IDeviceMemory> m_Memory;
         UInt32 m_CreatedResourceCount = 0;
-        UnorderedMap<UInt64, RegisteredResourceInfo> m_RegisteredResources;
+        festd::unordered_dense_map<UInt64, RegisteredResourceInfo> m_RegisteredResources;
 
         TransientResourceHeapBase(IDevice& dev, const TransientResourceHeapDesc& desc);
 

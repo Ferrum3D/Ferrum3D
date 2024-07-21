@@ -1,4 +1,4 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Utils/BinarySerializer.h>
 #include <OsAssets/Meshes/MeshAssetLoader.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
@@ -17,8 +17,7 @@ namespace FE::Osmium
 
     Assets::AssetStorage* MeshAssetLoader::CreateStorage()
     {
-        auto* p = GlobalAllocator<HeapAllocator>::Get().Allocate(sizeof(MeshAssetStorage), MaximumAlignment, FE_SRCPOS());
-        return new (p) MeshAssetStorage(this);
+        return Memory::DefaultNew<MeshAssetStorage>(this);
     }
 
     void MeshAssetLoader::SaveAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)
@@ -39,20 +38,20 @@ namespace FE::Osmium
         serializer.ReadArray(imageStorage->m_VertexBuffer);
     }
 
-    void MeshAssetLoader::LoadRawAsset(const List<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
+    void MeshAssetLoader::LoadRawAsset(const eastl::vector<Assets::AssetMetadataField>& metadata, Assets::AssetStorage* storage,
                                        IO::IStream* assetStream)
     {
-        List<MeshVertexComponent> components;
+        eastl::vector<MeshVertexComponent> components;
         for (auto& field : metadata)
         {
             if (field.GetKey().StartsWith(componentFieldName))
             {
                 auto index =
-                    field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).Parse<USize>().Unwrap();
+                    field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).Parse<uint32_t>().Unwrap();
 
-                if (components.Size() <= index)
+                if (components.size() <= index)
                 {
-                    components.Resize(index + 1, MeshVertexComponent::None);
+                    components.resize(index + 1, MeshVertexComponent::None);
                 }
 
 #define FE_PARSE_COMPONENT_ENUM(_name)                                                                                           \
@@ -77,12 +76,12 @@ namespace FE::Osmium
             }
         }
 
-        while (components.Back() == MeshVertexComponent::None)
+        while (components.back() == MeshVertexComponent::None)
         {
-            components.RemoveBack();
+            components.pop_back();
         }
 
-        for (USize i = 0; i < components.Size();)
+        for (uint32_t i = 0; i < components.size();)
         {
             if (components[i] == MeshVertexComponent::None)
             {
@@ -93,7 +92,7 @@ namespace FE::Osmium
                                i);
 
                 // It should not be SwapRemoveAt(i), because we need to keep the order anyway
-                components.RemoveAt(i);
+                components.erase(components.begin() + i);
             }
             else
             {
@@ -101,16 +100,16 @@ namespace FE::Osmium
             }
         }
 
-        if (components.Empty())
+        if (components.empty())
         {
             FE_LOG_ERROR("The must have at least one vertex component");
             return;
         }
 
         auto* meshStorage = static_cast<MeshAssetStorage*>(storage);
-        auto length       = assetStream->Length();
-        List<Int8> buffer(length, 0);
-        assetStream->ReadToBuffer(buffer.Data(), length);
+        auto length = assetStream->Length();
+        eastl::vector<Int8> buffer(static_cast<uint32_t>(length), 0);
+        assetStream->ReadToBuffer(buffer.data(), length);
 
         UInt32 vertexCount;
         auto result =
@@ -119,17 +118,18 @@ namespace FE::Osmium
         FE_ASSERT_MSG(result, "Failed to load a mesh");
     }
 
-    List<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadataFields()
+    eastl::vector<Assets::AssetMetadataField> MeshAssetLoader::GetAssetMetadataFields()
     {
         char name[componentFieldName.Size() + 2];
         memcpy(name, componentFieldName.Data(), componentFieldName.Size());
         name[componentFieldName.Size() + 1] = 0;
-        if (m_MetadataFields.Empty())
+        if (m_MetadataFields.empty())
         {
             for (char i = 0; i < 8; ++i)
             {
                 name[componentFieldName.Size()] = static_cast<char>('0' + i);
-                m_MetadataFields.Push(Assets::AssetMetadataField::Create<Assets::AssetMetadataType::String>(name, "", i == 0));
+                m_MetadataFields.push_back(
+                    Assets::AssetMetadataField::Create<Assets::AssetMetadataType::String>(name, "", i == 0));
             }
         }
 

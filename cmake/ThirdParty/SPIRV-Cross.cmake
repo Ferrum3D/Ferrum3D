@@ -1,5 +1,11 @@
-set(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON)
-add_subdirectory(${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross)
+﻿CPMAddPackage(
+    NAME SPIRV-Cross
+    GITHUB_REPOSITORY KhronosGroup/SPIRV-Cross
+    GIT_TAG vulkan-sdk-1.3.283.0
+	OPTIONS
+		"SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON"
+)
+
 set_target_properties(spirv-cross PROPERTIES FOLDER "${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross")
 set_target_properties(spirv-cross-core PROPERTIES FOLDER "${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross")
 set_target_properties(spirv-cross-c PROPERTIES FOLDER "${FE_PROJECT_ROOT}/ThirdParty/SPIRV-Cross")

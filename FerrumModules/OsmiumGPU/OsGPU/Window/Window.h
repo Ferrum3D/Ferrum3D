@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/PlatformInclude.h>
 #include <OsGPU/Window/IWindow.h>
 
@@ -8,7 +8,7 @@
 
 namespace FE::Osmium
 {
-    class Window : public Object<IWindow>
+    class Window : public IWindow
     {
         GLFWwindow* m_Window{};
         HWND m_Handle{};

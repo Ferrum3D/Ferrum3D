@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Framework/FrameworkBase.h>
 
 namespace FE
 {
     //! \brief A default generic implementation of IFrameworkFactory for dynamic modules.
     template<class TModule>
-    class ModuleFrameworkFactoryImpl : public Object<IFrameworkFactory>
+    class ModuleFrameworkFactoryImpl : public IFrameworkFactory
     {
         StringSlice m_LibraryPath;
         Rc<DynamicLibrary> m_Library;
@@ -36,10 +36,10 @@ namespace FE
                 return;
             }
 
-            m_Library = MakeShared<DynamicLibrary>();
+            m_Library = Rc<DynamicLibrary>::DefaultNew();
             m_Library->LoadFrom(m_LibraryPath);
             auto CreateModuleInstance = m_Library->GetFunction<CreateModuleInstanceProc>("CreateModuleInstance");
-            m_Module                  = CreateModuleInstance(&Env::GetEnvironment());
+            m_Module = CreateModuleInstance(&Env::GetEnvironment());
             FE_LOG_MESSAGE("Loaded a dynamic module: {}", fe_nameof(*m_Module));
         }
 
@@ -51,7 +51,7 @@ namespace FE
             }
 
             FE_LOG_MESSAGE("Unloading a dynamic module: {}", fe_nameof(*m_Module));
-            m_Module->ReleaseStrongRef();
+            m_Module->Release();
             m_Library.Reset();
             FE_LOG_MESSAGE("Done");
         }
@@ -124,7 +124,7 @@ namespace FE
         using Factory = ModuleFrameworkFactoryImpl<TModule>;
         inline static Rc<IFrameworkFactory> CreateFactory()
         {
-            return static_pointer_cast<IFrameworkFactory>(MakeShared<Factory>(TModule::LibraryPath));
+            return Rc<Factory>::DefaultNew(TModule::LibraryPath);
         }
 
         [[nodiscard]] inline const ModuleInfo& GetInfo() const noexcept

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Framebuffer/IFramebuffer.h>
 
@@ -7,11 +7,11 @@ namespace FE::Osmium
     class VKDevice;
     class IImageView;
 
-    class VKFramebuffer : public Object<IFramebuffer>
+    class VKFramebuffer : public IFramebuffer
     {
         VKDevice* m_Device;
         VkFramebuffer m_NativeFramebuffer;
-        List<Rc<IImageView>> m_RTVs;
+        eastl::vector<Rc<IImageView>> m_RTVs;
         FramebufferDesc m_Desc;
 
     public:

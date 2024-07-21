@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Memory/Memory.h>
@@ -7,7 +7,7 @@ namespace FE::Osmium
 {
     class ResourceCache final
     {
-        LRUCacheMap<USize, Rc<IObject>> m_Cache;
+        LRUCacheMap<USize, Rc<Memory::RefCountedObjectBase>> m_Cache;
 
     public:
         inline ResourceCache() = default;
@@ -22,14 +22,14 @@ namespace FE::Osmium
             return m_Cache.Capacity();
         }
 
-        inline void AddObject(USize descHash, IObject* object)
+        inline void AddObject(USize descHash, Memory::RefCountedObjectBase* object)
         {
             m_Cache.Emplace(descHash, object);
         }
 
-        inline IObject* FindObject(USize descHash)
+        inline Memory::RefCountedObjectBase* FindObject(USize descHash)
         {
-            Rc<IObject> result;
+            Rc<Memory::RefCountedObjectBase> result;
             if (m_Cache.TryGetValue(descHash, result))
             {
                 return result.Get();

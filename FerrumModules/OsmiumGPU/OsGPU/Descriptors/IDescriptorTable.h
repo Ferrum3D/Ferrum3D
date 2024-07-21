@@ -3,7 +3,7 @@
 
 namespace FE::Osmium
 {
-    class IDescriptorTable : public IObject
+    class IDescriptorTable : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IDescriptorTable, "C10FCB1B-31C8-47EE-AE2F-E53463494B85");

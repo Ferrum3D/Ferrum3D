@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OsGPU/Image/VKImageFormat.h>
 #include <OsGPU/SwapChain/ISwapChain.h>
 
@@ -8,7 +8,7 @@ namespace FE::Osmium
     class VKCommandQueue;
     class VKImageView;
 
-    class VKSwapChain : public Object<ISwapChain>
+    class VKSwapChain : public ISwapChain
     {
         VKDevice* m_Device;
         VKCommandQueue* m_Queue;
@@ -21,13 +21,13 @@ namespace FE::Osmium
 
         Rc<IImage> m_DepthImage;
         Rc<IImageView> m_DepthImageView;
-        List<Rc<IImage>> m_Images;
-        List<Rc<IImageView>> m_ImageViews;
+        eastl::vector<Rc<IImage>> m_Images;
+        eastl::vector<Rc<IImageView>> m_ImageViews;
         UInt32 m_ImageIndex = 0;
 
-        List<VkSemaphore> m_ImageAvailableSemaphores;
-        List<VkSemaphore> m_RenderFinishedSemaphores;
-        UInt32 m_FrameIndex;
+        eastl::vector<VkSemaphore> m_ImageAvailableSemaphores;
+        eastl::vector<VkSemaphore> m_RenderFinishedSemaphores;
+        UInt32 m_FrameIndex = 0;
 
         VkSemaphore* m_CurrentImageAvailableSemaphore;
         VkSemaphore* m_CurrentRenderFinishedSemaphore;
@@ -50,7 +50,7 @@ namespace FE::Osmium
         IImage* GetCurrentImage() override;
         void Present() override;
 
-        List<IImageView*> GetRTVs() override;
+        eastl::vector<IImageView*> GetRTVs() override;
         IImageView* GetDSV() override;
     };
 } // namespace FE::Osmium

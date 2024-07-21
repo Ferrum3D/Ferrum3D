@@ -1,4 +1,4 @@
-#include <FeCore/Math/MathUtils.h>
+﻿#include <FeCore/Math/MathUtils.h>
 #include <FeCore/Math/Matrix4x4F.h>
 #include <gtest/gtest.h>
 
@@ -82,7 +82,7 @@ TEST(Matrix4x4, Rotation)
 TEST(Matrix4x4, DataAccess)
 {
     auto m = Matrix4x4F::FromRows({ 1, 2, 3, 4 }, { 5, 6, 7, 8 }, { -1, -2, -3, -4 }, { -5, -6, -7, -8 });
-    std::array<FE::Float32, 16> data{ 1, 2, 3, 4, 5, 6, 7, 8, -1, -2, -3, -4, -5, -6, -7, -8 };
+    std::array<float, 16> data{ 1, 2, 3, 4, 5, 6, 7, 8, -1, -2, -3, -4, -5, -6, -7, -8 };
     for (size_t i = 0; i < 16; ++i)
     {
         EXPECT_EQ(data[i], m.RowMajorData()[i]);

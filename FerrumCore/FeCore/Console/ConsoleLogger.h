@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/IConsoleLogger.h>
 #include <FeCore/Modules/ServiceLocator.h>
 
@@ -8,7 +8,7 @@ namespace FE::Debug
     class ConsoleLogger final : public FE::ServiceLocatorImplBase<IConsoleLogger>
     {
         LogMessageType m_DebugLevel = LogMessageType::All;
-        FE::String m_Header         = FE::String(" ") + FE::FerrumEngineName + " [";
+        FE::String m_Header         = FE::String(" Ferrum3D [");
 
     protected:
         //=========================================================================================

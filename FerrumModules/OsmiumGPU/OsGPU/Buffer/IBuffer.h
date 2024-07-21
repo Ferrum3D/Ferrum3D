@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Memory/SharedPtr.h>
+﻿#pragma once
+#include <FeCore/RTTI/RTTI.h>
 #include <OsGPU/Memory/DeviceMemorySlice.h>
 #include <OsGPU/Memory/MemoryType.h>
 #include <OsGPU/Resource/BindFlags.h>
@@ -9,19 +9,19 @@ namespace FE::Osmium
     struct BufferDesc
     {
         FE_STRUCT_RTTI(BufferDesc, "2932FBE9-01B0-49C0-BDD5-ED0AD1A29F43");
-        UInt64 Size     = 0;
+        UInt64 Size = 0;
         BindFlags Flags = BindFlags::None;
 
         inline BufferDesc() = default;
 
         inline BufferDesc(UInt64 size, BindFlags bindFlags)
         {
-            Size  = size;
+            Size = size;
             Flags = bindFlags;
         }
     };
 
-    class IBuffer : public IObject
+    class IBuffer : public Memory::RefCountedObjectBase
     {
     public:
         FE_CLASS_RTTI(IBuffer, "2249E029-7ABD-4EEE-9D1D-C59570FD27EF");

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Strings/StringSlice.h>
 #include <FeCore/Time/DateTime.h>
 #include <FeCore/IO/BaseIO.h>
@@ -67,7 +67,8 @@ namespace FE::IO
         static ResultCode Delete(StringSlice fileName);
     };
 
-    class FileHandle final : public Object<IObject>
+
+    class FileHandle final : public Memory::RefCountedObjectBase
     {
         FILE* m_Handle;
         String m_FileName{};

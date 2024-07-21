@@ -1,6 +1,6 @@
-#pragma once
-#include <FeCore/Containers/List.h>
+﻿#pragma once
 #include <FeCore/Memory/NullableHandle.h>
+#include <FeCore/RTTI/RTTI.h>
 
 namespace FE
 {
@@ -60,18 +60,18 @@ namespace FE
     template<class TKey, class TValue>
     class SparseSet final
     {
-        List<USize> m_Sparse;
-        List<SparseSetEntry<TKey, TValue>> m_Dense;
+        eastl::vector<uint32_t> m_Sparse;
+        eastl::vector<SparseSetEntry<TKey, TValue>> m_Dense;
 
         inline NullableHandle DenseIndex(const TKey& key) const
         {
-            if (m_Sparse.Size() <= key)
+            if (m_Sparse.size() <= key)
             {
                 return NullableHandle::Null();
             }
 
-            auto denseIndex = m_Sparse[key];
-            if (denseIndex < m_Dense.Size())
+            const uint32_t denseIndex = m_Sparse[key];
+            if (denseIndex < m_Dense.size())
             {
                 auto& entry = m_Dense[denseIndex];
                 if (entry.Key() == key)
@@ -91,10 +91,10 @@ namespace FE
         //! \brief Create a SparseSet with initial capacity.
         //!
         //! \param [in] capacity - The capacity to initialize the SparseSet with.
-        inline explicit SparseSet(USize capacity)
+        inline explicit SparseSet(uint32_t capacity)
         {
-            m_Dense.Reserve(capacity);
-            m_Sparse.Resize(capacity, static_cast<USize>(-1));
+            m_Dense.reserve(capacity);
+            m_Sparse.resize(capacity, static_cast<uint32_t>(-1));
         }
 
         //! \brief Get value by key.
@@ -102,7 +102,7 @@ namespace FE
         {
             auto index = DenseIndex(key);
             FE_CORE_ASSERT(index.IsValid(), "Key not found in the SparseSet");
-            return m_Dense[index.ToOffset()].Value();
+            return m_Dense[static_cast<uint32_t>(index.ToOffset())].Value();
         }
 
         //! \brief Get value by key.
@@ -110,7 +110,7 @@ namespace FE
         {
             auto index = DenseIndex(key);
             FE_CORE_ASSERT(index.IsValid(), "Key not found in the SparseSet");
-            return m_Dense[index.ToOffset()].Value();
+            return m_Dense[static_cast<uint32_t>(index.ToOffset())].Value();
         }
 
         //! \brief Add a value into the SparseSet.
@@ -136,13 +136,13 @@ namespace FE
 
             if (auto denseIndex = DenseIndex(key))
             {
-                m_Dense[denseIndex.ToOffset()].Value() = TValue(std::forward<Args>(args)...);
+                m_Dense[static_cast<uint32_t>(denseIndex.ToOffset())].Value() = TValue(std::forward<Args>(args)...);
                 return false;
             }
             else
             {
-                auto n = m_Dense.Size();
-                m_Dense.Emplace(key, std::forward<Args>(args)...);
+                auto n = m_Dense.size();
+                m_Dense.emplace_back(key, std::forward<Args>(args)...);
                 m_Sparse[key] = n;
                 return true;
             }
@@ -185,14 +185,12 @@ namespace FE
         {
             if (auto denseIndex = DenseIndex(key))
             {
-                auto idx = denseIndex.ToOffset();
-                m_Dense.SwapRemoveAt(idx);
-                if (m_Dense.Size() > idx)
-                {
+                auto idx = static_cast<uint32_t>(denseIndex.ToOffset());
+                m_Dense.erase_unsorted(m_Dense.begin() + idx);
+                if (m_Dense.size() > idx)
                     m_Sparse[m_Dense[idx].Key()] = idx;
-                }
 
-                m_Sparse[key] = static_cast<USize>(-1);
+                m_Sparse[key] = static_cast<uint32_t>(-1);
                 return true;
             }
 
@@ -202,25 +200,25 @@ namespace FE
         //! \brief Change capacity of the SparseSet.
         //!
         //! \param [in] capacity - The new capacity.
-        inline void Reserve(USize capacity)
+        inline void Reserve(uint32_t capacity)
         {
             if (capacity <= Capacity())
             {
                 return;
             }
 
-            m_Dense.Reserve(capacity);
-            m_Sparse.Resize(capacity, static_cast<USize>(-1));
+            m_Dense.reserve(capacity);
+            m_Sparse.resize(capacity, static_cast<uint32_t>(-1));
         }
 
-        [[nodiscard]] inline USize Size() const
+        [[nodiscard]] inline uint32_t Size() const
         {
-            return m_Dense.Size();
+            return m_Dense.size();
         }
 
-        [[nodiscard]] inline USize Capacity() const
+        [[nodiscard]] inline uint32_t Capacity() const
         {
-            return m_Sparse.Size();
+            return m_Sparse.size();
         }
 
         [[nodiscard]] inline auto begin()

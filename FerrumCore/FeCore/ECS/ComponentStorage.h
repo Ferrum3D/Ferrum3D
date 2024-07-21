@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySliceMut.h>
 #include <FeCore/Containers/SparseSet.h>
@@ -46,13 +46,13 @@ namespace FE::ECS
         void Init(const ComponentStorageDesc& desc);
 
         //! \brief Size of the stored component aligned to the component type alignment.
-        [[nodiscard]] inline USize ElementSize() const
+        [[nodiscard]] inline uint32_t ElementSize() const
         {
             return m_Desc.Type.AlignedSize();
         }
 
         //! \brief Get number of stored components.
-        [[nodiscard]] inline USize Count() const
+        [[nodiscard]] inline uint32_t Count() const
         {
             return m_Count;
         }

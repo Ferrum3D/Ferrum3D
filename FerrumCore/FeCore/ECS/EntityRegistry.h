@@ -1,20 +1,19 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Containers/SparseSet.h>
 #include <FeCore/ECS/Entity.h>
 #include <FeCore/ECS/EntityArchetype.h>
-#include <FeCore/Memory/Object.h>
 
 namespace FE::ECS
 {
     class EntityQuery;
 
-    class EntityRegistry final : public Object<IObject>
+    class EntityRegistry final : public Memory::RefCountedObjectBase
     {
         struct EntityData
         {
             ArchetypeChunk* Chunk = nullptr;
-            Int16 ArchetypeID     = -1;
-            UInt16 EntityID       = 0;
+            Int16 ArchetypeID = -1;
+            UInt16 EntityID = 0;
 
             [[nodiscard]] inline bool IsEmpty() const
             {
@@ -23,17 +22,19 @@ namespace FE::ECS
         };
 
         SparseSet<EntityID, EntityData> m_Data;
-        List<EntityID> m_VersionTable;
-        List<EntityArchetype> m_Archetypes;
+        eastl::vector<EntityID> m_VersionTable;
+        eastl::vector<EntityArchetype> m_Archetypes;
 
-        List<EntityID> m_FreeList;
+        eastl::vector<EntityID> m_FreeList;
 
         EntityID m_EntityID = 0;
         inline EntityID GetEntityID()
         {
-            if (m_FreeList.Any())
+            if (!m_FreeList.empty())
             {
-                return m_FreeList.Pop();
+                const auto result = m_FreeList.back();
+                m_FreeList.pop_back();
+                return result;
             }
 
             return m_EntityID++;
@@ -44,7 +45,7 @@ namespace FE::ECS
     public:
         FE_CLASS_RTTI(EntityRegistry, "1A7583F3-7C99-4CDF-9C41-27B303C82134");
 
-        inline EntityRegistry()           = default;
+        inline EntityRegistry() = default;
         inline ~EntityRegistry() override = default;
 
         inline EntityID GetCurrentEntityVersion(Entity entity)
