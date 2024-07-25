@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <EASTL/fixed_vector.h>
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/MathUtils.h>
 #include <FeCore/Parallel/SpinLock.h>
@@ -19,20 +20,64 @@ namespace FE::Env
         class IEnvironment;
     } // namespace Internal
 
-    //! \brief Type of error returned by environment functions.
-    enum class VariableError : UInt8
+
+    //! \brief A shared string with fast equality comparison that is never deallocated.
+    class Name final
     {
-        NotFound,       //!< Variable was not found.
-        AllocationError //!< Couldn't allocate variable because of an allocation error.
-                        //!< This is typically a fatal unrecoverable error, but some allocators can collect garbage.
+        uint32_t m_Handle = InvalidIndex;
+
+    public:
+        struct Record final
+        {
+            uint64_t Hash; // 64-bit hash of the string.
+            uint16_t Size; // Size of the string in bytes.
+            char Data[1];  // Actual string is longer, but starts here.
+        };
+
+        inline Name() = default;
+
+        Name(std::string_view str);
+
+        const Record* GetRecord() const;
+
+        inline bool Valid() const
+        {
+            return m_Handle != InvalidIndex;
+        }
+
+        inline uint32_t size() const
+        {
+            return Valid() ? GetRecord()->Size : 0;
+        }
+
+        inline const char* c_str() const
+        {
+            return Valid() ? GetRecord()->Data : nullptr;
+        }
+
+        inline explicit operator bool() const
+        {
+            return Valid();
+        }
+
+        inline friend bool operator==(Name lhs, Name rhs)
+        {
+            return lhs.m_Handle == rhs.m_Handle;
+        }
+
+        inline friend bool operator!=(Name lhs, Name rhs)
+        {
+            return lhs.m_Handle != rhs.m_Handle;
+        }
     };
+
 
     //! \brief Create a variable by unique name.
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! \tparam T        - Type of variable to create.
-    //! \param [in] name - Unique name of variable to create.
+    //! \tparam T   - Type of variable to create.
+    //! \param name - Unique name of variable to create.
     //!
     //! \return The created variable.
     template<class T, class... Args>
@@ -42,8 +87,8 @@ namespace FE::Env
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! \tparam T         - Type of variable to create.
-    //! \param [in] value - Value to initialize the variable with.
+    //! \tparam T    - Type of variable to create.
+    //! \param value - Value to initialize the variable with.
     //!
     //! \return The created variable.
     template<class T, class... Args>
@@ -53,8 +98,8 @@ namespace FE::Env
     //!
     //! Creates a global variable by unique ID, but doesn't initialize it.
     //!
-    //! \tparam T      - Type of variable to allocate.
-    //! \param [in] id - Unique ID of variable to allocate.
+    //! \tparam T - Type of variable to allocate.
+    //! \param id - Unique ID of variable to allocate.
     //!
     //! \return The allocated variable.
     template<class T>
@@ -64,8 +109,8 @@ namespace FE::Env
     //!
     //! Creates a global variable by unique name, but doesn't initialize it.
     //!
-    //! \tparam T        - Type of variable to allocate.
-    //! \param [in] name - Unique name of variable to allocate.
+    //! \tparam T   - Type of variable to allocate.
+    //! \param name - Unique name of variable to allocate.
     //!
     //! \return The allocated variable.
     template<class T>
@@ -73,26 +118,24 @@ namespace FE::Env
 
     //! \brief Find global variable by its name.
     //!
-    //! Variable must be created by name before calling this function. Returns an Error result if variable was not found.
+    //! Variable must be created by name before calling this function. Returns null if variable was not found.
     //!
     //! \tparam T        - Type of variable to find.
-    //! \param [in] name - Unique name of variable to find.
-    //! \return The result that can contain the variable.
+    //! \param name - Unique name of variable to find.
     template<class T>
-    Result<GlobalVariable<T>, VariableError> FindGlobalVariable(std::string_view name);
+    GlobalVariable<T> FindGlobalVariable(std::string_view name);
 
     //! \brief Find global variable by its name.
     //!
-    //! Variable must be created by type before calling this function. Returns an Error result if variable was not found.
+    //! Variable must be created by type before calling this function. Returns null if variable was not found.
     //!
     //! \tparam T - Type of variable to find.
-    //! \return The result that can contain the variable.
     template<class T>
-    Result<GlobalVariable<T>, VariableError> FindGlobalVariableByType();
+    GlobalVariable<T> FindGlobalVariableByType();
 
     //! \brief Create global environment.
     //!
-    //! \param [in] allocator - Custom allocator.
+    //! \param allocator - Custom allocator.
     void CreateEnvironment();
 
     //! \brief Get global environment instance.
@@ -107,7 +150,7 @@ namespace FE::Env
     //! This function will most likely be called from another module that already have an environment attached
     //! or created.
     //!
-    //! \param [in] instance - Instance of global environment to attach.
+    //! \param instance - Instance of global environment to attach.
     void AttachEnvironment(Internal::IEnvironment& instance);
 
     //! \brief Detach global environment.
@@ -125,16 +168,19 @@ namespace FE::Env
     //! \internal
     namespace Internal
     {
-        //! \brief Type of success result returned by environment functions.
-        enum class VariableOk : UInt8
+        enum class VariableResultCode
         {
+            NotFound,
             Created,
             Found,
             Removed
         };
 
-        //! \brief Specialization of \ref Result that uses \ref VariableError and \ref VariableOk
-        using VariableResult = Result<std::tuple<void*, VariableOk>, VariableError>;
+        struct VariableResult final
+        {
+            void* pData = nullptr;
+            VariableResultCode Code = VariableResultCode::NotFound;
+        };
 
         //! \brief Environment interface.
         //!
@@ -177,7 +223,7 @@ namespace FE::Env
         public:
             //! \brief Create uninitialized global variable storage.
             //!
-            //! \param [in] name - Unique name of global variable.
+            //! \param name - Unique name of global variable.
             inline GlobalVariableStorage(std::string_view name)
                 : m_Name(name)
                 , m_RefCount(0)
@@ -188,7 +234,7 @@ namespace FE::Env
             //! \brief Call variable's constructor.
             //!
             //! \tparam Args     - Types of arguments to call the constructor with.
-            //! \param [in] args - Arguments to call the constructor with.
+            //! \param args - Arguments to call the constructor with.
             template<class... Args>
             inline void Construct(Args&&... args)
             {
@@ -249,25 +295,22 @@ namespace FE::Env
 
         //! \brief Allocate \ref GlobalVariableStorage for a global variable.
         //!
-        //! \param [in] name - A vector of characters that represents the name of the variable.
+        //! \param name - A vector of characters that represents the name of the variable.
         //!
         //! \return The allocated \ref GlobalVariableStorage.
         template<class T>
         inline GlobalVariableStorage<T>* AllocateVariableStorage(std::vector<char>&& name)
         {
             std::string_view nameView;
-            auto [data, ok] =
-                GetEnvironment()
-                    .CreateVariable(
-                        std::move(name), sizeof(GlobalVariableStorage<T>), alignof(GlobalVariableStorage<T>), nameView)
-                    .Expect("Couldn't create variable");
+            auto [data, code] = GetEnvironment().CreateVariable(
+                std::move(name), sizeof(GlobalVariableStorage<T>), alignof(GlobalVariableStorage<T>), nameView);
 
             GlobalVariableStorage<T>* storage = nullptr;
-            if (ok == Internal::VariableOk::Created)
+            if (code == Internal::VariableResultCode::Created)
             {
                 storage = new (data) GlobalVariableStorage<T>(nameView);
             }
-            else if (ok == Internal::VariableOk::Found)
+            else if (code == Internal::VariableResultCode::Found)
             {
                 storage = reinterpret_cast<GlobalVariableStorage<T>*>(data);
             }
@@ -380,7 +423,7 @@ namespace FE::Env
 
         //! \brief Swap contents of two variables.
         //!
-        //! \param [in] other - The variable to swap the content with.
+        //! \param other - The variable to swap the content with.
         inline void Swap(GlobalVariable& other)
         {
             auto* t = other.m_Storage;
@@ -475,27 +518,23 @@ namespace FE::Env
     }
 
     template<class T>
-    inline Result<GlobalVariable<T>, VariableError> FindGlobalVariable(std::string_view name)
+    inline GlobalVariable<T> FindGlobalVariable(std::string_view name)
     {
         using Var = GlobalVariable<T>;
-        using StorageType = typename GlobalVariable<T>::StorageType;
+        using StorageType = typename Var::StorageType;
 
         auto result = GetEnvironment().FindVariable(name);
-        FE_CHECK_RESULT(result);
-        void* ptr = std::get<0>(result.Unwrap());
-        if (ptr == nullptr)
-        {
-            return Err(VariableError::NotFound);
-        }
+        if (!result.pData)
+            return {};
 
-        return Var(reinterpret_cast<StorageType*>(ptr));
+        return Var(static_cast<StorageType*>(result.pData));
     }
 
     template<class T>
-    inline Result<GlobalVariable<T>, VariableError> FindGlobalVariableByType()
+    inline GlobalVariable<T> FindGlobalVariableByType()
     {
         const std::string_view typeName = TypeName<std::remove_pointer_t<T>>;
-        eastl::vector<char> str{};
+        eastl::fixed_vector<char, 256> str{};
         str.resize(static_cast<uint32_t>(typeName.length()) + 2);
         uint32_t size = 0;
         str[size++] = '#';

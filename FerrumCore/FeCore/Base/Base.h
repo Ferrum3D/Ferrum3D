@@ -35,6 +35,8 @@ namespace FE
     inline constexpr bool IsDebugBuild = false;
 #endif
 
+    inline constexpr uint32_t InvalidIndex = static_cast<uint32_t>(-1);
+
     //! \brief Empty structure with no members.
     struct EmptyStruct
     {
@@ -134,6 +136,83 @@ namespace FE
         auto mask = bitCount == typeBitCount ? static_cast<T>(-1) : ((1 << bitCount) - 1);
         return static_cast<T>(mask << leftShift);
     }
+
+
+    template<class TTo, class TFrom>
+    inline std::enable_if_t<
+        std::is_default_constructible_v<TTo> && std::is_default_constructible_v<TFrom> && sizeof(TTo) == sizeof(TFrom), TTo>
+    bit_cast(const TFrom& value)
+    {
+        TTo result;
+        memcpy(&result, &value, sizeof(TTo));
+        return result;
+    }
+
+
+    namespace Memory::Internal
+    {
+        class EASTLPolymorphicAllocator final
+        {
+            std::pmr::memory_resource* m_pMemoryResource = nullptr;
+
+        public:
+            EASTLPolymorphicAllocator(std::pmr::memory_resource* pMemoryResource = nullptr)
+                : m_pMemoryResource(pMemoryResource)
+            {
+            }
+            EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* pMemoryResource = nullptr)
+                : m_pMemoryResource(pMemoryResource)
+            {
+            }
+
+            inline void* allocate(size_t n, int = 0)
+            {
+                return m_pMemoryResource->allocate(n);
+            }
+
+            inline void* allocate(size_t n, size_t alignment, size_t, int = 0)
+            {
+                return m_pMemoryResource->allocate(n, alignment);
+            }
+
+            inline void deallocate(void* p, size_t size)
+            {
+                m_pMemoryResource->deallocate(p, size);
+            }
+
+            inline const char* get_name() const
+            {
+                return "";
+            }
+
+            inline void set_name(const char*) {}
+
+            friend bool operator==(const EASTLPolymorphicAllocator&, const EASTLPolymorphicAllocator&)
+            {
+                return true;
+            }
+
+            friend bool operator!=(const EASTLPolymorphicAllocator&, const EASTLPolymorphicAllocator&)
+            {
+                return false;
+            }
+        };
+    } // namespace Memory::Internal
+
+
+    namespace festd
+    {
+        namespace pmr
+        {
+            template<class T>
+            using vector = eastl::vector<T, Memory::Internal::EASTLPolymorphicAllocator>;
+        }
+
+
+        template<class T, class TAllocator = Memory::Internal::EASTLDefaultAllocator>
+        using vector = eastl::vector<T, TAllocator>;
+    } // namespace festd
+
 
     //! \brief Define std::hash<> for a type.
 #define FE_MAKE_HASHABLE(TypeName, Template, ...)                                                                                \

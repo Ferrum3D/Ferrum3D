@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <variant>
@@ -41,8 +41,6 @@ namespace FE
         }
 
     public:
-        FE_STRUCT_RTTI(Result, "87C787E0-D455-4480-8BB8-E7ACAD4738ED");
-
         inline Result() = default;
 
         inline Result(const T& value) // NOLINT(google-explicit-constructor)
@@ -65,10 +63,10 @@ namespace FE
         {
         }
 
-        inline Result(const Result& other)     = default;
+        inline Result(const Result& other) = default;
         inline Result(Result&& other) noexcept = default;
 
-        inline Result& operator=(const Result& other)     = default;
+        inline Result& operator=(const Result& other) = default;
         inline Result& operator=(Result&& other) noexcept = default;
 
         inline static Result Ok(const T& value)
@@ -147,88 +145,5 @@ namespace FE
             FE_CORE_ASSERT(IsOk(), msg);
             return std::get<T>(m_Data);
         }
-
-        template<class F>
-        inline T UnwrapOrElse(F&& f) const&
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? std::get<T>(m_Data) : std::invoke(std::forward<F>(f), std::get<TError>(m_Data));
-        }
-
-        template<class F>
-        inline T UnwrapOrElse(F&& f) &&
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? std::get<T>(m_Data)
-                          : std::invoke(std::forward<F>(f), static_cast<TError&&>(std::get<TError>(m_Data)));
-        }
-
-        template<class F>
-        inline constexpr auto OrElse(F&& f) const& -> Result<T, TError>
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? ResultType::Ok(std::get<T>(m_Data))
-                          : ResultType::Err(std::invoke(std::forward<F>(f), std::get<TError>(m_Data)));
-        }
-
-        template<class F>
-        inline constexpr auto OrElse(F&& f) && -> Result<T, TError>
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? ResultType::Ok(static_cast<T&&>(std::get<T>(m_Data)))
-                          : ResultType::Err(std::invoke(std::forward<F>(f), static_cast<TError&&>(std::get<TError>(m_Data))));
-        }
-
-        template<class F>
-        inline constexpr auto AndThen(F&& f) const& -> Result<T, TError>
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), std::get<T>(m_Data)))
-                          : ResultType::Err(std::get<TError>(m_Data));
-        }
-
-        template<class F>
-        inline constexpr auto AndThen(F&& f) && -> Result<T, TError>
-        {
-            using ResultType = Result<T, TError>;
-
-            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), static_cast<T&&>(std::get<T>(m_Data))))
-                          : ResultType::Err(static_cast<TError&&>(std::get<TError>(m_Data)));
-        }
-
-        template<class F>
-        [[nodiscard]] inline constexpr auto Map(F&& f) const& -> Result<std::invoke_result_t<F, const T&>, TError>
-        {
-            using InvokeResultType = std::invoke_result_t<F, const T&>;
-            using ResultType       = Result<InvokeResultType, TError>;
-
-            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), std::get<T>(m_Data)))
-                          : ResultType::Err(std::get<TError>(m_Data));
-        }
-
-        template<class F>
-        [[nodiscard]] inline constexpr auto Map(F&& f) && -> Result<std::invoke_result_t<F, T&&>, TError>
-        {
-            using InvokeResultType = std::invoke_result_t<F, T&&>;
-            using ResultType       = Result<InvokeResultType, TError>;
-
-            return IsOk() ? ResultType::Ok(std::invoke(std::forward<F>(f), static_cast<T&&>(std::get<T>(m_Data))))
-                          : ResultType::Err(static_cast<TError&&>(std::get<TError>(m_Data)));
-        }
     };
-
-#define FE_CHECK_RESULT(...)                                                                                                     \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        if ((__VA_ARGS__).IsErr())                                                                                               \
-        {                                                                                                                        \
-            return ::FE::Err((__VA_ARGS__).UnwrapErr());                                                                         \
-        }                                                                                                                        \
-    }                                                                                                                            \
-    while (0)
 } // namespace FE

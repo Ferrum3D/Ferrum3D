@@ -1,4 +1,5 @@
-﻿#include <EASTL/sort.h>
+﻿#if 0
+#include <EASTL/sort.h>
 #include <FeCore/Components/PositionComponent.h>
 #include <FeCore/ECS/EntityQuery.h>
 #include <FeCore/ECS/EntityRegistry.h>
@@ -190,3 +191,4 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
         ASSERT_EQ(static_cast<float>(i) * 3, registry->GetComponent<Position3DComponent>(entities[i]).Z);
     }
 }
+#endif

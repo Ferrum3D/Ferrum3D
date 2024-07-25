@@ -1,4 +1,5 @@
 ﻿#include <FeCore/Console/Console.h>
+#include <FeCore/Containers/HashTables.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Utils/SortedStringVector.h>
@@ -21,6 +22,88 @@ namespace FE::Env
 {
     namespace Internal
     {
+        inline constexpr uint32_t NamePageShift = 16;
+        inline constexpr uint32_t NamePageByteSize = 1 << NamePageShift;
+        inline constexpr uint32_t NameBlockShift = 3;
+        static_assert(1 << NameBlockShift == alignof(Name::Record));
+
+
+        class NameDataAllocator final
+        {
+            struct NameHandle final
+            {
+                uint32_t BlockIndex : NamePageShift - NameBlockShift;
+                uint32_t PageIndex : 32 - NamePageShift + NameBlockShift;
+            };
+
+            inline static constexpr uint32_t PageListByteSize = 64 * 1024;
+            inline static constexpr uint32_t MaxPageCount = PageListByteSize / sizeof(void*);
+
+            SpinLock m_Lock;
+            void** m_ppPages;
+            uint32_t m_CurrentPageIndex = InvalidIndex;
+            uint32_t m_Offset = NamePageByteSize;
+            festd::unordered_dense_map<uint64_t, uint32_t> m_Map;
+
+        public:
+            inline NameDataAllocator()
+            {
+                m_ppPages = static_cast<void**>(Memory::AllocateVirtual(PageListByteSize));
+            }
+
+            inline ~NameDataAllocator()
+            {
+                while (m_CurrentPageIndex != InvalidIndex)
+                {
+                    Memory::FreeVirtual(m_ppPages[m_CurrentPageIndex], NamePageByteSize);
+                    --m_CurrentPageIndex;
+                }
+
+                Memory::FreeVirtual(m_ppPages, PageListByteSize);
+            }
+
+            inline uint32_t TryFind(uint64_t hash)
+            {
+                std::lock_guard lk{ m_Lock };
+                const auto it = m_Map.find(hash);
+                if (it != m_Map.end())
+                    return it->second;
+                return InvalidIndex;
+            }
+
+            inline Name::Record* Allocate(uint64_t hash, size_t stringByteSize, uint32_t& handle)
+            {
+                std::lock_guard lk{ m_Lock };
+                const size_t recordHeaderSize = offsetof(Name::Record, Data);
+                const size_t recordSize = AlignUp<1 << NameBlockShift>(recordHeaderSize + stringByteSize);
+                if (recordSize + m_Offset > NamePageByteSize)
+                {
+                    m_ppPages[++m_CurrentPageIndex] = Memory::AllocateVirtual(NamePageByteSize);
+                    m_Offset = 0;
+                }
+
+                NameHandle result;
+                result.PageIndex = m_CurrentPageIndex;
+                result.BlockIndex = m_Offset >> NameBlockShift;
+                handle = bit_cast<uint32_t>(result);
+                m_Map.insert(std::make_pair(hash, handle));
+
+                void* ptr = static_cast<uint8_t*>(m_ppPages[m_CurrentPageIndex]) + m_Offset;
+                m_Offset += static_cast<uint32_t>(recordSize);
+                FE_CORE_ASSERT((m_Offset >> NameBlockShift) << NameBlockShift == m_Offset, "");
+                return static_cast<Name::Record*>(ptr);
+            }
+
+            inline Name::Record* ResolvePointer(uint32_t handleValue)
+            {
+                const NameHandle handle = bit_cast<NameHandle>(handleValue);
+                const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_ppPages[handle.PageIndex]);
+                const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.BlockIndex) << NameBlockShift);
+                return reinterpret_cast<Name::Record*>(recordAddress);
+            }
+        };
+
+
         class DefaultMemoryResource final : public std::pmr::memory_resource
         {
         public:
@@ -40,19 +123,16 @@ namespace FE::Env
             }
         };
 
-        static IEnvironment* g_EnvInstance = nullptr;
-        static bool g_IsEnvOwner = false;
-
         class Environment : public IEnvironment
         {
             using Map = SortedStringVector<void*, std::vector<char>, std::string_view>;
 
             Map m_Map;
             Mutex m_Lock;
-            DefaultMemoryResource m_DefaultMemoryResource;
 
             inline VariableResult FindVariableNoLock(std::string_view name)
             {
+                VariableResult result;
                 auto it = m_Map.FindCIter(name);
                 if (it != m_Map.end())
                 {
@@ -60,17 +140,24 @@ namespace FE::Env
                     auto view = std::string_view(vec.data(), vec.size());
                     if (view == name)
                     {
-                        return std::make_tuple(std::get<1>(*it), VariableOk::Found);
+                        result.Code = VariableResultCode::Found;
+                        result.pData = std::get<1>(*it);
+                        return result;
                     }
                 }
 
-                return Err(VariableError::NotFound);
+                result.Code = VariableResultCode::NotFound;
+                result.pData = nullptr;
+                return result;
             }
 
         public:
+            DefaultMemoryResource DefaultMemoryResource;
+            NameDataAllocator NameDataAllocator;
+
             inline Environment()
             {
-                std::pmr::set_default_resource(&m_DefaultMemoryResource);
+                std::pmr::set_default_resource(&DefaultMemoryResource);
 
                 Console::Init();
                 Console::SetColor(Console::Color::Green);
@@ -79,11 +166,6 @@ namespace FE::Env
                 // ss << " Global environment created ]====================\n";
                 // puts(ss.str().c_str());
                 Console::ResetColor();
-            }
-
-            inline std::pmr::memory_resource* GetDefaultMemoryResource()
-            {
-                return &m_DefaultMemoryResource;
             }
 
             inline VariableResult FindVariable(std::string_view name) override
@@ -97,30 +179,34 @@ namespace FE::Env
             {
                 std::unique_lock lk(m_Lock);
                 auto find = FindVariableNoLock(std::string_view(name.data(), name.size()));
-                if (find.IsOk())
-                {
+                if (find.pData)
                     return find;
-                }
 
                 void* storage = Memory::DefaultAllocate(size, alignment);
-                if (!storage)
-                    return VariableResult::Err(VariableError::AllocationError);
-
                 auto& [str, ptr] = m_Map.Push(std::move(name), storage);
                 nameView = std::string_view(str.data(), str.size());
-                return std::make_tuple(storage, VariableOk::Created);
+
+                VariableResult result;
+                result.Code = VariableResultCode::Created;
+                result.pData = storage;
+                return result;
             }
 
             inline VariableResult RemoveVariable(std::string_view name) override
             {
                 std::unique_lock lk(m_Lock);
+                VariableResult result;
+
                 auto it = m_Map.FindIter(name);
                 if (it == m_Map.end())
                 {
-                    return Err(VariableError::NotFound);
+                    result.pData = nullptr;
+                    result.Code = VariableResultCode::NotFound;
+                    return result;
                 }
 
-                auto result = std::make_tuple(std::get<1>(*it), VariableOk::Removed);
+                result.Code = VariableResultCode::Removed;
+                result.pData = std::get<1>(*it);
 
                 // Don't erase the variable as std::vector<...>.erase() is a very expensive operation (requires
                 // moving half the vector to the left).
@@ -168,7 +254,45 @@ namespace FE::Env
                 Memory::DefaultFree(this);
             }
         };
+
+
+        static Environment* g_EnvInstance = nullptr;
+        static bool g_IsEnvOwner = false;
     } // namespace Internal
+
+
+    Name::Name(std::string_view str)
+    {
+        auto& nameAllocator = Internal::g_EnvInstance->NameDataAllocator;
+        const uint64_t hash = DefaultHash(str);
+        m_Handle = nameAllocator.TryFind(hash);
+        if (Valid())
+        {
+            if (IsDebugBuild)
+            {
+                FE_CORE_ASSERT(str == GetRecord()->Data, "Env::Name collision");
+            }
+
+            return;
+        }
+
+        FE_CORE_ASSERT(str.size() < 0xffff, "Env::Name is too long");
+
+        Name::Record* pRecord = nameAllocator.Allocate(hash, str.size() + 1, m_Handle);
+        pRecord->Size = static_cast<uint16_t>(str.size());
+        pRecord->Hash = hash;
+        memcpy(pRecord->Data, str.data(), str.size());
+    }
+
+
+    const Name::Record* Name::GetRecord() const
+    {
+        if (!Valid())
+            return nullptr;
+
+        return Internal::g_EnvInstance->NameDataAllocator.ResolvePointer(m_Handle);
+    }
+
 
     void CreateEnvironment()
     {
@@ -191,8 +315,8 @@ namespace FE::Env
     {
         DetachEnvironment();
 
-        Internal::g_EnvInstance = &instance;
-        std::pmr::set_default_resource(static_cast<Internal::Environment&>(instance).GetDefaultMemoryResource());
+        Internal::g_EnvInstance = &static_cast<Internal::Environment&>(instance);
+        std::pmr::set_default_resource(&Internal::g_EnvInstance->DefaultMemoryResource);
     }
 
     void DetachEnvironment()
