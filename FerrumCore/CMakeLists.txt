@@ -97,6 +97,8 @@
     FeCore/Math/Vector4.h
     FeCore/Math/VectorMath.h
 
+    FeCore/Memory/LinearAllocator.h
+    FeCore/Memory/LinearAllocator.cpp
     FeCore/Memory/Memory.h
     FeCore/Memory/Memory.cpp
     FeCore/Memory/NullableHandle.h

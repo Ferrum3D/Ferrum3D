@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Utils/Result.h>
 #include <cassert>
@@ -265,6 +266,21 @@ namespace FE
             : m_Data(stringView.data())
             , m_Size(stringView.size())
         {
+        }
+
+        inline StringSlice(Env::Name name) noexcept
+        {
+            if (name.Valid())
+            {
+                const Env::Name::Record* pRecord = name.GetRecord();
+                m_Data = pRecord->Data;
+                m_Size = pRecord->Size;
+            }
+            else
+            {
+                m_Data = nullptr;
+                m_Size = 0;
+            }
         }
 
         inline constexpr StringSlice(const TChar* data) noexcept

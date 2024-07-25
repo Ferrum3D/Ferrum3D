@@ -71,7 +71,7 @@ TEST(Strings, Length)
 
 TEST(Strings, SmallCodepointAt)
 {
-    const char* utf8 = "qЯwgЫЧ";
+    const char* utf8 = u8"qЯwgЫЧ";
     ASSERT_TRUE(FE::UTF8::Valid(utf8));
 
     FE::String str = utf8;
