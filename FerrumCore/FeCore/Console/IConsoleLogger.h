@@ -79,7 +79,7 @@ namespace FE::Debug
         //! \param [in] fmt  - Format string.
         //! \param [in] args - Format arguments.
         template<class... Args>
-        FE_FINLINE void Print(StringSlice fmt, Args&&... args)
+        FE_FORCE_INLINE void Print(StringSlice fmt, Args&&... args)
         {
             PrintImpl(FE::Fmt::Format(fmt, std::forward<Args>(args)...));
         }
@@ -90,7 +90,7 @@ namespace FE::Debug
         //! \param [in] fmt   - Format string.
         //! \param [in] args  - Format arguments.
         template<class... Args>
-        FE_FINLINE void ColoredPrint(Color color, StringSlice fmt, Args&&... args)
+        FE_FORCE_INLINE void ColoredPrint(Color color, StringSlice fmt, Args&&... args)
         {
             ColoredPrintImpl(color, FE::Fmt::Format(fmt, std::forward<Args>(args)...));
         }

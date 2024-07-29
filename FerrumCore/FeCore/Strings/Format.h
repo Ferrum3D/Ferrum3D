@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Strings/String.h>
@@ -191,7 +191,8 @@ namespace FE::Fmt
                 }
                 else if (*it == '}')
                 {
-                    FE_CORE_ASSERT(*++it == '}', "must be escaped");
+                    ++it;
+                    FE_CORE_ASSERT(*it == '}', "must be escaped");
 
                     str.Append(StringSlice(begin, it));
                     begin = it;

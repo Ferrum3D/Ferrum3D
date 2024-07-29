@@ -1,28 +1,27 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/EventBus/EventBus.h>
+#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/Job.h>
-#include <FeCore/Jobs/JobScheduler.h>
-#include <FeCore/Jobs/SignalJob.h>
+#include <FeCore/Jobs/JobSystem.h>
 #include <algorithm>
 #include <chrono>
 #include <random>
 
-using FE::Int32;
-using FE::UInt64;
-using FE::USize;
+using namespace FE;
 
-inline constexpr USize MinJobArrayLength = 64 * 1024;
+inline constexpr uint32_t MinJobArrayLength = 64 * 1024;
 
-void MergeArraysSync(const FE::ArraySlice<Int32>& lhs, const FE::ArraySlice<Int32>& rhs, FE::ArraySliceMut<Int32> space)
+static void MergeArraysSync(const ArraySlice<int32_t>& lhs, const ArraySlice<int32_t>& rhs, ArraySliceMut<int32_t> space)
 {
-    const USize wholeSize = lhs.Length() + rhs.Length();
+    ZoneScoped;
+    const uint32_t wholeSize = lhs.Length() + rhs.Length();
     FE_ASSERT_MSG(
         wholeSize <= space.Length(), "Size of result ({}) was less than size of provided space ({})", wholeSize, space.Length());
 
-    USize leftIndex   = 0;
-    USize rightIndex  = 0;
-    USize resultIndex = 0;
+    uint32_t leftIndex = 0;
+    uint32_t rightIndex = 0;
+    uint32_t resultIndex = 0;
 
     while (resultIndex < wholeSize)
     {
@@ -45,73 +44,87 @@ void MergeArraysSync(const FE::ArraySlice<Int32>& lhs, const FE::ArraySlice<Int3
     }
 }
 
-void MergeSortImplAsync(FE::ArraySliceMut<Int32> array, FE::ArraySliceMut<Int32> mergingSpace);
+static void MergeSortImplAsync(ArraySliceMut<int32_t> array, ArraySliceMut<int32_t> mergingSpace);
 
-class MergeSortJob : public FE::Job
+class MergeSortJob : public SmallJob<MergeSortJob>
 {
-protected:
-    void Execute(const FE::JobExecutionContext&) override
+public:
+    void DoExecute() const
     {
+        ZoneScoped;
         MergeSortImplAsync(Array, Space);
     }
 
-public:
-    FE::ArraySliceMut<Int32> Array;
-    FE::ArraySliceMut<Int32> Space;
+    ArraySliceMut<int32_t> Array;
+    ArraySliceMut<int32_t> Space;
 
-    inline MergeSortJob(const FE::ArraySliceMut<int>& array, const FE::ArraySliceMut<int>& space)
+    inline MergeSortJob(const ArraySliceMut<int>& array, const ArraySliceMut<int>& space)
         : Array(array)
         , Space(space)
     {
     }
 };
 
-void MergeSortImplAsync(FE::ArraySliceMut<Int32> array, FE::ArraySliceMut<Int32> mergingSpace)
+static void MergeSortImplAsync(ArraySliceMut<int32_t> array, ArraySliceMut<int32_t> mergingSpace)
 {
+    ZoneScoped;
+    ZoneTextF("%d", array.Length());
     if (array.Length() <= MinJobArrayLength)
     {
         std::sort(array.begin(), array.end());
         return;
     }
 
-    const auto middleIndex = (array.Length() + 1) / 2;
-    const auto endIndex    = array.Length();
-    auto left              = array(0, middleIndex);
-    auto right             = array(middleIndex, endIndex);
+    const uint32_t middleIndex = (array.Length() + 1) / 2;
+    const uint32_t endIndex = array.Length();
+    auto left = array(0, middleIndex);
+    auto right = array(middleIndex, endIndex);
 
-    MergeSortJob leftJob(left, mergingSpace(0, middleIndex));
-    MergeSortJob rightJob(right, mergingSpace(middleIndex, endIndex));
-    FE::SignalJob signalJob;
-    signalJob.AttachParent(&leftJob);
-    signalJob.AttachParent(&rightJob);
-    leftJob.Schedule();
-    rightJob.Schedule();
+    MergeSortJob* leftJob = SmallJob<MergeSortJob>::Create(left, mergingSpace(0, middleIndex));
+    MergeSortJob* rightJob = SmallJob<MergeSortJob>::Create(right, mergingSpace(middleIndex, endIndex));
 
-    signalJob.Complete();
-    MergeArraysSync(FE::ArraySlice(left), FE::ArraySlice(right), mergingSpace);
+    Rc pWaitGroup = WaitGroup::Create();
+    leftJob->Schedule(pWaitGroup.Get());
+    rightJob->Schedule(pWaitGroup.Get());
+
+    pWaitGroup->Wait();
+    MergeArraysSync(ArraySlice(left), ArraySlice(right), mergingSpace);
     mergingSpace.CopyDataTo(array);
 }
 
-void ParallelSort(FE::ArraySliceMut<Int32> array)
+static void ParallelSort(ArraySliceMut<int32_t> array)
 {
-    FE::List<Int32> space;
-    space.Resize(array.Length());
-    MergeSortImplAsync(array, FE::ArraySliceMut(space));
+    ZoneScoped;
+    festd::vector<int32_t> space;
+    space.resize(array.Length());
+    MergeSortImplAsync(array, ArraySliceMut(space));
 }
 
-void AssertSorted(const FE::ArraySlice<int>& values)
+static void AssertSorted(const ArraySlice<int>& values)
 {
-    for (USize i = 0; i < values.Length() - 1; ++i)
+    ZoneScoped;
+    uint32_t unsortedCount = 0;
+    for (uint32_t i = 0; i < values.Length() - 1; ++i)
     {
         if (values[i] > values[i + 1])
         {
-            FE_LOG_WARNING("Unsorted pair: {{ {}: {}, {}: {} }}", i, values[i], i + 1, values[i + 1]);
+            if (unsortedCount < 8)
+            {
+                FE_LOG_WARNING("Unsorted pair: {{ {}: {}, {}: {} }}", i, values[i], i + 1, values[i + 1]);
+            }
+
+            ++unsortedCount;
         }
+    }
+
+    if (unsortedCount)
+    {
+        FE_LOG_ERROR("Total unsorted pairs found: {}", unsortedCount);
     }
 }
 
 template<class F>
-inline UInt64 MeasureTime(F&& function)
+inline static UInt64 MeasureTime(F&& function)
 {
     auto s = std::chrono::high_resolution_clock::now();
     function();
@@ -119,30 +132,26 @@ inline UInt64 MeasureTime(F&& function)
     return std::chrono::duration_cast<std::chrono::microseconds>(e - s).count();
 }
 
-int main()
+struct MainJob final : Job
 {
-    FE::Env::CreateEnvironment();
-    FE::GlobalAllocator<FE::HeapAllocator>::Init(FE::HeapAllocatorDesc{});
+    void Execute() override
     {
-        [[maybe_unused]] std::random_device device;
-        [[maybe_unused]] std::mt19937 mt(device());
-        [[maybe_unused]] std::uniform_int_distribution<Int32> distribution;
-        auto logger       = FE::MakeShared<FE::Debug::ConsoleLogger>();
-        auto eventBus     = FE::MakeShared<FE::EventBus<FE::FrameEvents>>();
-        auto jobScheduler = FE::MakeShared<FE::JobScheduler>(std::thread::hardware_concurrency() - 1);
-
+        ZoneScoped;
+        std::random_device device;
+        std::mt19937 mt(device());
+        std::uniform_int_distribution<int32_t> distribution;
         const USize length = 2'000'000;
-        FE::List<Int32> values1, values2;
-        values1.Reserve(length);
-        for (Int32 i = 0; i < length; ++i)
+        festd::vector<int32_t> values1, values2;
+        values1.reserve(length);
+        for (int32_t i = 0; i < length; ++i)
         {
-            values1.Push(distribution(mt));
+            values1.push_back(distribution(mt));
         }
-        values2.Resize(length);
-        FE::ArraySlice(values1).CopyDataTo(FE::ArraySliceMut(values2));
+        values2.resize(length);
+        ArraySlice(values1).CopyDataTo(ArraySliceMut(values2));
 
         auto parallel = MeasureTime([&values1]() {
-            ParallelSort(FE::ArraySliceMut(values1));
+            ParallelSort(ArraySliceMut(values1));
         });
         AssertSorted(values1);
 
@@ -151,7 +160,19 @@ int main()
         });
         AssertSorted(values2);
 
-        FE_LOG_MESSAGE("Parallel: {}mcs, std::sort: {}msc, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
+        FE_LOG_MESSAGE("Parallel: {}mcs, std::sort: {}mcs, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
+        ServiceLocator<IJobSystem>::Get()->Stop();
     }
-    FE::GlobalAllocator<FE::HeapAllocator>::Destroy();
+};
+
+int main()
+{
+    Env::CreateEnvironment();
+    Rc logger = Rc<Debug::ConsoleLogger>::DefaultNew();
+    Rc eventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
+    Rc jobSystem = Rc<JobSystem>::DefaultNew();
+
+    MainJob mainJob;
+    mainJob.Schedule();
+    jobSystem->Start();
 }

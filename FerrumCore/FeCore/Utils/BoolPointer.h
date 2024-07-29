@@ -21,31 +21,31 @@ namespace FE
         inline static constexpr UInt64 BooleanMask = ~PointerMask;
 
     public:
-        FE_FINLINE BoolPointer() = default;
+        FE_FORCE_INLINE BoolPointer() = default;
 
-        FE_FINLINE BoolPointer(T* pointer, bool boolean)
+        FE_FORCE_INLINE BoolPointer(T* pointer, bool boolean)
         {
             m_Data = reinterpret_cast<Int64>(pointer) | (boolean ? 1 : 0);
         }
 
-        FE_FINLINE void SetPointer(T* pointer)
+        FE_FORCE_INLINE void SetPointer(T* pointer)
         {
             const uint64_t value = m_Data & BooleanMask;
             m_Data = value | reinterpret_cast<Int64>(pointer);
         }
 
-        FE_FINLINE void SetBool(bool boolean)
+        FE_FORCE_INLINE void SetBool(bool boolean)
         {
             const uint64_t value = m_Data & PointerMask;
             m_Data = value | (boolean ? 1 : 0);
         }
 
-        [[nodiscard]] FE_FINLINE T* GetPointer() const
+        [[nodiscard]] FE_FORCE_INLINE T* GetPointer() const
         {
             return reinterpret_cast<T*>(m_Data & PointerMask);
         }
 
-        [[nodiscard]] FE_FINLINE bool GetBool() const
+        [[nodiscard]] FE_FORCE_INLINE bool GetBool() const
         {
             return m_Data & BooleanMask;
         }

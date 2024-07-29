@@ -3,9 +3,9 @@
 
 namespace FE
 {
-    Mutex::Mutex() noexcept // NOLINT
+    Mutex::Mutex(uint32_t spinCount) noexcept
     {
-        InitializeCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex));
+        InitializeCriticalSectionEx(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex), spinCount, 0);
     }
 
 

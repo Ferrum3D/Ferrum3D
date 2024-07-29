@@ -91,7 +91,7 @@ namespace FE
             if (s < MinCapacity)
                 return MinCapacity - 1;
 
-            size_t guess = FE::AlignUp<Memory::kDefaultAlignment / sizeof(TChar)>(s + 1) - 1;
+            size_t guess = FE::AlignUp<Memory::DefaultAlignment / sizeof(TChar)>(s + 1) - 1;
 
             if (guess == MinCapacity)
                 ++guess;

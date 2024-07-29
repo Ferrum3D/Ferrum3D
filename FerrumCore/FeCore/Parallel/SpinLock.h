@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <atomic>
-#include <thread>
 
 namespace FE
 {

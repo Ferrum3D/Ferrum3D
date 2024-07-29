@@ -27,79 +27,79 @@ namespace FE
     public:
         FE_STRUCT_RTTI(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
 
-        FE_FINLINE Vector4F()
+        FE_FORCE_INLINE Vector4F()
             : Vector4F(0, 0, 0, 0)
         {
         }
 
-        FE_FINLINE explicit Vector4F(TVec vec) noexcept;
+        FE_FORCE_INLINE explicit Vector4F(TVec vec) noexcept;
 
-        FE_FINLINE Vector4F(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE Vector4F(const Vector4F& other) noexcept;
 
-        FE_FINLINE explicit Vector4F(const Vector3F& other, float w = 1.0f) noexcept;
+        FE_FORCE_INLINE explicit Vector4F(const Vector3F& other, float w = 1.0f) noexcept;
 
-        FE_FINLINE Vector4F& operator=(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE Vector4F& operator=(const Vector4F& other) noexcept;
 
-        FE_FINLINE Vector4F(Vector4F&& other) noexcept;
+        FE_FORCE_INLINE Vector4F(Vector4F&& other) noexcept;
 
-        FE_FINLINE Vector4F& operator=(Vector4F&& other) noexcept;
+        FE_FORCE_INLINE Vector4F& operator=(Vector4F&& other) noexcept;
 
-        FE_FINLINE explicit Vector4F(float value) noexcept;
+        FE_FORCE_INLINE explicit Vector4F(float value) noexcept;
 
-        FE_FINLINE Vector4F(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE Vector4F(float x, float y, float z, float w) noexcept;
 
-        [[nodiscard]] FE_FINLINE Vector3F GetVector3F() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector3F GetVector3F() const noexcept;
 
-        FE_FINLINE explicit Vector4F(const std::array<float, 4>& array) noexcept;
+        FE_FORCE_INLINE explicit Vector4F(const std::array<float, 4>& array) noexcept;
 
         //! \return Vector4F{ 0, 0, 0, 0 }.
-        [[nodiscard]] FE_FINLINE static Vector4F GetZero() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetZero() noexcept;
 
         //! \return Vector4F{ 1, 0, 0, 0 }.
-        [[nodiscard]] FE_FINLINE static Vector4F GetUnitX() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitX() noexcept;
 
         //! \return Vector4F{ 0, 1, 0, 0 }.
-        [[nodiscard]] FE_FINLINE static Vector4F GetUnitY() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitY() noexcept;
 
         //! \return Vector4F{ 0, 0, 1, 0 }.
-        [[nodiscard]] FE_FINLINE static Vector4F GetUnitZ() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitZ() noexcept;
 
         //! \return Vector4F{ 0, 0, 0, 1 }.
-        [[nodiscard]] FE_FINLINE static Vector4F GetUnitW() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitW() noexcept;
 
-        [[nodiscard]] FE_FINLINE float operator[](size_t index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
 
-        [[nodiscard]] FE_FINLINE float& operator()(size_t index) noexcept;
-        [[nodiscard]] FE_FINLINE float operator()(size_t index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of four floats (components of the vector).
-        [[nodiscard]] FE_FINLINE const float* Data() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
 
         //! \return Underlying SIMD type.
-        [[nodiscard]] FE_FINLINE const TVec& GetSIMD() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE const TVec& GetSIMD() const noexcept;
 
-        [[nodiscard]] FE_FINLINE float X() const noexcept;
-        [[nodiscard]] FE_FINLINE float Y() const noexcept;
-        [[nodiscard]] FE_FINLINE float Z() const noexcept;
-        [[nodiscard]] FE_FINLINE float W() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Y() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Z() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float W() const noexcept;
 
-        [[nodiscard]] FE_FINLINE float& X() noexcept;
-        [[nodiscard]] FE_FINLINE float& Y() noexcept;
-        [[nodiscard]] FE_FINLINE float& Z() noexcept;
-        [[nodiscard]] FE_FINLINE float& W() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& X() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& Y() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& Z() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& W() noexcept;
 
-        FE_FINLINE void Set(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE void Set(float x, float y, float z, float w) noexcept;
 
-        [[nodiscard]] FE_FINLINE float Dot(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Dot(const Vector4F& other) const noexcept;
 
         //! \return Squared length of the vector.
-        [[nodiscard]] FE_FINLINE float LengthSq() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
 
         //! \return Length of the vector.
-        [[nodiscard]] FE_FINLINE float Length() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
 
         //! \return New normalized vector, this vector is not modified.
-        [[nodiscard]] FE_FINLINE Vector4F Normalized() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F Normalized() const noexcept;
 
         //! \brief Linearly interpolate between this and destination.
         //!
@@ -108,11 +108,11 @@ namespace FE
         //! \param [in] f - Interpolation factor.
         //!
         //! \return New interpolated vector, this vector is not modified.
-        [[nodiscard]] FE_FINLINE Vector4F Lerp(const Vector4F& dst, float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F Lerp(const Vector4F& dst, float f) const noexcept;
 
         //! \brief Multiply each component of this vector with each component of other vector.
         //! \return New vector, this vector is not modified.
-        [[nodiscard]] FE_FINLINE Vector4F MulEach(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F MulEach(const Vector4F& other) const noexcept;
 
         //! \brief Check if two vectors are approximately equal.
         //!
@@ -120,22 +120,22 @@ namespace FE
         //! \param [in] epsilon - Accepted difference between the two vectors.
         //!
         //! \return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Vector4F& other, float epsilon = Constants::Epsilon) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector4F& other, float epsilon = Constants::Epsilon) const noexcept;
 
-        [[nodiscard]] FE_FINLINE bool operator==(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FINLINE bool operator!=(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Vector4F& other) const noexcept;
 
-        [[nodiscard]] FE_FINLINE Vector4F operator-() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator-() const noexcept;
 
-        [[nodiscard]] FE_FINLINE Vector4F operator+(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FINLINE Vector4F operator-(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FINLINE Vector4F operator*(float f) const noexcept;
-        [[nodiscard]] FE_FINLINE Vector4F operator/(float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator+(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator-(const Vector4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator*(float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator/(float f) const noexcept;
 
-        FE_FINLINE Vector4F& operator+=(const Vector4F& other) noexcept;
-        FE_FINLINE Vector4F& operator-=(const Vector4F& other) noexcept;
-        FE_FINLINE Vector4F& operator*=(float f) noexcept;
-        FE_FINLINE Vector4F& operator/=(float f) noexcept;
+        FE_FORCE_INLINE Vector4F& operator+=(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE Vector4F& operator-=(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE Vector4F& operator*=(float f) noexcept;
+        FE_FORCE_INLINE Vector4F& operator/=(float f) noexcept;
     };
 
     Vector4F::Vector4F(TVec vec) noexcept // NOLINT clang-tidy complains about uninitialized union members

@@ -44,7 +44,7 @@ namespace FE
         //! The provided instance will be registered in the global environment,
         //! so that it can be used in multiple modules.
         //!
-        //! \param [in] instance - The instance to register.
+        //! \param instance - The instance to register.
         inline static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");

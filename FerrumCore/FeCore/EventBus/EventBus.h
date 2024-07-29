@@ -56,7 +56,7 @@ namespace FE
         inline static void UnregisterHandler(EventHandler<TEvent>* handler);
 
         template<class F, class... Args>
-        FE_FINLINE static void SendEvent(F&& function, Args&&... args);
+        FE_FORCE_INLINE static void SendEvent(F&& function, Args&&... args);
     };
 
     template<class TEvent>

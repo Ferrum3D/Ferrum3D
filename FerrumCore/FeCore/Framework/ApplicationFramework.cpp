@@ -14,7 +14,7 @@ namespace FE
         m_Logger = Rc<Debug::ConsoleLogger>::DefaultNew();
         m_Logger->SetDebugLevel(desc.LogSeverity);
         m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
-        m_JobScheduler = Rc<JobScheduler>::DefaultNew(std::thread::hardware_concurrency() - 1);
+        m_JobSystem = Rc<JobSystem>::DefaultNew();
 
         m_AssetManager = Rc<Assets::AssetManager>::DefaultNew();
         Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();

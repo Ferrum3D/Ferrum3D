@@ -13,8 +13,8 @@ namespace FE
 
     namespace Memory
     {
-        //! \brief Default alignment, 16 bytes.
-        inline constexpr USize kDefaultAlignment = 16;
+        inline constexpr size_t DefaultAlignment = 16;
+        inline constexpr size_t CacheLineSize = 64;
 
 
         class RefCountedObjectBase
@@ -55,7 +55,7 @@ namespace FE
                     std::pmr::memory_resource* pAllocator = m_pAllocator;
                     const size_t allocationSize = m_AllocationSize;
                     this->~RefCountedObjectBase();
-                    pAllocator->deallocate(this, allocationSize, kDefaultAlignment);
+                    pAllocator->deallocate(this, allocationSize, DefaultAlignment);
                 }
 
                 return refCount;
@@ -277,7 +277,7 @@ namespace FE
         template<class... TArgs>
         inline static T* New(std::pmr::memory_resource* pAllocator, TArgs&&... args)
         {
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::DefaultAlignment)) T(std::forward<TArgs>(args)...);
             SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }
@@ -286,7 +286,7 @@ namespace FE
         inline static T* DefaultNew(TArgs&&... args)
         {
             std::pmr::memory_resource* pAllocator = std::pmr::get_default_resource();
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::DefaultAlignment)) T(std::forward<TArgs>(args)...);
             SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }

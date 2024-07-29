@@ -23,98 +23,98 @@ namespace FE
     public:
         FE_STRUCT_RTTI(Quaternion, "36791C3D-2C83-4516-8359-E0A34E3FC7B9");
 
-        FE_FINLINE Quaternion()
+        FE_FORCE_INLINE Quaternion()
             : Quaternion(TVec::GetZero())
         {
         }
 
-        FE_FINLINE explicit Quaternion(TVec vec) noexcept;
+        FE_FORCE_INLINE explicit Quaternion(TVec vec) noexcept;
 
-        FE_FINLINE Quaternion(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE Quaternion(const Quaternion& other) noexcept;
 
-        FE_FINLINE explicit Quaternion(const Vector3F& v, float w) noexcept;
+        FE_FORCE_INLINE explicit Quaternion(const Vector3F& v, float w) noexcept;
 
-        FE_FINLINE Quaternion& operator=(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE Quaternion& operator=(const Quaternion& other) noexcept;
 
-        FE_FINLINE Quaternion(Quaternion&& other) noexcept;
+        FE_FORCE_INLINE Quaternion(Quaternion&& other) noexcept;
 
-        FE_FINLINE Quaternion& operator=(Quaternion&& other) noexcept;
+        FE_FORCE_INLINE Quaternion& operator=(Quaternion&& other) noexcept;
 
-        FE_FINLINE explicit Quaternion(float value) noexcept;
+        FE_FORCE_INLINE explicit Quaternion(float value) noexcept;
 
-        FE_FINLINE Quaternion(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE Quaternion(float x, float y, float z, float w) noexcept;
 
-        FE_FINLINE explicit Quaternion(const std::array<float, 4>& array) noexcept;
+        FE_FORCE_INLINE explicit Quaternion(const std::array<float, 4>& array) noexcept;
 
         //! \return Quaternion{ 0, 0, 0, 0 }.
-        [[nodiscard]] FE_FINLINE static Quaternion GetZero() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion GetZero() noexcept;
 
         //! \return Quaternion{ 0, 0, 0, 1 }.
-        [[nodiscard]] FE_FINLINE static Quaternion GetIdentity() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion GetIdentity() noexcept;
 
-        [[nodiscard]] FE_FINLINE static Quaternion CreateRotationX(float angle);
-        [[nodiscard]] FE_FINLINE static Quaternion CreateRotationY(float angle);
-        [[nodiscard]] FE_FINLINE static Quaternion CreateRotationZ(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationX(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationY(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationZ(float angle);
 
-        [[nodiscard]] FE_FINLINE static Quaternion FromAxisAngle(const Vector3F& axis, float angle);
-        [[nodiscard]] FE_FINLINE static Quaternion FromEulerAngles(const Vector3F& eulerAngles);
-        [[nodiscard]] FE_FINLINE static Quaternion FromEulerAngles(float x, float y, float z);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromAxisAngle(const Vector3F& axis, float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromEulerAngles(const Vector3F& eulerAngles);
+        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromEulerAngles(float x, float y, float z);
 
-        FE_FINLINE void GetAxisAngle(Vector3F& axis, float& angle) const noexcept;
-        [[nodiscard]] FE_FINLINE Vector3F GetEulerAngles() const noexcept;
+        FE_FORCE_INLINE void GetAxisAngle(Vector3F& axis, float& angle) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector3F GetEulerAngles() const noexcept;
 
-        [[nodiscard]] FE_FINLINE float operator[](USize index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator[](USize index) const noexcept;
 
-        [[nodiscard]] FE_FINLINE float& operator()(USize index) noexcept;
-        [[nodiscard]] FE_FINLINE float operator()(USize index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& operator()(USize index) noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator()(USize index) const noexcept;
 
         //! \return A pointer to array of four floats (components of the quaternion).
-        [[nodiscard]] FE_FINLINE const float* Data() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
 
         //! \return Underlying SIMD type.
-        [[nodiscard]] FE_FINLINE const TVec& GetSIMD() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE const TVec& GetSIMD() const noexcept;
 
-        [[nodiscard]] FE_FINLINE float X() const noexcept;
-        [[nodiscard]] FE_FINLINE float Y() const noexcept;
-        [[nodiscard]] FE_FINLINE float Z() const noexcept;
-        [[nodiscard]] FE_FINLINE float W() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Y() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Z() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float W() const noexcept;
 
-        [[nodiscard]] FE_FINLINE float& X() noexcept;
-        [[nodiscard]] FE_FINLINE float& Y() noexcept;
-        [[nodiscard]] FE_FINLINE float& Z() noexcept;
-        [[nodiscard]] FE_FINLINE float& W() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& X() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& Y() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& Z() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& W() noexcept;
 
-        [[nodiscard]] FE_FINLINE Vector3F Im() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Vector3F Im() const noexcept;
 
-        FE_FINLINE void Set(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE void Set(float x, float y, float z, float w) noexcept;
 
-        [[nodiscard]] FE_FINLINE float Dot(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Dot(const Quaternion& other) const noexcept;
 
         //! \return Squared length of the quaternion.
-        [[nodiscard]] FE_FINLINE float LengthSq() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
 
         //! \return Length of the quaternion.
-        [[nodiscard]] FE_FINLINE float Length() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
 
-        [[nodiscard]] FE_FINLINE Quaternion Conjugated() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion Conjugated() const noexcept;
 
-        [[nodiscard]] FE_FINLINE Quaternion Inverse() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion Inverse() const noexcept;
 
-        [[nodiscard]] FE_FINLINE Quaternion Normalized() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion Normalized() const noexcept;
 
         //! \brief Linearly interpolate between this and destination.
         //!
         //! \param [in] f - Interpolation factor.
         //!
         //! \return New interpolated quaternion, this quaternion is not modified.
-        [[nodiscard]] FE_FINLINE Quaternion Lerp(const Quaternion& dst, float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion Lerp(const Quaternion& dst, float f) const noexcept;
 
         //! \brief Spherical linearly interpolate between this and destination.
         //!
         //! \param [in] f - Interpolation factor.
         //!
         //! \return New interpolated quaternion, this quaternion is not modified.
-        [[nodiscard]] FE_FINLINE Quaternion SLerp(const Quaternion& dst, float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion SLerp(const Quaternion& dst, float f) const noexcept;
 
         //! \brief Check if two quaternions are approximately equal.
         //!
@@ -122,25 +122,25 @@ namespace FE
         //! \param [in] epsilon - Accepted difference between the two quaternion.
         //!
         //! \return True if the quaternions are approximately equal.
-        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Quaternion& other,
+        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Quaternion& other,
                                                       float epsilon = Constants::Epsilon) const noexcept;
 
-        [[nodiscard]] FE_FINLINE bool operator==(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FINLINE bool operator!=(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Quaternion& other) const noexcept;
 
-        [[nodiscard]] FE_FINLINE Quaternion operator-() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator-() const noexcept;
 
-        [[nodiscard]] FE_FINLINE Quaternion operator+(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FINLINE Quaternion operator-(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FINLINE Quaternion operator*(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FINLINE Quaternion operator*(float f) const noexcept;
-        [[nodiscard]] FE_FINLINE Quaternion operator/(float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator+(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator-(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator*(const Quaternion& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator*(float f) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE Quaternion operator/(float f) const noexcept;
 
-        FE_FINLINE Quaternion& operator+=(const Quaternion& other) noexcept;
-        FE_FINLINE Quaternion& operator-=(const Quaternion& other) noexcept;
-        FE_FINLINE Quaternion& operator*=(const Quaternion& other) noexcept;
-        FE_FINLINE Quaternion& operator*=(float f) noexcept;
-        FE_FINLINE Quaternion& operator/=(float f) noexcept;
+        FE_FORCE_INLINE Quaternion& operator+=(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE Quaternion& operator-=(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE Quaternion& operator*=(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE Quaternion& operator*=(float f) noexcept;
+        FE_FORCE_INLINE Quaternion& operator/=(float f) noexcept;
     };
 
     Quaternion::Quaternion(TVec vec) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
