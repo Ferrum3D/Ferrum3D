@@ -1,4 +1,4 @@
-from scripts.common.common import run_command
+﻿from scripts.common.common import run_command
 import sys
 import time
 from termcolor import cprint
@@ -34,22 +34,6 @@ def get_cmake_generator():
 
 
 cmake_generator = ''
-
-
-def run_dotnet_build(build_type: str):
-    args = [
-        'dotnet',
-        'build',
-        'Managed/Ferrum3D/',
-        '--configuration', build_type
-    ]
-    code = run_command(args, hide_output=False)
-    if not code:
-        cprint('Error: ', 'red', end='')
-        print(f'Failed to build project for {build_type.capitalize()}')
-    else:
-        cprint(f'Successfully built project for {build_type.capitalize()}', 'green')
-    return code
 
 
 def run_cmake_build(build_type: str):
@@ -118,12 +102,7 @@ def main():
     run_build_stage('build', run_cmake_build, build_types)
 
     cprint('\n============================================================', 'yellow')
-    cprint('Running setup and build of C# project...', 'yellow')
-    run_build_stage('build', run_dotnet_build, build_types)
-    cprint('\n============================================================', 'yellow')
     cprint(f'Setup and build finished in {time.time() - start_time:.2f} seconds.', 'green')
-    run_command(['Managed/Ferrum3D/Ferrum.Samples.Triangle/bin/Debug/Ferrum.Samples.Triangle.exe'],
-                working_directory='Managed/Ferrum3D/Ferrum.Samples.Triangle/bin/Debug/')
 
 
 if __name__ == '__main__':
