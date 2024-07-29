@@ -25,8 +25,8 @@
 
 #    define FE_FUNCSIG __PRETTY_FUNCTION__
 
-#    ifndef FE_FINLINE
-#        define FE_FINLINE inline
+#    ifndef FE_FORCE_INLINE
+#        define FE_FORCE_INLINE inline
 #    endif
 #elif defined _MSC_VER
 #    define FE_COMPILER_MSVC 1
@@ -39,8 +39,8 @@
 
 #    define FE_FUNCSIG __FUNCSIG__
 
-#    ifndef FE_FINLINE
-#        define FE_FINLINE __forceinline
+#    ifndef FE_FORCE_INLINE
+#        define FE_FORCE_INLINE __forceinline
 #    endif
 #endif
 

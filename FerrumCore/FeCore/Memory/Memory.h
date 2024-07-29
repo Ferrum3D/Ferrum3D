@@ -20,10 +20,36 @@ namespace FE
         void FreeVirtual(void* ptr, size_t byteSize);
 
 
+        enum class ProtectFlags
+        {
+            None = 0,
+            ReadOnly = 1,
+            ReadWrite = 2,
+        };
+
+        void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection);
+
+
         void* DefaultAllocate(size_t byteSize);
         void* DefaultAllocate(size_t byteSize, size_t byteAlignment);
         void* DefaultReallocate(void* ptr, size_t newSize);
         void DefaultFree(void* ptr);
+
+
+        //! \brief Allocate an uninitialized array using the provided allocator.
+        template<class T, class TAllocator>
+        inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
+        {
+            return static_cast<T*>(pAllocator->allocate(elementCount * sizeof(T), byteAlignment));
+        }
+
+
+        //! \brief Allocate an uninitialized array using the default allocator.
+        template<class T>
+        inline T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
+        {
+            return static_cast<T*>(DefaultAllocate(elementCount * sizeof(T), byteAlignment));
+        }
 
 
         //! \brief Create a new object of type T using the provided allocator.

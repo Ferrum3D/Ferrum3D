@@ -1,4 +1,5 @@
-﻿#include <FeCore/Base/PlatformInclude.h>
+﻿#include "Memory.h"
+#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/Memory.h>
 #include <mimalloc.h>
 
@@ -46,6 +47,34 @@ namespace FE::Memory
 #endif
     }
 
+
+    void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection)
+    {
+#if FE_WINDOWS
+        DWORD osProtect = 0;
+        switch (protection)
+        {
+        case ProtectFlags::None:
+            osProtect = PAGE_NOACCESS;
+            break;
+        case ProtectFlags::ReadOnly:
+            osProtect = PAGE_READONLY;
+            break;
+        case ProtectFlags::ReadWrite:
+            osProtect = PAGE_READWRITE;
+            break;
+        default:
+            FE_DEBUGBREAK;
+            break;
+        }
+
+        DWORD oldProtect = 0;
+        const BOOL result = VirtualProtect(ptr, byteSize, osProtect, &oldProtect);
+        assert(result);
+#else
+#    error Not implemented :(
+#endif
+    }
 
     void* DefaultAllocate(size_t byteSize)
     {

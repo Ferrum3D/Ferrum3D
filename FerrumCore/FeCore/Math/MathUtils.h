@@ -9,17 +9,17 @@ namespace FE
         inline constexpr float Epsilon = 0.0001f;
     }
 
-    FE_FINLINE constexpr float ToRadians(float degrees) noexcept
+    FE_FORCE_INLINE constexpr float ToRadians(float degrees) noexcept
     {
         return degrees * Constants::PI / 180.f;
     }
 
-    FE_FINLINE constexpr float ToDegrees(float radians) noexcept
+    FE_FORCE_INLINE constexpr float ToDegrees(float radians) noexcept
     {
         return radians * 180.f / Constants::PI;
     }
 
-    FE_FINLINE constexpr UInt32 NextPowerOfTwo(UInt32 v) noexcept
+    FE_FORCE_INLINE constexpr UInt32 NextPowerOfTwo(UInt32 v) noexcept
     {
         v--;
         v |= v >> 1;
@@ -38,13 +38,13 @@ namespace FE
 
 #ifdef FE_COMPILER_MSVC
 
-    FE_FINLINE UInt32 CountTrailingZeros(UInt32 value) noexcept
+    FE_FORCE_INLINE UInt32 CountTrailingZeros(UInt32 value) noexcept
     {
         unsigned long tz = 0;
         return _BitScanForward(&tz, value) ? tz : 32;
     }
 
-    FE_FINLINE UInt32 CountLeadingZeros(UInt32 value) noexcept
+    FE_FORCE_INLINE UInt32 CountLeadingZeros(UInt32 value) noexcept
     {
         unsigned long lz = 0;
         return _BitScanReverse(&lz, value) ? 31 - lz : 32;
@@ -52,12 +52,12 @@ namespace FE
 
 #else
 
-    FE_FINLINE UInt32 CountTrailingZeros(UInt32 value) noexcept
+    FE_FORCE_INLINE UInt32 CountTrailingZeros(UInt32 value) noexcept
     {
         return __builtin_ctz(value);
     }
 
-    FE_FINLINE UInt32 CountLeadingZeros(UInt32 value) noexcept
+    FE_FORCE_INLINE UInt32 CountLeadingZeros(UInt32 value) noexcept
     {
         return __builtin_clz(value);
     }

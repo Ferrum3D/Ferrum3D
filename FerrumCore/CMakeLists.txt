@@ -78,12 +78,12 @@
     FeCore/IO/StdoutStream.h
     FeCore/IO/StreamBase.h
 
-    FeCore/Jobs/IJobScheduler.h
+    FeCore/Jobs/IJobSystem.h
     FeCore/Jobs/Job.h
-    FeCore/Jobs/JobScheduler.cpp
-    FeCore/Jobs/JobScheduler.h
-    FeCore/Jobs/JobTree.h
-    FeCore/Jobs/SignalJob.h
+    FeCore/Jobs/JobSystem.cpp
+    FeCore/Jobs/JobSystem.h
+    FeCore/Jobs/WaitGroup.cpp
+    FeCore/Jobs/WaitGroup.h
 
     FeCore/Math/Color.h
     FeCore/Math/Colors.cpp
@@ -102,6 +102,8 @@
     FeCore/Memory/Memory.h
     FeCore/Memory/Memory.cpp
     FeCore/Memory/NullableHandle.h
+    FeCore/Memory/PoolAllocator.h
+    FeCore/Memory/PoolAllocator.cpp
     FeCore/Memory/RefCount.h
 
     FeCore/Modules/DynamicLibrary.cpp
@@ -111,11 +113,17 @@
     FeCore/Modules/ServiceLocator.h
 
     FeCore/Parallel/AtomicFlags.h
+    FeCore/Parallel/Context.h
+    FeCore/Parallel/Context.cpp
+    FeCore/Parallel/Fiber.h
+    FeCore/Parallel/Fiber.cpp
     FeCore/Parallel/Mutex.cpp
     FeCore/Parallel/Mutex.h
     FeCore/Parallel/Semaphore.cpp
     FeCore/Parallel/Semaphore.h
     FeCore/Parallel/SpinLock.h
+    FeCore/Parallel/Thread.h
+    FeCore/Parallel/Thread.cpp
 
     FeCore/RTTI/RTTI.h
 
@@ -160,7 +168,7 @@ fe_enable_sse_for_target(FeCore)
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
-target_link_libraries(FeCore mimalloc EASTL unordered_dense)
+target_link_libraries(FeCore fcontext mimalloc EASTL unordered_dense TracyClient)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

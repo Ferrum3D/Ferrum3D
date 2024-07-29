@@ -1,5 +1,7 @@
 ﻿#pragma once
+#include <EASTL/fixed_vector.h>
 #include <EASTL/functional.h>
+#include <EASTL/intrusive_list.h>
 #include <EASTL/vector.h>
 #include <FeCore/Base/Hash.h>
 #include <FeCore/Base/Platform.h>
@@ -9,6 +11,7 @@
 #include <intrin.h>
 #include <mutex>
 #include <string_view>
+#include <tracy/Tracy.hpp>
 
 namespace FE
 {
@@ -72,7 +75,7 @@ namespace FE
     template<class T, class U = T>
     inline T AlignUp(T x, U align)
     {
-        return (x + (align - 1u)) & ~(align - 1u);
+        return static_cast<T>((x + (align - 1u)) & ~(align - 1u));
     }
 
     //! \brief Align up a pointer.
@@ -148,6 +151,46 @@ namespace FE
         return result;
     }
 
+    template<class T>
+    inline constexpr auto enum_cast(T value) -> std::underlying_type_t<T>
+    {
+        return static_cast<std::underlying_type_t<T>>(value);
+    }
+
+
+    template<class T, class TValue, TValue TInvalidValue = std::numeric_limits<TValue>::max()>
+    struct TypedHandle
+    {
+        using BaseType = TValue;
+
+        TValue Value = TInvalidValue;
+
+        inline void Reset() noexcept
+        {
+            Value = TInvalidValue;
+        }
+
+        inline explicit operator TValue() const noexcept
+        {
+            return Value;
+        }
+
+        inline explicit operator bool() const noexcept
+        {
+            return Value != TInvalidValue;
+        }
+
+        inline friend bool operator==(const TypedHandle& lhs, const TypedHandle& rhs)
+        {
+            return lhs.Value == rhs.Value;
+        }
+
+        inline friend bool operator!=(const TypedHandle& lhs, const TypedHandle& rhs)
+        {
+            return lhs.Value != rhs.Value;
+        }
+    };
+
 
     namespace Memory::Internal
     {
@@ -211,6 +254,14 @@ namespace FE
 
         template<class T, class TAllocator = Memory::Internal::EASTLDefaultAllocator>
         using vector = eastl::vector<T, TAllocator>;
+
+        template<class T, uint32_t TSize>
+        using fixed_vector = eastl::fixed_vector<T, TSize, false>;
+
+        using intrusive_list_node = eastl::intrusive_list_node;
+
+        template<class T = intrusive_list_node>
+        using intrusive_list = eastl::intrusive_list<T>;
     } // namespace festd
 
 
@@ -229,8 +280,6 @@ namespace FE
 
 #if FE_DEBUG
     //! \brief Assertion without loggers, used in modules on which loggers depend.
-    //!
-    //! If assertion fails this function will use \ref FE_DEBUGBREAK.
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
@@ -239,13 +288,9 @@ namespace FE
         while (0)
 #else
     //! \brief Assertion without loggers, used in modules on which loggers depend.
-    //!
-    //! If assertion fails this function will use \ref FE_DEBUGBREAK.
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
-            (void)(expression);                                                                                                  \
-            (void)(msg);                                                                                                         \
         }                                                                                                                        \
         while (0)
 #endif

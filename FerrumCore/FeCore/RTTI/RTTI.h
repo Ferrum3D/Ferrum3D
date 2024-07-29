@@ -92,7 +92,7 @@ namespace FE
     //!
     //! Works just like \ref fe_dynamic_cast<T*>, except it will assert that a type can be casted and won't return
     //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
-    //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behaviour.
+    //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behavior.
     //!
     //! \note The function uses only the classes that provide Ferrum3D RTTI through \ref FE_CLASS_RTTI.
     //!

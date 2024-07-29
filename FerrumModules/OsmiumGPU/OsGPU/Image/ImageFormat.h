@@ -290,7 +290,7 @@ namespace FE::Osmium
         Count
     };
 
-    FE_FINLINE StringSlice ToString(Format format)
+    FE_FORCE_INLINE StringSlice ToString(Format format)
     {
         switch (format)
         {
@@ -861,7 +861,7 @@ namespace FE::Osmium
         }
     }
 
-    FE_FINLINE UInt32 GetFormatSize(Format format)
+    FE_FORCE_INLINE UInt32 GetFormatSize(Format format)
     {
         switch (format)
         {

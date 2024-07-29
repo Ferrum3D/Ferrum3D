@@ -49,7 +49,8 @@ namespace FE
         //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline explicit UUID(const char* str) noexcept
         {
-            FE_CORE_ASSERT(TryParse(str, *this, false), "Invalid format");
+            const bool result = TryParse(str, *this, false);
+            FE_CORE_ASSERT(result, "Invalid format");
         }
 
         inline static bool TryParse(const char* str, UUID& result, bool assertLength = true)

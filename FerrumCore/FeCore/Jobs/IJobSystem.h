@@ -1,0 +1,33 @@
+﻿#pragma once
+#include <FeCore/Memory/Memory.h>
+
+namespace FE
+{
+    enum class JobPriority : uint16_t
+    {
+        Low,
+        Normal,
+        High,
+        Count,
+    };
+
+    class Job;
+
+
+    class IJobSystem : public Memory::RefCountedObjectBase
+    {
+        friend class WaitGroup;
+
+        template<class TJob>
+        friend struct SmallJob;
+
+        virtual void* AllocateSmallBlock(size_t byteSize) = 0;
+        virtual void FreeSmallBlock(void* ptr, size_t byteSize) = 0;
+
+    public:
+        FE_CLASS_RTTI(IJobSystem, "F9FB743A-B543-4B64-A36B-B055434DE90B");
+
+        virtual void AddJob(Job* pJob, JobPriority priority = JobPriority::Normal) = 0;
+        virtual void Stop() = 0;
+    };
+} // namespace FE

@@ -10,7 +10,7 @@
 
 namespace FE
 {
-    FE_FINLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
+    FE_FORCE_INLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
     {
         const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
         const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;

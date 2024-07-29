@@ -13,89 +13,89 @@ namespace FE
     public:
         FE_STRUCT_RTTI(Matrix4x4F, "F86BB569-A2F4-48B7-83BE-365D28E862BD");
 
-        FE_FINLINE Matrix4x4F() = default;
+        FE_FORCE_INLINE Matrix4x4F() = default;
 
-        FE_FINLINE Matrix4x4F(const Matrix4x4F& other) noexcept;
+        FE_FORCE_INLINE Matrix4x4F(const Matrix4x4F& other) noexcept;
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F GetZero() noexcept;
-        [[nodiscard]] FE_FINLINE static Matrix4x4F GetIdentity() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F GetZero() noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F GetIdentity() noexcept;
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2,
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2,
                                                             const Vector4F& row3);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
                                                                const Vector4F& column2, const Vector4F& column3);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationX(float angle);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationY(float angle);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotationZ(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationX(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationY(float angle);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationZ(float angle);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateRotation(const Quaternion& quaternion);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotation(const Quaternion& quaternion);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateScale(const Vector3F& scale);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(const Vector4F& diagonal);
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateDiagonal(float x, float y, float z, float w);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateScale(const Vector3F& scale);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateDiagonal(const Vector4F& diagonal);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateDiagonal(float x, float y, float z, float w);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
 
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateTransform(const Quaternion& rotation, const Vector3F& translation);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateTransform(const Quaternion& rotation, const Vector3F& translation);
 
         // Vulkan-compatible
-        [[nodiscard]] FE_FINLINE static Matrix4x4F CreateProjection(float fovY, float aspectRatio, float near, float far);
+        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateProjection(float fovY, float aspectRatio, float near, float far);
 
-        [[nodiscard]] FE_FINLINE const float* RowMajorData() const;
+        [[nodiscard]] FE_FORCE_INLINE const float* RowMajorData() const;
 
-        [[nodiscard]] FE_FINLINE float operator()(size_t row, size_t column) const;
-        [[nodiscard]] FE_FINLINE float& operator()(size_t row, size_t column);
+        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t row, size_t column) const;
+        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t row, size_t column);
 
-        [[nodiscard]] FE_FINLINE Vector4F GetRow(size_t index) const;
-        FE_FINLINE void SetRow(size_t index, const Vector4F& vector);
-        FE_FINLINE void SetRow(size_t index, float x, float y, float z, float w);
-        FE_FINLINE void SetRow(size_t index, const Vector3F& vector, float w = 1.0f);
+        [[nodiscard]] FE_FORCE_INLINE Vector4F GetRow(size_t index) const;
+        FE_FORCE_INLINE void SetRow(size_t index, const Vector4F& vector);
+        FE_FORCE_INLINE void SetRow(size_t index, float x, float y, float z, float w);
+        FE_FORCE_INLINE void SetRow(size_t index, const Vector3F& vector, float w = 1.0f);
 
-        [[nodiscard]] FE_FINLINE Vector4F GetColumn(size_t index) const;
-        FE_FINLINE void SetColumn(size_t index, const Vector4F& vector);
-        FE_FINLINE void SetColumn(size_t index, float x, float y, float z, float w);
-        FE_FINLINE void SetColumn(size_t index, const Vector3F& vector, float w = 1.0f);
+        [[nodiscard]] FE_FORCE_INLINE Vector4F GetColumn(size_t index) const;
+        FE_FORCE_INLINE void SetColumn(size_t index, const Vector4F& vector);
+        FE_FORCE_INLINE void SetColumn(size_t index, float x, float y, float z, float w);
+        FE_FORCE_INLINE void SetColumn(size_t index, const Vector3F& vector, float w = 1.0f);
 
-        [[nodiscard]] FE_FINLINE Vector4F GetBasisX() const;
-        [[nodiscard]] FE_FINLINE Vector4F GetBasisY() const;
-        [[nodiscard]] FE_FINLINE Vector4F GetBasisZ() const;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisX() const;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisY() const;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisZ() const;
 
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator+(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator-(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator*(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator*(float f) const;
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator/(float f) const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator+(const Matrix4x4F& other) const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator-(const Matrix4x4F& other) const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator*(const Matrix4x4F& other) const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator*(float f) const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator/(float f) const;
 
-        FE_FINLINE Matrix4x4F& operator+=(const Matrix4x4F& other);
-        FE_FINLINE Matrix4x4F& operator-=(const Matrix4x4F& other);
-        FE_FINLINE Matrix4x4F& operator*=(const Matrix4x4F& other);
-        FE_FINLINE Matrix4x4F& operator*=(float f);
-        FE_FINLINE Matrix4x4F& operator/=(float f);
+        FE_FORCE_INLINE Matrix4x4F& operator+=(const Matrix4x4F& other);
+        FE_FORCE_INLINE Matrix4x4F& operator-=(const Matrix4x4F& other);
+        FE_FORCE_INLINE Matrix4x4F& operator*=(const Matrix4x4F& other);
+        FE_FORCE_INLINE Matrix4x4F& operator*=(float f);
+        FE_FORCE_INLINE Matrix4x4F& operator/=(float f);
 
-        [[nodiscard]] FE_FINLINE Matrix4x4F operator-() const;
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator-() const;
 
-        [[nodiscard]] FE_FINLINE Vector3F operator*(const Vector3F& vector) const;
-        [[nodiscard]] FE_FINLINE Vector4F operator*(const Vector4F& vector) const;
+        [[nodiscard]] FE_FORCE_INLINE Vector3F operator*(const Vector3F& vector) const;
+        [[nodiscard]] FE_FORCE_INLINE Vector4F operator*(const Vector4F& vector) const;
 
-        [[nodiscard]] FE_FINLINE Matrix4x4F Transposed() const;
-        FE_FINLINE void Transpose();
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F Transposed() const;
+        FE_FORCE_INLINE void Transpose();
 
-        [[nodiscard]] FE_FINLINE Matrix4x4F InverseTransform() const;
-        FE_FINLINE void InvertTransform();
+        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F InverseTransform() const;
+        FE_FORCE_INLINE void InvertTransform();
 
-        [[nodiscard]] FE_FINLINE float Determinant() const;
+        [[nodiscard]] FE_FORCE_INLINE float Determinant() const;
 
-        [[nodiscard]] FE_FINLINE bool IsApproxEqualTo(const Matrix4x4F& other,
+        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Matrix4x4F& other,
                                                       float epsilon = Constants::Epsilon) const noexcept;
 
-        [[nodiscard]] FE_FINLINE bool operator==(const Matrix4x4F& other) const noexcept;
-        [[nodiscard]] FE_FINLINE bool operator!=(const Matrix4x4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Matrix4x4F& other) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Matrix4x4F& other) const noexcept;
     };
 
     namespace Internal
     {
-        FE_FINLINE void SIMDMatrix4x4Multiply(const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r,
+        FE_FORCE_INLINE void SIMDMatrix4x4Multiply(const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r,
                                               SIMD::SSE::Float32x4* out)
         {
             // clang-format off
@@ -106,7 +106,7 @@ namespace FE
             // clang-format on
         }
 
-        FE_FINLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(const SIMD::SSE::Float32x4* matrix,
+        FE_FORCE_INLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(const SIMD::SSE::Float32x4* matrix,
                                                                     SIMD::SSE::Float32x4 vector)
         {
             using namespace SIMD::SSE;
@@ -118,7 +118,7 @@ namespace FE
             return prod1.HorizontalAdd(prod2).HorizontalAdd(prod3.HorizontalAdd(prod4));
         }
 
-        FE_FINLINE float SIMDMatrix3x3Determinant(const Vector3F* matrix)
+        FE_FORCE_INLINE float SIMDMatrix3x3Determinant(const Vector3F* matrix)
         {
             // Cross and Dot are already SIMD-optimized
             //                  | a1 a2 a3 |

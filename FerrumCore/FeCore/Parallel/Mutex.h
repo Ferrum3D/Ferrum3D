@@ -33,7 +33,12 @@ namespace FE
         Mutex(const Mutex&) = delete;
         Mutex& operator=(const Mutex&) = delete;
 
-        Mutex() noexcept;
+        inline Mutex() noexcept
+            : Mutex(500)
+        {
+        }
+
+        Mutex(uint32_t spinCount) noexcept;
         ~Mutex();
 
         void lock() noexcept;

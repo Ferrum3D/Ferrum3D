@@ -2,8 +2,9 @@
 #include <FeCore/Assets/IAssetManager.h>
 #include <FeCore/Console/ConsoleLogger.h>
 #include <FeCore/EventBus/EventBus.h>
+#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/FrameworkBase.h>
-#include <FeCore/Jobs/JobScheduler.h>
+#include <FeCore/Jobs/JobSystem.h>
 
 namespace FE
 {
@@ -11,10 +12,10 @@ namespace FE
     {
         String Name;
         String AssetDirectory;
-        UInt32 WindowWidth                = 800;
-        UInt32 WindowHeight               = 600;
+        UInt32 WindowWidth = 800;
+        UInt32 WindowHeight = 600;
         Debug::LogMessageType LogSeverity = Debug::LogMessageType::All;
-        bool Fullscreen                   = false;
+        bool Fullscreen = false;
 
         inline ApplicationDesc() = default;
 
@@ -64,16 +65,16 @@ namespace FE
     class ApplicationFramework : public ServiceLocatorImplBase<FrameworkBase, ApplicationFramework>
     {
         UInt32 m_FrameCounter = 0;
-        Int32 m_ExitCode      = 0;
-        bool m_StopRequested  = false;
+        Int32 m_ExitCode = 0;
+        bool m_StopRequested = false;
 
         Rc<Debug::ConsoleLogger> m_Logger;
         Rc<EventBus<FrameEvents>> m_FrameEventBus;
-        Rc<JobScheduler> m_JobScheduler;
+        Rc<JobSystem> m_JobSystem;
         Rc<Assets::IAssetManager> m_AssetManager;
 
     protected:
-        virtual void PollSystemEvents()   = 0;
+        virtual void PollSystemEvents() = 0;
         virtual bool CloseEventReceived() = 0;
 
         inline virtual void Tick([[maybe_unused]] const FrameEventArgs& frameEventArgs) {}
