@@ -42,7 +42,7 @@ Supported commands:
     bool TryConvertArrayToVector(const rapidjson::Value& value, typename CppTypeForAssetMetadataType<T>::Type& vector)
     {
         auto arr = value.GetArray();
-        const USize vecSize = T == AssetMetadataType::Vector3 ? 3 : 4;
+        const size_t vecSize = T == AssetMetadataType::Vector3 ? 3 : 4;
         if (arr.Size() != vecSize)
         {
             return false;
@@ -75,7 +75,7 @@ Supported commands:
         rapidjson::Document doc;
         if (doc.ParseInsitu(contents.Data()).HasParseError())
         {
-            USize lineNumber = 1;
+            size_t lineNumber = 1;
             for (auto c : StringSlice(contents.Data(), contents.Data() + doc.GetErrorOffset()))
             {
                 if (c == '\n')
@@ -291,7 +291,7 @@ Supported commands:
     {
         eastl::vector<StringSlice> args;
         args.reserve(argc - 1);
-        for (USize i = 1; i < argc; ++i)
+        for (size_t i = 1; i < argc; ++i)
         {
             args.push_back(argv[i]);
         }

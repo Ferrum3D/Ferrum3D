@@ -48,7 +48,7 @@ namespace FE::Osmium
         m_DepthImage->AllocateMemory(MemoryType::DeviceLocal);
         m_DepthImageView = m_DepthImage->CreateView(ImageAspectFlags::Depth);
 
-        for (USize i = 0; i < m_Desc.FrameCount; ++i)
+        for (size_t i = 0; i < m_Desc.FrameCount; ++i)
         {
             VkSemaphoreCreateInfo semaphoreCI{};
             semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -75,7 +75,7 @@ namespace FE::Osmium
 
         auto pd = fe_assert_cast<VKAdapter*>(&m_Device->GetAdapter())->GetNativeAdapter();
 
-        UInt32 formatCount;
+        uint32_t formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(pd, m_Surface, &formatCount, nullptr);
         eastl::vector formats(formatCount, VkSurfaceFormatKHR{});
         vkGetPhysicalDeviceSurfaceFormatsKHR(pd, m_Surface, &formatCount, formats.data());
@@ -118,7 +118,7 @@ namespace FE::Osmium
         // If v-sync is disabled, try to use either immediate or mailbox (if supported).
         if (!m_Desc.VerticalSync)
         {
-            UInt32 supportedModeCount;
+            uint32_t supportedModeCount;
             vkGetPhysicalDeviceSurfacePresentModesKHR(pd, m_Surface, &supportedModeCount, nullptr);
             eastl::vector<VkPresentModeKHR> supportedModes(supportedModeCount, VkPresentModeKHR{});
             vkGetPhysicalDeviceSurfacePresentModesKHR(pd, m_Surface, &supportedModeCount, supportedModes.data());
@@ -187,17 +187,17 @@ namespace FE::Osmium
         return m_Desc;
     }
 
-    UInt32 VKSwapChain::GetCurrentImageIndex()
+    uint32_t VKSwapChain::GetCurrentImageIndex()
     {
         return m_ImageIndex;
     }
 
-    UInt32 VKSwapChain::GetImageCount()
+    uint32_t VKSwapChain::GetImageCount()
     {
-        return static_cast<UInt32>(m_Images.size());
+        return static_cast<uint32_t>(m_Images.size());
     }
 
-    IImage* VKSwapChain::GetImage(UInt32 index)
+    IImage* VKSwapChain::GetImage(uint32_t index)
     {
         return m_Images[index].Get();
     }
@@ -224,11 +224,11 @@ namespace FE::Osmium
         AcquireNextImage(&m_ImageIndex);
     }
 
-    void VKSwapChain::AcquireNextImage(UInt32* index)
+    void VKSwapChain::AcquireNextImage(uint32_t* index)
     {
         VkSemaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex];
         FE_VK_ASSERT(vkAcquireNextImageKHR(
-            m_Device->GetNativeDevice(), m_NativeSwapChain, static_cast<UInt64>(-1), semaphore, nullptr, index));
+            m_Device->GetNativeDevice(), m_NativeSwapChain, static_cast<uint64_t>(-1), semaphore, nullptr, index));
     }
 
     eastl::vector<IImageView*> VKSwapChain::GetRTVs()
@@ -248,7 +248,7 @@ namespace FE::Osmium
         return m_DepthImageView.Get();
     }
 
-    UInt32 VKSwapChain::GetCurrentFrameIndex()
+    uint32_t VKSwapChain::GetCurrentFrameIndex()
     {
         return m_FrameIndex;
     }

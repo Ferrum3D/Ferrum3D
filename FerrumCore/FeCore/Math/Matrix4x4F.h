@@ -11,7 +11,7 @@ namespace FE
         Vector4F m_Data[RowCount];
 
     public:
-        FE_STRUCT_RTTI(Matrix4x4F, "F86BB569-A2F4-48B7-83BE-365D28E862BD");
+        FE_RTTI_Base(Matrix4x4F, "F86BB569-A2F4-48B7-83BE-365D28E862BD");
 
         FE_FORCE_INLINE Matrix4x4F() = default;
 

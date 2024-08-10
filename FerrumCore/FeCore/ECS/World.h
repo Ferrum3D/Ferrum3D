@@ -11,7 +11,7 @@ namespace FE::ECS
     class IWorld : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IWorld, "DCA8359C-CDD0-4555-8B87-2D2F5915476F");
+        FE_RTTI_Class(IWorld, "DCA8359C-CDD0-4555-8B87-2D2F5915476F");
 
         virtual void RegisterSystem(ISystem* system) = 0;
         virtual void UnregisterSystem(ISystem* system) = 0;
@@ -27,7 +27,7 @@ namespace FE::ECS
         Rc<EntityRegistry> m_Registry;
 
     public:
-        FE_CLASS_RTTI(World, "1937CC6F-4309-4EF4-9AB2-014ABC269FBE");
+        FE_RTTI_Class(World, "1937CC6F-4309-4EF4-9AB2-014ABC269FBE");
 
         World();
         ~World() override = default;

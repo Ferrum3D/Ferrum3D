@@ -4,7 +4,7 @@
 
 namespace FE::Osmium
 {
-    enum class Format : Int32
+    enum class Format : int32_t
     {
         None,
         R4G4_UNorm_Pack8,
@@ -861,7 +861,7 @@ namespace FE::Osmium
         }
     }
 
-    FE_FORCE_INLINE UInt32 GetFormatSize(Format format)
+    FE_FORCE_INLINE uint32_t GetFormatSize(Format format)
     {
         switch (format)
         {

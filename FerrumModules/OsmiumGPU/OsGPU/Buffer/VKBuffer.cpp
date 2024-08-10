@@ -11,7 +11,7 @@ namespace FE::Osmium
     {
     }
 
-    void* VKBuffer::Map(UInt64 offset, UInt64 size)
+    void* VKBuffer::Map(uint64_t offset, uint64_t size)
     {
         return m_Memory.Map(offset, size);
     }

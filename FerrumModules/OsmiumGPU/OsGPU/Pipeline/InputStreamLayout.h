@@ -24,7 +24,7 @@ namespace FE::Osmium
 
     struct InputStreamBufferDesc
     {
-        FE_STRUCT_RTTI(InputStreamBufferDesc, "EBFE9878-7F92-4B91-9DDF-A879C9180DEC");
+        FE_RTTI_Base(InputStreamBufferDesc, "EBFE9878-7F92-4B91-9DDF-A879C9180DEC");
 
         bool operator==(const InputStreamBufferDesc& rhs) const
         {
@@ -36,17 +36,17 @@ namespace FE::Osmium
             return !(rhs == *this);
         }
 
-        UInt32 Stride;
+        uint32_t Stride;
         InputStreamRate InputRate;
     };
 
     struct InputStreamAttributeDesc
     {
-        FE_STRUCT_RTTI(InputStreamAttributeDesc, "5D1A2410-3399-4C49-A7DC-0E7BA680C49C");
+        FE_RTTI_Base(InputStreamAttributeDesc, "5D1A2410-3399-4C49-A7DC-0E7BA680C49C");
 
         InputStreamAttributeDesc() = default;
 
-        inline InputStreamAttributeDesc(const String& shaderSemantic, UInt32 bufferIndex, UInt32 offset, Format elementFormat)
+        inline InputStreamAttributeDesc(const String& shaderSemantic, uint32_t bufferIndex, uint32_t offset, Format elementFormat)
             : ShaderSemantic(shaderSemantic)
             , BufferIndex(bufferIndex)
             , Offset(offset)
@@ -66,8 +66,8 @@ namespace FE::Osmium
         }
 
         FE::String ShaderSemantic;
-        UInt32 BufferIndex = 0;
-        UInt32 Offset = 0;
+        uint32_t BufferIndex = 0;
+        uint32_t Offset = 0;
         Format ElementFormat = Format::None;
     };
 

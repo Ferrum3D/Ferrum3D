@@ -3,7 +3,7 @@
 
 namespace FE::Memory
 {
-    class LinearAllocator final : public std::pmr::memory_resource
+    class LinearAllocator : public std::pmr::memory_resource
     {
         struct Page final
         {
@@ -27,6 +27,7 @@ namespace FE::Memory
 
         void NewPage();
 
+    protected:
         void* do_allocate(size_t byteSize, size_t byteAlignment) override;
         void do_deallocate(void*, size_t, size_t) override {}
         bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override

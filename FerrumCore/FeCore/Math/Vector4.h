@@ -25,7 +25,7 @@ namespace FE
         FE_POP_MSVC_WARNING
 
     public:
-        FE_STRUCT_RTTI(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
+        FE_RTTI_Base(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
 
         FE_FORCE_INLINE Vector4F()
             : Vector4F(0, 0, 0, 0)

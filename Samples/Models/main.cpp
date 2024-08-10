@@ -46,7 +46,7 @@ class ExampleApplication final : public FE::ApplicationFramework
     HAL::Viewport m_Viewport{};
     HAL::Scissor m_Scissor{};
 
-    const FE::Int32 m_FrameBufferCount = 3;
+    const int32_t m_FrameBufferCount = 3;
 
 protected:
     void PollSystemEvents() override
@@ -79,7 +79,7 @@ protected:
     }
 
 public:
-    FE_CLASS_RTTI(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
+    FE_RTTI_Class(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
 
     ~ExampleApplication() override
     {
@@ -116,7 +116,7 @@ public:
         auto meshAsset = FE::Assets::Asset<HAL::MeshAssetStorage>(FE::Assets::AssetID("884FEDDD-141D-49A0-92B2-38B519403D0A"));
         meshAsset.LoadSync();
         FE::Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
-        FE::UInt64 vertexSize, indexSize;
+        uint64_t vertexSize, indexSize;
         {
             vertexSize = meshAsset->VertexSize();
             vertexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
@@ -324,7 +324,7 @@ public:
             auto clearValues = eastl::vector{ HAL::ClearValueDesc::CreateColorValue(FE::Colors::MediumAquamarine),
                                               HAL::ClearValueDesc::CreateDepthStencilValue() };
             cmd->BeginRenderPass(m_RenderPass.Get(), framebuffer.Get(), clearValues);
-            cmd->DrawIndexed(meshAsset->IndexSize() / sizeof(FE::UInt32), 1, 0, 0, 0);
+            cmd->DrawIndexed(meshAsset->IndexSize() / sizeof(uint32_t), 1, 0, 0, 0);
             cmd->EndRenderPass();
             cmd->End();
         }

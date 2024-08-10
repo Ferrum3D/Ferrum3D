@@ -8,7 +8,7 @@ namespace FE::Osmium
         eastl::vector<Assets::AssetMetadataField> m_MetadataFields;
 
     public:
-        FE_CLASS_RTTI(MeshAssetLoader, "7A4E500E-9AEC-4B3A-A6F0-16B47299ECA2");
+        FE_RTTI_Class(MeshAssetLoader, "7A4E500E-9AEC-4B3A-A6F0-16B47299ECA2");
 
         ~MeshAssetLoader() override = default;
 

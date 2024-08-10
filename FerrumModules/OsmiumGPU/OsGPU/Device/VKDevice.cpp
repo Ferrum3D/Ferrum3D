@@ -33,17 +33,17 @@ namespace FE::Osmium
             });
         };
 
-        UInt32 familyCount;
+        uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, nullptr);
         eastl::vector<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
         vkGetPhysicalDeviceQueueFamilyProperties(m_NativeAdapter, &familyCount, families.data());
         for (uint32_t i = 0; i < families.size(); ++i)
         {
-            UInt32 graphics = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
-            UInt32 compute = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
-            UInt32 copy = VK_QUEUE_TRANSFER_BIT;
+            uint32_t graphics = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            uint32_t compute = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
+            uint32_t copy = VK_QUEUE_TRANSFER_BIT;
 
-            auto idx = static_cast<UInt32>(i);
+            auto idx = static_cast<uint32_t>(i);
             if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(CommandQueueClass::Graphics))
             {
                 m_QueueFamilyIndices.push_back(VKQueueFamilyData(idx, families[i].queueCount, CommandQueueClass::Graphics));
@@ -59,12 +59,12 @@ namespace FE::Osmium
         }
     }
 
-    UInt32 VKDevice::FindMemoryType(UInt32 typeBits, VkMemoryPropertyFlags properties)
+    uint32_t VKDevice::FindMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(m_NativeAdapter, &memProperties);
 
-        for (UInt32 i = 0; i < memProperties.memoryTypeCount; ++i)
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
         {
             if ((typeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
             {
@@ -73,7 +73,7 @@ namespace FE::Osmium
         }
 
         FE_UNREACHABLE("Memory type not found");
-        return static_cast<UInt32>(-1);
+        return static_cast<uint32_t>(-1);
     }
 
     VKDevice::VKDevice(VKAdapter& adapter)
@@ -84,7 +84,7 @@ namespace FE::Osmium
         FE_LOG_MESSAGE("Creating Vulkan Device on GPU: {}...", StringSlice(m_Adapter->GetDesc().Name));
         FindQueueFamilies();
 
-        UInt32 availableExtCount;
+        uint32_t availableExtCount;
         vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, nullptr);
         eastl::vector<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
         vkEnumerateDeviceExtensionProperties(m_NativeAdapter, nullptr, &availableExtCount, availableExt.data());
@@ -115,10 +115,10 @@ namespace FE::Osmium
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCI.queueCreateInfoCount = static_cast<UInt32>(queuesCI.size());
+        deviceCI.queueCreateInfoCount = static_cast<uint32_t>(queuesCI.size());
         deviceCI.pQueueCreateInfos = queuesCI.data();
         deviceCI.pEnabledFeatures = &deviceFeatures;
-        deviceCI.enabledExtensionCount = static_cast<UInt32>(RequiredDeviceExtensions.size());
+        deviceCI.enabledExtensionCount = static_cast<uint32_t>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
 
         vkCreateDevice(m_NativeAdapter, &deviceCI, VK_NULL_HANDLE, &m_NativeDevice);
@@ -219,7 +219,7 @@ namespace FE::Osmium
         return Rc<VKShaderModule>::DefaultNew(*this, desc);
     }
 
-    Rc<VKCommandBuffer> VKDevice::CreateCommandBuffer(UInt32 queueFamilyIndex)
+    Rc<VKCommandBuffer> VKDevice::CreateCommandBuffer(uint32_t queueFamilyIndex)
     {
         return Rc<VKCommandBuffer>::DefaultNew(*this, queueFamilyIndex);
     }
@@ -269,16 +269,16 @@ namespace FE::Osmium
         return m_SignalSemaphores.push_back();
     }
 
-    UInt32 VKDevice::GetWaitSemaphores(const VkSemaphore** semaphores)
+    uint32_t VKDevice::GetWaitSemaphores(const VkSemaphore** semaphores)
     {
         *semaphores = m_WaitSemaphores.data();
-        return static_cast<UInt32>(m_WaitSemaphores.size());
+        return static_cast<uint32_t>(m_WaitSemaphores.size());
     }
 
-    UInt32 VKDevice::GetSignalSemaphores(const VkSemaphore** semaphores)
+    uint32_t VKDevice::GetSignalSemaphores(const VkSemaphore** semaphores)
     {
         *semaphores = m_SignalSemaphores.data();
-        return static_cast<UInt32>(m_SignalSemaphores.size());
+        return static_cast<uint32_t>(m_SignalSemaphores.size());
     }
 
     Rc<IWindow> VKDevice::CreateWindow(const WindowDesc& desc)
@@ -342,7 +342,7 @@ namespace FE::Osmium
     VkMemoryRequirements VKDevice::GetImageMemoryRequirements(const ImageDesc& desc)
     {
         VkMemoryRequirements result{};
-        USize hash = 0;
+        size_t hash = 0;
         HashCombine(hash, desc);
         if (m_ImageMemoryRequirementsByDesc.TryGetValue(hash, result))
         {
@@ -373,9 +373,9 @@ namespace FE::Osmium
         return Rc<VKTransientResourceHeap>::DefaultNew(*this, desc);
     }
 
-    inline USize GetSetLayoutHash(const ArraySlice<DescriptorDesc>& descriptors)
+    inline size_t GetSetLayoutHash(const ArraySlice<DescriptorDesc>& descriptors)
     {
-        USize result = 0;
+        size_t result = 0;
         for (auto& descriptor : descriptors)
         {
             HashCombine(result, descriptor);
@@ -384,7 +384,7 @@ namespace FE::Osmium
         return result;
     }
 
-    VkDescriptorSetLayout VKDevice::GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, USize& key)
+    VkDescriptorSetLayout VKDevice::GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, size_t& key)
     {
         key = GetSetLayoutHash(descriptors);
         VkDescriptorSetLayout layout;
@@ -392,7 +392,7 @@ namespace FE::Osmium
         if (m_DescriptorSetLayouts.find(key) == m_DescriptorSetLayouts.end())
         {
             eastl::vector<VkDescriptorSetLayoutBinding> bindings;
-            for (UInt32 i = 0; i < descriptors.Length(); ++i)
+            for (uint32_t i = 0; i < descriptors.Length(); ++i)
             {
                 auto& desc = descriptors[i];
                 auto& binding = bindings.push_back();
@@ -405,7 +405,7 @@ namespace FE::Osmium
 
             VkDescriptorSetLayoutCreateInfo layoutCI{};
             layoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutCI.bindingCount = static_cast<UInt32>(bindings.size());
+            layoutCI.bindingCount = static_cast<uint32_t>(bindings.size());
             layoutCI.pBindings = bindings.data();
             vkCreateDescriptorSetLayout(m_NativeDevice, &layoutCI, VK_NULL_HANDLE, &layout);
 
@@ -419,7 +419,7 @@ namespace FE::Osmium
         return layout;
     }
 
-    void VKDevice::ReleaseDescriptorSetLayout(USize key)
+    void VKDevice::ReleaseDescriptorSetLayout(size_t key)
     {
         if (m_DescriptorSetLayouts[key].Release(m_NativeDevice))
         {

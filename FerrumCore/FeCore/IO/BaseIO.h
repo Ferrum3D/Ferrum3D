@@ -1,24 +1,25 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE::IO
 {
-    enum class ResultCode
+    //! \brief Represents an I/O result code.
+    enum class ResultCode : int32_t
     {
-        Success,
-        PermissionDenied,
-        NoFileOrDirectory,
-        FileExists,
-        FileTooLarge,
-        FilenameTooLong,
-        NotDirectory,
-        IsDirectory,
-        DirectoryNotEmpty,
-        TooManyOpenFiles,
-        InvalidSeek,
-        IOError,
-        DeadLock,
-        UnknownError
+        Success = 0,
+        PermissionDenied = -1,                       //!< Permission denied.
+        NoFileOrDirectory = -2,                      //!< No such file or directory.
+        FileExists = -3,                             //!< File already exists.
+        FileTooLarge = -4,                           //!< File is too large.
+        FilenameTooLong = -5,                        //!< Filename is too long.
+        NotDirectory = -6,                           //!< Not a directory.
+        IsDirectory = -7,                            //!< Is a directory.
+        DirectoryNotEmpty = -8,                      //!< Directory is not empty.
+        TooManyOpenFiles = -9,                       //!< Too many files are open.
+        InvalidSeek = -10,                           //!< Invalid seek operation.
+        IOError = -11,                               //!< IO error.
+        DeadLock = -12,                              //!< Resource deadlock would occur.
+        UnknownError = DefaultErrorCode<ResultCode>, //!< Unknown error.
     };
 
     StringSlice GetResultDesc(ResultCode code);
@@ -77,4 +78,4 @@ namespace FE::IO
         End,
         Current
     };
-}
+} // namespace FE::IO

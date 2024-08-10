@@ -20,7 +20,7 @@ namespace FE::Osmium
         poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolCI.maxSets = desc.MaxTables;
         poolCI.pPoolSizes = sizes.data();
-        poolCI.poolSizeCount = static_cast<UInt32>(sizes.size());
+        poolCI.poolSizeCount = static_cast<uint32_t>(sizes.size());
 
         vkCreateDescriptorPool(m_Device->GetNativeDevice(), &poolCI, VK_NULL_HANDLE, &m_NativePool);
     }

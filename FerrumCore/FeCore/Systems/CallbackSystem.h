@@ -15,7 +15,7 @@ namespace FE::ECS
         std::function<void(const FrameEventArgs* args)> UpdateCallback;
         std::function<void()> DestroyCallback;
 
-        FE_CLASS_RTTI(CallbackSystem, "484CC480-1C59-4FF0-B994-09A87C4E18DF");
+        FE_RTTI_Class(CallbackSystem, "484CC480-1C59-4FF0-B994-09A87C4E18DF");
 
         ~CallbackSystem() override = default;
 

@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief An immutable non-owning slice of elements stored contiguously, e.g. in an array or List<T>.
+    //! \brief An immutable non-owning slice of elements stored contiguously, e.g. in an array or vector.
     template<class T>
     class ArraySlice
     {
@@ -11,7 +11,7 @@ namespace FE
         const T* m_End;
 
     public:
-        FE_STRUCT_RTTI(ArraySlice, "C047D694-0887-403D-AD65-6A1B7B873951");
+        FE_RTTI_Base(ArraySlice, "C047D694-0887-403D-AD65-6A1B7B873951");
 
         inline ArraySlice()
             : m_Begin(nullptr)
@@ -83,7 +83,7 @@ namespace FE
         //! \tparam N - Length of the array.
         //!
         //! \param [in] array - The array.
-        template<USize N>
+        template<size_t N>
         inline ArraySlice(const std::array<T, N>& array) // NOLINT
             : m_Begin(array.data())
             , m_End(array.data() + array.size())
@@ -117,10 +117,10 @@ namespace FE
             return m_Begin[index];
         }
 
-        [[nodiscard]] inline SSize IndexOf(const T& value) const
+        [[nodiscard]] inline ptrdiff_t IndexOf(const T& value) const
         {
-            auto length = static_cast<SSize>(Length());
-            for (SSize i = 0; i < length; ++i)
+            auto length = static_cast<ptrdiff_t>(Length());
+            for (ptrdiff_t i = 0; i < length; ++i)
             {
                 if (value == m_Begin[i])
                 {

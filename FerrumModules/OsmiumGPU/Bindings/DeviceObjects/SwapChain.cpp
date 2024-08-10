@@ -5,12 +5,12 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT UInt32 ISwapChain_GetCurrentFrameIndex(ISwapChain* self)
+        FE_DLL_EXPORT uint32_t ISwapChain_GetCurrentFrameIndex(ISwapChain* self)
         {
             return self->GetCurrentFrameIndex();
         }
 
-        FE_DLL_EXPORT UInt32 ISwapChain_GetCurrentImageIndex(ISwapChain* self)
+        FE_DLL_EXPORT uint32_t ISwapChain_GetCurrentImageIndex(ISwapChain* self)
         {
             return self->GetCurrentImageIndex();
         }
@@ -26,13 +26,13 @@ namespace FE::Osmium
             return result;
         }
 
-        FE_DLL_EXPORT void ISwapChain_GetRTVs(ISwapChain* self, IImageView** renderTargets, Int32* count)
+        FE_DLL_EXPORT void ISwapChain_GetRTVs(ISwapChain* self, IImageView** renderTargets, int32_t* count)
         {
             auto result = self->GetRTVs();
-            *count      = static_cast<Int32>(result.Size());
+            *count      = static_cast<int32_t>(result.Size());
             if (renderTargets)
             {
-                for (Int32 i = 0; i < result.Size(); ++i)
+                for (int32_t i = 0; i < result.Size(); ++i)
                 {
                     renderTargets[i] = result[i];
                 }

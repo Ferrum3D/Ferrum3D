@@ -14,7 +14,7 @@ namespace FE::SIMD::SSE
     //! The provided functions use SSE4.1, but it's planned to conditionally compile them for SSE3 only as an option.
     struct Float32x4
     {
-        FE_STRUCT_RTTI(Float32x4, "7A8BB7B4-0841-4D71-A81D-D3F76828F08F");
+        FE_RTTI_Base(Float32x4, "7A8BB7B4-0841-4D71-A81D-D3F76828F08F");
 
         inline static constexpr size_t ElementCount = 4; //!< Number of elements in a vector.
 
@@ -83,17 +83,17 @@ namespace FE::SIMD::SSE
 
         FE_FORCE_INLINE static Float32x4 CompareLe(Float32x4 a, Float32x4 b) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllEq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllEq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllNeq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllNeq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllGt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllGt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllLt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllLt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllGe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllGe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
-        FE_FORCE_INLINE static bool CompareAllLe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept;
+        FE_FORCE_INLINE static bool CompareAllLe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept;
 
         FE_FORCE_INLINE friend Float32x4 operator&(Float32x4 a, Float32x4 b) noexcept;
 
@@ -270,36 +270,36 @@ namespace FE::SIMD::SSE
         return _mm_cmple_ps(a.Data, b.Data);
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllEq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllEq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         auto cmp = _mm_castps_si128(CompareNeq(a, b).Data);
         return (_mm_movemask_epi8(cmp) & mask) == 0;
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllNeq(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllNeq(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         return !CompareAllEq(a, b, mask);
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllGt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllGt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         auto cmp = _mm_castps_si128(CompareLe(a, b).Data);
         return (_mm_movemask_epi8(cmp) & mask) == 0;
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllLt(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllLt(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         auto cmp = _mm_castps_si128(CompareGe(a, b).Data);
         return (_mm_movemask_epi8(cmp) & mask) == 0;
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllGe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllGe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         auto cmp = _mm_castps_si128(CompareLt(a, b).Data);
         return (_mm_movemask_epi8(cmp) & mask) == 0;
     }
 
-    FE_FORCE_INLINE bool Float32x4::CompareAllLe(Float32x4 a, Float32x4 b, UInt32 mask) noexcept
+    FE_FORCE_INLINE bool Float32x4::CompareAllLe(Float32x4 a, Float32x4 b, uint32_t mask) noexcept
     {
         auto cmp = _mm_castps_si128(CompareGt(a, b).Data);
         return (_mm_movemask_epi8(cmp) & mask) == 0;
@@ -342,7 +342,7 @@ namespace FE::SIMD::SSE
 
     FE_FORCE_INLINE Float32x4 Float32x4::Abs() const noexcept
     {
-        static const auto signMask = _mm_castsi128_ps(_mm_set1_epi32(static_cast<Int32>(0x80000000)));
+        static const auto signMask = _mm_castsi128_ps(_mm_set1_epi32(static_cast<int32_t>(0x80000000)));
         return _mm_andnot_ps(signMask, Data);
     }
 
@@ -358,10 +358,10 @@ namespace FE::SIMD::SSE
 
     FE_FORCE_INLINE Float32x4 Float32x4::NegateXYZ() const noexcept
     {
-        alignas(16) static constexpr Int32 values[] = { static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x00000000) };
+        alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x00000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);
@@ -374,10 +374,10 @@ namespace FE::SIMD::SSE
 
     Float32x4 Float32x4::NegateW() const noexcept
     {
-        alignas(16) static constexpr Int32 values[] = { static_cast<Int32>(0x00000000),
-                                                        static_cast<Int32>(0x00000000),
-                                                        static_cast<Int32>(0x00000000),
-                                                        static_cast<Int32>(0x80000000) };
+        alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x00000000),
+                                                        static_cast<int32_t>(0x00000000),
+                                                        static_cast<int32_t>(0x00000000),
+                                                        static_cast<int32_t>(0x80000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);
@@ -385,10 +385,10 @@ namespace FE::SIMD::SSE
 
     Float32x4 Float32x4::Negate() const noexcept
     {
-        alignas(16) static constexpr Int32 values[] = { static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x80000000),
-                                                        static_cast<Int32>(0x80000000) };
+        alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x80000000),
+                                                        static_cast<int32_t>(0x80000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);

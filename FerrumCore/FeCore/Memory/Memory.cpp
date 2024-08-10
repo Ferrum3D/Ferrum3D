@@ -1,26 +1,31 @@
-﻿#include "Memory.h"
-#include <FeCore/Base/PlatformInclude.h>
+﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Parallel/SpinLock.h>
 #include <mimalloc.h>
 
 namespace FE::Memory
 {
     PlatformSpec GetPlatformSpec()
     {
-        static PlatformSpec result;
-        if (result.PageSize != 0)
-            return result;
+        static PlatformSpec s_result;
+        if (s_result.PageSize != 0)
+            return s_result;
+
+        static SpinLock s_spinLock;
+        std::lock_guard lk{ s_spinLock };
+        if (s_result.PageSize != 0)
+            return s_result;
 
 #if FE_WINDOWS
         SYSTEM_INFO info;
         GetSystemInfo(&info);
-        result.PageSize = info.dwPageSize;
-        result.Granularity = info.dwAllocationGranularity;
+        s_result.PageSize = info.dwPageSize;
+        s_result.Granularity = info.dwAllocationGranularity;
 #else
 #    error Not implemented :(
 #endif
 
-        return result;
+        return s_result;
     }
 
 

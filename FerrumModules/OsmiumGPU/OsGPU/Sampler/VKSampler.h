@@ -14,7 +14,7 @@ namespace FE::Osmium
     public:
         VkSampler Sampler;
 
-        FE_CLASS_RTTI(VKSampler, "4969C4F3-B6E2-450C-9250-876F8FC9DA8C");
+        FE_RTTI_Class(VKSampler, "4969C4F3-B6E2-450C-9250-876F8FC9DA8C");
 
         VKSampler(VKDevice& dev, const SamplerDesc& desc);
         ~VKSampler() override;

@@ -13,10 +13,10 @@ namespace FE
         };
 
 
-        PlatformSpec GetPlatformSpec();
+        [[nodiscard]] PlatformSpec GetPlatformSpec();
 
 
-        void* AllocateVirtual(size_t byteSize);
+        [[nodiscard]] void* AllocateVirtual(size_t byteSize);
         void FreeVirtual(void* ptr, size_t byteSize);
 
 
@@ -30,15 +30,15 @@ namespace FE
         void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection);
 
 
-        void* DefaultAllocate(size_t byteSize);
-        void* DefaultAllocate(size_t byteSize, size_t byteAlignment);
-        void* DefaultReallocate(void* ptr, size_t newSize);
+        [[nodiscard]] void* DefaultAllocate(size_t byteSize);
+        [[nodiscard]] void* DefaultAllocate(size_t byteSize, size_t byteAlignment);
+        [[nodiscard]] void* DefaultReallocate(void* ptr, size_t newSize);
         void DefaultFree(void* ptr);
 
 
         //! \brief Allocate an uninitialized array using the provided allocator.
         template<class T, class TAllocator>
-        inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
         {
             return static_cast<T*>(pAllocator->allocate(elementCount * sizeof(T), byteAlignment));
         }
@@ -46,7 +46,7 @@ namespace FE
 
         //! \brief Allocate an uninitialized array using the default allocator.
         template<class T>
-        inline T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] inline T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
         {
             return static_cast<T*>(DefaultAllocate(elementCount * sizeof(T), byteAlignment));
         }
@@ -62,7 +62,7 @@ namespace FE
         //!
         //! \return The allocated object.
         template<class T, class TAllocator, class... TArgs>
-        inline T* New(TAllocator* pAllocator, TArgs&&... args)
+        [[nodiscard]] inline T* New(TAllocator* pAllocator, TArgs&&... args)
         {
             return new (pAllocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
@@ -76,7 +76,7 @@ namespace FE
         //!
         //! \return The allocated object.
         template<class T, class... TArgs>
-        inline T* DefaultNew(TArgs&&... args)
+        [[nodiscard]] inline T* DefaultNew(TArgs&&... args)
         {
             return new (DefaultAllocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
@@ -91,11 +91,33 @@ namespace FE
         //! \tparam T          - The type of the object to delete.
         //! \tparam TAllocator - The type of the provided allocator.
         template<class T, class TAllocator>
-        inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize)
+        [[nodiscard]] inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = 0)
         {
             pointer->~T();
-            pAllocator->deallocate(pointer, byteSize, alignof(T));
+            pAllocator->deallocate(pointer, byteSize, byteAlignment);
         }
+
+
+        template<class TBase, class TLock>
+        class LockedMemoryResource final : public TBase
+        {
+            TLock m_Lock;
+
+        public:
+            using TBase::TBase;
+
+            inline void* do_allocate(size_t byteSize, size_t byteAlignment) override
+            {
+                std::lock_guard lk{ m_Lock };
+                return TBase::do_allocate(byteSize, byteAlignment);
+            }
+
+            inline void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override
+            {
+                std::lock_guard lk{ m_Lock };
+                TBase::do_deallocate(ptr, byteSize, byteAlignment);
+            }
+        };
 
 
         //! \brief Delete an object previously created via Memory::DefaultNew().
@@ -113,7 +135,7 @@ namespace FE
 
 
         template<class T>
-        struct DefaultDeleter final
+        struct DefaultDeleter
         {
             constexpr DefaultDeleter() noexcept = default;
 
@@ -141,21 +163,11 @@ namespace FE
             }
 
             template<class T2>
-            inline void operator()(T2* ptr) const noexcept
+            inline std::enable_if_t<std::is_trivially_destructible_v<T>> operator()(T2* ptr) const noexcept
             {
                 DefaultFree(ptr);
             }
         };
-
-
-        template<class T>
-        using Unique = std::unique_ptr<T, Memory::DefaultDeleter<T>>;
-
-        template<class T, class... TArgs>
-        [[nodiscard]] Unique<T> MakeUnique(TArgs&&... args)
-        {
-            return Unique<T>(DefaultNew<T>(std::forward<TArgs>(args)...));
-        }
 
 
         template<class T, class TSizeType = size_t>
@@ -197,59 +209,70 @@ namespace FE
         };
     } // namespace Memory
 
-    //! \brief Perform `static_cast` of \ref Rc<T>.
+
+    template<class T>
+    using Unique = std::unique_ptr<T, Memory::DefaultDeleter<T>>;
+
+    template<class T, class... TArgs>
+    [[nodiscard]] Unique<T> MakeUnique(TArgs&&... args)
+    {
+        return Unique<T>(Memory::DefaultNew<T>(std::forward<TArgs>(args)...));
+    }
+
+
+    //! \brief Perform `static_cast` of Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Rc::Get() and does a static_cast to TDest.
-    //! The result pointer is then used to create a new \ref Rc<T>.\n
+    //! This function retrieves a raw pointer using Rc::Get() and does a static_cast to TDest.
+    //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a derived class to base.
     //!
-    //! \note To cast a base class to derived, use \ref fe_dynamic_cast.
+    //! \note To cast a base class to derived, use dynamic_pointer_cast.
     //!
-    //! \param [in] src - Source pointer.
-    //! \tparam TDest   - The type of result pointer.
-    //! \tparam TSrc    - The type of source pointer.
+    //! \param src    - Source pointer.
+    //! \tparam TDest - The type of result pointer.
+    //! \tparam TSrc  - The type of source pointer.
     //!
-    //! \return An instance of \ref Rc<TDest> that holds the same object but statically casted.
+    //! \return An instance of Rc<TDest> that holds the same object but statically casted.
     template<class TDest, class TSrc>
-    inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
     {
         return Rc<TDest>(static_cast<TDest*>(src.Get()));
     }
 
-    //! \brief Perform \ref fe_dynamic_cast of \ref Rc<T>.
+
+    //! \brief Perform fe_dynamic_cast of Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Rc::Get() and does a fe_dynamic_cast to TDest.
-    //! The result pointer is then used to create a new \ref Rc<T>.\n
+    //! This function retrieves a raw pointer using Rc::Get() and does a fe_dynamic_cast to TDest.
+    //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
     //! \note To cast a derived class to base, use `static_cast`.
     //!
-    //! \param [in] src - Source pointer.
-    //! \tparam TDest   - The type of result pointer.
-    //! \tparam TSrc    - The type of source pointer.
+    //! \param src    - Source pointer.
+    //! \tparam TDest - The type of result pointer.
+    //! \tparam TSrc  - The type of source pointer.
     //!
-    //! \return An instance of \ref Rc<TDest> that holds the same object but dynamically casted.
+    //! \return An instance of Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
-    inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
         return Rc<TDest>(fe_dynamic_cast<TDest*>(src.Get()));
     }
 
-    //! \brief Perform \ref fe_assert_cast of \ref Rc<T>.
+
+    //! \brief Perform fe_assert_cast of Rc<T>.
     //!
-    //! This function retrieves a raw pointer using \ref Rc::Get() and does a fe_assert_cast to TDest.
-    //! The result pointer is then used to create a new \ref Rc<T>.\n
+    //! This function retrieves a raw pointer using Rc::Get() and does a fe_assert_cast to TDest.
+    //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
-    //! \note You must be sure that dynamic cast from TSrc to TDest will succeed.
+    //! \param src    - Source pointer.
+    //! \tparam TDest - The type of result pointer.
+    //! \tparam TSrc  - The type of source pointer.
     //!
-    //! \param [in] src - Source pointer.
-    //! \tparam TDest   - The type of result pointer.
-    //! \tparam TSrc    - The type of source pointer.
-    //!
-    //! \return An instance of \ref Rc<TDest> that holds the same object but dynamically casted.
+    //! \return An instance of Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
-    inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {
         return Rc<TDest>(fe_assert_cast<TDest*>(src.Get()));
     }

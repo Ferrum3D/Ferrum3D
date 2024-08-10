@@ -29,7 +29,7 @@ namespace FE
         FrameworkBase::Initialize();
     }
 
-    Int32 ApplicationFramework::RunMainLoop()
+    int32_t ApplicationFramework::RunMainLoop()
     {
         FrameEventArgs frameEventArgs{};
         frameEventArgs.DeltaTime = 0.1f;
@@ -71,7 +71,7 @@ namespace FE
         return CloseEventReceived() || m_StopRequested;
     }
 
-    void ApplicationFramework::Stop(Int32 exitCode)
+    void ApplicationFramework::Stop(int32_t exitCode)
     {
         m_ExitCode = exitCode;
         m_StopRequested = true;

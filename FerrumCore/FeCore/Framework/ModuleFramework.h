@@ -112,7 +112,7 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(ModuleFramework, "ED879368-A819-4B8C-AF2C-848AEF12B99F");
+        FE_RTTI_Class(ModuleFramework, "ED879368-A819-4B8C-AF2C-848AEF12B99F");
 
         inline ~ModuleFramework() override
         {

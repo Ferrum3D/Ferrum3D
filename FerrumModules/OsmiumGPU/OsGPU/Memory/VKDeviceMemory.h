@@ -14,12 +14,12 @@ namespace FE::Osmium
     public:
         VkDeviceMemory Memory;
 
-        FE_CLASS_RTTI(VKDeviceMemory, "D80E7CF1-4D15-4AEB-8CDA-5275195BC389");
+        FE_RTTI_Class(VKDeviceMemory, "D80E7CF1-4D15-4AEB-8CDA-5275195BC389");
 
-        VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc);
+        VKDeviceMemory(VKDevice& dev, uint32_t typeBits, const MemoryAllocationDesc& desc);
         ~VKDeviceMemory() override;
 
-        void* Map(USize offset, USize size) override;
+        void* Map(size_t offset, size_t size) override;
         void Unmap() override;
         const MemoryAllocationDesc& GetDesc() override;
     };

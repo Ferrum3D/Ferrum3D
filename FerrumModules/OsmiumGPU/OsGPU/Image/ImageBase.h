@@ -9,9 +9,9 @@ namespace FE::Osmium
         eastl::vector<eastl::vector<ResourceState>> m_States;
 
     public:
-        FE_CLASS_RTTI(ImageBase, "40A58181-9BB7-4EC1-9DFA-A27B3F586B5A");
+        FE_RTTI_Class(ImageBase, "40A58181-9BB7-4EC1-9DFA-A27B3F586B5A");
 
-        inline ImageBase(UInt16 arraySize, UInt16 mipLevelCount)
+        inline ImageBase(uint16_t arraySize, uint16_t mipLevelCount)
         {
             m_States.resize(arraySize);
             for (auto& arr : m_States)
@@ -48,7 +48,7 @@ namespace FE::Osmium
             return state;
         }
 
-        [[nodiscard]] inline ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const override
+        [[nodiscard]] inline ResourceState GetState(uint16_t arraySlice, uint16_t mipSlice) const override
         {
             return m_States[arraySlice][mipSlice];
         }

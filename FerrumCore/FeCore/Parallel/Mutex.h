@@ -26,7 +26,7 @@ namespace FE
 
     class Mutex final
     {
-        inline static constexpr USize NativeMutexSpace = 64;
+        inline static constexpr size_t NativeMutexSpace = 64;
         std::aligned_storage_t<NativeMutexSpace> m_NativeMutex;
 
     public:

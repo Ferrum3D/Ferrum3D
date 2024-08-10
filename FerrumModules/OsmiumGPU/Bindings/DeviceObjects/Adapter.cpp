@@ -10,7 +10,7 @@ namespace FE::Osmium
         struct AdapterDescBinding
         {
             const char* Name;
-            Int32 Type;
+            int32_t Type;
         };
 
         FE_DLL_EXPORT IDevice* IAdapter_CreateDevice(IAdapter* self)
@@ -28,7 +28,7 @@ namespace FE::Osmium
             StringCchCopyA(result, name.Size() + 1, name.Data());
 
             desc->Name = result;
-            desc->Type = static_cast<Int32>(d.Type);
+            desc->Type = static_cast<int32_t>(d.Type);
         }
 
         FE_DLL_EXPORT void IAdapter_Destruct(IAdapter* self)

@@ -10,7 +10,7 @@ namespace FE::ECS
         EntityRegistry* m_Registry;
 
     public:
-        FE_CLASS_RTTI(ComponentSystem, "6E69ACBC-6A89-439E-BF1A-57A80AB59039");
+        FE_RTTI_Class(ComponentSystem, "6E69ACBC-6A89-439E-BF1A-57A80AB59039");
 
         inline ComponentSystem()
         {

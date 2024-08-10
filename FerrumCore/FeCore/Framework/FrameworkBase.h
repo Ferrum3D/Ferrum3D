@@ -14,7 +14,7 @@ namespace FE
         void UnloadDependencies() override;
 
     public:
-        FE_CLASS_RTTI(FrameworkBase, "4B13A66B-5E7E-41BE-A0D0-DD51E995764B");
+        FE_RTTI_Class(FrameworkBase, "4B13A66B-5E7E-41BE-A0D0-DD51E995764B");
 
         ~FrameworkBase() override = default;
 

@@ -12,7 +12,7 @@ namespace FE
         T* m_End;
 
     public:
-        FE_STRUCT_RTTI(ArraySliceMut, "086387CB-9142-4A0D-9037-2B6044BE5875");
+        FE_RTTI_Base(ArraySliceMut, "086387CB-9142-4A0D-9037-2B6044BE5875");
 
         inline ArraySliceMut()
             : m_Begin(nullptr)
@@ -56,7 +56,7 @@ namespace FE
         //!
         //! \tparam N - Length of the array.
         //! \param [in] array - The array.
-        template<USize N>
+        template<size_t N>
         inline explicit ArraySliceMut(eastl::array<T, N>& array)
             : m_Begin(array.data())
             , m_End(array.data() + array.size())

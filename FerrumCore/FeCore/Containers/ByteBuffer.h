@@ -7,13 +7,13 @@ namespace FE
     //! \brief A buffer that stores contiguous memory as an array of bytes.
     class ByteBuffer final
     {
-        UInt8* m_pBegin = nullptr;
-        UInt8* m_pEnd = nullptr;
+        uint8_t* m_pBegin = nullptr;
+        uint8_t* m_pEnd = nullptr;
 
-        inline void Allocate(USize size)
+        inline void Allocate(size_t size)
         {
             void* ptr = Memory::DefaultAllocate(size);
-            m_pBegin = static_cast<UInt8*>(ptr);
+            m_pBegin = static_cast<uint8_t*>(ptr);
             m_pEnd = m_pBegin + size;
         }
 
@@ -72,7 +72,7 @@ namespace FE
         }
 
         //! \brief Create a ByteBuffer with specified size.
-        inline explicit ByteBuffer(USize size)
+        inline explicit ByteBuffer(size_t size)
         {
             Allocate(size);
         }
@@ -80,7 +80,7 @@ namespace FE
         //! \brief Create from a list and copy it.
         //!
         //! \param [in] data - The list that stores the data.
-        explicit ByteBuffer(const ArraySlice<UInt8>& data)
+        explicit ByteBuffer(const ArraySlice<uint8_t>& data)
         {
             Allocate(data.Length());
             memcpy(m_pBegin, data.Data(), data.Length());
@@ -89,7 +89,7 @@ namespace FE
         //! \brief Create from a list and move it.
         //!
         //! \param [in] data - The list that stores the data.
-        explicit ByteBuffer(eastl::vector<UInt8>&& data) noexcept
+        explicit ByteBuffer(eastl::vector<uint8_t>&& data) noexcept
         {
             m_pBegin = data.begin();
             m_pEnd = data.end();
@@ -100,8 +100,8 @@ namespace FE
         [[nodiscard]] inline static ByteBuffer MoveList(eastl::vector<T>&& data) noexcept
         {
             ByteBuffer result;
-            result.m_pEnd = reinterpret_cast<UInt8*>(data.end());
-            result.m_pBegin = reinterpret_cast<UInt8*>(data.DetachData());
+            result.m_pEnd = reinterpret_cast<uint8_t*>(data.end());
+            result.m_pBegin = reinterpret_cast<uint8_t*>(data.DetachData());
             return result;
         }
 
@@ -120,12 +120,12 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] inline UInt8* Data()
+        [[nodiscard]] inline uint8_t* Data()
         {
             return m_pBegin;
         }
 
-        [[nodiscard]] inline const UInt8* Data() const
+        [[nodiscard]] inline const uint8_t* Data() const
         {
             return m_pBegin;
         }

@@ -47,7 +47,7 @@ namespace FE::Osmium
         [[nodiscard]] VkPipelineDepthStencilStateCreateInfo BuildDepthState() const;
 
     public:
-        FE_CLASS_RTTI(VKGraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");
+        FE_RTTI_Class(VKGraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");
 
         VKGraphicsPipeline(VKDevice& dev, const GraphicsPipelineDesc& desc);
         ~VKGraphicsPipeline() override;

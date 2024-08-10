@@ -15,12 +15,12 @@ namespace FE::Osmium
         VkDescriptorSetLayout m_Layout;
         VkDescriptorSet m_Set;
 
-        USize m_LayoutHash;
+        size_t m_LayoutHash;
 
         eastl::vector<DescriptorDesc> m_Descriptors;
 
     public:
-        FE_CLASS_RTTI(VKDescriptorTable, "262CD421-E748-4F4C-A732-2ABB951D486A");
+        FE_RTTI_Class(VKDescriptorTable, "262CD421-E748-4F4C-A732-2ABB951D486A");
 
         VKDescriptorTable(VKDevice& dev, VKDescriptorHeap& heap, const ArraySlice<DescriptorDesc>& descriptors);
         ~VKDescriptorTable() override;

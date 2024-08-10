@@ -12,7 +12,7 @@ namespace FE::Assets
         Rc<AssetRegistry> m_Registry;
 
     public:
-        FE_CLASS_RTTI(AssetProviderDev, "B9E55773-ED2D-4103-A4C7-F2F4BE045A90");
+        FE_RTTI_Class(AssetProviderDev, "B9E55773-ED2D-4103-A4C7-F2F4BE045A90");
 
         ~AssetProviderDev() override = default;
 

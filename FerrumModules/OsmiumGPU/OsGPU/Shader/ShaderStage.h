@@ -3,7 +3,7 @@
 
 namespace FE::Osmium
 {
-    enum class ShaderStage : UInt32
+    enum class ShaderStage : uint32_t
     {
         Vertex,
         Pixel,
@@ -13,15 +13,15 @@ namespace FE::Osmium
         Compute
     };
 
-    enum class ShaderStageFlags : UInt32
+    enum class ShaderStageFlags : uint32_t
     {
         None     = 0,
-        Vertex   = 1 << static_cast<UInt32>(ShaderStage::Vertex),
-        Pixel    = 1 << static_cast<UInt32>(ShaderStage::Pixel),
-        Hull     = 1 << static_cast<UInt32>(ShaderStage::Hull),
-        Domain   = 1 << static_cast<UInt32>(ShaderStage::Domain),
-        Geometry = 1 << static_cast<UInt32>(ShaderStage::Geometry),
-        Compute  = 1 << static_cast<UInt32>(ShaderStage::Compute),
+        Vertex   = 1 << static_cast<uint32_t>(ShaderStage::Vertex),
+        Pixel    = 1 << static_cast<uint32_t>(ShaderStage::Pixel),
+        Hull     = 1 << static_cast<uint32_t>(ShaderStage::Hull),
+        Domain   = 1 << static_cast<uint32_t>(ShaderStage::Domain),
+        Geometry = 1 << static_cast<uint32_t>(ShaderStage::Geometry),
+        Compute  = 1 << static_cast<uint32_t>(ShaderStage::Compute),
         All      = Vertex | Hull | Domain | Pixel | Geometry | Compute
     };
 

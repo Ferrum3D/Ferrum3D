@@ -10,7 +10,7 @@ namespace FE::ECS
         m_Data = desc.Data;
     }
 
-    bool ComponentStorage::AllocateComponentImpl(UInt32& id)
+    bool ComponentStorage::AllocateComponentImpl(uint32_t& id)
     {
         if (m_Count == m_Data.Length())
         {
@@ -21,17 +21,17 @@ namespace FE::ECS
         return true;
     }
 
-    void ComponentStorage::UpdateComponentImpl(const void* componentData, UInt32 id)
+    void ComponentStorage::UpdateComponentImpl(const void* componentData, uint32_t id)
     {
         memcpy(&m_Data[id * ElementSize()], componentData, m_Desc.Type.DataSize);
     }
 
-    Int32 ComponentStorage::RemoveComponent(UInt32 id)
+    int32_t ComponentStorage::RemoveComponent(uint32_t id)
     {
-        Int32 result = -1;
+        int32_t result = -1;
         if (id < m_Count - 1)
         {
-            result = static_cast<UInt16>(m_Count - 1);
+            result = static_cast<uint16_t>(m_Count - 1);
             UpdateComponentImpl(&m_Data[result * ElementSize()], id);
         }
 
@@ -40,7 +40,7 @@ namespace FE::ECS
         return result;
     }
 
-    void ComponentStorage::ComponentData(UInt32 id, void** componentData)
+    void ComponentStorage::ComponentData(uint32_t id, void** componentData)
     {
         *componentData = &m_Data[id * ElementSize()];
     }

@@ -7,10 +7,10 @@ namespace FE::ECS
     struct ComponentType
     {
         TypeID Type;      //!< ID of component's type.
-        UInt32 Alignment; //!< Alignment of component data.
-        UInt32 DataSize;  //!< Size of component data.
+        uint32_t Alignment; //!< Alignment of component data.
+        uint32_t DataSize;  //!< Size of component data.
 
-        FE_STRUCT_RTTI(ComponentType, "D98BE686-B494-4C6A-82A2-D2EE6CDCEC2E");
+        FE_RTTI_Base(ComponentType, "D98BE686-B494-4C6A-82A2-D2EE6CDCEC2E");
 
         [[nodiscard]] inline uint32_t AlignedSize() const
         {
@@ -19,7 +19,7 @@ namespace FE::ECS
 
         //! \brief Create a ComponentType for a particular component.
         //!
-        //! \tparam T - C++ type of the component. Must implement FE_STRUCT_RTTI.
+        //! \tparam T - C++ type of the component. Must implement FE_RTTI_Base.
         //!
         //! \return The created ComponentType.
         template<class T>
@@ -27,8 +27,8 @@ namespace FE::ECS
         {
             ComponentType result;
             result.Type = fe_typeid<T>();
-            result.Alignment = static_cast<UInt32>(alignof(T));
-            result.DataSize = static_cast<UInt32>(sizeof(T));
+            result.Alignment = static_cast<uint32_t>(alignof(T));
+            result.DataSize = static_cast<uint32_t>(sizeof(T));
             return result;
         }
 

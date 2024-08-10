@@ -12,7 +12,7 @@ namespace FE
     class IFrameworkFactory : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IFrameworkFactory, "4937DF6A-5A41-4881-9C30-123A486C647C");
+        FE_RTTI_Class(IFrameworkFactory, "4937DF6A-5A41-4881-9C30-123A486C647C");
 
         //! \brief True if the framework was loaded.
         virtual bool IsLoaded() = 0;
@@ -65,7 +65,7 @@ namespace FE
         virtual void UnloadDependencies() = 0;
 
     public:
-        FE_CLASS_RTTI(IFramework, "E7D01BAE-B9D8-4865-A277-27D3CFEC7E39");
+        FE_RTTI_Class(IFramework, "E7D01BAE-B9D8-4865-A277-27D3CFEC7E39");
 
         ~IFramework() override = default;
 

@@ -7,7 +7,7 @@ namespace FE::IO
         return true;
     }
 
-    USize StdoutStream::WriteFromBuffer(const void* buffer, USize size)
+    size_t StdoutStream::WriteFromBuffer(const void* buffer, size_t size)
     {
         FE_ASSERT_MSG(buffer, "Buffer was nullptr");
         const std::unique_lock lk(FE::Console::StdoutMutex);

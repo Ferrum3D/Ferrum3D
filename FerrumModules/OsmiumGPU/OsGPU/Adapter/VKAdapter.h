@@ -30,7 +30,7 @@ namespace FE::Osmium
         VkPhysicalDevice m_VkAdapter;
 
     public:
-        FE_CLASS_RTTI(VKAdapter, "4054CC7E-C6EB-4A43-B326-E85C32BED38C");
+        FE_RTTI_Class(VKAdapter, "4054CC7E-C6EB-4A43-B326-E85C32BED38C");
 
         VkPhysicalDeviceProperties Properties;
 

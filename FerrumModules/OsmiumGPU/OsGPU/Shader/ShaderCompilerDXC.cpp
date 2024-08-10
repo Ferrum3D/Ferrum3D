@@ -108,7 +108,7 @@ namespace FE::Osmium
         }
 
         CComPtr<IDxcBlobEncoding> source;
-        auto sourceSize = static_cast<UInt32>(args.SourceCode.Size());
+        auto sourceSize = static_cast<uint32_t>(args.SourceCode.Size());
         result = library->CreateBlobWithEncodingFromPinned(args.SourceCode.Data(), sourceSize, CP_UTF8, &source);
         if (FAILED(result))
         {
@@ -126,7 +126,7 @@ namespace FE::Osmium
 #else
         defines.push_back(DxcDefine{ L"FE_DEBUG", L"0" });
 #endif
-        auto defineCount = static_cast<UInt32>(defines.size());
+        auto defineCount = static_cast<uint32_t>(defines.size());
 
         eastl::vector<LPCWSTR> compileArgs{ L"-O3", L"-Zpc" };
         if (m_API == GraphicsAPI::Vulkan)
@@ -144,7 +144,7 @@ namespace FE::Osmium
             compileArgs.push_back(L"-Od");
         }
 
-        auto argsCount = static_cast<UInt32>(compileArgs.size());
+        auto argsCount = static_cast<uint32_t>(compileArgs.size());
 
         std::pmr::wstring entryPoint{ args.EntryPoint.begin(), args.EntryPoint.end() };
         auto profile = GetTargetProfile(args.Stage, args.Version);
@@ -168,12 +168,12 @@ namespace FE::Osmium
             }
         }
 
-        eastl::vector<UInt8> returnValue;
+        eastl::vector<uint8_t> returnValue;
         if (SUCCEEDED(result))
         {
             CComPtr<IDxcBlob> byteCode;
             FE_ASSERT(SUCCEEDED(compileResult->GetResult(&byteCode)));
-            auto bufferPtr = static_cast<UInt8*>(byteCode->GetBufferPointer());
+            auto bufferPtr = static_cast<uint8_t*>(byteCode->GetBufferPointer());
             returnValue.assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
         }
         else

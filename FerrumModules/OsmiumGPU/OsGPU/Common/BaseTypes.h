@@ -20,32 +20,32 @@ namespace FE::Osmium
 
     struct Offset
     {
-        Int64 X;
-        Int64 Y;
-        Int64 Z;
+        int64_t X;
+        int64_t Y;
+        int64_t Z;
 
-        FE_STRUCT_RTTI(Offset, "761BFA99-DC5D-400B-9117-92ED2C1AD3EB");
+        FE_RTTI_Base(Offset, "761BFA99-DC5D-400B-9117-92ED2C1AD3EB");
 
         inline Offset() noexcept
             : Offset(0, 0, 0)
         {
         }
 
-        inline Offset(Int64 x) noexcept
+        inline Offset(int64_t x) noexcept
             : X(x)
             , Y(0)
             , Z(0)
         {
         }
 
-        inline Offset(Int64 x, Int64 y) noexcept
+        inline Offset(int64_t x, int64_t y) noexcept
             : X(x)
             , Y(y)
             , Z(0)
         {
         }
 
-        inline Offset(Int64 x, Int64 y, Int64 z) noexcept
+        inline Offset(int64_t x, int64_t y, int64_t z) noexcept
             : X(x)
             , Y(y)
             , Z(z)
@@ -55,32 +55,32 @@ namespace FE::Osmium
 
     struct Size
     {
-        UInt64 Width;
-        UInt64 Height;
-        UInt64 Depth;
+        uint64_t Width;
+        uint64_t Height;
+        uint64_t Depth;
 
-        FE_STRUCT_RTTI(Size, "C32E4F84-3144-4D6D-A4D3-00F19E22D708");
+        FE_RTTI_Base(Size, "C32E4F84-3144-4D6D-A4D3-00F19E22D708");
 
         inline Size() noexcept
             : Size(0, 0, 1)
         {
         }
 
-        inline Size(UInt64 w) noexcept
+        inline Size(uint64_t w) noexcept
             : Width(w)
             , Height(0)
             , Depth(1)
         {
         }
 
-        inline Size(UInt64 w, UInt64 h) noexcept
+        inline Size(uint64_t w, uint64_t h) noexcept
             : Width(w)
             , Height(h)
             , Depth(1)
         {
         }
 
-        inline Size(UInt64 w, UInt64 h, UInt64 d) noexcept
+        inline Size(uint64_t w, uint64_t h, uint64_t d) noexcept
             : Width(w)
             , Height(h)
             , Depth(d)

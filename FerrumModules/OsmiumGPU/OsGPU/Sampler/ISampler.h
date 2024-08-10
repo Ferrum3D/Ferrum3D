@@ -14,7 +14,7 @@ namespace FE::Osmium
     {
         None = 0,
         X16 = 16,
-        MaxSupported = std::numeric_limits<Int32>::max()
+        MaxSupported = std::numeric_limits<int32_t>::max()
     };
 
     struct SamplerDesc
@@ -28,7 +28,7 @@ namespace FE::Osmium
     class ISampler : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(ISampler, "99C25DE2-500B-4466-8EC6-B71024A886BE");
+        FE_RTTI_Class(ISampler, "99C25DE2-500B-4466-8EC6-B71024A886BE");
 
         ~ISampler() override = default;
 

@@ -25,7 +25,7 @@ namespace FE::Osmium
         VkPipelineLayoutCreateInfo layoutCI{};
         layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         layoutCI.pSetLayouts = setLayouts.data();
-        layoutCI.setLayoutCount = static_cast<UInt32>(setLayouts.size());
+        layoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
         vkCreatePipelineLayout(m_Device->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &m_Layout);
 
         VkGraphicsPipelineCreateInfo pipelineCI{};
@@ -33,7 +33,7 @@ namespace FE::Osmium
         pipelineCI.layout = m_Layout;
 
         auto shaderStages = BuildShaderStages();
-        pipelineCI.stageCount = static_cast<UInt32>(shaderStages.size());
+        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
         pipelineCI.pStages = shaderStages.data();
 
         VertexStates vertexStates{};
@@ -79,7 +79,7 @@ namespace FE::Osmium
         for (uint32_t i = 0; i < buffers.size(); ++i)
         {
             auto& binding = states.BindingDesc.push_back();
-            binding.binding = static_cast<UInt32>(i);
+            binding.binding = static_cast<uint32_t>(i);
             binding.inputRate = VKConvert(buffers[i].InputRate);
             binding.stride = buffers[i].Stride;
         }
@@ -104,9 +104,9 @@ namespace FE::Osmium
 
         states.VertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         states.VertexInput.pVertexBindingDescriptions = states.BindingDesc.data();
-        states.VertexInput.vertexBindingDescriptionCount = static_cast<UInt32>(states.BindingDesc.size());
+        states.VertexInput.vertexBindingDescriptionCount = static_cast<uint32_t>(states.BindingDesc.size());
         states.VertexInput.pVertexAttributeDescriptions = states.AttributeDesc.data();
-        states.VertexInput.vertexAttributeDescriptionCount = static_cast<UInt32>(states.AttributeDesc.size());
+        states.VertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(states.AttributeDesc.size());
 
         states.InputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         states.InputAssembly.topology = VKConvert(m_Desc.InputLayout.Topology);
@@ -208,7 +208,7 @@ namespace FE::Osmium
         state.CreateInfo.logicOpEnable = false;
         state.CreateInfo.logicOp = VK_LOGIC_OP_COPY;
         state.CreateInfo.pAttachments = state.Attachments.data();
-        state.CreateInfo.attachmentCount = static_cast<UInt32>(state.Attachments.size());
+        state.CreateInfo.attachmentCount = static_cast<uint32_t>(state.Attachments.size());
 
         state.CreateInfo.blendConstants[0] = m_Desc.ColorBlend.BlendConstants.X();
         state.CreateInfo.blendConstants[1] = m_Desc.ColorBlend.BlendConstants.Y();

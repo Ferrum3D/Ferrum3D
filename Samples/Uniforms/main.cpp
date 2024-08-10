@@ -44,7 +44,7 @@ void RunExample()
     FE::Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
     FE::Rc<HAL::IBuffer> psConstantBuffer, vsConstantBuffer;
     FE::Rc<HAL::IBuffer> indexBuffer, vertexBuffer;
-    FE::UInt64 vertexSize, indexSize;
+    uint64_t vertexSize, indexSize;
     {
         // clang-format off
             FE::List<Vertex> vertexData = {
@@ -63,8 +63,8 @@ void RunExample()
         vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
     {
-        FE::List<FE::UInt32> indexData = { 0, 2, 3, 3, 2, 1 };
-        indexSize                        = indexData.Size() * sizeof(FE::UInt32);
+        FE::List<uint32_t> indexData = { 0, 2, 3, 3, 2, 1 };
+        indexSize                        = indexData.Size() * sizeof(uint32_t);
         indexBufferStaging               = device->CreateBuffer(HAL::BindFlags::None, indexSize);
         indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
         indexBufferStaging->UpdateData(indexData.Data());

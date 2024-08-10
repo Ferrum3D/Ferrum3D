@@ -11,8 +11,8 @@ namespace FE::Osmium
         InputStreamBufferDesc m_Buffer{};
         eastl::vector<InputStreamAttributeDesc> m_Attributes;
 
-        UInt32 m_Index = 0;
-        UInt32 m_Offset = 0;
+        uint32_t m_Index = 0;
+        uint32_t m_Offset = 0;
 
     public:
         inline InputLayoutBufferBuilder& AddAttribute(Format format, const FE::String& semantic)
@@ -22,7 +22,7 @@ namespace FE::Osmium
             return *this;
         }
 
-        inline InputLayoutBufferBuilder& AddPadding(UInt32 bytes)
+        inline InputLayoutBufferBuilder& AddPadding(uint32_t bytes)
         {
             m_Offset += bytes;
             return *this;
@@ -49,7 +49,7 @@ namespace FE::Osmium
         {
             auto& result = m_Buffers.emplace_back();
             result.m_Buffer.InputRate = inputRate;
-            result.m_Index = static_cast<UInt32>(m_Buffers.size() - 1);
+            result.m_Index = static_cast<uint32_t>(m_Buffers.size() - 1);
             result.m_Parent = this;
 
             return result;

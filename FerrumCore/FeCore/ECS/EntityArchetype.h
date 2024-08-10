@@ -58,11 +58,11 @@ namespace FE::ECS
 
         eastl::vector<ComponentType> m_Layout;
         uint32_t m_EntitySize = 0;
-        USize m_HashCode = 0;
+        size_t m_HashCode = 0;
 
         eastl::vector<ArchetypeChunk*> m_Chunks;
 
-        UInt32 m_Version = 0;
+        uint32_t m_Version = 0;
 
         void InitInternal();
 
@@ -70,7 +70,7 @@ namespace FE::ECS
         explicit EntityArchetype(const ArraySlice<ComponentType>& layout);
 
     public:
-        FE_STRUCT_RTTI(EntityArchetype, "EC825348-557C-4728-A44B-9CB7FCADA938");
+        FE_RTTI_Base(EntityArchetype, "EC825348-557C-4728-A44B-9CB7FCADA938");
 
         inline EntityArchetype() = default;
         ~EntityArchetype();
@@ -103,7 +103,7 @@ namespace FE::ECS
         //!
         //! \param [out] id    - The ID of the created entity local to the archetype chunk.
         //! \param [out] chunk - The chunk where the entity was allocated.
-        ECSResult CreateEntity(UInt16& id, ArchetypeChunk** chunk);
+        ECSResult CreateEntity(uint16_t& id, ArchetypeChunk** chunk);
 
         //! \brief Destroy the entity.
         //!
@@ -113,7 +113,7 @@ namespace FE::ECS
         //!
         //! \param [in] id    - The ID of the entity to destroy local to the archetype chunk.
         //! \param [in] chunk - The chunk where the entity was allocated.
-        ECSResult DestroyEntity(UInt16 id, ArchetypeChunk* chunk);
+        ECSResult DestroyEntity(uint16_t id, ArchetypeChunk* chunk);
 
         //! \brief Retrieve the pointer to the component to set its data.
         //!
@@ -121,7 +121,7 @@ namespace FE::ECS
         //! \param [in] chunk    - The chunk where the entity was allocated.
         //! \param [in] typeID   - The ID of component type.
         //! \param [in] source   - The data of component to be copied.
-        ECSResult UpdateComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source);
+        ECSResult UpdateComponent(uint16_t entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source);
 
         //! \brief Retrieve the pointer to the component to get its data.
         //!
@@ -129,22 +129,22 @@ namespace FE::ECS
         //! \param [in] chunk       - The chunk where the entity was allocated.
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
+        ECSResult CopyComponent(uint16_t entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination);
 
         //! \brief Get the version of the archetype - a number that gets incremented after every change.
-        [[nodiscard]] inline UInt32 Version() const
+        [[nodiscard]] inline uint32_t Version() const
         {
             return m_Version;
         }
 
         //! \brief Check if the archetype has been changed after the specified version. Same as `version != archetype.Version()`
-        [[nodiscard]] inline bool DidChange(UInt32 version) const
+        [[nodiscard]] inline bool DidChange(uint32_t version) const
         {
             return m_Version != version;
         }
 
         //! \brief Get sum of sizes of all component types in the archetype.
-        [[nodiscard]] USize EntitySize() const
+        [[nodiscard]] size_t EntitySize() const
         {
             return m_EntitySize;
         }
@@ -156,13 +156,13 @@ namespace FE::ECS
         }
 
         //! \brief Get number of chunks currently allocated for this archetype.
-        [[nodiscard]] USize ChunkCount() const
+        [[nodiscard]] size_t ChunkCount() const
         {
             return m_Chunks.size();
         }
 
         //! \brief Get number of component types in the archetype.
-        [[nodiscard]] USize ComponentTypeCount() const
+        [[nodiscard]] size_t ComponentTypeCount() const
         {
             return m_Layout.size();
         }
@@ -174,7 +174,7 @@ namespace FE::ECS
         }
 
         //! \brief Get combination of all component type hashes from the archetype.
-        [[nodiscard]] USize GetHash() const
+        [[nodiscard]] size_t GetHash() const
         {
             return m_HashCode;
         }

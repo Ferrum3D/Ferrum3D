@@ -86,7 +86,7 @@ class TestApplication final : public FE::ApplicationFramework
     HAL::Viewport m_Viewport{};
     HAL::Scissor m_Scissor{};
 
-    const FE::Int32 m_FrameBufferCount = 3;
+    const FE::int32_t m_FrameBufferCount = 3;
 
 protected:
     void PollSystemEvents() override
@@ -130,7 +130,7 @@ protected:
     }
 
 public:
-    FE_CLASS_RTTI(TestApplication, "04E7E607-FBE9-42C8-93E2-87E198AA1905");
+    FE_RTTI_Class(TestApplication, "04E7E607-FBE9-42C8-93E2-87E198AA1905");
 
     ~TestApplication() override
     {
@@ -186,7 +186,7 @@ public:
         m_SwapChain                      = m_Device->CreateSwapChain(swapChainDesc);
 
         FE::Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
-        FE::UInt64 vertexSize, indexSize;
+        uint64_t vertexSize, indexSize;
         {
             // clang-format off
             FE::List<Vertex> vertexData = {
@@ -205,8 +205,8 @@ public:
                 HAL::TransientBufferDesc(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer), 0));
         }
         {
-            FE::List<FE::UInt32> indexData = { 0, 2, 3, 3, 2, 1 };
-            indexSize                      = indexData.Size() * sizeof(FE::UInt32);
+            FE::List<uint32_t> indexData = { 0, 2, 3, 3, 2, 1 };
+            indexSize                      = indexData.Size() * sizeof(uint32_t);
             indexBufferStaging             = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
             indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             indexBufferStaging->UpdateData(indexData.Data());
@@ -308,13 +308,13 @@ public:
 
         m_Pipeline = m_Device->CreateGraphicsPipeline(pipelineDesc);
 
-        for (FE::USize i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
+        for (FE::size_t i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
         {
             m_Fences.Push(m_Device->CreateFence(HAL::FenceState::Signaled));
         }
 
         m_RTVs = m_SwapChain->GetRTVs();
-        for (FE::USize i = 0; i < m_SwapChain->GetImageCount(); ++i)
+        for (FE::size_t i = 0; i < m_SwapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
             framebufferDesc.RenderPass        = m_RenderPass.Get();

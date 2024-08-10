@@ -30,7 +30,7 @@ namespace FE::Osmium
         VkDescriptorBufferInfo info{};
         info.buffer = vkBuffer->Buffer;
         info.offset = descriptorWriteBuffer.Offset;
-        info.range = descriptorWriteBuffer.Range == static_cast<UInt32>(-1) ? VK_WHOLE_SIZE : descriptorWriteBuffer.Range;
+        info.range = descriptorWriteBuffer.Range == static_cast<uint32_t>(-1) ? VK_WHOLE_SIZE : descriptorWriteBuffer.Range;
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

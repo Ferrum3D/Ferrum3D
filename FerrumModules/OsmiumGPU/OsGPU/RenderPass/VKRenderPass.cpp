@@ -44,9 +44,9 @@ namespace FE::Osmium
         BuildNativeRenderPass();
     }
 
-    UInt32 VKRenderPass::GetAttachmentCount()
+    uint32_t VKRenderPass::GetAttachmentCount()
     {
-        return static_cast<UInt32>(m_Desc.Attachments.Length());
+        return static_cast<uint32_t>(m_Desc.Attachments.Length());
     }
 
     void VKRenderPass::BuildNativeRenderPass()
@@ -54,7 +54,7 @@ namespace FE::Osmium
         auto attachmentDescriptions = BuildAttachmentDescriptions();
 
         eastl::vector<SubpassAttachmentReferences> subpassAttachmentReferences;
-        for (UInt32 i = 0; i < static_cast<UInt32>(m_Desc.Subpasses.Length()); ++i)
+        for (uint32_t i = 0; i < static_cast<uint32_t>(m_Desc.Subpasses.Length()); ++i)
         {
             auto& refs = subpassAttachmentReferences.push_back();
 
@@ -76,13 +76,13 @@ namespace FE::Osmium
 
         VkRenderPassCreateInfo renderPassCI{};
         renderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassCI.attachmentCount = static_cast<UInt32>(attachmentDescriptions.size());
+        renderPassCI.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
         renderPassCI.pAttachments = attachmentDescriptions.data();
 
-        renderPassCI.dependencyCount = static_cast<UInt32>(subpassDependencies.size());
+        renderPassCI.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
         renderPassCI.pDependencies = subpassDependencies.data();
 
-        renderPassCI.subpassCount = static_cast<UInt32>(subpassDescriptions.size());
+        renderPassCI.subpassCount = static_cast<uint32_t>(subpassDescriptions.size());
         renderPassCI.pSubpasses = subpassDescriptions.data();
 
         vkCreateRenderPass(m_Device->GetNativeDevice(), &renderPassCI, VK_NULL_HANDLE, &m_NativeRenderPass);
@@ -122,22 +122,22 @@ namespace FE::Osmium
             auto& nativeDesc = result.push_back();
             nativeDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-            nativeDesc.inputAttachmentCount = static_cast<UInt32>(currentRefs.Input.size());
+            nativeDesc.inputAttachmentCount = static_cast<uint32_t>(currentRefs.Input.size());
             nativeDesc.pInputAttachments = currentRefs.Input.data();
 
-            nativeDesc.colorAttachmentCount = static_cast<UInt32>(currentRefs.RT.size());
+            nativeDesc.colorAttachmentCount = static_cast<uint32_t>(currentRefs.RT.size());
             nativeDesc.pColorAttachments = currentRefs.RT.data();
             nativeDesc.pResolveAttachments = currentRefs.Resolve.data();
 
             nativeDesc.pDepthStencilAttachment =
-                currentRefs.DepthStencil.attachment == static_cast<UInt32>(-1) ? nullptr : &currentRefs.DepthStencil;
+                currentRefs.DepthStencil.attachment == static_cast<uint32_t>(-1) ? nullptr : &currentRefs.DepthStencil;
             nativeDesc.pPreserveAttachments = currentRefs.Preserve;
         }
 
         return result;
     }
 
-    eastl::vector<VkAttachmentReference> VKRenderPass::BuildAttachmentReferences(UInt32 subpassIndex,
+    eastl::vector<VkAttachmentReference> VKRenderPass::BuildAttachmentReferences(uint32_t subpassIndex,
                                                                                  AttachmentType attachmentType)
     {
         eastl::vector<VkAttachmentReference> result;
@@ -173,7 +173,7 @@ namespace FE::Osmium
     {
         eastl::vector<VkSubpassDependency> result;
 
-        static auto validateSubpassIndex = [this](UInt32 index) {
+        static auto validateSubpassIndex = [this](uint32_t index) {
             return index < m_Desc.Subpasses.Length() ? index : VK_SUBPASS_EXTERNAL;
         };
 

@@ -25,7 +25,7 @@ namespace FE
         virtual void FreeSmallBlock(void* ptr, size_t byteSize) = 0;
 
     public:
-        FE_CLASS_RTTI(IJobSystem, "F9FB743A-B543-4B64-A36B-B055434DE90B");
+        FE_RTTI_Class(IJobSystem, "F9FB743A-B543-4B64-A36B-B055434DE90B");
 
         virtual void AddJob(Job* pJob, JobPriority priority = JobPriority::Normal) = 0;
         virtual void Stop() = 0;

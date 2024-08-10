@@ -20,13 +20,13 @@ namespace FE::ECS
         EntityArchetype m_IncludeAny;
 
         template<class T>
-        inline T* GetComponent(ComponentStorage* storage, UInt32 index)
+        inline T* GetComponent(ComponentStorage* storage, uint32_t index)
         {
             return storage->GetComponent<T>(index);
         }
 
     public:
-        FE_STRUCT_RTTI(EntityQuery, "BB78DEF5-2D28-4E85-9E78-3CD1E7263B45");
+        FE_RTTI_Base(EntityQuery, "BB78DEF5-2D28-4E85-9E78-3CD1E7263B45");
 
         inline explicit EntityQuery(EntityRegistry* registry)
             : m_Registry(registry)
@@ -105,7 +105,7 @@ namespace FE::ECS
                         },
                         types);
 
-                    for (UInt32 i = 0; i < chunk->Count(); ++i)
+                    for (uint32_t i = 0; i < chunk->Count(); ++i)
                     {
                         auto components = std::apply(
                             [i, this](auto... args) {

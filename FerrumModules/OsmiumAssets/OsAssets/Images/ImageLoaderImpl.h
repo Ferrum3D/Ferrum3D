@@ -5,7 +5,7 @@
 
 namespace FE::Osmium::Internal
 {
-    Result<UInt8*, StringSlice> LoadImageFromMemory(const UInt8* data, USize length, Int32& width, Int32& height, Int32& channels);
-    void WriteImageToStream(const UInt8* data, Int32 width, Int32 height, IO::IStream* stream);
-    void FreeImageMemory(UInt8* data);
+    Result<uint8_t*, StringSlice> LoadImageFromMemory(const uint8_t* data, size_t length, int32_t& width, int32_t& height, int32_t& channels);
+    void WriteImageToStream(const uint8_t* data, int32_t width, int32_t height, IO::IStream* stream);
+    void FreeImageMemory(uint8_t* data);
 } // namespace FE::Osmium::Internal

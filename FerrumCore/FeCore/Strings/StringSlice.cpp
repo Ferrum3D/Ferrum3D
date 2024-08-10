@@ -2,7 +2,7 @@
 
 namespace FE
 {
-    ParseError StringSlice::TryToUIntImpl(UInt64& result) const
+    ParseError StringSlice::TryToUIntImpl(uint64_t& result) const
     {
         if (Size() == 0)
         {
@@ -27,14 +27,14 @@ namespace FE
             }
             else
             {
-                return { ParseErrorCode::InvalidSyntax, static_cast<USize>(ptr - Data()) };
+                return { ParseErrorCode::InvalidSyntax, static_cast<size_t>(ptr - Data()) };
             }
 
             ++ptr;
         }
     }
 
-    ParseError StringSlice::TryToIntImpl(Int64& result) const
+    ParseError StringSlice::TryToIntImpl(int64_t& result) const
     {
         if (Size() == 0)
         {
@@ -76,7 +76,7 @@ namespace FE
             }
             else
             {
-                return { ParseErrorCode::InvalidSyntax, static_cast<USize>(ptr - Data()) };
+                return { ParseErrorCode::InvalidSyntax, static_cast<size_t>(ptr - Data()) };
             }
 
             ++ptr;
@@ -98,7 +98,7 @@ namespace FE
             slice = StringSlice(slice.Data() + 1, slice.Size() - 1);
         }
 
-        USize position = 0;
+        size_t position = 0;
         for (auto c : slice)
         {
             if (c == '.')

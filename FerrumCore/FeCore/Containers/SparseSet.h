@@ -84,7 +84,7 @@ namespace FE
         }
 
     public:
-        FE_STRUCT_RTTI(SparseSet, "D2B6AC5C-E880-4307-8640-A6CAF80BE594");
+        FE_RTTI_Base(SparseSet, "D2B6AC5C-E880-4307-8640-A6CAF80BE594");
 
         inline SparseSet() = default;
 

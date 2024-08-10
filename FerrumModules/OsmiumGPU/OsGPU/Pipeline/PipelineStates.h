@@ -15,8 +15,8 @@ namespace FE::Osmium
     enum class CullingModeFlags
     {
         None = 0,
-        Back = 1 << static_cast<UInt32>(CullingMode::Back),
-        Front = 1 << static_cast<UInt32>(CullingMode::Front),
+        Back = 1 << static_cast<uint32_t>(CullingMode::Back),
+        Front = 1 << static_cast<uint32_t>(CullingMode::Front),
         BackAndFront = Back | Front
     };
 
@@ -97,13 +97,13 @@ namespace FE::Osmium
 
     struct MultisampleState
     {
-        Int32 SampleCount = 1;
+        int32_t SampleCount = 1;
         float MinSampleShading = 1.0f;
         bool SampleShadingEnabled = false;
 
         inline MultisampleState() = default;
 
-        inline MultisampleState(Int32 sampleCount, float minSampleShading, bool sampleShadingEnabled)
+        inline MultisampleState(int32_t sampleCount, float minSampleShading, bool sampleShadingEnabled)
             : SampleCount(sampleCount)
             , MinSampleShading(minSampleShading)
             , SampleShadingEnabled(sampleShadingEnabled)
@@ -150,7 +150,7 @@ namespace FE::Osmium
         }
     };
 
-    enum class PipelineStageFlags : UInt32
+    enum class PipelineStageFlags : uint32_t
     {
         TopOfPipe = 1 << 0,
         DrawIndirect = 1 << 1,
@@ -167,7 +167,7 @@ namespace FE::Osmium
         Transfer = 1 << 12,
         BottomOfPipe = 1 << 13,
         Host = 1 << 14,
-        AllGraphics = static_cast<UInt32>(-1)
+        AllGraphics = static_cast<uint32_t>(-1)
     };
 
     FE_ENUM_OPERATORS(PipelineStageFlags);

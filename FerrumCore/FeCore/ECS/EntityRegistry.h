@@ -12,8 +12,8 @@ namespace FE::ECS
         struct EntityData
         {
             ArchetypeChunk* Chunk = nullptr;
-            Int16 ArchetypeID = -1;
-            UInt16 EntityID = 0;
+            int16_t ArchetypeID = -1;
+            uint16_t EntityID = 0;
 
             [[nodiscard]] inline bool IsEmpty() const
             {
@@ -40,10 +40,10 @@ namespace FE::ECS
             return m_EntityID++;
         }
 
-        void MoveToArchetype(Entity entity, Int16 archetypeIndex);
+        void MoveToArchetype(Entity entity, int16_t archetypeIndex);
 
     public:
-        FE_CLASS_RTTI(EntityRegistry, "1A7583F3-7C99-4CDF-9C41-27B303C82134");
+        FE_RTTI_Class(EntityRegistry, "1A7583F3-7C99-4CDF-9C41-27B303C82134");
 
         inline EntityRegistry() = default;
         inline ~EntityRegistry() override = default;
@@ -113,9 +113,9 @@ namespace FE::ECS
         void DestroyEntity(Entity entity);
         void DestroyEntities(ArraySlice<Entity> entities);
 
-        inline UInt32 GetComponentCount(Entity entity)
+        inline uint32_t GetComponentCount(Entity entity)
         {
-            return static_cast<UInt32>(GetComponentTypes(entity).Length());
+            return static_cast<uint32_t>(GetComponentTypes(entity).Length());
         }
 
         ArraySlice<ComponentType> GetComponentTypes(Entity entity);

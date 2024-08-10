@@ -11,7 +11,7 @@ namespace FE::Assets
     class IAssetProvider : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IAssetProvider, "69148A5C-20A3-4255-868D-97DEE5319E84");
+        FE_RTTI_Class(IAssetProvider, "69148A5C-20A3-4255-868D-97DEE5319E84");
 
         ~IAssetProvider() override = default;
 

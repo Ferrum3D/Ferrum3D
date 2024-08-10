@@ -60,7 +60,7 @@ namespace FE::Osmium
             eastl::vector<VkAttachmentReference> Input;
             eastl::vector<VkAttachmentReference> RT;
             eastl::vector<VkAttachmentReference> Resolve;
-            const UInt32* Preserve;
+            const uint32_t* Preserve;
             VkAttachmentReference DepthStencil;
         };
 
@@ -68,15 +68,15 @@ namespace FE::Osmium
         eastl::vector<VkAttachmentDescription> BuildAttachmentDescriptions();
         eastl::vector<VkSubpassDescription> BuildSubpassDescriptions(
             eastl::vector<VKRenderPass::SubpassAttachmentReferences>& subpassAttachmentReferences) const;
-        eastl::vector<VkAttachmentReference> BuildAttachmentReferences(UInt32 subpassIndex, AttachmentType attachmentType);
+        eastl::vector<VkAttachmentReference> BuildAttachmentReferences(uint32_t subpassIndex, AttachmentType attachmentType);
         eastl::vector<VkSubpassDependency> BuildSubpassDependencies();
 
     public:
-        FE_CLASS_RTTI(VKRenderPass, "091A0BB6-816E-4144-AE03-D082C1C7B689");
+        FE_RTTI_Class(VKRenderPass, "091A0BB6-816E-4144-AE03-D082C1C7B689");
 
         VKRenderPass(VKDevice& dev, const RenderPassDesc& desc);
         ~VKRenderPass() override;
-        UInt32 GetAttachmentCount() override;
+        uint32_t GetAttachmentCount() override;
 
         inline VkRenderPass& GetNativeRenderPass();
     };

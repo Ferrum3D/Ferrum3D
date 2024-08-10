@@ -6,9 +6,9 @@ namespace FE::Osmium
 {
     struct MultisampleStateBinding
     {
-        Int32 SampleCount;
+        int32_t SampleCount;
         Float32 MinSampleShading;
-        Int32 SampleShadingEnabled;
+        int32_t SampleShadingEnabled;
     };
 
     struct ColorBlendStateBinding
@@ -31,8 +31,8 @@ namespace FE::Osmium
 
     struct InputStreamAttributeDescBinding
     {
-        UInt32 BufferIndex;
-        UInt32 Offset;
+        uint32_t BufferIndex;
+        uint32_t Offset;
         Format ElementFormat;
         char ShaderSemantic[32];
     };
@@ -40,14 +40,14 @@ namespace FE::Osmium
     struct DepthStencilStateBinding
     {
         CompareOp DepthCompareOp;
-        UInt32 DepthTestWriteEnabled;
+        uint32_t DepthTestWriteEnabled;
     };
 
     struct RasterizationStateBinding
     {
         CullingModeFlags CullMode;
         PolygonMode PolyMode;
-        UInt64 DepthClampDepthBiasRasterDiscardEnabled;
+        uint64_t DepthClampDepthBiasRasterDiscardEnabled;
     };
 
     class IRenderPass;
@@ -66,6 +66,6 @@ namespace FE::Osmium
         ByteBuffer DescriptorTables;
         ByteBuffer Shaders;
 
-        UInt32 SubpassIndex;
+        uint32_t SubpassIndex;
     };
 } // namespace FE::Osmium

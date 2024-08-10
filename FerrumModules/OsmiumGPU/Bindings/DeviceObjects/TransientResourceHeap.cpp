@@ -26,12 +26,12 @@ namespace FE::Osmium
             return self->CreateBuffer(*desc, *stats).Detach();
         }
 
-        FE_DLL_EXPORT void ITransientResourceHeap_ReleaseImage(ITransientResourceHeap * self, UInt64 resourceID)
+        FE_DLL_EXPORT void ITransientResourceHeap_ReleaseImage(ITransientResourceHeap * self, uint64_t resourceID)
         {
             return self->ReleaseImage(resourceID);
         }
 
-        FE_DLL_EXPORT void ITransientResourceHeap_ReleaseBuffer(ITransientResourceHeap * self, UInt64 resourceID)
+        FE_DLL_EXPORT void ITransientResourceHeap_ReleaseBuffer(ITransientResourceHeap * self, uint64_t resourceID)
         {
             return self->ReleaseBuffer(resourceID);
         }

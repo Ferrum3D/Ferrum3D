@@ -71,7 +71,7 @@ namespace FE::IO
 
     void FileHandle::GenFileOpenMode(OpenMode openMode)
     {
-        SSize index = 0;
+        ptrdiff_t index = 0;
         switch (openMode)
         {
         case OpenMode::ReadOnly:
@@ -100,7 +100,7 @@ namespace FE::IO
         m_OpenModeString[index] = 'b';
     }
 
-    ResultCode FileHandle::Seek(SSize offset, SeekMode seekMode)
+    ResultCode FileHandle::Seek(ptrdiff_t offset, SeekMode seekMode)
     {
         FE_ASSERT_MSG(IsOpen(), "File not open");
         int origin = 0;
@@ -120,13 +120,13 @@ namespace FE::IO
         return FE_SEEK_64(m_Handle, offset, origin) ? ResultCode::InvalidSeek : ResultCode::Success;
     }
 
-    USize FileHandle::Tell() const
+    size_t FileHandle::Tell() const
     {
         FE_ASSERT_MSG(IsOpen(), "File not open");
         return FE_TELL_64(m_Handle);
     }
 
-    USize FileHandle::Read(void* buffer, USize size)
+    size_t FileHandle::Read(void* buffer, size_t size)
     {
         FE_ASSERT_MSG(IsOpen(), "File not open");
         auto result = fread(buffer, 1, size, m_Handle);
@@ -138,7 +138,7 @@ namespace FE::IO
         return result;
     }
 
-    USize FileHandle::Write(const void* buffer, USize size)
+    size_t FileHandle::Write(const void* buffer, size_t size)
     {
         FE_ASSERT_MSG(IsOpen(), "File not open");
         auto result = fwrite(buffer, 1, size, m_Handle);
@@ -156,7 +156,7 @@ namespace FE::IO
         fflush(m_Handle);
     }
 
-    USize FileHandle::Length() const
+    size_t FileHandle::Length() const
     {
         FE_ASSERT_MSG(IsOpen(), "File not open");
         struct stat st; // NOLINT
@@ -166,7 +166,7 @@ namespace FE::IO
         }
 
         Internal::HandleError(errno);
-        return static_cast<USize>(-1);
+        return static_cast<size_t>(-1);
     }
 
     DateTime FileHandle::GetLastModificationTime() const

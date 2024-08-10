@@ -24,27 +24,27 @@ namespace FE::IO
         return m_Handle->IsOpen();
     }
 
-    ResultCode FileStream::Seek(SSize offset, SeekMode seekMode)
+    ResultCode FileStream::Seek(ptrdiff_t offset, SeekMode seekMode)
     {
         return m_Handle->Seek(offset, seekMode);
     }
 
-    USize FileStream::Tell() const
+    size_t FileStream::Tell() const
     {
         return m_Handle->Tell();
     }
 
-    USize FileStream::Length() const
+    size_t FileStream::Length() const
     {
         return m_Handle->Length();
     }
 
-    USize FileStream::ReadToBuffer(void* buffer, USize size)
+    size_t FileStream::ReadToBuffer(void* buffer, size_t size)
     {
         return m_Handle->Read(buffer, size);
     }
 
-    USize FileStream::WriteFromBuffer(const void* buffer, USize size)
+    size_t FileStream::WriteFromBuffer(const void* buffer, size_t size)
     {
         return m_Handle->Write(buffer, size);
     }

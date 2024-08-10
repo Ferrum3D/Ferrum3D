@@ -15,9 +15,9 @@
 
 namespace FE::Osmium::Internal
 {
-    Result<UInt8*, StringSlice> LoadImageFromMemory(const UInt8* data, USize length, Int32& width, Int32& height, Int32& channels)
+    Result<uint8_t*, StringSlice> LoadImageFromMemory(const uint8_t* data, size_t length, int32_t& width, int32_t& height, int32_t& channels)
     {
-        UInt8* result = stbi_load_from_memory(data, static_cast<int>(length), &width, &height, &channels, STBI_rgb_alpha);
+        uint8_t* result = stbi_load_from_memory(data, static_cast<int>(length), &width, &height, &channels, STBI_rgb_alpha);
         if (result)
         {
             return result;
@@ -26,11 +26,11 @@ namespace FE::Osmium::Internal
         return Err(StringSlice(stbi_failure_reason()));
     }
 
-    void WriteImageToStream(const UInt8* data, Int32 width, Int32 height, IO::IStream* stream)
+    void WriteImageToStream(const uint8_t* data, int32_t width, int32_t height, IO::IStream* stream)
     {
         stbi_write_png_to_func(
             [](void* context, void* data, int size) {
-                static_cast<IO::IStream*>(context)->WriteFromBuffer(data, static_cast<USize>(size));
+                static_cast<IO::IStream*>(context)->WriteFromBuffer(data, static_cast<size_t>(size));
             },
             stream,
             width,
@@ -40,7 +40,7 @@ namespace FE::Osmium::Internal
             4 * width);
     }
 
-    void FreeImageMemory(UInt8* data)
+    void FreeImageMemory(uint8_t* data)
     {
         stbi_image_free(data);
     }

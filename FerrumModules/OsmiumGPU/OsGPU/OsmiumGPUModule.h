@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Framework/ModuleFramework.h>
 #include <OsGPU/Instance/IInstance.h>
 
@@ -7,7 +7,7 @@ namespace FE::Osmium
     struct OsmiumGPUModuleDesc
     {
         const char* ApplicationName = nullptr;
-        GraphicsAPI API             = GraphicsAPI::Vulkan;
+        GraphicsAPI API = GraphicsAPI::Vulkan;
 
         inline OsmiumGPUModuleDesc() = default;
 
@@ -25,7 +25,7 @@ namespace FE::Osmium
 
         inline static constexpr const char* LibraryPath = "OsGPU";
 
-        virtual void Initialize(const OsmiumGPUModuleDesc& desc)       = 0;
+        virtual void Initialize(const OsmiumGPUModuleDesc& desc) = 0;
         [[nodiscard]] virtual Rc<IInstance> CreateInstance() const = 0;
     };
 } // namespace FE::Osmium

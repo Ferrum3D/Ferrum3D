@@ -20,11 +20,11 @@ namespace FE::IO
         [[nodiscard]] bool ReadAllowed() const noexcept override;
         [[nodiscard]] bool SeekAllowed() const noexcept override;
         [[nodiscard]] bool IsOpen() const override;
-        ResultCode Seek(SSize offset, SeekMode seekMode) override;
-        [[nodiscard]] USize Tell() const override;
-        [[nodiscard]] USize Length() const override;
-        USize ReadToBuffer(void* buffer, USize size) override;
-        USize WriteFromBuffer(const void* buffer, USize size) override;
+        ResultCode Seek(ptrdiff_t offset, SeekMode seekMode) override;
+        [[nodiscard]] size_t Tell() const override;
+        [[nodiscard]] size_t Length() const override;
+        size_t ReadToBuffer(void* buffer, size_t size) override;
+        size_t WriteFromBuffer(const void* buffer, size_t size) override;
         StringSlice GetName() override;
         [[nodiscard]] OpenMode GetOpenMode() const override;
         void Close() override;

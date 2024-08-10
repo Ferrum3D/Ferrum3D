@@ -7,10 +7,10 @@ namespace FE::Osmium
 {
     struct WindowDesc
     {
-        FE_STRUCT_RTTI(WindowDesc, "A32F5560-2333-4BE1-A661-59EAC29ABFBC");
+        FE_RTTI_Base(WindowDesc, "A32F5560-2333-4BE1-A661-59EAC29ABFBC");
 
-        UInt32 Width{};
-        UInt32 Height{};
+        uint32_t Width{};
+        uint32_t Height{};
 
         StringSlice Title{};
     };
@@ -18,7 +18,7 @@ namespace FE::Osmium
     class IWindow : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IWindow, "2E09CD62-42A4-4E0D-BC2C-B11E849FBEAF");
+        FE_RTTI_Class(IWindow, "2E09CD62-42A4-4E0D-BC2C-B11E849FBEAF");
 
         ~IWindow() override = default;
 

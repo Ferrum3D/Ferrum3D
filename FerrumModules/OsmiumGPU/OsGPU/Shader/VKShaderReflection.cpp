@@ -75,7 +75,7 @@ namespace FE::Osmium
         }
     }
 
-    VKShaderReflection::VKShaderReflection(const eastl::vector<UInt32>& byteCode)
+    VKShaderReflection::VKShaderReflection(const eastl::vector<uint32_t>& byteCode)
     {
         auto compiler = SpvC::CompilerHLSL(byteCode.data(), byteCode.size());
         ParseInputAttributes(compiler);
@@ -105,7 +105,7 @@ namespace FE::Osmium
         }
     }
 
-    UInt32 VKShaderReflection::GetInputAttributeLocation(StringSlice semantic)
+    uint32_t VKShaderReflection::GetInputAttributeLocation(StringSlice semantic)
     {
         for (auto& input : m_InputAttributes)
         {

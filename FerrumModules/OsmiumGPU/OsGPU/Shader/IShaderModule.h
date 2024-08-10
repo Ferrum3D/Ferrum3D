@@ -10,11 +10,11 @@ namespace FE::Osmium
 
     struct ShaderModuleDesc
     {
-        ArraySlice<UInt8> ByteCode;
+        ArraySlice<uint8_t> ByteCode;
         String EntryPoint;
         ShaderStage Stage = ShaderStage::Vertex;
 
-        FE_STRUCT_RTTI(ShaderModuleDesc, "25C38D43-1D2D-4EA2-9708-54C23DD04507");
+        FE_RTTI_Base(ShaderModuleDesc, "25C38D43-1D2D-4EA2-9708-54C23DD04507");
 
         inline ShaderModuleDesc() = default;
 
@@ -29,7 +29,7 @@ namespace FE::Osmium
     class IShaderModule : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IShaderModule, "0040A2EF-9D25-42AC-9A95-B3F8D4288E49");
+        FE_RTTI_Class(IShaderModule, "0040A2EF-9D25-42AC-9A95-B3F8D4288E49");
 
         ~IShaderModule() override = default;
 

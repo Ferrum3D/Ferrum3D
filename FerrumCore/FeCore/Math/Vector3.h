@@ -26,7 +26,7 @@ namespace FE
         FE_POP_MSVC_WARNING
 
     public:
-        FE_STRUCT_RTTI(Vector3F, "FBD32DD3-C4C4-46DA-8F74-E9EA863BCAAD");
+        FE_RTTI_Base(Vector3F, "FBD32DD3-C4C4-46DA-8F74-E9EA863BCAAD");
 
         FE_FORCE_INLINE Vector3F()
             : Vector3F(0, 0, 0)

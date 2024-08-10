@@ -124,7 +124,7 @@ static void AssertSorted(const ArraySlice<int>& values)
 }
 
 template<class F>
-inline static UInt64 MeasureTime(F&& function)
+inline static uint64_t MeasureTime(F&& function)
 {
     auto s = std::chrono::high_resolution_clock::now();
     function();
@@ -140,7 +140,7 @@ struct MainJob final : Job
         std::random_device device;
         std::mt19937 mt(device());
         std::uniform_int_distribution<int32_t> distribution;
-        const USize length = 2'000'000;
+        const size_t length = 2'000'000;
         festd::vector<int32_t> values1, values2;
         values1.reserve(length);
         for (int32_t i = 0; i < length; ++i)

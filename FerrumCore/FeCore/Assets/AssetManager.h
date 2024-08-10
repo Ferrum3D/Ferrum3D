@@ -11,7 +11,7 @@ namespace FE::Assets
         Rc<IAssetProvider> m_Provider;
 
     public:
-        FE_CLASS_RTTI(AssetManager, "753ACEEB-B5B8-4700-AE14-802DAFCA123C");
+        FE_RTTI_Class(AssetManager, "753ACEEB-B5B8-4700-AE14-802DAFCA123C");
 
         ~AssetManager() override = default;
 

@@ -8,11 +8,11 @@ namespace FE
     struct AtomicFlags
     {
         using AtomicType = std::conditional_t<sizeof(TFlags) == 64, AtomicInt64, AtomicInt32>;
-        using IntegralType = std::conditional_t<sizeof(TFlags) == 64, Int64, Int32>;
+        using IntegralType = std::conditional_t<sizeof(TFlags) == 64, int64_t, int32_t>;
 
         AtomicType Data = 0;
 
-        FE_STRUCT_RTTI(AtomicFlags, "07644FF7-CC29-4277-AA81-F68321231826");
+        FE_RTTI_Base(AtomicFlags, "07644FF7-CC29-4277-AA81-F68321231826");
 
         FE_FORCE_INLINE AtomicFlags(TFlags flags) // NOLINT
         {

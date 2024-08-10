@@ -17,7 +17,7 @@ namespace FE::Assets
         festd::unordered_dense_map<AssetID, AssetType> m_AssetTypes;
 
     public:
-        FE_CLASS_RTTI(AssetRegistry, "35D62039-49D0-48AE-9AD7-ADA816B945F5");
+        FE_RTTI_Class(AssetRegistry, "35D62039-49D0-48AE-9AD7-ADA816B945F5");
 
         ~AssetRegistry() override = default;
 

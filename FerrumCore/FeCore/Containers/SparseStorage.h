@@ -15,9 +15,9 @@ namespace FE
     //! \brief Sparse storage descriptor.
     struct SparseStorageDesc
     {
-        USize ValueByteAlignment; //!< Alignment of value to store in bytes.
-        USize ValueByteSize;      //!< Size of value to store in bytes.
-        USize Capacity;           //!< Capacity of the storage as number of stored values.
+        size_t ValueByteAlignment; //!< Alignment of value to store in bytes.
+        size_t ValueByteSize;      //!< Size of value to store in bytes.
+        size_t Capacity;           //!< Capacity of the storage as number of stored values.
 
         SparseStorageAllocationPolicy AllocationPolicy; //!< Storage allocation policy.
 
@@ -29,9 +29,9 @@ namespace FE
         {
         }
 
-        inline SparseStorageDesc(USize alignment, USize valueSize,
+        inline SparseStorageDesc(size_t alignment, size_t valueSize,
                                  SparseStorageAllocationPolicy allocationPolicy = SparseStorageAllocationPolicy::PreAllocate,
-                                 USize capacity = 256)
+                                 size_t capacity = 256)
         {
             ValueByteAlignment = alignment;
             ValueByteSize = valueSize;
@@ -60,24 +60,24 @@ namespace FE
     {
         SparseStorageDesc m_Desc;
 
-        SSize m_ChunkSize = -1;
-        SSize m_KeyOffset = -1;
+        int64_t m_ChunkSize = -1;
+        int64_t m_KeyOffset = -1;
 
-        eastl::vector<USize> m_Sparse;
-        eastl::vector<Int8> m_Dense;
+        eastl::vector<size_t> m_Sparse;
+        eastl::vector<int8_t> m_Dense;
 
-        [[nodiscard]] inline void* GetEntryValue(USize index)
+        [[nodiscard]] inline void* GetEntryValue(size_t index)
         {
             return &m_Dense[index * m_ChunkSize];
         }
 
-        [[nodiscard]] inline const TKey& GetEntryKey(USize index) const
+        [[nodiscard]] inline const TKey& GetEntryKey(size_t index) const
         {
             const void* pointer = &m_Dense[index * m_ChunkSize + m_KeyOffset];
             return *static_cast<const TKey*>(pointer);
         }
 
-        [[nodiscard]] inline TKey& GetEntryKey(USize index)
+        [[nodiscard]] inline TKey& GetEntryKey(size_t index)
         {
             void* pointer = &m_Dense[index * m_ChunkSize + m_KeyOffset];
             return *static_cast<TKey*>(pointer);
@@ -98,7 +98,7 @@ namespace FE
         }
 
     public:
-        FE_STRUCT_RTTI(SparseStorage, "41289318-36F5-41D6-BFED-73C7DC58C695");
+        FE_RTTI_Base(SparseStorage, "41289318-36F5-41D6-BFED-73C7DC58C695");
 
         inline SparseStorage() = default;
 
@@ -119,7 +119,7 @@ namespace FE
 
             if (desc.AllocationPolicy == SparseStorageAllocationPolicy::PreAllocate)
             {
-                m_Sparse.Resize(desc.Capacity, static_cast<USize>(-1));
+                m_Sparse.Resize(desc.Capacity, static_cast<size_t>(-1));
                 m_Dense.Reserve(desc.Capacity * m_ChunkSize);
             }
         }
@@ -136,7 +136,7 @@ namespace FE
 
             if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::FirstUseAllocate && Capacity() == 0)
             {
-                m_Sparse.resize(m_Desc.Capacity, static_cast<USize>(-1));
+                m_Sparse.resize(m_Desc.Capacity, static_cast<size_t>(-1));
                 m_Dense.reserve(m_Desc.Capacity * m_ChunkSize);
             }
 
@@ -150,7 +150,7 @@ namespace FE
                 if (m_Desc.AllocationPolicy == SparseStorageAllocationPolicy::Dynamic && m_Sparse.size() <= key)
                 {
                     for (uint32_t i = 0; i < key - m_Sparse.size() + 1; ++i)
-                        m_Sparse.push_back(static_cast<USize>(-1));
+                        m_Sparse.push_back(static_cast<size_t>(-1));
                 }
 
                 auto n = m_Dense.size() / m_ChunkSize;
@@ -200,7 +200,7 @@ namespace FE
                     m_Sparse[GetEntryKey(idx)] = idx;
                 }
 
-                m_Sparse[key] = static_cast<USize>(-1);
+                m_Sparse[key] = static_cast<size_t>(-1);
                 return true;
             }
 
@@ -236,8 +236,8 @@ namespace FE
 
             m_Dense.shrink_to_fit();
 
-            USize lastIndex = 0;
-            for (USize i = 0; i < m_Sparse.size(); ++i)
+            size_t lastIndex = 0;
+            for (size_t i = 0; i < m_Sparse.size(); ++i)
             {
                 if (Contains(static_cast<TKey>(i)))
                     lastIndex = i;
@@ -246,12 +246,12 @@ namespace FE
             m_Sparse.resize(lastIndex + 1);
         }
 
-        [[nodiscard]] inline USize Size() const
+        [[nodiscard]] inline size_t Size() const
         {
             return m_Dense.size() / m_ChunkSize;
         }
 
-        [[nodiscard]] inline USize Capacity() const
+        [[nodiscard]] inline size_t Capacity() const
         {
             return m_Sparse.size();
         }

@@ -37,7 +37,7 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(ServiceLocator<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
+        FE_RTTI_Class(ServiceLocator<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
 
         //! \brief Register the instance.
         //!
@@ -97,7 +97,7 @@ namespace FE
     template<class TBase, class TInterface = TBase>
     struct ServiceLocatorImplBase : public TBase
     {
-        FE_CLASS_RTTI(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
+        FE_RTTI_Class(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 
         //! \brief Calls \ref ServiceLocator::Register.
         inline ServiceLocatorImplBase()

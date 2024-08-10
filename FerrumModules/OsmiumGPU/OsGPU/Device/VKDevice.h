@@ -14,14 +14,14 @@ namespace FE::Osmium
 
     struct VKQueueFamilyData
     {
-        UInt32 FamilyIndex;
-        UInt32 QueueCount;
+        uint32_t FamilyIndex;
+        uint32_t QueueCount;
         CommandQueueClass Class;
         VkCommandPool CmdPool;
 
-        FE_STRUCT_RTTI(VKQueueFamilyData, "95E71464-EA4F-42C3-8838-881FCE46754D");
+        FE_RTTI_Base(VKQueueFamilyData, "95E71464-EA4F-42C3-8838-881FCE46754D");
 
-        inline VKQueueFamilyData(UInt32 idx, UInt32 count, CommandQueueClass cmdListClass)
+        inline VKQueueFamilyData(uint32_t idx, uint32_t count, CommandQueueClass cmdListClass)
             : FamilyIndex(idx)
             , QueueCount(count)
             , Class(cmdListClass)
@@ -34,7 +34,7 @@ namespace FE::Osmium
     class IVKObjectDeleter
     {
     public:
-        UInt32 FramesLeft = 3;
+        uint32_t FramesLeft = 3;
 
         virtual ~IVKObjectDeleter() = default;
 
@@ -65,10 +65,10 @@ namespace FE::Osmium
     class DescriptorSetLayoutData final
     {
         VkDescriptorSetLayout m_SetLayout;
-        UInt32 m_RefCount;
+        uint32_t m_RefCount;
 
     public:
-        FE_STRUCT_RTTI(DescriptorSetLayoutData, "93EA161C-0BC6-45F6-962B-8A21259DFE2B");
+        FE_RTTI_Base(DescriptorSetLayoutData, "93EA161C-0BC6-45F6-962B-8A21259DFE2B");
 
         inline DescriptorSetLayoutData() = default;
 
@@ -112,8 +112,8 @@ namespace FE::Osmium
         eastl::vector<VkSemaphore> m_WaitSemaphores;
         eastl::vector<VkSemaphore> m_SignalSemaphores;
 
-        festd::unordered_dense_map<USize, DescriptorSetLayoutData> m_DescriptorSetLayouts;
-        LRUCacheMap<USize, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
+        festd::unordered_dense_map<size_t, DescriptorSetLayoutData> m_DescriptorSetLayouts;
+        LRUCacheMap<size_t, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
         VkMemoryRequirements m_ImageMemoryRequirements;
         VkMemoryRequirements m_RenderTargetMemoryRequirements;
         VkMemoryRequirements m_BufferMemoryRequirements;
@@ -123,16 +123,16 @@ namespace FE::Osmium
         void FindQueueFamilies();
 
     public:
-        FE_CLASS_RTTI(VKDevice, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
+        FE_RTTI_Class(VKDevice, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
 
         explicit VKDevice(VKAdapter& adapter);
         ~VKDevice() override;
         VkDevice GetNativeDevice();
 
-        UInt32 FindMemoryType(UInt32 typeBits, VkMemoryPropertyFlags properties);
+        uint32_t FindMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties);
 
-        VkDescriptorSetLayout GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, USize& key);
-        void ReleaseDescriptorSetLayout(USize key);
+        VkDescriptorSetLayout GetDescriptorSetLayout(const ArraySlice<DescriptorDesc>& descriptors, size_t& key);
+        void ReleaseDescriptorSetLayout(size_t key);
 
         inline VkCommandPool GetCommandPool(CommandQueueClass cmdQueueClass)
         {
@@ -148,7 +148,7 @@ namespace FE::Osmium
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
-        inline VkCommandPool GetCommandPool(UInt32 queueFamilyIndex)
+        inline VkCommandPool GetCommandPool(uint32_t queueFamilyIndex)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
@@ -162,7 +162,7 @@ namespace FE::Osmium
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
-        inline UInt32 GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
+        inline uint32_t GetQueueFamilyIndex(CommandQueueClass cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
@@ -173,7 +173,7 @@ namespace FE::Osmium
             }
 
             FE_UNREACHABLE("Couldn't find queue family");
-            return static_cast<UInt32>(-1);
+            return static_cast<uint32_t>(-1);
         }
 
         template<class T, class... Args>
@@ -193,8 +193,8 @@ namespace FE::Osmium
 
         VkSemaphore& AddWaitSemaphore();
         VkSemaphore& AddSignalSemaphore();
-        UInt32 GetWaitSemaphores(const VkSemaphore** semaphores);
-        UInt32 GetSignalSemaphores(const VkSemaphore** semaphores);
+        uint32_t GetWaitSemaphores(const VkSemaphore** semaphores);
+        uint32_t GetSignalSemaphores(const VkSemaphore** semaphores);
 
         void WaitIdle() override;
         IAdapter& GetAdapter() override;
@@ -207,7 +207,7 @@ namespace FE::Osmium
         Rc<IShaderModule> CreateShaderModule(const ShaderModuleDesc& desc) override;
         Rc<IRenderPass> CreateRenderPass(const RenderPassDesc& desc) override;
         Rc<IDescriptorHeap> CreateDescriptorHeap(const DescriptorHeapDesc& desc) override;
-        Rc<VKCommandBuffer> CreateCommandBuffer(UInt32 queueFamilyIndex);
+        Rc<VKCommandBuffer> CreateCommandBuffer(uint32_t queueFamilyIndex);
         Rc<IShaderCompiler> CreateShaderCompiler() override;
         Rc<IGraphicsPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
         Rc<IImageView> CreateImageView(const ImageViewDesc& desc) override;

@@ -11,7 +11,7 @@ namespace FE::Osmium
     inline constexpr int g_PostProcessFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices
         | aiProcess_CalcTangentSpace | aiProcess_ImproveCacheLocality | aiProcess_GenSmoothNormals;
 
-    inline UInt32 ComponentSize(MeshVertexComponent component)
+    inline uint32_t ComponentSize(MeshVertexComponent component)
     {
         switch (component)
         {
@@ -35,8 +35,8 @@ namespace FE::Osmium
         }
     }
 
-    bool LoadMeshFromMemory(const eastl::vector<Int8>& fileData, const eastl::vector<MeshVertexComponent>& components,
-                            eastl::vector<float>& vertexBuffer, eastl::vector<UInt32>& indexBuffer, UInt32& vertexCount)
+    bool LoadMeshFromMemory(const eastl::vector<int8_t>& fileData, const eastl::vector<MeshVertexComponent>& components,
+                            eastl::vector<float>& vertexBuffer, eastl::vector<uint32_t>& indexBuffer, uint32_t& vertexCount)
     {
         Assimp::Importer Importer;
         const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), g_PostProcessFlags, ".fbx");
@@ -48,15 +48,15 @@ namespace FE::Osmium
         }
 
         vertexCount = 0;
-        UInt32 indexCount = 0;
+        uint32_t indexCount = 0;
 
-        UInt32 vertexBufferSize = 0;
+        uint32_t vertexBufferSize = 0;
         for (auto component : components)
         {
             vertexBufferSize += ComponentSize(component);
         }
 
-        for (UInt32 i = 0; i < pScene->mNumMeshes; ++i)
+        for (uint32_t i = 0; i < pScene->mNumMeshes; ++i)
         {
             vertexCount += pScene->mMeshes[i]->mNumVertices;
         }
@@ -65,9 +65,9 @@ namespace FE::Osmium
         vertexBuffer.resize(vertexBufferSize);
 
         Vector3F scale{ 0.01f, 0.01f, 0.01f };
-        UInt32 vbIndex = 0;
+        uint32_t vbIndex = 0;
 
-        for (UInt32 i = 0; i < pScene->mNumMeshes; ++i)
+        for (uint32_t i = 0; i < pScene->mNumMeshes; ++i)
         {
             const aiMesh* mesh = pScene->mMeshes[i];
 
@@ -76,7 +76,7 @@ namespace FE::Osmium
 
             const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
 
-            for (UInt32 j = 0; j < mesh->mNumVertices; ++j)
+            for (uint32_t j = 0; j < mesh->mNumVertices; ++j)
             {
                 const aiVector3D* pPos = &mesh->mVertices[j];
                 const aiVector3D* pNormal = &mesh->mNormals[j];
@@ -142,8 +142,8 @@ namespace FE::Osmium
                 }
             }
 
-            auto indexBase = static_cast<UInt32>(indexBuffer.size());
-            for (UInt32 j = 0; j < mesh->mNumFaces; ++j)
+            auto indexBase = static_cast<uint32_t>(indexBuffer.size());
+            for (uint32_t j = 0; j < mesh->mNumFaces; ++j)
             {
                 const aiFace& face = mesh->mFaces[j];
                 if (face.mNumIndices != 3)

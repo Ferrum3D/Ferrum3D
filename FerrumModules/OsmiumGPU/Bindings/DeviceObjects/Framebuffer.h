@@ -11,7 +11,7 @@ namespace FE::Osmium
     {
         ByteBuffer RenderTargetViews;
         IRenderPass* RenderPass;
-        UInt32 Width;
-        UInt32 Height;
+        uint32_t Width;
+        uint32_t Height;
     };
 } // namespace FE::Osmium

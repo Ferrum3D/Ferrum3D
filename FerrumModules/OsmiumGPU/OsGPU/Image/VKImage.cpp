@@ -26,7 +26,7 @@ namespace FE::Osmium
         range.ArraySliceCount = Desc.ArraySize;
         range.MinArraySlice = 0;
         range.MinMipSlice = 0;
-        range.MipSliceCount = static_cast<UInt16>(Desc.MipSliceCount);
+        range.MipSliceCount = static_cast<uint16_t>(Desc.MipSliceCount);
         range.AspectFlags = aspectFlags;
 
         ImageViewDesc desc{};
@@ -38,7 +38,7 @@ namespace FE::Osmium
     }
 
     VKImage::VKImage(VKDevice& dev, const ImageDesc& desc)
-        : ImageBase(desc.ArraySize, static_cast<UInt16>(desc.MipSliceCount))
+        : ImageBase(desc.ArraySize, static_cast<uint16_t>(desc.MipSliceCount))
         , m_Device(&dev)
         , Desc(desc)
     {

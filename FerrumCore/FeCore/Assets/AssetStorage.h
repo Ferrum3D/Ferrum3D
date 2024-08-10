@@ -16,8 +16,8 @@ namespace FE::Assets
     class AssetStorage
     {
         SpinLock m_Mutex;
-        UInt32 m_StrongRefCount;
-        UInt32 m_WeakRefCount;
+        uint32_t m_StrongRefCount;
+        uint32_t m_WeakRefCount;
 
     protected:
         IAssetLoader* m_Loader;
@@ -28,7 +28,7 @@ namespace FE::Assets
         virtual void Delete() = 0;
 
     public:
-        FE_CLASS_RTTI(AssetStorage, "46CA2164-383A-472F-995E-6FDBC9A1C550");
+        FE_RTTI_Class(AssetStorage, "46CA2164-383A-472F-995E-6FDBC9A1C550");
 
         //! \brief Construct an instance of AssetStorage with a loader.
         //!

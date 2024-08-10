@@ -9,14 +9,14 @@ namespace FE::Osmium
 {
     struct HLSLShaderVersion
     {
-        UInt32 Major = 6;
-        UInt32 Minor = 0;
+        uint32_t Major = 6;
+        uint32_t Minor = 0;
 
-        FE_STRUCT_RTTI(HLSLShaderVersion, "68EBC362-A8FE-4473-ADE3-7D5D8E86EA30");
+        FE_RTTI_Base(HLSLShaderVersion, "68EBC362-A8FE-4473-ADE3-7D5D8E86EA30");
 
         HLSLShaderVersion() = default;
 
-        inline HLSLShaderVersion(UInt32 major, UInt32 minor)
+        inline HLSLShaderVersion(uint32_t major, uint32_t minor)
             : Major(major)
             , Minor(minor)
         {
@@ -31,13 +31,13 @@ namespace FE::Osmium
         StringSlice EntryPoint;
         StringSlice FullPath;
 
-        FE_STRUCT_RTTI(ShaderCompilerArgs, "58A284CE-87C0-4142-AF5B-86539F015382");
+        FE_RTTI_Base(ShaderCompilerArgs, "58A284CE-87C0-4142-AF5B-86539F015382");
     };
 
     class IShaderCompiler : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IShaderCompiler, "F3D5E284-1DBF-40CC-9790-7D97FA69B18D");
+        FE_RTTI_Class(IShaderCompiler, "F3D5E284-1DBF-40CC-9790-7D97FA69B18D");
 
         ~IShaderCompiler() override = default;
 

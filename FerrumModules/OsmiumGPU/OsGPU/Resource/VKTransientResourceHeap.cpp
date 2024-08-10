@@ -20,7 +20,7 @@ namespace FE::Osmium
             requirements = vkDevice->GetRenderTargetMemoryRequirements();
             break;
         default:
-            FE_UNREACHABLE("Invalid TransientResourceType: {}", static_cast<Int32>(m_Desc.TypeFlags));
+            FE_UNREACHABLE("Invalid TransientResourceType: {}", static_cast<int32_t>(m_Desc.TypeFlags));
         }
 
         m_Desc.Alignment = std::max(m_Desc.Alignment, requirements.alignment);
@@ -37,13 +37,13 @@ namespace FE::Osmium
     {
     }
 
-    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const BufferDesc& desc, USize& byteSize)
+    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const BufferDesc& desc, size_t& byteSize)
     {
         byteSize = desc.Size;
         return m_Allocator.Allocate(desc.Size, m_Desc.Alignment);
     }
 
-    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const ImageDesc& desc, USize& byteSize)
+    NullableHandle VKTransientResourceHeap::AllocateResourceMemory(const ImageDesc& desc, size_t& byteSize)
     {
         auto* vkDevice = fe_assert_cast<VKDevice*>(m_Device);
         auto requirements = vkDevice->GetImageMemoryRequirements(desc);

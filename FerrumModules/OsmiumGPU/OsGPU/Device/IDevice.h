@@ -40,7 +40,7 @@ namespace FE::Osmium
     class IDevice : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IDevice, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
+        FE_RTTI_Class(IDevice, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
 
         ~IDevice() override = default;
 

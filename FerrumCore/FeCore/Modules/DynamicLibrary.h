@@ -12,7 +12,7 @@ namespace FE
         void* GetFunctionImpl(StringSlice functionName);
 
     public:
-        FE_CLASS_RTTI(DynamicLibrary, "3A50F5DD-9055-4AD3-ABB5-7737644EB87C");
+        FE_RTTI_Class(DynamicLibrary, "3A50F5DD-9055-4AD3-ABB5-7737644EB87C");
 
         inline DynamicLibrary() = default;
         ~DynamicLibrary() override;
