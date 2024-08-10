@@ -5,8 +5,8 @@ namespace FE::Osmium
 {
     struct WindowDescBinding
     {
-        UInt32 Width;
-        UInt32 Height;
+        uint32_t Width;
+        uint32_t Height;
 
         const char* Title;
     };

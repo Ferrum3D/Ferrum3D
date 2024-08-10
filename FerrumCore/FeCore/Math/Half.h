@@ -10,36 +10,36 @@ namespace FE
     namespace FeHalfConst
     {
         inline constexpr float Denorm = 1.0f / 16384.0f;
-        inline constexpr Int32 BitsMantissa = 10;
-        inline constexpr Int32 BitsExponent = 5;
-        inline constexpr Int32 MaxExpVal = 0x1f;
-        inline constexpr Int32 Bias = MaxExpVal / 2;
-        inline constexpr Int32 MaxExp = +Bias;
-        inline constexpr Int32 MinExp = -Bias;
+        inline constexpr int32_t BitsMantissa = 10;
+        inline constexpr int32_t BitsExponent = 5;
+        inline constexpr int32_t MaxExpVal = 0x1f;
+        inline constexpr int32_t Bias = MaxExpVal / 2;
+        inline constexpr int32_t MaxExp = +Bias;
+        inline constexpr int32_t MinExp = -Bias;
 
-        inline constexpr Int32 DoubleBitsMantissa = 52;
-        inline constexpr Int32 DoubleBitsExponent = 11;
-        inline constexpr Int32 DoubleMaxExpVal = 0x7ff;
-        inline constexpr Int32 DoubleBias = DoubleMaxExpVal / 2;
+        inline constexpr int32_t DoubleBitsMantissa = 52;
+        inline constexpr int32_t DoubleBitsExponent = 11;
+        inline constexpr int32_t DoubleMaxExpVal = 0x7ff;
+        inline constexpr int32_t DoubleBias = DoubleMaxExpVal / 2;
 
-        inline constexpr Int32 FloatBitsMantissa = 23;
-        inline constexpr Int32 FloatBitsExponent = 8;
-        inline constexpr Int32 FloatMaxExpVal = 0xff;
-        inline constexpr Int32 FloatBias = FloatMaxExpVal / 2;
+        inline constexpr int32_t FloatBitsMantissa = 23;
+        inline constexpr int32_t FloatBitsExponent = 8;
+        inline constexpr int32_t FloatMaxExpVal = 0xff;
+        inline constexpr int32_t FloatBias = FloatMaxExpVal / 2;
     } // namespace FeHalfConst
 
     union HalfFormat
     {
-        UInt16 Data;
+        uint16_t Data;
 
         struct
         {
-            UInt16 M : FeHalfConst::BitsMantissa;
-            UInt16 E : FeHalfConst::BitsExponent;
-            UInt16 S : 1;
+            uint16_t M : FeHalfConst::BitsMantissa;
+            uint16_t E : FeHalfConst::BitsExponent;
+            uint16_t S : 1;
         } SEM; //!< Sign-Exponent-Mantissa
 
-        constexpr HalfFormat(UInt16 b)
+        constexpr HalfFormat(uint16_t b)
             : Data(b)
         {
         }
@@ -51,9 +51,9 @@ namespace FE
 
         struct
         {
-            UInt32 M : FeHalfConst::FloatBitsMantissa;
-            UInt32 E : FeHalfConst::FloatBitsExponent;
-            UInt32 S : 1;
+            uint32_t M : FeHalfConst::FloatBitsMantissa;
+            uint32_t E : FeHalfConst::FloatBitsExponent;
+            uint32_t S : 1;
         } SEM; //!< Sign-Exponent-Mantissa
     };
 
@@ -63,16 +63,16 @@ namespace FE
 
         struct
         {
-            UInt64 M : FeHalfConst::DoubleBitsMantissa;
-            UInt64 E : FeHalfConst::DoubleBitsExponent;
-            UInt64 S : 1;
+            uint64_t M : FeHalfConst::DoubleBitsMantissa;
+            uint64_t E : FeHalfConst::DoubleBitsExponent;
+            uint64_t S : 1;
         } SEM; //!< Sign-Exponent-Mantissa
     };
 
     //! \brief Half-precision floating point.
     struct FeHalf
     {
-        FE_STRUCT_RTTI(FeHalf, "F6FB0AF8-5F42-4C0B-97D3-70079F094924");
+        FE_RTTI_Base(FeHalf, "F6FB0AF8-5F42-4C0B-97D3-70079F094924");
 
         constexpr FeHalf() noexcept
             : m_data(0)
@@ -114,7 +114,7 @@ namespace FE
             // A normal number (not infinity, zero or NaN)
             else
             {
-                Int32 exp = f.SEM.E - 127;
+                int32_t exp = f.SEM.E - 127;
 
                 if (exp < -24)
                 { // Zero in half precision
@@ -125,7 +125,7 @@ namespace FE
                 { // Denorm
                     m_data.SEM.E = 0;
 
-                    UInt32 exp1 = (UInt32)(-14 - exp);
+                    uint32_t exp1 = (uint32_t)(-14 - exp);
                     switch (exp1)
                     {
                     case 0:
@@ -352,7 +352,7 @@ namespace FE
         }
 
     private:
-        constexpr FeHalf(UInt16 s, UInt16 e, UInt16 m)
+        constexpr FeHalf(uint16_t s, uint16_t e, uint16_t m)
             : m_data(0)
         {
             m_data.SEM.S = s;

@@ -29,7 +29,7 @@ namespace FE::Osmium
         vkAllocateCommandBuffers(nativeDevice, &allocateInfo, &m_CommandBuffer);
     }
 
-    VKCommandBuffer::VKCommandBuffer(VKDevice& dev, UInt32 queueFamilyIndex)
+    VKCommandBuffer::VKCommandBuffer(VKDevice& dev, uint32_t queueFamilyIndex)
         : m_Device(&dev)
         , m_IsUpdating(false)
     {
@@ -64,13 +64,13 @@ namespace FE::Osmium
         vkEndCommandBuffer(m_CommandBuffer);
     }
 
-    void VKCommandBuffer::Draw(UInt32 vertexCount, UInt32 instanceCount, UInt32 firstVertex, UInt32 firstInstance)
+    void VKCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
-    void VKCommandBuffer::DrawIndexed(UInt32 indexCount, UInt32 instanceCount, UInt32 firstIndex, Int32 vertexOffset,
-                                      UInt32 firstInstance)
+    void VKCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
+                                      uint32_t firstInstance)
     {
         vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
@@ -172,9 +172,9 @@ namespace FE::Osmium
                              VK_DEPENDENCY_BY_REGION_BIT,
                              0,
                              nullptr,
-                             static_cast<UInt32>(nativeBufferBarriers.size()),
+                             static_cast<uint32_t>(nativeBufferBarriers.size()),
                              nativeBufferBarriers.data(),
-                             static_cast<UInt32>(nativeImageBarriers.size()),
+                             static_cast<uint32_t>(nativeImageBarriers.size()),
                              nativeImageBarriers.data());
     }
 
@@ -209,7 +209,7 @@ namespace FE::Osmium
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 vkPipeline->GetNativeLayout(),
                                 0,
-                                static_cast<UInt32>(nativeSets.size()),
+                                static_cast<uint32_t>(nativeSets.size()),
                                 nativeSets.data(),
                                 0,
                                 nullptr);
@@ -240,7 +240,7 @@ namespace FE::Osmium
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.framebuffer = fe_assert_cast<VKFramebuffer*>(framebuffer)->GetNativeFramebuffer();
         info.renderPass = fe_assert_cast<VKRenderPass*>(renderPass)->GetNativeRenderPass();
-        info.clearValueCount = static_cast<UInt32>(vkClearValues.size());
+        info.clearValueCount = static_cast<uint32_t>(vkClearValues.size());
         info.pClearValues = vkClearValues.data();
         info.renderArea.offset = VkOffset2D{ 0, 0 };
         info.renderArea.extent = VkExtent2D{ framebuffer->GetDesc().Width, framebuffer->GetDesc().Height };
@@ -258,20 +258,20 @@ namespace FE::Osmium
         vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, nativePipeline);
     }
 
-    void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer, UInt64 byteOffset)
+    void VKCommandBuffer::BindIndexBuffer(IBuffer* buffer, uint64_t byteOffset)
     {
         auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
         vkCmdBindIndexBuffer(m_CommandBuffer, nativeBuffer, byteOffset, VK_INDEX_TYPE_UINT32);
     }
 
-    void VKCommandBuffer::BindVertexBuffer(UInt32 slot, IBuffer* buffer, UInt64 byteOffset)
+    void VKCommandBuffer::BindVertexBuffer(uint32_t slot, IBuffer* buffer, uint64_t byteOffset)
     {
         auto nativeBuffer = fe_assert_cast<VKBuffer*>(buffer)->Buffer;
         vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &byteOffset);
     }
 
-    void VKCommandBuffer::BindVertexBuffers(UInt32 startSlot, const ArraySlice<IBuffer*>& buffers,
-                                            const ArraySlice<UInt64>& offsets)
+    void VKCommandBuffer::BindVertexBuffers(uint32_t startSlot, const ArraySlice<IBuffer*>& buffers,
+                                            const ArraySlice<uint64_t>& offsets)
     {
         FE_ASSERT_MSG(buffers.Length() == offsets.Length(), "Number of buffers must be the same as number of offsets");
 
@@ -282,7 +282,7 @@ namespace FE::Osmium
         }
 
         vkCmdBindVertexBuffers(
-            m_CommandBuffer, startSlot, static_cast<UInt32>(nativeBuffers.size()), nativeBuffers.data(), offsets.Data());
+            m_CommandBuffer, startSlot, static_cast<uint32_t>(nativeBuffers.size()), nativeBuffers.data(), offsets.Data());
     }
 
     void VKCommandBuffer::CopyBuffers(IBuffer* source, IBuffer* dest, const BufferCopyRegion& region)

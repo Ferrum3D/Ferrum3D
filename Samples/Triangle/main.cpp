@@ -42,7 +42,7 @@ class TestApplication final : public FE::ApplicationFramework
     HAL::Viewport m_Viewport{};
     HAL::Scissor m_Scissor{};
 
-    const FE::Int32 m_FrameBufferCount = 3;
+    const FE::int32_t m_FrameBufferCount = 3;
 
 protected:
     void PollSystemEvents() override
@@ -79,7 +79,7 @@ protected:
     }
 
 public:
-    FE_CLASS_RTTI(TestApplication, "1DF20010-27B5-4B68-943A-FBE881DF24F4");
+    FE_RTTI_Class(TestApplication, "1DF20010-27B5-4B68-943A-FBE881DF24F4");
 
     ~TestApplication() override
     {
@@ -182,13 +182,13 @@ public:
 
         m_Pipeline = m_Device->CreateGraphicsPipeline(pipelineDesc);
 
-        for (FE::USize i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
+        for (FE::size_t i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
         {
             m_Fences.Push(m_Device->CreateFence(HAL::FenceState::Signaled));
         }
 
         m_RTVs = m_SwapChain->GetRTVs();
-        for (FE::USize i = 0; i < m_SwapChain->GetImageCount(); ++i)
+        for (FE::size_t i = 0; i < m_SwapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
             framebufferDesc.RenderPass        = m_RenderPass.Get();

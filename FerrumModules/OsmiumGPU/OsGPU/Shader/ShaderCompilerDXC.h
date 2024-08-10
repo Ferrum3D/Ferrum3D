@@ -14,7 +14,7 @@ namespace FE::Osmium
         GraphicsAPI m_API;
 
     public:
-        FE_CLASS_RTTI(ShaderCompilerDXC, "9DAF49F9-4E5D-4042-B123-67200DC60A14");
+        FE_RTTI_Class(ShaderCompilerDXC, "9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
         explicit ShaderCompilerDXC(GraphicsAPI api);
 

@@ -8,7 +8,7 @@ namespace FE::IO
     class IStream : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IStream, "FD697DC5-020E-4998-ADF2-9DFAF48E2A75");
+        FE_RTTI_Class(IStream, "FD697DC5-020E-4998-ADF2-9DFAF48E2A75");
 
         ~IStream() override = default;
 
@@ -30,14 +30,14 @@ namespace FE::IO
         //! \param [in] seekMode - Seek mode to use.
         //!
         //! \return Success or error code.
-        virtual ResultCode Seek(SSize offset, SeekMode seekMode) = 0;
+        virtual ResultCode Seek(ptrdiff_t offset, SeekMode seekMode) = 0;
 
         //! \brief Get current stream position.
         //!
         //! \note This can always return zero for certain streams, e.g. stdio stream.
         //!
         //! \return Current stream position.
-        [[nodiscard]] virtual USize Tell() const = 0;
+        [[nodiscard]] virtual size_t Tell() const = 0;
 
         //! \brief Get length of the stream.
         //!
@@ -45,7 +45,7 @@ namespace FE::IO
         //! Otherwise return value is always zero.
         //!
         //! \return Length of the stream.
-        [[nodiscard]] virtual USize Length() const = 0;
+        [[nodiscard]] virtual size_t Length() const = 0;
 
         //! \brief Read contents of stream to a pre-allocated buffer.
         //!
@@ -53,7 +53,7 @@ namespace FE::IO
         //! \param [in] size   - Size in bytes of data to read.
         //!
         //! \return Number of bytes actually read.
-        virtual USize ReadToBuffer(void* buffer, USize size) = 0;
+        virtual size_t ReadToBuffer(void* buffer, size_t size) = 0;
 
         //! \brief Write contents of buffer to the stream.
         //!
@@ -61,7 +61,7 @@ namespace FE::IO
         //! \param [in] size   - Size in bytes of data to write.
         //!
         //! \return Number of bytes actually written.
-        virtual USize WriteFromBuffer(const void* buffer, USize size) = 0;
+        virtual size_t WriteFromBuffer(const void* buffer, size_t size) = 0;
 
         //! \brief Write to this stream from other stream.
         //!
@@ -69,7 +69,7 @@ namespace FE::IO
         //! \param [in] size   - Size in bytes of data to write.
         //!
         //! \return Number of bytes actually written.
-        virtual USize WriteFromStream(IStream* stream, USize size) = 0;
+        virtual size_t WriteFromStream(IStream* stream, size_t size) = 0;
 
         //! \brief Get name of the stream.
         //!

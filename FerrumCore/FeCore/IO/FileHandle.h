@@ -79,7 +79,7 @@ namespace FE::IO
         void GenFileOpenMode(OpenMode openMode);
 
     public:
-        FE_CLASS_RTTI(FileHandle, "58D19D75-CE53-4B11-B151-F82583B3EAD8");
+        FE_RTTI_Class(FileHandle, "58D19D75-CE53-4B11-B151-F82583B3EAD8");
 
         FileHandle();
         ~FileHandle() override;
@@ -87,19 +87,19 @@ namespace FE::IO
         ResultCode Open(StringSlice fileName, OpenMode openMode);
         void Close();
 
-        ResultCode Seek(SSize offset, SeekMode seekMode);
+        ResultCode Seek(ptrdiff_t offset, SeekMode seekMode);
 
-        [[nodiscard]] USize Tell() const;
+        [[nodiscard]] size_t Tell() const;
 
         [[nodiscard]] DateTime GetLastModificationTime() const;
         [[nodiscard]] OpenMode GetOpenMode() const;
 
-        USize Read(void* buffer, USize size);
-        USize Write(const void* buffer, USize size);
+        size_t Read(void* buffer, size_t size);
+        size_t Write(const void* buffer, size_t size);
 
         void Flush();
 
-        [[nodiscard]] USize Length() const;
+        [[nodiscard]] size_t Length() const;
 
         [[nodiscard]] StringSlice GetName() const;
 

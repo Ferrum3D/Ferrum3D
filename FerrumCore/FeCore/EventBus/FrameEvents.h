@@ -5,7 +5,7 @@ namespace FE
 {
     struct FrameEventArgs
     {
-        UInt32 FrameIndex;
+        uint32_t FrameIndex;
         float DeltaTime;
     };
 

@@ -14,20 +14,20 @@ namespace FE::Osmium
 
     struct TransientResourceHeapDesc
     {
-        UInt64 HeapSize = 512 * 1024;
-        UInt64 Alignment = 256;
-        Int32 CacheSize = 256;
+        uint64_t HeapSize = 512 * 1024;
+        uint64_t Alignment = 256;
+        int32_t CacheSize = 256;
         TransientResourceType TypeFlags = TransientResourceType::Buffer;
     };
 
     struct TransientImageDesc
     {
         ImageDesc Descriptor;
-        UInt64 ResourceID = 0;
+        uint64_t ResourceID = 0;
 
         inline TransientImageDesc() = default;
 
-        inline TransientImageDesc(const ImageDesc& descriptor, UInt64 resourceId)
+        inline TransientImageDesc(const ImageDesc& descriptor, uint64_t resourceId)
             : Descriptor(descriptor)
             , ResourceID(resourceId)
         {
@@ -37,11 +37,11 @@ namespace FE::Osmium
     struct TransientBufferDesc
     {
         BufferDesc Descriptor;
-        UInt64 ResourceID = 0;
+        uint64_t ResourceID = 0;
 
         inline TransientBufferDesc() = default;
 
-        inline TransientBufferDesc(const BufferDesc& descriptor, UInt64 resourceId)
+        inline TransientBufferDesc(const BufferDesc& descriptor, uint64_t resourceId)
             : Descriptor(descriptor)
             , ResourceID(resourceId)
         {
@@ -50,8 +50,8 @@ namespace FE::Osmium
 
     struct TransientResourceAllocationStats
     {
-        UInt64 MinOffset;
-        UInt64 MaxOffset;
+        uint64_t MinOffset;
+        uint64_t MaxOffset;
     };
 
     class IImage;
@@ -60,7 +60,7 @@ namespace FE::Osmium
     class ITransientResourceHeap : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(ITransientResourceHeap, "DA9D43A4-0EB2-45A4-96B4-714D89A34242");
+        FE_RTTI_Class(ITransientResourceHeap, "DA9D43A4-0EB2-45A4-96B4-714D89A34242");
         ~ITransientResourceHeap() override = default;
 
         inline virtual void Allocate() = 0;
@@ -73,8 +73,8 @@ namespace FE::Osmium
         [[nodiscard]] virtual Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc,
                                                        TransientResourceAllocationStats& stats) = 0;
 
-        virtual void ReleaseImage(UInt64 resourceID) = 0;
-        virtual void ReleaseBuffer(UInt64 resourceID) = 0;
+        virtual void ReleaseImage(uint64_t resourceID) = 0;
+        virtual void ReleaseBuffer(uint64_t resourceID) = 0;
     };
 } // namespace FE::Osmium
 

@@ -9,7 +9,7 @@ namespace FE::Assets
     class TestAssetLoader : public IAssetLoader
     {
     public:
-        FE_CLASS_RTTI(TestAssetLoader, "6A78F118-1A66-4543-AF3A-C43AA4E48572");
+        FE_RTTI_Class(TestAssetLoader, "6A78F118-1A66-4543-AF3A-C43AA4E48572");
 
         ~TestAssetLoader() override = default;
 
@@ -43,7 +43,7 @@ namespace FE::Assets
         ~TestAssetStorage() override = default;
 
         String Data;
-        Int32* DeleteCount = nullptr;
+        int32_t* DeleteCount = nullptr;
 
         explicit TestAssetStorage(TestAssetLoader* loader)
             : AssetStorage(loader)

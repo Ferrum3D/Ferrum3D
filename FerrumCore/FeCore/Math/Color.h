@@ -10,7 +10,7 @@ namespace FE
         inline static constexpr float InvMaxByte = 1.0f / 255.0f;
 
     public:
-        FE_STRUCT_RTTI(Color, "EC4C20BD-05B1-4F3F-B370-D8AE749A3C4F");
+        FE_RTTI_Base(Color, "EC4C20BD-05B1-4F3F-B370-D8AE749A3C4F");
 
         FE_FORCE_INLINE Color() noexcept;
 
@@ -24,8 +24,8 @@ namespace FE
 
         [[nodiscard]] FE_FORCE_INLINE static Color GetZero();
 
-        [[nodiscard]] FE_FORCE_INLINE static Color FromBytes(UInt8 r, UInt8 g, UInt8 b, UInt8 a) noexcept;
-        [[nodiscard]] FE_FORCE_INLINE static Color FromUInt32(UInt32 rgba);
+        [[nodiscard]] FE_FORCE_INLINE static Color FromBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
+        [[nodiscard]] FE_FORCE_INLINE static Color FromUInt32(uint32_t rgba);
 
         [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
 
@@ -46,10 +46,10 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE float& B32() noexcept;
         [[nodiscard]] FE_FORCE_INLINE float& A32() noexcept;
 
-        [[nodiscard]] FE_FORCE_INLINE UInt8 R8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE UInt8 G8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE UInt8 B8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE UInt8 A8() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE uint8_t R8() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE uint8_t G8() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE uint8_t B8() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE uint8_t A8() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE Color ToLinear() const noexcept;
         [[nodiscard]] FE_FORCE_INLINE Color ToSRGB() const noexcept;
@@ -57,7 +57,7 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE Color ToLinearApprox() const noexcept;
         [[nodiscard]] FE_FORCE_INLINE Color ToSRGBApprox() const noexcept;
 
-        [[nodiscard]] FE_FORCE_INLINE UInt32 ToUInt32() const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE uint32_t ToUInt32() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE Color Lerp(const Color& dst, float f) const noexcept;
 
@@ -118,7 +118,7 @@ namespace FE
         return Color(0);
     }
 
-    FE_FORCE_INLINE Color Color::FromBytes(UInt8 r, UInt8 g, UInt8 b, UInt8 a) noexcept
+    FE_FORCE_INLINE Color Color::FromBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept
     {
         auto red   = static_cast<float>(r) * InvMaxByte;
         auto green = static_cast<float>(g) * InvMaxByte;
@@ -128,7 +128,7 @@ namespace FE
         return Color(red, green, blue, alpha);
     }
 
-    FE_FORCE_INLINE Color Color::FromUInt32(UInt32 rgba)
+    FE_FORCE_INLINE Color Color::FromUInt32(uint32_t rgba)
     {
         auto r = (static_cast<float>((rgba >> 24) & 0xFF) * InvMaxByte);
         auto g = (static_cast<float>((rgba >> 16) & 0xFF) * InvMaxByte);
@@ -203,24 +203,24 @@ namespace FE
         return m_Color.W();
     }
 
-    FE_FORCE_INLINE UInt8 Color::R8() const noexcept
+    FE_FORCE_INLINE uint8_t Color::R8() const noexcept
     {
-        return static_cast<UInt8>(MaxByte * m_Color.X());
+        return static_cast<uint8_t>(MaxByte * m_Color.X());
     }
 
-    FE_FORCE_INLINE UInt8 Color::G8() const noexcept
+    FE_FORCE_INLINE uint8_t Color::G8() const noexcept
     {
-        return static_cast<UInt8>(MaxByte * m_Color.Y());
+        return static_cast<uint8_t>(MaxByte * m_Color.Y());
     }
 
-    FE_FORCE_INLINE UInt8 Color::B8() const noexcept
+    FE_FORCE_INLINE uint8_t Color::B8() const noexcept
     {
-        return static_cast<UInt8>(MaxByte * m_Color.Z());
+        return static_cast<uint8_t>(MaxByte * m_Color.Z());
     }
 
-    FE_FORCE_INLINE UInt8 Color::A8() const noexcept
+    FE_FORCE_INLINE uint8_t Color::A8() const noexcept
     {
-        return static_cast<UInt8>(MaxByte * m_Color.W());
+        return static_cast<uint8_t>(MaxByte * m_Color.W());
     }
 
     FE_FORCE_INLINE Color Color::ToLinear() const noexcept
@@ -255,7 +255,7 @@ namespace FE
         return Color(toSRGB(R32()), toSRGB(G32()), toSRGB(B32()), toSRGB(A32()));
     }
 
-    FE_FORCE_INLINE UInt32 Color::ToUInt32() const noexcept
+    FE_FORCE_INLINE uint32_t Color::ToUInt32() const noexcept
     {
         return (A8() << 24) | (B8() << 16) | (G8() << 8) | R8();
     }

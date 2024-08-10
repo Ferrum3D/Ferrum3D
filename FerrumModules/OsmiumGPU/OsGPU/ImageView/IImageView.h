@@ -8,7 +8,7 @@ namespace FE::Osmium
 
     struct ImageViewDesc
     {
-        FE_STRUCT_RTTI(ImageViewDesc, "F018B216-D830-4856-8BF1-E1C082BBBBB1");
+        FE_RTTI_Base(ImageViewDesc, "F018B216-D830-4856-8BF1-E1C082BBBBB1");
 
         ImageSubresourceRange SubresourceRange;
         Format Format = Format::None;
@@ -19,7 +19,7 @@ namespace FE::Osmium
     class IImageView : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IImageView, "16C72764-BC1D-4745-A83E-51D021ACA35D");
+        FE_RTTI_Class(IImageView, "16C72764-BC1D-4745-A83E-51D021ACA35D");
 
         ~IImageView() override = default;
 

@@ -27,7 +27,7 @@ namespace FE::Osmium
 
     struct ImageBarrierDesc
     {
-        FE_STRUCT_RTTI(ImageBarrierDesc, "D4115E22-8C42-4639-9EEB-C53C588AF1D5");
+        FE_RTTI_Base(ImageBarrierDesc, "D4115E22-8C42-4639-9EEB-C53C588AF1D5");
 
         IImage* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
@@ -37,11 +37,11 @@ namespace FE::Osmium
 
     struct BufferBarrierDesc
     {
-        FE_STRUCT_RTTI(BufferBarrierDesc, "88526570-44FF-4013-8A04-B513E42CB2DA");
+        FE_RTTI_Base(BufferBarrierDesc, "88526570-44FF-4013-8A04-B513E42CB2DA");
 
         IBuffer* Buffer           = nullptr;
-        UInt64 Offset             = 0;
-        UInt64 Size               = 0;
+        uint64_t Offset             = 0;
+        uint64_t Size               = 0;
         ResourceState StateBefore = ResourceState::Automatic;
         ResourceState StateAfter  = ResourceState::Undefined;
     };

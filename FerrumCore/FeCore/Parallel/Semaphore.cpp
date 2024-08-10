@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    Semaphore::Semaphore(UInt32 initialValue)
+    Semaphore::Semaphore(uint32_t initialValue)
     {
         m_NativeSemaphore = CreateSemaphore(nullptr, initialValue, 0xfff, nullptr);
     }
@@ -18,7 +18,7 @@ namespace FE
         WaitForSingleObject(m_NativeSemaphore, static_cast<DWORD>(-1));
     }
 
-    void Semaphore::Release(UInt32 count)
+    void Semaphore::Release(uint32_t count)
     {
         ReleaseSemaphore(m_NativeSemaphore, count, nullptr);
     }

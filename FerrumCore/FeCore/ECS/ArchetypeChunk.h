@@ -18,20 +18,20 @@ namespace FE::ECS
     class ArchetypeChunk final
     {
         uint32_t m_Capacity = 0;
-        eastl::vector<Int8> m_Data;
+        eastl::vector<int8_t> m_Data;
         eastl::vector<ComponentStorage> m_ComponentStorages;
 
-        eastl::vector<UInt16> m_EntityIndices;
-        eastl::vector<UInt16> m_EntityIDs;
+        eastl::vector<uint16_t> m_EntityIndices;
+        eastl::vector<uint16_t> m_EntityIDs;
 
-        eastl::vector<UInt16> m_FreeList;
+        eastl::vector<uint16_t> m_FreeList;
 
-        UInt32 m_Version = 0;
+        uint32_t m_Version = 0;
 
         inline ArchetypeChunk() = default;
 
     public:
-        FE_STRUCT_RTTI(ArchetypeChunk, "8D700C4F-6DAE-4C92-A6D5-0B3EB53BF592");
+        FE_RTTI_Base(ArchetypeChunk, "8D700C4F-6DAE-4C92-A6D5-0B3EB53BF592");
 
         // !\brief allocate an Archetype chunk, doesn't call Init().
         inline static ArchetypeChunk* Allocate()
@@ -51,26 +51,26 @@ namespace FE::ECS
         //! \brief Allocate entity data.
         //!
         //! \param [out] entityID - The internal ID of entity (within the chunk).
-        ECSResult AllocateEntity(UInt16& entityID);
+        ECSResult AllocateEntity(uint16_t& entityID);
 
         //! \brief Deallocate entity data.
         //!
         //! \param [in] entityID - The internal ID of entity (within the chunk).
-        ECSResult DeallocateEntity(UInt16 entityID);
+        ECSResult DeallocateEntity(uint16_t entityID);
 
         //! \brief Set component data.
         //!
         //! \param [in] entityID - The internal ID of entity (within the chunk).
         //! \param [in] typeID   - The ID of component type.
         //! \param [in] source   - The data of component to be copied.
-        ECSResult UpdateComponent(UInt16 entityID, const TypeID& typeID, const void* source);
+        ECSResult UpdateComponent(uint16_t entityID, const TypeID& typeID, const void* source);
 
         //! \brief Get component data.
         //!
         //! \param [in] entityID    - The internal ID of entity (within the chunk).
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponent(UInt16 entityID, const TypeID& typeID, void* destination);
+        ECSResult CopyComponent(uint16_t entityID, const TypeID& typeID, void* destination);
 
         //! \brief Copy component data to another chunk.
         //!
@@ -78,7 +78,7 @@ namespace FE::ECS
         //! \param [in] dstEntityID - The internal ID of entity (within the chunk).
         //! \param [in] typeID      - The ID of component type.
         //! \param [in] destination - The buffer to copy the component data to.
-        ECSResult CopyComponentToChunk(UInt16 srcEntityID, UInt16 dstEntityID, const TypeID& typeID, ArchetypeChunk* chunk);
+        ECSResult CopyComponentToChunk(uint16_t srcEntityID, uint16_t dstEntityID, const TypeID& typeID, ArchetypeChunk* chunk);
 
         inline ComponentStorage* GetComponentStorage(const TypeID& typeID)
         {
@@ -107,13 +107,13 @@ namespace FE::ECS
         }
 
         //! \brief Get the version of the chunk - a number that gets incremented after every change.
-        [[nodiscard]] inline UInt32 Version() const
+        [[nodiscard]] inline uint32_t Version() const
         {
             return m_Version;
         }
 
         //! \brief Check if the chunk has been changed after the specified version. Same as `version != chunk.Version()`
-        [[nodiscard]] inline bool DidChange(UInt32 version) const
+        [[nodiscard]] inline bool DidChange(uint32_t version) const
         {
             return m_Version != version;
         }

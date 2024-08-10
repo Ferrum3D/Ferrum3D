@@ -15,7 +15,7 @@ struct Vertex
 namespace HAL = FE::Osmium;
 
 inline constexpr const char* ExampleName = "Ferrum3D - Triangle with MSAA";
-inline constexpr FE::Int32 MSAASamples   = 8;
+inline constexpr FE::int32_t MSAASamples   = 8;
 
 void RunExample()
 {

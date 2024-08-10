@@ -12,14 +12,14 @@ namespace FE
     {
         String Name;
         String AssetDirectory;
-        UInt32 WindowWidth = 800;
-        UInt32 WindowHeight = 600;
+        uint32_t WindowWidth = 800;
+        uint32_t WindowHeight = 600;
         Debug::LogMessageType LogSeverity = Debug::LogMessageType::All;
         bool Fullscreen = false;
 
         inline ApplicationDesc() = default;
 
-        inline ApplicationDesc(const String& name, UInt32 windowWidth = 800, UInt32 windowHeight = 600, bool fullscreen = false)
+        inline ApplicationDesc(const String& name, uint32_t windowWidth = 800, uint32_t windowHeight = 600, bool fullscreen = false)
             : Name(name)
             , AssetDirectory()
             , WindowWidth(windowWidth)
@@ -34,8 +34,8 @@ namespace FE
         {
         }
 
-        inline ApplicationDesc(const String& name, const String& assetDirectory, UInt32 windowWidth = 800,
-                               UInt32 windowHeight = 600, bool fullscreen = false)
+        inline ApplicationDesc(const String& name, const String& assetDirectory, uint32_t windowWidth = 800,
+                               uint32_t windowHeight = 600, bool fullscreen = false)
             : Name(name)
             , AssetDirectory(assetDirectory)
             , WindowWidth(windowWidth)
@@ -64,8 +64,8 @@ namespace FE
     //! \endcode
     class ApplicationFramework : public ServiceLocatorImplBase<FrameworkBase, ApplicationFramework>
     {
-        UInt32 m_FrameCounter = 0;
-        Int32 m_ExitCode = 0;
+        uint32_t m_FrameCounter = 0;
+        int32_t m_ExitCode = 0;
         bool m_StopRequested = false;
 
         Rc<Debug::ConsoleLogger> m_Logger;
@@ -84,13 +84,13 @@ namespace FE
     public:
         ApplicationDesc Desc;
 
-        FE_CLASS_RTTI(ApplicationFramework, "CF197AF1-C4AE-4048-A85E-CEF4F03490AD");
+        FE_RTTI_Class(ApplicationFramework, "CF197AF1-C4AE-4048-A85E-CEF4F03490AD");
 
         ~ApplicationFramework() override;
 
         virtual void Initialize(const ApplicationDesc& desc);
-        Int32 RunMainLoop();
-        void Stop(Int32 exitCode);
+        int32_t RunMainLoop();
+        void Stop(int32_t exitCode);
     };
 
 #define FE_APP_MAIN()                                                                                                            \

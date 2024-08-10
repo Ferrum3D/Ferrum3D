@@ -20,29 +20,29 @@ namespace FE::Osmium
 
         ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
 
-        UInt32 MipSliceCount = 1;
-        UInt32 SampleCount = 1;
-        UInt16 ArraySize = 1;
+        uint32_t MipSliceCount = 1;
+        uint32_t SampleCount = 1;
+        uint16_t ArraySize = 1;
 
-        FE_STRUCT_RTTI(ImageDesc, "1B7CB069-C763-49D0-9CEA-088681802761");
+        FE_RTTI_Base(ImageDesc, "1B7CB069-C763-49D0-9CEA-088681802761");
 
-        inline static ImageDesc Img1D(ImageBindFlags bindFlags, UInt32 width, Format format);
-        inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
-        inline static ImageDesc Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format,
-                                      bool useMipMaps = false, UInt32 sampleCount = 1);
-        inline static ImageDesc Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format,
+        inline static ImageDesc Img1D(ImageBindFlags bindFlags, uint32_t width, Format format);
+        inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
+        inline static ImageDesc Img2D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, Format format,
+                                      bool useMipMaps = false, uint32_t sampleCount = 1);
+        inline static ImageDesc Img2DArray(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint16_t arraySize, Format format,
                                            bool useMipMaps = false);
-        inline static ImageDesc ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format);
-        inline static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format);
-        inline static ImageDesc Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format);
+        inline static ImageDesc ImgCubemap(ImageBindFlags bindFlags, uint32_t width, Format format);
+        inline static ImageDesc ImgCubemapArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
+        inline static ImageDesc Img3D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint32_t depth, Format format);
     };
 
-    ImageDesc ImageDesc::Img1D(ImageBindFlags bindFlags, UInt32 width, Format format)
+    ImageDesc ImageDesc::Img1D(ImageBindFlags bindFlags, uint32_t width, Format format)
     {
         return ImageDesc::Img1DArray(bindFlags, width, 1, format);
     }
 
-    ImageDesc ImageDesc::Img1DArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
+    ImageDesc ImageDesc::Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format)
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
@@ -53,8 +53,8 @@ namespace FE::Osmium
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, Format format, bool useMipMaps,
-                               UInt32 sampleCount)
+    ImageDesc ImageDesc::Img2D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, Format format, bool useMipMaps,
+                               uint32_t sampleCount)
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
@@ -63,11 +63,11 @@ namespace FE::Osmium
         desc.ArraySize = 1;
         desc.ImageFormat = format;
         desc.SampleCount = sampleCount;
-        desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        desc.MipSliceCount = useMipMaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
         return desc;
     }
 
-    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt16 arraySize, Format format,
+    ImageDesc ImageDesc::Img2DArray(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint16_t arraySize, Format format,
                                     bool useMipMaps)
     {
         ImageDesc desc{};
@@ -76,16 +76,16 @@ namespace FE::Osmium
         desc.ImageSize = { width, height, 1 };
         desc.ArraySize = arraySize;
         desc.ImageFormat = format;
-        desc.MipSliceCount = useMipMaps ? static_cast<UInt32>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        desc.MipSliceCount = useMipMaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
         return desc;
     }
 
-    ImageDesc ImageDesc::ImgCubemap(ImageBindFlags bindFlags, UInt32 width, Format format)
+    ImageDesc ImageDesc::ImgCubemap(ImageBindFlags bindFlags, uint32_t width, Format format)
     {
         return ImageDesc::ImgCubemapArray(bindFlags, width, 1, format);
     }
 
-    ImageDesc ImageDesc::ImgCubemapArray(ImageBindFlags bindFlags, UInt32 width, UInt16 arraySize, Format format)
+    ImageDesc ImageDesc::ImgCubemapArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format)
     {
         ImageDesc desc;
         desc.BindFlags = bindFlags;
@@ -96,7 +96,7 @@ namespace FE::Osmium
         return desc;
     }
 
-    ImageDesc ImageDesc::Img3D(ImageBindFlags bindFlags, UInt32 width, UInt32 height, UInt32 depth, Format format)
+    ImageDesc ImageDesc::Img3D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, uint32_t depth, Format format)
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
@@ -113,7 +113,7 @@ namespace FE::Osmium
     class IImage : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
+        FE_RTTI_Class(IImage, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
 
         ~IImage() override = default;
 
@@ -125,7 +125,7 @@ namespace FE::Osmium
 
         virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state) = 0;
         [[nodiscard]] virtual ResourceState GetState(const ImageSubresourceRange& subresourceRange) const = 0;
-        [[nodiscard]] virtual ResourceState GetState(UInt16 arraySlice, UInt16 mipSlice) const = 0;
+        [[nodiscard]] virtual ResourceState GetState(uint16_t arraySlice, uint16_t mipSlice) const = 0;
     };
 } // namespace FE::Osmium
 

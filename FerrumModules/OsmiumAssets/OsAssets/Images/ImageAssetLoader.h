@@ -6,7 +6,7 @@ namespace FE::Osmium
     class ImageAssetLoader : public Assets::IAssetLoader
     {
     public:
-        FE_CLASS_RTTI(ImageAssetLoader, "20BA2066-1FC7-46E4-9708-B45CE3EE177C");
+        FE_RTTI_Class(ImageAssetLoader, "20BA2066-1FC7-46E4-9708-B45CE3EE177C");
 
         ~ImageAssetLoader() override = default;
 

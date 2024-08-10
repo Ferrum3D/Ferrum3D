@@ -260,20 +260,20 @@ TEST(Strings, ParseErrors)
 
 TEST(Strings, Parse)
 {
-    EXPECT_EQ(FE::String("123").Parse<FE::Int8>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::Int16>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::Int32>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::Int64>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int8_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int16_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int32_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int64_t>().Unwrap(), 123);
 
-    EXPECT_EQ(FE::String("-123").Parse<FE::Int8>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<FE::Int16>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<FE::Int32>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<FE::Int64>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int8_t>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int16_t>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int32_t>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int64_t>().Unwrap(), -123);
 
-    EXPECT_EQ(FE::String("123").Parse<FE::UInt8>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::UInt16>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::UInt32>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<FE::UInt64>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint8_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint16_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint32_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint64_t>().Unwrap(), 123);
 
     EXPECT_EQ(FE::String("1.5").Parse<float>().Unwrap(), 1.5f);
     EXPECT_EQ(FE::String("-1.5").Parse<float>().Unwrap(), -1.5f);

@@ -199,7 +199,7 @@ namespace FE::Osmium
             return self->CreateWindow(d).Detach();
         }
 
-        FE_DLL_EXPORT ICommandQueue* IDevice_GetCommandQueue(IDevice* self, Int32 cmdQueueClass)
+        FE_DLL_EXPORT ICommandQueue* IDevice_GetCommandQueue(IDevice* self, int32_t cmdQueueClass)
         {
             return self->GetCommandQueue(static_cast<CommandQueueClass>(cmdQueueClass)).Detach();
         }

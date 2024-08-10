@@ -11,7 +11,7 @@ namespace FE::ECS
         Rc<EntityQuery> m_Query;
 
     public:
-        FE_CLASS_RTTI(TransformSystem, "0E8270F1-6D58-4D56-9519-A3A306E93FA1");
+        FE_RTTI_Class(TransformSystem, "0E8270F1-6D58-4D56-9519-A3A306E93FA1");
 
         ~TransformSystem() override = default;
 

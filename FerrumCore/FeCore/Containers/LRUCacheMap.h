@@ -12,17 +12,17 @@ namespace FE
     {
         festd::unordered_dense_map<TKey, typename eastl::list<std::pair<TKey, TValue>>::iterator> m_Map;
         eastl::list<std::pair<TKey, TValue>> m_Queue;
-        USize m_Capacity = 0;
+        size_t m_Capacity = 0;
 
     public:
-        FE_STRUCT_RTTI(LRUCacheMap, "6AB7529D-583B-4BE3-99E9-A2A3D2E73D2D");
+        FE_RTTI_Base(LRUCacheMap, "6AB7529D-583B-4BE3-99E9-A2A3D2E73D2D");
 
         inline LRUCacheMap() = default;
 
         //! \brief Create the cache with initial capacity.
         //!
         //! \param [in] capacity - Initial capacity.
-        inline explicit LRUCacheMap(USize capacity)
+        inline explicit LRUCacheMap(size_t capacity)
             : m_Capacity(capacity)
         {
         }
@@ -47,7 +47,7 @@ namespace FE
         //! \brief Change capacity of the cache, will remove least recently used when shrinking.
         //!
         //! \param [in] capacity - The new capacity.
-        inline void SetCapacity(USize capacity)
+        inline void SetCapacity(size_t capacity)
         {
             m_Capacity = capacity;
 
@@ -61,7 +61,7 @@ namespace FE
         }
 
         //! \brief Get cache capacity.
-        [[nodiscard]] inline USize Capacity() const
+        [[nodiscard]] inline size_t Capacity() const
         {
             return m_Capacity;
         }

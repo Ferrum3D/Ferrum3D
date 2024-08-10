@@ -22,7 +22,7 @@ namespace FE::Debug
         void SetDebugLevel(LogMessageType types) override;
         //=========================================================================================
 
-        FE_CLASS_RTTI(ConsoleLogger, "3C19F24F-9F51-4F16-BE4D-C1468D3EA6A4");
+        FE_RTTI_Class(ConsoleLogger, "3C19F24F-9F51-4F16-BE4D-C1468D3EA6A4");
 
         ConsoleLogger();
     };

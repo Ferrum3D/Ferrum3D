@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/CompilerTraits.h>
+#include <FeCore/Base/wyhash.h>
 #include <cstdint>
 #include <string_view>
 
@@ -10,18 +11,6 @@
 
 namespace FE
 {
-    FE_FORCE_INLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
-    {
-        const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
-        const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
-        const uint64_t p11 = x1 * y1, p01 = x0 * y1;
-        const uint64_t p10 = x1 * y0, p00 = x0 * y0;
-        const uint64_t middle = p10 + (p00 >> 32) + (uint32_t)p01;
-        *carry = p11 + (middle >> 32) + (p01 >> 32);
-        return (middle << 32) | (uint32_t)p00;
-    }
-
-
     namespace Internal
     {
         // Our hash functions are based on WyHash: https://github.com/wangyi-fudan/wyhash
@@ -33,7 +22,19 @@ namespace FE
         //
 
 
-        constexpr uint64_t kDefaultSecret[] = {
+        FE_FORCE_INLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
+        {
+            const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
+            const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
+            const uint64_t p11 = x1 * y1, p01 = x0 * y1;
+            const uint64_t p10 = x1 * y0, p00 = x0 * y0;
+            const uint64_t middle = p10 + (p00 >> 32) + (uint32_t)p01;
+            *carry = p11 + (middle >> 32) + (p01 >> 32);
+            return (middle << 32) | (uint32_t)p00;
+        }
+
+
+        constexpr uint64_t HashSecret[] = {
             UINT64_C(0x2d358dccaa6c78a5), UINT64_C(0x8bb84b93962eacc9), UINT64_C(0x4b33a62ed433d4a3), UINT64_C(0x4d5a2da51de1aa47)
         };
 
@@ -110,10 +111,11 @@ namespace FE
     } // namespace Internal
 
 
-    inline constexpr uint64_t DefaultHash(const void* data, size_t len) noexcept
+    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(const void* data, size_t len) noexcept
     {
         const char* p = static_cast<const char*>(data);
-        uint64_t seed = Internal::kDefaultSecret[0], a = 0, b = 0;
+        uint64_t seed = Internal::HashSecret[0], a = 0, b = 0;
+        seed ^= Internal::WyMix(seed ^ Internal::HashSecret[0], Internal::HashSecret[1]);
         if (len <= 16)
         {
             if (len >= 4)
@@ -139,11 +141,9 @@ namespace FE
                 uint64_t see1 = seed, see2 = seed;
                 do
                 {
-                    seed = Internal::WyMix(Internal::WyRead8(p) ^ Internal::kDefaultSecret[1], Internal::WyRead8(p + 8) ^ seed);
-                    see1 = Internal::WyMix(Internal::WyRead8(p + 16) ^ Internal::kDefaultSecret[2],
-                                           Internal::WyRead8(p + 24) ^ see1);
-                    see2 = Internal::WyMix(Internal::WyRead8(p + 32) ^ Internal::kDefaultSecret[3],
-                                           Internal::WyRead8(p + 40) ^ see2);
+                    seed = Internal::WyMix(Internal::WyRead8(p) ^ Internal::HashSecret[1], Internal::WyRead8(p + 8) ^ seed);
+                    see1 = Internal::WyMix(Internal::WyRead8(p + 16) ^ Internal::HashSecret[2], Internal::WyRead8(p + 24) ^ see1);
+                    see2 = Internal::WyMix(Internal::WyRead8(p + 32) ^ Internal::HashSecret[3], Internal::WyRead8(p + 40) ^ see2);
                     p += 48;
                     i -= 48;
                 }
@@ -152,7 +152,7 @@ namespace FE
             }
             while (i > 16)
             {
-                seed = Internal::WyMix(Internal::WyRead8(p) ^ Internal::kDefaultSecret[1], Internal::WyRead8(p + 8) ^ seed);
+                seed = Internal::WyMix(Internal::WyRead8(p) ^ Internal::HashSecret[1], Internal::WyRead8(p + 8) ^ seed);
                 i -= 16;
                 p += 16;
             }
@@ -160,11 +160,23 @@ namespace FE
             b = Internal::WyRead8(p + i - 8);
         }
 
-        return Internal::WyMix(Internal::kDefaultSecret[1] ^ len, Internal::WyMix(a ^ Internal::kDefaultSecret[1], b ^ seed));
+        return Internal::WyMix(Internal::HashSecret[1] ^ len, Internal::WyMix(a ^ Internal::HashSecret[1], b ^ seed));
     }
 
 
-    inline constexpr uint64_t DefaultHash(std::string_view str) noexcept
+    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(std::string_view str) noexcept
+    {
+        return CompileTimeHash(str.data(), str.length());
+    }
+
+
+    [[nodiscard]] inline uint64_t DefaultHash(const void* data, size_t len) noexcept
+    {
+        return wyhash(data, len, Internal::HashSecret[0], Internal::HashSecret);
+    }
+
+
+    [[nodiscard]] inline uint64_t DefaultHash(std::string_view str) noexcept
     {
         return DefaultHash(str.data(), str.length());
     }
@@ -175,7 +187,7 @@ namespace FE
 
 
     template<class T>
-    inline constexpr uint64_t TypeNameHash = DefaultHash(TypeName<T>);
+    inline constexpr uint64_t TypeNameHash = CompileTimeHash(TypeName<T>);
 
 
     inline void HashCombine(size_t& /* seed */) {}
@@ -185,8 +197,8 @@ namespace FE
     //!
     //! \tparam Args - Types of values.
     //!
-    //! \param [in,out] seed - Initial hash value to combine with.
-    //! \param [in]     args - The values to calculate hash of.
+    //! \param seed - Initial hash value to combine with.
+    //! \param args - The values to calculate hash of.
     template<typename T, typename... Args>
     inline void HashCombine(size_t& seed, const T& value, const Args&... args)
     {

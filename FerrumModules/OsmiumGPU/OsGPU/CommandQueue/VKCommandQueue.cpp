@@ -40,7 +40,7 @@ namespace FE::Osmium
         VkSubmitInfo info{};
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         info.pCommandBuffers = nativeBuffers.data();
-        info.commandBufferCount = static_cast<UInt32>(nativeBuffers.size());
+        info.commandBufferCount = static_cast<uint32_t>(nativeBuffers.size());
 
         if ((flags & SubmitFlags::FrameBegin) != SubmitFlags::None)
         {

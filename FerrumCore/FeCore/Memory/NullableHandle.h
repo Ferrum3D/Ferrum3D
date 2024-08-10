@@ -6,9 +6,9 @@ namespace FE
     //! \brief Represents a nullable index, where 0 can be valid. Used mostly for virtual GPU allocations.
     class NullableHandle final
     {
-        USize m_Handle;
+        size_t m_Handle;
 
-        inline explicit NullableHandle(USize handle)
+        inline explicit NullableHandle(size_t handle)
             : m_Handle(handle)
         {
         }
@@ -16,14 +16,14 @@ namespace FE
     public:
         //! \brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
         inline NullableHandle()
-            : NullableHandle(static_cast<USize>(-1))
+            : NullableHandle(static_cast<size_t>(-1))
         {
         }
 
         //! \brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
         [[nodiscard]] inline static NullableHandle Null()
         {
-            return NullableHandle(static_cast<USize>(-1));
+            return NullableHandle(static_cast<size_t>(-1));
         }
 
         //! \brief Get a zero value (not considered NULL!).
@@ -35,11 +35,11 @@ namespace FE
         //! \brief Create a handle from pointer.
         [[nodiscard]] inline static NullableHandle FromPtr(void* ptr)
         {
-            return NullableHandle(reinterpret_cast<USize>(ptr));
+            return NullableHandle(reinterpret_cast<size_t>(ptr));
         }
 
         //! \brief Create a handle from integral offset.
-        [[nodiscard]] inline static NullableHandle FromOffset(USize offset)
+        [[nodiscard]] inline static NullableHandle FromOffset(size_t offset)
         {
             return NullableHandle(offset);
         }
@@ -51,7 +51,7 @@ namespace FE
         }
 
         //! \brief Get underlying integral value.
-        [[nodiscard]] inline USize ToOffset() const
+        [[nodiscard]] inline size_t ToOffset() const
         {
             return m_Handle;
         }
@@ -59,13 +59,13 @@ namespace FE
         //! \brief Check if the handle is NULL.
         [[nodiscard]] inline bool IsNull() const
         {
-            return m_Handle == static_cast<USize>(-1);
+            return m_Handle == static_cast<size_t>(-1);
         }
 
         //! \brief Check if the handle is not NULL.
         [[nodiscard]] inline bool IsValid() const
         {
-            return m_Handle != static_cast<USize>(-1);
+            return m_Handle != static_cast<size_t>(-1);
         }
 
         [[nodiscard]] inline explicit operator bool() const // NOLINT(google-explicit-constructor)
@@ -76,7 +76,7 @@ namespace FE
         //! \brief Reset the value to NULL.
         inline void Reset()
         {
-            m_Handle = static_cast<USize>(-1);
+            m_Handle = static_cast<size_t>(-1);
         }
 
         friend bool operator==(const NullableHandle& lhs, const NullableHandle& rhs)
@@ -109,23 +109,23 @@ namespace FE
             return lhs.m_Handle >= rhs.m_Handle;
         }
 
-        inline friend NullableHandle operator+(const NullableHandle& handle, USize offset)
+        inline friend NullableHandle operator+(const NullableHandle& handle, size_t offset)
         {
             return NullableHandle(handle.m_Handle + offset);
         }
 
-        inline friend NullableHandle operator-(const NullableHandle& handle, USize offset)
+        inline friend NullableHandle operator-(const NullableHandle& handle, size_t offset)
         {
             return NullableHandle(handle.m_Handle - offset);
         }
 
-        inline NullableHandle& operator+=(USize offset)
+        inline NullableHandle& operator+=(size_t offset)
         {
             m_Handle += offset;
             return *this;
         }
 
-        inline NullableHandle& operator-=(USize offset)
+        inline NullableHandle& operator-=(size_t offset)
         {
             m_Handle -= offset;
             return *this;
@@ -133,7 +133,7 @@ namespace FE
     };
 
     template<>
-    inline NullableHandle AlignUp<NullableHandle, USize>(NullableHandle x, USize align)
+    inline NullableHandle AlignUp<NullableHandle, size_t>(NullableHandle x, size_t align)
     {
         return NullableHandle::FromOffset((x.ToOffset() + (align - 1u)) & ~(align - 1u));
     }

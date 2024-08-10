@@ -18,7 +18,7 @@ namespace FE::Assets
         T* m_Storage;
 
     public:
-        FE_STRUCT_RTTI(Asset, "A0DD3482-B26A-498A-AB03-F40642D50D5F");
+        FE_RTTI_Base(Asset, "A0DD3482-B26A-498A-AB03-F40642D50D5F");
 
         //! \brief Create an empty asset from its ID.
         //!

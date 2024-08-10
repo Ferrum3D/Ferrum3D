@@ -15,7 +15,7 @@ namespace FE::Osmium
         String m_Title{};
 
     public:
-        FE_CLASS_RTTI(Window, "CB4F9E4C-6BF5-4C43-B471-0EF42990B409");
+        FE_RTTI_Class(Window, "CB4F9E4C-6BF5-4C43-B471-0EF42990B409");
 
         explicit Window(const WindowDesc& desc);
 

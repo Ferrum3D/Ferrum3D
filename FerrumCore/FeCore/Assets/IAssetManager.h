@@ -16,7 +16,7 @@ namespace FE::Assets
     class IAssetManager : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IAssetManager, "7FC7D500-5CE4-4BF7-8030-1A5A4A16832C");
+        FE_RTTI_Class(IAssetManager, "7FC7D500-5CE4-4BF7-8030-1A5A4A16832C");
 
         ~IAssetManager() override = default;
 

@@ -26,7 +26,7 @@ namespace FE
         FE_POP_MSVC_WARNING
 
     public:
-        FE_STRUCT_RTTI(Vector2F, "3181CD8D-6109-4E7D-AE6F-E672ED5EDF2C");
+        FE_RTTI_Base(Vector2F, "3181CD8D-6109-4E7D-AE6F-E672ED5EDF2C");
 
         FE_FORCE_INLINE Vector2F()
             : Vector2F(0, 0)

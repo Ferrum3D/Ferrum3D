@@ -21,7 +21,7 @@ namespace FE::Osmium
     public:
         ~ICommandQueue() override = default;
 
-        FE_CLASS_RTTI(ICommandQueue, "2BC9A588-BF3E-420B-A8C7-6DC770E5F4B3");
+        FE_RTTI_Class(ICommandQueue, "2BC9A588-BF3E-420B-A8C7-6DC770E5F4B3");
 
         virtual void SignalFence(IFence* fence) = 0;
 

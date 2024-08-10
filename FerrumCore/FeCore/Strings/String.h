@@ -21,7 +21,7 @@ namespace FE
         {
             union
             {
-                UInt8 Size;
+                uint8_t Size;
                 [[maybe_unused]] TChar Lx;
             };
             TChar Data[MinCapacity];
@@ -62,7 +62,7 @@ namespace FE
 
         inline void SetSSize(size_t size) noexcept
         {
-            m_Data.S.Size = static_cast<UInt8>(size << 1);
+            m_Data.S.Size = static_cast<uint8_t>(size << 1);
         }
 
         inline void SetLSize(size_t size) noexcept
@@ -548,7 +548,7 @@ namespace FE
             return StringSlice(Data(), Size()).Strip(chars);
         }
 
-        [[nodiscard]] inline Int32 Compare(const StringSlice& other) const noexcept
+        [[nodiscard]] inline int32_t Compare(const StringSlice& other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
@@ -587,7 +587,7 @@ namespace FE
         [[nodiscard]] inline static String Join(const StringSlice& separator, const ArraySlice<StringSlice>& strings)
         {
             String result;
-            USize capacity = 0;
+            size_t capacity = 0;
             for (auto& string : strings)
             {
                 capacity += string.Size() + separator.Size();

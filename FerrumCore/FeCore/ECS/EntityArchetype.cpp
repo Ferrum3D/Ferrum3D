@@ -72,7 +72,7 @@ namespace FE::ECS
         m_Chunks = std::move(newChunks);
     }
 
-    ECSResult EntityArchetype::CreateEntity(UInt16& id, ArchetypeChunk** chunk)
+    ECSResult EntityArchetype::CreateEntity(uint16_t& id, ArchetypeChunk** chunk)
     {
         ++m_Version;
         for (auto* c : m_Chunks)
@@ -87,7 +87,7 @@ namespace FE::ECS
             case ECSResult::OutOfMemoryError:
                 continue;
             default:
-                FE_UNREACHABLE("Unknown error: {}", static_cast<UInt32>(result));
+                FE_UNREACHABLE("Unknown error: {}", static_cast<uint32_t>(result));
                 continue;
             }
         }
@@ -96,7 +96,7 @@ namespace FE::ECS
         return (*chunk)->AllocateEntity(id);
     }
 
-    ECSResult EntityArchetype::DestroyEntity(UInt16 id, ArchetypeChunk* chunk)
+    ECSResult EntityArchetype::DestroyEntity(uint16_t id, ArchetypeChunk* chunk)
     {
         auto result = chunk->DeallocateEntity(id);
         if (result == ECSResult::Success)
@@ -107,7 +107,7 @@ namespace FE::ECS
         return result;
     }
 
-    ECSResult EntityArchetype::UpdateComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source)
+    ECSResult EntityArchetype::UpdateComponent(uint16_t entityID, ArchetypeChunk* chunk, const TypeID& typeID, const void* source)
     {
         auto result = chunk->UpdateComponent(entityID, typeID, source);
         if (result == ECSResult::Success)
@@ -118,14 +118,14 @@ namespace FE::ECS
         return result;
     }
 
-    ECSResult EntityArchetype::CopyComponent(UInt16 entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination)
+    ECSResult EntityArchetype::CopyComponent(uint16_t entityID, ArchetypeChunk* chunk, const TypeID& typeID, void* destination)
     {
         return chunk->CopyComponent(entityID, typeID, destination);
     }
 
     EntityArchetypeMatch EntityArchetype::Match(const EntityArchetype& other)
     {
-        USize matchCount = 0;
+        size_t matchCount = 0;
         for (uint32_t i = 0; i < ComponentTypeCount(); ++i)
         {
             for (uint32_t j = 0; j < other.ComponentTypeCount(); ++j)

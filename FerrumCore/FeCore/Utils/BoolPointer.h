@@ -17,21 +17,21 @@ namespace FE
     {
         std::atomic<uint64_t> m_Data = 0;
 
-        inline static constexpr UInt64 PointerMask = static_cast<UInt64>(-1) ^ 1;
-        inline static constexpr UInt64 BooleanMask = ~PointerMask;
+        inline static constexpr uint64_t PointerMask = static_cast<uint64_t>(-1) ^ 1;
+        inline static constexpr uint64_t BooleanMask = ~PointerMask;
 
     public:
         FE_FORCE_INLINE BoolPointer() = default;
 
         FE_FORCE_INLINE BoolPointer(T* pointer, bool boolean)
         {
-            m_Data = reinterpret_cast<Int64>(pointer) | (boolean ? 1 : 0);
+            m_Data = reinterpret_cast<int64_t>(pointer) | (boolean ? 1 : 0);
         }
 
         FE_FORCE_INLINE void SetPointer(T* pointer)
         {
             const uint64_t value = m_Data & BooleanMask;
-            m_Data = value | reinterpret_cast<Int64>(pointer);
+            m_Data = value | reinterpret_cast<int64_t>(pointer);
         }
 
         FE_FORCE_INLINE void SetBool(bool boolean)

@@ -15,7 +15,7 @@ namespace FE::Osmium
             return self->CreateView(aspectFlags).Detach();
         }
 
-        FE_DLL_EXPORT void IImage_AllocateMemory(IImage* self, Int32 memoryType)
+        FE_DLL_EXPORT void IImage_AllocateMemory(IImage* self, int32_t memoryType)
         {
             self->AllocateMemory(static_cast<MemoryType>(memoryType));
         }

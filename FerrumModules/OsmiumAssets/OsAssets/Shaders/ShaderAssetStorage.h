@@ -16,7 +16,7 @@ namespace FE::Osmium
     public:
         explicit ShaderAssetStorage(ShaderAssetLoader* loader);
 
-        FE_CLASS_RTTI(ShaderAssetStorage, "AD125813-98AB-4960-A66C-80F5DEF4723C");
+        FE_RTTI_Class(ShaderAssetStorage, "AD125813-98AB-4960-A66C-80F5DEF4723C");
 
         [[nodiscard]] inline StringSlice GetSourceCode() const
         {

@@ -16,7 +16,7 @@ namespace FE::Assets
         T* m_Storage;
 
     public:
-        FE_STRUCT_RTTI(WeakAsset, "1CCA3D88-4896-45E5-9A7F-12F338DA181A");
+        FE_RTTI_Base(WeakAsset, "1CCA3D88-4896-45E5-9A7F-12F338DA181A");
 
         inline WeakAsset() noexcept
             : m_Storage(nullptr)

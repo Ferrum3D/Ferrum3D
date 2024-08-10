@@ -6,7 +6,7 @@ namespace FE::Osmium
     class ShaderAssetLoader : public Assets::IAssetLoader
     {
     public:
-        FE_CLASS_RTTI(ShaderAssetLoader, "004C59CC-768C-418F-99E1-D95D73F52444");
+        FE_RTTI_Class(ShaderAssetLoader, "004C59CC-768C-418F-99E1-D95D73F52444");
 
         ~ShaderAssetLoader() override = default;
 

@@ -11,7 +11,7 @@ namespace FE::ECS
         float X = 0.0f; //!< X coordinate of the entity's position.
         float Y = 0.0f; //!< Y coordinate of the entity's position.
 
-        FE_STRUCT_RTTI(Position2DComponent, "930DFC8B-1340-4C39-A0A9-CD44F0E2E5D6");
+        FE_RTTI_Base(Position2DComponent, "930DFC8B-1340-4C39-A0A9-CD44F0E2E5D6");
 
         inline Position2DComponent() = default;
 
@@ -71,7 +71,7 @@ namespace FE::ECS
         float Y = 0.0f; //!< Y coordinate of the entity's position.
         float Z = 0.0f; //!< Z coordinate of the entity's position.
 
-        FE_STRUCT_RTTI(Position3DComponent, "1F3CD11C-5547-4773-9941-082C257C6729");
+        FE_RTTI_Base(Position3DComponent, "1F3CD11C-5547-4773-9941-082C257C6729");
 
         inline Position3DComponent() = default;
 

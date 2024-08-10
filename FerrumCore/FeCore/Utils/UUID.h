@@ -21,7 +21,7 @@ namespace FE
     //! \brief A struct to work with UUIDs.
     struct alignas(8) UUID
     {
-        std::array<UInt8, 16> Data{};
+        std::array<uint8_t, 16> Data{};
 
         inline UUID() = default;
 
@@ -40,9 +40,9 @@ namespace FE
         {
             UUID result;
             memcpy(result.Data.data(), &value, 16);
-            *reinterpret_cast<UInt32*>(&result.Data[0]) = FE_BYTE_SWAP_UINT32(*reinterpret_cast<UInt32*>(&result.Data[0]));
-            *reinterpret_cast<UInt16*>(&result.Data[4]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<UInt16*>(&result.Data[4]));
-            *reinterpret_cast<UInt16*>(&result.Data[6]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<UInt16*>(&result.Data[6]));
+            *reinterpret_cast<uint32_t*>(&result.Data[0]) = FE_BYTE_SWAP_UINT32(*reinterpret_cast<uint32_t*>(&result.Data[0]));
+            *reinterpret_cast<uint16_t*>(&result.Data[4]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<uint16_t*>(&result.Data[4]));
+            *reinterpret_cast<uint16_t*>(&result.Data[6]) = FE_BYTE_SWAP_UINT16(*reinterpret_cast<uint16_t*>(&result.Data[6]));
             return result;
         }
 
@@ -57,12 +57,12 @@ namespace FE
         {
             static char digits[] = "0123456789ABCDEF";
             constexpr auto getValue = [](char c) {
-                return static_cast<UInt8>(std::find(digits, digits + 16, std::toupper(c)) - digits);
+                return static_cast<uint8_t>(std::find(digits, digits + 16, std::toupper(c)) - digits);
             };
 
-            USize idx = 0;
-            auto parse = [&](Int32 n) -> bool {
-                for (Int32 i = 0; i < n; ++i)
+            size_t idx = 0;
+            auto parse = [&](int32_t n) -> bool {
+                for (int32_t i = 0; i < n; ++i)
                 {
                     auto v1 = getValue(*str++);
                     if (v1 >= 16)
@@ -98,6 +98,19 @@ namespace FE
         }
     };
 
+    inline bool operator<(const UUID& lhs, const UUID& rhs)
+    {
+        auto* l = reinterpret_cast<const uint64_t*>(lhs.Data.data());
+        auto* r = reinterpret_cast<const uint64_t*>(rhs.Data.data());
+
+        if (l[0] != r[0])
+        {
+            return l[0] < r[0];
+        }
+
+        return l[1] < r[1];
+    }
+
     inline bool operator==(const UUID& lhs, const UUID& rhs)
     {
         return std::equal(lhs.Data.begin(), lhs.Data.end(), rhs.Data.begin());
@@ -109,7 +122,6 @@ namespace FE
     }
 } // namespace FE
 
-//!\ brief Calculate hash of a \ref FE::UUID.
 template<>
 struct eastl::hash<FE::UUID>
 {

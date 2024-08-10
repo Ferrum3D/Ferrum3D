@@ -5,12 +5,12 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT UInt32 MeshAssetStorage_VertexSize(MeshAssetStorage* self)
+        FE_DLL_EXPORT uint32_t MeshAssetStorage_VertexSize(MeshAssetStorage* self)
         {
             return self->VertexSize();
         }
 
-        FE_DLL_EXPORT UInt32 MeshAssetStorage_IndexSize(MeshAssetStorage* self)
+        FE_DLL_EXPORT uint32_t MeshAssetStorage_IndexSize(MeshAssetStorage* self)
         {
             return self->IndexSize();
         }
@@ -20,7 +20,7 @@ namespace FE::Osmium
             return self->VertexData();
         }
 
-        FE_DLL_EXPORT const UInt32* MeshAssetStorage_IndexData(MeshAssetStorage* self)
+        FE_DLL_EXPORT const uint32_t* MeshAssetStorage_IndexData(MeshAssetStorage* self)
         {
             return self->IndexData();
         }

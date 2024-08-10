@@ -51,14 +51,14 @@ namespace FE::Osmium
 
     class VKShaderModule : public IShaderModule
     {
-        eastl::vector<UInt32> m_ByteCode;
+        eastl::vector<uint32_t> m_ByteCode;
         ShaderModuleDesc m_Desc;
         VkShaderModule m_NativeModule;
         VKDevice* m_Device;
         Rc<VKShaderReflection> m_Reflection;
 
     public:
-        FE_CLASS_RTTI(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");
+        FE_RTTI_Class(VKShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");
 
         VKShaderModule(VKDevice& dev, const ShaderModuleDesc& desc);
         ~VKShaderModule() override;

@@ -4,7 +4,7 @@
 
 namespace FE::Osmium
 {
-    inline VkSampleCountFlagBits GetVKSampleCountFlags(Int32 sampleCount)
+    inline VkSampleCountFlagBits GetVKSampleCountFlags(int32_t sampleCount)
     {
         switch (sampleCount)
         {

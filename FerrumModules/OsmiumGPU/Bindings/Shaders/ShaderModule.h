@@ -5,9 +5,9 @@ namespace FE::Osmium
 {
     struct ShaderModuleDescBinding
     {
-        const UInt8* ByteCode;
-        USize ByteCodeSize;
+        const uint8_t* ByteCode;
+        size_t ByteCodeSize;
         const char* EntryPoint;
-        Int32 Stage;
+        int32_t Stage;
     };
 } // namespace FE::Osmium

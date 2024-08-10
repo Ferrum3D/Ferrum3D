@@ -14,7 +14,7 @@ struct TestComponent
 {
     float TestData;
 
-    FE_STRUCT_RTTI(TestComponent, "DAAAA79F-A425-40A3-A308-49FC365E5437");
+    FE_RTTI_Base(TestComponent, "DAAAA79F-A425-40A3-A308-49FC365E5437");
 
     friend bool operator==(const TestComponent& lhs, const TestComponent& rhs)
     {
@@ -83,7 +83,7 @@ TEST(EntityRegistry, UpdateQuery)
     registry->AddComponent<Position3DComponent>(entities);
     registry->AddComponent<TestComponent>(ArraySlice(entities)(0, count / 2));
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         registry->SetComponent(entities[i],
                                Position3DComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
@@ -99,8 +99,8 @@ TEST(EntityRegistry, UpdateQuery)
     FE::Rc query2 = FE::Rc<EntityQuery>::DefaultNew(registry.Get());
     query2->AllOf<Position3DComponent>().Update();
 
-    FE::USize entityCount1 = 0;
-    FE::USize entityCount2 = 0;
+    FE::size_t entityCount1 = 0;
+    FE::size_t entityCount2 = 0;
 
     query1->ForEach(std::function([&entityCount1](Position3DComponent& pos, TestComponent& test) {
         EXPECT_EQ(pos.Y, pos.X * 2);
@@ -130,7 +130,7 @@ TEST(EntityRegistry, ReuseEntityIDs)
         return lhs.GetID() < rhs.GetID();
     });
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         EXPECT_EQ(entities[i].GetVersion(), 0);
         ASSERT_EQ(entities[i].GetID(), i);
@@ -142,7 +142,7 @@ TEST(EntityRegistry, ReuseEntityIDs)
         return lhs.GetID() < rhs.GetID();
     });
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         EXPECT_EQ(entities[i].GetVersion(), 1);
         ASSERT_EQ(entities[i].GetID(), i);
@@ -160,14 +160,14 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
     registry->AddComponent<Position3DComponent>(entities);
     registry->AddComponent<TestComponent>(entities);
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         registry->SetComponent(entities[i],
                                Position3DComponent(static_cast<float>(i), static_cast<float>(i) * 2, static_cast<float>(i) * 3));
         registry->SetComponent(entities[i], TestComponent{ static_cast<float>(i) * 10 });
     }
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         EXPECT_TRUE(registry->HasComponent<Position3DComponent>(entities[i]));
         EXPECT_TRUE(registry->HasComponent<TestComponent>(entities[i]));
@@ -177,12 +177,12 @@ TEST(EntityRegistry, HandleMultipleArchetypeChunks)
         ASSERT_EQ(static_cast<float>(i) * 3, registry->GetComponent<Position3DComponent>(entities[i]).Z);
     }
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         ASSERT_TRUE(registry->RemoveComponent<TestComponent>(entities[i]));
     }
 
-    for (FE::USize i = 0; i < entities.size(); ++i)
+    for (FE::size_t i = 0; i < entities.size(); ++i)
     {
         EXPECT_TRUE(registry->HasComponent<Position3DComponent>(entities[i]));
         EXPECT_FALSE(registry->HasComponent<TestComponent>(entities[i]));

@@ -24,8 +24,8 @@ namespace FE::Assets
     template<AssetMetadataType T> struct CppTypeForAssetMetadataType          { using Type = void;     };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::String>  { using Type = String;   };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Bool>    { using Type = bool;     };
-    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Int>     { using Type = Int64;    };
-    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UInt>    { using Type = UInt64;   };
+    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Int>     { using Type = int64_t;    };
+    template<> struct CppTypeForAssetMetadataType<AssetMetadataType::UInt>    { using Type = uint64_t;   };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Float>   { using Type = float;  };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Vector3> { using Type = Vector3F; };
     template<> struct CppTypeForAssetMetadataType<AssetMetadataType::Vector4> { using Type = Vector4F; };
@@ -38,7 +38,7 @@ namespace FE::Assets
     class AssetMetadataField
     {
         FE_PUSH_MSVC_WARNING(4324)
-        std::variant<Vector4F, Vector3F, String, UUID, Int64, UInt64, float, bool> m_Value;
+        std::variant<Vector4F, Vector3F, String, UUID, int64_t, uint64_t, float, bool> m_Value;
         String m_Key;
         AssetMetadataType m_Type;
         bool m_Required;
@@ -123,7 +123,7 @@ namespace FE::Assets
     class IAssetLoader : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IAssetLoader, "D0DE4F16-0C3C-44E9-9215-CBC6FC98EB22");
+        FE_RTTI_Class(IAssetLoader, "D0DE4F16-0C3C-44E9-9215-CBC6FC98EB22");
 
         ~IAssetLoader() override = default;
 

@@ -15,7 +15,7 @@ namespace FE::Osmium
         FramebufferDesc m_Desc;
 
     public:
-        FE_CLASS_RTTI(VKFramebuffer, "E665C1C7-1AD2-48F3-AA54-08090EB5DC76");
+        FE_RTTI_Class(VKFramebuffer, "E665C1C7-1AD2-48F3-AA54-08090EB5DC76");
 
         VKFramebuffer(VKDevice& dev, const FramebufferDesc& desc);
         ~VKFramebuffer() override;

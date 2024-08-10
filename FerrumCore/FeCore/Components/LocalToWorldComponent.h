@@ -11,7 +11,7 @@ namespace FE::ECS
     {
         Matrix4x4F Matrix; //!< The Local-to-World matrix.
 
-        FE_STRUCT_RTTI(LocalToWorldComponent, "79E8B950-E483-45F7-B08B-07DABC47D3DA");
+        FE_RTTI_Base(LocalToWorldComponent, "79E8B950-E483-45F7-B08B-07DABC47D3DA");
 
         inline LocalToWorldComponent() = default;
 

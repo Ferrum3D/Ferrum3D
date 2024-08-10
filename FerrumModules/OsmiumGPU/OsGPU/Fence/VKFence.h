@@ -12,7 +12,7 @@ namespace FE::Osmium
         VKDevice* m_Device;
 
     public:
-        FE_CLASS_RTTI(VKFence, "78363647-3381-46F2-97B1-2A1AC8AFC3C1");
+        FE_RTTI_Class(VKFence, "78363647-3381-46F2-97B1-2A1AC8AFC3C1");
 
         VKFence(VKDevice& dev, FenceState initialState);
         ~VKFence() override;

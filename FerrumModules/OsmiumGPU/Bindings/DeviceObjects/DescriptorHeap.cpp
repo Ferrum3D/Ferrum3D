@@ -16,7 +16,7 @@ namespace FE::Osmium
         }
 
         FE_DLL_EXPORT IDescriptorTable* IDescriptorHeap_AllocateDescriptorTable(IDescriptorHeap* self, DescriptorDesc* descs,
-                                                                                UInt32 count)
+                                                                                uint32_t count)
         {
             return self->AllocateDescriptorTable(ArraySlice(descs, descs + count)).Detach();
         }

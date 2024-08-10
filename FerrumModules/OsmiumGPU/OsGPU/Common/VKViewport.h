@@ -20,7 +20,7 @@ namespace FE::Osmium
     {
         VkRect2D rect{};
         rect.offset = VkOffset2D{ scissor.MinX, scissor.MinY };
-        rect.extent = VkExtent2D{ static_cast<UInt32>(scissor.Width()), static_cast<UInt32>(scissor.Height()) };
+        rect.extent = VkExtent2D{ static_cast<uint32_t>(scissor.Width()), static_cast<uint32_t>(scissor.Height()) };
         return rect;
     }
 } // namespace FE::Osmium

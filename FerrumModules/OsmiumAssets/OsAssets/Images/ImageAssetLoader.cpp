@@ -33,10 +33,10 @@ namespace FE::Osmium
     {
         auto* imageStorage = static_cast<ImageAssetStorage*>(storage);
         const uint32_t length = static_cast<uint32_t>(assetStream->Length());
-        eastl::vector<UInt8> buffer(length, 0);
+        eastl::vector<uint8_t> buffer(length, 0);
         assetStream->ReadToBuffer(buffer.data(), length);
 
-        Int32 channels;
+        int32_t channels;
         auto result =
             Internal::LoadImageFromMemory(buffer.data(), length, imageStorage->m_Width, imageStorage->m_Height, channels);
         if (result.IsOk())

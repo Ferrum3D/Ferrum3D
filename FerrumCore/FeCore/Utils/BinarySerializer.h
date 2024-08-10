@@ -15,19 +15,19 @@ namespace FE
         {
         }
 
-        inline USize Write(const void* data, USize size)
+        inline size_t Write(const void* data, size_t size)
         {
             return m_Stream->WriteFromBuffer(data, size);
         }
 
         template<class T>
-        inline USize Write(T value)
+        inline size_t Write(T value)
         {
             return m_Stream->WriteFromBuffer(&value, sizeof(T));
         }
 
         template<class T>
-        inline USize Read(T& value)
+        inline size_t Read(T& value)
         {
             return m_Stream->ReadToBuffer(&value, sizeof(T));
         }
@@ -41,24 +41,24 @@ namespace FE
         }
 
         template<class T>
-        inline USize WriteArray(const ArraySlice<T>& array)
+        inline size_t WriteArray(const ArraySlice<T>& array)
         {
             auto length = array.Length() * sizeof(T);
-            Write<USize>(array.Length());
-            return m_Stream->WriteFromBuffer(array.Data(), length) + sizeof(USize);
+            Write<size_t>(array.Length());
+            return m_Stream->WriteFromBuffer(array.Data(), length) + sizeof(size_t);
         }
 
-        inline USize WriteString(StringSlice string)
+        inline size_t WriteString(StringSlice string)
         {
-            Write<USize>(string.Size());
+            Write<size_t>(string.Size());
             return m_Stream->WriteFromBuffer(string.Data(), string.Size());
         }
 
         template<class T>
-        inline USize ReadArray(eastl::vector<T>& buffer)
+        inline size_t ReadArray(eastl::vector<T>& buffer)
         {
-            buffer.resize(static_cast<uint32_t>(Read<USize>()));
-            return m_Stream->ReadToBuffer(buffer.data(), buffer.size() * sizeof(T)) + sizeof(USize);
+            buffer.resize(static_cast<uint32_t>(Read<size_t>()));
+            return m_Stream->ReadToBuffer(buffer.data(), buffer.size() * sizeof(T)) + sizeof(size_t);
         }
 
         template<class T>
@@ -69,9 +69,9 @@ namespace FE
             return buffer;
         }
 
-        inline USize ReadString(String& string)
+        inline size_t ReadString(String& string)
         {
-            string = String(Read<USize>(), '\0');
+            string = String(Read<size_t>(), '\0');
             return m_Stream->ReadToBuffer(string.Data(), string.Size());
         }
 

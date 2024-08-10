@@ -32,7 +32,7 @@ namespace FE
             std::pmr::memory_resource* m_pAllocator = nullptr;
 
         public:
-            FE_CLASS_RTTI(RefCountedObjectBase, "B4FA5C63-69C0-4666-8A92-726F070D769B");
+            FE_RTTI_Class(RefCountedObjectBase, "B4FA5C63-69C0-4666-8A92-726F070D769B");
 
             RefCountedObjectBase() = default;
             virtual ~RefCountedObjectBase() = default;

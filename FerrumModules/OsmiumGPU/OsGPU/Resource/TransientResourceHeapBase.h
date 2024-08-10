@@ -47,11 +47,11 @@ namespace FE::Osmium
         {
             Memory::RefCountedObjectBase* Resource = nullptr;
             NullableHandle Handle = NullableHandle::Null();
-            USize Size = 0;
+            size_t Size = 0;
 
             inline RegisteredResourceInfo() = default;
 
-            inline RegisteredResourceInfo(Memory::RefCountedObjectBase* resource, NullableHandle handle, USize size)
+            inline RegisteredResourceInfo(Memory::RefCountedObjectBase* resource, NullableHandle handle, size_t size)
             {
                 Resource = resource;
                 Handle = handle;
@@ -64,19 +64,19 @@ namespace FE::Osmium
         GPULinearAllocator m_Allocator;
         ResourceCache m_Cache;
         Rc<IDeviceMemory> m_Memory;
-        UInt32 m_CreatedResourceCount = 0;
-        festd::unordered_dense_map<UInt64, RegisteredResourceInfo> m_RegisteredResources;
+        uint32_t m_CreatedResourceCount = 0;
+        festd::unordered_dense_map<uint64_t, RegisteredResourceInfo> m_RegisteredResources;
 
         TransientResourceHeapBase(IDevice& dev, const TransientResourceHeapDesc& desc);
 
         virtual Rc<IDeviceMemory> AllocateMemoryImpl() = 0;
-        virtual NullableHandle AllocateResourceMemory(const BufferDesc& desc, USize& byteSize) = 0;
-        virtual NullableHandle AllocateResourceMemory(const ImageDesc& desc, USize& byteSize) = 0;
+        virtual NullableHandle AllocateResourceMemory(const BufferDesc& desc, size_t& byteSize) = 0;
+        virtual NullableHandle AllocateResourceMemory(const ImageDesc& desc, size_t& byteSize) = 0;
 
-        void ReleaseResource(UInt64 resourceID, TransientResourceType resourceType);
+        void ReleaseResource(uint64_t resourceID, TransientResourceType resourceType);
 
     public:
-        FE_CLASS_RTTI(TransientResourceHeapBase, "78A92015-D187-4E83-A4FF-00724C02E7DD");
+        FE_RTTI_Class(TransientResourceHeapBase, "78A92015-D187-4E83-A4FF-00724C02E7DD");
 
         ~TransientResourceHeapBase() override = default;
 
@@ -86,7 +86,7 @@ namespace FE::Osmium
         Rc<IImage> CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats) override;
         Rc<IBuffer> CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats) override;
 
-        void ReleaseImage(UInt64 resourceID) override;
-        void ReleaseBuffer(UInt64 resourceID) override;
+        void ReleaseImage(uint64_t resourceID) override;
+        void ReleaseBuffer(uint64_t resourceID) override;
     };
 } // namespace FE::Osmium

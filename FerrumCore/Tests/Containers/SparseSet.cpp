@@ -1,4 +1,4 @@
-#include <FeCore/Containers/SparseSet.h>
+﻿#include <FeCore/Containers/SparseSet.h>
 #include <FeCore/Strings/String.h>
 #include <gtest/gtest.h>
 
@@ -6,14 +6,14 @@ using FE::SparseSet;
 
 TEST(SparseSet, Create)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
     EXPECT_EQ(sparseSet.Capacity(), 10);
     EXPECT_EQ(sparseSet.Size(), 0);
 }
 
 TEST(SparseSet, Insert)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
 
     sparseSet.Insert(0, "Zero");
     EXPECT_EQ(sparseSet.Capacity(), 10);
@@ -30,7 +30,7 @@ TEST(SparseSet, Insert)
 
 TEST(SparseSet, Contains)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     EXPECT_TRUE(sparseSet.Contains(0));
     sparseSet.Insert(9, "Nine");
@@ -40,7 +40,7 @@ TEST(SparseSet, Contains)
 
 TEST(SparseSet, TryGetAt)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     FE::String value;
     EXPECT_TRUE(sparseSet.TryGetAt(0, value));
@@ -50,7 +50,7 @@ TEST(SparseSet, TryGetAt)
 
 TEST(SparseSet, Indexer)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     EXPECT_EQ(sparseSet[0], "Zero");
 
@@ -60,7 +60,7 @@ TEST(SparseSet, Indexer)
 
 TEST(SparseSet, Remove)
 {
-    SparseSet<FE::UInt32, FE::String> sparseSet(10);
+    SparseSet<uint32_t, FE::String> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     sparseSet.Insert(1, "One");
     sparseSet.Insert(2, "Two");

@@ -22,8 +22,8 @@ static FE::Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT flags,
                                                           [[maybe_unused]] VkDebugReportObjectTypeEXT objectType,
-                                                          [[maybe_unused]] FE::UInt64 object, [[maybe_unused]] size_t location,
-                                                          [[maybe_unused]] FE::Int32 messageCode,
+                                                          [[maybe_unused]] uint64_t object, [[maybe_unused]] size_t location,
+                                                          [[maybe_unused]] int32_t messageCode,
                                                           [[maybe_unused]] const char* pLayerPrefix, const char* pMessage,
                                                           void* pUserData)
 {
@@ -56,7 +56,7 @@ namespace FE::Osmium
     VKInstance::VKInstance(const InstanceDesc& desc)
     {
         volkInitialize();
-        UInt32 layerCount;
+        uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
         eastl::vector<VkLayerProperties> layers(layerCount, VkLayerProperties{});
         vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
@@ -69,7 +69,7 @@ namespace FE::Osmium
             FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layerSlice);
         }
 
-        UInt32 extensionCount;
+        uint32_t extensionCount;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         eastl::vector<VkExtensionProperties> extensions(extensionCount, VkExtensionProperties{});
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
@@ -91,9 +91,9 @@ namespace FE::Osmium
         VkInstanceCreateInfo instanceCI{};
         instanceCI.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         instanceCI.pApplicationInfo = &appInfo;
-        instanceCI.enabledLayerCount = static_cast<UInt32>(RequiredInstanceLayers.size());
+        instanceCI.enabledLayerCount = static_cast<uint32_t>(RequiredInstanceLayers.size());
         instanceCI.ppEnabledLayerNames = RequiredInstanceLayers.data();
-        instanceCI.enabledExtensionCount = static_cast<UInt32>(RequiredInstanceExtensions.size());
+        instanceCI.enabledExtensionCount = static_cast<uint32_t>(RequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = RequiredInstanceExtensions.data();
 
         vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_Instance);
@@ -111,7 +111,7 @@ namespace FE::Osmium
 #endif
         FE_LOG_MESSAGE("Vulkan instance created successfully");
 
-        UInt32 adapterCount;
+        uint32_t adapterCount;
         vkEnumeratePhysicalDevices(m_Instance, &adapterCount, nullptr);
         eastl::vector<VkPhysicalDevice> vkAdapters(adapterCount, VkPhysicalDevice{});
         vkEnumeratePhysicalDevices(m_Instance, &adapterCount, vkAdapters.data());

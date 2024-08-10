@@ -13,7 +13,7 @@ namespace FE::Osmium
         OsmiumAssetsModuleDesc m_Desc;
 
     public:
-        FE_CLASS_RTTI(OsmiumAssetsModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
+        FE_RTTI_Class(OsmiumAssetsModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
 
         OsmiumAssetsModuleImpl();
 

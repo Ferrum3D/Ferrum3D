@@ -61,7 +61,7 @@ void RunExample()
     FE::Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
     FE::Rc<HAL::IBuffer> vsConstantBuffer;
     FE::Rc<HAL::IBuffer> indexBuffer, vertexBuffer;
-    FE::UInt64 vertexSize, indexSize;
+    uint64_t vertexSize, indexSize;
     {
         // clang-format off
         FE::List<Vertex> vertexData = {
@@ -80,8 +80,8 @@ void RunExample()
         vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
     }
     {
-        FE::List<FE::UInt32> indexData = { 0, 2, 3, 3, 2, 1 };
-        indexSize                      = indexData.Size() * sizeof(FE::UInt32);
+        FE::List<uint32_t> indexData = { 0, 2, 3, 3, 2, 1 };
+        indexSize                      = indexData.Size() * sizeof(uint32_t);
         indexBufferStaging             = device->CreateBuffer(HAL::BufferDesc{ indexSize, HAL::BindFlags::None });
         indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
         indexBufferStaging->UpdateData(indexData.Data());
@@ -137,9 +137,9 @@ void RunExample()
         barrier.StateAfter = HAL::ResourceState::TransferRead;
         commandBuffer->ResourceTransitionBarriers({ barrier }, {});
 
-        auto mipCount    = static_cast<FE::UInt16>(textureImage->GetDesc().MipSliceCount);
+        auto mipCount    = static_cast<FE::uint16_t>(textureImage->GetDesc().MipSliceCount);
         auto textureSize = textureImage->GetDesc().ImageSize;
-        for (FE::UInt16 i = 1; i < mipCount; ++i)
+        for (FE::uint16_t i = 1; i < mipCount; ++i)
         {
             HAL::ImageBarrierDesc mipBarrier{};
             mipBarrier.Image                        = textureImage.Get();
@@ -152,13 +152,13 @@ void RunExample()
             blitRegion.Source.MipSlice = i - 1;
 
             blitRegion.SourceBounds[0] = {};
-            blitRegion.SourceBounds[1] = { FE::Int64(textureSize.Width >> (i - 1)), FE::Int64(textureSize.Height >> (i - 1)), 1 };
+            blitRegion.SourceBounds[1] = { FE::int64_t(textureSize.Width >> (i - 1)), FE::int64_t(textureSize.Height >> (i - 1)), 1 };
 
             blitRegion.Dest.Aspect   = HAL::ImageAspect::Color;
             blitRegion.Dest.MipSlice = i;
 
             blitRegion.DestBounds[0] = {};
-            blitRegion.DestBounds[1] = { FE::Int64(textureSize.Width >> i), FE::Int64(textureSize.Height >> i), 1 };
+            blitRegion.DestBounds[1] = { FE::int64_t(textureSize.Width >> i), FE::int64_t(textureSize.Height >> i), 1 };
 
             commandBuffer->ResourceTransitionBarriers({ mipBarrier }, {});
             commandBuffer->BlitImage(textureImage.Get(), textureImage.Get(), blitRegion);

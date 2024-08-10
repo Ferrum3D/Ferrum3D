@@ -12,11 +12,11 @@ namespace FE::ECS
     struct ComponentStorageDesc
     {
         ComponentType Type;       //!< Type of the component.
-        ArraySliceMut<Int8> Data; //!< Storage data.
+        ArraySliceMut<int8_t> Data; //!< Storage data.
 
         inline ComponentStorageDesc() = default;
 
-        inline explicit ComponentStorageDesc(const ComponentType& type, const ArraySliceMut<Int8>& data)
+        inline explicit ComponentStorageDesc(const ComponentType& type, const ArraySliceMut<int8_t>& data)
             : Type(type)
             , Data(data)
         {
@@ -29,8 +29,8 @@ namespace FE::ECS
         friend class ArchetypeChunk;
 
         ComponentStorageDesc m_Desc;
-        ArraySliceMut<Int8> m_Data;
-        UInt32 m_Count = 0;
+        ArraySliceMut<int8_t> m_Data;
+        uint32_t m_Count = 0;
 
         inline void AllocateComponentUnchecked()
         {
@@ -38,7 +38,7 @@ namespace FE::ECS
         }
 
     public:
-        FE_STRUCT_RTTI(ComponentStorage, "010F0DA1-ABF1-4883-9274-2C67E48B99FB");
+        FE_RTTI_Base(ComponentStorage, "010F0DA1-ABF1-4883-9274-2C67E48B99FB");
 
         inline ComponentStorage() = default;
 
@@ -71,29 +71,29 @@ namespace FE::ECS
         //! \brief Add an instance of component to the storage.
         //!
         //! \param [out] id  - The ID of the created component within the storage.
-        bool AllocateComponentImpl(UInt32& id);
+        bool AllocateComponentImpl(uint32_t& id);
 
         //! \brief Find a component in the storage and update its data.
         //!
         //! \param [in] componentData - Component data to be copied.
         //! \param [in] id            - The ID of the component to update.
-        void UpdateComponentImpl(const void* componentData, UInt32 id);
+        void UpdateComponentImpl(const void* componentData, uint32_t id);
 
         //! \brief Find a component in the storage retrieve a pointer to its data.
         //!
         //! \param [in] id             - The ID of the component.
         //! \param [out] componentData - Component data.
-        void ComponentData(UInt32 id, void** componentData);
+        void ComponentData(uint32_t id, void** componentData);
 
         //! \brief Find a component in the storage and remove it.
         //!
         //! \param [in] id - The ID of the component to remove.
         //!
         //! \return Index of the component that was moved to the place of removed one or -1.
-        Int32 RemoveComponent(UInt32 id);
+        int32_t RemoveComponent(uint32_t id);
 
         template<class T>
-        inline T* GetComponent(UInt32 id)
+        inline T* GetComponent(uint32_t id)
         {
             void* result;
             ComponentData(id, &result);
@@ -109,7 +109,7 @@ namespace FE::ECS
         //!
         //! \return True on success.
         template<class T>
-        inline bool AllocateComponent(const T& component, UInt32& id)
+        inline bool AllocateComponent(const T& component, uint32_t& id)
         {
             if (ValidationEnabled())
             {
@@ -134,7 +134,7 @@ namespace FE::ECS
         //! \param [in] component - Component data to be copied.
         //! \param [in] id        - The ID of the component to update.
         template<class T>
-        inline void UpdateComponent(const T& component, UInt32 id)
+        inline void UpdateComponent(const T& component, uint32_t id)
         {
             if (ValidationEnabled())
             {

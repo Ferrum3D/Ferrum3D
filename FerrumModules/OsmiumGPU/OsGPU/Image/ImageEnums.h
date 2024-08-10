@@ -31,9 +31,9 @@ namespace FE::Osmium
     enum class ImageAspectFlags
     {
         None,
-        Color        = 1 << static_cast<UInt32>(ImageAspect::Color),
-        Depth        = 1 << static_cast<UInt32>(ImageAspect::Depth),
-        Stencil      = 1 << static_cast<UInt32>(ImageAspect::Stencil),
+        Color        = 1 << static_cast<uint32_t>(ImageAspect::Color),
+        Depth        = 1 << static_cast<uint32_t>(ImageAspect::Depth),
+        Stencil      = 1 << static_cast<uint32_t>(ImageAspect::Stencil),
         DepthStencil = Depth | Stencil,
         All          = Depth | Stencil | Color
     };

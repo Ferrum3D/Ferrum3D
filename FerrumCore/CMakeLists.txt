@@ -36,9 +36,21 @@
     FeCore/Containers/ByteBuffer.h
     FeCore/Containers/HashTables.h
     FeCore/Containers/LRUCacheMap.h
-
+    FeCore/Containers/SegmentedVector.h
     FeCore/Containers/SparseSet.h
     FeCore/Containers/SparseStorage.h
+
+    FeCore/DI/Activator.h
+    FeCore/DI/BaseDI.h
+    FeCore/DI/BaseDI.cpp
+    FeCore/DI/Builder.h
+    FeCore/DI/Builder.cpp
+    FeCore/DI/Container.h
+    FeCore/DI/Container.cpp
+    FeCore/DI/LifetimeScope.h
+    FeCore/DI/LifetimeScope.cpp
+    FeCore/DI/Registration.h
+    FeCore/DI/Registry.h
 
     FeCore/ECS/ArchetypeChunk.cpp
     FeCore/ECS/ArchetypeChunk.h
@@ -155,7 +167,6 @@
     FeCore/Utils/BinarySerializer.h
     FeCore/Utils/BoolPointer.h
     FeCore/Utils/Result.h
-    FeCore/Utils/SortedStringVector.h
     FeCore/Utils/UUID.h
     # FERRUM_SORT_LINES END
 )

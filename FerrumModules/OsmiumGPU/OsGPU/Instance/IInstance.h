@@ -6,7 +6,7 @@ namespace FE::Osmium
 {
     struct InstanceDesc
     {
-        FE_STRUCT_RTTI(InstanceDesc, "20125FD5-EFCB-426E-B1EE-50DF51457171");
+        FE_RTTI_Base(InstanceDesc, "20125FD5-EFCB-426E-B1EE-50DF51457171");
 
         const char* ApplicationName;
 
@@ -25,7 +25,7 @@ namespace FE::Osmium
     public:
         ~IInstance() override = default;
 
-        FE_CLASS_RTTI(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
+        FE_RTTI_Class(IInstance, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
         [[nodiscard]] virtual const eastl::vector<Rc<IAdapter>>& GetAdapters() const = 0;
     };

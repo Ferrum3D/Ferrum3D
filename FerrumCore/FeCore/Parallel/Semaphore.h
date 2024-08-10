@@ -8,10 +8,10 @@ namespace FE
         void* m_NativeSemaphore;
 
     public:
-        explicit Semaphore(UInt32 initialValue = 0);
+        explicit Semaphore(uint32_t initialValue = 0);
         ~Semaphore();
 
         void Acquire();
-        void Release(UInt32 count = 1);
+        void Release(uint32_t count = 1);
     };
 } // namespace FE

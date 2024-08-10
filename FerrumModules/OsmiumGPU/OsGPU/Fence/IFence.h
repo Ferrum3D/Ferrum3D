@@ -6,7 +6,7 @@ namespace FE::Osmium
     class IFence : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IFence, "D815152F-A41F-45C8-81AB-F921F19E8AA3");
+        FE_RTTI_Class(IFence, "D815152F-A41F-45C8-81AB-F921F19E8AA3");
 
         ~IFence() override = default;
 

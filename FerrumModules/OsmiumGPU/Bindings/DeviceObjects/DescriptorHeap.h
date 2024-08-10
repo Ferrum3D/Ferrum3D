@@ -6,6 +6,6 @@ namespace FE::Osmium
     struct DescriptorHeapDescBinding
     {
         ByteBuffer Sizes;
-        UInt32 MaxSets;
+        uint32_t MaxSets;
     };
 }

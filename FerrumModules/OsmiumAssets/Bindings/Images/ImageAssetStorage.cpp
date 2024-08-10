@@ -5,22 +5,22 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT const UInt8* ImageAssetStorage_Data(ImageAssetStorage* self)
+        FE_DLL_EXPORT const uint8_t* ImageAssetStorage_Data(ImageAssetStorage* self)
         {
             return self->Data();
         }
 
-        FE_DLL_EXPORT Int32 ImageAssetStorage_Width(ImageAssetStorage* self)
+        FE_DLL_EXPORT int32_t ImageAssetStorage_Width(ImageAssetStorage* self)
         {
             return self->Width();
         }
 
-        FE_DLL_EXPORT Int32 ImageAssetStorage_Height(ImageAssetStorage* self)
+        FE_DLL_EXPORT int32_t ImageAssetStorage_Height(ImageAssetStorage* self)
         {
             return self->Height();
         }
 
-        FE_DLL_EXPORT USize ImageAssetStorage_Size(ImageAssetStorage* self)
+        FE_DLL_EXPORT size_t ImageAssetStorage_Size(ImageAssetStorage* self)
         {
             return self->Size();
         }

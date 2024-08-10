@@ -6,6 +6,7 @@
     Common/TestCommon.h
 
     Containers/LRUCacheMap.cpp
+    Containers/SegmentedVector.cpp
     Containers/SparseSet.cpp
 
     ECS/EntityRegistry.cpp

@@ -12,7 +12,7 @@ namespace FE::Osmium
         eastl::vector<Rc<IAdapter>> m_Adapters;
 
     public:
-        FE_CLASS_RTTI(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
+        FE_RTTI_Class(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
 
         explicit VKInstance(const InstanceDesc& desc);
         ~VKInstance() override;

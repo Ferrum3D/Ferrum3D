@@ -19,7 +19,7 @@ namespace FE::Osmium
     Rc<IImage> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
-        USize allocationSize;
+        size_t allocationSize;
         auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
         if (address.IsNull())
         {
@@ -60,7 +60,7 @@ namespace FE::Osmium
     Rc<IBuffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats)
     {
         FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
-        USize allocationSize;
+        size_t allocationSize;
         auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
         if (address.IsNull())
         {
@@ -98,17 +98,17 @@ namespace FE::Osmium
         return result;
     }
 
-    void TransientResourceHeapBase::ReleaseImage(UInt64 resourceID)
+    void TransientResourceHeapBase::ReleaseImage(uint64_t resourceID)
     {
         ReleaseResource(resourceID, TransientResourceType::Image);
     }
 
-    void TransientResourceHeapBase::ReleaseBuffer(UInt64 resourceID)
+    void TransientResourceHeapBase::ReleaseBuffer(uint64_t resourceID)
     {
         ReleaseResource(resourceID, TransientResourceType::Buffer);
     }
 
-    void TransientResourceHeapBase::ReleaseResource(UInt64 resourceID, TransientResourceType resourceType)
+    void TransientResourceHeapBase::ReleaseResource(uint64_t resourceID, TransientResourceType resourceType)
     {
         FE_ASSERT_MSG(resourceType == m_Desc.TypeFlags, "Transient heap type is not compatible");
         auto& resource = m_RegisteredResources[resourceID];

@@ -9,7 +9,7 @@ enum class NumberError
     TestError
 };
 
-auto TryNumber(FE::Int32 number) -> FE::Result<FE::Int32, NumberError>
+auto TryNumber(int32_t number) -> FE::Result<int32_t, NumberError>
 {
     if (number > 1000)
     {
@@ -72,7 +72,7 @@ TEST(Result, UnwrapOr)
     EXPECT_EQ(result.UnwrapOr(123), 12);
 }
 
-auto MockResult(const std::shared_ptr<MockConstructors>& mock, bool ok) -> FE::Result<AllocateObject, FE::Int32>
+auto MockResult(const std::shared_ptr<MockConstructors>& mock, bool ok) -> FE::Result<AllocateObject, int32_t>
 {
     if (ok)
     {

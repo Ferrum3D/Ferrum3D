@@ -5,7 +5,7 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT void ICommandQueue_SubmitBuffers(ICommandQueue* self, ICommandBuffer** buffers, UInt32 bufferCount,
+        FE_DLL_EXPORT void ICommandQueue_SubmitBuffers(ICommandQueue* self, ICommandBuffer** buffers, uint32_t bufferCount,
                                                        IFence* signalFence, SubmitFlags flags)
         {
             self->SubmitBuffers(ArraySlice(buffers, buffers + bufferCount), signalFence, flags);

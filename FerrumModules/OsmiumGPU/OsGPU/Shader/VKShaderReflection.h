@@ -11,10 +11,10 @@ namespace FE::Osmium
         void ParseInputAttributes(spirv_cross::CompilerHLSL& compiler);
 
     public:
-        FE_CLASS_RTTI(VKShaderReflection, "686E6EBE-8038-4E26-919C-70834410BC1F");
+        FE_RTTI_Class(VKShaderReflection, "686E6EBE-8038-4E26-919C-70834410BC1F");
 
-        explicit VKShaderReflection(const eastl::vector<UInt32>& byteCode);
+        explicit VKShaderReflection(const eastl::vector<uint32_t>& byteCode);
         eastl::vector<ShaderInputAttribute> GetInputAttributes() override;
-        UInt32 GetInputAttributeLocation(StringSlice semantic) override;
+        uint32_t GetInputAttributeLocation(StringSlice semantic) override;
     };
 } // namespace FE::Osmium

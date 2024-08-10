@@ -37,7 +37,7 @@ namespace FE::Fmt
             std::stringstream ss;
             if constexpr (std::is_pointer_v<T> && !std::is_same_v<T, const char*>)
             {
-                ss << "0x" << std::hex << reinterpret_cast<USize>(value);
+                ss << "0x" << std::hex << reinterpret_cast<size_t>(value);
             }
             else
             {
@@ -91,12 +91,12 @@ namespace FE::Fmt
         void Format(String& buffer, const UUID& value) const override
         {
             static char digits[] = "0123456789ABCDEF";
-            Int32 idx            = 0;
+            int32_t idx            = 0;
             buffer.Reserve(buffer.Size() + 36);
-            auto append = [&](UInt32 n) {
-                for (UInt32 i = 0; i < n; ++i)
+            auto append = [&](uint32_t n) {
+                for (uint32_t i = 0; i < n; ++i)
                 {
-                    UInt8 c = value.Data[idx++];
+                    uint8_t c = value.Data[idx++];
                     buffer.Append(digits[(c & 0xF0) >> 4]);
                     buffer.Append(digits[(c & 0x0F) >> 0]);
                 }

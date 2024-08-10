@@ -18,7 +18,7 @@ namespace FE::Osmium
         }
     }
 
-    VKDeviceMemory::VKDeviceMemory(VKDevice& dev, UInt32 typeBits, const MemoryAllocationDesc& desc)
+    VKDeviceMemory::VKDeviceMemory(VKDevice& dev, uint32_t typeBits, const MemoryAllocationDesc& desc)
         : m_Device(&dev)
         , m_Desc(desc)
     {
@@ -59,7 +59,7 @@ namespace FE::Osmium
         m_Device->QueueObjectDelete<VKMemoryDeleter>(Memory);
     }
 
-    void* VKDeviceMemory::Map(USize offset, USize size)
+    void* VKDeviceMemory::Map(size_t offset, size_t size)
     {
         void* data;
         FE_VK_ASSERT(vkMapMemory(m_Device->GetNativeDevice(), Memory, offset, size, 0, &data));

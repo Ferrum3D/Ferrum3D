@@ -16,7 +16,7 @@ namespace FE
     using UTF8::TCodepoint;
     using UTF8::TCodepointTraits;
 
-    enum class ParseErrorCode : UInt32
+    enum class ParseErrorCode : uint32_t
     {
         None,
         Overflow,
@@ -28,9 +28,9 @@ namespace FE
     {
         // In case of 32-bit data
         // | 4-bit error code | 28-bit position |
-        UInt32 m_Data;
+        uint32_t m_Data;
 
-        inline static constexpr UInt32 PositionByteCount = sizeof(UInt32) - 4;
+        inline static constexpr uint32_t PositionByteCount = sizeof(uint32_t) - 4;
 
     public:
         inline ParseError(ParseErrorCode code) noexcept // NOLINT(google-explicit-constructor)
@@ -38,8 +38,8 @@ namespace FE
         {
         }
 
-        inline ParseError(ParseErrorCode code, USize position) noexcept
-            : m_Data(static_cast<UInt32>(position) | (static_cast<UInt32>(code) << PositionByteCount))
+        inline ParseError(ParseErrorCode code, size_t position) noexcept
+            : m_Data(static_cast<uint32_t>(position) | (static_cast<uint32_t>(code) << PositionByteCount))
         {
         }
 
@@ -48,7 +48,7 @@ namespace FE
             return static_cast<ParseErrorCode>(m_Data >> PositionByteCount);
         }
 
-        [[nodiscard]] inline UInt32 GetPosition() const noexcept
+        [[nodiscard]] inline uint32_t GetPosition() const noexcept
         {
             return m_Data & MakeMask(PositionByteCount, 0u);
         }
@@ -85,8 +85,8 @@ namespace FE
         const TChar* m_Data;
         size_t m_Size;
 
-        ParseError TryToIntImpl(Int64& result) const;
-        ParseError TryToUIntImpl(UInt64& result) const;
+        ParseError TryToIntImpl(int64_t& result) const;
+        ParseError TryToUIntImpl(uint64_t& result) const;
 
         ParseError TryToFloatImpl(double& result) const;
 
@@ -100,7 +100,7 @@ namespace FE
         template<class TInt>
         [[nodiscard]] inline std::enable_if_t<is_signed_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
-            Int64 temp;
+            int64_t temp;
             auto ret = TryToIntImpl(temp);
             if (ret != ParseErrorCode::None)
             {
@@ -119,7 +119,7 @@ namespace FE
         template<class TInt>
         [[nodiscard]] inline std::enable_if_t<is_unsigned_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
-            UInt64 temp;
+            uint64_t temp;
             auto ret = TryToUIntImpl(temp);
             if (ret != ParseErrorCode::None)
             {
@@ -218,7 +218,7 @@ namespace FE
                 return t;
             }
 
-            inline friend Iterator operator+(Iterator lhs, Int32 rhs)
+            inline friend Iterator operator+(Iterator lhs, int32_t rhs)
             {
                 if (rhs > 0)
                 {
@@ -234,7 +234,7 @@ namespace FE
                 return lhs;
             }
 
-            inline friend Iterator operator-(const Iterator& lhs, Int32 rhs)
+            inline friend Iterator operator-(const Iterator& lhs, int32_t rhs)
             {
                 return lhs + (-rhs);
             }
@@ -242,12 +242,12 @@ namespace FE
             inline friend bool operator==(const Iterator& a, const Iterator& b)
             {
                 return a.m_Iter == b.m_Iter;
-            };
+            }
 
             inline friend bool operator!=(const Iterator& a, const Iterator& b)
             {
                 return a.m_Iter != b.m_Iter;
-            };
+            }
         };
 
         inline constexpr StringSlice() noexcept
@@ -256,7 +256,7 @@ namespace FE
         {
         }
 
-        inline constexpr StringSlice(const TChar* data, USize size) noexcept
+        inline constexpr StringSlice(const TChar* data, size_t size) noexcept
             : m_Data(data)
             , m_Size(size)
         {
@@ -289,7 +289,7 @@ namespace FE
         {
         }
 
-        template<USize S>
+        template<size_t S>
         inline constexpr StringSlice(const TChar (&data)[S]) noexcept
             : m_Data(data)
             , m_Size(S)

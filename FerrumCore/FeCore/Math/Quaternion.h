@@ -21,7 +21,7 @@ namespace FE
         FE_POP_MSVC_WARNING
 
     public:
-        FE_STRUCT_RTTI(Quaternion, "36791C3D-2C83-4516-8359-E0A34E3FC7B9");
+        FE_RTTI_Base(Quaternion, "36791C3D-2C83-4516-8359-E0A34E3FC7B9");
 
         FE_FORCE_INLINE Quaternion()
             : Quaternion(TVec::GetZero())
@@ -63,10 +63,10 @@ namespace FE
         FE_FORCE_INLINE void GetAxisAngle(Vector3F& axis, float& angle) const noexcept;
         [[nodiscard]] FE_FORCE_INLINE Vector3F GetEulerAngles() const noexcept;
 
-        [[nodiscard]] FE_FORCE_INLINE float operator[](USize index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
 
-        [[nodiscard]] FE_FORCE_INLINE float& operator()(USize index) noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float operator()(USize index) const noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
+        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
 
         //! \return A pointer to array of four floats (components of the quaternion).
         [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
@@ -295,17 +295,17 @@ namespace FE
                  std::atan2(2 * X() * W() - 2 * Y() * Z(), 1 - 2 * sqx - 2 * sqz) };
     }
 
-    float Quaternion::operator[](USize index) const noexcept
+    float Quaternion::operator[](size_t index) const noexcept
     {
         return m_Values[index];
     }
 
-    float& Quaternion::operator()(USize index) noexcept
+    float& Quaternion::operator()(size_t index) noexcept
     {
         return m_Values[index];
     }
 
-    float Quaternion::operator()(USize index) const noexcept
+    float Quaternion::operator()(size_t index) const noexcept
     {
         return m_Values[index];
     }

@@ -18,29 +18,29 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(TimeSpan, "F42DAA6C-53F3-4AA5-9971-9783D8754F6C");
+        FE_RTTI_Class(TimeSpan, "F42DAA6C-53F3-4AA5-9971-9783D8754F6C");
 
-        inline Int32 Years() const
+        inline int32_t Years() const
         {
             return m_Data.tm_year;
         }
 
-        inline Int32 Days() const
+        inline int32_t Days() const
         {
             return m_Data.tm_mday;
         }
 
-        inline Int32 Hours() const
+        inline int32_t Hours() const
         {
             return m_Data.tm_hour;
         }
 
-        inline Int32 Minutes() const
+        inline int32_t Minutes() const
         {
             return m_Data.tm_min;
         }
 
-        inline Int32 Seconds() const
+        inline int32_t Seconds() const
         {
             auto s = m_Data.tm_sec;
             if (s == 60)
@@ -48,7 +48,7 @@ namespace FE
             return s;
         }
 
-        inline Int64 TotalSeconds() const
+        inline int64_t TotalSeconds() const
         {
             auto copy = m_Data;
             return mktime(&copy);

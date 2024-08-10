@@ -21,39 +21,39 @@ namespace FE
         }
 
     public:
-        FE_CLASS_RTTI(DateTime, "9927EE14-F009-464A-A067-4E4CB7AFE56C");
+        FE_RTTI_Class(DateTime, "9927EE14-F009-464A-A067-4E4CB7AFE56C");
 
-        inline Int32 Year() const
+        inline int32_t Year() const
         {
             return m_Data.tm_year + 1900;
         }
 
-        inline Int32 Day() const
+        inline int32_t Day() const
         {
             return m_Data.tm_mday;
         }
 
-        inline Int32 DayOfWeek() const
+        inline int32_t DayOfWeek() const
         {
             return m_Data.tm_wday;
         }
 
-        inline Int32 DayOfYear() const
+        inline int32_t DayOfYear() const
         {
             return m_Data.tm_yday + 1;
         }
 
-        inline Int32 Hour() const
+        inline int32_t Hour() const
         {
             return m_Data.tm_hour;
         }
 
-        inline Int32 Minute() const
+        inline int32_t Minute() const
         {
             return m_Data.tm_min;
         }
 
-        inline Int32 Second() const
+        inline int32_t Second() const
         {
             auto s = m_Data.tm_sec;
             if (s == 60)

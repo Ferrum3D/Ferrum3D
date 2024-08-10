@@ -4,12 +4,12 @@ namespace FE::Osmium
 {
     extern "C"
     {
-        FE_DLL_EXPORT void IBuffer_AllocateMemory(IBuffer* self, Int32 memoryType)
+        FE_DLL_EXPORT void IBuffer_AllocateMemory(IBuffer* self, int32_t memoryType)
         {
             self->AllocateMemory(static_cast<MemoryType>(memoryType));
         }
 
-        FE_DLL_EXPORT void IBuffer_UpdateData(IBuffer* self, void* data, UInt64 offset, UInt64 size)
+        FE_DLL_EXPORT void IBuffer_UpdateData(IBuffer* self, void* data, uint64_t offset, uint64_t size)
         {
             self->UpdateData(data, offset, size);
         }

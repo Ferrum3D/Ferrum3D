@@ -108,10 +108,10 @@ namespace FE::Osmium
 
         auto* meshStorage = static_cast<MeshAssetStorage*>(storage);
         auto length = assetStream->Length();
-        eastl::vector<Int8> buffer(static_cast<uint32_t>(length), 0);
+        eastl::vector<int8_t> buffer(static_cast<uint32_t>(length), 0);
         assetStream->ReadToBuffer(buffer.data(), length);
 
-        UInt32 vertexCount;
+        uint32_t vertexCount;
         auto result =
             LoadMeshFromMemory(buffer, components, meshStorage->m_VertexBuffer, meshStorage->m_IndexBuffer, vertexCount);
         meshStorage->m_Components = components;

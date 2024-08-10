@@ -30,6 +30,6 @@ namespace FE::Osmium
     //! \param [out] vertexCount  - The number of vertices in the loaded mesh.
     //!
     //! \return True if the mesh was loaded successfully.
-    bool LoadMeshFromMemory(const eastl::vector<Int8>& fileData, const eastl::vector<MeshVertexComponent>& components,
-                            eastl::vector<float>& vertexBuffer, eastl::vector<UInt32>& indexBuffer, UInt32& vertexCount);
+    bool LoadMeshFromMemory(const eastl::vector<int8_t>& fileData, const eastl::vector<MeshVertexComponent>& components,
+                            eastl::vector<float>& vertexBuffer, eastl::vector<uint32_t>& indexBuffer, uint32_t& vertexCount);
 } // namespace FE::Osmium

@@ -9,7 +9,7 @@ namespace FE
     class EventHandler : public TEvent
     {
     protected:
-        FE_CLASS_RTTI(EventHandler, "389F7F29-DB23-42CE-A877-A5F003701988");
+        FE_RTTI_Class(EventHandler, "389F7F29-DB23-42CE-A877-A5F003701988");
 
         inline EventHandler()
         {
@@ -29,7 +29,7 @@ namespace FE
     class IEventBus : public Memory::RefCountedObjectBase
     {
     public:
-        FE_CLASS_RTTI(IEventBus, "953EC245-BCDD-467C-B1C1-E3CFCB582F4D");
+        FE_RTTI_Class(IEventBus, "953EC245-BCDD-467C-B1C1-E3CFCB582F4D");
     };
 
     template<class TEvent>
@@ -48,7 +48,7 @@ namespace FE
     public:
         using Handler = EventHandler<TEvent>;
 
-        FE_CLASS_RTTI(EventBus, "0D1E5B6E-ECB5-4859-AB57-4EAACF66AC10");
+        FE_RTTI_Class(EventBus, "0D1E5B6E-ECB5-4859-AB57-4EAACF66AC10");
 
         inline EventBus() = default;
 

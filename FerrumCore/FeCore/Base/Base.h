@@ -1,7 +1,9 @@
 ﻿#pragma once
+#include <EASTL/fixed_function.h>
 #include <EASTL/fixed_vector.h>
 #include <EASTL/functional.h>
 #include <EASTL/intrusive_list.h>
+#include <EASTL/sort.h>
 #include <EASTL/vector.h>
 #include <FeCore/Base/Hash.h>
 #include <FeCore/Base/Platform.h>
@@ -15,20 +17,7 @@
 
 namespace FE
 {
-    using Int8 = int8_t;
-    using Int16 = int16_t;
-    using Int32 = int32_t;
-    using Int64 = int64_t;
-
-    using UInt8 = uint8_t;
-    using UInt16 = uint16_t;
-    using UInt32 = uint32_t;
-    using UInt64 = uint64_t;
-
-    using USize = UInt64;
-    using SSize = Int64;
-
-    static_assert(sizeof(size_t) == sizeof(Int64));
+    static_assert(sizeof(size_t) == sizeof(int64_t));
 
 #ifdef FE_DEBUG
     //! \brief True on debug builds.
@@ -39,6 +28,9 @@ namespace FE
 #endif
 
     inline constexpr uint32_t InvalidIndex = static_cast<uint32_t>(-1);
+
+    template<class TEnum>
+    inline constexpr std::underlying_type_t<TEnum> DefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
 
     //! \brief Empty structure with no members.
     struct EmptyStruct
@@ -54,12 +46,12 @@ namespace FE
         const char* FuncName; //!< Name of function.
                               //!< This can be a function signature depending on compiler.
 
-        Int32 LineNumber; //!< Number of line in source file.
+        int32_t LineNumber; //!< Number of line in source file.
 
         //! Create a source position with specified data.
         //!
         //! \note It's recommended to use macros: \ref FE_SRCPOS and \ref FE_STATIC_SRCPOS
-        inline SourcePosition(const char* file, const char* func, Int32 line) noexcept
+        inline SourcePosition(const char* file, const char* func, int32_t line) noexcept
             : FileName(file)
             , FuncName(func)
             , LineNumber(line)
@@ -83,16 +75,16 @@ namespace FE
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
-    inline T* AlignUpPtr(const T* x, USize align)
+    inline T* AlignUpPtr(const T* x, size_t align)
     {
-        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<USize>(x), align));
+        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), align));
     }
 
     //! \brief Align up an integer.
     //!
     //! \param [in] x     - Value to align.
     //! \tparam A         - Alignment to use.
-    template<UInt32 A, class T>
+    template<uint32_t A, class T>
     inline constexpr T AlignUp(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
@@ -113,16 +105,16 @@ namespace FE
     //! \param [in] x     - Value to align.
     //! \param [in] align - Alignment to use.
     template<class T>
-    inline constexpr T* AlignDownPtr(const T* x, USize align)
+    inline constexpr T* AlignDownPtr(const T* x, size_t align)
     {
-        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<USize>(x), align));
+        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), align));
     }
 
     //! \brief Align down an integer.
     //!
     //! \param [in] x     - Value to align.
     //! \tparam A         - Alignment to use.
-    template<UInt32 A, class T>
+    template<uint32_t A, class T>
     inline constexpr T AlignDown(T x)
     {
         return (x & ~(A - 1));
@@ -138,6 +130,13 @@ namespace FE
         auto typeBitCount = sizeof(T) * 8;
         auto mask = bitCount == typeBitCount ? static_cast<T>(-1) : ((1 << bitCount) - 1);
         return static_cast<T>(mask << leftShift);
+    }
+
+
+    template<class T1, class T2>
+    inline auto CeilDivide(T1 x, T2 y) -> std::enable_if_t<std::is_unsigned_v<T1> && std::is_unsigned_v<T2>, decltype(x / y)>
+    {
+        return (x + y - 1) / y;
     }
 
 
@@ -262,6 +261,9 @@ namespace FE
 
         template<class T = intrusive_list_node>
         using intrusive_list = eastl::intrusive_list<T>;
+
+        template<int32_t TByteSize, class TFunc>
+        using fixed_function = eastl::fixed_function<TByteSize, TFunc>;
     } // namespace festd
 
 

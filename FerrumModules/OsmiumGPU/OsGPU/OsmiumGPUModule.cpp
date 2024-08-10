@@ -8,7 +8,7 @@ namespace FE::Osmium
         OsmiumGPUModuleDesc m_Desc;
 
     public:
-        FE_CLASS_RTTI(OsmiumGPUModuleImpl, "CB3A80B7-EED3-4FBF-8694-1ED61246234A");
+        FE_RTTI_Class(OsmiumGPUModuleImpl, "CB3A80B7-EED3-4FBF-8694-1ED61246234A");
 
         OsmiumGPUModuleImpl();
         ~OsmiumGPUModuleImpl() override = default;
@@ -37,7 +37,7 @@ namespace FE::Osmium
         case GraphicsAPI::Vulkan:
             return static_cast<IInstance*>(Rc<VKInstance>::DefaultNew(desc));
         default:
-            FE_UNREACHABLE("Invalid value: GraphicsAPI({})", static_cast<Int32>(m_Desc.API));
+            FE_UNREACHABLE("Invalid value: GraphicsAPI({})", static_cast<int32_t>(m_Desc.API));
             break;
         }
         return {};
