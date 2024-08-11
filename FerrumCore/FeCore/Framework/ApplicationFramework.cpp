@@ -1,4 +1,5 @@
-﻿#include <FeCore/Assets/AssetManager.h>
+﻿#include "ApplicationFramework.h"
+#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/EventBus/EventBus.h>
@@ -14,7 +15,6 @@ namespace FE
         m_Logger = Rc<Debug::ConsoleLogger>::DefaultNew();
         m_Logger->SetDebugLevel(desc.LogSeverity);
         m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
-        m_JobSystem = Rc<JobSystem>::DefaultNew();
 
         m_AssetManager = Rc<Assets::AssetManager>::DefaultNew();
         Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();
@@ -65,6 +65,13 @@ namespace FE
 
         return m_ExitCode;
     }
+
+
+    void ApplicationFramework::RegisterServices(DI::ServiceRegistryBuilder builder)
+    {
+        builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
+    }
+
 
     bool ApplicationFramework::ShouldStop()
     {

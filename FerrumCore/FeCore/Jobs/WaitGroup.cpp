@@ -49,7 +49,7 @@ namespace FE
             return;
         }
 
-        IJobSystem* pJobSystemInterface = ServiceLocator<IJobSystem>::Get();
+        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
         JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
 
         FiberWaitEntry* pEntry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
@@ -95,7 +95,7 @@ namespace FE
         }
 
         FiberWaitEntry* pQueueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        IJobSystem* pJobSystemInterface = ServiceLocator<IJobSystem>::Get();
+        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
         JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
 
         const uint32_t workerIndex = pJobSystem->GetWorkerIndex();

@@ -28,7 +28,7 @@ namespace FE
                 pCompletionWaitGroup->Add(1);
             }
 
-            ServiceLocator<IJobSystem>::Get()->AddJob(this, priority);
+            Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AddJob(this, priority);
         }
     };
 
@@ -43,14 +43,14 @@ namespace FE
             TJob* pJob = static_cast<TJob*>(this);
             pJob->DoExecute();
             pJob->~TJob();
-            ServiceLocator<IJobSystem>::Get()->FreeSmallBlock(pJob, sizeof(TJob));
+            Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->FreeSmallBlock(pJob, sizeof(TJob));
         }
 
         template<class... TArgs>
         inline static TJob* Create(TArgs&&... args)
         {
             static_assert(alignof(TJob) <= Memory::DefaultAlignment);
-            void* ptr = ServiceLocator<IJobSystem>::Get()->AllocateSmallBlock(sizeof(TJob));
+            void* ptr = Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AllocateSmallBlock(sizeof(TJob));
             return new (ptr) TJob(std::forward<TArgs>(args)...);
         }
     };

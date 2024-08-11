@@ -1,5 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/PoolAllocator.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
 #include <FeCore/Parallel/Thread.h>
 
 namespace FE
@@ -7,38 +8,27 @@ namespace FE
 #if FE_WINDOWS
     namespace
     {
-        struct ThreadDataImpl final
-        {
-            DWORD ID;
-            HANDLE hThread;
-            uintptr_t pUserData;
-            ThreadFunction StartRoutine;
-            Memory::PoolAllocator* pPool;
-        };
-
-        Memory::PoolAllocator g_ThreadDataPool{ "NativeThreadData", sizeof(ThreadDataImpl), 64 * 1024 };
-        SpinLock g_ThreadDataPoolLock;
+        static SpinLock g_ThreadDataPoolLock;
 
 
-        inline static ThreadDataImpl* AllocateThreadData()
+        inline static NativeThreadData* AllocateThreadData()
         {
             const std::lock_guard lock{ g_ThreadDataPoolLock };
-            ThreadDataImpl* pResult = Memory::New<ThreadDataImpl>(&g_ThreadDataPool);
-            pResult->pPool = &g_ThreadDataPool;
+            NativeThreadData* pResult = Memory::New<NativeThreadData>(Env::Internal::GetThreadDataPool());
             return pResult;
         }
 
 
         struct ThreadDataHolder final
         {
-            ThreadDataImpl* pData = nullptr;
+            NativeThreadData* pData = nullptr;
 
             ~ThreadDataHolder()
             {
                 if (pData)
                 {
                     const std::lock_guard lock{ g_ThreadDataPoolLock };
-                    Memory::Delete(pData->pPool, pData, sizeof(ThreadDataImpl));
+                    Memory::Delete(Env::Internal::GetThreadDataPool(), pData, sizeof(NativeThreadData));
                     pData = nullptr;
                 }
             }
@@ -49,7 +39,7 @@ namespace FE
 
         static DWORD WINAPI ThreadRoutineImpl(LPVOID lpParam)
         {
-            auto* pData = static_cast<ThreadDataImpl*>(lpParam);
+            auto* pData = static_cast<NativeThreadData*>(lpParam);
             g_TLSThreadData.pData = pData;
             pData->StartRoutine(pData->pUserData);
             return 0;
@@ -60,11 +50,14 @@ namespace FE
     ThreadHandle CreateThread(StringSlice name, ThreadFunction startRoutine, uintptr_t pUserData, ThreadPriority priority,
                               size_t stackSize)
     {
-        ThreadDataImpl* pData = AllocateThreadData();
+        NativeThreadData* pData = AllocateThreadData();
 
-        const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, pData, CREATE_SUSPENDED, &pData->ID);
+        DWORD threadID;
+        const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, pData, CREATE_SUSPENDED, &threadID);
         FE_CORE_ASSERT(hThread, "CreateThread failed");
 
+        pData->ID = threadID;
+        pData->Priority = priority;
         pData->hThread = hThread;
         pData->pUserData = pUserData;
         pData->StartRoutine = startRoutine;
@@ -102,7 +95,7 @@ namespace FE
         if (thread.Value == 0)
             return;
 
-        const ThreadDataImpl data = *reinterpret_cast<ThreadDataImpl*>(thread.Value);
+        const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.Value);
         const DWORD waitRes = WaitForSingleObject(data.hThread, INFINITE);
         FE_CORE_ASSERT(waitRes == WAIT_OBJECT_0, "WaitForSingleObject failed on thread");
 
@@ -115,12 +108,6 @@ namespace FE
     uint64_t GetCurrentThreadID()
     {
         return ::GetCurrentThreadId();
-    }
-
-
-    uint64_t GetThreadID(ThreadHandle threadHandle)
-    {
-        return reinterpret_cast<ThreadDataImpl*>(threadHandle.Value)->ID;
     }
 #else
 #    error Not implemented :(

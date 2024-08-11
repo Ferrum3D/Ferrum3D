@@ -19,7 +19,8 @@ namespace FE
 
         inline ApplicationDesc() = default;
 
-        inline ApplicationDesc(const String& name, uint32_t windowWidth = 800, uint32_t windowHeight = 600, bool fullscreen = false)
+        inline ApplicationDesc(const String& name, uint32_t windowWidth = 800, uint32_t windowHeight = 600,
+                               bool fullscreen = false)
             : Name(name)
             , AssetDirectory()
             , WindowWidth(windowWidth)
@@ -70,7 +71,6 @@ namespace FE
 
         Rc<Debug::ConsoleLogger> m_Logger;
         Rc<EventBus<FrameEvents>> m_FrameEventBus;
-        Rc<JobSystem> m_JobSystem;
         Rc<Assets::IAssetManager> m_AssetManager;
 
     protected:
@@ -78,6 +78,7 @@ namespace FE
         virtual bool CloseEventReceived() = 0;
 
         inline virtual void Tick([[maybe_unused]] const FrameEventArgs& frameEventArgs) {}
+        void RegisterServices(DI::ServiceRegistryBuilder builder) override;
 
         virtual bool ShouldStop();
 

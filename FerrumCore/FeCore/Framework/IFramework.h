@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Console/FeLog.h>
+#include <FeCore/DI/Builder.h>
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -57,6 +58,8 @@ namespace FE
         //!
         //! \param [out] dependencies - The list of dependencies. New entries must be added to it.
         virtual void GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& dependencies) = 0;
+
+        virtual void RegisterServices(DI::ServiceRegistryBuilder builder) = 0;
 
         //! \brief Basic framework initialization. Loads dependencies, sets initialized flag to true.
         virtual void Initialize() = 0;

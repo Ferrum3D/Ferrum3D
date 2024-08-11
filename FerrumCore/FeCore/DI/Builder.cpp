@@ -17,9 +17,9 @@ namespace FE::DI
     }
 
 
-    ServiceRegistry* ServiceRegistryBuilder::Build()
+    void ServiceRegistryBuilder::Build()
     {
         m_pRegistry->Sort();
-        return m_pRegistry.Get();
+        m_pRegistry.Reset();
     }
 } // namespace FE::DI

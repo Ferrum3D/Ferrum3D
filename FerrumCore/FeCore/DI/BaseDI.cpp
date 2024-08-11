@@ -2,7 +2,7 @@
 
 namespace FE::DI
 {
-    StringSlice GetResultDesc(ResultCode code)
+    const char* GetResultDesc(ResultCode code)
     {
         switch (code)
         {

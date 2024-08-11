@@ -16,7 +16,7 @@ namespace FE
     };
 
 
-    class JobSystem final : public ServiceLocatorImplBase<IJobSystem>
+    class JobSystem final : public IJobSystem
     {
         friend class WaitGroup;
 
@@ -112,7 +112,7 @@ namespace FE
         explicit JobSystem();
         ~JobSystem() override;
 
-        void Start();
+        void Start() override;
         void Stop();
         void AddJob(Job* pJob, JobPriority priority) override;
     };

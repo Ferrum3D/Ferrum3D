@@ -17,7 +17,7 @@ namespace FE::Osmium
 
         OsmiumAssetsModuleImpl();
 
-        ~OsmiumAssetsModuleImpl() override
+        inline ~OsmiumAssetsModuleImpl() override
         {
             auto* manager = ServiceLocator<Assets::IAssetManager>::Get();
             manager->RemoveAssetLoader(ImageAssetLoader::AssetType);
@@ -25,7 +25,9 @@ namespace FE::Osmium
             manager->RemoveAssetLoader(ShaderAssetLoader::AssetType);
         }
 
-        void Initialize(const OsmiumAssetsModuleDesc& desc) override
+        inline void RegisterServices(DI::ServiceRegistryBuilder) override {}
+
+        inline void Initialize(const OsmiumAssetsModuleDesc& desc) override
         {
             FrameworkBase::Initialize();
             m_Desc = desc;

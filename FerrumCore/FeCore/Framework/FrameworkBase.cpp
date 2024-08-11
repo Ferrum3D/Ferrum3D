@@ -1,4 +1,5 @@
 ﻿#include <FeCore/Framework/FrameworkBase.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
 
 namespace FE
 {
@@ -7,7 +8,9 @@ namespace FE
         return m_IsInitialized;
     }
 
-    void FrameworkBase::GetFrameworkDependencies([[maybe_unused]] eastl::vector<FE::Rc<FE::IFrameworkFactory>>& dependencies) {}
+
+    void FrameworkBase::GetFrameworkDependencies(eastl::vector<FE::Rc<FE::IFrameworkFactory>>&) {}
+
 
     void FrameworkBase::Initialize()
     {
@@ -18,8 +21,13 @@ namespace FE
             dependency->Load();
         }
 
+        DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
+        RegisterServices(builder);
+        builder.Build();
+
         m_IsInitialized = true;
     }
+
 
     void FrameworkBase::UnloadDependencies()
     {

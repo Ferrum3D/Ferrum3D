@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <FeCore/Utils/Result.h>
 
 namespace FE::DI
 {
@@ -15,7 +15,7 @@ namespace FE::DI
         UnknownError = DefaultErrorCode<ResultCode>, //!< Unknown error.
     };
 
-    StringSlice GetResultDesc(ResultCode code);
+    const char* GetResultDesc(ResultCode code);
 
 
     //! \brief Specifies the lifetime of an injectable service.
@@ -48,6 +48,12 @@ namespace FE::DI
                 return static_cast<T*>(pResult);
 
             return Err(code);
+        }
+
+        template<class T>
+        inline T* ResolveRequired()
+        {
+            return Resolve<T>().Unwrap();
         }
     };
 } // namespace FE::DI
