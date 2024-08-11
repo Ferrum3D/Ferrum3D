@@ -4,6 +4,8 @@
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/Environment.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
+#include <FeCore/Parallel/Thread.h>
 #include <cstdio>
 #include <sstream>
 
@@ -159,6 +161,7 @@ namespace FE::Env
             DefaultMemoryResource DefaultMemoryResource;
             VirtualMemoryResource VirtualMemoryResource;
             Memory::LockedMemoryResource<Memory::LinearAllocator, SpinLock> LinearMemoryResource;
+            Memory::PoolAllocator ThreadDataPool{ "NativeThreadData", sizeof(NativeThreadData), 64 * 1024 };
 
             NameDataAllocator NameDataAllocator;
             DI::Container DIContainer;
@@ -172,12 +175,7 @@ namespace FE::Env
                 Console::ResetColor();
             }
 
-            inline DI::ServiceRegistry* CreateServiceRegistry() override
-            {
-                return DIContainer.GetRegistryRoot()->Create();
-            }
-
-            inline std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type) override
+            inline std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type)
             {
                 switch (type)
                 {
@@ -249,14 +247,43 @@ namespace FE::Env
                 }
 #endif
 
-                Memory::DefaultFree(this);
+                Memory::DefaultDelete(this);
             }
         };
 
 
         static Environment* g_EnvInstance = nullptr;
         static bool g_IsEnvOwner = false;
+
+
+        DI::ServiceRegistry* CreateServiceRegistry()
+        {
+            return Internal::g_EnvInstance->DIContainer.GetRegistryRoot()->Create();
+        }
+
+
+        DI::ServiceRegistry* GetRootServiceRegistry()
+        {
+            return Internal::g_EnvInstance->DIContainer.GetRegistryRoot()->GetRootRegistry();
+        }
+
+
+        Memory::PoolAllocator* GetThreadDataPool()
+        {
+            return &Internal::g_EnvInstance->ThreadDataPool;
+        }
     } // namespace Internal
+
+    std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type)
+    {
+        return Internal::g_EnvInstance->GetStaticAllocator(type);
+    }
+
+
+    DI::IServiceProvider* FE::Env::GetServiceProvider()
+    {
+        return &Internal::g_EnvInstance->DIContainer;
+    }
 
 
     Name::Name(std::string_view str)
@@ -302,6 +329,7 @@ namespace FE::Env
 
         Internal::g_IsEnvOwner = true;
         Internal::g_EnvInstance = Memory::DefaultNew<Internal::Environment>();
+        Internal::g_EnvInstance->DIContainer.GetRegistryRoot()->Initialize();
     }
 
     Internal::IEnvironment& GetEnvironment()

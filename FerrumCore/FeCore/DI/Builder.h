@@ -1,9 +1,13 @@
 ﻿#pragma once
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>
+#include <FeCore/DI/Registry.h>
 
 namespace FE::DI
 {
+    class ServiceRegistryBuilder;
+
+
     namespace Internal
     {
         struct ServiceRegistrationSpec final
@@ -109,7 +113,7 @@ namespace FE::DI
     public:
         ServiceRegistryBuilder(ServiceRegistry* pRegistry);
 
-        [[nodiscard]] ServiceRegistry* Build();
+        void Build();
 
         template<class TInterface>
         [[nodiscard]] inline Internal::RegistryBindBuilder<TInterface> Bind()

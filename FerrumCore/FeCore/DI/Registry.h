@@ -5,6 +5,8 @@
 #include <FeCore/DI/Registration.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/PoolAllocator.h>
+#include <FeCore/Modules/Environment.h>
+#include <FeCore/Parallel/SpinLock.h>
 
 namespace FE::DI
 {
@@ -30,6 +32,7 @@ namespace FE::DI
         LifetimeScope* m_pRootLifetimeScope = nullptr;
         SpinLock m_CallbackListLock;
 
+    public:
         inline ServiceRegistry(std::pmr::memory_resource* pAllocator)
             : m_IDs(pAllocator)
             , m_Activators(pAllocator)
@@ -37,7 +40,6 @@ namespace FE::DI
         {
         }
 
-    public:
         inline void RegisterCallback(ServiceRegistryCallback& callback)
         {
             std::lock_guard lk{ m_CallbackListLock };
@@ -76,7 +78,7 @@ namespace FE::DI
             const uint32_t index = m_Registrations.size();
             m_IDs.push_back(id);
             m_Activators.push_back({});
-            m_Registrations.emplace_back(index);
+            m_Registrations.push_back(index);
             return &m_Registrations.back();
         }
 
@@ -112,7 +114,6 @@ namespace FE::DI
 
     class ServiceRegistryRoot final
     {
-        Memory::PoolAllocator m_RegistryPool;
         festd::intrusive_list<ServiceRegistry> m_Registries;
         Rc<ServiceRegistry> m_pRoot;
         SpinLock m_Lock;
@@ -157,11 +158,10 @@ namespace FE::DI
             }
         };
 
-        inline ServiceRegistryRoot()
-            : m_RegistryPool("ServiceRegistryPool", sizeof(ServiceRegistry), 16 * 1024)
+        inline void Initialize()
         {
             std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
-            m_pRoot = Rc<ServiceRegistry>::New(&m_RegistryPool, pAllocator);
+            m_pRoot = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_Registries.push_back(*m_pRoot);
             m_pRoot->RegisterCallback(m_RegistryCallback);
         }
@@ -187,7 +187,7 @@ namespace FE::DI
         inline ServiceRegistry* Create()
         {
             std::unique_lock lk{ m_Lock };
-            ServiceRegistry* pResult = Rc<ServiceRegistry>::New(&m_RegistryPool, std::pmr::get_default_resource());
+            ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
             m_Registries.push_back(*pResult);
             pResult->RegisterCallback(m_RegistryCallback);
             return pResult;

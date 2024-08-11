@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <EASTL/fixed_vector.h>
 #include <FeCore/Base/Base.h>
+#include <FeCore/DI/BaseDI.h>
 #include <FeCore/Math/MathUtils.h>
 #include <FeCore/Parallel/SpinLock.h>
 #include <FeCore/Strings/FeUnicode.h>
@@ -19,12 +20,6 @@ namespace FE::Memory
         Linear,  //!< Global linear allocator, the allocated memory will be freed only upon process termination.
     };
 } // namespace FE::Memory
-
-
-namespace FE::DI
-{
-    class ServiceRegistry;
-}
 
 
 namespace FE::Env
@@ -222,12 +217,6 @@ namespace FE::Env
         {
         public:
             virtual ~IEnvironment() = default;
-
-            virtual DI::ServiceRegistry* CreateServiceRegistry() = 0;
-
-            //! \brief Get static allocator by type.
-            //! \see FE::Env::GetStaticAllocator
-            virtual std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type) = 0;
 
             //! \brief Find a global variable.
             //! \see FE::Env::FindGlobalVariable
@@ -506,10 +495,8 @@ namespace FE::Env
         return !(x == y);
     }
 
-    inline std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type)
-    {
-        return GetEnvironment().GetStaticAllocator(type);
-    }
+    std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);
+    DI::IServiceProvider* GetServiceProvider();
 
     template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariable(Name name, Args&&... args)

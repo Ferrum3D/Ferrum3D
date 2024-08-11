@@ -91,7 +91,8 @@ namespace FE
         //! \tparam T          - The type of the object to delete.
         //! \tparam TAllocator - The type of the provided allocator.
         template<class T, class TAllocator>
-        [[nodiscard]] inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = 0)
+        [[nodiscard]] inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0,
+                                         size_t byteAlignment = DefaultAlignment)
         {
             pointer->~T();
             pAllocator->deallocate(pointer, byteSize, byteAlignment);

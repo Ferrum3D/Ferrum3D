@@ -3,7 +3,7 @@
 
 namespace FE::Osmium
 {
-    class OsmiumGPUModuleImpl : public ServiceLocatorImplBase<OsmiumGPUModule>
+    class OsmiumGPUModuleImpl final : public ServiceLocatorImplBase<OsmiumGPUModule>
     {
         OsmiumGPUModuleDesc m_Desc;
 
@@ -12,6 +12,8 @@ namespace FE::Osmium
 
         OsmiumGPUModuleImpl();
         ~OsmiumGPUModuleImpl() override = default;
+
+        inline void RegisterServices(DI::ServiceRegistryBuilder) override {}
 
         inline void Initialize(const OsmiumGPUModuleDesc& desc) override
         {

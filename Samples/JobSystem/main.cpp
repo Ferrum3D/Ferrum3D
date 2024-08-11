@@ -1,9 +1,11 @@
 ﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
+#include <FeCore/DI/Builder.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Jobs/JobSystem.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
 #include <algorithm>
 #include <chrono>
 #include <random>
@@ -161,7 +163,7 @@ struct MainJob final : Job
         AssertSorted(values2);
 
         FE_LOG_MESSAGE("Parallel: {}mcs, std::sort: {}mcs, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
-        ServiceLocator<IJobSystem>::Get()->Stop();
+        Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->Stop();
     }
 };
 
@@ -170,9 +172,12 @@ int main()
     Env::CreateEnvironment();
     Rc logger = Rc<Debug::ConsoleLogger>::DefaultNew();
     Rc eventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
-    Rc jobSystem = Rc<JobSystem>::DefaultNew();
+
+    DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
+    builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
+    builder.Build();
 
     MainJob mainJob;
     mainJob.Schedule();
-    jobSystem->Start();
+    Env::GetServiceProvider()->Resolve<IJobSystem>().Unwrap()->Start();
 }

@@ -315,9 +315,7 @@ namespace FE
             {
                 for (uint32_t elementIndex = 0; elementIndex < m_Size; ++elementIndex)
                 {
-                    const uint32_t segmentIndex = m_Size / ElementsPerSegment;
-                    const uint32_t elementIndex = m_Size % ElementsPerSegment;
-                    m_ppSegments[segmentIndex][elementIndex].~T();
+                    m_ppSegments[elementIndex / ElementsPerSegment][elementIndex % ElementsPerSegment].~T();
                 }
             }
 

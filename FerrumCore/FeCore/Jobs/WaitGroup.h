@@ -29,14 +29,14 @@ namespace FE
         {
             const uint32_t refCount = --m_RefCount;
             if (refCount == 0)
-                ServiceLocator<IJobSystem>::Get()->FreeSmallBlock(this, sizeof(WaitGroup));
+                Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->FreeSmallBlock(this, sizeof(WaitGroup));
 
             return refCount;
         }
 
         inline static WaitGroup* Create()
         {
-            void* ptr = ServiceLocator<IJobSystem>::Get()->AllocateSmallBlock(sizeof(WaitGroup));
+            void* ptr = Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AllocateSmallBlock(sizeof(WaitGroup));
             return new (ptr) WaitGroup;
         }
 

@@ -14,7 +14,7 @@ namespace FE
     public:
         typedef TModule* (*CreateModuleInstanceProc)(Env::Internal::IEnvironment* environment);
 
-        inline ModuleFrameworkFactoryImpl(StringSlice libraryPath) // NOLINT
+        inline ModuleFrameworkFactoryImpl(StringSlice libraryPath)
             : m_LibraryPath(libraryPath)
         {
         }

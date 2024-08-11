@@ -123,7 +123,8 @@ namespace FE
         {
             const String threadName = Fmt::Format("Worker {}", workerIndex);
             const auto threadFunc = [](uintptr_t workerIndex) {
-                fe_assert_cast<JobSystem*>(ServiceLocator<IJobSystem>::Get())->ThreadProc(static_cast<uint32_t>(workerIndex));
+                fe_assert_cast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
+                    ->ThreadProc(static_cast<uint32_t>(workerIndex));
             };
 
             Worker& worker = m_Workers.push_back();

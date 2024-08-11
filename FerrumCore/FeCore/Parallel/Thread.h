@@ -17,6 +17,20 @@ namespace FE
     };
 
 
+#if FE_WINDOWS
+    struct NativeThreadData final
+    {
+        uint32_t ID;
+        ThreadPriority Priority;
+        void* hThread;
+        uintptr_t pUserData;
+        ThreadFunction StartRoutine;
+    };
+#else
+#    error Not implemented :(
+#endif
+
+
     struct ThreadHandle final : TypedHandle<ThreadHandle, uint64_t, 0>
     {
     };
@@ -27,5 +41,16 @@ namespace FE
     void CloseThread(ThreadHandle& thread);
 
     uint64_t GetCurrentThreadID();
-    uint64_t GetThreadID(ThreadHandle threadHandle);
+
+
+    inline static const NativeThreadData& GetNativeThreadData(ThreadHandle threadHandle)
+    {
+        return *reinterpret_cast<const NativeThreadData*>(threadHandle.Value);
+    }
+
+
+    inline static uint64_t GetThreadID(ThreadHandle threadHandle)
+    {
+        return GetNativeThreadData(threadHandle).ID;
+    }
 } // namespace FE

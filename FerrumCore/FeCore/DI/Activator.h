@@ -37,10 +37,9 @@ namespace FE::DI
                 {
                 }
 
-                template<class T>
+                template<class T, class = std::enable_if_t<std::is_pointer_v<T>>>
                 FE_FORCE_INLINE operator T()
                 {
-                    static_assert(std::enable_if_t<std::is_pointer_v<T>>, "Non pointer arguments are not supported by DI");
                     return pContext->GetService<RemovePtr<T>>();
                 }
             };
@@ -122,11 +121,11 @@ namespace FE::DI
         }
 
         template<class T>
-        inline static ServiceActivator CreateForType(std::pmr::memory_resource* pAllocator)
+        inline static ServiceActivator CreateForType()
         {
             ServiceActivator result{};
-            result.m_Function = [pAllocator](IServiceProvider* pProvider, Memory::RefCountedObjectBase** ppResult) {
-                ResolveContext ctx{ pAllocator, pProvider };
+            result.m_Function = [](IServiceProvider* pProvider, Memory::RefCountedObjectBase** ppResult) {
+                ResolveContext ctx{ std::pmr::get_default_resource(), pProvider };
 
                 FE_CORE_ASSERT(ppResult, "ppResult was null");
                 *ppResult = ctx.CreateService<T>();

@@ -79,7 +79,7 @@ namespace FE::DI
 template<>
 struct eastl::hash<FE::DI::ServiceRegistration>
 {
-    inline uint64_t operator()(FE::DI::ServiceRegistration value)
+    inline uint64_t operator()(FE::DI::ServiceRegistration value) const
     {
         return FE::DefaultHash(&value, sizeof(value));
     }
