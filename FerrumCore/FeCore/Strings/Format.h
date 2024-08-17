@@ -68,6 +68,16 @@ namespace FE::Fmt
     };
 
     template<>
+    struct ValueFormatter<Env::Name> : BasicValueFormatter<Env::Name>
+    {
+        void Format(String& buffer, const Env::Name& name) const override
+        {
+            const Env::Name::Record* pRecord = name.GetRecord();
+            buffer.Append(pRecord->Data, pRecord->Size);
+        }
+    };
+
+    template<>
     struct ValueFormatter<std::string> : BasicValueFormatter<std::string>
     {
         void Format(String& buffer, const std::string& value) const override
@@ -91,7 +101,7 @@ namespace FE::Fmt
         void Format(String& buffer, const UUID& value) const override
         {
             static char digits[] = "0123456789ABCDEF";
-            int32_t idx            = 0;
+            int32_t idx = 0;
             buffer.Reserve(buffer.Size() + 36);
             auto append = [&](uint32_t n) {
                 for (uint32_t i = 0; i < n; ++i)
@@ -129,7 +139,7 @@ namespace FE::Fmt
 
             inline FormatArg(void* value, IValueFormatter* formatter) noexcept
             {
-                Value     = value;
+                Value = value;
                 Formatter = formatter;
             }
 
@@ -145,7 +155,7 @@ namespace FE::Fmt
                 Formatter->Format(str, Value);
             }
 
-            void* Value                = nullptr;
+            void* Value = nullptr;
             IValueFormatter* Formatter = nullptr;
         };
 
@@ -167,7 +177,7 @@ namespace FE::Fmt
         void FormatImpl(String& str, StringSlice fmt, FormatArgs<ArgsCount>& args)
         {
             size_t argIndex = 0;
-            auto begin      = fmt.begin();
+            auto begin = fmt.begin();
             for (auto it = fmt.begin(); it != fmt.end(); ++it)
             {
                 if (*it == '{')

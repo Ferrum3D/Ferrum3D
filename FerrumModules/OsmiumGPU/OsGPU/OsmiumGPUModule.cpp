@@ -5,49 +5,36 @@ namespace FE::Osmium
 {
     class OsmiumGPUModuleImpl final : public ServiceLocatorImplBase<OsmiumGPUModule>
     {
-        OsmiumGPUModuleDesc m_Desc;
-
     public:
         FE_RTTI_Class(OsmiumGPUModuleImpl, "CB3A80B7-EED3-4FBF-8694-1ED61246234A");
 
-        OsmiumGPUModuleImpl();
+        OsmiumGPUModuleImpl()
+        {
+            ModuleBase::Initialize();
+        }
+
         ~OsmiumGPUModuleImpl() override = default;
 
-        inline void RegisterServices(DI::ServiceRegistryBuilder) override {}
-
-        inline void Initialize(const OsmiumGPUModuleDesc& desc) override
+        inline void RegisterServices(DI::ServiceRegistryBuilder builder) override
         {
-            FrameworkBase::Initialize();
-            m_Desc = desc;
+            DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
+            Env::Configuration* pConfig = pServiceProvider->ResolveRequired<Env::Configuration>();
+            const StringSlice apiName = pConfig->GetString("Graphics/Api", "Vulkan");
+            if (apiName == "Vulkan")
+            {
+                builder.Bind<IInstance>().To<VKInstance>().InSingletonScope();
+            }
+            else
+            {
+                FE_UNREACHABLE("Unknown graphics API:\"{}\"", apiName);
+            }
         }
-
-        [[nodiscard]] Rc<IInstance> CreateInstance() const override;
     };
 
-    OsmiumGPUModuleImpl::OsmiumGPUModuleImpl()
-    {
-        SetInfo(ModuleInfo("Osmium.GPU", "Osmium's hardware abstraction layer", "Ferrum3D"));
-    }
 
-    Rc<IInstance> OsmiumGPUModuleImpl::CreateInstance() const
+    extern "C" FE_DLL_EXPORT void CreateModuleInstance(Env::Internal::IEnvironment& environment, IModule** ppModule)
     {
-        InstanceDesc desc{};
-        desc.ApplicationName = m_Desc.ApplicationName;
-
-        switch (m_Desc.API)
-        {
-        case GraphicsAPI::Vulkan:
-            return static_cast<IInstance*>(Rc<VKInstance>::DefaultNew(desc));
-        default:
-            FE_UNREACHABLE("Invalid value: GraphicsAPI({})", static_cast<int32_t>(m_Desc.API));
-            break;
-        }
-        return {};
-    }
-
-    extern "C" FE_DLL_EXPORT OsmiumGPUModule* CreateModuleInstance(Env::Internal::IEnvironment* environment)
-    {
-        Env::AttachEnvironment(*environment);
-        return Rc<OsmiumGPUModuleImpl>::DefaultNew();
+        Env::AttachEnvironment(environment);
+        *ppModule = Memory::DefaultNew<OsmiumGPUModuleImpl>();
     }
 } // namespace FE::Osmium

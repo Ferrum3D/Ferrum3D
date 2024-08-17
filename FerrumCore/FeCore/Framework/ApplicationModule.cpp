@@ -1,39 +1,51 @@
-﻿#include "ApplicationFramework.h"
-#include <FeCore/Assets/AssetManager.h>
+﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
-#include <FeCore/Framework/ApplicationFramework.h>
+#include <FeCore/Framework/ApplicationModule.h>
+#include <FeCore/Modules/Configuration.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
 
 namespace FE
 {
-    void ApplicationFramework::Initialize(const ApplicationDesc& desc)
+    ApplicationModule::ApplicationModule()
     {
-        Desc = desc;
+        ZoneScoped;
+        std::pmr::memory_resource* pStaticLinearAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+        m_ModuleRegistry = Rc<ModuleRegistry>::New(pStaticLinearAllocator);
 
-        m_Logger = Rc<Debug::ConsoleLogger>::DefaultNew();
-        m_Logger->SetDebugLevel(desc.LogSeverity);
-        m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
-
-        m_AssetManager = Rc<Assets::AssetManager>::DefaultNew();
-        Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();
-        if (!Desc.AssetDirectory.Empty())
-        {
-            Rc assetRegistry = Rc<Assets::AssetRegistry>::DefaultNew();
-            assetRegistry->LoadAssetsFromFile(Desc.AssetDirectory / "FerrumAssetIndex");
-            assetProvider->AttachRegistry(assetRegistry);
-        }
-        m_AssetManager->AttachAssetProvider(assetProvider);
-
-        FrameworkBase::Initialize();
+        DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
+        RegisterServices(builder);
+        builder.Build();
     }
 
-    int32_t ApplicationFramework::RunMainLoop()
+
+    void ApplicationModule::Initialize()
+    {
+        ZoneScoped;
+        m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
+
+        Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();
+        if (!m_AssetDirectory.Empty())
+        {
+            Rc assetRegistry = Rc<Assets::AssetRegistry>::DefaultNew();
+            assetRegistry->LoadAssetsFromFile(m_AssetDirectory / "FerrumAssetIndex");
+            assetProvider->AttachRegistry(assetRegistry);
+        }
+
+        DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
+        Assets::IAssetManager* pAssetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
+        pAssetManager->AttachAssetProvider(assetProvider);
+    }
+
+    int32_t ApplicationModule::RunMainLoop()
     {
         FrameEventArgs frameEventArgs{};
         frameEventArgs.DeltaTime = 0.1f;
         frameEventArgs.FrameIndex = 0;
+
+        FrameMark;
 
         auto ts = std::chrono::high_resolution_clock::now();
         while (!ShouldStop())
@@ -61,31 +73,32 @@ namespace FE
             frameEventArgs.FrameIndex = ++m_FrameCounter;
 
             ts = std::chrono::high_resolution_clock::now();
+
+            FrameMark;
         }
 
         return m_ExitCode;
     }
 
 
-    void ApplicationFramework::RegisterServices(DI::ServiceRegistryBuilder builder)
+    void ApplicationModule::RegisterServices(DI::ServiceRegistryBuilder builder)
     {
+        ZoneScoped;
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
+        builder.Bind<Env::Configuration>().ToSelf().InSingletonScope();
+        builder.Bind<Debug::IConsoleLogger>().To<Debug::ConsoleLogger>().InSingletonScope();
+        builder.Bind<Assets::IAssetManager>().To<Assets::AssetManager>().InSingletonScope();
     }
 
 
-    bool ApplicationFramework::ShouldStop()
+    bool ApplicationModule::ShouldStop()
     {
         return CloseEventReceived() || m_StopRequested;
     }
 
-    void ApplicationFramework::Stop(int32_t exitCode)
+    void ApplicationModule::Stop(int32_t exitCode)
     {
         m_ExitCode = exitCode;
         m_StopRequested = true;
-    }
-
-    ApplicationFramework::~ApplicationFramework()
-    {
-        FrameworkBase::UnloadDependencies();
     }
 } // namespace FE

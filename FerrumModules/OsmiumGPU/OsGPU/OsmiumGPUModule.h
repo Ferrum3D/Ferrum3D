@@ -1,31 +1,16 @@
 ﻿#pragma once
-#include <FeCore/Framework/ModuleFramework.h>
+#include <FeCore/Framework/ModuleBase.h>
 #include <OsGPU/Instance/IInstance.h>
 
 namespace FE::Osmium
 {
-    struct OsmiumGPUModuleDesc
-    {
-        const char* ApplicationName = nullptr;
-        GraphicsAPI API = GraphicsAPI::Vulkan;
-
-        inline OsmiumGPUModuleDesc() = default;
-
-        inline OsmiumGPUModuleDesc(const char* applicationName, GraphicsAPI api)
-            : ApplicationName(applicationName)
-            , API(api)
-        {
-        }
-    };
-
-    class OsmiumGPUModule : public ModuleFramework<OsmiumGPUModule>
+    class OsmiumGPUModule : public ModuleBase
     {
     public:
         ~OsmiumGPUModule() override = default;
 
-        inline static constexpr const char* LibraryPath = "OsGPU";
+        FE_RTTI_Class(OsmiumGPUModule, "A47C6079-CFF3-4653-80DA-9146664D1800");
 
-        virtual void Initialize(const OsmiumGPUModuleDesc& desc) = 0;
-        [[nodiscard]] virtual Rc<IInstance> CreateInstance() const = 0;
+        inline static constexpr const char* LibraryPath = "OsGPU";
     };
 } // namespace FE::Osmium

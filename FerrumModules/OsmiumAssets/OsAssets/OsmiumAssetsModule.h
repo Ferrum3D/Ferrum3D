@@ -1,25 +1,18 @@
 ﻿#pragma once
-#include <FeCore/Framework/ModuleFramework.h>
+#include <FeCore/Framework/ModuleBase.h>
 #include <OsAssets/Images/ImageAssetStorage.h>
 #include <OsAssets/Meshes/MeshAssetStorage.h>
 #include <OsAssets/Shaders/ShaderAssetStorage.h>
 
 namespace FE::Osmium
 {
-    struct OsmiumAssetsModuleDesc
+    class OsmiumAssetsModule : public ModuleBase
     {
-    };
-
-    class OsmiumAssetsModule : public ModuleFramework<OsmiumAssetsModule>
-    {
-    protected:
-        void GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& dependencies) override;
-
     public:
         ~OsmiumAssetsModule() override = default;
 
-        inline static constexpr const char* LibraryPath = "OsAssets";
+        FE_RTTI_Class(OsmiumAssetsModule, "1746E16A-F5EF-4AD0-A91D-541CA8D5F2E8");
 
-        virtual void Initialize(const OsmiumAssetsModuleDesc& desc) = 0;
+        inline static constexpr const char* LibraryPath = "OsAssets";
     };
 } // namespace FE::Osmium

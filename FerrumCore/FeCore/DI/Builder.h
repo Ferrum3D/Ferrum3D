@@ -17,7 +17,7 @@ namespace FE::DI
         };
 
 
-        class RegistryToBuilder final
+        class [[nodiscard]] RegistryToBuilder final
         {
             template<class TInterface>
             friend class RegistryBindBuilder;
@@ -52,7 +52,7 @@ namespace FE::DI
         };
 
         template<class TInterface>
-        class RegistryBindBuilder final
+        class [[nodiscard]] RegistryBindBuilder final
         {
             static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TInterface>);
 
@@ -115,8 +115,8 @@ namespace FE::DI
 
         void Build();
 
-        template<class TInterface>
-        [[nodiscard]] inline Internal::RegistryBindBuilder<TInterface> Bind()
+        template<class TInterface, class = std::enable_if_t<!std::is_base_of_v<ServiceLocatorObjectMarker, TInterface>>>
+        inline Internal::RegistryBindBuilder<TInterface> Bind()
         {
             return BindImpl(fe_typeid<TInterface>());
         }

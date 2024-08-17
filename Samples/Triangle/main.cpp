@@ -1,5 +1,5 @@
 #include <FeCore/Containers/ByteBuffer.h>
-#include <FeCore/Framework/ApplicationFramework.h>
+#include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Modules/DynamicLibrary.h>
@@ -16,7 +16,7 @@ namespace HAL = FE::Osmium;
 
 inline constexpr const char* ExampleName = "Ferrum3D - Triangle";
 
-class TestApplication final : public FE::ApplicationFramework
+class TestApplication final : public FE::ApplicationModule
 {
     FE::Rc<HAL::IInstance> m_Instance;
     FE::Rc<HAL::IAdapter> m_Adapter;
@@ -73,7 +73,7 @@ protected:
         m_SwapChain->Present();
     }
 
-    void GetFrameworkDependencies(FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
+    void GetFrameworkDependencies(FE::List<FE::Rc<FE::IModuleFactory>>& dependencies) override
     {
         dependencies.Push(HAL::OsmiumGPUModule::CreateFactory());
     }
@@ -88,7 +88,7 @@ public:
 
     void Initialize(const FE::ApplicationDesc& desc) override
     {
-        ApplicationFramework::Initialize(desc);
+        ApplicationModule::Initialize(desc);
         auto module = FE::ServiceLocator<HAL::OsmiumGPUModule>::Get();
         module->Initialize(HAL::OsmiumGPUModuleDesc(ExampleName, HAL::GraphicsAPI::Vulkan));
 

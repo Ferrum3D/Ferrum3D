@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <FeCore/Modules/Configuration.h>
 #include <OsGPU/Common/VKConfig.h>
 #include <OsGPU/Instance/IInstance.h>
 
@@ -10,11 +11,12 @@ namespace FE::Osmium
         VkDebugReportCallbackEXT m_Debug;
 
         eastl::vector<Rc<IAdapter>> m_Adapters;
+        Rc<Debug::IConsoleLogger> m_pLogger;
 
     public:
         FE_RTTI_Class(VKInstance, "4247535C-3E97-42E7-A869-1DC542AFBF25");
 
-        explicit VKInstance(const InstanceDesc& desc);
+        VKInstance(Env::Configuration* pConfig, Debug::IConsoleLogger* pLogger);
         ~VKInstance() override;
 
         VkInstance GetNativeInstance();

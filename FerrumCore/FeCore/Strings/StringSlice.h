@@ -502,6 +502,11 @@ namespace FE
             return UUID(Data());
         }
 
+        [[nodiscard]] inline explicit operator Env::Name() const noexcept
+        {
+            return Env::Name{ Data(), static_cast<uint32_t>(Size()) };
+        }
+
         [[nodiscard]] inline Iterator begin() const noexcept
         {
             return Iterator(Data());
@@ -542,6 +547,13 @@ namespace FE
     {
         return lhs.Size() == rhs.Size() && lhs.Compare(rhs) >= 0;
     }
+
+
+    [[nodiscard]] inline uint64_t DefaultHash(StringSlice str) noexcept
+    {
+        return DefaultHash(str.Data(), str.Size());
+    }
+
 
     template<>
     struct ValueParser<UUID> : std::true_type

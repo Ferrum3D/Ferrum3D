@@ -1,4 +1,4 @@
-set(SRC
+﻿set(SRC
     # FERRUM_SORT_LINES BEGIN
     OsAssets/OsmiumAssets.h
     OsAssets/OsmiumAssetsModule.cpp
@@ -32,9 +32,7 @@ fe_configure_target(OsAssets)
 target_include_directories(OsAssets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set_target_properties(OsAssets PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsAssets FeCore stb assimp)
+target_link_libraries(OsAssets FeCore stb assimp TracyClient)
 
 get_property("TARGET_SOURCE_FILES" TARGET OsAssets PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
-
-add_subdirectory(Bindings)

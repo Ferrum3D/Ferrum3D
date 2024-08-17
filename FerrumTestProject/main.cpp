@@ -17,7 +17,7 @@
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/Framework/ApplicationFramework.h>
+#include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/IO/StdoutStream.h>
 #include <FeCore/Jobs/JobScheduler.h>
@@ -55,7 +55,7 @@ protected:
 
 namespace HAL = FE::Osmium;
 
-class TestApplication final : public FE::ApplicationFramework
+class TestApplication final : public FE::ApplicationModule
 {
     FE::Rc<HAL::IInstance> m_Instance;
     FE::Rc<HAL::IAdapter> m_Adapter;
@@ -124,7 +124,7 @@ protected:
         }
     }
 
-    void GetFrameworkDependencies(FE::List<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
+    void GetFrameworkDependencies(FE::List<FE::Rc<FE::IModuleFactory>>& dependencies) override
     {
         dependencies.Push(HAL::OsmiumGPUModule::CreateFactory());
     }
@@ -139,7 +139,7 @@ public:
 
     void Initialize(const FE::ApplicationDesc& desc) override
     {
-        ApplicationFramework::Initialize(desc);
+        ApplicationModule::Initialize(desc);
         auto module = FE::ServiceLocator<HAL::OsmiumGPUModule>::Get();
         module->Initialize(HAL::OsmiumGPUModuleDesc("Ferrum3D - Test", HAL::GraphicsAPI::Vulkan));
 

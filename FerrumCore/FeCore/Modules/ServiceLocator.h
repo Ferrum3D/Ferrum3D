@@ -90,12 +90,18 @@ namespace FE
     template<class T>
     std::shared_mutex ServiceLocator<T>::m_Mutex;
 
+    struct ServiceLocatorObjectMarker
+    {
+    };
+
     //! \brief Helper class that registers and unregisters instance in ServiceLocator.
     //!
     //! \tparam TBase - The base class to derive.
     //! \tparam TInterface - The interface to register in ServiceLocator.
     template<class TBase, class TInterface = TBase>
-    struct ServiceLocatorImplBase : public TBase
+    struct ServiceLocatorImplBase
+        : public TBase
+        , public ServiceLocatorObjectMarker
     {
         FE_RTTI_Class(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 

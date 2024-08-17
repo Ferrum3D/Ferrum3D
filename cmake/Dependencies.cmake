@@ -1,5 +1,6 @@
 ﻿include(ThirdParty/get_cpm)
 include(ThirdParty/eastl)
+include(ThirdParty/small_vector)
 include(ThirdParty/unordered_dense)
 include(ThirdParty/context)
 include(ThirdParty/tracy)

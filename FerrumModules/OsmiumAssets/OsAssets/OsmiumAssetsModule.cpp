@@ -6,47 +6,40 @@
 
 namespace FE::Osmium
 {
-    void OsmiumAssetsModule::GetFrameworkDependencies(eastl::vector<Rc<IFrameworkFactory>>& /* dependencies */) {}
-
     class OsmiumAssetsModuleImpl : public ServiceLocatorImplBase<OsmiumAssetsModule>
     {
-        OsmiumAssetsModuleDesc m_Desc;
+        Rc<Assets::IAssetManager> m_pAssetManager;
 
     public:
         FE_RTTI_Class(OsmiumAssetsModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
 
-        OsmiumAssetsModuleImpl();
+        OsmiumAssetsModuleImpl()
+        {
+            // TODO:
+            //   Maybe register multiple instances for a single IAssetLoader interface.
+            //   The loaders will automatically unregister when the module detaches.
+            DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
+            m_pAssetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
+            m_pAssetManager->RegisterAssetLoader(Rc<ImageAssetLoader>::DefaultNew());
+            m_pAssetManager->RegisterAssetLoader(Rc<MeshAssetLoader>::DefaultNew());
+            m_pAssetManager->RegisterAssetLoader(Rc<ShaderAssetLoader>::DefaultNew());
+
+            ModuleBase::Initialize();
+        }
 
         inline ~OsmiumAssetsModuleImpl() override
         {
-            auto* manager = ServiceLocator<Assets::IAssetManager>::Get();
-            manager->RemoveAssetLoader(ImageAssetLoader::AssetType);
-            manager->RemoveAssetLoader(MeshAssetLoader::AssetType);
-            manager->RemoveAssetLoader(ShaderAssetLoader::AssetType);
+            m_pAssetManager->RemoveAssetLoader(ImageAssetLoader::AssetType);
+            m_pAssetManager->RemoveAssetLoader(MeshAssetLoader::AssetType);
+            m_pAssetManager->RemoveAssetLoader(ShaderAssetLoader::AssetType);
         }
 
         inline void RegisterServices(DI::ServiceRegistryBuilder) override {}
-
-        inline void Initialize(const OsmiumAssetsModuleDesc& desc) override
-        {
-            FrameworkBase::Initialize();
-            m_Desc = desc;
-
-            auto* manager = ServiceLocator<Assets::IAssetManager>::Get();
-            manager->RegisterAssetLoader(Rc<ImageAssetLoader>::DefaultNew());
-            manager->RegisterAssetLoader(Rc<MeshAssetLoader>::DefaultNew());
-            manager->RegisterAssetLoader(Rc<ShaderAssetLoader>::DefaultNew());
-        }
     };
 
-    OsmiumAssetsModuleImpl::OsmiumAssetsModuleImpl()
+    extern "C" FE_DLL_EXPORT void CreateModuleInstance(Env::Internal::IEnvironment& environment, IModule** ppModule)
     {
-        SetInfo(ModuleInfo("Osmium.Assets", "Osmium's asset loading module", "Ferrum3D"));
-    }
-
-    extern "C" FE_DLL_EXPORT OsmiumAssetsModule* CreateModuleInstance(Env::Internal::IEnvironment* environment)
-    {
-        Env::AttachEnvironment(*environment);
-        return Rc{ Rc<OsmiumAssetsModuleImpl>::DefaultNew() }.Detach();
+        Env::AttachEnvironment(environment);
+        *ppModule = Memory::DefaultNew<OsmiumAssetsModuleImpl>();
     }
 } // namespace FE::Osmium

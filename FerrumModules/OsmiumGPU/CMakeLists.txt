@@ -1,4 +1,4 @@
-set(SRC
+﻿set(SRC
     # FERRUM_SORT_LINES BEGIN
     OsGPU/OsmiumGPU.h
     OsGPU/OsmiumGPUModule.cpp
@@ -62,7 +62,6 @@ set(SRC
     OsGPU/ImageView/VKImageView.cpp
     OsGPU/ImageView/VKImageView.h
 
-    OsGPU/Instance/IInstance.cpp
     OsGPU/Instance/IInstance.h
     OsGPU/Instance/VKInstance.cpp
     OsGPU/Instance/VKInstance.h
@@ -128,9 +127,7 @@ fe_configure_target(OsGPU)
 target_include_directories(OsGPU PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set_target_properties(OsGPU PROPERTIES FOLDER "Modules/Osmium")
-target_link_libraries(OsGPU volk glfw dxc FeCore spirv-cross-core spirv-cross-hlsl)
+target_link_libraries(OsGPU volk glfw dxc FeCore spirv-cross-core spirv-cross-hlsl TracyClient)
 
 get_property("TARGET_SOURCE_FILES" TARGET OsGPU PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
-
-add_subdirectory(Bindings)

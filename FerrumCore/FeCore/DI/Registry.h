@@ -12,7 +12,7 @@ namespace FE::DI
 {
     class ServiceRegistry;
 
-    struct ServiceRegistryCallback : festd::intrusive_list_node
+    struct ServiceRegistryCallback
     {
         virtual void OnDetach(ServiceRegistry* pRegistry) = 0;
     };
@@ -28,7 +28,7 @@ namespace FE::DI
         SegmentedVector<UUID, 1024> m_IDs = nullptr;
         SegmentedVector<ServiceActivator> m_Activators = nullptr;
         festd::pmr::vector<ServiceRegistration> m_Registrations;
-        festd::intrusive_list<ServiceRegistryCallback> m_Callbacks;
+        festd::pmr::vector<ServiceRegistryCallback*> m_Callbacks;
         LifetimeScope* m_pRootLifetimeScope = nullptr;
         SpinLock m_CallbackListLock;
 
@@ -37,20 +37,21 @@ namespace FE::DI
             : m_IDs(pAllocator)
             , m_Activators(pAllocator)
             , m_Registrations(pAllocator)
+            , m_Callbacks(pAllocator)
         {
         }
 
-        inline void RegisterCallback(ServiceRegistryCallback& callback)
+        inline void RegisterCallback(ServiceRegistryCallback* pCallback)
         {
             std::lock_guard lk{ m_CallbackListLock };
-            m_Callbacks.push_back(callback);
+            m_Callbacks.push_back(pCallback);
         }
 
         inline ~ServiceRegistry() override
         {
-            for (ServiceRegistryCallback& callback : m_Callbacks)
+            for (ServiceRegistryCallback* pCallback : m_Callbacks)
             {
-                callback.OnDetach(this);
+                pCallback->OnDetach(this);
             }
 
             for (const ServiceRegistration& registration : m_Registrations)
@@ -109,6 +110,11 @@ namespace FE::DI
         {
             return &m_Activators[index];
         }
+
+        [[nodiscard]] inline bool Empty() const
+        {
+            return m_Registrations.empty();
+        }
     };
 
 
@@ -160,10 +166,11 @@ namespace FE::DI
 
         inline void Initialize()
         {
+            ZoneScoped;
             std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
             m_pRoot = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_Registries.push_back(*m_pRoot);
-            m_pRoot->RegisterCallback(m_RegistryCallback);
+            m_pRoot->RegisterCallback(&m_RegistryCallback);
         }
 
         inline ~ServiceRegistryRoot()
@@ -186,10 +193,11 @@ namespace FE::DI
 
         inline ServiceRegistry* Create()
         {
+            ZoneScoped;
             std::unique_lock lk{ m_Lock };
             ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
             m_Registries.push_back(*pResult);
-            pResult->RegisterCallback(m_RegistryCallback);
+            pResult->RegisterCallback(&m_RegistryCallback);
             return pResult;
         }
     };

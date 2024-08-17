@@ -141,9 +141,8 @@ namespace FE
 
 
     template<class TTo, class TFrom>
-    inline std::enable_if_t<
-        std::is_default_constructible_v<TTo> && std::is_default_constructible_v<TFrom> && sizeof(TTo) == sizeof(TFrom), TTo>
-    bit_cast(const TFrom& value)
+    inline std::enable_if_t<std::is_default_constructible_v<TTo> && sizeof(TTo) == sizeof(TFrom), TTo> bit_cast(
+        const TFrom& value)
     {
         TTo result;
         memcpy(&result, &value, sizeof(TTo));
@@ -169,6 +168,11 @@ namespace FE
             Value = TInvalidValue;
         }
 
+        inline bool IsValid() const noexcept
+        {
+            return Value != TInvalidValue;
+        }
+
         inline explicit operator TValue() const noexcept
         {
             return Value;
@@ -176,7 +180,7 @@ namespace FE
 
         inline explicit operator bool() const noexcept
         {
-            return Value != TInvalidValue;
+            return IsValid();
         }
 
         inline friend bool operator==(const TypedHandle& lhs, const TypedHandle& rhs)
@@ -201,10 +205,15 @@ namespace FE
             EASTLPolymorphicAllocator(std::pmr::memory_resource* pMemoryResource = nullptr)
                 : m_pMemoryResource(pMemoryResource)
             {
+                if (m_pMemoryResource == nullptr)
+                    m_pMemoryResource = std::pmr::get_default_resource();
             }
+
             EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* pMemoryResource = nullptr)
                 : m_pMemoryResource(pMemoryResource)
             {
+                if (m_pMemoryResource == nullptr)
+                    m_pMemoryResource = std::pmr::get_default_resource();
             }
 
             inline void* allocate(size_t n, int = 0)
@@ -265,6 +274,10 @@ namespace FE
         template<int32_t TByteSize, class TFunc>
         using fixed_function = eastl::fixed_function<TByteSize, TFunc>;
     } // namespace festd
+
+
+//! \brief Typed alloca() wrapper.
+#define FE_StackAlloc(type, arraySize) static_cast<type*>(alloca(sizeof(type) * arraySize))
 
 
     //! \brief Define std::hash<> for a type.

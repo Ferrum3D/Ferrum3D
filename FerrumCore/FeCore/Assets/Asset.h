@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/IAssetManager.h>
 #include <FeCore/Assets/WeakAsset.h>
 #include <FeCore/Modules/ServiceLocator.h>
@@ -99,9 +99,9 @@ namespace FE::Assets
         //! \brief Swap two asset holders.
         inline void Swap(Asset& other)
         {
-            auto* t         = other.m_Storage;
+            auto* t = other.m_Storage;
             other.m_Storage = m_Storage;
-            m_Storage       = t;
+            m_Storage = t;
         }
 
         //! \brief Create a weak asset holder from this.
@@ -115,9 +115,9 @@ namespace FE::Assets
         //! The function will block until the asset is loaded. It will call the manager's LoadAsset function.
         //!
         //! \see IAssetManager::LoadAsset
-        inline void LoadSync()
+        inline void LoadSync(IAssetManager* pAssetManager)
         {
-            m_Storage = static_cast<T*>(ServiceLocator<IAssetManager>::Get()->LoadAsset(m_ID));
+            m_Storage = static_cast<T*>(pAssetManager->LoadAsset(m_ID));
         }
 
         inline T& operator*()

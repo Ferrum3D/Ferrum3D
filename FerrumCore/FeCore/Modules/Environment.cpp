@@ -138,6 +138,20 @@ namespace FE::Env
 
         class Environment : public IEnvironment
         {
+            struct ProfilerInitScope
+            {
+                inline ProfilerInitScope()
+                {
+                    tracy::StartupProfiler();
+                }
+
+                inline ~ProfilerInitScope()
+                {
+                    tracy::ShutdownProfiler();
+                }
+            };
+
+            ProfilerInitScope m_ProfilerInitScope;
             festd::unordered_dense_map<Name, void*> m_Map;
             Mutex m_Lock;
 
@@ -161,13 +175,14 @@ namespace FE::Env
             DefaultMemoryResource DefaultMemoryResource;
             VirtualMemoryResource VirtualMemoryResource;
             Memory::LockedMemoryResource<Memory::LinearAllocator, SpinLock> LinearMemoryResource;
-            Memory::PoolAllocator ThreadDataPool{ "NativeThreadData", sizeof(NativeThreadData), 64 * 1024 };
+            Memory::PoolAllocator ThreadDataPool;
 
             NameDataAllocator NameDataAllocator;
             DI::Container DIContainer;
 
             inline Environment()
-                : LinearMemoryResource(256 * 1024, &VirtualMemoryResource)
+                : LinearMemoryResource(2 * 1024 * 1024, &VirtualMemoryResource)
+                , ThreadDataPool("NativeThreadData", sizeof(NativeThreadData), 64 * 1024)
             {
                 std::pmr::set_default_resource(&DefaultMemoryResource);
 
@@ -308,6 +323,25 @@ namespace FE::Env
         pRecord->Size = static_cast<uint16_t>(str.size());
         pRecord->Hash = hash;
         memcpy(pRecord->Data, str.data(), str.size());
+    }
+
+
+    bool Name::TryGetExisting(std::string_view str, Name& result)
+    {
+        auto& nameAllocator = Internal::g_EnvInstance->NameDataAllocator;
+        const uint64_t hash = DefaultHash(str);
+        result.m_Handle = nameAllocator.TryFind(hash);
+        if (result.Valid())
+        {
+            if (IsDebugBuild)
+            {
+                FE_CORE_ASSERT(str == result.GetRecord()->Data, "Env::Name collision");
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
 

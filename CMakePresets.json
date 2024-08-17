@@ -1,4 +1,4 @@
-{
+﻿{
   "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
@@ -9,7 +9,6 @@
     {
       "name": "default-base",
       "hidden": true,
-      "generator": "Ninja",
       "binaryDir": "${sourceDir}/cmake-build/${presetName}",
       "cacheVariables": {
         "FE_USE_SSE41": "ON",
@@ -20,6 +19,7 @@
       "name": "windows-base",
       "inherits": "default-base",
       "hidden": true,
+      "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "external"
@@ -36,6 +36,7 @@
       "name": "linux-base",
       "inherits": "default-base",
       "hidden": true,
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_ASM_NASM_COMPILER": "nasm",
         "CMAKE_MAKE_PROGRAM": "ninja",

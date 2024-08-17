@@ -22,6 +22,7 @@ namespace FE::Osmium
         , m_Desc(desc)
         , m_Queue(fe_assert_cast<VKCommandQueue*>(desc.Queue))
     {
+        ZoneScoped;
         auto& instance = *fe_assert_cast<VKInstance*>(&m_Device->GetInstance());
 
         BuildNativeSwapChain(instance);
@@ -209,6 +210,7 @@ namespace FE::Osmium
 
     void VKSwapChain::Present()
     {
+        ZoneScoped;
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
