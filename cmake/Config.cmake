@@ -35,6 +35,9 @@ if (FE_USE_SSE41)
     add_compile_definitions(FE_SSE41_SUPPORTED=1)
 endif()
 
+add_compile_definitions(TRACY_DELAYED_INIT)
+add_compile_definitions(TRACY_MANUAL_LIFETIME)
+
 function(fe_enable_sse_for_target SSE_TARGET)
     if (FE_USE_SSE41 AND NOT FE_COMPILER_MSVC)
         target_compile_options(${SSE_TARGET} PUBLIC -msse4.1)

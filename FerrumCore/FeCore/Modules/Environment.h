@@ -56,6 +56,8 @@ namespace FE::Env
         {
         }
 
+        static bool TryGetExisting(std::string_view str, Name& result);
+
         const Record* GetRecord() const;
 
         inline bool Valid() const

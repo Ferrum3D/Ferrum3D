@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Console/ConsoleLogger.h>
 
 namespace FE
 {
     //! brief Log a message using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_MESSAGE(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogMessage(__VA_ARGS__)
+#define FE_LOG_MESSAGE(...) Env::GetServiceProvider()->ResolveRequired<::FE::Debug::IConsoleLogger>()->LogMessage(__VA_ARGS__)
 
     //! \brief Log an error using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_ERROR(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogError(__VA_ARGS__)
+#define FE_LOG_ERROR(...) Env::GetServiceProvider()->ResolveRequired<::FE::Debug::IConsoleLogger>()->LogError(__VA_ARGS__)
 
     //! \brief Log a warning using currently registered instance of FE::Debug::IConsoleLogger.
-#define FE_LOG_WARNING(...) ::FE::ServiceLocator<::FE::Debug::IConsoleLogger>::Get()->LogWarning(__VA_ARGS__)
+#define FE_LOG_WARNING(...) Env::GetServiceProvider()->ResolveRequired<::FE::Debug::IConsoleLogger>()->LogWarning(__VA_ARGS__)
 
     //! \brief Log an error and break the attached debugger if an expression was false. Will crash in release builds.
 #define FE_ASSERT(expr)                                                                                                          \

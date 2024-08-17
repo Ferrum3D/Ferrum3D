@@ -37,6 +37,7 @@
     FeCore/Containers/HashTables.h
     FeCore/Containers/LRUCacheMap.h
     FeCore/Containers/SegmentedVector.h
+    FeCore/Containers/SmallVector.h
     FeCore/Containers/SparseSet.h
     FeCore/Containers/SparseStorage.h
 
@@ -72,12 +73,11 @@
     FeCore/EventBus/EventBus.h
     FeCore/EventBus/FrameEvents.h
 
-    FeCore/Framework/ApplicationFramework.cpp
-    FeCore/Framework/ApplicationFramework.h
-    FeCore/Framework/FrameworkBase.cpp
-    FeCore/Framework/FrameworkBase.h
-    FeCore/Framework/IFramework.h
-    FeCore/Framework/ModuleFramework.h
+    FeCore/Framework/ApplicationModule.cpp
+    FeCore/Framework/ApplicationModule.h
+    FeCore/Framework/ModuleBase.cpp
+    FeCore/Framework/ModuleBase.h
+    FeCore/Framework/IModule.h
 
     FeCore/IO/BaseIO.cpp
     FeCore/IO/BaseIO.h
@@ -118,11 +118,12 @@
     FeCore/Memory/PoolAllocator.cpp
     FeCore/Memory/RefCount.h
 
-    FeCore/Modules/DynamicLibrary.cpp
-    FeCore/Modules/DynamicLibrary.h
-    FeCore/Modules/Environment.cpp
+    FeCore/Modules/Configuration.h
     FeCore/Modules/Environment.h
+    FeCore/Modules/Environment.cpp
     FeCore/Modules/EnvironmentPrivate.h
+    FeCore/Modules/LibraryLoader.h
+    FeCore/Modules/LibraryLoader.cpp
     FeCore/Modules/ServiceLocator.h
 
     FeCore/Parallel/AtomicFlags.h
@@ -180,7 +181,7 @@ fe_enable_sse_for_target(FeCore)
 target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
-target_link_libraries(FeCore fcontext mimalloc EASTL unordered_dense TracyClient)
+target_link_libraries(FeCore fcontext mimalloc EASTL unordered_dense small_vector TracyClient)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

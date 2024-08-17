@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Modules/DynamicLibrary.h>
+#include <FeCore/Modules/LibraryLoader.h>
 #include <OsGPU/Shader/IShaderCompiler.h>
 
 #include <dxc/DxilContainer/DxilContainer.h>
@@ -10,7 +10,7 @@ namespace FE::Osmium
 {
     class ShaderCompilerDXC : public IShaderCompiler
     {
-        DynamicLibrary m_Module;
+        LibraryLoader m_Module;
         GraphicsAPI m_API;
 
     public:

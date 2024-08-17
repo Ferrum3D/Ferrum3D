@@ -53,7 +53,8 @@ namespace FE::Osmium
         FE_LOG_MESSAGE("Vulkan instance was destroyed");
     }
 
-    VKInstance::VKInstance(const InstanceDesc& desc)
+    VKInstance::VKInstance(Env::Configuration* pConfig, Debug::IConsoleLogger* pLogger)
+        : m_pLogger(pLogger)
     {
         volkInitialize();
         uint32_t layerCount;
@@ -86,7 +87,7 @@ namespace FE::Osmium
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.apiVersion = VK_API_VERSION_1_2;
         appInfo.pEngineName = "Ferrum3D";
-        appInfo.pApplicationName = desc.ApplicationName;
+        appInfo.pApplicationName = pConfig->GetName("ApplicationName", {}).c_str();
 
         VkInstanceCreateInfo instanceCI{};
         instanceCI.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -106,10 +107,10 @@ namespace FE::Osmium
         debugCI.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
         debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
         debugCI.pfnCallback = &DebugReportCallback;
-        debugCI.pUserData = FE::ServiceLocator<FE::Debug::IConsoleLogger>::Get();
+        debugCI.pUserData = m_pLogger.Get();
         vkCreateDebugReportCallbackEXT(m_Instance, &debugCI, VK_NULL_HANDLE, &m_Debug);
 #endif
-        FE_LOG_MESSAGE("Vulkan instance created successfully");
+        m_pLogger->LogMessage("Vulkan instance created successfully");
 
         uint32_t adapterCount;
         vkEnumeratePhysicalDevices(m_Instance, &adapterCount, nullptr);
@@ -119,7 +120,7 @@ namespace FE::Osmium
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(vkAdapter, &props);
-            FE_LOG_MESSAGE("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
+            m_pLogger->LogMessage("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
             m_Adapters.push_back(Rc<VKAdapter>::DefaultNew(*this, vkAdapter));
         }
     }

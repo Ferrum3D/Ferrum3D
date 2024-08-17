@@ -34,7 +34,7 @@ namespace FE::DI
                 ? Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear)
                 : std::pmr::get_default_resource();
             pLifetimeScope = Memory::DefaultNew<LifetimeScope>(pAllocator, pRegistry, this);
-            pRegistry->RegisterCallback(m_RegistryCallback);
+            pRegistry->RegisterCallback(&m_RegistryCallback);
         }
 
         return pLifetimeScope->Resolve(registration, ppResult);

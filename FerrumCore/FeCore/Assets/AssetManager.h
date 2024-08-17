@@ -5,7 +5,7 @@
 
 namespace FE::Assets
 {
-    class AssetManager : public ServiceLocatorImplBase<IAssetManager>
+    class AssetManager : public IAssetManager
     {
         festd::unordered_dense_map<AssetType, Rc<IAssetLoader>> m_Loaders;
         Rc<IAssetProvider> m_Provider;

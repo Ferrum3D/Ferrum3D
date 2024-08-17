@@ -80,7 +80,7 @@ namespace FE::Osmium
     ShaderCompilerDXC::ShaderCompilerDXC(GraphicsAPI api)
         : m_API(api)
     {
-        m_Module.LoadFrom("dxcompiler");
+        m_Module.Load("dxcompiler");
     }
 
     ByteBuffer ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
@@ -89,7 +89,7 @@ namespace FE::Osmium
         const std::pmr::wstring shaderName(sepIter + 1, args.FullPath.end());
         const std::pmr::wstring baseDirectory(args.FullPath.begin(), sepIter);
 
-        auto createInstance = m_Module.GetFunction<DxcCreateInstanceProc>("DxcCreateInstance");
+        auto createInstance = m_Module.FindFunction<DxcCreateInstanceProc>("DxcCreateInstance");
 
         CComPtr<IDxcLibrary> library;
         HRESULT result = createInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));

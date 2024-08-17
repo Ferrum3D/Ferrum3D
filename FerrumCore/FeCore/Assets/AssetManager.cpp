@@ -1,4 +1,4 @@
-#include <FeCore/Assets/AssetManager.h>
+﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Assets/IAssetProvider.h>
 
@@ -21,9 +21,9 @@ namespace FE::Assets
 
     AssetStorage* AssetManager::LoadAsset(const AssetID& assetID)
     {
-        auto type     = m_Provider->GetAssetType(assetID);
-        auto stream   = m_Provider->CreateAssetLoadingStream(assetID);
-        auto loader   = m_Loaders[type].Get();
+        auto type = m_Provider->GetAssetType(assetID);
+        auto stream = m_Provider->CreateAssetLoadingStream(assetID);
+        auto loader = m_Loaders[type].Get();
         auto* storage = loader->CreateStorage();
         storage->AddStrongRef();
         loader->LoadAsset(storage, stream.Get());

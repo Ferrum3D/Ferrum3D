@@ -3,7 +3,7 @@
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ArraySlice.h>
-#include <FeCore/Framework/ApplicationFramework.h>
+#include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileStream.h>
 #include <FeCore/Memory/Memory.h>
 #include <OsAssets/OsmiumAssetsModule.h>
@@ -328,7 +328,7 @@ Supported commands:
     }
 } // namespace FE::Assets
 
-class CompilerApplication : public FE::ApplicationFramework
+class CompilerApplication : public FE::ApplicationModule
 {
     int m_Argc;
     char** m_Argv;
@@ -344,11 +344,11 @@ protected:
 private:
     inline void Tick(const FE::FrameEventArgs& frameEventArgs) override
     {
-        ApplicationFramework::Tick(frameEventArgs);
+        ApplicationModule::Tick(frameEventArgs);
         Stop(FE::Assets::RunCompiler(m_Argc, m_Argv));
     }
 
-    inline void GetFrameworkDependencies(eastl::vector<FE::Rc<FE::IFrameworkFactory>>& dependencies) override
+    inline void GetFrameworkDependencies(eastl::vector<FE::Rc<FE::IModuleFactory>>& dependencies) override
     {
         dependencies.push_back(FE::Osmium::OsmiumAssetsModule::CreateFactory());
     }
@@ -362,7 +362,7 @@ public:
 
     void Initialize(const FE::ApplicationDesc& desc) override
     {
-        ApplicationFramework::Initialize(desc);
+        ApplicationModule::Initialize(desc);
         auto assetsModule = FE::ServiceLocator<FE::Osmium::OsmiumAssetsModule>::Get();
         assetsModule->Initialize(FE::Osmium::OsmiumAssetsModuleDesc{});
     }

@@ -2,6 +2,7 @@
 #include <FeCore/Containers/HashTables.h>
 #include <FeCore/DI/LifetimeScope.h>
 #include <FeCore/DI/Registry.h>
+#include <FeCore/Parallel/Mutex.h>
 
 namespace FE::DI
 {
@@ -15,12 +16,14 @@ namespace FE::DI
                     reinterpret_cast<Container*>(reinterpret_cast<uintptr_t>(this) - offsetof(Container, m_RegistryCallback));
 
                 std::lock_guard lk{ pParent->m_Lock };
-                Memory::DefaultDelete(pRegistry->GetRootLifetimeScope());
+                LifetimeScope* pRootLifetimeScope = pRegistry->GetRootLifetimeScope();
+                if (pRootLifetimeScope)
+                    Memory::DefaultDelete(pRootLifetimeScope);
             }
         } m_RegistryCallback;
 
+        Mutex m_Lock;
         ServiceRegistryRoot m_RegistryRoot;
-        SpinLock m_Lock;
 
     public:
         inline ServiceRegistryRoot* GetRegistryRoot()

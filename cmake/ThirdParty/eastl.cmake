@@ -4,13 +4,10 @@
     VERSION 3.21.12
     GIT_TAG 3.21.12
     DOWNLOAD_ONLY YES
-    GIT_SUBMODULES "test/packages/EABase"
     GIT_SUBMODULES_RECURSE FALSE
 )
 
-add_library(EASTL INTERFACE)
-target_include_directories(EASTL INTERFACE "${EASTL_SOURCE_DIR}/include")
-target_include_directories(EASTL INTERFACE "${EASTL_SOURCE_DIR}/test/packages/EABase/include/Common")
 
+add_definitions(-DEASTL_USER_CONFIG_HEADER=<${FE_PROJECT_ROOT}/FerrumCore/FeCore/Base/EASTLConfig.h>)
+add_subdirectory(${EASTL_SOURCE_DIR})
 set_target_properties(EASTL PROPERTIES FOLDER "ThirdParty")
-add_definitions(-DEASTL_USER_CONFIG_HEADER=<FeCore/Base/EASTLConfig.h>)
