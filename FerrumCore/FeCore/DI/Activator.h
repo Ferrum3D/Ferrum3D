@@ -71,21 +71,21 @@ namespace FE::DI
             }
 
             template<class T, class TArg1, class TArg2, class... TArgs>
-            inline std::enable_if_t<std::is_constructible_v<T, TArg1, TArg2, TArgs...>, T*> //
+            FE_FORCE_INLINE std::enable_if_t<std::is_constructible_v<T, TArg1, TArg2, TArgs...>, T*> //
             CreateServiceImpl(TArg1 a1, TArg2 a2, TArgs... args)
             {
                 return Rc<T>::New(pAllocator, a1, a2, args...);
             }
 
             template<class T, class TArg1, class TArg2, class... TArgs>
-            inline std::enable_if_t<!std::is_constructible_v<T, TArg1, TArg2, TArgs...>, T*> //
+            FE_FORCE_INLINE std::enable_if_t<!std::is_constructible_v<T, TArg1, TArg2, TArgs...>, T*> //
             CreateServiceImpl(TArg1, TArg2 a2, TArgs... args)
             {
                 return CreateServiceImpl<T>(a2, args...);
             }
 
             template<class T>
-            inline T* CreateService()
+            FE_FORCE_INLINE T* CreateService()
             {
                 return CreateServiceImpl<T>(ArgResolver(this),
                                             ArgResolver(this),

@@ -27,9 +27,18 @@ namespace FE
             RefCountedObjectBase(RefCountedObjectBase&&) = delete;
             RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
 
+        protected:
             std::atomic<uint32_t> m_RefCount = 0;
             uint32_t m_AllocationSize = 0;
             std::pmr::memory_resource* m_pAllocator = nullptr;
+
+            inline virtual void DoRelease()
+            {
+                std::pmr::memory_resource* pAllocator = m_pAllocator;
+                const size_t allocationSize = m_AllocationSize;
+                this->~RefCountedObjectBase();
+                pAllocator->deallocate(this, allocationSize);
+            }
 
         public:
             FE_RTTI_Class(RefCountedObjectBase, "B4FA5C63-69C0-4666-8A92-726F070D769B");
@@ -51,12 +60,7 @@ namespace FE
             {
                 const uint32_t refCount = --m_RefCount;
                 if (refCount == 0)
-                {
-                    std::pmr::memory_resource* pAllocator = m_pAllocator;
-                    const size_t allocationSize = m_AllocationSize;
-                    this->~RefCountedObjectBase();
-                    pAllocator->deallocate(this, allocationSize, DefaultAlignment);
-                }
+                    DoRelease();
 
                 return refCount;
             }

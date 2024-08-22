@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
-#include <FeCore/Containers/ArraySlice.h>
 #include <OsAssets/Meshes/MeshLoaderImpl.h>
 
 namespace FE::Osmium
@@ -21,7 +20,7 @@ namespace FE::Osmium
 
         FE_RTTI_Class(MeshAssetStorage, "A34FEF78-A485-4B5D-969C-CFA52B949C9C");
 
-        [[nodiscard]] inline ArraySlice<MeshVertexComponent> VertexComponents() const noexcept
+        [[nodiscard]] inline festd::span<const MeshVertexComponent> VertexComponents() const noexcept
         {
             return m_Components;
         }

@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/IO/IStream.h>
 #include <FeCore/Strings/String.h>
 
@@ -41,11 +40,11 @@ namespace FE
         }
 
         template<class T>
-        inline size_t WriteArray(const ArraySlice<T>& array)
+        inline size_t WriteArray(festd::span<T> array)
         {
-            auto length = array.Length() * sizeof(T);
-            Write<size_t>(array.Length());
-            return m_Stream->WriteFromBuffer(array.Data(), length) + sizeof(size_t);
+            const auto length = array.size() * sizeof(T);
+            Write<size_t>(array.size());
+            return m_Stream->WriteFromBuffer(array.data(), length) + sizeof(size_t);
         }
 
         inline size_t WriteString(StringSlice string)

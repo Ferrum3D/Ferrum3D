@@ -2,7 +2,6 @@
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileStream.h>
 #include <FeCore/Memory/Memory.h>
@@ -230,11 +229,11 @@ Supported commands:
     }
 
     void ProcessOneFile(const StringSlice& file, IO::IStream* outStream,
-                        const ArraySlice<std::pair<String, String>>& additionalMetadata)
+                        const festd::span<std::pair<String, String>>& additionalMetadata)
     {
         IAssetLoader* loader = nullptr;
 
-        FE_ASSERT(additionalMetadata.Empty()); // TODO
+        FE_ASSERT(additionalMetadata.empty()); // TODO
 
         auto metadata = ReadMetadataForAsset(file, &loader);
 
@@ -249,7 +248,7 @@ Supported commands:
         loader->SaveAsset(storage.Get(), outStream);
     }
 
-    int CompileCommand(const ArraySlice<StringSlice>& args)
+    int CompileCommand(const festd::span<StringSlice>& args)
     {
         eastl::vector<String> files;
         eastl::vector<std::pair<String, String>> additionalMetadata;
@@ -280,7 +279,7 @@ Supported commands:
         return 0;
     }
 
-    int BuildCommand(const ArraySlice<StringSlice>& args)
+    int BuildCommand(const festd::span<StringSlice>& args)
     {
         FE_LOG_ERROR("Building not implemented!");
         Console::PrintToStdout(String::Join("\n", args));
@@ -316,11 +315,11 @@ Supported commands:
 
         if (args[0] == "compile")
         {
-            return CompileCommand(ArraySlice(args)(1, args.size()));
+            return CompileCommand(festd::span<FE::StringSlice>(args).subspan(1, args.size() - 1));
         }
         else if (args[0] == "build")
         {
-            return BuildCommand(ArraySlice(args)(1, args.size()));
+            return BuildCommand(festd::span<FE::StringSlice>(args).subspan(1, args.size() - 1));
         }
 
         FE_LOG_ERROR("Invalid command: {}", args[0]);

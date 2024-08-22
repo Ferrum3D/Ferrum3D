@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Strings/String.h>
 
 namespace FE
@@ -80,10 +79,10 @@ namespace FE
         //! \brief Create from a list and copy it.
         //!
         //! \param [in] data - The list that stores the data.
-        explicit ByteBuffer(const ArraySlice<uint8_t>& data)
+        explicit ByteBuffer(festd::span<uint8_t> data)
         {
-            Allocate(data.Length());
-            memcpy(m_pBegin, data.Data(), data.Length());
+            Allocate(data.size());
+            memcpy(m_pBegin, data.data(), data.size());
         }
 
         //! \brief Create from a list and move it.
@@ -106,14 +105,14 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline static ByteBuffer CopyList(const ArraySlice<T>& data) noexcept
+        [[nodiscard]] inline static ByteBuffer CopyList(festd::span<T> data) noexcept
         {
             ByteBuffer result(data.Length());
             memcpy(result.m_pBegin, data.Data(), data.Length());
             return result;
         }
 
-        [[nodiscard]] inline static ByteBuffer CopyString(const StringSlice& data) noexcept
+        [[nodiscard]] inline static ByteBuffer CopyString(StringSlice data) noexcept
         {
             ByteBuffer result(data.Size());
             memcpy(result.m_pBegin, data.Data(), data.Size());

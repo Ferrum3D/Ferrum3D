@@ -91,7 +91,7 @@ void RunExample()
     }
 
     FE::Rc<HAL::IBuffer> textureStaging;
-    FE::Rc<HAL::IImage> textureImage;
+    FE::Rc<HAL::Image> textureImage;
     {
         auto imageAsset = FE::Assets::Asset<HAL::ImageAssetStorage>(FE::Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1"));
         imageAsset.LoadSync();
@@ -274,7 +274,7 @@ void RunExample()
     }
 
     auto RTVs = swapChain->GetRTVs();
-    FE::List<FE::Rc<HAL::IFramebuffer>> framebuffers;
+    FE::List<FE::Rc<HAL::Framebuffer>> framebuffers;
     FE::List<FE::Rc<HAL::ICommandBuffer>> commandBuffers;
     for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
     {

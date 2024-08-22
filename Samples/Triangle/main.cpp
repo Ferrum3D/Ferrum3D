@@ -23,18 +23,18 @@ class TestApplication final : public FE::ApplicationModule
     FE::Rc<HAL::IDevice> m_Device;
 
     FE::List<FE::Rc<HAL::IFence>> m_Fences;
-    FE::List<FE::Rc<HAL::IFramebuffer>> m_Framebuffers;
+    FE::List<FE::Rc<HAL::Framebuffer>> m_Framebuffers;
     FE::List<FE::Rc<HAL::ICommandBuffer>> m_CommandBuffers;
     FE::Rc<HAL::ICommandQueue> m_GraphicsQueue;
     FE::Rc<HAL::ICommandQueue> m_TransferQueue;
 
-    FE::Rc<HAL::IRenderPass> m_RenderPass;
-    FE::Rc<HAL::ISwapChain> m_SwapChain;
-    FE::Rc<HAL::IGraphicsPipeline> m_Pipeline;
+    FE::Rc<HAL::RenderPass> m_RenderPass;
+    FE::Rc<HAL::SwapChain> m_SwapChain;
+    FE::Rc<HAL::GraphicsPipeline> m_Pipeline;
     FE::List<HAL::IImageView*> m_RTVs;
 
-    FE::Rc<HAL::IShaderModule> m_PixelShader;
-    FE::Rc<HAL::IShaderModule> m_VertexShader;
+    FE::Rc<HAL::ShaderModule> m_PixelShader;
+    FE::Rc<HAL::ShaderModule> m_VertexShader;
 
     FE::Rc<HAL::IBuffer> m_VertexBuffer;
 

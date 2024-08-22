@@ -73,10 +73,12 @@ namespace FE
             m_EntryMap[moduleName] = pNewEntry;
             pNewEntry->Name = moduleName;
             pNewEntry->m_RefCount = 1;
-            pNewEntry->Loader.Load(modulePath);
+
+            const bool loadResult = pNewEntry->Loader.Load(modulePath);
+            FE_ASSERT_MSG(loadResult, "Unable to load module \"{}\"", modulePath);
 
             const auto createModule = pNewEntry->Loader.FindFunction<CreateModuleInstanceProc>("CreateModuleInstance");
-            FE_ASSERT_MSG(createModule, "Invalid module \"{}\": CreateModuleInstance not found");
+            FE_ASSERT_MSG(createModule, "Invalid module \"{}\": CreateModuleInstance not found", modulePath);
             createModule(Env::GetEnvironment(), &pNewEntry->pModule);
             return pNewEntry->pModule;
         }
