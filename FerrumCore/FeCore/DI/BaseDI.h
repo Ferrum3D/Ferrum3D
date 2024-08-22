@@ -42,18 +42,28 @@ namespace FE::DI
         template<class T>
         inline Result<T*, ResultCode> Resolve()
         {
-            Memory::RefCountedObjectBase* pResult = nullptr;
-            const ResultCode code = Resolve(fe_typeid<T>(), &pResult);
-            if (code == ResultCode::Success)
-                return static_cast<T*>(pResult);
+            if constexpr (std::is_same_v<T, IServiceProvider>)
+            {
+                return this;
+            }
+            else
+            {
+                Memory::RefCountedObjectBase* pResult = nullptr;
+                const ResultCode code = Resolve(fe_typeid<T>(), &pResult);
+                if (code == ResultCode::Success)
+                    return static_cast<T*>(pResult);
 
-            return Err(code);
+                return Err(code);
+            }
         }
 
         template<class T>
         inline T* ResolveRequired()
         {
-            return Resolve<T>().Unwrap();
+            if constexpr (std::is_same_v<T, IServiceProvider>)
+                return this;
+            else
+                return Resolve<T>().Unwrap();
         }
     };
 } // namespace FE::DI

@@ -4,6 +4,7 @@
 #include <EASTL/functional.h>
 #include <EASTL/intrusive_list.h>
 #include <EASTL/sort.h>
+#include <EASTL/span.h>
 #include <EASTL/vector.h>
 #include <FeCore/Base/Hash.h>
 #include <FeCore/Base/Platform.h>
@@ -14,6 +15,23 @@
 #include <mutex>
 #include <string_view>
 #include <tracy/Tracy.hpp>
+
+#if FE_DEBUG
+//! \brief Assertion without loggers, used in modules on which loggers depend.
+#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
+        do                                                                                                                       \
+        {                                                                                                                        \
+            assert((expression) && (msg));                                                                                       \
+        }                                                                                                                        \
+        while (0)
+#else
+//! \brief Assertion without loggers, used in modules on which loggers depend.
+#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
+        do                                                                                                                       \
+        {                                                                                                                        \
+        }                                                                                                                        \
+        while (0)
+#endif
 
 namespace FE
 {
@@ -259,21 +277,36 @@ namespace FE
             using vector = eastl::vector<T, Memory::Internal::EASTLPolymorphicAllocator>;
         }
 
-
-        template<class T, class TAllocator = Memory::Internal::EASTLDefaultAllocator>
-        using vector = eastl::vector<T, TAllocator>;
-
         template<class T, uint32_t TSize>
         using fixed_vector = eastl::fixed_vector<T, TSize, false>;
 
-        using intrusive_list_node = eastl::intrusive_list_node;
+        inline constexpr size_t dynamic_extent = static_cast<size_t>(-1);
 
-        template<class T = intrusive_list_node>
-        using intrusive_list = eastl::intrusive_list<T>;
-
-        template<int32_t TByteSize, class TFunc>
-        using fixed_function = eastl::fixed_function<TByteSize, TFunc>;
+        using eastl::fixed_function;
+        using eastl::intrusive_list;
+        using eastl::intrusive_list_node;
+        using eastl::span;
+        using eastl::vector;
     } // namespace festd
+
+
+    namespace Memory
+    {
+        template<class T>
+        inline void Copy(festd::span<const T> source, festd::span<T> destination)
+        {
+            FE_CORE_ASSERT(source.size() == destination.size(), "Size mismatch");
+            eastl::copy(source.begin(), source.end(), destination.begin());
+        }
+
+
+        template<class T>
+        inline void Copy(festd::span<T> source, festd::span<T> destination)
+        {
+            FE_CORE_ASSERT(source.size() == destination.size(), "Size mismatch");
+            eastl::copy(source.begin(), source.end(), destination.begin());
+        }
+    } // namespace Memory
 
 
 //! \brief Typed alloca() wrapper.
@@ -292,23 +325,6 @@ namespace FE
             return seed;                                                                                                         \
         }                                                                                                                        \
     };
-
-#if FE_DEBUG
-    //! \brief Assertion without loggers, used in modules on which loggers depend.
-#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
-        do                                                                                                                       \
-        {                                                                                                                        \
-            assert((expression) && (msg));                                                                                       \
-        }                                                                                                                        \
-        while (0)
-#else
-    //! \brief Assertion without loggers, used in modules on which loggers depend.
-#    define FE_CORE_ASSERT(expression, msg)                                                                                      \
-        do                                                                                                                       \
-        {                                                                                                                        \
-        }                                                                                                                        \
-        while (0)
-#endif
 
     //! \brief Define bitwise operations on `enum`.
     //!

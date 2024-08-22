@@ -137,7 +137,7 @@ void RunExample()
         fences.Push(device->CreateFence(HAL::FenceState::Signaled));
 
     auto RTVs = swapChain->GetRTVs();
-    FE::List<FE::Rc<HAL::IFramebuffer>> framebuffers;
+    FE::List<FE::Rc<HAL::Framebuffer>> framebuffers;
     FE::List<FE::Rc<HAL::ICommandBuffer>> commandBuffers;
     for (size_t i = 0; i < swapChain->GetImageCount(); ++i)
     {

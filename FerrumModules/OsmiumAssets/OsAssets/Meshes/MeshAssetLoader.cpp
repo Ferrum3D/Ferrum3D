@@ -24,9 +24,9 @@ namespace FE::Osmium
     {
         auto* imageStorage = static_cast<MeshAssetStorage*>(storage);
         BinarySerializer serializer(assetStream);
-        serializer.WriteArray(ArraySlice(imageStorage->m_Components));
-        serializer.WriteArray(ArraySlice(imageStorage->m_IndexBuffer));
-        serializer.WriteArray(ArraySlice(imageStorage->m_VertexBuffer));
+        serializer.WriteArray(festd::span(imageStorage->m_Components));
+        serializer.WriteArray(festd::span(imageStorage->m_IndexBuffer));
+        serializer.WriteArray(festd::span(imageStorage->m_VertexBuffer));
     }
 
     void Osmium::MeshAssetLoader::LoadAsset(Assets::AssetStorage* storage, IO::IStream* assetStream)

@@ -3,48 +3,64 @@
 #include <FeCore/IO/FileHandle.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Math/Matrix4x4F.h>
+#include <HAL/Buffer.h>
+#include <HAL/CommandList.h>
+#include <HAL/CommandQueue.h>
+#include <HAL/DescriptorHeap.h>
+#include <HAL/DescriptorTable.h>
+#include <HAL/Device.h>
+#include <HAL/DeviceFactory.h>
+#include <HAL/Fence.h>
+#include <HAL/Framebuffer.h>
+#include <HAL/GraphicsPipeline.h>
+#include <HAL/IWindow.h>
+#include <HAL/Image.h>
+#include <HAL/ImageView.h>
+#include <HAL/InputLayoutBuilder.h>
+#include <HAL/Module.h>
+#include <HAL/RenderPass.h>
+#include <HAL/Sampler.h>
+#include <HAL/ShaderCompiler.h>
+#include <HAL/ShaderModule.h>
+#include <HAL/SwapChain.h>
 #include <OsAssets/OsmiumAssetsModule.h>
-#include <OsGPU/OsmiumGPU.h>
-#include <OsGPU/OsmiumGPUModule.h>
 
 using namespace FE;
-
-namespace HAL = FE::Osmium;
+using namespace FE::Graphics;
 
 inline constexpr const char* ExampleName = "Ferrum3D - Models";
 
 class ExampleApplication final : public ApplicationModule
 {
     ModuleDependency<HAL::OsmiumGPUModule> m_OsmiumGPUModule;
-    ModuleDependency<HAL::OsmiumAssetsModule> m_OsmiumAssetsModule;
+    ModuleDependency<FE::Osmium::OsmiumAssetsModule> m_OsmiumAssetsModule;
 
-    Rc<HAL::IInstance> m_Instance;
-    Rc<HAL::IAdapter> m_Adapter;
-    Rc<HAL::IDevice> m_Device;
+    Rc<HAL::DeviceFactory> m_Factory;
+    Rc<HAL::Device> m_Device;
 
-    festd::vector<Rc<HAL::IFence>> m_Fences;
-    festd::vector<Rc<HAL::IFramebuffer>> m_Framebuffers;
-    festd::vector<Rc<HAL::ICommandBuffer>> m_CommandBuffers;
-    Rc<HAL::ICommandQueue> m_GraphicsQueue;
-    Rc<HAL::ICommandQueue> m_TransferQueue;
+    festd::vector<Rc<HAL::Fence>> m_Fences;
+    festd::vector<Rc<HAL::Framebuffer>> m_Framebuffers;
+    festd::vector<Rc<HAL::CommandList>> m_CommandLists;
+    Rc<HAL::CommandQueue> m_GraphicsQueue;
+    Rc<HAL::CommandQueue> m_TransferQueue;
 
-    Rc<HAL::IRenderPass> m_RenderPass;
-    Rc<HAL::ISwapChain> m_SwapChain;
-    Rc<HAL::IGraphicsPipeline> m_Pipeline;
-    festd::vector<HAL::IImageView*> m_RTVs;
+    Rc<HAL::RenderPass> m_RenderPass;
+    Rc<HAL::SwapChain> m_SwapChain;
+    Rc<HAL::GraphicsPipeline> m_Pipeline;
+    festd::vector<HAL::ImageView*> m_RTVs;
 
-    Rc<HAL::IDescriptorHeap> m_DescriptorHeap;
-    Rc<HAL::IDescriptorTable> m_DescriptorTable;
+    Rc<HAL::DescriptorHeap> m_DescriptorHeap;
+    Rc<HAL::DescriptorTable> m_DescriptorTable;
 
-    Rc<HAL::IShaderModule> m_PixelShader;
-    Rc<HAL::IShaderModule> m_VertexShader;
+    Rc<HAL::ShaderModule> m_PixelShader;
+    Rc<HAL::ShaderModule> m_VertexShader;
 
-    Rc<HAL::IBuffer> m_ConstantBuffer;
-    Rc<HAL::IBuffer> m_IndexBuffer, m_VertexBuffer;
+    Rc<HAL::Buffer> m_ConstantBuffer;
+    Rc<HAL::Buffer> m_IndexBuffer, m_VertexBuffer;
 
-    Rc<HAL::IImage> m_TextureImage;
-    Rc<HAL::IImageView> m_TextureView;
-    Rc<HAL::ISampler> m_TextureSampler;
+    Rc<HAL::Image> m_TextureImage;
+    Rc<HAL::ImageView> m_TextureView;
+    Rc<HAL::Sampler> m_TextureSampler;
 
     Rc<HAL::IWindow> m_Window;
     HAL::Viewport m_Viewport{};
@@ -71,8 +87,9 @@ protected:
         m_Window->PollEvents();
         auto imageIndex = m_SwapChain->GetCurrentImageIndex();
         m_Fences[m_SwapChain->GetCurrentFrameIndex()]->Reset();
-        m_GraphicsQueue->SubmitBuffers(
-            { m_CommandBuffers[imageIndex].Get() }, m_Fences[frameIndex].Get(), HAL::SubmitFlags::FrameBeginEnd);
+
+        std::array commandLists{ m_CommandLists[imageIndex].Get() };
+        m_GraphicsQueue->SubmitBuffers(commandLists, m_Fences[frameIndex].Get(), HAL::SubmitFlags::FrameBeginEnd);
         m_SwapChain->Present();
     }
 
@@ -92,12 +109,17 @@ public:
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
         Rc pAssetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
 
-        m_Instance = Env::GetServiceProvider()->ResolveRequired<HAL::IInstance>();
-        m_Adapter = m_Instance->GetAdapters()[0];
-        m_Device = m_Adapter->CreateDevice();
-        m_GraphicsQueue = m_Device->GetCommandQueue(HAL::CommandQueueClass::Graphics);
-        m_TransferQueue = m_Device->GetCommandQueue(HAL::CommandQueueClass::Transfer);
-        m_Window = m_Device->CreateWindow(HAL::WindowDesc{ 800, 600, ExampleName });
+        m_Factory = pServiceProvider->ResolveRequired<HAL::DeviceFactory>();
+        m_Device = pServiceProvider->ResolveRequired<HAL::Device>();
+
+        const HAL::AdapterInfo adapterInfo = m_Factory->EnumerateAdapters()[0];
+        m_Factory->CreateDevice(adapterInfo.Name);
+
+        m_GraphicsQueue = m_Device->GetCommandQueue(HAL::HardwareQueueKindFlags::Graphics);
+        m_TransferQueue = m_Device->GetCommandQueue(HAL::HardwareQueueKindFlags::Transfer);
+
+        m_Window = pServiceProvider->ResolveRequired<HAL::IWindow>();
+        m_Window->Init(HAL::WindowDesc{ 800, 600, ExampleName });
         m_Viewport = m_Window->CreateViewport();
         m_Scissor = m_Window->CreateScissor();
 
@@ -108,37 +130,44 @@ public:
         swapChainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
         swapChainDesc.Queue = m_GraphicsQueue.Get();
         swapChainDesc.VerticalSync = true;
-        m_SwapChain = m_Device->CreateSwapChain(swapChainDesc);
+        m_SwapChain = pServiceProvider->ResolveRequired<HAL::SwapChain>();
+        m_SwapChain->Init(swapChainDesc);
 
-        auto meshAsset = Assets::Asset<HAL::MeshAssetStorage>(Assets::AssetID("884FEDDD-141D-49A0-92B2-38B519403D0A"));
+        auto meshAsset = Assets::Asset<Osmium::MeshAssetStorage>(Assets::AssetID("884FEDDD-141D-49A0-92B2-38B519403D0A"));
         meshAsset.LoadSync(pAssetManager.Get());
-        Rc<HAL::IBuffer> indexBufferStaging, vertexBufferStaging;
+
+        Rc<HAL::Buffer> indexBufferStaging, vertexBufferStaging;
         uint64_t vertexSize, indexSize;
         {
             vertexSize = meshAsset->VertexSize();
-            vertexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
+            vertexBufferStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            vertexBufferStaging->Init(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
             vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             vertexBufferStaging->UpdateData(meshAsset->VertexData());
 
-            m_VertexBuffer = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer));
+            m_VertexBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            m_VertexBuffer->Init(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer));
             m_VertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
             indexSize = meshAsset->IndexSize();
-            indexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
+            indexBufferStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            indexBufferStaging->Init(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
             indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             indexBufferStaging->UpdateData(meshAsset->IndexData());
 
-            m_IndexBuffer = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::IndexBuffer));
+            m_IndexBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            m_IndexBuffer->Init(HAL::BufferDesc(indexSize, HAL::BindFlags::IndexBuffer));
             m_IndexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
 
-        Rc<HAL::IBuffer> textureStaging;
+        Rc<HAL::Buffer> textureStaging;
         {
-            auto imageAsset = Assets::Asset<HAL::ImageAssetStorage>(Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1"));
+            auto imageAsset = Assets::Asset<Osmium::ImageAssetStorage>(Assets::AssetID("94FC6391-4656-4BE7-844D-8D87680A00F1"));
             imageAsset.LoadSync(pAssetManager.Get());
 
-            textureStaging = m_Device->CreateBuffer(HAL::BufferDesc(imageAsset->Size(), HAL::BindFlags::None));
+            textureStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            textureStaging->Init(HAL::BufferDesc(imageAsset->Size(), HAL::BindFlags::None));
             textureStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             textureStaging->UpdateData(imageAsset->Data());
 
@@ -147,7 +176,8 @@ public:
                                                    imageAsset->Height(),
                                                    HAL::Format::R8G8B8A8_SRGB);
 
-            m_TextureImage = m_Device->CreateImage(imageDesc);
+            m_TextureImage = pServiceProvider->ResolveRequired<HAL::Image>();
+            m_TextureImage->Init(imageDesc);
             m_TextureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
 
@@ -160,45 +190,56 @@ public:
             constantData *= Matrix4x4F::CreateRotationX(-0.5f);
             constantData *= Matrix4x4F::CreateTranslation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
             constantData *= Matrix4x4F::CreateRotationY(Constants::PI * -1.3f);
-            m_ConstantBuffer = m_Device->CreateBuffer(HAL::BufferDesc(sizeof(constantData), HAL::BindFlags::ConstantBuffer));
+
+            m_ConstantBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
+            m_ConstantBuffer->Init(HAL::BufferDesc(sizeof(constantData), HAL::BindFlags::ConstantBuffer));
             m_ConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             m_ConstantBuffer->UpdateData(constantData.RowMajorData());
         }
 
-        m_TextureView = m_TextureImage->CreateView(HAL::ImageAspectFlags::Color);
-        m_TextureSampler = m_Device->CreateSampler(HAL::SamplerDesc{});
+        m_TextureView = pServiceProvider->ResolveRequired<HAL::ImageView>();
+        m_TextureView->Init(HAL::ImageViewDesc::ForImage(m_TextureImage.Get(), HAL::ImageAspectFlags::Color));
+        m_TextureSampler = pServiceProvider->ResolveRequired<HAL::Sampler>();
+        m_TextureSampler->Init(HAL::SamplerDesc{});
 
         {
-            auto transferComplete = m_Device->CreateFence(HAL::FenceState::Reset);
-            auto copyCmdBuffer = m_Device->CreateCommandBuffer(HAL::CommandQueueClass::Transfer);
-            copyCmdBuffer->Begin();
-            copyCmdBuffer->CopyBuffers(vertexBufferStaging.Get(), m_VertexBuffer.Get(), HAL::BufferCopyRegion(vertexSize));
-            copyCmdBuffer->CopyBuffers(indexBufferStaging.Get(), m_IndexBuffer.Get(), HAL::BufferCopyRegion(indexSize));
+            Rc transferComplete = pServiceProvider->ResolveRequired<HAL::Fence>();
+            transferComplete->Init(HAL::FenceState::Reset);
+
+            Rc copyCmdList = pServiceProvider->ResolveRequired<HAL::CommandList>();
+            copyCmdList->Init({ HAL::HardwareQueueKindFlags::Transfer, HAL::CommandListFlags::OneTimeSubmit });
+            copyCmdList->Begin();
+            copyCmdList->CopyBuffers(vertexBufferStaging.Get(), m_VertexBuffer.Get(), HAL::BufferCopyRegion(vertexSize));
+            copyCmdList->CopyBuffers(indexBufferStaging.Get(), m_IndexBuffer.Get(), HAL::BufferCopyRegion(indexSize));
 
             HAL::ImageBarrierDesc barrier{};
             barrier.Image = m_TextureImage.Get();
             barrier.SubresourceRange = m_TextureView->GetDesc().SubresourceRange;
             barrier.StateAfter = HAL::ResourceState::TransferWrite;
-            copyCmdBuffer->ResourceTransitionBarriers({ barrier }, {});
+            copyCmdList->ResourceTransitionBarriers(std::array{ barrier }, {});
 
             auto size = m_TextureImage->GetDesc().ImageSize;
-            copyCmdBuffer->CopyBufferToImage(textureStaging.Get(), m_TextureImage.Get(), HAL::BufferImageCopyRegion(size));
+            copyCmdList->CopyBufferToImage(textureStaging.Get(), m_TextureImage.Get(), HAL::BufferImageCopyRegion(size));
 
             barrier.StateAfter = HAL::ResourceState::ShaderResource;
-            copyCmdBuffer->ResourceTransitionBarriers({ barrier }, {});
-            copyCmdBuffer->End();
-            m_TransferQueue->SubmitBuffers({ copyCmdBuffer.Get() }, transferComplete.Get(), HAL::SubmitFlags::None);
+            copyCmdList->ResourceTransitionBarriers(std::array{ barrier }, {});
+            copyCmdList->End();
+
+            std::array commandLists{ copyCmdList.Get() };
+            m_TransferQueue->SubmitBuffers(commandLists, transferComplete.Get(), HAL::SubmitFlags::None);
             transferComplete->WaitOnCPU();
         }
 
-        auto compiler = m_Device->CreateShaderCompiler();
+        Rc compiler = pServiceProvider->ResolveRequired<HAL::ShaderCompiler>();
         HAL::ShaderCompilerArgs shaderArgs{};
         shaderArgs.Version = HAL::HLSLShaderVersion{ 6, 1 };
         shaderArgs.EntryPoint = "main";
 
-        auto vertexShaderAsset = Assets::Asset<HAL::ShaderAssetStorage>(Assets::AssetID("7C8B7FDD-3CE8-4286-A4C1-03D8A07CF338"));
+        auto vertexShaderAsset =
+            Assets::Asset<Osmium::ShaderAssetStorage>(Assets::AssetID("7C8B7FDD-3CE8-4286-A4C1-03D8A07CF338"));
         vertexShaderAsset.LoadSync(pAssetManager.Get());
-        auto pixelShaderAsset = Assets::Asset<HAL::ShaderAssetStorage>(Assets::AssetID("90B76162-0BF0-45DF-A58B-13AFC834C551"));
+        auto pixelShaderAsset =
+            Assets::Asset<Osmium::ShaderAssetStorage>(Assets::AssetID("90B76162-0BF0-45DF-A58B-13AFC834C551"));
         pixelShaderAsset.LoadSync(pAssetManager.Get());
 
         shaderArgs.Stage = HAL::ShaderStage::Pixel;
@@ -212,8 +253,10 @@ public:
         auto vsByteCode = compiler->CompileShader(shaderArgs);
         compiler.Reset();
 
-        m_PixelShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
-        m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+        m_PixelShader = pServiceProvider->ResolveRequired<HAL::ShaderModule>();
+        m_PixelShader->Init(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
+        m_VertexShader = pServiceProvider->ResolveRequired<HAL::ShaderModule>();
+        m_VertexShader->Init(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
 
         HAL::RenderPassDesc renderPassDesc{};
 
@@ -234,12 +277,14 @@ public:
 
         HAL::SubpassDesc subpassDesc{};
         auto renderTargetAttachment = HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0);
-        subpassDesc.RenderTargetAttachments = ArraySlice(&renderTargetAttachment, 1);
+        subpassDesc.RenderTargetAttachments = festd::span(&renderTargetAttachment, 1);
         subpassDesc.DepthStencilAttachment = HAL::SubpassAttachment(HAL::ResourceState::DepthWrite, 1);
-        renderPassDesc.Subpasses = ArraySlice(&subpassDesc, 1);
+        renderPassDesc.Subpasses = festd::span(&subpassDesc, 1);
         HAL::SubpassDependency dependency{};
-        renderPassDesc.SubpassDependencies = ArraySlice(&dependency, 1);
-        m_RenderPass = m_Device->CreateRenderPass(renderPassDesc);
+        renderPassDesc.SubpassDependencies = festd::span(&dependency, 1);
+
+        m_RenderPass = pServiceProvider->ResolveRequired<HAL::RenderPass>();
+        m_RenderPass->Init(renderPassDesc);
 
         HAL::DescriptorHeapDesc descriptorHeapDesc{};
         descriptorHeapDesc.MaxTables = 1;
@@ -248,13 +293,15 @@ public:
                                            HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
                                            HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
         descriptorHeapDesc.Sizes = descriptorHeapSizes;
-        m_DescriptorHeap = m_Device->CreateDescriptorHeap(descriptorHeapDesc);
+
+        m_DescriptorHeap = pServiceProvider->ResolveRequired<HAL::DescriptorHeap>();
+        m_DescriptorHeap->Init(descriptorHeapDesc);
 
         HAL::DescriptorDesc psSamplerDescriptorDesc(HAL::ShaderResourceType::Sampler, HAL::ShaderStageFlags::Pixel, 1);
         HAL::DescriptorDesc psTextureDescriptorDesc(HAL::ShaderResourceType::TextureSRV, HAL::ShaderStageFlags::Pixel, 1);
         HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
-        m_DescriptorTable =
-            m_DescriptorHeap->AllocateDescriptorTable({ psSamplerDescriptorDesc, psTextureDescriptorDesc, vsDescriptorDesc });
+        m_DescriptorTable = m_DescriptorHeap->AllocateDescriptorTable(
+            std::array{ psSamplerDescriptorDesc, psTextureDescriptorDesc, vsDescriptorDesc });
 
         HAL::DescriptorWriteSampler descriptorWriteSampler{ m_TextureSampler.Get() };
         m_DescriptorTable->Update(descriptorWriteSampler);
@@ -274,11 +321,15 @@ public:
 
         pipelineDesc.RenderPass = m_RenderPass.Get();
         pipelineDesc.SubpassIndex = 0;
-        pipelineDesc.ColorBlend = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
-        auto shaders = eastl::vector{ m_PixelShader.Get(), m_VertexShader.Get() };
-        pipelineDesc.Shaders = ArraySlice(shaders);
+
+        const std::array colorBlendStates{ HAL::TargetColorBlending{} };
+        pipelineDesc.ColorBlend = HAL::ColorBlendState(colorBlendStates);
+
+        std::array shaders{ m_PixelShader.Get(), m_VertexShader.Get() };
+        pipelineDesc.Shaders = festd::span(shaders);
+
         auto descriptorTable = m_DescriptorTable.Get();
-        pipelineDesc.DescriptorTables = ArraySlice(&descriptorTable, 1);
+        pipelineDesc.DescriptorTables = festd::span(&descriptorTable, 1);
         pipelineDesc.Viewport = m_Viewport;
         pipelineDesc.Scissor = m_Scissor;
         pipelineDesc.Rasterization = HAL::RasterizationState{};
@@ -289,12 +340,20 @@ public:
 
         pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
 
-        m_Pipeline = m_Device->CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = pServiceProvider->ResolveRequired<HAL::GraphicsPipeline>();
+        m_Pipeline->Init(pipelineDesc);
 
         for (uint32_t i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
-            m_Fences.push_back(m_Device->CreateFence(HAL::FenceState::Signaled));
+        {
+            Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
+            fence->Init(HAL::FenceState::Signaled);
+            m_Fences.push_back(fence);
+        }
 
-        m_RTVs = m_SwapChain->GetRTVs();
+        const festd::span rtvSpan = m_SwapChain->GetRTVs();
+        m_RTVs.resize(rtvSpan.size());
+        Memory::Copy(rtvSpan, festd::span(m_RTVs));
+
         for (uint32_t i = 0; i < m_SwapChain->GetImageCount(); ++i)
         {
             HAL::FramebufferDesc framebufferDesc{};
@@ -303,20 +362,26 @@ public:
             framebufferDesc.RenderTargetViews = views;
             framebufferDesc.Width = m_Scissor.Width();
             framebufferDesc.Height = m_Scissor.Height();
-            m_Framebuffers.push_back(m_Device->CreateFramebuffer(framebufferDesc));
-            const auto& framebuffer = m_Framebuffers.back();
 
-            m_CommandBuffers.push_back(m_Device->CreateCommandBuffer(HAL::CommandQueueClass::Graphics));
-            auto& cmd = m_CommandBuffers.back();
+            Rc framebuffer = pServiceProvider->ResolveRequired<HAL::Framebuffer>();
+            framebuffer->Init(framebufferDesc);
+            m_Framebuffers.push_back(framebuffer);
+
+            Rc cmd = pServiceProvider->ResolveRequired<HAL::CommandList>();
+            cmd->Init({ HAL::HardwareQueueKindFlags::Graphics, HAL::CommandListFlags::None });
+            m_CommandLists.push_back(cmd);
+
+            std::array descriptorTables{ m_DescriptorTable.Get() };
+            std::array clearValues{ HAL::ClearValueDesc::CreateColorValue(Colors::MediumAquamarine),
+                                    HAL::ClearValueDesc::CreateDepthStencilValue() };
+
             cmd->Begin();
             cmd->BindGraphicsPipeline(m_Pipeline.Get());
-            cmd->BindDescriptorTables({ m_DescriptorTable.Get() }, m_Pipeline.Get());
+            cmd->BindDescriptorTables(descriptorTables, m_Pipeline.Get());
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
             cmd->BindVertexBuffer(0, m_VertexBuffer.Get(), 0);
             cmd->BindIndexBuffer(m_IndexBuffer.Get(), 0);
-            auto clearValues = eastl::vector{ HAL::ClearValueDesc::CreateColorValue(Colors::MediumAquamarine),
-                                              HAL::ClearValueDesc::CreateDepthStencilValue() };
             cmd->BeginRenderPass(m_RenderPass.Get(), framebuffer.Get(), clearValues);
             cmd->DrawIndexed(meshAsset->IndexSize() / sizeof(uint32_t), 1, 0, 0, 0);
             cmd->EndRenderPass();

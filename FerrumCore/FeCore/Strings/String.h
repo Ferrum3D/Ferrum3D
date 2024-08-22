@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Strings/StringSlice.h>
 
 namespace FE
@@ -484,7 +483,7 @@ namespace FE
             return Append(str);
         }
 
-        inline String& operator/=(const StringSlice& str)
+        inline String& operator/=(StringSlice str)
         {
             Append(FE_PATH_SEPARATOR);
             return Append(str);
@@ -548,12 +547,12 @@ namespace FE
             return StringSlice(Data(), Size()).Strip(chars);
         }
 
-        [[nodiscard]] inline int32_t Compare(const StringSlice& other) const noexcept
+        [[nodiscard]] inline int32_t Compare(StringSlice other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        [[nodiscard]] inline bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
+        [[nodiscard]] inline bool IsEqualTo(StringSlice other, bool caseSensitive = true) const noexcept
         {
             return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
@@ -584,20 +583,20 @@ namespace FE
             return StringSlice(Data(), Size()).Parse<T>();
         }
 
-        [[nodiscard]] inline static String Join(const StringSlice& separator, const ArraySlice<StringSlice>& strings)
+        [[nodiscard]] inline static String Join(StringSlice separator, const festd::span<StringSlice>& strings)
         {
             String result;
             size_t capacity = 0;
-            for (auto& string : strings)
+            for (const StringSlice string : strings)
             {
                 capacity += string.Size() + separator.Size();
             }
 
             result.Reserve(capacity);
-            for (uint32_t i = 0; i < strings.Length(); ++i)
+            for (uint32_t i = 0; i < strings.size(); ++i)
             {
                 result.Append(strings[i]);
-                if (i != strings.Length() - 1)
+                if (i != strings.size() - 1)
                 {
                     result.Append(separator);
                 }
@@ -628,7 +627,7 @@ namespace FE
     template<>
     struct ValueParser<String> : std::true_type
     {
-        inline static ParseError TryConvert(const StringSlice& str, String& result)
+        inline static ParseError TryConvert(StringSlice str, String& result)
         {
             result = str;
             return ParseErrorCode::None;

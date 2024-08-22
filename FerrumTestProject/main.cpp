@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2022 Nikita Dubovikov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  */
 
 #include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileHandle.h>
@@ -60,24 +59,24 @@ class TestApplication final : public FE::ApplicationModule
     FE::Rc<HAL::IInstance> m_Instance;
     FE::Rc<HAL::IAdapter> m_Adapter;
     FE::Rc<HAL::IDevice> m_Device;
-    FE::Rc<HAL::ITransientResourceHeap> m_ResourceHeap;
+    FE::Rc<HAL::TransientResourceHeap> m_ResourceHeap;
 
     FE::List<FE::Rc<HAL::IFence>> m_Fences;
-    FE::List<FE::Rc<HAL::IFramebuffer>> m_Framebuffers;
+    FE::List<FE::Rc<HAL::Framebuffer>> m_Framebuffers;
     FE::List<FE::Rc<HAL::ICommandBuffer>> m_CommandBuffers;
     FE::Rc<HAL::ICommandQueue> m_GraphicsQueue;
     FE::Rc<HAL::ICommandQueue> m_TransferQueue;
 
-    FE::Rc<HAL::IRenderPass> m_RenderPass;
-    FE::Rc<HAL::ISwapChain> m_SwapChain;
-    FE::Rc<HAL::IGraphicsPipeline> m_Pipeline;
+    FE::Rc<HAL::RenderPass> m_RenderPass;
+    FE::Rc<HAL::SwapChain> m_SwapChain;
+    FE::Rc<HAL::GraphicsPipeline> m_Pipeline;
     FE::List<HAL::IImageView*> m_RTVs;
 
     FE::Rc<HAL::IDescriptorHeap> m_DescriptorHeap;
     FE::Rc<HAL::IDescriptorTable> m_DescriptorTable;
 
-    FE::Rc<HAL::IShaderModule> m_PixelShader;
-    FE::Rc<HAL::IShaderModule> m_VertexShader;
+    FE::Rc<HAL::ShaderModule> m_PixelShader;
+    FE::Rc<HAL::ShaderModule> m_VertexShader;
 
     FE::Rc<HAL::IBuffer> m_ConstantBuffer;
     FE::Rc<HAL::IBuffer> m_IndexBuffer, m_VertexBuffer;
@@ -264,11 +263,11 @@ public:
         attachmentDesc.InitialState = HAL::ResourceState::Undefined;
         attachmentDesc.FinalState   = HAL::ResourceState::Present;
 
-        renderPassDesc.Attachments = FE::ArraySlice(&attachmentDesc, 1);
+        renderPassDesc.Attachments = FE::festd::span(&attachmentDesc, 1);
 
         HAL::SubpassDesc subpassDesc{};
         subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
-        renderPassDesc.Subpasses            = FE::ArraySlice(&subpassDesc, 1);
+        renderPassDesc.Subpasses            = FE::festd::span(&subpassDesc, 1);
 
         HAL::SubpassDependency dependency{};
         renderPassDesc.SubpassDependencies = { dependency };
@@ -278,7 +277,7 @@ public:
         HAL::DescriptorHeapDesc descriptorHeapDesc{};
         descriptorHeapDesc.MaxTables = 1;
         auto descriptorHeapSize      = HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer);
-        descriptorHeapDesc.Sizes     = FE::ArraySlice(&descriptorHeapSize, 1);
+        descriptorHeapDesc.Sizes     = FE::festd::span(&descriptorHeapSize, 1);
         m_DescriptorHeap             = m_Device->CreateDescriptorHeap(descriptorHeapDesc);
 
         HAL::DescriptorDesc descriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
@@ -300,7 +299,7 @@ public:
         auto shaders                        = FE::List{ m_PixelShader.Get(), m_VertexShader.Get() };
         pipelineDesc.Shaders                = shaders;
         auto descriptorTable                = m_DescriptorTable.Get();
-        pipelineDesc.DescriptorTables       = FE::ArraySlice(&descriptorTable, 1);
+        pipelineDesc.DescriptorTables       = FE::festd::span(&descriptorTable, 1);
         pipelineDesc.Viewport               = m_Viewport;
         pipelineDesc.Scissor                = m_Scissor;
         pipelineDesc.Rasterization          = HAL::RasterizationState{};
@@ -318,7 +317,7 @@ public:
         {
             HAL::FramebufferDesc framebufferDesc{};
             framebufferDesc.RenderPass        = m_RenderPass.Get();
-            framebufferDesc.RenderTargetViews = FE::ArraySlice(m_RTVs)(i, i + 1);
+            framebufferDesc.RenderTargetViews = FE::festd::span(m_RTVs)(i, i + 1);
             framebufferDesc.Width             = m_Scissor.Width();
             framebufferDesc.Height            = m_Scissor.Height();
             auto& framebuffer                 = m_Framebuffers.Push(m_Device->CreateFramebuffer(framebufferDesc));

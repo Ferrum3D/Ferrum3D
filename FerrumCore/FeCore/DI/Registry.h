@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>

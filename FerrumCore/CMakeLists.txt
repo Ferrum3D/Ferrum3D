@@ -31,8 +31,6 @@
     FeCore/Console/FeLog.h
     FeCore/Console/IConsoleLogger.h
 
-    FeCore/Containers/ArraySlice.h
-    FeCore/Containers/ArraySliceMut.h
     FeCore/Containers/ByteBuffer.h
     FeCore/Containers/HashTables.h
     FeCore/Containers/LRUCacheMap.h
@@ -52,23 +50,6 @@
     FeCore/DI/LifetimeScope.cpp
     FeCore/DI/Registration.h
     FeCore/DI/Registry.h
-
-    FeCore/ECS/ArchetypeChunk.cpp
-    FeCore/ECS/ArchetypeChunk.h
-    FeCore/ECS/ComponentStorage.cpp
-    FeCore/ECS/ComponentStorage.h
-    FeCore/ECS/ComponentSystem.h
-    FeCore/ECS/ComponentType.h
-    FeCore/ECS/ECSCommon.h
-    FeCore/ECS/Entity.h
-    FeCore/ECS/EntityArchetype.cpp
-    FeCore/ECS/EntityArchetype.h
-    FeCore/ECS/EntityQuery.h
-    FeCore/ECS/EntityRegistry.cpp
-    FeCore/ECS/EntityRegistry.h
-    FeCore/ECS/ISystem.h
-    FeCore/ECS/World.cpp
-    FeCore/ECS/World.h
 
     FeCore/EventBus/EventBus.h
     FeCore/EventBus/FrameEvents.h
@@ -156,11 +137,6 @@
     FeCore/Strings/String.h
     FeCore/Strings/StringSlice.cpp
     FeCore/Strings/StringSlice.h
-
-    FeCore/Systems/CallbackSystem.cpp
-    FeCore/Systems/CallbackSystem.h
-    FeCore/Systems/TransformSystem.cpp
-    FeCore/Systems/TransformSystem.h
 
     FeCore/Time/DateTime.cpp
     FeCore/Time/DateTime.h

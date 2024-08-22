@@ -1,5 +1,4 @@
 ﻿#include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/ArraySlice.h>
 #include <FeCore/DI/Builder.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
@@ -14,12 +13,12 @@ using namespace FE;
 
 inline constexpr uint32_t MinJobArrayLength = 64 * 1024;
 
-static void MergeArraysSync(const ArraySlice<int32_t>& lhs, const ArraySlice<int32_t>& rhs, ArraySliceMut<int32_t> space)
+static void MergeArraysSync(festd::span<const int32_t> lhs, festd::span<const int32_t> rhs, festd::span<int32_t> space)
 {
     ZoneScoped;
-    const uint32_t wholeSize = lhs.Length() + rhs.Length();
+    const uint32_t wholeSize = lhs.size() + rhs.size();
     FE_ASSERT_MSG(
-        wholeSize <= space.Length(), "Size of result ({}) was less than size of provided space ({})", wholeSize, space.Length());
+        wholeSize <= space.size(), "Size of result ({}) was less than size of provided space ({})", wholeSize, space.size());
 
     uint32_t leftIndex = 0;
     uint32_t rightIndex = 0;
@@ -27,11 +26,11 @@ static void MergeArraysSync(const ArraySlice<int32_t>& lhs, const ArraySlice<int
 
     while (resultIndex < wholeSize)
     {
-        if (leftIndex >= lhs.Length())
+        if (leftIndex >= lhs.size())
         {
             space[resultIndex++] = rhs[rightIndex++];
         }
-        else if (rightIndex >= rhs.Length())
+        else if (rightIndex >= rhs.size())
         {
             space[resultIndex++] = lhs[leftIndex++];
         }
@@ -46,7 +45,7 @@ static void MergeArraysSync(const ArraySlice<int32_t>& lhs, const ArraySlice<int
     }
 }
 
-static void MergeSortImplAsync(ArraySliceMut<int32_t> array, ArraySliceMut<int32_t> mergingSpace);
+static void MergeSortImplAsync(festd::span<int32_t> array, festd::span<int32_t> mergingSpace);
 
 class MergeSortJob : public SmallJob<MergeSortJob>
 {
@@ -57,56 +56,56 @@ public:
         MergeSortImplAsync(Array, Space);
     }
 
-    ArraySliceMut<int32_t> Array;
-    ArraySliceMut<int32_t> Space;
+    festd::span<int32_t> Array;
+    festd::span<int32_t> Space;
 
-    inline MergeSortJob(const ArraySliceMut<int>& array, const ArraySliceMut<int>& space)
+    inline MergeSortJob(festd::span<int32_t> array, festd::span<int32_t> space)
         : Array(array)
         , Space(space)
     {
     }
 };
 
-static void MergeSortImplAsync(ArraySliceMut<int32_t> array, ArraySliceMut<int32_t> mergingSpace)
+static void MergeSortImplAsync(festd::span<int32_t> array, festd::span<int32_t> mergingSpace)
 {
     ZoneScoped;
-    ZoneTextF("%d", array.Length());
-    if (array.Length() <= MinJobArrayLength)
+    ZoneTextF("%d", array.size());
+    if (array.size() <= MinJobArrayLength)
     {
         std::sort(array.begin(), array.end());
         return;
     }
 
-    const uint32_t middleIndex = (array.Length() + 1) / 2;
-    const uint32_t endIndex = array.Length();
-    auto left = array(0, middleIndex);
-    auto right = array(middleIndex, endIndex);
+    const uint32_t middleIndex = (array.size() + 1) / 2;
+    const uint32_t endIndex = array.size();
+    const festd::span left = array.subspan(0, middleIndex);
+    const festd::span right = array.subspan(middleIndex, endIndex - middleIndex);
 
-    MergeSortJob* leftJob = SmallJob<MergeSortJob>::Create(left, mergingSpace(0, middleIndex));
-    MergeSortJob* rightJob = SmallJob<MergeSortJob>::Create(right, mergingSpace(middleIndex, endIndex));
+    MergeSortJob* leftJob = SmallJob<MergeSortJob>::Create(left, mergingSpace.subspan(0, middleIndex));
+    MergeSortJob* rightJob = SmallJob<MergeSortJob>::Create(right, mergingSpace.subspan(middleIndex, endIndex - middleIndex));
 
     Rc pWaitGroup = WaitGroup::Create();
     leftJob->Schedule(pWaitGroup.Get());
     rightJob->Schedule(pWaitGroup.Get());
 
     pWaitGroup->Wait();
-    MergeArraysSync(ArraySlice(left), ArraySlice(right), mergingSpace);
-    mergingSpace.CopyDataTo(array);
+    MergeArraysSync(festd::span(left), festd::span(right), mergingSpace);
+    Memory::Copy(mergingSpace, array);
 }
 
-static void ParallelSort(ArraySliceMut<int32_t> array)
+static void ParallelSort(festd::span<int32_t> array)
 {
     ZoneScoped;
     festd::vector<int32_t> space;
-    space.resize(array.Length());
-    MergeSortImplAsync(array, ArraySliceMut(space));
+    space.resize(array.size());
+    MergeSortImplAsync(array, festd::span(space));
 }
 
-static void AssertSorted(const ArraySlice<int>& values)
+static void AssertSorted(festd::span<int32_t> values)
 {
     ZoneScoped;
     uint32_t unsortedCount = 0;
-    for (uint32_t i = 0; i < values.Length() - 1; ++i)
+    for (uint32_t i = 0; i < values.size() - 1; ++i)
     {
         if (values[i] > values[i + 1])
         {
@@ -149,11 +148,12 @@ struct MainJob final : Job
         {
             values1.push_back(distribution(mt));
         }
+
         values2.resize(length);
-        ArraySlice(values1).CopyDataTo(ArraySliceMut(values2));
+        Memory::Copy(festd::span(values1), festd::span(values2));
 
         auto parallel = MeasureTime([&values1]() {
-            ParallelSort(ArraySliceMut(values1));
+            ParallelSort(festd::span(values1));
         });
         AssertSorted(values1);
 
