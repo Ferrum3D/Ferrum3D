@@ -41,7 +41,7 @@ namespace FE::Graphics::Vulkan
             layoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
             layoutCI.bindingCount = static_cast<uint32_t>(bindings.size());
             layoutCI.pBindings = bindings.data();
-            vkCreateDescriptorSetLayout(m_pDevice->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &layout);
+            vkCreateDescriptorSetLayout(NativeCast(m_pDevice), &layoutCI, VK_NULL_HANDLE, &layout);
 
             m_DescriptorSetLayouts[key] = DescriptorSetLayoutData(layout);
         }
@@ -56,7 +56,7 @@ namespace FE::Graphics::Vulkan
 
     void DescriptorAllocator::ReleaseDescriptorSetLayout(size_t key)
     {
-        if (m_DescriptorSetLayouts[key].Release(m_pDevice->GetNativeDevice()))
+        if (m_DescriptorSetLayouts[key].Release(NativeCast(m_pDevice)))
         {
             m_DescriptorSetLayouts.erase(key);
         }

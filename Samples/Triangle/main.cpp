@@ -29,7 +29,7 @@ class TestApplication final : public FE::ApplicationModule
     FE::Rc<HAL::ICommandQueue> m_TransferQueue;
 
     FE::Rc<HAL::RenderPass> m_RenderPass;
-    FE::Rc<HAL::SwapChain> m_SwapChain;
+    FE::Rc<HAL::Swapchain> m_SwapChain;
     FE::Rc<HAL::GraphicsPipeline> m_Pipeline;
     FE::List<HAL::IImageView*> m_RTVs;
 
@@ -100,7 +100,7 @@ public:
         m_Viewport      = m_Window->CreateViewport();
         m_Scissor       = m_Window->CreateScissor();
 
-        HAL::SwapChainDesc swapChainDesc{};
+        HAL::SwapchainDesc swapChainDesc{};
         swapChainDesc.ImageCount         = m_FrameBufferCount;
         swapChainDesc.ImageWidth         = m_Scissor.Width();
         swapChainDesc.ImageHeight        = m_Scissor.Height();

@@ -14,6 +14,7 @@ namespace FE::Graphics::Vulkan
 {
     constexpr auto RequiredDeviceExtensions = std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
+
     void Device::FindQueueFamilies()
     {
         auto hasQueueFamily = [this](HAL::HardwareQueueKindFlags cmdQueueClass) {
@@ -51,6 +52,7 @@ namespace FE::Graphics::Vulkan
             }
         }
     }
+
 
     uint32_t Device::FindMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties)
     {
@@ -181,6 +183,8 @@ namespace FE::Graphics::Vulkan
 
     Device::~Device()
     {
+        DisposePending();
+
         for (auto& family : m_QueueFamilyIndices)
         {
             vkDestroyCommandPool(m_NativeDevice, family.CmdPool, VK_NULL_HANDLE);

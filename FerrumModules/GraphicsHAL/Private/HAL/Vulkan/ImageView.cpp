@@ -46,16 +46,16 @@ namespace FE::Graphics::Vulkan
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCI.components = VkComponentMapping{};
         viewCI.format = VKConvert(desc.Format);
-        viewCI.image = ImplCast(desc.Image)->NativeImage;
+        viewCI.image = NativeCast(desc.Image);
         viewCI.viewType = VKConvert(desc.Dimension, desc.SubresourceRange.ArraySliceCount != 1);
         viewCI.subresourceRange = VKConvert(desc.SubresourceRange);
-        vkCreateImageView(ImplCast(m_pDevice)->GetNativeDevice(), &viewCI, VK_NULL_HANDLE, &m_NativeView);
+        vkCreateImageView(NativeCast(m_pDevice), &viewCI, VK_NULL_HANDLE, &m_NativeView);
         return HAL::ResultCode::Success;
     }
 
 
     ImageView::~ImageView()
     {
-        vkDestroyImageView(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeView, nullptr);
+        vkDestroyImageView(NativeCast(m_pDevice), m_NativeView, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

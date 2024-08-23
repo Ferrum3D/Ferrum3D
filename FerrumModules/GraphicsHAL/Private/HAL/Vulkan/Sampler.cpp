@@ -58,7 +58,7 @@ namespace FE::Graphics::Vulkan
         samplerCI.compareEnable = desc.CompareEnable;
         samplerCI.compareOp = VKConvert(desc.CompareOp);
 
-        vkCreateSampler(ImplCast(m_pDevice)->GetNativeDevice(), &samplerCI, VK_NULL_HANDLE, &NativeSampler);
+        vkCreateSampler(NativeCast(m_pDevice), &samplerCI, VK_NULL_HANDLE, &m_NativeSampler);
         return HAL::ResultCode::Success;
     }
 
@@ -71,7 +71,7 @@ namespace FE::Graphics::Vulkan
 
     Sampler::~Sampler()
     {
-        if (NativeSampler)
-            vkDestroySampler(ImplCast(m_pDevice)->GetNativeDevice(), NativeSampler, nullptr);
+        if (m_NativeSampler)
+            vkDestroySampler(NativeCast(m_pDevice), m_NativeSampler, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

@@ -95,7 +95,7 @@ namespace FE::Graphics::Vulkan
         renderPassCI.subpassCount = static_cast<uint32_t>(subpassDescriptions.size());
         renderPassCI.pSubpasses = subpassDescriptions.data();
 
-        vkCreateRenderPass(ImplCast(m_pDevice)->GetNativeDevice(), &renderPassCI, VK_NULL_HANDLE, &m_NativeRenderPass);
+        vkCreateRenderPass(NativeCast(m_pDevice), &renderPassCI, VK_NULL_HANDLE, &m_NativeRenderPass);
     }
 
 
@@ -211,6 +211,6 @@ namespace FE::Graphics::Vulkan
     RenderPass::~RenderPass()
     {
         if (m_NativeRenderPass)
-            vkDestroyRenderPass(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeRenderPass, nullptr);
+            vkDestroyRenderPass(NativeCast(m_pDevice), m_NativeRenderPass, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

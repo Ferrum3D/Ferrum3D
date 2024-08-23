@@ -1,13 +1,12 @@
 ﻿#pragma once
+#include <HAL/DeviceService.h>
 #include <HAL/Image.h>
 #include <HAL/Vulkan/Device.h>
 
 namespace FE::Graphics::Vulkan
 {
-    class MemoryRequirementsCache final : public Memory::RefCountedObjectBase
+    class MemoryRequirementsCache final : public HAL::DeviceService
     {
-        // Hold a reference to the device to make sure it's not deleted before this class.
-        Rc<Device> m_pDevice;
         DI::IServiceProvider* m_pServiceProvider = nullptr;
 
         LRUCacheMap<size_t, VkMemoryRequirements> m_ImageMemoryRequirementsByDesc;
@@ -19,11 +18,13 @@ namespace FE::Graphics::Vulkan
         FE_RTTI_Class(MemoryRequirementsCache, "476F7BBF-5D1C-40E2-B890-4E3666E5EEE8");
 
         inline MemoryRequirementsCache(Device* pDevice, DI::IServiceProvider* pServiceProvider)
-            : m_pDevice(pDevice)
+            : HAL::DeviceService(pDevice)
             , m_pServiceProvider(pServiceProvider)
         {
             m_ImageMemoryRequirementsByDesc.SetCapacity(1024);
         }
+
+        ~MemoryRequirementsCache() override = default;
 
         VkMemoryRequirements GetImageMemoryRequirements(const HAL::ImageDesc& desc);
         VkMemoryRequirements GetImageMemoryRequirements();

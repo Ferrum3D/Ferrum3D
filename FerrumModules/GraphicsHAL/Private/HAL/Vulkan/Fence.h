@@ -21,7 +21,10 @@ namespace FE::Graphics::Vulkan
         void Reset() override;
         HAL::FenceState GetState() override;
 
-        VkFence GetNativeFence();
+        [[nodiscard]] inline VkFence GetNative() const
+        {
+            return m_NativeFence;
+        }
     };
 
     FE_ENABLE_IMPL_CAST(Fence);

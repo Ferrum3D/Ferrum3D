@@ -20,19 +20,18 @@ namespace FE::Graphics::Vulkan
 
         VkDescriptorSetAllocateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        info.descriptorPool = m_Heap->GetNativeDescriptorPool();
+        info.descriptorPool = NativeCast(m_Heap.Get());
         info.descriptorSetCount = 1;
         info.pSetLayouts = &m_Layout;
 
-        vkAllocateDescriptorSets(ImplCast(m_pDevice)->GetNativeDevice(), &info, &m_Set);
+        vkAllocateDescriptorSets(NativeCast(m_pDevice), &info, &m_Set);
     }
 
 
     void DescriptorTable::Update(const HAL::DescriptorWriteBuffer& descriptorWriteBuffer)
     {
-        const Buffer* pBuffer = ImplCast(descriptorWriteBuffer.Buffer);
         VkDescriptorBufferInfo info{};
-        info.buffer = pBuffer->NativeBuffer;
+        info.buffer = NativeCast(descriptorWriteBuffer.Buffer);
         info.offset = descriptorWriteBuffer.Offset;
         info.range = descriptorWriteBuffer.Range == static_cast<uint32_t>(-1) ? VK_WHOLE_SIZE : descriptorWriteBuffer.Range;
 
@@ -44,15 +43,14 @@ namespace FE::Graphics::Vulkan
         write.dstBinding = descriptorWriteBuffer.Binding;
         write.dstSet = m_Set;
         write.pBufferInfo = &info;
-        vkUpdateDescriptorSets(ImplCast(m_pDevice)->GetNativeDevice(), 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(NativeCast(m_pDevice), 1, &write, 0, nullptr);
     }
 
 
     void DescriptorTable::Update(const HAL::DescriptorWriteImage& descriptorWriteImage)
     {
-        const ImageView* pImageView = ImplCast(descriptorWriteImage.View);
         VkDescriptorImageInfo info{};
-        info.imageView = pImageView->GetNativeView();
+        info.imageView = NativeCast(descriptorWriteImage.View);
         info.sampler = VK_NULL_HANDLE;
         info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -64,16 +62,15 @@ namespace FE::Graphics::Vulkan
         write.dstBinding = descriptorWriteImage.Binding;
         write.dstSet = m_Set;
         write.pImageInfo = &info;
-        vkUpdateDescriptorSets(ImplCast(m_pDevice)->GetNativeDevice(), 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(NativeCast(m_pDevice), 1, &write, 0, nullptr);
     }
 
 
     void DescriptorTable::Update(const HAL::DescriptorWriteSampler& descriptorWriteSampler)
     {
-        const Sampler* pSampler = ImplCast(descriptorWriteSampler.Sampler);
         VkDescriptorImageInfo info{};
         info.imageView = VK_NULL_HANDLE;
-        info.sampler = pSampler->NativeSampler;
+        info.sampler = NativeCast(descriptorWriteSampler.Sampler);
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -83,7 +80,7 @@ namespace FE::Graphics::Vulkan
         write.dstBinding = descriptorWriteSampler.Binding;
         write.dstSet = m_Set;
         write.pImageInfo = &info;
-        vkUpdateDescriptorSets(ImplCast(m_pDevice)->GetNativeDevice(), 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(NativeCast(m_pDevice), 1, &write, 0, nullptr);
     }
 
 

@@ -50,21 +50,17 @@ namespace FE::Graphics::Vulkan
 
         HAL::ResultCode Init(const HAL::GraphicsPipelineDesc& desc) override;
 
-        inline VkPipeline GetNativePipeline();
-        inline VkPipelineLayout GetNativeLayout();
+        [[nodiscard]] inline VkPipeline GetNative() const
+        {
+            return m_NativePipeline;
+        }
+
+        inline VkPipelineLayout GetNativeLayout() const
+        {
+            return m_Layout;
+        }
     };
 
-
-    inline VkPipeline GraphicsPipeline::GetNativePipeline()
-    {
-        return m_NativePipeline;
-    }
-
-
-    inline VkPipelineLayout GraphicsPipeline::GetNativeLayout()
-    {
-        return m_Layout;
-    }
 
     FE_ENABLE_IMPL_CAST(GraphicsPipeline);
 } // namespace FE::Graphics::Vulkan

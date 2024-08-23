@@ -27,11 +27,14 @@ namespace FE::Graphics::Vulkan
         DeviceFactory(Env::Configuration* pConfig, Debug::IConsoleLogger* pLogger);
         ~DeviceFactory() override;
 
+        [[nodiscard]] inline VkInstance GetNative() const
+        {
+            return m_Instance;
+        }
+
         HAL::ResultCode CreateDevice(Env::Name adapterName) override;
 
         void RegisterServices(DI::ServiceRegistryBuilder& builder);
-
-        VkInstance GetNativeInstance();
 
         [[nodiscard]] festd::span<const HAL::AdapterInfo> EnumerateAdapters() const override;
     };

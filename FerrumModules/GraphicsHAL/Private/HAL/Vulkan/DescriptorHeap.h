@@ -34,7 +34,7 @@ namespace FE::Graphics::Vulkan
     class DescriptorHeap : public HAL::DescriptorHeap
     {
         VkDescriptorPool m_NativePool = VK_NULL_HANDLE;
-        Rc<DescriptorAllocator> m_DescriptorAllocator;
+        DescriptorAllocator* m_DescriptorAllocator;
 
     public:
         FE_RTTI_Class(DescriptorHeap, "5AFA0C8B-35EE-4B53-9144-C3BD5A8AA51D");
@@ -48,7 +48,7 @@ namespace FE::Graphics::Vulkan
 
         void Reset() override;
 
-        inline VkDescriptorPool GetNativeDescriptorPool() const
+        [[nodiscard]] inline VkDescriptorPool GetNative() const
         {
             return m_NativePool;
         }

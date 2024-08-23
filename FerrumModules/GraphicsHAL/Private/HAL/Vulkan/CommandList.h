@@ -18,7 +18,7 @@ namespace FE::Graphics::Vulkan
 
         HAL::ResultCode Init(const HAL::CommandListDesc& desc) override;
 
-        inline VkCommandBuffer GetNativeBuffer() const
+        [[nodiscard]] inline VkCommandBuffer GetNative() const
         {
             return m_CommandBuffer;
         }
@@ -35,7 +35,8 @@ namespace FE::Graphics::Vulkan
 
         void BindIndexBuffer(HAL::Buffer* buffer, uint64_t byteOffset) override;
         void BindVertexBuffer(uint32_t slot, HAL::Buffer* buffer, uint64_t byteOffset) override;
-        void BindVertexBuffers(uint32_t startSlot, festd::span<HAL::Buffer*> buffers, festd::span<const uint64_t> offsets) override;
+        void BindVertexBuffers(uint32_t startSlot, festd::span<HAL::Buffer*> buffers,
+                               festd::span<const uint64_t> offsets) override;
 
         void CopyBuffers(HAL::Buffer* source, HAL::Buffer* dest, const HAL::BufferCopyRegion& region) override;
         void CopyBufferToImage(HAL::Buffer* source, HAL::Image* dest, const HAL::BufferImageCopyRegion& region) override;

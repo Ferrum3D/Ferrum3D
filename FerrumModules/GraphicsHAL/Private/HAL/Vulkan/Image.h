@@ -6,21 +6,38 @@ namespace FE::Graphics::Vulkan
 {
     class Image final : public HAL::ImageBase
     {
+        VkMemoryRequirements m_MemoryRequirements{};
+        VkImage m_NativeImage = VK_NULL_HANDLE;
+        HAL::ImageDesc m_Desc;
+
         HAL::DeviceMemorySlice m_Memory;
         bool m_MemoryOwned = false;
         bool m_Owned = false;
 
     public:
-        VkMemoryRequirements MemoryRequirements{};
-        VkImage NativeImage = VK_NULL_HANDLE;
-        HAL::ImageDesc Desc;
-
         FE_RTTI_Class(Image, "9726C432-92C1-489C-9623-55330B3530E8");
 
         explicit Image(HAL::Device* pDevice);
         ~Image() override;
 
-        HAL::ResultCode Init(const HAL::ImageDesc& desc) override;
+        inline void InitInternal(StringSlice name, const HAL::ImageDesc& desc, VkImage nativeImage)
+        {
+            m_Name = name;
+            m_Desc = desc;
+            m_NativeImage = nativeImage;
+        }
+
+        [[nodiscard]] inline VkImage GetNative() const
+        {
+            return m_NativeImage;
+        }
+
+        [[nodiscard]] inline const VkMemoryRequirements& GetMemoryRequirements() const
+        {
+            return m_MemoryRequirements;
+        }
+
+        HAL::ResultCode Init(StringSlice name, const HAL::ImageDesc& desc) override;
 
         const HAL::ImageDesc& GetDesc() override;
 

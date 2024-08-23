@@ -78,14 +78,12 @@ namespace FE::Graphics::Vulkan
 
         uint32_t GetAttachmentCount() override;
 
-        inline VkRenderPass& GetNativeRenderPass();
+        [[nodiscard]] inline VkRenderPass GetNative() const
+        {
+            return m_NativeRenderPass;
+        }
     };
 
-
-    inline VkRenderPass& RenderPass::GetNativeRenderPass()
-    {
-        return m_NativeRenderPass;
-    }
 
     FE_ENABLE_IMPL_CAST(RenderPass);
 } // namespace FE::Graphics::Vulkan

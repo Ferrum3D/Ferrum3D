@@ -19,25 +19,25 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<VkImageView> nativeRTVs;
         for (const HAL::ImageView* view : desc.RenderTargetViews)
         {
-            nativeRTVs.push_back(ImplCast(view)->GetNativeView());
+            nativeRTVs.push_back(NativeCast(view));
         }
 
         VkFramebufferCreateInfo framebufferCI{};
         framebufferCI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCI.renderPass = ImplCast(desc.RenderPass.Get())->GetNativeRenderPass();
+        framebufferCI.renderPass = NativeCast(desc.RenderPass.Get());
         framebufferCI.attachmentCount = static_cast<uint32_t>(nativeRTVs.size());
         framebufferCI.pAttachments = nativeRTVs.data();
         framebufferCI.width = desc.Width;
         framebufferCI.height = desc.Height;
         framebufferCI.layers = 1;
 
-        vkCreateFramebuffer(ImplCast(m_pDevice)->GetNativeDevice(), &framebufferCI, VK_NULL_HANDLE, &m_NativeFramebuffer);
+        vkCreateFramebuffer(NativeCast(m_pDevice), &framebufferCI, VK_NULL_HANDLE, &m_NativeFramebuffer);
         return HAL::ResultCode::Success;
     }
 
 
     Framebuffer::~Framebuffer()
     {
-        vkDestroyFramebuffer(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeFramebuffer, nullptr);
+        vkDestroyFramebuffer(NativeCast(m_pDevice), m_NativeFramebuffer, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

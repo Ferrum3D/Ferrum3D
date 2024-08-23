@@ -5,39 +5,39 @@
 #include <HAL/Vulkan/DeviceFactory.h>
 #include <HAL/Vulkan/Image.h>
 #include <HAL/Vulkan/ImageView.h>
-#include <HAL/Vulkan/SwapChain.h>
+#include <HAL/Vulkan/Swapchain.h>
 #include <algorithm>
 
 namespace FE::Graphics::Vulkan
 {
-    bool SwapChain::ValidateDimensions(const HAL::SwapChainDesc& swapChainDesc) const
+    bool Swapchain::ValidateDimensions(const HAL::SwapchainDesc& swapchainDesc) const
     {
-        return m_Capabilities.minImageExtent.width <= swapChainDesc.ImageWidth
-            && m_Capabilities.minImageExtent.height <= swapChainDesc.ImageHeight
-            && m_Capabilities.maxImageExtent.width >= swapChainDesc.ImageWidth
-            && m_Capabilities.maxImageExtent.height >= swapChainDesc.ImageHeight;
+        return m_Capabilities.minImageExtent.width <= swapchainDesc.ImageWidth
+            && m_Capabilities.minImageExtent.height <= swapchainDesc.ImageHeight
+            && m_Capabilities.maxImageExtent.width >= swapchainDesc.ImageWidth
+            && m_Capabilities.maxImageExtent.height >= swapchainDesc.ImageHeight;
     }
 
 
-    SwapChain::SwapChain(HAL::Device* pDevice, HAL::Image* pDepthImage)
+    Swapchain::Swapchain(HAL::Device* pDevice, HAL::Image* pDepthImage)
         : m_DepthImage(ImplCast(pDepthImage))
     {
         m_pDevice = pDevice;
     }
 
 
-    HAL::ResultCode SwapChain::Init(const HAL::SwapChainDesc& desc)
+    HAL::ResultCode Swapchain::Init(const HAL::SwapchainDesc& desc)
     {
         ZoneScoped;
         m_Desc = desc;
         m_Queue = ImplCast(desc.Queue);
 
-        BuildNativeSwapChain();
+        BuildNativeSwapchain();
 
-        const VkDevice device = ImplCast(m_pDevice)->GetNativeDevice();
-        vkGetSwapchainImagesKHR(device, m_NativeSwapChain, &m_Desc.ImageCount, nullptr);
+        const VkDevice device = NativeCast(m_pDevice);
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.ImageCount, nullptr);
         festd::small_vector<VkImage> images(m_Desc.ImageCount, VK_NULL_HANDLE);
-        vkGetSwapchainImagesKHR(device, m_NativeSwapChain, &m_Desc.ImageCount, images.data());
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.ImageCount, images.data());
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
 
@@ -47,8 +47,8 @@ namespace FE::Graphics::Vulkan
         for (auto& image : images)
         {
             Rc backBuffer = ImplCast(pServiceProvider->ResolveRequired<HAL::Image>());
-            backBuffer->NativeImage = image;
-            backBuffer->Desc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::Color, width, height, m_Desc.Format);
+            const auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::Color, width, height, m_Desc.Format);
+            backBuffer->InitInternal("Swapchain image", imageDesc, image);
             m_Images.push_back(backBuffer);
 
             Rc backBufferView = ImplCast(pServiceProvider->ResolveRequired<HAL::ImageView>());
@@ -57,7 +57,7 @@ namespace FE::Graphics::Vulkan
         }
 
         const auto depthImageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::Depth, width, height, HAL::Format::D32_SFloat);
-        m_DepthImage->Init(depthImageDesc);
+        m_DepthImage->Init("Swapchain depth target", depthImageDesc);
         m_DepthImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
         m_DepthImageView = ImplCast(pServiceProvider->ResolveRequired<HAL::ImageView>());
         m_DepthImageView->Init(HAL::ImageViewDesc::ForImage(m_DepthImage.Get(), HAL::ImageAspectFlags::Depth));
@@ -77,7 +77,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void SwapChain::BuildNativeSwapChain()
+    void Swapchain::BuildNativeSwapchain()
     {
 #if FE_WINDOWS
         DeviceFactory* pFactory = ImplCast(Env::GetServiceProvider()->ResolveRequired<HAL::DeviceFactory>());
@@ -86,7 +86,7 @@ namespace FE::Graphics::Vulkan
         surfaceCI.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         surfaceCI.hinstance = GetModuleHandle(nullptr);
         surfaceCI.hwnd = static_cast<HWND>(m_Desc.NativeWindowHandle);
-        vkCreateWin32SurfaceKHR(pFactory->GetNativeInstance(), &surfaceCI, VK_NULL_HANDLE, &m_Surface);
+        vkCreateWin32SurfaceKHR(NativeCast(pFactory), &surfaceCI, VK_NULL_HANDLE, &m_Surface);
 #else
 #    error platform not supported
 #endif
@@ -112,7 +112,7 @@ namespace FE::Graphics::Vulkan
         }
         if (m_ColorFormat.format == VK_FORMAT_UNDEFINED)
         {
-            FE_LOG_WARNING("SwapChain format {} is not supported, using the first supported one", preferredFormat);
+            FE_LOG_WARNING("Swapchain format {} is not supported, using the first supported one", preferredFormat);
             m_ColorFormat = formats.front();
         }
 
@@ -158,26 +158,26 @@ namespace FE::Graphics::Vulkan
             FE_LOG_WARNING("V-Sync is force enabled, because FIFO is the only supported present mode");
         }
 
-        VkSwapchainCreateInfoKHR swapChainCI{};
-        swapChainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapChainCI.surface = m_Surface;
-        swapChainCI.imageArrayLayers = 1;
-        swapChainCI.minImageCount = m_Desc.ImageCount;
-        swapChainCI.imageExtent = m_Capabilities.currentExtent;
-        swapChainCI.imageFormat = m_ColorFormat.format;
-        swapChainCI.imageColorSpace = m_ColorFormat.colorSpace;
-        swapChainCI.imageUsage =
+        VkSwapchainCreateInfoKHR swapchainCI{};
+        swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapchainCI.surface = m_Surface;
+        swapchainCI.imageArrayLayers = 1;
+        swapchainCI.minImageCount = m_Desc.ImageCount;
+        swapchainCI.imageExtent = m_Capabilities.currentExtent;
+        swapchainCI.imageFormat = m_ColorFormat.format;
+        swapchainCI.imageColorSpace = m_ColorFormat.colorSpace;
+        swapchainCI.imageUsage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        swapChainCI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swapChainCI.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapChainCI.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        swapChainCI.presentMode = mode;
-        swapChainCI.clipped = true;
-        swapChainCI.pQueueFamilyIndices = &m_Queue->GetDesc().QueueFamilyIndex;
-        swapChainCI.queueFamilyIndexCount = 1;
+        swapchainCI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchainCI.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchainCI.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swapchainCI.presentMode = mode;
+        swapchainCI.clipped = true;
+        swapchainCI.pQueueFamilyIndices = &m_Queue->GetDesc().QueueFamilyIndex;
+        swapchainCI.queueFamilyIndexCount = 1;
 
         Device* device = ImplCast(m_pDevice);
-        vkCreateSwapchainKHR(device->GetNativeDevice(), &swapChainCI, VK_NULL_HANDLE, &m_NativeSwapChain);
+        vkCreateSwapchainKHR(NativeCast(device), &swapchainCI, VK_NULL_HANDLE, &m_NativeSwapchain);
 
         // TODO: old hack, must be removed
         // Probably we should use a work batch object that would be submitted to a command queue.
@@ -188,9 +188,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    SwapChain::~SwapChain()
+    Swapchain::~Swapchain()
     {
-        const VkDevice device = ImplCast(m_pDevice)->GetNativeDevice();
+        const VkDevice device = NativeCast(m_pDevice);
         for (auto& semaphore : m_ImageAvailableSemaphores)
         {
             vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
@@ -201,48 +201,48 @@ namespace FE::Graphics::Vulkan
             vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
         }
 
-        if (m_NativeSwapChain)
-            vkDestroySwapchainKHR(device, m_NativeSwapChain, VK_NULL_HANDLE);
+        if (m_NativeSwapchain)
+            vkDestroySwapchainKHR(device, m_NativeSwapchain, VK_NULL_HANDLE);
 
         if (m_Surface)
         {
-            const VkInstance instance = ImplCast(m_pDevice)->GetDeviceFactory()->GetNativeInstance();
+            const VkInstance instance = ImplCast(m_pDevice)->GetDeviceFactory()->GetNative();
             vkDestroySurfaceKHR(instance, m_Surface, VK_NULL_HANDLE);
         }
     }
 
 
-    const HAL::SwapChainDesc& SwapChain::GetDesc()
+    const HAL::SwapchainDesc& Swapchain::GetDesc()
     {
         return m_Desc;
     }
 
 
-    uint32_t SwapChain::GetCurrentImageIndex()
+    uint32_t Swapchain::GetCurrentImageIndex()
     {
         return m_ImageIndex;
     }
 
 
-    uint32_t SwapChain::GetImageCount()
+    uint32_t Swapchain::GetImageCount()
     {
         return static_cast<uint32_t>(m_Images.size());
     }
 
 
-    Image* SwapChain::GetImage(uint32_t index)
+    Image* Swapchain::GetImage(uint32_t index)
     {
         return m_Images[index].Get();
     }
 
 
-    Image* SwapChain::GetCurrentImage()
+    Image* Swapchain::GetCurrentImage()
     {
         return m_Images[m_ImageIndex].Get();
     }
 
 
-    void SwapChain::Present()
+    void Swapchain::Present()
     {
         ZoneScoped;
         VkPresentInfoKHR presentInfo{};
@@ -250,9 +250,9 @@ namespace FE::Graphics::Vulkan
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_FrameIndex];
         presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = &m_NativeSwapChain;
+        presentInfo.pSwapchains = &m_NativeSwapchain;
         presentInfo.pImageIndices = &m_ImageIndex;
-        FE_VK_ASSERT(vkQueuePresentKHR(m_Queue->GetNativeQueue(), &presentInfo));
+        FE_VK_ASSERT(vkQueuePresentKHR(NativeCast(m_Queue), &presentInfo));
 
         m_FrameIndex = (m_FrameIndex + 1) % m_Desc.FrameCount;
         *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
@@ -261,28 +261,28 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void SwapChain::AcquireNextImage(uint32_t* index)
+    void Swapchain::AcquireNextImage(uint32_t* index)
     {
         const VkSemaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex];
-        const VkDevice device = ImplCast(m_pDevice)->GetNativeDevice();
-        FE_VK_ASSERT(vkAcquireNextImageKHR(device, m_NativeSwapChain, static_cast<uint64_t>(-1), semaphore, nullptr, index));
+        const VkDevice device = NativeCast(m_pDevice);
+        FE_VK_ASSERT(vkAcquireNextImageKHR(device, m_NativeSwapchain, static_cast<uint64_t>(-1), semaphore, nullptr, index));
     }
 
 
-    festd::span<HAL::ImageView*> SwapChain::GetRTVs()
+    festd::span<HAL::ImageView*> Swapchain::GetRTVs()
     {
         return festd::span(reinterpret_cast<HAL::ImageView**>(m_ImageViews.begin()),
                            reinterpret_cast<HAL::ImageView**>(m_ImageViews.end()));
     }
 
 
-    HAL::ImageView* SwapChain::GetDSV()
+    HAL::ImageView* Swapchain::GetDSV()
     {
         return m_DepthImageView.Get();
     }
 
 
-    uint32_t SwapChain::GetCurrentFrameIndex()
+    uint32_t Swapchain::GetCurrentFrameIndex()
     {
         return m_FrameIndex;
     }

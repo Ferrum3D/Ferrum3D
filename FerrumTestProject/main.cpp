@@ -68,7 +68,7 @@ class TestApplication final : public FE::ApplicationModule
     FE::Rc<HAL::ICommandQueue> m_TransferQueue;
 
     FE::Rc<HAL::RenderPass> m_RenderPass;
-    FE::Rc<HAL::SwapChain> m_SwapChain;
+    FE::Rc<HAL::Swapchain> m_SwapChain;
     FE::Rc<HAL::GraphicsPipeline> m_Pipeline;
     FE::List<HAL::IImageView*> m_RTVs;
 
@@ -175,7 +175,7 @@ public:
         m_ResourceHeap->Allocate();
 
         auto compiler = m_Device->CreateShaderCompiler();
-        HAL::SwapChainDesc swapChainDesc{};
+        HAL::SwapchainDesc swapChainDesc{};
         swapChainDesc.ImageCount         = m_FrameBufferCount;
         swapChainDesc.ImageWidth         = m_Scissor.Width();
         swapChainDesc.ImageHeight        = m_Scissor.Height();

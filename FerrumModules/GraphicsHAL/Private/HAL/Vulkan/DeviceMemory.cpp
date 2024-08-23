@@ -29,7 +29,7 @@ namespace FE::Graphics::Vulkan
         info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         info.allocationSize = desc.Size;
         info.memoryTypeIndex = ImplCast(pDevice)->FindMemoryType(typeBits, properties);
-        vkAllocateMemory(ImplCast(pDevice)->GetNativeDevice(), &info, VK_NULL_HANDLE, &Memory);
+        vkAllocateMemory(NativeCast(pDevice), &info, VK_NULL_HANDLE, &m_NativeMemory);
     }
 
 
@@ -41,20 +41,20 @@ namespace FE::Graphics::Vulkan
 
     DeviceMemory::~DeviceMemory()
     {
-        vkFreeMemory(ImplCast(m_pDevice)->GetNativeDevice(), Memory, nullptr);
+        vkFreeMemory(NativeCast(m_pDevice), m_NativeMemory, nullptr);
     }
 
 
     void* DeviceMemory::Map(size_t offset, size_t size)
     {
         void* data;
-        FE_VK_ASSERT(vkMapMemory(ImplCast(m_pDevice)->GetNativeDevice(), Memory, offset, size, 0, &data));
+        FE_VK_ASSERT(vkMapMemory(NativeCast(m_pDevice), m_NativeMemory, offset, size, 0, &data));
         return data;
     }
 
 
     void DeviceMemory::Unmap()
     {
-        vkUnmapMemory(ImplCast(m_pDevice)->GetNativeDevice(), Memory);
+        vkUnmapMemory(NativeCast(m_pDevice), m_NativeMemory);
     }
 } // namespace FE::Graphics::Vulkan

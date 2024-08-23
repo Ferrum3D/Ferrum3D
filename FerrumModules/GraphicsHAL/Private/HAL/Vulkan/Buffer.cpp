@@ -8,12 +8,14 @@ namespace FE::Graphics::Vulkan
     Buffer::Buffer(HAL::Device* pDevice)
     {
         m_pDevice = pDevice;
+        Register();
     }
 
 
-    HAL::ResultCode Buffer::Init(const HAL::BufferDesc& desc)
+    HAL::ResultCode Buffer::Init(StringSlice name, const HAL::BufferDesc& desc)
     {
-        Desc = desc;
+        m_Name = name;
+        m_Desc = desc;
 
         VkBufferCreateInfo bufferCI{};
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -47,11 +49,18 @@ namespace FE::Graphics::Vulkan
             bufferCI.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
-        const VkDevice nativeDevice = ImplCast(m_pDevice)->GetNativeDevice();
-        if (vkCreateBuffer(nativeDevice, &bufferCI, VK_NULL_HANDLE, &NativeBuffer) != VK_SUCCESS)
+        const VkDevice nativeDevice = NativeCast(m_pDevice);
+        if (vkCreateBuffer(nativeDevice, &bufferCI, VK_NULL_HANDLE, &m_NativeBuffer) != VK_SUCCESS)
             return HAL::ResultCode::UnknownError;
 
-        vkGetBufferMemoryRequirements(nativeDevice, NativeBuffer, &MemoryRequirements);
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_NativeBuffer);
+        nameInfo.pObjectName = m_Name.Data();
+        vkSetDebugUtilsObjectNameEXT(NativeCast(m_pDevice), &nameInfo);
+
+        vkGetBufferMemoryRequirements(nativeDevice, m_NativeBuffer, &m_MemoryRequirements);
         return HAL::ResultCode::Success;
     }
 
@@ -71,10 +80,10 @@ namespace FE::Graphics::Vulkan
     void Buffer::AllocateMemory(HAL::MemoryType type)
     {
         HAL::MemoryAllocationDesc desc{};
-        desc.Size = MemoryRequirements.size;
+        desc.Size = m_MemoryRequirements.size;
         desc.Type = type;
 
-        DeviceMemory* memory = Rc<DeviceMemory>::DefaultNew(m_pDevice, MemoryRequirements.memoryTypeBits, desc);
+        DeviceMemory* memory = Rc<DeviceMemory>::DefaultNew(m_pDevice, m_MemoryRequirements.memoryTypeBits, desc);
         memory->AddRef();
         BindMemory(HAL::DeviceMemorySlice{ memory });
         m_MemoryOwned = true;
@@ -84,14 +93,14 @@ namespace FE::Graphics::Vulkan
     void Buffer::BindMemory(const HAL::DeviceMemorySlice& memory)
     {
         m_Memory = memory;
-        const VkDeviceMemory vkMemory = ImplCast(memory.Memory)->Memory;
-        vkBindBufferMemory(ImplCast(m_pDevice)->GetNativeDevice(), NativeBuffer, vkMemory, memory.ByteOffset);
+        const VkDeviceMemory vkMemory = NativeCast(memory.Memory);
+        vkBindBufferMemory(NativeCast(m_pDevice), m_NativeBuffer, vkMemory, memory.ByteOffset);
     }
 
 
     const HAL::BufferDesc& Buffer::GetDesc() const
     {
-        return Desc;
+        return m_Desc;
     }
 
 
@@ -106,6 +115,6 @@ namespace FE::Graphics::Vulkan
 
     Buffer::~Buffer()
     {
-        vkDestroyBuffer(ImplCast(m_pDevice)->GetNativeDevice(), NativeBuffer, nullptr);
+        vkDestroyBuffer(NativeCast(m_pDevice), m_NativeBuffer, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

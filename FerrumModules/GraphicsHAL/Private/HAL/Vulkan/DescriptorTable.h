@@ -11,7 +11,7 @@ namespace FE::Graphics::Vulkan
     class DescriptorTable : public HAL::DescriptorTable
     {
         Rc<DescriptorHeap> m_Heap;
-        Rc<DescriptorAllocator> m_DescriptorAllocator;
+        DescriptorAllocator* m_DescriptorAllocator;
 
         VkDescriptorSetLayout m_Layout = VK_NULL_HANDLE;
         VkDescriptorSet m_Set = VK_NULL_HANDLE;
@@ -31,19 +31,16 @@ namespace FE::Graphics::Vulkan
         void Update(const HAL::DescriptorWriteImage& descriptorWriteBuffer) override;
         void Update(const HAL::DescriptorWriteSampler& descriptorWriteBuffer) override;
 
-        inline VkDescriptorSet GetNativeSet() const;
-        inline VkDescriptorSetLayout GetNativeSetLayout() const;
+        [[nodiscard]] inline VkDescriptorSet GetNative() const
+        {
+            return m_Set;
+        }
+
+        inline VkDescriptorSetLayout GetNativeSetLayout() const
+        {
+            return m_Layout;
+        }
     };
-
-    inline VkDescriptorSet DescriptorTable::GetNativeSet() const
-    {
-        return m_Set;
-    }
-
-    inline VkDescriptorSetLayout DescriptorTable::GetNativeSetLayout() const
-    {
-        return m_Layout;
-    }
 
     FE_ENABLE_IMPL_CAST(DescriptorTable);
 } // namespace FE::Graphics::Vulkan

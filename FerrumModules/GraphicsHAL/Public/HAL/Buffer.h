@@ -1,10 +1,7 @@
 ﻿#pragma once
-#include <FeCore/RTTI/RTTI.h>
 #include <HAL/BindFlags.h>
-#include <HAL/Common/BaseTypes.h>
-#include <HAL/DeviceMemorySlice.h>
 #include <HAL/DeviceObject.h>
-#include <HAL/MemoryType.h>
+#include <HAL/Resource.h>
 
 namespace FE::Graphics::HAL
 {
@@ -22,12 +19,13 @@ namespace FE::Graphics::HAL
         }
     };
 
-    class Buffer : public DeviceObject
+
+    class Buffer : public Resource
     {
     public:
         FE_RTTI_Class(Buffer, "2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
-        virtual ResultCode Init(const BufferDesc& desc) = 0;
+        virtual ResultCode Init(StringSlice name, const BufferDesc& desc) = 0;
 
         ~Buffer() override = default;
 
@@ -35,10 +33,6 @@ namespace FE::Graphics::HAL
         void* Map(uint64_t offset);
 
         virtual void Unmap() = 0;
-
-        virtual void AllocateMemory(MemoryType type) = 0;
-
-        virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
 
         [[nodiscard]] virtual const BufferDesc& GetDesc() const = 0;
 

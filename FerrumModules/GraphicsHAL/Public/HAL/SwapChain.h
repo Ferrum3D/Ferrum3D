@@ -6,9 +6,9 @@ namespace FE::Graphics::HAL
 {
     class CommandQueue;
 
-    struct SwapChainDesc
+    struct SwapchainDesc
     {
-        FE_RTTI_Base(SwapChainDesc, "19401C0C-A89C-4393-8D40-F669AB8B128C");
+        FE_RTTI_Base(SwapchainDesc, "19401C0C-A89C-4393-8D40-F669AB8B128C");
 
         uint32_t ImageCount = 3;
         uint32_t FrameCount = 2;
@@ -25,16 +25,16 @@ namespace FE::Graphics::HAL
     class Image;
     class ImageView;
 
-    class SwapChain : public DeviceObject
+    class Swapchain : public DeviceObject
     {
     public:
-        ~SwapChain() override = default;
+        ~Swapchain() override = default;
 
-        FE_RTTI_Class(SwapChain, "B2D395D3-59B3-4552-9AC5-4B57BCB15259");
+        FE_RTTI_Class(Swapchain, "B2D395D3-59B3-4552-9AC5-4B57BCB15259");
 
-        virtual ResultCode Init(const SwapChainDesc& desc) = 0;
+        virtual ResultCode Init(const SwapchainDesc& desc) = 0;
 
-        virtual const SwapChainDesc& GetDesc() = 0;
+        virtual const SwapchainDesc& GetDesc() = 0;
         virtual void Present() = 0;
         virtual uint32_t GetCurrentImageIndex() = 0;
         virtual uint32_t GetCurrentFrameIndex() = 0;
