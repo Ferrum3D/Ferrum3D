@@ -46,4 +46,11 @@ namespace FE::Graphics::Vulkan
                                                             FE_VK_SURFACE_EXT };
 
     StringSlice VKResultToString(VkResult result);
+
+
+    template<class T>
+    inline auto NativeCast(const T* pObject) -> decltype(ImplCast(pObject)->GetNative())
+    {
+        return ImplCast(pObject)->GetNative();
+    }
 } // namespace FE::Graphics::Vulkan

@@ -15,7 +15,7 @@ namespace FE::Graphics::Vulkan
         VkFenceCreateInfo fenceCI{};
         fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceCI.flags = initialState == HAL::FenceState::Reset ? 0 : VK_FENCE_CREATE_SIGNALED_BIT;
-        vkCreateFence(ImplCast(m_pDevice)->GetNativeDevice(), &fenceCI, VK_NULL_HANDLE, &m_NativeFence);
+        vkCreateFence(NativeCast(m_pDevice), &fenceCI, VK_NULL_HANDLE, &m_NativeFence);
         return HAL::ResultCode::Success;
     }
 
@@ -29,30 +29,25 @@ namespace FE::Graphics::Vulkan
 
     void Fence::WaitOnCPU()
     {
-        vkWaitForFences(ImplCast(m_pDevice)->GetNativeDevice(), 1, &m_NativeFence, false, 10000000000);
+        vkWaitForFences(NativeCast(m_pDevice), 1, &m_NativeFence, false, 10000000000);
     }
 
 
     void Fence::Reset()
     {
-        vkResetFences(ImplCast(m_pDevice)->GetNativeDevice(), 1, &m_NativeFence);
+        vkResetFences(NativeCast(m_pDevice), 1, &m_NativeFence);
     }
 
 
     HAL::FenceState Fence::GetState()
     {
-        auto status = vkGetFenceStatus(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeFence);
+        const VkResult status = vkGetFenceStatus(NativeCast(m_pDevice), m_NativeFence);
         return status == VK_SUCCESS ? HAL::FenceState::Signaled : HAL::FenceState::Reset;
     }
 
 
-    VkFence Fence::GetNativeFence()
-    {
-        return m_NativeFence;
-    }
-
     Fence::~Fence()
     {
-        vkDestroyFence(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeFence, nullptr);
+        vkDestroyFence(NativeCast(m_pDevice), m_NativeFence, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

@@ -1,15 +1,32 @@
 ﻿#include <HAL/Device.h>
 #include <HAL/DeviceObject.h>
+#include <HAL/DeviceService.h>
+#include <HAL/Resource.h>
 
 namespace FE::Graphics::HAL
 {
-    Device::~Device()
+    void Device::DisposePending()
     {
-        for (auto& disposer : m_DisposeQueue)
+        for (uint32_t i = 0; i < m_DisposeQueue.size(); ++i)
         {
+            // Don't use a range-based for loop here, since more objects can be added while we are iterating
+            PendingDisposer& disposer = m_DisposeQueue[i];
             disposer.pObject->DoDispose();
             m_pLogger->LogMessage("Deleted object at {}", disposer.pObject);
         }
+        for (festd::intrusive_list_node& resourceNode : m_ResourceList)
+        {
+            m_pLogger->LogError("Resource leak: {}", static_cast<HAL::Resource&>(resourceNode).GetName());
+            FE_DEBUGBREAK;
+        }
+        for (festd::intrusive_list_node& serviceNode : m_ServiceList)
+        {
+            static_cast<DeviceService&>(serviceNode).Release();
+        }
+
+        m_DisposeQueue.clear();
+        m_ResourceList.clear();
+        m_ServiceList.clear();
     }
 
 

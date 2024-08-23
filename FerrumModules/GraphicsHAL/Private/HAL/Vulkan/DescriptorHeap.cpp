@@ -30,26 +30,26 @@ namespace FE::Graphics::Vulkan
         poolCI.pPoolSizes = sizes.data();
         poolCI.poolSizeCount = sizes.size();
 
-        vkCreateDescriptorPool(ImplCast(m_pDevice)->GetNativeDevice(), &poolCI, VK_NULL_HANDLE, &m_NativePool);
+        vkCreateDescriptorPool(NativeCast(m_pDevice), &poolCI, VK_NULL_HANDLE, &m_NativePool);
         return HAL::ResultCode::Success;
     }
 
 
     Rc<HAL::DescriptorTable> DescriptorHeap::AllocateDescriptorTable(festd::span<const HAL::DescriptorDesc> descriptors)
     {
-        Rc result = Rc<DescriptorTable>::DefaultNew(m_pDevice, this, m_DescriptorAllocator.Get(), descriptors);
-        return result->GetNativeSet() == VK_NULL_HANDLE ? nullptr : result;
+        Rc result = Rc<DescriptorTable>::DefaultNew(m_pDevice, this, m_DescriptorAllocator, descriptors);
+        return result->GetNative() == VK_NULL_HANDLE ? nullptr : result;
     }
 
 
     DescriptorHeap::~DescriptorHeap()
     {
-        vkDestroyDescriptorPool(ImplCast(m_pDevice)->GetNativeDevice(), m_NativePool, nullptr);
+        vkDestroyDescriptorPool(NativeCast(m_pDevice), m_NativePool, nullptr);
     }
 
 
     void DescriptorHeap::Reset()
     {
-        vkResetDescriptorPool(ImplCast(m_pDevice)->GetNativeDevice(), m_NativePool, VK_FLAGS_NONE);
+        vkResetDescriptorPool(NativeCast(m_pDevice), m_NativePool, VK_FLAGS_NONE);
     }
 } // namespace FE::Graphics::Vulkan

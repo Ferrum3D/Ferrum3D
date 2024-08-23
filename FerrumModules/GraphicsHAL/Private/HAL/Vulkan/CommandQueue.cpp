@@ -10,23 +10,21 @@ namespace FE::Graphics::Vulkan
         : m_Desc(desc)
     {
         m_pDevice = pDevice;
-        vkGetDeviceQueue(ImplCast(m_pDevice)->GetNativeDevice(), m_Desc.QueueFamilyIndex, m_Desc.QueueIndex, &m_Queue);
+        vkGetDeviceQueue(NativeCast(m_pDevice), m_Desc.QueueFamilyIndex, m_Desc.QueueIndex, &m_Queue);
     }
+
 
     const CommandQueueDesc& CommandQueue::GetDesc() const
     {
         return m_Desc;
     }
 
-    VkQueue CommandQueue::GetNativeQueue()
-    {
-        return m_Queue;
-    }
 
     void CommandQueue::SignalFence(HAL::Fence* fence)
     {
         SubmitBuffers({}, fence, HAL::SubmitFlags::None);
     }
+
 
     void CommandQueue::SubmitBuffers(festd::span<HAL::CommandList*> commandLists, HAL::Fence* signalFence, HAL::SubmitFlags flags)
     {
@@ -34,7 +32,7 @@ namespace FE::Graphics::Vulkan
         commandBuffers.reserve(commandLists.size());
         for (HAL::CommandList* pCommandList : commandLists)
         {
-            commandBuffers.push_back(ImplCast(pCommandList)->GetNativeBuffer());
+            commandBuffers.push_back(NativeCast(pCommandList));
         }
 
         VkSubmitInfo info{};
@@ -54,7 +52,7 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         info.pWaitDstStageMask = waitDstFlags.data();
 
-        const VkFence vkFence = signalFence ? ImplCast(signalFence)->GetNativeFence() : VK_NULL_HANDLE;
+        const VkFence vkFence = signalFence ? NativeCast(signalFence) : VK_NULL_HANDLE;
         vkQueueSubmit(m_Queue, 1, &info, vkFence);
     }
 } // namespace FE::Graphics::Vulkan

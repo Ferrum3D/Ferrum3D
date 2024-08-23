@@ -24,11 +24,15 @@ namespace FE::Graphics::Vulkan
         CommandQueue(HAL::Device* pDevice, const CommandQueueDesc& desc);
         ~CommandQueue() override = default;
 
+        [[nodiscard]] inline VkQueue GetNative() const
+        {
+            return m_Queue;
+        }
+
         void SignalFence(HAL::Fence* fence) override;
         void SubmitBuffers(festd::span<HAL::CommandList*> commandLists, HAL::Fence* signalFence, HAL::SubmitFlags flags) override;
 
         [[nodiscard]] const CommandQueueDesc& GetDesc() const;
-        VkQueue GetNativeQueue();
     };
 
     FE_ENABLE_IMPL_CAST(CommandQueue);

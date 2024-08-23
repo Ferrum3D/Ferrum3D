@@ -25,7 +25,12 @@ namespace FE::DI
             return activationResult;
         }
 
-        (*ppResult)->AddRef();
+        if (registration.GetLifetime() != Lifetime::Transient)
+        {
+            // We don't want to hold references to transient objects.
+            (*ppResult)->AddRef();
+        }
+
         m_Table[registration] = *ppResult;
         return ResultCode::Success;
     }

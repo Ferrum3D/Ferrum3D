@@ -7,11 +7,17 @@ namespace FE::Graphics::Vulkan
     class DeviceMemory : public HAL::DeviceMemory
     {
         HAL::MemoryAllocationDesc m_Desc;
+        VkDeviceMemory m_NativeMemory = VK_NULL_HANDLE;
 
     public:
-        VkDeviceMemory Memory = VK_NULL_HANDLE;
-
         FE_RTTI_Class(DeviceMemory, "D80E7CF1-4D15-4AEB-8CDA-5275195BC389");
+
+        using NativeType = VkDeviceMemory;
+
+        inline VkDeviceMemory GetNative() const
+        {
+            return m_NativeMemory;
+        }
 
         DeviceMemory(HAL::Device* pDevice, uint32_t typeBits, const HAL::MemoryAllocationDesc& desc);
         ~DeviceMemory() override;

@@ -1,12 +1,9 @@
 ﻿#pragma once
 #include <HAL/BindFlags.h>
-#include <HAL/Common/BaseTypes.h>
-#include <HAL/DeviceMemorySlice.h>
-#include <HAL/DeviceObject.h>
 #include <HAL/ImageEnums.h>
 #include <HAL/ImageFormat.h>
 #include <HAL/ImageSubresource.h>
-#include <HAL/MemoryType.h>
+#include <HAL/Resource.h>
 #include <HAL/ResourceState.h>
 
 namespace FE::Graphics::HAL
@@ -108,19 +105,16 @@ namespace FE::Graphics::HAL
     class ImageView;
     class DeviceMemory;
 
-    class Image : public DeviceObject
+    class Image : public Resource
     {
     public:
         FE_RTTI_Class(Image, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
 
         ~Image() override = default;
 
-        virtual ResultCode Init(const ImageDesc& desc) = 0;
+        virtual ResultCode Init(StringSlice name, const ImageDesc& desc) = 0;
 
         virtual const ImageDesc& GetDesc() = 0;
-
-        virtual void AllocateMemory(MemoryType type) = 0;
-        virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
 
         virtual void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state) = 0;
         [[nodiscard]] virtual ResourceState GetState(const ImageSubresourceRange& subresourceRange) const = 0;

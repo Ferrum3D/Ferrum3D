@@ -42,7 +42,7 @@ namespace FE::Graphics::HAL
         else
         {
             Rc newImage = Env::GetServiceProvider()->ResolveRequired<Image>();
-            newImage->Init(desc.Descriptor);
+            newImage->Init(desc.Name, desc.Descriptor);
             result = newImage.Get();
             m_Cache.AddObject(descHash, result);
 
@@ -85,7 +85,7 @@ namespace FE::Graphics::HAL
         else
         {
             Rc newBuffer = Env::GetServiceProvider()->ResolveRequired<Buffer>();
-            newBuffer->Init(desc.Descriptor);
+            newBuffer->Init(desc.Name, desc.Descriptor);
 
             result = newBuffer.Get();
             m_Cache.AddObject(descHash, result);

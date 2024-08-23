@@ -25,13 +25,15 @@ namespace FE::Graphics::HAL
 
     struct TransientImageDesc final
     {
+        String Name;
         ImageDesc Descriptor;
         uint64_t ResourceID = 0;
 
         inline TransientImageDesc() = default;
 
-        inline TransientImageDesc(const ImageDesc& descriptor, uint64_t resourceId)
-            : Descriptor(descriptor)
+        inline TransientImageDesc(StringSlice name, const ImageDesc& descriptor, uint64_t resourceId)
+            : Name(name)
+            , Descriptor(descriptor)
             , ResourceID(resourceId)
         {
         }
@@ -40,13 +42,15 @@ namespace FE::Graphics::HAL
 
     struct TransientBufferDesc final
     {
+        String Name;
         BufferDesc Descriptor;
         uint64_t ResourceID = 0;
 
         inline TransientBufferDesc() = default;
 
-        inline TransientBufferDesc(const BufferDesc& descriptor, uint64_t resourceId)
-            : Descriptor(descriptor)
+        inline TransientBufferDesc(StringSlice name, const BufferDesc& descriptor, uint64_t resourceId)
+            : Name(name)
+            , Descriptor(descriptor)
             , ResourceID(resourceId)
         {
         }

@@ -11,6 +11,7 @@
     Public/HAL/DescriptorTable.h
     Public/HAL/Device.h
     Public/HAL/DeviceObject.h
+    Public/HAL/DeviceService.h
     Public/HAL/Fence.h
     Public/HAL/Framebuffer.h
     Public/HAL/Image.h
@@ -30,6 +31,7 @@
     Public/HAL/RenderPass.h
     Public/HAL/BindFlags.h
     Public/HAL/TransientResourceHeap.h
+    Public/HAL/Resource.h
     Public/HAL/ResourceCache.h
     Public/HAL/ResourceState.h
     Public/HAL/ShaderResourceType.h
@@ -40,7 +42,7 @@
     Public/HAL/ShaderReflection.h
     Public/HAL/ShaderCompilerDXC.h
     Public/HAL/ShaderStage.h
-    Public/HAL/SwapChain.h
+    Public/HAL/Swapchain.h
     Public/HAL/IWindow.h
     Public/HAL/Window.h
 )
@@ -103,8 +105,8 @@ set(VULKAN_SOURCES
     Private/HAL/Vulkan/ShaderModule.h
     Private/HAL/Vulkan/ShaderReflection.cpp
     Private/HAL/Vulkan/ShaderReflection.h
-    Private/HAL/Vulkan/SwapChain.cpp
-    Private/HAL/Vulkan/SwapChain.h
+    Private/HAL/Vulkan/Swapchain.cpp
+    Private/HAL/Vulkan/Swapchain.h
 )
 
 set(SRC ${PUBLIC_HEADERS} ${VULKAN_SOURCES} ${COMMON_SOURCES})

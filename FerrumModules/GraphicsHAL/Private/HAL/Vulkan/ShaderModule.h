@@ -62,6 +62,11 @@ namespace FE::Graphics::Vulkan
         ShaderModule(HAL::Device* pDevice);
         ~ShaderModule() override;
 
+        [[nodiscard]] inline VkShaderModule GetNative() const
+        {
+            return m_NativeModule;
+        }
+
         HAL::ResultCode Init(const HAL::ShaderModuleDesc& desc) override;
 
         [[nodiscard]] const HAL::ShaderModuleDesc& GetDesc() const override;

@@ -24,7 +24,7 @@ namespace FE::Graphics::Vulkan
 
     HAL::ResultCode CommandList::Init(const HAL::CommandListDesc& desc)
     {
-        const VkDevice nativeDevice = ImplCast(m_pDevice)->GetNativeDevice();
+        const VkDevice nativeDevice = NativeCast(m_pDevice);
         m_CommandPool = ImplCast(m_pDevice)->GetCommandPool(desc.QueueKind);
         VkCommandBufferAllocateInfo allocateInfo{};
         allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -93,8 +93,6 @@ namespace FE::Graphics::Vulkan
             if (barrier.Image == nullptr)
                 continue;
 
-            const Image* pImage = ImplCast(barrier.Image);
-
             auto stateBefore = barrier.StateBefore == HAL::ResourceState::Automatic
                 ? barrier.Image->GetState(barrier.SubresourceRange.MinArraySlice, barrier.SubresourceRange.MinMipSlice)
                 : barrier.StateBefore;
@@ -110,7 +108,7 @@ namespace FE::Graphics::Vulkan
             imageMemoryBarrier.newLayout = after;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.image = pImage->NativeImage;
+            imageMemoryBarrier.image = NativeCast(barrier.Image);
             imageMemoryBarrier.subresourceRange = VKConvert(barrier.SubresourceRange);
 
             imageMemoryBarrier.srcAccessMask = GetAccessMask(stateBefore);
@@ -131,8 +129,6 @@ namespace FE::Graphics::Vulkan
             if (barrier.Buffer == nullptr)
                 continue;
 
-            Buffer* pBuffer = ImplCast(barrier.Buffer);
-
             FE_ASSERT_MSG(barrier.StateBefore != HAL::ResourceState::Automatic,
                           "Automatic resource state management is currently "
                           "not supported for buffers");
@@ -144,7 +140,7 @@ namespace FE::Graphics::Vulkan
             bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            bufferMemoryBarrier.buffer = pBuffer->NativeBuffer;
+            bufferMemoryBarrier.buffer = NativeCast(barrier.Buffer);
             bufferMemoryBarrier.offset = barrier.Offset;
             bufferMemoryBarrier.size = barrier.Size;
 
@@ -192,7 +188,7 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<VkDescriptorSet> nativeSets;
         for (const HAL::DescriptorTable* table : descriptorTables)
         {
-            nativeSets.push_back(ImplCast(table)->GetNativeSet());
+            nativeSets.push_back(NativeCast(table));
         }
 
         vkCmdBindDescriptorSets(m_CommandBuffer,
@@ -229,8 +225,8 @@ namespace FE::Graphics::Vulkan
 
         VkRenderPassBeginInfo info{};
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        info.framebuffer = ImplCast(framebuffer)->GetNativeFramebuffer();
-        info.renderPass = ImplCast(renderPass)->GetNativeRenderPass();
+        info.framebuffer = NativeCast(framebuffer);
+        info.renderPass = NativeCast(renderPass);
         info.clearValueCount = static_cast<uint32_t>(vkClearValues.size());
         info.pClearValues = vkClearValues.data();
         info.renderArea.offset = VkOffset2D{ 0, 0 };
@@ -247,31 +243,32 @@ namespace FE::Graphics::Vulkan
 
     void CommandList::BindGraphicsPipeline(HAL::GraphicsPipeline* pipeline)
     {
-        vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ImplCast(pipeline)->GetNativePipeline());
+        vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, NativeCast(pipeline));
     }
 
 
     void CommandList::BindIndexBuffer(HAL::Buffer* buffer, uint64_t byteOffset)
     {
-        vkCmdBindIndexBuffer(m_CommandBuffer, ImplCast(buffer)->NativeBuffer, byteOffset, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(m_CommandBuffer, NativeCast(buffer), byteOffset, VK_INDEX_TYPE_UINT32);
     }
 
 
     void CommandList::BindVertexBuffer(uint32_t slot, HAL::Buffer* buffer, uint64_t byteOffset)
     {
-        const VkBuffer nativeBuffer = ImplCast(buffer)->NativeBuffer;
+        const VkBuffer nativeBuffer = NativeCast(buffer);
         vkCmdBindVertexBuffers(m_CommandBuffer, slot, 1, &nativeBuffer, &byteOffset);
     }
 
 
-    void CommandList::BindVertexBuffers(uint32_t startSlot, festd::span<HAL::Buffer*> buffers, festd::span<const uint64_t> offsets)
+    void CommandList::BindVertexBuffers(uint32_t startSlot, festd::span<HAL::Buffer*> buffers,
+                                        festd::span<const uint64_t> offsets)
     {
         FE_ASSERT_MSG(buffers.size() == offsets.size(), "Number of buffers must be the same as number of offsets");
 
         festd::small_vector<VkBuffer> nativeBuffers(buffers.size(), VK_NULL_HANDLE);
         for (uint32_t i = 0; i < buffers.size(); ++i)
         {
-            nativeBuffers[i] = ImplCast(buffers[i])->NativeBuffer;
+            nativeBuffers[i] = NativeCast(buffers[i]);
         }
 
         vkCmdBindVertexBuffers(
@@ -285,7 +282,7 @@ namespace FE::Graphics::Vulkan
         copy.size = region.Size;
         copy.dstOffset = region.DestOffset;
         copy.srcOffset = region.SourceOffset;
-        vkCmdCopyBuffer(m_CommandBuffer, ImplCast(source)->NativeBuffer, ImplCast(dest)->NativeBuffer, 1, &copy);
+        vkCmdCopyBuffer(m_CommandBuffer, NativeCast(source), NativeCast(dest), 1, &copy);
     }
 
 
@@ -305,12 +302,8 @@ namespace FE::Graphics::Vulkan
         copy.imageOffset = VKConvert(region.ImageOffset);
         copy.imageExtent = VKConvert(region.ImageSize);
 
-        vkCmdCopyBufferToImage(m_CommandBuffer,
-                               ImplCast(source)->NativeBuffer,
-                               ImplCast(dest)->NativeImage,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                               1,
-                               &copy);
+        vkCmdCopyBufferToImage(
+            m_CommandBuffer, NativeCast(source), NativeCast(dest), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
 
 
@@ -339,9 +332,9 @@ namespace FE::Graphics::Vulkan
         nativeBlit.dstOffsets[1] = VKConvert(region.DestBounds[1]);
 
         vkCmdBlitImage(m_CommandBuffer,
-                       ImplCast(source)->NativeImage,
+                       NativeCast(source),
                        VKConvert(source->GetState(region.Source)),
-                       ImplCast(dest)->NativeImage,
+                       NativeCast(dest),
                        VKConvert(dest->GetState(region.Dest)),
                        1,
                        &nativeBlit,
@@ -351,6 +344,6 @@ namespace FE::Graphics::Vulkan
 
     CommandList::~CommandList()
     {
-        vkFreeCommandBuffers(ImplCast(m_pDevice)->GetNativeDevice(), m_CommandPool, 1, &m_CommandBuffer);
+        vkFreeCommandBuffers(NativeCast(m_pDevice), m_CommandPool, 1, &m_CommandBuffer);
     }
 } // namespace FE::Graphics::Vulkan

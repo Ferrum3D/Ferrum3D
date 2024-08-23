@@ -33,7 +33,7 @@ void RunExample()
     auto viewport = window->CreateViewport();
     auto scissor  = window->CreateScissor();
 
-    HAL::SwapChainDesc swapChainDesc{};
+    HAL::SwapchainDesc swapChainDesc{};
     swapChainDesc.ImageCount         = 3;
     swapChainDesc.ImageWidth         = scissor.Width();
     swapChainDesc.ImageHeight        = scissor.Height();

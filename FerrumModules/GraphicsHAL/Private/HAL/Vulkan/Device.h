@@ -84,6 +84,11 @@ namespace FE::Graphics::Vulkan
 
         HAL::ResultCode Init(VkPhysicalDevice nativeAdapter);
 
+        [[nodiscard]] inline VkDevice GetNative() const
+        {
+            return m_NativeDevice;
+        }
+
         uint32_t FindMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties);
 
         inline VkCommandPool GetCommandPool(HAL::HardwareQueueKindFlags cmdQueueClass)
@@ -141,11 +146,6 @@ namespace FE::Graphics::Vulkan
         inline VkPhysicalDevice GetNativeAdapter() const
         {
             return m_NativeAdapter;
-        }
-
-        inline VkDevice GetNativeDevice() const
-        {
-            return m_NativeDevice;
         }
 
         void WaitIdle() override;

@@ -22,7 +22,7 @@ namespace FE::Graphics::Vulkan
         shaderCI.codeSize = m_Desc.ByteCode.size();
         shaderCI.pCode = m_ByteCode.data();
 
-        vkCreateShaderModule(ImplCast(m_pDevice)->GetNativeDevice(), &shaderCI, VK_NULL_HANDLE, &m_NativeModule);
+        vkCreateShaderModule(NativeCast(m_pDevice), &shaderCI, VK_NULL_HANDLE, &m_NativeModule);
         return HAL::ResultCode::Success;
     }
 
@@ -56,6 +56,6 @@ namespace FE::Graphics::Vulkan
     ShaderModule::~ShaderModule()
     {
         if (m_NativeModule)
-            vkDestroyShaderModule(ImplCast(m_pDevice)->GetNativeDevice(), m_NativeModule, nullptr);
+            vkDestroyShaderModule(NativeCast(m_pDevice), m_NativeModule, nullptr);
     }
 } // namespace FE::Graphics::Vulkan

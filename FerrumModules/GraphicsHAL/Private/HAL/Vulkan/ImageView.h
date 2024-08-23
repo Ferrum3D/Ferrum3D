@@ -13,17 +13,18 @@ namespace FE::Graphics::Vulkan
         explicit ImageView(HAL::Device* pDevice);
         ~ImageView() override;
 
+        using NativeType = VkImageView;
+
         HAL::ResultCode Init(const HAL::ImageViewDesc& desc) override;
 
         [[nodiscard]] const HAL::ImageViewDesc& GetDesc() const override;
 
-        [[nodiscard]] inline VkImageView GetNativeView() const;
+        [[nodiscard]] inline VkImageView GetNative() const
+        {
+            return m_NativeView;
+        }
     };
 
-    inline VkImageView ImageView::GetNativeView() const
-    {
-        return m_NativeView;
-    }
 
     FE_ENABLE_IMPL_CAST(ImageView);
 } // namespace FE::Graphics::Vulkan

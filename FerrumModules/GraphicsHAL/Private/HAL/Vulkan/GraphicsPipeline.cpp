@@ -33,7 +33,7 @@ namespace FE::Graphics::Vulkan
         layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         layoutCI.pSetLayouts = setLayouts.data();
         layoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
-        vkCreatePipelineLayout(ImplCast(m_pDevice)->GetNativeDevice(), &layoutCI, VK_NULL_HANDLE, &m_Layout);
+        vkCreatePipelineLayout(NativeCast(m_pDevice), &layoutCI, VK_NULL_HANDLE, &m_Layout);
 
         VkGraphicsPipelineCreateInfo pipelineCI{};
         pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -72,11 +72,10 @@ namespace FE::Graphics::Vulkan
         pipelineCI.pDynamicState = &dynamicStateCI;
 
         pipelineCI.layout = m_Layout;
-        pipelineCI.renderPass = ImplCast(m_Desc.RenderPass)->GetNativeRenderPass();
+        pipelineCI.renderPass = NativeCast(m_Desc.RenderPass);
         pipelineCI.subpass = m_Desc.SubpassIndex;
 
-        vkCreateGraphicsPipelines(
-            ImplCast(m_pDevice)->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_NativePipeline);
+        vkCreateGraphicsPipelines(NativeCast(m_pDevice), VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_NativePipeline);
         return HAL::ResultCode::Success;
     }
 
@@ -235,7 +234,7 @@ namespace FE::Graphics::Vulkan
 
     GraphicsPipeline::~GraphicsPipeline()
     {
-        const VkDevice device = ImplCast(m_pDevice)->GetNativeDevice();
+        const VkDevice device = NativeCast(m_pDevice);
         vkDestroyPipeline(device, m_NativePipeline, nullptr);
         vkDestroyPipelineLayout(device, m_Layout, nullptr);
     }

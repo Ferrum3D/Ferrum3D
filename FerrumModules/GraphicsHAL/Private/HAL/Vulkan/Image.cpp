@@ -12,21 +12,23 @@ namespace FE::Graphics::Vulkan
     Image::Image(HAL::Device* pDevice)
     {
         m_pDevice = pDevice;
+        Register();
     }
 
 
     const HAL::ImageDesc& Image::GetDesc()
     {
-        return Desc;
+        return m_Desc;
     }
 
 
-    HAL::ResultCode Image::Init(const HAL::ImageDesc& desc)
+    HAL::ResultCode Image::Init(StringSlice name, const HAL::ImageDesc& desc)
     {
         using HAL::ImageBindFlags;
         using HAL::ImageDim;
 
-        Desc = desc;
+        m_Desc = desc;
+        m_Name = name;
         InitState(desc.ArraySize, static_cast<uint16_t>(desc.MipSliceCount));
 
         VkImageCreateInfo imageCI{};
@@ -101,10 +103,17 @@ namespace FE::Graphics::Vulkan
         imageCI.samples = GetVKSampleCountFlags(desc.SampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        vkCreateImage(ImplCast(m_pDevice)->GetNativeDevice(), &imageCI, VK_NULL_HANDLE, &NativeImage);
+        vkCreateImage(NativeCast(m_pDevice), &imageCI, VK_NULL_HANDLE, &m_NativeImage);
         m_Owned = true;
 
-        vkGetImageMemoryRequirements(ImplCast(m_pDevice)->GetNativeDevice(), NativeImage, &MemoryRequirements);
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_NativeImage);
+        nameInfo.pObjectName = m_Name.Data();
+        vkSetDebugUtilsObjectNameEXT(NativeCast(m_pDevice), &nameInfo);
+
+        vkGetImageMemoryRequirements(NativeCast(m_pDevice), m_NativeImage, &m_MemoryRequirements);
         return HAL::ResultCode::Success;
     }
 
@@ -112,9 +121,10 @@ namespace FE::Graphics::Vulkan
     void Image::AllocateMemory(HAL::MemoryType type)
     {
         HAL::MemoryAllocationDesc desc{};
-        desc.Size = MemoryRequirements.size;
+        desc.Size = m_MemoryRequirements.size;
         desc.Type = type;
-        Rc memory = Rc<DeviceMemory>::DefaultNew(m_pDevice, MemoryRequirements.memoryTypeBits, desc);
+
+        Rc memory = Rc<DeviceMemory>::DefaultNew(m_pDevice, m_MemoryRequirements.memoryTypeBits, desc);
         BindMemory(HAL::DeviceMemorySlice{ memory.Detach() });
         m_MemoryOwned = true;
     }
@@ -123,8 +133,7 @@ namespace FE::Graphics::Vulkan
     void Image::BindMemory(const HAL::DeviceMemorySlice& memory)
     {
         m_Memory = memory;
-        vkBindImageMemory(
-            ImplCast(m_pDevice)->GetNativeDevice(), NativeImage, ImplCast(memory.Memory)->Memory, memory.ByteOffset);
+        vkBindImageMemory(NativeCast(m_pDevice), m_NativeImage, NativeCast(memory.Memory), memory.ByteOffset);
     }
 
 
@@ -132,7 +141,7 @@ namespace FE::Graphics::Vulkan
     {
         if (m_Owned)
         {
-            vkDestroyImage(ImplCast(m_pDevice)->GetNativeDevice(), NativeImage, nullptr);
+            vkDestroyImage(NativeCast(m_pDevice), m_NativeImage, nullptr);
         }
         if (m_MemoryOwned)
         {

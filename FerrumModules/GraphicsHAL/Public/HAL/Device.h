@@ -15,6 +15,8 @@ namespace FE::Graphics::HAL
         , public EventBus<FrameEvents>::Handler
     {
         friend class DeviceObject;
+        friend class DeviceService;
+        friend class Resource;
 
         struct PendingDisposer final
         {
@@ -23,7 +25,11 @@ namespace FE::Graphics::HAL
         };
 
         SpinLock m_DisposeQueueLock;
+        SpinLock m_ResourceListLock;
+        SpinLock m_ServiceListLock;
         festd::vector<PendingDisposer> m_DisposeQueue;
+        festd::intrusive_list<> m_ResourceList;
+        festd::intrusive_list<> m_ServiceList;
 
         Debug::IConsoleLogger* m_pLogger;
 
@@ -36,10 +42,15 @@ namespace FE::Graphics::HAL
         {
         }
 
+        void DisposePending();
+
     public:
         FE_RTTI_Class(Device, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
 
-        ~Device() override;
+        inline ~Device() override
+        {
+            FE_CORE_ASSERT(m_DisposeQueue.empty(), "Device implementation didn't call DisposePending()");
+        }
 
         virtual void WaitIdle() = 0;
 

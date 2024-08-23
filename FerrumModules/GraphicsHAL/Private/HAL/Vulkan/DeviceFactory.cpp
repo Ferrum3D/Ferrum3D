@@ -18,7 +18,7 @@
 #include <HAL/Vulkan/RenderPass.h>
 #include <HAL/Vulkan/Sampler.h>
 #include <HAL/Vulkan/ShaderModule.h>
-#include <HAL/Vulkan/SwapChain.h>
+#include <HAL/Vulkan/Swapchain.h>
 #include <HAL/Vulkan/TransientResourceHeap.h>
 
 
@@ -114,7 +114,7 @@ namespace FE::Graphics::Vulkan
 
         builder.Bind<HAL::Fence>().To<Fence>().InTransientScope();
         builder.Bind<HAL::CommandList>().To<CommandList>().InTransientScope();
-        builder.Bind<HAL::SwapChain>().To<SwapChain>().InTransientScope();
+        builder.Bind<HAL::Swapchain>().To<Swapchain>().InTransientScope();
         builder.Bind<HAL::Buffer>().To<Buffer>().InTransientScope();
         builder.Bind<HAL::Image>().To<Image>().InTransientScope();
         builder.Bind<HAL::ShaderModule>().To<ShaderModule>().InTransientScope();
@@ -210,12 +210,6 @@ namespace FE::Graphics::Vulkan
             info.Kind = VKConvert(props.deviceType);
             info.Name = Env::Name{ props.deviceName };
         }
-    }
-
-
-    VkInstance DeviceFactory::GetNativeInstance()
-    {
-        return m_Instance;
     }
 
 

@@ -20,16 +20,13 @@ namespace FE::Graphics::Vulkan
 
         HAL::ResultCode Init(const HAL::FramebufferDesc& desc) override;
 
-        [[nodiscard]] inline VkFramebuffer GetNativeFramebuffer() const;
+        [[nodiscard]] inline VkFramebuffer GetNative() const
+        {
+            return m_NativeFramebuffer;
+        }
 
         [[nodiscard]] inline const HAL::FramebufferDesc& GetDesc() const override;
     };
-
-
-    inline VkFramebuffer Framebuffer::GetNativeFramebuffer() const
-    {
-        return m_NativeFramebuffer;
-    }
 
 
     inline const HAL::FramebufferDesc& Framebuffer::GetDesc() const

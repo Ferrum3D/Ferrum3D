@@ -22,7 +22,7 @@
 #include <HAL/Sampler.h>
 #include <HAL/ShaderCompiler.h>
 #include <HAL/ShaderModule.h>
-#include <HAL/SwapChain.h>
+#include <HAL/Swapchain.h>
 #include <OsAssets/OsmiumAssetsModule.h>
 
 using namespace FE;
@@ -45,7 +45,7 @@ class ExampleApplication final : public ApplicationModule
     Rc<HAL::CommandQueue> m_TransferQueue;
 
     Rc<HAL::RenderPass> m_RenderPass;
-    Rc<HAL::SwapChain> m_SwapChain;
+    Rc<HAL::Swapchain> m_SwapChain;
     Rc<HAL::GraphicsPipeline> m_Pipeline;
     festd::vector<HAL::ImageView*> m_RTVs;
 
@@ -81,11 +81,12 @@ protected:
 
     void Tick(const FrameEventArgs& /* frameEventArgs */) override
     {
-        auto frameIndex = m_SwapChain->GetCurrentFrameIndex();
+        const uint32_t frameIndex = m_SwapChain->GetCurrentFrameIndex();
 
         m_Fences[frameIndex]->WaitOnCPU();
         m_Window->PollEvents();
-        auto imageIndex = m_SwapChain->GetCurrentImageIndex();
+
+        const uint32_t imageIndex = m_SwapChain->GetCurrentImageIndex();
         m_Fences[m_SwapChain->GetCurrentFrameIndex()]->Reset();
 
         std::array commandLists{ m_CommandLists[imageIndex].Get() };
@@ -123,15 +124,15 @@ public:
         m_Viewport = m_Window->CreateViewport();
         m_Scissor = m_Window->CreateScissor();
 
-        HAL::SwapChainDesc swapChainDesc{};
-        swapChainDesc.ImageCount = m_FrameBufferCount;
-        swapChainDesc.ImageWidth = m_Scissor.Width();
-        swapChainDesc.ImageHeight = m_Scissor.Height();
-        swapChainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
-        swapChainDesc.Queue = m_GraphicsQueue.Get();
-        swapChainDesc.VerticalSync = true;
-        m_SwapChain = pServiceProvider->ResolveRequired<HAL::SwapChain>();
-        m_SwapChain->Init(swapChainDesc);
+        HAL::SwapchainDesc swapchainDesc{};
+        swapchainDesc.ImageCount = m_FrameBufferCount;
+        swapchainDesc.ImageWidth = m_Scissor.Width();
+        swapchainDesc.ImageHeight = m_Scissor.Height();
+        swapchainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
+        swapchainDesc.Queue = m_GraphicsQueue.Get();
+        swapchainDesc.VerticalSync = true;
+        m_SwapChain = pServiceProvider->ResolveRequired<HAL::Swapchain>();
+        m_SwapChain->Init(swapchainDesc);
 
         auto meshAsset = Assets::Asset<Osmium::MeshAssetStorage>(Assets::AssetID("884FEDDD-141D-49A0-92B2-38B519403D0A"));
         meshAsset.LoadSync(pAssetManager.Get());
@@ -141,23 +142,23 @@ public:
         {
             vertexSize = meshAsset->VertexSize();
             vertexBufferStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            vertexBufferStaging->Init(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
+            vertexBufferStaging->Init("Staging vertex", HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
             vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             vertexBufferStaging->UpdateData(meshAsset->VertexData());
 
             m_VertexBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            m_VertexBuffer->Init(HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer));
+            m_VertexBuffer->Init("Vertex", HAL::BufferDesc(vertexSize, HAL::BindFlags::VertexBuffer));
             m_VertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
         {
             indexSize = meshAsset->IndexSize();
             indexBufferStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            indexBufferStaging->Init(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
+            indexBufferStaging->Init("Staging index", HAL::BufferDesc(indexSize, HAL::BindFlags::None));
             indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             indexBufferStaging->UpdateData(meshAsset->IndexData());
 
             m_IndexBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            m_IndexBuffer->Init(HAL::BufferDesc(indexSize, HAL::BindFlags::IndexBuffer));
+            m_IndexBuffer->Init("Index", HAL::BufferDesc(indexSize, HAL::BindFlags::IndexBuffer));
             m_IndexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
 
@@ -167,7 +168,7 @@ public:
             imageAsset.LoadSync(pAssetManager.Get());
 
             textureStaging = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            textureStaging->Init(HAL::BufferDesc(imageAsset->Size(), HAL::BindFlags::None));
+            textureStaging->Init("Staging texture", HAL::BufferDesc(imageAsset->Size(), HAL::BindFlags::None));
             textureStaging->AllocateMemory(HAL::MemoryType::HostVisible);
             textureStaging->UpdateData(imageAsset->Data());
 
@@ -177,13 +178,15 @@ public:
                                                    HAL::Format::R8G8B8A8_SRGB);
 
             m_TextureImage = pServiceProvider->ResolveRequired<HAL::Image>();
-            m_TextureImage->Init(imageDesc);
+            m_TextureImage->Init("Texture", imageDesc);
             m_TextureImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
         }
 
         {
-            auto aspectRatio =
-                static_cast<float>(m_SwapChain->GetDesc().ImageWidth) / static_cast<float>(m_SwapChain->GetDesc().ImageHeight);
+            const float imageWidth = static_cast<float>(m_SwapChain->GetDesc().ImageWidth);
+            const float imageHeight = static_cast<float>(m_SwapChain->GetDesc().ImageHeight);
+            const float aspectRatio = imageWidth / imageHeight;
+
             auto constantData = Matrix4x4F::GetIdentity();
             constantData *= Matrix4x4F::CreateProjection(Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
             constantData *= Matrix4x4F::CreateRotationY(Constants::PI);
@@ -192,7 +195,7 @@ public:
             constantData *= Matrix4x4F::CreateRotationY(Constants::PI * -1.3f);
 
             m_ConstantBuffer = pServiceProvider->ResolveRequired<HAL::Buffer>();
-            m_ConstantBuffer->Init(HAL::BufferDesc(sizeof(constantData), HAL::BindFlags::ConstantBuffer));
+            m_ConstantBuffer->Init("Constant buffer", HAL::BufferDesc(sizeof(constantData), HAL::BindFlags::ConstantBuffer));
             m_ConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
             m_ConstantBuffer->UpdateData(constantData.RowMajorData());
         }
@@ -218,7 +221,7 @@ public:
             barrier.StateAfter = HAL::ResourceState::TransferWrite;
             copyCmdList->ResourceTransitionBarriers(std::array{ barrier }, {});
 
-            auto size = m_TextureImage->GetDesc().ImageSize;
+            const HAL::Size size = m_TextureImage->GetDesc().ImageSize;
             copyCmdList->CopyBufferToImage(textureStaging.Get(), m_TextureImage.Get(), HAL::BufferImageCopyRegion(size));
 
             barrier.StateAfter = HAL::ResourceState::ShaderResource;
@@ -245,12 +248,12 @@ public:
         shaderArgs.Stage = HAL::ShaderStage::Pixel;
         shaderArgs.FullPath = "../../Samples/Models/Shaders/PixelShader.hlsl";
         shaderArgs.SourceCode = pixelShaderAsset->GetSourceCode();
-        auto psByteCode = compiler->CompileShader(shaderArgs);
+        const auto psByteCode = compiler->CompileShader(shaderArgs);
 
         shaderArgs.Stage = HAL::ShaderStage::Vertex;
         shaderArgs.FullPath = "../../Samples/Models/Shaders/VertexShader.hlsl";
         shaderArgs.SourceCode = vertexShaderAsset->GetSourceCode();
-        auto vsByteCode = compiler->CompileShader(shaderArgs);
+        const auto vsByteCode = compiler->CompileShader(shaderArgs);
         compiler.Reset();
 
         m_PixelShader = pServiceProvider->ResolveRequired<HAL::ShaderModule>();
@@ -272,7 +275,7 @@ public:
         depthAttachmentDesc.InitialState = HAL::ResourceState::Undefined;
         depthAttachmentDesc.FinalState = HAL::ResourceState::DepthWrite;
 
-        eastl::vector attachments{ attachmentDesc, depthAttachmentDesc };
+        std::array attachments{ attachmentDesc, depthAttachmentDesc };
         renderPassDesc.Attachments = attachments;
 
         HAL::SubpassDesc subpassDesc{};
@@ -289,9 +292,9 @@ public:
         HAL::DescriptorHeapDesc descriptorHeapDesc{};
         descriptorHeapDesc.MaxTables = 1;
 
-        eastl::vector descriptorHeapSizes{ HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
-                                           HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
-                                           HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
+        const std::array descriptorHeapSizes{ HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
+                                              HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
+                                              HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
         descriptorHeapDesc.Sizes = descriptorHeapSizes;
 
         m_DescriptorHeap = pServiceProvider->ResolveRequired<HAL::DescriptorHeap>();
@@ -328,7 +331,7 @@ public:
         std::array shaders{ m_PixelShader.Get(), m_VertexShader.Get() };
         pipelineDesc.Shaders = festd::span(shaders);
 
-        auto descriptorTable = m_DescriptorTable.Get();
+        HAL::DescriptorTable* descriptorTable = m_DescriptorTable.Get();
         pipelineDesc.DescriptorTables = festd::span(&descriptorTable, 1);
         pipelineDesc.Viewport = m_Viewport;
         pipelineDesc.Scissor = m_Scissor;
