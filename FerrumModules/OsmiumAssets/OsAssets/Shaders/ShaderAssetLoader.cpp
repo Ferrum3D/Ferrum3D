@@ -34,7 +34,7 @@ namespace FE::Osmium
                                          Assets::AssetStorage* storage, IO::IStream* assetStream)
     {
         auto* shaderStorage = static_cast<ShaderAssetStorage*>(storage);
-        shaderStorage->SourceCode = String(assetStream->Length(), '\0');
+        shaderStorage->SourceCode = String(static_cast<uint32_t>(assetStream->Length()), '\0');
         assetStream->ReadToBuffer(shaderStorage->SourceCode.Data(), shaderStorage->SourceCode.Size());
     }
 

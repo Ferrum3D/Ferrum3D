@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <cassert>
@@ -7,9 +7,9 @@
 
 namespace FE::UTF8
 {
-    using TChar            = char;
-    using TCharTraits      = std::char_traits<TChar>;
-    using TCodepoint       = char32_t;
+    using TChar = char;
+    using TCharTraits = std::char_traits<TChar>;
+    using TCodepoint = char32_t;
     using TCodepointTraits = std::char_traits<TCodepoint>;
 
     namespace Internal
@@ -37,13 +37,13 @@ namespace FE::UTF8
         {
             static const char lengths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                             0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
-            static const int masks[]    = { 0x00, 0x7f, 0x1f, 0x0f, 0x07 };
-            static const uint32_t mins[]  = { 4194304, 0, 128, 2048, 65536 };
-            static const int shiftc[]   = { 0, 18, 12, 6, 0 };
-            static const int shifte[]   = { 0, 6, 4, 2, 0 };
+            static const int masks[] = { 0x00, 0x7f, 0x1f, 0x0f, 0x07 };
+            static const uint32_t mins[] = { 4194304, 0, 128, 2048, 65536 };
+            static const int shiftc[] = { 0, 18, 12, 6, 0 };
+            static const int shifte[] = { 0, 6, 4, 2, 0 };
 
             unsigned char* s = (unsigned char*)buf;
-            int len          = lengths[s[0] >> 3];
+            int len = lengths[s[0] >> 3];
 
             /* Compute the pointer to the next character early so that the next
              * iteration can start working on the next character. Neither Clang
@@ -79,20 +79,20 @@ namespace FE::UTF8
         uint32_t c;
         int e;
         void* input = reinterpret_cast<void*>(const_cast<TChar*>(it));
-        it          = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
+        it = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
         FE_CORE_ASSERT(e == 0, "Invalid unicode");
         return c;
     }
 
     inline TCodepoint DecodePrior(const TChar*& it) noexcept
     {
-        uint32_t c          = 0;
-        int e             = 1;
+        uint32_t c = 0;
+        int e = 1;
         const TChar* iter = it;
-        int maxlen        = 3;
+        int maxlen = 3;
         while (e && maxlen--)
         {
-            void* input                 = reinterpret_cast<void*>(const_cast<TChar*>(--iter));
+            void* input = reinterpret_cast<void*>(const_cast<TChar*>(--iter));
             [[maybe_unused]] void* temp = Internal::utf8_decode(input, &c, &e);
         }
 
@@ -106,9 +106,9 @@ namespace FE::UTF8
         return Decode(it);
     }
 
-    inline int Compare(const TChar* lhs, const TChar* rhs, size_t length1, size_t length2) noexcept
+    inline int32_t Compare(const TChar* lhs, const TChar* rhs, uint32_t length1, uint32_t length2) noexcept
     {
-        size_t length = std::min(length1, length2);
+        uint32_t length = std::min(length1, length2);
         for (; 0 < length; --length, Decode(lhs), Decode(rhs))
         {
             if (*lhs != *rhs)
@@ -125,7 +125,8 @@ namespace FE::UTF8
         return length1 < length2 ? -1 : 1;
     }
 
-    inline bool AreEqual(const TChar* lhs, const TChar* rhs, size_t length1, size_t length2, bool caseSensitive = true) noexcept
+    inline bool AreEqual(const TChar* lhs, const TChar* rhs, uint32_t length1, uint32_t length2,
+                         bool caseSensitive = true) noexcept
     {
         if (length1 != length2)
         {
@@ -152,15 +153,15 @@ namespace FE::UTF8
         return true;
     }
 
-    inline size_t Length(const TChar* str, size_t byteLen) noexcept
+    inline uint32_t Length(const TChar* str, uint32_t byteLen) noexcept
     {
-        size_t result = 0;
+        uint32_t result = 0;
         while (byteLen-- && Decode(str))
             ++result;
         return result;
     }
 
-    inline void Advance(const TChar*& str, size_t n) noexcept
+    inline void Advance(const TChar*& str, uint32_t n) noexcept
     {
         while (n-- && Decode(str))
         {
@@ -174,7 +175,7 @@ namespace FE::UTF8
         while (*str)
         {
             void* input = reinterpret_cast<void*>(const_cast<TChar*>(str));
-            str         = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
+            str = static_cast<const TChar*>(Internal::utf8_decode(input, &c, &e));
         }
         return e == 0;
     }

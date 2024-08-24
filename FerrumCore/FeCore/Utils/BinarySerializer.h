@@ -70,7 +70,7 @@ namespace FE
 
         inline size_t ReadString(String& string)
         {
-            string = String(Read<size_t>(), '\0');
+            string = String(static_cast<uint32_t>(Read<size_t>()), '\0');
             return m_Stream->ReadToBuffer(string.Data(), string.Size());
         }
 

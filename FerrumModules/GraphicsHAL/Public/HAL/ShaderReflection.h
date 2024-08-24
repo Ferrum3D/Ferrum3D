@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <HAL/ImageFormat.h>
+#include <FeCore/Strings/FixedString.h>
 
 namespace FE::Graphics::HAL
 {
@@ -8,7 +9,7 @@ namespace FE::Graphics::HAL
     {
         uint32_t Location;
         Format ElementFormat;
-        FE::String ShaderSemantic;
+        FixedString<22> ShaderSemantic;
     };
 
 

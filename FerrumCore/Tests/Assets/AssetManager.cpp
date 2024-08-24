@@ -3,25 +3,26 @@
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/AssetRegistry.h>
 #include <FeCore/IO/FileStream.h>
+#include <FeCore/Modules/Environment.h>
 #include <Tests/Assets/TestAssetLoader.h>
 #include <Tests/Common/TestCommon.h>
 
-using FE::static_pointer_cast;
+using namespace FE;
 
 TEST(AssetLoader, LoadAsset)
 {
-    FE::Rc loader = FE::Rc<FE::Assets::TestAssetLoader>::DefaultNew();
+    Rc loader = Rc<Assets::TestAssetLoader>::DefaultNew();
 
     auto deleteCount = 0;
-    auto storage = static_cast<FE::Assets::TestAssetStorage*>(loader->CreateStorage());
+    auto storage = static_cast<Assets::TestAssetStorage*>(loader->CreateStorage());
     storage->AddStrongRef();
     storage->DeleteCount = &deleteCount;
 
-    FE::Rc file = FE::Rc<FE::IO::FileHandle>::DefaultNew();
-    FE::Rc stream = FE::Rc<FE::IO::FileStream>::DefaultNew(std::move(file));
-    FE_IO_ASSERT(stream->Open(assetPath1, FE::IO::OpenMode::ReadOnly));
+    Rc file = Rc<IO::FileHandle>::DefaultNew();
+    Rc stream = Rc<IO::FileStream>::DefaultNew(std::move(file));
+    FE_IO_ASSERT(stream->Open(assetPath1, IO::OpenMode::ReadOnly));
     loader->LoadAsset(storage, stream.Get());
-    EXPECT_EQ(storage->Data, FE::IO::File::ReadAllText(assetPath1));
+    EXPECT_EQ(storage->Data, IO::File::ReadAllText(assetPath1));
     storage->ReleaseStrongRef();
     EXPECT_EQ(deleteCount, 1);
 
@@ -30,13 +31,13 @@ TEST(AssetLoader, LoadAsset)
 
 TEST(AssetRegistry, AddAsset)
 {
-    FE::Rc registry = FE::Rc<FE::Assets::AssetRegistry>::DefaultNew();
+    Rc registry = Rc<Assets::AssetRegistry>::DefaultNew();
     registry->AddAsset(assetID1, assetType, assetPath1);
     registry->AddAsset(assetID2, assetType, assetPath2);
 
     ASSERT_TRUE(registry->HasAsset(assetID1));
     ASSERT_TRUE(registry->HasAsset(assetID2));
-    ASSERT_FALSE(registry->HasAsset(FE::Assets::AssetID("F7707EB1-33C8-44A8-A63A-B75D40CD5BAC")));
+    ASSERT_FALSE(registry->HasAsset(Assets::AssetID("F7707EB1-33C8-44A8-A63A-B75D40CD5BAC")));
 
     EXPECT_EQ(registry->GetAssetFilePath(assetID1), assetPath1);
     EXPECT_EQ(registry->GetAssetFilePath(assetID2), assetPath2);
@@ -47,35 +48,35 @@ TEST(AssetRegistry, AddAsset)
 
 TEST(AssetManager, LoadAsset)
 {
-    FE::Rc loader = FE::Rc<FE::Assets::TestAssetLoader>::DefaultNew();
-    FE::Rc registry = FE::Rc<FE::Assets::AssetRegistry>::DefaultNew();
+    Rc loader = Rc<Assets::TestAssetLoader>::DefaultNew();
+    Rc registry = Rc<Assets::AssetRegistry>::DefaultNew();
     registry->AddAsset(assetID1, assetType, assetPath1);
     registry->AddAsset(assetID2, assetType, assetPath2);
 
-    FE::Rc provider = FE::Rc<FE::Assets::AssetProviderDev>::DefaultNew();
+    Rc provider = Rc<Assets::AssetProviderDev>::DefaultNew();
     provider->AttachRegistry(registry);
 
-    FE::Rc manager = FE::Rc<FE::Assets::AssetManager>::DefaultNew();
-    manager->AttachAssetProvider(static_pointer_cast<FE::Assets::IAssetProvider>(provider));
-    manager->RegisterAssetLoader(static_pointer_cast<FE::Assets::IAssetLoader>(loader));
+    Rc manager = Rc<Assets::AssetManager>::DefaultNew();
+    manager->AttachAssetProvider(static_pointer_cast<Assets::IAssetProvider>(provider));
+    manager->RegisterAssetLoader(static_pointer_cast<Assets::IAssetLoader>(loader));
 
     auto deleteCount = 0;
     {
-        auto asset1 = FE::Assets::Asset<FE::Assets::TestAssetStorage>(assetID1);
-        auto asset2 = FE::Assets::Asset<FE::Assets::TestAssetStorage>(assetID2);
-        auto anotherAsset1 = FE::Assets::Asset<FE::Assets::TestAssetStorage>(assetID1);
+        auto asset1 = Assets::Asset<Assets::TestAssetStorage>(assetID1);
+        auto asset2 = Assets::Asset<Assets::TestAssetStorage>(assetID2);
+        auto anotherAsset1 = Assets::Asset<Assets::TestAssetStorage>(assetID1);
 
-        asset1.LoadSync();
+        asset1.LoadSync(manager.Get());
         asset1->DeleteCount = &deleteCount;
-        asset2.LoadSync();
+        asset2.LoadSync(manager.Get());
         asset2->DeleteCount = &deleteCount;
-        anotherAsset1.LoadSync();
+        anotherAsset1.LoadSync(manager.Get());
         anotherAsset1->DeleteCount = &deleteCount;
 
-        EXPECT_EQ(asset1->Data, FE::IO::File::ReadAllText(assetPath1));
-        EXPECT_EQ(anotherAsset1->Data, FE::IO::File::ReadAllText(assetPath1));
+        EXPECT_EQ(asset1->Data, IO::File::ReadAllText(assetPath1));
+        EXPECT_EQ(anotherAsset1->Data, IO::File::ReadAllText(assetPath1));
         //EXPECT_EQ(&anotherAsset1->Data, &asset1->Data);
-        EXPECT_EQ(asset2->Data, FE::IO::File::ReadAllText(assetPath2));
+        EXPECT_EQ(asset2->Data, IO::File::ReadAllText(assetPath2));
     }
 
     EXPECT_EQ(deleteCount, 3);

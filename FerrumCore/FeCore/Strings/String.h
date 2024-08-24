@@ -4,72 +4,72 @@
 
 namespace FE
 {
-    //! \brief String class that uses \ref HeapAllocator and UTF-8 encoding.
+    //! \brief String class with UTF-8 support.
     class String final
     {
+        inline static constexpr uint32_t ShortCapacity = 24;
+
         struct LongMode
         {
-            size_t Cap;
-            size_t Size;
             TChar* Data;
+            uint32_t Capacity;
+            uint32_t Size;
+            uint64_t Indicator;
         };
-
-        inline static constexpr size_t MinCapacity = (sizeof(LongMode) - 1) / sizeof(TChar);
 
         struct ShortMode
         {
-            union
-            {
-                uint8_t Size;
-                [[maybe_unused]] TChar Lx;
-            };
-            TChar Data[MinCapacity];
+            TChar Data[ShortCapacity - 1];
+            uint8_t Size;
         };
 
-        union Ulx
-        {
-            [[maybe_unused]] LongMode Lm;
-            [[maybe_unused]] ShortMode Sm;
-        };
-
-        inline static constexpr size_t WordCount = sizeof(Ulx) / sizeof(size_t);
-
-        struct Rep
+        struct
         {
             union
             {
-                LongMode L;
-                ShortMode S;
-                size_t R[WordCount];
+                LongMode Long;
+                ShortMode Short;
+                uint64_t Words[3];
             };
         } m_Data;
 
         [[nodiscard]] inline bool IsLong() const noexcept
         {
-            return m_Data.S.Size & 1;
+            return m_Data.Short.Size == 0xff;
         }
 
-        [[nodiscard]] inline size_t GetLCap() const noexcept
+        [[nodiscard]] inline uint32_t GetLCap() const noexcept
         {
-            return m_Data.L.Cap & static_cast<size_t>(~1);
+            return m_Data.Long.Capacity;
         }
 
-        inline void SetLCap(size_t cap) noexcept
+        inline void SetLCap(uint32_t capacity) noexcept
         {
-            m_Data.L.Cap = cap | 1;
+            m_Data.Long.Capacity = capacity;
         }
 
-        inline void SetSSize(size_t size) noexcept
+        inline uint32_t GetSSize() const noexcept
         {
-            m_Data.S.Size = static_cast<uint8_t>(size << 1);
+            return m_Data.Short.Size ^ (ShortCapacity - 1);
         }
 
-        inline void SetLSize(size_t size) noexcept
+        inline void SetSSize(uint32_t size) noexcept
         {
-            m_Data.L.Size = size;
+            m_Data.Short.Size = static_cast<uint8_t>(size ^ (ShortCapacity - 1));
         }
 
-        inline void SetSize(size_t size) noexcept
+        inline uint32_t GetLSize() const noexcept
+        {
+            return m_Data.Long.Size;
+        }
+
+        inline void SetLSize(uint32_t size) noexcept
+        {
+            m_Data.Long.Size = size;
+            m_Data.Long.Indicator = std::numeric_limits<uint64_t>::max();
+        }
+
+        inline void SetSize(uint32_t size) noexcept
         {
             if (IsLong())
                 SetLSize(size);
@@ -79,26 +79,21 @@ namespace FE
 
         inline void Zero() noexcept
         {
-            for (auto& i : m_Data.R)
-            {
-                i = 0;
-            }
+            m_Data.Words[0] = 0;
+            m_Data.Words[1] = 0;
+            m_Data.Words[2] = 0;
+            SetSSize(0);
         }
 
-        inline static size_t Recommend(size_t s) noexcept
+        inline static uint32_t Recommend(uint32_t s) noexcept
         {
-            if (s < MinCapacity)
-                return MinCapacity - 1;
+            if (s < ShortCapacity)
+                return ShortCapacity - 1;
 
-            size_t guess = FE::AlignUp<Memory::DefaultAlignment / sizeof(TChar)>(s + 1) - 1;
-
-            if (guess == MinCapacity)
-                ++guess;
-
-            return guess;
+            return AlignUp<Memory::DefaultAlignment>(s + 1) - 1;
         }
 
-        inline static TChar* Allocate(size_t s) noexcept
+        inline static TChar* Allocate(uint32_t s) noexcept
         {
             return static_cast<TChar*>(Memory::DefaultAllocate(s));
         }
@@ -108,29 +103,29 @@ namespace FE
             Memory::DefaultFree(c);
         }
 
-        inline static void CopyData(TChar* dest, const TChar* src, size_t size) noexcept
+        inline static void CopyData(TChar* dest, const TChar* src, uint32_t size) noexcept
         {
             TCharTraits::copy(dest, src, size);
         }
 
-        inline static void SetData(TChar* dest, TChar value, size_t size) noexcept
+        inline static void SetData(TChar* dest, TChar value, uint32_t size) noexcept
         {
             TCharTraits::assign(dest, size, value);
         }
 
-        inline TChar* InitImpl(size_t size) noexcept
+        inline TChar* InitImpl(uint32_t size) noexcept
         {
             TChar* newPtr;
-            if (size < MinCapacity)
+            if (size < ShortCapacity)
             {
                 SetSSize(size);
-                newPtr = m_Data.S.Data;
+                newPtr = m_Data.Short.Data;
             }
             else
             {
-                size_t newCap = Recommend(size);
+                uint32_t newCap = Recommend(size);
                 newPtr = Allocate(newCap + 1);
-                m_Data.L.Data = newPtr;
+                m_Data.Long.Data = newPtr;
                 SetLCap(newCap + 1);
                 SetLSize(size);
             }
@@ -138,36 +133,36 @@ namespace FE
             return newPtr;
         }
 
-        inline void Init(const TChar* str, size_t size) noexcept
+        inline void Init(const TChar* str, uint32_t size) noexcept
         {
             TChar* ptr = InitImpl(size);
             CopyData(ptr, str, size);
             ptr[size] = '\0';
         }
 
-        inline void Init(size_t count, TChar value) noexcept
+        inline void Init(uint32_t count, TChar value) noexcept
         {
             TChar* ptr = InitImpl(count);
             SetData(ptr, value, count);
             ptr[count] = '\0';
         }
 
-        inline void GrowAndReplace(size_t oldCap, size_t deltaCap, size_t oldSize, size_t copyCount, size_t delCount,
-                                   size_t addCount, const TChar* newChars)
+        inline void GrowAndReplace(uint32_t oldCap, uint32_t deltaCap, uint32_t oldSize, uint32_t copyCount, uint32_t delCount,
+                                   uint32_t addCount, const TChar* newChars)
         {
             TChar* oldData = Data();
-            size_t cap = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
+            uint32_t cap = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
             TChar* newData = Allocate(cap + 1);
             if (copyCount)
                 CopyData(newData, oldData, copyCount);
             if (addCount)
                 CopyData(newData + copyCount, newChars, addCount);
-            size_t copySize = oldSize - delCount - copyCount;
+            uint32_t copySize = oldSize - delCount - copyCount;
             if (copySize)
                 CopyData(newData + copyCount + addCount, oldData + delCount, copySize);
-            if (oldCap + 1 != MinCapacity)
+            if (oldCap + 1 != ShortCapacity)
                 Deallocate(oldData);
-            m_Data.L.Data = (newData);
+            m_Data.Long.Data = (newData);
             SetLCap(cap + 1);
             oldSize = copyCount + addCount + copySize;
             SetLSize(oldSize);
@@ -175,64 +170,7 @@ namespace FE
         }
 
     public:
-        class Iterator
-        {
-            friend class String;
-            const TChar* m_Iter;
-
-        public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = TCodepoint;
-            using pointer = const TCodepoint*;
-            using reference = const TCodepoint&;
-
-            inline Iterator(const TChar* iter)
-                : m_Iter(iter)
-            {
-            }
-
-            inline value_type operator*() const
-            {
-                return UTF8::PeekDecode(m_Iter);
-            }
-
-            inline Iterator& operator++()
-            {
-                UTF8::Decode(m_Iter);
-                return *this;
-            }
-
-            inline Iterator operator++(int)
-            {
-                Iterator t = *this;
-                ++(*this);
-                return t;
-            }
-
-            inline Iterator& operator--()
-            {
-                UTF8::DecodePrior(m_Iter);
-                return *this;
-            }
-
-            inline Iterator operator--(int)
-            {
-                Iterator t = *this;
-                UTF8::DecodePrior(m_Iter);
-                return t;
-            }
-
-            inline friend bool operator==(const Iterator& a, const Iterator& b)
-            {
-                return a.m_Iter == b.m_Iter;
-            };
-
-            inline friend bool operator!=(const Iterator& a, const Iterator& b)
-            {
-                return a.m_Iter != b.m_Iter;
-            };
-        };
+        using Iterator = Internal::StrIterator;
 
         inline String() noexcept
         {
@@ -244,7 +182,7 @@ namespace FE
             if (!other.IsLong())
                 m_Data = other.m_Data;
             else
-                Init(other.m_Data.L.Data, other.m_Data.L.Size);
+                Init(other.m_Data.Long.Data, other.m_Data.Long.Size);
         }
 
         inline String& operator=(const String& other) noexcept
@@ -254,7 +192,7 @@ namespace FE
             if (!other.IsLong())
                 m_Data = other.m_Data;
             else
-                Init(other.m_Data.L.Data, other.m_Data.L.Size);
+                Init(other.m_Data.Long.Data, other.m_Data.Long.Size);
             return *this;
         }
 
@@ -273,12 +211,12 @@ namespace FE
             return *this;
         }
 
-        inline String(size_t length, TChar value) noexcept
+        inline String(uint32_t length, TChar value) noexcept
         {
             Init(length, value);
         }
 
-        inline String(const TChar* str, size_t byteSize) noexcept
+        inline String(const TChar* str, uint32_t byteSize) noexcept
         {
             Init(str, byteSize);
         }
@@ -289,7 +227,7 @@ namespace FE
         }
 
         inline String(const TChar* str) noexcept
-            : String(str, TCharTraits::length(str))
+            : String(str, Str::ByteLength(str))
         {
         }
 
@@ -297,49 +235,40 @@ namespace FE
         {
             if (IsLong())
             {
-                Deallocate(m_Data.L.Data);
+                Deallocate(m_Data.Long.Data);
             }
         }
 
         [[nodiscard]] inline const TChar* Data() const noexcept
         {
-            return IsLong() ? m_Data.L.Data : m_Data.S.Data;
+            return IsLong() ? m_Data.Long.Data : m_Data.Short.Data;
         }
 
         inline TChar* Data() noexcept
         {
-            return IsLong() ? m_Data.L.Data : m_Data.S.Data;
+            return IsLong() ? m_Data.Long.Data : m_Data.Short.Data;
         }
 
         // O(1)
-        [[nodiscard]] inline TChar ByteAt(size_t index) const
+        [[nodiscard]] inline TChar ByteAt(uint32_t index) const
         {
             FE_CORE_ASSERT(index < Size(), "Invalid index");
             return Data()[index];
         }
 
         // O(N)
-        [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
+        [[nodiscard]] inline TCodepoint CodePointAt(uint32_t index) const
         {
-            auto begin = Data();
-            auto end = begin + Size() + 1;
-            size_t cpIndex = 0;
-            for (auto iter = begin; iter != end; UTF8::Decode(iter), ++cpIndex)
-            {
-                if (cpIndex == index)
-                {
-                    return UTF8::PeekDecode(iter);
-                }
-            }
+            if (IsLong())
+                return Str::CodepointAt(m_Data.Long.Data, m_Data.Long.Size, index);
 
-            FE_CORE_ASSERT(false, "Invalid index");
-            return 0;
+            return Str::CodepointAt(m_Data.Short.Data, GetSSize(), index);
         }
 
         // O(1)
-        [[nodiscard]] inline size_t Size() const noexcept
+        [[nodiscard]] inline uint32_t Size() const noexcept
         {
-            return IsLong() ? m_Data.L.Size : m_Data.S.Size >> 1;
+            return IsLong() ? GetLSize() : GetSSize();
         }
 
         [[nodiscard]] inline bool Empty() const noexcept
@@ -348,16 +277,15 @@ namespace FE
         }
 
         // O(1)
-        [[nodiscard]] inline size_t Capacity() const noexcept
+        [[nodiscard]] inline uint32_t Capacity() const noexcept
         {
-            return (IsLong() ? GetLCap() : MinCapacity) - 1;
+            return (IsLong() ? GetLCap() : ShortCapacity) - 1;
         }
 
         // O(N)
-        [[nodiscard]] inline size_t Length() const noexcept
+        [[nodiscard]] inline uint32_t Length() const noexcept
         {
-            auto ptr = Data();
-            return UTF8::Length(ptr, Size());
+            return UTF8::Length(Data(), Size());
         }
 
         inline operator StringSlice() const noexcept
@@ -365,53 +293,54 @@ namespace FE
             return { Data(), Size() };
         }
 
-        inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
+        inline StringSlice Substring(uint32_t beginIndex, uint32_t length) const
         {
             auto begin = Data();
             auto end = Data();
             UTF8::Advance(begin, beginIndex);
-            UTF8::Advance(end, endIndex);
-            return StringSlice(begin, end - begin);
+            UTF8::Advance(end, beginIndex + length);
+            return StringSlice(begin, static_cast<uint32_t>(end - begin));
         }
 
-        [[nodiscard]] inline StringSlice ASCIISubstring(size_t beginIndex, size_t endIndex) const
+        [[nodiscard]] inline StringSlice ASCIISubstring(uint32_t beginIndex, uint32_t length) const
         {
             auto begin = Data() + beginIndex;
-            auto end = Data() + endIndex;
-            return StringSlice(begin, end - begin);
+            auto end = Data() + beginIndex + length;
+            return StringSlice(begin, static_cast<uint32_t>(end - begin));
         }
 
-        inline void Reserve(size_t reserve) noexcept
+        inline void Reserve(uint32_t reserve) noexcept
         {
-            size_t cap = Capacity();
+            const uint32_t cap = Capacity();
             if (cap >= reserve)
                 return;
 
             reserve = Recommend(reserve);
             TChar* newData = Allocate(reserve + 1);
             TChar* oldData = Data();
-            auto oldSize = Size();
+
+            const uint32_t oldSize = Size();
             CopyData(newData, oldData, oldSize + 1);
             if (IsLong())
                 Deallocate(oldData);
 
             SetLCap(reserve + 1);
             SetLSize(oldSize);
-            m_Data.L.Data = newData;
+            m_Data.Long.Data = newData;
         }
 
         inline void Shrink() noexcept
         {
-            size_t cap = Capacity();
-            size_t size = Size();
-            size_t reserve = Recommend(size);
+            const uint32_t cap = Capacity();
+            const uint32_t size = Size();
+            const uint32_t reserve = Recommend(size);
             if (reserve == cap)
                 return;
 
-            if (reserve == MinCapacity - 1)
+            if (reserve == ShortCapacity - 1)
             {
-                TChar* newData = m_Data.S.Data;
-                TChar* oldData = m_Data.L.Data;
+                TChar* newData = m_Data.Short.Data;
+                TChar* oldData = m_Data.Long.Data;
 
                 CopyData(newData, oldData, size + 1);
                 Deallocate(oldData);
@@ -420,14 +349,14 @@ namespace FE
             else
             {
                 TChar* newData = Allocate(reserve + 1);
-                TChar* oldData = m_Data.L.Data;
+                TChar* oldData = m_Data.Long.Data;
 
                 CopyData(newData, oldData, size + 1);
                 Deallocate(oldData);
 
                 SetLCap(reserve + 1);
                 SetLSize(size);
-                m_Data.L.Data = newData;
+                m_Data.Long.Data = newData;
             }
         }
 
@@ -437,7 +366,7 @@ namespace FE
             SetSize(0);
         }
 
-        inline String& Append(const TChar* str, size_t count)
+        inline String& Append(const TChar* str, uint32_t count)
         {
             FE_CORE_ASSERT(count == 0 || str != nullptr, "Couldn't append more than 0 chars from a null string");
             if (count == 0)
@@ -445,8 +374,8 @@ namespace FE
                 return *this;
             }
 
-            size_t size = Size();
-            size_t cap = Capacity();
+            const uint32_t cap = Capacity();
+            uint32_t size = Size();
             if (cap - size >= count)
             {
                 TChar* data = Data();
@@ -475,7 +404,7 @@ namespace FE
 
         inline String& Append(const TChar* str)
         {
-            return Append(str, std::char_traits<TChar>::length(str));
+            return Append(str, Str::ByteLength(str));
         }
 
         inline String& operator+=(StringSlice str)
@@ -485,7 +414,7 @@ namespace FE
 
         inline String& operator/=(StringSlice str)
         {
-            Append(FE_PATH_SEPARATOR);
+            Append('/');
             return Append(str);
         }
 
@@ -522,14 +451,15 @@ namespace FE
             return StringSlice(Data(), Size()).FindLastOf(search).m_Iter;
         }
 
-        [[nodiscard]] inline eastl::vector<StringSlice> Split(TCodepoint c = ' ') const
+        [[nodiscard]] inline festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
+                                                                   std::pmr::memory_resource* pAllocator = nullptr) const
         {
-            return StringSlice(Data(), Size()).Split(c);
+            return StringSlice(Data(), Size()).Split(c, pAllocator);
         }
 
-        [[nodiscard]] inline eastl::vector<StringSlice> SplitLines() const
+        [[nodiscard]] inline festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
         {
-            return StringSlice(Data(), Size()).SplitLines();
+            return StringSlice(Data(), Size()).SplitLines(pAllocator);
         }
 
         [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
@@ -560,9 +490,7 @@ namespace FE
         [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
-            {
                 return false;
-            }
 
             return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
@@ -570,9 +498,7 @@ namespace FE
         [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
-            {
                 return false;
-            }
 
             return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
@@ -586,7 +512,7 @@ namespace FE
         [[nodiscard]] inline static String Join(StringSlice separator, const festd::span<StringSlice>& strings)
         {
             String result;
-            size_t capacity = 0;
+            uint32_t capacity = 0;
             for (const StringSlice string : strings)
             {
                 capacity += string.Size() + separator.Size();

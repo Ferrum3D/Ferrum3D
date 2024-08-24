@@ -14,6 +14,7 @@ namespace FE
     {
         struct alignas(Memory::CacheLineSize) FiberInfo final
         {
+            // TODO: fixed strings
             String Name;
             Context::Handle Context;
             std::atomic<bool> IsFree;

@@ -106,7 +106,7 @@ namespace FE::Graphics::Vulkan
 
             auto& current = m_InputAttributes.push_back();
             current.Location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-            current.ShaderSemantic = String(semantic.c_str(), semanticSize);
+            current.ShaderSemantic = StringSlice(semantic.c_str(), static_cast<uint32_t>(semanticSize));
             current.ElementFormat = SPIRTypeToFormat(compiler.get_type(resource.base_type_id));
         }
     }

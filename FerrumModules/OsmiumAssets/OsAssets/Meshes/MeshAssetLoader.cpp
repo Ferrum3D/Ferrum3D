@@ -46,8 +46,8 @@ namespace FE::Osmium
         {
             if (field.GetKey().StartsWith(componentFieldName))
             {
-                auto index =
-                    field.GetKey().ASCIISubstring(componentFieldName.Size(), field.GetKey().Size()).Parse<uint32_t>().Unwrap();
+                const uint32_t indexLength = field.GetKey().Size() - componentFieldName.Size();
+                auto index = field.GetKey().ASCIISubstring(componentFieldName.Size(), indexLength).Parse<uint32_t>().Unwrap();
 
                 if (components.size() <= index)
                 {

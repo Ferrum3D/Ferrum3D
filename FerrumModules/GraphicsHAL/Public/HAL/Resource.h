@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/RTTI/RTTI.h>
+#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/String.h>
 #include <HAL/Common/BaseTypes.h>
 #include <HAL/DeviceMemorySlice.h>
@@ -12,10 +13,8 @@ namespace FE::Graphics::HAL
         : public DeviceObject
         , public festd::intrusive_list_node
     {
-        // TODO: fixed strings
-
     protected:
-        String m_Name;
+        FixStr64 m_Name;
 
         inline void Register()
         {

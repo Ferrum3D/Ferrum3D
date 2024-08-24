@@ -9,9 +9,9 @@ namespace FE::Graphics::HAL
         uint32_t DescriptorCount = 0;
         ShaderResourceType ResourceType = ShaderResourceType::None;
 
-        DescriptorSize() = default;
+        inline DescriptorSize() = default;
 
-        DescriptorSize(uint32_t descriptorCount, ShaderResourceType resourceType)
+        inline DescriptorSize(uint32_t descriptorCount, ShaderResourceType resourceType)
             : DescriptorCount(descriptorCount)
             , ResourceType(resourceType)
         {

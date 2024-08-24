@@ -11,7 +11,7 @@ namespace FE::IO
     {
         FE_ASSERT_MSG(buffer, "Buffer was nullptr");
         const std::unique_lock lk(FE::Console::StdoutMutex);
-        FE::Console::PrintToStdout(StringSlice(static_cast<const char*>(buffer), size));
+        FE::Console::PrintToStdout(StringSlice(static_cast<const char*>(buffer), static_cast<uint32_t>(size)));
         return 0;
     }
 

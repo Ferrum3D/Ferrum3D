@@ -1,4 +1,5 @@
 ﻿#include <FeCore/Console/FeLog.h>
+#include <FeCore/Strings/FixedString.h>
 #include <gtest/gtest.h>
 #include <mimalloc.h>
 
@@ -28,15 +29,23 @@ TEST(Strings, AssignmentFreesMemory)
 TEST(Strings, EmptySizeCapacity)
 {
     FE::String str;
-    ASSERT_EQ(str.Capacity(), 22);
+    ASSERT_EQ(str.Capacity(), 23);
     ASSERT_EQ(str.Size(), 0);
+
+    FE::FixStr128 fix;
+    ASSERT_EQ(fix.Capacity(), 128);
+    ASSERT_EQ(fix.Size(), 0);
 }
 
 TEST(Strings, SmallSizeCapacity)
 {
     FE::String str = "q";
-    ASSERT_EQ(str.Capacity(), 22);
+    ASSERT_EQ(str.Capacity(), 23);
     ASSERT_EQ(str.Size(), 1);
+
+    FE::FixStr32 fix = "q";
+    ASSERT_EQ(fix.Capacity(), 32);
+    ASSERT_EQ(fix.Size(), 1);
 }
 
 TEST(Strings, LongSizeCapacity)
@@ -52,6 +61,10 @@ TEST(Strings, SmallByteAt)
     FE::String str = "0123456789";
     EXPECT_EQ(str.ByteAt(0), '0');
     EXPECT_EQ(str.ByteAt(9), '9');
+
+    FE::FixStr32 fix = "0123456789";
+    EXPECT_EQ(fix.ByteAt(0), '0');
+    EXPECT_EQ(fix.ByteAt(9), '9');
 }
 
 TEST(Strings, LongByteAt)
@@ -65,8 +78,10 @@ TEST(Strings, Length)
 {
     FE::String smalls = "0123";
     FE::String longs = "loooooooooooooooooooooooooooooooooooong";
+    FE::FixStr128 fixs = "0123";
     EXPECT_EQ(smalls.Length(), 4);
     EXPECT_EQ(longs.Length(), 39);
+    EXPECT_EQ(fixs.Length(), 4);
 }
 
 TEST(Strings, SmallCodepointAt)
@@ -78,6 +93,10 @@ TEST(Strings, SmallCodepointAt)
     EXPECT_EQ(str.CodePointAt(0), L'q');
     EXPECT_EQ(str.CodePointAt(3), L'g');
     // EXPECT_EQ(str.CodePointAt(4), L'Ы');
+
+    FE::FixStr32 fix = utf8;
+    EXPECT_EQ(fix.CodePointAt(0), L'q');
+    EXPECT_EQ(fix.CodePointAt(3), L'g');
 }
 
 TEST(Strings, LongCodepointAt)
@@ -105,12 +124,19 @@ TEST(Strings, Equals)
     EXPECT_EQ(e, f);
     EXPECT_NE(a, e);
     EXPECT_NE(d, f);
+
+    FE::FixStr256 fix = "abc";
+    EXPECT_EQ(a, fix);
+    EXPECT_EQ(b, fix);
+    EXPECT_NE(c, fix);
 }
 
 TEST(Strings, Slice)
 {
     FE::String str = "===slice===";
-    ASSERT_EQ(str(3, 8), "slice");
+    ASSERT_EQ(str.Substring(3, 5), "slice");
+    FE::FixStr256 fix = "===slice===";
+    ASSERT_EQ(fix.Substring(3, 5), "slice");
 }
 
 TEST(Strings, SmallConcat)
@@ -118,6 +144,11 @@ TEST(Strings, SmallConcat)
     FE::String a = "A";
     FE::String b = "B";
     ASSERT_EQ(a + b, "AB");
+
+    FE::FixStr256 fa = "A";
+    FE::FixStr32 fb = "B";
+    ASSERT_EQ(fa + fb, "AB");
+    ASSERT_EQ(a + fa, "AA");
 }
 
 TEST(Strings, LongConcat)
@@ -125,21 +156,21 @@ TEST(Strings, LongConcat)
     FE::String a(128, 'A');
     FE::String b(128, 'B');
     auto c = a + b;
-    ASSERT_EQ(c(0, 128), a);
-    ASSERT_EQ(c(128, 256), b);
+    ASSERT_EQ(c.Substring(0, 128), a);
+    ASSERT_EQ(c.Substring(128, 128), b);
 }
 
 TEST(Strings, ShrinkReserve)
 {
     FE::String str;
-    EXPECT_EQ(str.Capacity(), 22); // initially small
+    EXPECT_EQ(str.Capacity(), 23); // initially small
 
     str.Reserve(128); // small -> long
     EXPECT_GE(str.Capacity(), 128);
 
     str.Append("123");
     str.Shrink(); // long -> small
-    EXPECT_EQ(str.Capacity(), 22);
+    EXPECT_EQ(str.Capacity(), 23);
 
     const char l[] = "looooooooooooooooooooooooooooooooooooong";
     str.Append(l); // small -> long

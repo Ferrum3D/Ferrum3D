@@ -9,7 +9,7 @@ namespace FE::Assets
         auto content = IO::File::ReadAllText(fileName);
         for (auto line : content.SplitLines())
         {
-            const eastl::vector<StringSlice> split = line.Split();
+            const festd::vector split = line.Split();
             const StringSlice id = split[0];
             const StringSlice type = split[1];
             const StringSlice file = split[2];

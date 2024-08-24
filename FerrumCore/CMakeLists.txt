@@ -131,10 +131,12 @@
     FeCore/SIMD/Scalar/Float32x4.h
     FeCore/SIMD/Scalar/Int32x4.h
 
-    FeCore/Strings/FeUnicode.h
+    FeCore/Strings/FixedString.h
+    FeCore/Strings/Unicode.h
     FeCore/Strings/Format.cpp
     FeCore/Strings/Format.h
     FeCore/Strings/String.h
+    FeCore/Strings/StringBase.h
     FeCore/Strings/StringSlice.cpp
     FeCore/Strings/StringSlice.h
 

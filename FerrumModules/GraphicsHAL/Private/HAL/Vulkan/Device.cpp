@@ -97,7 +97,7 @@ namespace FE::Graphics::Vulkan
             const bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const VkExtensionProperties& props) {
                 return StringSlice(ext) == props.extensionName;
             });
-            FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", String(ext));
+            FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", StringSlice(ext));
         }
 
         constexpr float queuePriority = 1.0f;

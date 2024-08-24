@@ -15,7 +15,7 @@ namespace FE::Graphics::HAL
         uint32_t m_Offset = 0;
 
     public:
-        inline InputLayoutBufferBuilder& AddAttribute(Format format, const FE::String& semantic)
+        inline InputLayoutBufferBuilder& AddAttribute(Format format, StringSlice semantic)
         {
             m_Attributes.emplace_back(semantic, m_Index, m_Offset, format);
             m_Offset += GetFormatSize(format);
