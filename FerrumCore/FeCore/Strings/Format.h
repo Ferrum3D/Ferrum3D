@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Strings/FeUnicode.h>
 #include <FeCore/Strings/String.h>
+#include <FeCore/Strings/Unicode.h>
 #include <array>
 #include <cstdlib>
 #include <ostream>
@@ -45,7 +45,7 @@ namespace FE::Fmt
             }
 
             auto v = ss.str();
-            buffer.Append(v.data(), v.size());
+            buffer.Append(v.data(), static_cast<uint32_t>(v.size()));
         }
     };
 
@@ -82,7 +82,7 @@ namespace FE::Fmt
     {
         void Format(String& buffer, const std::string& value) const override
         {
-            buffer.Append(value.data(), value.size());
+            buffer.Append(value.data(), static_cast<uint32_t>(value.size()));
         }
     };
 
@@ -91,7 +91,7 @@ namespace FE::Fmt
     {
         void Format(String& buffer, const std::string_view& value) const override
         {
-            buffer.Append(value.data(), value.size());
+            buffer.Append(value.data(), static_cast<uint32_t>(value.size()));
         }
     };
 

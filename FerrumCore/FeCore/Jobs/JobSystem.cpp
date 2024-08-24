@@ -121,6 +121,7 @@ namespace FE
         m_Workers.reserve(workerCount + 1);
         for (int32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
         {
+            // TODO: fixed strings
             const String threadName = Fmt::Format("Worker {}", workerIndex);
             const auto threadFunc = [](uintptr_t workerIndex) {
                 fe_assert_cast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())

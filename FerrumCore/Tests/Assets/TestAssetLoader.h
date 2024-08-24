@@ -77,8 +77,8 @@ namespace FE::Assets
     }
 } // namespace FE::Assets
 
-inline constexpr auto assetPath1 = "../../FerrumCore/Tests/Assets/TestAsset1.txt";
+inline constexpr auto assetPath1 = "../../../FerrumCore/Tests/Assets/TestAsset1.txt";
 inline static auto assetID1 = FE::Assets::AssetID("AB008D2B-4287-4E63-BB5B-0433BF966B7E");
 
-inline constexpr auto assetPath2 = "../../FerrumCore/Tests/Assets/TestAsset2.txt";
+inline constexpr auto assetPath2 = "../../../FerrumCore/Tests/Assets/TestAsset2.txt";
 inline static auto assetID2 = FE::Assets::AssetID("EDA4E058-9342-472F-9BB6-64306F489FD9");

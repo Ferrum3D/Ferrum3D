@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <FeCore/Strings/FixedString.h>
 #include <HAL/Buffer.h>
 #include <HAL/DeviceObject.h>
 #include <HAL/Image.h>
@@ -25,7 +26,7 @@ namespace FE::Graphics::HAL
 
     struct TransientImageDesc final
     {
-        String Name;
+        FixStr32 Name;
         ImageDesc Descriptor;
         uint64_t ResourceID = 0;
 
@@ -42,7 +43,7 @@ namespace FE::Graphics::HAL
 
     struct TransientBufferDesc final
     {
-        String Name;
+        FixStr32 Name;
         BufferDesc Descriptor;
         uint64_t ResourceID = 0;
 

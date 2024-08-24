@@ -1,4 +1,4 @@
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/IO/FileHandle.h>
 
 #if FE_WINDOWS
@@ -63,7 +63,7 @@ namespace FE::IO
         if (IsOpen())
         {
             fclose(m_Handle);
-            m_Handle   = nullptr;
+            m_Handle = nullptr;
             m_OpenMode = OpenMode::None;
             m_FileName.Clear();
         }
@@ -239,13 +239,14 @@ namespace FE::IO
     String File::ReadAllText(StringSlice fileName)
     {
         FileHandle file;
-        auto result = file.Open(fileName, OpenMode::ReadOnly);
-        FE_ASSERT_MSG(
-            result == ResultCode::Success, "IO Error while loading file {}: {}", Directory::GetCurrentDirectory() / fileName,
-            GetResultDesc(result));
+        const IO::ResultCode result = file.Open(fileName, OpenMode::ReadOnly);
+        FE_ASSERT_MSG(result == ResultCode::Success,
+                      "IO Error while loading file {}: {}",
+                      Directory::GetCurrentDirectory() / fileName,
+                      GetResultDesc(result));
 
-        auto length = file.Length();
-        String buffer(length, ' ');
+        const size_t length = file.Length();
+        String buffer(static_cast<uint32_t>(length), ' ');
         file.Read(buffer.Data(), length);
         return buffer;
     }

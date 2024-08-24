@@ -183,7 +183,7 @@ namespace FE::Graphics::HAL
             if (SUCCEEDED(compileResult->GetErrorBuffer(&errors)) && SUCCEEDED(library->GetBlobAsUtf8(errors, &unicodeErrors)))
             {
                 auto errorString = static_cast<const char*>(unicodeErrors->GetBufferPointer());
-                FE_LOG_ERROR("Shader compilation failed: {}", String(errorString));
+                FE_LOG_ERROR("Shader compilation failed: {}", StringSlice(errorString));
             }
         }
 

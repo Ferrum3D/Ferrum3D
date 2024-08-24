@@ -4,7 +4,7 @@
 #include <FeCore/DI/BaseDI.h>
 #include <FeCore/Math/MathUtils.h>
 #include <FeCore/Parallel/SpinLock.h>
-#include <FeCore/Strings/FeUnicode.h>
+#include <FeCore/Strings/Unicode.h>
 #include <FeCore/Utils/Result.h>
 #include <array>
 #include <mutex>

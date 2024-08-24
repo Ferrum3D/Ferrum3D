@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
-#include <FeCore/Strings/FeUnicode.h>
+#include <FeCore/Strings/StringBase.h>
 #include <FeCore/Utils/Result.h>
 #include <cassert>
 #include <codecvt>
@@ -11,11 +11,6 @@
 
 namespace FE
 {
-    using UTF8::TChar;
-    using UTF8::TCharTraits;
-    using UTF8::TCodepoint;
-    using UTF8::TCodepointTraits;
-
     enum class ParseErrorCode : uint32_t
     {
         None,
@@ -26,11 +21,8 @@ namespace FE
 
     class ParseError final
     {
-        // In case of 32-bit data
-        // | 4-bit error code | 28-bit position |
-        uint32_t m_Data;
-
-        inline static constexpr uint32_t PositionByteCount = sizeof(uint32_t) - 4;
+        uint32_t m_ErrorCode : 4;
+        uint32_t m_Position : 28;
 
     public:
         inline ParseError(ParseErrorCode code) noexcept // NOLINT(google-explicit-constructor)
@@ -38,19 +30,20 @@ namespace FE
         {
         }
 
-        inline ParseError(ParseErrorCode code, size_t position) noexcept
-            : m_Data(static_cast<uint32_t>(position) | (static_cast<uint32_t>(code) << PositionByteCount))
+        inline ParseError(ParseErrorCode code, uint32_t position) noexcept
+            : m_ErrorCode(enum_cast(code))
+            , m_Position(position)
         {
         }
 
         [[nodiscard]] inline ParseErrorCode GetCode() const noexcept
         {
-            return static_cast<ParseErrorCode>(m_Data >> PositionByteCount);
+            return static_cast<ParseErrorCode>(m_ErrorCode);
         }
 
         [[nodiscard]] inline uint32_t GetPosition() const noexcept
         {
-            return m_Data & MakeMask(PositionByteCount, 0u);
+            return m_Position;
         }
 
         inline friend bool operator==(ParseError parseError, ParseErrorCode code) noexcept
@@ -83,7 +76,7 @@ namespace FE
     class StringSlice final
     {
         const TChar* m_Data;
-        size_t m_Size;
+        uint32_t m_Size;
 
         ParseError TryToIntImpl(int64_t& result) const;
         ParseError TryToUIntImpl(uint64_t& result) const;
@@ -169,86 +162,7 @@ namespace FE
         }
 
     public:
-        class Iterator
-        {
-            friend class StringSlice;
-            friend class String;
-            const TChar* m_Iter;
-
-        public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = TCodepoint;
-            using pointer = const TCodepoint*;
-            using reference = const TCodepoint&;
-
-            inline Iterator(const TChar* iter)
-                : m_Iter(iter)
-            {
-            }
-
-            inline value_type operator*() const
-            {
-                return UTF8::PeekDecode(m_Iter);
-            }
-
-            inline Iterator& operator++()
-            {
-                UTF8::Decode(m_Iter);
-                return *this;
-            }
-
-            inline Iterator operator++(int)
-            {
-                Iterator t = *this;
-                ++(*this);
-                return t;
-            }
-
-            inline Iterator& operator--()
-            {
-                UTF8::DecodePrior(m_Iter);
-                return *this;
-            }
-
-            inline Iterator operator--(int)
-            {
-                Iterator t = *this;
-                UTF8::DecodePrior(m_Iter);
-                return t;
-            }
-
-            inline friend Iterator operator+(Iterator lhs, int32_t rhs)
-            {
-                if (rhs > 0)
-                {
-                    while (rhs--)
-                        ++lhs;
-                }
-                else
-                {
-                    while (rhs--)
-                        --lhs;
-                }
-
-                return lhs;
-            }
-
-            inline friend Iterator operator-(const Iterator& lhs, int32_t rhs)
-            {
-                return lhs + (-rhs);
-            }
-
-            inline friend bool operator==(const Iterator& a, const Iterator& b)
-            {
-                return a.m_Iter == b.m_Iter;
-            }
-
-            inline friend bool operator!=(const Iterator& a, const Iterator& b)
-            {
-                return a.m_Iter != b.m_Iter;
-            }
-        };
+        using Iterator = Internal::StrIterator;
 
         inline constexpr StringSlice() noexcept
             : m_Data(nullptr)
@@ -256,15 +170,15 @@ namespace FE
         {
         }
 
-        inline constexpr StringSlice(const TChar* data, size_t size) noexcept
+        inline constexpr StringSlice(const TChar* data, uint32_t size) noexcept
             : m_Data(data)
             , m_Size(size)
         {
         }
 
-        inline constexpr StringSlice(const std::string_view& stringView) noexcept
+        inline constexpr StringSlice(std::string_view stringView) noexcept
             : m_Data(stringView.data())
-            , m_Size(stringView.size())
+            , m_Size(static_cast<uint32_t>(stringView.size()))
         {
         }
 
@@ -285,20 +199,20 @@ namespace FE
 
         inline constexpr StringSlice(const TChar* data) noexcept
             : m_Data(data)
-            , m_Size(data == nullptr ? 0 : std::char_traits<TChar>::length(data))
+            , m_Size(data == nullptr ? 0 : Str::ByteLength(data))
         {
         }
 
         template<size_t S>
         inline constexpr StringSlice(const TChar (&data)[S]) noexcept
             : m_Data(data)
-            , m_Size(S)
+            , m_Size(Str::ByteLength(data))
         {
         }
 
         inline StringSlice(Iterator begin, Iterator end) noexcept
             : m_Data(begin.m_Iter)
-            , m_Size(end.m_Iter - begin.m_Iter)
+            , m_Size(static_cast<uint32_t>(end.m_Iter - begin.m_Iter))
         {
         }
 
@@ -307,75 +221,57 @@ namespace FE
             return m_Data;
         }
 
-        [[nodiscard]] inline constexpr size_t Size() const noexcept
+        [[nodiscard]] inline constexpr uint32_t Size() const noexcept
         {
             return m_Size;
         }
 
         // O(N)
-        [[nodiscard]] inline size_t Length() const noexcept
+        [[nodiscard]] inline uint32_t Length() const noexcept
         {
-            return UTF8::Length(Data(), Size());
+            return Str::Length(Data(), Size());
         }
 
-        inline StringSlice operator()(size_t beginIndex, size_t endIndex) const
+        inline StringSlice Substring(uint32_t beginIndex, uint32_t length) const
         {
             auto begin = Data();
             auto end = Data();
             UTF8::Advance(begin, beginIndex);
-            UTF8::Advance(end, endIndex);
-            return StringSlice(begin, end - begin);
+            UTF8::Advance(end, beginIndex + length);
+            return StringSlice(begin, static_cast<uint32_t>(end - begin));
         }
 
         // O(1)
-        [[nodiscard]] inline TChar ByteAt(size_t index) const
+        [[nodiscard]] inline TChar ByteAt(uint32_t index) const
         {
             assert(index < Size());
             return Data()[index];
         }
 
         // O(N)
-        [[nodiscard]] inline TCodepoint CodePointAt(size_t index) const
+        [[nodiscard]] inline TCodepoint CodePointAt(uint32_t index) const
         {
-            auto begin = Data();
-            auto end = begin + Size() + 1;
-            size_t cpIndex = 0;
-            for (auto iter = begin; iter != end; UTF8::Decode(iter), ++cpIndex)
-            {
-                if (cpIndex == index)
-                    return UTF8::PeekDecode(iter);
-            }
-
-            assert(0);
-            return 0;
+            return Str::CodepointAt(Data(), Size(), index);
         }
 
         [[nodiscard]] inline Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
         {
-            auto e = end();
-            for (auto iter = start; iter != e; ++iter)
-            {
-                if (*iter == search)
-                    return iter;
-            }
-            return e;
+            const uint32_t size = Size();
+            const TChar* data = Data();
+            FE_CORE_ASSERT(start.m_Iter >= data && start.m_Iter <= data + size, "");
+
+            const uint32_t searchSize = static_cast<uint32_t>(data + size - start.m_Iter);
+            return Str::FindFirstOf(start.m_Iter, searchSize, search);
         }
 
         [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
         {
-            return FindFirstOf(begin(), search);
+            return Str::FindFirstOf(Data(), Size(), search);
         }
 
         [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
         {
-            auto e = end();
-            auto result = e;
-            for (auto iter = begin(); iter != e; ++iter)
-            {
-                if (*iter == search)
-                    result = iter;
-            }
-            return result;
+            return Str::FindLastOf(Data(), Size(), search);
         }
 
         [[nodiscard]] inline bool Contains(TCodepoint search) const noexcept
@@ -399,9 +295,13 @@ namespace FE
             return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline eastl::vector<StringSlice> Split(TCodepoint c = ' ') const
+        [[nodiscard]] inline festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
+                                                                   std::pmr::memory_resource* pAllocator = nullptr) const
         {
-            eastl::vector<StringSlice> result;
+            if (pAllocator == nullptr)
+                pAllocator = std::pmr::get_default_resource();
+
+            festd::pmr::vector<StringSlice> result{ pAllocator };
             auto current = begin();
             while (current != end())
             {
@@ -415,14 +315,17 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] inline eastl::vector<StringSlice> SplitLines() const
+        [[nodiscard]] inline festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
         {
-            eastl::vector<StringSlice> result;
+            if (pAllocator == nullptr)
+                pAllocator = std::pmr::get_default_resource();
+
+            festd::pmr::vector<StringSlice> result;
             auto current = begin();
             while (current != end())
             {
                 auto cPos = FindFirstOf(current, '\n');
-                auto line = StringSlice(current.m_Iter, cPos.m_Iter - current.m_Iter).StripRight("\r");
+                auto line = StringSlice(current.m_Iter, static_cast<uint32_t>(cPos.m_Iter - current.m_Iter)).StripRight("\r");
                 result.push_back(line);
                 current = cPos;
                 if (current != end())

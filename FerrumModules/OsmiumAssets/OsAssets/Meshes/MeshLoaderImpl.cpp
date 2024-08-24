@@ -42,7 +42,7 @@ namespace FE::Osmium
         const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), g_PostProcessFlags, ".fbx");
         if (!pScene)
         {
-            String error = Importer.GetErrorString();
+            const StringSlice error = Importer.GetErrorString();
             FE_LOG_ERROR("Assimp Error: {}", error);
             return false;
         }

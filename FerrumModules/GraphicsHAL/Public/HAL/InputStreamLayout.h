@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <FeCore/Strings/FixedString.h>
 #include <HAL/ImageFormat.h>
 
 namespace FE::Graphics::HAL
@@ -61,7 +62,7 @@ namespace FE::Graphics::HAL
             return !(rhs == *this);
         }
 
-        FE::String ShaderSemantic;
+        FixedString<22> ShaderSemantic;
         uint32_t BufferIndex = 0;
         uint32_t Offset = 0;
         Format ElementFormat = Format::None;
