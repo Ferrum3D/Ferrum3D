@@ -15,7 +15,7 @@ namespace FE::Graphics::HAL
             : m_pDevice(pDevice)
         {
             std::lock_guard lk{ m_pDevice->m_ServiceListLock };
-            m_pDevice->m_ServiceList.push_back(*this);
+            m_pDevice->m_ServiceList.push_back(this);
             AddRef();
         }
 
