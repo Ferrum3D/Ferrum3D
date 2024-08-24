@@ -24,12 +24,12 @@ namespace FE::Graphics::HAL
             uint32_t FramesLeft = 0;
         };
 
-        SpinLock m_DisposeQueueLock;
         SpinLock m_ResourceListLock;
+        SpinLock m_DisposeQueueLock;
         SpinLock m_ServiceListLock;
-        festd::vector<PendingDisposer> m_DisposeQueue;
         festd::intrusive_list<> m_ResourceList;
-        festd::intrusive_list<> m_ServiceList;
+        festd::vector<PendingDisposer> m_DisposeQueue;
+        festd::vector<DeviceService*> m_ServiceList;
 
         Debug::IConsoleLogger* m_pLogger;
 
