@@ -1,7 +1,6 @@
 ﻿#include <FeCore/Containers/SmallVector.h>
 #include <HAL/Vulkan/CommandList.h>
 #include <HAL/Vulkan/Common/Viewport.h>
-#include <HAL/Vulkan/DescriptorTable.h>
 #include <HAL/Vulkan/Device.h>
 #include <HAL/Vulkan/GraphicsPipeline.h>
 #include <HAL/Vulkan/ImageFormat.h>
@@ -9,6 +8,7 @@
 #include <HAL/Vulkan/RenderPass.h>
 #include <HAL/Vulkan/ShaderModule.h>
 #include <HAL/Vulkan/ShaderReflection.h>
+#include <HAL/Vulkan/ShaderResourceGroup.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -23,10 +23,10 @@ namespace FE::Graphics::Vulkan
         m_Desc = desc;
 
         festd::small_vector<VkDescriptorSetLayout> setLayouts;
-        setLayouts.reserve(desc.DescriptorTables.size());
-        for (const HAL::DescriptorTable* table : desc.DescriptorTables)
+        setLayouts.reserve(desc.ShaderResourceGroups.size());
+        for (const HAL::ShaderResourceGroup* srg : desc.ShaderResourceGroups)
         {
-            setLayouts.push_back(ImplCast(table)->GetNativeSetLayout());
+            setLayouts.push_back(ImplCast(srg)->GetNativeSetLayout());
         }
 
         VkPipelineLayoutCreateInfo layoutCI{};

@@ -6,7 +6,7 @@
 
 namespace FE::Graphics::HAL
 {
-    class DescriptorTable;
+    class ShaderResourceGroup;
     class ShaderModule;
     class RenderPass;
 
@@ -16,7 +16,7 @@ namespace FE::Graphics::HAL
         RenderPass* RenderPass = nullptr;
         uint32_t SubpassIndex = 0;
 
-        festd::span<DescriptorTable*> DescriptorTables;
+        festd::span<ShaderResourceGroup*> ShaderResourceGroups;
         festd::span<ShaderModule*> Shaders;
 
         MultisampleState Multisample;

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <HAL/DeviceObject.h>
 #include <HAL/PipelineStates.h>
+#include <HAL/Resource.h>
 #include <limits>
 
 namespace FE::Graphics::HAL

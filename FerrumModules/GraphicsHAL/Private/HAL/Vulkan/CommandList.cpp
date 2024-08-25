@@ -4,7 +4,6 @@
 #include <HAL/Vulkan/CommandList.h>
 #include <HAL/Vulkan/Common/BaseTypes.h>
 #include <HAL/Vulkan/Common/Viewport.h>
-#include <HAL/Vulkan/DescriptorTable.h>
 #include <HAL/Vulkan/Device.h>
 #include <HAL/Vulkan/Framebuffer.h>
 #include <HAL/Vulkan/GraphicsPipeline.h>
@@ -12,6 +11,7 @@
 #include <HAL/Vulkan/ImageSubresource.h>
 #include <HAL/Vulkan/RenderPass.h>
 #include <HAL/Vulkan/ResourceState.h>
+#include <HAL/Vulkan/ShaderResourceGroup.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -183,20 +183,21 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandList::BindDescriptorTables(festd::span<HAL::DescriptorTable*> descriptorTables, HAL::GraphicsPipeline* pipeline)
+    void CommandList::BindShaderResourceGroups(festd::span<HAL::ShaderResourceGroup*> shaderResourceGroups,
+                                               HAL::GraphicsPipeline* pipeline)
     {
-        festd::small_vector<VkDescriptorSet> nativeSets;
-        for (const HAL::DescriptorTable* table : descriptorTables)
+        festd::small_vector<VkDescriptorSet> descriptorSets;
+        for (const HAL::ShaderResourceGroup* table : shaderResourceGroups)
         {
-            nativeSets.push_back(NativeCast(table));
+            descriptorSets.push_back(ImplCast(table)->GetNativeSet());
         }
 
         vkCmdBindDescriptorSets(m_CommandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 ImplCast(pipeline)->GetNativeLayout(),
                                 0,
-                                static_cast<uint32_t>(nativeSets.size()),
-                                nativeSets.data(),
+                                static_cast<uint32_t>(descriptorSets.size()),
+                                descriptorSets.data(),
                                 0,
                                 nullptr);
     }

@@ -1,15 +1,28 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <HAL/ImageFormat.h>
 #include <FeCore/Strings/FixedString.h>
+#include <HAL/ImageFormat.h>
+#include <HAL/ShaderResourceType.h>
+#include <HAL/ShaderStage.h>
 
 namespace FE::Graphics::HAL
 {
-    struct ShaderInputAttribute
+    struct ShaderInputAttribute final
     {
-        uint32_t Location;
-        Format ElementFormat;
+        uint32_t Location = 0;
+        Format ElementFormat = Format::None;
         FixedString<22> ShaderSemantic;
+    };
+
+
+    struct ShaderResourceBinding final
+    {
+        FixedString<50> Name;
+        uint32_t Stride = 0;
+        uint8_t Slot = 0;
+        uint8_t Space = 0;
+        uint16_t Count = 0;
+        ShaderResourceType Type = ShaderResourceType::None;
     };
 
 
@@ -20,7 +33,10 @@ namespace FE::Graphics::HAL
 
         ~ShaderReflection() override = default;
 
-        virtual festd::span<const ShaderInputAttribute> GetInputAttributes() = 0;
-        virtual uint32_t GetInputAttributeLocation(StringSlice semantic) = 0;
+        virtual festd::span<const ShaderInputAttribute> GetInputAttributes() const = 0;
+        virtual festd::span<const ShaderResourceBinding> GetResourceBindings() const = 0;
+
+        virtual uint32_t GetResourceBindingIndex(StringSlice name) const = 0;
+        virtual uint32_t GetInputAttributeLocation(StringSlice semantic) const = 0;
     };
 } // namespace FE::Graphics::HAL

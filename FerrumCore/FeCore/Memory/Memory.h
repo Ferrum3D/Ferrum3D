@@ -211,14 +211,17 @@ namespace FE
     } // namespace Memory
 
 
-    template<class T>
-    using Unique = std::unique_ptr<T, Memory::DefaultDeleter<T>>;
-
-    template<class T, class... TArgs>
-    [[nodiscard]] Unique<T> MakeUnique(TArgs&&... args)
+    namespace festd
     {
-        return Unique<T>(Memory::DefaultNew<T>(std::forward<TArgs>(args)...));
-    }
+        template<class T>
+        using unique_ptr = std::unique_ptr<T, Memory::DefaultDeleter<T>>;
+
+        template<class T, class... TArgs>
+        [[nodiscard]] unique_ptr<T> make_unique(TArgs&&... args)
+        {
+            return unique_ptr<T>(Memory::DefaultNew<T>(std::forward<TArgs>(args)...));
+        }
+    } // namespace festd
 
 
     //! \brief Perform `static_cast` of Rc<T>.

@@ -20,5 +20,6 @@ namespace FE::Graphics::HAL
         }
 
     public:
+        virtual void Shutdown() {}
     };
 } // namespace FE::Graphics::HAL

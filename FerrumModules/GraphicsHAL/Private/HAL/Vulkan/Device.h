@@ -4,7 +4,6 @@
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/EventBus/FrameEvents.h>
-#include <HAL/DescriptorDesc.h>
 #include <HAL/Device.h>
 #include <HAL/DeviceFactory.h>
 #include <HAL/Vulkan/Common/Config.h>
@@ -26,38 +25,6 @@ namespace FE::Graphics::Vulkan
         }
     };
 
-
-    class DescriptorSetLayoutData final
-    {
-        VkDescriptorSetLayout m_SetLayout;
-        uint32_t m_RefCount;
-
-    public:
-        inline DescriptorSetLayoutData() = default;
-
-        inline explicit DescriptorSetLayoutData(VkDescriptorSetLayout layout)
-            : m_SetLayout(layout)
-            , m_RefCount(1)
-        {
-        }
-
-        [[nodiscard]] inline VkDescriptorSetLayout SetLayout()
-        {
-            ++m_RefCount;
-            return m_SetLayout;
-        }
-
-        [[nodiscard]] inline bool Release(VkDevice device)
-        {
-            if (--m_RefCount == 0)
-            {
-                vkDestroyDescriptorSetLayout(device, m_SetLayout, VK_NULL_HANDLE);
-                return true;
-            }
-
-            return false;
-        }
-    };
 
     class CommandList;
     class DeviceFactory;

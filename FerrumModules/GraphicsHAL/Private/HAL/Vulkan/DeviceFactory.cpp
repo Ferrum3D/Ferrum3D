@@ -6,7 +6,6 @@
 #include <HAL/Vulkan/Buffer.h>
 #include <HAL/Vulkan/CommandList.h>
 #include <HAL/Vulkan/DescriptorAllocator.h>
-#include <HAL/Vulkan/DescriptorHeap.h>
 #include <HAL/Vulkan/Device.h>
 #include <HAL/Vulkan/DeviceFactory.h>
 #include <HAL/Vulkan/Fence.h>
@@ -18,6 +17,7 @@
 #include <HAL/Vulkan/RenderPass.h>
 #include <HAL/Vulkan/Sampler.h>
 #include <HAL/Vulkan/ShaderModule.h>
+#include <HAL/Vulkan/ShaderResourceGroup.h>
 #include <HAL/Vulkan/Swapchain.h>
 #include <HAL/Vulkan/TransientResourceHeap.h>
 
@@ -119,12 +119,12 @@ namespace FE::Graphics::Vulkan
         builder.Bind<HAL::Image>().To<Image>().InTransientScope();
         builder.Bind<HAL::ShaderModule>().To<ShaderModule>().InTransientScope();
         builder.Bind<HAL::RenderPass>().To<RenderPass>().InTransientScope();
-        builder.Bind<HAL::DescriptorHeap>().To<DescriptorHeap>().InTransientScope();
         builder.Bind<HAL::GraphicsPipeline>().To<GraphicsPipeline>().InTransientScope();
         builder.Bind<HAL::ImageView>().To<ImageView>().InTransientScope();
         builder.Bind<HAL::Framebuffer>().To<Framebuffer>().InTransientScope();
         builder.Bind<HAL::Sampler>().To<Sampler>().InTransientScope();
         builder.Bind<HAL::TransientResourceHeap>().To<TransientResourceHeap>().InTransientScope();
+        builder.Bind<HAL::ShaderResourceGroup>().To<ShaderResourceGroup>().InTransientScope();
 
         builder.Bind<MemoryRequirementsCache>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();

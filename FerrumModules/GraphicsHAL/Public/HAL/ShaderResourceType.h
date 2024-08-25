@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace FE::Graphics::HAL
 {
@@ -13,4 +13,31 @@ namespace FE::Graphics::HAL
         Sampler,
         InputAttachment
     };
+
+
+    inline constexpr bool IsBufferShaderResource(ShaderResourceType type)
+    {
+        switch (type)
+        {
+        case ShaderResourceType::ConstantBuffer:
+        case ShaderResourceType::BufferSRV:
+        case ShaderResourceType::BufferUAV:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+
+    inline constexpr bool IsTextureShaderResource(ShaderResourceType type)
+    {
+        switch (type)
+        {
+        case ShaderResourceType::TextureSRV:
+        case ShaderResourceType::TextureUAV:
+            return true;
+        default:
+            return false;
+        }
+    }
 } // namespace FE::Graphics::HAL
