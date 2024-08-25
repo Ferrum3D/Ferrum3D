@@ -6,9 +6,6 @@
     Public/HAL/Buffer.h
     Public/HAL/CommandList.h
     Public/HAL/CommandQueue.h
-    Public/HAL/DescriptorDesc.h
-    Public/HAL/DescriptorHeap.h
-    Public/HAL/DescriptorTable.h
     Public/HAL/Device.h
     Public/HAL/DeviceObject.h
     Public/HAL/DeviceService.h
@@ -34,6 +31,8 @@
     Public/HAL/Resource.h
     Public/HAL/ResourceCache.h
     Public/HAL/ResourceState.h
+    Public/HAL/ShaderResourceGroup.h
+    Public/HAL/ShaderResourceGroupData.h
     Public/HAL/ShaderResourceType.h
     Public/HAL/TransientResourceHeapBase.h
     Public/HAL/Sampler.h
@@ -69,10 +68,6 @@ set(VULKAN_SOURCES
     Private/HAL/Vulkan/CommandQueue.h
     Private/HAL/Vulkan/DescriptorAllocator.cpp
     Private/HAL/Vulkan/DescriptorAllocator.h
-    Private/HAL/Vulkan/DescriptorHeap.cpp
-    Private/HAL/Vulkan/DescriptorHeap.h
-    Private/HAL/Vulkan/DescriptorTable.cpp
-    Private/HAL/Vulkan/DescriptorTable.h
     Private/HAL/Vulkan/Device.cpp
     Private/HAL/Vulkan/Device.h
     Private/HAL/Vulkan/DeviceFactory.cpp
@@ -105,6 +100,8 @@ set(VULKAN_SOURCES
     Private/HAL/Vulkan/ShaderModule.h
     Private/HAL/Vulkan/ShaderReflection.cpp
     Private/HAL/Vulkan/ShaderReflection.h
+    Private/HAL/Vulkan/ShaderResourceGroup.cpp
+    Private/HAL/Vulkan/ShaderResourceGroup.h
     Private/HAL/Vulkan/Swapchain.cpp
     Private/HAL/Vulkan/Swapchain.h
 )

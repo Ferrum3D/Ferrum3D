@@ -6,8 +6,6 @@
 #include <HAL/Buffer.h>
 #include <HAL/CommandList.h>
 #include <HAL/CommandQueue.h>
-#include <HAL/DescriptorHeap.h>
-#include <HAL/DescriptorTable.h>
 #include <HAL/Device.h>
 #include <HAL/DeviceFactory.h>
 #include <HAL/Fence.h>
@@ -22,6 +20,8 @@
 #include <HAL/Sampler.h>
 #include <HAL/ShaderCompiler.h>
 #include <HAL/ShaderModule.h>
+#include <HAL/ShaderReflection.h>
+#include <HAL/ShaderResourceGroup.h>
 #include <HAL/Swapchain.h>
 #include <OsAssets/OsmiumAssetsModule.h>
 
@@ -49,8 +49,7 @@ class ExampleApplication final : public ApplicationModule
     Rc<HAL::GraphicsPipeline> m_Pipeline;
     festd::vector<HAL::ImageView*> m_RTVs;
 
-    Rc<HAL::DescriptorHeap> m_DescriptorHeap;
-    Rc<HAL::DescriptorTable> m_DescriptorTable;
+    Rc<HAL::ShaderResourceGroup> m_SRG;
 
     Rc<HAL::ShaderModule> m_PixelShader;
     Rc<HAL::ShaderModule> m_VertexShader;
@@ -289,30 +288,19 @@ public:
         m_RenderPass = pServiceProvider->ResolveRequired<HAL::RenderPass>();
         m_RenderPass->Init(renderPassDesc);
 
-        HAL::DescriptorHeapDesc descriptorHeapDesc{};
-        descriptorHeapDesc.MaxTables = 1;
+        const HAL::ShaderReflection* psReflection = m_PixelShader->GetReflection();
+        const HAL::ShaderReflection* vsReflection = m_VertexShader->GetReflection();
 
-        const std::array descriptorHeapSizes{ HAL::DescriptorSize(1, HAL::ShaderResourceType::Sampler),
-                                              HAL::DescriptorSize(1, HAL::ShaderResourceType::TextureSRV),
-                                              HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
-        descriptorHeapDesc.Sizes = descriptorHeapSizes;
+        m_SRG = pServiceProvider->ResolveRequired<HAL::ShaderResourceGroup>();
 
-        m_DescriptorHeap = pServiceProvider->ResolveRequired<HAL::DescriptorHeap>();
-        m_DescriptorHeap->Init(descriptorHeapDesc);
+        const std::array shadersReflection{ psReflection, vsReflection };
+        m_SRG->Init({ shadersReflection });
 
-        HAL::DescriptorDesc psSamplerDescriptorDesc(HAL::ShaderResourceType::Sampler, HAL::ShaderStageFlags::Pixel, 1);
-        HAL::DescriptorDesc psTextureDescriptorDesc(HAL::ShaderResourceType::TextureSRV, HAL::ShaderStageFlags::Pixel, 1);
-        HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
-        m_DescriptorTable = m_DescriptorHeap->AllocateDescriptorTable(
-            std::array{ psSamplerDescriptorDesc, psTextureDescriptorDesc, vsDescriptorDesc });
-
-        HAL::DescriptorWriteSampler descriptorWriteSampler{ m_TextureSampler.Get() };
-        m_DescriptorTable->Update(descriptorWriteSampler);
-        HAL::DescriptorWriteImage descriptorWriteImage{ m_TextureView.Get(), 1 };
-        m_DescriptorTable->Update(descriptorWriteImage);
-        HAL::DescriptorWriteBuffer descriptorWrite{ m_ConstantBuffer.Get() };
-        descriptorWrite.Binding = 2;
-        m_DescriptorTable->Update(descriptorWrite);
+        HAL::ShaderResourceGroupData srgData{};
+        srgData.Set(psReflection->GetResourceBindingIndex("g_Sampler"), m_TextureSampler.Get());
+        srgData.Set(psReflection->GetResourceBindingIndex("g_Texture"), m_TextureView.Get());
+        srgData.Set(vsReflection->GetResourceBindingIndex("Settings"), m_ConstantBuffer.Get());
+        m_SRG->Update(srgData);
 
         HAL::GraphicsPipelineDesc pipelineDesc{};
         pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
@@ -331,8 +319,8 @@ public:
         std::array shaders{ m_PixelShader.Get(), m_VertexShader.Get() };
         pipelineDesc.Shaders = festd::span(shaders);
 
-        HAL::DescriptorTable* descriptorTable = m_DescriptorTable.Get();
-        pipelineDesc.DescriptorTables = festd::span(&descriptorTable, 1);
+        std::array srgs{ m_SRG.Get() };
+        pipelineDesc.ShaderResourceGroups = srgs;
         pipelineDesc.Viewport = m_Viewport;
         pipelineDesc.Scissor = m_Scissor;
         pipelineDesc.Rasterization = HAL::RasterizationState{};
@@ -374,13 +362,12 @@ public:
             cmd->Init({ HAL::HardwareQueueKindFlags::Graphics, HAL::CommandListFlags::None });
             m_CommandLists.push_back(cmd);
 
-            std::array descriptorTables{ m_DescriptorTable.Get() };
             std::array clearValues{ HAL::ClearValueDesc::CreateColorValue(Colors::MediumAquamarine),
                                     HAL::ClearValueDesc::CreateDepthStencilValue() };
 
             cmd->Begin();
             cmd->BindGraphicsPipeline(m_Pipeline.Get());
-            cmd->BindDescriptorTables(descriptorTables, m_Pipeline.Get());
+            cmd->BindShaderResourceGroups(srgs, m_Pipeline.Get());
             cmd->SetViewport(m_Viewport);
             cmd->SetScissor(m_Scissor);
             cmd->BindVertexBuffer(0, m_VertexBuffer.Get(), 0);

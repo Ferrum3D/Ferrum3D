@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <csignal>
 #include <stdexcept>
 
@@ -9,6 +9,9 @@
 #endif
 
 #define FE_MAKE_STR(txt) #txt
+#define FE_JOIN1(a, b) a##b
+#define FE_JOIN(a, b) FE_JOIN1(a, b)
+#define FE_UNIQUE_IDENT(name) FE_JOIN(name, __LINE__)
 
 #if defined __clang__
 #    define FE_COMPILER_CLANG 1

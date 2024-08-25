@@ -26,7 +26,8 @@ namespace FE::Graphics::Vulkan
         void Begin() override;
         void End() override;
 
-        void BindDescriptorTables(festd::span<HAL::DescriptorTable*> descriptorTables, HAL::GraphicsPipeline* pipeline) override;
+        void BindShaderResourceGroups(festd::span<HAL::ShaderResourceGroup*> shaderResourceGroups,
+                                      HAL::GraphicsPipeline* pipeline) override;
         void BindGraphicsPipeline(HAL::GraphicsPipeline* pipeline) override;
 
         void BeginRenderPass(HAL::RenderPass* renderPass, HAL::Framebuffer* framebuffer,

@@ -6,9 +6,58 @@
 
 namespace FE::Graphics::Vulkan
 {
+    struct DescriptorSetLayoutHandle final
+    {
+        VkDescriptorSetLayout Layout = VK_NULL_HANDLE;
+        uint64_t Hash = 0;
+
+        inline explicit operator bool() const
+        {
+            return Layout != VK_NULL_HANDLE;
+        }
+    };
+
+
     class DescriptorAllocator final : public HAL::DeviceService
     {
-        festd::unordered_dense_map<size_t, DescriptorSetLayoutData> m_DescriptorSetLayouts;
+        struct SetLayoutCacheEntry final
+        {
+            VkDescriptorSetLayout SetLayout;
+            uint32_t RefCount;
+
+            inline SetLayoutCacheEntry() = default;
+
+            inline SetLayoutCacheEntry(VkDescriptorSetLayout layout)
+                : SetLayout(layout)
+                , RefCount(1)
+            {
+            }
+
+            [[nodiscard]] inline VkDescriptorSetLayout GetSetLayout()
+            {
+                ++RefCount;
+                return SetLayout;
+            }
+
+            [[nodiscard]] inline bool Release(VkDevice device)
+            {
+                if (--RefCount == 0)
+                {
+                    vkDestroyDescriptorSetLayout(device, SetLayout, VK_NULL_HANDLE);
+                    return true;
+                }
+
+                return false;
+            }
+        };
+
+        festd::unordered_dense_map<uint64_t, SetLayoutCacheEntry> m_DescriptorSetLayouts;
+
+        festd::vector<VkDescriptorPool> m_DescriptorPools;
+        VkDescriptorPool m_CurrentPool = VK_NULL_HANDLE;
+        uint32_t m_NextDescriptorPoolSize = 256;
+
+        void NewPool();
 
     public:
         FE_RTTI_Class(DescriptorAllocator, "0C1521F6-D4A7-4D32-8005-9DDEC295BAA6");
@@ -19,8 +68,11 @@ namespace FE::Graphics::Vulkan
         }
 
         ~DescriptorAllocator() override = default;
+        void Shutdown() override;
 
-        VkDescriptorSetLayout GetDescriptorSetLayout(festd::span<const HAL::DescriptorDesc> descriptors, size_t& key);
-        void ReleaseDescriptorSetLayout(size_t key);
+        DescriptorSetLayoutHandle CreateDescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo& createInfo);
+        void ReleaseDescriptorSetLayout(DescriptorSetLayoutHandle handle);
+
+        VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout setLayout);
     };
 } // namespace FE::Graphics::Vulkan

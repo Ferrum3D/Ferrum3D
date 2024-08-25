@@ -96,7 +96,8 @@ namespace FE::Graphics::HAL
         Offset DestBounds[2];
     };
 
-    class DescriptorTable;
+
+    class ShaderResourceGroup;
     class GraphicsPipeline;
     class RenderPass;
     class Framebuffer;
@@ -136,7 +137,8 @@ namespace FE::Graphics::HAL
                                                 festd::span<const BufferBarrierDesc> bufferBarriers) = 0;
         virtual void MemoryBarrier() = 0;
 
-        virtual void BindDescriptorTables(festd::span<DescriptorTable*> descriptorTables, GraphicsPipeline* pipeline) = 0;
+        virtual void BindShaderResourceGroups(festd::span<ShaderResourceGroup*> shaderResourceGroups,
+                                              GraphicsPipeline* pipeline) = 0;
         virtual void BindGraphicsPipeline(GraphicsPipeline* pipeline) = 0;
 
         virtual void BeginRenderPass(RenderPass* renderPass, Framebuffer* framebuffer,

@@ -21,6 +21,7 @@ namespace FE::Graphics::HAL
         }
         for (DeviceService* pService : m_ServiceList)
         {
+            pService->Shutdown();
             pService->Release();
         }
 
