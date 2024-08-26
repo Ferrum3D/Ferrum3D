@@ -1,162 +1,177 @@
-﻿set(SRC
-    # FERRUM_SORT_LINES BEGIN
-    FeCore/Assets/Asset.h
-    FeCore/Assets/AssetCommon.h
-    FeCore/Assets/AssetManager.cpp
-    FeCore/Assets/AssetManager.h
-    FeCore/Assets/AssetProviderDev.cpp
-    FeCore/Assets/AssetProviderDev.h
-    FeCore/Assets/AssetRegistry.cpp
-    FeCore/Assets/AssetRegistry.h
-    FeCore/Assets/AssetStorage.h
-    FeCore/Assets/IAssetLoader.h
-    FeCore/Assets/IAssetManager.h
-    FeCore/Assets/IAssetProvider.h
-    FeCore/Assets/WeakAsset.h
+﻿set(PUBLIC_HEADERS
+    Public/FeCore/Assets/Asset.h
+    Public/FeCore/Assets/AssetCommon.h
+    Public/FeCore/Assets/AssetManager.h
+    Public/FeCore/Assets/AssetProviderDev.h
+    Public/FeCore/Assets/AssetRegistry.h
+    Public/FeCore/Assets/AssetStorage.h
+    Public/FeCore/Assets/IAssetLoader.h
+    Public/FeCore/Assets/IAssetManager.h
+    Public/FeCore/Assets/IAssetProvider.h
+    Public/FeCore/Assets/WeakAsset.h
+    
 
-    FeCore/Base/Base.h
-    FeCore/Base/CompilerTraits.h
-    FeCore/Base/Hash.h
-    FeCore/Base/Platform.h
-    FeCore/Base/PlatformInclude.h
-    FeCore/Base/PlatformTraits.h
+    Public/FeCore/Base/Base.h
+    Public/FeCore/Base/CompilerTraits.h
+    Public/FeCore/Base/Hash.h
+    Public/FeCore/Base/Platform.h
+    Public/FeCore/Base/PlatformInclude.h
+    Public/FeCore/Base/PlatformTraits.h
 
-    FeCore/Components/LocalToWorldComponent.h
-    FeCore/Components/PositionComponent.h
+    Public/FeCore/Components/LocalToWorldComponent.h
+    Public/FeCore/Components/PositionComponent.h
+    
+    Public/FeCore/Console/Console.h
+    Public/FeCore/Console/ConsoleLogger.h
+    Public/FeCore/Console/FeLog.h
+    Public/FeCore/Console/IConsoleLogger.h
 
-    FeCore/Console/Console.cpp
-    FeCore/Console/Console.h
-    FeCore/Console/ConsoleLogger.cpp
-    FeCore/Console/ConsoleLogger.h
-    FeCore/Console/FeLog.h
-    FeCore/Console/IConsoleLogger.h
+    Public/FeCore/Containers/ByteBuffer.h
+    Public/FeCore/Containers/HashTables.h
+    Public/FeCore/Containers/LRUCacheMap.h
+    Public/FeCore/Containers/SegmentedVector.h
+    Public/FeCore/Containers/SmallVector.h
+    Public/FeCore/Containers/SparseSet.h
+    Public/FeCore/Containers/SparseStorage.h
 
-    FeCore/Containers/ByteBuffer.h
-    FeCore/Containers/HashTables.h
-    FeCore/Containers/LRUCacheMap.h
-    FeCore/Containers/SegmentedVector.h
-    FeCore/Containers/SmallVector.h
-    FeCore/Containers/SparseSet.h
-    FeCore/Containers/SparseStorage.h
+    Public/FeCore/DI/Activator.h
+    Public/FeCore/DI/BaseDI.h
+    Public/FeCore/DI/Builder.h
+    Public/FeCore/DI/Container.h
+    Public/FeCore/DI/LifetimeScope.h
+    Public/FeCore/DI/Registration.h
+    Public/FeCore/DI/Registry.h
 
-    FeCore/DI/Activator.h
-    FeCore/DI/BaseDI.h
-    FeCore/DI/BaseDI.cpp
-    FeCore/DI/Builder.h
-    FeCore/DI/Builder.cpp
-    FeCore/DI/Container.h
-    FeCore/DI/Container.cpp
-    FeCore/DI/LifetimeScope.h
-    FeCore/DI/LifetimeScope.cpp
-    FeCore/DI/Registration.h
-    FeCore/DI/Registry.h
+    Public/FeCore/EventBus/EventBus.h
+    Public/FeCore/EventBus/FrameEvents.h
+    
+    Public/FeCore/Framework/ApplicationModule.h
+    Public/FeCore/Framework/ModuleBase.h
+    Public/FeCore/Framework/IModule.h
+    
+    Public/FeCore/IO/BaseIO.h
+    Public/FeCore/IO/FileHandle.h
+    Public/FeCore/IO/FileStream.h
+    Public/FeCore/IO/IStream.h
+    Public/FeCore/IO/StdoutStream.h
+    Public/FeCore/IO/StreamBase.h
+    
+    Public/FeCore/Jobs/IJobSystem.h
+    Public/FeCore/Jobs/Job.h
+    Public/FeCore/Jobs/JobSystem.h
+    Public/FeCore/Jobs/WaitGroup.h
 
-    FeCore/EventBus/EventBus.h
-    FeCore/EventBus/FrameEvents.h
+    Public/FeCore/Math/Color.h
+    Public/FeCore/Math/Colors.h
+    Public/FeCore/Math/Half.h
+    Public/FeCore/Math/MathUtils.h
+    Public/FeCore/Math/Matrix4x4F.h
+    Public/FeCore/Math/Quaternion.h
+    Public/FeCore/Math/Vector2.h
+    Public/FeCore/Math/Vector3.h
+    Public/FeCore/Math/Vector4.h
+    Public/FeCore/Math/VectorMath.h
+    
+    Public/FeCore/Memory/LinearAllocator.h
+    Public/FeCore/Memory/Memory.h
+    Public/FeCore/Memory/NullableHandle.h
+    Public/FeCore/Memory/PoolAllocator.h
+    Public/FeCore/Memory/RefCount.h
 
-    FeCore/Framework/ApplicationModule.cpp
-    FeCore/Framework/ApplicationModule.h
-    FeCore/Framework/ModuleBase.cpp
-    FeCore/Framework/ModuleBase.h
-    FeCore/Framework/IModule.h
+    Public/FeCore/Modules/Configuration.h
+    Public/FeCore/Modules/Environment.h
+    Public/FeCore/Modules/EnvironmentPrivate.h
+    Public/FeCore/Modules/LibraryLoader.h
+    Public/FeCore/Modules/ServiceLocator.h
 
-    FeCore/IO/BaseIO.cpp
-    FeCore/IO/BaseIO.h
-    FeCore/IO/FileHandle.cpp
-    FeCore/IO/FileHandle.h
-    FeCore/IO/FileStream.cpp
-    FeCore/IO/FileStream.h
-    FeCore/IO/IStream.h
-    FeCore/IO/StdoutStream.cpp
-    FeCore/IO/StdoutStream.h
-    FeCore/IO/StreamBase.h
+    Public/FeCore/Parallel/AtomicFlags.h
+    Public/FeCore/Parallel/Context.h
+    Public/FeCore/Parallel/Fiber.h
+    Public/FeCore/Parallel/Mutex.h
+    Public/FeCore/Parallel/Semaphore.h
+    Public/FeCore/Parallel/SpinLock.h
+    Public/FeCore/Parallel/Thread.h
 
-    FeCore/Jobs/IJobSystem.h
-    FeCore/Jobs/Job.h
-    FeCore/Jobs/JobSystem.cpp
-    FeCore/Jobs/JobSystem.h
-    FeCore/Jobs/WaitGroup.cpp
-    FeCore/Jobs/WaitGroup.h
+    Public/FeCore/RTTI/RTTI.h
 
-    FeCore/Math/Color.h
-    FeCore/Math/Colors.cpp
-    FeCore/Math/Colors.h
-    FeCore/Math/Half.h
-    FeCore/Math/MathUtils.h
-    FeCore/Math/Matrix4x4F.h
-    FeCore/Math/Quaternion.h
-    FeCore/Math/Vector2.h
-    FeCore/Math/Vector3.h
-    FeCore/Math/Vector4.h
-    FeCore/Math/VectorMath.h
+    Public/FeCore/SIMD/CommonSIMD.h
+    Public/FeCore/SIMD/SIMDIntrin.h
 
-    FeCore/Memory/LinearAllocator.h
-    FeCore/Memory/LinearAllocator.cpp
-    FeCore/Memory/Memory.h
-    FeCore/Memory/Memory.cpp
-    FeCore/Memory/NullableHandle.h
-    FeCore/Memory/PoolAllocator.h
-    FeCore/Memory/PoolAllocator.cpp
-    FeCore/Memory/RefCount.h
+    Public/FeCore/SIMD/SSE/Float32x4.h
+    Public/FeCore/SIMD/SSE/Int32x4.h
 
-    FeCore/Modules/Configuration.h
-    FeCore/Modules/Environment.h
-    FeCore/Modules/Environment.cpp
-    FeCore/Modules/EnvironmentPrivate.h
-    FeCore/Modules/LibraryLoader.h
-    FeCore/Modules/LibraryLoader.cpp
-    FeCore/Modules/ServiceLocator.h
+    Public/FeCore/SIMD/Scalar/Float32x4.h
+    Public/FeCore/SIMD/Scalar/Int32x4.h
 
-    FeCore/Parallel/AtomicFlags.h
-    FeCore/Parallel/Context.h
-    FeCore/Parallel/Context.cpp
-    FeCore/Parallel/Fiber.h
-    FeCore/Parallel/Fiber.cpp
-    FeCore/Parallel/Mutex.cpp
-    FeCore/Parallel/Mutex.h
-    FeCore/Parallel/Semaphore.cpp
-    FeCore/Parallel/Semaphore.h
-    FeCore/Parallel/SpinLock.h
-    FeCore/Parallel/Thread.h
-    FeCore/Parallel/Thread.cpp
+    Public/FeCore/Strings/FixedString.h
+    Public/FeCore/Strings/Unicode.h
+    Public/FeCore/Strings/Format.h
+    Public/FeCore/Strings/String.h
+    Public/FeCore/Strings/StringBase.h
+    Public/FeCore/Strings/StringSlice.h
+    
+    Public/FeCore/Time/DateTime.h
+    Public/FeCore/Time/TimeSpan.h
 
-    FeCore/RTTI/RTTI.h
-
-    FeCore/SIMD/CommonSIMD.h
-    FeCore/SIMD/SIMDIntrin.h
-
-    FeCore/SIMD/SSE/Float32x4.h
-    FeCore/SIMD/SSE/Int32x4.h
-
-    FeCore/SIMD/Scalar/Float32x4.h
-    FeCore/SIMD/Scalar/Int32x4.h
-
-    FeCore/Strings/FixedString.h
-    FeCore/Strings/Unicode.h
-    FeCore/Strings/Format.cpp
-    FeCore/Strings/Format.h
-    FeCore/Strings/String.h
-    FeCore/Strings/StringBase.h
-    FeCore/Strings/StringSlice.cpp
-    FeCore/Strings/StringSlice.h
-
-    FeCore/Time/DateTime.cpp
-    FeCore/Time/DateTime.h
-    FeCore/Time/TimeSpan.h
-
-    FeCore/Utils/BinarySerializer.h
-    FeCore/Utils/BoolPointer.h
-    FeCore/Utils/Result.h
-    FeCore/Utils/UUID.h
-    # FERRUM_SORT_LINES END
+    Public/FeCore/Utils/BinarySerializer.h
+    Public/FeCore/Utils/BoolPointer.h
+    Public/FeCore/Utils/Result.h
+    Public/FeCore/Utils/UUID.h
 )
 
-add_library(FeCore STATIC ${SRC})
+set(COMMON_SOURCES
+    Private/FeCore/Assets/AssetManager.cpp
+    Private/FeCore/Assets/AssetProviderDev.cpp
+    Private/FeCore/Assets/AssetRegistry.cpp
+
+    Private/FeCore/Console/Console.cpp
+    Private/FeCore/Console/ConsoleLogger.cpp
+
+    Private/FeCore/DI/BaseDI.cpp
+    Private/FeCore/DI/Builder.cpp
+    Private/FeCore/DI/Container.cpp
+    Private/FeCore/DI/LifetimeScope.cpp
+
+    Private/FeCore/Framework/ApplicationModule.cpp
+    Private/FeCore/Framework/ModuleBase.cpp
+
+    Private/FeCore/IO/BaseIO.cpp
+    Private/FeCore/IO/FileHandle.cpp
+    Private/FeCore/IO/FileStream.cpp
+    Private/FeCore/IO/StdoutStream.cpp
+
+    Private/FeCore/Jobs/JobSystem.cpp
+    Private/FeCore/Jobs/WaitGroup.cpp
+
+    Private/FeCore/Math/Colors.cpp
+
+    Private/FeCore/Memory/LinearAllocator.cpp
+    Private/FeCore/Memory/Memory.cpp
+    Private/FeCore/Memory/PoolAllocator.cpp
+
+    Private/FeCore/Modules/Environment.cpp
+    Private/FeCore/Modules/LibraryLoader.cpp
+
+    Private/FeCore/Parallel/Context.cpp
+    Private/FeCore/Parallel/Fiber.cpp
+    Private/FeCore/Parallel/Mutex.cpp
+    Private/FeCore/Parallel/Semaphore.cpp
+    Private/FeCore/Parallel/Thread.cpp
+
+    Private/FeCore/Strings/Format.cpp
+    Private/FeCore/Strings/StringSlice.cpp
+
+    Private/FeCore/Time/DateTime.cpp
+)
+
+
+add_library(FeCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES})
 
 fe_configure_target(FeCore)
 fe_enable_sse_for_target(FeCore)
 
-target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(FeCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
+target_include_directories(FeCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCore fcontext mimalloc EASTL unordered_dense small_vector TracyClient)

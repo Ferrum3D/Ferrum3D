@@ -106,9 +106,8 @@ set(VULKAN_SOURCES
     Private/HAL/Vulkan/Swapchain.h
 )
 
-set(SRC ${PUBLIC_HEADERS} ${VULKAN_SOURCES} ${COMMON_SOURCES})
 
-add_library(GraphicsHAL SHARED ${SRC})
+add_library(GraphicsHAL SHARED ${PUBLIC_HEADERS} ${VULKAN_SOURCES} ${COMMON_SOURCES})
 
 fe_configure_target(GraphicsHAL)
 

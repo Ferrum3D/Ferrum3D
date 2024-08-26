@@ -8,6 +8,6 @@
 )
 
 
-add_definitions(-DEASTL_USER_CONFIG_HEADER=<${FE_PROJECT_ROOT}/FerrumCore/FeCore/Base/EASTLConfig.h>)
+add_definitions(-DEASTL_USER_CONFIG_HEADER=<${FE_PROJECT_ROOT}/FerrumCore/Private/FeCore/Base/EASTLConfig.h>)
 add_subdirectory(${EASTL_SOURCE_DIR})
 set_target_properties(EASTL PROPERTIES FOLDER "ThirdParty")
