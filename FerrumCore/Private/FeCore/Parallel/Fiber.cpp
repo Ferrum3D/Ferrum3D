@@ -1,5 +1,4 @@
-﻿#include "Fiber.h"
-#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Console/FeLog.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Parallel/Fiber.h>
 
