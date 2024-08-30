@@ -1,5 +1,6 @@
-#include <FeCore/Console/Console.h>
+﻿#include <FeCore/Console/Console.h>
 #include <iostream>
+
 
 #ifdef FE_WINDOWS
 #    define WIN32_LEAN_AND_MEAN
@@ -7,7 +8,7 @@
 #    undef min
 #    undef max
 
-static HANDLE ConHandle  = nullptr;
+static HANDLE ConHandle = nullptr;
 static WORD DefaultColor = 0;
 
 inline static WORD GetConColor()
@@ -17,6 +18,7 @@ inline static WORD GetConColor()
     return info.wAttributes;
 }
 #endif
+
 
 namespace FE::Console
 {
@@ -51,10 +53,5 @@ namespace FE::Console
     void ResetColor()
     {
         SetColor(Color::Default);
-    }
-
-    void PrintToStdout(StringSlice string)
-    {
-        fwrite(string.Data(), 1, string.Size(), stdout);
     }
 } // namespace FE::Console

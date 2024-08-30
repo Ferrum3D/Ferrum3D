@@ -17,9 +17,9 @@ TEST(EnvironmentTest, EnvName)
     EXPECT_EQ(empty.c_str(), nullptr);
     EXPECT_EQ(empty.GetRecord(), nullptr);
 
-    const Env::Name test1 = "name123";
-    const Env::Name test2 = "name124";
-    const Env::Name test3 = "name123";
+    const Env::Name test1 = std::string_view{ "name123" };
+    const Env::Name test2 = std::string_view{ "name124" };
+    const Env::Name test3 = std::string_view{ "name123" };
     const Env::Name test4 = test1;
     EXPECT_EQ(test1.GetRecord(), test3.GetRecord());
     EXPECT_EQ(test1.GetRecord(), test4.GetRecord());

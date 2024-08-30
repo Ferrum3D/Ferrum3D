@@ -25,6 +25,6 @@ namespace FE::Graphics::HAL
 
         virtual void SignalFence(Fence* fence) = 0;
 
-        virtual void SubmitBuffers(festd::span<CommandList*> commandLists, Fence* signalFence, SubmitFlags flags) = 0;
+        virtual void SubmitBuffers(festd::span<CommandList* const> commandLists, Fence* signalFence, SubmitFlags flags) = 0;
     };
 } // namespace FE::Graphics::HAL

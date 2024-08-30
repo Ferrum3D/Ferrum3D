@@ -11,6 +11,6 @@ namespace FE::Graphics::HAL
 
         FE_RTTI_Class(OsmiumGPUModule, "A47C6079-CFF3-4653-80DA-9146664D1800");
 
-        inline static constexpr const char* LibraryPath = "GraphicsHAL";
+        inline static constexpr const char* LibraryPath = "FeGraphicsHAL";
     };
 } // namespace FE::Graphics::HAL

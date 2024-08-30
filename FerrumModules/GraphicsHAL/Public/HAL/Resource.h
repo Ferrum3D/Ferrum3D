@@ -14,7 +14,7 @@ namespace FE::Graphics::HAL
         , public festd::intrusive_list_node
     {
     protected:
-        FixStr64 m_Name;
+        FixedString<126> m_Name;
 
         inline void Register()
         {

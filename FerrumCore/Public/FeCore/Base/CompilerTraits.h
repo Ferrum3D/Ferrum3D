@@ -48,7 +48,7 @@
 #endif
 
 #if FE_COMPILER_MSVC || FE_COMPILER_MS_CLANG
-#    define FE_DEBUGBREAK __debugbreak()
+#    define FE_DebugBreak() __debugbreak()
 #else
-#    define FE_DEBUGBREAK raise(SIGTRAP)
+#    define FE_DebugBreak() raise(SIGTRAP)
 #endif

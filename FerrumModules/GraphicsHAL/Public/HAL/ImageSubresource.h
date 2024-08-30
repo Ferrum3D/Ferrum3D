@@ -3,12 +3,11 @@
 
 namespace FE::Graphics::HAL
 {
-    struct alignas(uint64_t) ImageSubresource
+    struct ImageSubresource
     {
-        uint16_t MipSlice = 0;
+        ImageAspect Aspect = ImageAspect::kColor;
+        uint8_t MipSlice = 0;
         uint16_t ArraySlice = 0;
-
-        ImageAspect Aspect = ImageAspect::Color;
     };
 
 
@@ -19,14 +18,14 @@ namespace FE::Graphics::HAL
         uint16_t MinArraySlice = 0;
         uint16_t ArraySliceCount = 1;
 
-        ImageAspectFlags AspectFlags = ImageAspectFlags::All;
+        ImageAspectFlags AspectFlags = ImageAspectFlags::kAll;
 
         inline ImageSubresourceRange() = default;
 
         inline ImageSubresourceRange(const ImageSubresource& subresource)
         {
             AspectFlags = static_cast<ImageAspectFlags>(1 << enum_cast(subresource.Aspect));
-            MinMipSlice = static_cast<uint8_t>(subresource.MipSlice);
+            MinMipSlice = subresource.MipSlice;
             MinArraySlice = subresource.ArraySlice;
             MipSliceCount = 1;
             ArraySliceCount = 1;

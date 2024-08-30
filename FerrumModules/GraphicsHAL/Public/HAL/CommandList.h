@@ -63,10 +63,10 @@ namespace FE::Graphics::HAL
 
     struct BufferImageCopyRegion final
     {
-        Offset ImageOffset{};
-        Size ImageSize{};
-        ImageSubresource ImageSubresource{};
-        uint64_t BufferOffset{};
+        Offset ImageOffset;
+        Size ImageSize;
+        ImageSubresource ImageSubresource;
+        uint32_t BufferOffset = 0;
 
         inline BufferImageCopyRegion() = default;
 
@@ -78,7 +78,7 @@ namespace FE::Graphics::HAL
         {
         }
 
-        inline BufferImageCopyRegion(uint64_t buffetOffset, struct ImageSubresource imageSubresource, Offset imageOffset,
+        inline BufferImageCopyRegion(uint32_t buffetOffset, struct ImageSubresource imageSubresource, Offset imageOffset,
                                      Size imageSize)
             : BufferOffset(buffetOffset)
             , ImageSubresource(imageSubresource)

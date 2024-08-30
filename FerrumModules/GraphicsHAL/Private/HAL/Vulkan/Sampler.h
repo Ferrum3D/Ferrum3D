@@ -25,5 +25,5 @@ namespace FE::Graphics::Vulkan
         const HAL::SamplerDesc& GetDesc() override;
     };
 
-    FE_ENABLE_IMPL_CAST(Sampler);
+    FE_ENABLE_NATIVE_CAST(Sampler);
 } // namespace FE::Graphics::Vulkan

@@ -5,21 +5,22 @@ namespace FE::Graphics::HAL
 {
     enum class ResourceState
     {
-        Undefined,
-        Common,
-        VertexBuffer,
-        ConstantBuffer,
-        IndexBuffer,
-        RenderTarget,
-        UnorderedAccess,
-        DepthWrite,
-        DepthRead,
-        ShaderResource,
-        IndirectArgument,
-        TransferWrite,
-        TransferRead,
-        Present,
-        Automatic
+        kUndefined,
+        kCommon,
+        kVertexBuffer,
+        kConstantBuffer,
+        kIndexBuffer,
+        kRenderTarget,
+        kUnorderedAccess,
+        kDepthWrite,
+        kDepthRead,
+        kShaderResource,
+        kIndirectArgument,
+        kTransferWrite,
+        kTransferRead,
+        kPresent,
+        kAutomatic,
+        kCount,
     };
 
 
@@ -32,8 +33,8 @@ namespace FE::Graphics::HAL
 
         Image* Image = nullptr;
         ImageSubresourceRange SubresourceRange;
-        ResourceState StateBefore = ResourceState::Automatic;
-        ResourceState StateAfter = ResourceState::Undefined;
+        ResourceState StateBefore = ResourceState::kAutomatic;
+        ResourceState StateAfter = ResourceState::kUndefined;
     };
 
 
@@ -44,7 +45,7 @@ namespace FE::Graphics::HAL
         Buffer* Buffer = nullptr;
         uint64_t Offset = 0;
         uint64_t Size = 0;
-        ResourceState StateBefore = ResourceState::Automatic;
-        ResourceState StateAfter = ResourceState::Undefined;
+        ResourceState StateBefore = ResourceState::kAutomatic;
+        ResourceState StateAfter = ResourceState::kUndefined;
     };
 } // namespace FE::Graphics::HAL

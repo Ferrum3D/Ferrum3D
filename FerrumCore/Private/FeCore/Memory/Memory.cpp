@@ -69,7 +69,7 @@ namespace FE::Memory
             osProtect = PAGE_READWRITE;
             break;
         default:
-            FE_DEBUGBREAK;
+            FE_DebugBreak();
             break;
         }
 

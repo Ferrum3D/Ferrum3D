@@ -1,9 +1,9 @@
 ﻿#pragma once
-#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Containers/SegmentedVector.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
+#include <FeCore/Logging/Trace.h>
 #include <HAL/Device.h>
 #include <HAL/DeviceFactory.h>
 #include <HAL/Vulkan/Common/Config.h>
@@ -46,7 +46,7 @@ namespace FE::Graphics::Vulkan
     public:
         FE_RTTI_Class(Device, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
 
-        Device(Debug::IConsoleLogger* pLogger, HAL::DeviceFactory* pFactory);
+        Device(Logger* pLogger, HAL::DeviceFactory* pFactory);
         ~Device() override;
 
         HAL::ResultCode Init(VkPhysicalDevice nativeAdapter);
@@ -68,7 +68,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find command pool");
+            FE_AssertMsg(false, "Couldn't find command pool");
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
@@ -82,7 +82,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find command pool");
+            FE_AssertMsg(false, "Couldn't find command pool");
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
@@ -96,7 +96,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find queue family");
+            FE_AssertMsg(false, "Couldn't find queue family");
             return static_cast<uint32_t>(-1);
         }
 
@@ -125,5 +125,5 @@ namespace FE::Graphics::Vulkan
         Rc<HAL::CommandQueue> GetCommandQueue(HAL::HardwareQueueKindFlags cmdQueueClass) override;
     };
 
-    FE_ENABLE_IMPL_CAST(Device);
+    FE_ENABLE_NATIVE_CAST(Device);
 } // namespace FE::Graphics::Vulkan

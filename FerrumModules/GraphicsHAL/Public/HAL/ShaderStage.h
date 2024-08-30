@@ -5,25 +5,25 @@ namespace FE::Graphics::HAL
 {
     enum class ShaderStage : uint32_t
     {
-        Vertex,
-        Pixel,
-        Hull,
-        Domain,
-        Geometry,
-        Compute
+        kVertex,
+        kPixel,
+        kHull,
+        kDomain,
+        kGeometry,
+        kCompute
     };
 
 
     enum class ShaderStageFlags : uint32_t
     {
-        None = 0,
-        Vertex = 1 << static_cast<uint32_t>(ShaderStage::Vertex),
-        Pixel = 1 << static_cast<uint32_t>(ShaderStage::Pixel),
-        Hull = 1 << static_cast<uint32_t>(ShaderStage::Hull),
-        Domain = 1 << static_cast<uint32_t>(ShaderStage::Domain),
-        Geometry = 1 << static_cast<uint32_t>(ShaderStage::Geometry),
-        Compute = 1 << static_cast<uint32_t>(ShaderStage::Compute),
-        All = Vertex | Hull | Domain | Pixel | Geometry | Compute
+        kNone = 0,
+        kVertex = 1 << static_cast<uint32_t>(ShaderStage::kVertex),
+        kPixel = 1 << static_cast<uint32_t>(ShaderStage::kPixel),
+        kHull = 1 << static_cast<uint32_t>(ShaderStage::kHull),
+        kDomain = 1 << static_cast<uint32_t>(ShaderStage::kDomain),
+        kGeometry = 1 << static_cast<uint32_t>(ShaderStage::kGeometry),
+        kCompute = 1 << static_cast<uint32_t>(ShaderStage::kCompute),
+        kAll = kVertex | kHull | kDomain | kPixel | kGeometry | kCompute
     };
 
     FE_ENUM_OPERATORS(ShaderStageFlags);

@@ -1,9 +1,9 @@
-﻿#include <FeCore/Console/FeLog.h>
-#include <FeCore/DI/Builder.h>
+﻿#include <FeCore/DI/Builder.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Jobs/JobSystem.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/EnvironmentPrivate.h>
 #include <algorithm>
 #include <chrono>
@@ -17,7 +17,7 @@ static void MergeArraysSync(festd::span<const int32_t> lhs, festd::span<const in
 {
     ZoneScoped;
     const uint32_t wholeSize = lhs.size() + rhs.size();
-    FE_ASSERT_MSG(
+    FE_AssertMsg(
         wholeSize <= space.size(), "Size of result ({}) was less than size of provided space ({})", wholeSize, space.size());
 
     uint32_t leftIndex = 0;
@@ -47,10 +47,10 @@ static void MergeArraysSync(festd::span<const int32_t> lhs, festd::span<const in
 
 static void MergeSortImplAsync(festd::span<int32_t> array, festd::span<int32_t> mergingSpace);
 
-class MergeSortJob : public SmallJob<MergeSortJob>
+class MergeSortJob final : public Job
 {
 public:
-    void DoExecute() const
+    void Execute() final
     {
         ZoneScoped;
         MergeSortImplAsync(Array, Space);
@@ -81,12 +81,14 @@ static void MergeSortImplAsync(festd::span<int32_t> array, festd::span<int32_t> 
     const festd::span left = array.subspan(0, middleIndex);
     const festd::span right = array.subspan(middleIndex, endIndex - middleIndex);
 
-    MergeSortJob* leftJob = SmallJob<MergeSortJob>::Create(left, mergingSpace.subspan(0, middleIndex));
-    MergeSortJob* rightJob = SmallJob<MergeSortJob>::Create(right, mergingSpace.subspan(middleIndex, endIndex - middleIndex));
+    MergeSortJob leftJob{ left, mergingSpace.subspan(0, middleIndex) };
+    MergeSortJob rightJob{ right, mergingSpace.subspan(middleIndex, endIndex - middleIndex) };
+
+    IJobSystem* pJobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
 
     Rc pWaitGroup = WaitGroup::Create();
-    leftJob->Schedule(pWaitGroup.Get());
-    rightJob->Schedule(pWaitGroup.Get());
+    leftJob.Schedule(pJobSystem, pWaitGroup.Get());
+    rightJob.Schedule(pJobSystem, pWaitGroup.Get());
 
     pWaitGroup->Wait();
     MergeArraysSync(festd::span(left), festd::span(right), mergingSpace);
@@ -101,7 +103,7 @@ static void ParallelSort(festd::span<int32_t> array)
     MergeSortImplAsync(array, festd::span(space));
 }
 
-static void AssertSorted(festd::span<int32_t> values)
+static void AssertSorted(Logger* pLogger, festd::span<int32_t> values)
 {
     ZoneScoped;
     uint32_t unsortedCount = 0;
@@ -111,7 +113,7 @@ static void AssertSorted(festd::span<int32_t> values)
         {
             if (unsortedCount < 8)
             {
-                FE_LOG_WARNING("Unsorted pair: {{ {}: {}, {}: {} }}", i, values[i], i + 1, values[i + 1]);
+                pLogger->LogWarning("Unsorted pair: {{ {}: {}, {}: {} }}", i, values[i], i + 1, values[i + 1]);
             }
 
             ++unsortedCount;
@@ -120,7 +122,7 @@ static void AssertSorted(festd::span<int32_t> values)
 
     if (unsortedCount)
     {
-        FE_LOG_ERROR("Total unsorted pairs found: {}", unsortedCount);
+        pLogger->LogWarning("Total unsorted pairs found: {}", unsortedCount);
     }
 }
 
@@ -138,6 +140,9 @@ struct MainJob final : Job
     void Execute() override
     {
         ZoneScoped;
+
+        Logger* pLogger = Env::GetServiceProvider()->ResolveRequired<Logger>();
+
         std::random_device device;
         std::mt19937 mt(device());
         std::uniform_int_distribution<int32_t> distribution;
@@ -155,14 +160,14 @@ struct MainJob final : Job
         auto parallel = MeasureTime([&values1]() {
             ParallelSort(festd::span(values1));
         });
-        AssertSorted(values1);
+        AssertSorted(pLogger, values1);
 
         auto stdSort = MeasureTime([&values2]() {
             std::sort(values2.begin(), values2.end());
         });
-        AssertSorted(values2);
+        AssertSorted(pLogger, values2);
 
-        FE_LOG_MESSAGE("Parallel: {}mcs, std::sort: {}mcs, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
+        pLogger->LogInfo("Parallel: {}mcs, std::sort: {}mcs, {}x speedup", parallel, stdSort, double(stdSort) / parallel);
         Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->Stop();
     }
 };
@@ -170,14 +175,16 @@ struct MainJob final : Job
 int main()
 {
     Env::CreateEnvironment();
-    Rc logger = Rc<Debug::ConsoleLogger>::DefaultNew();
     Rc eventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
 
     DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
     builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
+    builder.Bind<Logger>().ToSelf().InSingletonScope();
     builder.Build();
 
+    IJobSystem* pJobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+
     MainJob mainJob;
-    mainJob.Schedule();
-    Env::GetServiceProvider()->Resolve<IJobSystem>().Unwrap()->Start();
+    mainJob.Schedule(pJobSystem);
+    pJobSystem->Start();
 }

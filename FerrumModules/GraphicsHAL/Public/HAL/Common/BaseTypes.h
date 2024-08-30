@@ -21,18 +21,18 @@ namespace FE::Graphics::HAL
 
     enum class HardwareQueueKindFlags
     {
-        None = 0, //!< Invalid or unspecified value.
+        kNone = 0, //!< Invalid or unspecified value.
 
-        GraphicsBit = 1 << 0, //!< Queue that supports graphics operations.
-        ComputeBit = 1 << 1,  //!< Queue that supports compute operations.
-        TransferBit = 1 << 2, //!< Queue that supports copy operations.
+        kGraphicsBit = 1 << 0, //!< Queue that supports graphics operations.
+        kComputeBit = 1 << 1,  //!< Queue that supports compute operations.
+        kTransferBit = 1 << 2, //!< Queue that supports copy operations.
 
-        //! \brief Queue for graphics + compute + copy operations.
-        Graphics = GraphicsBit | ComputeBit | TransferBit,
-        //! \brief Queue for compute + copy operations.
-        Compute = ComputeBit | TransferBit,
-        //! \brief Queue for copy operations.
-        Transfer = TransferBit,
+        //! @brief Queue for graphics + compute + copy operations.
+        kGraphics = kGraphicsBit | kComputeBit | kTransferBit,
+        //! @brief Queue for compute + copy operations.
+        kCompute = kComputeBit | kTransferBit,
+        //! @brief Queue for copy operations.
+        kTransfer = kTransferBit,
     };
 
     FE_ENUM_OPERATORS(HardwareQueueKindFlags);
@@ -47,30 +47,27 @@ namespace FE::Graphics::HAL
 
     struct Offset
     {
-        int64_t X;
-        int64_t Y;
-        int64_t Z;
+        int32_t X = 0;
+        int32_t Y = 0;
+        int32_t Z = 0;
 
-        inline Offset() noexcept
-            : Offset(0, 0, 0)
-        {
-        }
+        inline constexpr Offset() = default;
 
-        inline Offset(int64_t x) noexcept
+        inline constexpr explicit Offset(int32_t x) noexcept
             : X(x)
             , Y(0)
             , Z(0)
         {
         }
 
-        inline Offset(int64_t x, int64_t y) noexcept
+        inline constexpr Offset(int32_t x, int32_t y) noexcept
             : X(x)
             , Y(y)
             , Z(0)
         {
         }
 
-        inline Offset(int64_t x, int64_t y, int64_t z) noexcept
+        inline constexpr Offset(int32_t x, int32_t y, int32_t z) noexcept
             : X(x)
             , Y(y)
             , Z(z)
@@ -81,36 +78,39 @@ namespace FE::Graphics::HAL
 
     struct Size
     {
-        uint64_t Width;
-        uint64_t Height;
-        uint64_t Depth;
+        uint32_t Width = 0;
+        uint32_t Height = 0;
+        uint32_t Depth = 1;
 
-        inline Size() noexcept
-            : Size(0, 0, 1)
-        {
-        }
+        inline constexpr Size() = default;
 
-        inline Size(uint64_t w) noexcept
+        inline constexpr explicit Size(uint32_t w) noexcept
             : Width(w)
             , Height(0)
             , Depth(1)
         {
         }
 
-        inline Size(uint64_t w, uint64_t h) noexcept
+        inline constexpr Size(uint32_t w, uint32_t h) noexcept
             : Width(w)
             , Height(h)
             , Depth(1)
         {
         }
 
-        inline Size(uint64_t w, uint64_t h, uint64_t d) noexcept
+        inline constexpr Size(uint32_t w, uint32_t h, uint32_t d) noexcept
             : Width(w)
             , Height(h)
             , Depth(d)
         {
         }
     };
+
+
+    inline uint32_t CalculateMipCount(Size size)
+    {
+        return 1 + Math::FloorLog2(std::max(size.Width, std::max(size.Height, size.Depth)));
+    }
 } // namespace FE::Graphics::HAL
 
 

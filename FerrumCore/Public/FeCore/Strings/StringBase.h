@@ -126,9 +126,21 @@ namespace FE
             return UTF8::Length(str, ByteLength(str));
         }
 
+        [[nodiscard]] inline static TChar* Copy(TChar* dst, uint32_t dstSize, const TChar* src, uint32_t srcSize)
+        {
+            const uint32_t actualSize = dstSize < srcSize ? dstSize : srcSize;
+            memcpy(dst, src, actualSize);
+            return dst + actualSize;
+        }
+
         [[nodiscard]] inline static int32_t ByteCompare(const TChar* lhs, const TChar* rhs) noexcept
         {
             return strcmp(lhs, rhs);
+        }
+
+        [[nodiscard]] inline static int32_t ByteCompare(const TChar* lhs, const TChar* rhs, uint32_t count) noexcept
+        {
+            return strncmp(lhs, rhs, count);
         }
 
         [[nodiscard]] inline static int32_t Compare(const TChar* lhs, const TChar* rhs, uint32_t length1,

@@ -2,6 +2,7 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>
 #include <FeCore/DI/Registry.h>
+#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::DI
 {
@@ -68,6 +69,11 @@ namespace FE::DI
             template<class TImpl>
             inline RegistryToBuilder To()
             {
+                if constexpr (!std::is_same_v<TImpl, TInterface>)
+                {
+                    FE_CORE_ASSERT(fe_typeid<TImpl>() != fe_typeid<TInterface>(), "");
+                }
+
                 *m_Target.pActivator = ServiceActivator::CreateForType<TImpl>();
                 return RegistryToBuilder(m_Target);
             }

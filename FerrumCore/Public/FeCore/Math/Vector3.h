@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Math/MathUtils.h>
+﻿#pragma once
+#include <FeCore/Base/BaseMath.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/CommonSIMD.h>
 #include <array>
@@ -8,7 +8,7 @@
 
 namespace FE
 {
-    //! \brief 3-dimensional vector.
+    //! @brief 3-dimensional vector.
     class Vector3F final
     {
         using TVec = SIMD::SSE::Float32x4;
@@ -49,16 +49,16 @@ namespace FE
 
         FE_FORCE_INLINE explicit Vector3F(const std::array<float, 3>& array) noexcept;
 
-        //! \return Vector3F{ 0, 0, 0 }.
+        //! @return Vector3F{ 0, 0, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector3F GetZero() noexcept;
 
-        //! \return Vector3F{ 1, 0, 0 }.
+        //! @return Vector3F{ 1, 0, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector3F GetUnitX() noexcept;
 
-        //! \return Vector3F{ 0, 1, 0 }.
+        //! @return Vector3F{ 0, 1, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector3F GetUnitY() noexcept;
 
-        //! \return Vector3F{ 0, 0, 1 }.
+        //! @return Vector3F{ 0, 0, 1 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector3F GetUnitZ() noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
@@ -66,10 +66,10 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
         [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
 
-        //! \return A pointer to array of three floats (components of the vector).
+        //! @return A pointer to array of three floats (components of the vector).
         [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
 
-        //! \return Underlying SIMD type.
+        //! @return Underlying SIMD type.
         [[nodiscard]] FE_FORCE_INLINE TVec GetSIMD() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
@@ -84,39 +84,40 @@ namespace FE
 
         [[nodiscard]] FE_FORCE_INLINE float Dot(const Vector3F& other) const noexcept;
 
-        //! \return Squared length of the vector.
+        //! @return Squared length of the vector.
         [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
 
-        //! \return Length of the vector.
+        //! @return Length of the vector.
         [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
 
-        //! \return New normalized vector, this vector is not modified.
+        //! @return New normalized vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector3F Normalized() const noexcept;
 
-        //! \brief Linearly interpolate between this and destination.
+        //! @brief Linearly interpolate between this and destination.
         //!
         //! The result is (dst - this) * f + this.
         //!
-        //! \param [in] f - Interpolation factor.
+        //! @param f - Interpolation factor.
         //!
-        //! \return New interpolated vector, this vector is not modified.
+        //! @return New interpolated vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector3F Lerp(const Vector3F& dst, float f) const noexcept;
 
-        //! \return Cross product [this x other].
+        //! @return Cross product [this x other].
         [[nodiscard]] FE_FORCE_INLINE Vector3F Cross(const Vector3F& other) const noexcept;
 
-        //! \brief Multiply each component of this vector with each component of other vector.
+        //! @brief Multiply each component of this vector with each component of other vector.
         //!
-        //! \return New vector, this vector is not modified.
+        //! @return New vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector3F MulEach(const Vector3F& other) const noexcept;
 
-        //! \brief Check if two vectors are approximately equal.
+        //! @brief Check if two vectors are approximately equal.
         //!
-        //! \param [in] other   - The vector to compare this vector with.
-        //! \param [in] epsilon - Accepted difference between the two vectors.
+        //! @param other   - The vector to compare this vector with.
+        //! @param epsilon - Accepted difference between the two vectors.
         //!
-        //! \return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector3F& other, float epsilon = Constants::Epsilon) const noexcept;
+        //! @return True if the vectors are approximately equal.
+        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector3F& other,
+                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE bool operator==(const Vector3F& other) const noexcept;
 
@@ -265,9 +266,9 @@ namespace FE
 
     FE_FORCE_INLINE float Vector3F::Dot(const Vector3F& other) const noexcept
     {
-        TVec mul     = m_Value * other.m_Value;
+        TVec mul = m_Value * other.m_Value;
         TVec halfSum = mul.Broadcast<1>() + mul;
-        TVec sum     = mul.Broadcast<2>() + halfSum;
+        TVec sum = mul.Broadcast<2>() + halfSum;
         return sum.Select<0>();
     }
 

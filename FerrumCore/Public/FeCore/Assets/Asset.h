@@ -3,41 +3,21 @@
 #include <FeCore/Assets/WeakAsset.h>
 #include <FeCore/Modules/ServiceLocator.h>
 
-namespace FE::Assets
+namespace FE
 {
-    //! \brief Asset holder.
+    //! @brief Asset holder.
     //!
-    //! \tparam T - Asset storage type.
+    //! @tparam T - Asset storage type.
     //!
     //! This class is used to hold asset storage. It implements reference counting and
     //! provides interface for asset loading.
     template<class T>
     class Asset final
     {
-        AssetID m_ID;
-        T* m_Storage;
+        T* m_Storage = nullptr;
 
-    public:
-        FE_RTTI_Base(Asset, "A0DD3482-B26A-498A-AB03-F40642D50D5F");
-
-        //! \brief Create an empty asset from its ID.
-        //!
-        //! The asset will be empty until loading will be requested.
-        //!
-        //! \param [in] assetID - ID of asset to hold.
-        inline explicit Asset(const AssetID& assetID)
-            : m_Storage(nullptr)
-            , m_ID(assetID)
-        {
-        }
-
-        //! \brief Create from preloaded asset
-        //!
-        //! \param [in] assetID - ID of asset to hold.
-        //! \param [in] storage - Preloaded asset storage.
-        inline Asset(const AssetID& assetID, T* storage)
+        explicit Asset(T* storage)
             : m_Storage(storage)
-            , m_ID(assetID)
         {
             if (m_Storage)
             {
@@ -45,8 +25,10 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Copy constructor.
-        inline Asset(const Asset& other)
+    public:
+        Asset() = default;
+
+        Asset(const Asset& other)
             : m_Storage(other.m_Storage)
         {
             if (m_Storage)
@@ -55,40 +37,37 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Move constructor.
-        inline Asset(Asset&& other) noexcept
+        Asset(Asset&& other) noexcept
             : m_Storage(other.m_Storage)
         {
             other.m_Storage = nullptr;
         }
 
-        //! \brief Copy assignment.
-        inline Asset& operator=(const Asset& other)
+        Asset& operator=(const Asset& other)
         {
             Asset(other).Swap(*this);
             return *this;
         }
 
-        //! \brief Move assignment.
-        inline Asset& operator=(Asset&& other) noexcept
+        Asset& operator=(Asset&& other) noexcept
         {
             Asset(std::move(other)).Swap(*this);
             return *this;
         }
 
-        //! \brief Reset the asset holder and remove a reference from the asset.
-        inline void Reset()
+        //! @brief Reset the asset holder and remove a reference from the asset.
+        void Reset()
         {
             Asset{}.Swap(*this);
         }
 
-        //! \brief Get underlying asset storage.
-        inline T* Get()
+        //! @brief Get underlying asset storage.
+        T* Get() const
         {
             return m_Storage;
         }
 
-        inline ~Asset()
+        ~Asset()
         {
             if (m_Storage)
             {
@@ -96,56 +75,42 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Swap two asset holders.
-        inline void Swap(Asset& other)
+        void Swap(Asset& other)
         {
-            auto* t = other.m_Storage;
+            T* t = other.m_Storage;
             other.m_Storage = m_Storage;
             m_Storage = t;
         }
 
-        //! \brief Create a weak asset holder from this.
-        inline WeakAsset<T> CreateWeak()
+        //! @brief Create a weak asset holder from this.
+        WeakAsset<T> CreateWeak()
         {
             return WeakAsset<T>(m_Storage);
         }
 
-        //! \brief Load asset from the manager synchronously.
-        //!
-        //! The function will block until the asset is loaded. It will call the manager's LoadAsset function.
-        //!
-        //! \see IAssetManager::LoadAsset
-        inline void LoadSync(IAssetManager* pAssetManager)
+        static Asset LoadSynchronously(Assets::IAssetManager* pAssetManager, Env::Name assetName)
         {
-            m_Storage = static_cast<T*>(pAssetManager->LoadAsset(m_ID));
+            const Env::Name assetType{ T::kAssetTypeName };
+            const Assets::AssetLoadingFlags flags = Assets::AssetLoadingFlags::kSynchronous;
+            T* storage = fe_assert_cast<T*>(pAssetManager->LoadAsset(assetName, assetType, flags));
+            return Asset(storage);
         }
 
-        inline T& operator*()
+        T& operator*() const
         {
             FE_CORE_ASSERT(m_Storage, "Asset was empty");
             return *m_Storage;
         }
 
-        inline T* operator->()
+        T* operator->() const
         {
             return m_Storage;
         }
 
-        inline const T& operator*() const
+        //! @brief Check if the asset is valid.
+        explicit operator bool() const
         {
-            FE_CORE_ASSERT(m_Storage, "Asset was empty");
-            return *m_Storage;
-        }
-
-        inline const T* operator->() const
-        {
-            return *m_Storage;
-        }
-
-        //! \brief Check if the asset is valid.
-        inline explicit operator bool() const
-        {
-            return m_Storage;
+            return m_Storage != nullptr;
         }
     };
-} // namespace FE::Assets
+} // namespace FE

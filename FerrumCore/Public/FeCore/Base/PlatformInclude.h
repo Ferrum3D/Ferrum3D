@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Platform.h>
 
 #if FE_WINDOWS
@@ -14,6 +14,7 @@
 #    undef GetObject
 #    undef CreateWindow
 #    undef MemoryBarrier
+#    undef GetCurrentDirectory
 #else
 #    error Unsupported platform
 #endif

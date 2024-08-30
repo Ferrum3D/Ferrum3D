@@ -34,5 +34,5 @@ namespace FE::Graphics::Vulkan
         return m_Desc;
     }
 
-    FE_ENABLE_IMPL_CAST(Framebuffer);
+    FE_ENABLE_NATIVE_CAST(Framebuffer);
 } // namespace FE::Graphics::Vulkan

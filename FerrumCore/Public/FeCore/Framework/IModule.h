@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/HashTables.h>
 #include <FeCore/DI/Builder.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/LibraryLoader.h>
 #include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -13,7 +13,7 @@ namespace FE
     using CreateModuleInstanceProc = void (*)(Env::Internal::IEnvironment&, IModule**);
 
 
-    //! \brief Base interface for modules and applications.
+    //! @brief Base interface for modules and applications.
     class IModule
     {
     protected:
@@ -75,10 +75,10 @@ namespace FE
             pNewEntry->m_RefCount = 1;
 
             const bool loadResult = pNewEntry->Loader.Load(modulePath);
-            FE_ASSERT_MSG(loadResult, "Unable to load module \"{}\"", modulePath);
+            FE_AssertMsg(loadResult, "Unable to load module \"{}\"", modulePath);
 
             const auto createModule = pNewEntry->Loader.FindFunction<CreateModuleInstanceProc>("CreateModuleInstance");
-            FE_ASSERT_MSG(createModule, "Invalid module \"{}\": CreateModuleInstance not found", modulePath);
+            FE_AssertMsg(createModule, "Invalid module \"{}\": CreateModuleInstance not found", modulePath);
             createModule(Env::GetEnvironment(), &pNewEntry->pModule);
             return pNewEntry->pModule;
         }
@@ -87,7 +87,7 @@ namespace FE
         {
             std::lock_guard lk{ m_Lock };
             const auto iter = m_EntryMap.find(moduleName);
-            FE_ASSERT(iter != m_EntryMap.end());
+            FE_Assert(iter != m_EntryMap.end());
             if (--iter->second->m_RefCount == 0)
             {
                 Memory::DefaultDelete(iter->second->pModule);
@@ -102,13 +102,13 @@ namespace FE
         {
             for (auto& [name, pEntry] : m_EntryMap)
             {
-                FE_LOG_ERROR("Module \"{}\" was never unloaded", name);
+                Trace::ReportError("Module \"{}\" was never unloaded", name);
             }
         }
     };
 
 
-    //! \brief Scoped module loader.
+    //! @brief Scoped module loader.
     template<class TModule>
     class ModuleDependency final
     {

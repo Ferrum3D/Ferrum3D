@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Console/IConsoleLogger.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Parallel/SpinLock.h>
 #include <HAL/BindFlags.h>
 #include <HAL/Common/BaseTypes.h>
@@ -9,6 +9,7 @@
 namespace FE::Graphics::HAL
 {
     class CommandQueue;
+    class DeviceService;
 
     class Device
         : public Memory::RefCountedObjectBase
@@ -31,13 +32,13 @@ namespace FE::Graphics::HAL
         festd::vector<PendingDisposer> m_DisposeQueue;
         festd::vector<DeviceService*> m_ServiceList;
 
-        Debug::IConsoleLogger* m_pLogger;
-
         void QueueObjectDispose(DeviceObject* pObject);
         void OnFrameEnd(const FrameEventArgs& args) override;
 
     protected:
-        inline Device(Debug::IConsoleLogger* pLogger)
+        Logger* m_pLogger;
+
+        inline Device(Logger* pLogger)
             : m_pLogger(pLogger)
         {
         }

@@ -45,5 +45,5 @@ namespace FE::Graphics::Vulkan
         void BindMemory(const HAL::DeviceMemorySlice& memory) override;
     };
 
-    FE_ENABLE_IMPL_CAST(Image);
+    FE_ENABLE_NATIVE_CAST(Image);
 } // namespace FE::Graphics::Vulkan

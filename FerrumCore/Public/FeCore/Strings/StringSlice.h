@@ -72,7 +72,7 @@ namespace FE
     {
     };
 
-    //! \brief A slice of \ref String.
+    //! @brief A slice of a String.
     class StringSlice final
     {
         const TChar* m_Data;
@@ -141,12 +141,17 @@ namespace FE
         template<class TBool>
         [[nodiscard]] inline std::enable_if_t<std::is_same_v<TBool, bool>, ParseError> ParseImpl(TBool& result) const noexcept
         {
-            if (*this == "true" || *this == "1")
+            // something weird here:
+            // error C2678: binary '==': no operator found which takes a left-hand operand of type
+            //     'const FE::StringSlice' (or there is no acceptable conversion)
+            if (std::string_view{ m_Data, m_Size } == std::string_view{ "true" }
+                || std::string_view{ m_Data, m_Size } == std::string_view{ "1" })
             {
                 result = true;
                 return ParseErrorCode::None;
             }
-            if (*this == "false" || *this == "0")
+            if (std::string_view{ m_Data, m_Size } == std::string_view{ "false" }
+                || std::string_view{ m_Data, m_Size } == std::string_view{ "0" })
             {
                 result = false;
                 return ParseErrorCode::None;

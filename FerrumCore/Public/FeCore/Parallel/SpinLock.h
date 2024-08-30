@@ -5,7 +5,7 @@ namespace FE
 {
     class SpinLock final
     {
-        std::atomic<bool> m_Locked;
+        std::atomic<bool> m_Locked = false;
 
     public:
         inline void lock() noexcept

@@ -1,42 +1,51 @@
 ﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/IAssetLoader.h>
-#include <FeCore/Assets/IAssetProvider.h>
 
 namespace FE::Assets
 {
-    void AssetManager::RegisterAssetLoader(Rc<IAssetLoader> loader)
+    AssetManager::AssetManager(IO::IStreamFactory* streamFactory)
+        : m_StreamFactory(streamFactory)
     {
-        m_Loaders[loader->GetAssetType()] = std::move(loader);
     }
 
-    void AssetManager::AttachAssetProvider(Rc<IAssetProvider> provider)
+
+    void AssetManager::RegisterAssetLoader(IAssetLoader* loader)
     {
-        m_Provider = std::move(provider);
+        std::lock_guard lk{ m_Lock };
+        const Env::Name assetType = loader->GetSpec().AssetTypeName;
+        m_LoadersByType[assetType] = std::move(loader);
     }
 
-    void AssetManager::DetachAssetProvider()
-    {
-        m_Provider.Reset();
-    }
 
-    AssetStorage* AssetManager::LoadAsset(const AssetID& assetID)
+    AssetStorage* AssetManager::LoadAsset(Env::Name assetName, Env::Name assetType, AssetLoadingFlags loadingFlags)
     {
-        auto type = m_Provider->GetAssetType(assetID);
-        auto stream = m_Provider->CreateAssetLoadingStream(assetID);
-        auto loader = m_Loaders[type].Get();
-        auto* storage = loader->CreateStorage();
-        storage->AddStrongRef();
-        loader->LoadAsset(storage, stream.Get());
+        std::lock_guard lk{ m_Lock };
+        IAssetLoader* loader = m_LoadersByType[assetType].Get();
+        AssetStorage* storage = nullptr;
+        loader->CreateStorage(&storage);
+        FE_Assert(storage);
+        loader->LoadAsset(storage, assetName);
+
+        if ((loadingFlags & AssetLoadingFlags::kSynchronous) == AssetLoadingFlags::kSynchronous)
+        {
+            while (!storage->IsCompletelyLoaded())
+                _mm_pause();
+        }
+
         return storage;
     }
 
-    void AssetManager::RemoveAssetLoader(const AssetType& assetType)
+
+    void AssetManager::UnregisterAssetLoader(Env::Name assetType)
     {
-        m_Loaders.erase(assetType);
+        std::lock_guard lk{ m_Lock };
+        m_LoadersByType.erase(assetType);
     }
 
-    IAssetLoader* AssetManager::GetAssetLoader(const AssetType& assetType)
+
+    IAssetLoader* AssetManager::GetAssetLoader(Env::Name assetType)
     {
-        return m_Loaders[assetType].Get();
+        std::lock_guard lk{ m_Lock };
+        return m_LoadersByType[assetType].Get();
     }
 } // namespace FE::Assets

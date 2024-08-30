@@ -13,10 +13,6 @@ namespace FE
 
     namespace Memory
     {
-        inline constexpr size_t DefaultAlignment = 16;
-        inline constexpr size_t CacheLineSize = 64;
-
-
         class RefCountedObjectBase
         {
             friend class ::FE::Internal::RcBase;
@@ -210,25 +206,25 @@ namespace FE
             return *this;
         }
 
-        //! \brief Release a reference and reset to null.
+        //! @brief Release a reference and reset to null.
         inline void Reset()
         {
             InternalRelease();
         }
 
-        //! \brief Get pointer to the stored pointer.
+        //! @brief Get pointer to the stored pointer.
         [[nodiscard]] inline T* const* GetAddressOf() const
         {
             return &m_pObject;
         }
 
-        //! \brief Get pointer to the stored pointer.
+        //! @brief Get pointer to the stored pointer.
         [[nodiscard]] inline T** GetAddressOf()
         {
             return &m_pObject;
         }
 
-        //! \brief Release a reference and get pointer to the stored pointer.
+        //! @brief Release a reference and get pointer to the stored pointer.
         //!
         //! It is the same as using unary '&' operator.
         [[nodiscard]] inline T** ReleaseAndGetAddressOf()
@@ -237,14 +233,14 @@ namespace FE
             return &m_pObject;
         }
 
-        //! \brief Attach a pointer and do not add strong reference.
+        //! @brief Attach a pointer and do not add strong reference.
         inline void Attach(T* pObject)
         {
             InternalRelease();
             m_pObject = pObject;
         }
 
-        //! \brief Detach the stored pointer: reset to null without decrementing the reference counter.
+        //! @brief Detach the stored pointer: reset to null without decrementing the reference counter.
         inline T* Detach()
         {
             T* ptr = m_pObject;
@@ -252,7 +248,7 @@ namespace FE
             return ptr;
         }
 
-        //! \brief Get underlying raw pointer.
+        //! @brief Get underlying raw pointer.
         [[nodiscard]] inline T* Get() const
         {
             return m_pObject;
@@ -281,8 +277,9 @@ namespace FE
         template<class... TArgs>
         inline static T* New(std::pmr::memory_resource* pAllocator, TArgs&&... args)
         {
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::DefaultAlignment)) T(std::forward<TArgs>(args)...);
-            SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
+            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
+                SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }
 
@@ -290,8 +287,9 @@ namespace FE
         inline static T* DefaultNew(TArgs&&... args)
         {
             std::pmr::memory_resource* pAllocator = std::pmr::get_default_resource();
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::DefaultAlignment)) T(std::forward<TArgs>(args)...);
-            SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
+            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
+                SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }
     };

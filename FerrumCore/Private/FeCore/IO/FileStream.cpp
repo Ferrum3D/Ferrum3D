@@ -1,81 +1,101 @@
-#include <FeCore/IO/FileStream.h>
-
-#include <utility>
+﻿#include <FeCore/IO/FileStream.h>
+#include <FeCore/IO/Platform/PlatformFile.h>
 
 namespace FE::IO
 {
-    bool FileStream::WriteAllowed() const noexcept
-    {
-        return IsWriteAllowed(GetOpenMode());
-    }
-
-    bool FileStream::ReadAllowed() const noexcept
-    {
-        return IsReadAllowed(GetOpenMode());
-    }
-
-    bool FileStream::SeekAllowed() const noexcept
+    bool FileStream::SeekAllowed() const
     {
         return true;
     }
 
+
     bool FileStream::IsOpen() const
     {
-        return m_Handle->IsOpen();
+        return m_Handle.IsValid();
     }
 
-    ResultCode FileStream::Seek(ptrdiff_t offset, SeekMode seekMode)
+
+    ResultCode FileStream::Seek(intptr_t offset, SeekMode seekMode)
     {
-        return m_Handle->Seek(offset, seekMode);
+        return Platform::SeekFile(m_Handle, offset, seekMode);
     }
 
-    size_t FileStream::Tell() const
+
+    uintptr_t FileStream::Tell() const
     {
-        return m_Handle->Tell();
+        uintptr_t position;
+        FE_IO_ASSERT(Platform::TellFile(m_Handle, position));
+        return position;
     }
+
 
     size_t FileStream::Length() const
     {
-        return m_Handle->Length();
+        return m_Stats.ByteSize;
     }
 
-    size_t FileStream::ReadToBuffer(void* buffer, size_t size)
+
+    size_t FileStream::ReadToBuffer(festd::span<std::byte> buffer)
     {
-        return m_Handle->Read(buffer, size);
+        uint32_t bytesRead;
+        FE_IO_ASSERT(Platform::ReadFile(m_Handle, buffer, bytesRead));
+        return bytesRead;
     }
 
-    size_t FileStream::WriteFromBuffer(const void* buffer, size_t size)
+
+    size_t FileStream::WriteImpl(festd::span<const std::byte> buffer)
     {
-        return m_Handle->Write(buffer, size);
+        uint32_t bytesWritten;
+        FE_IO_ASSERT(Platform::WriteFile(m_Handle, buffer, bytesWritten));
+        return bytesWritten;
     }
+
 
     StringSlice FileStream::GetName()
     {
-        return m_Handle->GetName();
+        return m_Name;
     }
+
 
     OpenMode FileStream::GetOpenMode() const
     {
-        return m_Handle->GetOpenMode();
+        return m_OpenMode;
     }
+
+
+    FileStats FileStream::GetStats() const
+    {
+        return m_Stats;
+    }
+
 
     void FileStream::Close()
     {
-        m_Handle->Close();
+        if (m_Handle)
+            Platform::CloseFile(m_Handle);
     }
+
 
     ResultCode FileStream::Open(StringSlice fileName, OpenMode openMode)
     {
-        return m_Handle->Open(fileName, openMode);
+        ResultCode result = Platform::OpenFile(fileName, openMode, m_Handle);
+        if (result != ResultCode::Success)
+            return result;
+
+        result = Platform::GetFileStats(m_Handle, m_Stats);
+        if (result != ResultCode::Success)
+            return result;
+
+        m_Name = fileName;
+        m_OpenMode = openMode;
+        return ResultCode::Success;
     }
 
-    FileStream::FileStream(const Rc<FileHandle>& file)
-        : m_Handle(file)
-    {
-    }
 
-    FileStream::FileStream(Rc<FileHandle>&& file)
-        : m_Handle(std::move(file))
+    void FileStream::Open(StandardDescriptor standardDescriptor)
     {
+        m_Name = GetStandardDescriptorName(standardDescriptor);
+        m_OpenMode = GetStandardDescriptorOpenMode(standardDescriptor);
+        m_Handle = Platform::GetStandardFile(standardDescriptor);
     }
-}
+} // namespace FE::IO

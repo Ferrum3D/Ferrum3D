@@ -96,7 +96,7 @@ namespace FE::Graphics::Vulkan
         HAL::ShaderModule* vertexShader = nullptr;
         for (auto& shader : m_Desc.Shaders)
         {
-            if (shader->GetDesc().Stage == HAL::ShaderStage::Vertex)
+            if (shader->GetDesc().Stage == HAL::ShaderStage::kVertex)
             {
                 vertexShader = shader;
             }

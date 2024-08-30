@@ -2,7 +2,6 @@
 #include <EASTL/fixed_vector.h>
 #include <FeCore/Base/Base.h>
 #include <FeCore/DI/BaseDI.h>
-#include <FeCore/Math/MathUtils.h>
 #include <FeCore/Parallel/SpinLock.h>
 #include <FeCore/Strings/Unicode.h>
 #include <FeCore/Utils/Result.h>
@@ -12,7 +11,7 @@
 
 namespace FE::Memory
 {
-    //! \brief Type of global static allocator.
+    //! @brief Type of global static allocator.
     enum class StaticAllocatorType : uint32_t
     {
         Default, //!< Default global heap allocator.
@@ -34,10 +33,10 @@ namespace FE::Env
     } // namespace Internal
 
 
-    //! \brief A shared string with fast equality comparison that is never deallocated.
+    //! @brief A shared string with fast equality comparison that is never deallocated.
     class Name final
     {
-        uint32_t m_Handle = InvalidIndex;
+        uint32_t m_Handle = kInvalidIndex;
 
     public:
         struct Record final
@@ -49,10 +48,10 @@ namespace FE::Env
 
         inline Name() = default;
 
-        Name(std::string_view str);
+        explicit Name(std::string_view str);
 
-        inline Name(const char* data, uint32_t length)
-            : Name(std::string_view{ data, length })
+        inline Name(const char* data, uint32_t length = 0)
+            : Name(std::string_view{ data, length ? length : __builtin_strlen(data) })
         {
         }
 
@@ -62,7 +61,7 @@ namespace FE::Env
 
         inline bool Valid() const
         {
-            return m_Handle != InvalidIndex;
+            return m_Handle != kInvalidIndex;
         }
 
         inline uint32_t size() const
@@ -112,86 +111,86 @@ namespace FE::Env
     };
 
 
-    //! \brief Create a variable by unique name.
+    //! @brief Create a variable by unique name.
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! \tparam T   - Type of variable to create.
-    //! \param name - Unique name of variable to create.
+    //! @tparam T   - Type of variable to create.
+    //! @param name - Unique name of variable to create.
     //!
-    //! \return The created variable.
+    //! @return The created variable.
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariable(Name name, Args&&... args);
 
-    //! \brief Create a variable by its type name.
+    //! @brief Create a variable by its type name.
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! \tparam T    - Type of variable to create.
-    //! \param value - Value to initialize the variable with.
+    //! @tparam T    - Type of variable to create.
+    //! @param value - Value to initialize the variable with.
     //!
-    //! \return The created variable.
+    //! @return The created variable.
     template<class T, class... Args>
     GlobalVariable<T> CreateGlobalVariableByType(Args&&... args);
 
-    //! \brief Allocate global variable storage.
+    //! @brief Allocate global variable storage.
     //!
     //! Creates a global variable by unique name, but doesn't initialize it.
     //!
-    //! \tparam T   - Type of variable to allocate.
-    //! \param name - Unique name of variable to allocate.
+    //! @tparam T   - Type of variable to allocate.
+    //! @param name - Unique name of variable to allocate.
     //!
-    //! \return The allocated variable.
+    //! @return The allocated variable.
     template<class T>
     GlobalVariable<T> AllocateGlobalVariable(Name name);
 
-    //! \brief Find global variable by its name.
+    //! @brief Find global variable by its name.
     //!
     //! Variable must be created by name before calling this function. Returns null if variable was not found.
     //!
-    //! \tparam T   - Type of variable to find.
-    //! \param name - Unique name of variable to find.
+    //! @tparam T   - Type of variable to find.
+    //! @param name - Unique name of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariable(Name name);
 
-    //! \brief Find global variable by its name.
+    //! @brief Find global variable by its name.
     //!
     //! Variable must be created by type before calling this function. Returns null if variable was not found.
     //!
-    //! \tparam T - Type of variable to find.
+    //! @tparam T - Type of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariableByType();
 
-    //! \brief Create global environment.
+    //! @brief Create global environment.
     //!
-    //! \param allocator - Custom allocator.
+    //! @param allocator - Custom allocator.
     void CreateEnvironment();
 
-    //! \brief Get global environment instance.
+    //! @brief Get global environment instance.
     //!
     //! Global environment must be created before any calls to this function. The
     //! environment won't be created automatically. This function will throw if the environment was not
     //! created and attached to this module.
     Internal::IEnvironment& GetEnvironment();
 
-    //! \brief Attach an instance of global environment to this module.
+    //! @brief Attach an instance of global environment to this module.
     //!
     //! This function will most likely be called from another module that already have an environment attached
     //! or created.
     //!
-    //! \param instance - Instance of global environment to attach.
+    //! @param instance - Instance of global environment to attach.
     void AttachEnvironment(Internal::IEnvironment& instance);
 
-    //! \brief Detach global environment.
+    //! @brief Detach global environment.
     //!
     //! If the current module is the owner of global environment, it will be released, all variables will be
     //! deallocated and destructed. If the current module isn't the owner of environment, it will just set
     //! the module-local pointer to environment to `nullptr`.
     void DetachEnvironment();
 
-    //! \brief Checks if the global environment exists and is attached to the current module.
+    //! @brief Checks if the global environment exists and is attached to the current module.
     //!
-    //! \return True if environment is attached.
+    //! @return True if environment is attached.
     bool EnvironmentAttached();
 
     //! \internal
@@ -211,7 +210,7 @@ namespace FE::Env
             VariableResultCode Code = VariableResultCode::NotFound;
         };
 
-        //! \brief Environment interface.
+        //! @brief Environment interface.
         //!
         //! This is an internal-only interface that should not be exposed to engine users. Only one instance across
         //! all engine modules is allowed.
@@ -220,23 +219,23 @@ namespace FE::Env
         public:
             virtual ~IEnvironment() = default;
 
-            //! \brief Find a global variable.
+            //! @brief Find a global variable.
             //! \see FE::Env::FindGlobalVariable
             virtual VariableResult FindVariable(Name name) = 0;
 
-            //! \brief Create a global variable.
+            //! @brief Create a global variable.
             //! \see FE::Env::CreateGlobalVariable
             virtual VariableResult CreateVariable(Name name, size_t size, size_t alignment) = 0;
 
-            //! \brief Remove a global variable.
+            //! @brief Remove a global variable.
             //! \see FE::Env::RemoveGlobalVariable
             virtual VariableResult RemoveVariable(Name name) = 0;
 
-            //! \brief Destroy the environment.
+            //! @brief Destroy the environment.
             virtual void Destroy() = 0;
         };
 
-        //! \brief Storage of global variable. Allocated once for variable.
+        //! @brief Storage of global variable. Allocated once for variable.
         template<class T>
         class GlobalVariableStorage
         {
@@ -249,9 +248,9 @@ namespace FE::Env
             friend class GlobalVariable<T>;
 
         public:
-            //! \brief Create uninitialized global variable storage.
+            //! @brief Create uninitialized global variable storage.
             //!
-            //! \param name - Unique name of global variable.
+            //! @param name - Unique name of global variable.
             inline GlobalVariableStorage(Name name)
                 : m_Name(name)
                 , m_RefCount(0)
@@ -259,9 +258,9 @@ namespace FE::Env
             {
             }
 
-            //! \brief Call variable's constructor.
+            //! @brief Call variable's constructor.
             //!
-            //! \param args - Arguments to call the constructor with.
+            //! @param args - Arguments to call the constructor with.
             template<class... TArgs>
             inline void Construct(TArgs&&... args)
             {
@@ -270,7 +269,7 @@ namespace FE::Env
                 m_IsConstructed = true;
             }
 
-            //! \brief Call variable's destructor. This function does _not_ deallocate memory.
+            //! @brief Call variable's destructor. This function does _not_ deallocate memory.
             inline void Destruct()
             {
                 std::unique_lock lk(m_Mutex);
@@ -278,21 +277,21 @@ namespace FE::Env
                 m_IsConstructed = false;
             }
 
-            //! \brief Check if variable was constructed.
+            //! @brief Check if variable was constructed.
             //!
-            //! \return True if Construct was called.
+            //! @return True if Construct was called.
             [[nodiscard]] inline bool IsConstructed() const
             {
                 return m_IsConstructed;
             }
 
-            //! \brief Get underlying variable.
+            //! @brief Get underlying variable.
             inline const T* Get() const
             {
                 return reinterpret_cast<const T*>(&m_Storage);
             }
 
-            //! \brief Add a reference to internal counter.
+            //! @brief Add a reference to internal counter.
             inline void AddRef()
             {
                 std::unique_lock lk(m_Mutex);
@@ -320,11 +319,11 @@ namespace FE::Env
             }
         };
 
-        //! \brief Allocate GlobalVariableStorage for a global variable.
+        //! @brief Allocate GlobalVariableStorage for a global variable.
         //!
-        //! \param name - The name of the variable.
+        //! @param name - The name of the variable.
         //!
-        //! \return The allocated GlobalVariableStorage.
+        //! @return The allocated GlobalVariableStorage.
         template<class T>
         inline GlobalVariableStorage<T>* AllocateVariableStorage(Name name)
         {
@@ -352,7 +351,7 @@ namespace FE::Env
             FE::Env::AttachEnvironment(*static_cast<IEnvironment*>(environmentPointer));
         }
 
-        //! \brief Implementation of FE::Env::CreateGlobalVariable
+        //! @brief Implementation of FE::Env::CreateGlobalVariable
         template<class T, class... Args>
         inline GlobalVariable<T> CreateGlobalVariableImpl(Name name, Args&&... args)
         {
@@ -362,11 +361,11 @@ namespace FE::Env
         }
     } // namespace Internal
 
-    //! \brief Shared pointer to global variable storage.
+    //! @brief Shared pointer to global variable storage.
     //!
     //! Size of this class is same as size of a pointer. It implements intrusive reference counted pointer.
     //!
-    //! \tparam T Type of the variable that this class holds.
+    //! @tparam T Type of the variable that this class holds.
     template<class T>
     class GlobalVariable
     {
@@ -375,7 +374,7 @@ namespace FE::Env
     public:
         using StorageType = Internal::GlobalVariableStorage<T>;
 
-        //! \brief Create a _null_ global variable.
+        //! @brief Create a _null_ global variable.
         inline GlobalVariable()
             : m_Storage(nullptr)
         {
@@ -413,18 +412,18 @@ namespace FE::Env
             return *this;
         }
 
-        //! \brief Get name of the global variable.
+        //! @brief Get name of the global variable.
         //!
         //! The name is either a normal string, which represents a user-defined unique variable name, or a special
         //! environment-generated name that starts with a '#'.
         //!
-        //! \return The name of the variable.
+        //! @return The name of the variable.
         [[nodiscard]] inline Name GetName() const
         {
             return m_Storage->m_Name;
         }
 
-        //! \brief Set this variable to _null_.
+        //! @brief Set this variable to _null_.
         inline void Reset()
         {
             GlobalVariable{}.Swap(*this);
@@ -438,17 +437,17 @@ namespace FE::Env
                 m_Storage->Release();
         }
 
-        //! \brief Check if the variable is not empty and is constructed (initialized).
+        //! @brief Check if the variable is not empty and is constructed (initialized).
         //!
-        //! \return True if constructed.
+        //! @return True if constructed.
         inline bool IsConstructed()
         {
             return m_Storage && m_Storage->IsConstructed();
         }
 
-        //! \brief Swap contents of two variables.
+        //! @brief Swap contents of two variables.
         //!
-        //! \param other - The variable to swap the content with.
+        //! @param other - The variable to swap the content with.
         inline void Swap(GlobalVariable& other)
         {
             auto* t = other.m_Storage;
@@ -483,14 +482,14 @@ namespace FE::Env
         }
     };
 
-    //! \brief Compares names of two variables.
+    //! @brief Compares names of two variables.
     template<class T>
     inline bool operator==(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {
         return x.GetName() == y.GetName();
     }
 
-    //! \brief Compares names of two variables.
+    //! @brief Compares names of two variables.
     template<class T>
     inline bool operator!=(const GlobalVariable<T>& x, const GlobalVariable<T>& y)
     {
@@ -503,7 +502,9 @@ namespace FE::Env
     template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariable(Name name, Args&&... args)
     {
-        FE_CORE_ASSERT(name[0] != '#', "Names that start with a '#' are reserved for type name variables");
+        const Name::Record* pRecord = name.GetRecord();
+        const std::string_view nameView{ pRecord->Data, pRecord->Size };
+        FE_CORE_ASSERT(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
         return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
     }
 

@@ -1,5 +1,5 @@
-#pragma once
-#include <FeCore/Math/MathUtils.h>
+﻿#pragma once
+#include <FeCore/Base/BaseMath.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/CommonSIMD.h>
 #include <array>
@@ -8,7 +8,7 @@
 
 namespace FE
 {
-    //! \brief 2-dimensional vector.
+    //! @brief 2-dimensional vector.
     class Vector2F final
     {
         using TVec = SIMD::SSE::Float32x4;
@@ -49,23 +49,23 @@ namespace FE
 
         FE_FORCE_INLINE explicit Vector2F(const std::array<float, 2>& array) noexcept;
 
-        //! \return Vector2F{ 0, 0 }.
+        //! @return Vector2F{ 0, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector2F GetZero() noexcept;
 
-        //! \return Vector2F{ 1, 0 }.
+        //! @return Vector2F{ 1, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector2F GetUnitX() noexcept;
 
-        //! \return Vector2F{ 0, 1 }.
+        //! @return Vector2F{ 0, 1 }.
         [[nodiscard]] FE_FORCE_INLINE static Vector2F GetUnitY() noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
 
-        //! \return A pointer to array of two floats (components of the vector).
+        //! @return A pointer to array of two floats (components of the vector).
         [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
 
-        //! \return Underlying SIMD type.
+        //! @return Underlying SIMD type.
         [[nodiscard]] FE_FORCE_INLINE TVec GetSIMD() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
@@ -78,36 +78,37 @@ namespace FE
 
         [[nodiscard]] FE_FORCE_INLINE float Dot(const Vector2F& other) const noexcept;
 
-        //! \return Squared length of the vector.
+        //! @return Squared length of the vector.
         [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
 
-        //! \return Length of the vector.
+        //! @return Length of the vector.
         [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
 
-        //! \return New normalized vector, this vector is not modified.
+        //! @return New normalized vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector2F Normalized() const noexcept;
 
-        //! \brief Linearly interpolate between this and destination.
+        //! @brief Linearly interpolate between this and destination.
         //!
         //! The result is (dst - this) * f + this.
         //!
-        //! \param [in] f - Interpolation factor.
+        //! @param f - Interpolation factor.
         //!
-        //! \return New interpolated vector, this vector is not modified.
+        //! @return New interpolated vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector2F Lerp(const Vector2F& dst, float f) const noexcept;
 
-        //! \brief Multiply each component of this vector with each component of other vector.
+        //! @brief Multiply each component of this vector with each component of other vector.
         //!
-        //! \return New vector, this vector is not modified.
+        //! @return New vector, this vector is not modified.
         [[nodiscard]] FE_FORCE_INLINE Vector2F MulEach(const Vector2F& other) const noexcept;
 
-        //! \brief Check if two vectors are approximately equal.
+        //! @brief Check if two vectors are approximately equal.
         //!
-        //! \param [in] other   - The vector to compare this vector with.
-        //! \param [in] epsilon - Accepted difference between the two vectors.
+        //! @param other   - The vector to compare this vector with.
+        //! @param epsilon - Accepted difference between the two vectors.
         //!
-        //! \return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector2F& other, float epsilon = Constants::Epsilon) const noexcept;
+        //! @return True if the vectors are approximately equal.
+        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector2F& other,
+                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE bool operator==(const Vector2F& other) const noexcept;
 

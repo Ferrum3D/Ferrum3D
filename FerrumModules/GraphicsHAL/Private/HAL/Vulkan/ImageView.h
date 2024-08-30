@@ -10,6 +10,8 @@ namespace FE::Graphics::Vulkan
         VkImageView m_NativeView = VK_NULL_HANDLE;
 
     public:
+        FE_RTTI_Class(ImageView, "8FB20182-96B7-4D3D-8148-9FE2142A0875");
+
         explicit ImageView(HAL::Device* pDevice);
         ~ImageView() override;
 
@@ -26,5 +28,5 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    FE_ENABLE_IMPL_CAST(ImageView);
+    FE_ENABLE_NATIVE_CAST(ImageView);
 } // namespace FE::Graphics::Vulkan

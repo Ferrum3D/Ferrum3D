@@ -10,7 +10,7 @@ namespace FE
 {
     struct FiberWaitEntry final : festd::intrusive_list_node
     {
-        FiberHandle Fiber;
+        Threading::FiberHandle Fiber;
         JobPriority Priority;
         std::atomic<bool> SwitchCompleted;
     };
@@ -69,20 +69,20 @@ namespace FE
             festd::intrusive_list<FiberWaitEntry> ReadyFibersQueue;
         };
 
-        struct alignas(Memory::CacheLineSize) Worker final
+        struct alignas(Memory::kCacheLineSize) Worker final
         {
             uint64_t ThreadID;
             ThreadHandle Thread;
-            FiberHandle PrevFiber;
-            FiberHandle CurrentFiber;
+            Threading::FiberHandle PrevFiber;
+            Threading::FiberHandle CurrentFiber;
             FiberWaitEntry* pLastWaitEntry = nullptr;
             Context::Handle ExitContext;
-            JobPriority Priority = JobPriority::Normal;
+            JobPriority Priority = JobPriority::kNormal;
         };
 
-        JobQueue m_JobQueues[enum_cast(JobPriority::Count)];
+        JobQueue m_JobQueues[enum_cast(JobPriority::kCount)];
         festd::fixed_vector<Worker, 64> m_Workers;
-        FiberPool m_FiberPool;
+        Threading::FiberPool m_FiberPool;
 
         Semaphore m_Semaphore;
         std::atomic<bool> m_ShouldExit;
@@ -98,7 +98,7 @@ namespace FE
             }
 
             FE_CORE_ASSERT(0, "Thread not found");
-            return InvalidIndex;
+            return kInvalidIndex;
         }
 
         void ThreadProc(uint32_t workerIndex);
@@ -113,7 +113,7 @@ namespace FE
         ~JobSystem() override;
 
         void Start() override;
-        void Stop();
+        void Stop() override;
         void AddJob(Job* pJob, JobPriority priority) override;
     };
 } // namespace FE

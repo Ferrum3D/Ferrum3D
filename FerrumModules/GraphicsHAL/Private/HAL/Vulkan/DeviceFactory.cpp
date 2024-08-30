@@ -1,6 +1,6 @@
-﻿#include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/SmallVector.h>
+﻿#include <FeCore/Containers/SmallVector.h>
 #include <FeCore/DI/Builder.h>
+#include <FeCore/Logging/Trace.h>
 
 #include <HAL/ShaderCompilerDXC.h>
 #include <HAL/Vulkan/Buffer.h>
@@ -25,20 +25,20 @@
 namespace FE::Graphics::Vulkan
 {
 #if FE_DEBUG
-    static Debug::LogMessageType GetLogMessageType(VkDebugReportFlagsEXT flags)
+    static LogSeverity GetLogMessageType(VkDebugReportFlagsEXT flags)
     {
         switch (static_cast<VkDebugReportFlagBitsEXT>(flags))
         {
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
         case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            return Debug::LogMessageType::Message;
+            return LogSeverity::kInfo;
         case VK_DEBUG_REPORT_WARNING_BIT_EXT:
         case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            return Debug::LogMessageType::Warning;
+            return LogSeverity::kWarning;
         case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            return Debug::LogMessageType::Error;
+            return LogSeverity::kError;
         default:
-            return Debug::LogMessageType::None;
+            return LogSeverity::kInfo;
         }
     }
 
@@ -61,8 +61,8 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        const Debug::LogMessageType type = GetLogMessageType(flags);
-        static_cast<Debug::IConsoleLogger*>(pUserData)->Log(type, "{}", message);
+        const LogSeverity type = GetLogMessageType(flags);
+        static_cast<Logger*>(pUserData)->Log(type, "{}", message);
         return VK_FALSE;
     }
 #endif
@@ -89,7 +89,7 @@ namespace FE::Graphics::Vulkan
     {
         vkDestroyDebugReportCallbackEXT(m_Instance, m_Debug, VK_NULL_HANDLE);
         vkDestroyInstance(m_Instance, VK_NULL_HANDLE);
-        FE_LOG_MESSAGE("Vulkan instance was destroyed");
+        m_pLogger->LogInfo("Vulkan instance was destroyed");
     }
 
 
@@ -129,11 +129,12 @@ namespace FE::Graphics::Vulkan
         builder.Bind<MemoryRequirementsCache>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
 
-        builder.Bind<HAL::ShaderCompiler>().ToConst(Rc<HAL::ShaderCompilerDXC>::DefaultNew(HAL::GraphicsAPI::Vulkan));
+        builder.Bind<HAL::ShaderCompiler>().ToConst(
+            Rc<HAL::ShaderCompilerDXC>::DefaultNew(m_pLogger.Get(), HAL::GraphicsAPI::Vulkan));
     }
 
 
-    DeviceFactory::DeviceFactory(Env::Configuration* pConfig, Debug::IConsoleLogger* pLogger)
+    DeviceFactory::DeviceFactory(Env::Configuration* pConfig, Logger* pLogger)
         : m_pLogger(pLogger)
     {
         volkInitialize();
@@ -148,7 +149,7 @@ namespace FE::Graphics::Vulkan
             bool found = eastl::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
                 return layerSlice == props.layerName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layerSlice);
+            FE_AssertMsg(found, "Vulkan instance layer {} was not found", layerSlice);
         }
 
         uint32_t extensionCount;
@@ -162,7 +163,7 @@ namespace FE::Graphics::Vulkan
             const bool found = eastl::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
                 return extSlice == props.extensionName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance extension {} was not found", extSlice);
+            FE_AssertMsg(found, "Vulkan instance extension {} was not found", extSlice);
         }
 
         VkApplicationInfo appInfo{};
@@ -193,7 +194,7 @@ namespace FE::Graphics::Vulkan
         debugCI.pUserData = m_pLogger.Get();
         vkCreateDebugReportCallbackEXT(m_Instance, &debugCI, VK_NULL_HANDLE, &m_Debug);
 #endif
-        m_pLogger->LogMessage("Vulkan instance created successfully");
+        m_pLogger->LogInfo("Vulkan instance created successfully");
 
         uint32_t adapterCount;
         vkEnumeratePhysicalDevices(m_Instance, &adapterCount, nullptr);
@@ -204,7 +205,7 @@ namespace FE::Graphics::Vulkan
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(physicalDevice, &props);
-            m_pLogger->LogMessage("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
+            m_pLogger->LogInfo("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
 
             HAL::AdapterInfo& info = m_Adapters.push_back();
             info.Kind = VKConvert(props.deviceType);

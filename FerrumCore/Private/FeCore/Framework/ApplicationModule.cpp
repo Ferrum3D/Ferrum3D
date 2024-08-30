@@ -1,14 +1,86 @@
 ﻿#include <FeCore/Assets/AssetManager.h>
-#include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
+#include <FeCore/Console/Console.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/ApplicationModule.h>
+#include <FeCore/IO/AsyncStreamIO.h>
+#include <FeCore/IO/FileStream.h>
+#include <FeCore/IO/StreamFactory.h>
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/Modules/EnvironmentPrivate.h>
 
 namespace FE
 {
+    struct LogColorScope final
+    {
+        inline LogColorScope(LogSeverity severity)
+        {
+            Console::Color color = Console::Color::Default;
+            switch (severity)
+            {
+            case LogSeverity::kWarning:
+                color = Console::Color::Yellow;
+                break;
+            case LogSeverity::kError:
+            case LogSeverity::kCritical:
+                color = Console::Color::Red;
+                break;
+            }
+
+            Console::SetColor(color);
+        }
+
+        inline ~LogColorScope()
+        {
+            Console::ResetColor();
+        }
+    };
+
+
+    struct StdoutLogSink final : public LogSinkBase
+    {
+        Rc<IO::FileStream> m_stream;
+
+        inline StdoutLogSink(Logger* logger)
+            : LogSinkBase(logger)
+        {
+            m_stream = Rc<IO::FileStream>::DefaultNew();
+            m_stream->Open(IO::StandardDescriptor::kSTDOUT);
+            m_stream->EnsureBufferAllocated();
+        }
+
+        inline void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message)
+        {
+            {
+                const auto date = DateTime<TZ::UTC>::Now().ToString(DateTimeFormatKind::kISO8601);
+                m_stream->WriteFromBuffer(Memory::MakeByteSpan(date.Data(), date.Size()));
+            }
+
+            m_stream->WriteFromBuffer(Memory::MakeByteSpan(" ["));
+
+            {
+                LogColorScope colorScope{ severity };
+                m_stream->WriteFromBuffer(Memory::MakeByteSpan(LogSeverityToString(severity)));
+            }
+
+            m_stream->WriteFromBuffer(Memory::MakeByteSpan("] "));
+
+            {
+                const auto location =
+                    Fmt::FixedFormatSized<IO::MaxPathLength + 16>("{}({}): ", sourceLocation.FileName, sourceLocation.LineNumber);
+                m_stream->WriteFromBuffer(Memory::MakeByteSpan(location.Data(), location.Size()));
+            }
+
+            m_stream->WriteFromBuffer(Memory::MakeByteSpan(message.Data(), message.Size()));
+            m_stream->WriteFromBuffer(Memory::MakeByteSpan("\n"));
+
+            if (severity >= LogSeverity::kWarning)
+                m_stream->FlushWrites();
+        }
+    };
+
+
     ApplicationModule::ApplicationModule()
     {
         ZoneScoped;
@@ -18,25 +90,15 @@ namespace FE
         DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
         RegisterServices(builder);
         builder.Build();
+
+        Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
+        m_logSinks.push_back(festd::make_unique<StdoutLogSink>(logger));
     }
 
 
     void ApplicationModule::Initialize()
     {
-        ZoneScoped;
         m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
-
-        Rc assetProvider = Rc<Assets::AssetProviderDev>::DefaultNew();
-        if (!m_AssetDirectory.Empty())
-        {
-            Rc assetRegistry = Rc<Assets::AssetRegistry>::DefaultNew();
-            assetRegistry->LoadAssetsFromFile(m_AssetDirectory / "FerrumAssetIndex");
-            assetProvider->AttachRegistry(assetRegistry);
-        }
-
-        DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
-        Assets::IAssetManager* pAssetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
-        pAssetManager->AttachAssetProvider(assetProvider);
     }
 
     int32_t ApplicationModule::RunMainLoop()
@@ -77,6 +139,8 @@ namespace FE
             FrameMark;
         }
 
+        Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->Stop();
+
         return m_ExitCode;
     }
 
@@ -86,8 +150,10 @@ namespace FE
         ZoneScoped;
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
         builder.Bind<Env::Configuration>().ToSelf().InSingletonScope();
-        builder.Bind<Debug::IConsoleLogger>().To<Debug::ConsoleLogger>().InSingletonScope();
+        builder.Bind<Logger>().ToSelf().InSingletonScope();
         builder.Bind<Assets::IAssetManager>().To<Assets::AssetManager>().InSingletonScope();
+        builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();
+        builder.Bind<IO::IAsyncStreamIO>().To<IO::AsyncStreamIO>().InSingletonScope();
     }
 
 

@@ -34,66 +34,69 @@ namespace FE::Graphics::Vulkan
         VkImageCreateInfo imageCI{};
         imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         VkImageUsageFlags usage{};
-        if ((desc.BindFlags & ImageBindFlags::Depth) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kDepth) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::Stencil) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kStencil) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::ShaderRead) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kShaderRead) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::Color) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kColor) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::UnorderedAccess) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kUnorderedAccess) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::TransferWrite) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kTransferWrite) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
-        if ((desc.BindFlags & ImageBindFlags::TransferRead) != ImageBindFlags::None)
+        if ((desc.BindFlags & ImageBindFlags::kTransferRead) != ImageBindFlags::kNone)
         {
             usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
-        switch (desc.Dimension)
+        switch (desc.GetDimension())
         {
-        case ImageDim::Image1D:
+        case ImageDim::kImage1D:
             imageCI.imageType = VK_IMAGE_TYPE_1D;
             break;
-        case ImageDim::ImageCubemap:
-            FE_ASSERT_MSG(desc.ArraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.ArraySize);
+        case ImageDim::kImageCubemap:
+            FE_AssertMsg(desc.ArraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.ArraySize);
             imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             [[fallthrough]];
-        case ImageDim::Image2D:
+        case ImageDim::kImage2D:
             imageCI.imageType = VK_IMAGE_TYPE_2D;
             break;
-        case ImageDim::Image3D:
+        case ImageDim::kImage3D:
             imageCI.imageType = VK_IMAGE_TYPE_3D;
             break;
         default:
-            FE_UNREACHABLE("Unknown image dimension");
+            FE_AssertMsg(false, "Unknown image dimension");
             break;
         }
 
-        imageCI.extent = VKConvert(desc.ImageSize);
-        if (desc.Dimension != ImageDim::Image2D && imageCI.extent.height > 1)
+        Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
+
+        imageCI.extent = VKConvert(desc.GetSize());
+        if (desc.GetDimension() != ImageDim::kImage2D && imageCI.extent.height > 1)
         {
-            FE_LOG_WARNING("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
+            logger->LogWarning("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
             imageCI.extent.height = 1;
         }
-        if (desc.Dimension != ImageDim::Image3D && imageCI.extent.depth > 1)
+        if (desc.GetDimension() != ImageDim::kImage3D && imageCI.extent.depth > 1)
         {
-            FE_LOG_WARNING("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
+            logger->LogWarning("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
             imageCI.extent.depth = 1;
         }
+
         imageCI.mipLevels = desc.MipSliceCount;
         imageCI.arrayLayers = desc.ArraySize;
         imageCI.format = VKConvert(desc.ImageFormat);

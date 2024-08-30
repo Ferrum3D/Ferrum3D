@@ -22,7 +22,7 @@ namespace FE::Graphics::Vulkan
 
     void Fence::SignalOnCPU()
     {
-        auto queue = ImplCast(m_pDevice)->GetCommandQueue(HAL::HardwareQueueKindFlags::Graphics);
+        auto queue = ImplCast(m_pDevice)->GetCommandQueue(HAL::HardwareQueueKindFlags::kGraphics);
         queue->SignalFence(this);
     }
 

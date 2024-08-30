@@ -14,21 +14,21 @@ namespace FE
         {
         }
 
-        inline size_t Write(const void* data, size_t size)
+        inline size_t Write(const void* data, uint32_t size)
         {
-            return m_Stream->WriteFromBuffer(data, size);
+            return m_Stream->WriteFromBuffer({ static_cast<const std::byte*>(data), size });
         }
 
         template<class T>
         inline size_t Write(T value)
         {
-            return m_Stream->WriteFromBuffer(&value, sizeof(T));
+            return Write(&value, sizeof(T));
         }
 
         template<class T>
         inline size_t Read(T& value)
         {
-            return m_Stream->ReadToBuffer(&value, sizeof(T));
+            return m_Stream->ReadToBuffer({ reinterpret_cast<std::byte*>(&value), sizeof(T) });
         }
 
         template<class T>
@@ -50,7 +50,7 @@ namespace FE
         inline size_t WriteString(StringSlice string)
         {
             Write<size_t>(string.Size());
-            return m_Stream->WriteFromBuffer(string.Data(), string.Size());
+            return Write(string.Data(), string.Size());
         }
 
         template<class T>
@@ -71,7 +71,7 @@ namespace FE
         inline size_t ReadString(String& string)
         {
             string = String(static_cast<uint32_t>(Read<size_t>()), '\0');
-            return m_Stream->ReadToBuffer(string.Data(), string.Size());
+            return m_Stream->ReadToBuffer({ reinterpret_cast<std::byte*>(string.Data()), string.Size() });
         }
 
         inline String ReadString()

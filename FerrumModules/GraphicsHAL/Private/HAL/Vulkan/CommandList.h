@@ -56,5 +56,5 @@ namespace FE::Graphics::Vulkan
         void MemoryBarrier() override;
     };
 
-    FE_ENABLE_IMPL_CAST(CommandList);
+    FE_ENABLE_NATIVE_CAST(CommandList);
 } // namespace FE::Graphics::Vulkan
