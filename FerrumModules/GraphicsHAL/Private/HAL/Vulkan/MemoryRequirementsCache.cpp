@@ -10,10 +10,10 @@ namespace FE::Graphics::Vulkan
         {
             Rc pImage = m_pServiceProvider->ResolveRequired<HAL::Image>();
 
-            const HAL::ImageBindFlags bindFlags = HAL::ImageBindFlags::Color | HAL::ImageBindFlags::ShaderRead;
-            const HAL::ImageDesc imageDesc = HAL::ImageDesc::Img2D(bindFlags, 1, 1, HAL::Format::R8G8B8A8_UNorm);
+            const HAL::ImageBindFlags bindFlags = HAL::ImageBindFlags::kColor | HAL::ImageBindFlags::kShaderRead;
+            const HAL::ImageDesc imageDesc = HAL::ImageDesc::Img2D(bindFlags, 1, 1, HAL::Format::kR8G8B8A8_UNORM);
             const HAL::ResultCode result = pImage->Init("MemoryRequirementsCache Temp", imageDesc);
-            FE_ASSERT(result == HAL::ResultCode::Success);
+            FE_Assert(result == HAL::ResultCode::Success);
             m_RenderTargetMemoryRequirements = ImplCast(pImage.Get())->GetMemoryRequirements();
         }
 
@@ -30,7 +30,7 @@ namespace FE::Graphics::Vulkan
             const HAL::BindFlags bindFlags = HAL::BindFlags::ConstantBuffer | HAL::BindFlags::ShaderResource;
             const HAL::BufferDesc bufferDesc{ 1, bindFlags };
             const HAL::ResultCode result = pBuffer->Init("MemoryRequirementsCache Temp", bufferDesc);
-            FE_ASSERT(result == HAL::ResultCode::Success);
+            FE_Assert(result == HAL::ResultCode::Success);
             m_BufferMemoryRequirements = ImplCast(pBuffer.Get())->GetMemoryRequirements();
         }
 
@@ -48,7 +48,7 @@ namespace FE::Graphics::Vulkan
         Rc pImage = m_pServiceProvider->ResolveRequired<HAL::Image>();
 
         const HAL::ResultCode result = pImage->Init("MemoryRequirementsCache Temp", desc);
-        FE_ASSERT(result == HAL::ResultCode::Success);
+        FE_Assert(result == HAL::ResultCode::Success);
         requirements = ImplCast(pImage.Get())->GetMemoryRequirements();
         m_ImageMemoryRequirementsByDesc.Emplace(hash, requirements);
         return requirements;
@@ -61,10 +61,10 @@ namespace FE::Graphics::Vulkan
         {
             Rc pImage = m_pServiceProvider->ResolveRequired<HAL::Image>();
 
-            const HAL::ImageBindFlags bindFlags = HAL::ImageBindFlags::UnorderedAccess | HAL::ImageBindFlags::ShaderRead;
-            const HAL::ImageDesc imageDesc = HAL::ImageDesc::Img2D(bindFlags, 1, 1, HAL::Format::R8G8B8A8_UNorm);
+            const HAL::ImageBindFlags bindFlags = HAL::ImageBindFlags::kUnorderedAccess | HAL::ImageBindFlags::kShaderRead;
+            const HAL::ImageDesc imageDesc = HAL::ImageDesc::Img2D(bindFlags, 1, 1, HAL::Format::kR8G8B8A8_UNORM);
             const HAL::ResultCode result = pImage->Init("MemoryRequirementsCache Temp", imageDesc);
-            FE_ASSERT(result == HAL::ResultCode::Success);
+            FE_Assert(result == HAL::ResultCode::Success);
             m_RenderTargetMemoryRequirements = ImplCast(pImage.Get())->GetMemoryRequirements();
         }
 

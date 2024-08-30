@@ -4,7 +4,7 @@
 
 #include <volk.h>
 
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/Memory.h>
 #include <array>
 
@@ -21,7 +21,7 @@
     do                                                                                                                           \
     {                                                                                                                            \
         const VkResult FE_UNIQUE_IDENT(result) = (stmt);                                                                         \
-        FE_ASSERT_MSG(FE_UNIQUE_IDENT(result) == VK_SUCCESS, "Vulkan result was {}", VKResultToString(FE_UNIQUE_IDENT(result))); \
+        FE_AssertMsg(FE_UNIQUE_IDENT(result) == VK_SUCCESS, "Vulkan result was {}", VKResultToString(FE_UNIQUE_IDENT(result)));  \
     }                                                                                                                            \
     while (0)
 
@@ -35,6 +35,14 @@
         return static_cast<const objectType*>(ptr);                                                                              \
     }
 
+#define FE_ENABLE_NATIVE_CAST(objectType)                                                                                        \
+    FE_ENABLE_IMPL_CAST(objectType)                                                                                              \
+    inline static auto NativeCast(const HAL::objectType* pObject)                                                                \
+    {                                                                                                                            \
+        return ImplCast(pObject)->GetNative();                                                                                   \
+    }
+
+
 namespace FE::Graphics::Vulkan
 {
     constexpr auto RequiredInstanceLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
@@ -46,11 +54,4 @@ namespace FE::Graphics::Vulkan
                                                             FE_VK_SURFACE_EXT };
 
     StringSlice VKResultToString(VkResult result);
-
-
-    template<class T>
-    inline auto NativeCast(const T* pObject) -> decltype(ImplCast(pObject)->GetNative())
-    {
-        return ImplCast(pObject)->GetNative();
-    }
 } // namespace FE::Graphics::Vulkan

@@ -1,14 +1,13 @@
 ﻿#pragma once
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Console/ConsoleLogger.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/ModuleBase.h>
 #include <FeCore/Jobs/JobSystem.h>
 
 namespace FE
 {
-    //! \brief Base class for all applications created with Ferrum3D.
+    //! @brief Base class for all applications created with Ferrum3D.
     //!
     //! Usage:
     //! \code{.cpp}
@@ -31,6 +30,19 @@ namespace FE
 
         Rc<ModuleRegistry> m_ModuleRegistry;
         Rc<EventBus<FrameEvents>> m_FrameEventBus;
+
+        festd::vector<festd::unique_ptr<LogSinkBase>> m_logSinks;
+
+        struct MainJob final : public Job
+        {
+            ApplicationModule* m_app = nullptr;
+            int32_t m_resultCode = -1;
+
+            void Execute() override
+            {
+                m_resultCode = m_app->RunMainLoop();
+            }
+        };
 
     protected:
         String m_AssetDirectory;
@@ -61,11 +73,18 @@ namespace FE
             // TODO: add the args to configuration.
             (void)argc;
             (void)argv;
-            TApplication* pApplication = Memory::New<TApplication>(Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear));
-            initFunc(pApplication);
-            const int32_t resultCode = pApplication->RunMainLoop();
-            pApplication->~TApplication();
-            return resultCode;
+            TApplication* application = Memory::New<TApplication>(Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear));
+            initFunc(application);
+
+            IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+
+            MainJob mainJob;
+            mainJob.m_app = application;
+            mainJob.Schedule(jobSystem);
+            jobSystem->Start();
+
+            application->~TApplication();
+            return mainJob.m_resultCode;
         }
     };
 } // namespace FE

@@ -6,6 +6,7 @@
 #include <EASTL/sort.h>
 #include <EASTL/span.h>
 #include <EASTL/vector.h>
+#include <FeCore/Base/BaseMath.h>
 #include <FeCore/Base/Hash.h>
 #include <FeCore/Base/Platform.h>
 #include <atomic>
@@ -17,7 +18,7 @@
 #include <tracy/Tracy.hpp>
 
 #if FE_DEBUG
-//! \brief Assertion without loggers, used in modules on which loggers depend.
+//! @brief Assertion without loggers, used in modules on which loggers depend.
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
@@ -25,7 +26,7 @@
         }                                                                                                                        \
         while (0)
 #else
-//! \brief Assertion without loggers, used in modules on which loggers depend.
+//! @brief Assertion without loggers, used in modules on which loggers depend.
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
         do                                                                                                                       \
         {                                                                                                                        \
@@ -38,123 +39,116 @@ namespace FE
     static_assert(sizeof(size_t) == sizeof(int64_t));
 
 #ifdef FE_DEBUG
-    //! \brief True on debug builds.
+    //! @brief True on debug builds.
     inline constexpr bool IsDebugBuild = true;
 #else
-    //! \brief True on debug builds.
+    //! @brief True on debug builds.
     inline constexpr bool IsDebugBuild = false;
 #endif
 
-    inline constexpr uint32_t InvalidIndex = static_cast<uint32_t>(-1);
+    inline constexpr uint32_t kInvalidIndex = static_cast<uint32_t>(-1);
 
     template<class TEnum>
     inline constexpr std::underlying_type_t<TEnum> DefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
 
-    //! \brief Empty structure with no members.
+    //! @brief Empty structure with no members.
     struct EmptyStruct
     {
     };
 
-    //! \brief Position in source file.
-    //!
-    //! Represents source position as name of file and function and line number.
-    struct SourcePosition
+    //! @brief Location in source file.
+    struct SourceLocation
     {
-        const char* FileName; //!< Name of source file.
-        const char* FuncName; //!< Name of function.
-                              //!< This can be a function signature depending on compiler.
+        const char* FileName = "";
+        uint32_t LineNumber = 0;
 
-        int32_t LineNumber; //!< Number of line in source file.
+        inline SourceLocation() = default;
 
-        //! Create a source position with specified data.
-        //!
-        //! \note It's recommended to use macros: \ref FE_SRCPOS and \ref FE_STATIC_SRCPOS
-        inline SourcePosition(const char* file, const char* func, int32_t line) noexcept
+        inline static constexpr SourceLocation Current(const char* file = __builtin_FILE(),
+                                                       uint32_t line = __builtin_LINE()) noexcept
+        {
+            return SourceLocation(file, line);
+        }
+
+    private:
+        inline constexpr SourceLocation(const char* file, uint32_t line) noexcept
             : FileName(file)
-            , FuncName(func)
             , LineNumber(line)
         {
         }
     };
 
 
-    //! \brief Align up an integer.
+    //! @brief Align up an integer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \param [in] align - Alignment to use.
+    //! @param x     - Value to align.
+    //! @param align - Alignment to use.
     template<class T, class U = T>
     inline T AlignUp(T x, U align)
     {
         return static_cast<T>((x + (align - 1u)) & ~(align - 1u));
     }
 
-    //! \brief Align up a pointer.
+    //! @brief Align up a pointer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \param [in] align - Alignment to use.
+    //! @param x     - Value to align.
+    //! @param align - Alignment to use.
     template<class T>
     inline T* AlignUpPtr(const T* x, size_t align)
     {
         return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), align));
     }
 
-    //! \brief Align up an integer.
+    //! @brief Align up an integer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \tparam A         - Alignment to use.
+    //! @param x  - Value to align.
+    //! @tparam A - Alignment to use.
     template<uint32_t A, class T>
     inline constexpr T AlignUp(T x)
     {
         return (x + (A - 1)) & ~(A - 1);
     }
 
-    //! \brief Align down an integer.
+    //! @brief Align down an integer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \param [in] align - Alignment to use.
+    //! @param x     - Value to align.
+    //! @param align - Alignment to use.
     template<class T, class U = T>
     inline T AlignDown(T x, U align)
     {
         return (x & ~(align - 1));
     }
 
-    //! \brief Align down a pointer.
+    //! @brief Align down a pointer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \param [in] align - Alignment to use.
+    //! @param x     - Value to align.
+    //! @param align - Alignment to use.
     template<class T>
     inline constexpr T* AlignDownPtr(const T* x, size_t align)
     {
         return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), align));
     }
 
-    //! \brief Align down an integer.
+    //! @brief Align down an integer.
     //!
-    //! \param [in] x     - Value to align.
-    //! \tparam A         - Alignment to use.
+    //! @param x  - Value to align.
+    //! @tparam A - Alignment to use.
     template<uint32_t A, class T>
     inline constexpr T AlignDown(T x)
     {
         return (x & ~(A - 1));
     }
 
-    //! \brief Create a bitmask.
+    //! @brief Create a bitmask.
     //!
-    //! \param [in] bitCount  - The number of ones in the created mask.
-    //! \param [in] leftShift - The number of zeros to the right of the created mask.
+    //! @param bitCount  - The number of ones in the created mask.
+    //! @param leftShift - The number of zeros to the right of the created mask.
     template<class T>
     inline constexpr T MakeMask(T bitCount, T leftShift)
     {
         auto typeBitCount = sizeof(T) * 8;
         auto mask = bitCount == typeBitCount ? static_cast<T>(-1) : ((1 << bitCount) - 1);
         return static_cast<T>(mask << leftShift);
-    }
-
-
-    template<class T1, class T2>
-    inline auto CeilDivide(T1 x, T2 y) -> std::enable_if_t<std::is_unsigned_v<T1> && std::is_unsigned_v<T2>, decltype(x / y)>
-    {
-        return (x + y - 1) / y;
     }
 
 
@@ -292,6 +286,10 @@ namespace FE
 
     namespace Memory
     {
+        inline constexpr size_t kDefaultAlignment = 16;
+        inline constexpr size_t kCacheLineSize = 64;
+
+
         template<class T>
         inline void Copy(festd::span<const T> source, festd::span<T> destination)
         {
@@ -306,14 +304,20 @@ namespace FE
             FE_CORE_ASSERT(source.size() == destination.size(), "Size mismatch");
             eastl::copy(source.begin(), source.end(), destination.begin());
         }
+
+
+        inline constexpr festd::span<const std::byte> MakeByteSpan(const char* str, uint32_t length = 0)
+        {
+            return { reinterpret_cast<const std::byte*>(str), length ? length : (uint32_t)__builtin_strlen(str) };
+        }
     } // namespace Memory
 
 
-//! \brief Typed alloca() wrapper.
+//! @brief Typed alloca() wrapper.
 #define FE_StackAlloc(type, arraySize) static_cast<type*>(alloca(sizeof(type) * arraySize))
 
 
-    //! \brief Define std::hash<> for a type.
+    //! @brief Define std::hash<> for a type.
 #define FE_MAKE_HASHABLE(TypeName, Template, ...)                                                                                \
     template<Template>                                                                                                           \
     struct eastl::hash<TypeName>                                                                                                 \
@@ -326,7 +330,7 @@ namespace FE
         }                                                                                                                        \
     };
 
-    //! \brief Define bitwise operations on `enum`.
+    //! @brief Define bitwise operations on `enum`.
     //!
     //! The macro defines bitwise or, and, xor operators.
 #define FE_ENUM_OPERATORS(Name)                                                                                                  \

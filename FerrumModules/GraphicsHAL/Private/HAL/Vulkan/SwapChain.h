@@ -12,6 +12,8 @@ namespace FE::Graphics::Vulkan
         CommandQueue* m_Queue = nullptr;
         HAL::SwapchainDesc m_Desc;
 
+        Logger* m_logger = nullptr;
+
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
         VkSwapchainKHR m_NativeSwapchain = VK_NULL_HANDLE;
         VkSurfaceFormatKHR m_ColorFormat;
@@ -37,7 +39,7 @@ namespace FE::Graphics::Vulkan
     public:
         FE_RTTI_Class(Swapchain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
-        Swapchain(HAL::Device* pDevice, HAL::Image* pDepthImage);
+        Swapchain(HAL::Device* pDevice, Logger* logger, HAL::Image* pDepthImage);
         ~Swapchain() override;
 
         inline VkSwapchainKHR GetNative() const
@@ -59,5 +61,5 @@ namespace FE::Graphics::Vulkan
         HAL::ImageView* GetDSV() override;
     };
 
-    FE_ENABLE_IMPL_CAST(Swapchain);
+    FE_ENABLE_NATIVE_CAST(Swapchain);
 } // namespace FE::Graphics::Vulkan

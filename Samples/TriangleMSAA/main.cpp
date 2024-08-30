@@ -4,7 +4,7 @@
 #include <FeCore/Modules/DynamicLibrary.h>
 #include <OsGPU/OsmiumGPU.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
+#include <FeCore/EventBus/CoreEvents.h>
 
 struct Vertex
 {
@@ -48,10 +48,10 @@ void RunExample()
     auto swapChain                   = device->CreateSwapChain(swapChainDesc);
 
     auto colorImageDesc = HAL::ImageDesc::Img2D(
-        HAL::ImageBindFlags::Color, scissor.Width(), scissor.Height(), swapChain->GetDesc().Format, false, MSAASamples);
+        HAL::ImageBindFlags::kColor, scissor.Width(), scissor.Height(), swapChain->GetDesc().Format, false, MSAASamples);
     auto colorImage = device->CreateImage(colorImageDesc);
-    colorImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
-    auto colorImageView = colorImage->CreateView(HAL::ImageAspectFlags::Color);
+    colorImage->AllocateMemory(HAL::MemoryType::kDeviceLocal);
+    auto colorImageView = colorImage->CreateView(HAL::ImageAspectFlags::kColor);
 
     FE::Rc<HAL::IBuffer> vertexBuffer;
     {
@@ -63,7 +63,7 @@ void RunExample()
         };
         // clang-format on
         vertexBuffer = device->CreateBuffer(HAL::BufferDesc{ vertexData.Size() * sizeof(Vertex), HAL::BindFlags::VertexBuffer });
-        vertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
+        vertexBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
         vertexBuffer->UpdateData(vertexData.Data());
     }
 
@@ -72,39 +72,39 @@ void RunExample()
     shaderArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
     shaderArgs.EntryPoint = "main";
 
-    shaderArgs.Stage      = HAL::ShaderStage::Pixel;
+    shaderArgs.Stage      = HAL::ShaderStage::kPixel;
     shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/PixelShader.hlsl";
     auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto psByteCode       = compiler->CompileShader(shaderArgs);
 
-    shaderArgs.Stage      = HAL::ShaderStage::Vertex;
+    shaderArgs.Stage      = HAL::ShaderStage::kVertex;
     shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/VertexShader.hlsl";
     source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
     shaderArgs.SourceCode = source;
     auto vsByteCode       = compiler->CompileShader(shaderArgs);
     compiler.Reset();
 
-    auto pixelShader  = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
-    auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+    auto pixelShader  = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kPixel, psByteCode));
+    auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kVertex, vsByteCode));
 
     HAL::RenderPassDesc renderPassDesc{};
 
     HAL::AttachmentDesc colorAttachmentDesc{};
     colorAttachmentDesc.Format       = swapChain->GetDesc().Format;
-    colorAttachmentDesc.InitialState = HAL::ResourceState::Undefined;
-    colorAttachmentDesc.FinalState   = HAL::ResourceState::RenderTarget;
+    colorAttachmentDesc.InitialState = HAL::ResourceState::kUndefined;
+    colorAttachmentDesc.FinalState   = HAL::ResourceState::kRenderTarget;
     colorAttachmentDesc.SampleCount  = MSAASamples;
 
     HAL::AttachmentDesc resolveAttachmentDesc{};
     resolveAttachmentDesc.Format       = swapChain->GetDesc().Format;
-    resolveAttachmentDesc.InitialState = HAL::ResourceState::Undefined;
-    resolveAttachmentDesc.FinalState   = HAL::ResourceState::Present;
+    resolveAttachmentDesc.InitialState = HAL::ResourceState::kUndefined;
+    resolveAttachmentDesc.FinalState   = HAL::ResourceState::kPresent;
     renderPassDesc.Attachments         = { colorAttachmentDesc, resolveAttachmentDesc };
 
     HAL::SubpassDesc subpassDesc{};
-    subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
-    subpassDesc.MSAAResolveAttachments  = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 1) };
+    subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::kRenderTarget, 0) };
+    subpassDesc.MSAAResolveAttachments  = { HAL::SubpassAttachment(HAL::ResourceState::kRenderTarget, 1) };
     renderPassDesc.Subpasses            = { subpassDesc };
     HAL::SubpassDependency dependency{};
     renderPassDesc.SubpassDependencies = { dependency };
@@ -112,7 +112,7 @@ void RunExample()
 
     HAL::GraphicsPipelineDesc pipelineDesc{};
     pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
-                                   .AddBuffer(HAL::InputStreamRate::PerVertex)
+                                   .AddBuffer(HAL::InputStreamRate::kPerVertex)
                                    .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
                                    .AddAttribute(HAL::Format::R32G32B32_SFloat, "COLOR")
                                    .Build()
@@ -126,7 +126,7 @@ void RunExample()
     pipelineDesc.Shaders                = shaders;
     pipelineDesc.Multisample            = HAL::MultisampleState(MSAASamples, 0.2f, true);
     pipelineDesc.Rasterization          = HAL::RasterizationState{};
-    pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+    pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::kBack;
     pipelineDesc.Scissor                = scissor;
     pipelineDesc.Viewport               = viewport;
 

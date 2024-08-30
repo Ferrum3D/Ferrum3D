@@ -1,5 +1,5 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/SmallVector.h>
 #include <FeCore/Modules/LibraryLoader.h>
 
@@ -12,7 +12,7 @@ namespace FE
 #if FE_WINDOWS
             const int32_t nameSize = static_cast<int32_t>(name.Size());
             const int32_t wideLength = MultiByteToWideChar(CP_UTF8, 0, name.Data(), nameSize, nullptr, 0);
-            FE_ASSERT(wideLength > 0);
+            FE_Assert(wideLength > 0);
 
             festd::small_vector<WCHAR, MAX_PATH + 1> wideName;
             wideName.resize(wideLength + 1, '\0');
@@ -39,7 +39,7 @@ namespace FE
         void* FindModuleSymbol(ModuleHandle moduleHandle, const char* symbolName)
         {
 #if FE_WINDOWS
-            return GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.Value), symbolName);
+            return (void*)GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.Value), symbolName);
 #else
 #    error Not implemented :(
 #endif
@@ -53,13 +53,13 @@ namespace FE
             return;
 
         const bool result = Platform::UnloadModule(m_Handle);
-        FE_ASSERT_MSG(result, "Couldn't unload library");
+        FE_AssertMsg(result, "Couldn't unload library");
     }
 
 
     LibraryLoader::LibraryLoader(StringSlice libraryName)
     {
         const bool result = Load(libraryName);
-        FE_ASSERT_MSG(result, "Couldn't load library \"{}\"", libraryName);
+        FE_AssertMsg(result, "Couldn't load library \"{}\"", libraryName);
     }
 } // namespace FE

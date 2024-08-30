@@ -1,2 +1,2 @@
 ﻿add_subdirectory(GraphicsHAL)
-add_subdirectory(OsmiumAssets)
+add_subdirectory(Graphics)

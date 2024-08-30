@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <EASTL/variant.h>
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/StringSlice.h>
@@ -38,7 +38,7 @@ namespace FE::Env
 
         inline void CheckType(ConfigurationValueType expected) const
         {
-            FE_ASSERT_MSG(m_Type == expected, "Type mismatch");
+            FE_AssertMsg(m_Type == expected, "Type mismatch");
         }
 
     public:
@@ -260,6 +260,8 @@ namespace FE::Env
         mutable SpinLock m_Lock;
 
     public:
+        FE_RTTI_Class(Configuration, "FE804C2B-6671-47E7-8A96-4CD59680CCE4");
+
         inline void AddProvider(ConfigurationSection& providerSection)
         {
             std::lock_guard lk{ m_Lock };

@@ -40,7 +40,7 @@ namespace FE::Graphics::HAL
         eastl::vector<InputLayoutBufferBuilder> m_Buffers;
 
     public:
-        explicit InputLayoutBuilder(PrimitiveTopology topology = PrimitiveTopology::TriangleList)
+        explicit InputLayoutBuilder(PrimitiveTopology topology = PrimitiveTopology::kTriangleList)
         {
             m_Topology = topology;
         }

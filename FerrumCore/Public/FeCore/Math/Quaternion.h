@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Math/Vector3.h>
 #include <FeCore/SIMD/CommonSIMD.h>
 
@@ -46,10 +46,10 @@ namespace FE
 
         FE_FORCE_INLINE explicit Quaternion(const std::array<float, 4>& array) noexcept;
 
-        //! \return Quaternion{ 0, 0, 0, 0 }.
+        //! @return Quaternion{ 0, 0, 0, 0 }.
         [[nodiscard]] FE_FORCE_INLINE static Quaternion GetZero() noexcept;
 
-        //! \return Quaternion{ 0, 0, 0, 1 }.
+        //! @return Quaternion{ 0, 0, 0, 1 }.
         [[nodiscard]] FE_FORCE_INLINE static Quaternion GetIdentity() noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationX(float angle);
@@ -68,10 +68,10 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
         [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
 
-        //! \return A pointer to array of four floats (components of the quaternion).
+        //! @return A pointer to array of four floats (components of the quaternion).
         [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
 
-        //! \return Underlying SIMD type.
+        //! @return Underlying SIMD type.
         [[nodiscard]] FE_FORCE_INLINE const TVec& GetSIMD() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
@@ -90,10 +90,10 @@ namespace FE
 
         [[nodiscard]] FE_FORCE_INLINE float Dot(const Quaternion& other) const noexcept;
 
-        //! \return Squared length of the quaternion.
+        //! @return Squared length of the quaternion.
         [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
 
-        //! \return Length of the quaternion.
+        //! @return Length of the quaternion.
         [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE Quaternion Conjugated() const noexcept;
@@ -102,28 +102,28 @@ namespace FE
 
         [[nodiscard]] FE_FORCE_INLINE Quaternion Normalized() const noexcept;
 
-        //! \brief Linearly interpolate between this and destination.
+        //! @brief Linearly interpolate between this and destination.
         //!
-        //! \param [in] f - Interpolation factor.
+        //! @param f - Interpolation factor.
         //!
-        //! \return New interpolated quaternion, this quaternion is not modified.
+        //! @return New interpolated quaternion, this quaternion is not modified.
         [[nodiscard]] FE_FORCE_INLINE Quaternion Lerp(const Quaternion& dst, float f) const noexcept;
 
-        //! \brief Spherical linearly interpolate between this and destination.
+        //! @brief Spherical linearly interpolate between this and destination.
         //!
-        //! \param [in] f - Interpolation factor.
+        //! @param f - Interpolation factor.
         //!
-        //! \return New interpolated quaternion, this quaternion is not modified.
+        //! @return New interpolated quaternion, this quaternion is not modified.
         [[nodiscard]] FE_FORCE_INLINE Quaternion SLerp(const Quaternion& dst, float f) const noexcept;
 
-        //! \brief Check if two quaternions are approximately equal.
+        //! @brief Check if two quaternions are approximately equal.
         //!
-        //! \param [in] other   - The quaternion to compare this one with.
-        //! \param [in] epsilon - Accepted difference between the two quaternion.
+        //! @param other   - The quaternion to compare this one with.
+        //! @param epsilon - Accepted difference between the two quaternion.
         //!
-        //! \return True if the quaternions are approximately equal.
+        //! @return True if the quaternions are approximately equal.
         [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Quaternion& other,
-                                                      float epsilon = Constants::Epsilon) const noexcept;
+                                                      float epsilon = Math::Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE bool operator==(const Quaternion& other) const noexcept;
         [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Quaternion& other) const noexcept;
@@ -279,12 +279,12 @@ namespace FE
 
         if (test > 0.499f)
         {
-            return { 2.0f * std::atan2(X(), W()), Constants::PI * 0.5f, 0 };
+            return { 2.0f * std::atan2(X(), W()), Math::Constants::PI * 0.5f, 0 };
         }
 
         if (test < -0.499)
         {
-            return { -2.0f * std::atan2(X(), W()), -Constants::PI / 2, 0 };
+            return { -2.0f * std::atan2(X(), W()), -Math::Constants::PI / 2, 0 };
         }
 
         auto sqx = X() * X();

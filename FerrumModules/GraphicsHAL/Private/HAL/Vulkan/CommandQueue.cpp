@@ -26,7 +26,8 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandQueue::SubmitBuffers(festd::span<HAL::CommandList*> commandLists, HAL::Fence* signalFence, HAL::SubmitFlags flags)
+    void CommandQueue::SubmitBuffers(festd::span<HAL::CommandList* const> commandLists, HAL::Fence* signalFence,
+                                     HAL::SubmitFlags flags)
     {
         festd::small_vector<VkCommandBuffer> commandBuffers;
         commandBuffers.reserve(commandLists.size());

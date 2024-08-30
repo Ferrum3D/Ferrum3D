@@ -19,7 +19,6 @@
       "name": "windows-base",
       "inherits": "default-base",
       "hidden": true,
-      "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "external"
@@ -55,6 +54,7 @@
       "name": "windows-debug-msvc-avx",
       "inherits": "windows-base",
       "displayName": "Windows x64 Debug with MSVC, SSE4.1 and AVX2",
+      "generator": "Visual Studio 17 2022",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "cl.exe"
@@ -64,6 +64,7 @@
       "name": "windows-release-msvc-avx",
       "inherits": "windows-base",
       "displayName": "Windows x64 Release with MSVC, SSE4.1 and AVX2",
+      "generator": "Visual Studio 17 2022",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": "cl.exe"
@@ -73,6 +74,7 @@
       "name": "windows-debug-clang-avx",
       "inherits": "windows-base",
       "displayName": "Windows x64 Debug with Clang, SSE4.1 and AVX2",
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "clang++.exe"
@@ -82,6 +84,7 @@
       "name": "windows-release-clang-avx",
       "inherits": "windows-base",
       "displayName": "Windows x64 Release with Clang, SSE4.1 and AVX2",
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": "clang++.exe"

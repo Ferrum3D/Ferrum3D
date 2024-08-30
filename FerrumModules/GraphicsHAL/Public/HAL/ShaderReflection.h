@@ -10,7 +10,7 @@ namespace FE::Graphics::HAL
     struct ShaderInputAttribute final
     {
         uint32_t Location = 0;
-        Format ElementFormat = Format::None;
+        Format ElementFormat = Format::kUndefined;
         FixedString<22> ShaderSemantic;
     };
 

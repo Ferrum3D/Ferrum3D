@@ -33,9 +33,10 @@ namespace FE
     };
 
     template<class TEvent>
-    class EventBus : public ServiceLocatorImplBase<IEventBus<TEvent>>
+    class EventBus final : public ServiceLocatorImplBase<IEventBus<TEvent>>
     {
-        eastl::vector<EventHandler<TEvent>*> m_Handlers;
+        SpinLock m_Lock;
+        festd::vector<EventHandler<TEvent>*> m_Handlers;
 
         template<class F, class... Args>
         inline void SendEventInternal(F&& function, Args&&... args);
@@ -63,6 +64,7 @@ namespace FE
     template<class F, class... Args>
     void EventBus<TEvent>::SendEventInternal(F&& function, Args&&... args)
     {
+        std::lock_guard lock{ m_Lock };
         for (Handler* h : m_Handlers)
         {
             std::invoke(function, h, std::forward<Args>(args)...);
@@ -79,12 +81,14 @@ namespace FE
     template<class TEvent>
     void FE::EventBus<TEvent>::RegisterHandlerInternal(Handler* handler)
     {
+        std::lock_guard lock{ m_Lock };
         m_Handlers.push_back(handler);
     }
 
     template<class TEvent>
     void FE::EventBus<TEvent>::UnregisterHandlerInternal(Handler* handler)
     {
+        std::lock_guard lock{ m_Lock };
         m_Handlers.erase(eastl::find(m_Handlers.begin(), m_Handlers.end(), handler));
     }
 

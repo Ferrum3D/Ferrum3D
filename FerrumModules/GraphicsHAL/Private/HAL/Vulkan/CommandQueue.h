@@ -30,10 +30,11 @@ namespace FE::Graphics::Vulkan
         }
 
         void SignalFence(HAL::Fence* fence) override;
-        void SubmitBuffers(festd::span<HAL::CommandList*> commandLists, HAL::Fence* signalFence, HAL::SubmitFlags flags) override;
+        void SubmitBuffers(festd::span<HAL::CommandList* const> commandLists, HAL::Fence* signalFence,
+                           HAL::SubmitFlags flags) override;
 
         [[nodiscard]] const CommandQueueDesc& GetDesc() const;
     };
 
-    FE_ENABLE_IMPL_CAST(CommandQueue);
+    FE_ENABLE_NATIVE_CAST(CommandQueue);
 } // namespace FE::Graphics::Vulkan

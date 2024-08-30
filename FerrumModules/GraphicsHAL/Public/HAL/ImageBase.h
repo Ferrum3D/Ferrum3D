@@ -16,7 +16,7 @@ namespace FE::Graphics::HAL
             m_States.resize(arraySize);
             for (auto& arr : m_States)
             {
-                arr.resize(mipLevelCount, ResourceState::Undefined);
+                arr.resize(mipLevelCount, ResourceState::kUndefined);
             }
         }
 
@@ -40,7 +40,7 @@ namespace FE::Graphics::HAL
             {
                 for (uint32_t j = 0; j < subresourceRange.MipSliceCount; ++j)
                 {
-                    FE_ASSERT_MSG(m_States[i + subresourceRange.MinArraySlice][j + subresourceRange.MinMipSlice] == state,
+                    FE_AssertMsg(m_States[i + subresourceRange.MinArraySlice][j + subresourceRange.MinMipSlice] == state,
                                   "States in specified subresource range where different");
                 }
             }

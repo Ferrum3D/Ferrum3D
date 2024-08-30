@@ -32,7 +32,7 @@ namespace FE::Graphics::Vulkan
 
     void DescriptorAllocator::Shutdown()
     {
-        FE_ASSERT(m_DescriptorSetLayouts.empty());
+        FE_Assert(m_DescriptorSetLayouts.empty());
         for (const VkDescriptorPool pool : m_DescriptorPools)
         {
             vkDestroyDescriptorPool(NativeCast(m_pDevice), pool, nullptr);

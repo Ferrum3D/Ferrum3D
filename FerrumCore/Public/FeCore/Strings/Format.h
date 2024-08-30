@@ -1,104 +1,168 @@
 ﻿#pragma once
+#include <EASTL/tuple.h>
 #include <FeCore/Base/Base.h>
+#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/String.h>
 #include <FeCore/Strings/Unicode.h>
 #include <array>
 #include <cstdlib>
+#include <itoa/jeaiii_to_text.h>
 #include <ostream>
 #include <sstream>
 #include <string_view>
 
+FE_PUSH_MSVC_WARNING(4702)
+#include <dragonbox/dragonbox_to_chars.h>
+FE_POP_MSVC_WARNING
+
 namespace FE::Fmt
 {
-    using FE::String;
-    using FE::StringSlice;
-
-    struct IValueFormatter
+    namespace Internal
     {
-        virtual void Format(String& buffer, void* value) const = 0;
-    };
-
-    template<class T>
-    struct BasicValueFormatter : IValueFormatter
-    {
-        virtual void Format(String& buffer, const T& value) const = 0;
-
-        virtual void Format(String& buffer, void* value) const override final
+        inline char* TrimEmptyExp(char* buffer, const char* begin)
         {
-            Format(buffer, *reinterpret_cast<T*>(value));
-        }
-    };
-
-    template<class T>
-    struct ValueFormatter : BasicValueFormatter<T>
-    {
-        void Format(String& buffer, const T& value) const override
-        {
-            std::stringstream ss;
-            if constexpr (std::is_pointer_v<T> && !std::is_same_v<T, const char*>)
+            if (buffer - begin < 2)
             {
-                ss << "0x" << std::hex << reinterpret_cast<size_t>(value);
+                return buffer;
+            }
+
+            if (*(buffer - 1) == '0' && *(buffer - 2) == 'E')
+            {
+                return buffer - 2;
+            }
+
+            return buffer;
+        }
+
+        template<class TBuffer>
+        inline void FormatIntegral(TBuffer& buffer, uint64_t value)
+        {
+            char buf[24];
+            auto* ptr = jeaiii::to_text_from_integer(buf, value);
+            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+        }
+
+        template<class TBuffer>
+        inline void FormatIntegral(TBuffer& buffer, int64_t value)
+        {
+            char buf[24];
+            auto* ptr = jeaiii::to_text_from_integer(buf, value);
+            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+        }
+    } // namespace Internal
+
+
+    template<class TBuffer, class T>
+    struct ValueFormatter
+    {
+        void Format(TBuffer& buffer, const T& value) const
+        {
+            if constexpr (std::is_integral_v<T> && std::is_signed_v<T>)
+            {
+                Internal::FormatIntegral(buffer, static_cast<int64_t>(value));
+            }
+            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T>)
+            {
+                Internal::FormatIntegral(buffer, static_cast<uint64_t>(value));
             }
             else
             {
-                ss << value;
+                FE_CORE_ASSERT(false, "Not implemented");
             }
-
-            auto v = ss.str();
-            buffer.Append(v.data(), static_cast<uint32_t>(v.size()));
         }
     };
 
-    template<>
-    struct ValueFormatter<String> : BasicValueFormatter<String>
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, float>
     {
-        void Format(String& buffer, const String& value) const override
+        void Format(TBuffer& buffer, float value) const
+        {
+            char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32>];
+            char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
+            buffer.Append(buf, ptr - buf);
+        }
+    };
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, double>
+    {
+        void Format(TBuffer& buffer, double value) const
+        {
+            char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary64>];
+            char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
+            buffer.Append(buf, ptr - buf);
+        }
+    };
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, const char*>
+    {
+        void Format(TBuffer& buffer, const char* value) const
         {
             buffer.Append(value);
         }
     };
 
-    template<>
-    struct ValueFormatter<StringSlice> : BasicValueFormatter<StringSlice>
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, String>
     {
-        void Format(String& buffer, const StringSlice& value) const override
+        void Format(TBuffer& buffer, const String& value) const
         {
             buffer.Append(value);
         }
     };
 
-    template<>
-    struct ValueFormatter<Env::Name> : BasicValueFormatter<Env::Name>
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, StringSlice>
     {
-        void Format(String& buffer, const Env::Name& name) const override
+        void Format(TBuffer& buffer, StringSlice value) const
+        {
+            buffer.Append(value);
+        }
+    };
+
+    template<class TBuffer, uint32_t TSize>
+    struct ValueFormatter<TBuffer, FixedString<TSize>>
+    {
+        void Format(TBuffer& buffer, const FixedString<TSize>& value) const
+        {
+            buffer.Append(value);
+        }
+    };
+
+    template<class TBuffer, uint32_t TSize>
+    struct ValueFormatter<TBuffer, char[TSize]>
+    {
+        void Format(TBuffer& buffer, const char (&value)[TSize]) const
+        {
+            buffer.Append(value);
+        }
+    };
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, Env::Name>
+    {
+        void Format(TBuffer& buffer, const Env::Name& name) const
         {
             const Env::Name::Record* pRecord = name.GetRecord();
             buffer.Append(pRecord->Data, pRecord->Size);
         }
     };
 
-    template<>
-    struct ValueFormatter<std::string> : BasicValueFormatter<std::string>
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, std::string_view>
     {
-        void Format(String& buffer, const std::string& value) const override
+        void Format(TBuffer& buffer, const std::string_view& value) const
         {
             buffer.Append(value.data(), static_cast<uint32_t>(value.size()));
         }
     };
 
-    template<>
-    struct ValueFormatter<std::string_view> : BasicValueFormatter<std::string_view>
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, UUID>
     {
-        void Format(String& buffer, const std::string_view& value) const override
-        {
-            buffer.Append(value.data(), static_cast<uint32_t>(value.size()));
-        }
-    };
-
-    template<>
-    struct ValueFormatter<UUID> : BasicValueFormatter<UUID>
-    {
-        void Format(String& buffer, const UUID& value) const override
+        void Format(TBuffer& buffer, const UUID& value) const
         {
             static char digits[] = "0123456789ABCDEF";
             int32_t idx = 0;
@@ -126,57 +190,42 @@ namespace FE::Fmt
 
     namespace Internal
     {
-        template<class TFormatter>
-        inline TFormatter* GetFormatter()
-        {
-            static TFormatter instance;
-            return &instance;
-        }
-
+        template<class TBuffer>
         struct FormatArg
         {
-            inline FormatArg() = default;
+            using FuncType = void (*)(const void*, TBuffer&);
 
-            inline FormatArg(void* value, IValueFormatter* formatter) noexcept
-            {
-                Value = value;
-                Formatter = formatter;
-            }
+            FuncType pFunc = nullptr;
+            const void* pValue = nullptr;
 
             template<class T>
-            inline static FormatArg Create(T&& arg) noexcept
+            inline static FormatArg Create(T* arg) noexcept
             {
-                auto* f = GetFormatter<ValueFormatter<std::decay_t<T>>>();
-                return FormatArg((void*)&arg, f);
+                const auto func = [](const void* value, TBuffer& buffer) {
+                    ValueFormatter<TBuffer, std::remove_const_t<T>>{}.Format(buffer,
+                                                                             *static_cast<const std::remove_cv_t<T>*>(value));
+                };
+                return FormatArg{ func, arg };
             }
 
-            inline void FormatTo(String& str) const
+            inline void FormatTo(TBuffer& buffer) const
             {
-                Formatter->Format(str, Value);
+                pFunc(pValue, buffer);
             }
-
-            void* Value = nullptr;
-            IValueFormatter* Formatter = nullptr;
         };
 
-        template<size_t ArgsCount>
+
+        template<class TBuffer, size_t TArgCount>
         struct FormatArgs
         {
-            std::array<FormatArg, ArgsCount> Data;
-
-            inline bool HasUnused() const
-            {
-                for (const auto& arg : Data)
-                    if (arg.Value)
-                        return true;
-                return false;
-            }
+            std::array<FormatArg<TBuffer>, TArgCount> Data;
         };
 
-        template<size_t ArgsCount>
-        void FormatImpl(String& str, StringSlice fmt, FormatArgs<ArgsCount>& args)
+        template<class TBuffer, size_t TArgCount>
+        void FormatImpl(TBuffer& buffer, StringSlice fmt, FormatArgs<TBuffer, TArgCount>& args)
         {
             size_t argIndex = 0;
+            bool autoIndex = true;
             auto begin = fmt.begin();
             for (auto it = fmt.begin(); it != fmt.end(); ++it)
             {
@@ -185,41 +234,86 @@ namespace FE::Fmt
                     auto braceIt = it;
                     if (*++it == '{')
                     {
-                        str.Append(StringSlice(begin, it));
+                        buffer.Append(StringSlice(begin, it));
                         begin = it;
                         begin++;
                         continue;
                     }
-                    FE_CORE_ASSERT(*it == '}', ""); // do not accept arguments and indices for now
-                    str.Append(StringSlice(begin, braceIt));
+                    if (*it != '}')
+                    {
+                        FE_CORE_ASSERT(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
+                        argIndex = 0;
+                        autoIndex = false;
+                        while (true)
+                        {
+                            FE_CORE_ASSERT(it != fmt.end(), "Invalid arg index");
+                            if (*it <= '9' && *it >= '0')
+                            {
+                                argIndex *= 10;
+                                argIndex += static_cast<size_t>(*it) - '0';
+                            }
+                            else
+                            {
+                                break;
+                            }
+
+                            ++it;
+                        }
+
+                        FE_CORE_ASSERT(*it == '}', "Invalid arg index");
+                    }
+                    buffer.Append(StringSlice(begin, braceIt));
                     begin = it;
                     begin++;
 
-                    auto& arg = args.Data[argIndex++];
-                    arg.FormatTo(str);
-                    arg.Value = nullptr;
+                    auto& arg = args.Data[argIndex];
+                    arg.FormatTo(buffer);
+                    if (autoIndex)
+                        ++argIndex;
                 }
                 else if (*it == '}')
                 {
                     ++it;
                     FE_CORE_ASSERT(*it == '}', "must be escaped");
 
-                    str.Append(StringSlice(begin, it));
+                    buffer.Append(StringSlice(begin, it));
                     begin = it;
                     begin++;
                     continue;
                 }
             }
-            str.Append(StringSlice(begin, fmt.end()));
+            buffer.Append(StringSlice(begin, fmt.end()));
         }
     } // namespace Internal
 
-    template<class... Args>
-    inline String Format(StringSlice fmt, Args&&... args)
+    template<class TBuffer, class... TArgs>
+    inline void FormatTo(TBuffer& buffer, StringSlice fmt, TArgs&&... args)
     {
-        String result;
-        Internal::FormatArgs<sizeof...(Args)> formatArgs{ Internal::FormatArg::Create(args)... };
-        Internal::FormatImpl<sizeof...(Args)>(result, fmt, formatArgs);
-        return result;
+        Internal::FormatArgs<TBuffer, sizeof...(TArgs)> formatArgs{ Internal::FormatArg<TBuffer>::Create(&args)... };
+        Internal::FormatImpl<TBuffer, sizeof...(TArgs)>(buffer, fmt, formatArgs);
+    }
+
+    template<class... TArgs>
+    inline String Format(StringSlice fmt, TArgs&&... args)
+    {
+        String buffer;
+        FormatTo<String, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        return buffer;
+    }
+
+    template<uint32_t TSize, class... TArgs>
+    inline FixedString<TSize> FixedFormatSized(StringSlice fmt, TArgs&&... args)
+    {
+        FixedString<TSize> buffer;
+        FormatTo<FixedString<TSize>, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        return buffer;
+    }
+
+    template<class... TArgs>
+    inline FixStr256 FixedFormat(StringSlice fmt, TArgs&&... args)
+    {
+        FixStr256 buffer;
+        FormatTo<FixStr256, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        return buffer;
     }
 } // namespace FE::Fmt

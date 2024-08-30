@@ -20,7 +20,7 @@ namespace FE::Graphics::HAL
 
     Rc<Image> TransientResourceHeapBase::CreateImage(const TransientImageDesc& desc, TransientResourceAllocationStats& stats)
     {
-        FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
+        FE_AssertMsg(m_Desc.TypeFlags == TransientResourceType::Image, "Transient heap type is not compatible");
         size_t allocationSize;
         auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
         if (address.IsNull())
@@ -28,7 +28,7 @@ namespace FE::Graphics::HAL
             return nullptr;
         }
 
-        FE_ASSERT_MSG(m_CreatedResourceCount < m_Cache.Capacity(), "Resource cache overflow");
+        FE_AssertMsg(m_CreatedResourceCount < m_Cache.Capacity(), "Resource cache overflow");
         m_CreatedResourceCount++;
 
         size_t descHash = 0;
@@ -63,7 +63,7 @@ namespace FE::Graphics::HAL
 
     Rc<Buffer> TransientResourceHeapBase::CreateBuffer(const TransientBufferDesc& desc, TransientResourceAllocationStats& stats)
     {
-        FE_ASSERT_MSG(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
+        FE_AssertMsg(m_Desc.TypeFlags == TransientResourceType::Buffer, "Transient heap type is not compatible");
         size_t allocationSize;
         auto address = AllocateResourceMemory(desc.Descriptor, allocationSize);
         if (address.IsNull())
@@ -71,7 +71,7 @@ namespace FE::Graphics::HAL
             return nullptr;
         }
 
-        FE_ASSERT_MSG(m_CreatedResourceCount < m_Cache.Capacity(), "Resource cache overflow");
+        FE_AssertMsg(m_CreatedResourceCount < m_Cache.Capacity(), "Resource cache overflow");
         m_CreatedResourceCount++;
 
         size_t descHash = 0;
@@ -119,7 +119,7 @@ namespace FE::Graphics::HAL
 
     void TransientResourceHeapBase::ReleaseResource(uint64_t resourceID, TransientResourceType resourceType)
     {
-        FE_ASSERT_MSG(resourceType == m_Desc.TypeFlags, "Transient heap type is not compatible");
+        FE_AssertMsg(resourceType == m_Desc.TypeFlags, "Transient heap type is not compatible");
         auto& resource = m_RegisteredResources[resourceID];
         m_Allocator.Deallocate(resource.Handle, resource.Size);
         if (--m_CreatedResourceCount == 0)

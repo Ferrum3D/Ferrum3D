@@ -6,7 +6,7 @@
 
 namespace FE
 {
-    //! \brief Least Recently Used cache implementation.
+    //! @brief Least Recently Used cache implementation.
     template<class TKey, class TValue>
     class LRUCacheMap final
     {
@@ -19,19 +19,19 @@ namespace FE
 
         inline LRUCacheMap() = default;
 
-        //! \brief Create the cache with initial capacity.
+        //! @brief Create the cache with initial capacity.
         //!
-        //! \param [in] capacity - Initial capacity.
+        //! @param capacity - Initial capacity.
         inline explicit LRUCacheMap(size_t capacity)
             : m_Capacity(capacity)
         {
         }
 
-        //! \brief Get value by a key.
+        //! @brief Get value by a key.
         //!
-        //! \param [in] key - The key to find.
+        //! @param key - The key to find.
         //!
-        //! \return Result value that is Result::Ok() if the value was in the cache.
+        //! @return Result value that is Result::Ok() if the value was in the cache.
         inline Result<TValue, bool> operator[](const TKey& key)
         {
             TValue value;
@@ -44,9 +44,9 @@ namespace FE
             return Err(false);
         }
 
-        //! \brief Change capacity of the cache, will remove least recently used when shrinking.
+        //! @brief Change capacity of the cache, will remove least recently used when shrinking.
         //!
-        //! \param [in] capacity - The new capacity.
+        //! @param capacity - The new capacity.
         inline void SetCapacity(size_t capacity)
         {
             m_Capacity = capacity;
@@ -60,16 +60,16 @@ namespace FE
             }
         }
 
-        //! \brief Get cache capacity.
+        //! @brief Get cache capacity.
         [[nodiscard]] inline size_t Capacity() const
         {
             return m_Capacity;
         }
 
-        //! \brief Emplace a key-value pair to the cache.
+        //! @brief Emplace a key-value pair to the cache.
         //!
-        //! \param [in] key  - The key to associate the value with.
-        //! \param [in] args - Arguments for value constructor.
+        //! @param key  - The key to associate the value with.
+        //! @param args - Arguments for value constructor.
         template<class... Args>
         inline void Emplace(const TKey& key, Args&&... args)
         {
@@ -89,23 +89,23 @@ namespace FE
             SetCapacity(m_Capacity);
         }
 
-        //! \brief Check if a key is present, but do not promote to most recently used.
+        //! @brief Check if a key is present, but do not promote to most recently used.
         //!
-        //! \param [in] key - The key to check for.
+        //! @param key - The key to check for.
         //!
-        //! \return True if the key is in the cache.
+        //! @return True if the key is in the cache.
         inline bool HasKey(const TKey& key)
         {
             auto it = m_Map.find(key);
             return it != m_Map.end();
         }
 
-        //! \brief Try get a value from the cache.
+        //! @brief Try get a value from the cache.
         //!
-        //! \param [in]  key   - The key to find.
-        //! \param [out] value - The value that will be set on success.
+        //! @param  key   - The key to find.
+        //! @param [out] value - The value that will be set on success.
         //!
-        //! \return True if the key is in the cache.
+        //! @return True if the key is in the cache.
         inline bool TryGetValue(const TKey& key, TValue& value)
         {
             auto it = m_Map.find(key);

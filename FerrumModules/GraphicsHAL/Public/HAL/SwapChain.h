@@ -15,7 +15,7 @@ namespace FE::Graphics::HAL
         uint32_t ImageWidth = 0;
         uint32_t ImageHeight = 0;
         bool VerticalSync = false;
-        Format Format = Format::None;
+        Format Format = Format::kUndefined;
 
         CommandQueue* Queue = nullptr;
         void* NativeWindowHandle = nullptr;

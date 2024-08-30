@@ -32,7 +32,7 @@ namespace FE::Memory
     void* PoolAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
     {
         FE_CORE_ASSERT(byteSize <= m_ElementByteSize, "");
-        FE_CORE_ASSERT(byteAlignment <= DefaultAlignment, "");
+        FE_CORE_ASSERT(byteAlignment <= kDefaultAlignment, "");
 
 #if FE_DEBUG
         ++m_AllocationCount;

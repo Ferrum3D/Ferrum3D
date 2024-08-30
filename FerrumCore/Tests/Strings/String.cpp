@@ -1,4 +1,4 @@
-﻿#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Strings/FixedString.h>
 #include <gtest/gtest.h>
 #include <mimalloc.h>

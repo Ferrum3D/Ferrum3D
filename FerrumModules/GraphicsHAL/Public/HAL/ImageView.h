@@ -6,10 +6,10 @@ namespace FE::Graphics::HAL
 {
     struct ImageViewDesc
     {
-        ImageSubresourceRange SubresourceRange;
-        Format Format = Format::None;
         HAL::Image* Image = nullptr;
-        ImageDim Dimension = ImageDim::Image2D;
+        ImageSubresourceRange SubresourceRange;
+        Format Format = Format::kUndefined;
+        ImageDim Dimension = ImageDim::kImage2D;
 
         inline static ImageViewDesc ForImage(HAL::Image* image, HAL::ImageAspectFlags aspectFlags)
         {
@@ -24,7 +24,7 @@ namespace FE::Graphics::HAL
             ImageViewDesc desc{};
             desc.Format = imageDesc.ImageFormat;
             desc.Image = image;
-            desc.Dimension = imageDesc.Dimension;
+            desc.Dimension = imageDesc.GetDimension();
             desc.SubresourceRange = range;
             return desc;
         }

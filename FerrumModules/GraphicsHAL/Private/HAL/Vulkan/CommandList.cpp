@@ -41,7 +41,7 @@ namespace FE::Graphics::Vulkan
 
     void CommandList::Begin()
     {
-        FE_ASSERT(!m_IsUpdating);
+        FE_Assert(!m_IsUpdating);
         m_IsUpdating = true;
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -51,7 +51,7 @@ namespace FE::Graphics::Vulkan
 
     void CommandList::End()
     {
-        FE_ASSERT(m_IsUpdating);
+        FE_Assert(m_IsUpdating);
         m_IsUpdating = false;
         vkEndCommandBuffer(m_CommandBuffer);
     }
@@ -93,7 +93,7 @@ namespace FE::Graphics::Vulkan
             if (barrier.Image == nullptr)
                 continue;
 
-            auto stateBefore = barrier.StateBefore == HAL::ResourceState::Automatic
+            auto stateBefore = barrier.StateBefore == HAL::ResourceState::kAutomatic
                 ? barrier.Image->GetState(barrier.SubresourceRange.MinArraySlice, barrier.SubresourceRange.MinMipSlice)
                 : barrier.StateBefore;
 
@@ -129,7 +129,7 @@ namespace FE::Graphics::Vulkan
             if (barrier.Buffer == nullptr)
                 continue;
 
-            FE_ASSERT_MSG(barrier.StateBefore != HAL::ResourceState::Automatic,
+            FE_AssertMsg(barrier.StateBefore != HAL::ResourceState::kAutomatic,
                           "Automatic resource state management is currently "
                           "not supported for buffers");
 
@@ -264,7 +264,7 @@ namespace FE::Graphics::Vulkan
     void CommandList::BindVertexBuffers(uint32_t startSlot, festd::span<HAL::Buffer*> buffers,
                                         festd::span<const uint64_t> offsets)
     {
-        FE_ASSERT_MSG(buffers.size() == offsets.size(), "Number of buffers must be the same as number of offsets");
+        FE_AssertMsg(buffers.size() == offsets.size(), "Number of buffers must be the same as number of offsets");
 
         festd::small_vector<VkBuffer> nativeBuffers(buffers.size(), VK_NULL_HANDLE);
         for (uint32_t i = 0; i < buffers.size(); ++i)

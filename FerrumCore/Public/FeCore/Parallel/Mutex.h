@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief Null mutex, never blocks.
+    //! @brief Null mutex, never blocks.
     class NullMutex final
     {
     public:

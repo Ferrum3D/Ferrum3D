@@ -27,5 +27,5 @@ namespace FE::Graphics::Vulkan
         const HAL::MemoryAllocationDesc& GetDesc() override;
     };
 
-    FE_ENABLE_IMPL_CAST(DeviceMemory);
+    FE_ENABLE_NATIVE_CAST(DeviceMemory);
 } // namespace FE::Graphics::Vulkan

@@ -27,7 +27,7 @@ namespace FE::Graphics::Vulkan
         case HAL::ShaderResourceType::InputAttachment:
             return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         default:
-            FE_UNREACHABLE("Invalid ShaderResourceType");
+            FE_AssertMsg(false, "Invalid ShaderResourceType");
             return VK_DESCRIPTOR_TYPE_MAX_ENUM;
         }
     }
@@ -89,7 +89,7 @@ namespace FE::Graphics::Vulkan
                                        return lhs.Slot < rhs;
                                    });
 
-            FE_ASSERT(binding != m_ResourceBindings.end() && binding && binding->Slot == entry.Index);
+            FE_Assert(binding != m_ResourceBindings.end() && binding && binding->Slot == entry.Index);
 
             VkWriteDescriptorSet writeDescriptorSet{};
             writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -107,7 +107,7 @@ namespace FE::Graphics::Vulkan
 
             if (const auto* pBuffer = fe_dynamic_cast<const Buffer*>(entry.pObject.Get()))
             {
-                FE_ASSERT(HAL::IsBufferShaderResource(binding->Type));
+                FE_Assert(HAL::IsBufferShaderResource(binding->Type));
 
                 info.bufferInfo.buffer = NativeCast(pBuffer);
                 info.bufferInfo.offset = 0;
@@ -116,7 +116,7 @@ namespace FE::Graphics::Vulkan
             }
             if (const auto* pImageView = fe_dynamic_cast<const ImageView*>(entry.pObject.Get()))
             {
-                FE_ASSERT(HAL::IsTextureShaderResource(binding->Type));
+                FE_Assert(HAL::IsTextureShaderResource(binding->Type));
 
                 info.imageInfo.imageView = NativeCast(pImageView);
                 info.imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -125,7 +125,7 @@ namespace FE::Graphics::Vulkan
             }
             if (const auto* pSampler = fe_dynamic_cast<const Sampler*>(entry.pObject.Get()))
             {
-                FE_ASSERT(binding->Type == HAL::ShaderResourceType::Sampler);
+                FE_Assert(binding->Type == HAL::ShaderResourceType::Sampler);
 
                 info.imageInfo.imageView = VK_NULL_HANDLE;
                 info.imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;

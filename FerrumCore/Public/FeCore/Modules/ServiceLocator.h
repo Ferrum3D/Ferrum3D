@@ -4,7 +4,7 @@
 
 namespace FE
 {
-    //! \brief This class provides interface to access registered instance of a class.
+    //! @brief This class provides interface to access registered instance of a class.
     //!
     //! Doesn't own the registered class, memory is managed by the user.
     //! The instance can be shared between different modules and is created and destroyed explicitly.
@@ -18,7 +18,7 @@ namespace FE
     //!     IFoo* instance = ServiceLocator<IFoo>::Get();
     //! \endcode
     //!
-    //! \tparam T Type of the interface.
+    //! @tparam T Type of the interface.
     template<class T>
     class ServiceLocator
     {
@@ -39,12 +39,12 @@ namespace FE
     public:
         FE_RTTI_Class(ServiceLocator<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
 
-        //! \brief Register the instance.
+        //! @brief Register the instance.
         //!
         //! The provided instance will be registered in the global environment,
         //! so that it can be used in multiple modules.
         //!
-        //! \param instance - The instance to register.
+        //! @param instance - The instance to register.
         inline static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");
@@ -53,7 +53,7 @@ namespace FE
             m_Owner = Env::CreateGlobalVariableByType<T*>(instance);
         }
 
-        //! \brief Unregister the instance.
+        //! @brief Unregister the instance.
         inline static void Unregister()
         {
             FE_CORE_ASSERT(m_Owner, "ServiceLocator instance was a nullptr");
@@ -62,12 +62,12 @@ namespace FE
             m_Owner.Reset();
         }
 
-        //! \brief Get the registered instance.
+        //! @brief Get the registered instance.
         //!
         //! The function will try to find the instance in all attached modules and cache it in the current module.
         //! If the instance of type `T` was not yet registered the function will return `nullptr`.
         //!
-        //! \return The registered instance.
+        //! @return The registered instance.
         inline static T* Get()
         {
             if (!m_Instance)
@@ -94,10 +94,10 @@ namespace FE
     {
     };
 
-    //! \brief Helper class that registers and unregisters instance in ServiceLocator.
+    //! @brief Helper class that registers and unregisters instance in ServiceLocator.
     //!
-    //! \tparam TBase - The base class to derive.
-    //! \tparam TInterface - The interface to register in ServiceLocator.
+    //! @tparam TBase - The base class to derive.
+    //! @tparam TInterface - The interface to register in ServiceLocator.
     template<class TBase, class TInterface = TBase>
     struct ServiceLocatorImplBase
         : public TBase
@@ -105,13 +105,13 @@ namespace FE
     {
         FE_RTTI_Class(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 
-        //! \brief Calls \ref ServiceLocator::Register.
+        //! @brief Calls \ref ServiceLocator::Register.
         inline ServiceLocatorImplBase()
         {
             ServiceLocator<TInterface>::Register(static_cast<TInterface*>(this));
         }
 
-        //! \brief Calls \ref ServiceLocator::Unregister.
+        //! @brief Calls \ref ServiceLocator::Unregister.
         inline virtual ~ServiceLocatorImplBase()
         {
             ServiceLocator<TInterface>::Unregister();

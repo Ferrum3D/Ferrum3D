@@ -1,60 +1,75 @@
-#pragma once
-#include <FeCore/Base/Base.h>
-#include <FeCore/Base/Platform.h>
-#include <ctime>
-#include <ostream>
-#include <sstream>
+﻿#pragma once
+#include <FeCore/Time/BaseTime.h>
 
 namespace FE
 {
-    //! \brief Represents a time span: an interval between two instances of \ref DateTime.
-    class TimeSpan
+    //! @brief Represents a time span: an interval between two instances of DateTime.
+    class TimeSpan final
     {
-        tm m_Data;
+        TimeValue m_Seconds;
 
-        inline TimeSpan(time_t time)
+        inline explicit TimeSpan(TimeValue time)
         {
-            m_Data = *localtime(&time);
+            m_Seconds = time;
         }
 
     public:
-        FE_RTTI_Class(TimeSpan, "F42DAA6C-53F3-4AA5-9971-9783D8754F6C");
-
-        inline int32_t Years() const
+        [[nodiscard]] inline int32_t Days() const
         {
-            return m_Data.tm_year;
+            return static_cast<int32_t>(m_Seconds / (60 * 60 * 24));
         }
 
-        inline int32_t Days() const
+        [[nodiscard]] inline int32_t Hours() const
         {
-            return m_Data.tm_mday;
+            return static_cast<int32_t>((m_Seconds / (60 * 60)) % 24);
         }
 
-        inline int32_t Hours() const
+        [[nodiscard]] inline double TotalHours() const
         {
-            return m_Data.tm_hour;
+            return m_Seconds / (60.0 * 60.0);
         }
 
-        inline int32_t Minutes() const
+        [[nodiscard]] inline int32_t Minutes() const
         {
-            return m_Data.tm_min;
+            return static_cast<int32_t>((m_Seconds / 60) % 60);
         }
 
-        inline int32_t Seconds() const
+        [[nodiscard]] inline double TotalMinutes() const
         {
-            auto s = m_Data.tm_sec;
-            if (s == 60)
-                return 0;
-            return s;
+            return m_Seconds / 60.0;
         }
 
-        inline int64_t TotalSeconds() const
+        [[nodiscard]] inline int32_t Seconds() const
         {
-            auto copy = m_Data;
-            return mktime(&copy);
+            return static_cast<int32_t>(m_Seconds % 60);
         }
 
-        inline static TimeSpan FromSeconds(time_t seconds)
+        [[nodiscard]] inline TimeValue TotalSeconds() const
+        {
+            return m_Seconds;
+        }
+
+        [[nodiscard]] inline bool Empty() const
+        {
+            return m_Seconds == 0;
+        }
+
+        [[nodiscard]] inline TimeSpan operator-() const
+        {
+            return TimeSpan{ -m_Seconds };
+        }
+
+        [[nodiscard]] inline friend TimeSpan operator+(TimeSpan lhs, TimeSpan rhs)
+        {
+            return TimeSpan{ lhs.m_Seconds + rhs.m_Seconds };
+        }
+
+        [[nodiscard]] inline friend TimeSpan operator-(TimeSpan lhs, TimeSpan rhs)
+        {
+            return TimeSpan{ lhs.m_Seconds - rhs.m_Seconds };
+        }
+
+        [[nodiscard]] inline static TimeSpan FromSeconds(TimeValue seconds)
         {
             return TimeSpan(seconds);
         }

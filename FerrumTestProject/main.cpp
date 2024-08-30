@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileHandle.h>
@@ -38,7 +38,7 @@ class TestJob : public FE::Job
 public:
     int id;
 
-    explicit TestJob(int i, FE::JobPriority priority = FE::JobPriority::Normal)
+    explicit TestJob(int i, FE::JobPriority priority = FE::JobPriority::kNormal)
         : FE::Job(priority, false)
         , id(i)
     {
@@ -154,7 +154,7 @@ public:
         {
             testJobs.Emplace(i).Schedule();
         }
-        testJobs.Emplace(999999, FE::JobPriority::Highest).Schedule();
+        testJobs.Emplace(999999, FE::JobPriority::kHighest).Schedule();
 
         FE_LOG_MESSAGE("Counter: {}", JobCounter);
 
@@ -197,7 +197,7 @@ public:
             // clang-format on
             vertexSize          = vertexData.Size() * sizeof(Vertex);
             vertexBufferStaging = m_Device->CreateBuffer(HAL::BufferDesc(vertexSize, HAL::BindFlags::None));
-            vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+            vertexBufferStaging->AllocateMemory(HAL::MemoryType::kHostVisible);
             vertexBufferStaging->UpdateData(vertexData.Data());
 
             m_VertexBuffer = m_ResourceHeap->CreateBuffer(
@@ -207,7 +207,7 @@ public:
             FE::List<uint32_t> indexData = { 0, 2, 3, 3, 2, 1 };
             indexSize                      = indexData.Size() * sizeof(uint32_t);
             indexBufferStaging             = m_Device->CreateBuffer(HAL::BufferDesc(indexSize, HAL::BindFlags::None));
-            indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+            indexBufferStaging->AllocateMemory(HAL::MemoryType::kHostVisible);
             indexBufferStaging->UpdateData(indexData.Data());
 
             m_IndexBuffer = m_ResourceHeap->CreateBuffer(
@@ -217,7 +217,7 @@ public:
             FE::Color constantData = FE::Colors::White;
             constantData *= 0.7f;
             m_ConstantBuffer = m_Device->CreateBuffer(HAL::BufferDesc(sizeof(FE::Vector4F), HAL::BindFlags::ConstantBuffer));
-            m_ConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
+            m_ConstantBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
             m_ConstantBuffer->UpdateData(constantData.Data());
         }
 
@@ -234,25 +234,25 @@ public:
 
         HAL::ShaderCompilerArgs psArgs{};
         psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
-        psArgs.Stage      = HAL::ShaderStage::Pixel;
+        psArgs.Stage      = HAL::ShaderStage::kPixel;
         psArgs.EntryPoint = "main";
         psArgs.FullPath   = "../../FerrumTestProject/Shaders/PixelShader.hlsl";
         auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
         psArgs.SourceCode = psSource;
         auto psByteCode   = compiler->CompileShader(psArgs);
 
-        m_PixelShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
+        m_PixelShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kPixel, psByteCode));
 
         HAL::ShaderCompilerArgs vsArgs{};
         vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
-        vsArgs.Stage      = HAL::ShaderStage::Vertex;
+        vsArgs.Stage      = HAL::ShaderStage::kVertex;
         vsArgs.EntryPoint = "main";
         vsArgs.FullPath   = "../../FerrumTestProject/Shaders/VertexShader.hlsl";
         auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
         vsArgs.SourceCode = vsSource;
         auto vsByteCode   = compiler->CompileShader(vsArgs);
 
-        m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+        m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kVertex, vsByteCode));
 
         HAL::RenderPassDesc renderPassDesc{};
 
@@ -260,13 +260,13 @@ public:
         attachmentDesc.Format       = m_SwapChain->GetDesc().Format;
         attachmentDesc.StoreOp      = HAL::AttachmentStoreOp::Store;
         attachmentDesc.LoadOp       = HAL::AttachmentLoadOp::Clear;
-        attachmentDesc.InitialState = HAL::ResourceState::Undefined;
-        attachmentDesc.FinalState   = HAL::ResourceState::Present;
+        attachmentDesc.InitialState = HAL::ResourceState::kUndefined;
+        attachmentDesc.FinalState   = HAL::ResourceState::kPresent;
 
         renderPassDesc.Attachments = FE::festd::span(&attachmentDesc, 1);
 
         HAL::SubpassDesc subpassDesc{};
-        subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
+        subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::kRenderTarget, 0) };
         renderPassDesc.Subpasses            = FE::festd::span(&subpassDesc, 1);
 
         HAL::SubpassDependency dependency{};
@@ -280,14 +280,14 @@ public:
         descriptorHeapDesc.Sizes     = FE::festd::span(&descriptorHeapSize, 1);
         m_DescriptorHeap             = m_Device->CreateDescriptorHeap(descriptorHeapDesc);
 
-        HAL::DescriptorDesc descriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
+        HAL::DescriptorDesc descriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::kPixel, 1);
         m_DescriptorTable = m_DescriptorHeap->AllocateDescriptorTable({ descriptorDesc });
 
         m_DescriptorTable->Update(HAL::DescriptorWriteBuffer(m_ConstantBuffer.Get()));
 
         HAL::GraphicsPipelineDesc pipelineDesc{};
-        pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
-                                       .AddBuffer(HAL::InputStreamRate::PerVertex)
+        pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::kTriangleList)
+                                       .AddBuffer(HAL::InputStreamRate::kPerVertex)
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "COLOR")
                                        .Build()
@@ -303,7 +303,7 @@ public:
         pipelineDesc.Viewport               = m_Viewport;
         pipelineDesc.Scissor                = m_Scissor;
         pipelineDesc.Rasterization          = HAL::RasterizationState{};
-        pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+        pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::kBack;
 
         m_Pipeline = m_Device->CreateGraphicsPipeline(pipelineDesc);
 

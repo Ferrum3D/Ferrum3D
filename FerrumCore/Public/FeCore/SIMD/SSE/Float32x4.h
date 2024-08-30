@@ -1,21 +1,12 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/RTTI/RTTI.h>
 #include <FeCore/SIMD/SIMDIntrin.h>
 
 #ifdef FE_SSE3_SUPPORTED
 namespace FE::SIMD::SSE
 {
-    // Separate definitions and declarations, so that compiler explorer will show assembly for this code.
-
-    //! \brief A wrapper on SSE vector (`__m128`) that provides operator overloading.
-    //!
-    //! This struct provides interface that hides ugly _mm_XXX(...) functions and makes it easier to work with SIMD.
-    //! It also exists to provide scalar (non-SIMD) implementation for older processors.
-    //! The provided functions use SSE4.1, but it's planned to conditionally compile them for SSE3 only as an option.
-    struct Float32x4
+    struct Float32x4 final
     {
-        FE_RTTI_Base(Float32x4, "7A8BB7B4-0841-4D71-A81D-D3F76828F08F");
-
         inline static constexpr size_t ElementCount = 4; //!< Number of elements in a vector.
 
         __m128 Data; //!< Underlying SIMD vector type.
@@ -26,16 +17,16 @@ namespace FE::SIMD::SSE
 
         FE_FORCE_INLINE Float32x4(float value);
 
-        //! \brief Set Data = { x, y, 0, 0 }
+        //! @brief Set Data = { x, y, 0, 0 }
         FE_FORCE_INLINE Float32x4(float x, float y);
 
-        //! \brief Set Data = { x, y, z, 0 }
+        //! @brief Set Data = { x, y, z, 0 }
         FE_FORCE_INLINE Float32x4(float x, float y, float z);
 
-        //! \brief Set Data = { x, y, z, w }
+        //! @brief Set Data = { x, y, z, w }
         FE_FORCE_INLINE Float32x4(float x, float y, float z, float w);
 
-        //! \brief Get { 0, 0, 0, 0 }
+        //! @brief Get { 0, 0, 0, 0 }
         FE_FORCE_INLINE static Float32x4 GetZero() noexcept;
 
         template<size_t F3, size_t F2, size_t F1, size_t F0>
@@ -359,9 +350,9 @@ namespace FE::SIMD::SSE
     FE_FORCE_INLINE Float32x4 Float32x4::NegateXYZ() const noexcept
     {
         alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x00000000) };
+                                                          static_cast<int32_t>(0x80000000),
+                                                          static_cast<int32_t>(0x80000000),
+                                                          static_cast<int32_t>(0x00000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);
@@ -375,9 +366,9 @@ namespace FE::SIMD::SSE
     Float32x4 Float32x4::NegateW() const noexcept
     {
         alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x00000000),
-                                                        static_cast<int32_t>(0x00000000),
-                                                        static_cast<int32_t>(0x00000000),
-                                                        static_cast<int32_t>(0x80000000) };
+                                                          static_cast<int32_t>(0x00000000),
+                                                          static_cast<int32_t>(0x00000000),
+                                                          static_cast<int32_t>(0x80000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);
@@ -386,9 +377,9 @@ namespace FE::SIMD::SSE
     Float32x4 Float32x4::Negate() const noexcept
     {
         alignas(16) static constexpr int32_t values[] = { static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x80000000),
-                                                        static_cast<int32_t>(0x80000000) };
+                                                          static_cast<int32_t>(0x80000000),
+                                                          static_cast<int32_t>(0x80000000),
+                                                          static_cast<int32_t>(0x80000000) };
 
         static const auto mask = _mm_castsi128_ps(_mm_load_si128(reinterpret_cast<const __m128i*>(values)));
         return *this ^ Float32x4(mask);

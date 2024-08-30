@@ -22,7 +22,7 @@ namespace FE
         m_Semaphore.Acquire();
         m_Workers[workerIndex].ThreadID = GetCurrentThreadID();
 
-        const FiberHandle initialFiber = m_FiberPool.Rent(false);
+        const Threading::FiberHandle initialFiber = m_FiberPool.Rent(false);
         m_Workers[workerIndex].CurrentFiber = initialFiber;
         m_Workers[workerIndex].PrevFiber.Reset();
         m_FiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this));
@@ -46,7 +46,7 @@ namespace FE
                 ZoneNamed(TryDequeue, true);
                 for (uint32_t attempt = 0; attempt < 8; ++attempt)
                 {
-                    for (int32_t queueIndex = enum_cast(JobPriority::High); queueIndex >= 0; --queueIndex)
+                    for (int32_t queueIndex = enum_cast(JobPriority::kHigh); queueIndex >= 0; --queueIndex)
                     {
                         JobQueue& queue = m_JobQueues[queueIndex];
                         std::lock_guard lk{ queue.Lock };
@@ -121,8 +121,7 @@ namespace FE
         m_Workers.reserve(workerCount + 1);
         for (int32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
         {
-            // TODO: fixed strings
-            const String threadName = Fmt::Format("Worker {}", workerIndex);
+            const auto threadName = Fmt::FixedFormat("Worker {}", workerIndex);
             const auto threadFunc = [](uintptr_t workerIndex) {
                 fe_assert_cast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
                     ->ThreadProc(static_cast<uint32_t>(workerIndex));
@@ -146,7 +145,7 @@ namespace FE
 
     void JobSystem::Start()
     {
-        const FiberHandle initialFiber = m_FiberPool.Rent(false);
+        const Threading::FiberHandle initialFiber = m_FiberPool.Rent(false);
         Worker& mainThread = m_Workers.push_back();
         mainThread.ThreadID = GetCurrentThreadID();
         mainThread.CurrentFiber = initialFiber;

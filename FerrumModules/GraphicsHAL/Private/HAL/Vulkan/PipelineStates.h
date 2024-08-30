@@ -6,22 +6,8 @@ namespace FE::Graphics::Vulkan
 {
     inline VkSampleCountFlagBits GetVKSampleCountFlags(int32_t sampleCount)
     {
-        switch (sampleCount)
-        {
-        case 1:
-            return VK_SAMPLE_COUNT_1_BIT;
-        case 2:
-            return VK_SAMPLE_COUNT_2_BIT;
-        case 4:
-            return VK_SAMPLE_COUNT_4_BIT;
-        case 8:
-            return VK_SAMPLE_COUNT_8_BIT;
-        case 16:
-            return VK_SAMPLE_COUNT_16_BIT;
-        default:
-            FE_UNREACHABLE("Invalid Sample count");
-            return VK_SAMPLE_COUNT_1_BIT;
-        }
+        FE_AssertDebug(sampleCount <= 64 && Math::IsPowerOfTwo(sampleCount));
+        return static_cast<VkSampleCountFlagBits>(sampleCount);
     }
 
 
@@ -29,18 +15,18 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::BlendOperation::Add:
+        case HAL::BlendOperation::kAdd:
             return VK_BLEND_OP_ADD;
-        case HAL::BlendOperation::Subtract:
+        case HAL::BlendOperation::kSubtract:
             return VK_BLEND_OP_SUBTRACT;
-        case HAL::BlendOperation::ReverseSubtract:
+        case HAL::BlendOperation::kReverseSubtract:
             return VK_BLEND_OP_REVERSE_SUBTRACT;
-        case HAL::BlendOperation::Min:
+        case HAL::BlendOperation::kMin:
             return VK_BLEND_OP_MIN;
-        case HAL::BlendOperation::Max:
+        case HAL::BlendOperation::kMax:
             return VK_BLEND_OP_MAX;
         default:
-            FE_UNREACHABLE("Invalid BlendOp");
+            FE_AssertMsg(false, "Invalid BlendOp");
             return VK_BLEND_OP_MAX_ENUM;
         }
     }
@@ -49,61 +35,62 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::BlendFactor::Zero:
+        case HAL::BlendFactor::kZero:
             return VK_BLEND_FACTOR_ZERO;
-        case HAL::BlendFactor::One:
+        case HAL::BlendFactor::kOne:
             return VK_BLEND_FACTOR_ONE;
-        case HAL::BlendFactor::SrcColor:
+        case HAL::BlendFactor::kSrcColor:
             return VK_BLEND_FACTOR_SRC_COLOR;
-        case HAL::BlendFactor::OneMinusSrcColor:
+        case HAL::BlendFactor::kOneMinusSrcColor:
             return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        case HAL::BlendFactor::DstColor:
+        case HAL::BlendFactor::kDstColor:
             return VK_BLEND_FACTOR_DST_COLOR;
-        case HAL::BlendFactor::OneMinusDstColor:
+        case HAL::BlendFactor::kOneMinusDstColor:
             return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-        case HAL::BlendFactor::SrcAlpha:
+        case HAL::BlendFactor::kSrcAlpha:
             return VK_BLEND_FACTOR_SRC_ALPHA;
-        case HAL::BlendFactor::OneMinusSrcAlpha:
+        case HAL::BlendFactor::kOneMinusSrcAlpha:
             return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        case HAL::BlendFactor::DstAlpha:
+        case HAL::BlendFactor::kDstAlpha:
             return VK_BLEND_FACTOR_DST_ALPHA;
-        case HAL::BlendFactor::OneMinusDstAlpha:
+        case HAL::BlendFactor::kOneMinusDstAlpha:
             return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-        case HAL::BlendFactor::ConstantColor:
+        case HAL::BlendFactor::kConstantColor:
             return VK_BLEND_FACTOR_CONSTANT_COLOR;
-        case HAL::BlendFactor::OneMinusConstantColor:
+        case HAL::BlendFactor::kOneMinusConstantColor:
             return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-        case HAL::BlendFactor::ConstantAlpha:
+        case HAL::BlendFactor::kConstantAlpha:
             return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-        case HAL::BlendFactor::OneMinusConstantAlpha:
+        case HAL::BlendFactor::kOneMinusConstantAlpha:
             return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-        case HAL::BlendFactor::SrcAlphaSaturate:
+        case HAL::BlendFactor::kSrcAlphaSaturate:
             return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-        case HAL::BlendFactor::Src1Color:
+        case HAL::BlendFactor::kSrc1Color:
             return VK_BLEND_FACTOR_SRC1_COLOR;
-        case HAL::BlendFactor::OneMinusSrc1Color:
+        case HAL::BlendFactor::kOneMinusSrc1Color:
             return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-        case HAL::BlendFactor::Src1Alpha:
+        case HAL::BlendFactor::kSrc1Alpha:
             return VK_BLEND_FACTOR_SRC1_ALPHA;
-        case HAL::BlendFactor::OneMinusSrc1Alpha:
+        case HAL::BlendFactor::kOneMinusSrc1Alpha:
             return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
         default:
-            FE_UNREACHABLE("Invalid BlendFactor");
+            FE_AssertMsg(false, "Invalid BlendFactor");
             return VK_BLEND_FACTOR_MAX_ENUM;
         }
     }
 
     inline VkColorComponentFlags VKConvert(HAL::ColorComponentFlags source)
     {
-        auto result = static_cast<VkColorComponentFlags>(0);
-#define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
-    if ((source & HAL::ColorComponentFlags::ferrum) != HAL::ColorComponentFlags::None)                                           \
-    result |= VK_COLOR_COMPONENT_##vulkan##_BIT
-        FE_CVT_ENTRY(Red, R);
-        FE_CVT_ENTRY(Green, G);
-        FE_CVT_ENTRY(Blue, B);
-        FE_CVT_ENTRY(Alpha, A);
-#undef FE_CVT_ENTRY
+        VkColorComponentFlags result = VK_FLAGS_NONE;
+        if ((source & HAL::ColorComponentFlags::kRed) != HAL::ColorComponentFlags::kNone)
+            result |= VK_COLOR_COMPONENT_R_BIT;
+        if ((source & HAL::ColorComponentFlags::kGreen) != HAL::ColorComponentFlags::kNone)
+            result |= VK_COLOR_COMPONENT_G_BIT;
+        if ((source & HAL::ColorComponentFlags::kBlue) != HAL::ColorComponentFlags::kNone)
+            result |= VK_COLOR_COMPONENT_B_BIT;
+        if ((source & HAL::ColorComponentFlags::kAlpha) != HAL::ColorComponentFlags::kNone)
+            result |= VK_COLOR_COMPONENT_A_BIT;
+
         return result;
     }
 
@@ -111,24 +98,24 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::CompareOp::Never:
+        case HAL::CompareOp::kNever:
             return VK_COMPARE_OP_NEVER;
-        case HAL::CompareOp::Always:
+        case HAL::CompareOp::kAlways:
             return VK_COMPARE_OP_ALWAYS;
-        case HAL::CompareOp::Less:
+        case HAL::CompareOp::kLess:
             return VK_COMPARE_OP_LESS;
-        case HAL::CompareOp::Equal:
+        case HAL::CompareOp::kEqual:
             return VK_COMPARE_OP_EQUAL;
-        case HAL::CompareOp::LessEqual:
+        case HAL::CompareOp::kLessEqual:
             return VK_COMPARE_OP_LESS_OR_EQUAL;
-        case HAL::CompareOp::Greater:
+        case HAL::CompareOp::kGreater:
             return VK_COMPARE_OP_GREATER;
-        case HAL::CompareOp::NotEqual:
+        case HAL::CompareOp::kNotEqual:
             return VK_COMPARE_OP_NOT_EQUAL;
-        case HAL::CompareOp::GreaterEqual:
+        case HAL::CompareOp::kGreaterEqual:
             return VK_COMPARE_OP_GREATER_OR_EQUAL;
         default:
-            FE_UNREACHABLE("Invalid CompareOp");
+            FE_AssertMsg(false, "Invalid CompareOp");
             return VK_COMPARE_OP_MAX_ENUM;
         }
     }
@@ -137,26 +124,26 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::PolygonMode::Fill:
+        case HAL::PolygonMode::kFill:
             return VK_POLYGON_MODE_FILL;
-        case HAL::PolygonMode::Line:
+        case HAL::PolygonMode::kLine:
             return VK_POLYGON_MODE_LINE;
-        case HAL::PolygonMode::Point:
+        case HAL::PolygonMode::kPoint:
             return VK_POLYGON_MODE_POINT;
         default:
-            FE_UNREACHABLE("Invalid PolygonMode");
+            FE_AssertMsg(false, "Invalid PolygonMode");
             return VK_POLYGON_MODE_MAX_ENUM;
         }
     }
 
     inline VkCullModeFlags VKConvert(HAL::CullingModeFlags source)
     {
-        auto result = 0;
-        if ((source & HAL::CullingModeFlags::Front) != HAL::CullingModeFlags::None)
+        VkCullModeFlags result = 0;
+        if ((source & HAL::CullingModeFlags::kFront) != HAL::CullingModeFlags::kNone)
         {
             result |= VK_CULL_MODE_FRONT_BIT;
         }
-        if ((source & HAL::CullingModeFlags::Back) != HAL::CullingModeFlags::None)
+        if ((source & HAL::CullingModeFlags::kBack) != HAL::CullingModeFlags::kNone)
         {
             result |= VK_CULL_MODE_BACK_BIT;
         }
@@ -167,18 +154,18 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::PrimitiveTopology::PointList:
+        case HAL::PrimitiveTopology::kPointList:
             return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case HAL::PrimitiveTopology::LineList:
+        case HAL::PrimitiveTopology::kLineList:
             return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case HAL::PrimitiveTopology::LineStrip:
+        case HAL::PrimitiveTopology::kLineStrip:
             return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case HAL::PrimitiveTopology::TriangleList:
+        case HAL::PrimitiveTopology::kTriangleList:
             return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case HAL::PrimitiveTopology::TriangleStrip:
+        case HAL::PrimitiveTopology::kTriangleStrip:
             return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         default:
-            FE_UNREACHABLE("Invalid PrimitiveTopology");
+            FE_AssertMsg(false, "Invalid PrimitiveTopology");
             return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         }
     }
@@ -187,12 +174,12 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::InputStreamRate::PerVertex:
+        case HAL::InputStreamRate::kPerVertex:
             return VK_VERTEX_INPUT_RATE_VERTEX;
-        case HAL::InputStreamRate::PerInstance:
+        case HAL::InputStreamRate::kPerInstance:
             return VK_VERTEX_INPUT_RATE_INSTANCE;
         default:
-            FE_UNREACHABLE("Invalid InputStreamRate");
+            FE_AssertMsg(false, "Invalid InputStreamRate");
             return VK_VERTEX_INPUT_RATE_MAX_ENUM;
         }
     }

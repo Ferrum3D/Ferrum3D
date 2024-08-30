@@ -1,5 +1,5 @@
-﻿#include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/ByteBuffer.h>
+﻿#include <FeCore/Containers/ByteBuffer.h>
+#include <FeCore/Logging/Trace.h>
 #include <HAL/ShaderCompilerDXC.h>
 #include <d3d12shader.h>
 
@@ -53,22 +53,22 @@ namespace FE::Graphics::HAL
         std::basic_stringstream<wchar_t, std::char_traits<wchar_t>, Memory::StdDefaultAllocator<wchar_t>> result;
         switch (stage)
         {
-        case ShaderStage::Vertex:
+        case ShaderStage::kVertex:
             result << L"vs_";
             break;
-        case ShaderStage::Pixel:
+        case ShaderStage::kPixel:
             result << L"ps_";
             break;
-        case ShaderStage::Hull:
+        case ShaderStage::kHull:
             result << L"hs_";
             break;
-        case ShaderStage::Domain:
+        case ShaderStage::kDomain:
             result << L"ds_";
             break;
-        case ShaderStage::Geometry:
+        case ShaderStage::kGeometry:
             result << L"gs_";
             break;
-        case ShaderStage::Compute:
+        case ShaderStage::kCompute:
             result << L"cs_";
             break;
         }
@@ -77,8 +77,9 @@ namespace FE::Graphics::HAL
         return std::pmr::wstring{ result.str() };
     }
 
-    ShaderCompilerDXC::ShaderCompilerDXC(GraphicsAPI api)
+    ShaderCompilerDXC::ShaderCompilerDXC(Logger* logger, GraphicsAPI api)
         : m_API(api)
+        , m_logger(logger)
     {
         m_Module.Load("dxcompiler");
     }
@@ -95,7 +96,7 @@ namespace FE::Graphics::HAL
         HRESULT result = createInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library));
         if (FAILED(result))
         {
-            FE_LOG_ERROR("Couldn't create a DXC library");
+            m_logger->LogError("Couldn't create a DXC library");
             return {};
         }
 
@@ -103,7 +104,7 @@ namespace FE::Graphics::HAL
         result = createInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
         if (FAILED(result))
         {
-            FE_LOG_ERROR("Couldn't create a DXC compiler");
+            m_logger->LogError("Couldn't create a DXC compiler");
             return {};
         }
 
@@ -112,7 +113,7 @@ namespace FE::Graphics::HAL
         result = library->CreateBlobWithEncodingFromPinned(args.SourceCode.Data(), sourceSize, CP_UTF8, &source);
         if (FAILED(result))
         {
-            FE_LOG_ERROR("Couldn't create a DXC Blob encoding");
+            m_logger->LogError("Couldn't create a DXC Blob encoding");
             return {};
         }
 
@@ -172,7 +173,7 @@ namespace FE::Graphics::HAL
         if (SUCCEEDED(result))
         {
             CComPtr<IDxcBlob> byteCode;
-            FE_ASSERT(SUCCEEDED(compileResult->GetResult(&byteCode)));
+            FE_Assert(SUCCEEDED(compileResult->GetResult(&byteCode)));
             auto bufferPtr = static_cast<uint8_t*>(byteCode->GetBufferPointer());
             returnValue.assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
         }
@@ -183,7 +184,7 @@ namespace FE::Graphics::HAL
             if (SUCCEEDED(compileResult->GetErrorBuffer(&errors)) && SUCCEEDED(library->GetBlobAsUtf8(errors, &unicodeErrors)))
             {
                 auto errorString = static_cast<const char*>(unicodeErrors->GetBufferPointer());
-                FE_LOG_ERROR("Shader compilation failed: {}", StringSlice(errorString));
+                m_logger->LogError("Shader compilation failed: {}", StringSlice(errorString));
             }
         }
 

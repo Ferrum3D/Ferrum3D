@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief Represents a nullable index, where 0 can be valid. Used mostly for virtual GPU allocations.
+    //! @brief Represents a nullable index, where 0 can be valid. Used mostly for virtual GPU allocations.
     class NullableHandle final
     {
         size_t m_Handle;
@@ -14,55 +14,55 @@ namespace FE
         }
 
     public:
-        //! \brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
+        //! @brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
         inline NullableHandle()
             : NullableHandle(static_cast<size_t>(-1))
         {
         }
 
-        //! \brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
+        //! @brief Get a NULL value, that holds 0xFFFFFFFFFFFFFFFF
         [[nodiscard]] inline static NullableHandle Null()
         {
             return NullableHandle(static_cast<size_t>(-1));
         }
 
-        //! \brief Get a zero value (not considered NULL!).
+        //! @brief Get a zero value (not considered NULL!).
         [[nodiscard]] inline static NullableHandle Zero()
         {
             return NullableHandle(0);
         }
 
-        //! \brief Create a handle from pointer.
+        //! @brief Create a handle from pointer.
         [[nodiscard]] inline static NullableHandle FromPtr(void* ptr)
         {
             return NullableHandle(reinterpret_cast<size_t>(ptr));
         }
 
-        //! \brief Create a handle from integral offset.
+        //! @brief Create a handle from integral offset.
         [[nodiscard]] inline static NullableHandle FromOffset(size_t offset)
         {
             return NullableHandle(offset);
         }
 
-        //! \brief Convert to pointer. NullableHandle::Null() becomes nullptr.
+        //! @brief Convert to pointer. NullableHandle::Null() becomes nullptr.
         [[nodiscard]] inline void* ToPtr() const
         {
             return IsNull() ? nullptr : reinterpret_cast<void*>(m_Handle);
         }
 
-        //! \brief Get underlying integral value.
+        //! @brief Get underlying integral value.
         [[nodiscard]] inline size_t ToOffset() const
         {
             return m_Handle;
         }
 
-        //! \brief Check if the handle is NULL.
+        //! @brief Check if the handle is NULL.
         [[nodiscard]] inline bool IsNull() const
         {
             return m_Handle == static_cast<size_t>(-1);
         }
 
-        //! \brief Check if the handle is not NULL.
+        //! @brief Check if the handle is not NULL.
         [[nodiscard]] inline bool IsValid() const
         {
             return m_Handle != static_cast<size_t>(-1);
@@ -73,7 +73,7 @@ namespace FE
             return IsValid();
         }
 
-        //! \brief Reset the value to NULL.
+        //! @brief Reset the value to NULL.
         inline void Reset()
         {
             m_Handle = static_cast<size_t>(-1);

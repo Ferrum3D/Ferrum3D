@@ -28,10 +28,10 @@ namespace FE::Graphics::HAL
         AttachmentLoadOp StencilLoadOp = AttachmentLoadOp::DontCare;
         AttachmentStoreOp StencilStoreOp = AttachmentStoreOp::DontCare;
 
-        Format Format = Format::None;
+        Format Format = Format::kUndefined;
 
-        ResourceState InitialState = ResourceState::Undefined;
-        ResourceState FinalState = ResourceState::Undefined;
+        ResourceState InitialState = ResourceState::kUndefined;
+        ResourceState FinalState = ResourceState::kUndefined;
 
         int32_t SampleCount = 1;
     };
@@ -39,7 +39,7 @@ namespace FE::Graphics::HAL
 
     struct SubpassAttachment
     {
-        ResourceState State = ResourceState::Undefined;
+        ResourceState State = ResourceState::kUndefined;
         uint32_t Index = static_cast<uint32_t>(-1);
 
         SubpassAttachment() = default;
@@ -76,12 +76,12 @@ namespace FE::Graphics::HAL
     struct SubpassDependency
     {
         uint32_t SourceSubpassIndex = static_cast<uint32_t>(-1);
-        PipelineStageFlags SourcePipelineStage = PipelineStageFlags::ColorAttachmentOutput;
-        ResourceState SourceState = ResourceState::Common;
+        PipelineStageFlags SourcePipelineStage = PipelineStageFlags::kColorAttachmentOutput;
+        ResourceState SourceState = ResourceState::kCommon;
 
         uint32_t DestinationSubpassIndex = 0;
-        PipelineStageFlags DestinationPipelineStage = PipelineStageFlags::ColorAttachmentOutput;
-        ResourceState DestinationState = ResourceState::RenderTarget;
+        PipelineStageFlags DestinationPipelineStage = PipelineStageFlags::kColorAttachmentOutput;
+        ResourceState DestinationState = ResourceState::kRenderTarget;
     };
 
 

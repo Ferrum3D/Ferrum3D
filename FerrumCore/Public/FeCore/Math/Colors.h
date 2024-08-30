@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief Named colors from CSS3 specification
+    //! @brief Named colors from CSS3 specification
     struct Colors
     {
         //=========================================================================================

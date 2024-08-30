@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <FeCore/Console/FeLog.h>
 #include <FeCore/Containers/ByteBuffer.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Strings/FixedString.h>
 #include <HAL/DeviceObject.h>
 #include <HAL/ShaderStage.h>
@@ -13,12 +13,12 @@ namespace FE::Graphics::HAL
     {
         festd::span<const uint8_t> ByteCode;
         FixStr32 EntryPoint;
-        ShaderStage Stage = ShaderStage::Vertex;
+        ShaderStage Stage = ShaderStage::kVertex;
 
         inline ShaderModuleDesc() = default;
 
-        inline ShaderModuleDesc(ShaderStage stage, const ByteBuffer& byteCode)
-            : ByteCode(byteCode.Data(), byteCode.Size())
+        inline ShaderModuleDesc(ShaderStage stage, festd::span<const uint8_t> byteCode)
+            : ByteCode(byteCode)
             , EntryPoint("main")
             , Stage(stage)
         {

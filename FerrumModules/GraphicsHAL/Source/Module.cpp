@@ -24,7 +24,7 @@ namespace FE::Graphics::HAL
 
             DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
             Env::Configuration* pConfig = pServiceProvider->ResolveRequired<Env::Configuration>();
-            Debug::IConsoleLogger* pLogger = pServiceProvider->ResolveRequired<Debug::IConsoleLogger>();
+            Logger* pLogger = pServiceProvider->ResolveRequired<Logger>();
             const StringSlice apiName = pConfig->GetString("Graphics/Api", "Vulkan");
             if (apiName == "Vulkan")
             {
@@ -36,7 +36,7 @@ namespace FE::Graphics::HAL
             }
             else
             {
-                FE_UNREACHABLE("Unknown graphics API:\"{}\"", apiName);
+                FE_AssertMsg(false, "Unknown graphics API:\"{}\"", apiName);
             }
         }
     };

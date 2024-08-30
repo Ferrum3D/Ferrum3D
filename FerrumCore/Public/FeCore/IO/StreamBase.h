@@ -1,119 +1,128 @@
 ﻿#pragma once
 #include <FeCore/IO/IStream.h>
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 
 namespace FE::IO
 {
-    class StreamBase : public IStream
+    struct StreamBase : public IStream
     {
-    public:
         FE_RTTI_Class(StreamBase, "2F74FF8D-4D81-44BE-962A-9D30669E03C8");
 
         ~StreamBase() override = default;
 
+        inline bool WriteAllowed() const override
+        {
+            return IsWriteAllowed(GetOpenMode());
+        }
+
+        inline bool ReadAllowed() const override
+        {
+            return IsReadAllowed(GetOpenMode());
+        }
+
         inline size_t WriteFromStream(IStream* stream, size_t size) override
         {
-            FE_ASSERT_MSG(stream, "Stream was nullptr");
-            FE_ASSERT_MSG(stream->ReadAllowed(), "Source stream was write-only");
-            FE_ASSERT_MSG(WriteAllowed(), "Destination stream was read-only");
-            FE_ASSERT_MSG(stream != this, "Destination and source streams are the same");
+            FE_AssertMsg(stream, "Stream was nullptr");
+            FE_AssertMsg(stream->ReadAllowed(), "Source stream was write-only");
+            FE_AssertMsg(WriteAllowed(), "Destination stream was read-only");
+            FE_AssertMsg(stream != this, "Destination and source streams are the same");
 
-            static constexpr size_t tempSize = 128;
-            int8_t temp[tempSize];
+            std::byte tempBuffer[512];
             size_t result = 0;
 
-            for (size_t offset = 0; offset < size; offset += tempSize)
+            for (size_t offset = 0; offset < size; offset += sizeof(tempBuffer))
             {
-                auto remaining = size - offset;
-                auto currentSize = std::min(remaining, tempSize);
-                stream->ReadToBuffer(temp, currentSize);
-                result += WriteFromBuffer(temp, currentSize);
+                const size_t remaining = size - offset;
+                const size_t currentSize = std::min(remaining, sizeof(tempBuffer));
+                stream->ReadToBuffer({ tempBuffer, static_cast<uint32_t>(currentSize) });
+                result += WriteFromBuffer({ tempBuffer, static_cast<uint32_t>(currentSize) });
             }
 
             return result;
         }
+
+        inline void FlushWrites() override {}
+
+        inline FileStats GetStats() const override
+        {
+            FE_AssertMsg(false, "Not supported");
+            return {};
+        }
     };
 
-    class RStreamBase : public StreamBase
+
+    class BufferedStream : public StreamBase
     {
+    protected:
+        std::pmr::memory_resource* m_pBufferAllocator = nullptr;
+        std::byte* m_pBuffer = nullptr;
+        uint32_t m_BufferCapacity = 1024;
+        uint32_t m_BufferPosition = 0;
+
+        inline BufferedStream(std::pmr::memory_resource* pBufferAllocator)
+        {
+            SetBufferAllocator(pBufferAllocator);
+        }
+
+        virtual size_t WriteImpl(festd::span<const std::byte> buffer) = 0;
+
     public:
-        FE_RTTI_Class(RStreamBase, "339049F5-E6B9-481F-9AC5-4690EDDAF0F5");
-
-        ~RStreamBase() override = default;
-
-        [[nodiscard]] inline bool WriteAllowed() const noexcept override
+        inline ~BufferedStream()
         {
-            return false;
+            if (m_pBuffer)
+            {
+                m_pBufferAllocator->deallocate(m_pBuffer, m_BufferCapacity, Memory::kDefaultAlignment);
+                m_pBuffer = nullptr;
+            }
         }
 
-        [[nodiscard]] inline bool ReadAllowed() const noexcept override
+        inline void SetBufferSize(uint32_t byteSize)
         {
-            return true;
+            if (m_pBuffer != nullptr)
+            {
+                FlushWrites();
+                m_pBufferAllocator->deallocate(m_pBuffer, m_BufferCapacity, Memory::kDefaultAlignment);
+            }
+
+            FE_Assert(m_BufferPosition == 0);
+            m_BufferCapacity = byteSize;
         }
 
-        inline size_t WriteFromBuffer([[maybe_unused]] const void* buffer, [[maybe_unused]] size_t size) override
+        inline void EnsureBufferAllocated()
         {
-            FE_UNREACHABLE("Stream {} is read-only", GetName());
-            return 0;
+            if (m_pBuffer == nullptr)
+                m_pBuffer = Memory::AllocateArray<std::byte>(m_pBufferAllocator, m_BufferCapacity, Memory::kDefaultAlignment);
         }
 
-        inline size_t WriteFromStream([[maybe_unused]] IStream* stream, [[maybe_unused]] size_t size) override
+        inline void SetBufferAllocator(std::pmr::memory_resource* pBufferAllocator)
         {
-            FE_UNREACHABLE("Stream {} is read-only", GetName());
-            return 0;
+            FE_CORE_ASSERT(m_pBuffer == nullptr, "Buffer already allocated");
+
+            if (pBufferAllocator == nullptr)
+                pBufferAllocator = std::pmr::get_default_resource();
+            m_pBufferAllocator = pBufferAllocator;
         }
 
-        [[nodiscard]] inline OpenMode GetOpenMode() const override
+        inline size_t WriteFromBuffer(festd::span<const std::byte> buffer) final
         {
-            return OpenMode::ReadOnly;
+            EnsureBufferAllocated();
+
+            if (m_BufferPosition + buffer.size() > m_BufferCapacity)
+                FlushWrites();
+
+            if (buffer.size() > m_BufferCapacity)
+                return WriteImpl(buffer);
+
+            Memory::Copy(buffer, festd::span{ m_pBuffer + m_BufferPosition, buffer.size() });
+            m_BufferPosition += buffer.size();
+            return buffer.size();
+        }
+
+        inline void FlushWrites() final
+        {
+            const size_t bytesWritten = WriteImpl({ m_pBuffer, m_BufferPosition });
+            FE_Assert(bytesWritten == m_BufferPosition);
+            m_BufferPosition = 0;
         }
     };
-
-    class WStreamBase : public StreamBase
-    {
-    public:
-        FE_RTTI_Class(WStreamBase, "41056CA7-2943-4473-8041-3D4DB12619E3");
-
-        [[nodiscard]] inline bool WriteAllowed() const noexcept override
-        {
-            return true;
-        }
-
-        [[nodiscard]] inline bool ReadAllowed() const noexcept override
-        {
-            return false;
-        }
-
-        [[nodiscard]] inline bool SeekAllowed() const noexcept override
-        {
-            return false;
-        }
-
-        inline ResultCode Seek([[maybe_unused]] ptrdiff_t offset, [[maybe_unused]] SeekMode seekMode) override
-        {
-            FE_UNREACHABLE("Stream {} is write-only", GetName());
-            return ResultCode::InvalidSeek;
-        }
-
-        [[nodiscard]] inline size_t Tell() const override
-        {
-            return 0;
-        }
-
-        [[nodiscard]] inline size_t Length() const override
-        {
-            return 0;
-        }
-
-        inline size_t ReadToBuffer([[maybe_unused]] void* buffer, [[maybe_unused]] size_t size) override
-        {
-            FE_UNREACHABLE("Stream {} is write-only", GetName());
-            return 0;
-        }
-
-        [[nodiscard]] inline OpenMode GetOpenMode() const override
-        {
-            return OpenMode::CreateNew;
-        }
-    };
-}
+} // namespace FE::IO

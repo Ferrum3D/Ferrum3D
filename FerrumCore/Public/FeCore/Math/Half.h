@@ -69,7 +69,7 @@ namespace FE
         } SEM; //!< Sign-Exponent-Mantissa
     };
 
-    //! \brief Half-precision floating point.
+    //! @brief Half-precision floating point.
     struct FeHalf
     {
         FE_RTTI_Base(FeHalf, "F6FB0AF8-5F42-4C0B-97D3-70079F094924");

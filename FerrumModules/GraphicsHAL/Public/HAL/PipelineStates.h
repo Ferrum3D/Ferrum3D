@@ -8,17 +8,17 @@ namespace FE::Graphics::HAL
 {
     enum class CullingMode
     {
-        Back,
-        Front
+        kBack,
+        kFront,
     };
 
 
     enum class CullingModeFlags
     {
-        None = 0,
-        Back = 1 << static_cast<uint32_t>(CullingMode::Back),
-        Front = 1 << static_cast<uint32_t>(CullingMode::Front),
-        BackAndFront = Back | Front
+        kNone = 0,
+        kBack = 1 << enum_cast(CullingMode::kBack),
+        kFront = 1 << enum_cast(CullingMode::kFront),
+        kBackAndFront = kBack | kFront,
     };
 
     FE_ENUM_OPERATORS(CullingModeFlags);
@@ -26,68 +26,68 @@ namespace FE::Graphics::HAL
 
     enum class PolygonMode
     {
-        None,
-        Fill,
-        Line,
-        Point
+        kNone,
+        kFill,
+        kLine,
+        kPoint,
     };
 
 
     enum class CompareOp
     {
-        Never,
-        Always,
-        Less,
-        Equal,
-        LessEqual,
-        Greater,
-        NotEqual,
-        GreaterEqual
+        kNever,
+        kAlways,
+        kLess,
+        kEqual,
+        kLessEqual,
+        kGreater,
+        kNotEqual,
+        kGreaterEqual,
     };
 
 
     enum class BlendFactor
     {
-        Zero,
-        One,
-        SrcColor,
-        OneMinusSrcColor,
-        DstColor,
-        OneMinusDstColor,
-        SrcAlpha,
-        OneMinusSrcAlpha,
-        DstAlpha,
-        OneMinusDstAlpha,
-        ConstantColor,
-        OneMinusConstantColor,
-        ConstantAlpha,
-        OneMinusConstantAlpha,
-        SrcAlphaSaturate,
-        Src1Color,
-        OneMinusSrc1Color,
-        Src1Alpha,
-        OneMinusSrc1Alpha,
+        kZero,
+        kOne,
+        kSrcColor,
+        kOneMinusSrcColor,
+        kDstColor,
+        kOneMinusDstColor,
+        kSrcAlpha,
+        kOneMinusSrcAlpha,
+        kDstAlpha,
+        kOneMinusDstAlpha,
+        kConstantColor,
+        kOneMinusConstantColor,
+        kConstantAlpha,
+        kOneMinusConstantAlpha,
+        kSrcAlphaSaturate,
+        kSrc1Color,
+        kOneMinusSrc1Color,
+        kSrc1Alpha,
+        kOneMinusSrc1Alpha,
     };
 
 
     enum class BlendOperation
     {
-        Add,
-        Subtract,
-        ReverseSubtract,
-        Min,
-        Max
+        kAdd,
+        kSubtract,
+        kReverseSubtract,
+        kMin,
+        kMax,
     };
 
 
     enum class ColorComponentFlags
     {
-        None = 0,
-        Red = 1 << 0,
-        Green = 1 << 1,
-        Blue = 1 << 2,
-        Alpha = 1 << 3,
-        All = Red | Green | Blue | Alpha
+        kNone = 0,
+        kRed = 1 << 0,
+        kGreen = 1 << 1,
+        kBlue = 1 << 2,
+        kAlpha = 1 << 3,
+        kAll = kRed | kGreen | kBlue | kAlpha,
     };
 
     FE_ENUM_OPERATORS(ColorComponentFlags);
@@ -95,8 +95,8 @@ namespace FE::Graphics::HAL
 
     struct RasterizationState
     {
-        CullingModeFlags CullMode = CullingModeFlags::None;
-        PolygonMode PolyMode = PolygonMode::Fill;
+        CullingModeFlags CullMode = CullingModeFlags::kNone;
+        PolygonMode PolyMode = PolygonMode::kFill;
         bool DepthClampEnabled = false;
         bool DepthBiasEnabled = false;
         bool RasterDiscardEnabled = false;
@@ -122,7 +122,7 @@ namespace FE::Graphics::HAL
 
     struct DepthStencilState
     {
-        CompareOp DepthCompareOp = CompareOp::Less;
+        CompareOp DepthCompareOp = CompareOp::kLess;
         bool DepthTestEnabled = false;
         bool DepthWriteEnabled = false;
     };
@@ -130,13 +130,13 @@ namespace FE::Graphics::HAL
 
     struct TargetColorBlending
     {
-        ColorComponentFlags ColorWriteFlags = ColorComponentFlags::All;
-        BlendFactor SourceFactor = BlendFactor::One;
-        BlendFactor DestinationFactor = BlendFactor::Zero;
-        BlendOperation BlendOp = BlendOperation::Add;
-        BlendFactor SourceAlphaFactor = BlendFactor::One;
-        BlendFactor DestinationAlphaFactor = BlendFactor::Zero;
-        BlendOperation AlphaBlendOp = BlendOperation::Add;
+        ColorComponentFlags ColorWriteFlags = ColorComponentFlags::kAll;
+        BlendFactor SourceFactor = BlendFactor::kOne;
+        BlendFactor DestinationFactor = BlendFactor::kZero;
+        BlendOperation BlendOp = BlendOperation::kAdd;
+        BlendFactor SourceAlphaFactor = BlendFactor::kOne;
+        BlendFactor DestinationAlphaFactor = BlendFactor::kZero;
+        BlendOperation AlphaBlendOp = BlendOperation::kAdd;
         bool BlendEnabled = false;
     };
 
@@ -164,22 +164,22 @@ namespace FE::Graphics::HAL
 
     enum class PipelineStageFlags : uint32_t
     {
-        TopOfPipe = 1 << 0,
-        DrawIndirect = 1 << 1,
-        VertexInput = 1 << 2,
-        VertexShader = 1 << 3,
-        TessellationControlShader = 1 << 4,
-        TessellationEvaluationShader = 1 << 5,
-        GeometryShader = 1 << 6,
-        FragmentShader = 1 << 7,
-        EarlyFragmentTests = 1 << 8,
-        LateFragmentTests = 1 << 9,
-        ColorAttachmentOutput = 1 << 10,
-        ComputeShader = 1 << 11,
-        Transfer = 1 << 12,
-        BottomOfPipe = 1 << 13,
-        Host = 1 << 14,
-        AllGraphics = static_cast<uint32_t>(-1)
+        kTopOfPipe = 1 << 0,
+        kDrawIndirect = 1 << 1,
+        kVertexInput = 1 << 2,
+        kVertexShader = 1 << 3,
+        kTessellationControlShader = 1 << 4,
+        kTessellationEvaluationShader = 1 << 5,
+        kGeometryShader = 1 << 6,
+        kFragmentShader = 1 << 7,
+        kEarlyFragmentTests = 1 << 8,
+        kLateFragmentTests = 1 << 9,
+        kColorAttachmentOutput = 1 << 10,
+        kComputeShader = 1 << 11,
+        kTransfer = 1 << 12,
+        kBottomOfPipe = 1 << 13,
+        kHost = 1 << 14,
+        kAllGraphics = static_cast<uint32_t>(-1),
     };
 
     FE_ENUM_OPERATORS(PipelineStageFlags);

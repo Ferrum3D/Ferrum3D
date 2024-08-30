@@ -4,7 +4,7 @@
 
 namespace FE::DI
 {
-    //! \brief Represents a dependency injection result code.
+    //! @brief Represents a dependency injection result code.
     enum class ResultCode : int32_t
     {
         Success = 0,
@@ -18,7 +18,7 @@ namespace FE::DI
     const char* GetResultDesc(ResultCode code);
 
 
-    //! \brief Specifies the lifetime of an injectable service.
+    //! @brief Specifies the lifetime of an injectable service.
     enum class Lifetime : uint32_t
     {
         Singleton, //!< Specifies that only a single instance of the service will be created.
@@ -29,7 +29,7 @@ namespace FE::DI
     };
 
 
-    //! \brief Base interface for dependency injection containers.
+    //! @brief Base interface for dependency injection containers.
     class IServiceProvider
     {
     public:

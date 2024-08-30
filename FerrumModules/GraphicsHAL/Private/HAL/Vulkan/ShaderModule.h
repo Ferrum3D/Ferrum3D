@@ -11,7 +11,7 @@ namespace FE::Graphics::Vulkan
     {
         auto result = 0;
 #define FE_CVT_ENTRY(ferrum, vulkan)                                                                                             \
-    if ((source & HAL::ShaderStageFlags::ferrum) != HAL::ShaderStageFlags::None)                                                 \
+    if ((source & HAL::ShaderStageFlags::k##ferrum) != HAL::ShaderStageFlags::kNone)                                             \
     result |= VK_SHADER_STAGE_##vulkan##_BIT
 
         FE_CVT_ENTRY(Pixel, FRAGMENT);
@@ -30,20 +30,20 @@ namespace FE::Graphics::Vulkan
     {
         switch (source)
         {
-        case HAL::ShaderStage::Vertex:
+        case HAL::ShaderStage::kVertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
-        case HAL::ShaderStage::Pixel:
+        case HAL::ShaderStage::kPixel:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case HAL::ShaderStage::Hull:
+        case HAL::ShaderStage::kHull:
             return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        case HAL::ShaderStage::Domain:
+        case HAL::ShaderStage::kDomain:
             return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        case HAL::ShaderStage::Geometry:
+        case HAL::ShaderStage::kGeometry:
             return VK_SHADER_STAGE_GEOMETRY_BIT;
-        case HAL::ShaderStage::Compute:
+        case HAL::ShaderStage::kCompute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
         default:
-            FE_UNREACHABLE("Invalid ShaderStage");
+            FE_AssertMsg(false, "Invalid ShaderStage");
             return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
         }
     }
@@ -75,5 +75,5 @@ namespace FE::Graphics::Vulkan
         HAL::ShaderReflection* GetReflection() override;
     };
 
-    FE_ENABLE_IMPL_CAST(ShaderModule);
+    FE_ENABLE_NATIVE_CAST(ShaderModule);
 } // namespace FE::Graphics::Vulkan

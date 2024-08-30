@@ -25,7 +25,7 @@ namespace FE::Graphics::HAL
     struct ShaderCompilerArgs
     {
         HLSLShaderVersion Version;
-        ShaderStage Stage = ShaderStage::Vertex;
+        ShaderStage Stage = ShaderStage::kVertex;
         StringSlice SourceCode;
         StringSlice EntryPoint;
         StringSlice FullPath;

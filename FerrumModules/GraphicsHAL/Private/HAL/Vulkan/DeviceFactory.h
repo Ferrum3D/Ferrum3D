@@ -19,12 +19,12 @@ namespace FE::Graphics::Vulkan
 
         festd::vector<HAL::AdapterInfo> m_Adapters;
         festd::vector<VkPhysicalDevice> m_NativeAdapters;
-        Rc<Debug::IConsoleLogger> m_pLogger;
+        Rc<Logger> m_pLogger;
 
     public:
         FE_RTTI_Class(DeviceFactory, "4247535C-3E97-42E7-A869-1DC542AFBF25");
 
-        DeviceFactory(Env::Configuration* pConfig, Debug::IConsoleLogger* pLogger);
+        DeviceFactory(Env::Configuration* pConfig, Logger* pLogger);
         ~DeviceFactory() override;
 
         [[nodiscard]] inline VkInstance GetNative() const
@@ -39,5 +39,5 @@ namespace FE::Graphics::Vulkan
         [[nodiscard]] festd::span<const HAL::AdapterInfo> EnumerateAdapters() const override;
     };
 
-    FE_ENABLE_IMPL_CAST(DeviceFactory);
+    FE_ENABLE_NATIVE_CAST(DeviceFactory);
 } // namespace FE::Graphics::Vulkan

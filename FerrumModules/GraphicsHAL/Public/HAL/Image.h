@@ -8,18 +8,52 @@
 
 namespace FE::Graphics::HAL
 {
-    struct ImageDesc
+    struct ImageDesc final
     {
-        Size ImageSize = {};
+        uint32_t Width : 14;
+        uint32_t Height : 14;
+        uint32_t SampleCount : 4;
+        uint32_t Depth : 14;
+        uint32_t ArraySize : 12;
+        uint32_t MipSliceCount : 4;
+        uint32_t Dimension : 2;
 
-        Format ImageFormat = Format::None;
-        ImageDim Dimension = ImageDim::Image2D;
+        Format ImageFormat = Format::kUndefined;
 
-        ImageBindFlags BindFlags = ImageBindFlags::ShaderRead;
+        ImageBindFlags BindFlags = ImageBindFlags::kShaderRead;
 
-        uint32_t MipSliceCount = 1;
-        uint32_t SampleCount = 1;
-        uint16_t ArraySize = 1;
+        inline ImageDesc()
+        {
+            Width = 0;
+            Height = 0;
+            Depth = 0;
+            ArraySize = 1;
+            MipSliceCount = 1;
+            SampleCount = 1;
+            SetDimension(ImageDim::kImage2D);
+        }
+
+        inline Size GetSize() const
+        {
+            return Size{ Width, Height, Depth };
+        }
+
+        inline void SetSize(Size size)
+        {
+            Width = size.Width;
+            Height = size.Height;
+            Depth = size.Depth;
+        }
+
+        inline ImageDim GetDimension() const
+        {
+            return static_cast<ImageDim>(Dimension);
+        }
+
+        inline void SetDimension(ImageDim dimension)
+        {
+            Dimension = enum_cast(dimension);
+        }
 
         inline static ImageDesc Img1D(ImageBindFlags bindFlags, uint32_t width, Format format);
         inline static ImageDesc Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
@@ -41,9 +75,9 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.Dimension = ImageDim::Image1D;
+        desc.SetDimension(ImageDim::kImage1D);
         desc.ImageFormat = format;
-        desc.ImageSize = { width, 1, 1 };
+        desc.SetSize({ width, 1, 1 });
         desc.ArraySize = arraySize;
         return desc;
     }
@@ -53,12 +87,12 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.Dimension = ImageDim::Image2D;
-        desc.ImageSize = { width, height, 1 };
+        desc.SetDimension(ImageDim::kImage2D);
+        desc.SetSize({ width, height, 1 });
         desc.ArraySize = 1;
         desc.ImageFormat = format;
         desc.SampleCount = sampleCount;
-        desc.MipSliceCount = useMipMaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        desc.MipSliceCount = useMipMaps ? CalculateMipCount({ width, height }) : 1;
         return desc;
     }
 
@@ -67,11 +101,11 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.Dimension = ImageDim::Image2D;
-        desc.ImageSize = { width, height, 1 };
+        desc.SetDimension(ImageDim::kImage2D);
+        desc.SetSize({ width, height, 1 });
         desc.ArraySize = arraySize;
         desc.ImageFormat = format;
-        desc.MipSliceCount = useMipMaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        desc.MipSliceCount = useMipMaps ? CalculateMipCount({ width, height }) : 1;
         return desc;
     }
 
@@ -84,8 +118,8 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc;
         desc.BindFlags = bindFlags;
-        desc.Dimension = ImageDim::ImageCubemap;
-        desc.ImageSize = { width, width, 1 };
+        desc.SetDimension(ImageDim::kImageCubemap);
+        desc.SetSize({ width, width, 1 });
         desc.ArraySize = 6 * arraySize;
         desc.ImageFormat = format;
         return desc;
@@ -95,8 +129,8 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.Dimension = ImageDim::Image3D;
-        desc.ImageSize = { width, height, depth };
+        desc.SetDimension(ImageDim::kImage3D);
+        desc.SetSize({ width, height, depth });
         desc.ArraySize = 1;
         desc.ImageFormat = format;
         return desc;
@@ -122,5 +156,12 @@ namespace FE::Graphics::HAL
     };
 } // namespace FE::Graphics::HAL
 
-FE_MAKE_HASHABLE(FE::Graphics::HAL::ImageDesc, , value.ImageSize, value.ImageFormat, value.Dimension, value.BindFlags,
-                 value.MipSliceCount, value.SampleCount, value.ArraySize);
+
+template<>
+struct eastl::hash<FE::Graphics::HAL::ImageDesc>
+{
+    size_t operator()(const FE::Graphics::HAL::ImageDesc& imageDesc) const
+    {
+        return FE::DefaultHash(&imageDesc, sizeof(FE::Graphics::HAL::ImageDesc));
+    }
+};

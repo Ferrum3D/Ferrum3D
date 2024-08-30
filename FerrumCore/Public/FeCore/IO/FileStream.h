@@ -1,32 +1,40 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/IO/StreamBase.h>
-#include <FeCore/IO/FileHandle.h>
 
 namespace FE::IO
 {
-    class FileStream : public StreamBase
+    class FileStream : public BufferedStream
     {
-        Rc<FileHandle> m_Handle;
+        FixedPath m_Name;
+        Platform::FileHandle m_Handle;
+        FileStats m_Stats;
+        OpenMode m_OpenMode = OpenMode::kNone;
+
+        size_t WriteImpl(festd::span<const std::byte> buffer) override;
 
     public:
-        explicit FileStream(const Rc<FileHandle>& file);
-        explicit FileStream(Rc<FileHandle>&& file);
+        inline FileStream(std::pmr::memory_resource* pBufferAllocator = nullptr)
+            : BufferedStream(pBufferAllocator)
+        {
+        }
 
-        ~FileStream() override = default;
+        inline ~FileStream() override
+        {
+            Close();
+        }
 
         ResultCode Open(StringSlice fileName, OpenMode openMode);
+        void Open(StandardDescriptor standardDescriptor);
 
-        [[nodiscard]] bool WriteAllowed() const noexcept override;
-        [[nodiscard]] bool ReadAllowed() const noexcept override;
-        [[nodiscard]] bool SeekAllowed() const noexcept override;
+        [[nodiscard]] bool SeekAllowed() const override;
         [[nodiscard]] bool IsOpen() const override;
-        ResultCode Seek(ptrdiff_t offset, SeekMode seekMode) override;
-        [[nodiscard]] size_t Tell() const override;
+        ResultCode Seek(intptr_t offset, SeekMode seekMode) override;
+        [[nodiscard]] uintptr_t Tell() const override;
         [[nodiscard]] size_t Length() const override;
-        size_t ReadToBuffer(void* buffer, size_t size) override;
-        size_t WriteFromBuffer(const void* buffer, size_t size) override;
+        size_t ReadToBuffer(festd::span<std::byte> buffer) override;
         StringSlice GetName() override;
         [[nodiscard]] OpenMode GetOpenMode() const override;
+        [[nodiscard]] virtual FileStats GetStats() const override;
         void Close() override;
     };
-}
+} // namespace FE::IO

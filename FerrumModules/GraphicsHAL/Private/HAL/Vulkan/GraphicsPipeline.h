@@ -62,5 +62,5 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    FE_ENABLE_IMPL_CAST(GraphicsPipeline);
+    FE_ENABLE_NATIVE_CAST(GraphicsPipeline);
 } // namespace FE::Graphics::Vulkan

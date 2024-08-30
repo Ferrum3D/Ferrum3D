@@ -9,7 +9,7 @@ namespace FE
 {
     using TypeID = UUID;
 
-    //! \brief Add basic RTTI functions to a class.
+    //! @brief Add basic RTTI functions to a class.
     //!
     //! Same as FE_RTTI_Class, but for `final` classes that don't inherit from other classes. Doesn't add any virtual functions.
     //!
@@ -32,7 +32,7 @@ namespace FE
         return ::FE::TypeName<name>;                                                                                             \
     }
 
-    //! \brief Add RTTI functions to a class.
+    //! @brief Add RTTI functions to a class.
     //!
     //! This macro is a part of Ferrum3D custom RTTI implementation.
     //! Use it to allow `fe_dynamic_cast` on a class.\n
@@ -47,7 +47,7 @@ namespace FE
     //!     };
     //! \endcode
     //!
-    //! \note Use FE_RTTI_Base for `final` classes that don't inherit from any other class.
+    //! @note Use FE_RTTI_Base for `final` classes that don't inherit from any other class.
 #define FE_RTTI_Class(name, uuid)                                                                                                \
     FE_RTTI_Base(name, uuid);                                                                                                    \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
@@ -68,16 +68,16 @@ namespace FE
     }                                                                                                                            \
     FE_POP_CLANG_WARNING
 
-    //! \brief Cast a pointer to a base class to a derived class pointer if possible.
+    //! @brief Cast a pointer to a base class to a derived class pointer if possible.
     //!
     //! Works just like normal `dynamic_cast<T*>`, except it only works with the classes that provide Ferrum3D RTTI
     //! via FE_RTTI_Class macro.
     //!
-    //! \tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! \tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! \param src      - The source value.
+    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //! @param src      - The source value.
     //!
-    //! \return The result pointer if destination type was derived from source type, `nullptr` otherwise.
+    //! @return The result pointer if destination type was derived from source type, `nullptr` otherwise.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_dynamic_cast(TSrc* src)
     {
@@ -87,19 +87,19 @@ namespace FE
         return nullptr;
     }
 
-    //! \brief Assert that a variable can be dynamically casted to another type.
+    //! @brief Assert that a variable can be dynamically casted to another type.
     //!
     //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be casted and won't return
     //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
     //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behavior.
     //!
-    //! \note The function only works with the classes that provide Ferrum3D RTTI via FE_RTTI_Class macro.
+    //! @note The function only works with the classes that provide Ferrum3D RTTI via FE_RTTI_Class macro.
     //!
-    //! \tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! \tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! \param src      - The source value.
+    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //! @param src      - The source value.
     //!
-    //! \return The result pointer if destination type was derived from source type.
+    //! @return The result pointer if destination type was derived from source type.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_assert_cast(TSrc* src)
     {
@@ -107,7 +107,7 @@ namespace FE
         return static_cast<TDstPtr>(src);
     }
 
-    //! \brief Get name of a type.
+    //! @brief Get name of a type.
     //!
     //! This function returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
     //! Example:
@@ -122,18 +122,18 @@ namespace FE
     //!     auto fooName = fe_nameof<Foo<int>>(); // "Foo" - not "Foo<int>"!
     //! \endcode
     //!
-    //! \note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
+    //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! \tparam T - Type to get name of.
+    //! @tparam T - Type to get name of.
     //!
-    //! \return Short name of type T.
+    //! @return Short name of type T.
     template<class T>
     inline std::string_view fe_nameof() noexcept
     {
         return T::FeRTTI_GetSName();
     }
 
-    //! \brief Get name of a type.
+    //! @brief Get name of a type.
     //!
     //! This functions is same as fe_nameof(), but can return name of derived class if called from a base class.\n
     //! Returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
@@ -155,11 +155,11 @@ namespace FE
     //!
     //! For additional information see overload of fe_nameof() without parameters.
     //!
-    //! \note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
+    //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! \tparam T - Type to get name of.
+    //! @tparam T - Type to get name of.
     //!
-    //! \return Short name of type T.
+    //! @return Short name of type T.
     //!
     //! \see fe_nameof()
     template<class T>

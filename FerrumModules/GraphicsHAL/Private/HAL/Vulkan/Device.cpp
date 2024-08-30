@@ -1,5 +1,5 @@
-﻿#include <FeCore/Console/FeLog.h>
-#include <FeCore/Containers/SmallVector.h>
+﻿#include <FeCore/Containers/SmallVector.h>
+#include <FeCore/Logging/Trace.h>
 #include <HAL/DeviceObject.h>
 #include <HAL/Image.h>
 #include <HAL/ShaderCompilerDXC.h>
@@ -35,20 +35,20 @@ namespace FE::Graphics::Vulkan
             uint32_t copy = VK_QUEUE_TRANSFER_BIT;
 
             auto idx = static_cast<uint32_t>(i);
-            if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(HAL::HardwareQueueKindFlags::Graphics))
+            if ((families[i].queueFlags & graphics) == graphics && !hasQueueFamily(HAL::HardwareQueueKindFlags::kGraphics))
             {
                 m_QueueFamilyIndices.push_back(
-                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::Graphics));
+                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::kGraphics));
             }
-            else if ((families[i].queueFlags & compute) == compute && !hasQueueFamily(HAL::HardwareQueueKindFlags::Compute))
+            else if ((families[i].queueFlags & compute) == compute && !hasQueueFamily(HAL::HardwareQueueKindFlags::kCompute))
             {
                 m_QueueFamilyIndices.push_back(
-                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::Compute));
+                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::kCompute));
             }
-            else if ((families[i].queueFlags & copy) == copy && !hasQueueFamily(HAL::HardwareQueueKindFlags::Transfer))
+            else if ((families[i].queueFlags & copy) == copy && !hasQueueFamily(HAL::HardwareQueueKindFlags::kTransfer))
             {
                 m_QueueFamilyIndices.push_back(
-                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::Transfer));
+                    QueueFamilyData(idx, families[i].queueCount, HAL::HardwareQueueKindFlags::kTransfer));
             }
         }
     }
@@ -67,12 +67,12 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        FE_UNREACHABLE("Memory type not found");
+        FE_AssertMsg(false, "Memory type not found");
         return static_cast<uint32_t>(-1);
     }
 
 
-    Device::Device(Debug::IConsoleLogger* pLogger, HAL::DeviceFactory* pFactory)
+    Device::Device(Logger* pLogger, HAL::DeviceFactory* pFactory)
         : HAL::Device(pLogger)
         , m_pDeviceFactory(ImplCast(pFactory))
     {
@@ -84,7 +84,7 @@ namespace FE::Graphics::Vulkan
         m_NativeAdapter = nativeAdapter;
 
         vkGetPhysicalDeviceProperties(nativeAdapter, &m_AdapterProperties);
-        FE_LOG_MESSAGE("Creating Vulkan Device on GPU: {}...", m_AdapterProperties.deviceName);
+        m_pLogger->LogInfo("Creating Vulkan Device on GPU: {}...", m_AdapterProperties.deviceName);
 
         FindQueueFamilies();
 
@@ -97,7 +97,7 @@ namespace FE::Graphics::Vulkan
             const bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const VkExtensionProperties& props) {
                 return StringSlice(ext) == props.extensionName;
             });
-            FE_ASSERT_MSG(found, "Vulkan device extension {} was not found", StringSlice(ext));
+            FE_AssertMsg(found, "Vulkan device extension {} was not found", StringSlice(ext));
         }
 
         constexpr float queuePriority = 1.0f;

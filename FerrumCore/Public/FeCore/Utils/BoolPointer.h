@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief Stores a boolean-pointer pair in 8 bytes instead of 9.
+    //! @brief Stores a boolean-pointer pair in 8 bytes instead of 9.
     //!
     //! Every pointer allocated with rpmalloc is 16-bytes aligned, so the 4 least significant bits
     //! of the pointer will always be 0. The BoolPointer class uses the fact to store a boolean
@@ -11,7 +11,7 @@ namespace FE
     //! types of alignment to work with this class too. Only the HeapAllocator can guarantee 16-byte
     //! alignment.
     //!
-    //! \tparam T Type of pointer to store.
+    //! @tparam T Type of pointer to store.
     template<class T>
     class BoolPointer
     {

@@ -8,7 +8,7 @@ endif()
 
 set(CMAKE_DEBUG_POSTFIX "")
 
-if (FE_COMPILER_MSVC)
+if (WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
     add_compile_definitions(_ENABLE_EXTENDED_ALIGNED_STORAGE)
@@ -48,7 +48,8 @@ function(fe_configure_target TARGET)
     if(FE_COMPILER_MSVC)
         target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4324)
     else()
-        target_compile_options(${TARGET} PRIVATE -Wall -Wextra -pedantic -Werror)
+        target_compile_options(${TARGET} PRIVATE -Wall -Werror
+			-Wno-deprecated-builtins -Wno-language-extension-token)
     endif()
 endfunction()
 

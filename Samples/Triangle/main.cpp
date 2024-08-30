@@ -121,7 +121,7 @@ public:
             bufferDesc.Flags = HAL::BindFlags::VertexBuffer;
             bufferDesc.Size  = vertexData.Size() * sizeof(Vertex);
             m_VertexBuffer   = m_Device->CreateBuffer(bufferDesc);
-            m_VertexBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
+            m_VertexBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
             m_VertexBuffer->UpdateData(vertexData.Data());
         }
 
@@ -130,32 +130,32 @@ public:
         shaderArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
         shaderArgs.EntryPoint = "main";
 
-        shaderArgs.Stage      = HAL::ShaderStage::Pixel;
+        shaderArgs.Stage      = HAL::ShaderStage::kPixel;
         shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/PixelShader.hlsl";
         auto source           = FE::IO::File::ReadAllText(shaderArgs.FullPath);
         shaderArgs.SourceCode = source;
         auto psByteCode       = compiler->CompileShader(shaderArgs);
 
-        shaderArgs.Stage      = HAL::ShaderStage::Vertex;
+        shaderArgs.Stage      = HAL::ShaderStage::kVertex;
         shaderArgs.FullPath   = "../../Samples/Triangle/Shaders/VertexShader.hlsl";
         source                = FE::IO::File::ReadAllText(shaderArgs.FullPath);
         shaderArgs.SourceCode = source;
         auto vsByteCode       = compiler->CompileShader(shaderArgs);
         compiler.Reset();
 
-        m_PixelShader  = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
-        m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+        m_PixelShader  = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kPixel, psByteCode));
+        m_VertexShader = m_Device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kVertex, vsByteCode));
 
         HAL::RenderPassDesc renderPassDesc{};
 
         HAL::AttachmentDesc attachmentDesc{};
         attachmentDesc.Format       = m_SwapChain->GetDesc().Format;
-        attachmentDesc.InitialState = HAL::ResourceState::Undefined;
-        attachmentDesc.FinalState   = HAL::ResourceState::Present;
+        attachmentDesc.InitialState = HAL::ResourceState::kUndefined;
+        attachmentDesc.FinalState   = HAL::ResourceState::kPresent;
         renderPassDesc.Attachments  = { attachmentDesc };
 
         HAL::SubpassDesc subpassDesc{};
-        subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
+        subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::kRenderTarget, 0) };
         renderPassDesc.Subpasses            = { subpassDesc };
         HAL::SubpassDependency dependency{};
         renderPassDesc.SubpassDependencies = { dependency };
@@ -163,7 +163,7 @@ public:
 
         HAL::GraphicsPipelineDesc pipelineDesc{};
         pipelineDesc.InputLayout = HAL::InputLayoutBuilder{}
-                                       .AddBuffer(HAL::InputStreamRate::PerVertex)
+                                       .AddBuffer(HAL::InputStreamRate::kPerVertex)
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
                                        .AddAttribute(HAL::Format::R32G32B32_SFloat, "COLOR")
                                        .Build()
@@ -176,7 +176,7 @@ public:
         pipelineDesc.ColorBlend             = HAL::ColorBlendState({ HAL::TargetColorBlending{} });
         pipelineDesc.Shaders                = shaders;
         pipelineDesc.Rasterization          = HAL::RasterizationState{};
-        pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+        pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::kBack;
         pipelineDesc.Scissor                = m_Scissor;
         pipelineDesc.Viewport               = m_Viewport;
 

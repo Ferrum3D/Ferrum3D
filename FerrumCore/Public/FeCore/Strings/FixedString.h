@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief String class that never allocates.
+    //! @brief String class that never allocates.
     template<size_t TCapacity>
     class FixedString final
     {
@@ -152,10 +152,10 @@ namespace FE
             return Append(str.Data(), str.Size());
         }
 
-        inline FixedString& Append(TChar cp)
+        inline FixedString& Append(TChar c)
         {
             assert(Size() < Capacity());
-            return Append(&str, 1);
+            return Append(&c, 1);
         }
 
         inline FixedString& Append(const TChar* str)
@@ -178,7 +178,8 @@ namespace FE
 
         inline FixedString& operator/=(const StringSlice& str)
         {
-            Append('/');
+            if (!Empty() && m_Data[m_Size - 1] != '/')
+                Append('/');
             return Append(str);
         }
 

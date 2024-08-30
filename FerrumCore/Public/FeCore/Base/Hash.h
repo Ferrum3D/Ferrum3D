@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Base/CompilerTraits.h>
+#include <FeCore/Base/BaseMath.h>
 #include <FeCore/Base/wyhash.h>
 #include <cstdint>
 #include <string_view>
@@ -20,18 +20,6 @@ namespace FE
         // The code below assumes little-endian and implements only the most basic functionality of the original
         // library: string hashes and uint64_t hashes.
         //
-
-
-        FE_FORCE_INLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
-        {
-            const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
-            const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
-            const uint64_t p11 = x1 * y1, p01 = x0 * y1;
-            const uint64_t p10 = x1 * y0, p00 = x0 * y0;
-            const uint64_t middle = p10 + (p00 >> 32) + (uint32_t)p01;
-            *carry = p11 + (middle >> 32) + (p01 >> 32);
-            return (middle << 32) | (uint32_t)p00;
-        }
 
 
         constexpr uint64_t HashSecret[] = {
@@ -59,7 +47,7 @@ namespace FE
         inline constexpr uint64_t WyMix(uint64_t A, uint64_t B)
         {
 #if FE_COMPILER_MSVC
-            return Multiply128(A, B, &B) ^ B;
+            return Math::CompileTime::Multiply128(A, B, &B) ^ B;
 #else
             __uint128_t r = A;
             r *= B;
@@ -73,7 +61,7 @@ namespace FE
         {
             A ^= UINT64_C(0x2d358dccaa6c78a5);
             B ^= UINT64_C(0x8bb84b93962eacc9);
-            A = Multiply128(A, B, &B);
+            A = Math::CompileTime::Multiply128(A, B, &B);
 
             return WyMix(A ^ UINT64_C(0x2d358dccaa6c78a5), B ^ UINT64_C(0x8bb84b93962eacc9));
         }
@@ -86,7 +74,7 @@ namespace FE
             std::string_view value;
         };
 
-        //! \brief Remove leading and trailing spaces from a string view.
+        //! @brief Remove leading and trailing spaces from a string view.
         inline constexpr std::string_view TrimTypeName(std::string_view name)
         {
             name.remove_prefix(name.find_first_not_of(' '));
@@ -193,12 +181,12 @@ namespace FE
     inline void HashCombine(size_t& /* seed */) {}
 
 
-    //! \brief Combine hashes of specified values with seed.
+    //! @brief Combine hashes of specified values with seed.
     //!
-    //! \tparam Args - Types of values.
+    //! @tparam Args - Types of values.
     //!
-    //! \param seed - Initial hash value to combine with.
-    //! \param args - The values to calculate hash of.
+    //! @param seed - Initial hash value to combine with.
+    //! @param args - The values to calculate hash of.
     template<typename T, typename... Args>
     inline void HashCombine(size_t& seed, const T& value, const Args&... args)
     {

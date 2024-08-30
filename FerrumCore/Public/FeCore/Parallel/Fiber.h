@@ -3,7 +3,7 @@
 #include <FeCore/Parallel/Context.h>
 #include <FeCore/Strings/Format.h>
 
-namespace FE
+namespace FE::Threading
 {
     struct FiberHandle final : TypedHandle<FiberHandle, uint32_t>
     {
@@ -12,12 +12,11 @@ namespace FE
 
     class FiberPool final
     {
-        struct alignas(Memory::CacheLineSize) FiberInfo final
+        struct alignas(Memory::kCacheLineSize) FiberInfo final
         {
-            // TODO: fixed strings
-            String Name;
-            Context::Handle Context;
             std::atomic<bool> IsFree;
+            FixedString<116> Name;
+            Context::Handle Context;
         };
 
         void* m_pStackMemory = nullptr;

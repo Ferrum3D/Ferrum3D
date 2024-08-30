@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Math/Quaternion.h>
 #include <FeCore/Math/Vector4.h>
 
@@ -21,9 +21,9 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F GetIdentity() noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2,
-                                                            const Vector4F& row3);
+                                                                 const Vector4F& row3);
         [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
-                                                               const Vector4F& column2, const Vector4F& column3);
+                                                                    const Vector4F& column2, const Vector4F& column3);
 
         [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationX(float angle);
         [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationY(float angle);
@@ -87,7 +87,7 @@ namespace FE
         [[nodiscard]] FE_FORCE_INLINE float Determinant() const;
 
         [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Matrix4x4F& other,
-                                                      float epsilon = Constants::Epsilon) const noexcept;
+                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE bool operator==(const Matrix4x4F& other) const noexcept;
         [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Matrix4x4F& other) const noexcept;
@@ -96,7 +96,7 @@ namespace FE
     namespace Internal
     {
         FE_FORCE_INLINE void SIMDMatrix4x4Multiply(const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r,
-                                              SIMD::SSE::Float32x4* out)
+                                                   SIMD::SSE::Float32x4* out)
         {
             // clang-format off
             out[0] = l[0].Broadcast<3>() * r[3] + (l[0].Broadcast<2>() * r[2] + (l[0].Broadcast<1>() * r[1] + (l[0].Broadcast<0>() * r[0])));
@@ -107,7 +107,7 @@ namespace FE
         }
 
         FE_FORCE_INLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(const SIMD::SSE::Float32x4* matrix,
-                                                                    SIMD::SSE::Float32x4 vector)
+                                                                         SIMD::SSE::Float32x4 vector)
         {
             using namespace SIMD::SSE;
             Float32x4 prod1 = matrix[0] * vector;
@@ -264,8 +264,8 @@ namespace FE
     {
         Matrix4x4F matrix{};
 
-        float cotY  = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
-        float cotX  = cotY / aspectRatio;
+        float cotY = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
+        float cotX = cotY / aspectRatio;
         float invFl = 1.0f / (far - near);
         matrix.SetRow(0, -cotX, 0.0f, 0.0f, 0.0f);
         matrix.SetRow(1, 0.0f, cotY, 0.0f, 0.0f);

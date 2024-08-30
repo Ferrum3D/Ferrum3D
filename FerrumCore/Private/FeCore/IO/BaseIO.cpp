@@ -1,7 +1,27 @@
-﻿#include <FeCore/IO/BaseIO.h>
+﻿#include <FeCore/Base/PlatformInclude.h>
+#include <FeCore/IO/BaseIO.h>
 
 namespace FE::IO
 {
+    FixedPath GetCurrentDirectory()
+    {
+#if FE_WINDOWS
+        wchar_t buf[MaxPathLength];
+        GetCurrentDirectoryW(MaxPathLength, buf);
+
+        const int32_t length = WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0, nullptr, nullptr);
+        assert(length > 0);
+
+        FixedPath result;
+        result.Resize(length - 1, 0);
+        WideCharToMultiByte(CP_UTF8, 0, buf, -1, result.Data(), result.Size(), nullptr, nullptr);
+        return result;
+#else
+#    error Not implemented :(
+#endif
+    }
+
+
     StringSlice GetResultDesc(ResultCode code)
     {
         switch (code)
@@ -32,6 +52,10 @@ namespace FE::IO
             return "IO error";
         case ResultCode::DeadLock:
             return "Resource deadlock would occur";
+        case ResultCode::NotSupported:
+            return "Operation is not supported";
+        case ResultCode::InvalidArgument:
+            return "Argument value has not been accepted";
         default:
             return "Unknown error";
         }

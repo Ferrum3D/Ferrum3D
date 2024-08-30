@@ -4,7 +4,7 @@
 
 namespace FE
 {
-    //! \brief String class with UTF-8 support.
+    //! @brief String class with UTF-8 support.
     class String final
     {
         inline static constexpr uint32_t ShortCapacity = 24;
@@ -90,7 +90,7 @@ namespace FE
             if (s < ShortCapacity)
                 return ShortCapacity - 1;
 
-            return AlignUp<Memory::DefaultAlignment>(s + 1) - 1;
+            return AlignUp<Memory::kDefaultAlignment>(s + 1) - 1;
         }
 
         inline static TChar* Allocate(uint32_t s) noexcept
@@ -414,7 +414,8 @@ namespace FE
 
         inline String& operator/=(StringSlice str)
         {
-            Append('/');
+            if (Data()[Size() - 1] != '/')
+                Append('/');
             return Append(str);
         }
 

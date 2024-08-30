@@ -1,8 +1,8 @@
-﻿#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Parallel/Fiber.h>
 
-namespace FE
+namespace FE::Threading
 {
     inline static constexpr size_t NormalStackSize = 64 * 1024;
     inline static constexpr size_t ExtendedStackSize = 512 * 1024;
@@ -21,6 +21,7 @@ namespace FE
         m_pStackMemory = Memory::AllocateVirtual(m_StackMemorySize);
 
         m_Fibers = Memory::DefaultAllocateArray<FiberInfo>(TotalFiberCount);
+        eastl::uninitialized_default_fill(m_Fibers, m_Fibers + TotalFiberCount);
 
         std::byte* ptr = static_cast<std::byte*>(m_pStackMemory);
         for (uint32_t i = 0; i < NormalFiberCount; ++i)
@@ -29,7 +30,7 @@ namespace FE
             ptr += memorySpec.PageSize + NormalStackSize; // top of the stack
             m_Fibers[i].IsFree = true;
             m_Fibers[i].Context = Context::Create(ptr, NormalStackSize, fiberCallback);
-            m_Fibers[i].Name = Fmt::Format("Fiber {}", i);
+            Fmt::FormatTo(m_Fibers[i].Name, "Fiber {}", i);
         }
         for (uint32_t i = 0; i < ExtendedFiberCount; ++i)
         {
@@ -37,11 +38,11 @@ namespace FE
             ptr += memorySpec.PageSize + ExtendedStackSize;
             m_Fibers[i + NormalFiberCount].IsFree = true;
             m_Fibers[i + NormalFiberCount].Context = Context::Create(ptr, ExtendedStackSize, fiberCallback);
-            m_Fibers[i + NormalFiberCount].Name = Fmt::Format("Fiber Big {}", i);
+            Fmt::FormatTo(m_Fibers[i + NormalFiberCount].Name, "Fiber Big {}", i);
         }
 
         Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::None);
-        FE_ASSERT(ptr + memorySpec.PageSize == static_cast<std::byte*>(m_pStackMemory) + totalGuardPagesSize + TotalStackSize);
+        FE_Assert(ptr + memorySpec.PageSize == static_cast<std::byte*>(m_pStackMemory) + totalGuardPagesSize + TotalStackSize);
     }
 
 
@@ -96,4 +97,4 @@ namespace FE
         TracyFiberEnter(m_Fibers[to.Value].Name.Data());
         return Context::Switch(m_Fibers[to.Value].Context, userData);
     }
-} // namespace FE
+} // namespace FE::Threading

@@ -27,5 +27,5 @@ namespace FE::Graphics::Vulkan
         }
     };
 
-    FE_ENABLE_IMPL_CAST(Fence);
+    FE_ENABLE_NATIVE_CAST(Fence);
 } // namespace FE::Graphics::Vulkan

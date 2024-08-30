@@ -1,7 +1,7 @@
 ﻿#include <FeCore/Assets/AssetManager.h>
 #include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Framework/ApplicationModule.h>
 #include <FeCore/IO/FileStream.h>
 #include <FeCore/Memory/Memory.h>
@@ -93,7 +93,7 @@ Supported commands:
         StringSlice assetTypeStr = doc["asset-type"].GetString();
 
         auto assetType = assetTypeStr.Parse<Assets::AssetType>().UnwrapOrElse([&metadataPath](auto) {
-            FE_UNREACHABLE("`asset-type` has invalid format in asset metadata in file: {}. It must be a UUID", metadataPath);
+            FE_AssertMsg(false, "`asset-type` has invalid format in asset metadata in file: {}. It must be a UUID", metadataPath);
             return Assets::AssetType{};
         });
 
@@ -233,13 +233,13 @@ Supported commands:
     {
         IAssetLoader* loader = nullptr;
 
-        FE_ASSERT(additionalMetadata.empty()); // TODO
+        FE_Assert(additionalMetadata.empty()); // TODO
 
         auto metadata = ReadMetadataForAsset(file, &loader);
 
         Rc fileHandle = Rc<IO::FileHandle>::DefaultNew();
         Rc stream = Rc<IO::FileStream>::DefaultNew(fileHandle);
-        FE_IO_ASSERT(stream->Open(file, IO::OpenMode::ReadOnly));
+        FE_IO_ASSERT(stream->Open(file, IO::OpenMode::kReadOnly));
 
         Rc<AssetStorage> storage = loader->CreateStorage();
         storage->ReleaseStrongRef();
@@ -271,7 +271,7 @@ Supported commands:
         {
             Rc fileHandle = Rc<IO::FileHandle>::DefaultNew();
             Rc stream = Rc<IO::FileStream>::DefaultNew(fileHandle);
-            FE_IO_ASSERT(stream->Open(Fmt::Format("{}.compiled.pak", file), IO::OpenMode::Create));
+            FE_IO_ASSERT(stream->Open(Fmt::Format("{}.compiled.pak", file), IO::OpenMode::kCreate));
 
             ProcessOneFile(file, stream.Get(), additionalMetadata);
         }

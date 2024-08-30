@@ -1,9 +1,16 @@
 ﻿#pragma once
+#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/StringSlice.h>
+#include <FeCore/Time/DateTime.h>
 
 namespace FE::IO
 {
-    //! \brief Represents an I/O result code.
+    inline constexpr uint32_t MaxPathLength = 260;
+
+    using FixedPath = FixedString<MaxPathLength>;
+
+
+    //! @brief Represents an I/O result code.
     enum class ResultCode : int32_t
     {
         Success = 0,
@@ -19,6 +26,8 @@ namespace FE::IO
         InvalidSeek = -10,      //!< Invalid seek operation.
         IOError = -11,          //!< IO error.
         DeadLock = -12,         //!< Resource deadlock would occur.
+        NotSupported = -13,     //!< Operation is not supported.
+        InvalidArgument = -14,  //!< Argument value has not been accepted.
         UnknownError = DefaultErrorCode<ResultCode>,
     };
 
@@ -28,54 +37,148 @@ namespace FE::IO
     do                                                                                                                           \
     {                                                                                                                            \
         ::FE::IO::ResultCode code = expr;                                                                                        \
-        FE_ASSERT_MSG(code == ::FE::IO::ResultCode::Success, "IO error: {}", ::FE::IO::GetResultDesc(code));                     \
+        FE_AssertMsg(code == ::FE::IO::ResultCode::Success, "IO error: {}", ::FE::IO::GetResultDesc(code));                      \
     }                                                                                                                            \
     while (0)
 
-    enum class OpenMode
+
+    namespace Platform
     {
-        None,
-        ReadOnly,
-        WriteOnly,
-        Append,
-        Create,
-        CreateNew,
-        Truncate,
-        ReadWrite
+        struct FileHandle final : TypedHandle<FileHandle, uint64_t>
+        {
+            inline static FileHandle FromPointer(const void* ptr)
+            {
+                return FileHandle{ reinterpret_cast<uint64_t>(ptr) };
+            }
+        };
+    } // namespace Platform
+
+
+    FixedPath GetCurrentDirectory();
+
+
+    //! @brief I/O operation priority.
+    //!
+    //! To make a more fine-grained request priority class
+    //! use addition and subtraction, e.g. IO::Priority::kNormal + 123
+    //! would be somewhere between normal and high priorities.
+    //!
+    //! The difference between two consecutive priority levels is Priority::kLevelDiff.
+    enum class Priority : int32_t
+    {
+        kLevelBits = 20,
+        kLevelDiff = (1 << kLevelBits) - 1,
+
+        kLowest = 1 << kLevelBits,
+        kLow = 2 << kLevelBits,
+        kNormal = 3 << kLevelBits,
+        kHigh = 4 << kLevelBits,
+        kHighest = 5 << kLevelBits,
     };
 
-    inline bool IsWriteAllowed(OpenMode mode)
+
+    inline Priority operator-(Priority lhs, int32_t rhs)
     {
-        switch (mode)
-        {
-        case OpenMode::WriteOnly:
-        case OpenMode::Append:
-        case OpenMode::Create:
-        case OpenMode::CreateNew:
-        case OpenMode::Truncate:
-        case OpenMode::ReadWrite:
-            return true;
-        default:
-            return false;
-        }
+        return static_cast<Priority>(enum_cast(lhs) - rhs);
     }
 
-    inline bool IsReadAllowed(OpenMode mode)
+
+    inline Priority operator+(Priority lhs, int32_t rhs)
     {
-        switch (mode)
-        {
-        case OpenMode::ReadOnly:
-        case OpenMode::ReadWrite:
-            return true;
-        default:
-            return false;
-        }
+        return static_cast<Priority>(enum_cast(lhs) + rhs);
     }
+
+
+    enum class StandardDescriptor
+    {
+        kSTDIN,
+        kSTDOUT,
+        kSTDERR,
+    };
+
+
+    struct FileStats final
+    {
+        DateTime<TZ::UTC> CreationTime;
+        DateTime<TZ::UTC> ModificationTime;
+        DateTime<TZ::UTC> AccessTime;
+        uint64_t ByteSize;
+    };
+
+
+    enum class FileAttributeFlags : uint32_t
+    {
+        kNone = 0,
+        kHidden = 1 << 0,
+        kDirectory = 1 << 1,
+        kReadOnly = 1 << 2,
+        kInvalid = 1u << 31,
+    };
+
+    FE_ENUM_OPERATORS(FileAttributeFlags);
+
+
+    enum class OpenMode
+    {
+        kNone,
+        kReadOnly = 1 << 6,
+        kWriteOnly = 1 << 7,
+        kAppend = kWriteOnly | 1,
+        kCreate = kWriteOnly | 2,
+        kCreateNew = kWriteOnly | 3,
+        kTruncate = kWriteOnly | 4,
+        kReadWrite = kReadOnly | kWriteOnly,
+    };
+
+
+    inline constexpr bool IsWriteAllowed(OpenMode mode)
+    {
+        return (enum_cast(mode) & enum_cast(OpenMode::kWriteOnly)) != 0;
+    }
+
+
+    inline constexpr bool IsReadAllowed(OpenMode mode)
+    {
+        return (enum_cast(mode) & enum_cast(OpenMode::kReadOnly)) != 0;
+    }
+
 
     enum class SeekMode
     {
-        Begin,
-        End,
-        Current
+        kBegin,
+        kEnd,
+        kCurrent
     };
+
+
+    inline constexpr const char* GetStandardDescriptorName(StandardDescriptor descriptor)
+    {
+        switch (descriptor)
+        {
+        case StandardDescriptor::kSTDIN:
+            return "STDIN";
+        case StandardDescriptor::kSTDOUT:
+            return "STDOUT";
+        case StandardDescriptor::kSTDERR:
+            return "STDERR";
+        default:
+            return "<Unknown>";
+        }
+    }
+
+
+    inline constexpr OpenMode GetStandardDescriptorOpenMode(StandardDescriptor descriptor)
+    {
+        switch (descriptor)
+        {
+        case StandardDescriptor::kSTDIN:
+            return OpenMode::kReadOnly;
+        case StandardDescriptor::kSTDOUT:
+            return OpenMode::kAppend;
+        case StandardDescriptor::kSTDERR:
+            return OpenMode::kAppend;
+        default:
+            return OpenMode::kNone;
+        }
+    }
 } // namespace FE::IO

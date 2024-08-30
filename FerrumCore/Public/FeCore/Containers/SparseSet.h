@@ -4,7 +4,7 @@
 
 namespace FE
 {
-    //! \brief An entry in the \ref SparseSet.
+    //! @brief An entry in the \ref SparseSet.
     template<class TKey, class TValue>
     class SparseSetEntry
     {
@@ -88,16 +88,16 @@ namespace FE
 
         inline SparseSet() = default;
 
-        //! \brief Create a SparseSet with initial capacity.
+        //! @brief Create a SparseSet with initial capacity.
         //!
-        //! \param [in] capacity - The capacity to initialize the SparseSet with.
+        //! @param capacity - The capacity to initialize the SparseSet with.
         inline explicit SparseSet(uint32_t capacity)
         {
             m_Dense.reserve(capacity);
             m_Sparse.resize(capacity, static_cast<uint32_t>(-1));
         }
 
-        //! \brief Get value by key.
+        //! @brief Get value by key.
         [[nodiscard]] inline TValue& operator[](const TKey& key)
         {
             auto index = DenseIndex(key);
@@ -105,7 +105,7 @@ namespace FE
             return m_Dense[static_cast<uint32_t>(index.ToOffset())].Value();
         }
 
-        //! \brief Get value by key.
+        //! @brief Get value by key.
         [[nodiscard]] inline const TValue& operator[](const TKey& key) const
         {
             auto index = DenseIndex(key);
@@ -113,22 +113,22 @@ namespace FE
             return m_Dense[static_cast<uint32_t>(index.ToOffset())].Value();
         }
 
-        //! \brief Add a value into the SparseSet.
+        //! @brief Add a value into the SparseSet.
         //!
-        //! \param [in] key   - The key to associate the value with.
-        //! \param [in] value - The value to add.
+        //! @param key   - The key to associate the value with.
+        //! @param value - The value to add.
         //!
-        //! \return True if the value was new, False if it was updated.
+        //! @return True if the value was new, False if it was updated.
         inline bool Insert(const TKey& key, const TValue& value)
         {
             return Emplace(key, value);
         }
 
-        //! \brief Add a value into the SparseSet.
+        //! @brief Add a value into the SparseSet.
         //!
-        //! \param [in] key - The key to associate the value with.
+        //! @param key - The key to associate the value with.
         //!
-        //! \return True if the value was new, False if it was updated.
+        //! @return True if the value was new, False if it was updated.
         template<class... Args>
         inline bool Emplace(const TKey& key, Args&&... args)
         {
@@ -148,22 +148,22 @@ namespace FE
             }
         }
 
-        //! \brief Check if the key is present.
+        //! @brief Check if the key is present.
         //!
-        //! \param [in] key - The key to check for.
+        //! @param key - The key to check for.
         //!
-        //! \return True if the was found.
+        //! @return True if the was found.
         [[nodiscard]] inline bool Contains(const TKey& key) const
         {
             return DenseIndex(key).IsValid();
         }
 
-        //! \brief Try to get value by key.
+        //! @brief Try to get value by key.
         //!
-        //! \param [in] key    - The key to get.
-        //! \param [out] value - The value that was found.
+        //! @param key    - The key to get.
+        //! @param [out] value - The value that was found.
         //!
-        //! \return True if the key was found.
+        //! @return True if the key was found.
         [[nodiscard]] inline bool TryGetAt(const TKey& key, TValue& value)
         {
             auto index = DenseIndex(key);
@@ -176,11 +176,11 @@ namespace FE
             return true;
         }
 
-        //! \brief Remove a value from the SparseSet by key.
+        //! @brief Remove a value from the SparseSet by key.
         //!
-        //! \param [in] key - The key to remove.
+        //! @param key - The key to remove.
         //!
-        //! \return True if the key was found and removed.
+        //! @return True if the key was found and removed.
         inline bool Remove(const TKey& key)
         {
             if (auto denseIndex = DenseIndex(key))
@@ -197,9 +197,9 @@ namespace FE
             return false;
         }
 
-        //! \brief Change capacity of the SparseSet.
+        //! @brief Change capacity of the SparseSet.
         //!
-        //! \param [in] capacity - The new capacity.
+        //! @param capacity - The new capacity.
         inline void Reserve(uint32_t capacity)
         {
             if (capacity <= Capacity())

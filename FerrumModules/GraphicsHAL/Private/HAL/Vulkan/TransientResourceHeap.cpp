@@ -19,7 +19,7 @@ namespace FE::Graphics::Vulkan
             requirements = m_pMemoryRequirementsCache->GetRenderTargetMemoryRequirements();
             break;
         default:
-            FE_UNREACHABLE("Invalid TransientResourceType: {}", static_cast<int32_t>(m_Desc.TypeFlags));
+            FE_AssertMsg(false, "Invalid TransientResourceType: {}", static_cast<int32_t>(m_Desc.TypeFlags));
         }
 
         m_Desc.Alignment = std::max(m_Desc.Alignment, requirements.alignment);
@@ -27,7 +27,7 @@ namespace FE::Graphics::Vulkan
 
         HAL::MemoryAllocationDesc desc{};
         desc.Size = m_Desc.HeapSize;
-        desc.Type = HAL::MemoryType::DeviceLocal;
+        desc.Type = HAL::MemoryType::kDeviceLocal;
         return Rc<DeviceMemory>::DefaultNew(m_pDevice, requirements.memoryTypeBits, desc);
     }
 

@@ -36,7 +36,7 @@ namespace FE
         void DefaultFree(void* ptr);
 
 
-        //! \brief Allocate an uninitialized array using the provided allocator.
+        //! @brief Allocate an uninitialized array using the provided allocator.
         template<class T, class TAllocator>
         [[nodiscard]] inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
         {
@@ -44,7 +44,7 @@ namespace FE
         }
 
 
-        //! \brief Allocate an uninitialized array using the default allocator.
+        //! @brief Allocate an uninitialized array using the default allocator.
         template<class T>
         [[nodiscard]] inline T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
         {
@@ -52,15 +52,15 @@ namespace FE
         }
 
 
-        //! \brief Create a new object of type T using the provided allocator.
+        //! @brief Create a new object of type T using the provided allocator.
         //!
-        //! \param pAllocator - The allocator to use.
-        //! \param args       - The arguments to call the constructor of T with.
+        //! @param pAllocator - The allocator to use.
+        //! @param args       - The arguments to call the constructor of T with.
         //!
-        //! \tparam T          - The type of the object to allocate.
-        //! \tparam TAllocator - The type of the provided allocator.
+        //! @tparam T          - The type of the object to allocate.
+        //! @tparam TAllocator - The type of the provided allocator.
         //!
-        //! \return The allocated object.
+        //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
         [[nodiscard]] inline T* New(TAllocator* pAllocator, TArgs&&... args)
         {
@@ -68,13 +68,13 @@ namespace FE
         }
 
 
-        //! \brief Create a new object of type T using the default allocator.
+        //! @brief Create a new object of type T using the default allocator.
         //!
-        //! \param args - The arguments to call the constructor of T with.
+        //! @param args - The arguments to call the constructor of T with.
         //!
-        //! \tparam T - The type of the object to allocate.
+        //! @tparam T - The type of the object to allocate.
         //!
-        //! \return The allocated object.
+        //! @return The allocated object.
         template<class T, class... TArgs>
         [[nodiscard]] inline T* DefaultNew(TArgs&&... args)
         {
@@ -82,17 +82,16 @@ namespace FE
         }
 
 
-        //! \brief Delete an object previously created via Memory::New().
+        //! @brief Delete an object previously created via Memory::New().
         //!
-        //! \param pAllocator - The allocator to use.
-        //! \param pointer    - The pointer to the object to delete previously returned by Memory::New().
-        //! \param byteSize   - The size of the object to delete.
+        //! @param pAllocator - The allocator to use.
+        //! @param pointer    - The pointer to the object to delete previously returned by Memory::New().
+        //! @param byteSize   - The size of the object to delete.
         //!
-        //! \tparam T          - The type of the object to delete.
-        //! \tparam TAllocator - The type of the provided allocator.
+        //! @tparam T          - The type of the object to delete.
+        //! @tparam TAllocator - The type of the provided allocator.
         template<class T, class TAllocator>
-        [[nodiscard]] inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0,
-                                         size_t byteAlignment = DefaultAlignment)
+        inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {
             pointer->~T();
             pAllocator->deallocate(pointer, byteSize, byteAlignment);
@@ -121,12 +120,12 @@ namespace FE
         };
 
 
-        //! \brief Delete an object previously created via Memory::DefaultNew().
+        //! @brief Delete an object previously created via Memory::DefaultNew().
         //!
-        //! \param pointer  - The pointer to the object to delete previously returned by Memory::DefaultNew().
-        //! \param byteSize - The size of the object to delete.
+        //! @param pointer  - The pointer to the object to delete previously returned by Memory::DefaultNew().
+        //! @param byteSize - The size of the object to delete.
         //!
-        //! \tparam T - The type of the object to delete.
+        //! @tparam T - The type of the object to delete.
         template<class T>
         inline void DefaultDelete(T* pointer)
         {
@@ -224,19 +223,19 @@ namespace FE
     } // namespace festd
 
 
-    //! \brief Perform `static_cast` of Rc<T>.
+    //! @brief Perform `static_cast` of Rc<T>.
     //!
     //! This function retrieves a raw pointer using Rc::Get() and does a static_cast to TDest.
     //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a derived class to base.
     //!
-    //! \note To cast a base class to derived, use dynamic_pointer_cast.
+    //! @note To cast a base class to derived, use dynamic_pointer_cast.
     //!
-    //! \param src    - Source pointer.
-    //! \tparam TDest - The type of result pointer.
-    //! \tparam TSrc  - The type of source pointer.
+    //! @param src    - Source pointer.
+    //! @tparam TDest - The type of result pointer.
+    //! @tparam TSrc  - The type of source pointer.
     //!
-    //! \return An instance of Rc<TDest> that holds the same object but statically casted.
+    //! @return An instance of Rc<TDest> that holds the same object but statically casted.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
     {
@@ -244,19 +243,19 @@ namespace FE
     }
 
 
-    //! \brief Perform fe_dynamic_cast of Rc<T>.
+    //! @brief Perform fe_dynamic_cast of Rc<T>.
     //!
     //! This function retrieves a raw pointer using Rc::Get() and does a fe_dynamic_cast to TDest.
     //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
-    //! \note To cast a derived class to base, use `static_cast`.
+    //! @note To cast a derived class to base, use `static_cast`.
     //!
-    //! \param src    - Source pointer.
-    //! \tparam TDest - The type of result pointer.
-    //! \tparam TSrc  - The type of source pointer.
+    //! @param src    - Source pointer.
+    //! @tparam TDest - The type of result pointer.
+    //! @tparam TSrc  - The type of source pointer.
     //!
-    //! \return An instance of Rc<TDest> that holds the same object but dynamically casted.
+    //! @return An instance of Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
@@ -264,17 +263,17 @@ namespace FE
     }
 
 
-    //! \brief Perform fe_assert_cast of Rc<T>.
+    //! @brief Perform fe_assert_cast of Rc<T>.
     //!
     //! This function retrieves a raw pointer using Rc::Get() and does a fe_assert_cast to TDest.
     //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
-    //! \param src    - Source pointer.
-    //! \tparam TDest - The type of result pointer.
-    //! \tparam TSrc  - The type of source pointer.
+    //! @param src    - Source pointer.
+    //! @tparam TDest - The type of result pointer.
+    //! @tparam TSrc  - The type of source pointer.
     //!
-    //! \return An instance of Rc<TDest> that holds the same object but dynamically casted.
+    //! @return An instance of Rc<TDest> that holds the same object but dynamically casted.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {
