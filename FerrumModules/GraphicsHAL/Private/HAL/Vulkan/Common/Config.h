@@ -4,7 +4,7 @@
 
 #include <volk.h>
 
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/Memory.h>
 #include <array>
 
@@ -21,7 +21,7 @@
     do                                                                                                                           \
     {                                                                                                                            \
         const VkResult FE_UNIQUE_IDENT(result) = (stmt);                                                                         \
-        FE_ASSERT_MSG(FE_UNIQUE_IDENT(result) == VK_SUCCESS, "Vulkan result was {}", VKResultToString(FE_UNIQUE_IDENT(result))); \
+        FE_AssertMsg(FE_UNIQUE_IDENT(result) == VK_SUCCESS, "Vulkan result was {}", VKResultToString(FE_UNIQUE_IDENT(result))); \
     }                                                                                                                            \
     while (0)
 

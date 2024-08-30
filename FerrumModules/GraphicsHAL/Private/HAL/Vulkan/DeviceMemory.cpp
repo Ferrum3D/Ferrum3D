@@ -8,12 +8,12 @@ namespace FE::Graphics::Vulkan
     {
         switch (type)
         {
-        case HAL::MemoryType::DeviceLocal:
+        case HAL::MemoryType::kDeviceLocal:
             return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        case HAL::MemoryType::HostVisible:
+        case HAL::MemoryType::kHostVisible:
             return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
         default:
-            FE_UNREACHABLE("Invalid memory type");
+            FE_AssertMsg(false, "Invalid memory type");
             return 0;
         }
     }

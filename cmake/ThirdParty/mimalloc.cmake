@@ -6,6 +6,8 @@
           "MI_BUILD_TESTS OFF"
           "MI_BUILD_SHARED ON"
           "MI_BUILD_STATIC OFF"
+		  "MI_OVERRIDE OFF"
+		  "MI_WIN_REDIRECT OFF"
 )
 
 

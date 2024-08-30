@@ -25,7 +25,7 @@ namespace FE::Graphics::HAL
     {
         SamplerAddressMode AddressMode = SamplerAddressMode::Repeat;
         SamplerAnisotropy Anisotropy = SamplerAnisotropy::X16;
-        CompareOp CompareOp = CompareOp::Always;
+        CompareOp CompareOp = CompareOp::kAlways;
         bool CompareEnable = false;
     };
 

@@ -32,6 +32,10 @@ namespace FE::IO
             return "IO error";
         case ResultCode::DeadLock:
             return "Resource deadlock would occur";
+        case ResultCode::NotSupported:
+            return "Operation is not supported";
+        case ResultCode::InvalidArgument:
+            return "Argument value has not been accepted";
         default:
             return "Unknown error";
         }

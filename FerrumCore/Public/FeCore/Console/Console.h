@@ -6,7 +6,7 @@
 
 namespace FE::Console
 {
-    //! \brief Cross-platform abstraction over console text color.
+    //! @brief Cross-platform abstraction over console text color.
     enum class Color
     {
         Default = 0xff,
@@ -49,19 +49,14 @@ namespace FE::Console
 
     static Mutex StdoutMutex;
 
-    //! \brief Initialize the console.
+    //! @brief Initialize the console.
     void Init();
 
-    //! \brief Set console text color.
+    //! @brief Set console text color.
     //!
-    //! \param [in] color - The color to set.
+    //! @param color - The color to set.
     void SetColor(Color color);
 
-    //! \brief Reset console text color to default.
+    //! @brief Reset console text color to default.
     void ResetColor();
-
-    //! \brief Print a string to stdout.
-    //!
-    //! \param [in] string - String to print.
-    void PrintToStdout(StringSlice string);
 } // namespace FE::Console

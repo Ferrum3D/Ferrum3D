@@ -20,7 +20,7 @@ TEST(AssetLoader, LoadAsset)
 
     Rc file = Rc<IO::FileHandle>::DefaultNew();
     Rc stream = Rc<IO::FileStream>::DefaultNew(std::move(file));
-    FE_IO_ASSERT(stream->Open(assetPath1, IO::OpenMode::ReadOnly));
+    FE_IO_ASSERT(stream->Open(assetPath1, IO::OpenMode::kReadOnly));
     loader->LoadAsset(storage, stream.Get());
     EXPECT_EQ(storage->Data, IO::File::ReadAllText(assetPath1));
     storage->ReleaseStrongRef();

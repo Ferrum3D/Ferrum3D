@@ -3,7 +3,7 @@
 
 namespace FE::ECS
 {
-    //! \brief 2 dimensional position component.
+    //! @brief 2 dimensional position component.
     //!
     //! This component stores X and Y coordinates of an entity.
     struct alignas(4) Position2DComponent
@@ -62,7 +62,7 @@ namespace FE::ECS
         }
     };
 
-    //! \brief 3 dimensional position component.
+    //! @brief 3 dimensional position component.
     //!
     //! This component stores X, Y and Z coordinates of an entity.
     struct alignas(4) Position3DComponent

@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    //! \brief Describes how SparseStorage will allocate its memory.
+    //! @brief Describes how SparseStorage will allocate its memory.
     enum class SparseStorageAllocationPolicy
     {
         None,             //!< Invalid value that indicates that the storage was not initialized.
@@ -12,7 +12,7 @@ namespace FE
         Dynamic           //!< Dynamically resize underlying List when out of memory.
     };
 
-    //! \brief Sparse storage descriptor.
+    //! @brief Sparse storage descriptor.
     struct SparseStorageDesc
     {
         size_t ValueByteAlignment; //!< Alignment of value to store in bytes.
@@ -40,7 +40,7 @@ namespace FE
         }
     };
 
-    //! \brief Same as SparseSet<T>, but for arbitrary value sizes.
+    //! @brief Same as SparseSet<T>, but for arbitrary value sizes.
     //!
     //! This class stores a specified number of chunks that have the following memory layout:
     //! ```
@@ -102,13 +102,13 @@ namespace FE
 
         inline SparseStorage() = default;
 
-        //! \brief Initialize the storage and allocate memory.
+        //! @brief Initialize the storage and allocate memory.
         //!
         //! \see SparseStorageDesc
         //!
-        //! \param [in] alignment - The alignment required for the stored value.
-        //! \param [in] valueSize - The size of the value to store.
-        //! \param [in] capacity  - The number of chunks to allocate memory for.
+        //! @param alignment - The alignment required for the stored value.
+        //! @param valueSize - The size of the value to store.
+        //! @param capacity  - The number of chunks to allocate memory for.
         inline void Init(const SparseStorageDesc& desc)
         {
             FE_CORE_ASSERT(m_ChunkSize == -1, "Sparse storage can only be initialized once");
@@ -124,12 +124,12 @@ namespace FE
             }
         }
 
-        //! \brief Add a value into the SparseStorage.
+        //! @brief Add a value into the SparseStorage.
         //!
-        //! \param [in] key   - The key to associate the value with.
-        //! \param [in] value - The pointer to the value.
+        //! @param key   - The key to associate the value with.
+        //! @param value - The pointer to the value.
         //!
-        //! \return True if the value was new, False if it was updated.
+        //! @return True if the value was new, False if it was updated.
         inline bool Insert(const TKey& key, void* value)
         {
             FE_CORE_ASSERT(key < m_Desc.Capacity, "SparseStorage overflow");
@@ -164,30 +164,30 @@ namespace FE
             }
         }
 
-        //! \brief Check if the key is present.
+        //! @brief Check if the key is present.
         //!
-        //! \param [in] key - The key to check for.
+        //! @param key - The key to check for.
         //!
-        //! \return True if the was found.
+        //! @return True if the was found.
         [[nodiscard]] inline bool Contains(const TKey& key) const
         {
             return DenseIndex(key).IsValid();
         }
 
-        //! \brief Try to get value by key.
+        //! @brief Try to get value by key.
         //!
-        //! \param [in] key - The key to get.
+        //! @param key - The key to get.
         [[nodiscard]] inline void* TryGetAt(const TKey& key)
         {
             auto index = DenseIndex(key);
             return index.IsValid() ? GetEntryValue(index.ToOffset()) : nullptr;
         }
 
-        //! \brief Remove a value from the SparseStorage by key.
+        //! @brief Remove a value from the SparseStorage by key.
         //!
-        //! \param [in] key - The key to remove.
+        //! @param key - The key to remove.
         //!
-        //! \return True if the key was found and removed.
+        //! @return True if the key was found and removed.
         inline bool Remove(const TKey& key)
         {
             if (auto denseIndex = DenseIndex(key))
@@ -207,7 +207,7 @@ namespace FE
             return false;
         }
 
-        //! \brief Release unused memory.
+        //! @brief Release unused memory.
         //!
         //! If the storage uses SparseStorageAllocationPolicy::Dynamic, this function will shrink
         //! internal data structures.<br>

@@ -36,7 +36,7 @@ namespace FE::Graphics::HAL
             }
             else
             {
-                FE_UNREACHABLE("Unknown graphics API:\"{}\"", apiName);
+                FE_AssertMsg(false, "Unknown graphics API:\"{}\"", apiName);
             }
         }
     };

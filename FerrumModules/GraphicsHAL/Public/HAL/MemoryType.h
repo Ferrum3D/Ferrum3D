@@ -6,7 +6,7 @@ namespace FE::Graphics::HAL
 {
     enum class MemoryType
     {
-        DeviceLocal,
-        HostVisible
+        kDeviceLocal,
+        kHostVisible
     };
 } // namespace FE::Graphics::HAL

@@ -7,21 +7,24 @@ namespace FE
     typedef void (*ThreadFunction)(uintptr_t);
 
 
-    enum class ThreadPriority : int32_t
+    namespace Threading
     {
-        Lowest = -2,
-        BelowNormal = -1,
-        Normal = 0,
-        AboveNormal = 1,
-        Highest = 2,
-    };
+        enum class Priority : int32_t
+        {
+            kLowest = -2,
+            kBelowNormal = -1,
+            kNormal = 0,
+            kAboveNormal = 1,
+            kHighest = 2,
+        };
+    } // namespace Threading
 
 
 #if FE_WINDOWS
     struct NativeThreadData final
     {
         uint32_t ID;
-        ThreadPriority Priority;
+        Threading::Priority Priority;
         void* hThread;
         uintptr_t pUserData;
         ThreadFunction StartRoutine;
@@ -37,7 +40,7 @@ namespace FE
 
 
     ThreadHandle CreateThread(StringSlice name, ThreadFunction startRoutine, uintptr_t pUserData = 0,
-                              ThreadPriority priority = ThreadPriority::Normal, size_t stackSize = 0);
+                              Threading::Priority priority = Threading::Priority::kNormal, size_t stackSize = 0);
     void CloseThread(ThreadHandle& thread);
 
     uint64_t GetCurrentThreadID();

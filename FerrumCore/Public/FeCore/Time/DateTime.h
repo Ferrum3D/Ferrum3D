@@ -1,108 +1,185 @@
-#pragma once
+﻿#pragma once
+#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/Format.h>
 #include <FeCore/Time/TimeSpan.h>
 
 namespace FE
 {
-    //! \brief Represents date and time.
-    class DateTime
+    namespace TZ
     {
-        tm m_Data;
+        struct Convert;
+    }
 
-        inline DateTime(const tm& data)
-            : m_Data(data)
-        {
-        }
 
-        inline time_t MakeTime() const
+    namespace Internal
+    {
+        class DateTimeBase
         {
-            auto copy = m_Data;
-            return mktime(&copy);
+        protected:
+            SystemTimeInfo m_Data{};
+
+            inline DateTimeBase() = default;
+
+            inline DateTimeBase(SystemTimeInfo data)
+                : m_Data(data)
+            {
+            }
+
+        public:
+            [[nodiscard]] inline int32_t Year() const
+            {
+                return static_cast<int32_t>(m_Data.Year) + 1900;
+            }
+
+            [[nodiscard]] inline int32_t Month() const
+            {
+                return m_Data.Month;
+            }
+
+            [[nodiscard]] inline int32_t Day() const
+            {
+                return m_Data.Day;
+            }
+
+            [[nodiscard]] inline int32_t DayOfWeek() const
+            {
+                return m_Data.DayOfWeek;
+            }
+
+            [[nodiscard]] inline int32_t Hour() const
+            {
+                return m_Data.Hour;
+            }
+
+            [[nodiscard]] inline int32_t Minute() const
+            {
+                return m_Data.Minute;
+            }
+
+            [[nodiscard]] inline int32_t Second() const
+            {
+                return m_Data.Second;
+            }
+
+            [[nodiscard]] FixStr64 ToString(DateTimeFormatKind formatKind) const;
+        };
+    } // namespace Internal
+
+
+    //! @brief A struct that represents date and time, template parameter specifies the time zone.
+    //!
+    //! \see TZ::UTC, TZ::Local
+    template<class TTimeZone>
+    class DateTime final : public Internal::DateTimeBase
+    {
+        friend TZ::Convert;
+
+        inline DateTime(SystemTimeInfo data)
+            : Internal::DateTimeBase(data)
+        {
         }
 
     public:
-        FE_RTTI_Class(DateTime, "9927EE14-F009-464A-A067-4E4CB7AFE56C");
+        inline DateTime() = default;
 
-        inline int32_t Year() const
+        [[nodiscard]] inline static DateTime Now()
         {
-            return m_Data.tm_year + 1900;
+            return FromUnixTime(Platform::GetCurrentTimeUTC());
         }
 
-        inline int32_t Day() const
+        [[nodiscard]] inline TimeValue ToUnixTime() const
         {
-            return m_Data.tm_mday;
+            return TTimeZone::ToUnixTime(m_Data);
         }
 
-        inline int32_t DayOfWeek() const
+        [[nodiscard]] inline static DateTime FromUnixTime(TimeValue time)
         {
-            return m_Data.tm_wday;
-        }
-
-        inline int32_t DayOfYear() const
-        {
-            return m_Data.tm_yday + 1;
-        }
-
-        inline int32_t Hour() const
-        {
-            return m_Data.tm_hour;
-        }
-
-        inline int32_t Minute() const
-        {
-            return m_Data.tm_min;
-        }
-
-        inline int32_t Second() const
-        {
-            auto s = m_Data.tm_sec;
-            if (s == 60)
-                return 0;
-            return s;
-        }
-
-        void Format(std::ostream& stream, const char* format = "[%m/%d/%Y %T]") const;
-
-        String ToString(const char* format = "[%m/%d/%Y %T]") const;
-
-        inline static DateTime CreateLocal(time_t time)
-        {
-            tm data;
-            localtime_s(&data, &time);
-            return DateTime(data);
-        }
-
-        inline static DateTime CreateUtc(time_t time)
-        {
-            tm data;
-            gmtime_s(&data, &time);
-            return DateTime(data);
-        }
-
-        inline static DateTime Now()
-        {
-            time_t now;
-            time(&now);
-            return CreateLocal(now);
-        }
-
-        inline static DateTime UtcNow()
-        {
-            time_t now;
-            time(&now);
-            return CreateUtc(now);
-        }
-
-        inline TimeSpan operator-(const DateTime& other) const
-        {
-            time_t diff = static_cast<time_t>(difftime(MakeTime(), other.MakeTime()));
-            return TimeSpan::FromSeconds(diff);
+            return DateTime{ TTimeZone::FromUnixTime(time) };
         }
     };
 
-    inline std::ostream& operator<<(std::ostream& stream, const DateTime& time)
+
+    template<class TTimeZone1, class TTimeZone2>
+    [[nodiscard]] inline TimeSpan operator-(DateTime<TTimeZone1> lhs, DateTime<TTimeZone2> rhs)
     {
-        time.Format(stream);
-        return stream;
+        if constexpr (std::is_same_v<TTimeZone1, TTimeZone2>)
+        {
+            // Avoid conversion when we know the time zones are the same.
+            const auto a = bit_cast<SystemTimeInfo>(lhs);
+            const auto b = bit_cast<SystemTimeInfo>(rhs);
+            return TimeSpan::FromSeconds(Platform::ConstructTime(a) - Platform::ConstructTime(b));
+        }
+
+        return TimeSpan::FromSeconds(lhs.ToUnixTime() - rhs.ToUnixTime());
     }
+
+
+    template<class TTimeZone1, class TTimeZone2>
+    [[nodiscard]] inline bool operator==(DateTime<TTimeZone1> lhs, DateTime<TTimeZone2> rhs)
+    {
+        if constexpr (std::is_same_v<TTimeZone1, TTimeZone2>)
+        {
+            return bit_cast<uint64_t>(lhs) == bit_cast<uint64_t>(rhs);
+        }
+
+        return lhs.ToUnixTime() == rhs.ToUnixTime();
+    }
+
+
+    template<class TTimeZone1, class TTimeZone2>
+    [[nodiscard]] inline bool operator!=(DateTime<TTimeZone1> lhs, DateTime<TTimeZone2> rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+
+    namespace TZ
+    {
+        struct UTC final
+        {
+            UTC() = delete;
+
+            [[nodiscard]] inline static TimeValue ToUnixTime(SystemTimeInfo dateTime)
+            {
+                return Platform::ConstructTime(dateTime);
+            }
+
+            [[nodiscard]] inline static SystemTimeInfo FromUnixTime(TimeValue time)
+            {
+                return Platform::DeconstructTime(time);
+            }
+        };
+
+
+        struct Local final
+        {
+            Local() = delete;
+
+            [[nodiscard]] inline static TimeValue ToUnixTime(SystemTimeInfo dateTime)
+            {
+                SystemTimeInfo utc;
+                Platform::ConvertLocalTimeToUTC(dateTime, utc);
+                return Platform::ConstructTime(utc);
+            }
+
+            [[nodiscard]] inline static SystemTimeInfo FromUnixTime(TimeValue time)
+            {
+                SystemTimeInfo local;
+                Platform::ConvertUTCToLocalTime(Platform::DeconstructTime(time), local);
+                return local;
+            }
+        };
+
+
+        struct Convert final
+        {
+            Convert() = delete;
+
+            template<class TDestTimeZone, class TSourceTimeZone>
+            [[nodiscard]] inline static DateTime<TDestTimeZone> To(DateTime<TSourceTimeZone> dateTime)
+            {
+                return DateTime<TDestTimeZone>::FromUnixTime(dateTime.ToUnixTime());
+            }
+        };
+    } // namespace TZ
 } // namespace FE

@@ -8,19 +8,19 @@ namespace FE::Graphics::HAL
 {
     enum class PrimitiveTopology
     {
-        None,
-        PointList,
-        LineList,
-        LineStrip,
-        TriangleList,
-        TriangleStrip
+        kNone,
+        kPointList,
+        kLineList,
+        kLineStrip,
+        kTriangleList,
+        kTriangleStrip
     };
 
     enum class InputStreamRate
     {
-        None,
-        PerVertex,
-        PerInstance
+        kNone,
+        kPerVertex,
+        kPerInstance
     };
 
     struct InputStreamBufferDesc
@@ -65,7 +65,7 @@ namespace FE::Graphics::HAL
         FixedString<22> ShaderSemantic;
         uint32_t BufferIndex = 0;
         uint32_t Offset = 0;
-        Format ElementFormat = Format::None;
+        Format ElementFormat = Format::kUndefined;
     };
 
     class InputStreamLayout

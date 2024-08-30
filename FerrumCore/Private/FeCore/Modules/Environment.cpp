@@ -32,7 +32,7 @@ namespace FE::Env
 
             SpinLock m_Lock;
             void** m_ppPages;
-            uint32_t m_CurrentPageIndex = InvalidIndex;
+            uint32_t m_CurrentPageIndex = kInvalidIndex;
             uint32_t m_Offset = NamePageByteSize;
             festd::unordered_dense_map<uint64_t, uint32_t> m_Map;
 
@@ -44,7 +44,7 @@ namespace FE::Env
 
             inline ~NameDataAllocator()
             {
-                while (m_CurrentPageIndex != InvalidIndex)
+                while (m_CurrentPageIndex != kInvalidIndex)
                 {
                     Memory::FreeVirtual(m_ppPages[m_CurrentPageIndex], NamePageByteSize);
                     --m_CurrentPageIndex;
@@ -59,7 +59,7 @@ namespace FE::Env
                 const auto it = m_Map.find(hash);
                 if (it != m_Map.end())
                     return it->second;
-                return InvalidIndex;
+                return kInvalidIndex;
             }
 
             inline Name::Record* Allocate(uint64_t hash, size_t stringByteSize, uint32_t& handle)
@@ -201,7 +201,7 @@ namespace FE::Env
                 case Memory::StaticAllocatorType::Linear:
                     return &LinearMemoryResource;
                 default:
-                    FE_DEBUGBREAK;
+                    FE_DebugBreak();
                     return nullptr;
                 }
             }
@@ -295,7 +295,7 @@ namespace FE::Env
     }
 
 
-    DI::IServiceProvider* FE::Env::GetServiceProvider()
+    DI::IServiceProvider* GetServiceProvider()
     {
         return &Internal::g_EnvInstance->DIContainer;
     }

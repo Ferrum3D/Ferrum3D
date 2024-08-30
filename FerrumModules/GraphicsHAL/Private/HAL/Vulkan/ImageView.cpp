@@ -10,17 +10,17 @@ namespace FE::Graphics::Vulkan
     {
         switch (dim)
         {
-        case HAL::ImageDim::Image1D:
+        case HAL::ImageDim::kImage1D:
             return isArray ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
-        case HAL::ImageDim::Image2D:
+        case HAL::ImageDim::kImage2D:
             return isArray ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
-        case HAL::ImageDim::Image3D:
-            FE_ASSERT_MSG(!isArray, "Array of 3D images is not allowed");
+        case HAL::ImageDim::kImage3D:
+            FE_AssertMsg(!isArray, "Array of 3D images is not allowed");
             return VK_IMAGE_VIEW_TYPE_3D;
-        case HAL::ImageDim::ImageCubemap:
+        case HAL::ImageDim::kImageCubemap:
             return isArray ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
         default:
-            FE_UNREACHABLE("Invalid ImageDim");
+            FE_AssertMsg(false, "Invalid ImageDim");
             return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
         }
     }

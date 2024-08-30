@@ -1,4 +1,4 @@
-﻿#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <HAL/Vulkan/ShaderReflection.h>
 
 namespace FE::Graphics::Vulkan
@@ -24,7 +24,7 @@ namespace FE::Graphics::Vulkan
             case 4:
                 return Format::R16G16B16A16_SFloat;
             default:
-                FE_UNREACHABLE("VecSize {} in parameters is not allowed", type.vecsize);
+                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
                 return Format::None;
             }
         case SpvC::SPIRType::BaseType::Float:
@@ -39,7 +39,7 @@ namespace FE::Graphics::Vulkan
             case 4:
                 return Format::R32G32B32A32_SFloat;
             default:
-                FE_UNREACHABLE("VecSize {} in parameters is not allowed", type.vecsize);
+                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
                 return Format::None;
             }
         case SpvC::SPIRType::BaseType::Int:
@@ -54,7 +54,7 @@ namespace FE::Graphics::Vulkan
             case 4:
                 return Format::R32G32B32A32_SInt;
             default:
-                FE_UNREACHABLE("VecSize {} in parameters is not allowed", type.vecsize);
+                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
                 return Format::None;
             }
         case SpvC::SPIRType::BaseType::UInt:
@@ -69,11 +69,11 @@ namespace FE::Graphics::Vulkan
             case 4:
                 return Format::R32G32B32A32_UInt;
             default:
-                FE_UNREACHABLE("VecSize {} in parameters is not allowed", type.vecsize);
+                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
                 return Format::None;
             }
         default:
-            FE_UNREACHABLE("Invalid format");
+            FE_AssertMsg(false, "Invalid format");
             return Format::None;
         }
     }
@@ -119,10 +119,10 @@ namespace FE::Graphics::Vulkan
                 return HAL::ShaderResourceType::ConstantBuffer;
             }
 
-            FE_UNREACHABLE("Invalid resource type");
+            FE_AssertMsg(false, "Invalid resource type");
             return HAL::ShaderResourceType::None;
         default:
-            FE_UNREACHABLE("Invalid resource type");
+            FE_AssertMsg(false, "Invalid resource type");
             return HAL::ShaderResourceType::None;
         }
     }
@@ -142,7 +142,7 @@ namespace FE::Graphics::Vulkan
         if (!resourceType.array.empty())
             result.Count = static_cast<uint8_t>(resourceType.array.front());
 
-        FE_ASSERT(result.Count != 0);
+        FE_Assert(result.Count != 0);
         return result;
     }
 
@@ -217,7 +217,7 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        FE_UNREACHABLE("Shader resource \"{}\" not found", name);
+        FE_AssertMsg(false, "Shader resource \"{}\" not found", name);
         return 0;
     }
 
@@ -232,7 +232,7 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        FE_UNREACHABLE("Shader semantic \"{}\" not found in input attributes", semantic);
+        FE_AssertMsg(false, "Shader semantic \"{}\" not found in input attributes", semantic);
         return 0;
     }
 } // namespace FE::Graphics::Vulkan

@@ -3,7 +3,7 @@
 
 namespace FE::ECS
 {
-    //! \brief Local-to-World matrix component.
+    //! @brief Local-to-World matrix component.
     //!
     //! This component stores a single Matrix4x4F that allows to transform vectors from local object
     //! coordinate system to the global coordinate system.

@@ -12,8 +12,10 @@ namespace FE::DI
         {
             inline void OnDetach(ServiceRegistry* pRegistry) override
             {
+                FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
                 Container* pParent =
                     reinterpret_cast<Container*>(reinterpret_cast<uintptr_t>(this) - offsetof(Container, m_RegistryCallback));
+                FE_POP_CLANG_WARNING
 
                 std::lock_guard lk{ pParent->m_Lock };
                 LifetimeScope* pRootLifetimeScope = pRegistry->GetRootLifetimeScope();

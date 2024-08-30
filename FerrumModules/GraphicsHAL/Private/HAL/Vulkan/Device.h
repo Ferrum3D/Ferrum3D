@@ -1,9 +1,9 @@
 ﻿#pragma once
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <HAL/Device.h>
 #include <HAL/DeviceFactory.h>
 #include <HAL/Vulkan/Common/Config.h>
@@ -68,7 +68,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find command pool");
+            FE_AssertMsg(false, "Couldn't find command pool");
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
@@ -82,7 +82,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find command pool");
+            FE_AssertMsg(false, "Couldn't find command pool");
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
@@ -96,7 +96,7 @@ namespace FE::Graphics::Vulkan
                 }
             }
 
-            FE_UNREACHABLE("Couldn't find queue family");
+            FE_AssertMsg(false, "Couldn't find queue family");
             return static_cast<uint32_t>(-1);
         }
 

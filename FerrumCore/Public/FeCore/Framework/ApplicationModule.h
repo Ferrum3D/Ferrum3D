@@ -1,14 +1,13 @@
 ﻿#pragma once
 #include <FeCore/Assets/IAssetManager.h>
-#include <FeCore/Console/ConsoleLogger.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/ModuleBase.h>
 #include <FeCore/Jobs/JobSystem.h>
 
 namespace FE
 {
-    //! \brief Base class for all applications created with Ferrum3D.
+    //! @brief Base class for all applications created with Ferrum3D.
     //!
     //! Usage:
     //! \code{.cpp}

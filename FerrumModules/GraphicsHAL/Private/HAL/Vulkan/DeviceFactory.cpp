@@ -1,4 +1,4 @@
-﻿#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/SmallVector.h>
 #include <FeCore/DI/Builder.h>
 
@@ -148,7 +148,7 @@ namespace FE::Graphics::Vulkan
             bool found = eastl::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
                 return layerSlice == props.layerName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance layer {} was not found", layerSlice);
+            FE_AssertMsg(found, "Vulkan instance layer {} was not found", layerSlice);
         }
 
         uint32_t extensionCount;
@@ -162,7 +162,7 @@ namespace FE::Graphics::Vulkan
             const bool found = eastl::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
                 return extSlice == props.extensionName;
             });
-            FE_ASSERT_MSG(found, "Vulkan instance extension {} was not found", extSlice);
+            FE_AssertMsg(found, "Vulkan instance extension {} was not found", extSlice);
         }
 
         VkApplicationInfo appInfo{};

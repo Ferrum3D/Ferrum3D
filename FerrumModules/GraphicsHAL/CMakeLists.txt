@@ -107,15 +107,15 @@ set(VULKAN_SOURCES
 )
 
 
-add_library(GraphicsHAL SHARED ${PUBLIC_HEADERS} ${VULKAN_SOURCES} ${COMMON_SOURCES})
+add_library(FeGraphicsHAL SHARED ${PUBLIC_HEADERS} ${VULKAN_SOURCES} ${COMMON_SOURCES})
 
-fe_configure_target(GraphicsHAL)
+fe_configure_target(FeGraphicsHAL)
 
-target_include_directories(GraphicsHAL PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
-target_include_directories(GraphicsHAL PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
+target_include_directories(FeGraphicsHAL PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
+target_include_directories(FeGraphicsHAL PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
-set_target_properties(GraphicsHAL PROPERTIES FOLDER "Modules/Graphics")
-target_link_libraries(GraphicsHAL volk glfw dxc FeCore spirv-cross-core spirv-cross-hlsl TracyClient)
+set_target_properties(FeGraphicsHAL PROPERTIES FOLDER "Modules/Graphics")
+target_link_libraries(FeGraphicsHAL volk glfw dxc FeCore spirv-cross-core spirv-cross-hlsl TracyClient)
 
-get_property("TARGET_SOURCE_FILES" TARGET GraphicsHAL PROPERTY SOURCES)
+get_property("TARGET_SOURCE_FILES" TARGET FeGraphicsHAL PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

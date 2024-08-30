@@ -56,33 +56,33 @@ void RunExample()
         // clang-format on
         vertexSize          = vertexData.Size() * sizeof(Vertex);
         vertexBufferStaging = device->CreateBuffer(HAL::BindFlags::None, vertexSize);
-        vertexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+        vertexBufferStaging->AllocateMemory(HAL::MemoryType::kHostVisible);
         vertexBufferStaging->UpdateData(vertexData.Data());
 
         vertexBuffer = device->CreateBuffer(HAL::BindFlags::VertexBuffer, vertexSize);
-        vertexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
+        vertexBuffer->AllocateMemory(HAL::MemoryType::kDeviceLocal);
     }
     {
         FE::List<uint32_t> indexData = { 0, 2, 3, 3, 2, 1 };
         indexSize                        = indexData.Size() * sizeof(uint32_t);
         indexBufferStaging               = device->CreateBuffer(HAL::BindFlags::None, indexSize);
-        indexBufferStaging->AllocateMemory(HAL::MemoryType::HostVisible);
+        indexBufferStaging->AllocateMemory(HAL::MemoryType::kHostVisible);
         indexBufferStaging->UpdateData(indexData.Data());
 
         indexBuffer = device->CreateBuffer(HAL::BindFlags::IndexBuffer, indexSize);
-        indexBuffer->AllocateMemory(HAL::MemoryType::DeviceLocal);
+        indexBuffer->AllocateMemory(HAL::MemoryType::kDeviceLocal);
     }
 
     {
         auto constantData = FE::Colors::Gold;
         psConstantBuffer       = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector4F));
-        psConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
+        psConstantBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
         psConstantBuffer->UpdateData(constantData.Data());
     }
     {
         FE::Vector3F constantData = { 0.3f, -0.4f, 0.0f };
         vsConstantBuffer          = device->CreateBuffer(HAL::BindFlags::ConstantBuffer, sizeof(FE::Vector3F));
-        vsConstantBuffer->AllocateMemory(HAL::MemoryType::HostVisible);
+        vsConstantBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
         vsConstantBuffer->UpdateData(constantData.Data());
     }
 
@@ -100,25 +100,25 @@ void RunExample()
     auto compiler = device->CreateShaderCompiler();
     HAL::ShaderCompilerArgs psArgs{};
     psArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
-    psArgs.Stage      = HAL::ShaderStage::Pixel;
+    psArgs.Stage      = HAL::ShaderStage::kPixel;
     psArgs.EntryPoint = "main";
     psArgs.FullPath   = "../../Samples/Uniforms/Shaders/PixelShader.hlsl";
     auto psSource     = FE::IO::File::ReadAllText(psArgs.FullPath);
     psArgs.SourceCode = psSource;
     auto psByteCode   = compiler->CompileShader(psArgs);
 
-    auto pixelShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Pixel, psByteCode));
+    auto pixelShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kPixel, psByteCode));
 
     HAL::ShaderCompilerArgs vsArgs{};
     vsArgs.Version    = HAL::HLSLShaderVersion{ 6, 1 };
-    vsArgs.Stage      = HAL::ShaderStage::Vertex;
+    vsArgs.Stage      = HAL::ShaderStage::kVertex;
     vsArgs.EntryPoint = "main";
     vsArgs.FullPath   = "../../Samples/Uniforms/Shaders/VertexShader.hlsl";
     auto vsSource     = FE::IO::File::ReadAllText(vsArgs.FullPath);
     vsArgs.SourceCode = vsSource;
     auto vsByteCode   = compiler->CompileShader(vsArgs);
 
-    auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::Vertex, vsByteCode));
+    auto vertexShader = device->CreateShaderModule(HAL::ShaderModuleDesc(HAL::ShaderStage::kVertex, vsByteCode));
 
     HAL::RenderPassDesc renderPassDesc{};
 
@@ -126,13 +126,13 @@ void RunExample()
     attachmentDesc.Format       = swapChain->GetDesc().Format;
     attachmentDesc.StoreOp      = HAL::AttachmentStoreOp::Store;
     attachmentDesc.LoadOp       = HAL::AttachmentLoadOp::Clear;
-    attachmentDesc.InitialState = HAL::ResourceState::Undefined;
-    attachmentDesc.FinalState   = HAL::ResourceState::Present;
+    attachmentDesc.InitialState = HAL::ResourceState::kUndefined;
+    attachmentDesc.FinalState   = HAL::ResourceState::kPresent;
 
     renderPassDesc.Attachments = { attachmentDesc };
 
     HAL::SubpassDesc subpassDesc{};
-    subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::RenderTarget, 0) };
+    subpassDesc.RenderTargetAttachments = { HAL::SubpassAttachment(HAL::ResourceState::kRenderTarget, 0) };
     renderPassDesc.Subpasses            = { subpassDesc };
 
     HAL::SubpassDependency dependency{};
@@ -146,8 +146,8 @@ void RunExample()
                                      HAL::DescriptorSize(1, HAL::ShaderResourceType::ConstantBuffer) };
     auto descriptorHeap          = device->CreateDescriptorHeap(descriptorHeapDesc);
 
-    HAL::DescriptorDesc psDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Pixel, 1);
-    HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::Vertex, 1);
+    HAL::DescriptorDesc psDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::kPixel, 1);
+    HAL::DescriptorDesc vsDescriptorDesc(HAL::ShaderResourceType::ConstantBuffer, HAL::ShaderStageFlags::kVertex, 1);
     auto descriptorTable = descriptorHeap->AllocateDescriptorTable({ psDescriptorDesc, vsDescriptorDesc });
 
     HAL::DescriptorWriteBuffer descriptorWrite{ psConstantBuffer.Get() };
@@ -157,8 +157,8 @@ void RunExample()
     descriptorTable->Update(descriptorWrite);
 
     HAL::GraphicsPipelineDesc pipelineDesc{};
-    pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::TriangleList)
-                                   .AddBuffer(HAL::InputStreamRate::PerVertex)
+    pipelineDesc.InputLayout = HAL::InputLayoutBuilder(HAL::PrimitiveTopology::kTriangleList)
+                                   .AddBuffer(HAL::InputStreamRate::kPerVertex)
                                    .AddAttribute(HAL::Format::R32G32B32_SFloat, "POSITION")
                                    .Build()
                                    .Build();
@@ -172,7 +172,7 @@ void RunExample()
     pipelineDesc.Scissor          = scissor;
     pipelineDesc.Rasterization    = HAL::RasterizationState{};
 
-    pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::Back;
+    pipelineDesc.Rasterization.CullMode = HAL::CullingModeFlags::kBack;
 
     auto pipeline = device->CreateGraphicsPipeline(pipelineDesc);
 

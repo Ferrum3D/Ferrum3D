@@ -16,14 +16,14 @@ namespace FE::Graphics::HAL
     public:
         void Init(size_t size)
         {
-            FE_ASSERT(m_Size == 0);
+            FE_Assert(m_Size == 0);
             m_Size = size;
             Reset();
         }
 
         NullableHandle Allocate(size_t size, size_t alignment)
         {
-            FE_ASSERT(m_Offset.IsValid());
+            FE_Assert(m_Offset.IsValid());
             const size_t address = AlignUp(m_Offset.ToOffset(), alignment);
             m_Offset = NullableHandle::FromOffset(address + size);
             return NullableHandle::FromOffset(address);

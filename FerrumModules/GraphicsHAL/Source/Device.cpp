@@ -17,7 +17,7 @@ namespace FE::Graphics::HAL
         for (festd::intrusive_list_node& resourceNode : m_ResourceList)
         {
             m_pLogger->LogError("Resource leak: {}", static_cast<HAL::Resource&>(resourceNode).GetName());
-            FE_DEBUGBREAK;
+            FE_DebugBreak();
         }
         for (DeviceService* pService : m_ServiceList)
         {

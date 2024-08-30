@@ -1,14 +1,85 @@
 ﻿#include <FeCore/Assets/AssetManager.h>
-#include <FeCore/Assets/AssetProviderDev.h>
 #include <FeCore/Assets/IAssetLoader.h>
+#include <FeCore/Console/Console.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
 #include <FeCore/Framework/ApplicationModule.h>
+#include <FeCore/IO/FileStream.h>
+#include <FeCore/IO/StreamFactory.h>
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/Modules/EnvironmentPrivate.h>
 
 namespace FE
 {
+    struct LogColorScope final
+    {
+        inline LogColorScope(LogSeverity severity)
+        {
+            Console::Color color = Console::Color::Default;
+            switch (severity)
+            {
+            case LogSeverity::kWarning:
+                color = Console::Color::Yellow;
+                break;
+            case LogSeverity::kError:
+            case LogSeverity::kCritical:
+                color = Console::Color::Red;
+                break;
+            }
+
+            Console::SetColor(color);
+        }
+
+        inline ~LogColorScope()
+        {
+            Console::ResetColor();
+        }
+    };
+
+
+    struct StdoutLogSink final : public LogSinkBase
+    {
+        Rc<IO::FileStream> Stream;
+
+        inline StdoutLogSink(Logger* logger)
+            : LogSinkBase(logger)
+        {
+            Stream = Rc<IO::FileStream>::DefaultNew();
+            Stream->Open(IO::StandardDescriptor::kSTDOUT);
+            Stream->EnsureBufferAllocated();
+        }
+
+        inline void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message)
+        {
+            {
+                const auto date = DateTime<TZ::UTC>::Now().ToString(DateTimeFormatKind::kISO8601);
+                Stream->WriteFromBuffer(Memory::MakeByteSpan(date.Data(), date.Size()));
+            }
+
+            Stream->WriteFromBuffer(Memory::MakeByteSpan(" ["));
+
+            {
+                LogColorScope colorScope{ severity };
+                Stream->WriteFromBuffer(Memory::MakeByteSpan(LogSeverityToString(severity)));
+            }
+
+            Stream->WriteFromBuffer(Memory::MakeByteSpan("] "));
+
+            {
+                const auto location =
+                    Fmt::FixedFormatSized<IO::MaxPathLength + 16>("{}({}): ", sourceLocation.FileName, sourceLocation.LineNumber);
+                Stream->WriteFromBuffer(Memory::MakeByteSpan(location.Data(), location.Size()));
+            }
+
+            Stream->WriteFromBuffer(Memory::MakeByteSpan(message.Data(), message.Size()));
+            Stream->WriteFromBuffer(Memory::MakeByteSpan("\n"));
+
+            if (severity >= LogSeverity::kWarning)
+                Stream->FlushWrites();
+        }
+    };
+
+
     ApplicationModule::ApplicationModule()
     {
         ZoneScoped;
@@ -86,8 +157,9 @@ namespace FE
         ZoneScoped;
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
         builder.Bind<Env::Configuration>().ToSelf().InSingletonScope();
-        builder.Bind<Debug::IConsoleLogger>().To<Debug::ConsoleLogger>().InSingletonScope();
+        builder.Bind<Logger>().ToSelf().InSingletonScope();
         builder.Bind<Assets::IAssetManager>().To<Assets::AssetManager>().InSingletonScope();
+        builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();
     }
 
 

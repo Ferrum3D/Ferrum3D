@@ -47,20 +47,20 @@ namespace FE::Graphics::Vulkan
         for (auto& image : images)
         {
             Rc backBuffer = ImplCast(pServiceProvider->ResolveRequired<HAL::Image>());
-            const auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::Color, width, height, m_Desc.Format);
+            const auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::kColor, width, height, m_Desc.Format);
             backBuffer->InitInternal("Swapchain image", imageDesc, image);
             m_Images.push_back(backBuffer);
 
             Rc backBufferView = ImplCast(pServiceProvider->ResolveRequired<HAL::ImageView>());
-            backBufferView->Init(HAL::ImageViewDesc::ForImage(backBuffer.Get(), HAL::ImageAspectFlags::Color));
+            backBufferView->Init(HAL::ImageViewDesc::ForImage(backBuffer.Get(), HAL::ImageAspectFlags::kColor));
             m_ImageViews.push_back(backBufferView);
         }
 
-        const auto depthImageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::Depth, width, height, HAL::Format::D32_SFloat);
+        const auto depthImageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::kDepth, width, height, HAL::Format::D32_SFloat);
         m_DepthImage->Init("Swapchain depth target", depthImageDesc);
-        m_DepthImage->AllocateMemory(HAL::MemoryType::DeviceLocal);
+        m_DepthImage->AllocateMemory(HAL::MemoryType::kDeviceLocal);
         m_DepthImageView = ImplCast(pServiceProvider->ResolveRequired<HAL::ImageView>());
-        m_DepthImageView->Init(HAL::ImageViewDesc::ForImage(m_DepthImage.Get(), HAL::ImageAspectFlags::Depth));
+        m_DepthImageView->Init(HAL::ImageViewDesc::ForImage(m_DepthImage.Get(), HAL::ImageAspectFlags::kDepth));
 
         for (size_t i = 0; i < m_Desc.FrameCount; ++i)
         {
@@ -99,7 +99,7 @@ namespace FE::Graphics::Vulkan
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_Surface, &formatCount, formats.data());
         VkBool32 formatSupported;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, m_Queue->GetDesc().QueueFamilyIndex, m_Surface, &formatSupported);
-        FE_ASSERT(formatSupported);
+        FE_Assert(formatSupported);
 
         const auto preferredFormat = HAL::Format::B8G8R8A8_SRGB;
         m_ColorFormat.format = VK_FORMAT_UNDEFINED;

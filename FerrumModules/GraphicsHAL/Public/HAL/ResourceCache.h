@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Console/FeLog.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Memory/Memory.h>
 

@@ -18,7 +18,7 @@ namespace FE::Graphics::Vulkan
         case HAL::AttachmentLoadOp::Clear:
             return VK_ATTACHMENT_LOAD_OP_CLEAR;
         default:
-            FE_UNREACHABLE("Invalid AttachmentLoadOp");
+            FE_AssertMsg(false, "Invalid AttachmentLoadOp");
             return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
         }
     }
@@ -33,7 +33,7 @@ namespace FE::Graphics::Vulkan
         case HAL::AttachmentStoreOp::Store:
             return VK_ATTACHMENT_STORE_OP_STORE;
         default:
-            FE_UNREACHABLE("Invalid AttachmentLoadOp");
+            FE_AssertMsg(false, "Invalid AttachmentLoadOp");
             return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
         }
     }
@@ -168,7 +168,7 @@ namespace FE::Graphics::Vulkan
             attachments = &m_Desc.Subpasses[subpassIndex].MSAAResolveAttachments;
             break;
         default:
-            FE_UNREACHABLE("Invalid AttachmentType, note that Preserve and DepthStencil attachments are not allowed here");
+            FE_AssertMsg(false, "Invalid AttachmentType, note that Preserve and DepthStencil attachments are not allowed here");
             return result;
         }
 

@@ -3,7 +3,7 @@
 
 namespace FE::Memory
 {
-    class PoolAllocator final : public std::pmr::memory_resource
+    class PoolAllocator : public std::pmr::memory_resource
     {
         struct Page final
         {
@@ -11,7 +11,7 @@ namespace FE::Memory
             void* pCurrent;
         };
 
-        static_assert(sizeof(Page) == DefaultAlignment);
+        static_assert(sizeof(Page) == kDefaultAlignment);
 
         const char* m_Name = nullptr;
         size_t m_ElementByteSize = 0;
@@ -74,7 +74,7 @@ namespace FE::Memory
                                "Page size must be aligned to virtual allocation granularity");
             }
 
-            m_ElementByteSize = AlignUp<DefaultAlignment>(elementByteSize);
+            m_ElementByteSize = AlignUp<kDefaultAlignment>(elementByteSize);
             FE_CORE_ASSERT(pageByteSize > m_ElementByteSize, "");
 
             m_PageByteSize = pageByteSize;

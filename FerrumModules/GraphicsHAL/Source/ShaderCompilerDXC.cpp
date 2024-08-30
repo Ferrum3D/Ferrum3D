@@ -1,4 +1,4 @@
-﻿#include <FeCore/Console/FeLog.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/ByteBuffer.h>
 #include <HAL/ShaderCompilerDXC.h>
 #include <d3d12shader.h>
@@ -53,22 +53,22 @@ namespace FE::Graphics::HAL
         std::basic_stringstream<wchar_t, std::char_traits<wchar_t>, Memory::StdDefaultAllocator<wchar_t>> result;
         switch (stage)
         {
-        case ShaderStage::Vertex:
+        case ShaderStage::kVertex:
             result << L"vs_";
             break;
-        case ShaderStage::Pixel:
+        case ShaderStage::kPixel:
             result << L"ps_";
             break;
-        case ShaderStage::Hull:
+        case ShaderStage::kHull:
             result << L"hs_";
             break;
-        case ShaderStage::Domain:
+        case ShaderStage::kDomain:
             result << L"ds_";
             break;
-        case ShaderStage::Geometry:
+        case ShaderStage::kGeometry:
             result << L"gs_";
             break;
-        case ShaderStage::Compute:
+        case ShaderStage::kCompute:
             result << L"cs_";
             break;
         }
@@ -172,7 +172,7 @@ namespace FE::Graphics::HAL
         if (SUCCEEDED(result))
         {
             CComPtr<IDxcBlob> byteCode;
-            FE_ASSERT(SUCCEEDED(compileResult->GetResult(&byteCode)));
+            FE_Assert(SUCCEEDED(compileResult->GetResult(&byteCode)));
             auto bufferPtr = static_cast<uint8_t*>(byteCode->GetBufferPointer());
             returnValue.assign(bufferPtr, bufferPtr + byteCode->GetBufferSize());
         }

@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 
-namespace FE::Assets
+namespace FE
 {
-    //! \brief A weak asset holder.
+    //! @brief A weak asset holder.
     //!
-    //! \tparam T - Asset storage type.
+    //! @tparam T - Asset storage type.
     //!
     //! This class is used to hold a weak reference to asset storage. When the asset is no longer valid,
-    //! the storage will be deleted, and the asset will be empty, but all the weak references will remain.
+    //! the storage will be deleted, but all the weak references will remain.
     //! It can be used by IAssetManager for caching of assets.
     template<class T>
     class WeakAsset final
@@ -23,7 +23,7 @@ namespace FE::Assets
         {
         }
 
-        //! \brief Create from preloaded asset.
+        //! @brief Create from preloaded asset.
         inline explicit WeakAsset(T* storage)
             : m_Storage(storage)
         {
@@ -33,7 +33,6 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Copy constructor.
         inline WeakAsset(const WeakAsset& other)
             : m_Storage(other.m_Storage)
         {
@@ -43,35 +42,31 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Move constructor.
         inline WeakAsset(WeakAsset&& other) noexcept
             : m_Storage(other.m_Storage)
         {
             other.m_Storage = nullptr;
         }
 
-        //! \brief Copy assignment.
         inline WeakAsset& operator=(const WeakAsset& other)
         {
             WeakAsset(other).Swap(*this);
             return *this;
         }
 
-        //! \brief Move assignment.
         inline WeakAsset& operator=(WeakAsset&& other) noexcept
         {
             WeakAsset(std::move(other)).Swap(*this);
             return *this;
         }
 
-        //! \brief Reset the asset holder and remove a reference from the asset.
         inline void Reset()
         {
             WeakAsset{}.Swap(*this);
         }
 
-        //! \brief Get underlying asset storage.
-        inline T* Get() noexcept
+        //! @brief Get underlying asset storage.
+        inline T* Get() const
         {
             return m_Storage;
         }
@@ -84,40 +79,29 @@ namespace FE::Assets
             }
         }
 
-        //! \brief Swap two asset holders.
+        //! @brief Swap two asset holders.
         inline void Swap(WeakAsset& other) noexcept
         {
-            auto* t         = other.m_Storage;
+            auto* t = other.m_Storage;
             other.m_Storage = m_Storage;
-            m_Storage       = t;
+            m_Storage = t;
         }
 
-        inline T& operator*()
+        inline T& operator*() const
         {
             FE_CORE_ASSERT(m_Storage, "Asset was empty");
             return *m_Storage;
         }
 
-        inline T* operator->()
+        inline T* operator->() const
         {
             return m_Storage;
         }
 
-        inline const T& operator*() const
-        {
-            FE_CORE_ASSERT(m_Storage, "Asset was empty");
-            return *m_Storage;
-        }
-
-        inline const T* operator->() const
-        {
-            return *m_Storage;
-        }
-
-        //! \brief Check if the asset is valid.
+        //! @brief Check if the asset is valid.
         inline explicit operator bool() const
         {
             return m_Storage && m_Storage->IsAlive();
         }
     };
-} // namespace FE::Assets
+} // namespace FE

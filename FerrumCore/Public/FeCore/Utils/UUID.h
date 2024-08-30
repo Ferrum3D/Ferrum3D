@@ -18,7 +18,7 @@ typedef struct _GUID
 
 namespace FE
 {
-    //! \brief A struct to work with UUIDs.
+    //! @brief A struct to work with UUIDs.
     struct alignas(8) UUID
     {
         std::array<uint8_t, 16> Data{};
@@ -46,7 +46,7 @@ namespace FE
             return result;
         }
 
-        //! \brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
+        //! @brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
         inline explicit UUID(const char* str) noexcept
         {
             const bool result = TryParse(str, *this, false);

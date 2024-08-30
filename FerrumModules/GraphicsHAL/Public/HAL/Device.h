@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Console/IConsoleLogger.h>
 #include <FeCore/EventBus/EventBus.h>
-#include <FeCore/EventBus/FrameEvents.h>
+#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/Parallel/SpinLock.h>
 #include <HAL/BindFlags.h>
 #include <HAL/Common/BaseTypes.h>
