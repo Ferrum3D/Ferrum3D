@@ -1,7 +1,4 @@
 ﻿set(SRC
-    Assets/AssetManager.cpp
-    Assets/TestAssetLoader.h
-
     Common/TestCommon.h
 
     Containers/LRUCacheMap.cpp
@@ -28,9 +25,6 @@
 )
 
 add_executable(FeCoreTests ${SRC})
-
-configure_file(Assets/TestAsset1.txt ${CMAKE_BINARY_DIR}/Assets/TestAsset1.txt COPYONLY)
-configure_file(Assets/TestAsset2.txt ${CMAKE_BINARY_DIR}/Assets/TestAsset2.txt COPYONLY)
 
 target_include_directories(FeCoreTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 

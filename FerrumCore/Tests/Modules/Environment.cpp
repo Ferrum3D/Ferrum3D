@@ -17,10 +17,10 @@ TEST(EnvironmentTest, EnvName)
     EXPECT_EQ(empty.c_str(), nullptr);
     EXPECT_EQ(empty.GetRecord(), nullptr);
 
-    const Env::Name test1 = std::string_view{ "name123" };
-    const Env::Name test2 = std::string_view{ "name124" };
-    const Env::Name test3 = std::string_view{ "name123" };
-    const Env::Name test4 = test1;
+    const Env::Name test1{ std::string_view{ "name123" } };
+    const Env::Name test2{ std::string_view{ "name124" } };
+    const Env::Name test3{ std::string_view{ "name123" } };
+    const Env::Name test4{ test1 };
     EXPECT_EQ(test1.GetRecord(), test3.GetRecord());
     EXPECT_EQ(test1.GetRecord(), test4.GetRecord());
     EXPECT_EQ(test1.c_str(), test3.c_str());
@@ -62,36 +62,36 @@ TEST(EnvironmentTest, EnvNamePages)
 
 TEST(EnvironmentTest, CreateVar)
 {
-    auto intVar = Env::CreateGlobalVariable<int>("CreateVar", 123);
+    auto intVar = Env::CreateGlobalVariable<int>(Env::Name{ "CreateVar" }, 123);
     ASSERT_EQ(*intVar, 123);
-    ASSERT_EQ(intVar.GetName(), "CreateVar");
+    ASSERT_EQ(intVar.GetName(), std::string_view{ "CreateVar" });
 }
 
 TEST(EnvironmentTest, SharedVar)
 {
-    auto instance1 = Env::CreateGlobalVariable<int>("SharedVar", 123);
+    auto instance1 = Env::CreateGlobalVariable<int>(Env::Name{ "SharedVar" }, 123);
     auto instance2 = instance1;
     ASSERT_EQ(*instance1, 123);
 
     ASSERT_EQ(instance1, instance2);
     ASSERT_EQ(*instance1, *instance2);
 
-    ASSERT_EQ(instance1.GetName(), "SharedVar");
-    ASSERT_EQ(instance2.GetName(), "SharedVar");
+    ASSERT_EQ(instance1.GetName(), std::string_view{ "SharedVar" });
+    ASSERT_EQ(instance2.GetName(), std::string_view{ "SharedVar" });
 }
 
 TEST(EnvironmentTest, FindVar)
 {
-    auto owner1 = Env::CreateGlobalVariable<int>("FindVar", 123);
-    /* deleted var*/ Env::CreateGlobalVariable<int>("Removed", 0);
+    auto owner1 = Env::CreateGlobalVariable<int>(Env::Name{ "FindVar" }, 123);
+    /* deleted var*/ Env::CreateGlobalVariable<int>(Env::Name{ "Removed" }, 0);
 
-    auto var123 = Env::FindGlobalVariable<int>("FindVar");
+    auto var123 = Env::FindGlobalVariable<int>(Env::Name{ "FindVar" });
     ASSERT_TRUE(var123);
-    ASSERT_FALSE(Env::FindGlobalVariable<int>("Removed"));
+    ASSERT_FALSE(Env::FindGlobalVariable<int>(Env::Name{ "Removed" }));
 
     ASSERT_EQ(*var123, 123);
 
-    EXPECT_EQ(var123.GetName(), "FindVar");
+    EXPECT_EQ(var123.GetName(), std::string_view{ "FindVar" });
 }
 
 TEST(EnvironmentTest, NoCopies)
@@ -103,8 +103,8 @@ TEST(EnvironmentTest, NoCopies)
     EXPECT_CALL(*mock, Move()).Times(0);
 
     {
-        auto handle1 = Env::CreateGlobalVariable<AllocateObject>("NoCopies", mock);
-        auto handle2 = Env::FindGlobalVariable<AllocateObject>("NoCopies");
+        auto handle1 = Env::CreateGlobalVariable<AllocateObject>(Env::Name{ "NoCopies" }, mock);
+        auto handle2 = Env::FindGlobalVariable<AllocateObject>(Env::Name{ "NoCopies" });
 
         ASSERT_EQ(&*handle1, &*handle2);
     }
