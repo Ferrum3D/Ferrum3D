@@ -80,7 +80,7 @@ namespace FE::Fmt
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.Append(buf, ptr - buf);
+            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
         }
     };
 
@@ -91,7 +91,7 @@ namespace FE::Fmt
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary64>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.Append(buf, ptr - buf);
+            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
         }
     };
 
