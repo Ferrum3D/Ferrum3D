@@ -1,5 +1,4 @@
-﻿#include <FeCore/Math/MathUtils.h>
-#include <FeCore/Math/Matrix4x4F.h>
+﻿#include <FeCore/Math/Matrix4x4F.h>
 #include <gtest/gtest.h>
 
 using FE::Matrix4x4F;
@@ -54,25 +53,27 @@ TEST(Matrix4x4, Create)
 
 TEST(Matrix4x4, Rotation)
 {
-    auto m = Matrix4x4F::CreateRotationX(FE::ToRadians(60.f));
+    using namespace FE::Math;
+
+    auto m = Matrix4x4F::CreateRotationX(ToRadians(60.f));
     EXPECT_TRUE(m.GetRow(0).IsApproxEqualTo(Vector4F(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(1).IsApproxEqualTo(Vector4F(+0.0000000f, +0.5000000f, -0.8660254f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(2).IsApproxEqualTo(Vector4F(+0.0000000f, +0.8660254f, +0.5000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(3).IsApproxEqualTo(Vector4F(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
-    m = Matrix4x4F::CreateRotationY(FE::ToRadians(60.f));
+    m = Matrix4x4F::CreateRotationY(ToRadians(60.f));
     EXPECT_TRUE(m.GetRow(0).IsApproxEqualTo(Vector4F(+0.5000000f, +0.0000000f, +0.8660254f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(1).IsApproxEqualTo(Vector4F(+0.0000000f, +1.0000000f, +0.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(2).IsApproxEqualTo(Vector4F(-0.8660254f, +0.0000000f, +0.5000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(3).IsApproxEqualTo(Vector4F(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
-    m = Matrix4x4F::CreateRotationZ(FE::ToRadians(60.f));
+    m = Matrix4x4F::CreateRotationZ(ToRadians(60.f));
     EXPECT_TRUE(m.GetRow(0).IsApproxEqualTo(Vector4F(+0.5000000f, -0.8660254f, +0.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(1).IsApproxEqualTo(Vector4F(+0.8660254f, +0.5000000f, +0.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(2).IsApproxEqualTo(Vector4F(-0.0000000f, +0.0000000f, +1.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(3).IsApproxEqualTo(Vector4F(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
-    m = Matrix4x4F::CreateRotationX(FE::ToRadians(30.0f));
+    m = Matrix4x4F::CreateRotationX(ToRadians(30.0f));
     EXPECT_TRUE(m.GetRow(0).IsApproxEqualTo(Vector4F(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(1).IsApproxEqualTo(Vector4F(+0.0000000f, +0.8660254f, -0.5000000f, +0.0000000f)));
     EXPECT_TRUE(m.GetRow(2).IsApproxEqualTo(Vector4F(+0.0000000f, +0.5000000f, +0.8660254f, +0.0000000f)));
@@ -258,7 +259,7 @@ TEST(Matrix4x4, Determinant)
 TEST(Matrix4x4, InverseTransform)
 {
     auto m = Matrix4x4F::CreateTranslation(Vector3F(1, 2, 3));
-    m *= Matrix4x4F::CreateRotationX(FE::ToRadians(60.f));
+    m *= Matrix4x4F::CreateRotationX(FE::Math::ToRadians(60.f));
     m *= Matrix4x4F::CreateScale(Vector3F(4, 5, 6));
     auto identity = m * m.InverseTransform();
     EXPECT_TRUE(identity.IsApproxEqualTo(Matrix4x4F::GetIdentity()));

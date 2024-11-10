@@ -196,7 +196,7 @@ namespace FE
         inline SegmentedVector(const SegmentedVector& other)
             : m_pAllocator(other.m_pAllocator)
         {
-            const uint32_t segmentCount = CeilDivide(other.m_Size, ElementsPerSegment);
+            const uint32_t segmentCount = Math::CeilDivide(other.m_Size, ElementsPerSegment);
             m_SegmentTableSize = segmentCount;
             m_ppSegments = Memory::AllocateArray<T*>(m_pAllocator, segmentCount);
             memset(m_ppSegments, 0, sizeof(T*) * segmentCount);
@@ -210,7 +210,7 @@ namespace FE
         inline SegmentedVector(const SegmentedVector<T, TSizeOther>& other)
             : m_pAllocator(other.m_pAllocator)
         {
-            const uint32_t segmentCount = CeilDivide(other.m_Size, ElementsPerSegment);
+            const uint32_t segmentCount = Math::CeilDivide(other.m_Size, ElementsPerSegment);
             m_SegmentTableSize = segmentCount;
             m_ppSegments = Memory::AllocateArray<T*>(m_pAllocator, segmentCount);
             memset(m_ppSegments, 0, sizeof(T*) * segmentCount);
