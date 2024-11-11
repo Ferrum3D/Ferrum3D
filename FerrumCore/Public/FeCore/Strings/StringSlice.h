@@ -300,6 +300,23 @@ namespace FE
             return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
+        template<class TVector>
+        void Split(TVector& vector, uint32_t maxCount, TCodepoint c = ' ') const
+        {
+            if (maxCount == 0)
+                return;
+
+            auto current = begin();
+            while (current != end())
+            {
+                auto cPos = maxCount-- == 0 ? end() : FindFirstOf(current, c);
+                vector.emplace_back(current.m_Iter, cPos.m_Iter - current.m_Iter);
+                current = cPos;
+                if (current != end())
+                    ++current;
+            }
+        }
+
         [[nodiscard]] inline festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
                                                                    std::pmr::memory_resource* pAllocator = nullptr) const
         {
@@ -307,16 +324,7 @@ namespace FE
                 pAllocator = std::pmr::get_default_resource();
 
             festd::pmr::vector<StringSlice> result{ pAllocator };
-            auto current = begin();
-            while (current != end())
-            {
-                auto cPos = FindFirstOf(current, c);
-                result.emplace_back(current.m_Iter, cPos.m_Iter - current.m_Iter);
-                current = cPos;
-                if (current != end())
-                    ++current;
-            }
-
+            Split(result, UINT32_MAX, c);
             return result;
         }
 

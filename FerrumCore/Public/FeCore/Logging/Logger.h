@@ -106,7 +106,7 @@ namespace FE
         template<class... TArgs>
         inline void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)
         {
-            FixStr512 message;
+            String message;
             Fmt::FormatTo(message, fmt.Value, std::forward<TArgs>(args)...);
 
             std::lock_guard lock{ m_Lock };

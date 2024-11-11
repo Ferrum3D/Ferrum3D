@@ -33,20 +33,29 @@ namespace FE
 
         festd::vector<festd::unique_ptr<LogSinkBase>> m_logSinks;
 
+        festd::vector<StringSlice> m_commandLine;
+
+        template<class TApplication, class TFunc>
         struct MainJob final : public Job
         {
-            ApplicationModule* m_app = nullptr;
+            TFunc m_initFunc;
+            TApplication* m_app = nullptr;
             int32_t m_resultCode = -1;
+
+            MainJob(TFunc&& initFunc, TApplication* app)
+                : m_initFunc(std::forward<TFunc>(initFunc))
+                , m_app(app)
+            {
+            }
 
             void Execute() override
             {
+                m_initFunc(m_app);
                 m_resultCode = m_app->RunMainLoop();
             }
         };
 
     protected:
-        String m_AssetDirectory;
-
         virtual void PollSystemEvents() = 0;
         virtual bool CloseEventReceived() = 0;
 
@@ -58,7 +67,7 @@ namespace FE
     public:
         FE_RTTI_Class(ApplicationModule, "CF197AF1-C4AE-4048-A85E-CEF4F03490AD");
 
-        ApplicationModule();
+        ApplicationModule(int32_t argc, const char** argv);
         ~ApplicationModule() override = default;
 
         virtual void Initialize();
@@ -66,20 +75,17 @@ namespace FE
         void Stop(int32_t exitCode);
 
         template<class TApplication, class TFunc, class = std::enable_if_t<std::is_base_of_v<ApplicationModule, TApplication>>>
-        inline static int32_t Run(int32_t argc, char** argv, TFunc&& initFunc)
+        inline static int32_t Run(int32_t argc, const char** argv, TFunc&& initFunc)
         {
             Env::CreateEnvironment();
 
-            // TODO: add the args to configuration.
-            (void)argc;
-            (void)argv;
-            TApplication* application = Memory::New<TApplication>(Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear));
-            initFunc(application);
+            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+
+            TApplication* application = Memory::New<TApplication>(allocator, argc, argv);
 
             IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
 
-            MainJob mainJob;
-            mainJob.m_app = application;
+            MainJob<TApplication, TFunc> mainJob{ std::forward<TFunc>(initFunc), application };
             mainJob.Schedule(jobSystem);
             jobSystem->Start();
 

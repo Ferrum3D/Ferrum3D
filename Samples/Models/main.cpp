@@ -97,6 +97,11 @@ protected:
 public:
     FE_RTTI_Class(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
 
+    ExampleApplication(int32_t argc, const char** argv)
+        : ApplicationModule(argc, argv)
+    {
+    }
+
     ~ExampleApplication() override
     {
         m_Device->WaitIdle();
@@ -104,7 +109,8 @@ public:
 
     void Initialize() override
     {
-        m_AssetDirectory = "../../../Samples/Models";
+        ZoneScoped;
+
         ApplicationModule::Initialize();
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
@@ -157,8 +163,8 @@ public:
             m_ConstantBuffer->UpdateData(constantData.RowMajorData());
         }
 
-        m_VertexShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(pAssetManager.Get(), "Shaders/VertexShader");
-        m_PixelShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(pAssetManager.Get(), "Shaders/PixelShader");
+        m_VertexShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(pAssetManager.Get(), "Shaders/Shader.vs");
+        m_PixelShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(pAssetManager.Get(), "Shaders/Shader.ps");
 
         HAL::RenderPassDesc renderPassDesc{};
 
@@ -282,7 +288,7 @@ public:
     }
 };
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     return ApplicationModule::Run<ExampleApplication>(argc, argv, [](ExampleApplication* app) {
         app->Initialize();

@@ -4,7 +4,7 @@
 
 namespace FE::Threading
 {
-    inline static constexpr size_t NormalStackSize = 64 * 1024;
+    inline static constexpr size_t NormalStackSize = 512 * 1024;
     inline static constexpr size_t ExtendedStackSize = 512 * 1024;
     inline static constexpr uint32_t NormalFiberCount = 128;
     inline static constexpr uint32_t ExtendedFiberCount = 32;

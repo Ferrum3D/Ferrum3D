@@ -43,7 +43,6 @@ namespace FE
             FiberWaitEntry* pWaitEntry = nullptr;
             Job* pJob = nullptr;
             {
-                ZoneNamed(TryDequeue, true);
                 for (uint32_t attempt = 0; attempt < 8; ++attempt)
                 {
                     for (int32_t queueIndex = enum_cast(JobPriority::kHigh); queueIndex >= 0; --queueIndex)
@@ -77,6 +76,13 @@ namespace FE
                     for (uint32_t spin = 0; spin < spinCount; ++spin)
                         _mm_pause();
                 }
+            }
+
+            if (!m_InitialJobPickedUp.exchange(true))
+            {
+                // The initial job must be picked up by the Main Thread.
+                // After that we can safely let the other workers run.
+                m_Semaphore.Release(m_Workers.size() - 1);
             }
 
             if (pWaitEntry)
@@ -150,7 +156,6 @@ namespace FE
         mainThread.ThreadID = GetCurrentThreadID();
         mainThread.CurrentFiber = initialFiber;
         mainThread.PrevFiber.Reset();
-        m_Semaphore.Release(m_Workers.size() - 1);
         m_FiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this));
     }
 

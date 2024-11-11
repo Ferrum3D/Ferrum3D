@@ -20,6 +20,8 @@ namespace FE::Graphics::HAL
 
         inline void SetImpl(uint32_t bindingIndex, DeviceObject* pObject)
         {
+            FE_Assert(pObject);
+
             auto iter = std::lower_bound(
                 m_Entries.begin(), m_Entries.end(), bindingIndex, [](const ShaderResourceEntry& lhs, uint32_t rhs) {
                     return lhs.Index < rhs;

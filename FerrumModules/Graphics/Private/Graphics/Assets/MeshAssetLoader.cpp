@@ -33,6 +33,8 @@ namespace FE::Graphics
 
     void MeshAssetLoader::LoadAsset(Assets::AssetStorage* storage, Env::Name assetName)
     {
+        ZoneScoped;
+
         auto assetStream = m_streamFactory->OpenFileStream(IO::FixedPath{ assetName } + ".fbx", IO::OpenMode::kReadOnly).Unwrap();
 
         festd::vector<std::byte> buffer(static_cast<uint32_t>(assetStream->Length()), 0);

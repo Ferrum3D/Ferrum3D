@@ -81,9 +81,13 @@ namespace FE
     };
 
 
-    ApplicationModule::ApplicationModule()
+    ApplicationModule::ApplicationModule(int32_t argc, const char** argv)
     {
         ZoneScoped;
+
+        for (int32_t argIndex = 1; argIndex < argc; ++argIndex)
+            m_commandLine.push_back(argv[argIndex]);
+
         std::pmr::memory_resource* pStaticLinearAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
         m_ModuleRegistry = Rc<ModuleRegistry>::New(pStaticLinearAllocator);
 
@@ -148,8 +152,15 @@ namespace FE
     void ApplicationModule::RegisterServices(DI::ServiceRegistryBuilder builder)
     {
         ZoneScoped;
+        builder.Bind<Env::Configuration>()
+            .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
+                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+                *result = Memory::New<Env::Configuration>(allocator, m_commandLine);
+                return DI::ResultCode::Success;
+            })
+            .InSingletonScope();
+
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
-        builder.Bind<Env::Configuration>().ToSelf().InSingletonScope();
         builder.Bind<Logger>().ToSelf().InSingletonScope();
         builder.Bind<Assets::IAssetManager>().To<Assets::AssetManager>().InSingletonScope();
         builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();

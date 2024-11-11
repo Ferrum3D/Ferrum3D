@@ -46,11 +46,11 @@ namespace FE::Env
             char Data[1];  // Actual string is longer, but starts here.
         };
 
-        inline Name() = default;
+        Name() = default;
 
         explicit Name(std::string_view str);
 
-        inline Name(const char* data, uint32_t length = 0)
+        Name(const char* data, uint32_t length = 0)
             : Name(std::string_view{ data, length ? length : __builtin_strlen(data) })
         {
         }
@@ -59,52 +59,52 @@ namespace FE::Env
 
         const Record* GetRecord() const;
 
-        inline bool Valid() const
+        bool Valid() const
         {
             return m_Handle != kInvalidIndex;
         }
 
-        inline uint32_t size() const
+        uint32_t size() const
         {
             return Valid() ? GetRecord()->Size : 0;
         }
 
-        inline const char* c_str() const
+        const char* c_str() const
         {
             return Valid() ? GetRecord()->Data : nullptr;
         }
 
-        inline explicit operator bool() const
+        explicit operator bool() const
         {
             return Valid();
         }
 
-        inline friend bool operator==(Name lhs, Name rhs)
+        friend bool operator==(Name lhs, Name rhs)
         {
             return lhs.m_Handle == rhs.m_Handle;
         }
 
-        inline friend bool operator!=(Name lhs, Name rhs)
+        friend bool operator!=(Name lhs, Name rhs)
         {
             return lhs.m_Handle != rhs.m_Handle;
         }
 
-        inline friend bool operator==(Name lhs, std::string_view rhs)
+        friend bool operator==(Name lhs, std::string_view rhs)
         {
             return lhs.GetRecord()->Data == rhs;
         }
 
-        inline friend bool operator!=(Name lhs, std::string_view rhs)
+        friend bool operator!=(Name lhs, std::string_view rhs)
         {
             return lhs.GetRecord()->Data != rhs;
         }
 
-        inline friend bool operator==(std::string_view lhs, Name rhs)
+        friend bool operator==(std::string_view lhs, Name rhs)
         {
             return rhs == lhs;
         }
 
-        inline friend bool operator!=(std::string_view lhs, Name rhs)
+        friend bool operator!=(std::string_view lhs, Name rhs)
         {
             return rhs != lhs;
         }
@@ -251,7 +251,7 @@ namespace FE::Env
             //! @brief Create uninitialized global variable storage.
             //!
             //! @param name - Unique name of global variable.
-            inline GlobalVariableStorage(Name name)
+            GlobalVariableStorage(Name name)
                 : m_Name(name)
                 , m_RefCount(0)
                 , m_IsConstructed(false)
@@ -262,7 +262,7 @@ namespace FE::Env
             //!
             //! @param args - Arguments to call the constructor with.
             template<class... TArgs>
-            inline void Construct(TArgs&&... args)
+            void Construct(TArgs&&... args)
             {
                 std::unique_lock lk(m_Mutex);
                 new (&m_Storage) T(std::forward<TArgs>(args)...);
@@ -270,7 +270,7 @@ namespace FE::Env
             }
 
             //! @brief Call variable's destructor. This function does _not_ deallocate memory.
-            inline void Destruct()
+            void Destruct()
             {
                 std::unique_lock lk(m_Mutex);
                 reinterpret_cast<T*>(&m_Storage)->~T();
@@ -280,19 +280,19 @@ namespace FE::Env
             //! @brief Check if variable was constructed.
             //!
             //! @return True if Construct was called.
-            [[nodiscard]] inline bool IsConstructed() const
+            [[nodiscard]] bool IsConstructed() const
             {
                 return m_IsConstructed;
             }
 
             //! @brief Get underlying variable.
-            inline const T* Get() const
+            const T* Get() const
             {
                 return reinterpret_cast<const T*>(&m_Storage);
             }
 
             //! @brief Add a reference to internal counter.
-            inline void AddRef()
+            void AddRef()
             {
                 std::unique_lock lk(m_Mutex);
                 ++m_RefCount;
@@ -301,7 +301,7 @@ namespace FE::Env
             //! \breif Remove a reference from internal counter.
             //!
             //! This function will call variable's destructor and deallocate memory if the reference counter reaches zero.
-            inline void Release()
+            void Release()
             {
                 std::unique_lock lk(m_Mutex);
 
@@ -375,38 +375,38 @@ namespace FE::Env
         using StorageType = Internal::GlobalVariableStorage<T>;
 
         //! @brief Create a _null_ global variable.
-        inline GlobalVariable()
+        GlobalVariable()
             : m_Storage(nullptr)
         {
         }
 
-        inline explicit GlobalVariable(StorageType* storage)
+        explicit GlobalVariable(StorageType* storage)
             : m_Storage(storage)
         {
             if (m_Storage)
                 m_Storage->AddRef();
         }
 
-        inline GlobalVariable(const GlobalVariable& other)
+        GlobalVariable(const GlobalVariable& other)
             : m_Storage(other.m_Storage)
         {
             if (m_Storage)
                 m_Storage->AddRef();
         }
 
-        inline GlobalVariable(GlobalVariable&& other) noexcept
+        GlobalVariable(GlobalVariable&& other) noexcept
             : m_Storage(other.m_Storage)
         {
             other.m_Storage = nullptr;
         }
 
-        inline GlobalVariable& operator=(const GlobalVariable& other)
+        GlobalVariable& operator=(const GlobalVariable& other)
         {
             GlobalVariable(other).Swap(*this);
             return *this;
         }
 
-        inline GlobalVariable& operator=(GlobalVariable&& other) noexcept
+        GlobalVariable& operator=(GlobalVariable&& other) noexcept
         {
             GlobalVariable(std::move(other)).Swap(*this);
             return *this;
@@ -418,18 +418,18 @@ namespace FE::Env
         //! environment-generated name that starts with a '#'.
         //!
         //! @return The name of the variable.
-        [[nodiscard]] inline Name GetName() const
+        [[nodiscard]] Name GetName() const
         {
             return m_Storage->m_Name;
         }
 
         //! @brief Set this variable to _null_.
-        inline void Reset()
+        void Reset()
         {
             GlobalVariable{}.Swap(*this);
         }
 
-        inline ~GlobalVariable()
+        ~GlobalVariable()
         {
             if (!EnvironmentAttached())
                 return;
@@ -440,7 +440,7 @@ namespace FE::Env
         //! @brief Check if the variable is not empty and is constructed (initialized).
         //!
         //! @return True if constructed.
-        inline bool IsConstructed()
+        bool IsConstructed()
         {
             return m_Storage && m_Storage->IsConstructed();
         }
@@ -448,35 +448,35 @@ namespace FE::Env
         //! @brief Swap contents of two variables.
         //!
         //! @param other - The variable to swap the content with.
-        inline void Swap(GlobalVariable& other)
+        void Swap(GlobalVariable& other)
         {
             auto* t = other.m_Storage;
             other.m_Storage = m_Storage;
             m_Storage = t;
         }
 
-        inline T* Get() const
+        T* Get() const
         {
             FE_CORE_ASSERT(m_Storage, "Global variable was empty");
             FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_Storage->Get());
         }
 
-        inline T& operator*() const
+        T& operator*() const
         {
             FE_CORE_ASSERT(m_Storage, "Global variable was empty");
             FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return *const_cast<T*>(m_Storage->Get());
         }
 
-        inline T* operator->() const
+        T* operator->() const
         {
             FE_CORE_ASSERT(m_Storage, "Global variable was empty");
             FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_Storage->Get());
         }
 
-        inline explicit operator bool() const
+        explicit operator bool() const
         {
             return m_Storage;
         }
@@ -574,7 +574,7 @@ namespace FE::Env
 template<>
 struct eastl::hash<FE::Env::Name>
 {
-    inline size_t operator()(FE::Env::Name name) const
+    size_t operator()(FE::Env::Name name) const
     {
         return name.GetRecord()->Hash;
     }

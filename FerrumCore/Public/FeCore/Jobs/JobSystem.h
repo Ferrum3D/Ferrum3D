@@ -86,10 +86,10 @@ namespace FE
 
         Semaphore m_Semaphore;
         std::atomic<bool> m_ShouldExit;
+        std::atomic<bool> m_InitialJobPickedUp;
 
         inline uint32_t GetWorkerIndex() const
         {
-            ZoneScoped;
             const uint64_t threadID = GetCurrentThreadID();
             for (uint32_t threadIndex = 0; threadIndex < m_Workers.size(); ++threadIndex)
             {
