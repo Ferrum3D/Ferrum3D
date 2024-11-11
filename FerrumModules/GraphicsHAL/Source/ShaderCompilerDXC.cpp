@@ -86,6 +86,8 @@ namespace FE::Graphics::HAL
 
     ByteBuffer ShaderCompilerDXC::CompileShader(const ShaderCompilerArgs& args)
     {
+        ZoneScoped;
+
         auto sepIter = args.FullPath.FindLastOf('/');
         const std::pmr::wstring shaderName(sepIter + 1, args.FullPath.end());
         const std::pmr::wstring baseDirectory(args.FullPath.begin(), sepIter);

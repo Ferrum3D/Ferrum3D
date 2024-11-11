@@ -148,6 +148,7 @@ set(COMMON_SOURCES
     Private/FeCore/Memory/Memory.cpp
     Private/FeCore/Memory/PoolAllocator.cpp
 
+    Private/FeCore/Modules/Configuration.cpp
     Private/FeCore/Modules/Environment.cpp
     Private/FeCore/Modules/LibraryLoader.cpp
 

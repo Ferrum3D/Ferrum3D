@@ -78,9 +78,9 @@ namespace FE::DI
                 return RegistryToBuilder(m_Target);
             }
 
-            inline RegistryToBuilder ToFunc(ActivatorFunction function)
+            inline RegistryToBuilder ToFunc(ActivatorFunction&& function)
             {
-                *m_Target.pActivator = ServiceActivator::CreateFromFunction(function);
+                *m_Target.pActivator = ServiceActivator::CreateFromFunction(std::forward<ActivatorFunction>(function));
                 m_Target.pRegistration->SetFunction(true);
                 return RegistryToBuilder(m_Target);
             }

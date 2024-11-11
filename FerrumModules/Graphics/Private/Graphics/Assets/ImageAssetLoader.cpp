@@ -81,11 +81,15 @@ namespace FE::Graphics
             commandList->End();
 
             Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
+            fence->Init(HAL::FenceState::Reset);
 
             Rc<HAL::Device> device = commandList->GetDevice();
             Rc<HAL::CommandQueue> transferQueue = device->GetCommandQueue(HAL::HardwareQueueKindFlags::kTransfer);
             transferQueue->SubmitBuffers(std::array{ commandList.Get() }, fence.Get(), HAL::SubmitFlags::None);
             fence->WaitOnCPU();
+
+            pStorage->m_imageView = pServiceProvider->ResolveRequired<HAL::ImageView>();
+            pStorage->m_imageView->Init(HAL::ImageViewDesc::ForImage(pStorage->m_image.Get(), HAL::ImageAspectFlags::kColor));
 
             if (pStorage->m_loadedMipCount.fetch_add(1) == imageDesc.MipSliceCount - 1)
             {

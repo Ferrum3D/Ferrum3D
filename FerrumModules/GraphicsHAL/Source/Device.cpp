@@ -45,8 +45,9 @@ namespace FE::Graphics::HAL
         std::lock_guard lock{ m_DisposeQueueLock };
         for (uint32_t i = 0; i < m_DisposeQueue.size();)
         {
-            m_pLogger->LogInfo(
-                "Trying to delete object at {}, frames left: {}...", m_DisposeQueue[i].pObject, m_DisposeQueue[i].FramesLeft);
+            m_pLogger->LogInfo("Trying to delete object at {}, frames left: {}...",
+                               reinterpret_cast<uintptr_t>(m_DisposeQueue[i].pObject),
+                               m_DisposeQueue[i].FramesLeft);
             if (--m_DisposeQueue[i].FramesLeft > 0)
             {
                 ++i;
@@ -54,7 +55,7 @@ namespace FE::Graphics::HAL
             }
 
             m_DisposeQueue[i].pObject->DoDispose();
-            m_pLogger->LogInfo("Deleted object at {}", m_DisposeQueue[i].pObject);
+            m_pLogger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(m_DisposeQueue[i].pObject));
             m_DisposeQueue.erase_unsorted(m_DisposeQueue.begin() + i);
         }
     }

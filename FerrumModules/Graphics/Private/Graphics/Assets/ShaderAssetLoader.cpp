@@ -8,16 +8,18 @@ namespace FE::Graphics
 {
     struct ShaderAssetLoader::CompilerJob : public Job
     {
-        IO::FixedPath Path;
-        StringSlice SourceCode;
-        ShaderAssetStorage* pStorage = nullptr;
-        ShaderAssetLoader* pLoader = nullptr;
-        HAL::ShaderCompiler* pCompiler = nullptr;
-        Rc<HAL::ShaderModule> ShaderModule;
+        IO::FixedPath m_path;
+        StringSlice m_sourceCode;
+        ShaderAssetStorage* m_storage = nullptr;
+        ShaderAssetLoader* m_loader = nullptr;
+        HAL::ShaderCompiler* m_compiler = nullptr;
+        Rc<HAL::ShaderModule> m_shaderModule;
+        Logger* m_logger = nullptr;
 
-        inline CompilerJob(HAL::ShaderCompiler* compiler, HAL::ShaderModule* shaderModule)
-            : pCompiler(compiler)
-            , ShaderModule(shaderModule)
+        inline CompilerJob(HAL::ShaderCompiler* compiler, HAL::ShaderModule* shaderModule, Logger* logger)
+            : m_compiler(compiler)
+            , m_shaderModule(shaderModule)
+            , m_logger(logger)
         {
         }
 
@@ -27,11 +29,11 @@ namespace FE::Graphics
 
             HAL::ShaderCompilerArgs compilerArgs;
             compilerArgs.EntryPoint = "main";
-            compilerArgs.SourceCode = SourceCode;
-            compilerArgs.FullPath = Path;
+            compilerArgs.SourceCode = m_sourceCode;
+            compilerArgs.FullPath = m_path;
             compilerArgs.Version = HAL::HLSLShaderVersion{ 6, 1 };
 
-            const StringSlice pathNoExt{ Path.begin(), Path.FindLastOf('.') };
+            const StringSlice pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
             if (pathNoExt.EndsWith(".ps"))
                 compilerArgs.Stage = HAL::ShaderStage::kPixel;
             else if (pathNoExt.EndsWith(".vs"))
@@ -45,20 +47,26 @@ namespace FE::Graphics
             else if (pathNoExt.EndsWith(".ds"))
                 compilerArgs.Stage = HAL::ShaderStage::kDomain;
 
-            const ByteBuffer byteCode = pCompiler->CompileShader(compilerArgs);
+            const ByteBuffer byteCode = m_compiler->CompileShader(compilerArgs);
+            if (byteCode.size() == 0)
+            {
+                m_logger->LogError("Shader compilation failed {}", m_path);
+            }
+            else
+            {
+                // TODO: save to a SPIR-V file
 
-            // TODO: save to a SPIR-V file
+                HAL::ShaderModuleDesc moduleDesc;
+                moduleDesc.ByteCode = byteCode;
+                moduleDesc.EntryPoint = compilerArgs.EntryPoint;
+                moduleDesc.Stage = compilerArgs.Stage;
+                FE_Verify(m_shaderModule->Init(moduleDesc) == HAL::ResultCode::Success);
+                m_storage->m_ShaderModule = m_shaderModule;
+                m_storage->m_Ready.store(true, std::memory_order_release);
+            }
 
-            HAL::ShaderModuleDesc moduleDesc;
-            moduleDesc.ByteCode = byteCode;
-            moduleDesc.EntryPoint = compilerArgs.EntryPoint;
-            moduleDesc.Stage = compilerArgs.Stage;
-            FE_Verify(ShaderModule->Init(moduleDesc) == HAL::ResultCode::Success);
-            pStorage->m_ShaderModule = ShaderModule;
-            pStorage->m_Ready.store(true, std::memory_order_release);
-
-            Memory::DefaultFree((void*)SourceCode.Data());
-            Memory::Delete(&pLoader->m_CompilerJobPool, this, sizeof(CompilerJob));
+            Memory::DefaultFree((void*)m_sourceCode.Data());
+            Memory::Delete(&m_loader->m_CompilerJobPool, this, sizeof(CompilerJob));
         }
     };
 
@@ -70,10 +78,10 @@ namespace FE::Graphics
         FE_Assert(result.pController->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
 
         CompilerJob* job = DI::New<CompilerJob>(&m_CompilerJobPool).Unwrap();
-        job->Path = result.pRequest->Path;
-        job->SourceCode = { reinterpret_cast<const char*>(result.pRequest->pReadBuffer), result.pRequest->ReadBufferSize };
-        job->pStorage = static_cast<ShaderAssetStorage*>(result.pRequest->pUserData);
-        job->pLoader = this;
+        job->m_path = result.pRequest->Path;
+        job->m_sourceCode = { reinterpret_cast<const char*>(result.pRequest->pReadBuffer), result.pRequest->ReadBufferSize };
+        job->m_storage = static_cast<ShaderAssetStorage*>(result.pRequest->pUserData);
+        job->m_loader = this;
         job->Schedule(m_pJobSystem);
     }
 

@@ -26,7 +26,8 @@ namespace FE::IO
 
     bool FileStreamFactory::FileExists(StringSlice filename)
     {
-        return Platform::FileExists(filename);
+        const FixedPath fullPath = m_ParentDirectory / filename;
+        return Platform::FileExists(fullPath);
     }
 
 
