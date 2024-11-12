@@ -116,6 +116,8 @@ namespace FE
         auto ts = std::chrono::high_resolution_clock::now();
         while (!ShouldStop())
         {
+            ZoneScopedN("Frame");
+
             auto getDelta = [](std::chrono::high_resolution_clock::time_point ts) {
                 auto now = std::chrono::high_resolution_clock::now();
                 auto ms = std::chrono::duration_cast<std::chrono::microseconds>(now - ts).count();

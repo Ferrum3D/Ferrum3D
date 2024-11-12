@@ -87,5 +87,13 @@ namespace FE::Graphics
         commandList->CopyBuffers(indexBufferStaging.Get(), meshStorage->m_indexBuffer.Get(), indexCopyRegion);
 
         commandList->End();
+
+        Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
+        fence->Init(HAL::FenceState::Reset);
+
+        Rc<HAL::Device> device = commandList->GetDevice();
+        Rc<HAL::CommandQueue> transferQueue = device->GetCommandQueue(HAL::HardwareQueueKindFlags::kTransfer);
+        transferQueue->SubmitBuffers(std::array{ commandList.Get() }, fence.Get(), HAL::SubmitFlags::None);
+        fence->WaitOnCPU();
     }
 } // namespace FE::Graphics
