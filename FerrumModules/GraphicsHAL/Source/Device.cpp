@@ -12,7 +12,7 @@ namespace FE::Graphics::HAL
             // Don't use a range-based for loop here, since more objects can be added while we are iterating
             PendingDisposer& disposer = m_DisposeQueue[i];
             disposer.pObject->DoDispose();
-            m_pLogger->LogInfo("Deleted object at {}", disposer.pObject);
+            m_pLogger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.pObject));
         }
         for (festd::intrusive_list_node& resourceNode : m_ResourceList)
         {

@@ -53,13 +53,13 @@ namespace FE::Graphics::HAL
                                                       bool isSRGB, uint32_t index)
         {
             // clang-format off
-            return enum_cast(type)                        << 30
-                 | byteSize                               << 25
-                 | enum_cast(channelCount)                << 23
-                 | enum_cast(aspectFlags)                 << 20
-                 | (blockCompressed           ? 1 : 0)    << 19
-                 | (isSigned                  ? 1 : 0)    << 18
-                 | (isSRGB                    ? 1 : 0)    << 17
+            return (enum_cast(type)                        << 30)
+                 | (byteSize                               << 25)
+                 | (enum_cast(channelCount)                << 23)
+                 | (enum_cast(aspectFlags)                 << 20)
+                 | ((blockCompressed           ? 1 : 0)    << 19)
+                 | ((isSigned                  ? 1 : 0)    << 18)
+                 | ((isSRGB                    ? 1 : 0)    << 17)
                  | index;
             // clang-format on
         }
@@ -264,14 +264,14 @@ namespace FE::Graphics::HAL
         }
 
     private:
-        uint32_t m_Type : 2;
-        uint32_t m_ByteSize : 5;
-        uint32_t m_ChannelCount : 2;
-        uint32_t m_AspectFlags : 3;
-        uint32_t m_IsBlockCompressed : 1;
-        uint32_t m_IsSigned : 1;
-        uint32_t m_IsSRGB : 1;
         uint32_t m_FormatIndex : 17;
+        uint32_t m_IsSRGB : 1;
+        uint32_t m_IsSigned : 1;
+        uint32_t m_IsBlockCompressed : 1;
+        uint32_t m_AspectFlags : 3;
+        uint32_t m_ChannelCount : 2;
+        uint32_t m_ByteSize : 5;
+        uint32_t m_Type : 2;
     };
 
 

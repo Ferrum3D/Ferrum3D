@@ -42,7 +42,7 @@ namespace FE::Graphics
             const auto bufferName = Fmt::FixedFormat("Staging {}", pStorage->GetImage()->GetName());
             stagingBuffer->Init(bufferName, stagingBufferDesc);
             stagingBuffer->AllocateMemory(HAL::MemoryType::kHostVisible);
-            stagingBuffer->UpdateData(PixelBuffer.data(), PixelBuffer.size_bytes());
+            stagingBuffer->UpdateData(PixelBuffer.data(), 0, PixelBuffer.size_bytes());
 
             // TODO: async copy...
             Rc commandList = pServiceProvider->ResolveRequired<HAL::CommandList>();
@@ -133,10 +133,13 @@ namespace FE::Graphics
         desc.MipSliceCount = baseHeader->dwMipMapCount;
         desc.ArraySize = dx10Header->arraySize;
         desc.ImageFormat = DDS::ConvertFormat(dx10Header->dxgiFormat);
+        desc.BindFlags = HAL::ImageBindFlags::kShaderRead | HAL::ImageBindFlags::kTransferWrite;
         desc.SetDimension(DDS::ConvertDimension(dx10Header->resourceDimension));
 
         storage->m_image = Env::GetServiceProvider()->ResolveRequired<HAL::Image>();
         FE_Verify(storage->m_image->Init(result.pRequest->Path, desc) == HAL::ResultCode::Success);
+
+        storage->m_image->AllocateMemory(HAL::MemoryType::kDeviceLocal);
 
         result.pRequest->pAllocator->deallocate(result.pRequest->pReadBuffer, result.pRequest->ReadBufferSize);
 

@@ -50,19 +50,24 @@ namespace FE::Graphics::Vulkan
                                                               [[maybe_unused]] const char* pLayerPrefix, const char* pMessage,
                                                               void* pUserData)
     {
-        constexpr static auto ignoredMessages = std::array{ "VUID-VkShaderModuleCreateInfo-pCode-04147", "Device Extension:" };
+        constexpr static auto ignoredMessages =
+            std::array{ "Validation Error: [ VUID-VkShaderModuleCreateInfo-pCode-08742", "Device Extension:" };
 
-        StringSlice message = pMessage;
+        const StringSlice message = pMessage;
         for (auto& msg : ignoredMessages)
         {
             if (message.StartsWith(msg))
-            {
                 return VK_FALSE;
-            }
         }
 
         const LogSeverity type = GetLogMessageType(flags);
         static_cast<Logger*>(pUserData)->Log(type, "{}", message);
+
+#    if FE_DEBUG && 0
+        if (type == LogSeverity::kError)
+            FE_DebugBreak();
+#    endif
+
         return VK_FALSE;
     }
 #endif
