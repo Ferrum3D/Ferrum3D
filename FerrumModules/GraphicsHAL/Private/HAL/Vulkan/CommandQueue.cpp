@@ -6,54 +6,78 @@
 
 namespace FE::Graphics::Vulkan
 {
-    CommandQueue::CommandQueue(HAL::Device* pDevice, const CommandQueueDesc& desc)
-        : m_Desc(desc)
+    CommandQueue::CommandQueue(HAL::Device* pDevice, CommandQueueDesc desc)
+        : m_desc(desc)
     {
         m_pDevice = pDevice;
-        vkGetDeviceQueue(NativeCast(m_pDevice), m_Desc.QueueFamilyIndex, m_Desc.QueueIndex, &m_Queue);
+        vkGetDeviceQueue(NativeCast(m_pDevice), m_desc.m_queueFamilyIndex, m_desc.m_queueIndex, &m_queue);
     }
 
 
     const CommandQueueDesc& CommandQueue::GetDesc() const
     {
-        return m_Desc;
+        return m_desc;
     }
 
 
-    void CommandQueue::SignalFence(HAL::Fence* fence)
+    void CommandQueue::SignalFence(const HAL::FenceSyncPoint& fence)
     {
-        SubmitBuffers({}, fence, HAL::SubmitFlags::None);
+        const VkSemaphore vkSemaphore = NativeCast(fence.m_fence.Get());
+
+        VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};
+        timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSemaphoreInfo.pSignalSemaphoreValues = &fence.m_value;
+        timelineSemaphoreInfo.signalSemaphoreValueCount = 1;
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = &timelineSemaphoreInfo;
+        submitInfo.pSignalSemaphores = &vkSemaphore;
+        submitInfo.signalSemaphoreCount = 1;
+
+        FE_VK_ASSERT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
     }
 
 
-    void CommandQueue::SubmitBuffers(festd::span<HAL::CommandList* const> commandLists, HAL::Fence* signalFence,
-                                     HAL::SubmitFlags flags)
+    void CommandQueue::WaitFence(const HAL::FenceSyncPoint& fence)
     {
+        const VkSemaphore vkSemaphore = NativeCast(fence.m_fence.Get());
+        const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+        VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};
+        timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSemaphoreInfo.pWaitSemaphoreValues = &fence.m_value;
+        timelineSemaphoreInfo.waitSemaphoreValueCount = 1;
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = &timelineSemaphoreInfo;
+        submitInfo.pWaitSemaphores = &vkSemaphore;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitDstStageMask = &kWaitDstFlags;
+
+        FE_VK_ASSERT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
+    }
+
+
+    void CommandQueue::Execute(festd::span<HAL::CommandList* const> commandLists)
+    {
+        const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
         festd::small_vector<VkCommandBuffer> commandBuffers;
         commandBuffers.reserve(commandLists.size());
+
         for (HAL::CommandList* pCommandList : commandLists)
         {
             commandBuffers.push_back(NativeCast(pCommandList));
         }
 
-        VkSubmitInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        info.pCommandBuffers = commandBuffers.data();
-        info.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pCommandBuffers = commandBuffers.data();
+        submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+        submitInfo.pWaitDstStageMask = &kWaitDstFlags;
 
-        if ((flags & HAL::SubmitFlags::FrameBegin) != HAL::SubmitFlags::None)
-        {
-            info.waitSemaphoreCount = ImplCast(m_pDevice)->GetWaitSemaphores(&info.pWaitSemaphores);
-        }
-        if ((flags & HAL::SubmitFlags::FrameEnd) != HAL::SubmitFlags::None)
-        {
-            info.signalSemaphoreCount = ImplCast(m_pDevice)->GetSignalSemaphores(&info.pSignalSemaphores);
-        }
-
-        festd::small_vector<VkPipelineStageFlags> waitDstFlags(info.waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        info.pWaitDstStageMask = waitDstFlags.data();
-
-        const VkFence vkFence = signalFence ? NativeCast(signalFence) : VK_NULL_HANDLE;
-        vkQueueSubmit(m_Queue, 1, &info, vkFence);
+        FE_VK_ASSERT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
     }
 } // namespace FE::Graphics::Vulkan

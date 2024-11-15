@@ -10,9 +10,9 @@ namespace FE::Graphics::HAL
         uint64_t Size = 0;
         BindFlags Flags = BindFlags::None;
 
-        inline BufferDesc() = default;
+        BufferDesc() = default;
 
-        inline BufferDesc(uint64_t size, BindFlags bindFlags)
+        BufferDesc(uint64_t size, BindFlags bindFlags)
         {
             Size = size;
             Flags = bindFlags;

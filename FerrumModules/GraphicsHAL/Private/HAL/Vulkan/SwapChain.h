@@ -4,7 +4,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    class CommandQueue;
+    struct CommandQueue;
     class ImageView;
 
     class Swapchain final : public HAL::Swapchain
@@ -21,20 +21,15 @@ namespace FE::Graphics::Vulkan
 
         Rc<Image> m_DepthImage;
         Rc<ImageView> m_DepthImageView;
-        festd::vector<Rc<Image>> m_Images;
-        festd::vector<Rc<ImageView>> m_ImageViews;
-        uint32_t m_ImageIndex = 0;
+        festd::small_vector<Rc<Image>, 3> m_Images;
+        festd::small_vector<Rc<ImageView>, 3> m_ImageViews;
 
-        eastl::vector<VkSemaphore> m_ImageAvailableSemaphores;
-        eastl::vector<VkSemaphore> m_RenderFinishedSemaphores;
+        VkSemaphore m_ImageAvailableSemaphore;
+        VkSemaphore m_RenderFinishedSemaphore;
         uint32_t m_FrameIndex = 0;
-
-        VkSemaphore* m_CurrentImageAvailableSemaphore = nullptr;
-        VkSemaphore* m_CurrentRenderFinishedSemaphore = nullptr;
 
         [[nodiscard]] bool ValidateDimensions(const HAL::SwapchainDesc& swapChainDesc) const;
         void BuildNativeSwapchain();
-        void AcquireNextImage(uint32_t* index);
 
     public:
         FE_RTTI_Class(Swapchain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
@@ -42,23 +37,23 @@ namespace FE::Graphics::Vulkan
         Swapchain(HAL::Device* pDevice, Logger* logger, HAL::Image* pDepthImage);
         ~Swapchain() override;
 
-        inline VkSwapchainKHR GetNative() const
+        VkSwapchainKHR GetNative() const
         {
             return m_NativeSwapchain;
         }
 
         HAL::ResultCode Init(const HAL::SwapchainDesc& desc) override;
 
-        const HAL::SwapchainDesc& GetDesc() override;
-        uint32_t GetCurrentImageIndex() override;
-        uint32_t GetCurrentFrameIndex() override;
-        uint32_t GetImageCount() override;
-        Image* GetImage(uint32_t index) override;
-        Image* GetCurrentImage() override;
-        void Present() override;
+        const HAL::SwapchainDesc& GetDesc() const override;
 
-        festd::span<HAL::ImageView*> GetRTVs() override;
-        HAL::ImageView* GetDSV() override;
+        void BeginFrame(const HAL::FenceSyncPoint& signalFence) override;
+        void Present(const HAL::FenceSyncPoint& waitFence) override;
+
+        uint32_t GetCurrentImageIndex() const override;
+        uint32_t GetImageCount() const override;
+
+        festd::span<HAL::ImageView* const> GetRTVs() const override;
+        HAL::ImageView* GetDSV() const override;
     };
 
     FE_ENABLE_NATIVE_CAST(Swapchain);

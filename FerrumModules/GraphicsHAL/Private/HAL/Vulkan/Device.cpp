@@ -111,7 +111,15 @@ namespace FE::Graphics::Vulkan
             queueCI.pQueuePriorities = &queuePriority;
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        VkPhysicalDeviceVulkan12Features deviceFeatures12{};
+        deviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        deviceFeatures12.timelineSemaphore = true;
+
+        VkPhysicalDeviceFeatures2 deviceFeatures2{};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &deviceFeatures12;
+
+        VkPhysicalDeviceFeatures& deviceFeatures = deviceFeatures2.features;
         deviceFeatures.geometryShader = true;
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy = true;
@@ -119,9 +127,9 @@ namespace FE::Graphics::Vulkan
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceCI.pNext = &deviceFeatures2;
         deviceCI.queueCreateInfoCount = static_cast<uint32_t>(queuesCI.size());
         deviceCI.pQueueCreateInfos = queuesCI.data();
-        deviceCI.pEnabledFeatures = &deviceFeatures;
         deviceCI.enabledExtensionCount = static_cast<uint32_t>(RequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = RequiredDeviceExtensions.data();
 
@@ -143,8 +151,8 @@ namespace FE::Graphics::Vulkan
     Rc<HAL::CommandQueue> Device::GetCommandQueue(HAL::HardwareQueueKindFlags cmdQueueClass)
     {
         CommandQueueDesc desc{};
-        desc.QueueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
-        desc.QueueIndex = 0;
+        desc.m_queueFamilyIndex = GetQueueFamilyIndex(cmdQueueClass);
+        desc.m_queueIndex = 0;
         return Rc<CommandQueue>::DefaultNew(this, desc);
     }
 
@@ -152,32 +160,6 @@ namespace FE::Graphics::Vulkan
     void Device::WaitIdle()
     {
         vkDeviceWaitIdle(m_NativeDevice);
-    }
-
-
-    VkSemaphore& Device::AddWaitSemaphore()
-    {
-        return m_WaitSemaphores.push_back();
-    }
-
-
-    VkSemaphore& Device::AddSignalSemaphore()
-    {
-        return m_SignalSemaphores.push_back();
-    }
-
-
-    uint32_t Device::GetWaitSemaphores(const VkSemaphore** semaphores)
-    {
-        *semaphores = m_WaitSemaphores.data();
-        return static_cast<uint32_t>(m_WaitSemaphores.size());
-    }
-
-
-    uint32_t Device::GetSignalSemaphores(const VkSemaphore** semaphores)
-    {
-        *semaphores = m_SignalSemaphores.data();
-        return static_cast<uint32_t>(m_SignalSemaphores.size());
     }
 
 

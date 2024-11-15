@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Containers/SegmentedVector.h>
+#include <FeCore/Containers/SmallVector.h>
 #include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Logging/Trace.h>
@@ -17,7 +18,7 @@ namespace FE::Graphics::Vulkan
         HAL::HardwareQueueKindFlags Class;
         VkCommandPool CmdPool = VK_NULL_HANDLE;
 
-        inline QueueFamilyData(uint32_t idx, uint32_t count, HAL::HardwareQueueKindFlags cmdListClass)
+        QueueFamilyData(uint32_t idx, uint32_t count, HAL::HardwareQueueKindFlags cmdListClass)
             : FamilyIndex(idx)
             , QueueCount(count)
             , Class(cmdListClass)
@@ -36,10 +37,7 @@ namespace FE::Graphics::Vulkan
         VkPhysicalDeviceProperties m_AdapterProperties{};
 
         DeviceFactory* m_pDeviceFactory = nullptr;
-        eastl::vector<QueueFamilyData> m_QueueFamilyIndices;
-
-        eastl::vector<VkSemaphore> m_WaitSemaphores;
-        eastl::vector<VkSemaphore> m_SignalSemaphores;
+        festd::small_vector<QueueFamilyData> m_QueueFamilyIndices;
 
         void FindQueueFamilies();
 
@@ -51,14 +49,14 @@ namespace FE::Graphics::Vulkan
 
         HAL::ResultCode Init(VkPhysicalDevice nativeAdapter);
 
-        [[nodiscard]] inline VkDevice GetNative() const
+        [[nodiscard]] VkDevice GetNative() const
         {
             return m_NativeDevice;
         }
 
         uint32_t FindMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties);
 
-        inline VkCommandPool GetCommandPool(HAL::HardwareQueueKindFlags cmdQueueClass)
+        VkCommandPool GetCommandPool(HAL::HardwareQueueKindFlags cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
@@ -72,7 +70,7 @@ namespace FE::Graphics::Vulkan
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
-        inline VkCommandPool GetCommandPool(uint32_t queueFamilyIndex)
+        VkCommandPool GetCommandPool(uint32_t queueFamilyIndex)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
@@ -86,7 +84,7 @@ namespace FE::Graphics::Vulkan
             return m_QueueFamilyIndices.front().CmdPool;
         }
 
-        inline uint32_t GetQueueFamilyIndex(HAL::HardwareQueueKindFlags cmdQueueClass)
+        uint32_t GetQueueFamilyIndex(HAL::HardwareQueueKindFlags cmdQueueClass)
         {
             for (auto& queue : m_QueueFamilyIndices)
             {
@@ -100,27 +98,22 @@ namespace FE::Graphics::Vulkan
             return static_cast<uint32_t>(-1);
         }
 
-        inline DeviceFactory* GetDeviceFactory() const
+        DeviceFactory* GetDeviceFactory() const
         {
             return m_pDeviceFactory;
         }
 
-        inline const VkPhysicalDeviceProperties& GetAdapterProperties() const
+        const VkPhysicalDeviceProperties& GetAdapterProperties() const
         {
             return m_AdapterProperties;
         }
 
-        inline VkPhysicalDevice GetNativeAdapter() const
+        VkPhysicalDevice GetNativeAdapter() const
         {
             return m_NativeAdapter;
         }
 
         void WaitIdle() override;
-
-        VkSemaphore& AddWaitSemaphore();
-        VkSemaphore& AddSignalSemaphore();
-        uint32_t GetWaitSemaphores(const VkSemaphore** semaphores);
-        uint32_t GetSignalSemaphores(const VkSemaphore** semaphores);
 
         Rc<HAL::CommandQueue> GetCommandQueue(HAL::HardwareQueueKindFlags cmdQueueClass) override;
     };

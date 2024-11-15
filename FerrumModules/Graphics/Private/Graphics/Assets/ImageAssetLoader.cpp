@@ -81,12 +81,13 @@ namespace FE::Graphics
             commandList->End();
 
             Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
-            fence->Init(HAL::FenceState::Reset);
+            fence->Init();
 
             Rc<HAL::Device> device = commandList->GetDevice();
             Rc<HAL::CommandQueue> transferQueue = device->GetCommandQueue(HAL::HardwareQueueKindFlags::kTransfer);
-            transferQueue->SubmitBuffers(std::array{ commandList.Get() }, fence.Get(), HAL::SubmitFlags::None);
-            fence->WaitOnCPU();
+            transferQueue->Execute(std::array{ commandList.Get() });
+            transferQueue->SignalFence({ fence, 1 });
+            fence->Wait(1);
 
             pStorage->m_imageView = pServiceProvider->ResolveRequired<HAL::ImageView>();
             pStorage->m_imageView->Init(HAL::ImageViewDesc::ForImage(pStorage->m_image.Get(), HAL::ImageAspectFlags::kColor));
@@ -134,7 +135,7 @@ namespace FE::Graphics
         desc.ArraySize = dx10Header->arraySize;
         desc.ImageFormat = DDS::ConvertFormat(dx10Header->dxgiFormat);
         desc.BindFlags = HAL::ImageBindFlags::kShaderRead | HAL::ImageBindFlags::kTransferWrite;
-        desc.SetDimension(DDS::ConvertDimension(dx10Header->resourceDimension));
+        desc.Dimension = DDS::ConvertDimension(dx10Header->resourceDimension);
 
         storage->m_image = Env::GetServiceProvider()->ResolveRequired<HAL::Image>();
         FE_Verify(storage->m_image->Init(result.pRequest->Path, desc) == HAL::ResultCode::Success);

@@ -16,7 +16,7 @@ namespace FE::Graphics::HAL
         uint32_t Depth : 14;
         uint32_t ArraySize : 12;
         uint32_t MipSliceCount : 4;
-        uint32_t Dimension : 2;
+        ImageDim Dimension : 2;
 
         Format ImageFormat = Format::kUndefined;
 
@@ -30,7 +30,7 @@ namespace FE::Graphics::HAL
             ArraySize = 1;
             MipSliceCount = 1;
             SampleCount = 1;
-            SetDimension(ImageDim::kImage2D);
+            Dimension = ImageDim::kImage2D;
         }
 
         inline Size GetSize() const
@@ -43,16 +43,6 @@ namespace FE::Graphics::HAL
             Width = size.Width;
             Height = size.Height;
             Depth = size.Depth;
-        }
-
-        inline ImageDim GetDimension() const
-        {
-            return static_cast<ImageDim>(Dimension);
-        }
-
-        inline void SetDimension(ImageDim dimension)
-        {
-            Dimension = enum_cast(dimension);
         }
 
         inline static ImageDesc Img1D(ImageBindFlags bindFlags, uint32_t width, Format format);
@@ -75,7 +65,7 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.SetDimension(ImageDim::kImage1D);
+        desc.Dimension = ImageDim::kImage1D;
         desc.ImageFormat = format;
         desc.SetSize({ width, 1, 1 });
         desc.ArraySize = arraySize;
@@ -87,7 +77,7 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.SetDimension(ImageDim::kImage2D);
+        desc.Dimension = ImageDim::kImage2D;
         desc.SetSize({ width, height, 1 });
         desc.ArraySize = 1;
         desc.ImageFormat = format;
@@ -101,7 +91,7 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.SetDimension(ImageDim::kImage2D);
+        desc.Dimension = ImageDim::kImage2D;
         desc.SetSize({ width, height, 1 });
         desc.ArraySize = arraySize;
         desc.ImageFormat = format;
@@ -118,7 +108,7 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc;
         desc.BindFlags = bindFlags;
-        desc.SetDimension(ImageDim::kImageCubemap);
+        desc.Dimension = ImageDim::kImageCubemap;
         desc.SetSize({ width, width, 1 });
         desc.ArraySize = 6 * arraySize;
         desc.ImageFormat = format;
@@ -129,7 +119,7 @@ namespace FE::Graphics::HAL
     {
         ImageDesc desc{};
         desc.BindFlags = bindFlags;
-        desc.SetDimension(ImageDim::kImage3D);
+        desc.Dimension = ImageDim::kImage3D;
         desc.SetSize({ width, height, depth });
         desc.ArraySize = 1;
         desc.ImageFormat = format;

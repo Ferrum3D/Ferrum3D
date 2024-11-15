@@ -89,11 +89,12 @@ namespace FE::Graphics
         commandList->End();
 
         Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
-        fence->Init(HAL::FenceState::Reset);
+        fence->Init();
 
         Rc<HAL::Device> device = commandList->GetDevice();
         Rc<HAL::CommandQueue> transferQueue = device->GetCommandQueue(HAL::HardwareQueueKindFlags::kTransfer);
-        transferQueue->SubmitBuffers(std::array{ commandList.Get() }, fence.Get(), HAL::SubmitFlags::None);
-        fence->WaitOnCPU();
+        transferQueue->Execute(std::array{ commandList.Get() });
+        transferQueue->SignalFence({ fence, 1 });
+        fence->Wait(1);
     }
 } // namespace FE::Graphics

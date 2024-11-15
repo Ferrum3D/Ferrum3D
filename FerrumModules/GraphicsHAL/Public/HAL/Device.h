@@ -8,7 +8,7 @@
 
 namespace FE::Graphics::HAL
 {
-    class CommandQueue;
+    struct CommandQueue;
     class DeviceService;
 
     class Device
