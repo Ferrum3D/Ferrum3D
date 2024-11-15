@@ -3,6 +3,7 @@
 #include <HAL/Vulkan/CommandQueue.h>
 #include <HAL/Vulkan/Device.h>
 #include <HAL/Vulkan/DeviceFactory.h>
+#include <HAL/Vulkan/Fence.h>
 #include <HAL/Vulkan/Image.h>
 #include <HAL/Vulkan/ImageView.h>
 #include <HAL/Vulkan/Swapchain.h>
@@ -36,9 +37,9 @@ namespace FE::Graphics::Vulkan
         BuildNativeSwapchain();
 
         const VkDevice device = NativeCast(m_pDevice);
-        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.ImageCount, nullptr);
-        festd::small_vector<VkImage> images(m_Desc.ImageCount, VK_NULL_HANDLE);
-        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.ImageCount, images.data());
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.FrameCount, nullptr);
+        festd::small_vector<VkImage> images(m_Desc.FrameCount, VK_NULL_HANDLE);
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.FrameCount, images.data());
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
 
@@ -63,17 +64,11 @@ namespace FE::Graphics::Vulkan
         m_DepthImageView = ImplCast(pServiceProvider->ResolveRequired<HAL::ImageView>());
         m_DepthImageView->Init(HAL::ImageViewDesc::ForImage(m_DepthImage.Get(), HAL::ImageAspectFlags::kDepth));
 
-        for (size_t i = 0; i < m_Desc.FrameCount; ++i)
-        {
-            VkSemaphoreCreateInfo semaphoreCI{};
-            semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            vkCreateSemaphore(device, &semaphoreCI, VK_NULL_HANDLE, &m_RenderFinishedSemaphores.push_back());
-            vkCreateSemaphore(device, &semaphoreCI, VK_NULL_HANDLE, &m_ImageAvailableSemaphores.push_back());
-        }
+        VkSemaphoreCreateInfo semaphoreCI{};
+        semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_RenderFinishedSemaphore);
+        vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_ImageAvailableSemaphore);
 
-        AcquireNextImage(&m_ImageIndex);
-        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
-        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex];
         return HAL::ResultCode::Success;
     }
 
@@ -87,7 +82,7 @@ namespace FE::Graphics::Vulkan
         surfaceCI.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         surfaceCI.hinstance = GetModuleHandle(nullptr);
         surfaceCI.hwnd = static_cast<HWND>(m_Desc.NativeWindowHandle);
-        vkCreateWin32SurfaceKHR(NativeCast(pFactory), &surfaceCI, VK_NULL_HANDLE, &m_Surface);
+        vkCreateWin32SurfaceKHR(NativeCast(pFactory), &surfaceCI, nullptr, &m_Surface);
 #else
 #    error platform not supported
 #endif
@@ -99,7 +94,7 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<VkSurfaceFormatKHR> formats(formatCount, VkSurfaceFormatKHR{});
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_Surface, &formatCount, formats.data());
         VkBool32 formatSupported;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, m_Queue->GetDesc().QueueFamilyIndex, m_Surface, &formatSupported);
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, m_Queue->GetDesc().m_queueFamilyIndex, m_Surface, &formatSupported);
         FE_Assert(formatSupported);
 
         const auto preferredFormat = HAL::Format::kB8G8R8A8_SRGB;
@@ -163,7 +158,7 @@ namespace FE::Graphics::Vulkan
         swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchainCI.surface = m_Surface;
         swapchainCI.imageArrayLayers = 1;
-        swapchainCI.minImageCount = m_Desc.ImageCount;
+        swapchainCI.minImageCount = m_Desc.FrameCount;
         swapchainCI.imageExtent = m_Capabilities.currentExtent;
         swapchainCI.imageFormat = m_ColorFormat.format;
         swapchainCI.imageColorSpace = m_ColorFormat.colorSpace;
@@ -174,33 +169,22 @@ namespace FE::Graphics::Vulkan
         swapchainCI.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         swapchainCI.presentMode = mode;
         swapchainCI.clipped = true;
-        swapchainCI.pQueueFamilyIndices = &m_Queue->GetDesc().QueueFamilyIndex;
+        swapchainCI.pQueueFamilyIndices = &m_Queue->GetDesc().m_queueFamilyIndex;
         swapchainCI.queueFamilyIndexCount = 1;
 
-        Device* device = ImplCast(m_pDevice);
-        vkCreateSwapchainKHR(NativeCast(device), &swapchainCI, VK_NULL_HANDLE, &m_NativeSwapchain);
-
-        // TODO: old hack, must be removed
-        // Probably we should use a work batch object that would be submitted to a command queue.
-        // Vulkan-specific implementation of such object would contain the semaphores to signal
-        // and the semaphores to wait for.
-        m_CurrentImageAvailableSemaphore = &device->AddWaitSemaphore();
-        m_CurrentRenderFinishedSemaphore = &device->AddSignalSemaphore();
+        vkCreateSwapchainKHR(NativeCast(m_pDevice), &swapchainCI, VK_NULL_HANDLE, &m_NativeSwapchain);
     }
 
 
     Swapchain::~Swapchain()
     {
         const VkDevice device = NativeCast(m_pDevice);
-        for (auto& semaphore : m_ImageAvailableSemaphores)
-        {
-            vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
-        }
 
-        for (auto& semaphore : m_RenderFinishedSemaphores)
-        {
-            vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
-        }
+        if (m_ImageAvailableSemaphore)
+            vkDestroySemaphore(device, m_ImageAvailableSemaphore, VK_NULL_HANDLE);
+
+        if (m_RenderFinishedSemaphore)
+            vkDestroySemaphore(device, m_RenderFinishedSemaphore, VK_NULL_HANDLE);
 
         if (m_NativeSwapchain)
             vkDestroySwapchainKHR(device, m_NativeSwapchain, VK_NULL_HANDLE);
@@ -213,78 +197,101 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    const HAL::SwapchainDesc& Swapchain::GetDesc()
+    const HAL::SwapchainDesc& Swapchain::GetDesc() const
     {
         return m_Desc;
     }
 
 
-    uint32_t Swapchain::GetCurrentImageIndex()
+    uint32_t Swapchain::GetCurrentImageIndex() const
     {
-        return m_ImageIndex;
+        return m_FrameIndex;
     }
 
 
-    uint32_t Swapchain::GetImageCount()
+    uint32_t Swapchain::GetImageCount() const
     {
         return static_cast<uint32_t>(m_Images.size());
     }
 
 
-    Image* Swapchain::GetImage(uint32_t index)
-    {
-        return m_Images[index].Get();
-    }
-
-
-    Image* Swapchain::GetCurrentImage()
-    {
-        return m_Images[m_ImageIndex].Get();
-    }
-
-
-    void Swapchain::Present()
+    void Swapchain::BeginFrame(const HAL::FenceSyncPoint& signalFence)
     {
         ZoneScoped;
+
+        const uint64_t tempValue = UINT64_MAX;
+        const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+        const VkDevice device = NativeCast(m_pDevice);
+        vkAcquireNextImageKHR(device, m_NativeSwapchain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_FrameIndex);
+
+        VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};
+        timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSemaphoreInfo.waitSemaphoreValueCount = 1;
+        timelineSemaphoreInfo.pWaitSemaphoreValues = &tempValue;
+        timelineSemaphoreInfo.signalSemaphoreValueCount = 1;
+        timelineSemaphoreInfo.pSignalSemaphoreValues = &signalFence.m_value;
+
+        const VkSemaphore vkSignalFence = NativeCast(signalFence.m_fence.Get());
+
+        VkSubmitInfo signalSubmitInfo{};
+        signalSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        signalSubmitInfo.pNext = &timelineSemaphoreInfo;
+        signalSubmitInfo.waitSemaphoreCount = 1;
+        signalSubmitInfo.pWaitSemaphores = &m_ImageAvailableSemaphore;
+        signalSubmitInfo.signalSemaphoreCount = 1;
+        signalSubmitInfo.pSignalSemaphores = &vkSignalFence;
+        signalSubmitInfo.pWaitDstStageMask = &kWaitDstFlags;
+        FE_VK_ASSERT(vkQueueSubmit(NativeCast(m_Queue), 1, &signalSubmitInfo, VK_NULL_HANDLE));
+    }
+
+
+    void Swapchain::Present(const HAL::FenceSyncPoint& waitFence)
+    {
+        ZoneScoped;
+
+        const uint64_t tempValue = UINT64_MAX;
+        const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+        VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};
+        timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSemaphoreInfo.waitSemaphoreValueCount = 1;
+        timelineSemaphoreInfo.pWaitSemaphoreValues = &waitFence.m_value;
+        timelineSemaphoreInfo.signalSemaphoreValueCount = 1;
+        timelineSemaphoreInfo.pSignalSemaphoreValues = &tempValue;
+
+        const VkSemaphore vkWaitFence = NativeCast(waitFence.m_fence.Get());
+
+        VkSubmitInfo signalSubmitInfo{};
+        signalSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        signalSubmitInfo.pNext = &timelineSemaphoreInfo;
+        signalSubmitInfo.waitSemaphoreCount = 1;
+        signalSubmitInfo.pWaitSemaphores = &vkWaitFence;
+        signalSubmitInfo.signalSemaphoreCount = 1;
+        signalSubmitInfo.pSignalSemaphores = &m_RenderFinishedSemaphore;
+        signalSubmitInfo.pWaitDstStageMask = &kWaitDstFlags;
+        FE_VK_ASSERT(vkQueueSubmit(NativeCast(m_Queue), 1, &signalSubmitInfo, VK_NULL_HANDLE));
+
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_FrameIndex];
+        presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphore;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &m_NativeSwapchain;
-        presentInfo.pImageIndices = &m_ImageIndex;
+        presentInfo.pImageIndices = &m_FrameIndex;
         FE_VK_ASSERT(vkQueuePresentKHR(NativeCast(m_Queue), &presentInfo));
-
-        m_FrameIndex = (m_FrameIndex + 1) % m_Desc.FrameCount;
-        *m_CurrentImageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
-        *m_CurrentRenderFinishedSemaphore = m_RenderFinishedSemaphores[m_FrameIndex];
-        AcquireNextImage(&m_ImageIndex);
     }
 
 
-    void Swapchain::AcquireNextImage(uint32_t* index)
+    festd::span<HAL::ImageView* const> Swapchain::GetRTVs() const
     {
-        const VkSemaphore semaphore = m_ImageAvailableSemaphores[m_FrameIndex];
-        const VkDevice device = NativeCast(m_pDevice);
-        FE_VK_ASSERT(vkAcquireNextImageKHR(device, m_NativeSwapchain, static_cast<uint64_t>(-1), semaphore, nullptr, index));
+        return festd::span(reinterpret_cast<HAL::ImageView* const*>(m_ImageViews.begin().base()),
+                           reinterpret_cast<HAL::ImageView* const*>(m_ImageViews.end().base()));
     }
 
 
-    festd::span<HAL::ImageView*> Swapchain::GetRTVs()
-    {
-        return festd::span(reinterpret_cast<HAL::ImageView**>(m_ImageViews.begin()),
-                           reinterpret_cast<HAL::ImageView**>(m_ImageViews.end()));
-    }
-
-
-    HAL::ImageView* Swapchain::GetDSV()
+    HAL::ImageView* Swapchain::GetDSV() const
     {
         return m_DepthImageView.Get();
-    }
-
-
-    uint32_t Swapchain::GetCurrentFrameIndex()
-    {
-        return m_FrameIndex;
     }
 } // namespace FE::Graphics::Vulkan

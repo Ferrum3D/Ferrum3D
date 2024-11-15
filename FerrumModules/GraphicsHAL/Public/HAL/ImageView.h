@@ -24,7 +24,7 @@ namespace FE::Graphics::HAL
             ImageViewDesc desc{};
             desc.Format = imageDesc.ImageFormat;
             desc.Image = image;
-            desc.Dimension = imageDesc.GetDimension();
+            desc.Dimension = imageDesc.Dimension;
             desc.SubresourceRange = range;
             return desc;
         }

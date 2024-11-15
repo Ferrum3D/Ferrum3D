@@ -40,7 +40,10 @@ class ExampleApplication final : public ApplicationModule
     Rc<HAL::DeviceFactory> m_Factory;
     Rc<HAL::Device> m_Device;
 
-    festd::vector<Rc<HAL::Fence>> m_Fences;
+    Rc<HAL::Fence> m_Fence;
+    uint64_t m_FenceValue = 0;
+    festd::vector<uint64_t> m_FenceValues;
+
     festd::vector<Rc<HAL::Framebuffer>> m_Framebuffers;
     festd::vector<Rc<HAL::CommandList>> m_CommandLists;
     Rc<HAL::CommandQueue> m_GraphicsQueue;
@@ -81,17 +84,23 @@ protected:
 
     void Tick(const FrameEventArgs& /* frameEventArgs */) override
     {
-        const uint32_t frameIndex = m_SwapChain->GetCurrentFrameIndex();
-
-        m_Fences[frameIndex]->WaitOnCPU();
         m_Window->PollEvents();
+        if (m_Window->CloseRequested())
+            return;
 
-        const uint32_t imageIndex = m_SwapChain->GetCurrentImageIndex();
-        m_Fences[m_SwapChain->GetCurrentFrameIndex()]->Reset();
+        m_SwapChain->BeginFrame({ m_Fence, ++m_FenceValue });
+        m_GraphicsQueue->WaitFence({ m_Fence, m_FenceValue });
 
-        std::array commandLists{ m_CommandLists[imageIndex].Get() };
-        m_GraphicsQueue->SubmitBuffers(commandLists, m_Fences[frameIndex].Get(), HAL::SubmitFlags::FrameBeginEnd);
-        m_SwapChain->Present();
+        const uint32_t frameIndex = m_SwapChain->GetCurrentImageIndex();
+
+        m_Fence->Wait(m_FenceValues[frameIndex]);
+
+        std::array commandLists{ m_CommandLists[frameIndex].Get() };
+
+        m_FenceValues[frameIndex] = ++m_FenceValue;
+        m_GraphicsQueue->Execute(commandLists);
+        m_GraphicsQueue->SignalFence({ m_Fence, m_FenceValues[frameIndex] });
+        m_SwapChain->Present({ m_Fence, m_FenceValue });
     }
 
 public:
@@ -131,7 +140,7 @@ public:
         m_Scissor = m_Window->CreateScissor();
 
         HAL::SwapchainDesc swapchainDesc{};
-        swapchainDesc.ImageCount = m_FrameBufferCount;
+        swapchainDesc.FrameCount = m_FrameBufferCount;
         swapchainDesc.ImageWidth = m_Scissor.Width();
         swapchainDesc.ImageHeight = m_Scissor.Height();
         swapchainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
@@ -242,12 +251,12 @@ public:
         m_Pipeline = pServiceProvider->ResolveRequired<HAL::GraphicsPipeline>();
         m_Pipeline->Init(pipelineDesc);
 
+        m_Fence = pServiceProvider->ResolveRequired<HAL::Fence>();
+        m_Fence->Init();
+        m_FenceValue = 0;
+
         for (uint32_t i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
-        {
-            Rc fence = pServiceProvider->ResolveRequired<HAL::Fence>();
-            fence->Init(HAL::FenceState::Signaled);
-            m_Fences.push_back(fence);
-        }
+            m_FenceValues.push_back(0);
 
         const festd::span rtvSpan = m_SwapChain->GetRTVs();
         m_RTVs.resize(rtvSpan.size());

@@ -4,14 +4,11 @@
 
 namespace FE::Graphics::HAL
 {
-    class CommandQueue;
+    struct CommandQueue;
 
-    struct SwapchainDesc
+    struct SwapchainDesc final
     {
-        FE_RTTI_Base(SwapchainDesc, "19401C0C-A89C-4393-8D40-F669AB8B128C");
-
-        uint32_t ImageCount = 3;
-        uint32_t FrameCount = 2;
+        uint32_t FrameCount = 3;
         uint32_t ImageWidth = 0;
         uint32_t ImageHeight = 0;
         bool VerticalSync = false;
@@ -34,15 +31,15 @@ namespace FE::Graphics::HAL
 
         virtual ResultCode Init(const SwapchainDesc& desc) = 0;
 
-        virtual const SwapchainDesc& GetDesc() = 0;
-        virtual void Present() = 0;
-        virtual uint32_t GetCurrentImageIndex() = 0;
-        virtual uint32_t GetCurrentFrameIndex() = 0;
-        virtual uint32_t GetImageCount() = 0;
-        virtual Image* GetImage(uint32_t index) = 0;
-        virtual Image* GetCurrentImage() = 0;
+        virtual const SwapchainDesc& GetDesc() const = 0;
 
-        virtual festd::span<ImageView*> GetRTVs() = 0;
-        virtual ImageView* GetDSV() = 0;
+        virtual void BeginFrame(const FenceSyncPoint& signalFence) = 0;
+        virtual void Present(const FenceSyncPoint& waitFence) = 0;
+
+        virtual uint32_t GetCurrentImageIndex() const = 0;
+        virtual uint32_t GetImageCount() const = 0;
+
+        virtual festd::span<ImageView* const> GetRTVs() const = 0;
+        virtual ImageView* GetDSV() const = 0;
     };
 } // namespace FE::Graphics::HAL

@@ -63,7 +63,7 @@ namespace FE::Graphics::Vulkan
             usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
-        switch (desc.GetDimension())
+        switch (desc.Dimension)
         {
         case ImageDim::kImage1D:
             imageCI.imageType = VK_IMAGE_TYPE_1D;
@@ -86,12 +86,12 @@ namespace FE::Graphics::Vulkan
         Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
 
         imageCI.extent = VKConvert(desc.GetSize());
-        if (desc.GetDimension() != ImageDim::kImage2D && imageCI.extent.height > 1)
+        if (desc.Dimension != ImageDim::kImage2D && imageCI.extent.height > 1)
         {
             logger->LogWarning("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
             imageCI.extent.height = 1;
         }
-        if (desc.GetDimension() != ImageDim::kImage3D && imageCI.extent.depth > 1)
+        if (desc.Dimension != ImageDim::kImage3D && imageCI.extent.depth > 1)
         {
             logger->LogWarning("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
             imageCI.extent.depth = 1;

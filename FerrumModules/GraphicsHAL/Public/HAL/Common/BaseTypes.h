@@ -38,13 +38,6 @@ namespace FE::Graphics::HAL
     FE_ENUM_OPERATORS(HardwareQueueKindFlags);
 
 
-    enum class FenceState
-    {
-        Signaled,
-        Reset
-    };
-
-
     struct Offset
     {
         int32_t X = 0;

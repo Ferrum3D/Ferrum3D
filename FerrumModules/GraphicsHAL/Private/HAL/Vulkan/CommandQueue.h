@@ -6,34 +6,35 @@ namespace FE::Graphics::Vulkan
 {
     class Device;
 
-    struct CommandQueueDesc
+    struct CommandQueueDesc final
     {
-        uint32_t QueueFamilyIndex;
-        uint32_t QueueIndex;
+        uint32_t m_queueFamilyIndex;
+        uint32_t m_queueIndex;
     };
 
 
-    class CommandQueue : public HAL::CommandQueue
+    struct CommandQueue final : public HAL::CommandQueue
     {
-        VkQueue m_Queue = VK_NULL_HANDLE;
-        CommandQueueDesc m_Desc;
-
-    public:
         FE_RTTI_Class(CommandQueue, "416B9666-BFB4-4DB6-85C8-1AB6D5A318C5");
 
-        CommandQueue(HAL::Device* pDevice, const CommandQueueDesc& desc);
+        CommandQueue(HAL::Device* pDevice, CommandQueueDesc desc);
         ~CommandQueue() override = default;
 
         [[nodiscard]] inline VkQueue GetNative() const
         {
-            return m_Queue;
+            return m_queue;
         }
 
-        void SignalFence(HAL::Fence* fence) override;
-        void SubmitBuffers(festd::span<HAL::CommandList* const> commandLists, HAL::Fence* signalFence,
-                           HAL::SubmitFlags flags) override;
+        void SignalFence(const HAL::FenceSyncPoint& fence) override;
+        void WaitFence(const HAL::FenceSyncPoint& fence) override;
+
+        void Execute(festd::span<HAL::CommandList* const> commandLists) override;
 
         [[nodiscard]] const CommandQueueDesc& GetDesc() const;
+
+    private:
+        VkQueue m_queue = VK_NULL_HANDLE;
+        CommandQueueDesc m_desc;
     };
 
     FE_ENABLE_NATIVE_CAST(CommandQueue);

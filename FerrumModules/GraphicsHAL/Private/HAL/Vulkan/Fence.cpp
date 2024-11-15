@@ -10,44 +10,53 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    HAL::ResultCode Fence::Init(HAL::FenceState initialState)
+    HAL::ResultCode Fence::Init(uint64_t initialValue)
     {
-        VkFenceCreateInfo fenceCI{};
-        fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceCI.flags = initialState == HAL::FenceState::Reset ? 0 : VK_FENCE_CREATE_SIGNALED_BIT;
-        vkCreateFence(NativeCast(m_pDevice), &fenceCI, VK_NULL_HANDLE, &m_NativeFence);
+        VkSemaphoreTypeCreateInfo typeCI{};
+        typeCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+        typeCI.initialValue = initialValue;
+        typeCI.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+        VkSemaphoreCreateInfo semaphoreCI{};
+        semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        semaphoreCI.pNext = &typeCI;
+
+        FE_VK_ASSERT(vkCreateSemaphore(NativeCast(m_pDevice), &semaphoreCI, nullptr, &m_timelineSemaphore));
         return HAL::ResultCode::Success;
     }
 
 
-    void Fence::SignalOnCPU()
+    void Fence::Signal(uint64_t value)
     {
-        auto queue = ImplCast(m_pDevice)->GetCommandQueue(HAL::HardwareQueueKindFlags::kGraphics);
-        queue->SignalFence(this);
+        VkSemaphoreSignalInfo signalInfo{};
+        signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+        signalInfo.value = value;
+        signalInfo.semaphore = m_timelineSemaphore;
+        FE_VK_ASSERT(vkSignalSemaphore(NativeCast(m_pDevice), &signalInfo));
     }
 
 
-    void Fence::WaitOnCPU()
+    void Fence::Wait(uint64_t value)
     {
-        vkWaitForFences(NativeCast(m_pDevice), 1, &m_NativeFence, false, 10000000000);
+        VkSemaphoreWaitInfo waitInfo{};
+        waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = &m_timelineSemaphore;
+        waitInfo.pValues = &value;
+        FE_VK_ASSERT(vkWaitSemaphores(NativeCast(m_pDevice), &waitInfo, UINT64_MAX));
     }
 
 
-    void Fence::Reset()
+    uint64_t Fence::GetCompletedValue()
     {
-        vkResetFences(NativeCast(m_pDevice), 1, &m_NativeFence);
-    }
-
-
-    HAL::FenceState Fence::GetState()
-    {
-        const VkResult status = vkGetFenceStatus(NativeCast(m_pDevice), m_NativeFence);
-        return status == VK_SUCCESS ? HAL::FenceState::Signaled : HAL::FenceState::Reset;
+        uint64_t result;
+        FE_VK_ASSERT(vkGetSemaphoreCounterValue(NativeCast(m_pDevice), m_timelineSemaphore, &result));
+        return result;
     }
 
 
     Fence::~Fence()
     {
-        vkDestroyFence(NativeCast(m_pDevice), m_NativeFence, nullptr);
+        vkDestroySemaphore(NativeCast(m_pDevice), m_timelineSemaphore, nullptr);
     }
 } // namespace FE::Graphics::Vulkan
