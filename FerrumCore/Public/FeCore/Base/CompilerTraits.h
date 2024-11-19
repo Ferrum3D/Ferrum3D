@@ -49,6 +49,8 @@
 
 #if FE_COMPILER_MSVC || FE_COMPILER_MS_CLANG
 #    define FE_DebugBreak() __debugbreak()
+#    define FE_VECTORCALL __vectorcall
 #else
 #    define FE_DebugBreak() raise(SIGTRAP)
+#    define FE_VECTORCALL
 #endif

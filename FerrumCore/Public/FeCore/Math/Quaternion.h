@@ -8,7 +8,6 @@ namespace FE
     {
         using TVec = SIMD::SSE::Float32x4;
 
-        FE_PUSH_MSVC_WARNING(4201)
         union
         {
             TVec m_Value;
@@ -18,7 +17,6 @@ namespace FE
                 float m_X, m_Y, m_Z, m_W;
             };
         };
-        FE_POP_MSVC_WARNING
 
     public:
         FE_RTTI_Base(Quaternion, "36791C3D-2C83-4516-8359-E0A34E3FC7B9");
@@ -123,7 +121,7 @@ namespace FE
         //!
         //! @return True if the quaternions are approximately equal.
         [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Quaternion& other,
-                                                      float epsilon = Math::Constants::Epsilon) const noexcept;
+                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
 
         [[nodiscard]] FE_FORCE_INLINE bool operator==(const Quaternion& other) const noexcept;
         [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Quaternion& other) const noexcept;
@@ -268,7 +266,7 @@ namespace FE
         }
         else
         {
-            axis  = Vector3F::GetUnitY();
+            axis = Vector3F::GetUnitY();
             angle = 0.0f;
         }
     }
@@ -373,8 +371,8 @@ namespace FE
     float Quaternion::Dot(const Quaternion& other) const noexcept
     {
         TVec mul = m_Value * other.m_Value;
-        TVec t   = mul * mul.Shuffle<2, 3, 0, 1>();
-        TVec r   = t + t.Shuffle<1, 0, 2, 3>();
+        TVec t = mul * mul.Shuffle<2, 3, 0, 1>();
+        TVec r = t + t.Shuffle<1, 0, 2, 3>();
         return r.Select<0>();
     }
 
@@ -423,7 +421,7 @@ namespace FE
             return *this;
         }
 
-        float halfTheta    = std::acos(cosHalfTheta);
+        float halfTheta = std::acos(cosHalfTheta);
         float sinHalfTheta = std::sqrt(1.0f - cosHalfTheta * cosHalfTheta);
 
         if (std::abs(sinHalfTheta) < 0.001f)
@@ -483,8 +481,8 @@ namespace FE
         auto b3231 = other.m_Value.Shuffle<1, 3, 2, 3>();
         auto a0000 = m_Value.Broadcast<0>();
 
-        auto t3  = a3312 * b3231;
-        auto t0  = a0000 * other.m_Value;
+        auto t3 = a3312 * b3231;
+        auto t0 = a0000 * other.m_Value;
         auto t03 = t0 - t3;
         return Quaternion(t03 + t12);
     }

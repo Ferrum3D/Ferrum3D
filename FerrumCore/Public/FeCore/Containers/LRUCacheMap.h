@@ -17,12 +17,12 @@ namespace FE
     public:
         FE_RTTI_Base(LRUCacheMap, "6AB7529D-583B-4BE3-99E9-A2A3D2E73D2D");
 
-        inline LRUCacheMap() = default;
+        LRUCacheMap() = default;
 
         //! @brief Create the cache with initial capacity.
         //!
         //! @param capacity - Initial capacity.
-        inline explicit LRUCacheMap(size_t capacity)
+        explicit LRUCacheMap(size_t capacity)
             : m_Capacity(capacity)
         {
         }
@@ -32,7 +32,7 @@ namespace FE
         //! @param key - The key to find.
         //!
         //! @return Result value that is Result::Ok() if the value was in the cache.
-        inline Result<TValue, bool> operator[](const TKey& key)
+        Result<TValue, bool> operator[](const TKey& key)
         {
             TValue value;
             if (TryGetValue(key, value))
@@ -47,7 +47,7 @@ namespace FE
         //! @brief Change capacity of the cache, will remove least recently used when shrinking.
         //!
         //! @param capacity - The new capacity.
-        inline void SetCapacity(size_t capacity)
+        void SetCapacity(size_t capacity)
         {
             m_Capacity = capacity;
 
@@ -61,7 +61,7 @@ namespace FE
         }
 
         //! @brief Get cache capacity.
-        [[nodiscard]] inline size_t Capacity() const
+        [[nodiscard]] size_t Capacity() const
         {
             return m_Capacity;
         }
@@ -71,7 +71,7 @@ namespace FE
         //! @param key  - The key to associate the value with.
         //! @param args - Arguments for value constructor.
         template<class... Args>
-        inline void Emplace(const TKey& key, Args&&... args)
+        void Emplace(const TKey& key, Args&&... args)
         {
             FE_CORE_ASSERT(m_Capacity > 0, "Cache capacity was zero");
 
@@ -94,7 +94,7 @@ namespace FE
         //! @param key - The key to check for.
         //!
         //! @return True if the key is in the cache.
-        inline bool HasKey(const TKey& key)
+        bool HasKey(const TKey& key)
         {
             auto it = m_Map.find(key);
             return it != m_Map.end();
@@ -106,7 +106,7 @@ namespace FE
         //! @param [out] value - The value that will be set on success.
         //!
         //! @return True if the key is in the cache.
-        inline bool TryGetValue(const TKey& key, TValue& value)
+        bool TryGetValue(const TKey& key, TValue& value)
         {
             auto it = m_Map.find(key);
             if (it != m_Map.end())
