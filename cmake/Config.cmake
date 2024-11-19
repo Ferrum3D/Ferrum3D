@@ -46,7 +46,7 @@ endfunction()
 
 function(fe_configure_target TARGET)
     if(FE_COMPILER_MSVC)
-        target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4324)
+        target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4324 /wd4201)
     else()
         target_compile_options(${TARGET} PRIVATE -Wall -Werror
 			-Wno-deprecated-builtins -Wno-language-extension-token)

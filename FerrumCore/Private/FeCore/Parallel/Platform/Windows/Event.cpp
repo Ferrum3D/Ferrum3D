@@ -21,7 +21,6 @@ namespace FE::Threading
         if (m_NativeEvent == 0)
             return;
 
-        Wait();
         CloseHandle(reinterpret_cast<HANDLE>(m_NativeEvent));
         m_NativeEvent = 0;
     }

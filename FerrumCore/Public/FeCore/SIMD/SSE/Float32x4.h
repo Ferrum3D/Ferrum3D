@@ -154,7 +154,6 @@ namespace FE::SIMD::SSE
     FE_FORCE_INLINE Float32x4 Float32x4::Shuffle() const noexcept
     {
         static_assert(F3 < 4 && F2 < 4 && F1 < 4 && F0 < 4);
-        // TODO: test this _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(*this), _MM_SHUFFLE(F3, F2, F1, F0)));
         return Shuffle<F3, F2, F1, F0>(*this, *this);
     }
 

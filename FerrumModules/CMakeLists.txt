@@ -1,2 +1,1 @@
-﻿add_subdirectory(GraphicsHAL)
-add_subdirectory(Graphics)
+﻿add_subdirectory(Graphics)

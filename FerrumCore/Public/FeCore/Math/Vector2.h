@@ -13,7 +13,6 @@ namespace FE
     {
         using TVec = SIMD::SSE::Float32x4;
 
-        FE_PUSH_MSVC_WARNING(4201)
         union
         {
             TVec m_Value;
@@ -23,7 +22,6 @@ namespace FE
                 float m_X, m_Y;
             };
         };
-        FE_POP_MSVC_WARNING
 
     public:
         FE_RTTI_Base(Vector2F, "3181CD8D-6109-4E7D-AE6F-E672ED5EDF2C");
