@@ -63,7 +63,7 @@ namespace FE::Graphics::Vulkan
         const LogSeverity type = GetLogMessageType(flags);
         static_cast<Logger*>(pUserData)->Log(type, "{}", message);
 
-#    if FE_DEBUG && 0
+#    if FE_DEBUG
         if (type == LogSeverity::kError)
             FE_DebugBreak();
 #    endif

@@ -8,14 +8,14 @@ namespace FE::Graphics::HAL
 
     struct SwapchainDesc final
     {
-        uint32_t FrameCount = 3;
-        uint32_t ImageWidth = 0;
-        uint32_t ImageHeight = 0;
-        bool VerticalSync = false;
-        Format Format = Format::kUndefined;
+        uint32_t m_frameCount = 2;
+        uint32_t m_imageWidth = 0;
+        uint32_t m_imageHeight = 0;
+        bool m_verticalSync = false;
+        Format m_format = Format::kUndefined;
 
-        CommandQueue* Queue = nullptr;
-        void* NativeWindowHandle = nullptr;
+        CommandQueue* m_queue = nullptr;
+        void* m_nativeWindowHandle = nullptr;
     };
 
 
