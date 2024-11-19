@@ -69,8 +69,6 @@ class ExampleApplication final : public ApplicationModule
     HAL::Viewport m_Viewport{};
     HAL::Scissor m_Scissor{};
 
-    const int32_t m_FrameBufferCount = 3;
-
 protected:
     void PollSystemEvents() override
     {
@@ -82,24 +80,22 @@ protected:
         return m_Window->CloseRequested();
     }
 
-    void Tick(const FrameEventArgs& /* frameEventArgs */) override
+    void Tick(const FrameEventArgs& frameEventArgs) override
     {
         m_Window->PollEvents();
         if (m_Window->CloseRequested())
             return;
 
-        m_SwapChain->BeginFrame({ m_Fence, ++m_FenceValue });
-        m_GraphicsQueue->WaitFence({ m_Fence, m_FenceValue });
-
-        const uint32_t frameIndex = m_SwapChain->GetCurrentImageIndex();
-
+        const uint32_t frameIndex = frameEventArgs.FrameIndex % m_FenceValues.size();
         m_Fence->Wait(m_FenceValues[frameIndex]);
+        m_SwapChain->BeginFrame({ m_Fence, ++m_FenceValue });
 
-        std::array commandLists{ m_CommandLists[frameIndex].Get() };
+        const uint32_t imageIndex = m_SwapChain->GetCurrentImageIndex();
+        const std::array commandLists{ m_CommandLists[imageIndex].Get() };
 
         m_FenceValues[frameIndex] = ++m_FenceValue;
         m_GraphicsQueue->Execute(commandLists);
-        m_GraphicsQueue->SignalFence({ m_Fence, m_FenceValues[frameIndex] });
+        m_GraphicsQueue->SignalFence({ m_Fence, m_FenceValue });
         m_SwapChain->Present({ m_Fence, m_FenceValue });
     }
 
@@ -140,12 +136,12 @@ public:
         m_Scissor = m_Window->CreateScissor();
 
         HAL::SwapchainDesc swapchainDesc{};
-        swapchainDesc.FrameCount = m_FrameBufferCount;
-        swapchainDesc.ImageWidth = m_Scissor.Width();
-        swapchainDesc.ImageHeight = m_Scissor.Height();
-        swapchainDesc.NativeWindowHandle = m_Window->GetNativeHandle();
-        swapchainDesc.Queue = m_GraphicsQueue.Get();
-        swapchainDesc.VerticalSync = true;
+        swapchainDesc.m_frameCount = 2;
+        swapchainDesc.m_imageWidth = m_Scissor.Width();
+        swapchainDesc.m_imageHeight = m_Scissor.Height();
+        swapchainDesc.m_nativeWindowHandle = m_Window->GetNativeHandle();
+        swapchainDesc.m_queue = m_GraphicsQueue.Get();
+        swapchainDesc.m_verticalSync = true;
         m_SwapChain = pServiceProvider->ResolveRequired<HAL::Swapchain>();
         m_SwapChain->Init(swapchainDesc);
 
@@ -155,8 +151,8 @@ public:
         m_TextureSampler->Init(HAL::SamplerDesc{});
 
         {
-            const float imageWidth = static_cast<float>(m_SwapChain->GetDesc().ImageWidth);
-            const float imageHeight = static_cast<float>(m_SwapChain->GetDesc().ImageHeight);
+            const float imageWidth = static_cast<float>(m_SwapChain->GetDesc().m_imageWidth);
+            const float imageHeight = static_cast<float>(m_SwapChain->GetDesc().m_imageHeight);
             const float aspectRatio = imageWidth / imageHeight;
 
             auto constantData = Matrix4x4F::GetIdentity();
@@ -178,7 +174,7 @@ public:
         HAL::RenderPassDesc renderPassDesc{};
 
         HAL::AttachmentDesc attachmentDesc{};
-        attachmentDesc.Format = m_SwapChain->GetDesc().Format;
+        attachmentDesc.Format = m_SwapChain->GetDesc().m_format;
         attachmentDesc.InitialState = HAL::ResourceState::kUndefined;
         attachmentDesc.FinalState = HAL::ResourceState::kPresent;
 
@@ -255,7 +251,7 @@ public:
         m_Fence->Init();
         m_FenceValue = 0;
 
-        for (uint32_t i = 0; i < m_SwapChain->GetDesc().FrameCount; ++i)
+        for (uint32_t i = 0; i < m_SwapChain->GetDesc().m_frameCount; ++i)
             m_FenceValues.push_back(0);
 
         const festd::span rtvSpan = m_SwapChain->GetRTVs();

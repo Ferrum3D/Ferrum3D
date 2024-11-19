@@ -13,10 +13,10 @@ namespace FE::Graphics::Vulkan
 {
     bool Swapchain::ValidateDimensions(const HAL::SwapchainDesc& swapchainDesc) const
     {
-        return m_Capabilities.minImageExtent.width <= swapchainDesc.ImageWidth
-            && m_Capabilities.minImageExtent.height <= swapchainDesc.ImageHeight
-            && m_Capabilities.maxImageExtent.width >= swapchainDesc.ImageWidth
-            && m_Capabilities.maxImageExtent.height >= swapchainDesc.ImageHeight;
+        return m_Capabilities.minImageExtent.width <= swapchainDesc.m_imageWidth
+            && m_Capabilities.minImageExtent.height <= swapchainDesc.m_imageHeight
+            && m_Capabilities.maxImageExtent.width >= swapchainDesc.m_imageWidth
+            && m_Capabilities.maxImageExtent.height >= swapchainDesc.m_imageHeight;
     }
 
 
@@ -32,24 +32,24 @@ namespace FE::Graphics::Vulkan
     {
         ZoneScoped;
         m_Desc = desc;
-        m_Queue = ImplCast(desc.Queue);
+        m_Queue = ImplCast(desc.m_queue);
 
         BuildNativeSwapchain();
 
         const VkDevice device = NativeCast(m_pDevice);
-        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.FrameCount, nullptr);
-        festd::small_vector<VkImage> images(m_Desc.FrameCount, VK_NULL_HANDLE);
-        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.FrameCount, images.data());
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.m_frameCount, nullptr);
+        festd::small_vector<VkImage> images(m_Desc.m_frameCount, VK_NULL_HANDLE);
+        vkGetSwapchainImagesKHR(device, m_NativeSwapchain, &m_Desc.m_frameCount, images.data());
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
 
-        const uint32_t width = m_Desc.ImageWidth;
-        const uint32_t height = m_Desc.ImageHeight;
-        m_Desc.Format = VKConvert(m_ColorFormat.format);
+        const uint32_t width = m_Desc.m_imageWidth;
+        const uint32_t height = m_Desc.m_imageHeight;
+        m_Desc.m_format = VKConvert(m_ColorFormat.format);
         for (auto& image : images)
         {
             Rc backBuffer = ImplCast(pServiceProvider->ResolveRequired<HAL::Image>());
-            const auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::kColor, width, height, m_Desc.Format);
+            const auto imageDesc = HAL::ImageDesc::Img2D(HAL::ImageBindFlags::kColor, width, height, m_Desc.m_format);
             backBuffer->InitInternal("Swapchain image", imageDesc, image);
             m_Images.push_back(backBuffer);
 
@@ -66,8 +66,15 @@ namespace FE::Graphics::Vulkan
 
         VkSemaphoreCreateInfo semaphoreCI{};
         semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_RenderFinishedSemaphore);
-        vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_ImageAvailableSemaphore);
+
+        m_RenderFinishedSemaphores.resize(m_Desc.m_frameCount);
+        m_ImageAvailableSemaphores.resize(m_Desc.m_frameCount);
+
+        for (uint32_t frameIndex = 0; frameIndex < m_Desc.m_frameCount; ++frameIndex)
+        {
+            vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_RenderFinishedSemaphores[frameIndex]);
+            vkCreateSemaphore(device, &semaphoreCI, nullptr, &m_ImageAvailableSemaphores[frameIndex]);
+        }
 
         return HAL::ResultCode::Success;
     }
@@ -81,7 +88,7 @@ namespace FE::Graphics::Vulkan
         VkWin32SurfaceCreateInfoKHR surfaceCI{};
         surfaceCI.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         surfaceCI.hinstance = GetModuleHandle(nullptr);
-        surfaceCI.hwnd = static_cast<HWND>(m_Desc.NativeWindowHandle);
+        surfaceCI.hwnd = static_cast<HWND>(m_Desc.m_nativeWindowHandle);
         vkCreateWin32SurfaceKHR(NativeCast(pFactory), &surfaceCI, nullptr, &m_Surface);
 #else
 #    error platform not supported
@@ -117,31 +124,31 @@ namespace FE::Graphics::Vulkan
         {
             const VkExtent2D min = m_Capabilities.minImageExtent;
             const VkExtent2D max = m_Capabilities.maxImageExtent;
-            const uint32_t width = std::clamp(m_Desc.ImageWidth, min.width, max.width);
-            const uint32_t height = std::clamp(m_Desc.ImageHeight, min.height, max.height);
+            const uint32_t width = std::clamp(m_Desc.m_imageWidth, min.width, max.width);
+            const uint32_t height = std::clamp(m_Desc.m_imageHeight, min.height, max.height);
             m_logger->LogWarning("Requested swap chain size ({}, {}) was resized to ({}, {}) according to capabilities",
-                                 m_Desc.ImageWidth,
-                                 m_Desc.ImageHeight,
+                                 m_Desc.m_imageWidth,
+                                 m_Desc.m_imageHeight,
                                  width,
                                  height);
-            m_Desc.ImageWidth = width;
-            m_Desc.ImageHeight = height;
+            m_Desc.m_imageWidth = width;
+            m_Desc.m_imageHeight = height;
         }
 
-        auto mode = VK_PRESENT_MODE_FIFO_KHR;
+        VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;
 
         // If v-sync is disabled, try to use either immediate or mailbox (if supported).
-        if (!m_Desc.VerticalSync)
+        if (!m_Desc.m_verticalSync)
         {
             uint32_t supportedModeCount;
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_Surface, &supportedModeCount, nullptr);
             eastl::vector<VkPresentModeKHR> supportedModes(supportedModeCount, VkPresentModeKHR{});
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_Surface, &supportedModeCount, supportedModes.data());
-            auto preferredModes = { VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR };
+            const std::array preferredModes = { VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR };
 
-            for (auto& supported : supportedModes)
+            for (const VkPresentModeKHR supported : supportedModes)
             {
-                for (auto& preferred : preferredModes)
+                for (const VkPresentModeKHR preferred : preferredModes)
                 {
                     if (supported == preferred)
                         mode = supported;
@@ -149,7 +156,7 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        if (mode == VK_PRESENT_MODE_FIFO_KHR && !m_Desc.VerticalSync)
+        if (mode == VK_PRESENT_MODE_FIFO_KHR && !m_Desc.m_verticalSync)
         {
             m_logger->LogWarning("V-Sync is force enabled, because FIFO is the only supported present mode");
         }
@@ -158,7 +165,7 @@ namespace FE::Graphics::Vulkan
         swapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchainCI.surface = m_Surface;
         swapchainCI.imageArrayLayers = 1;
-        swapchainCI.minImageCount = m_Desc.FrameCount;
+        swapchainCI.minImageCount = m_Desc.m_frameCount;
         swapchainCI.imageExtent = m_Capabilities.currentExtent;
         swapchainCI.imageFormat = m_ColorFormat.format;
         swapchainCI.imageColorSpace = m_ColorFormat.colorSpace;
@@ -180,11 +187,11 @@ namespace FE::Graphics::Vulkan
     {
         const VkDevice device = NativeCast(m_pDevice);
 
-        if (m_ImageAvailableSemaphore)
-            vkDestroySemaphore(device, m_ImageAvailableSemaphore, VK_NULL_HANDLE);
+        for (VkSemaphore semaphore : m_ImageAvailableSemaphores)
+            vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
 
-        if (m_RenderFinishedSemaphore)
-            vkDestroySemaphore(device, m_RenderFinishedSemaphore, VK_NULL_HANDLE);
+        for (VkSemaphore semaphore : m_RenderFinishedSemaphores)
+            vkDestroySemaphore(device, semaphore, VK_NULL_HANDLE);
 
         if (m_NativeSwapchain)
             vkDestroySwapchainKHR(device, m_NativeSwapchain, VK_NULL_HANDLE);
@@ -205,7 +212,7 @@ namespace FE::Graphics::Vulkan
 
     uint32_t Swapchain::GetCurrentImageIndex() const
     {
-        return m_FrameIndex;
+        return m_ImageIndex;
     }
 
 
@@ -222,8 +229,9 @@ namespace FE::Graphics::Vulkan
         const uint64_t tempValue = UINT64_MAX;
         const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
+        const VkSemaphore imageAvailableSemaphore = m_ImageAvailableSemaphores[m_FrameIndex];
         const VkDevice device = NativeCast(m_pDevice);
-        vkAcquireNextImageKHR(device, m_NativeSwapchain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_FrameIndex);
+        vkAcquireNextImageKHR(device, m_NativeSwapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &m_ImageIndex);
 
         VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};
         timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
@@ -238,7 +246,7 @@ namespace FE::Graphics::Vulkan
         signalSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         signalSubmitInfo.pNext = &timelineSemaphoreInfo;
         signalSubmitInfo.waitSemaphoreCount = 1;
-        signalSubmitInfo.pWaitSemaphores = &m_ImageAvailableSemaphore;
+        signalSubmitInfo.pWaitSemaphores = &imageAvailableSemaphore;
         signalSubmitInfo.signalSemaphoreCount = 1;
         signalSubmitInfo.pSignalSemaphores = &vkSignalFence;
         signalSubmitInfo.pWaitDstStageMask = &kWaitDstFlags;
@@ -268,18 +276,20 @@ namespace FE::Graphics::Vulkan
         signalSubmitInfo.waitSemaphoreCount = 1;
         signalSubmitInfo.pWaitSemaphores = &vkWaitFence;
         signalSubmitInfo.signalSemaphoreCount = 1;
-        signalSubmitInfo.pSignalSemaphores = &m_RenderFinishedSemaphore;
+        signalSubmitInfo.pSignalSemaphores = &m_RenderFinishedSemaphores[m_FrameIndex];
         signalSubmitInfo.pWaitDstStageMask = &kWaitDstFlags;
         FE_VK_ASSERT(vkQueueSubmit(NativeCast(m_Queue), 1, &signalSubmitInfo, VK_NULL_HANDLE));
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphore;
+        presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_FrameIndex];
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &m_NativeSwapchain;
-        presentInfo.pImageIndices = &m_FrameIndex;
+        presentInfo.pImageIndices = &m_ImageIndex;
         FE_VK_ASSERT(vkQueuePresentKHR(NativeCast(m_Queue), &presentInfo));
+
+        m_FrameIndex = (m_FrameIndex + 1) % m_Desc.m_frameCount;
     }
 
 

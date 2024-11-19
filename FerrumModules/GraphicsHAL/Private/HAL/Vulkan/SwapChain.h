@@ -24,9 +24,10 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<Rc<Image>, 3> m_Images;
         festd::small_vector<Rc<ImageView>, 3> m_ImageViews;
 
-        VkSemaphore m_ImageAvailableSemaphore;
-        VkSemaphore m_RenderFinishedSemaphore;
+        festd::small_vector<VkSemaphore, 3> m_ImageAvailableSemaphores;
+        festd::small_vector<VkSemaphore, 3> m_RenderFinishedSemaphores;
         uint32_t m_FrameIndex = 0;
+        uint32_t m_ImageIndex = 0;
 
         [[nodiscard]] bool ValidateDimensions(const HAL::SwapchainDesc& swapChainDesc) const;
         void BuildNativeSwapchain();
