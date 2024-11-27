@@ -35,6 +35,8 @@
     Public/FeCore/DI/Registration.h
     Public/FeCore/DI/Registry.h
 
+    Public/FeCore/ECS/ECS.h
+
     Public/FeCore/EventBus/CoreEvents.h
     Public/FeCore/EventBus/EventBus.h
 
@@ -125,6 +127,8 @@ set(COMMON_SOURCES
     Private/FeCore/DI/Builder.cpp
     Private/FeCore/DI/Container.cpp
     Private/FeCore/DI/LifetimeScope.cpp
+
+    Private/FeCore/ECS/ECS.cpp
 
     Private/FeCore/Framework/ApplicationModule.cpp
     Private/FeCore/Framework/ModuleBase.cpp
