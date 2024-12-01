@@ -20,7 +20,7 @@ namespace FE
     } // namespace Threading
 
 
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
     struct NativeThreadData final
     {
         uint32_t ID;

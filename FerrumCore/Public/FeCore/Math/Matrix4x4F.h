@@ -4,558 +4,361 @@
 
 namespace FE
 {
-    class Matrix4x4F final
-    {
-        inline static constexpr size_t RowCount = 4;
-
-        Vector4F m_Data[RowCount];
-
-    public:
-        FE_RTTI_Base(Matrix4x4F, "F86BB569-A2F4-48B7-83BE-365D28E862BD");
-
-        FE_FORCE_INLINE Matrix4x4F() = default;
-
-        FE_FORCE_INLINE Matrix4x4F(const Matrix4x4F& other) noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F GetZero() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F GetIdentity() noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2,
-                                                                 const Vector4F& row3);
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F FromColumns(const Vector4F& column0, const Vector4F& column1,
-                                                                    const Vector4F& column2, const Vector4F& column3);
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationX(float angle);
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationY(float angle);
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotationZ(float angle);
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateRotation(const Quaternion& quaternion);
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateScale(const Vector3F& scale);
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateDiagonal(const Vector4F& diagonal);
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateDiagonal(float x, float y, float z, float w);
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateTranslation(const Vector3F& translation);
-
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateTransform(const Quaternion& rotation, const Vector3F& translation);
-
-        // Vulkan-compatible
-        [[nodiscard]] FE_FORCE_INLINE static Matrix4x4F CreateProjection(float fovY, float aspectRatio, float near, float far);
-
-        [[nodiscard]] FE_FORCE_INLINE const float* RowMajorData() const;
-
-        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t row, size_t column) const;
-        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t row, size_t column);
-
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetRow(size_t index) const;
-        FE_FORCE_INLINE void SetRow(size_t index, const Vector4F& vector);
-        FE_FORCE_INLINE void SetRow(size_t index, float x, float y, float z, float w);
-        FE_FORCE_INLINE void SetRow(size_t index, const Vector3F& vector, float w = 1.0f);
-
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetColumn(size_t index) const;
-        FE_FORCE_INLINE void SetColumn(size_t index, const Vector4F& vector);
-        FE_FORCE_INLINE void SetColumn(size_t index, float x, float y, float z, float w);
-        FE_FORCE_INLINE void SetColumn(size_t index, const Vector3F& vector, float w = 1.0f);
-
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisX() const;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisY() const;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetBasisZ() const;
-
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator+(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator-(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator*(const Matrix4x4F& other) const;
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator*(float f) const;
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator/(float f) const;
-
-        FE_FORCE_INLINE Matrix4x4F& operator+=(const Matrix4x4F& other);
-        FE_FORCE_INLINE Matrix4x4F& operator-=(const Matrix4x4F& other);
-        FE_FORCE_INLINE Matrix4x4F& operator*=(const Matrix4x4F& other);
-        FE_FORCE_INLINE Matrix4x4F& operator*=(float f);
-        FE_FORCE_INLINE Matrix4x4F& operator/=(float f);
-
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F operator-() const;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector3F operator*(const Vector3F& vector) const;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator*(const Vector4F& vector) const;
-
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F Transposed() const;
-        FE_FORCE_INLINE void Transpose();
-
-        [[nodiscard]] FE_FORCE_INLINE Matrix4x4F InverseTransform() const;
-        FE_FORCE_INLINE void InvertTransform();
-
-        [[nodiscard]] FE_FORCE_INLINE float Determinant() const;
-
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Matrix4x4F& other,
-                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Matrix4x4F& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Matrix4x4F& other) const noexcept;
-    };
-
     namespace Internal
     {
-        FE_FORCE_INLINE void SIMDMatrix4x4Multiply(const SIMD::SSE::Float32x4* l, const SIMD::SSE::Float32x4* r,
-                                                   SIMD::SSE::Float32x4* out)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Transpose4Impl(__m128 row0, __m128 row1, __m128 row2, __m128 row3, __m128* out)
         {
-            // clang-format off
-            out[0] = l[0].Broadcast<3>() * r[3] + (l[0].Broadcast<2>() * r[2] + (l[0].Broadcast<1>() * r[1] + (l[0].Broadcast<0>() * r[0])));
-            out[1] = l[1].Broadcast<3>() * r[3] + (l[1].Broadcast<2>() * r[2] + (l[1].Broadcast<1>() * r[1] + (l[1].Broadcast<0>() * r[0])));
-            out[2] = l[2].Broadcast<3>() * r[3] + (l[2].Broadcast<2>() * r[2] + (l[2].Broadcast<1>() * r[1] + (l[2].Broadcast<0>() * r[0])));
-            out[3] = l[3].Broadcast<3>() * r[3] + (l[3].Broadcast<2>() * r[2] + (l[3].Broadcast<1>() * r[1] + (l[3].Broadcast<0>() * r[0])));
-            // clang-format on
+            const __m128 t0 = _mm_shuffle_ps(row0, row1, _MM_SHUFFLE(1, 0, 1, 0));
+            const __m128 t1 = _mm_shuffle_ps(row0, row1, _MM_SHUFFLE(3, 2, 3, 2));
+            const __m128 t2 = _mm_shuffle_ps(row2, row3, _MM_SHUFFLE(1, 0, 1, 0));
+            const __m128 t3 = _mm_shuffle_ps(row2, row3, _MM_SHUFFLE(3, 2, 3, 2));
+            out[0] = _mm_shuffle_ps(t0, t2, _MM_SHUFFLE(2, 0, 2, 0));
+            out[1] = _mm_shuffle_ps(t0, t2, _MM_SHUFFLE(3, 1, 3, 1));
+            out[2] = _mm_shuffle_ps(t1, t3, _MM_SHUFFLE(2, 0, 2, 0));
+            out[3] = _mm_shuffle_ps(t1, t3, _MM_SHUFFLE(3, 1, 3, 1));
         }
 
-        FE_FORCE_INLINE SIMD::SSE::Float32x4 SIMDMatrix4x4VectorMultiply(const SIMD::SSE::Float32x4* matrix,
-                                                                         SIMD::SSE::Float32x4 vector)
-        {
-            using namespace SIMD::SSE;
-            Float32x4 prod1 = matrix[0] * vector;
-            Float32x4 prod2 = matrix[1] * vector;
-            Float32x4 prod3 = matrix[2] * vector;
-            Float32x4 prod4 = matrix[3] * vector;
-
-            return prod1.HorizontalAdd(prod2).HorizontalAdd(prod3.HorizontalAdd(prod4));
-        }
-
-        FE_FORCE_INLINE float SIMDMatrix3x3Determinant(const Vector3F* matrix)
-        {
-            // Cross and Dot are already SIMD-optimized
-            //                  | a1 a2 a3 |
-            // a * [b x c] = det| b1 b2 b3 |
-            //                  | c1 c2 c3 |
-            return matrix[0].Dot(matrix[1].Cross(matrix[2]));
-        }
+        extern alignas(Memory::kCacheLineSize) const float kIdentity4Values[16];
     } // namespace Internal
 
-    Matrix4x4F::Matrix4x4F(const Matrix4x4F& other) noexcept
+    struct Matrix4x4F final
     {
-        m_Data[0] = other.m_Data[0];
-        m_Data[1] = other.m_Data[1];
-        m_Data[2] = other.m_Data[2];
-        m_Data[3] = other.m_Data[3];
-    }
-
-    Matrix4x4F Matrix4x4F::GetZero() noexcept
-    {
-        return Matrix4x4F::FromRows(Vector4F::GetZero(), Vector4F::GetZero(), Vector4F::GetZero(), Vector4F::GetZero());
-    }
-
-    Matrix4x4F Matrix4x4F::GetIdentity() noexcept
-    {
-        return Matrix4x4F::FromRows(Vector4F::GetUnitX(), Vector4F::GetUnitY(), Vector4F::GetUnitZ(), Vector4F::GetUnitW());
-    }
-
-    Matrix4x4F Matrix4x4F::FromRows(const Vector4F& row0, const Vector4F& row1, const Vector4F& row2, const Vector4F& row3)
-    {
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, row0);
-        matrix.SetRow(1, row1);
-        matrix.SetRow(2, row2);
-        matrix.SetRow(3, row3);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::FromColumns(const Vector4F& column0, const Vector4F& column1, const Vector4F& column2,
-                                       const Vector4F& column3)
-    {
-        Matrix4x4F matrix{};
-        matrix.SetColumn(0, column0);
-        matrix.SetColumn(1, column1);
-        matrix.SetColumn(2, column2);
-        matrix.SetColumn(3, column3);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateRotationX(float angle)
-    {
-        float s = std::sin(angle);
-        float c = std::cos(angle);
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, Vector4F::GetUnitX());
-        matrix.SetRow(1, 0.0f, c, -s, 0.0f);
-        matrix.SetRow(2, 0.0f, s, +c, 0.0f);
-        matrix.SetRow(3, Vector4F::GetUnitW());
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateRotationY(float angle)
-    {
-        float s = std::sin(angle);
-        float c = std::cos(angle);
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, +c, 0.0f, s, 0.0f);
-        matrix.SetRow(1, Vector4F::GetUnitY());
-        matrix.SetRow(2, -s, 0.0f, c, 0.0f);
-        matrix.SetRow(3, Vector4F::GetUnitW());
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateRotationZ(float angle)
-    {
-        float s = std::sin(angle);
-        float c = std::cos(angle);
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, c, -s, 0.0f, 0.0f);
-        matrix.SetRow(1, s, +c, 0.0f, 0.0f);
-        matrix.SetRow(2, Vector4F::GetUnitZ());
-        matrix.SetRow(3, Vector4F::GetUnitW());
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateRotation(const Quaternion& q)
-    {
-        auto wx2 = 2.0f * q.W() * q.X();
-        auto wy2 = 2.0f * q.W() * q.Y();
-        auto wz2 = 2.0f * q.W() * q.Z();
-        auto xx2 = 2.0f * q.X() * q.X();
-        auto xy2 = 2.0f * q.X() * q.Y();
-        auto xz2 = 2.0f * q.X() * q.Z();
-        auto yy2 = 2.0f * q.Y() * q.Y();
-        auto yz2 = 2.0f * q.Y() * q.Z();
-        auto zz2 = 2.0f * q.Z() * q.Z();
-
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, 1.0f - yy2 - zz2, xy2 - wz2, xz2 + wy2, 0);
-        matrix.SetRow(1, xy2 + wz2, 1.0f - xx2 - zz2, yz2 - wx2, 0);
-        matrix.SetRow(2, xz2 - wy2, yz2 + wx2, 1.0f - xx2 - yy2, 0);
-        matrix.SetRow(3, 0, 0, 0, 1);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateScale(const Vector3F& scale)
-    {
-        return CreateDiagonal(Vector4F(scale));
-    }
-
-    Matrix4x4F Matrix4x4F::CreateDiagonal(const Vector4F& diagonal)
-    {
-        return CreateDiagonal(diagonal.X(), diagonal.Y(), diagonal.Z(), diagonal.W());
-    }
-
-    Matrix4x4F Matrix4x4F::CreateDiagonal(float x, float y, float z, float w)
-    {
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, x, 0.0f, 0.0f, 0.0f);
-        matrix.SetRow(1, 0.0f, y, 0.0f, 0.0f);
-        matrix.SetRow(2, 0.0f, 0.0f, z, 0.0f);
-        matrix.SetRow(3, 0.0f, 0.0f, 0.0f, w);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateTranslation(const Vector3F& translation)
-    {
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, 1.0f, 0.0f, 0.0f, translation.X());
-        matrix.SetRow(1, 0.0f, 1.0f, 0.0f, translation.Y());
-        matrix.SetRow(2, 0.0f, 0.0f, 1.0f, translation.Z());
-        matrix.SetRow(3, 0.0f, 0.0f, 0.0f, 1.0f);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateTransform(const Quaternion& rotation, const Vector3F& translation)
-    {
-        auto matrix = CreateRotation(rotation);
-        matrix.SetColumn(3, translation);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::CreateProjection(float fovY, float aspectRatio, float near, float far)
-    {
-        Matrix4x4F matrix{};
-
-        float cotY = std::cos(0.5f * fovY) / std::sin(0.5f * fovY);
-        float cotX = cotY / aspectRatio;
-        float invFl = 1.0f / (far - near);
-        matrix.SetRow(0, -cotX, 0.0f, 0.0f, 0.0f);
-        matrix.SetRow(1, 0.0f, cotY, 0.0f, 0.0f);
-        matrix.SetRow(2, 0.0f, 0.0f, far * invFl, -far * near * invFl);
-        matrix.SetRow(3, 0.0f, 0.0f, 1.0f, 0.0f);
-        return matrix;
-    }
-
-    const float* Matrix4x4F::RowMajorData() const
-    {
-        return m_Data[0].Data();
-    }
-
-    float Matrix4x4F::operator()(size_t row, size_t column) const
-    {
-        return m_Data[row][column];
-    }
-
-    float& Matrix4x4F::operator()(size_t row, size_t column)
-    {
-        return m_Data[row](column);
-    }
-
-    Vector4F Matrix4x4F::GetRow(size_t index) const
-    {
-        return m_Data[index];
-    }
-
-    void Matrix4x4F::SetRow(size_t index, const Vector4F& vector)
-    {
-        m_Data[index] = vector;
-    }
-
-    void Matrix4x4F::SetRow(size_t index, float x, float y, float z, float w)
-    {
-        m_Data[index] = Vector4F(x, y, z, w);
-    }
-
-    void Matrix4x4F::SetRow(size_t index, const Vector3F& vector, float w)
-    {
-        m_Data[index] = Vector4F(vector, w);
-    }
-
-    Vector4F Matrix4x4F::GetColumn(size_t index) const
-    {
-        return Vector4F(m_Data[0][index], m_Data[1][index], m_Data[2][index], m_Data[3][index]);
-    }
-
-    void Matrix4x4F::SetColumn(size_t index, const Vector4F& vector)
-    {
-        m_Data[0](index) = vector.X();
-        m_Data[1](index) = vector.Y();
-        m_Data[2](index) = vector.Z();
-        m_Data[3](index) = vector.W();
-    }
-
-    void Matrix4x4F::SetColumn(size_t index, float x, float y, float z, float w)
-    {
-        m_Data[0](index) = x;
-        m_Data[1](index) = y;
-        m_Data[2](index) = z;
-        m_Data[3](index) = w;
-    }
-
-    void Matrix4x4F::SetColumn(size_t index, const Vector3F& vector, float w)
-    {
-        m_Data[0](index) = vector.X();
-        m_Data[1](index) = vector.Y();
-        m_Data[2](index) = vector.Z();
-        m_Data[3](index) = w;
-    }
-
-    Vector4F Matrix4x4F::GetBasisX() const
-    {
-        return GetColumn(0);
-    }
-
-    Vector4F Matrix4x4F::GetBasisY() const
-    {
-        return GetColumn(1);
-    }
-
-    Vector4F Matrix4x4F::GetBasisZ() const
-    {
-        return GetColumn(2);
-    }
-
-    Matrix4x4F Matrix4x4F::operator+(const Matrix4x4F& other) const
-    {
-        auto row0 = GetRow(0) + other.GetRow(0);
-        auto row1 = GetRow(1) + other.GetRow(1);
-        auto row2 = GetRow(2) + other.GetRow(2);
-        auto row3 = GetRow(3) + other.GetRow(3);
-        return Matrix4x4F::FromRows(row0, row1, row2, row3);
-    }
-
-    Matrix4x4F Matrix4x4F::operator-(const Matrix4x4F& other) const
-    {
-        auto row0 = GetRow(0) - other.GetRow(0);
-        auto row1 = GetRow(1) - other.GetRow(1);
-        auto row2 = GetRow(2) - other.GetRow(2);
-        auto row3 = GetRow(3) - other.GetRow(3);
-        return Matrix4x4F::FromRows(row0, row1, row2, row3);
-    }
-
-    Matrix4x4F& Matrix4x4F::operator+=(const Matrix4x4F& other)
-    {
-        *this = *this + other;
-        return *this;
-    }
-
-    Matrix4x4F& Matrix4x4F::operator-=(const Matrix4x4F& other)
-    {
-        *this = *this - other;
-        return *this;
-    }
-
-    Matrix4x4F Matrix4x4F::operator*(const Matrix4x4F& other) const
-    {
-        Matrix4x4F matrix{};
-        Internal::SIMDMatrix4x4Multiply(
-            &m_Data[0].GetSIMD(), &other.m_Data[0].GetSIMD(), const_cast<SIMD::SSE::Float32x4*>(&matrix.m_Data[0].GetSIMD()));
-        return matrix;
-    }
-
-    Matrix4x4F& Matrix4x4F::operator*=(const Matrix4x4F& other)
-    {
-        *this = *this * other;
-        return *this;
-    }
-
-    Matrix4x4F Matrix4x4F::operator*(float f) const
-    {
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, m_Data[0] * f);
-        matrix.SetRow(1, m_Data[1] * f);
-        matrix.SetRow(2, m_Data[2] * f);
-        matrix.SetRow(3, m_Data[3] * f);
-        return matrix;
-    }
-
-    Matrix4x4F Matrix4x4F::operator/(float f) const
-    {
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, m_Data[0] / f);
-        matrix.SetRow(1, m_Data[1] / f);
-        matrix.SetRow(2, m_Data[2] / f);
-        matrix.SetRow(3, m_Data[3] / f);
-        return matrix;
-    }
-
-    Matrix4x4F& Matrix4x4F::operator*=(float f)
-    {
-        *this = *this * f;
-        return *this;
-    }
-
-    Matrix4x4F& Matrix4x4F::operator/=(float f)
-    {
-        *this = *this / f;
-        return *this;
-    }
-
-    Matrix4x4F Matrix4x4F::operator-() const
-    {
-        return *this * -1;
-    }
-
-    Vector4F Matrix4x4F::operator*(const Vector4F& vector) const
-    {
-        return Vector4F(Internal::SIMDMatrix4x4VectorMultiply(&m_Data[0].GetSIMD(), vector.GetSIMD()));
-    }
-
-    Vector3F Matrix4x4F::operator*(const Vector3F& vector) const
-    {
-        Vector4F v(vector, 1.0f);
-        auto result = *this * v;
-        return result.GetVector3F();
-    }
-
-    Matrix4x4F Matrix4x4F::Transposed() const
-    {
-        // TODO: SIMD?
-        Matrix4x4F matrix{};
-        matrix.SetRow(0, GetColumn(0));
-        matrix.SetRow(1, GetColumn(1));
-        matrix.SetRow(2, GetColumn(2));
-        matrix.SetRow(3, GetColumn(3));
-        return matrix;
-    }
-
-    void Matrix4x4F::Transpose()
-    {
-        *this = Transposed();
-    }
-
-    bool Matrix4x4F::IsApproxEqualTo(const Matrix4x4F& other, float epsilon) const noexcept
-    {
-        for (size_t i = 0; i < RowCount; ++i)
+        union
         {
-            if (!m_Data[i].IsApproxEqualTo(other.m_Data[i], epsilon))
+            Vector4F m_rows[4];
+            __m128 m_simdVectors[4];
+            float m_values[16];
+            struct
             {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    bool Matrix4x4F::operator==(const Matrix4x4F& other) const noexcept
-    {
-        for (size_t i = 0; i < RowCount; ++i)
-        {
-            if (m_Data[i] != other.m_Data[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    bool Matrix4x4F::operator!=(const Matrix4x4F& other) const noexcept
-    {
-        return !(*this == other);
-    }
-
-    float Matrix4x4F::Determinant() const
-    {
-        static constexpr auto det3 = [](const Vector3F& a, const Vector3F& b, const Vector3F& c) {
-            std::array<Vector3F, 3> m3{ a, b, c };
-            return Internal::SIMDMatrix3x3Determinant(m3.data());
+                float m_00, m_01, m_02, m_03;
+                float m_10, m_11, m_12, m_13;
+                float m_20, m_21, m_22, m_23;
+                float m_30, m_31, m_32, m_33;
+            };
         };
-        const auto& m = *this;
 
-        auto d1 = det3({ m(1, 1), m(1, 2), m(1, 3) }, { m(2, 1), m(2, 2), m(2, 3) }, { m(3, 1), m(3, 2), m(3, 3) });
-        auto d2 = det3({ m(1, 0), m(1, 2), m(1, 3) }, { m(2, 0), m(2, 2), m(2, 3) }, { m(3, 0), m(3, 2), m(3, 3) });
-        auto d3 = det3({ m(1, 0), m(1, 1), m(1, 3) }, { m(2, 0), m(2, 1), m(2, 3) }, { m(3, 0), m(3, 1), m(3, 3) });
-        auto d4 = det3({ m(1, 0), m(1, 1), m(1, 2) }, { m(2, 0), m(2, 1), m(2, 2) }, { m(3, 0), m(3, 1), m(3, 2) });
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F() = default;
 
-        return m(0, 0) * d1 - m(0, 1) * d2 + m(0, 2) * d3 - m(0, 3) * d4;
-    }
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL RowMajorData()
+        {
+            return m_values;
+        }
 
-    void Matrix4x4F::InvertTransform()
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE const float* FE_VECTORCALL RowMajorData() const
+        {
+            return m_values;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromRows(Vector4F row0, Vector4F row1,
+                                                                                       Vector4F row2, Vector4F row3)
+        {
+            Matrix4x4F result;
+            result.m_rows[0] = row0;
+            result.m_rows[1] = row1;
+            result.m_rows[2] = row2;
+            result.m_rows[3] = row3;
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromColumns(Vector4F column0, Vector4F column1,
+                                                                                          Vector4F column2, Vector4F column3)
+        {
+            Matrix4x4F result;
+            Internal::Transpose4Impl(
+                column0.m_simdVector, column1.m_simdVector, column2.m_simdVector, column3.m_simdVector, result.m_simdVectors);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Zero()
+        {
+            return FromRows(Vector4F::Zero(), Vector4F::Zero(), Vector4F::Zero(), Vector4F::Zero());
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL LoadUnaligned(const float* values)
+        {
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_loadu_ps(&values[0]);
+            result.m_simdVectors[1] = _mm_loadu_ps(&values[4]);
+            result.m_simdVectors[2] = _mm_loadu_ps(&values[8]);
+            result.m_simdVectors[3] = _mm_loadu_ps(&values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL LoadAligned(const float* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_load_ps(&values[0]);
+            result.m_simdVectors[1] = _mm_load_ps(&values[4]);
+            result.m_simdVectors[2] = _mm_load_ps(&values[8]);
+            result.m_simdVectors[3] = _mm_load_ps(&values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Identity()
+        {
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_load_ps(&Internal::kIdentity4Values[0]);
+            result.m_simdVectors[1] = _mm_load_ps(&Internal::kIdentity4Values[4]);
+            result.m_simdVectors[2] = _mm_load_ps(&Internal::kIdentity4Values[8]);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationX(float angle)
+        {
+            const float sin = Math::Sin(angle);
+            const float cos = Math::Cos(angle);
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_load_ps(&Internal::kIdentity4Values[0]);
+            result.m_simdVectors[1] = _mm_setr_ps(0.0f, cos, -sin, 0.0f);
+            result.m_simdVectors[2] = _mm_setr_ps(0.0f, sin, cos, 0.0f);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationY(float angle)
+        {
+            const float sin = Math::Sin(angle);
+            const float cos = Math::Cos(angle);
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_setr_ps(cos, 0.0f, sin, 0.0f);
+            result.m_simdVectors[1] = _mm_load_ps(&Internal::kIdentity4Values[4]);
+            result.m_simdVectors[2] = _mm_setr_ps(-sin, 0.0f, cos, 0.0f);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationZ(float angle)
+        {
+            const float sin = Math::Sin(angle);
+            const float cos = Math::Cos(angle);
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_setr_ps(cos, -sin, 0.0f, 0.0f);
+            result.m_simdVectors[1] = _mm_setr_ps(sin, cos, 0.0f, 0.0f);
+            result.m_simdVectors[2] = _mm_load_ps(&Internal::kIdentity4Values[8]);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Rotation(Quaternion quat)
+        {
+            const float wx2 = 2.0f * quat.w * quat.x;
+            const float wy2 = 2.0f * quat.w * quat.y;
+            const float wz2 = 2.0f * quat.w * quat.z;
+            const float xx2 = 2.0f * quat.x * quat.x;
+            const float xy2 = 2.0f * quat.x * quat.y;
+            const float xz2 = 2.0f * quat.x * quat.z;
+            const float yy2 = 2.0f * quat.y * quat.y;
+            const float yz2 = 2.0f * quat.y * quat.z;
+            const float zz2 = 2.0f * quat.z * quat.z;
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_setr_ps(1.0f - yy2 - zz2, xy2 - wz2, xz2 + wy2, 0.0f);
+            result.m_simdVectors[1] = _mm_setr_ps(xy2 + wz2, 1.0f - xx2 - zz2, yz2 - wx2, 0.0f);
+            result.m_simdVectors[2] = _mm_setr_ps(xz2 - wy2, yz2 + wx2, 1.0f - xx2 - yy2, 0.0f);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Scale(Vector3F scale)
+        {
+            const __m128 zero = _mm_setzero_ps();
+
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_blend_ps(zero, scale.m_simdVector, 1);
+            result.m_simdVectors[1] = _mm_blend_ps(zero, scale.m_simdVector, 2);
+            result.m_simdVectors[2] = _mm_blend_ps(zero, scale.m_simdVector, 4);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Translation(Vector3F translation)
+        {
+            Matrix4x4F result;
+            result.m_simdVectors[0] = _mm_insert_ps(_mm_load_ps(&Internal::kIdentity4Values[0]), translation.m_simdVector, 0x30);
+            result.m_simdVectors[1] = _mm_insert_ps(_mm_load_ps(&Internal::kIdentity4Values[4]), translation.m_simdVector, 0x70);
+            result.m_simdVectors[2] = _mm_insert_ps(_mm_load_ps(&Internal::kIdentity4Values[8]), translation.m_simdVector, 0xB0);
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
+            return result;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Projection(float fovY, float aspectRatio,
+                                                                                         float near, float far)
+        {
+            const float cotY = Math::Cos(0.5f * fovY) / Math::Sin(0.5f * fovY);
+            const float cotX = cotY / aspectRatio;
+            const float invFl = 1.0f / (far - near);
+
+            Matrix4x4F result;
+            result.m_rows[0] = Vector4F::AxisX(-cotX);
+            result.m_rows[1] = Vector4F::AxisY(cotY);
+            result.m_rows[2] = Vector4F{ 0.0f, 0.0f, far * invFl, -far * near * invFl };
+            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[8]);
+            return result;
+        }
+    };
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator+(const Matrix4x4F& lhs, const Matrix4x4F& rhs)
     {
-        *this = InverseTransform();
+        Matrix4x4F result;
+        result.m_simdVectors[0] = _mm_add_ps(lhs.m_simdVectors[0], rhs.m_simdVectors[0]);
+        result.m_simdVectors[1] = _mm_add_ps(lhs.m_simdVectors[1], rhs.m_simdVectors[1]);
+        result.m_simdVectors[2] = _mm_add_ps(lhs.m_simdVectors[2], rhs.m_simdVectors[2]);
+        result.m_simdVectors[3] = _mm_add_ps(lhs.m_simdVectors[3], rhs.m_simdVectors[3]);
+        return result;
     }
 
-    Matrix4x4F Matrix4x4F::InverseTransform() const
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator-(const Matrix4x4F& lhs, const Matrix4x4F& rhs)
     {
-        using SIMD::SSE::Float32x4;
-
-        const auto& t = *this;
-        Matrix4x4F m{};
-        auto s0 = t(0, 0) * t(1, 1) - t(1, 0) * t(0, 1);
-        auto s1 = t(0, 0) * t(1, 2) - t(1, 0) * t(0, 2);
-        auto s2 = t(0, 0) * t(1, 3) - t(1, 0) * t(0, 3);
-        auto s3 = t(0, 1) * t(1, 2) - t(1, 1) * t(0, 2);
-        auto s4 = t(0, 1) * t(1, 3) - t(1, 1) * t(0, 3);
-        auto s5 = t(0, 2) * t(1, 3) - t(1, 2) * t(0, 3);
-
-        auto c5 = t(2, 2) * t(3, 3) - t(3, 2) * t(2, 3);
-        auto c4 = t(2, 1) * t(3, 3) - t(3, 1) * t(2, 3);
-        auto c3 = t(2, 1) * t(3, 2) - t(3, 1) * t(2, 2);
-        auto c2 = t(2, 0) * t(3, 3) - t(3, 0) * t(2, 3);
-        auto c1 = t(2, 0) * t(3, 2) - t(3, 0) * t(2, 2);
-        auto c0 = t(2, 0) * t(3, 1) - t(3, 0) * t(2, 1);
-
-        auto invDet = 1 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
-
-        m(0, 0) = (t(1, 1) * c5 - t(1, 2) * c4 + t(1, 3) * c3) * invDet;
-        m(0, 1) = (-t(0, 1) * c5 + t(0, 2) * c4 - t(0, 3) * c3) * invDet;
-        m(0, 2) = (t(3, 1) * s5 - t(3, 2) * s4 + t(3, 3) * s3) * invDet;
-        m(0, 3) = (-t(2, 1) * s5 + t(2, 2) * s4 - t(2, 3) * s3) * invDet;
-
-        m(1, 0) = (-t(1, 0) * c5 + t(1, 2) * c2 - t(1, 3) * c1) * invDet;
-        m(1, 1) = (t(0, 0) * c5 - t(0, 2) * c2 + t(0, 3) * c1) * invDet;
-        m(1, 2) = (-t(3, 0) * s5 + t(3, 2) * s2 - t(3, 3) * s1) * invDet;
-        m(1, 3) = (t(2, 0) * s5 - t(2, 2) * s2 + t(2, 3) * s1) * invDet;
-
-        m(2, 0) = (t(1, 0) * c4 - t(1, 1) * c2 + t(1, 3) * c0) * invDet;
-        m(2, 1) = (-t(0, 0) * c4 + t(0, 1) * c2 - t(0, 3) * c0) * invDet;
-        m(2, 2) = (t(3, 0) * s4 - t(3, 1) * s2 + t(3, 3) * s0) * invDet;
-        m(2, 3) = (-t(2, 0) * s4 + t(2, 1) * s2 - t(2, 3) * s0) * invDet;
-
-        m(3, 0) = (-t(1, 0) * c3 + t(1, 1) * c1 - t(1, 2) * c0) * invDet;
-        m(3, 1) = (t(0, 0) * c3 - t(0, 1) * c1 + t(0, 2) * c0) * invDet;
-        m(3, 2) = (-t(3, 0) * s3 + t(3, 1) * s1 - t(3, 2) * s0) * invDet;
-        m(3, 3) = (t(2, 0) * s3 - t(2, 1) * s1 + t(2, 2) * s0) * invDet;
-
-        return m;
+        Matrix4x4F result;
+        result.m_simdVectors[0] = _mm_sub_ps(lhs.m_simdVectors[0], rhs.m_simdVectors[0]);
+        result.m_simdVectors[1] = _mm_sub_ps(lhs.m_simdVectors[1], rhs.m_simdVectors[1]);
+        result.m_simdVectors[2] = _mm_sub_ps(lhs.m_simdVectors[2], rhs.m_simdVectors[2]);
+        result.m_simdVectors[3] = _mm_sub_ps(lhs.m_simdVectors[3], rhs.m_simdVectors[3]);
+        return result;
     }
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator-(const Matrix4x4F& mat)
+    {
+        Matrix4x4F result;
+        result.m_rows[0] = -mat.m_rows[0];
+        result.m_rows[1] = -mat.m_rows[1];
+        result.m_rows[2] = -mat.m_rows[2];
+        result.m_rows[3] = -mat.m_rows[3];
+        return result;
+    }
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator*(const Matrix4x4F& lhs, const Matrix4x4F& rhs)
+    {
+        Matrix4x4F result;
+
+        result.m_rows[0] = Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs.m_rows[0]) * rhs.m_rows[3]
+            + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs.m_rows[0]) * rhs.m_rows[2]
+            + Vector4F::Swizzle<Math::Swizzle::kYYYY>(lhs.m_rows[0]) * rhs.m_rows[1]
+            + Vector4F::Swizzle<Math::Swizzle::kXXXX>(lhs.m_rows[0]) * rhs.m_rows[0];
+
+        result.m_rows[1] = Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs.m_rows[1]) * rhs.m_rows[3]
+            + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs.m_rows[1]) * rhs.m_rows[2]
+            + Vector4F::Swizzle<Math::Swizzle::kYYYY>(lhs.m_rows[1]) * rhs.m_rows[1]
+            + Vector4F::Swizzle<Math::Swizzle::kXXXX>(lhs.m_rows[1]) * rhs.m_rows[0];
+
+        result.m_rows[2] = Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs.m_rows[2]) * rhs.m_rows[3]
+            + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs.m_rows[2]) * rhs.m_rows[2]
+            + Vector4F::Swizzle<Math::Swizzle::kYYYY>(lhs.m_rows[2]) * rhs.m_rows[1]
+            + Vector4F::Swizzle<Math::Swizzle::kXXXX>(lhs.m_rows[2]) * rhs.m_rows[0];
+
+        result.m_rows[3] = Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs.m_rows[3]) * rhs.m_rows[3]
+            + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs.m_rows[3]) * rhs.m_rows[2]
+            + Vector4F::Swizzle<Math::Swizzle::kYYYY>(lhs.m_rows[3]) * rhs.m_rows[1]
+            + Vector4F::Swizzle<Math::Swizzle::kXXXX>(lhs.m_rows[3]) * rhs.m_rows[0];
+
+        return result;
+    }
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator*(Vector4F lhs, const Matrix4x4F& rhs)
+    {
+        return Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs) * rhs.m_rows[3]
+            + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs) * rhs.m_rows[2]
+            + Vector4F::Swizzle<Math::Swizzle::kYYYY>(lhs) * rhs.m_rows[1]
+            + Vector4F::Swizzle<Math::Swizzle::kXXXX>(lhs) * rhs.m_rows[0];
+    }
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator*(const Matrix4x4F& lhs, float rhs)
+    {
+        const __m128 broadcast = _mm_set1_ps(rhs);
+
+        Matrix4x4F result;
+        result.m_simdVectors[0] = _mm_mul_ps(lhs.m_simdVectors[0], broadcast);
+        result.m_simdVectors[1] = _mm_mul_ps(lhs.m_simdVectors[1], broadcast);
+        result.m_simdVectors[2] = _mm_mul_ps(lhs.m_simdVectors[2], broadcast);
+        result.m_simdVectors[3] = _mm_mul_ps(lhs.m_simdVectors[3], broadcast);
+        return result;
+    }
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator/(const Matrix4x4F& lhs, float rhs)
+    {
+        const __m128 broadcast = _mm_set1_ps(rhs);
+
+        Matrix4x4F result;
+        result.m_simdVectors[0] = _mm_div_ps(lhs.m_simdVectors[0], broadcast);
+        result.m_simdVectors[1] = _mm_div_ps(lhs.m_simdVectors[1], broadcast);
+        result.m_simdVectors[2] = _mm_div_ps(lhs.m_simdVectors[2], broadcast);
+        result.m_simdVectors[3] = _mm_div_ps(lhs.m_simdVectors[3], broadcast);
+        return result;
+    }
+
+
+    namespace Math
+    {
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL Transpose(const Matrix4x4F& matrix)
+        {
+            Matrix4x4F result;
+            FE::Internal::Transpose4Impl(matrix.m_simdVectors[0],
+                                         matrix.m_simdVectors[1],
+                                         matrix.m_simdVectors[2],
+                                         matrix.m_simdVectors[3],
+                                         result.m_simdVectors);
+            return result;
+        }
+
+
+        FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL InverseTransform(const Matrix4x4F& matrix);
+
+
+        template<uint32_t TColumnIndex>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL ExtractColumn(const Matrix4x4F& matrix)
+        {
+            constexpr int32_t shuffleMask = _MM_SHUFFLE(TColumnIndex, TColumnIndex, TColumnIndex, TColumnIndex);
+            const __m128 x = _mm_shuffle_ps(matrix.m_simdVectors[0], matrix.m_simdVectors[0], shuffleMask);
+            const __m128 y = _mm_shuffle_ps(matrix.m_simdVectors[1], matrix.m_simdVectors[1], shuffleMask);
+            const __m128 z = _mm_shuffle_ps(matrix.m_simdVectors[2], matrix.m_simdVectors[2], shuffleMask);
+            const __m128 w = _mm_shuffle_ps(matrix.m_simdVectors[3], matrix.m_simdVectors[3], shuffleMask);
+            return Vector4F{ _mm_blend_ps(_mm_blend_ps(_mm_blend_ps(x, y, 0x2), z, 0xc), w, 0x8) };
+        }
+
+
+        template<uint32_t TColumnIndex>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void FE_VECTORCALL ReplaceColumn(Matrix4x4F& matrix, Vector4F column)
+        {
+            constexpr uint32_t sourceMask = TColumnIndex << 4u;
+            matrix.m_simdVectors[0] = _mm_insert_ps(matrix.m_simdVectors[0], column.m_simdVector, sourceMask | (0 << 6));
+            matrix.m_simdVectors[1] = _mm_insert_ps(matrix.m_simdVectors[1], column.m_simdVector, sourceMask | (1 << 6));
+            matrix.m_simdVectors[2] = _mm_insert_ps(matrix.m_simdVectors[2], column.m_simdVector, sourceMask | (2 << 6));
+            matrix.m_simdVectors[3] = _mm_insert_ps(matrix.m_simdVectors[3], column.m_simdVector, sourceMask | (3 << 6));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Matrix4x4F lhs, Matrix4x4F rhs,
+                                                                               float epsilon = Constants::Epsilon)
+        {
+            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            const __m128 epsilonBroadcast = _mm_set1_ps(epsilon);
+
+            __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[0], rhs.m_simdVectors[0]), kSignMask);
+            __m128 mask = _mm_cmpgt_ps(distance, epsilonBroadcast);
+
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[1], rhs.m_simdVectors[1]), kSignMask);
+            mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
+
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[2], rhs.m_simdVectors[2]), kSignMask);
+            mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
+
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[3], rhs.m_simdVectors[3]), kSignMask);
+            mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
+
+            return _mm_movemask_ps(mask) == 0;
+        }
+    } // namespace Math
 } // namespace FE

@@ -32,7 +32,7 @@ namespace FE::Graphics::Vulkan
         VkPipelineLayoutCreateInfo layoutCI{};
         layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         layoutCI.pSetLayouts = setLayouts.data();
-        layoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+        layoutCI.setLayoutCount = setLayouts.size();
         vkCreatePipelineLayout(NativeCast(m_device), &layoutCI, VK_NULL_HANDLE, &m_layout);
 
         VkGraphicsPipelineCreateInfo pipelineCI{};
@@ -40,7 +40,7 @@ namespace FE::Graphics::Vulkan
         pipelineCI.layout = m_layout;
 
         auto shaderStages = BuildShaderStages();
-        pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+        pipelineCI.stageCount = shaderStages.size();
         pipelineCI.pStages = shaderStages.data();
 
         VertexStates vertexStates{};
@@ -80,7 +80,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void GraphicsPipeline::BuildVertexStates(GraphicsPipeline::VertexStates& states) const
+    void GraphicsPipeline::BuildVertexStates(VertexStates& states) const
     {
         const auto& buffers = m_desc.m_inputLayout.m_buffers;
         const auto& attributes = m_desc.m_inputLayout.m_attributes;
@@ -88,7 +88,7 @@ namespace FE::Graphics::Vulkan
         for (uint32_t i = 0; i < buffers.size(); ++i)
         {
             auto& binding = states.m_bindingDesc.push_back();
-            binding.binding = static_cast<uint32_t>(i);
+            binding.binding = i;
             binding.inputRate = VKConvert(buffers[i].m_inputRate);
             binding.stride = buffers[i].m_stride;
         }
@@ -111,9 +111,9 @@ namespace FE::Graphics::Vulkan
 
         states.m_vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         states.m_vertexInput.pVertexBindingDescriptions = states.m_bindingDesc.data();
-        states.m_vertexInput.vertexBindingDescriptionCount = static_cast<uint32_t>(states.m_bindingDesc.size());
+        states.m_vertexInput.vertexBindingDescriptionCount = states.m_bindingDesc.size();
         states.m_vertexInput.pVertexAttributeDescriptions = states.m_attributeDesc.data();
-        states.m_vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(states.m_attributeDesc.size());
+        states.m_vertexInput.vertexAttributeDescriptionCount = states.m_attributeDesc.size();
 
         states.m_inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         states.m_inputAssembly.topology = VKConvert(m_desc.m_inputLayout.m_topology);
@@ -131,7 +131,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void GraphicsPipeline::BuildViewportState(GraphicsPipeline::ViewportState& state) const
+    void GraphicsPipeline::BuildViewportState(ViewportState& state) const
     {
         state.m_viewport = VKConvert(m_desc.m_viewport);
         state.m_scissor = VKConvert(m_desc.m_scissor);
@@ -208,7 +208,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void GraphicsPipeline::BuildBlendState(GraphicsPipeline::BlendState& state)
+    void GraphicsPipeline::BuildBlendState(BlendState& state)
     {
         for (uint32_t i = 0; i < m_desc.m_colorBlend.m_targetBlendStates.size(); ++i)
             state.m_attachments.push_back(BuildBlendState(i));
@@ -217,12 +217,9 @@ namespace FE::Graphics::Vulkan
         state.m_createInfo.logicOpEnable = false;
         state.m_createInfo.logicOp = VK_LOGIC_OP_COPY;
         state.m_createInfo.pAttachments = state.m_attachments.data();
-        state.m_createInfo.attachmentCount = static_cast<uint32_t>(state.m_attachments.size());
+        state.m_createInfo.attachmentCount = state.m_attachments.size();
 
-        state.m_createInfo.blendConstants[0] = m_desc.m_colorBlend.m_blendConstants.X();
-        state.m_createInfo.blendConstants[1] = m_desc.m_colorBlend.m_blendConstants.Y();
-        state.m_createInfo.blendConstants[2] = m_desc.m_colorBlend.m_blendConstants.Z();
-        state.m_createInfo.blendConstants[3] = m_desc.m_colorBlend.m_blendConstants.W();
+        memcpy(state.m_createInfo.blendConstants, m_desc.m_colorBlend.m_blendConstants.Data(), sizeof(Vector4F));
     }
 
 

@@ -9,24 +9,24 @@ namespace FE::IO
 
         FE_RTTI_Class(AsyncReadController, "4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
 
-        inline AsyncReadController(AsyncReadRequestQueueEntry* pEntry)
+        AsyncReadController(AsyncReadRequestQueueEntry* pEntry)
             : pRequestEntry(pEntry)
         {
         }
 
         ~AsyncReadController() override = default;
 
-        inline void Cancel() override
+        void Cancel() override
         {
             pRequestEntry->CancellationRequested.store(true, std::memory_order_release);
         }
 
-        inline AsyncOperationStatus GetStatus() const override
+        AsyncOperationStatus GetStatus() const override
         {
             return pRequestEntry->Status.load(std::memory_order_acquire);
         }
 
-        inline ResultCode GetLastOperationResult() const override
+        ResultCode GetLastOperationResult() const override
         {
             return pRequestEntry->LastResult.load(std::memory_order_acquire);
         }
@@ -61,8 +61,7 @@ namespace FE::IO
         AsyncReadRequest& request = entry->Request;
         if (request.pStream == nullptr && status != AsyncOperationStatus::kCanceled)
         {
-            const auto result = m_pStreamFactory->OpenFileStream(request.Path, OpenMode::kReadOnly);
-            if (result)
+            if (const auto result = m_pStreamFactory->OpenFileStream(request.Path, OpenMode::kReadOnly))
             {
                 request.pStream = result.Unwrap();
                 const StringSlice zoneText = request.pStream->GetName();

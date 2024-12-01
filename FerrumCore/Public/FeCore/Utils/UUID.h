@@ -4,7 +4,7 @@
 #include <cctype>
 #include <string_view>
 
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
 #    include <guiddef.h>
 #else
 typedef struct _GUID

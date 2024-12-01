@@ -1,334 +1,222 @@
-﻿#pragma once
-#include <FeCore/Base/BaseMath.h>
-#include <FeCore/RTTI/RTTI.h>
-#include <FeCore/SIMD/CommonSIMD.h>
-#include <array>
-#include <cstdint>
-#include <iostream>
+#pragma once
+#include <FeCore/Base/Base.h>
 
 namespace FE
 {
-    //! @brief 2-dimensional vector.
-    class Vector2F final
+    template<class T>
+    struct Vector2Base final
     {
-        using TVec = SIMD::SSE::Float32x4;
-
         union
         {
-            TVec m_Value;
-            float m_Values[2];
+            T m_values[2];
             struct
             {
-                float m_X, m_Y;
+                T x, y;
             };
         };
 
-    public:
-        FE_RTTI_Base(Vector2F, "3181CD8D-6109-4E7D-AE6F-E672ED5EDF2C");
-
-        FE_FORCE_INLINE Vector2F()
-            : Vector2F(0, 0)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base()
+            : x(0)
+            , y(0)
         {
         }
 
-        FE_FORCE_INLINE explicit Vector2F(TVec vec) noexcept;
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(T value)
+            : x(value)
+            , y(value)
+        {
+        }
 
-        FE_FORCE_INLINE Vector2F(const Vector2F& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(T x, T y)
+            : x(x)
+            , y(y)
+        {
+        }
 
-        FE_FORCE_INLINE Vector2F& operator=(const Vector2F& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* Data()
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Vector2F(Vector2F&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE const T* Data() const
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Vector2F& operator=(Vector2F&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base Zero()
+        {
+            return Vector2Base{ 0, 0 };
+        }
 
-        FE_FORCE_INLINE explicit Vector2F(float value) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base LoadUnaligned(const T* values)
+        {
+            return Vector2Base{ values[0], values[1] };
+        }
 
-        FE_FORCE_INLINE Vector2F(float x, float y) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base LoadAligned(const T* values)
+        {
+            return Vector2Base{ values[0], values[1] };
+        }
 
-        FE_FORCE_INLINE explicit Vector2F(const std::array<float, 2>& array) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisX(T length = 1.0f)
+        {
+            return Vector2Base{ length, 0 };
+        }
 
-        //! @return Vector2F{ 0, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector2F GetZero() noexcept;
-
-        //! @return Vector2F{ 1, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector2F GetUnitX() noexcept;
-
-        //! @return Vector2F{ 0, 1 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector2F GetUnitY() noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
-
-        //! @return A pointer to array of two floats (components of the vector).
-        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
-
-        //! @return Underlying SIMD type.
-        [[nodiscard]] FE_FORCE_INLINE TVec GetSIMD() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float Y() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& X() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& Y() noexcept;
-
-        FE_FORCE_INLINE void Set(float x, float y) noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float Dot(const Vector2F& other) const noexcept;
-
-        //! @return Squared length of the vector.
-        [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
-
-        //! @return Length of the vector.
-        [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
-
-        //! @return New normalized vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector2F Normalized() const noexcept;
-
-        //! @brief Linearly interpolate between this and destination.
-        //!
-        //! The result is (dst - this) * f + this.
-        //!
-        //! @param f - Interpolation factor.
-        //!
-        //! @return New interpolated vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector2F Lerp(const Vector2F& dst, float f) const noexcept;
-
-        //! @brief Multiply each component of this vector with each component of other vector.
-        //!
-        //! @return New vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector2F MulEach(const Vector2F& other) const noexcept;
-
-        //! @brief Check if two vectors are approximately equal.
-        //!
-        //! @param other   - The vector to compare this vector with.
-        //! @param epsilon - Accepted difference between the two vectors.
-        //!
-        //! @return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector2F& other,
-                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Vector2F& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Vector2F& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector2F operator-() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector2F operator+(const Vector2F& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector2F operator-(const Vector2F& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector2F operator*(float f) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector2F operator/(float f) const noexcept;
-
-        FE_FORCE_INLINE Vector2F& operator+=(const Vector2F& other) noexcept;
-
-        FE_FORCE_INLINE Vector2F& operator-=(const Vector2F& other) noexcept;
-
-        FE_FORCE_INLINE Vector2F& operator*=(float f) noexcept;
-
-        FE_FORCE_INLINE Vector2F& operator/=(float f) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisY(T length = 1.0f)
+        {
+            return Vector2Base{ 0, length };
+        }
     };
 
-    FE_FORCE_INLINE Vector2F::Vector2F(TVec vec) noexcept // NOLINT clang-tidy complains about uninitialized union members
-        : m_Value(vec)
+    using Vector2F = Vector2Base<float>;
+    using Vector2Int = Vector2Base<int32_t>;
+    using Vector2UInt = Vector2Base<uint32_t>;
+
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator+(Vector2Base<T> lhs, Vector2Base<T> rhs)
     {
+        return Vector2Base<T>{ lhs.x + rhs.x, lhs.y + rhs.y };
     }
 
-    FE_FORCE_INLINE Vector2F::Vector2F(const Vector2F& other) noexcept // NOLINT
-        : m_Value(other.m_Value)
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator-(Vector2Base<T> lhs, Vector2Base<T> rhs)
     {
+        return Vector2Base<T>{ lhs.x - rhs.x, lhs.y - rhs.y };
     }
 
-    FE_FORCE_INLINE Vector2F& Vector2F::operator=(const Vector2F& other) noexcept
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator-(Vector2Base<T> vec)
     {
-        m_Value = other.m_Value;
-        return *this;
+        return Vector2Base<T>{ -vec.x, -vec.y };
     }
 
-    FE_FORCE_INLINE Vector2F::Vector2F(Vector2F&& other) noexcept // NOLINT
-        : m_Value(other.m_Value)
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator*(Vector2Base<T> lhs, Vector2Base<T> rhs)
     {
+        return Vector2Base<T>{ lhs.x * rhs.x, lhs.y * rhs.y };
     }
 
-    FE_FORCE_INLINE Vector2F& Vector2F::operator=(Vector2F&& other) noexcept
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator/(Vector2Base<T> lhs, Vector2Base<T> rhs)
     {
-        m_Value = other.m_Value;
-        return *this;
+        return Vector2Base<T>{ lhs.x / rhs.x, lhs.y / rhs.y };
     }
 
-    FE_FORCE_INLINE Vector2F::Vector2F(float value) noexcept // NOLINT
-        : m_Value(value)
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator*(Vector2Base<T> lhs, T rhs)
     {
+        return Vector2Base<T>{ lhs.x * rhs, lhs.y * rhs };
     }
 
-    FE_FORCE_INLINE Vector2F::Vector2F(float x, float y) noexcept // NOLINT
-        : m_Value(x, y)
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> operator/(Vector2Base<T> lhs, T rhs)
     {
+        return Vector2Base<T>{ lhs.x / rhs, lhs.y / rhs };
     }
 
-    FE_FORCE_INLINE Vector2F::Vector2F(const std::array<float, 2>& array) noexcept // NOLINT
-        : m_Value(array[0], array[1])
+
+    namespace Math
     {
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(Vector2Base<float> lhs, Vector2Base<float> rhs)
+        {
+            return lhs.x * rhs.x + lhs.y * rhs.y;
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Abs(Vector2F vec)
+        {
+            return Vector2F{ Abs(vec.x), Abs(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Int Abs(Vector2Int vec)
+        {
+            return Vector2Int{ Abs(vec.x), Abs(vec.y) };
+        }
+
+
+        template<class T>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> Min(Vector2Base<T> lhs, Vector2Base<T> rhs)
+        {
+            return Vector2Base<T>{ Min(lhs.x, rhs.x), Min(lhs.y, rhs.y) };
+        }
+
+
+        template<class T>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> Max(Vector2Base<T> lhs, Vector2Base<T> rhs)
+        {
+            return Vector2Base<T>{ Max(lhs.x, rhs.x), Max(lhs.y, rhs.y) };
+        }
+
+
+        template<class T>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base<T> Clamp(Vector2Base<T> vec, Vector2Base<T> min, Vector2Base<T> max)
+        {
+            return Vector2Base<T>{ Clamp(vec.x, min.x, max.x), Clamp(vec.y, min.y, max.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Saturate(Vector2F vec)
+        {
+            return Vector2F{ Saturate(vec.x), Saturate(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float LengthSquared(Vector2F vec)
+        {
+            return Dot(vec, vec);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Length(Vector2F vec)
+        {
+            return Sqrt(LengthSquared(vec));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Normalize(Vector2F vec)
+        {
+            return vec / Length(vec);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float DistanceSquared(Vector2F lhs, Vector2F rhs)
+        {
+            return LengthSquared(lhs - rhs);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Distance(Vector2F lhs, Vector2F rhs)
+        {
+            return Length(lhs - rhs);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::Epsilon)
+        {
+            return EqualEstimate(lhs.x, rhs.x, epsilon) && EqualEstimate(lhs.y, rhs.y, epsilon);
+        }
+    } // namespace Math
+
+
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool operator==(Vector2Base<T> lhs, Vector2Base<T> rhs)
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y;
     }
 
-    FE_FORCE_INLINE Vector2F Vector2F::GetZero() noexcept
-    {
-        return Vector2F(0);
-    }
 
-    FE_FORCE_INLINE Vector2F Vector2F::GetUnitX() noexcept
+    template<class T>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool operator!=(Vector2Base<T> lhs, Vector2Base<T> rhs)
     {
-        return Vector2F(1, 0);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::GetUnitY() noexcept
-    {
-        return Vector2F(0, 1);
-    }
-
-    FE_FORCE_INLINE float Vector2F::operator[](size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    FE_FORCE_INLINE float Vector2F::operator()(size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    FE_FORCE_INLINE const float* Vector2F::Data() const noexcept
-    {
-        return m_Values;
-    }
-
-    FE_FORCE_INLINE Vector2F::TVec Vector2F::GetSIMD() const noexcept
-    {
-        return m_Value;
-    }
-
-    FE_FORCE_INLINE float Vector2F::X() const noexcept
-    {
-        return m_X;
-    }
-
-    FE_FORCE_INLINE float Vector2F::Y() const noexcept
-    {
-        return m_Y;
-    }
-
-    FE_FORCE_INLINE float& Vector2F::X() noexcept
-    {
-        return m_X;
-    }
-
-    FE_FORCE_INLINE float& Vector2F::Y() noexcept
-    {
-        return m_Y;
-    }
-
-    FE_FORCE_INLINE void Vector2F::Set(float x, float y) noexcept
-    {
-        m_Value = TVec(x, y);
-    }
-
-    FE_FORCE_INLINE float Vector2F::Dot(const Vector2F& other) const noexcept
-    {
-        // A scalar version seems to require fewer operations here.
-        // TODO: benchmark this
-        // TVec mul = m_Value * other.m_Value;
-        // return (mul.Broadcast<1>() + mul).Select<0>();
-        return m_X * other.m_X + m_Y * other.m_Y;
-    }
-
-    FE_FORCE_INLINE float Vector2F::LengthSq() const noexcept
-    {
-        return Dot(*this);
-    }
-
-    FE_FORCE_INLINE float Vector2F::Length() const noexcept
-    {
-        return std::sqrt(LengthSq());
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::Normalized() const noexcept
-    {
-        float len = Length();
-        return Vector2F(m_Value / len);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::Lerp(const Vector2F& dst, float f) const noexcept
-    {
-        return Vector2F((dst.m_Value - m_Value) * f + m_Value);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::MulEach(const Vector2F& other) const noexcept
-    {
-        return Vector2F(m_Value * other.m_Value);
-    }
-
-    FE_FORCE_INLINE bool Vector2F::IsApproxEqualTo(const Vector2F& other, float epsilon) const noexcept
-    {
-        return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xfff);
-    }
-
-    FE_FORCE_INLINE bool Vector2F::operator==(const Vector2F& other) const noexcept
-    {
-        return TVec::CompareAllEq(m_Value, other.m_Value, 0xfff);
-    }
-
-    FE_FORCE_INLINE bool Vector2F::operator!=(const Vector2F& other) const noexcept
-    {
-        return TVec::CompareAllNeq(m_Value, other.m_Value, 0xfff);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::operator-() const noexcept
-    {
-        return Vector2F(m_Value.Negate());
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::operator+(const Vector2F& other) const noexcept
-    {
-        return Vector2F(m_Value + other.m_Value);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::operator-(const Vector2F& other) const noexcept
-    {
-        return Vector2F(m_Value - other.m_Value);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::operator*(float f) const noexcept
-    {
-        return Vector2F(m_Value * f);
-    }
-
-    FE_FORCE_INLINE Vector2F Vector2F::operator/(float f) const noexcept
-    {
-        return Vector2F(m_Value / f);
-    }
-
-    FE_FORCE_INLINE Vector2F& Vector2F::operator+=(const Vector2F& other) noexcept
-    {
-        *this = *this + other;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Vector2F& Vector2F::operator-=(const Vector2F& other) noexcept
-    {
-        *this = *this - other;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Vector2F& Vector2F::operator*=(float f) noexcept
-    {
-        *this = *this * f;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Vector2F& Vector2F::operator/=(float f) noexcept
-    {
-        *this = *this / f;
-        return *this;
+        return lhs.x != rhs.x || lhs.y != rhs.y;
     }
 } // namespace FE

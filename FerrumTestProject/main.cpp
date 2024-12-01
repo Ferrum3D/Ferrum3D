@@ -214,7 +214,7 @@ public:
                 RHI::TransientBufferDesc(RHI::BufferDesc(indexSize, RHI::BindFlags::IndexBuffer), 1));
         }
         {
-            FE::Color constantData = FE::Colors::White;
+            FE::Color4F constantData = FE::Colors::White;
             constantData *= 0.7f;
             m_ConstantBuffer = m_Device->CreateBuffer(RHI::BufferDesc(sizeof(FE::Vector4F), RHI::BindFlags::ConstantBuffer));
             m_ConstantBuffer->AllocateMemory(RHI::MemoryType::kHostVisible);

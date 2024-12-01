@@ -5,8 +5,11 @@ namespace FE::Env
     Configuration::Configuration(festd::span<const StringSlice> commandLine)
     {
         ConfigurationSection& commandLineSection = m_rootSections.push_back();
-        for (uint32_t argumentIndex = 0; argumentIndex < commandLine.size() - 1; ++argumentIndex)
+        for (uint32_t argumentIndex = 0; argumentIndex < commandLine.size(); ++argumentIndex)
         {
+            if (argumentIndex == commandLine.size() - 1)
+                break;
+
             const StringSlice argument = commandLine[argumentIndex];
             if (argument == "-c" || argument == "--config")
             {

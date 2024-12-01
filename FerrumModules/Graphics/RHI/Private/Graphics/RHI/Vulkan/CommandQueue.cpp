@@ -75,7 +75,7 @@ namespace FE::Graphics::Vulkan
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.pCommandBuffers = commandBuffers.data();
-        submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+        submitInfo.commandBufferCount = commandBuffers.size();
         submitInfo.pWaitDstStageMask = &kWaitDstFlags;
 
         FE_VK_ASSERT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));

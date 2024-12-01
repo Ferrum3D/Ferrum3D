@@ -14,9 +14,6 @@
     Public/FeCore/Base/PlatformInclude.h
     Public/FeCore/Base/PlatformTraits.h
 
-    Public/FeCore/Components/LocalToWorldComponent.h
-    Public/FeCore/Components/PositionComponent.h
-
     Public/FeCore/Console/Console.h
 
     Public/FeCore/Containers/ByteBuffer.h
@@ -59,14 +56,13 @@
 
     Public/FeCore/Math/Color.h
     Public/FeCore/Math/Colors.h
-    Public/FeCore/Math/Half.h
     Public/FeCore/Math/Matrix4x4F.h
     Public/FeCore/Math/Quaternion.h
     Public/FeCore/Math/Vector2.h
     Public/FeCore/Math/Vector3.h
     Public/FeCore/Math/Vector4.h
     Public/FeCore/Math/VectorMath.h
-    
+
     Public/FeCore/Memory/LinearAllocator.h
     Public/FeCore/Memory/Memory.h
     Public/FeCore/Memory/NullableHandle.h
@@ -143,6 +139,7 @@ set(COMMON_SOURCES
     Private/FeCore/Logging/Logger.cpp
 
     Private/FeCore/Math/Colors.cpp
+    Private/FeCore/Math/Matrix4x4F.cpp
 
     Private/FeCore/Memory/LinearAllocator.cpp
     Private/FeCore/Memory/Memory.cpp

@@ -5,7 +5,7 @@ namespace FE::IO
 {
     FixedPath GetCurrentDirectory()
     {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         wchar_t buf[MaxPathLength];
         GetCurrentDirectoryW(MaxPathLength, buf);
 

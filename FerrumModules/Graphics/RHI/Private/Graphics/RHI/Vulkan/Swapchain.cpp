@@ -82,7 +82,7 @@ namespace FE::Graphics::Vulkan
 
     void Swapchain::BuildNativeSwapchain()
     {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         DeviceFactory* factory = ImplCast(Env::GetServiceProvider()->ResolveRequired<RHI::DeviceFactory>());
 
         VkWin32SurfaceCreateInfoKHR surfaceCI{};

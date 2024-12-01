@@ -1,537 +1,264 @@
 ﻿#pragma once
-#include <FeCore/Math/Vector3.h>
-#include <FeCore/SIMD/CommonSIMD.h>
+#include <FeCore/Math/Vector4.h>
 
 namespace FE
 {
-    class Quaternion final
+    struct Quaternion final
     {
-        using TVec = SIMD::SSE::Float32x4;
-
         union
         {
-            TVec m_Value;
-            float m_Values[4];
+            __m128 m_simdVector;
+            float m_values[4];
             struct
             {
-                float m_X, m_Y, m_Z, m_W;
+                float x, y, z, w;
             };
         };
 
-    public:
-        FE_RTTI_Base(Quaternion, "36791C3D-2C83-4516-8359-E0A34E3FC7B9");
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion() = default;
 
-        FE_FORCE_INLINE Quaternion()
-            : Quaternion(TVec::GetZero())
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(__m128 vec)
+            : m_simdVector(vec)
         {
         }
 
-        FE_FORCE_INLINE explicit Quaternion(TVec vec) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(Vector3F vec, float w)
+        {
+            const __m128 t = _mm_shuffle_ps(_mm_set_ss(w), vec.m_simdVector, _MM_SHUFFLE(3, 2, 1, 0));
+            m_simdVector = _mm_shuffle_ps(vec.m_simdVector, t, _MM_SHUFFLE(0, 2, 1, 0));
+        }
 
-        FE_FORCE_INLINE Quaternion(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(float x, float y, float z, float w)
+            : m_simdVector(_mm_setr_ps(x, y, z, w))
+        {
+        }
 
-        FE_FORCE_INLINE explicit Quaternion(const Vector3F& v, float w) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL Data()
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Quaternion& operator=(const Quaternion& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE const float* FE_VECTORCALL Data() const
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Quaternion(Quaternion&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL Zero()
+        {
+            return Quaternion{ _mm_setzero_ps() };
+        }
 
-        FE_FORCE_INLINE Quaternion& operator=(Quaternion&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL Identity()
+        {
+            return Quaternion{ 0.0f, 0.0f, 0.0f, 1.0f };
+        }
 
-        FE_FORCE_INLINE explicit Quaternion(float value) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL LoadUnaligned(const float* values)
+        {
+            return Quaternion{ _mm_loadu_ps(values) };
+        }
 
-        FE_FORCE_INLINE Quaternion(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL LoadAligned(const float* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
+            return Quaternion{ _mm_load_ps(values) };
+        }
 
-        FE_FORCE_INLINE explicit Quaternion(const std::array<float, 4>& array) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationX(float angle)
+        {
+            const float sin = Math::Sin(angle * 0.5f);
+            const float cos = Math::Cos(angle * 0.5f);
+            return Quaternion{ sin, 0.0f, 0.0f, cos };
+        }
 
-        //! @return Quaternion{ 0, 0, 0, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion GetZero() noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationY(float angle)
+        {
+            const float sin = Math::Sin(angle * 0.5f);
+            const float cos = Math::Cos(angle * 0.5f);
+            return Quaternion{ 0.0f, sin, 0.0f, cos };
+        }
 
-        //! @return Quaternion{ 0, 0, 0, 1 }.
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion GetIdentity() noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationZ(float angle)
+        {
+            const float sin = Math::Sin(angle * 0.5f);
+            const float cos = Math::Cos(angle * 0.5f);
+            return Quaternion{ 0.0f, 0.0f, sin, cos };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationX(float angle);
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationY(float angle);
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion CreateRotationZ(float angle);
-
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromAxisAngle(const Vector3F& axis, float angle);
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromEulerAngles(const Vector3F& eulerAngles);
-        [[nodiscard]] FE_FORCE_INLINE static Quaternion FromEulerAngles(float x, float y, float z);
-
-        FE_FORCE_INLINE void GetAxisAngle(Vector3F& axis, float& angle) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Vector3F GetEulerAngles() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
-
-        //! @return A pointer to array of four floats (components of the quaternion).
-        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
-
-        //! @return Underlying SIMD type.
-        [[nodiscard]] FE_FORCE_INLINE const TVec& GetSIMD() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float Y() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float Z() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float W() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& X() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& Y() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& Z() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& W() noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector3F Im() const noexcept;
-
-        FE_FORCE_INLINE void Set(float x, float y, float z, float w) noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float Dot(const Quaternion& other) const noexcept;
-
-        //! @return Squared length of the quaternion.
-        [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
-
-        //! @return Length of the quaternion.
-        [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Quaternion Conjugated() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Quaternion Inverse() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Quaternion Normalized() const noexcept;
-
-        //! @brief Linearly interpolate between this and destination.
-        //!
-        //! @param f - Interpolation factor.
-        //!
-        //! @return New interpolated quaternion, this quaternion is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Quaternion Lerp(const Quaternion& dst, float f) const noexcept;
-
-        //! @brief Spherical linearly interpolate between this and destination.
-        //!
-        //! @param f - Interpolation factor.
-        //!
-        //! @return New interpolated quaternion, this quaternion is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Quaternion SLerp(const Quaternion& dst, float f) const noexcept;
-
-        //! @brief Check if two quaternions are approximately equal.
-        //!
-        //! @param other   - The quaternion to compare this one with.
-        //! @param epsilon - Accepted difference between the two quaternion.
-        //!
-        //! @return True if the quaternions are approximately equal.
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Quaternion& other,
-                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Quaternion& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator-() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator+(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator-(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator*(const Quaternion& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator*(float f) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Quaternion operator/(float f) const noexcept;
-
-        FE_FORCE_INLINE Quaternion& operator+=(const Quaternion& other) noexcept;
-        FE_FORCE_INLINE Quaternion& operator-=(const Quaternion& other) noexcept;
-        FE_FORCE_INLINE Quaternion& operator*=(const Quaternion& other) noexcept;
-        FE_FORCE_INLINE Quaternion& operator*=(float f) noexcept;
-        FE_FORCE_INLINE Quaternion& operator/=(float f) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL AxisAngle(Vector3F axis, float angle)
+        {
+            const float sin = Math::Sin(angle * 0.5f);
+            const float cos = Math::Cos(angle * 0.5f);
+            return Quaternion{ axis * sin, cos };
+        }
     };
 
-    Quaternion::Quaternion(TVec vec) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(vec)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator+(Quaternion lhs, Quaternion rhs)
     {
+        return Quaternion{ _mm_add_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Quaternion::Quaternion(const Quaternion& other) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(other.m_Value)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator-(Quaternion lhs, Quaternion rhs)
     {
+        return Quaternion{ _mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Quaternion::Quaternion(const Vector3F& v, float w) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(v.GetSIMD())
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(Quaternion lhs, float rhs)
     {
-        m_W = w;
+        return Quaternion{ _mm_mul_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    Quaternion& Quaternion::operator=(const Quaternion& other) noexcept
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator/(Quaternion lhs, float rhs)
     {
-        m_Value = other.m_Value;
-        return *this;
+        return Quaternion{ _mm_div_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    Quaternion::Quaternion(Quaternion&& other) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(Quaternion lhs, Quaternion rhs)
     {
-        m_Value = other.m_Value;
+        const __m128 a1123 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(3, 2, 1, 1));
+        const __m128 a2231 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(1, 3, 2, 2));
+        const __m128 b1000 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(0, 0, 0, 1));
+        const __m128 b2312 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(2, 1, 3, 2));
+
+        const __m128 t1 = _mm_mul_ps(a1123, b1000);
+        const __m128 t2 = _mm_mul_ps(a2231, b2312);
+
+        const __m128 kNegateWMask = _mm_castsi128_ps(_mm_setr_epi32(0, 0, 0, static_cast<int32_t>(0x80000000)));
+        const __m128 t12 = _mm_xor_ps(_mm_mul_ps(t1, t2), kNegateWMask);
+
+        const __m128 a3312 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(2, 1, 3, 3));
+        const __m128 b3231 = _mm_shuffle_ps(rhs.m_simdVector, rhs.m_simdVector, _MM_SHUFFLE(1, 3, 2, 3));
+        const __m128 a0000 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(0, 0, 0, 0));
+
+        const __m128 t3 = _mm_mul_ps(a3312, b3231);
+        const __m128 t0 = _mm_mul_ps(a0000, rhs.m_simdVector);
+        const __m128 t03 = _mm_sub_ps(t0, t3);
+        return Quaternion{ _mm_add_ps(t03, t12) };
     }
 
-    Quaternion& Quaternion::operator=(Quaternion&& other) noexcept
+
+    namespace Math
     {
-        m_Value = other.m_Value;
-        return *this;
-    }
-
-    Quaternion::Quaternion(float value) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(value)
-    {
-    }
-
-    Quaternion::Quaternion(float x, float y, float z, float w) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(x, y, z, w)
-    {
-    }
-
-    Quaternion::Quaternion(const std::array<float, 4>& array) noexcept // NOLINT(cppcoreguidelines-pro-type-member-init)
-        : m_Value(array[0], array[1], array[2], array[3])
-    {
-    }
-
-    Quaternion Quaternion::GetZero() noexcept
-    {
-        return Quaternion(0);
-    }
-
-    Quaternion Quaternion::GetIdentity() noexcept
-    {
-        return { 0, 0, 0, 1 };
-    }
-
-    Quaternion Quaternion::CreateRotationX(float angle)
-    {
-        auto s = std::sin(angle * 0.5f);
-        auto c = std::cos(angle * 0.5f);
-
-        return { s, 0, 0, c };
-    }
-
-    Quaternion Quaternion::CreateRotationY(float angle)
-    {
-        auto s = std::sin(angle * 0.5f);
-        auto c = std::cos(angle * 0.5f);
-
-        return { 0, s, 0, c };
-    }
-
-    Quaternion Quaternion::CreateRotationZ(float angle)
-    {
-        auto s = std::sin(angle * 0.5f);
-        auto c = std::cos(angle * 0.5f);
-
-        return { 0, 0, s, c };
-    }
-
-    Quaternion Quaternion::FromAxisAngle(const Vector3F& axis, float angle)
-    {
-        auto s = std::sin(angle * 0.5f);
-        auto c = std::cos(angle * 0.5f);
-
-        return Quaternion(axis * s, c);
-    }
-
-    Quaternion Quaternion::FromEulerAngles(const Vector3F& eulerAngles)
-    {
-        auto angles = eulerAngles * 0.5f;
-
-        auto sx = std::sin(angles.X());
-        auto sy = std::sin(angles.Y());
-        auto sz = std::sin(angles.Z());
-        auto cx = std::cos(angles.X());
-        auto cy = std::cos(angles.Y());
-        auto cz = std::cos(angles.Z());
-
-        return {
-            cx * cy * cz - sx * sy * sz, // x
-            cx * sy * sz + sx * cy * cz, // y
-            cx * sy * cz - sx * cy * sz, // z
-            cx * cy * sz + sx * sy * cz  // w
-        };
-    }
-
-    Quaternion Quaternion::FromEulerAngles(float x, float y, float z)
-    {
-        return FromEulerAngles({ x, y, z });
-    }
-
-    void Quaternion::GetAxisAngle(Vector3F& axis, float& angle) const noexcept
-    {
-        angle = 2.0f * std::acos(W());
-
-        auto s = std::sin(angle * 0.5f);
-        if (s > 0.0f)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Im(Quaternion quat)
         {
-            axis = Im() / s;
-        }
-        else
-        {
-            axis = Vector3F::GetUnitY();
-            angle = 0.0f;
-        }
-    }
-
-    Vector3F Quaternion::GetEulerAngles() const noexcept
-    {
-        auto test = X() * Y() + Z() * W();
-
-        if (test > 0.499f)
-        {
-            return { 2.0f * std::atan2(X(), W()), Math::Constants::PI * 0.5f, 0 };
+            return Vector3F{ quat.m_simdVector };
         }
 
-        if (test < -0.499)
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Re(Quaternion quat)
         {
-            return { -2.0f * std::atan2(X(), W()), -Math::Constants::PI / 2, 0 };
+            return quat.w;
         }
 
-        auto sqx = X() * X();
-        auto sqy = Y() * Y();
-        auto sqz = Z() * Z();
-        return { std::atan2(2 * Y() * W() - 2 * X() * Z(), 1 - 2 * sqy - 2 * sqz),
-                 std::asin(2 * test),
-                 std::atan2(2 * X() * W() - 2 * Y() * Z(), 1 - 2 * sqx - 2 * sqz) };
-    }
 
-    float Quaternion::operator[](size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    float& Quaternion::operator()(size_t index) noexcept
-    {
-        return m_Values[index];
-    }
-
-    float Quaternion::operator()(size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    const float* Quaternion::Data() const noexcept
-    {
-        return m_Values;
-    }
-
-    const Quaternion::TVec& Quaternion::GetSIMD() const noexcept
-    {
-        return m_Value;
-    }
-
-    float Quaternion::X() const noexcept
-    {
-        return m_X;
-    }
-
-    float Quaternion::Y() const noexcept
-    {
-        return m_Y;
-    }
-
-    float Quaternion::Z() const noexcept
-    {
-        return m_Z;
-    }
-
-    float Quaternion::W() const noexcept
-    {
-        return m_W;
-    }
-
-    float& Quaternion::X() noexcept
-    {
-        return m_X;
-    }
-
-    float& Quaternion::Y() noexcept
-    {
-        return m_Y;
-    }
-
-    float& Quaternion::Z() noexcept
-    {
-        return m_Z;
-    }
-
-    float& Quaternion::W() noexcept
-    {
-        return m_W;
-    }
-
-    Vector3F Quaternion::Im() const noexcept
-    {
-        return Vector3F(m_Value);
-    }
-
-    void Quaternion::Set(float x, float y, float z, float w) noexcept
-    {
-        m_Value = TVec(x, y, z, w);
-    }
-
-    float Quaternion::Dot(const Quaternion& other) const noexcept
-    {
-        TVec mul = m_Value * other.m_Value;
-        TVec t = mul * mul.Shuffle<2, 3, 0, 1>();
-        TVec r = t + t.Shuffle<1, 0, 2, 3>();
-        return r.Select<0>();
-    }
-
-    float Quaternion::LengthSq() const noexcept
-    {
-        return Dot(*this);
-    }
-
-    float Quaternion::Length() const noexcept
-    {
-        return std::sqrt(LengthSq());
-    }
-
-    Quaternion Quaternion::Conjugated() const noexcept
-    {
-        return Quaternion(m_Value.NegateXYZ());
-    }
-
-    Quaternion Quaternion::Inverse() const noexcept
-    {
-        return Conjugated() / LengthSq();
-    }
-
-    Quaternion Quaternion::Normalized() const noexcept
-    {
-        float len = Length();
-        return Quaternion(m_Value / len);
-    }
-
-    Quaternion Quaternion::Lerp(const Quaternion& dst, float f) const noexcept
-    {
-        if (Dot(dst) >= 0.0f)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(Quaternion lhs, Quaternion rhs)
         {
-            return *this * (1.0f - f) + dst * f;
+            return _mm_cvtss_f32(Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector));
         }
 
-        return *this * (1.0f - f) - dst * f;
-    }
 
-    Quaternion Quaternion::SLerp(const Quaternion& dst, float f) const noexcept
-    {
-        auto cosHalfTheta = W() * dst.W() + X() * dst.X() + Y() * dst.Y() + Z() * dst.Z();
-
-        if (abs(cosHalfTheta) >= 1.0)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(Quaternion quat)
         {
-            return *this;
+            return _mm_cvtss_f32(Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector));
         }
 
-        float halfTheta = std::acos(cosHalfTheta);
-        float sinHalfTheta = std::sqrt(1.0f - cosHalfTheta * cosHalfTheta);
 
-        if (std::abs(sinHalfTheta) < 0.001f)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(Quaternion quat)
         {
-            return Quaternion(m_Value * 0.5f + dst.m_Value * 0.5f);
+            return _mm_cvtss_f32(_mm_sqrt_ss(Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector)));
         }
 
-        float ratioA = std::sin((1.0f - f) * halfTheta) / sinHalfTheta;
-        float ratioB = std::sin(f * halfTheta) / sinHalfTheta;
 
-        return Quaternion(m_Value * ratioA + dst.m_Value * ratioB);
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(Quaternion quat)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            return _mm_cvtss_f32(_mm_div_ss(_mm_set1_ps(1.0f), _mm_sqrt_ss(lengthSq)));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(Quaternion quat)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            return _mm_cvtss_f32(_mm_rsqrt_ss(lengthSq));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Normalize(Quaternion quat)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
+            return Quaternion{ _mm_div_ps(quat.m_simdVector, _mm_sqrt_ps(broadcast)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL NormalizeEstimate(Quaternion quat)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
+            return Quaternion{ _mm_mul_ps(quat.m_simdVector, _mm_rsqrt_ps(broadcast)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpeq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpNotEqualMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpneq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmplt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpgt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessEqualMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmple_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterEqualMask(Quaternion lhs, Quaternion rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpge_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Quaternion lhs, Quaternion rhs,
+                                                                               float epsilon = Constants::Epsilon)
+        {
+            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);
+            const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
+            return mask == 0;
+        }
+    } // namespace Math
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(Quaternion lhs, Quaternion rhs)
+    {
+        return Math::CmpNotEqualMask(lhs, rhs) == 0;
     }
 
-    bool Quaternion::IsApproxEqualTo(const Quaternion& other, float epsilon) const noexcept
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator!=(Quaternion lhs, Quaternion rhs)
     {
-        return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xffff);
-    }
-
-    bool Quaternion::operator==(const Quaternion& other) const noexcept
-    {
-        return TVec::CompareAllEq(m_Value, other.m_Value, 0xffff);
-    }
-
-    bool Quaternion::operator!=(const Quaternion& other) const noexcept
-    {
-        return TVec::CompareAllNeq(m_Value, other.m_Value, 0xffff);
-    }
-
-    Quaternion Quaternion::operator-() const noexcept
-    {
-        return Quaternion(0.0f - m_Value);
-    }
-
-    Quaternion Quaternion::operator+(const Quaternion& other) const noexcept
-    {
-        return Quaternion(m_Value + other.m_Value);
-    }
-
-    Quaternion Quaternion::operator-(const Quaternion& other) const noexcept
-    {
-        return Quaternion(m_Value - other.m_Value);
-    }
-
-    Quaternion Quaternion::operator*(const Quaternion& other) const noexcept
-    {
-        auto a1123 = m_Value.Shuffle<3, 2, 1, 1>();
-        auto a2231 = m_Value.Shuffle<1, 3, 2, 2>();
-        auto b1000 = other.m_Value.Shuffle<0, 0, 0, 1>();
-        auto b2312 = other.m_Value.Shuffle<2, 1, 3, 2>();
-
-        auto t1 = a1123 * b1000;
-        auto t2 = a2231 * b2312;
-
-        auto t12 = (t1 * t2).NegateW();
-
-        auto a3312 = m_Value.Shuffle<2, 1, 3, 3>();
-        auto b3231 = other.m_Value.Shuffle<1, 3, 2, 3>();
-        auto a0000 = m_Value.Broadcast<0>();
-
-        auto t3 = a3312 * b3231;
-        auto t0 = a0000 * other.m_Value;
-        auto t03 = t0 - t3;
-        return Quaternion(t03 + t12);
-    }
-
-    Quaternion Quaternion::operator*(float f) const noexcept
-    {
-        return Quaternion(m_Value * f);
-    }
-
-    Quaternion Quaternion::operator/(float f) const noexcept
-    {
-        return Quaternion(m_Value / f);
-    }
-
-    Quaternion& Quaternion::operator+=(const Quaternion& other) noexcept
-    {
-        *this = *this + other;
-        return *this;
-    }
-
-    Quaternion& Quaternion::operator-=(const Quaternion& other) noexcept
-    {
-        *this = *this - other;
-        return *this;
-    }
-
-    Quaternion& Quaternion::operator*=(const Quaternion& other) noexcept
-    {
-        *this = *this * other;
-        return *this;
-    }
-
-    Quaternion& Quaternion::operator*=(float f) noexcept
-    {
-        *this = *this * f;
-        return *this;
-    }
-
-    Quaternion& Quaternion::operator/=(float f) noexcept
-    {
-        *this = *this / f;
-        return *this;
+        return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
-
-namespace std // NOLINT
-{
-    inline ostream& operator<<(ostream& stream, const FE::Quaternion& vec)
-    {
-        return stream << "{ (" << vec.X() << "i + " << vec.Y() << "j + " << vec.Z() << "k) + " << vec.W() << " }";
-    }
-} // namespace std

@@ -7,6 +7,7 @@
 
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
+    Math/Vector4.cpp
 
     Modules/Environment.cpp
     Modules/ServiceLocator.cpp

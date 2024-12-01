@@ -28,9 +28,8 @@
 
 #    define FE_FUNCSIG __PRETTY_FUNCTION__
 
-#    ifndef FE_FORCE_INLINE
-#        define FE_FORCE_INLINE inline
-#    endif
+#    define FE_FORCE_INLINE __attribute__((always_inline)) inline
+#    define FE_FORCE_NOINLINE __attribute__((noinline))
 #elif defined _MSC_VER
 #    define FE_COMPILER_MSVC 1
 
@@ -42,15 +41,17 @@
 
 #    define FE_FUNCSIG __FUNCSIG__
 
-#    ifndef FE_FORCE_INLINE
-#        define FE_FORCE_INLINE __forceinline
-#    endif
+#    define FE_FORCE_INLINE __forceinline
+#    define FE_FORCE_NOINLINE __declspec(noinline)
 #endif
+
 
 #if FE_COMPILER_MSVC || FE_COMPILER_MS_CLANG
 #    define FE_DebugBreak() __debugbreak()
 #    define FE_VECTORCALL __vectorcall
+#    define FE_NO_SECURITY_COOKIE __declspec(safebuffers)
 #else
 #    define FE_DebugBreak() raise(SIGTRAP)
 #    define FE_VECTORCALL
+#    define FE_NO_SECURITY_COOKIE
 #endif

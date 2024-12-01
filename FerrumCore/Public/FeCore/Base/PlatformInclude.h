@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Base/Platform.h>
 
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
 #    define NOMINMAX
 #    define WIN32_LEAN_AND_MEAN
 #    include <Windows.h>

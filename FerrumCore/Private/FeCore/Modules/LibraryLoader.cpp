@@ -9,7 +9,7 @@ namespace FE
     {
         ModuleHandle LoadModule(StringSlice name)
         {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
             const int32_t nameSize = static_cast<int32_t>(name.Size());
             const int32_t wideLength = MultiByteToWideChar(CP_UTF8, 0, name.Data(), nameSize, nullptr, 0);
             FE_Assert(wideLength > 0);
@@ -28,7 +28,7 @@ namespace FE
 
         bool UnloadModule(ModuleHandle moduleHandle)
         {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
             return FreeLibrary(reinterpret_cast<HMODULE>(moduleHandle.Value));
 #else
 #    error Not implemented :(
@@ -38,7 +38,7 @@ namespace FE
 
         void* FindModuleSymbol(ModuleHandle moduleHandle, const char* symbolName)
         {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
             return (void*)GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.Value), symbolName);
 #else
 #    error Not implemented :(
