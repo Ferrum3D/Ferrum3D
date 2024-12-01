@@ -16,7 +16,7 @@ namespace FE::Memory
         if (s_result.PageSize != 0)
             return s_result;
 
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         SYSTEM_INFO info;
         GetSystemInfo(&info);
         s_result.PageSize = info.dwPageSize;
@@ -34,7 +34,7 @@ namespace FE::Memory
         FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().Granularity) == byteSize,
                        "Size must be aligned to virtual allocation granularity");
 
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         return VirtualAlloc(nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
 #    error Not implemented :(
@@ -44,7 +44,7 @@ namespace FE::Memory
 
     void FreeVirtual(void* ptr, size_t byteSize)
     {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         (void)byteSize;
         VirtualFree(ptr, 0, MEM_RELEASE);
 #else
@@ -55,7 +55,7 @@ namespace FE::Memory
 
     void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection)
     {
-#if FE_WINDOWS
+#if FE_PLATFORM_WINDOWS
         DWORD osProtect = 0;
         switch (protection)
         {

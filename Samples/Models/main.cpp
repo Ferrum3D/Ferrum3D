@@ -89,12 +89,12 @@ struct ExampleApplication final : public ApplicationModule
             const float imageHeight = static_cast<float>(m_swapChain->GetDesc().m_imageHeight);
             const float aspectRatio = imageWidth / imageHeight;
 
-            auto constantData = Matrix4x4F::GetIdentity();
-            constantData *= Matrix4x4F::CreateProjection(Math::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
-            constantData *= Matrix4x4F::CreateRotationY(Math::Constants::PI);
-            constantData *= Matrix4x4F::CreateRotationX(-0.5f);
-            constantData *= Matrix4x4F::CreateTranslation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
-            constantData *= Matrix4x4F::CreateRotationY(Math::Constants::PI * -1.3f);
+            auto constantData = Matrix4x4F::Identity();
+            constantData = constantData * Matrix4x4F::Projection(Math::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
+            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI);
+            constantData = constantData * Matrix4x4F::RotationX(-0.5f);
+            constantData = constantData * Matrix4x4F::Translation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
+            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI * -1.3f);
 
             m_constantBuffer = pServiceProvider->ResolveRequired<RHI::Buffer>();
             m_constantBuffer->Init("Constant buffer", RHI::BufferDesc(sizeof(constantData), RHI::BindFlags::kConstantBuffer));
@@ -209,7 +209,7 @@ struct ExampleApplication final : public ApplicationModule
             cmd->Init({ RHI::HardwareQueueKindFlags::kGraphics, RHI::CommandListFlags::kNone });
             m_commandLists.push_back(cmd);
 
-            const std::array clearValues{ RHI::ClearValueDesc::CreateColorValue(Colors::MediumAquamarine),
+            const std::array clearValues{ RHI::ClearValueDesc::CreateColorValue(Colors::kMediumAquamarine),
                                           RHI::ClearValueDesc::CreateDepthStencilValue() };
 
             cmd->Begin();
@@ -247,8 +247,7 @@ private:
         m_fence->Wait(m_fenceValues[frameIndex]);
         m_swapChain->BeginFrame({ m_fence, ++m_fenceValue });
 
-        const uint32_t imageIndex = m_swapChain->GetCurrentImageIndex();
-        const std::array commandLists{ m_commandLists[imageIndex].Get() };
+        const std::array commandLists{ m_commandLists[frameIndex].Get() };
 
         m_fenceValues[frameIndex] = ++m_fenceValue;
         m_graphicsQueue->Execute(commandLists);

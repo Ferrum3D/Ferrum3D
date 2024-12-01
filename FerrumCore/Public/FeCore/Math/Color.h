@@ -3,334 +3,190 @@
 
 namespace FE
 {
-    class Color
+    struct Color4F final
     {
-        Vector4F m_Color;
-        inline static constexpr float MaxByte    = 255.0f;
-        inline static constexpr float InvMaxByte = 1.0f / 255.0f;
+        static constexpr float kMaxByte = 255.0f;
+        static constexpr float kInvMaxByte = 1.0f / 255.0f;
 
-    public:
-        FE_RTTI_Base(Color, "EC4C20BD-05B1-4F3F-B370-D8AE749A3C4F");
+        union
+        {
+            __m128 m_simdVector;
+            float m_values[4];
+            struct
+            {
+                float r, g, b, a;
+            };
+        };
 
-        FE_FORCE_INLINE Color() noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F() = default;
 
-        FE_FORCE_INLINE explicit Color(const Vector4F& vector);
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(float value)
+            : m_simdVector(_mm_set1_ps(value))
+        {
+        }
 
-        FE_FORCE_INLINE explicit Color(const Vector3F& rgb, float a = 1.0f);
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(__m128 vec)
+            : m_simdVector(vec)
+        {
+        }
 
-        FE_FORCE_INLINE explicit Color(float rgba);
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(Vector4F vec)
+            : m_simdVector(vec.m_simdVector)
+        {
+        }
 
-        FE_FORCE_INLINE Color(float r, float g, float b, float a);
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(float r, float g, float b, float a)
+            : m_simdVector(_mm_setr_ps(r, g, b, a))
+        {
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE static Color GetZero();
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL Zero()
+        {
+            return Color4F{ _mm_setzero_ps() };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE static Color FromBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
-        [[nodiscard]] FE_FORCE_INLINE static Color FromUInt32(uint32_t rgba);
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL Data()
+        {
+            return m_values;
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE const float* FE_VECTORCALL Data() const
+        {
+            return m_values;
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL LoadUnaligned(const float* values)
+        {
+            return Color4F{ _mm_loadu_ps(values) };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL LoadAligned(const float* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
+            return Color4F{ _mm_load_ps(values) };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE Vector4F GetVector4F() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Vector3F GetVector3F() const noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL FromBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+        {
+            const __m128i intVector = _mm_setr_epi32(r, g, b, a);
+            const __m128 floatVector = _mm_cvtepi32_ps(intVector);
+            return Color4F{ _mm_mul_ps(floatVector, _mm_set1_ps(kInvMaxByte)) };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE float R32() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float G32() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float B32() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float A32() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& R32() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& G32() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& B32() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& A32() noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE uint8_t R8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE uint8_t G8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE uint8_t B8() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE uint8_t A8() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color ToLinear() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Color ToSRGB() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color ToLinearApprox() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Color ToSRGBApprox() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE uint32_t ToUInt32() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color Lerp(const Color& dst, float f) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color MulEach(const Color& color) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Color& other, float epsilon = 0.0001f) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Color& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Color& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color operator-() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color operator+(const Color& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color operator-(const Color& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color operator*(float f) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Color operator/(float f) const noexcept;
-
-        FE_FORCE_INLINE Color& operator+=(const Color& other) noexcept;
-
-        FE_FORCE_INLINE Color& operator-=(const Color& other) noexcept;
-
-        FE_FORCE_INLINE Color& operator*=(float f) noexcept;
-
-        FE_FORCE_INLINE Color& operator/=(float f) noexcept;
+        template<Math::Swizzle TSwizzle>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL Swizzle(Color4F color)
+        {
+            return Color4F{ _mm_shuffle_ps(color.m_simdVector, color.m_simdVector, enum_cast(TSwizzle)) };
+        }
     };
 
-    FE_FORCE_INLINE Color::Color() noexcept
-        : m_Color()
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator+(Color4F lhs, Color4F rhs)
     {
+        return Color4F{ _mm_add_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    FE_FORCE_INLINE Color::Color(const Vector4F& vector)
-        : m_Color(vector)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator-(Color4F lhs, Color4F rhs)
     {
+        return Color4F{ _mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    FE_FORCE_INLINE Color::Color(const Vector3F& rgb, float a)
-        : m_Color(rgb, a)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator*(Color4F lhs, Color4F rhs)
     {
+        return Color4F{ _mm_mul_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    FE_FORCE_INLINE Color::Color(float rgba)
-        : m_Color(rgba)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator/(Color4F lhs, Color4F rhs)
     {
+        return Color4F{ _mm_div_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    FE_FORCE_INLINE Color::Color(float r, float g, float b, float a)
-        : m_Color(r, g, b, a)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator*(Color4F lhs, float rhs)
     {
+        return Color4F{ _mm_mul_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    FE_FORCE_INLINE Color Color::GetZero()
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator/(Color4F lhs, float rhs)
     {
-        return Color(0);
+        return Color4F{ _mm_div_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    FE_FORCE_INLINE Color Color::FromBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept
-    {
-        auto red   = static_cast<float>(r) * InvMaxByte;
-        auto green = static_cast<float>(g) * InvMaxByte;
-        auto blue  = static_cast<float>(b) * InvMaxByte;
-        auto alpha = static_cast<float>(a) * InvMaxByte;
 
-        return Color(red, green, blue, alpha);
+    namespace Math
+    {
+        template<>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL Clamp<Color4F>(Color4F vec, Color4F min, Color4F max)
+        {
+            return Color4F{ _mm_max_ps(min.m_simdVector, _mm_min_ps(vec.m_simdVector, max.m_simdVector)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL Saturate(Color4F vec)
+        {
+            return Color4F{ _mm_max_ps(_mm_setzero_ps(), _mm_min_ps(vec.m_simdVector, _mm_set1_ps(1.0f))) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpeq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpNotEqualMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpneq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmplt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpgt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessEqualMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmple_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterEqualMask(Color4F lhs, Color4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpge_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Color4F lhs, Color4F rhs,
+                                                                               float epsilon = Constants::Epsilon)
+        {
+            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);
+            const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
+            return mask == 0;
+        }
+    } // namespace Math
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(Color4F lhs, Color4F rhs)
+    {
+        return Math::CmpNotEqualMask(lhs, rhs) == 0;
     }
 
-    FE_FORCE_INLINE Color Color::FromUInt32(uint32_t rgba)
-    {
-        auto r = (static_cast<float>((rgba >> 24) & 0xFF) * InvMaxByte);
-        auto g = (static_cast<float>((rgba >> 16) & 0xFF) * InvMaxByte);
-        auto b = (static_cast<float>((rgba >> 8) & 0xFF) * InvMaxByte);
-        auto a = (static_cast<float>((rgba >> 0) & 0xFF) * InvMaxByte);
 
-        return Color(r, g, b, a);
-    }
-
-    FE_FORCE_INLINE float Color::operator[](size_t index) const noexcept
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator!=(Color4F lhs, Color4F rhs)
     {
-        return m_Color[index];
-    }
-
-    FE_FORCE_INLINE float Color::operator()(size_t index) const noexcept
-    {
-        return m_Color(index);
-    }
-
-    FE_FORCE_INLINE const float* Color::Data() const noexcept
-    {
-        return m_Color.Data();
-    }
-
-    FE_FORCE_INLINE Vector4F Color::GetVector4F() const noexcept
-    {
-        return m_Color;
-    }
-
-    FE_FORCE_INLINE Vector3F Color::GetVector3F() const noexcept
-    {
-        return m_Color.GetVector3F();
-    }
-
-    FE_FORCE_INLINE float Color::R32() const noexcept
-    {
-        return m_Color.X();
-    }
-
-    FE_FORCE_INLINE float Color::G32() const noexcept
-    {
-        return m_Color.Y();
-    }
-
-    FE_FORCE_INLINE float Color::B32() const noexcept
-    {
-        return m_Color.Z();
-    }
-
-    FE_FORCE_INLINE float Color::A32() const noexcept
-    {
-        return m_Color.W();
-    }
-
-    FE_FORCE_INLINE float& Color::R32() noexcept
-    {
-        return m_Color.X();
-    }
-
-    FE_FORCE_INLINE float& Color::G32() noexcept
-    {
-        return m_Color.Y();
-    }
-
-    FE_FORCE_INLINE float& Color::B32() noexcept
-    {
-        return m_Color.Z();
-    }
-
-    FE_FORCE_INLINE float& Color::A32() noexcept
-    {
-        return m_Color.W();
-    }
-
-    FE_FORCE_INLINE uint8_t Color::R8() const noexcept
-    {
-        return static_cast<uint8_t>(MaxByte * m_Color.X());
-    }
-
-    FE_FORCE_INLINE uint8_t Color::G8() const noexcept
-    {
-        return static_cast<uint8_t>(MaxByte * m_Color.Y());
-    }
-
-    FE_FORCE_INLINE uint8_t Color::B8() const noexcept
-    {
-        return static_cast<uint8_t>(MaxByte * m_Color.Z());
-    }
-
-    FE_FORCE_INLINE uint8_t Color::A8() const noexcept
-    {
-        return static_cast<uint8_t>(MaxByte * m_Color.W());
-    }
-
-    FE_FORCE_INLINE Color Color::ToLinear() const noexcept
-    {
-        auto toLinear = [](float v) {
-            return v <= 0.04045f ? v / 12.92f : powf((v + 0.055f) / 1.055f, 2.4f);
-        };
-        return Color(toLinear(R32()), toLinear(G32()), toLinear(B32()), toLinear(A32()));
-    }
-
-    FE_FORCE_INLINE Color Color::ToSRGB() const noexcept
-    {
-        auto toSRGB = [](float v) {
-            return v <= 0.0031308f ? v * 12.92f : powf(v, 1.0f / 2.4f) * 1.055f - 0.055f;
-        };
-        return Color(toSRGB(R32()), toSRGB(G32()), toSRGB(B32()), toSRGB(A32()));
-    }
-
-    FE_FORCE_INLINE Color Color::ToLinearApprox() const noexcept
-    {
-        auto toLinear = [](float v) {
-            return powf(v, 2.2f);
-        };
-        return Color(toLinear(R32()), toLinear(G32()), toLinear(B32()), toLinear(A32()));
-    }
-
-    FE_FORCE_INLINE Color Color::ToSRGBApprox() const noexcept
-    {
-        auto toSRGB = [](float v) {
-            return powf(v, 1.0f / 2.2f);
-        };
-        return Color(toSRGB(R32()), toSRGB(G32()), toSRGB(B32()), toSRGB(A32()));
-    }
-
-    FE_FORCE_INLINE uint32_t Color::ToUInt32() const noexcept
-    {
-        return (A8() << 24) | (B8() << 16) | (G8() << 8) | R8();
-    }
-
-    FE_FORCE_INLINE Color Color::Lerp(const Color& dst, float f) const noexcept
-    {
-        return Color(m_Color.Lerp(dst.m_Color, f));
-    }
-
-    FE_FORCE_INLINE Color Color::MulEach(const Color& color) const noexcept
-    {
-        return Color(m_Color.MulEach(color.m_Color));
-    }
-
-    FE_FORCE_INLINE bool Color::IsApproxEqualTo(const Color& other, float epsilon) const noexcept
-    {
-        return m_Color.IsApproxEqualTo(other.m_Color, epsilon);
-    }
-
-    FE_FORCE_INLINE bool Color::operator==(const Color& other) const noexcept
-    {
-        return m_Color == other.m_Color;
-    }
-
-    FE_FORCE_INLINE bool Color::operator!=(const Color& other) const noexcept
-    {
-        return m_Color != other.m_Color;
-    }
-
-    FE_FORCE_INLINE Color Color::operator-() const noexcept
-    {
-        return Color(-m_Color);
-    }
-
-    FE_FORCE_INLINE Color Color::operator+(const Color& other) const noexcept
-    {
-        return Color(m_Color + other.m_Color);
-    }
-
-    FE_FORCE_INLINE Color Color::operator-(const Color& other) const noexcept
-    {
-        return Color(m_Color - other.m_Color);
-    }
-
-    FE_FORCE_INLINE Color Color::operator*(float f) const noexcept
-    {
-        return Color(m_Color * f);
-    }
-
-    FE_FORCE_INLINE Color Color::operator/(float f) const noexcept
-    {
-        return Color(m_Color / f);
-    }
-
-    FE_FORCE_INLINE Color& Color::operator+=(const Color& other) noexcept
-    {
-        m_Color += other.m_Color;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Color& Color::operator-=(const Color& other) noexcept
-    {
-        m_Color -= other.m_Color;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Color& Color::operator*=(float f) noexcept
-    {
-        m_Color *= f;
-        return *this;
-    }
-
-    FE_FORCE_INLINE Color& Color::operator/=(float f) noexcept
-    {
-        m_Color /= f;
-        return *this;
+        return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE

@@ -157,9 +157,9 @@ namespace FE::Graphics::Vulkan
                              VK_DEPENDENCY_BY_REGION_BIT,
                              0,
                              nullptr,
-                             static_cast<uint32_t>(nativeBufferBarriers.size()),
+                             nativeBufferBarriers.size(),
                              nativeBufferBarriers.data(),
-                             static_cast<uint32_t>(nativeImageBarriers.size()),
+                             nativeImageBarriers.size(),
                              nativeImageBarriers.data());
     }
 
@@ -196,7 +196,7 @@ namespace FE::Graphics::Vulkan
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 ImplCast(pipeline)->GetNativeLayout(),
                                 0,
-                                static_cast<uint32_t>(descriptorSets.size()),
+                                descriptorSets.size(),
                                 descriptorSets.data(),
                                 0,
                                 nullptr);
@@ -217,8 +217,7 @@ namespace FE::Graphics::Vulkan
             }
             else
             {
-                for (uint32_t i = 0; i < 4; ++i)
-                    vkClearValue.color.float32[i] = clearValue.m_colorValue[i];
+                memcpy(vkClearValue.color.float32, clearValue.m_colorValue.Data(), sizeof(Color4F));
             }
         }
 
@@ -226,7 +225,7 @@ namespace FE::Graphics::Vulkan
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.framebuffer = NativeCast(framebuffer);
         info.renderPass = NativeCast(renderPass);
-        info.clearValueCount = static_cast<uint32_t>(vkClearValues.size());
+        info.clearValueCount = vkClearValues.size();
         info.pClearValues = vkClearValues.data();
         info.renderArea.offset = VkOffset2D{ 0, 0 };
         info.renderArea.extent = VkExtent2D{ framebuffer->GetDesc().m_width, framebuffer->GetDesc().m_height };
@@ -270,14 +269,13 @@ namespace FE::Graphics::Vulkan
             nativeBuffers[i] = NativeCast(buffers[i]);
         }
 
-        vkCmdBindVertexBuffers(
-            m_commandBuffer, startSlot, static_cast<uint32_t>(nativeBuffers.size()), nativeBuffers.data(), offsets.data());
+        vkCmdBindVertexBuffers(m_commandBuffer, startSlot, nativeBuffers.size(), nativeBuffers.data(), offsets.data());
     }
 
 
     void CommandList::CopyBuffers(RHI::Buffer* source, RHI::Buffer* dest, const RHI::BufferCopyRegion& region)
     {
-        VkBufferCopy copy{};
+        VkBufferCopy copy;
         copy.size = region.m_size;
         copy.dstOffset = region.m_destOffset;
         copy.srcOffset = region.m_sourceOffset;
@@ -287,7 +285,7 @@ namespace FE::Graphics::Vulkan
 
     void CommandList::CopyBufferToImage(RHI::Buffer* source, RHI::Image* dest, const RHI::BufferImageCopyRegion& region)
     {
-        VkBufferImageCopy copy{};
+        VkBufferImageCopy copy;
         copy.bufferOffset = region.m_bufferOffset;
         copy.bufferRowLength = 0;
         copy.bufferImageHeight = 0;

@@ -9,12 +9,12 @@ namespace FE::Graphics::RHI
 {
     struct ClearValueDesc final
     {
-        Color m_colorValue;
+        Color4F m_colorValue;
         float m_depthValue = 0;
         uint32_t m_stencilValue = 0;
         bool m_isDepthStencil = false;
 
-        static ClearValueDesc FE_VECTORCALL CreateColorValue(Color color)
+        static ClearValueDesc FE_VECTORCALL CreateColorValue(Color4F color)
         {
             ClearValueDesc result{};
             result.m_colorValue = color;

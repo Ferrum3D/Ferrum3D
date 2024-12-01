@@ -1,393 +1,375 @@
 ﻿#pragma once
 #include <FeCore/Math/Vector3.h>
 #include <FeCore/SIMD/CommonSIMD.h>
-#include <array>
-#include <cstdint>
-#include <iostream>
 
 namespace FE
 {
     //! @brief 4-dimensional vector.
-    class Vector4F final
+    struct Vector4F final
     {
-        using TVec = SIMD::SSE::Float32x4;
-
         union
         {
-            TVec m_Value;
-            float m_Values[4];
+            __m128 m_simdVector;
+            float m_values[4];
             struct
             {
-                float m_X, m_Y, m_Z, m_W;
+                float x, y, z, w;
             };
         };
 
-    public:
-        FE_RTTI_Base(Vector4F, "C8B28F38-DAAB-4C9A-A922-41E881ED184C");
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F() = default;
 
-        FE_FORCE_INLINE Vector4F()
-            : Vector4F(0, 0, 0, 0)
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F(float value)
+            : m_simdVector(_mm_set1_ps(value))
         {
         }
 
-        FE_FORCE_INLINE explicit Vector4F(TVec vec) noexcept;
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F(__m128 vec)
+            : m_simdVector(vec)
+        {
+        }
 
-        FE_FORCE_INLINE Vector4F(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F(Vector3F vec, float w)
+        {
+            const __m128 t = _mm_shuffle_ps(_mm_set_ss(w), vec.m_simdVector, _MM_SHUFFLE(3, 2, 1, 0));
+            m_simdVector = _mm_shuffle_ps(vec.m_simdVector, t, _MM_SHUFFLE(0, 2, 1, 0));
+        }
 
-        FE_FORCE_INLINE explicit Vector4F(const Vector3F& other, float w = 1.0f) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F(float x, float y, float z, float w)
+            : m_simdVector(_mm_setr_ps(x, y, z, w))
+        {
+        }
 
-        FE_FORCE_INLINE Vector4F& operator=(const Vector4F& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL Data()
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Vector4F(Vector4F&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE const float* FE_VECTORCALL Data() const
+        {
+            return m_values;
+        }
 
-        FE_FORCE_INLINE Vector4F& operator=(Vector4F&& other) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL Zero()
+        {
+            return Vector4F{ _mm_setzero_ps() };
+        }
 
-        FE_FORCE_INLINE explicit Vector4F(float value) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL LoadUnaligned(const float* values)
+        {
+            return Vector4F{ _mm_loadu_ps(values) };
+        }
 
-        FE_FORCE_INLINE Vector4F(float x, float y, float z, float w) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL LoadAligned(const float* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
+            return Vector4F{ _mm_load_ps(values) };
+        }
 
-        [[nodiscard]] FE_FORCE_INLINE Vector3F GetVector3F() const noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL AxisX(float length = 1.0f)
+        {
+            return Vector4F{ _mm_blend_ps(_mm_setzero_ps(), _mm_set_ss(length), 0b0111) };
+        }
 
-        FE_FORCE_INLINE explicit Vector4F(const std::array<float, 4>& array) noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL AxisY(float length = 1.0f)
+        {
+            return Vector4F{ _mm_insert_ps(_mm_set_ss(length), _mm_set_ss(length), 0x1d) };
+        }
 
-        //! @return Vector4F{ 0, 0, 0, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetZero() noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL AxisZ(float length = 1.0f)
+        {
+            return Vector4F{ _mm_insert_ps(_mm_set_ss(length), _mm_set_ss(length), 0x2b) };
+        }
 
-        //! @return Vector4F{ 1, 0, 0, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitX() noexcept;
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL AxisW(float length = 1.0f)
+        {
+            return Vector4F{ _mm_insert_ps(_mm_set_ss(length), _mm_set_ss(length), 0x37) };
+        }
 
-        //! @return Vector4F{ 0, 1, 0, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitY() noexcept;
-
-        //! @return Vector4F{ 0, 0, 1, 0 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitZ() noexcept;
-
-        //! @return Vector4F{ 0, 0, 0, 1 }.
-        [[nodiscard]] FE_FORCE_INLINE static Vector4F GetUnitW() noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float operator[](size_t index) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& operator()(size_t index) noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float operator()(size_t index) const noexcept;
-
-        //! @return A pointer to array of four floats (components of the vector).
-        [[nodiscard]] FE_FORCE_INLINE const float* Data() const noexcept;
-
-        //! @return Underlying SIMD type.
-        [[nodiscard]] FE_FORCE_INLINE const TVec& GetSIMD() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float X() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float Y() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float Z() const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float W() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float& X() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& Y() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& Z() noexcept;
-        [[nodiscard]] FE_FORCE_INLINE float& W() noexcept;
-
-        FE_FORCE_INLINE void Set(float x, float y, float z, float w) noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE float Dot(const Vector4F& other) const noexcept;
-
-        //! @return Squared length of the vector.
-        [[nodiscard]] FE_FORCE_INLINE float LengthSq() const noexcept;
-
-        //! @return Length of the vector.
-        [[nodiscard]] FE_FORCE_INLINE float Length() const noexcept;
-
-        //! @return New normalized vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector4F Normalized() const noexcept;
-
-        //! @brief Linearly interpolate between this and destination.
-        //!
-        //! The result is (dst - this) * f + this;
-        //!
-        //! @param f - Interpolation factor.
-        //!
-        //! @return New interpolated vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector4F Lerp(const Vector4F& dst, float f) const noexcept;
-
-        //! @brief Multiply each component of this vector with each component of other vector.
-        //! @return New vector, this vector is not modified.
-        [[nodiscard]] FE_FORCE_INLINE Vector4F MulEach(const Vector4F& other) const noexcept;
-
-        //! @brief Check if two vectors are approximately equal.
-        //!
-        //! @param other   - The vector to compare this vector with.
-        //! @param epsilon - Accepted difference between the two vectors.
-        //!
-        //! @return True if the vectors are approximately equal.
-        [[nodiscard]] FE_FORCE_INLINE bool IsApproxEqualTo(const Vector4F& other,
-                                                           float epsilon = Math::Constants::Epsilon) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE bool operator==(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE bool operator!=(const Vector4F& other) const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator-() const noexcept;
-
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator+(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator-(const Vector4F& other) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator*(float f) const noexcept;
-        [[nodiscard]] FE_FORCE_INLINE Vector4F operator/(float f) const noexcept;
-
-        FE_FORCE_INLINE Vector4F& operator+=(const Vector4F& other) noexcept;
-        FE_FORCE_INLINE Vector4F& operator-=(const Vector4F& other) noexcept;
-        FE_FORCE_INLINE Vector4F& operator*=(float f) noexcept;
-        FE_FORCE_INLINE Vector4F& operator/=(float f) noexcept;
+        template<Math::Swizzle TSwizzle>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL Swizzle(Vector4F vec)
+        {
+            return Vector4F{ _mm_shuffle_ps(vec.m_simdVector, vec.m_simdVector, enum_cast(TSwizzle)) };
+        }
     };
 
-    Vector4F::Vector4F(TVec vec) noexcept // NOLINT clang-tidy complains about uninitialized union members
-        : m_Value(vec)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator+(Vector4F lhs, Vector4F rhs)
     {
+        return Vector4F{ _mm_add_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Vector4F::Vector4F(const Vector4F& other) noexcept // NOLINT
-        : m_Value(other.m_Value)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator-(Vector4F lhs, Vector4F rhs)
     {
+        return Vector4F{ _mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Vector4F::Vector4F(const Vector3F& other, float w) noexcept // NOLINT
-        : m_Value(other.GetSIMD())
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator-(Vector4F vec)
     {
-        m_W = w;
+        const __m128 kSignMask = _mm_castsi128_ps(_mm_setr_epi32(static_cast<int32_t>(0x80000000),
+                                                                 static_cast<int32_t>(0x80000000),
+                                                                 static_cast<int32_t>(0x80000000),
+                                                                 static_cast<int32_t>(0x80000000)));
+        return Vector4F{ _mm_xor_ps(vec.m_simdVector, kSignMask) };
     }
 
-    Vector4F& Vector4F::operator=(const Vector4F& other) noexcept
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator*(Vector4F lhs, Vector4F rhs)
     {
-        m_Value = other.m_Value;
-        return *this;
+        return Vector4F{ _mm_mul_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Vector4F::Vector4F(Vector4F&& other) noexcept // NOLINT
-        : m_Value(other.m_Value)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator/(Vector4F lhs, Vector4F rhs)
     {
+        return Vector4F{ _mm_div_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
-    Vector4F& Vector4F::operator=(Vector4F&& other) noexcept
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator*(Vector4F lhs, float rhs)
     {
-        m_Value = other.m_Value;
-        return *this;
+        return Vector4F{ _mm_mul_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    Vector4F::Vector4F(float value) noexcept // NOLINT
-        : m_Value(value)
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator/(Vector4F lhs, float rhs)
     {
+        return Vector4F{ _mm_div_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
-    Vector4F::Vector4F(float x, float y, float z, float w) noexcept // NOLINT
-        : m_Value(x, y, z, w)
+
+    namespace Math
     {
+        namespace Internal
+        {
+            FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Dot4Impl(__m128 lhs, __m128 rhs)
+            {
+                const __m128 mul = _mm_mul_ps(lhs, rhs);
+                const __m128 t0 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(0, 0, 3, 2));
+                const __m128 t1 = _mm_add_ps(mul, t0);
+                const __m128 t2 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(0, 0, 0, 1));
+                return _mm_add_ps(t1, t2);
+            }
+        } // namespace Internal
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL DotBroadcast(Vector4F lhs, Vector4F rhs)
+        {
+            const __m128 result = Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector);
+            return Vector4F{ _mm_shuffle_ps(result, result, _MM_SHUFFLE(0, 0, 0, 0)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_cvtss_f32(Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Abs(Vector4F lhs)
+        {
+            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            return Vector4F{ _mm_and_ps(lhs.m_simdVector, kSignMask) };
+        }
+
+
+        template<>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Min<Vector4F>(Vector4F lhs, Vector4F rhs)
+        {
+            return Vector4F{ _mm_min_ps(lhs.m_simdVector, rhs.m_simdVector) };
+        }
+
+
+        template<>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Max<Vector4F>(Vector4F lhs, Vector4F rhs)
+        {
+            return Vector4F{ _mm_max_ps(lhs.m_simdVector, rhs.m_simdVector) };
+        }
+
+
+        template<>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Clamp<Vector4F>(Vector4F vec, Vector4F min, Vector4F max)
+        {
+            return Vector4F{ _mm_max_ps(min.m_simdVector, _mm_min_ps(vec.m_simdVector, max.m_simdVector)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Saturate(Vector4F vec)
+        {
+            return Vector4F{ _mm_max_ps(_mm_setzero_ps(), _mm_min_ps(vec.m_simdVector, _mm_set1_ps(1.0f))) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Floor(Vector4F vec)
+        {
+            return Vector4F{ _mm_floor_ps(vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Ceil(Vector4F vec)
+        {
+            return Vector4F{ _mm_ceil_ps(vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Round(Vector4F vec)
+        {
+            return Vector4F{ _mm_floor_ps(_mm_add_ps(vec.m_simdVector, _mm_set_ps1(0.5f))) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Reciprocal(Vector4F vec)
+        {
+            return Vector4F{ _mm_div_ps(_mm_set_ps1(1.0f), vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL ReciprocalEstimate(Vector4F vec)
+        {
+            return Vector4F{ _mm_rcp_ps(vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Sqrt(Vector4F vec)
+        {
+            return Vector4F{ _mm_sqrt_ps(vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL ReciprocalSqrt(Vector4F vec)
+        {
+            return Vector4F{ _mm_div_ps(_mm_set1_ps(1.0f), _mm_sqrt_ps(vec.m_simdVector)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL ReciprocalSqrtEstimate(Vector4F vec)
+        {
+            return Vector4F{ _mm_rsqrt_ps(vec.m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL LengthSquaredBroadcast(Vector4F vec)
+        {
+            return DotBroadcast(vec, vec);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(Vector4F vec)
+        {
+            return _mm_cvtss_f32(Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL LengthBroadcast(Vector4F vec)
+        {
+            return Vector4F{ _mm_sqrt_ps(DotBroadcast(vec, vec).m_simdVector) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(Vector4F vec)
+        {
+            return _mm_cvtss_f32(_mm_sqrt_ss(Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector)));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(Vector4F vec)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            return _mm_cvtss_f32(_mm_div_ss(_mm_set1_ps(1.0f), _mm_sqrt_ss(lengthSq)));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(Vector4F vec)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            return _mm_cvtss_f32(_mm_rsqrt_ss(lengthSq));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Normalize(Vector4F vec)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
+            return Vector4F{ _mm_div_ps(vec.m_simdVector, _mm_sqrt_ps(broadcast)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL NormalizeEstimate(Vector4F vec)
+        {
+            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
+            return Vector4F{ _mm_mul_ps(vec.m_simdVector, _mm_rsqrt_ps(broadcast)) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL DistanceSquared(Vector4F lhs, Vector4F rhs)
+        {
+            return LengthSquared(lhs - rhs);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Distance(Vector4F lhs, Vector4F rhs)
+        {
+            return Length(lhs - rhs);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpeq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpNotEqualMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpneq_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmplt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpgt_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessEqualMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmple_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterEqualMask(Vector4F lhs, Vector4F rhs)
+        {
+            return _mm_movemask_ps(_mm_cmpge_ps(lhs.m_simdVector, rhs.m_simdVector));
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Vector4F lhs, Vector4F rhs,
+                                                                               float epsilon = Constants::Epsilon)
+        {
+            const __m128 distance = Abs(lhs - rhs).m_simdVector;
+            const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
+            return mask == 0;
+        }
+    } // namespace Math
+
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(Vector4F lhs, Vector4F rhs)
+    {
+        return Math::CmpNotEqualMask(lhs, rhs) == 0;
     }
 
-    Vector4F::Vector4F(const std::array<float, 4>& array) noexcept // NOLINT
-        : m_Value(array[0], array[1], array[2], array[3])
-    {
-    }
 
-    Vector3F Vector4F::GetVector3F() const noexcept
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator!=(Vector4F lhs, Vector4F rhs)
     {
-        return Vector3F(m_Value);
-    }
-
-    Vector4F Vector4F::GetZero() noexcept
-    {
-        return Vector4F(0);
-    }
-
-    Vector4F Vector4F::GetUnitX() noexcept
-    {
-        return Vector4F(1, 0, 0, 0);
-    }
-
-    Vector4F Vector4F::GetUnitY() noexcept
-    {
-        return Vector4F(0, 1, 0, 0);
-    }
-
-    Vector4F Vector4F::GetUnitZ() noexcept
-    {
-        return Vector4F(0, 0, 1, 0);
-    }
-
-    Vector4F Vector4F::GetUnitW() noexcept
-    {
-        return Vector4F(0, 0, 0, 1);
-    }
-
-    float Vector4F::operator[](size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    float Vector4F::operator()(size_t index) const noexcept
-    {
-        return m_Values[index];
-    }
-
-    float& Vector4F::operator()(size_t index) noexcept
-    {
-        return m_Values[index];
-    }
-
-    const float* Vector4F::Data() const noexcept
-    {
-        return m_Values;
-    }
-
-    const Vector4F::TVec& Vector4F::GetSIMD() const noexcept
-    {
-        return m_Value;
-    }
-
-    float Vector4F::X() const noexcept
-    {
-        return m_X;
-    }
-
-    float Vector4F::Y() const noexcept
-    {
-        return m_Y;
-    }
-
-    float Vector4F::Z() const noexcept
-    {
-        return m_Z;
-    }
-
-    float Vector4F::W() const noexcept
-    {
-        return m_W;
-    }
-
-    float& Vector4F::X() noexcept
-    {
-        return m_X;
-    }
-
-    float& Vector4F::Y() noexcept
-    {
-        return m_Y;
-    }
-
-    float& Vector4F::Z() noexcept
-    {
-        return m_Z;
-    }
-
-    float& Vector4F::W() noexcept
-    {
-        return m_W;
-    }
-
-    void Vector4F::Set(float x, float y, float z, float w) noexcept
-    {
-        m_Value = TVec(x, y, z, w);
-    }
-
-    float Vector4F::Dot(const Vector4F& other) const noexcept
-    {
-        TVec mul = m_Value * other.m_Value;
-        TVec t = mul * mul.Shuffle<2, 3, 0, 1>();
-        TVec r = t + t.Shuffle<1, 0, 2, 3>();
-        return r.Select<0>();
-    }
-
-    float Vector4F::LengthSq() const noexcept
-    {
-        return Dot(*this);
-    }
-
-    float Vector4F::Length() const noexcept
-    {
-        return std::sqrt(LengthSq());
-    }
-
-    Vector4F Vector4F::Normalized() const noexcept
-    {
-        float len = Length();
-        return Vector4F(m_Value / len);
-    }
-
-    Vector4F Vector4F::Lerp(const Vector4F& dst, float f) const noexcept
-    {
-        return Vector4F((dst.m_Value - m_Value) * f + m_Value);
-    }
-
-    Vector4F Vector4F::MulEach(const Vector4F& other) const noexcept
-    {
-        return Vector4F(m_Value * other.m_Value);
-    }
-
-    bool Vector4F::IsApproxEqualTo(const Vector4F& other, float epsilon) const noexcept
-    {
-        return TVec::CompareAllLe((m_Value - other.m_Value).Abs(), epsilon, 0xffff);
-    }
-
-    bool Vector4F::operator==(const Vector4F& other) const noexcept
-    {
-        return TVec::CompareAllEq(m_Value, other.m_Value, 0xffff);
-    }
-
-    bool Vector4F::operator!=(const Vector4F& other) const noexcept
-    {
-        return TVec::CompareAllNeq(m_Value, other.m_Value, 0xffff);
-    }
-
-    Vector4F Vector4F::operator-() const noexcept
-    {
-        return Vector4F(m_Value.Negate());
-    }
-
-    Vector4F Vector4F::operator+(const Vector4F& other) const noexcept
-    {
-        return Vector4F(m_Value + other.m_Value);
-    }
-
-    Vector4F Vector4F::operator-(const Vector4F& other) const noexcept
-    {
-        return Vector4F(m_Value - other.m_Value);
-    }
-
-    Vector4F Vector4F::operator*(float f) const noexcept
-    {
-        return Vector4F(m_Value * f);
-    }
-
-    Vector4F Vector4F::operator/(float f) const noexcept
-    {
-        return Vector4F(m_Value / f);
-    }
-
-    Vector4F& Vector4F::operator+=(const Vector4F& other) noexcept
-    {
-        *this = *this + other;
-        return *this;
-    }
-
-    Vector4F& Vector4F::operator-=(const Vector4F& other) noexcept
-    {
-        *this = *this - other;
-        return *this;
-    }
-
-    Vector4F& Vector4F::operator*=(float f) noexcept
-    {
-        *this = *this * f;
-        return *this;
-    }
-
-    Vector4F& Vector4F::operator/=(float f) noexcept
-    {
-        *this = *this / f;
-        return *this;
+        return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
-
-namespace std // NOLINT
-{
-    inline ostream& operator<<(ostream& stream, const FE::Vector4F& vec)
-    {
-        return stream << "{ " << vec.X() << "; " << vec.Y() << "; " << vec.Z() << "; " << vec.W() << " }";
-    }
-} // namespace std

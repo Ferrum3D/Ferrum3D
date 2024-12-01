@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-#ifdef FE_WINDOWS
+#ifdef FE_PLATFORM_WINDOWS
 #    define WIN32_LEAN_AND_MEAN
 #    include <Windows.h>
 #    undef min
@@ -24,7 +24,7 @@ namespace FE::Console
 {
     void Init()
     {
-#ifdef FE_WINDOWS
+#ifdef FE_PLATFORM_WINDOWS
         ConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleOutputCP(CP_UTF8);
         DefaultColor = GetConColor();
@@ -33,7 +33,7 @@ namespace FE::Console
 
     void SetColor(Color color)
     {
-#ifdef FE_WINDOWS
+#ifdef FE_PLATFORM_WINDOWS
         if (ConHandle)
         {
             if (color == Color::Default)
@@ -45,7 +45,7 @@ namespace FE::Console
                 SetConsoleTextAttribute(ConHandle, (DefaultColor & 0xF0) | (WORD)color);
             }
         }
-#elif defined(FE_LINUX)
+#elif defined(FE_PLATFORM_LINUX)
         std::cout << "\033[" << (int)color << "m";
 #endif
     }

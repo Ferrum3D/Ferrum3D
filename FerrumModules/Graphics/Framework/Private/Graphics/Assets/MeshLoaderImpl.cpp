@@ -8,10 +8,12 @@
 
 namespace FE::Graphics
 {
-    inline constexpr int g_PostProcessFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices
-        | aiProcess_CalcTangentSpace | aiProcess_ImproveCacheLocality | aiProcess_GenSmoothNormals;
+    inline constexpr int32_t kPostProcessFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate
+        | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_ImproveCacheLocality
+        | aiProcess_GenSmoothNormals;
 
-    inline uint32_t ComponentSize(MeshVertexComponent component)
+
+    static uint32_t ComponentSize(MeshVertexComponent component)
     {
         switch (component)
         {
@@ -35,13 +37,14 @@ namespace FE::Graphics
         }
     }
 
+
     bool LoadMeshFromMemory(festd::span<const std::byte> fileData, festd::span<const MeshVertexComponent> components,
                             festd::vector<float>& vertexBuffer, festd::vector<uint32_t>& indexBuffer, uint32_t& vertexCount)
     {
         Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
 
         Assimp::Importer Importer;
-        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), g_PostProcessFlags, ".fbx");
+        const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), kPostProcessFlags, ".fbx");
         if (!pScene)
         {
             const StringSlice error = Importer.GetErrorString();
@@ -93,50 +96,61 @@ namespace FE::Graphics
                     case MeshVertexComponent::None:
                         FE_AssertMsg(false, "None component in mesh loading");
                         break;
+
                     case MeshVertexComponent::Position3F:
-                        vertexBuffer[vbIndex++] = pPos->x * scale.X();
-                        vertexBuffer[vbIndex++] = -pPos->y * scale.Y();
-                        vertexBuffer[vbIndex++] = pPos->z * scale.Z();
+                        vertexBuffer[vbIndex++] = pPos->x * scale.x;
+                        vertexBuffer[vbIndex++] = -pPos->y * scale.y;
+                        vertexBuffer[vbIndex++] = pPos->z * scale.z;
                         break;
+
                     case MeshVertexComponent::Normal3F:
                         vertexBuffer[vbIndex++] = pNormal->x;
                         vertexBuffer[vbIndex++] = -pNormal->y;
                         vertexBuffer[vbIndex++] = pNormal->z;
                         break;
+
                     case MeshVertexComponent::Tangent3F:
                         vertexBuffer[vbIndex++] = pTangent->x;
                         vertexBuffer[vbIndex++] = pTangent->y;
                         vertexBuffer[vbIndex++] = pTangent->z;
                         break;
+
                     case MeshVertexComponent::Bitangent3F:
                         vertexBuffer[vbIndex++] = pBiTangent->x;
                         vertexBuffer[vbIndex++] = pBiTangent->y;
                         vertexBuffer[vbIndex++] = pBiTangent->z;
                         break;
+
                     case MeshVertexComponent::TextureCoordinate2F:
                         vertexBuffer[vbIndex++] = pTexCoord->x;
                         vertexBuffer[vbIndex++] = -pTexCoord->y;
                         break;
+
                     case MeshVertexComponent::Color3F:
                         vertexBuffer[vbIndex++] = color.r;
                         vertexBuffer[vbIndex++] = color.g;
                         vertexBuffer[vbIndex++] = color.b;
                         break;
+
                     case MeshVertexComponent::Color4F:
                         vertexBuffer[vbIndex++] = color.r;
                         vertexBuffer[vbIndex++] = color.g;
                         vertexBuffer[vbIndex++] = color.b;
                         vertexBuffer[vbIndex++] = 1.0f;
                         break;
+
                     case MeshVertexComponent::Dummy4F:
                         vertexBuffer[vbIndex++] = 0.0f;
                         [[fallthrough]];
+
                     case MeshVertexComponent::Dummy3F:
                         vertexBuffer[vbIndex++] = 0.0f;
                         [[fallthrough]];
+
                     case MeshVertexComponent::Dummy2F:
                         vertexBuffer[vbIndex++] = 0.0f;
                         [[fallthrough]];
+
                     case MeshVertexComponent::Dummy1F:
                         vertexBuffer[vbIndex++] = 0.0f;
                         break;
@@ -144,14 +158,12 @@ namespace FE::Graphics
                 }
             }
 
-            auto indexBase = static_cast<uint32_t>(indexBuffer.size());
+            const uint32_t indexBase = indexBuffer.size();
             for (uint32_t j = 0; j < mesh->mNumFaces; ++j)
             {
                 const aiFace& face = mesh->mFaces[j];
                 if (face.mNumIndices != 3)
-                {
                     continue;
-                }
 
                 indexBuffer.push_back(indexBase + face.mIndices[0]);
                 indexBuffer.push_back(indexBase + face.mIndices[1]);

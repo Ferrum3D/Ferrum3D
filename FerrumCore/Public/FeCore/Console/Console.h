@@ -10,7 +10,7 @@ namespace FE::Console
     enum class Color
     {
         Default = 0xff,
-#ifdef FE_WINDOWS
+#ifdef FE_PLATFORM_WINDOWS
         Black = 0x0,
         Navy = 0x1,
         Green = 0x2,
