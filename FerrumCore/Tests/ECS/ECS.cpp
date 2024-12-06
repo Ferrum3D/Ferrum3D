@@ -1,19 +1,48 @@
 ﻿#include "FeCore/ECS/ECS.h"
 #include <gtest/gtest.h>
+
 namespace FE::ECS
 {
     TEST(ECS, Create)
     {
-        Archetype archetype{};
-        Entity entity = createEntity(archetype);
+        struct PositionComponent
+        {
+            uint32_t x, y, z;
+        };
 
-        EXPECT_EQ(archetype.m_chunks.size(), 1);
-        ArchetypeChunk* chunk = archetype.m_chunks[0];
-        EXPECT_EQ(chunk->entityCount, 1);
-        EXPECT_TRUE(chunk->freeEntities[0]);
+        struct FlyComponent
+        {
+            int32_t gravity;
+        };
 
-        deleteEntity(archetype, entity.Id);
-        EXPECT_EQ(chunk->entityCount, 0);
-        EXPECT_FALSE(chunk->freeEntities[0]);
+        constexpr uint32_t componentSizes[] = { sizeof(PositionComponent), sizeof(FlyComponent) };
+        Rc<Archetype> archetype = Rc<Archetype>::DefaultNew(componentSizes);
+        Entity entity1 = archetype->CreateEntity();
+
+        EXPECT_EQ(archetype->m_chunks.size(), 1);
+        auto& indices = archetype->m_chunks[0]->m_indexAllocator.m_freeIndices;
+
+        bool hasOccupiedEntity = false;
+        for (bool isFree : indices)
+        {
+            if (!isFree)
+            {
+                hasOccupiedEntity = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(hasOccupiedEntity);
+
+        archetype->DestroyEntity(entity1);
+        bool isEmpty = true;
+        for (bool isFree : indices)
+        {
+            if (!isFree)
+            {
+                isEmpty = false;
+                break;
+            }
+        }
+        EXPECT_TRUE(isEmpty);
     }
 } // namespace FE::ECS
