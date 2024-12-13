@@ -20,11 +20,11 @@ namespace FE
         void FreeVirtual(void* ptr, size_t byteSize);
 
 
-        enum class ProtectFlags
+        enum class ProtectFlags : uint32_t
         {
-            None = 0,
-            ReadOnly = 1,
-            ReadWrite = 2,
+            kNone = 0,
+            kReadOnly = 1,
+            kReadWrite = 2,
         };
 
         void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection);

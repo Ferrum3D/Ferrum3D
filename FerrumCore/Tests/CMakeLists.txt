@@ -1,6 +1,7 @@
 ﻿set(SRC
     Common/TestCommon.h
 
+    Containers/BitSet.cpp
     Containers/LRUCacheMap.cpp
     Containers/SegmentedVector.cpp
     Containers/SparseSet.cpp
