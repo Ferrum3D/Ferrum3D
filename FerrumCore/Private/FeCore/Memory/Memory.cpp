@@ -59,13 +59,13 @@ namespace FE::Memory
         DWORD osProtect = 0;
         switch (protection)
         {
-        case ProtectFlags::None:
+        case ProtectFlags::kNone:
             osProtect = PAGE_NOACCESS;
             break;
-        case ProtectFlags::ReadOnly:
+        case ProtectFlags::kReadOnly:
             osProtect = PAGE_READONLY;
             break;
-        case ProtectFlags::ReadWrite:
+        case ProtectFlags::kReadWrite:
             osProtect = PAGE_READWRITE;
             break;
         default:

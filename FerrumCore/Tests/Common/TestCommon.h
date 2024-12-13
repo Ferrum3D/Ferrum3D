@@ -4,20 +4,18 @@
 
 #include <utility>
 
-class MockConstructors
+struct MockConstructors
 {
-public:
     MOCK_METHOD(void, Construct, (), (noexcept));
     MOCK_METHOD(void, Destruct, (), (noexcept));
     MOCK_METHOD(void, Copy, (), (noexcept));
     MOCK_METHOD(void, Move, (), (noexcept));
 };
 
-class AllocateObject
+struct AllocateObject
 {
     std::shared_ptr<MockConstructors> m_Mock;
 
-public:
     AllocateObject(std::shared_ptr<MockConstructors> mock) noexcept
     {
         m_Mock = std::move(mock);
@@ -32,7 +30,7 @@ public:
 
     AllocateObject(AllocateObject&& other) noexcept
     {
-        m_Mock       = other.m_Mock;
+        m_Mock = other.m_Mock;
         other.m_Mock = nullptr;
         m_Mock->Move();
     }
@@ -43,5 +41,33 @@ public:
         {
             m_Mock->Destruct();
         }
+    }
+};
+
+
+struct TestAllocator : public std::pmr::memory_resource
+{
+    uint32_t m_allocationCount = 0;
+    uint32_t m_deallocationCount = 0;
+    size_t m_totalSize = 0;
+
+private:
+    void* do_allocate(size_t bytes, size_t align) override
+    {
+        ++m_allocationCount;
+        m_totalSize += bytes;
+        return FE::Memory::DefaultAllocate(bytes, align);
+    }
+
+    void do_deallocate(void* ptr, size_t bytes, size_t align) override
+    {
+        ++m_deallocationCount;
+        m_totalSize -= bytes;
+        FE::Memory::DefaultFree(ptr);
+    }
+
+    bool do_is_equal(const memory_resource& other) const noexcept override
+    {
+        return this == &other;
     }
 };

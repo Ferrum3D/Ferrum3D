@@ -1,4 +1,7 @@
-﻿#include <FeCore/Console/Console.h>
+﻿#include "FeCore/Platform/Windows/Common.h"
+
+
+#include <FeCore/Console/Console.h>
 #include <FeCore/Containers/HashTables.h>
 #include <FeCore/DI/Container.h>
 #include <FeCore/Memory/LinearAllocator.h>
@@ -11,6 +14,14 @@
 
 namespace FE::Env
 {
+    bool IsDebuggerPresent()
+    {
+#if FE_PLATFORM_WINDOWS
+        return ::IsDebuggerPresent();
+#endif
+    }
+
+
     namespace Internal
     {
         inline constexpr uint32_t NamePageShift = 16;

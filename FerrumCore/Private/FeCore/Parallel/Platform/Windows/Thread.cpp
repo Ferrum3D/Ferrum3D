@@ -91,10 +91,10 @@ namespace FE
 
     void CloseThread(ThreadHandle& thread)
     {
-        if (thread.Value == 0)
+        if (thread.m_value == 0)
             return;
 
-        const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.Value);
+        const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.m_value);
         const DWORD waitRes = WaitForSingleObject(data.hThread, INFINITE);
         FE_CORE_ASSERT(waitRes == WAIT_OBJECT_0, "WaitForSingleObject failed on thread");
 

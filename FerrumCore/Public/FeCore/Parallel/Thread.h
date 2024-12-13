@@ -48,7 +48,7 @@ namespace FE
 
     inline static const NativeThreadData& GetNativeThreadData(ThreadHandle threadHandle)
     {
-        return *reinterpret_cast<const NativeThreadData*>(threadHandle.Value);
+        return *reinterpret_cast<const NativeThreadData*>(threadHandle.m_value);
     }
 
 

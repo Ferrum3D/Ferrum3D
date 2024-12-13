@@ -6,7 +6,7 @@ namespace FE::IO::Platform
 {
     inline static HANDLE HandleCast(FileHandle handle)
     {
-        return reinterpret_cast<HANDLE>(handle.Value);
+        return reinterpret_cast<HANDLE>(handle.m_value);
     }
 
 
