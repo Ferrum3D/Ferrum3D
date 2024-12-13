@@ -118,8 +118,7 @@ TEST(Vector4, Division)
 
 TEST(Vector4, Dot)
 {
-    std::random_device rd;
-    std::mt19937 mt(rd());
+    std::mt19937 mt(0);
     std::uniform_real_distribution<float> dist(-5, 5);
 
     const auto dotRef = [](Vector4F lhs, Vector4F rhs) {
@@ -170,8 +169,7 @@ TEST(Vector4, Clamp)
 
 TEST(Vector4, Length)
 {
-    std::random_device rd;
-    std::mt19937 mt(rd());
+    std::mt19937 mt(0);
     std::uniform_real_distribution<float> dist(-5, 5);
 
     const auto lenRef = [](Vector4F lhs) {

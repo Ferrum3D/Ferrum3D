@@ -8,20 +8,22 @@ namespace FE
     //! @param x     - Value to align.
     //! @param align - Alignment to use.
     template<class T, class U = T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T AlignUp(T x, U align)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignUp(T x, U align)
     {
         return static_cast<T>((x + (align - 1u)) & ~(align - 1u));
     }
+
 
     //! @brief Align up a pointer.
     //!
     //! @param x     - Value to align.
     //! @param align - Alignment to use.
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* AlignUpPtr(const T* x, size_t align)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* AlignUpPtr(T* x, size_t align)
     {
         return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), align));
     }
+
 
     //! @brief Align up an integer.
     //!
@@ -33,25 +35,28 @@ namespace FE
         return (x + (A - 1)) & ~(A - 1);
     }
 
+
     //! @brief Align down an integer.
     //!
     //! @param x     - Value to align.
     //! @param align - Alignment to use.
     template<class T, class U = T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T AlignDown(T x, U align)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignDown(T x, U align)
     {
         return x & ~(align - 1);
     }
+
 
     //! @brief Align down a pointer.
     //!
     //! @param x     - Value to align.
     //! @param align - Alignment to use.
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T* AlignDownPtr(const T* x, size_t align)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* AlignDownPtr(T* x, size_t align)
     {
         return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), align));
     }
+
 
     //! @brief Align down an integer.
     //!
@@ -63,6 +68,7 @@ namespace FE
         return x & ~(A - 1);
     }
 
+
     //! @brief Create a bitmask.
     //!
     //! @param bitCount  - The number of ones in the created mask.
@@ -70,9 +76,9 @@ namespace FE
     template<class T>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T MakeMask(T bitCount, T leftShift)
     {
-        auto typeBitCount = sizeof(T) * 8;
-        auto mask = bitCount == typeBitCount ? static_cast<T>(-1) : ((1 << bitCount) - 1);
-        return static_cast<T>(mask << leftShift);
+        const T allOnes = std::numeric_limits<T>::max();
+        const T mask = static_cast<T>(-(bitCount != 0)) & (allOnes >> (sizeof(T) * 8 - bitCount));
+        return mask << leftShift;
     }
 
 
@@ -85,6 +91,7 @@ namespace FE
         memcpy(&result, &value, sizeof(TTo));
         return result;
     }
+
 
     template<class T>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr auto enum_cast(T value) -> std::underlying_type_t<T>
@@ -140,6 +147,23 @@ namespace FE::Bit
     }
 
 
+    //! @brief Search for the first set bit in the given value and store its index in result.
+    //!
+    //! @return true if a bit was found, false if the value is zero.
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanForward64(uint32_t& result, uint64_t value)
+    {
+#if FE_COMPILER_MSVC
+        return _BitScanForward64(reinterpret_cast<unsigned long*>(&result), value);
+#else
+        if (value == 0)
+            return false;
+
+        result = __builtin_ctzll(value);
+        return true;
+#endif
+    }
+
+
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
@@ -154,6 +178,47 @@ namespace FE::Bit
         result = 31 - __builtin_clz(value);
         return true;
 #endif
+    }
+
+
+    //! @brief Search for the last set bit in the given value and store its index in result.
+    //!
+    //! @return true if a bit was found, false if the value is zero.
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanReverse64(uint32_t& result, uint64_t value)
+    {
+#if FE_COMPILER_MSVC
+        return _BitScanReverse64(reinterpret_cast<unsigned long*>(&result), value);
+#else
+        if (value == 0)
+            return false;
+
+        result = 63 - __builtin_clzll(value);
+        return true;
+#endif
+    }
+
+
+    template<class TFunctor>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint32_t word, TFunctor functor)
+    {
+        uint32_t currentIndex;
+        while (ScanForward(currentIndex, word))
+        {
+            functor(currentIndex);
+            word &= ~(1 << currentIndex);
+        }
+    }
+
+
+    template<class TFunctor>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
+    {
+        uint32_t currentIndex;
+        while (ScanForward64(currentIndex, word))
+        {
+            functor(currentIndex);
+            word &= ~(UINT64_C(1) << currentIndex);
+        }
     }
 } // namespace FE::Bit
 
@@ -177,9 +242,9 @@ namespace FE::Math
             const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
             const uint64_t p11 = x1 * y1, p01 = x0 * y1;
             const uint64_t p10 = x1 * y0, p00 = x0 * y0;
-            const uint64_t middle = p10 + (p00 >> 32) + (uint32_t)p01;
+            const uint64_t middle = p10 + (p00 >> 32) + static_cast<uint32_t>(p01);
             *carry = p11 + (middle >> 32) + (p01 >> 32);
-            return (middle << 32) | (uint32_t)p00;
+            return (middle << 32) | static_cast<uint32_t>(p00);
         }
     } // namespace CompileTime
 
@@ -271,27 +336,27 @@ namespace FE::Math
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T Max(T lhs, T rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Max(T lhs, T rhs)
     {
         return lhs > rhs ? lhs : rhs;
     }
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T Min(T lhs, T rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Min(T lhs, T rhs)
     {
         return lhs < rhs ? lhs : rhs;
     }
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T Clamp(T value, T min, T max)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Clamp(T value, T min, T max)
     {
         return Max(min, Min(value, max));
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Saturate(float value)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr float Saturate(float value)
     {
         return Clamp(value, 0.0f, 1.0f);
     }

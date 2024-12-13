@@ -26,7 +26,7 @@ namespace FE::Threading
         std::byte* ptr = static_cast<std::byte*>(m_pStackMemory);
         for (uint32_t i = 0; i < NormalFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::None);
+            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
             ptr += memorySpec.PageSize + NormalStackSize; // top of the stack
             m_Fibers[i].IsFree = true;
             m_Fibers[i].Context = Context::Create(ptr, NormalStackSize, fiberCallback);
@@ -34,14 +34,14 @@ namespace FE::Threading
         }
         for (uint32_t i = 0; i < ExtendedFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::None);
+            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
             ptr += memorySpec.PageSize + ExtendedStackSize;
             m_Fibers[i + NormalFiberCount].IsFree = true;
             m_Fibers[i + NormalFiberCount].Context = Context::Create(ptr, ExtendedStackSize, fiberCallback);
             Fmt::FormatTo(m_Fibers[i + NormalFiberCount].Name, "Fiber Big {}", i);
         }
 
-        Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::None);
+        Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
         FE_Assert(ptr + memorySpec.PageSize == static_cast<std::byte*>(m_pStackMemory) + totalGuardPagesSize + TotalStackSize);
     }
 
@@ -81,20 +81,20 @@ namespace FE::Threading
 
     void FiberPool::Return(FiberHandle fiberHandle)
     {
-        m_Fibers[fiberHandle.Value].IsFree.store(true, std::memory_order_release);
+        m_Fibers[fiberHandle.m_value].IsFree.store(true, std::memory_order_release);
     }
 
 
     void FiberPool::Update(FiberHandle fiberHandle, Context::Handle context)
     {
         if (fiberHandle)
-            m_Fibers[fiberHandle.Value].Context = context;
+            m_Fibers[fiberHandle.m_value].Context = context;
     }
 
 
     Context::TransferParams FiberPool::Switch(FiberHandle to, uintptr_t userData)
     {
-        TracyFiberEnter(m_Fibers[to.Value].Name.Data());
-        return Context::Switch(m_Fibers[to.Value].Context, userData);
+        TracyFiberEnter(m_Fibers[to.m_value].Name.Data());
+        return Context::Switch(m_Fibers[to.m_value].Context, userData);
     }
 } // namespace FE::Threading

@@ -1,6 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Logging/Trace.h>
 #include <FeCore/Containers/SmallVector.h>
+#include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/LibraryLoader.h>
 
 namespace FE
@@ -29,7 +29,7 @@ namespace FE
         bool UnloadModule(ModuleHandle moduleHandle)
         {
 #if FE_PLATFORM_WINDOWS
-            return FreeLibrary(reinterpret_cast<HMODULE>(moduleHandle.Value));
+            return FreeLibrary(reinterpret_cast<HMODULE>(moduleHandle.m_value));
 #else
 #    error Not implemented :(
 #endif
@@ -39,7 +39,7 @@ namespace FE
         void* FindModuleSymbol(ModuleHandle moduleHandle, const char* symbolName)
         {
 #if FE_PLATFORM_WINDOWS
-            return (void*)GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.Value), symbolName);
+            return (void*)GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.m_value), symbolName);
 #else
 #    error Not implemented :(
 #endif
@@ -53,6 +53,7 @@ namespace FE
             return;
 
         const bool result = Platform::UnloadModule(m_Handle);
+        m_Handle = {};
         FE_AssertMsg(result, "Couldn't unload library");
     }
 

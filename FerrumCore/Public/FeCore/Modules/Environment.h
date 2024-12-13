@@ -33,6 +33,9 @@ namespace FE::Env
     } // namespace Internal
 
 
+    bool IsDebuggerPresent();
+
+
     //! @brief A shared string with fast equality comparison that is never deallocated.
     class Name final
     {
@@ -239,11 +242,11 @@ namespace FE::Env
         template<class T>
         class GlobalVariableStorage
         {
-            std::aligned_storage_t<sizeof(T), alignof(T)> m_Storage;
-            Name m_Name;
-            uint32_t m_RefCount;
-            SpinLock m_Mutex;
-            bool m_IsConstructed;
+            std::aligned_storage_t<sizeof(T), alignof(T)> m_storage;
+            Name m_name;
+            uint32_t m_refCount;
+            SpinLock m_mutex;
+            bool m_isConstructed;
 
             friend class GlobalVariable<T>;
 
@@ -252,9 +255,9 @@ namespace FE::Env
             //!
             //! @param name - Unique name of global variable.
             GlobalVariableStorage(Name name)
-                : m_Name(name)
-                , m_RefCount(0)
-                , m_IsConstructed(false)
+                : m_name(name)
+                , m_refCount(0)
+                , m_isConstructed(false)
             {
             }
 
@@ -264,17 +267,17 @@ namespace FE::Env
             template<class... TArgs>
             void Construct(TArgs&&... args)
             {
-                std::unique_lock lk(m_Mutex);
-                new (&m_Storage) T(std::forward<TArgs>(args)...);
-                m_IsConstructed = true;
+                std::unique_lock lk(m_mutex);
+                new (&m_storage) T(std::forward<TArgs>(args)...);
+                m_isConstructed = true;
             }
 
             //! @brief Call variable's destructor. This function does _not_ deallocate memory.
             void Destruct()
             {
-                std::unique_lock lk(m_Mutex);
-                reinterpret_cast<T*>(&m_Storage)->~T();
-                m_IsConstructed = false;
+                std::unique_lock lk(m_mutex);
+                reinterpret_cast<T*>(&m_storage)->~T();
+                m_isConstructed = false;
             }
 
             //! @brief Check if variable was constructed.
@@ -282,20 +285,20 @@ namespace FE::Env
             //! @return True if Construct was called.
             [[nodiscard]] bool IsConstructed() const
             {
-                return m_IsConstructed;
+                return m_isConstructed;
             }
 
             //! @brief Get underlying variable.
             const T* Get() const
             {
-                return reinterpret_cast<const T*>(&m_Storage);
+                return reinterpret_cast<const T*>(&m_storage);
             }
 
             //! @brief Add a reference to internal counter.
             void AddRef()
             {
-                std::unique_lock lk(m_Mutex);
-                ++m_RefCount;
+                std::unique_lock lk(m_mutex);
+                ++m_refCount;
             }
 
             //! \breif Remove a reference from internal counter.
@@ -303,15 +306,15 @@ namespace FE::Env
             //! This function will call variable's destructor and deallocate memory if the reference counter reaches zero.
             void Release()
             {
-                std::unique_lock lk(m_Mutex);
+                std::unique_lock lk(m_mutex);
 
-                if (--m_RefCount == 0)
+                if (--m_refCount == 0)
                 {
                     auto& env = FE::Env::GetEnvironment();
-                    env.RemoveVariable(m_Name);
+                    env.RemoveVariable(m_name);
 
-                    if (m_IsConstructed)
-                        reinterpret_cast<T*>(&m_Storage)->~T();
+                    if (m_isConstructed)
+                        reinterpret_cast<T*>(&m_storage)->~T();
 
                     lk.unlock();
                     Memory::DefaultFree(this);
@@ -352,11 +355,11 @@ namespace FE::Env
         }
 
         //! @brief Implementation of FE::Env::CreateGlobalVariable
-        template<class T, class... Args>
-        inline GlobalVariable<T> CreateGlobalVariableImpl(Name name, Args&&... args)
+        template<class T, class... TArgs>
+        inline GlobalVariable<T> CreateGlobalVariableImpl(Name name, TArgs&&... args)
         {
             Internal::GlobalVariableStorage<T>* storage = Internal::AllocateVariableStorage<T>(name);
-            storage->Construct(std::forward<Args>(args)...);
+            storage->Construct(std::forward<TArgs>(args)...);
             return FE::Env::GlobalVariable<T>(storage);
         }
     } // namespace Internal
@@ -369,35 +372,35 @@ namespace FE::Env
     template<class T>
     class GlobalVariable
     {
-        Internal::GlobalVariableStorage<T>* m_Storage;
+        Internal::GlobalVariableStorage<T>* m_storage;
 
     public:
         using StorageType = Internal::GlobalVariableStorage<T>;
 
         //! @brief Create a _null_ global variable.
         GlobalVariable()
-            : m_Storage(nullptr)
+            : m_storage(nullptr)
         {
         }
 
         explicit GlobalVariable(StorageType* storage)
-            : m_Storage(storage)
+            : m_storage(storage)
         {
-            if (m_Storage)
-                m_Storage->AddRef();
+            if (m_storage)
+                m_storage->AddRef();
         }
 
         GlobalVariable(const GlobalVariable& other)
-            : m_Storage(other.m_Storage)
+            : m_storage(other.m_storage)
         {
-            if (m_Storage)
-                m_Storage->AddRef();
+            if (m_storage)
+                m_storage->AddRef();
         }
 
         GlobalVariable(GlobalVariable&& other) noexcept
-            : m_Storage(other.m_Storage)
+            : m_storage(other.m_storage)
         {
-            other.m_Storage = nullptr;
+            other.m_storage = nullptr;
         }
 
         GlobalVariable& operator=(const GlobalVariable& other)
@@ -420,7 +423,7 @@ namespace FE::Env
         //! @return The name of the variable.
         [[nodiscard]] Name GetName() const
         {
-            return m_Storage->m_Name;
+            return m_storage->m_name;
         }
 
         //! @brief Set this variable to _null_.
@@ -433,8 +436,8 @@ namespace FE::Env
         {
             if (!EnvironmentAttached())
                 return;
-            if (m_Storage)
-                m_Storage->Release();
+            if (m_storage)
+                m_storage->Release();
         }
 
         //! @brief Check if the variable is not empty and is constructed (initialized).
@@ -442,7 +445,7 @@ namespace FE::Env
         //! @return True if constructed.
         bool IsConstructed()
         {
-            return m_Storage && m_Storage->IsConstructed();
+            return m_storage && m_storage->IsConstructed();
         }
 
         //! @brief Swap contents of two variables.
@@ -450,35 +453,35 @@ namespace FE::Env
         //! @param other - The variable to swap the content with.
         void Swap(GlobalVariable& other)
         {
-            auto* t = other.m_Storage;
-            other.m_Storage = m_Storage;
-            m_Storage = t;
+            auto* t = other.m_storage;
+            other.m_storage = m_storage;
+            m_storage = t;
         }
 
         T* Get() const
         {
-            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return const_cast<T*>(m_Storage->Get());
+            FE_CORE_ASSERT(m_storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            return const_cast<T*>(m_storage->Get());
         }
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return *const_cast<T*>(m_Storage->Get());
+            FE_CORE_ASSERT(m_storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            return *const_cast<T*>(m_storage->Get());
         }
 
         T* operator->() const
         {
-            FE_CORE_ASSERT(m_Storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_Storage->IsConstructed(), "Global variable was not constructed");
-            return const_cast<T*>(m_Storage->Get());
+            FE_CORE_ASSERT(m_storage, "Global variable was empty");
+            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            return const_cast<T*>(m_storage->Get());
         }
 
         explicit operator bool() const
         {
-            return m_Storage;
+            return m_storage;
         }
     };
 

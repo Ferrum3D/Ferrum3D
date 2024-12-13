@@ -16,6 +16,8 @@
 
     Public/FeCore/Console/Console.h
 
+    Public/FeCore/Containers/BitSet.h
+    Public/FeCore/Containers/BitStorage.h
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/HashTables.h
     Public/FeCore/Containers/LRUCacheMap.h
