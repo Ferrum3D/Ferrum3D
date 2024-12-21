@@ -95,9 +95,9 @@ namespace FE::Graphics
         m_sourceExtensions.push_back(".hlsl");
         m_sourceExtensions.push_back(".hlsli");
 
-        m_spec.AssetTypeName = Env::Name{ ShaderAssetStorage::kAssetTypeName };
-        m_spec.FileExtension = ".spv";
-        m_spec.SourceExtensions = m_sourceExtensions;
+        m_spec.m_assetTypeName = Env::Name{ ShaderAssetStorage::kAssetTypeName };
+        m_spec.m_fileExtension = ".spv";
+        m_spec.m_sourceExtensions = m_sourceExtensions;
     }
 
 
@@ -118,7 +118,7 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        const IO::FixedPath spvFilename = IO::FixedPath{ assetName } + m_spec.FileExtension;
+        const IO::FixedPath spvFilename = IO::FixedPath{ assetName } + m_spec.m_fileExtension;
         // TODO: check if already compiled
         // if (m_streamFactory->FileExists(spvFilename))
         // {
@@ -126,7 +126,7 @@ namespace FE::Graphics
         //     const IO::FileStats stats = spvFile->GetStats();
         // }
 
-        for (const StringSlice extension : m_spec.SourceExtensions)
+        for (const StringSlice extension : m_spec.m_sourceExtensions)
         {
             const IO::FixedPath path = IO::FixedPath{ assetName } + extension;
             if (!m_streamFactory->FileExists(path))

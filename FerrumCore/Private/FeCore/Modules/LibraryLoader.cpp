@@ -1,5 +1,5 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Containers/SmallVector.h>
+#include <festd/vector.h>
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/LibraryLoader.h>
 
@@ -49,11 +49,11 @@ namespace FE
 
     void LibraryLoader::Release()
     {
-        if (!m_Handle)
+        if (!m_handle)
             return;
 
-        const bool result = Platform::UnloadModule(m_Handle);
-        m_Handle = {};
+        const bool result = Platform::UnloadModule(m_handle);
+        m_handle = {};
         FE_AssertMsg(result, "Couldn't unload library");
     }
 

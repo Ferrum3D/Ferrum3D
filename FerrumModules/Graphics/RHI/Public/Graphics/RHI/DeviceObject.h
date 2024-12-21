@@ -27,8 +27,8 @@ namespace FE::Graphics::RHI
 
         void DoDispose()
         {
-            std::pmr::memory_resource* pAllocator = m_pAllocator;
-            const size_t allocationSize = m_AllocationSize;
+            std::pmr::memory_resource* pAllocator = m_allocator;
+            const size_t allocationSize = m_allocationSize;
             this->~DeviceObject();
             pAllocator->deallocate(this, allocationSize);
         }

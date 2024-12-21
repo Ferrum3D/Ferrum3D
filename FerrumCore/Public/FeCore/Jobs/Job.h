@@ -2,33 +2,33 @@
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Memory/Memory.h>
-#include <atomic>
+#include <festd/intrusive_list.h>
 
 namespace FE
 {
-    class WaitGroup;
+    struct WaitGroup;
 
 
-    class Job : public festd::intrusive_list_node
+    struct Job : public festd::intrusive_list_node
     {
-        friend class JobSystem;
-        Rc<WaitGroup> m_pCompletionWaitGroup;
-
-    public:
         virtual ~Job() = default;
         virtual void Execute() = 0;
 
-        inline void Schedule(IJobSystem* pJobSystem, WaitGroup* pCompletionWaitGroup = nullptr,
-                             JobPriority priority = JobPriority::kNormal)
+        void Schedule(IJobSystem* pJobSystem, WaitGroup* pCompletionWaitGroup = nullptr,
+                      JobPriority priority = JobPriority::kNormal)
         {
-            FE_CORE_ASSERT(m_pCompletionWaitGroup == nullptr, "Already scheduled");
+            FE_CORE_ASSERT(m_completionWaitGroup == nullptr, "Already scheduled");
             if (pCompletionWaitGroup)
             {
-                m_pCompletionWaitGroup = pCompletionWaitGroup;
+                m_completionWaitGroup = pCompletionWaitGroup;
                 pCompletionWaitGroup->Add(1);
             }
 
             pJobSystem->AddJob(this, priority);
         }
+
+    private:
+        friend struct JobSystem;
+        Rc<WaitGroup> m_completionWaitGroup;
     };
 } // namespace FE

@@ -15,15 +15,15 @@ namespace FE::Memory
         {
             friend class LinearAllocator;
 
-            Page* m_pPage = nullptr;
-            size_t m_Offset = sizeof(Page);
+            Page* m_page = nullptr;
+            size_t m_offset = sizeof(Page);
         };
 
     private:
-        size_t m_PageByteSize = 0;
-        std::pmr::memory_resource* m_pPageAllocator = nullptr;
-        Page* m_pFirstPage = nullptr;
-        Marker m_CurrentMarker;
+        size_t m_pageByteSize = 0;
+        std::pmr::memory_resource* m_pageAllocator = nullptr;
+        Page* m_firstPage = nullptr;
+        Marker m_currentMarker;
 
         void NewPage();
 
@@ -37,42 +37,42 @@ namespace FE::Memory
 
     public:
         LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pPageAllocator = nullptr);
-        ~LinearAllocator();
+        ~LinearAllocator() override;
 
         void Collect();
 
-        inline Marker GetMarker() const
+        Marker GetMarker() const
         {
-            return m_CurrentMarker;
+            return m_currentMarker;
         }
 
-        inline void Restore(const Marker& marker)
+        void Restore(const Marker& marker)
         {
-            m_CurrentMarker = marker;
+            m_currentMarker = marker;
         }
 
-        inline void Clear()
+        void Clear()
         {
-            m_CurrentMarker = {};
+            m_currentMarker = {};
         }
     };
 
 
     inline void* LinearAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
     {
-        if (AlignUp(sizeof(Page), byteAlignment) + byteSize > m_PageByteSize)
+        if (AlignUp(sizeof(Page), byteAlignment) + byteSize > m_pageByteSize)
             return nullptr;
 
-        if (!m_CurrentMarker.m_pPage)
+        if (!m_currentMarker.m_page)
             NewPage();
 
-        const size_t newOffset = AlignUp(m_CurrentMarker.m_Offset, byteAlignment) + byteSize;
-        if (newOffset > m_PageByteSize)
+        const size_t newOffset = AlignUp(m_currentMarker.m_offset, byteAlignment) + byteSize;
+        if (newOffset > m_pageByteSize)
             NewPage();
 
-        const size_t oldOffset = m_CurrentMarker.m_Offset;
-        m_CurrentMarker.m_Offset = newOffset;
+        const size_t oldOffset = m_currentMarker.m_offset;
+        m_currentMarker.m_offset = newOffset;
 
-        return reinterpret_cast<uint8_t*>(m_CurrentMarker.m_pPage) + oldOffset;
+        return reinterpret_cast<uint8_t*>(m_currentMarker.m_page) + oldOffset;
     }
 } // namespace FE::Memory

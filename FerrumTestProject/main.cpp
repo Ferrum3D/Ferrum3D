@@ -106,7 +106,7 @@ protected:
     void Tick(const FE::FrameEventArgs& frameEventArgs) override
     {
         auto frameIndex = m_SwapChain->GetCurrentFrameIndex();
-        auto delta      = frameEventArgs.DeltaTime;
+        auto delta      = frameEventArgs.m_deltaTime;
 
         m_Fences[frameIndex]->WaitOnCPU();
         m_Window->PollEvents();
@@ -116,7 +116,7 @@ protected:
             { m_CommandBuffers[imageIndex].Get() }, m_Fences[frameIndex].Get(), RHI::SubmitFlags::FrameBeginEnd);
         m_SwapChain->Present();
 
-        if ((frameEventArgs.FrameIndex + 1) % 1000 == 0)
+        if ((frameEventArgs.m_frameIndex + 1) % 1000 == 0)
         {
             FE_LOG_MESSAGE("Counter: {}", JobCounter);
             FE_LOG_MESSAGE("Delta: {}sec, FPS: {}", delta, 1.0f / delta);

@@ -20,7 +20,7 @@ TEST(DateTime, Basic)
 TEST(DateTime, ConvertTimeZone)
 {
     const auto timeZoneInfo = Platform::GetTimeZoneInfo();
-    printf("Time zone: \"%s\" (%d bias)\n", timeZoneInfo.StandardName.Data(), timeZoneInfo.MinuteBias);
+    printf("Time zone: \"%s\" (%d bias)\n", timeZoneInfo.m_standardName.Data(), timeZoneInfo.m_minuteBias);
 
     const DateTime<TZ::Local> localTime = DateTime<TZ::Local>::Now();
     const DateTime<TZ::UTC> utcTime = TZ::Convert::To<TZ::UTC>(localTime);
@@ -29,9 +29,15 @@ TEST(DateTime, ConvertTimeZone)
     EXPECT_EQ(diff.TotalSeconds(), 0);
     EXPECT_TRUE(diff.Empty());
 
+    const auto normalizeMinuteBias = [](int32_t minuteBias) {
+        while (minuteBias < 0)
+            minuteBias += 24 * 60;
+        return minuteBias;
+    };
+
     const uint32_t minuteDiff = utcTime.Minute() - localTime.Minute();
     const uint32_t hourDiff = utcTime.Hour() - localTime.Hour();
-    EXPECT_EQ(minuteDiff + hourDiff * 60, timeZoneInfo.MinuteBias);
+    EXPECT_EQ(normalizeMinuteBias(minuteDiff + hourDiff * 60), normalizeMinuteBias(timeZoneInfo.m_minuteBias));
 
     EXPECT_EQ(localTime, TZ::Convert::To<TZ::Local>(utcTime));
     EXPECT_EQ(utcTime, TZ::Convert::To<TZ::UTC>(localTime));

@@ -23,20 +23,20 @@ namespace FE
     {
         std::array<uint8_t, 16> Data{};
 
-        inline UUID() = default;
+        UUID() = default;
 
-        inline UUID(const UUID& other) noexcept
+        UUID(const UUID& other) noexcept
         {
             memcpy(Data.data(), other.Data.data(), 16);
         }
 
-        inline UUID& operator=(const UUID& other) noexcept
+        UUID& operator=(const UUID& other) noexcept
         {
             memcpy(Data.data(), other.Data.data(), 16);
             return *this;
         }
 
-        inline static UUID FromGUID(const GUID& value) noexcept
+        static UUID FromGUID(const GUID& value) noexcept
         {
             UUID result;
             memcpy(result.Data.data(), &value, 16);
@@ -47,13 +47,13 @@ namespace FE
         }
 
         //! @brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
-        inline explicit UUID(const char* str) noexcept
+        explicit UUID(const char* str) noexcept
         {
             const bool result = TryParse(str, *this, false);
             FE_CORE_ASSERT(result, "Invalid format");
         }
 
-        inline static bool TryParse(const char* str, UUID& result, bool assertLength = true)
+        static bool TryParse(const char* str, UUID& result, bool assertLength = true)
         {
             static char digits[] = "0123456789ABCDEF";
             constexpr auto getValue = [](char c) {
@@ -80,15 +80,15 @@ namespace FE
             };
 
             // clang-format off
-            if (!parse(4))       return false;
-            if (*str++ != '-')   return false;
-            if (!parse(2))       return false;
-            if (*str++ != '-')   return false;
-            if (!parse(2))       return false;
-            if (*str++ != '-')   return false;
-            if (!parse(2))       return false;
-            if (*str++ != '-')   return false;
-            if (!parse(6))       return false;
+            if (!parse(4))  return false;
+            if (*str++ != '-') return false;
+            if (!parse(2))  return false;
+            if (*str++ != '-') return false;
+            if (!parse(2))  return false;
+            if (*str++ != '-') return false;
+            if (!parse(2))  return false;
+            if (*str++ != '-') return false;
+            if (!parse(6))  return false;
             // clang-format on
 
             if (*str != '\0' && assertLength)
@@ -125,7 +125,7 @@ namespace FE
 template<>
 struct eastl::hash<FE::UUID>
 {
-    inline size_t operator()(const FE::UUID& value) const noexcept
+    size_t operator()(const FE::UUID& value) const noexcept
     {
         return FE::DefaultHash(value.Data.data(), value.Data.size());
     }

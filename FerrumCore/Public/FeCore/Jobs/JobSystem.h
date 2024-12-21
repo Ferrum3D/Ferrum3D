@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/Job.h>
-#include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Parallel/Fiber.h>
 #include <FeCore/Parallel/Semaphore.h>
 #include <FeCore/Parallel/Thread.h>
@@ -10,90 +9,100 @@ namespace FE
 {
     struct FiberWaitEntry final : festd::intrusive_list_node
     {
-        Threading::FiberHandle Fiber;
-        JobPriority Priority;
-        std::atomic<bool> SwitchCompleted;
+        Threading::FiberHandle m_fiber;
+        JobPriority m_priority;
+        std::atomic<bool> m_switchCompleted;
     };
 
 
-    class JobSystem final : public IJobSystem
+    struct JobSystem final : public IJobSystem
     {
-        friend class WaitGroup;
+        FE_RTTI_Class(JobSystem, "6754DA31-46FA-4661-A46E-2787E6D9FD29");
+
+        explicit JobSystem();
+        ~JobSystem() override;
+
+        void Start() override;
+        void Stop() override;
+        void AddJob(Job* pJob, JobPriority priority) override;
+
+    private:
+        friend struct WaitGroup;
 
         void* AllocateSmallBlock(size_t byteSize) override;
         void FreeSmallBlock(void* ptr, size_t byteSize) override;
 
-        inline void SwitchFromWaitingFiber(uint32_t workerIndex, FiberWaitEntry& entry)
+        void SwitchFromWaitingFiber(uint32_t workerIndex, FiberWaitEntry& entry)
         {
-            Worker& worker = m_Workers[workerIndex];
-            worker.pLastWaitEntry = &entry;
-            worker.PrevFiber = worker.CurrentFiber;
-            worker.CurrentFiber = m_FiberPool.Rent(false);
+            Worker& worker = m_workers[workerIndex];
+            worker.m_lastWaitEntry = &entry;
+            worker.m_prevFiber = worker.m_currentFiber;
+            worker.m_currentFiber = m_fiberPool.Rent(false);
 
-            const Context::TransferParams tp = m_FiberPool.Switch(worker.CurrentFiber, reinterpret_cast<uintptr_t>(this));
+            const Context::TransferParams tp = m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
             CleanUpAfterSwitch(tp);
         }
 
-        inline void AddReadyFiber(FiberWaitEntry* pEntry)
+        void AddReadyFiber(FiberWaitEntry* pEntry)
         {
-            JobQueue& queue = m_JobQueues[enum_cast(pEntry->Priority)];
+            JobQueue& queue = m_jobQueues[festd::to_underlying(pEntry->m_priority)];
 
-            std::lock_guard lk{ queue.Lock };
-            queue.ReadyFibersQueue.push_back(*pEntry);
+            std::lock_guard lk{ queue.m_lock };
+            queue.m_readyFibersQueue.push_back(*pEntry);
         }
 
-        inline void CleanUpAfterSwitch(Context::TransferParams transferParams)
+        void CleanUpAfterSwitch(Context::TransferParams transferParams)
         {
             const uint32_t workerIndex = GetWorkerIndex();
-            Worker& worker = m_Workers[workerIndex];
-            m_FiberPool.Update(worker.PrevFiber, transferParams.ContextHandle);
+            Worker& worker = m_workers[workerIndex];
+            m_fiberPool.Update(worker.m_prevFiber, transferParams.m_contextHandle);
 
-            if (worker.pLastWaitEntry)
+            if (worker.m_lastWaitEntry)
             {
-                worker.pLastWaitEntry->SwitchCompleted.store(true, std::memory_order_release);
-                worker.pLastWaitEntry = nullptr;
+                worker.m_lastWaitEntry->m_switchCompleted.store(true, std::memory_order_release);
+                worker.m_lastWaitEntry = nullptr;
             }
-            else if (worker.PrevFiber)
+            else if (worker.m_prevFiber)
             {
-                FE_CORE_ASSERT(worker.pLastWaitEntry == nullptr, "Wait entry was not cleaned up");
-                m_FiberPool.Return(worker.PrevFiber);
+                FE_CORE_ASSERT(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
+                m_fiberPool.Return(worker.m_prevFiber);
             }
 
-            worker.PrevFiber.Reset();
+            worker.m_prevFiber.Reset();
         }
 
         struct JobQueue final
         {
-            SpinLock Lock;
-            festd::intrusive_list<Job> Queue;
-            festd::intrusive_list<FiberWaitEntry> ReadyFibersQueue;
+            Threading::SpinLock m_lock;
+            festd::intrusive_list<Job> m_queue;
+            festd::intrusive_list<FiberWaitEntry> m_readyFibersQueue;
         };
 
         struct alignas(Memory::kCacheLineSize) Worker final
         {
-            uint64_t ThreadID;
-            ThreadHandle Thread;
-            Threading::FiberHandle PrevFiber;
-            Threading::FiberHandle CurrentFiber;
-            FiberWaitEntry* pLastWaitEntry = nullptr;
-            Context::Handle ExitContext;
-            JobPriority Priority = JobPriority::kNormal;
+            uint64_t m_threadId;
+            ThreadHandle m_thread;
+            Threading::FiberHandle m_prevFiber;
+            Threading::FiberHandle m_currentFiber;
+            FiberWaitEntry* m_lastWaitEntry = nullptr;
+            Context::Handle m_exitContext;
+            JobPriority m_priority = JobPriority::kNormal;
         };
 
-        JobQueue m_JobQueues[enum_cast(JobPriority::kCount)];
-        festd::fixed_vector<Worker, 64> m_Workers;
-        Threading::FiberPool m_FiberPool;
+        JobQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)];
+        festd::fixed_vector<Worker, 64> m_workers;
+        Threading::FiberPool m_fiberPool;
 
-        Semaphore m_Semaphore;
-        std::atomic<bool> m_ShouldExit;
-        std::atomic<bool> m_InitialJobPickedUp;
+        Threading::Semaphore m_semaphore;
+        std::atomic<bool> m_shouldExit;
+        std::atomic<bool> m_initialJobPickedUp;
 
-        inline uint32_t GetWorkerIndex() const
+        uint32_t GetWorkerIndex() const
         {
             const uint64_t threadID = GetCurrentThreadID();
-            for (uint32_t threadIndex = 0; threadIndex < m_Workers.size(); ++threadIndex)
+            for (uint32_t threadIndex = 0; threadIndex < m_workers.size(); ++threadIndex)
             {
-                if (m_Workers[threadIndex].ThreadID == threadID)
+                if (m_workers[threadIndex].m_threadId == threadID)
                     return threadIndex;
             }
 
@@ -105,15 +114,5 @@ namespace FE
         void FiberProc(Context::TransferParams transferParams);
 
         static void FiberProcImpl(Context::TransferParams transferParams);
-
-    public:
-        FE_RTTI_Class(JobSystem, "6754DA31-46FA-4661-A46E-2787E6D9FD29");
-
-        explicit JobSystem();
-        ~JobSystem() override;
-
-        void Start() override;
-        void Stop() override;
-        void AddJob(Job* pJob, JobPriority priority) override;
     };
 } // namespace FE

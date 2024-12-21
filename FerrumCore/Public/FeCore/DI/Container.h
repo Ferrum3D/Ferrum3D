@@ -1,38 +1,38 @@
 ﻿#pragma once
-#include <FeCore/Containers/HashTables.h>
 #include <FeCore/DI/LifetimeScope.h>
 #include <FeCore/DI/Registry.h>
 #include <FeCore/Parallel/Mutex.h>
+#include <festd/unordered_map.h>
 
 namespace FE::DI
 {
-    class Container final : public IServiceProvider
+    struct Container final : public IServiceProvider
     {
+        ServiceRegistryRoot* GetRegistryRoot()
+        {
+            return &m_registryRoot;
+        }
+
+        ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) override;
+
+    private:
         struct CallbackImpl final : ServiceRegistryCallback
         {
-            inline void OnDetach(ServiceRegistry* pRegistry) override
+            void OnDetach(ServiceRegistry* pRegistry) override
             {
                 FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
                 Container* pParent =
-                    reinterpret_cast<Container*>(reinterpret_cast<uintptr_t>(this) - offsetof(Container, m_RegistryCallback));
+                    reinterpret_cast<Container*>(reinterpret_cast<uintptr_t>(this) - offsetof(Container, m_registryCallback));
                 FE_POP_CLANG_WARNING
 
-                std::lock_guard lk{ pParent->m_Lock };
+                std::lock_guard lk{ pParent->m_lock };
                 LifetimeScope* pRootLifetimeScope = pRegistry->GetRootLifetimeScope();
                 if (pRootLifetimeScope)
                     Memory::DefaultDelete(pRootLifetimeScope);
             }
-        } m_RegistryCallback;
+        } m_registryCallback;
 
-        Mutex m_Lock;
-        ServiceRegistryRoot m_RegistryRoot;
-
-    public:
-        inline ServiceRegistryRoot* GetRegistryRoot()
-        {
-            return &m_RegistryRoot;
-        }
-
-        ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) override;
+        Mutex m_lock;
+        ServiceRegistryRoot m_registryRoot;
     };
 } // namespace FE::DI

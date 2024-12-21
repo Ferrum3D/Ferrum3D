@@ -6,125 +6,126 @@
 
 namespace FE::DI
 {
-    class ServiceRegistryBuilder;
+    struct ServiceRegistryBuilder;
 
 
     namespace Internal
     {
         struct ServiceRegistrationSpec final
         {
-            ServiceRegistration* pRegistration = nullptr;
-            ServiceActivator* pActivator = nullptr;
+            ServiceRegistration* m_registration = nullptr;
+            ServiceActivator* m_activator = nullptr;
         };
 
 
-        class [[nodiscard]] RegistryToBuilder final
+        struct [[nodiscard]] RegistryToBuilder final
         {
+            void InScope(Lifetime lifetime)
+            {
+                m_target.m_registration->SetLifetime(lifetime);
+            }
+
+            void InSingletonScope()
+            {
+                InScope(Lifetime::kSingleton);
+            }
+
+            void InThreadScope()
+            {
+                InScope(Lifetime::kThread);
+            }
+
+            void InTransientScope()
+            {
+                InScope(Lifetime::kTransient);
+            }
+
+        private:
             template<class TInterface>
-            friend class RegistryBindBuilder;
+            friend struct RegistryBindBuilder;
 
-            ServiceRegistrationSpec m_Target;
+            ServiceRegistrationSpec m_target;
 
-            inline explicit RegistryToBuilder(ServiceRegistrationSpec registrationSpec)
-                : m_Target(registrationSpec)
+            explicit RegistryToBuilder(ServiceRegistrationSpec registrationSpec)
+                : m_target(registrationSpec)
             {
-            }
-
-        public:
-            inline void InScope(Lifetime lifetime)
-            {
-                m_Target.pRegistration->SetLifetime(lifetime);
-            }
-
-            inline void InSingletonScope()
-            {
-                InScope(Lifetime::Singleton);
-            }
-
-            inline void InThreadScope()
-            {
-                InScope(Lifetime::Thread);
-            }
-
-            inline void InTransientScope()
-            {
-                InScope(Lifetime::Transient);
             }
         };
+
 
         template<class TInterface>
-        class [[nodiscard]] RegistryBindBuilder final
+        struct [[nodiscard]] RegistryBindBuilder final
         {
-            static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TInterface>);
-
-            friend class DI::ServiceRegistryBuilder;
-            ServiceRegistrationSpec m_Target;
-
-            inline RegistryBindBuilder(ServiceRegistrationSpec registrationSpec)
-                : m_Target(registrationSpec)
-            {
-            }
-
-        public:
             template<class TImpl>
-            inline RegistryToBuilder To()
+            RegistryToBuilder To()
             {
                 if constexpr (!std::is_same_v<TImpl, TInterface>)
                 {
                     FE_CORE_ASSERT(fe_typeid<TImpl>() != fe_typeid<TInterface>(), "");
                 }
 
-                *m_Target.pActivator = ServiceActivator::CreateForType<TImpl>();
-                return RegistryToBuilder(m_Target);
+                *m_target.m_activator = ServiceActivator::CreateForType<TImpl>();
+                return RegistryToBuilder(m_target);
             }
 
-            inline RegistryToBuilder ToFunc(ActivatorFunction&& function)
+            RegistryToBuilder ToFunc(ActivatorFunction&& function)
             {
-                *m_Target.pActivator = ServiceActivator::CreateFromFunction(std::forward<ActivatorFunction>(function));
-                m_Target.pRegistration->SetFunction(true);
-                return RegistryToBuilder(m_Target);
+                *m_target.m_activator = ServiceActivator::CreateFromFunction(std::forward<ActivatorFunction>(function));
+                m_target.m_registration->SetFunction(true);
+                return RegistryToBuilder(m_target);
             }
 
-            inline void ToConst(TInterface* pConst)
+            void ToConst(TInterface* pConst)
             {
                 auto factory = [pConst](IServiceProvider*, Memory::RefCountedObjectBase** ppResult) {
                     *ppResult = pConst;
-                    return ResultCode::Success;
+                    return ResultCode::kSuccess;
                 };
 
-                *m_Target.pActivator = ServiceActivator::CreateFromFunction(factory);
-                m_Target.pRegistration->SetLifetime(Lifetime::Singleton);
-                m_Target.pRegistration->SetConstant(true);
+                *m_target.m_activator = ServiceActivator::CreateFromFunction(factory);
+                m_target.m_registration->SetLifetime(Lifetime::kSingleton);
+                m_target.m_registration->SetConstant(true);
                 pConst->AddRef();
             }
 
-            inline RegistryToBuilder ToSelf()
+            RegistryToBuilder ToSelf()
             {
-                *m_Target.pActivator = ServiceActivator::CreateForType<TInterface>();
-                return RegistryToBuilder(m_Target);
+                *m_target.m_activator = ServiceActivator::CreateForType<TInterface>();
+                return RegistryToBuilder(m_target);
+            }
+
+        private:
+            static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TInterface>);
+
+            friend struct DI::ServiceRegistryBuilder;
+            ServiceRegistrationSpec m_target;
+
+            RegistryBindBuilder(ServiceRegistrationSpec registrationSpec)
+                : m_target(registrationSpec)
+            {
             }
         };
     } // namespace Internal
 
 
-    class ServiceRegistry;
+    struct ServiceRegistry;
 
 
-    class ServiceRegistryBuilder final
+    struct ServiceRegistryBuilder final
     {
-        Rc<ServiceRegistry> m_pRegistry;
-
-        Internal::ServiceRegistrationSpec BindImpl(const UUID& id);
-
-    public:
         ServiceRegistryBuilder(ServiceRegistry* pRegistry);
 
         void Build();
 
         template<class TInterface, class = std::enable_if_t<!std::is_base_of_v<ServiceLocatorObjectMarker, TInterface>>>
-        inline Internal::RegistryBindBuilder<TInterface> Bind()
+        Internal::RegistryBindBuilder<TInterface> Bind()
         {
             return BindImpl(fe_typeid<TInterface>());
         }
+
+    private:
+        Rc<ServiceRegistry> m_registry;
+
+        Internal::ServiceRegistrationSpec BindImpl(const UUID& id);
     };
 } // namespace FE::DI

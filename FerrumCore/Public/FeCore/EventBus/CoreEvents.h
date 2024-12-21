@@ -5,17 +5,17 @@ namespace FE
 {
     struct FrameEventArgs final
     {
-        uint32_t FrameIndex;
-        float DeltaTime;
+        uint32_t m_frameIndex;
+        float m_deltaTime;
     };
 
 
     struct FrameEvents
     {
-        inline virtual void OnFrameStart(const FrameEventArgs&) {}
-        inline virtual void OnUpdate(const FrameEventArgs&) {}
-        inline virtual void OnLateUpdate(const FrameEventArgs&) {}
-        inline virtual void OnFrameEnd(const FrameEventArgs&) {}
+        virtual void OnFrameStart(const FrameEventArgs&) {}
+        virtual void OnUpdate(const FrameEventArgs&) {}
+        virtual void OnLateUpdate(const FrameEventArgs&) {}
+        virtual void OnFrameEnd(const FrameEventArgs&) {}
     };
 
 

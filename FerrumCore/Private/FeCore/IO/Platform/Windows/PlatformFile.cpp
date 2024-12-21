@@ -1,6 +1,6 @@
-﻿#include <FeCore/Containers/SmallVector.h>
-#include <FeCore/IO/Platform/PlatformFile.h>
+﻿#include <FeCore/IO/Platform/PlatformFile.h>
 #include <FeCore/Platform/Windows/Common.h>
+#include <festd/vector.h>
 
 namespace FE::IO::Platform
 {
@@ -139,14 +139,14 @@ namespace FE::IO::Platform
         using namespace FE::Platform;
 
         const WideString<MAX_PATH> widePath{ filePath };
-        if (widePath.Value.empty())
+        if (widePath.m_value.empty())
             return ResultCode::InvalidArgument;
 
         const DWORD desiredFileAccessFlags = GetFileAccessFlags(openMode);
         const DWORD fileShareMode = GetFileShareMode(openMode);
         const DWORD fileCreationDisposition = GetFileCreationDisposition(openMode);
 
-        const HANDLE nativeFileHandle = CreateFileW(widePath.Value.data(),
+        const HANDLE nativeFileHandle = CreateFileW(widePath.m_value.data(),
                                                     desiredFileAccessFlags,
                                                     fileShareMode,
                                                     nullptr,
@@ -177,10 +177,10 @@ namespace FE::IO::Platform
         if (!GetFileSizeEx(hFile, &fileSize))
             return ConvertWin32Error(GetLastError());
 
-        result.CreationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(creationFT));
-        result.AccessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
-        result.ModificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
-        result.ByteSize = static_cast<uint64_t>(fileSize.QuadPart);
+        result.m_creationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(creationFT));
+        result.m_accessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
+        result.m_modificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
+        result.m_byteSize = static_cast<uint64_t>(fileSize.QuadPart);
         return ResultCode::Success;
     }
 
@@ -193,10 +193,10 @@ namespace FE::IO::Platform
         using namespace FE::Platform;
 
         const WideString<MAX_PATH> widePath{ filePath };
-        if (widePath.Value.empty())
+        if (widePath.m_value.empty())
             return FileAttributeFlags::kInvalid;
 
-        const DWORD attributes = GetFileAttributesW(widePath.Value.data());
+        const DWORD attributes = GetFileAttributesW(widePath.m_value.data());
         if (attributes == INVALID_FILE_ATTRIBUTES)
             return FileAttributeFlags::kInvalid;
 

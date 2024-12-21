@@ -8,19 +8,19 @@ namespace FE::Memory
     PlatformSpec GetPlatformSpec()
     {
         static PlatformSpec s_result;
-        if (s_result.PageSize != 0)
+        if (s_result.m_pageSize != 0)
             return s_result;
 
-        static SpinLock s_spinLock;
+        static Threading::SpinLock s_spinLock;
         std::lock_guard lk{ s_spinLock };
-        if (s_result.PageSize != 0)
+        if (s_result.m_pageSize != 0)
             return s_result;
 
 #if FE_PLATFORM_WINDOWS
         SYSTEM_INFO info;
         GetSystemInfo(&info);
-        s_result.PageSize = info.dwPageSize;
-        s_result.Granularity = info.dwAllocationGranularity;
+        s_result.m_pageSize = info.dwPageSize;
+        s_result.m_granularity = info.dwAllocationGranularity;
 #else
 #    error Not implemented :(
 #endif
@@ -31,7 +31,7 @@ namespace FE::Memory
 
     void* AllocateVirtual(size_t byteSize)
     {
-        FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().Granularity) == byteSize,
+        FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
                        "Size must be aligned to virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS

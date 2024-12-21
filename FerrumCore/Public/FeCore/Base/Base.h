@@ -1,21 +1,13 @@
 ﻿#pragma once
-#include <EASTL/finally.h>
-#include <EASTL/fixed_function.h>
-#include <EASTL/fixed_vector.h>
-#include <EASTL/functional.h>
-#include <EASTL/intrusive_list.h>
-#include <EASTL/sort.h>
-#include <EASTL/span.h>
-#include <EASTL/vector.h>
 #include <FeCore/Base/BaseMath.h>
 #include <FeCore/Base/Hash.h>
 #include <FeCore/Base/Platform.h>
 #include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <festd/base.h>
+#include <festd/span.h>
 #include <intrin.h>
-#include <mutex>
-#include <string_view>
 #include <tracy/Tracy.hpp>
 
 #if FE_DEBUG
@@ -37,43 +29,35 @@
 
 namespace FE
 {
-    static_assert(sizeof(size_t) == sizeof(int64_t));
-
-#ifdef FE_DEBUG
-    //! @brief True on debug builds.
-    inline constexpr bool IsDebugBuild = true;
-#else
-    //! @brief True on debug builds.
-    inline constexpr bool IsDebugBuild = false;
-#endif
-
     inline constexpr uint32_t kInvalidIndex = static_cast<uint32_t>(-1);
 
     template<class TEnum>
-    inline constexpr std::underlying_type_t<TEnum> DefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
+    inline constexpr std::underlying_type_t<TEnum> kDefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
+
 
     //! @brief Empty structure with no members.
-    struct EmptyStruct
+    struct EmptyStruct final
     {
     };
 
+
     //! @brief Location in source file.
-    struct SourceLocation
+    struct SourceLocation final
     {
-        const char* FileName = "";
-        uint32_t LineNumber = 0;
+        const char* m_fileName = "";
+        uint32_t m_lineNumber = 0;
 
         SourceLocation() = default;
 
         static constexpr SourceLocation Current(const char* file = __builtin_FILE(), uint32_t line = __builtin_LINE()) noexcept
         {
-            return SourceLocation(file, line);
+            return { file, line };
         }
 
     private:
         constexpr SourceLocation(const char* file, uint32_t line) noexcept
-            : FileName(file)
-            , LineNumber(line)
+            : m_fileName(file)
+            , m_lineNumber(line)
         {
         }
     };
@@ -115,6 +99,11 @@ namespace FE
         {
             return lhs.m_value != rhs.m_value;
         }
+
+    private:
+        TypedHandle() = default;
+
+        friend T;
     };
 
 
@@ -173,34 +162,6 @@ namespace FE
         };
     } // namespace Memory::Internal
 
-
-    namespace festd
-    {
-        namespace pmr
-        {
-            template<class T>
-            using vector = eastl::vector<T, Memory::Internal::EASTLPolymorphicAllocator>;
-        }
-
-        template<class T, uint32_t TSize>
-        using fixed_vector = eastl::fixed_vector<T, TSize, false>;
-
-        inline constexpr size_t dynamic_extent = static_cast<size_t>(-1);
-
-        using eastl::fixed_function;
-        using eastl::intrusive_list;
-        using eastl::intrusive_list_node;
-        using eastl::span;
-        using eastl::vector;
-
-        template<typename TFunc>
-        [[nodiscard]] auto defer(TFunc&& f)
-        {
-            return eastl::finally<TFunc>(std::forward<TFunc>(f));
-        }
-    } // namespace festd
-
-
     namespace Memory
     {
         inline constexpr size_t kDefaultAlignment = 16;
@@ -246,33 +207,4 @@ namespace FE
             return seed;                                                                                                         \
         }                                                                                                                        \
     };
-
-    //! @brief Define bitwise operations on `enum`.
-    //!
-    //! The macro defines bitwise or, and, xor operators.
-#define FE_ENUM_OPERATORS(Name)                                                                                                  \
-    inline constexpr Name operator|(Name a, Name b)                                                                              \
-    {                                                                                                                            \
-        return Name(((std::underlying_type_t<Name>)a) | ((std::underlying_type_t<Name>)b));                                      \
-    }                                                                                                                            \
-    inline constexpr Name& operator|=(Name& a, Name b)                                                                           \
-    {                                                                                                                            \
-        return a = a | b;                                                                                                        \
-    }                                                                                                                            \
-    inline constexpr Name operator&(Name a, Name b)                                                                              \
-    {                                                                                                                            \
-        return Name(((std::underlying_type_t<Name>)a) & ((std::underlying_type_t<Name>)b));                                      \
-    }                                                                                                                            \
-    inline constexpr Name& operator&=(Name& a, Name b)                                                                           \
-    {                                                                                                                            \
-        return a = a & b;                                                                                                        \
-    }                                                                                                                            \
-    inline constexpr Name operator^(Name a, Name b)                                                                              \
-    {                                                                                                                            \
-        return Name(((std::underlying_type_t<Name>)a) ^ ((std::underlying_type_t<Name>)b));                                      \
-    }                                                                                                                            \
-    inline constexpr Name& operator^=(Name& a, Name b)                                                                           \
-    {                                                                                                                            \
-        return a = a ^ b;                                                                                                        \
-    }
 } // namespace FE

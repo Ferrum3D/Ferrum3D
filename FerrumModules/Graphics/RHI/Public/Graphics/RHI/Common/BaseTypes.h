@@ -8,7 +8,7 @@ namespace FE::Graphics::RHI
     enum class ResultCode : int32_t
     {
         kSuccess = 0,
-        kUnknownError = DefaultErrorCode<ResultCode>,
+        kUnknownError = kDefaultErrorCode<ResultCode>,
     };
 
 

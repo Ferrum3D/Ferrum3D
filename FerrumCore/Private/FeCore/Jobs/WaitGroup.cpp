@@ -5,10 +5,10 @@ namespace FE
 {
     FE_FORCE_INLINE bool WaitGroup::SignalSlowImpl()
     {
-        uint64_t lockAndQueue = m_LockAndQueue.load(std::memory_order_acquire);
+        uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
         if (lockAndQueue == 0)
         {
-            if (m_LockAndQueue.compare_exchange_weak(lockAndQueue, 1, std::memory_order_acquire))
+            if (m_lockAndQueue.compare_exchange_weak(lockAndQueue, 1, std::memory_order_acquire))
             {
                 // The queue is empty
                 return true;
@@ -20,13 +20,13 @@ namespace FE
         if (lockAndQueue & 1)
             return false;
 
-        return m_LockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire);
+        return m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire);
     }
 
 
     void WaitGroup::Signal()
     {
-        const int32_t prevValue = m_Counter.fetch_sub(1);
+        const int32_t prevValue = m_counter.fetch_sub(1);
         if (prevValue > 1)
             return;
 
@@ -42,10 +42,10 @@ namespace FE
             spinCount = std::min(spinCount << 1, 32u);
         }
 
-        const uint64_t lockAndQueue = m_LockAndQueue.load(std::memory_order_relaxed);
+        const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
         if (lockAndQueue == 1)
         {
-            m_LockAndQueue.store(0, std::memory_order_release);
+            m_lockAndQueue.store(0, std::memory_order_release);
             return;
         }
 
@@ -60,7 +60,7 @@ namespace FE
             pEntry = pNext;
         }
 
-        m_LockAndQueue.store(0, std::memory_order_release);
+        m_lockAndQueue.store(0, std::memory_order_release);
     }
 
 
@@ -69,12 +69,12 @@ namespace FE
         uint32_t spinCount = 1;
         while (true)
         {
-            if (m_Counter.load(std::memory_order_relaxed) == 0)
+            if (m_counter.load(std::memory_order_relaxed) == 0)
                 return;
 
-            uint64_t lockAndQueue = m_LockAndQueue.load(std::memory_order_acquire);
+            uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
             if ((lockAndQueue & 1)
-                || !m_LockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire))
+                || !m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire))
             {
                 for (uint32_t spin = 0; spin < spinCount; ++spin)
                     _mm_pause();
@@ -86,11 +86,11 @@ namespace FE
             break;
         }
 
-        const uint64_t lockAndQueue = m_LockAndQueue.load(std::memory_order_relaxed);
+        const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
 
         if (IsSignaled())
         {
-            m_LockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
+            m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
             return;
         }
 
@@ -99,24 +99,24 @@ namespace FE
         JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
 
         const uint32_t workerIndex = pJobSystem->GetWorkerIndex();
-        JobSystem::Worker& worker = pJobSystem->m_Workers[workerIndex];
+        JobSystem::Worker& worker = pJobSystem->m_workers[workerIndex];
 
         FiberWaitEntry waitEntry;
         waitEntry.mpPrev = nullptr;
         waitEntry.mpNext = nullptr;
-        waitEntry.Priority = worker.Priority;
-        waitEntry.Fiber = worker.CurrentFiber;
+        waitEntry.m_priority = worker.m_priority;
+        waitEntry.m_fiber = worker.m_currentFiber;
         if (pQueueHead)
         {
             // Queue tail is stored in mpPrev to reduce the sizeof(FiberWaitEntry)
             pQueueHead->mpPrev->mpNext = &waitEntry;
             pQueueHead->mpPrev = &waitEntry;
-            m_LockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
+            m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
         }
         else
         {
             waitEntry.mpPrev = &waitEntry;
-            m_LockAndQueue.store(reinterpret_cast<uint64_t>(&waitEntry), std::memory_order_release);
+            m_lockAndQueue.store(reinterpret_cast<uint64_t>(&waitEntry), std::memory_order_release);
         }
 
         pJobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);

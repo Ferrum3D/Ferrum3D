@@ -10,8 +10,8 @@ namespace FE::Context
 
     struct TransferParams final
     {
-        Handle ContextHandle;
-        uintptr_t UserData = 0;
+        Handle m_contextHandle;
+        uintptr_t m_userData = 0;
     };
 
     using Callback = void (*)(TransferParams);

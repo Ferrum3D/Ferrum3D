@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
 #include <FeCore/Strings/FixedString.h>
 
 namespace FE
@@ -37,28 +36,32 @@ namespace FE
             //! @brief Difference in minutes between Universal Coordinated Time (UTC) and local time.
             //!
             //! UTC = Local + MinuteBias
-            int32_t MinuteBias = 0;
+            int32_t m_minuteBias = 0;
 
             //! @brief Standard time zone name, e.g. "EST".
-            FixedString<26> StandardName;
+            FixedString<26> m_standardName;
         };
 
 
         //! @brief Get system's local time zone info.
         [[nodiscard]] TimeZoneInfo GetTimeZoneInfo();
 
+
         //! @brief Get current system time in UTC format.
         [[nodiscard]] TimeValue GetCurrentTimeUTC();
+
 
         //! @brief Decompose TimeValue into SystemTimeInfo.
         //!
         //! @param time - The time value to decompose.
         [[nodiscard]] SystemTimeInfo DeconstructTime(TimeValue time);
 
+
         //! @brief Create TimeValue from SystemTimeInfo.
         //!
         //! @param dateTime - SystemTimeInfo to compose from.
         [[nodiscard]] TimeValue ConstructTime(SystemTimeInfo dateTime);
+
 
         //! @brief Convert date and time in UTC format to timezone specific local format.
         //!
@@ -67,6 +70,7 @@ namespace FE
         //!
         //! @return True if the operation was successful.
         bool ConvertUTCToLocalTime(SystemTimeInfo source, SystemTimeInfo& result);
+
 
         //! @brief Convert timezone specific local date and time to UTC format.
         //!

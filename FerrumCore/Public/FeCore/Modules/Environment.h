@@ -29,7 +29,7 @@ namespace FE::Env
     namespace Internal
     {
         // Internal interface, implemented only once, used internally in this namespace only.
-        class IEnvironment;
+        struct IEnvironment;
     } // namespace Internal
 
 
@@ -37,16 +37,13 @@ namespace FE::Env
 
 
     //! @brief A shared string with fast equality comparison that is never deallocated.
-    class Name final
+    struct Name final
     {
-        uint32_t m_Handle = kInvalidIndex;
-
-    public:
         struct Record final
         {
-            uint64_t Hash; // 64-bit hash of the string.
-            uint16_t Size; // Size of the string in bytes.
-            char Data[1];  // Actual string is longer, but starts here.
+            uint64_t m_hash; // 64-bit hash of the string.
+            uint16_t m_size; // Size of the string in bytes.
+            char m_data[1];  // Actual string is longer, but starts here.
         };
 
         Name() = default;
@@ -60,21 +57,21 @@ namespace FE::Env
 
         static bool TryGetExisting(std::string_view str, Name& result);
 
-        const Record* GetRecord() const;
+        [[nodiscard]] const Record* GetRecord() const;
 
-        bool Valid() const
+        [[nodiscard]] bool Valid() const
         {
-            return m_Handle != kInvalidIndex;
+            return m_handle != kInvalidIndex;
         }
 
-        uint32_t size() const
+        [[nodiscard]] uint32_t size() const
         {
-            return Valid() ? GetRecord()->Size : 0;
+            return Valid() ? GetRecord()->m_size : 0;
         }
 
-        const char* c_str() const
+        [[nodiscard]] const char* c_str() const
         {
-            return Valid() ? GetRecord()->Data : nullptr;
+            return Valid() ? GetRecord()->m_data : nullptr;
         }
 
         explicit operator bool() const
@@ -84,22 +81,22 @@ namespace FE::Env
 
         friend bool operator==(Name lhs, Name rhs)
         {
-            return lhs.m_Handle == rhs.m_Handle;
+            return lhs.m_handle == rhs.m_handle;
         }
 
         friend bool operator!=(Name lhs, Name rhs)
         {
-            return lhs.m_Handle != rhs.m_Handle;
+            return lhs.m_handle != rhs.m_handle;
         }
 
         friend bool operator==(Name lhs, std::string_view rhs)
         {
-            return lhs.GetRecord()->Data == rhs;
+            return lhs.GetRecord()->m_data == rhs;
         }
 
         friend bool operator!=(Name lhs, std::string_view rhs)
         {
-            return lhs.GetRecord()->Data != rhs;
+            return lhs.GetRecord()->m_data != rhs;
         }
 
         friend bool operator==(std::string_view lhs, Name rhs)
@@ -111,6 +108,9 @@ namespace FE::Env
         {
             return rhs != lhs;
         }
+
+    private:
+        uint32_t m_handle = kInvalidIndex;
     };
 
 
@@ -217,9 +217,8 @@ namespace FE::Env
         //!
         //! This is an internal-only interface that should not be exposed to engine users. Only one instance across
         //! all engine modules is allowed.
-        class IEnvironment
+        struct IEnvironment
         {
-        public:
             virtual ~IEnvironment() = default;
 
             //! @brief Find a global variable.
@@ -245,7 +244,7 @@ namespace FE::Env
             std::aligned_storage_t<sizeof(T), alignof(T)> m_storage;
             Name m_name;
             uint32_t m_refCount;
-            SpinLock m_mutex;
+            Threading::SpinLock m_mutex;
             bool m_isConstructed;
 
             friend class GlobalVariable<T>;
@@ -506,7 +505,7 @@ namespace FE::Env
     inline GlobalVariable<T> CreateGlobalVariable(Name name, Args&&... args)
     {
         const Name::Record* pRecord = name.GetRecord();
-        const std::string_view nameView{ pRecord->Data, pRecord->Size };
+        const std::string_view nameView{ pRecord->m_data, pRecord->m_size };
         FE_CORE_ASSERT(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
         return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
     }
@@ -579,6 +578,6 @@ struct eastl::hash<FE::Env::Name>
 {
     size_t operator()(FE::Env::Name name) const
     {
-        return name.GetRecord()->Hash;
+        return name.GetRecord()->m_hash;
     }
 };

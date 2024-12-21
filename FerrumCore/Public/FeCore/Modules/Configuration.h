@@ -341,6 +341,6 @@ namespace FE::Env
         static constexpr uint32_t kSectionCount = 2;
 
         festd::fixed_vector<ConfigurationSection, kSectionCount> m_rootSections;
-        mutable SpinLock m_lock;
+        mutable Threading::SpinLock m_lock;
     };
 } // namespace FE::Env

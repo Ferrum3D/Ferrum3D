@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/NullableHandle.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <festd/vector.h>
 
 namespace FE
 {
@@ -60,8 +61,8 @@ namespace FE
     template<class TKey, class TValue>
     class SparseSet final
     {
-        eastl::vector<uint32_t> m_Sparse;
-        eastl::vector<SparseSetEntry<TKey, TValue>> m_Dense;
+        festd::vector<uint32_t> m_Sparse;
+        festd::vector<SparseSetEntry<TKey, TValue>> m_Dense;
 
         inline NullableHandle DenseIndex(const TKey& key) const
         {

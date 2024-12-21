@@ -12,40 +12,27 @@ namespace FE
     //! This class is used to hold asset storage. It implements reference counting and
     //! provides interface for asset loading.
     template<class T>
-    class Asset final
+    struct Asset final
     {
-        T* m_Storage = nullptr;
-
-        explicit Asset(T* storage)
-            : m_Storage(storage)
-        {
-            if (m_Storage)
-            {
-                m_Storage->AddStrongRef();
-            }
-        }
-
-    public:
         Asset() = default;
 
         Asset(const Asset& other)
-            : m_Storage(other.m_Storage)
+            : m_storage(other.m_storage)
         {
-            if (m_Storage)
-            {
-                m_Storage->AddStrongRef();
-            }
+            if (m_storage)
+                m_storage->AddStrongRef();
         }
 
         Asset(Asset&& other) noexcept
-            : m_Storage(other.m_Storage)
+            : m_storage(other.m_storage)
         {
-            other.m_Storage = nullptr;
+            other.m_storage = nullptr;
         }
 
         Asset& operator=(const Asset& other)
         {
-            Asset(other).Swap(*this);
+            if (this != &other)
+                Asset(other).Swap(*this);
             return *this;
         }
 
@@ -62,33 +49,31 @@ namespace FE
         }
 
         //! @brief Get underlying asset storage.
-        T* Get() const
+        [[nodiscard]] T* Get() const
         {
-            return m_Storage;
+            return m_storage;
         }
 
         ~Asset()
         {
-            if (m_Storage)
-            {
-                m_Storage->ReleaseStrongRef();
-            }
+            if (m_storage)
+                m_storage->ReleaseStrongRef();
         }
 
         void Swap(Asset& other)
         {
-            T* t = other.m_Storage;
-            other.m_Storage = m_Storage;
-            m_Storage = t;
+            T* t = other.m_storage;
+            other.m_storage = m_storage;
+            m_storage = t;
         }
 
         //! @brief Create a weak asset holder from this.
-        WeakAsset<T> CreateWeak()
+        [[nodiscard]] WeakAsset<T> CreateWeak()
         {
-            return WeakAsset<T>(m_Storage);
+            return WeakAsset<T>(m_storage);
         }
 
-        static Asset LoadSynchronously(Assets::IAssetManager* pAssetManager, Env::Name assetName)
+        [[nodiscard]] static Asset LoadSynchronously(Assets::IAssetManager* pAssetManager, Env::Name assetName)
         {
             const Env::Name assetType{ T::kAssetTypeName };
             const Assets::AssetLoadingFlags flags = Assets::AssetLoadingFlags::kSynchronous;
@@ -98,19 +83,29 @@ namespace FE
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_Storage, "Asset was empty");
-            return *m_Storage;
+            FE_CORE_ASSERT(m_storage, "Asset was empty");
+            return *m_storage;
         }
 
         T* operator->() const
         {
-            return m_Storage;
+            return m_storage;
         }
 
         //! @brief Check if the asset is valid.
         explicit operator bool() const
         {
-            return m_Storage != nullptr;
+            return m_storage != nullptr;
+        }
+
+    private:
+        T* m_storage = nullptr;
+
+        explicit Asset(T* storage)
+            : m_storage(storage)
+        {
+            if (m_storage)
+                m_storage->AddStrongRef();
         }
     };
 } // namespace FE

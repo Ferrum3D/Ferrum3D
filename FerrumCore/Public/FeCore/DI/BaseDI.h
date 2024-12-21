@@ -7,12 +7,12 @@ namespace FE::DI
     //! @brief Represents a dependency injection result code.
     enum class ResultCode : int32_t
     {
-        Success = 0,
-        Abort = -1,                                  //!< Operation aborted.
-        InvalidOperation = -2,                       //!< Operation was invalid.
-        NotFound = -3,                               //!< Some of the required services were not found.
-        CircularDependency = -4,                     //!< Service activation failed because of circular dependencies.
-        UnknownError = DefaultErrorCode<ResultCode>, //!< Unknown error.
+        kSuccess = 0,
+        kAbort = -1,                                   //!< Operation aborted.
+        kInvalidOperation = -2,                        //!< Operation was invalid.
+        kNotFound = -3,                                //!< Some of the required services were not found.
+        kCircularDependency = -4,                      //!< Service activation failed because of circular dependencies.
+        kUnknownError = kDefaultErrorCode<ResultCode>, //!< Unknown error.
     };
 
     const char* GetResultDesc(ResultCode code);
@@ -21,18 +21,17 @@ namespace FE::DI
     //! @brief Specifies the lifetime of an injectable service.
     enum class Lifetime : uint32_t
     {
-        Singleton, //!< Specifies that only a single instance of the service will be created.
-        Thread,    //!< Specifies that an instance of the service will be created for each thread.
-        Transient, //!< Specifies that an instance of the service will be created for each call to IServiceProvider::Resolve.
+        kSingleton, //!< Specifies that only a single instance of the service will be created.
+        kThread,    //!< Specifies that an instance of the service will be created for each thread.
+        kTransient, //!< Specifies that an instance of the service will be created for each call to IServiceProvider::Resolve.
 
-        Count,
+        kCount,
     };
 
 
     //! @brief Base interface for dependency injection containers.
-    class IServiceProvider
+    struct IServiceProvider
     {
-    public:
         FE_RTTI_Class(IServiceProvider, "89A29040-31BC-411D-8522-92D7D2696C16");
 
         virtual ~IServiceProvider() = default;
@@ -40,7 +39,7 @@ namespace FE::DI
         virtual ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) = 0;
 
         template<class T>
-        inline Result<T*, ResultCode> Resolve()
+        Result<T*, ResultCode> Resolve()
         {
             if constexpr (std::is_same_v<T, IServiceProvider>)
             {
@@ -50,7 +49,7 @@ namespace FE::DI
             {
                 Memory::RefCountedObjectBase* pResult = nullptr;
                 const ResultCode code = Resolve(fe_typeid<T>(), &pResult);
-                if (code == ResultCode::Success)
+                if (code == ResultCode::kSuccess)
                     return static_cast<T*>(pResult);
 
                 return Err(code);
@@ -58,7 +57,7 @@ namespace FE::DI
         }
 
         template<class T>
-        inline T* ResolveRequired()
+        T* ResolveRequired()
         {
             if constexpr (std::is_same_v<T, IServiceProvider>)
                 return this;

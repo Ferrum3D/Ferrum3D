@@ -16,9 +16,9 @@ namespace FE::Graphics::RHI
     enum class ImageAspectFlags : uint32_t
     {
         kNone,
-        kColor = 1 << enum_cast(ImageAspect::kColor),
-        kDepth = 1 << enum_cast(ImageAspect::kDepth),
-        kStencil = 1 << enum_cast(ImageAspect::kStencil),
+        kColor = 1 << festd::to_underlying(ImageAspect::kColor),
+        kDepth = 1 << festd::to_underlying(ImageAspect::kDepth),
+        kStencil = 1 << festd::to_underlying(ImageAspect::kStencil),
         kDepthStencil = kDepth | kStencil,
         kAll = kDepth | kStencil | kColor,
     };
@@ -53,10 +53,10 @@ namespace FE::Graphics::RHI
                                                       bool isSRGB, uint32_t index)
         {
             // clang-format off
-            return (enum_cast(type)                        << 30)
+            return (festd::to_underlying(type)                        << 30)
                  | (byteSize                               << 25)
-                 | (enum_cast(channelCount)                << 23)
-                 | (enum_cast(aspectFlags)                 << 20)
+                 | (festd::to_underlying(channelCount)                << 23)
+                 | (festd::to_underlying(aspectFlags)                 << 20)
                  | ((blockCompressed           ? 1 : 0)    << 19)
                  | ((isSigned                  ? 1 : 0)    << 18)
                  | ((isSRGB                    ? 1 : 0)    << 17)
@@ -174,7 +174,7 @@ namespace FE::Graphics::RHI
 #undef FE_DECL_FORMAT_ENUM_VALUE
     };
 
-    static_assert((enum_cast(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 71)));
+    static_assert((festd::to_underlying(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 71)));
 
 
     union FormatInfo final
@@ -191,7 +191,7 @@ namespace FE::Graphics::RHI
 
         [[nodiscard]] uint32_t GetChannelCount() const
         {
-            return enum_cast(m_channelCount) + 1;
+            return festd::to_underlying(m_channelCount) + 1;
         }
 
         [[nodiscard]] uint32_t CalculateRowPitch(uint32_t width, uint32_t mipIndex = 0) const

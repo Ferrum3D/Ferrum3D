@@ -13,27 +13,23 @@ namespace FE
         NullMutex() = default;
         ~NullMutex() = default;
 
-        inline void lock() noexcept {}
+        void lock() noexcept {}
 
         [[nodiscard]] inline bool try_lock() const noexcept // NOLINT
         {
             return true;
         }
 
-        inline void unlock() noexcept {}
+        void unlock() noexcept {}
     };
 
 
-    class Mutex final
+    struct Mutex final
     {
-        inline static constexpr size_t NativeMutexSpace = 64;
-        std::aligned_storage_t<NativeMutexSpace> m_NativeMutex;
-
-    public:
         Mutex(const Mutex&) = delete;
         Mutex& operator=(const Mutex&) = delete;
 
-        inline Mutex() noexcept
+        Mutex() noexcept
             : Mutex(500)
         {
         }
@@ -44,5 +40,9 @@ namespace FE
         void lock() noexcept;
         bool try_lock();
         void unlock();
+
+    private:
+        static constexpr size_t kNativeMutexSpace = 64;
+        std::aligned_storage_t<kNativeMutexSpace> m_nativeMutex;
     };
 } // namespace FE

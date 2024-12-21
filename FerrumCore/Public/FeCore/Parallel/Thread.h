@@ -23,11 +23,11 @@ namespace FE
 #if FE_PLATFORM_WINDOWS
     struct NativeThreadData final
     {
-        uint32_t ID;
-        Threading::Priority Priority;
-        void* hThread;
-        uintptr_t pUserData;
-        ThreadFunction StartRoutine;
+        uint32_t m_id;
+        Threading::Priority m_priority;
+        void* m_threadHandle;
+        uintptr_t m_userData;
+        ThreadFunction m_startRoutine;
     };
 #else
 #    error Not implemented :(
@@ -46,14 +46,14 @@ namespace FE
     uint64_t GetCurrentThreadID();
 
 
-    inline static const NativeThreadData& GetNativeThreadData(ThreadHandle threadHandle)
+    inline const NativeThreadData& GetNativeThreadData(ThreadHandle threadHandle)
     {
         return *reinterpret_cast<const NativeThreadData*>(threadHandle.m_value);
     }
 
 
-    inline static uint64_t GetThreadID(ThreadHandle threadHandle)
+    inline uint64_t GetThreadID(ThreadHandle threadHandle)
     {
-        return GetNativeThreadData(threadHandle).ID;
+        return GetNativeThreadData(threadHandle).m_id;
     }
 } // namespace FE

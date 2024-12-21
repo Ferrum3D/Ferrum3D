@@ -6,15 +6,15 @@ namespace FE::DI
     {
         switch (code)
         {
-        case ResultCode::Success:
+        case ResultCode::kSuccess:
             return "Success";
-        case ResultCode::Abort:
+        case ResultCode::kAbort:
             return "Operation aborted";
-        case ResultCode::InvalidOperation:
+        case ResultCode::kInvalidOperation:
             return "Operation was invalid";
-        case ResultCode::NotFound:
+        case ResultCode::kNotFound:
             return "Some of the required services were not found";
-        case ResultCode::CircularDependency:
+        case ResultCode::kCircularDependency:
             return "Service activation failed because of circular dependencies";
         default:
             return "Unknown error";

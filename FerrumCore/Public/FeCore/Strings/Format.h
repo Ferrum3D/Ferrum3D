@@ -146,7 +146,7 @@ namespace FE::Fmt
         void Format(TBuffer& buffer, const Env::Name& name) const
         {
             const Env::Name::Record* pRecord = name.GetRecord();
-            buffer.Append(pRecord->Data, pRecord->Size);
+            buffer.Append(pRecord->m_data, pRecord->m_size);
         }
     };
 

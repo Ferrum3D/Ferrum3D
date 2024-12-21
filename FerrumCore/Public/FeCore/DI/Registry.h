@@ -6,11 +6,13 @@
 #include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Parallel/SpinLock.h>
+#include <festd/intrusive_list.h>
+#include <festd/vector.h>
 
 namespace FE::DI
 {
-    class ServiceRegistry;
-    class LifetimeScope;
+    struct ServiceRegistry;
+    struct LifetimeScope;
 
     struct ServiceRegistryCallback
     {
@@ -18,189 +20,189 @@ namespace FE::DI
     };
 
 
-    class ServiceRegistry final
+    struct ServiceRegistry final
         : public Memory::RefCountedObjectBase
         , public festd::intrusive_list_node
     {
-        friend class LifetimeScope;
-        friend class ServiceRegistryRoot;
-
-        SegmentedVector<UUID, 1024> m_IDs = nullptr;
-        SegmentedVector<ServiceActivator> m_Activators = nullptr;
-        festd::pmr::vector<ServiceRegistration> m_Registrations;
-        festd::pmr::vector<ServiceRegistryCallback*> m_Callbacks;
-        LifetimeScope* m_pRootLifetimeScope = nullptr;
-        SpinLock m_CallbackListLock;
-
-    public:
-        inline ServiceRegistry(std::pmr::memory_resource* pAllocator)
-            : m_IDs(pAllocator)
-            , m_Activators(pAllocator)
-            , m_Registrations(pAllocator)
-            , m_Callbacks(pAllocator)
+        ServiceRegistry(std::pmr::memory_resource* pAllocator)
+            : m_ids(pAllocator)
+            , m_activators(pAllocator)
+            , m_registrations(pAllocator)
+            , m_callbacks(pAllocator)
         {
         }
 
-        inline void RegisterCallback(ServiceRegistryCallback* pCallback)
+        void RegisterCallback(ServiceRegistryCallback* pCallback)
         {
-            std::lock_guard lk{ m_CallbackListLock };
-            m_Callbacks.push_back(pCallback);
+            std::lock_guard lk{ m_callbackListLock };
+            m_callbacks.push_back(pCallback);
         }
 
-        inline ~ServiceRegistry() override
+        ~ServiceRegistry() override
         {
-            for (ServiceRegistryCallback* pCallback : m_Callbacks)
+            for (ServiceRegistryCallback* pCallback : m_callbacks)
             {
                 pCallback->OnDetach(this);
             }
 
-            for (const ServiceRegistration& registration : m_Registrations)
+            for (const ServiceRegistration& registration : m_registrations)
             {
                 if (registration.IsConstant())
                 {
                     Memory::RefCountedObjectBase* pObject;
 
                     [[maybe_unused]] const ResultCode resultCode =
-                        m_Activators[registration.GetIndex()].Invoke(nullptr, &pObject);
-                    FE_CORE_ASSERT(resultCode == ResultCode::Success, "");
+                        m_activators[registration.GetIndex()].Invoke(nullptr, &pObject);
+                    FE_CORE_ASSERT(resultCode == ResultCode::kSuccess, "");
 
                     pObject->Release();
                 }
             }
         }
 
-        [[nodiscard]] inline LifetimeScope* GetRootLifetimeScope() const
+        [[nodiscard]] LifetimeScope* GetRootLifetimeScope() const
         {
-            return m_pRootLifetimeScope;
+            return m_rootLifetimeScope;
         }
 
-        inline ServiceRegistration* Add(const UUID& id)
+        ServiceRegistration* Add(const UUID& id)
         {
-            const uint32_t index = m_Registrations.size();
-            m_IDs.push_back(id);
-            m_Activators.push_back({});
-            m_Registrations.push_back(index);
-            return &m_Registrations.back();
+            const uint32_t index = m_registrations.size();
+            m_ids.push_back(id);
+            m_activators.push_back({});
+            m_registrations.push_back(index);
+            return &m_registrations.back();
         }
 
-        inline void Sort()
+        void Sort()
         {
             ZoneScoped;
-            eastl::sort(m_Registrations.begin(),
-                        m_Registrations.end(),
+            eastl::sort(m_registrations.begin(),
+                        m_registrations.end(),
                         [this](const ServiceRegistration& lhs, const ServiceRegistration& rhs) {
-                            return m_IDs[lhs.m_Index] < m_IDs[rhs.m_Index];
+                            return m_ids[lhs.m_index] < m_ids[rhs.m_index];
                         });
         }
 
-        inline ServiceRegistration* FindByID(const UUID& id)
+        ServiceRegistration* FindByID(const UUID& id)
         {
             ServiceRegistration* it = eastl::lower_bound(
-                m_Registrations.begin(), m_Registrations.end(), id, [this](const ServiceRegistration& lhs, const UUID& id) {
-                    return m_IDs[lhs.m_Index] < id;
+                m_registrations.begin(), m_registrations.end(), id, [this](const ServiceRegistration& lhs, const UUID& id) {
+                    return m_ids[lhs.m_index] < id;
                 });
 
-            if (it != m_Registrations.end() && m_IDs[it->m_Index] == id)
+            if (it != m_registrations.end() && m_ids[it->m_index] == id)
                 return it;
 
             return nullptr;
         }
 
-        inline ServiceActivator* GetActivator(uint32_t index)
+        ServiceActivator* GetActivator(uint32_t index)
         {
-            return &m_Activators[index];
+            return &m_activators[index];
         }
 
-        [[nodiscard]] inline bool Empty() const
+        [[nodiscard]] bool Empty() const
         {
-            return m_Registrations.empty();
+            return m_registrations.empty();
         }
+
+    private:
+        friend struct LifetimeScope;
+        friend struct ServiceRegistryRoot;
+
+        SegmentedVector<UUID, 1024> m_ids = nullptr;
+        SegmentedVector<ServiceActivator> m_activators = nullptr;
+        festd::pmr::vector<ServiceRegistration> m_registrations;
+        festd::pmr::vector<ServiceRegistryCallback*> m_callbacks;
+        LifetimeScope* m_rootLifetimeScope = nullptr;
+        Threading::SpinLock m_callbackListLock;
     };
 
 
-    class ServiceRegistryRoot final
+    struct ServiceRegistryRoot final
     {
-        festd::intrusive_list<ServiceRegistry> m_Registries;
-        Rc<ServiceRegistry> m_pRoot;
-        SpinLock m_Lock;
-
-        struct CallbackImpl final : ServiceRegistryCallback
+        struct Reader final
         {
-            inline void OnDetach(ServiceRegistry* pRegistry) override
+            Reader(ServiceRegistryRoot* pParent)
+                : m_parent(pParent)
             {
-                FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
-                ServiceRegistryRoot* pParent = reinterpret_cast<ServiceRegistryRoot*>(
-                    reinterpret_cast<uintptr_t>(this) - offsetof(ServiceRegistryRoot, m_RegistryCallback));
-                FE_POP_CLANG_WARNING
-
-                std::unique_lock lk{ pParent->m_Lock };
-                pParent->m_Registries.remove(*pRegistry);
-            }
-        } m_RegistryCallback;
-
-    public:
-        class Reader final
-        {
-            ServiceRegistryRoot* m_pParent;
-
-        public:
-            inline Reader(ServiceRegistryRoot* pParent)
-                : m_pParent(pParent)
-            {
-                m_pParent->m_Lock.lock();
+                m_parent->m_lock.lock();
             }
 
-            inline ~Reader()
+            ~Reader()
             {
-                m_pParent->m_Lock.unlock();
+                m_parent->m_lock.unlock();
             }
 
-            inline auto begin() const
+            auto begin() const
             {
-                return m_pParent->m_Registries.begin();
+                return m_parent->m_registries.begin();
             }
 
-            inline auto end() const
+            auto end() const
             {
-                return m_pParent->m_Registries.end();
+                return m_parent->m_registries.end();
             }
+
+        private:
+            ServiceRegistryRoot* m_parent;
         };
 
-        inline void Initialize()
+        void Initialize()
         {
             ZoneScoped;
             std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
-            m_pRoot = Rc<ServiceRegistry>::DefaultNew(pAllocator);
-            m_Registries.push_back(*m_pRoot);
-            m_pRoot->RegisterCallback(&m_RegistryCallback);
+            m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
+            m_registries.push_back(*m_root);
+            m_root->RegisterCallback(&m_registryCallback);
         }
 
-        inline ~ServiceRegistryRoot()
+        ~ServiceRegistryRoot()
         {
-            m_pRoot.Reset();
+            m_root.Reset();
 
-            // All references to all of the registries must be eliminated at this point.
-            FE_CORE_ASSERT(m_Registries.empty(), "Service registry leaks detected");
+            // All references to all the registries must be eliminated at this point.
+            FE_CORE_ASSERT(m_registries.empty(), "Service registry leaks detected");
         }
 
-        inline Reader Read()
+        Reader Read()
         {
             return Reader{ this };
         }
 
-        inline ServiceRegistry* GetRootRegistry() const
+        ServiceRegistry* GetRootRegistry() const
         {
-            return m_pRoot.Get();
+            return m_root.Get();
         }
 
-        inline ServiceRegistry* Create()
+        ServiceRegistry* Create()
         {
             ZoneScoped;
-            std::unique_lock lk{ m_Lock };
+            std::unique_lock lk{ m_lock };
             ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
-            m_Registries.push_back(*pResult);
-            pResult->RegisterCallback(&m_RegistryCallback);
+            m_registries.push_back(*pResult);
+            pResult->RegisterCallback(&m_registryCallback);
             return pResult;
         }
+
+    private:
+        festd::intrusive_list<ServiceRegistry> m_registries;
+        Rc<ServiceRegistry> m_root;
+        Threading::SpinLock m_lock;
+
+        struct CallbackImpl final : ServiceRegistryCallback
+        {
+            void OnDetach(ServiceRegistry* pRegistry) override
+            {
+                FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
+                ServiceRegistryRoot* pParent = reinterpret_cast<ServiceRegistryRoot*>(
+                    reinterpret_cast<uintptr_t>(this) - offsetof(ServiceRegistryRoot, m_registryCallback));
+                FE_POP_CLANG_WARNING
+
+                std::unique_lock lk{ pParent->m_lock };
+                festd::intrusive_list<ServiceRegistry>::remove(*pRegistry);
+            }
+        } m_registryCallback;
     };
 } // namespace FE::DI

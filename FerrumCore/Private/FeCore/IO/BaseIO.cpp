@@ -6,8 +6,8 @@ namespace FE::IO
     FixedPath GetCurrentDirectory()
     {
 #if FE_PLATFORM_WINDOWS
-        wchar_t buf[MaxPathLength];
-        GetCurrentDirectoryW(MaxPathLength, buf);
+        wchar_t buf[kMaxPathLength];
+        GetCurrentDirectoryW(kMaxPathLength, buf);
 
         const int32_t length = WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0, nullptr, nullptr);
         assert(length > 0);

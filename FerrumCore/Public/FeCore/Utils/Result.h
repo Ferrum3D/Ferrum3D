@@ -8,15 +8,15 @@ namespace FE
     template<class T>
     struct Err
     {
-        T Value;
+        T m_value;
 
-        inline Err(const T& value) // NOLINT(google-explicit-constructor)
-            : Value(value)
+        Err(const T& value) // NOLINT(google-explicit-constructor)
+            : m_value(value)
         {
         }
 
-        inline Err(T&& value) // NOLINT(google-explicit-constructor)
-            : Value(value)
+        Err(T&& value) // NOLINT(google-explicit-constructor)
+            : m_value(value)
         {
         }
     };
@@ -24,126 +24,126 @@ namespace FE
     template<class T, class TError>
     class Result final
     {
-        std::variant<T, TError> m_Data;
+        std::variant<T, TError> m_data;
 
         struct CreateFromError
         {
         };
 
-        inline Result(CreateFromError, const TError& error)
-            : m_Data(error)
+        Result(CreateFromError, const TError& error)
+            : m_data(error)
         {
         }
 
-        inline Result(CreateFromError, TError&& error)
-            : m_Data(std::move(error))
+        Result(CreateFromError, TError&& error)
+            : m_data(std::move(error))
         {
         }
 
     public:
-        inline Result() = default;
+        Result() = default;
 
-        inline Result(const T& value) // NOLINT(google-explicit-constructor)
-            : m_Data(value)
+        Result(const T& value) // NOLINT(google-explicit-constructor)
+            : m_data(value)
         {
         }
 
-        inline Result(T&& value) // NOLINT(google-explicit-constructor)
-            : m_Data(std::move(value))
+        Result(T&& value) // NOLINT(google-explicit-constructor)
+            : m_data(std::move(value))
         {
         }
 
-        inline Result(const Err<TError>& error) // NOLINT(google-explicit-constructor)
-            : m_Data(error.Value)
+        Result(const Err<TError>& error) // NOLINT(google-explicit-constructor)
+            : m_data(error.m_value)
         {
         }
 
-        inline Result(Err<TError>&& error) // NOLINT(google-explicit-constructor)
-            : m_Data(std::move(error.Value))
+        Result(Err<TError>&& error) // NOLINT(google-explicit-constructor)
+            : m_data(std::move(error.m_value))
         {
         }
 
-        inline Result(const Result& other) = default;
-        inline Result(Result&& other) noexcept = default;
+        Result(const Result& other) = default;
+        Result(Result&& other) noexcept = default;
 
-        inline Result& operator=(const Result& other) = default;
-        inline Result& operator=(Result&& other) noexcept = default;
+        Result& operator=(const Result& other) = default;
+        Result& operator=(Result&& other) noexcept = default;
 
-        inline static Result Ok(const T& value)
+        static Result Ok(const T& value)
         {
             return Result(value);
         }
 
-        inline static Result Ok(T&& value)
+        static Result Ok(T&& value)
         {
             return Result(std::move(value));
         }
 
-        inline static Result Err(const TError& error)
+        static Result Err(const TError& error)
         {
             return Result(CreateFromError{}, error);
         }
 
-        inline static Result Err(TError&& error)
+        static Result Err(TError&& error)
         {
             return Result(CreateFromError{}, std::move(error));
         }
 
-        [[nodiscard]] inline bool IsOk() const
+        [[nodiscard]] bool IsOk() const
         {
-            return m_Data.index() == 0;
+            return m_data.index() == 0;
         }
 
-        [[nodiscard]] inline bool IsErr() const
+        [[nodiscard]] bool IsErr() const
         {
             return !IsOk();
         }
 
-        inline TError UnwrapErr() const
+        TError UnwrapErr() const
         {
             return ExpectErr("UnwrapErr() called on OK result");
         }
 
-        inline TError ExpectErr(const char* msg) const
+        TError ExpectErr(const char* msg) const
         {
             FE_CORE_ASSERT(IsErr(), msg);
-            return std::get<TError>(m_Data);
+            return std::get<TError>(m_data);
         }
 
-        [[nodiscard]] inline explicit operator bool() const
+        [[nodiscard]] explicit operator bool() const
         {
             return IsOk();
         }
 
-        [[nodiscard]] inline T UnwrapOr(const T& defaultValue) const
+        [[nodiscard]] T UnwrapOr(const T& defaultValue) const
         {
             if (IsOk())
             {
-                return std::get<T>(m_Data);
+                return std::get<T>(m_data);
             }
 
             return defaultValue;
         }
 
-        [[nodiscard]] inline T UnwrapOrDefault() const
+        [[nodiscard]] T UnwrapOrDefault() const
         {
             if (IsOk())
             {
-                return std::get<T>(m_Data);
+                return std::get<T>(m_data);
             }
 
             return {};
         }
 
-        inline T Unwrap() const
+        T Unwrap() const
         {
             return Expect("Unwrap() called on error result");
         }
 
-        inline T Expect(const char* msg) const
+        T Expect(const char* msg) const
         {
             FE_CORE_ASSERT(IsOk(), msg);
-            return std::get<T>(m_Data);
+            return std::get<T>(m_data);
         }
     };
 } // namespace FE

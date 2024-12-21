@@ -5,14 +5,14 @@ namespace FE
     LogSinkBase::LogSinkBase(Logger* logger)
         : m_pLogger(logger)
     {
-        std::lock_guard lk{ logger->m_Lock };
-        logger->m_Sinks.push_back(*this);
+        std::lock_guard lk{ logger->m_lock };
+        logger->m_sinks.push_back(*this);
     }
 
 
     LogSinkBase::~LogSinkBase()
     {
-        std::lock_guard lk{ m_pLogger->m_Lock };
-        m_pLogger->m_Sinks.remove(*this);
+        std::lock_guard lk{ m_pLogger->m_lock };
+        m_pLogger->m_sinks.remove(*this);
     }
 } // namespace FE

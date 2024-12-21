@@ -184,9 +184,9 @@ namespace FE::Graphics
         m_sourceExtensions.push_back(".png");
         m_sourceExtensions.push_back(".jpg");
 
-        m_spec.AssetTypeName = Env::Name{ ImageAssetStorage::kAssetTypeName };
-        m_spec.FileExtension = ".dds";
-        m_spec.SourceExtensions = m_sourceExtensions;
+        m_spec.m_assetTypeName = Env::Name{ ImageAssetStorage::kAssetTypeName };
+        m_spec.m_fileExtension = ".dds";
+        m_spec.m_sourceExtensions = m_sourceExtensions;
     }
 
 

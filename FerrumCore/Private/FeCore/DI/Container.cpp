@@ -8,7 +8,7 @@ namespace FE::DI
         ServiceRegistration registration{};
 
         {
-            const ServiceRegistryRoot::Reader registryReader = m_RegistryRoot.Read();
+            const ServiceRegistryRoot::Reader registryReader = m_registryRoot.Read();
             for (ServiceRegistry& registry : registryReader)
             {
                 if (const ServiceRegistration* pRegistration = registry.FindByID(registrationID))
@@ -22,19 +22,19 @@ namespace FE::DI
 
         if (pRegistry == nullptr)
         {
-            return ResultCode::NotFound;
+            return ResultCode::kNotFound;
         }
 
-        std::lock_guard lk{ m_Lock };
+        std::lock_guard lk{ m_lock };
 
         LifetimeScope* pLifetimeScope = pRegistry->GetRootLifetimeScope();
         if (pLifetimeScope == nullptr)
         {
-            std::pmr::memory_resource* pAllocator = pRegistry == m_RegistryRoot.GetRootRegistry()
+            std::pmr::memory_resource* pAllocator = pRegistry == m_registryRoot.GetRootRegistry()
                 ? Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear)
                 : std::pmr::get_default_resource();
             pLifetimeScope = Memory::DefaultNew<LifetimeScope>(pAllocator, pRegistry, this);
-            pRegistry->RegisterCallback(&m_RegistryCallback);
+            pRegistry->RegisterCallback(&m_registryCallback);
         }
 
         return pLifetimeScope->Resolve(registration, ppResult);

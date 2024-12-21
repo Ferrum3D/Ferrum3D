@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Containers/SegmentedVector.h>
-#include <FeCore/Containers/SmallVector.h>
+#include <festd/vector.h>
 #include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Logging/Trace.h>

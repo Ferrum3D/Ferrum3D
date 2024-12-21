@@ -4,74 +4,74 @@
 namespace FE
 {
     //! @brief Represents a time span: an interval between two instances of DateTime.
-    class TimeSpan final
+    struct TimeSpan final
     {
-        TimeValue m_Seconds;
-
-        inline explicit TimeSpan(TimeValue time)
+        [[nodiscard]] int32_t Days() const
         {
-            m_Seconds = time;
+            return static_cast<int32_t>(m_seconds / (60 * 60 * 24));
         }
 
-    public:
-        [[nodiscard]] inline int32_t Days() const
+        [[nodiscard]] int32_t Hours() const
         {
-            return static_cast<int32_t>(m_Seconds / (60 * 60 * 24));
+            return static_cast<int32_t>((m_seconds / (60 * 60)) % 24);
         }
 
-        [[nodiscard]] inline int32_t Hours() const
+        [[nodiscard]] double TotalHours() const
         {
-            return static_cast<int32_t>((m_Seconds / (60 * 60)) % 24);
+            return m_seconds / (60.0 * 60.0);
         }
 
-        [[nodiscard]] inline double TotalHours() const
+        [[nodiscard]] int32_t Minutes() const
         {
-            return m_Seconds / (60.0 * 60.0);
+            return static_cast<int32_t>((m_seconds / 60) % 60);
         }
 
-        [[nodiscard]] inline int32_t Minutes() const
+        [[nodiscard]] double TotalMinutes() const
         {
-            return static_cast<int32_t>((m_Seconds / 60) % 60);
+            return m_seconds / 60.0;
         }
 
-        [[nodiscard]] inline double TotalMinutes() const
+        [[nodiscard]] int32_t Seconds() const
         {
-            return m_Seconds / 60.0;
+            return static_cast<int32_t>(m_seconds % 60);
         }
 
-        [[nodiscard]] inline int32_t Seconds() const
+        [[nodiscard]] TimeValue TotalSeconds() const
         {
-            return static_cast<int32_t>(m_Seconds % 60);
+            return m_seconds;
         }
 
-        [[nodiscard]] inline TimeValue TotalSeconds() const
+        [[nodiscard]] bool Empty() const
         {
-            return m_Seconds;
+            return m_seconds == 0;
         }
 
-        [[nodiscard]] inline bool Empty() const
+        [[nodiscard]] TimeSpan operator-() const
         {
-            return m_Seconds == 0;
+            return TimeSpan{ -m_seconds };
         }
 
-        [[nodiscard]] inline TimeSpan operator-() const
+        [[nodiscard]] friend TimeSpan operator+(TimeSpan lhs, TimeSpan rhs)
         {
-            return TimeSpan{ -m_Seconds };
+            return TimeSpan{ lhs.m_seconds + rhs.m_seconds };
         }
 
-        [[nodiscard]] inline friend TimeSpan operator+(TimeSpan lhs, TimeSpan rhs)
+        [[nodiscard]] friend TimeSpan operator-(TimeSpan lhs, TimeSpan rhs)
         {
-            return TimeSpan{ lhs.m_Seconds + rhs.m_Seconds };
+            return TimeSpan{ lhs.m_seconds - rhs.m_seconds };
         }
 
-        [[nodiscard]] inline friend TimeSpan operator-(TimeSpan lhs, TimeSpan rhs)
-        {
-            return TimeSpan{ lhs.m_Seconds - rhs.m_Seconds };
-        }
-
-        [[nodiscard]] inline static TimeSpan FromSeconds(TimeValue seconds)
+        [[nodiscard]] static TimeSpan FromSeconds(TimeValue seconds)
         {
             return TimeSpan(seconds);
+        }
+
+    private:
+        TimeValue m_seconds;
+
+        explicit TimeSpan(TimeValue time)
+        {
+            m_seconds = time;
         }
     };
 } // namespace FE

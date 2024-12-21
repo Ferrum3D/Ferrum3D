@@ -4,68 +4,68 @@ namespace FE::Memory
 {
     void LinearAllocator::NewPage()
     {
-        Page* pCurrentPage = m_CurrentMarker.m_pPage;
+        Page* pCurrentPage = m_currentMarker.m_page;
         if (pCurrentPage == nullptr)
         {
-            if (m_pFirstPage == nullptr)
-                m_pFirstPage = static_cast<Page*>(m_pPageAllocator->allocate(m_PageByteSize));
+            if (m_firstPage == nullptr)
+                m_firstPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
 
-            m_CurrentMarker.m_pPage = m_pFirstPage;
-            m_CurrentMarker.m_Offset = sizeof(Page);
+            m_currentMarker.m_page = m_firstPage;
+            m_currentMarker.m_offset = sizeof(Page);
             return;
         }
 
         if (pCurrentPage->pNext == nullptr)
         {
-            Page* pNewPage = static_cast<Page*>(m_pPageAllocator->allocate(m_PageByteSize));
+            Page* pNewPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
             pCurrentPage->pNext = pNewPage;
         }
 
-        m_CurrentMarker.m_pPage = pCurrentPage->pNext;
-        m_CurrentMarker.m_Offset = sizeof(Page);
+        m_currentMarker.m_page = pCurrentPage->pNext;
+        m_currentMarker.m_offset = sizeof(Page);
     }
 
 
     LinearAllocator::LinearAllocator(size_t pageByteSize, std::pmr::memory_resource* pPageAllocator)
-        : m_PageByteSize(pageByteSize)
-        , m_pPageAllocator(pPageAllocator)
+        : m_pageByteSize(pageByteSize)
+        , m_pageAllocator(pPageAllocator)
     {
         FE_CORE_ASSERT(pageByteSize > 0, "Page size must be greater than zero");
-        if (m_pPageAllocator == nullptr)
+        if (m_pageAllocator == nullptr)
         {
-            m_pPageAllocator = std::pmr::get_default_resource();
+            m_pageAllocator = std::pmr::get_default_resource();
         }
     }
 
 
     LinearAllocator::~LinearAllocator()
     {
-        Page* pPage = m_pFirstPage;
-        m_pFirstPage = nullptr;
+        Page* pPage = m_firstPage;
+        m_firstPage = nullptr;
 
         while (pPage)
         {
             Page* pOldPage = pPage;
             pPage = pPage->pNext;
-            m_pPageAllocator->deallocate(pOldPage, m_PageByteSize);
+            m_pageAllocator->deallocate(pOldPage, m_pageByteSize);
         }
     }
 
 
     void LinearAllocator::Collect()
     {
-        Page* pPage = m_CurrentMarker.m_pPage;
+        Page* pPage = m_currentMarker.m_page;
         if (pPage == nullptr)
             return;
 
         pPage = pPage->pNext;
-        m_CurrentMarker.m_pPage->pNext = nullptr;
+        m_currentMarker.m_page->pNext = nullptr;
 
         while (pPage)
         {
             Page* pOldPage = pPage;
             pPage = pPage->pNext;
-            m_pPageAllocator->deallocate(pOldPage, m_PageByteSize);
+            m_pageAllocator->deallocate(pOldPage, m_pageByteSize);
         }
     }
 } // namespace FE::Memory

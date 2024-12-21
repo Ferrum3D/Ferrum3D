@@ -26,7 +26,7 @@ namespace FE
         static Env::GlobalVariable<T*> m_Owner;
         static std::shared_mutex m_Mutex;
 
-        inline static void TryFind()
+        static void TryFind()
         {
             std::unique_lock lk(m_Mutex);
             const Env::GlobalVariable variable = Env::FindGlobalVariableByType<T*>();
@@ -45,7 +45,7 @@ namespace FE
         //! so that it can be used in multiple modules.
         //!
         //! @param instance - The instance to register.
-        inline static void Register(T* instance)
+        static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");
             FE_CORE_ASSERT(Get() == nullptr, "Couldn't register a ServiceLocator instance twice");
@@ -54,7 +54,7 @@ namespace FE
         }
 
         //! @brief Unregister the instance.
-        inline static void Unregister()
+        static void Unregister()
         {
             FE_CORE_ASSERT(m_Owner, "ServiceLocator instance was a nullptr");
             std::unique_lock lk(m_Mutex);
@@ -68,7 +68,7 @@ namespace FE
         //! If the instance of type `T` was not yet registered the function will return `nullptr`.
         //!
         //! @return The registered instance.
-        inline static T* Get()
+        static T* Get()
         {
             if (!m_Instance)
             {
@@ -106,13 +106,13 @@ namespace FE
         FE_RTTI_Class(ServiceLocatorImplBase, "3C5B1F1F-48B4-4A20-BAFA-70AEE73AC2A3");
 
         //! @brief Calls \ref ServiceLocator::Register.
-        inline ServiceLocatorImplBase()
+        ServiceLocatorImplBase()
         {
             ServiceLocator<TInterface>::Register(static_cast<TInterface*>(this));
         }
 
         //! @brief Calls \ref ServiceLocator::Unregister.
-        inline virtual ~ServiceLocatorImplBase()
+        virtual ~ServiceLocatorImplBase()
         {
             ServiceLocator<TInterface>::Unregister();
         }

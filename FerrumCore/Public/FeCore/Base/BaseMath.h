@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/CompilerTraits.h>
+#include <festd/base.h>
 
 namespace FE
 {
@@ -79,24 +80,6 @@ namespace FE
         const T allOnes = std::numeric_limits<T>::max();
         const T mask = static_cast<T>(-(bitCount != 0)) & (allOnes >> (sizeof(T) * 8 - bitCount));
         return mask << leftShift;
-    }
-
-
-    template<class TTo, class TFrom>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE
-        std::enable_if_t<std::is_default_constructible_v<TTo> && sizeof(TTo) == sizeof(TFrom), TTo>
-        bit_cast(const TFrom& value)
-    {
-        TTo result;
-        memcpy(&result, &value, sizeof(TTo));
-        return result;
-    }
-
-
-    template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr auto enum_cast(T value) -> std::underlying_type_t<T>
-    {
-        return static_cast<std::underlying_type_t<T>>(value);
     }
 } // namespace FE
 
@@ -219,6 +202,20 @@ namespace FE::Bit
             functor(currentIndex);
             word &= ~(UINT64_C(1) << currentIndex);
         }
+    }
+
+
+    template<class TFlag>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool AllSet(TFlag source, TFlag test)
+    {
+        return (festd::to_underlying(source) & festd::to_underlying(test)) == festd::to_underlying(test);
+    }
+
+
+    template<class TFlag>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool AnySet(TFlag source, TFlag test)
+    {
+        return (festd::to_underlying(source) & festd::to_underlying(test)) != static_cast<std::underlying_type_t<TFlag>>(0);
     }
 } // namespace FE::Bit
 
@@ -437,6 +434,37 @@ namespace FE::Math
 
     FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(Component x, Component y, Component z, Component w)
     {
-        return static_cast<Swizzle>(enum_cast(x) | (enum_cast(y) << 2) | (enum_cast(z) << 4) | (enum_cast(w) << 6));
+        return static_cast<Swizzle>(festd::to_underlying(x) | (festd::to_underlying(y) << 2) | (festd::to_underlying(z) << 4)
+                                    | (festd::to_underlying(w) << 6));
     }
 } // namespace FE::Math
+
+
+//! @brief Define bitwise operations on `enum`.
+//!
+//! The macro defines bitwise or, and, xor operators.
+#define FE_ENUM_OPERATORS(Name)                                                                                                  \
+    inline constexpr Name operator|(Name a, Name b)                                                                              \
+    {                                                                                                                            \
+        return Name(((std::underlying_type_t<Name>)a) | ((std::underlying_type_t<Name>)b));                                      \
+    }                                                                                                                            \
+    inline constexpr Name& operator|=(Name& a, Name b)                                                                           \
+    {                                                                                                                            \
+        return a = a | b;                                                                                                        \
+    }                                                                                                                            \
+    inline constexpr Name operator&(Name a, Name b)                                                                              \
+    {                                                                                                                            \
+        return Name(((std::underlying_type_t<Name>)a) & ((std::underlying_type_t<Name>)b));                                      \
+    }                                                                                                                            \
+    inline constexpr Name& operator&=(Name& a, Name b)                                                                           \
+    {                                                                                                                            \
+        return a = a & b;                                                                                                        \
+    }                                                                                                                            \
+    inline constexpr Name operator^(Name a, Name b)                                                                              \
+    {                                                                                                                            \
+        return Name(((std::underlying_type_t<Name>)a) ^ ((std::underlying_type_t<Name>)b));                                      \
+    }                                                                                                                            \
+    inline constexpr Name& operator^=(Name& a, Name b)                                                                           \
+    {                                                                                                                            \
+        return a = a ^ b;                                                                                                        \
+    }

@@ -7,13 +7,14 @@ namespace FE
 {
     namespace
     {
-        static SpinLock g_ThreadDataPoolLock;
+        static Threading::SpinLock g_ThreadDataPoolLock;
 
 
         inline static NativeThreadData* AllocateThreadData()
         {
             const std::lock_guard lock{ g_ThreadDataPoolLock };
-            NativeThreadData* pResult = Memory::New<NativeThreadData>(Env::Internal::GetThreadDataPool());
+            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
+            NativeThreadData* pResult = Memory::New<NativeThreadData>(&state.m_threadDataAllocator);
             return pResult;
         }
 
@@ -27,7 +28,8 @@ namespace FE
                 if (pData)
                 {
                     const std::lock_guard lock{ g_ThreadDataPoolLock };
-                    Memory::Delete(Env::Internal::GetThreadDataPool(), pData, sizeof(NativeThreadData));
+                    Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
+                    Memory::Delete(&state.m_threadDataAllocator, pData, sizeof(NativeThreadData));
                     pData = nullptr;
                 }
             }
@@ -40,7 +42,7 @@ namespace FE
         {
             auto* pData = static_cast<NativeThreadData*>(lpParam);
             g_TLSThreadData.pData = pData;
-            pData->StartRoutine(pData->pUserData);
+            pData->m_startRoutine(pData->m_userData);
             return 0;
         }
     } // namespace
@@ -55,11 +57,11 @@ namespace FE
         const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, pData, CREATE_SUSPENDED, &threadID);
         FE_CORE_ASSERT(hThread, "CreateThread failed");
 
-        pData->ID = threadID;
-        pData->Priority = priority;
-        pData->hThread = hThread;
-        pData->pUserData = pUserData;
-        pData->StartRoutine = startRoutine;
+        pData->m_id = threadID;
+        pData->m_priority = priority;
+        pData->m_threadHandle = hThread;
+        pData->m_userData = pUserData;
+        pData->m_startRoutine = startRoutine;
 
         WCHAR wideName[64];
         const int32_t wideNameLength =
@@ -95,10 +97,10 @@ namespace FE
             return;
 
         const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.m_value);
-        const DWORD waitRes = WaitForSingleObject(data.hThread, INFINITE);
+        const DWORD waitRes = WaitForSingleObject(data.m_threadHandle, INFINITE);
         FE_CORE_ASSERT(waitRes == WAIT_OBJECT_0, "WaitForSingleObject failed on thread");
 
-        const BOOL closeRes = CloseHandle(data.hThread);
+        const BOOL closeRes = CloseHandle(data.m_threadHandle);
         FE_CORE_ASSERT(closeRes, "CloseHandle failed on thread");
         thread.Reset();
     }

@@ -15,40 +15,40 @@ namespace FE::Threading
     FiberPool::FiberPool(Context::Callback fiberCallback)
     {
         const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
-        const size_t totalGuardPagesSize = (TotalFiberCount + 1) * memorySpec.PageSize;
+        const size_t totalGuardPagesSize = (TotalFiberCount + 1) * memorySpec.m_pageSize;
 
-        m_StackMemorySize = AlignUp(totalGuardPagesSize + TotalStackSize, memorySpec.Granularity);
-        m_pStackMemory = Memory::AllocateVirtual(m_StackMemorySize);
+        m_stackMemorySize = AlignUp(totalGuardPagesSize + TotalStackSize, memorySpec.m_granularity);
+        m_stackMemory = Memory::AllocateVirtual(m_stackMemorySize);
 
-        m_Fibers = Memory::DefaultAllocateArray<FiberInfo>(TotalFiberCount);
-        eastl::uninitialized_default_fill(m_Fibers, m_Fibers + TotalFiberCount);
+        m_fibers = Memory::DefaultAllocateArray<FiberInfo>(TotalFiberCount);
+        eastl::uninitialized_default_fill(m_fibers, m_fibers + TotalFiberCount);
 
-        std::byte* ptr = static_cast<std::byte*>(m_pStackMemory);
+        std::byte* ptr = static_cast<std::byte*>(m_stackMemory);
         for (uint32_t i = 0; i < NormalFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
-            ptr += memorySpec.PageSize + NormalStackSize; // top of the stack
-            m_Fibers[i].IsFree = true;
-            m_Fibers[i].Context = Context::Create(ptr, NormalStackSize, fiberCallback);
-            Fmt::FormatTo(m_Fibers[i].Name, "Fiber {}", i);
+            Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
+            ptr += memorySpec.m_pageSize + NormalStackSize; // top of the stack
+            m_fibers[i].m_isFree = true;
+            m_fibers[i].m_context = Context::Create(ptr, NormalStackSize, fiberCallback);
+            Fmt::FormatTo(m_fibers[i].m_name, "Fiber {}", i);
         }
         for (uint32_t i = 0; i < ExtendedFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
-            ptr += memorySpec.PageSize + ExtendedStackSize;
-            m_Fibers[i + NormalFiberCount].IsFree = true;
-            m_Fibers[i + NormalFiberCount].Context = Context::Create(ptr, ExtendedStackSize, fiberCallback);
-            Fmt::FormatTo(m_Fibers[i + NormalFiberCount].Name, "Fiber Big {}", i);
+            Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
+            ptr += memorySpec.m_pageSize + ExtendedStackSize;
+            m_fibers[i + NormalFiberCount].m_isFree = true;
+            m_fibers[i + NormalFiberCount].m_context = Context::Create(ptr, ExtendedStackSize, fiberCallback);
+            Fmt::FormatTo(m_fibers[i + NormalFiberCount].m_name, "Fiber Big {}", i);
         }
 
-        Memory::ProtectVirtual(ptr, memorySpec.PageSize, Memory::ProtectFlags::kNone);
-        FE_Assert(ptr + memorySpec.PageSize == static_cast<std::byte*>(m_pStackMemory) + totalGuardPagesSize + TotalStackSize);
+        Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
+        FE_Assert(ptr + memorySpec.m_pageSize == static_cast<std::byte*>(m_stackMemory) + totalGuardPagesSize + TotalStackSize);
     }
 
 
     FiberPool::~FiberPool()
     {
-        Memory::DefaultFree(m_Fibers);
+        Memory::DefaultFree(m_fibers);
     }
 
 
@@ -56,7 +56,7 @@ namespace FE::Threading
     {
         const uint32_t fiberCount = extended ? ExtendedFiberCount : NormalFiberCount;
         const uint32_t baseFiberIndex = extended ? NormalFiberCount : 0;
-        const uint32_t indexSeed = m_IndexSeed.fetch_add(1, std::memory_order_release);
+        const uint32_t indexSeed = m_indexSeed.fetch_add(1, std::memory_order_release);
         const uint64_t indexOffset = DefaultHash(&indexSeed, sizeof(indexSeed));
 
         while (true)
@@ -64,12 +64,12 @@ namespace FE::Threading
             for (uint32_t fiberIndex = 0; fiberIndex < fiberCount; ++fiberIndex)
             {
                 const uint32_t realIndex = static_cast<uint32_t>((fiberIndex + indexOffset) % fiberCount);
-                FiberInfo& info = m_Fibers[realIndex + baseFiberIndex];
-                if (!info.IsFree.load(std::memory_order_relaxed))
+                FiberInfo& info = m_fibers[realIndex + baseFiberIndex];
+                if (!info.m_isFree.load(std::memory_order_relaxed))
                     continue;
 
                 bool expected = true;
-                if (info.IsFree.compare_exchange_weak(expected, false, std::memory_order_release))
+                if (info.m_isFree.compare_exchange_weak(expected, false, std::memory_order_release))
                     return FiberHandle{ realIndex + baseFiberIndex };
             }
 
@@ -81,20 +81,20 @@ namespace FE::Threading
 
     void FiberPool::Return(FiberHandle fiberHandle)
     {
-        m_Fibers[fiberHandle.m_value].IsFree.store(true, std::memory_order_release);
+        m_fibers[fiberHandle.m_value].m_isFree.store(true, std::memory_order_release);
     }
 
 
     void FiberPool::Update(FiberHandle fiberHandle, Context::Handle context)
     {
         if (fiberHandle)
-            m_Fibers[fiberHandle.m_value].Context = context;
+            m_fibers[fiberHandle.m_value].m_context = context;
     }
 
 
     Context::TransferParams FiberPool::Switch(FiberHandle to, uintptr_t userData)
     {
-        TracyFiberEnter(m_Fibers[to.m_value].Name.Data());
-        return Context::Switch(m_Fibers[to.m_value].Context, userData);
+        TracyFiberEnter(m_fibers[to.m_value].m_name.Data());
+        return Context::Switch(m_fibers[to.m_value].m_context, userData);
     }
 } // namespace FE::Threading

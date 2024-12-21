@@ -4,10 +4,10 @@ namespace FE::Memory
 {
     inline PoolAllocator::Page* PoolAllocator::AllocatePage()
     {
-        Page* pResult = static_cast<Page*>(Memory::AllocateVirtual(m_PageByteSize));
-        pResult->pNext = m_pPageList;
-        pResult->pCurrent = pResult + 1;
-        m_pPageList = pResult;
+        Page* pResult = static_cast<Page*>(AllocateVirtual(m_pageByteSize));
+        pResult->m_next = m_pageList;
+        pResult->m_current = pResult + 1;
+        m_pageList = pResult;
         return pResult;
     }
 
@@ -17,31 +17,31 @@ namespace FE::Memory
         if (!pPage)
             return nullptr;
 
-        const uint8_t* pPageEnd = reinterpret_cast<const uint8_t*>(pPage) + m_PageByteSize;
-        const size_t elementByteSize = m_ElementByteSize;
+        const uint8_t* pPageEnd = reinterpret_cast<const uint8_t*>(pPage) + m_pageByteSize;
+        const size_t elementByteSize = m_elementByteSize;
 
-        uint8_t* pResult = static_cast<uint8_t*>(pPage->pCurrent);
+        uint8_t* pResult = static_cast<uint8_t*>(pPage->m_current);
         if (pResult + elementByteSize > pPageEnd)
             return nullptr;
 
-        pPage->pCurrent = pResult + elementByteSize;
+        pPage->m_current = pResult + elementByteSize;
         return pResult;
     }
 
 
     void* PoolAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
     {
-        FE_CORE_ASSERT(byteSize <= m_ElementByteSize, "");
+        FE_CORE_ASSERT(byteSize <= m_elementByteSize, "");
         FE_CORE_ASSERT(byteAlignment <= kDefaultAlignment, "");
 
 #if FE_DEBUG
-        ++m_AllocationCount;
+        ++m_allocationCount;
 #endif
 
         void* pResult;
-        if (!m_pFreeList)
+        if (!m_freeList)
         {
-            pResult = AllocateFromPage(m_pPageList);
+            pResult = AllocateFromPage(m_pageList);
             if (!pResult)
             {
                 Page* pPage = AllocatePage();
@@ -51,16 +51,16 @@ namespace FE::Memory
             return pResult;
         }
 
-        pResult = m_pFreeList;
-        m_pFreeList = *static_cast<void**>(pResult);
+        pResult = m_freeList;
+        m_freeList = *static_cast<void**>(pResult);
         return pResult;
     }
 
 
     void PoolAllocator::do_deallocate(void* ptr, size_t, size_t)
     {
-        FE_CORE_ASSERT(m_AllocationCount-- > 0, "");
-        *static_cast<void**>(ptr) = m_pFreeList;
-        m_pFreeList = ptr;
+        FE_CORE_ASSERT(m_allocationCount-- > 0, "");
+        *static_cast<void**>(ptr) = m_freeList;
+        m_freeList = ptr;
     }
 } // namespace FE::Memory

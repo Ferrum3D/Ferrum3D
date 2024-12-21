@@ -76,7 +76,7 @@ namespace FE
         template<Math::Swizzle TSwizzle>
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL Swizzle(Color4F color)
         {
-            return Color4F{ _mm_shuffle_ps(color.m_simdVector, color.m_simdVector, enum_cast(TSwizzle)) };
+            return Color4F{ _mm_shuffle_ps(color.m_simdVector, color.m_simdVector, festd::to_underlying(TSwizzle)) };
         }
     };
 

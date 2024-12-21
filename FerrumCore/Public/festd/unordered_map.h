@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <ankerl/unordered_dense.h>
 

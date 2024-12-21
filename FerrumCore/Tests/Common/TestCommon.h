@@ -1,8 +1,7 @@
 #pragma once
+#include <FeCore/Base/Base.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include <utility>
 
 struct MockConstructors
 {
@@ -45,7 +44,7 @@ struct AllocateObject
 };
 
 
-struct TestAllocator : public std::pmr::memory_resource
+struct TestAllocator final : public std::pmr::memory_resource
 {
     uint32_t m_allocationCount = 0;
     uint32_t m_deallocationCount = 0;
