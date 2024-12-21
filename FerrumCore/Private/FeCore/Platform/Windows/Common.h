@@ -1,23 +1,33 @@
 ﻿#pragma once
 #include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Containers/SmallVector.h>
 #include <FeCore/Time/BaseTime.h>
+#include <festd/vector.h>
 
 namespace FE::Platform
 {
     template<uint32_t TLength>
     struct WideString
     {
-        festd::small_vector<WCHAR, TLength> Value;
+        festd::small_vector<WCHAR, TLength> m_value;
 
-        inline WideString(StringSlice str)
+        WideString(StringSlice str)
         {
             const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), nullptr, 0);
             if (length < 0)
                 return;
 
-            Value.resize(length + 1, 0);
-            MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), Value.data(), Value.size());
+            m_value.resize(length + 1, 0);
+            MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), m_value.data(), m_value.size());
+        }
+
+        [[nodiscard]] const WCHAR* data() const
+        {
+            return m_value.data();
+        }
+
+        [[nodiscard]] uint32_t size() const
+        {
+            return m_value.size();
         }
     };
 

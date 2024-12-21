@@ -17,60 +17,60 @@ namespace FE
     } // namespace Platform
 
 
-    class LibraryLoader final
+    struct LibraryLoader final
     {
-        Platform::ModuleHandle m_Handle;
-
-        LibraryLoader(const LibraryLoader&) = delete;
-        LibraryLoader& operator=(const LibraryLoader&) = delete;
-
-        void Release();
-
-    public:
         LibraryLoader() = default;
         LibraryLoader(StringSlice libraryName);
 
-        inline bool Load(StringSlice libraryName)
+        bool Load(StringSlice libraryName)
         {
-            m_Handle = Platform::LoadModule(libraryName);
-            return m_Handle.IsValid();
+            m_handle = Platform::LoadModule(libraryName);
+            return m_handle.IsValid();
         }
 
-        inline LibraryLoader(LibraryLoader&& other) noexcept
+        LibraryLoader(LibraryLoader&& other) noexcept
         {
-            m_Handle = other.m_Handle;
-            other.m_Handle.Reset();
+            m_handle = other.m_handle;
+            other.m_handle.Reset();
         }
 
-        inline LibraryLoader& operator=(LibraryLoader&& other) noexcept
+        LibraryLoader& operator=(LibraryLoader&& other) noexcept
         {
             Release();
 
-            m_Handle = other.m_Handle;
-            other.m_Handle.Reset();
+            m_handle = other.m_handle;
+            other.m_handle.Reset();
 
             return *this;
         }
 
-        inline Platform::ModuleHandle GetHandle() const
+        Platform::ModuleHandle GetHandle() const
         {
-            return m_Handle;
+            return m_handle;
         }
 
-        inline ~LibraryLoader()
+        ~LibraryLoader()
         {
             Release();
         }
 
         template<class T>
-        [[nodiscard]] inline T FindFunction(const char* functionName) const
+        [[nodiscard]] T FindFunction(const char* functionName) const
         {
-            return reinterpret_cast<T>(Platform::FindModuleSymbol(m_Handle, functionName));
+            return reinterpret_cast<T>(Platform::FindModuleSymbol(m_handle, functionName));
         }
 
-        inline explicit operator bool() const noexcept
+        explicit operator bool() const noexcept
         {
-            return m_Handle.IsValid();
+            return m_handle.IsValid();
         }
+
+    private:
+        Platform::ModuleHandle m_handle;
+
+        LibraryLoader(const LibraryLoader&) = delete;
+        LibraryLoader& operator=(const LibraryLoader&) = delete;
+
+        void Release();
     };
 } // namespace FE

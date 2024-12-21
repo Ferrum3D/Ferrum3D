@@ -14,15 +14,15 @@ namespace FE::Threading
     {
         struct alignas(Memory::kCacheLineSize) FiberInfo final
         {
-            std::atomic<bool> IsFree;
-            FixedString<116> Name;
-            Context::Handle Context;
+            std::atomic<bool> m_isFree;
+            FixedString<116> m_name;
+            Context::Handle m_context;
         };
 
-        void* m_pStackMemory = nullptr;
-        size_t m_StackMemorySize = 0;
-        FiberInfo* m_Fibers = nullptr;
-        std::atomic<uint32_t> m_IndexSeed;
+        void* m_stackMemory = nullptr;
+        size_t m_stackMemorySize = 0;
+        FiberInfo* m_fibers = nullptr;
+        std::atomic<uint32_t> m_indexSeed;
 
     public:
         FiberPool(Context::Callback fiberCallback);
@@ -34,4 +34,4 @@ namespace FE::Threading
         void Update(FiberHandle fiberHandle, Context::Handle context);
         Context::TransferParams Switch(FiberHandle to, uintptr_t userData);
     };
-} // namespace FE
+} // namespace FE::Threading

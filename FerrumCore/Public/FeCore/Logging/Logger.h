@@ -1,7 +1,6 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/Format.h>
-#include <FeCore/Time/DateTime.h>
+#include <festd/intrusive_list.h>
 
 namespace FE
 {
@@ -41,12 +40,12 @@ namespace FE
 
     enum class LogSeverityFlags
     {
-        kTrace = 1 << enum_cast(LogSeverity::kTrace),       //!< See LogSeverity::kTrace.
-        kDebug = 1 << enum_cast(LogSeverity::kDebug),       //!< See LogSeverity::kDebug.
-        kInfo = 1 << enum_cast(LogSeverity::kInfo),         //!< See LogSeverity::kInfo.
-        kWarning = 1 << enum_cast(LogSeverity::kWarning),   //!< See LogSeverity::kWarning.
-        kError = 1 << enum_cast(LogSeverity::kError),       //!< See LogSeverity::kError.
-        kCritical = 1 << enum_cast(LogSeverity::kCritical), //!< See LogSeverity::kCritical.
+        kTrace = 1 << festd::to_underlying(LogSeverity::kTrace),       //!< See LogSeverity::kTrace.
+        kDebug = 1 << festd::to_underlying(LogSeverity::kDebug),       //!< See LogSeverity::kDebug.
+        kInfo = 1 << festd::to_underlying(LogSeverity::kInfo),         //!< See LogSeverity::kInfo.
+        kWarning = 1 << festd::to_underlying(LogSeverity::kWarning),   //!< See LogSeverity::kWarning.
+        kError = 1 << festd::to_underlying(LogSeverity::kError),       //!< See LogSeverity::kError.
+        kCritical = 1 << festd::to_underlying(LogSeverity::kCritical), //!< See LogSeverity::kCritical.
 
         kNone = 0,                                   //!< Value used to specify that nothing should be logged.
         kErrorsOnly = kError | kCritical,            //!< Value used to specify that only errors should be logged.
@@ -58,98 +57,97 @@ namespace FE
     FE_ENUM_OPERATORS(LogSeverityFlags);
 
 
-    class Logger;
+    struct Logger;
 
-    class LogSinkBase : public festd::intrusive_list_node
+    struct LogSinkBase : public festd::intrusive_list_node
     {
+        virtual ~LogSinkBase();
+
+        virtual void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message) = 0;
+
     protected:
         Logger* m_pLogger;
 
         LogSinkBase(Logger* logger);
-
-    public:
-        virtual ~LogSinkBase();
-
-        virtual void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message) = 0;
     };
 
 
     struct LogFormatString final
     {
-        StringSlice Value;
-        SourceLocation Location;
+        StringSlice m_value;
+        SourceLocation m_location;
 
-        inline LogFormatString(const char* fmt, SourceLocation location = SourceLocation::Current())
-            : Value(fmt)
-            , Location(location)
+        LogFormatString(const char* fmt, SourceLocation location = SourceLocation::Current())
+            : m_value(fmt)
+            , m_location(location)
         {
         }
 
-        inline LogFormatString(StringSlice fmt, SourceLocation location = SourceLocation::Current())
-            : Value(fmt)
-            , Location(location)
+        LogFormatString(StringSlice fmt, SourceLocation location = SourceLocation::Current())
+            : m_value(fmt)
+            , m_location(location)
         {
         }
     };
 
 
-    class Logger final : public Memory::RefCountedObjectBase
+    struct Logger final : public Memory::RefCountedObjectBase
     {
-        friend class LogSinkBase;
-
-        SpinLock m_Lock;
-        festd::intrusive_list<LogSinkBase> m_Sinks;
-
-    public:
         FE_RTTI_Class(Logger, "B54397F4-415F-4FA6-8124-4672D2A179CE");
 
         template<class... TArgs>
-        inline void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)
+        void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)
         {
             String message;
-            Fmt::FormatTo(message, fmt.Value, std::forward<TArgs>(args)...);
+            Fmt::FormatTo(message, fmt.m_value, std::forward<TArgs>(args)...);
 
-            std::lock_guard lock{ m_Lock };
-            for (LogSinkBase& sink : m_Sinks)
+            std::lock_guard lock{ m_lock };
+            for (LogSinkBase& sink : m_sinks)
             {
-                sink.Log(severity, fmt.Location, message);
+                sink.Log(severity, fmt.m_location, message);
             }
         }
 
         template<class... TArgs>
-        inline void LogTrace(LogFormatString fmt, TArgs&&... args)
+        void LogTrace(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kTrace, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-        inline void LogDebug(LogFormatString fmt, TArgs&&... args)
+        void LogDebug(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kDebug, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-        inline void LogInfo(LogFormatString fmt, TArgs&&... args)
+        void LogInfo(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kInfo, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-        inline void LogWarning(LogFormatString fmt, TArgs&&... args)
+        void LogWarning(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kWarning, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-        inline void LogError(LogFormatString fmt, TArgs&&... args)
+        void LogError(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kError, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-        inline void LogCritical(LogFormatString fmt, TArgs&&... args)
+        void LogCritical(LogFormatString fmt, TArgs&&... args)
         {
             Log(LogSeverity::kCritical, fmt, std::forward<TArgs>(args)...);
         }
+
+    private:
+        friend struct LogSinkBase;
+
+        Threading::SpinLock m_lock;
+        festd::intrusive_list<LogSinkBase> m_sinks;
     };
 } // namespace FE

@@ -11,97 +11,92 @@ namespace FE
     //! the storage will be deleted, but all the weak references will remain.
     //! It can be used by IAssetManager for caching of assets.
     template<class T>
-    class WeakAsset final
+    struct WeakAsset final
     {
-        T* m_Storage;
-
-    public:
         FE_RTTI_Base(WeakAsset, "1CCA3D88-4896-45E5-9A7F-12F338DA181A");
 
-        inline WeakAsset() noexcept
-            : m_Storage(nullptr)
+        WeakAsset() noexcept
+            : m_storage(nullptr)
         {
         }
 
         //! @brief Create from preloaded asset.
-        inline explicit WeakAsset(T* storage)
-            : m_Storage(storage)
+        explicit WeakAsset(T* storage)
+            : m_storage(storage)
         {
-            if (m_Storage)
-            {
-                m_Storage->AddWeakRef();
-            }
+            if (m_storage)
+                m_storage->AddWeakRef();
         }
 
-        inline WeakAsset(const WeakAsset& other)
-            : m_Storage(other.m_Storage)
+        WeakAsset(const WeakAsset& other)
+            : m_storage(other.m_storage)
         {
-            if (m_Storage)
-            {
-                m_Storage->AddWeakRef();
-            }
+            if (m_storage)
+                m_storage->AddWeakRef();
         }
 
-        inline WeakAsset(WeakAsset&& other) noexcept
-            : m_Storage(other.m_Storage)
+        WeakAsset(WeakAsset&& other) noexcept
+            : m_storage(other.m_storage)
         {
-            other.m_Storage = nullptr;
+            other.m_storage = nullptr;
         }
 
-        inline WeakAsset& operator=(const WeakAsset& other)
+        WeakAsset& operator=(const WeakAsset& other)
         {
-            WeakAsset(other).Swap(*this);
+            if (this != &other)
+                WeakAsset(other).Swap(*this);
             return *this;
         }
 
-        inline WeakAsset& operator=(WeakAsset&& other) noexcept
+        WeakAsset& operator=(WeakAsset&& other) noexcept
         {
             WeakAsset(std::move(other)).Swap(*this);
             return *this;
         }
 
-        inline void Reset()
+        void Reset()
         {
             WeakAsset{}.Swap(*this);
         }
 
         //! @brief Get underlying asset storage.
-        inline T* Get() const
+        [[nodiscard]] T* Get() const
         {
-            return m_Storage;
+            return m_storage;
         }
 
-        inline ~WeakAsset()
+        ~WeakAsset()
         {
-            if (m_Storage)
-            {
-                m_Storage->ReleaseWeakRef();
-            }
+            if (m_storage)
+                m_storage->ReleaseWeakRef();
         }
 
         //! @brief Swap two asset holders.
-        inline void Swap(WeakAsset& other) noexcept
+        void Swap(WeakAsset& other) noexcept
         {
-            auto* t = other.m_Storage;
-            other.m_Storage = m_Storage;
-            m_Storage = t;
+            auto* t = other.m_storage;
+            other.m_storage = m_storage;
+            m_storage = t;
         }
 
-        inline T& operator*() const
+        T& operator*() const
         {
-            FE_CORE_ASSERT(m_Storage, "Asset was empty");
-            return *m_Storage;
+            FE_CORE_ASSERT(m_storage, "Asset was empty");
+            return *m_storage;
         }
 
-        inline T* operator->() const
+        T* operator->() const
         {
-            return m_Storage;
+            return m_storage;
         }
 
         //! @brief Check if the asset is valid.
-        inline explicit operator bool() const
+        explicit operator bool() const
         {
-            return m_Storage && m_Storage->IsAlive();
+            return m_storage && m_storage->IsAlive();
         }
+
+    private:
+        T* m_storage;
     };
 } // namespace FE

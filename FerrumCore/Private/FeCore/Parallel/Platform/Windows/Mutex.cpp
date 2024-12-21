@@ -5,30 +5,30 @@ namespace FE
 {
     Mutex::Mutex(uint32_t spinCount) noexcept
     {
-        InitializeCriticalSectionEx(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex), spinCount, 0);
+        InitializeCriticalSectionEx(reinterpret_cast<LPCRITICAL_SECTION>(&m_nativeMutex), spinCount, 0);
     }
 
 
     Mutex::~Mutex()
     {
-        DeleteCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex));
+        DeleteCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_nativeMutex));
     }
 
 
     void Mutex::lock() noexcept
     {
-        EnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex));
+        EnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_nativeMutex));
     }
 
 
     bool Mutex::try_lock()
     {
-        return TryEnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex));
+        return TryEnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_nativeMutex));
     }
 
 
     void Mutex::unlock()
     {
-        LeaveCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_NativeMutex));
+        LeaveCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&m_nativeMutex));
     }
 } // namespace FE

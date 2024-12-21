@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Assets/AssetCommon.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Parallel/SpinLock.h>
 
@@ -13,28 +12,14 @@ namespace FE::Assets
     //! a data stream and create an instance of this class. The users of asset will Get the data of assets
     //! they need in implementation-defined way through classes derived from AssetStorage.
     //! The AssetStorage class is responsible for reference counting and deleting the data after its reference count reaches 0.
-    class AssetStorage
+    struct AssetStorage
     {
-        std::pmr::memory_resource* m_allocator = nullptr;
-        uint32_t m_strongRefCount = 0;
-        uint32_t m_weakRefCount = 0;
-
-    protected:
-        mutable TracyLockable(SpinLock, m_mutex);
-        IAssetLoader* m_loader = nullptr;
-
-        //! @brief Delete the asset data, but keep this instance of AssetStorage.
-        //!
-        //! This function is called by AssetStorage when its reference count reaches 0.
-        virtual void Delete() = 0;
-
-    public:
         FE_RTTI_Class(AssetStorage, "46CA2164-383A-472F-995E-6FDBC9A1C550");
 
         //! @brief Construct an instance of AssetStorage with a loader.
         //!
         //! @param loader - Loader that will be used to load the asset data.
-        inline explicit AssetStorage(IAssetLoader* loader, std::pmr::memory_resource* allocator = nullptr) noexcept
+        explicit AssetStorage(IAssetLoader* loader, std::pmr::memory_resource* allocator = nullptr) noexcept
             : m_allocator(allocator)
             , m_loader(loader)
         {
@@ -45,13 +30,13 @@ namespace FE::Assets
         virtual ~AssetStorage() = default;
 
         //! @brief Check if the asset is still valid.
-        [[nodiscard]] inline bool IsAlive() const
+        [[nodiscard]] bool IsAlive() const
         {
             return m_strongRefCount > 0;
         }
 
         //! @brief Returns true if the asset can be cached and shared and won't be loaded on each request.
-        [[nodiscard]] inline virtual bool IsShareable()
+        [[nodiscard]] virtual bool IsShareable()
         {
             return true;
         }
@@ -63,7 +48,7 @@ namespace FE::Assets
         [[nodiscard]] virtual bool IsCompletelyLoaded() const = 0;
 
         //! @brief Add a strong reference to the asset.
-        inline void AddStrongRef()
+        void AddStrongRef()
         {
             std::unique_lock lk(m_mutex);
             ++m_strongRefCount;
@@ -71,7 +56,7 @@ namespace FE::Assets
         }
 
         //! @brief Remove a strong reference from the asset.
-        inline void ReleaseStrongRef()
+        void ReleaseStrongRef()
         {
             std::unique_lock lk(m_mutex);
 
@@ -87,14 +72,14 @@ namespace FE::Assets
         }
 
         //! @brief Add a weak reference to the asset.
-        inline void AddWeakRef()
+        void AddWeakRef()
         {
             std::unique_lock lk(m_mutex);
             ++m_weakRefCount;
         }
 
         //! @brief Remove a weak reference from the asset.
-        inline void ReleaseWeakRef()
+        void ReleaseWeakRef()
         {
             std::unique_lock lk(m_mutex);
             // Every strong reference holds a weak reference too, so if the weak counter reaches zero we can safely delete storage
@@ -104,5 +89,19 @@ namespace FE::Assets
                 Memory::Delete(m_allocator, this);
             }
         }
+
+    private:
+        std::pmr::memory_resource* m_allocator = nullptr;
+        uint32_t m_strongRefCount = 0;
+        uint32_t m_weakRefCount = 0;
+
+    protected:
+        mutable TracyLockable(Threading::SpinLock, m_mutex);
+        IAssetLoader* m_loader = nullptr;
+
+        //! @brief Delete the asset data, but keep this instance of AssetStorage.
+        //!
+        //! This function is called by AssetStorage when its reference count reaches 0.
+        virtual void Delete() = 0;
     };
 } // namespace FE::Assets

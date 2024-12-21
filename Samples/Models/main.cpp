@@ -243,7 +243,7 @@ private:
         if (m_window->CloseRequested())
             return;
 
-        const uint32_t frameIndex = frameEventArgs.FrameIndex % m_fenceValues.size();
+        const uint32_t frameIndex = frameEventArgs.m_frameIndex % m_fenceValues.size();
         m_fence->Wait(m_fenceValues[frameIndex]);
         m_swapChain->BeginFrame({ m_fence, ++m_fenceValue });
 

@@ -5,9 +5,9 @@
 
 namespace FE::IO
 {
-    inline constexpr uint32_t MaxPathLength = 260;
+    inline constexpr uint32_t kMaxPathLength = 260;
 
-    using FixedPath = FixedString<MaxPathLength>;
+    using FixedPath = FixedString<kMaxPathLength>;
 
 
     //! @brief Represents an I/O result code.
@@ -28,7 +28,7 @@ namespace FE::IO
         DeadLock = -12,         //!< Resource deadlock would occur.
         NotSupported = -13,     //!< Operation is not supported.
         InvalidArgument = -14,  //!< Argument value has not been accepted.
-        UnknownError = DefaultErrorCode<ResultCode>,
+        UnknownError = kDefaultErrorCode<ResultCode>,
     };
 
     StringSlice GetResultDesc(ResultCode code);
@@ -46,7 +46,7 @@ namespace FE::IO
     {
         struct FileHandle final : TypedHandle<FileHandle, uint64_t>
         {
-            inline static FileHandle FromPointer(const void* ptr)
+            static FileHandle FromPointer(const void* ptr)
             {
                 return FileHandle{ reinterpret_cast<uint64_t>(ptr) };
             }
@@ -79,13 +79,13 @@ namespace FE::IO
 
     inline Priority operator-(Priority lhs, int32_t rhs)
     {
-        return static_cast<Priority>(enum_cast(lhs) - rhs);
+        return static_cast<Priority>(festd::to_underlying(lhs) - rhs);
     }
 
 
     inline Priority operator+(Priority lhs, int32_t rhs)
     {
-        return static_cast<Priority>(enum_cast(lhs) + rhs);
+        return static_cast<Priority>(festd::to_underlying(lhs) + rhs);
     }
 
 
@@ -99,10 +99,10 @@ namespace FE::IO
 
     struct FileStats final
     {
-        DateTime<TZ::UTC> CreationTime;
-        DateTime<TZ::UTC> ModificationTime;
-        DateTime<TZ::UTC> AccessTime;
-        uint64_t ByteSize;
+        DateTime<TZ::UTC> m_creationTime;
+        DateTime<TZ::UTC> m_modificationTime;
+        DateTime<TZ::UTC> m_accessTime;
+        uint64_t m_byteSize;
     };
 
 
@@ -133,13 +133,13 @@ namespace FE::IO
 
     inline constexpr bool IsWriteAllowed(OpenMode mode)
     {
-        return (enum_cast(mode) & enum_cast(OpenMode::kWriteOnly)) != 0;
+        return (festd::to_underlying(mode) & festd::to_underlying(OpenMode::kWriteOnly)) != 0;
     }
 
 
     inline constexpr bool IsReadAllowed(OpenMode mode)
     {
-        return (enum_cast(mode) & enum_cast(OpenMode::kReadOnly)) != 0;
+        return (festd::to_underlying(mode) & festd::to_underlying(OpenMode::kReadOnly)) != 0;
     }
 
 

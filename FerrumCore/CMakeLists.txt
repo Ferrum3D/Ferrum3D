@@ -1,6 +1,15 @@
 ﻿set(PUBLIC_HEADERS
+    Public/festd/Internal/BitStorage.h
+
+    Public/festd/base.h
+    Public/festd/bit_vector.h
+    Public/festd/fixed_function.h
+    Public/festd/intrusive_list.h
+    Public/festd/span.h
+    Public/festd/unordered_map.h
+    Public/festd/vector.h
+
     Public/FeCore/Assets/Asset.h
-    Public/FeCore/Assets/AssetCommon.h
     Public/FeCore/Assets/AssetStorage.h
     Public/FeCore/Assets/IAssetLoader.h
     Public/FeCore/Assets/IAssetManager.h
@@ -16,13 +25,9 @@
 
     Public/FeCore/Console/Console.h
 
-    Public/FeCore/Containers/BitSet.h
-    Public/FeCore/Containers/BitStorage.h
     Public/FeCore/Containers/ByteBuffer.h
-    Public/FeCore/Containers/HashTables.h
     Public/FeCore/Containers/LRUCacheMap.h
     Public/FeCore/Containers/SegmentedVector.h
-    Public/FeCore/Containers/SmallVector.h
     Public/FeCore/Containers/SparseSet.h
     Public/FeCore/Containers/SparseStorage.h
 
@@ -73,7 +78,6 @@
 
     Public/FeCore/Modules/Configuration.h
     Public/FeCore/Modules/Environment.h
-    Public/FeCore/Modules/EnvironmentPrivate.h
     Public/FeCore/Modules/LibraryLoader.h
     Public/FeCore/Modules/ServiceLocator.h
 
@@ -118,6 +122,7 @@ set(COMMON_SOURCES
     Private/FeCore/Assets/AssetManager.cpp
 
     Private/FeCore/Console/Console.cpp
+    Private/FeCore/Console/ConsolePrivate.h
 
     Private/FeCore/DI/BaseDI.cpp
     Private/FeCore/DI/Builder.cpp
@@ -149,6 +154,7 @@ set(COMMON_SOURCES
 
     Private/FeCore/Modules/Configuration.cpp
     Private/FeCore/Modules/Environment.cpp
+    Private/FeCore/Modules/EnvironmentPrivate.h
     Private/FeCore/Modules/LibraryLoader.cpp
 
     Private/FeCore/Parallel/Context.cpp

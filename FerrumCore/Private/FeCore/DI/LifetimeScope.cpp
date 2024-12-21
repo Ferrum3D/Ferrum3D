@@ -5,61 +5,60 @@ namespace FE::DI
 {
     ResultCode LifetimeScope::ActivateImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
     {
-        return m_pRegistry->GetActivator(registration.GetIndex())->Invoke(m_pRootProvider, ppResult);
+        return m_registry->GetActivator(registration.GetIndex())->Invoke(m_rootProvider, ppResult);
     }
 
 
     ResultCode LifetimeScope::ResolveImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
     {
-        auto iter = m_Table.find(registration);
-        if (iter != m_Table.end())
+        auto iter = m_table.find(registration);
+        if (iter != m_table.end())
         {
             *ppResult = iter->second;
-            return ResultCode::Success;
+            return ResultCode::kSuccess;
         }
 
         const ResultCode activationResult = ActivateImpl(registration, ppResult);
-        if (activationResult != ResultCode::Success)
+        if (activationResult != ResultCode::kSuccess)
         {
             *ppResult = nullptr;
             return activationResult;
         }
 
-        if (registration.GetLifetime() != Lifetime::Transient)
+        if (registration.GetLifetime() != Lifetime::kTransient)
         {
             // We don't want to hold references to transient objects.
             (*ppResult)->AddRef();
         }
 
-        m_Table[registration] = *ppResult;
-        return ResultCode::Success;
+        m_table[registration] = *ppResult;
+        return ResultCode::kSuccess;
     }
 
 
     LifetimeScope::~LifetimeScope()
     {
-        for (auto& [registration, pObject] : m_Table)
+        for (auto& [registration, pObject] : m_table)
         {
             pObject->Release();
         }
 
-        m_Table.clear();
+        m_table.clear();
     }
 
 
     ResultCode LifetimeScope::Resolve(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
     {
-        const Lifetime lifetime = registration.GetLifetime();
-        switch (lifetime)
+        switch (registration.GetLifetime())
         {
-        case Lifetime::Transient:
+        case Lifetime::kTransient:
             return ActivateImpl(registration, ppResult);
-        case Lifetime::Singleton:
+        case Lifetime::kSingleton:
             return ResolveImpl(registration, ppResult);
-        case Lifetime::Thread:
+        case Lifetime::kThread:
         default:
             *ppResult = nullptr;
-            return ResultCode::InvalidOperation;
+            return ResultCode::kInvalidOperation;
         }
     }
 } // namespace FE::DI

@@ -4,37 +4,28 @@
 
 namespace FE
 {
-    class WaitGroup final
+    struct WaitGroup final
     {
-        std::atomic<uint32_t> m_RefCount;
-        std::atomic<int32_t> m_Counter;
-        std::atomic<uint64_t> m_LockAndQueue;
-
-        bool SignalSlowImpl();
-
-        WaitGroup() = default;
-
-    public:
-        [[nodiscard]] inline uint32_t GetRefCount() const
+        [[nodiscard]] uint32_t GetRefCount() const
         {
-            return m_RefCount.load(std::memory_order_relaxed);
+            return m_refCount.load(std::memory_order_relaxed);
         }
 
-        inline uint32_t AddRef()
+        uint32_t AddRef()
         {
-            return ++m_RefCount;
+            return ++m_refCount;
         }
 
-        inline uint32_t Release()
+        uint32_t Release()
         {
-            const uint32_t refCount = --m_RefCount;
+            const uint32_t refCount = --m_refCount;
             if (refCount == 0)
                 Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->FreeSmallBlock(this, sizeof(WaitGroup));
 
             return refCount;
         }
 
-        inline static WaitGroup* Create()
+        static WaitGroup* Create()
         {
             void* ptr = Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AllocateSmallBlock(sizeof(WaitGroup));
             return new (ptr) WaitGroup;
@@ -44,18 +35,27 @@ namespace FE
         void Signal();
         bool IsSignaled() const;
         void Wait();
+
+    private:
+        std::atomic<uint32_t> m_refCount;
+        std::atomic<int32_t> m_counter;
+        std::atomic<uint64_t> m_lockAndQueue;
+
+        bool SignalSlowImpl();
+
+        WaitGroup() = default;
     };
 
 
     inline void WaitGroup::Add(int32_t value)
     {
         FE_CORE_ASSERT(value > 0, "Invalid value");
-        m_Counter.fetch_add(value);
+        m_counter.fetch_add(value);
     }
 
 
     inline bool WaitGroup::IsSignaled() const
     {
-        return m_Counter.load() == 0;
+        return m_counter.load() == 0;
     }
 } // namespace FE

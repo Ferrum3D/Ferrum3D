@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Assets/AssetCommon.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/RTTI/RTTI.h>
@@ -7,7 +6,7 @@
 namespace FE::Assets
 {
     struct IAssetLoader;
-    class AssetStorage;
+    struct AssetStorage;
 
 
     enum class AssetLoadingFlags

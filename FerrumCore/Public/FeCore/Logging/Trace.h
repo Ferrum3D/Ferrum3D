@@ -42,7 +42,7 @@ namespace FE::Trace
         else
         {
             // The logger has not been initialized yet.
-            Platform::AssertionReport(fmt.Location, Fmt::FixedFormat(fmt.Value, std::forward<TArgs>(args)...));
+            Platform::AssertionReport(fmt.m_location, Fmt::FixedFormat(fmt.m_value, std::forward<TArgs>(args)...));
         }
     }
 

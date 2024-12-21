@@ -6,33 +6,33 @@ namespace FE
 {
     class BinarySerializer final
     {
-        Rc<IO::IStream> m_Stream;
+        Rc<IO::IStream> m_stream;
 
     public:
-        inline explicit BinarySerializer(IO::IStream* stream)
-            : m_Stream(stream)
+        explicit BinarySerializer(IO::IStream* stream)
+            : m_stream(stream)
         {
         }
 
-        inline size_t Write(const void* data, uint32_t size)
+        size_t Write(const void* data, uint32_t size)
         {
-            return m_Stream->WriteFromBuffer({ static_cast<const std::byte*>(data), size });
+            return m_stream->WriteFromBuffer({ static_cast<const std::byte*>(data), size });
         }
 
         template<class T>
-        inline size_t Write(T value)
+        size_t Write(T value)
         {
             return Write(&value, sizeof(T));
         }
 
         template<class T>
-        inline size_t Read(T& value)
+        size_t Read(T& value)
         {
-            return m_Stream->ReadToBuffer({ reinterpret_cast<std::byte*>(&value), sizeof(T) });
+            return m_stream->ReadToBuffer({ reinterpret_cast<std::byte*>(&value), sizeof(T) });
         }
 
         template<class T>
-        inline T Read()
+        T Read()
         {
             T value;
             Read(value);
@@ -40,41 +40,41 @@ namespace FE
         }
 
         template<class T>
-        inline size_t WriteArray(festd::span<T> array)
+        size_t WriteArray(festd::span<T> array)
         {
             const auto length = array.size() * sizeof(T);
             Write<size_t>(array.size());
-            return m_Stream->WriteFromBuffer(array.data(), length) + sizeof(size_t);
+            return m_stream->WriteFromBuffer(array.data(), length) + sizeof(size_t);
         }
 
-        inline size_t WriteString(StringSlice string)
+        size_t WriteString(StringSlice string)
         {
             Write<size_t>(string.Size());
             return Write(string.Data(), string.Size());
         }
 
         template<class T>
-        inline size_t ReadArray(eastl::vector<T>& buffer)
+        size_t ReadArray(eastl::vector<T>& buffer)
         {
             buffer.resize(static_cast<uint32_t>(Read<size_t>()));
-            return m_Stream->ReadToBuffer(buffer.data(), buffer.size() * sizeof(T)) + sizeof(size_t);
+            return m_stream->ReadToBuffer(buffer.data(), buffer.size() * sizeof(T)) + sizeof(size_t);
         }
 
         template<class T>
-        inline eastl::vector<T> ReadArray()
+        eastl::vector<T> ReadArray()
         {
             eastl::vector<T> buffer;
             ReadArray<T>(buffer);
             return buffer;
         }
 
-        inline size_t ReadString(String& string)
+        size_t ReadString(String& string)
         {
             string = String(static_cast<uint32_t>(Read<size_t>()), '\0');
-            return m_Stream->ReadToBuffer({ reinterpret_cast<std::byte*>(string.Data()), string.Size() });
+            return m_stream->ReadToBuffer({ reinterpret_cast<std::byte*>(string.Data()), string.Size() });
         }
 
-        inline String ReadString()
+        String ReadString()
         {
             String string;
             ReadString(string);

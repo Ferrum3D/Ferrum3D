@@ -89,7 +89,7 @@ namespace FE
         template<Math::Swizzle TSwizzle>
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4F FE_VECTORCALL Swizzle(Vector4F vec)
         {
-            return Vector4F{ _mm_shuffle_ps(vec.m_simdVector, vec.m_simdVector, enum_cast(TSwizzle)) };
+            return Vector4F{ _mm_shuffle_ps(vec.m_simdVector, vec.m_simdVector, festd::to_underlying(TSwizzle)) };
         }
     };
 

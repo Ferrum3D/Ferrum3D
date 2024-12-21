@@ -14,9 +14,9 @@ namespace FE::Assets
     //! strings like "png" or "jpg".
     struct AssetLoaderSpec final
     {
-        Env::Name AssetTypeName;
-        StringSlice FileExtension;
-        festd::span<const StringSlice> SourceExtensions;
+        Env::Name m_assetTypeName;
+        StringSlice m_fileExtension;
+        festd::span<const StringSlice> m_sourceExtensions;
     };
 
 
@@ -36,7 +36,7 @@ namespace FE::Assets
         //!
         //! The storage will have one strong reference. Remove the reference when you are done with it.
         //! Asset<T>::Load() will take ownership of the storage and will remove this reference automatically.
-        [[nodiscard]] virtual void CreateStorage(AssetStorage** ppStorage) = 0;
+        virtual void CreateStorage(AssetStorage** ppStorage) = 0;
 
         virtual void LoadAsset(AssetStorage* storage, Env::Name assetName) = 0;
     };

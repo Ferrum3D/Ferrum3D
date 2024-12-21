@@ -1,5 +1,4 @@
 ﻿#include <FeCore/Console/Console.h>
-#include <FeCore/Containers/HashTables.h>
 #include <FeCore/DI/Container.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Memory/Memory.h>
@@ -8,6 +7,7 @@
 #include <FeCore/Parallel/Thread.h>
 #include <FeCore/Platform/Windows/Common.h>
 #include <cstdio>
+#include <festd/unordered_map.h>
 #include <sstream>
 
 namespace FE::Env
@@ -39,7 +39,7 @@ namespace FE::Env
             static constexpr uint32_t PageListByteSize = 64 * 1024;
             static constexpr uint32_t MaxPageCount = PageListByteSize / sizeof(void*);
 
-            SpinLock m_Lock;
+            Threading::SpinLock m_Lock;
             void** m_ppPages;
             uint32_t m_CurrentPageIndex = kInvalidIndex;
             uint32_t m_Offset = kNamePageByteSize;
@@ -74,7 +74,7 @@ namespace FE::Env
             Name::Record* Allocate(uint64_t hash, size_t stringByteSize, uint32_t& handle)
             {
                 std::lock_guard lk{ m_Lock };
-                const size_t recordHeaderSize = offsetof(Name::Record, Data);
+                const size_t recordHeaderSize = offsetof(Name::Record, m_data);
                 const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
                 if (recordSize + m_Offset > kNamePageByteSize)
                 {
@@ -85,7 +85,7 @@ namespace FE::Env
                 NameHandle result;
                 result.PageIndex = m_CurrentPageIndex;
                 result.BlockIndex = m_Offset >> kNameBlockShift;
-                handle = bit_cast<uint32_t>(result);
+                handle = festd::bit_cast<uint32_t>(result);
                 m_Map.insert(std::make_pair(hash, handle));
 
                 void* ptr = static_cast<uint8_t*>(m_ppPages[m_CurrentPageIndex]) + m_Offset;
@@ -96,7 +96,7 @@ namespace FE::Env
 
             Name::Record* ResolvePointer(uint32_t handleValue) const
             {
-                const NameHandle handle = bit_cast<NameHandle>(handleValue);
+                const NameHandle handle = festd::bit_cast<NameHandle>(handleValue);
                 const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_ppPages[handle.PageIndex]);
                 const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.BlockIndex) << kNameBlockShift);
                 return reinterpret_cast<Name::Record*>(recordAddress);
@@ -129,7 +129,7 @@ namespace FE::Env
         public:
             void* do_allocate(size_t size, size_t alignment) override
             {
-                FE_CORE_ASSERT(Memory::GetPlatformSpec().Granularity >= alignment, "Unsupported alignment");
+                FE_CORE_ASSERT(Memory::GetPlatformSpec().m_granularity >= alignment, "Unsupported alignment");
                 return Memory::AllocateVirtual(size);
             }
 
@@ -183,20 +183,17 @@ namespace FE::Env
         public:
             DefaultMemoryResource m_defaultMemoryResource;
             VirtualMemoryResource m_virtualMemoryResource;
-            Memory::LockedMemoryResource<Memory::LinearAllocator, SpinLock> m_linearMemoryResource;
-            Memory::PoolAllocator m_threadDataPool;
+            Memory::LockedMemoryResource<Memory::LinearAllocator, Threading::SpinLock> m_linearMemoryResource;
+
+            SharedState m_sharedState;
 
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
 
             Environment()
                 : m_linearMemoryResource(2 * 1024 * 1024, &m_virtualMemoryResource)
-                , m_threadDataPool("NativeThreadData", sizeof(NativeThreadData), 64 * 1024)
             {
                 std::pmr::set_default_resource(&m_defaultMemoryResource);
-
-                Console::Init();
-                Console::ResetColor();
             }
 
             std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type)
@@ -259,10 +256,10 @@ namespace FE::Env
                 if (!m_map.empty())
                 {
                     printf("%" PRId64 " global environment variable leaks detected\n", m_map.size());
-                    Console::SetColor(Console::Color::Red);
+                    Console::SetTextColor(Console::Color::kRed);
                     puts("Destructors of leaked variables won't be called!");
                     puts("Be sure to free all global variables before global environment shut-down");
-                    Console::ResetColor();
+                    Console::SetTextColor(Console::Color::kDefault);
                     for (auto& [name, data] : m_map)
                     {
                         printf("%s", name.c_str());
@@ -292,9 +289,15 @@ namespace FE::Env
         }
 
 
-        Memory::PoolAllocator* GetThreadDataPool()
+        SharedState::SharedState()
+            : m_threadDataAllocator("NativeThreadData", sizeof(NativeThreadData), 64 * 1024)
         {
-            return &g_EnvInstance->m_threadDataPool;
+        }
+
+
+        SharedState& SharedState::Get()
+        {
+            return g_EnvInstance->m_sharedState;
         }
     } // namespace Internal
 
@@ -315,24 +318,20 @@ namespace FE::Env
     {
         auto& nameAllocator = Internal::g_EnvInstance->m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
-        m_Handle = nameAllocator.TryFind(hash);
+        m_handle = nameAllocator.TryFind(hash);
         if (Valid())
         {
-            if (IsDebugBuild)
-            {
-                FE_CORE_ASSERT(str == GetRecord()->Data, "Env::Name collision");
-            }
-
+            FE_CORE_ASSERT(str == GetRecord()->m_data, "Env::Name collision");
             return;
         }
 
-        const size_t recordHeaderSize = offsetof(Name::Record, Data);
+        const size_t recordHeaderSize = offsetof(Name::Record, m_data);
         FE_CORE_ASSERT(str.size() < Internal::kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
 
-        Name::Record* pRecord = nameAllocator.Allocate(hash, str.size() + 1, m_Handle);
-        pRecord->Size = static_cast<uint16_t>(str.size());
-        pRecord->Hash = hash;
-        memcpy(pRecord->Data, str.data(), str.size());
+        Record* pRecord = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
+        pRecord->m_size = static_cast<uint16_t>(str.size());
+        pRecord->m_hash = hash;
+        memcpy(pRecord->m_data, str.data(), str.size());
     }
 
 
@@ -340,14 +339,10 @@ namespace FE::Env
     {
         auto& nameAllocator = Internal::g_EnvInstance->m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
-        result.m_Handle = nameAllocator.TryFind(hash);
+        result.m_handle = nameAllocator.TryFind(hash);
         if (result.Valid())
         {
-            if (IsDebugBuild)
-            {
-                FE_CORE_ASSERT(str == result.GetRecord()->Data, "Env::Name collision");
-            }
-
+            FE_CORE_ASSERT(str == result.GetRecord()->m_data, "Env::Name collision");
             return true;
         }
 
@@ -360,7 +355,7 @@ namespace FE::Env
         if (!Valid())
             return nullptr;
 
-        return Internal::g_EnvInstance->m_nameDataAllocator.ResolvePointer(m_Handle);
+        return Internal::g_EnvInstance->m_nameDataAllocator.ResolvePointer(m_handle);
     }
 
 
@@ -373,6 +368,8 @@ namespace FE::Env
 
         Internal::g_IsEnvOwner = true;
         Internal::g_EnvInstance = Memory::DefaultNew<Internal::Environment>();
+
+        Console::Init();
         Internal::g_EnvInstance->m_diContainer.GetRegistryRoot()->Initialize();
     }
 

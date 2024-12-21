@@ -5,7 +5,7 @@
 
 namespace FE::DI
 {
-    class ServiceRegistryBuilder;
+    struct ServiceRegistryBuilder;
 }
 
 namespace FE::Graphics::Vulkan

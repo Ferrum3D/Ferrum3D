@@ -5,21 +5,21 @@ namespace FE
 {
     namespace DI
     {
-        class ServiceRegistry;
+        struct ServiceRegistry;
     }
 
 
-    class ModuleBase : public IModule
+    struct ModuleBase : public IModule
     {
-        Rc<DI::ServiceRegistry> m_pRegistry;
-
-    protected:
-        void Initialize();
-
-    public:
         FE_RTTI_Class(ModuleBase, "4B13A66B-5E7E-41BE-A0D0-DD51E995764B");
 
         ModuleBase();
         ~ModuleBase() override;
+
+    private:
+        Rc<DI::ServiceRegistry> m_pRegistry;
+
+    protected:
+        void Initialize();
     };
 } // namespace FE

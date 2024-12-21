@@ -3,22 +3,14 @@
 
 namespace FE::IO
 {
-    class FileStream : public BufferedStream
+    struct FileStream final : public BufferedStream
     {
-        FixedPath m_Name;
-        Platform::FileHandle m_Handle;
-        FileStats m_Stats;
-        OpenMode m_OpenMode = OpenMode::kNone;
-
-        size_t WriteImpl(festd::span<const std::byte> buffer) override;
-
-    public:
-        inline FileStream(std::pmr::memory_resource* pBufferAllocator = nullptr)
+        explicit FileStream(std::pmr::memory_resource* pBufferAllocator = nullptr)
             : BufferedStream(pBufferAllocator)
         {
         }
 
-        inline ~FileStream() override
+        ~FileStream() override
         {
             Close();
         }
@@ -36,5 +28,13 @@ namespace FE::IO
         [[nodiscard]] OpenMode GetOpenMode() const override;
         [[nodiscard]] virtual FileStats GetStats() const override;
         void Close() override;
+
+    private:
+        FixedPath m_name;
+        Platform::FileHandle m_handle;
+        FileStats m_stats{};
+        OpenMode m_openMode = OpenMode::kNone;
+
+        size_t WriteImpl(festd::span<const std::byte> buffer) override;
     };
 } // namespace FE::IO

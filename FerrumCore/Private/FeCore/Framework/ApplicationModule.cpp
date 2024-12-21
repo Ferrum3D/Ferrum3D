@@ -14,69 +14,78 @@ namespace FE
 {
     struct LogColorScope final
     {
-        inline LogColorScope(LogSeverity severity)
+        explicit LogColorScope(LogSeverity severity)
         {
-            Console::Color color = Console::Color::Default;
+            Console::Color color;
             switch (severity)
             {
+            default:
+                FE_DebugBreak();
+                [[fallthrough]];
+
             case LogSeverity::kWarning:
-                color = Console::Color::Yellow;
+                color = Console::Color::kYellow;
                 break;
+
             case LogSeverity::kError:
             case LogSeverity::kCritical:
-                color = Console::Color::Red;
+                color = Console::Color::kRed;
+                break;
+
+            case LogSeverity::kTrace:
+            case LogSeverity::kDebug:
+                color = Console::Color::kAqua;
+                break;
+
+            case LogSeverity::kInfo:
+                color = Console::Color::kLime;
                 break;
             }
 
-            Console::SetColor(color);
+            Console::SetTextColor(color);
         }
 
-        inline ~LogColorScope()
+        ~LogColorScope()
         {
-            Console::ResetColor();
+            Console::SetTextColor(Console::Color::kDefault);
         }
     };
 
 
     struct StdoutLogSink final : public LogSinkBase
     {
-        Rc<IO::FileStream> m_stream;
-
-        inline StdoutLogSink(Logger* logger)
+        StdoutLogSink(Logger* logger)
             : LogSinkBase(logger)
         {
-            m_stream = Rc<IO::FileStream>::DefaultNew();
-            m_stream->Open(IO::StandardDescriptor::kSTDOUT);
-            m_stream->EnsureBufferAllocated();
         }
 
-        inline void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message)
+        void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message)
         {
             {
                 const auto date = DateTime<TZ::UTC>::Now().ToString(DateTimeFormatKind::kISO8601);
-                m_stream->WriteFromBuffer(Memory::MakeByteSpan(date.Data(), date.Size()));
+                Console::Write(date);
             }
 
-            m_stream->WriteFromBuffer(Memory::MakeByteSpan(" ["));
+            Console::Write(" [");
 
             {
                 LogColorScope colorScope{ severity };
-                m_stream->WriteFromBuffer(Memory::MakeByteSpan(LogSeverityToString(severity)));
+                Console::Write(LogSeverityToString(severity));
             }
 
-            m_stream->WriteFromBuffer(Memory::MakeByteSpan("] "));
+            Console::Write("] ");
 
             {
-                const auto location =
-                    Fmt::FixedFormatSized<IO::MaxPathLength + 16>("{}({}): ", sourceLocation.FileName, sourceLocation.LineNumber);
-                m_stream->WriteFromBuffer(Memory::MakeByteSpan(location.Data(), location.Size()));
+                const auto location = Fmt::FixedFormatSized<IO::kMaxPathLength + 16>(
+                    "{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
+                Console::Write(StringSlice(location.Data(), location.Size()));
             }
 
-            m_stream->WriteFromBuffer(Memory::MakeByteSpan(message.Data(), message.Size()));
-            m_stream->WriteFromBuffer(Memory::MakeByteSpan("\n"));
+            Console::Write(StringSlice(message.Data(), message.Size()));
+            Console::Write("\n");
 
             if (severity >= LogSeverity::kWarning)
-                m_stream->FlushWrites();
+                Console::Flush();
         }
     };
 
@@ -89,7 +98,7 @@ namespace FE
             m_commandLine.push_back(argv[argIndex]);
 
         std::pmr::memory_resource* pStaticLinearAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
-        m_ModuleRegistry = Rc<ModuleRegistry>::New(pStaticLinearAllocator);
+        m_moduleRegistry = Rc<ModuleRegistry>::New(pStaticLinearAllocator);
 
         DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
         RegisterServices(builder);
@@ -102,14 +111,14 @@ namespace FE
 
     void ApplicationModule::Initialize()
     {
-        m_FrameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
+        m_frameEventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
     }
 
     int32_t ApplicationModule::RunMainLoop()
     {
         FrameEventArgs frameEventArgs{};
-        frameEventArgs.DeltaTime = 0.1f;
-        frameEventArgs.FrameIndex = 0;
+        frameEventArgs.m_deltaTime = 0.1f;
+        frameEventArgs.m_frameIndex = 0;
 
         FrameMark;
 
@@ -126,28 +135,30 @@ namespace FE
 
             PollSystemEvents();
 
-            frameEventArgs.DeltaTime = getDelta(ts);
+            frameEventArgs.m_deltaTime = getDelta(ts);
             EventBus<FrameEvents>::SendEvent(&FrameEvents::OnFrameStart, frameEventArgs);
-            frameEventArgs.DeltaTime = getDelta(ts);
+            frameEventArgs.m_deltaTime = getDelta(ts);
             EventBus<FrameEvents>::SendEvent(&FrameEvents::OnUpdate, frameEventArgs);
 
             Tick(frameEventArgs);
 
-            frameEventArgs.DeltaTime = getDelta(ts);
+            frameEventArgs.m_deltaTime = getDelta(ts);
             EventBus<FrameEvents>::SendEvent(&FrameEvents::OnLateUpdate, frameEventArgs);
-            frameEventArgs.DeltaTime = getDelta(ts);
+            frameEventArgs.m_deltaTime = getDelta(ts);
             EventBus<FrameEvents>::SendEvent(&FrameEvents::OnFrameEnd, frameEventArgs);
 
-            frameEventArgs.FrameIndex = ++m_FrameCounter;
+            frameEventArgs.m_frameIndex = ++m_frameCounter;
 
             ts = std::chrono::high_resolution_clock::now();
+
+            Console::Flush();
 
             FrameMark;
         }
 
         Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->Stop();
 
-        return m_ExitCode;
+        return m_exitCode;
     }
 
 
@@ -158,7 +169,7 @@ namespace FE
             .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
                 std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
                 *result = Memory::New<Env::Configuration>(allocator, m_commandLine);
-                return DI::ResultCode::Success;
+                return DI::ResultCode::kSuccess;
             })
             .InSingletonScope();
 
@@ -172,12 +183,12 @@ namespace FE
 
     bool ApplicationModule::ShouldStop()
     {
-        return CloseEventReceived() || m_StopRequested;
+        return CloseEventReceived() || m_stopRequested;
     }
 
     void ApplicationModule::Stop(int32_t exitCode)
     {
-        m_ExitCode = exitCode;
-        m_StopRequested = true;
+        m_exitCode = exitCode;
+        m_stopRequested = true;
     }
 } // namespace FE

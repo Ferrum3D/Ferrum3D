@@ -8,8 +8,8 @@ namespace FE
     {
         struct PlatformSpec final
         {
-            size_t PageSize = 0;
-            size_t Granularity = 0;
+            size_t m_pageSize = 0;
+            size_t m_granularity = 0;
         };
 
 
@@ -101,20 +101,20 @@ namespace FE
         template<class TBase, class TLock>
         class LockedMemoryResource final : public TBase
         {
-            TLock m_Lock;
+            TLock m_lock;
 
         public:
             using TBase::TBase;
 
             inline void* do_allocate(size_t byteSize, size_t byteAlignment) override
             {
-                std::lock_guard lk{ m_Lock };
+                std::lock_guard lk{ m_lock };
                 return TBase::do_allocate(byteSize, byteAlignment);
             }
 
             inline void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override
             {
-                std::lock_guard lk{ m_Lock };
+                std::lock_guard lk{ m_lock };
                 TBase::do_deallocate(ptr, byteSize, byteAlignment);
             }
         };
@@ -140,11 +140,11 @@ namespace FE
             constexpr DefaultDeleter() noexcept = default;
 
             template<class T2>
-            inline DefaultDeleter(const DefaultDeleter<T2>&) noexcept
+            DefaultDeleter(const DefaultDeleter<T2>&) noexcept
             {
             }
 
-            inline void operator()(T* ptr) const noexcept
+            void operator()(T* ptr) const noexcept
             {
                 ptr->~T();
                 DefaultFree(ptr);
@@ -158,12 +158,12 @@ namespace FE
             constexpr DefaultDeleter() noexcept = default;
 
             template<class T2>
-            inline DefaultDeleter(const DefaultDeleter<T2[]>&) noexcept
+            DefaultDeleter(const DefaultDeleter<T2[]>&) noexcept
             {
             }
 
             template<class T2>
-            inline std::enable_if_t<std::is_trivially_destructible_v<T>> operator()(T2* ptr) const noexcept
+            std::enable_if_t<std::is_trivially_destructible_v<T>> operator()(T2* ptr) const noexcept
             {
                 DefaultFree(ptr);
             }
@@ -178,31 +178,31 @@ namespace FE
             using size_type = TSizeType;
 
             constexpr StdDefaultAllocator() noexcept {}
-            inline constexpr StdDefaultAllocator(const StdDefaultAllocator&) noexcept {}
+            constexpr StdDefaultAllocator(const StdDefaultAllocator&) noexcept {}
 
             template<class U>
-            inline constexpr StdDefaultAllocator(const StdDefaultAllocator<U, TSizeType>&) noexcept
+            constexpr StdDefaultAllocator(const StdDefaultAllocator<U, TSizeType>&) noexcept
             {
             }
 
-            [[nodiscard]] inline T* allocate(size_t n) const
+            [[nodiscard]] T* allocate(size_t n) const
             {
                 return static_cast<T*>(DefaultAllocate(n * sizeof(T)));
             }
 
-            inline void deallocate(T* ptr, size_t) const
+            void deallocate(T* ptr, size_t) const
             {
                 DefaultFree(ptr);
             }
 
             template<class U>
-            inline bool operator==(const StdDefaultAllocator<U, TSizeType>&) noexcept
+            bool operator==(const StdDefaultAllocator<U, TSizeType>&) noexcept
             {
                 return true;
             }
 
             template<class U>
-            inline bool operator!=(const StdDefaultAllocator<U, TSizeType>&) noexcept
+            bool operator!=(const StdDefaultAllocator<U, TSizeType>&) noexcept
             {
                 return false;
             }

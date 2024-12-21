@@ -9,15 +9,15 @@ namespace FE::Platform
         GetTimeZoneInformation(&info);
 
         TimeZoneInfo result;
-        result.MinuteBias = info.Bias;
+        result.m_minuteBias = info.Bias;
 
         if (info.StandardName[0] == 0)
             return result;
 
         const int32_t length = WideCharToMultiByte(CP_UTF8, 0, info.StandardName, -1, nullptr, 0, nullptr, nullptr);
-        result.StandardName.Resize(length, ' ');
+        result.m_standardName.Resize(length, ' ');
         WideCharToMultiByte(
-            CP_UTF8, 0, info.StandardName, -1, result.StandardName.Data(), result.StandardName.Size(), nullptr, nullptr);
+            CP_UTF8, 0, info.StandardName, -1, result.m_standardName.Data(), result.m_standardName.Size(), nullptr, nullptr);
         return result;
     }
 

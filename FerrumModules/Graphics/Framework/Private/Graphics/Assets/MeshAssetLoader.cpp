@@ -13,8 +13,8 @@ namespace FE::Graphics
     MeshAssetLoader::MeshAssetLoader(IO::IStreamFactory* streamFactory)
         : m_streamFactory(streamFactory)
     {
-        m_spec.AssetTypeName = Env::Name{ MeshAssetStorage::kAssetTypeName };
-        m_spec.FileExtension = ".fbx";
+        m_spec.m_assetTypeName = Env::Name{ MeshAssetStorage::kAssetTypeName };
+        m_spec.m_fileExtension = ".fbx";
     }
 
 

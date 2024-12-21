@@ -6,23 +6,23 @@ namespace FE::Threading
 {
     void Event::Send()
     {
-        FE_Verify(SetEvent(reinterpret_cast<HANDLE>(m_NativeEvent)));
+        FE_Verify(SetEvent(reinterpret_cast<HANDLE>(m_nativeEvent)));
     }
 
 
     void Event::Wait()
     {
-        FE_Verify(WaitForSingleObject(reinterpret_cast<HANDLE>(m_NativeEvent), INFINITE) == WAIT_OBJECT_0);
+        FE_Verify(WaitForSingleObject(reinterpret_cast<HANDLE>(m_nativeEvent), INFINITE) == WAIT_OBJECT_0);
     }
 
 
     void Event::Close()
     {
-        if (m_NativeEvent == 0)
+        if (m_nativeEvent == 0)
             return;
 
-        CloseHandle(reinterpret_cast<HANDLE>(m_NativeEvent));
-        m_NativeEvent = 0;
+        CloseHandle(reinterpret_cast<HANDLE>(m_nativeEvent));
+        m_nativeEvent = 0;
     }
 
 

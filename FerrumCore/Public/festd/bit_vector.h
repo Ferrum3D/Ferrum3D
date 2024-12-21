@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Containers/BitStorage.h>
+#include <festd/Internal/BitStorage.h>
 
 namespace FE::Internal
 {
@@ -504,18 +504,18 @@ namespace FE
     {
         namespace pmr
         {
-            using bit_vector = Internal::BitSetImpl<
-                Internal::BasicBitSetImpl<Internal::PolymorphicAllocatorBitSetStorage<Internal::DynamicBitSetStorage>>>;
+            using bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
+                FE::Internal::PolymorphicAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
         }
 
-        using bit_vector = Internal::BitSetImpl<
-            Internal::BasicBitSetImpl<Internal::DefaultAllocatorBitSetStorage<Internal::DynamicBitSetStorage>>>;
+        using bit_vector = FE::Internal::BitSetImpl<
+            FE::Internal::BasicBitSetImpl<FE::Internal::DefaultAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
 
         template<uint32_t TMinCapacity>
-        using fixed_bit_vector = Internal::BitSetImpl<
-            Internal::BasicBitSetImpl<Internal::DefaultAllocatorBitSetStorage<Internal::FixedBitSetStorage<TMinCapacity>>>>;
+        using fixed_bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
+            FE::Internal::DefaultAllocatorBitSetStorage<FE::Internal::FixedBitSetStorage<TMinCapacity>>>>;
 
-        using bit_vector_view = Internal::BitSetImpl<Internal::BasicBitSetView<Internal::BasicBitSetViewImpl>>;
+        using bit_vector_view = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetView<FE::Internal::BasicBitSetViewImpl>>;
     } // namespace festd
 
 

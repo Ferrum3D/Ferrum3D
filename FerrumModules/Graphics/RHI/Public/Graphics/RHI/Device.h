@@ -46,9 +46,9 @@ namespace FE::Graphics::RHI
             uint32_t m_framesLeft = 0;
         };
 
-        SpinLock m_resourceListLock;
-        SpinLock m_disposeQueueLock;
-        SpinLock m_serviceListLock;
+        Threading::SpinLock m_resourceListLock;
+        Threading::SpinLock m_disposeQueueLock;
+        Threading::SpinLock m_serviceListLock;
         festd::intrusive_list<> m_resourceList;
         festd::vector<PendingDisposer> m_disposeQueue;
         festd::vector<DeviceService*> m_serviceList;

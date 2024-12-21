@@ -16,8 +16,8 @@ namespace FE::Graphics::RHI
     enum class CullingModeFlags : uint32_t
     {
         kNone = 0,
-        kBack = 1 << enum_cast(CullingMode::kBack),
-        kFront = 1 << enum_cast(CullingMode::kFront),
+        kBack = 1 << festd::to_underlying(CullingMode::kBack),
+        kFront = 1 << festd::to_underlying(CullingMode::kFront),
         kBackAndFront = kBack | kFront,
     };
 

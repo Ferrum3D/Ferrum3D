@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#include <EASTL/vector.h>
+#include <EASTL/fixed_vector.h>
 #include <FeCore/Memory/Memory.h>
 #include <gch/small_vector.hpp>
 
@@ -13,6 +15,19 @@ namespace FE::festd
             using std::allocator<T>::allocator;
         };
     } // namespace Internal
+
+
+    namespace pmr
+    {
+        template<class T>
+        using vector = eastl::vector<T, Memory::Internal::EASTLPolymorphicAllocator>;
+    }
+
+
+    template<class T, uint32_t TSize>
+    using fixed_vector = eastl::fixed_vector<T, TSize, false>;
+
+    using eastl::vector;
 
 
 #if __INTELLISENSE__

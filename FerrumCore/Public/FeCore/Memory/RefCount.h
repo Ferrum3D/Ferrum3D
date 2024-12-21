@@ -13,8 +13,33 @@ namespace FE
 
     namespace Memory
     {
-        class RefCountedObjectBase
+        struct RefCountedObjectBase
         {
+            FE_RTTI_Class(RefCountedObjectBase, "B4FA5C63-69C0-4666-8A92-726F070D769B");
+
+            RefCountedObjectBase() = default;
+            virtual ~RefCountedObjectBase() = default;
+
+            [[nodiscard]] uint32_t GetRefCount() const
+            {
+                return m_refCount.load(std::memory_order_relaxed);
+            }
+
+            uint32_t AddRef()
+            {
+                return ++m_refCount;
+            }
+
+            uint32_t Release()
+            {
+                const uint32_t refCount = --m_refCount;
+                if (refCount == 0)
+                    DoRelease();
+
+                return refCount;
+            }
+
+        private:
             friend class ::FE::Internal::RcBase;
 
             RefCountedObjectBase(const RefCountedObjectBase&) = delete;
@@ -24,41 +49,16 @@ namespace FE
             RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
 
         protected:
-            std::atomic<uint32_t> m_RefCount = 0;
-            uint32_t m_AllocationSize = 0;
-            std::pmr::memory_resource* m_pAllocator = nullptr;
+            std::atomic<uint32_t> m_refCount = 0;
+            uint32_t m_allocationSize = 0;
+            std::pmr::memory_resource* m_allocator = nullptr;
 
-            inline virtual void DoRelease()
+            virtual void DoRelease()
             {
-                std::pmr::memory_resource* pAllocator = m_pAllocator;
-                const size_t allocationSize = m_AllocationSize;
+                std::pmr::memory_resource* pAllocator = m_allocator;
+                const size_t allocationSize = m_allocationSize;
                 this->~RefCountedObjectBase();
                 pAllocator->deallocate(this, allocationSize);
-            }
-
-        public:
-            FE_RTTI_Class(RefCountedObjectBase, "B4FA5C63-69C0-4666-8A92-726F070D769B");
-
-            RefCountedObjectBase() = default;
-            virtual ~RefCountedObjectBase() = default;
-
-            [[nodiscard]] inline uint32_t GetRefCount() const
-            {
-                return m_RefCount.load(std::memory_order_relaxed);
-            }
-
-            inline uint32_t AddRef()
-            {
-                return ++m_RefCount;
-            }
-
-            inline uint32_t Release()
-            {
-                const uint32_t refCount = --m_RefCount;
-                if (refCount == 0)
-                    DoRelease();
-
-                return refCount;
             }
         };
     } // namespace Memory
@@ -66,113 +66,62 @@ namespace FE
 
     namespace Internal
     {
-        template<class T>
-        class PtrRef final
-        {
-            T* m_Ptr;
-
-        public:
-            using ValueType = typename T::ValueType;
-
-            inline explicit PtrRef(T* ptr)
-                : m_Ptr(ptr)
-            {
-            }
-
-            inline operator void**() const
-            {
-                return reinterpret_cast<void**>(m_Ptr->ReleaseAndGetAddressOf());
-            }
-
-            inline operator ValueType**()
-            {
-                return m_Ptr->ReleaseAndGetAddressOf();
-            }
-
-            inline ValueType* operator*()
-            {
-                return m_Ptr->Get();
-            }
-        };
-
-
         class RcBase
         {
         protected:
-            inline static void SetupRefCounter(Memory::RefCountedObjectBase* pObject, std::pmr::memory_resource* pAllocator,
-                                               uint32_t allocationSize)
+            static void SetupRefCounter(Memory::RefCountedObjectBase* pObject, std::pmr::memory_resource* pAllocator,
+                                        uint32_t allocationSize)
             {
-                pObject->m_AllocationSize = allocationSize;
-                pObject->m_pAllocator = pAllocator;
+                pObject->m_allocationSize = allocationSize;
+                pObject->m_allocator = pAllocator;
             }
         };
     } // namespace Internal
 
 
     template<class T>
-    class Rc final : public Internal::RcBase
+    struct Rc final : public Internal::RcBase
     {
-        T* m_pObject = nullptr;
-
-        inline void InternalAddRef() const
-        {
-            if (m_pObject)
-                m_pObject->AddRef();
-        }
-
-        inline uint32_t InternalRelease()
-        {
-            uint32_t result = 0;
-            if (m_pObject)
-            {
-                result = m_pObject->Release();
-                m_pObject = nullptr;
-            }
-
-            return result;
-        }
-
-    public:
         using ValueType = T;
 
-        inline Rc() = default;
+        Rc() = default;
 
-        inline ~Rc()
+        ~Rc()
         {
             InternalRelease();
         }
 
-        inline Rc(T* pObject)
-            : m_pObject(pObject)
+        Rc(T* pObject)
+            : m_object(pObject)
         {
             InternalAddRef();
         }
 
-        inline Rc(const Rc& other)
-            : m_pObject(other.Get())
+        Rc(const Rc& other)
+            : m_object(other.Get())
         {
             InternalAddRef();
         }
 
         template<class TOther>
-        inline Rc(const Rc<TOther>& other)
-            : m_pObject(other.Get())
+        Rc(const Rc<TOther>& other)
+            : m_object(other.Get())
         {
             InternalAddRef();
         }
 
-        inline Rc(Rc&& other)
-            : m_pObject(other.Detach())
+        Rc(Rc&& other)
+            : m_object(other.Detach())
         {
         }
 
         template<class TOther>
-        inline Rc(Rc<TOther>&& other)
-            : m_pObject(other.Detach())
+        Rc(Rc<TOther>&& other)
+            : m_object(other.Detach())
         {
         }
 
-        inline Rc& operator=(const Rc& other)
+        Rc& operator=(const Rc& other)
         {
             if (static_cast<Internal::RcBase*>(this) == static_cast<const Internal::RcBase*>(&other))
                 return *this;
@@ -183,7 +132,7 @@ namespace FE
         }
 
         template<class TOther>
-        inline Rc& operator=(const Rc<TOther>& other)
+        Rc& operator=(const Rc<TOther>& other)
         {
             if (static_cast<Internal::RcBase*>(this) == static_cast<const Internal::RcBase*>(&other))
                 return *this;
@@ -193,89 +142,84 @@ namespace FE
             return *this;
         }
 
-        inline Rc& operator=(Rc&& other)
+        Rc& operator=(Rc&& other)
         {
             Attach(other.Detach());
             return *this;
         }
 
         template<class TOther>
-        inline Rc& operator=(Rc<TOther>&& other)
+        Rc& operator=(Rc<TOther>&& other)
         {
             Attach(other.Detach());
             return *this;
         }
 
         //! @brief Release a reference and reset to null.
-        inline void Reset()
+        void Reset()
         {
             InternalRelease();
         }
 
         //! @brief Get pointer to the stored pointer.
-        [[nodiscard]] inline T* const* GetAddressOf() const
+        [[nodiscard]] T* const* GetAddressOf() const
         {
-            return &m_pObject;
+            return &m_object;
         }
 
         //! @brief Get pointer to the stored pointer.
-        [[nodiscard]] inline T** GetAddressOf()
+        [[nodiscard]] T** GetAddressOf()
         {
-            return &m_pObject;
+            return &m_object;
         }
 
         //! @brief Release a reference and get pointer to the stored pointer.
         //!
         //! It is the same as using unary '&' operator.
-        [[nodiscard]] inline T** ReleaseAndGetAddressOf()
+        [[nodiscard]] T** ReleaseAndGetAddressOf()
         {
             InternalRelease();
-            return &m_pObject;
+            return &m_object;
         }
 
         //! @brief Attach a pointer and do not add strong reference.
-        inline void Attach(T* pObject)
+        void Attach(T* pObject)
         {
             InternalRelease();
-            m_pObject = pObject;
+            m_object = pObject;
         }
 
         //! @brief Detach the stored pointer: reset to null without decrementing the reference counter.
-        inline T* Detach()
+        T* Detach()
         {
-            T* ptr = m_pObject;
-            m_pObject = nullptr;
+            T* ptr = m_object;
+            m_object = nullptr;
             return ptr;
         }
 
         //! @brief Get underlying raw pointer.
-        [[nodiscard]] inline T* Get() const
+        [[nodiscard]] T* Get() const
         {
-            return m_pObject;
+            return m_object;
         }
 
-        inline Internal::PtrRef<Rc<T>> operator&()
-        {
-            return Internal::PtrRef<Rc<T>>(this);
-        }
-
-        inline T& operator*() const
+        T& operator*() const
         {
             return *Get();
         }
 
-        inline T* operator->() const
+        T* operator->() const
         {
             return Get();
         }
 
-        inline explicit operator bool() const
+        explicit operator bool() const
         {
             return Get();
         }
 
         template<class... TArgs>
-        inline static T* New(std::pmr::memory_resource* pAllocator, TArgs&&... args)
+        static T* New(std::pmr::memory_resource* pAllocator, TArgs&&... args)
         {
             T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
@@ -284,13 +228,34 @@ namespace FE
         }
 
         template<class... TArgs>
-        inline static T* DefaultNew(TArgs&&... args)
+        static T* DefaultNew(TArgs&&... args)
         {
             std::pmr::memory_resource* pAllocator = std::pmr::get_default_resource();
             T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
                 SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
+        }
+
+    private:
+        T* m_object = nullptr;
+
+        void InternalAddRef() const
+        {
+            if (m_object)
+                m_object->AddRef();
+        }
+
+        uint32_t InternalRelease()
+        {
+            uint32_t result = 0;
+            if (m_object)
+            {
+                result = m_object->Release();
+                m_object = nullptr;
+            }
+
+            return result;
         }
     };
 

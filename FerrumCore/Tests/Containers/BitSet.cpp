@@ -1,5 +1,6 @@
-#include <FeCore/Containers/BitSet.h>
 #include <Tests/Common/TestCommon.h>
+#include <festd/bit_vector.h>
+#include <festd/vector.h>
 #include <random>
 
 using namespace FE;
@@ -8,7 +9,7 @@ namespace
 {
     BitSetWord* AllocateGuardedWords(size_t count)
     {
-        const size_t pageSize = Memory::GetPlatformSpec().Granularity;
+        const size_t pageSize = Memory::GetPlatformSpec().m_granularity;
         const size_t byteSize = AlignUp(count * sizeof(BitSetWord), pageSize);
         const size_t totalWords = byteSize / sizeof(BitSetWord);
         const size_t padWords = totalWords - count;
@@ -26,7 +27,7 @@ namespace
 
     void FreeGuardedWords(BitSetWord* words, size_t count)
     {
-        const size_t pageSize = Memory::GetPlatformSpec().Granularity;
+        const size_t pageSize = Memory::GetPlatformSpec().m_granularity;
         const size_t byteSize = AlignUp(count * sizeof(BitSetWord), pageSize);
         const size_t totalWords = byteSize / sizeof(BitSetWord);
         const size_t padWords = totalWords - count;

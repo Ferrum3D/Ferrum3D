@@ -5,10 +5,10 @@ namespace FE::Threading
 {
     class Event final
     {
-        uintptr_t m_NativeEvent = 0;
+        uintptr_t m_nativeEvent = 0;
 
         Event(uintptr_t nativeEvent)
-            : m_NativeEvent(nativeEvent)
+            : m_nativeEvent(nativeEvent)
         {
         }
 
@@ -21,16 +21,16 @@ namespace FE::Threading
         }
 
         Event(Event&& other) noexcept
-            : m_NativeEvent(other.m_NativeEvent)
+            : m_nativeEvent(other.m_nativeEvent)
         {
-            other.m_NativeEvent = 0;
+            other.m_nativeEvent = 0;
         }
 
         Event& operator=(Event&& other) noexcept
         {
             Close();
-            m_NativeEvent = other.m_NativeEvent;
-            other.m_NativeEvent = 0;
+            m_nativeEvent = other.m_nativeEvent;
+            other.m_nativeEvent = 0;
             return *this;
         }
 

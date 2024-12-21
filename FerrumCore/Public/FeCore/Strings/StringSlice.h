@@ -2,12 +2,7 @@
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/StringBase.h>
 #include <FeCore/Utils/Result.h>
-#include <cassert>
-#include <codecvt>
-#include <locale>
-#include <ostream>
-#include <string>
-#include <type_traits>
+#include <festd/vector.h>
 
 namespace FE
 {
@@ -25,43 +20,43 @@ namespace FE
         uint32_t m_Position : 28;
 
     public:
-        inline ParseError(ParseErrorCode code) noexcept // NOLINT(google-explicit-constructor)
+        ParseError(ParseErrorCode code) noexcept // NOLINT(google-explicit-constructor)
             : ParseError(code, 0)
         {
         }
 
-        inline ParseError(ParseErrorCode code, uint32_t position) noexcept
-            : m_ErrorCode(enum_cast(code))
+        ParseError(ParseErrorCode code, uint32_t position) noexcept
+            : m_ErrorCode(festd::to_underlying(code))
             , m_Position(position)
         {
         }
 
-        [[nodiscard]] inline ParseErrorCode GetCode() const noexcept
+        [[nodiscard]] ParseErrorCode GetCode() const noexcept
         {
             return static_cast<ParseErrorCode>(m_ErrorCode);
         }
 
-        [[nodiscard]] inline uint32_t GetPosition() const noexcept
+        [[nodiscard]] uint32_t GetPosition() const noexcept
         {
             return m_Position;
         }
 
-        inline friend bool operator==(ParseError parseError, ParseErrorCode code) noexcept
+        friend bool operator==(ParseError parseError, ParseErrorCode code) noexcept
         {
             return parseError.GetCode() == code;
         }
 
-        inline friend bool operator!=(ParseError parseError, ParseErrorCode code) noexcept
+        friend bool operator!=(ParseError parseError, ParseErrorCode code) noexcept
         {
             return parseError.GetCode() != code;
         }
 
-        inline friend bool operator==(ParseError lhs, ParseError rhs) noexcept
+        friend bool operator==(ParseError lhs, ParseError rhs) noexcept
         {
             return lhs.GetCode() == rhs.GetCode() && lhs.GetPosition() == rhs.GetPosition();
         }
 
-        inline friend bool operator!=(ParseError lhs, ParseError rhs) noexcept
+        friend bool operator!=(ParseError lhs, ParseError rhs) noexcept
         {
             return lhs.GetCode() != rhs.GetCode() && lhs.GetPosition() != rhs.GetPosition();
         }
@@ -84,14 +79,12 @@ namespace FE
         ParseError TryToFloatImpl(double& result) const;
 
         template<class T>
-        inline static constexpr bool is_signed_integer_v =
-            std::is_signed_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+        static constexpr bool is_signed_integer_v = std::is_signed_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
         template<class T>
-        inline static constexpr bool is_unsigned_integer_v =
-            std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
+        static constexpr bool is_unsigned_integer_v = std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
 
         template<class TInt>
-        [[nodiscard]] inline std::enable_if_t<is_signed_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
+        [[nodiscard]] std::enable_if_t<is_signed_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
             int64_t temp;
             auto ret = TryToIntImpl(temp);
@@ -110,7 +103,7 @@ namespace FE
         }
 
         template<class TInt>
-        [[nodiscard]] inline std::enable_if_t<is_unsigned_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
+        [[nodiscard]] std::enable_if_t<is_unsigned_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
             uint64_t temp;
             auto ret = TryToUIntImpl(temp);
@@ -129,8 +122,7 @@ namespace FE
         }
 
         template<class TFloat>
-        [[nodiscard]] inline std::enable_if_t<std::is_floating_point_v<TFloat>, ParseError> ParseImpl(
-            TFloat& result) const noexcept
+        [[nodiscard]] std::enable_if_t<std::is_floating_point_v<TFloat>, ParseError> ParseImpl(TFloat& result) const noexcept
         {
             double temp;
             auto ret = TryToFloatImpl(temp);
@@ -139,7 +131,7 @@ namespace FE
         }
 
         template<class TBool>
-        [[nodiscard]] inline std::enable_if_t<std::is_same_v<TBool, bool>, ParseError> ParseImpl(TBool& result) const noexcept
+        [[nodiscard]] std::enable_if_t<std::is_same_v<TBool, bool>, ParseError> ParseImpl(TBool& result) const noexcept
         {
             // something weird here:
             // error C2678: binary '==': no operator found which takes a left-hand operand of type
@@ -161,7 +153,7 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline std::enable_if_t<ValueParser<T>::value, ParseError> ParseImpl(T& result) const noexcept
+        [[nodiscard]] std::enable_if_t<ValueParser<T>::value, ParseError> ParseImpl(T& result) const noexcept
         {
             return ValueParser<T>::TryConvert(*this, result);
         }
@@ -169,31 +161,31 @@ namespace FE
     public:
         using Iterator = Internal::StrIterator;
 
-        inline constexpr StringSlice() noexcept
+        constexpr StringSlice() noexcept
             : m_Data(nullptr)
             , m_Size(0)
         {
         }
 
-        inline constexpr StringSlice(const TChar* data, uint32_t size) noexcept
+        constexpr StringSlice(const TChar* data, uint32_t size) noexcept
             : m_Data(data)
             , m_Size(size)
         {
         }
 
-        inline constexpr StringSlice(std::string_view stringView) noexcept
+        constexpr StringSlice(std::string_view stringView) noexcept
             : m_Data(stringView.data())
             , m_Size(static_cast<uint32_t>(stringView.size()))
         {
         }
 
-        inline StringSlice(Env::Name name) noexcept
+        StringSlice(Env::Name name) noexcept
         {
             if (name.Valid())
             {
                 const Env::Name::Record* pRecord = name.GetRecord();
-                m_Data = pRecord->Data;
-                m_Size = pRecord->Size;
+                m_Data = pRecord->m_data;
+                m_Size = pRecord->m_size;
             }
             else
             {
@@ -202,42 +194,42 @@ namespace FE
             }
         }
 
-        inline constexpr StringSlice(const TChar* data) noexcept
+        constexpr StringSlice(const TChar* data) noexcept
             : m_Data(data)
             , m_Size(data == nullptr ? 0 : Str::ByteLength(data))
         {
         }
 
         template<size_t S>
-        inline constexpr StringSlice(const TChar (&data)[S]) noexcept
+        constexpr StringSlice(const TChar (&data)[S]) noexcept
             : m_Data(data)
             , m_Size(Str::ByteLength(data))
         {
         }
 
-        inline StringSlice(Iterator begin, Iterator end) noexcept
+        StringSlice(Iterator begin, Iterator end) noexcept
             : m_Data(begin.m_Iter)
             , m_Size(static_cast<uint32_t>(end.m_Iter - begin.m_Iter))
         {
         }
 
-        [[nodiscard]] inline constexpr const TChar* Data() const noexcept
+        [[nodiscard]] constexpr const TChar* Data() const noexcept
         {
             return m_Data;
         }
 
-        [[nodiscard]] inline constexpr uint32_t Size() const noexcept
+        [[nodiscard]] constexpr uint32_t Size() const noexcept
         {
             return m_Size;
         }
 
         // O(N)
-        [[nodiscard]] inline uint32_t Length() const noexcept
+        [[nodiscard]] uint32_t Length() const noexcept
         {
             return Str::Length(Data(), Size());
         }
 
-        inline StringSlice Substring(uint32_t beginIndex, uint32_t length) const
+        StringSlice Substring(uint32_t beginIndex, uint32_t length) const
         {
             auto begin = Data();
             auto end = Data();
@@ -247,19 +239,19 @@ namespace FE
         }
 
         // O(1)
-        [[nodiscard]] inline TChar ByteAt(uint32_t index) const
+        [[nodiscard]] TChar ByteAt(uint32_t index) const
         {
             assert(index < Size());
             return Data()[index];
         }
 
         // O(N)
-        [[nodiscard]] inline TCodepoint CodePointAt(uint32_t index) const
+        [[nodiscard]] TCodepoint CodePointAt(uint32_t index) const
         {
             return Str::CodepointAt(Data(), Size(), index);
         }
 
-        [[nodiscard]] inline Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
         {
             const uint32_t size = Size();
             const TChar* data = Data();
@@ -269,22 +261,22 @@ namespace FE
             return Str::FindFirstOf(start.m_Iter, searchSize, search);
         }
 
-        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(TCodepoint search) const noexcept
         {
             return Str::FindFirstOf(Data(), Size(), search);
         }
 
-        [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindLastOf(TCodepoint search) const noexcept
         {
             return Str::FindLastOf(Data(), Size(), search);
         }
 
-        [[nodiscard]] inline bool Contains(TCodepoint search) const noexcept
+        [[nodiscard]] bool Contains(TCodepoint search) const noexcept
         {
             return FindFirstOf(search) != end();
         }
 
-        [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
                 return false;
@@ -292,7 +284,7 @@ namespace FE
             return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
                 return false;
@@ -317,8 +309,8 @@ namespace FE
             }
         }
 
-        [[nodiscard]] inline festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
-                                                                   std::pmr::memory_resource* pAllocator = nullptr) const
+        [[nodiscard]] festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
+                                                            std::pmr::memory_resource* pAllocator = nullptr) const
         {
             if (pAllocator == nullptr)
                 pAllocator = std::pmr::get_default_resource();
@@ -328,7 +320,7 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] inline festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
+        [[nodiscard]] festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
         {
             if (pAllocator == nullptr)
                 pAllocator = std::pmr::get_default_resource();
@@ -348,7 +340,7 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] inline StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
         {
             if (Size() == 0)
                 return {};
@@ -367,7 +359,7 @@ namespace FE
             return { result, endIter };
         }
 
-        [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
         {
             if (Size() == 0)
                 return {};
@@ -385,23 +377,23 @@ namespace FE
             return { beginIter, result };
         }
 
-        [[nodiscard]] inline StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
         {
             return StripLeft(chars).StripRight(chars);
         }
 
-        [[nodiscard]] inline int Compare(const StringSlice& other) const noexcept
+        [[nodiscard]] int Compare(const StringSlice& other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        [[nodiscard]] inline bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
         {
             return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
 
         template<class T>
-        [[nodiscard]] inline Result<T, ParseError> Parse() const
+        [[nodiscard]] Result<T, ParseError> Parse() const
         {
             T result;
             auto err = ParseImpl(result);
@@ -413,22 +405,22 @@ namespace FE
             return Err(err);
         }
 
-        [[nodiscard]] inline explicit operator UUID() const noexcept
+        [[nodiscard]] explicit operator UUID() const noexcept
         {
             return UUID(Data());
         }
 
-        [[nodiscard]] inline explicit operator Env::Name() const noexcept
+        [[nodiscard]] explicit operator Env::Name() const noexcept
         {
             return Env::Name{ Data(), static_cast<uint32_t>(Size()) };
         }
 
-        [[nodiscard]] inline Iterator begin() const noexcept
+        [[nodiscard]] Iterator begin() const noexcept
         {
             return Iterator(Data());
         }
 
-        [[nodiscard]] inline Iterator end() const noexcept
+        [[nodiscard]] Iterator end() const noexcept
         {
             return Iterator(Data() + Size());
         }
@@ -474,7 +466,7 @@ namespace FE
     template<>
     struct ValueParser<UUID> : std::true_type
     {
-        inline static ParseError TryConvert(const StringSlice& str, UUID& result)
+        static ParseError TryConvert(const StringSlice& str, UUID& result)
         {
             if (str.Length() != 36)
             {
@@ -485,11 +477,3 @@ namespace FE
         }
     };
 } // namespace FE
-
-namespace std
-{
-    inline ostream& operator<<(ostream& stream, FE::StringSlice str)
-    {
-        return stream << std::string_view(str.Data(), str.Size());
-    }
-} // namespace std
