@@ -7,10 +7,10 @@ namespace FE::Assets
     //! @brief Asset loader specification.
     //!
     //! This struct provides information about asset type and supported extensions for an asset loader.
-    //! FileExtension is a file extension of ready and preprocessed asset that can be used in a production build.
-    //! SourceExtensions is an optional list of extensions that this loader can load in development builds.
+    //! `m_fileExtension` is a file extension of ready and preprocessed asset that can be used in a production build.
+    //! `m_sourceExtensions` is an optional list of extensions that this loader can load in development builds.
     //!
-    //! For instance, image asset's FileExtension would be "dds" and SourceExtensions would contain
+    //! For instance, image asset's `m_fileExtension` would be "dds" and `m_sourceExtensions` would contain
     //! strings like "png" or "jpg".
     struct AssetLoaderSpec final
     {

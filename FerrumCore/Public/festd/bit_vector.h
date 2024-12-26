@@ -504,23 +504,31 @@ namespace FE
     {
         namespace pmr
         {
+            //! @brief A bit vector using a polymorphic allocator.
             using bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
                 FE::Internal::PolymorphicAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
         }
 
+        //! @brief A bit vector using the default allocator.
         using bit_vector = FE::Internal::BitSetImpl<
             FE::Internal::BasicBitSetImpl<FE::Internal::DefaultAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
 
+        //! @brief A fixed-size bit vector that never allocates memory.
         template<uint32_t TMinCapacity>
         using fixed_bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
             FE::Internal::DefaultAllocatorBitSetStorage<FE::Internal::FixedBitSetStorage<TMinCapacity>>>>;
 
+        //! @brief A view of a bit vector.
         using bit_vector_view = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetView<FE::Internal::BasicBitSetViewImpl>>;
     } // namespace festd
 
 
     namespace Bit
     {
+        //! @brief Traverses a bit vector and calls a functor for each set bit.
+        //!
+        //! @param bits    - The bit vector to traverse.
+        //! @param functor - The functor to call for each set bit.
         template<class TBase, class TFunctor>
         inline void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
         {

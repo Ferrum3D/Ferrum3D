@@ -40,13 +40,13 @@ namespace FE::DI
         }
 
         template<class T>
-        static Result<T*, ResultCode> Instantiate(IServiceProvider* pProvider, std::pmr::memory_resource* pAllocator)
+        static festd::expected<T*, ResultCode> Instantiate(IServiceProvider* pProvider, std::pmr::memory_resource* pAllocator)
         {
             ResolveContext ctx{ pAllocator, pProvider };
 
             T* pObject = ctx.CreateService<T>();
             if (ctx.m_resolveResult != ResultCode::kSuccess)
-                return Err(ctx.m_resolveResult);
+                return festd::unexpected(ctx.m_resolveResult);
 
             return pObject;
         }
@@ -91,11 +91,11 @@ namespace FE::DI
                 if (m_resolveResult != ResultCode::kSuccess)
                     return nullptr;
 
-                const Result<T*, ResultCode> result = m_serviceProvider->Resolve<T>();
+                const festd::expected<T*, ResultCode> result = m_serviceProvider->Resolve<T>();
                 if (result)
-                    return result.Unwrap();
+                    return result.value();
 
-                m_resolveResult = result.UnwrapErr();
+                m_resolveResult = result.error();
                 return nullptr;
             }
 
@@ -162,14 +162,14 @@ namespace FE::DI
 
 
     template<class T>
-    Result<T*, ResultCode> New(std::pmr::memory_resource* pAllocator)
+    festd::expected<T*, ResultCode> New(std::pmr::memory_resource* pAllocator)
     {
         return ServiceActivator::Instantiate<T>(Env::GetServiceProvider(), pAllocator);
     }
 
 
     template<class T>
-    Result<T*, ResultCode> DefaultNew()
+    festd::expected<T*, ResultCode> DefaultNew()
     {
         return ServiceActivator::Instantiate<T>(Env::GetServiceProvider(), std::pmr::get_default_resource());
     }

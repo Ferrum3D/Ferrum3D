@@ -1,19 +1,19 @@
 ﻿#pragma once
-#include <festd/unordered_map.h>
 #include <Graphics/RHI/DeviceService.h>
 #include <Graphics/RHI/Vulkan/Common/Config.h>
 #include <Graphics/RHI/Vulkan/Device.h>
+#include <festd/unordered_map.h>
 
 namespace FE::Graphics::Vulkan
 {
     struct DescriptorSetLayoutHandle final
     {
-        VkDescriptorSetLayout Layout = VK_NULL_HANDLE;
-        uint64_t Hash = 0;
+        VkDescriptorSetLayout m_layout = VK_NULL_HANDLE;
+        uint64_t m_hash = 0;
 
         explicit operator bool() const
         {
-            return Layout != VK_NULL_HANDLE;
+            return m_layout != VK_NULL_HANDLE;
         }
     };
 

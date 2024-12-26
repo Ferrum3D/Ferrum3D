@@ -63,7 +63,7 @@ namespace FE::Graphics::Vulkan
         layoutCreateInfo.bindingCount = vkBindings.size();
         layoutCreateInfo.pBindings = vkBindings.data();
         m_layoutHandle = m_pDescriptorAllocator->CreateDescriptorSetLayout(layoutCreateInfo);
-        m_descriptorSet = m_pDescriptorAllocator->AllocateDescriptorSet(m_layoutHandle.Layout);
+        m_descriptorSet = m_pDescriptorAllocator->AllocateDescriptorSet(m_layoutHandle.m_layout);
 
         eastl::sort(m_resourceBindings.begin(),
                     m_resourceBindings.end(),

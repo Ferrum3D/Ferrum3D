@@ -1,8 +1,7 @@
 ﻿#pragma once
 #include <EASTL/list.h>
-#include <festd/unordered_map.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Utils/Result.h>
+#include <festd/unordered_map.h>
 
 namespace FE
 {
@@ -31,17 +30,14 @@ namespace FE
         //!
         //! @param key - The key to find.
         //!
-        //! @return Result value that is Result::Ok() if the value was in the cache.
-        Result<TValue, bool> operator[](const TKey& key)
+        //! @return The corresponding value if the key was in the cache, nullopt otherwise.
+        festd::optional<TValue> operator[](const TKey& key)
         {
             TValue value;
             if (TryGetValue(key, value))
-            {
                 return value;
-            }
 
-            // TODO: maybe use optional here
-            return Err(false);
+            return festd::nullopt;
         }
 
         //! @brief Change capacity of the cache, will remove least recently used when shrinking.

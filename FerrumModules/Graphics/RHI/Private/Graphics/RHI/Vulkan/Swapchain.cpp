@@ -1,4 +1,4 @@
-﻿#include <festd/vector.h>
+﻿#include <FeCore/DI/Activator.h>
 #include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/Vulkan/CommandQueue.h>
 #include <Graphics/RHI/Vulkan/Device.h>
@@ -6,8 +6,10 @@
 #include <Graphics/RHI/Vulkan/Fence.h>
 #include <Graphics/RHI/Vulkan/Image.h>
 #include <Graphics/RHI/Vulkan/ImageView.h>
+#include <Graphics/RHI/Vulkan/ResourcePool.h>
 #include <Graphics/RHI/Vulkan/Swapchain.h>
 #include <algorithm>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -20,9 +22,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Swapchain::Swapchain(RHI::Device* device, Logger* logger, RHI::Image* depthImage)
+    Swapchain::Swapchain(RHI::Device* device, Logger* logger, RHI::ResourcePool* resourcePool)
         : m_logger(logger)
-        , m_depthImage(ImplCast(depthImage))
+        , m_resourcePool(resourcePool)
     {
         m_device = device;
     }
@@ -42,25 +44,27 @@ namespace FE::Graphics::Vulkan
         vkGetSwapchainImagesKHR(device, m_nativeSwapchain, &m_desc.m_frameCount, images.data());
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
+        auto* resourcePool = fe_assert_cast<ResourcePool*>(m_resourcePool.Get());
 
         const uint32_t width = m_desc.m_imageWidth;
         const uint32_t height = m_desc.m_imageHeight;
         m_desc.m_format = VKConvert(m_colorFormat.format);
-        for (auto& image : images)
+        for (uint32_t imageIndex = 0; imageIndex < images.size(); ++imageIndex)
         {
-            Rc backBuffer = ImplCast(pServiceProvider->ResolveRequired<RHI::Image>());
+            const VkImage image = images[imageIndex];
             const auto imageDesc = RHI::ImageDesc::Img2D(RHI::ImageBindFlags::kColor, width, height, m_desc.m_format);
-            backBuffer->InitInternal("Swapchain image", imageDesc, image);
+            const Rc backBuffer = ImplCast(DI::New<Image>(&resourcePool->m_imagePool).value());
+            const auto imageName = Fmt::FixedFormat("Swap Chain Color Target {}", imageIndex);
+            backBuffer->InitInternal(Env::Name{ imageName }, imageDesc, image);
             m_images.push_back(backBuffer);
 
-            Rc backBufferView = ImplCast(pServiceProvider->ResolveRequired<RHI::ImageView>());
+            const Rc backBufferView = ImplCast(pServiceProvider->ResolveRequired<RHI::ImageView>());
             backBufferView->Init(RHI::ImageViewDesc::ForImage(backBuffer.Get(), RHI::ImageAspectFlags::kColor));
             m_imageViews.push_back(backBufferView);
         }
 
         const auto depthImageDesc = RHI::ImageDesc::Img2D(RHI::ImageBindFlags::kDepth, width, height, RHI::Format::kD32_SFLOAT);
-        m_depthImage->Init("Swapchain depth target", depthImageDesc);
-        m_depthImage->AllocateMemory(RHI::MemoryType::kDeviceLocal);
+        m_depthImage = ImplCast(m_resourcePool->CreateImage("Swap Chain Depth Target", depthImageDesc).value());
         m_depthImageView = ImplCast(pServiceProvider->ResolveRequired<RHI::ImageView>());
         m_depthImageView->Init(RHI::ImageViewDesc::ForImage(m_depthImage.Get(), RHI::ImageAspectFlags::kDepth));
 

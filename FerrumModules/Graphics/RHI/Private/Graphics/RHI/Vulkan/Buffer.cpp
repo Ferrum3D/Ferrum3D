@@ -12,10 +12,11 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    RHI::ResultCode Buffer::Init(StringSlice name, const RHI::BufferDesc& desc)
+    RHI::ResultCode Buffer::InitInternal(VmaAllocator allocator, Env::Name name, const RHI::BufferDesc& desc)
     {
         m_name = name;
         m_desc = desc;
+        m_vmaAllocator = allocator;
 
         VkBufferCreateInfo bufferCI{};
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -49,67 +50,65 @@ namespace FE::Graphics::Vulkan
             bufferCI.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
-        const VkDevice nativeDevice = NativeCast(m_device);
-        if (vkCreateBuffer(nativeDevice, &bufferCI, VK_NULL_HANDLE, &m_nativeBuffer) != VK_SUCCESS)
+        VmaAllocationCreateInfo allocationCI{};
+        allocationCI.usage = VMA_MEMORY_USAGE_AUTO;
+
+        switch (desc.m_usage)
+        {
+        default:
+            FE_DebugBreak();
+            [[fallthrough]];
+
+        case RHI::ResourceUsage::kDeviceOnly:
+            allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            break;
+
+        case RHI::ResourceUsage::kHostRandomAccess:
+            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+            break;
+
+        case RHI::ResourceUsage::kHostWriteThrough:
+            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+            break;
+        }
+
+        if (vmaCreateBuffer(allocator, &bufferCI, &allocationCI, &m_nativeBuffer, &m_vmaAllocation, nullptr) != VK_SUCCESS)
             return RHI::ResultCode::kUnknownError;
+
+        vmaSetAllocationName(allocator, m_vmaAllocation, m_name.c_str());
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeBuffer);
-        nameInfo.pObjectName = m_name.Data();
-        vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo);
+        nameInfo.pObjectName = m_name.c_str();
+        if (vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo) != VK_SUCCESS)
+            return RHI::ResultCode::kUnknownError;
 
-        vkGetBufferMemoryRequirements(nativeDevice, m_nativeBuffer, &m_memoryRequirements);
         return RHI::ResultCode::kSuccess;
     }
 
 
-    void* Buffer::Map(uint64_t offset, uint64_t size)
+    void* Buffer::Map(uint32_t, uint32_t)
     {
-        return m_memory.Map(offset, size);
+        FE_AssertDebug(m_desc.m_usage == RHI::ResourceUsage::kHostRandomAccess
+                       || m_desc.m_usage == RHI::ResourceUsage::kHostWriteThrough);
+
+        void* result;
+        FE_VK_ASSERT(vmaMapMemory(m_vmaAllocator, m_vmaAllocation, &result));
+        return result;
     }
 
 
     void Buffer::Unmap()
     {
-        m_memory.Unmap();
-    }
-
-
-    void Buffer::AllocateMemory(RHI::MemoryType type)
-    {
-        RHI::MemoryAllocationDesc desc{};
-        desc.m_size = m_memoryRequirements.size;
-        desc.m_type = type;
-
-        DeviceMemory* memory = Rc<DeviceMemory>::DefaultNew(m_device, m_memoryRequirements.memoryTypeBits, desc);
-        memory->AddRef();
-        BindMemory(RHI::DeviceMemorySlice{ memory });
-        m_memoryOwned = true;
-    }
-
-
-    void Buffer::BindMemory(const RHI::DeviceMemorySlice& memory)
-    {
-        m_memory = memory;
-        const VkDeviceMemory vkMemory = NativeCast(memory.m_memory);
-        vkBindBufferMemory(NativeCast(m_device), m_nativeBuffer, vkMemory, memory.m_byteOffset);
+        vmaUnmapMemory(m_vmaAllocator, m_vmaAllocation);
     }
 
 
     const RHI::BufferDesc& Buffer::GetDesc() const
     {
         return m_desc;
-    }
-
-
-    void Buffer::DoRelease()
-    {
-        if (m_memoryOwned)
-            m_memory.m_memory->Release();
-
-        DeviceObject::DoRelease();
     }
 
 

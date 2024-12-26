@@ -9,7 +9,7 @@ namespace FE::Graphics::RHI
         Image* m_image = nullptr;
         ImageSubresourceRange m_subresourceRange;
         Format m_format = Format::kUndefined;
-        ImageDim m_dimension = ImageDim::kImage2D;
+        ImageDimension m_dimension = ImageDimension::k2D;
 
         static ImageViewDesc ForImage(Image* image, RHI::ImageAspectFlags aspectFlags)
         {

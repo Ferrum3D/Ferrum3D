@@ -195,4 +195,4 @@ namespace FE::Graphics::RHI
     }
 } // namespace FE::Graphics::RHI
 
-FE_POP_MSVC_WARNING
+FE_POP_MSVC_WARNING()

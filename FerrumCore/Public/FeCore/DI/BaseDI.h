@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Utils/Result.h>
 
 namespace FE::DI
 {
@@ -39,7 +38,7 @@ namespace FE::DI
         virtual ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) = 0;
 
         template<class T>
-        Result<T*, ResultCode> Resolve()
+        festd::expected<T*, ResultCode> Resolve()
         {
             if constexpr (std::is_same_v<T, IServiceProvider>)
             {
@@ -52,7 +51,7 @@ namespace FE::DI
                 if (code == ResultCode::kSuccess)
                     return static_cast<T*>(pResult);
 
-                return Err(code);
+                return festd::unexpected(code);
             }
         }
 
@@ -62,7 +61,7 @@ namespace FE::DI
             if constexpr (std::is_same_v<T, IServiceProvider>)
                 return this;
             else
-                return Resolve<T>().Unwrap();
+                return Resolve<T>().value();
         }
     };
 } // namespace FE::DI

@@ -2,6 +2,12 @@
 
 namespace FE::DI
 {
+    Container::Container()
+    {
+        m_registryCallback.m_parent = this;
+    }
+
+
     ResultCode Container::Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult)
     {
         ServiceRegistry* pRegistry = nullptr;
@@ -21,9 +27,7 @@ namespace FE::DI
         }
 
         if (pRegistry == nullptr)
-        {
             return ResultCode::kNotFound;
-        }
 
         std::lock_guard lk{ m_lock };
 

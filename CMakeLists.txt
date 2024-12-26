@@ -18,6 +18,4 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(FerrumCore)
 add_subdirectory(FerrumModules)
-add_subdirectory(FerrumAssetCompiler)
-add_subdirectory(FerrumTestProject)
 add_subdirectory(Samples)

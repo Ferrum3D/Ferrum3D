@@ -2,6 +2,9 @@
     Public/Graphics/RHI/Common/BaseTypes.h
     Public/Graphics/RHI/Common/Viewport.h
 
+    Public/Graphics/RHI/FrameGraph/Base.h
+    Public/Graphics/RHI/FrameGraph/Blackboard.h
+
     Public/Graphics/RHI/AdapterInfo.h
     Public/Graphics/RHI/Buffer.h
     Public/Graphics/RHI/CommandList.h
@@ -13,7 +16,6 @@
     Public/Graphics/RHI/Framebuffer.h
     Public/Graphics/RHI/Image.h
     Public/Graphics/RHI/ImageBase.h
-    Public/Graphics/RHI/ImageEnums.h
     Public/Graphics/RHI/ImageFormat.h
     Public/Graphics/RHI/ImageSubresource.h
     Public/Graphics/RHI/ImageView.h
@@ -25,14 +27,13 @@
     Public/Graphics/RHI/InputStreamLayout.h
     Public/Graphics/RHI/PipelineStates.h
     Public/Graphics/RHI/RenderPass.h
-    Public/Graphics/RHI/TransientResourceHeap.h
     Public/Graphics/RHI/Resource.h
     Public/Graphics/RHI/ResourceCache.h
+    Public/Graphics/RHI/ResourcePool.h
     Public/Graphics/RHI/ResourceState.h
     Public/Graphics/RHI/ShaderResourceGroup.h
     Public/Graphics/RHI/ShaderResourceGroupData.h
     Public/Graphics/RHI/ShaderResourceType.h
-    Public/Graphics/RHI/TransientResourceHeapBase.h
     Public/Graphics/RHI/Sampler.h
     Public/Graphics/RHI/ShaderCompiler.h
     Public/Graphics/RHI/ShaderModule.h
@@ -48,7 +49,6 @@ set(COMMON_SOURCES
     Private/Graphics/RHI/Device.cpp
     Private/Graphics/RHI/Module.cpp
     Private/Graphics/RHI/ShaderCompilerDXC.cpp
-    Private/Graphics/RHI/TransientResourceHeapBase.cpp
     Private/Graphics/RHI/Window.cpp
 )
 
@@ -82,16 +82,14 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/ImageSubresource.h
     Private/Graphics/RHI/Vulkan/ImageView.cpp
     Private/Graphics/RHI/Vulkan/ImageView.h
-    Private/Graphics/RHI/Vulkan/MemoryRequirementsCache.cpp
-    Private/Graphics/RHI/Vulkan/MemoryRequirementsCache.h
     Private/Graphics/RHI/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/RHI/Vulkan/GraphicsPipeline.h
     Private/Graphics/RHI/Vulkan/PipelineStates.h
     Private/Graphics/RHI/Vulkan/RenderPass.cpp
     Private/Graphics/RHI/Vulkan/RenderPass.h
+    Private/Graphics/RHI/Vulkan/ResourcePool.h
+    Private/Graphics/RHI/Vulkan/ResourcePool.cpp
     Private/Graphics/RHI/Vulkan/ResourceState.h
-    Private/Graphics/RHI/Vulkan/TransientResourceHeap.cpp
-    Private/Graphics/RHI/Vulkan/TransientResourceHeap.h
     Private/Graphics/RHI/Vulkan/Sampler.cpp
     Private/Graphics/RHI/Vulkan/Sampler.h
     Private/Graphics/RHI/Vulkan/ShaderModule.cpp
@@ -102,6 +100,7 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/ShaderResourceGroup.h
     Private/Graphics/RHI/Vulkan/Swapchain.cpp
     Private/Graphics/RHI/Vulkan/Swapchain.h
+    Private/Graphics/RHI/Vulkan/VmaImpl.cpp
 )
 
 
@@ -113,7 +112,16 @@ target_include_directories(FeGraphicsRHI PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Pub
 target_include_directories(FeGraphicsRHI PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeGraphicsRHI PROPERTIES FOLDER "Modules/Graphics")
-target_link_libraries(FeGraphicsRHI volk glfw dxc FeCore spirv-cross-core spirv-cross-hlsl TracyClient)
+target_link_libraries(FeGraphicsRHI
+    volk
+    glfw
+    dxc
+    FeCore
+    spirv-cross-core
+    spirv-cross-hlsl
+    GPUOpen::VulkanMemoryAllocator
+    TracyClient
+)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGraphicsRHI PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

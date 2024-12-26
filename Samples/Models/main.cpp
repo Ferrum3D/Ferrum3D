@@ -15,11 +15,11 @@
 #include <Graphics/RHI/Framebuffer.h>
 #include <Graphics/RHI/GraphicsPipeline.h>
 #include <Graphics/RHI/IWindow.h>
-#include <Graphics/RHI/Image.h>
 #include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/InputLayoutBuilder.h>
 #include <Graphics/RHI/Module.h>
 #include <Graphics/RHI/RenderPass.h>
+#include <Graphics/RHI/ResourcePool.h>
 #include <Graphics/RHI/Sampler.h>
 #include <Graphics/RHI/ShaderCompiler.h>
 #include <Graphics/RHI/ShaderModule.h>
@@ -30,7 +30,7 @@
 using namespace FE;
 using namespace FE::Graphics;
 
-inline constexpr const char* ExampleName = "Ferrum3D - Models";
+inline constexpr const char* kExampleName = "Ferrum3D - Models";
 
 struct ExampleApplication final : public ApplicationModule
 {
@@ -64,8 +64,10 @@ struct ExampleApplication final : public ApplicationModule
         m_graphicsQueue = m_device->GetCommandQueue(RHI::HardwareQueueKindFlags::kGraphics);
         m_transferQueue = m_device->GetCommandQueue(RHI::HardwareQueueKindFlags::kTransfer);
 
+        const Rc resourcePool = pServiceProvider->ResolveRequired<RHI::ResourcePool>();
+
         m_window = pServiceProvider->ResolveRequired<RHI::IWindow>();
-        m_window->Init(RHI::WindowDesc{ 800, 600, ExampleName });
+        m_window->Init(RHI::WindowDesc{ 800, 600, kExampleName });
         m_viewport = m_window->CreateViewport();
         m_scissor = m_window->CreateScissor();
 
@@ -96,9 +98,9 @@ struct ExampleApplication final : public ApplicationModule
             constantData = constantData * Matrix4x4F::Translation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
             constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI * -1.3f);
 
-            m_constantBuffer = pServiceProvider->ResolveRequired<RHI::Buffer>();
-            m_constantBuffer->Init("Constant buffer", RHI::BufferDesc(sizeof(constantData), RHI::BindFlags::kConstantBuffer));
-            m_constantBuffer->AllocateMemory(RHI::MemoryType::kHostVisible);
+            const auto constantBufferDesc =
+                RHI::BufferDesc(sizeof(constantData), RHI::BindFlags::kConstantBuffer, RHI::ResourceUsage::kHostWriteThrough);
+            m_constantBuffer = resourcePool->CreateBuffer("Constant Buffer", constantBufferDesc).value();
             m_constantBuffer->UpdateData(constantData.RowMajorData());
         }
 

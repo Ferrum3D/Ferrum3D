@@ -1,9 +1,8 @@
-﻿#include <festd/vector.h>
-#include <FeCore/DI/Builder.h>
+﻿#include <FeCore/DI/Builder.h>
 #include <FeCore/Logging/Trace.h>
+#include <festd/vector.h>
 
 #include <Graphics/RHI/ShaderCompilerDXC.h>
-#include <Graphics/RHI/Vulkan/Buffer.h>
 #include <Graphics/RHI/Vulkan/CommandList.h>
 #include <Graphics/RHI/Vulkan/DescriptorAllocator.h>
 #include <Graphics/RHI/Vulkan/Device.h>
@@ -11,15 +10,13 @@
 #include <Graphics/RHI/Vulkan/Fence.h>
 #include <Graphics/RHI/Vulkan/Framebuffer.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
-#include <Graphics/RHI/Vulkan/Image.h>
 #include <Graphics/RHI/Vulkan/ImageView.h>
-#include <Graphics/RHI/Vulkan/MemoryRequirementsCache.h>
 #include <Graphics/RHI/Vulkan/RenderPass.h>
+#include <Graphics/RHI/Vulkan/ResourcePool.h>
 #include <Graphics/RHI/Vulkan/Sampler.h>
 #include <Graphics/RHI/Vulkan/ShaderModule.h>
 #include <Graphics/RHI/Vulkan/ShaderResourceGroup.h>
 #include <Graphics/RHI/Vulkan/Swapchain.h>
-#include <Graphics/RHI/Vulkan/TransientResourceHeap.h>
 
 
 namespace FE::Graphics::Vulkan
@@ -117,22 +114,19 @@ namespace FE::Graphics::Vulkan
     void DeviceFactory::RegisterServices(DI::ServiceRegistryBuilder& builder)
     {
         builder.Bind<RHI::Device>().To<Device>().InSingletonScope();
+        builder.Bind<RHI::ResourcePool>().To<ResourcePool>().InSingletonScope();
 
         builder.Bind<RHI::Fence>().To<Fence>().InTransientScope();
         builder.Bind<RHI::CommandList>().To<CommandList>().InTransientScope();
         builder.Bind<RHI::Swapchain>().To<Swapchain>().InTransientScope();
-        builder.Bind<RHI::Buffer>().To<Buffer>().InTransientScope();
-        builder.Bind<RHI::Image>().To<Image>().InTransientScope();
         builder.Bind<RHI::ShaderModule>().To<ShaderModule>().InTransientScope();
         builder.Bind<RHI::RenderPass>().To<RenderPass>().InTransientScope();
         builder.Bind<RHI::GraphicsPipeline>().To<GraphicsPipeline>().InTransientScope();
         builder.Bind<RHI::ImageView>().To<ImageView>().InTransientScope();
         builder.Bind<RHI::Framebuffer>().To<Framebuffer>().InTransientScope();
         builder.Bind<RHI::Sampler>().To<Sampler>().InTransientScope();
-        builder.Bind<RHI::TransientResourceHeap>().To<TransientResourceHeap>().InTransientScope();
         builder.Bind<RHI::ShaderResourceGroup>().To<ShaderResourceGroup>().InTransientScope();
 
-        builder.Bind<MemoryRequirementsCache>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
 
         builder.Bind<RHI::ShaderCompiler>().ToConst(

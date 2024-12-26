@@ -16,6 +16,7 @@ namespace FE::DI
 
     struct ServiceRegistryCallback
     {
+        virtual ~ServiceRegistryCallback() = default;
         virtual void OnDetach(ServiceRegistry* pRegistry) = 0;
     };
 
@@ -65,7 +66,7 @@ namespace FE::DI
             return m_rootLifetimeScope;
         }
 
-        ServiceRegistration* Add(const UUID& id)
+        ServiceRegistration* Add(const UUID id)
         {
             const uint32_t index = m_registrations.size();
             m_ids.push_back(id);
@@ -77,17 +78,15 @@ namespace FE::DI
         void Sort()
         {
             ZoneScoped;
-            eastl::sort(m_registrations.begin(),
-                        m_registrations.end(),
-                        [this](const ServiceRegistration& lhs, const ServiceRegistration& rhs) {
-                            return m_ids[lhs.m_index] < m_ids[rhs.m_index];
-                        });
+            festd::sort(m_registrations, [this](const ServiceRegistration& lhs, const ServiceRegistration& rhs) {
+                return m_ids[lhs.m_index] < m_ids[rhs.m_index];
+            });
         }
 
-        ServiceRegistration* FindByID(const UUID& id)
+        ServiceRegistration* FindByID(const UUID id)
         {
-            ServiceRegistration* it = eastl::lower_bound(
-                m_registrations.begin(), m_registrations.end(), id, [this](const ServiceRegistration& lhs, const UUID& id) {
+            ServiceRegistration* it =
+                festd::lower_bound(m_registrations, id, [this](const ServiceRegistration& lhs, const UUID& id) {
                     return m_ids[lhs.m_index] < id;
                 });
 
@@ -124,7 +123,7 @@ namespace FE::DI
     {
         struct Reader final
         {
-            Reader(ServiceRegistryRoot* pParent)
+            explicit Reader(ServiceRegistryRoot* pParent)
                 : m_parent(pParent)
             {
                 m_parent->m_lock.lock();
@@ -135,12 +134,17 @@ namespace FE::DI
                 m_parent->m_lock.unlock();
             }
 
-            auto begin() const
+            Reader(const Reader&) = delete;
+            Reader& operator=(const Reader&) = delete;
+            Reader(Reader&&) = delete;
+            Reader& operator=(Reader&&) = delete;
+
+            [[nodiscard]] auto begin() const
             {
                 return m_parent->m_registries.begin();
             }
 
-            auto end() const
+            [[nodiscard]] auto end() const
             {
                 return m_parent->m_registries.end();
             }
@@ -156,6 +160,11 @@ namespace FE::DI
             m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_registries.push_back(*m_root);
             m_root->RegisterCallback(&m_registryCallback);
+        }
+
+        ServiceRegistryRoot()
+        {
+            m_registryCallback.m_parent = this;
         }
 
         ~ServiceRegistryRoot()
@@ -191,18 +200,15 @@ namespace FE::DI
         Rc<ServiceRegistry> m_root;
         Threading::SpinLock m_lock;
 
-        struct CallbackImpl final : ServiceRegistryCallback
+        struct CallbackImpl final : public ServiceRegistryCallback
         {
             void OnDetach(ServiceRegistry* pRegistry) override
             {
-                FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
-                ServiceRegistryRoot* pParent = reinterpret_cast<ServiceRegistryRoot*>(
-                    reinterpret_cast<uintptr_t>(this) - offsetof(ServiceRegistryRoot, m_registryCallback));
-                FE_POP_CLANG_WARNING
-
-                std::unique_lock lk{ pParent->m_lock };
+                std::unique_lock lk{ m_parent->m_lock };
                 festd::intrusive_list<ServiceRegistry>::remove(*pRegistry);
             }
+
+            ServiceRegistryRoot* m_parent = nullptr;
         } m_registryCallback;
     };
 } // namespace FE::DI

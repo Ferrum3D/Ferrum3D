@@ -24,6 +24,7 @@
     Public/FeCore/Base/PlatformTraits.h
 
     Public/FeCore/Console/Console.h
+    Public/FeCore/Console/ConsolePrivate.h
 
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/LRUCacheMap.h
@@ -78,6 +79,7 @@
 
     Public/FeCore/Modules/Configuration.h
     Public/FeCore/Modules/Environment.h
+    Public/FeCore/Modules/EnvironmentPrivate.h
     Public/FeCore/Modules/LibraryLoader.h
     Public/FeCore/Modules/ServiceLocator.h
 
@@ -113,7 +115,6 @@
 
     Public/FeCore/Utils/BinarySerializer.h
     Public/FeCore/Utils/BoolPointer.h
-    Public/FeCore/Utils/Result.h
     Public/FeCore/Utils/UUID.h
 )
 
@@ -122,7 +123,6 @@ set(COMMON_SOURCES
     Private/FeCore/Assets/AssetManager.cpp
 
     Private/FeCore/Console/Console.cpp
-    Private/FeCore/Console/ConsolePrivate.h
 
     Private/FeCore/DI/BaseDI.cpp
     Private/FeCore/DI/Builder.cpp
@@ -154,7 +154,6 @@ set(COMMON_SOURCES
 
     Private/FeCore/Modules/Configuration.cpp
     Private/FeCore/Modules/Environment.cpp
-    Private/FeCore/Modules/EnvironmentPrivate.h
     Private/FeCore/Modules/LibraryLoader.cpp
 
     Private/FeCore/Parallel/Context.cpp
@@ -193,7 +192,7 @@ target_include_directories(FeCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCore
-    fcontext mimalloc EASTL unordered_dense small_vector
+    fcontext mimalloc EASTL unordered_dense small_vector tl_expected
     TracyClient jeaiii_itoa dragonbox::dragonbox_to_chars)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)

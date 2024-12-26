@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/StringBase.h>
-#include <FeCore/Utils/Result.h>
+#include <FeCore/Utils/UUID.h>
 #include <festd/vector.h>
 
 namespace FE
@@ -70,8 +70,8 @@ namespace FE
     //! @brief A slice of a String.
     class StringSlice final
     {
-        const TChar* m_Data;
-        uint32_t m_Size;
+        const TChar* m_data;
+        uint32_t m_size;
 
         ParseError TryToIntImpl(int64_t& result) const;
         ParseError TryToUIntImpl(uint64_t& result) const;
@@ -87,17 +87,12 @@ namespace FE
         [[nodiscard]] std::enable_if_t<is_signed_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
             int64_t temp;
-            auto ret = TryToIntImpl(temp);
-            if (ret != ParseErrorCode::None)
-            {
+            if (const ParseError ret = TryToIntImpl(temp); ret != ParseErrorCode::None)
                 return ret;
-            }
 
             result = static_cast<TInt>(temp);
             if (result != temp)
-            {
                 return ParseErrorCode::Overflow;
-            }
 
             return ParseErrorCode::None;
         }
@@ -106,17 +101,12 @@ namespace FE
         [[nodiscard]] std::enable_if_t<is_unsigned_integer_v<TInt>, ParseError> ParseImpl(TInt& result) const noexcept
         {
             uint64_t temp;
-            auto ret = TryToUIntImpl(temp);
-            if (ret != ParseErrorCode::None)
-            {
+            if (const ParseError ret = TryToUIntImpl(temp); ret != ParseErrorCode::None)
                 return ret;
-            }
 
             result = static_cast<TInt>(temp);
             if (result != temp)
-            {
                 return ParseErrorCode::Overflow;
-            }
 
             return ParseErrorCode::None;
         }
@@ -125,7 +115,7 @@ namespace FE
         [[nodiscard]] std::enable_if_t<std::is_floating_point_v<TFloat>, ParseError> ParseImpl(TFloat& result) const noexcept
         {
             double temp;
-            auto ret = TryToFloatImpl(temp);
+            const ParseError ret = TryToFloatImpl(temp);
             result = static_cast<TFloat>(temp);
             return ret;
         }
@@ -136,14 +126,14 @@ namespace FE
             // something weird here:
             // error C2678: binary '==': no operator found which takes a left-hand operand of type
             //     'const FE::StringSlice' (or there is no acceptable conversion)
-            if (std::string_view{ m_Data, m_Size } == std::string_view{ "true" }
-                || std::string_view{ m_Data, m_Size } == std::string_view{ "1" })
+            if (std::string_view{ m_data, m_size } == std::string_view{ "true" }
+                || std::string_view{ m_data, m_size } == std::string_view{ "1" })
             {
                 result = true;
                 return ParseErrorCode::None;
             }
-            if (std::string_view{ m_Data, m_Size } == std::string_view{ "false" }
-                || std::string_view{ m_Data, m_Size } == std::string_view{ "0" })
+            if (std::string_view{ m_data, m_size } == std::string_view{ "false" }
+                || std::string_view{ m_data, m_size } == std::string_view{ "0" })
             {
                 result = false;
                 return ParseErrorCode::None;
@@ -162,20 +152,20 @@ namespace FE
         using Iterator = Internal::StrIterator;
 
         constexpr StringSlice() noexcept
-            : m_Data(nullptr)
-            , m_Size(0)
+            : m_data(nullptr)
+            , m_size(0)
         {
         }
 
         constexpr StringSlice(const TChar* data, uint32_t size) noexcept
-            : m_Data(data)
-            , m_Size(size)
+            : m_data(data)
+            , m_size(size)
         {
         }
 
         constexpr StringSlice(std::string_view stringView) noexcept
-            : m_Data(stringView.data())
-            , m_Size(static_cast<uint32_t>(stringView.size()))
+            : m_data(stringView.data())
+            , m_size(static_cast<uint32_t>(stringView.size()))
         {
         }
 
@@ -184,43 +174,43 @@ namespace FE
             if (name.Valid())
             {
                 const Env::Name::Record* pRecord = name.GetRecord();
-                m_Data = pRecord->m_data;
-                m_Size = pRecord->m_size;
+                m_data = pRecord->m_data;
+                m_size = pRecord->m_size;
             }
             else
             {
-                m_Data = nullptr;
-                m_Size = 0;
+                m_data = nullptr;
+                m_size = 0;
             }
         }
 
         constexpr StringSlice(const TChar* data) noexcept
-            : m_Data(data)
-            , m_Size(data == nullptr ? 0 : Str::ByteLength(data))
+            : m_data(data)
+            , m_size(data == nullptr ? 0 : Str::ByteLength(data))
         {
         }
 
         template<size_t S>
         constexpr StringSlice(const TChar (&data)[S]) noexcept
-            : m_Data(data)
-            , m_Size(Str::ByteLength(data))
+            : m_data(data)
+            , m_size(Str::ByteLength(data))
         {
         }
 
         StringSlice(Iterator begin, Iterator end) noexcept
-            : m_Data(begin.m_Iter)
-            , m_Size(static_cast<uint32_t>(end.m_Iter - begin.m_Iter))
+            : m_data(begin.m_Iter)
+            , m_size(static_cast<uint32_t>(end.m_Iter - begin.m_Iter))
         {
         }
 
         [[nodiscard]] constexpr const TChar* Data() const noexcept
         {
-            return m_Data;
+            return m_data;
         }
 
         [[nodiscard]] constexpr uint32_t Size() const noexcept
         {
-            return m_Size;
+            return m_size;
         }
 
         // O(N)
@@ -393,16 +383,14 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] Result<T, ParseError> Parse() const
+        [[nodiscard]] festd::expected<T, ParseError> Parse() const
         {
             T result;
             auto err = ParseImpl(result);
             if (err == ParseErrorCode::None)
-            {
                 return result;
-            }
 
-            return Err(err);
+            return festd::unexpected(err);
         }
 
         [[nodiscard]] explicit operator UUID() const noexcept
@@ -412,7 +400,7 @@ namespace FE
 
         [[nodiscard]] explicit operator Env::Name() const noexcept
         {
-            return Env::Name{ Data(), static_cast<uint32_t>(Size()) };
+            return Env::Name{ Data(), Size() };
         }
 
         [[nodiscard]] Iterator begin() const noexcept
@@ -468,12 +456,8 @@ namespace FE
     {
         static ParseError TryConvert(const StringSlice& str, UUID& result)
         {
-            if (str.Length() != 36)
-            {
-                return { ParseErrorCode::UnexpectedEnd, str.Length() - 1 };
-            }
-
-            return UUID::TryParse(str.Data(), result, false) ? ParseErrorCode::None : ParseErrorCode::InvalidSyntax;
+            result = UUID::Parse({ str.Data(), str.Size() });
+            return result.IsZero() ? ParseErrorCode::InvalidSyntax : ParseErrorCode::None;
         }
     };
 } // namespace FE

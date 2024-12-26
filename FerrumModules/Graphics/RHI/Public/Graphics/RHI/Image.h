@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <Graphics/RHI/ImageEnums.h>
 #include <Graphics/RHI/ImageFormat.h>
 #include <Graphics/RHI/ImageSubresource.h>
 #include <Graphics/RHI/Resource.h>
@@ -7,6 +6,33 @@
 
 namespace FE::Graphics::RHI
 {
+    enum class ImageBindFlags : uint32_t
+    {
+        kNone = 0,
+
+        kShaderRead = 1 << 0,
+        kUnorderedAccess = 1 << 1,
+
+        kColor = 1 << 2,
+        kDepth = 1 << 3,
+        kStencil = 1 << 4,
+
+        kTransferRead = 1 << 5,
+        kTransferWrite = 1 << 6,
+    };
+
+    FE_ENUM_OPERATORS(ImageBindFlags);
+
+
+    enum class ImageDimension : uint32_t
+    {
+        k1D,
+        k2D,
+        k3D,
+        kCubemap,
+    };
+
+
     struct ImageDesc final
     {
         uint32_t m_width : 14;
@@ -15,11 +41,11 @@ namespace FE::Graphics::RHI
         uint32_t m_depth : 14;
         uint32_t m_arraySize : 12;
         uint32_t m_mipSliceCount : 4;
-        ImageDim m_dimension : 2;
+        ImageDimension m_dimension : 2;
+        ImageBindFlags m_bindFlags : 16;
+        ResourceUsage m_usage : 16;
 
         Format m_imageFormat = Format::kUndefined;
-
-        ImageBindFlags m_bindFlags = ImageBindFlags::kShaderRead;
 
         ImageDesc()
         {
@@ -29,10 +55,12 @@ namespace FE::Graphics::RHI
             m_arraySize = 1;
             m_mipSliceCount = 1;
             m_sampleCount = 1;
-            m_dimension = ImageDim::kImage2D;
+            m_dimension = ImageDimension::k2D;
+            m_bindFlags = ImageBindFlags::kShaderRead;
+            m_usage = ResourceUsage::kDeviceOnly;
         }
 
-        Size GetSize() const
+        [[nodiscard]] Size GetSize() const
         {
             return Size{ m_width, m_height, m_depth };
         }
@@ -58,7 +86,7 @@ namespace FE::Graphics::RHI
 
     inline ImageDesc ImageDesc::Img1D(ImageBindFlags bindFlags, uint32_t width, Format format)
     {
-        return ImageDesc::Img1DArray(bindFlags, width, 1, format);
+        return Img1DArray(bindFlags, width, 1, format);
     }
 
 
@@ -66,7 +94,7 @@ namespace FE::Graphics::RHI
     {
         ImageDesc desc{};
         desc.m_bindFlags = bindFlags;
-        desc.m_dimension = ImageDim::kImage1D;
+        desc.m_dimension = ImageDimension::k1D;
         desc.m_imageFormat = format;
         desc.m_arraySize = arraySize;
         desc.SetSize({ width, 1, 1 });
@@ -79,7 +107,7 @@ namespace FE::Graphics::RHI
     {
         ImageDesc desc{};
         desc.m_bindFlags = bindFlags;
-        desc.m_dimension = ImageDim::kImage2D;
+        desc.m_dimension = ImageDimension::k2D;
         desc.m_arraySize = 1;
         desc.m_imageFormat = format;
         desc.m_sampleCount = sampleCount;
@@ -94,7 +122,7 @@ namespace FE::Graphics::RHI
     {
         ImageDesc desc{};
         desc.m_bindFlags = bindFlags;
-        desc.m_dimension = ImageDim::kImage2D;
+        desc.m_dimension = ImageDimension::k2D;
         desc.m_arraySize = arraySize;
         desc.m_imageFormat = format;
         desc.m_mipSliceCount = useMipMaps ? CalculateMipCount({ width, height }) : 1;
@@ -105,7 +133,7 @@ namespace FE::Graphics::RHI
 
     inline ImageDesc ImageDesc::ImgCubemap(ImageBindFlags bindFlags, uint32_t width, Format format)
     {
-        return ImageDesc::ImgCubemapArray(bindFlags, width, 1, format);
+        return ImgCubemapArray(bindFlags, width, 1, format);
     }
 
 
@@ -113,7 +141,7 @@ namespace FE::Graphics::RHI
     {
         ImageDesc desc;
         desc.m_bindFlags = bindFlags;
-        desc.m_dimension = ImageDim::kImageCubemap;
+        desc.m_dimension = ImageDimension::kCubemap;
         desc.m_arraySize = 6 * arraySize;
         desc.m_imageFormat = format;
         desc.SetSize({ width, width, 1 });
@@ -125,7 +153,7 @@ namespace FE::Graphics::RHI
     {
         ImageDesc desc{};
         desc.m_bindFlags = bindFlags;
-        desc.m_dimension = ImageDim::kImage3D;
+        desc.m_dimension = ImageDimension::k3D;
         desc.m_arraySize = 1;
         desc.m_imageFormat = format;
         desc.SetSize({ width, height, depth });
@@ -141,8 +169,6 @@ namespace FE::Graphics::RHI
         FE_RTTI_Class(Image, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
 
         ~Image() override = default;
-
-        virtual ResultCode Init(StringSlice name, const ImageDesc& desc) = 0;
 
         virtual const ImageDesc& GetDesc() = 0;
 

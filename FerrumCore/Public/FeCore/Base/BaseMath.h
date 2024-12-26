@@ -6,67 +6,67 @@ namespace FE
 {
     //! @brief Align up an integer.
     //!
-    //! @param x     - Value to align.
-    //! @param align - Alignment to use.
-    template<class T, class U = T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignUp(T x, U align)
+    //! @param x         - Value to align.
+    //! @param alignment - Alignment to use.
+    template<class T, class TAlignmentType = T>
+    FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
     {
-        return static_cast<T>((x + (align - 1u)) & ~(align - 1u));
+        return static_cast<T>((x + (alignment - 1u)) & ~(alignment - 1u));
     }
 
 
     //! @brief Align up a pointer.
     //!
-    //! @param x     - Value to align.
-    //! @param align - Alignment to use.
+    //! @param x         - Value to align.
+    //! @param alignment - Alignment to use.
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* AlignUpPtr(T* x, size_t align)
+    FE_FORCE_INLINE T* AlignUpPtr(T* x, const size_t alignment)
     {
-        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), align));
+        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), alignment));
     }
 
 
     //! @brief Align up an integer.
     //!
-    //! @param x  - Value to align.
-    //! @tparam A - Alignment to use.
-    template<uint32_t A, class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignUp(T x)
+    //! @param x           - Value to align.
+    //! @tparam TAlignment - Alignment to use.
+    template<uint32_t TAlignment, class T>
+    FE_FORCE_INLINE constexpr T AlignUp(const T x)
     {
-        return (x + (A - 1)) & ~(A - 1);
+        return (x + (TAlignment - 1)) & ~(TAlignment - 1);
     }
 
 
     //! @brief Align down an integer.
     //!
-    //! @param x     - Value to align.
-    //! @param align - Alignment to use.
-    template<class T, class U = T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignDown(T x, U align)
+    //! @param x         - Value to align.
+    //! @param alignment - Alignment to use.
+    template<class T, class TAlignmentType = T>
+    FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
     {
-        return x & ~(align - 1);
+        return x & ~(alignment - 1);
     }
 
 
     //! @brief Align down a pointer.
     //!
-    //! @param x     - Value to align.
-    //! @param align - Alignment to use.
+    //! @param x         - Value to align.
+    //! @param alignment - Alignment to use.
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* AlignDownPtr(T* x, size_t align)
+    FE_FORCE_INLINE T* AlignDownPtr(T* x, const size_t alignment)
     {
-        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), align));
+        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), alignment));
     }
 
 
     //! @brief Align down an integer.
     //!
-    //! @param x  - Value to align.
-    //! @tparam A - Alignment to use.
-    template<uint32_t A, class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T AlignDown(T x)
+    //! @param x           - Value to align.
+    //! @tparam TAlignment - Alignment to use.
+    template<uint32_t TAlignment, class T>
+    FE_FORCE_INLINE constexpr T AlignDown(const T x)
     {
-        return x & ~(A - 1);
+        return x & ~(TAlignment - 1);
     }
 
 
@@ -75,7 +75,7 @@ namespace FE
     //! @param bitCount  - The number of ones in the created mask.
     //! @param leftShift - The number of zeros to the right of the created mask.
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T MakeMask(T bitCount, T leftShift)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T MakeMask(const T bitCount, const T leftShift)
     {
         const T allOnes = std::numeric_limits<T>::max();
         const T mask = static_cast<T>(-(bitCount != 0)) & (allOnes >> (sizeof(T) * 8 - bitCount));
@@ -86,7 +86,7 @@ namespace FE
 namespace FE::Bit
 {
     //! @brief Count the number of trailing zeros in the given value.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE int32_t CountTrailingZeros(uint32_t value)
+    FE_FORCE_INLINE int32_t CountTrailingZeros(const uint32_t value)
     {
 #if FE_COMPILER_MSVC
         unsigned long result = 0;
@@ -100,7 +100,7 @@ namespace FE::Bit
 
 
     //! @brief Count the number of leading zeros in the given value.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE int32_t CountLeadingZeros(uint32_t value)
+    FE_FORCE_INLINE int32_t CountLeadingZeros(const uint32_t value)
     {
 #if FE_COMPILER_MSVC
         unsigned long result = 0;
@@ -116,7 +116,7 @@ namespace FE::Bit
     //! @brief Search for the first set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanForward(uint32_t& result, uint32_t value)
+    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const uint32_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanForward(reinterpret_cast<unsigned long*>(&result), value);
@@ -133,7 +133,7 @@ namespace FE::Bit
     //! @brief Search for the first set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanForward64(uint32_t& result, uint64_t value)
+    FE_FORCE_INLINE bool ScanForward64(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanForward64(reinterpret_cast<unsigned long*>(&result), value);
@@ -150,7 +150,7 @@ namespace FE::Bit
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanReverse(uint32_t& result, uint32_t value)
+    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const uint32_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanReverse(reinterpret_cast<unsigned long*>(&result), value);
@@ -167,7 +167,7 @@ namespace FE::Bit
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool ScanReverse64(uint32_t& result, uint64_t value)
+    FE_FORCE_INLINE bool ScanReverse64(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanReverse64(reinterpret_cast<unsigned long*>(&result), value);
@@ -181,6 +181,10 @@ namespace FE::Bit
     }
 
 
+    //! @brief Traverse an unsigned integer and call a functor for each set bit.
+    //!
+    //! @param word    - The unsigned integer to traverse.
+    //! @param functor - The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint32_t word, TFunctor functor)
     {
@@ -193,6 +197,10 @@ namespace FE::Bit
     }
 
 
+    //! @brief Traverse an unsigned integer and call a functor for each set bit.
+    //!
+    //! @param word    - The unsigned integer to traverse.
+    //! @param functor - The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
     {
@@ -205,15 +213,17 @@ namespace FE::Bit
     }
 
 
+    //! @brief Check if all bits from `test` are set in the `source`.
     template<class TFlag>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool AllSet(TFlag source, TFlag test)
+    FE_FORCE_INLINE bool constexpr AllSet(const TFlag source, const TFlag test)
     {
         return (festd::to_underlying(source) & festd::to_underlying(test)) == festd::to_underlying(test);
     }
 
 
+    //! @brief Check if any bit from `test` is set in the `source`.
     template<class TFlag>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool AnySet(TFlag source, TFlag test)
+    FE_FORCE_INLINE bool constexpr AnySet(const TFlag source, const TFlag test)
     {
         return (festd::to_underlying(source) & festd::to_underlying(test)) != static_cast<std::underlying_type_t<TFlag>>(0);
     }
@@ -233,7 +243,7 @@ namespace FE::Math
     namespace CompileTime
     {
         //! @brief Multiply two 64-bit values with carry at compile time.
-        FE_FORCE_INLINE constexpr uint64_t Multiply128(uint64_t x, uint64_t y, uint64_t* carry)
+        FE_FORCE_INLINE constexpr uint64_t Multiply128(const uint64_t x, const uint64_t y, uint64_t* carry)
         {
             const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
             const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
@@ -253,146 +263,154 @@ namespace FE::Math
     } // namespace Constants
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Sin(float x)
+    FE_FORCE_INLINE float Sin(const float x)
     {
         return sinf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Cos(float x)
+    FE_FORCE_INLINE float Cos(const float x)
     {
         return cosf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Tan(float x)
+    FE_FORCE_INLINE float Tan(const float x)
     {
         return tanf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Asin(float x)
+    FE_FORCE_INLINE float Asin(const float x)
     {
         return asinf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Acos(float x)
+    FE_FORCE_INLINE float Acos(const float x)
     {
         return acosf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Sqrt(float x)
+    FE_FORCE_INLINE float Sqrt(const float x)
     {
         return sqrtf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Abs(float x)
+    FE_FORCE_INLINE float Abs(const float x)
     {
         return abs(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE int32_t Abs(int32_t x)
+    FE_FORCE_INLINE int32_t Abs(const int32_t x)
     {
         return abs(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE int64_t Abs(int64_t x)
+    FE_FORCE_INLINE int64_t Abs(const int64_t x)
     {
         return abs(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Floor(float x)
+    FE_FORCE_INLINE float Floor(const float x)
     {
         return floorf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Ceil(float x)
+    FE_FORCE_INLINE float Ceil(const float x)
     {
         return ceilf(x);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Round(float x)
+    //! @brief Round a floating point number to the nearest integer.
+    //!
+    //! @param x - The floating point number to round.
+    //!
+    //! @note This function behaves differently from std::round, it uses `floor(x + 0.5f)`.
+    FE_FORCE_INLINE float Round(const float x)
     {
         return floorf(x + 0.5f);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(float lhs, float rhs,
-                                                                           float epsilon = Constants::Epsilon)
+    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::Epsilon)
     {
         return abs(lhs - rhs) < epsilon;
     }
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Max(T lhs, T rhs)
+    FE_FORCE_INLINE constexpr T Max(const T lhs, const T rhs)
     {
         return lhs > rhs ? lhs : rhs;
     }
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Min(T lhs, T rhs)
+    FE_FORCE_INLINE constexpr T Min(const T lhs, const T rhs)
     {
         return lhs < rhs ? lhs : rhs;
     }
 
 
     template<class T>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T Clamp(T value, T min, T max)
+    FE_FORCE_INLINE constexpr T Clamp(const T value, const T min, const T max)
     {
         return Max(min, Min(value, max));
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr float Saturate(float value)
+    FE_FORCE_INLINE constexpr float Saturate(const float value)
     {
         return Clamp(value, 0.0f, 1.0f);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr uint32_t MakeFourCC(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+    FE_FORCE_INLINE constexpr uint32_t MakeFourCC(const uint32_t a, const uint32_t b, const uint32_t c, const uint32_t d)
     {
         return a | (b << 8u) | (c << 16u) | (d << 24u);
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr bool IsPowerOfTwo(uint32_t x)
+    FE_FORCE_INLINE constexpr bool IsPowerOfTwo(const uint32_t x)
     {
         return x != 0 && (x & (x - 1)) == 0;
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr uint32_t NextPowerOfTwo(uint32_t x)
+    //! @brief Calculate the smallest power of two that is greater than or equal to `x`.
+    FE_FORCE_INLINE uint32_t CeilPowerOfTwo(const uint32_t x)
     {
-        x--;
-        x |= x >> 1;
-        x |= x >> 2;
-        x |= x >> 4;
-        x |= x >> 8;
-        x |= x >> 16;
-        x++;
-        return x;
+        const uint64_t x64 = 2 * static_cast<uint64_t>(x) - 1;
+        uint32_t result;
+        Bit::ScanReverse64(result, x64);
+        return static_cast<uint32_t>(1 << result);
+    }
+
+
+    //! @brief Calculate the largest power of two that is less than or equal to `x`.
+    FE_FORCE_INLINE uint32_t FloorPowerOfTwo(const uint32_t x)
+    {
+        return 1 << (31 - Bit::CountLeadingZeros(x));
     }
 
 
     template<class T1, class T2>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE auto CeilDivide(T1 x, T2 y)
+    FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y)
         -> std::enable_if_t<std::is_unsigned_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
     {
         return (x + y - 1) / y;
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FloorLog2(uint32_t x)
+    FE_FORCE_INLINE uint32_t FloorLog2(const uint32_t x)
     {
         uint32_t result;
         if (Bit::ScanReverse(result, x))
@@ -432,7 +450,7 @@ namespace FE::Math
     };
 
 
-    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(Component x, Component y, Component z, Component w)
+    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const Component x, const Component y, const Component z, const Component w)
     {
         return static_cast<Swizzle>(festd::to_underlying(x) | (festd::to_underlying(y) << 2) | (festd::to_underlying(z) << 4)
                                     | (festd::to_underlying(w) << 6));
@@ -444,27 +462,27 @@ namespace FE::Math
 //!
 //! The macro defines bitwise or, and, xor operators.
 #define FE_ENUM_OPERATORS(Name)                                                                                                  \
-    inline constexpr Name operator|(Name a, Name b)                                                                              \
+    inline constexpr Name operator|(const Name a, const Name b)                                                                  \
     {                                                                                                                            \
         return Name(((std::underlying_type_t<Name>)a) | ((std::underlying_type_t<Name>)b));                                      \
     }                                                                                                                            \
-    inline constexpr Name& operator|=(Name& a, Name b)                                                                           \
+    inline constexpr Name& operator|=(Name& a, const Name b)                                                                     \
     {                                                                                                                            \
         return a = a | b;                                                                                                        \
     }                                                                                                                            \
-    inline constexpr Name operator&(Name a, Name b)                                                                              \
+    inline constexpr Name operator&(const Name a, const Name b)                                                                  \
     {                                                                                                                            \
         return Name(((std::underlying_type_t<Name>)a) & ((std::underlying_type_t<Name>)b));                                      \
     }                                                                                                                            \
-    inline constexpr Name& operator&=(Name& a, Name b)                                                                           \
+    inline constexpr Name& operator&=(Name& a, const Name b)                                                                     \
     {                                                                                                                            \
         return a = a & b;                                                                                                        \
     }                                                                                                                            \
-    inline constexpr Name operator^(Name a, Name b)                                                                              \
+    inline constexpr Name operator^(const Name a, const Name b)                                                                  \
     {                                                                                                                            \
         return Name(((std::underlying_type_t<Name>)a) ^ ((std::underlying_type_t<Name>)b));                                      \
     }                                                                                                                            \
-    inline constexpr Name& operator^=(Name& a, Name b)                                                                           \
+    inline constexpr Name& operator^=(Name& a, const Name b)                                                                     \
     {                                                                                                                            \
         return a = a ^ b;                                                                                                        \
     }

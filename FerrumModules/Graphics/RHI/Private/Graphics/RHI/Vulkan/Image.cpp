@@ -22,13 +22,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    RHI::ResultCode Image::Init(StringSlice name, const RHI::ImageDesc& desc)
+    RHI::ResultCode Image::InitInternal(VmaAllocator allocator, Env::Name name, const RHI::ImageDesc& desc)
     {
         using RHI::ImageBindFlags;
-        using RHI::ImageDim;
+        using RHI::ImageDimension;
 
         m_desc = desc;
         m_name = name;
+        m_vmaAllocator = allocator;
+
         InitState(desc.m_arraySize, static_cast<uint16_t>(desc.m_mipSliceCount));
 
         VkImageCreateInfo imageCI{};
@@ -65,17 +67,17 @@ namespace FE::Graphics::Vulkan
 
         switch (desc.m_dimension)
         {
-        case ImageDim::kImage1D:
+        case ImageDimension::k1D:
             imageCI.imageType = VK_IMAGE_TYPE_1D;
             break;
-        case ImageDim::kImageCubemap:
+        case ImageDimension::kCubemap:
             FE_AssertMsg(desc.m_arraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.m_arraySize);
             imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             [[fallthrough]];
-        case ImageDim::kImage2D:
+        case ImageDimension::k2D:
             imageCI.imageType = VK_IMAGE_TYPE_2D;
             break;
-        case ImageDim::kImage3D:
+        case ImageDimension::k3D:
             imageCI.imageType = VK_IMAGE_TYPE_3D;
             break;
         default:
@@ -86,12 +88,12 @@ namespace FE::Graphics::Vulkan
         Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
 
         imageCI.extent = VKConvert(desc.GetSize());
-        if (desc.m_dimension != ImageDim::kImage2D && imageCI.extent.height > 1)
+        if (desc.m_dimension != ImageDimension::k2D && imageCI.extent.height > 1)
         {
             logger->LogWarning("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
             imageCI.extent.height = 1;
         }
-        if (desc.m_dimension != ImageDim::kImage3D && imageCI.extent.depth > 1)
+        if (desc.m_dimension != ImageDimension::k3D && imageCI.extent.depth > 1)
         {
             logger->LogWarning("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
             imageCI.extent.depth = 1;
@@ -106,49 +108,48 @@ namespace FE::Graphics::Vulkan
         imageCI.samples = GetVKSampleCountFlags(desc.m_sampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        vkCreateImage(NativeCast(m_device), &imageCI, VK_NULL_HANDLE, &m_nativeImage);
-        m_owned = true;
+        VmaAllocationCreateInfo allocationCI{};
+        allocationCI.usage = VMA_MEMORY_USAGE_AUTO;
+
+        switch (desc.m_usage)
+        {
+        default:
+            FE_DebugBreak();
+            [[fallthrough]];
+
+        case RHI::ResourceUsage::kDeviceOnly:
+            allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            break;
+
+        case RHI::ResourceUsage::kHostRandomAccess:
+            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+            break;
+
+        case RHI::ResourceUsage::kHostWriteThrough:
+            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+            break;
+        }
+
+        if (vmaCreateImage(allocator, &imageCI, &allocationCI, &m_nativeImage, &m_vmaAllocation, nullptr) != VK_SUCCESS)
+            return RHI::ResultCode::kUnknownError;
+
+        vmaSetAllocationName(allocator, m_vmaAllocation, m_name.c_str());
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeImage);
-        nameInfo.pObjectName = m_name.Data();
-        vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo);
+        nameInfo.pObjectName = m_name.c_str();
+        if (vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo) != VK_SUCCESS)
+            return RHI::ResultCode::kUnknownError;
 
-        vkGetImageMemoryRequirements(NativeCast(m_device), m_nativeImage, &m_memoryRequirements);
         return RHI::ResultCode::kSuccess;
-    }
-
-
-    void Image::AllocateMemory(RHI::MemoryType type)
-    {
-        RHI::MemoryAllocationDesc desc{};
-        desc.m_size = m_memoryRequirements.size;
-        desc.m_type = type;
-
-        Rc memory = Rc<DeviceMemory>::DefaultNew(m_device, m_memoryRequirements.memoryTypeBits, desc);
-        BindMemory(RHI::DeviceMemorySlice{ memory.Detach() });
-        m_memoryOwned = true;
-    }
-
-
-    void Image::BindMemory(const RHI::DeviceMemorySlice& memory)
-    {
-        m_memory = memory;
-        vkBindImageMemory(NativeCast(m_device), m_nativeImage, NativeCast(memory.m_memory), memory.m_byteOffset);
     }
 
 
     Image::~Image()
     {
-        if (m_owned)
-        {
-            vkDestroyImage(NativeCast(m_device), m_nativeImage, nullptr);
-        }
-        if (m_memoryOwned)
-        {
-            m_memory.m_memory->Release();
-        }
+        if (m_vmaAllocator != nullptr)
+            vmaDestroyImage(m_vmaAllocator, m_nativeImage, m_vmaAllocation);
     }
 } // namespace FE::Graphics::Vulkan

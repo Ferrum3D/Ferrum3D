@@ -21,10 +21,10 @@
 #    endif
 
 #    define FE_PUSH_MSVC_WARNING(...)
-#    define FE_POP_MSVC_WARNING
+#    define FE_POP_MSVC_WARNING()
 
 #    define FE_PUSH_CLANG_WARNING(warn) _Pragma("clang diagnostic push") _Pragma(FE_MAKE_STR(clang diagnostic ignored warn))
-#    define FE_POP_CLANG_WARNING _Pragma("clang diagnostic pop")
+#    define FE_POP_CLANG_WARNING() _Pragma("clang diagnostic pop")
 
 #    define FE_FUNCSIG __PRETTY_FUNCTION__
 
@@ -34,10 +34,10 @@
 #    define FE_COMPILER_MSVC 1
 
 #    define FE_PUSH_MSVC_WARNING(warn) __pragma(warning(push)) __pragma(warning(disable : warn))
-#    define FE_POP_MSVC_WARNING __pragma(warning(pop))
+#    define FE_POP_MSVC_WARNING() __pragma(warning(pop))
 
 #    define FE_PUSH_CLANG_WARNING(...)
-#    define FE_POP_CLANG_WARNING
+#    define FE_POP_CLANG_WARNING()
 
 #    define FE_FUNCSIG __FUNCSIG__
 

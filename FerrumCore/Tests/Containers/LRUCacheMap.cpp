@@ -57,7 +57,7 @@ TEST(LRUCacheMap, Operator)
     cache.Emplace(1, 1);
     auto r0 = cache[0];
     auto r1 = cache[1];
-    EXPECT_FALSE(r0.IsOk());
-    EXPECT_TRUE(r1.IsOk());
-    EXPECT_EQ(r1.Unwrap(), 1);
+    EXPECT_FALSE(r0.has_value());
+    EXPECT_TRUE(r1.has_value());
+    EXPECT_EQ(r1.value(), 1);
 }

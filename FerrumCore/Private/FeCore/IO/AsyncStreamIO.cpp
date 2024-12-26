@@ -63,13 +63,13 @@ namespace FE::IO
         {
             if (const auto result = m_streamFactory->OpenFileStream(request.Path, OpenMode::kReadOnly))
             {
-                request.pStream = result.Unwrap();
+                request.pStream = result.value();
                 const StringSlice zoneText = request.pStream->GetName();
                 ZoneText(zoneText.Data(), zoneText.Size());
             }
             else
             {
-                const StringSlice resultDesc = GetResultDesc(result.UnwrapErr());
+                const StringSlice resultDesc = GetResultDesc(result.error());
                 status = AsyncOperationStatus::kFailed;
                 ZoneTextF("Failed request: %.*s", resultDesc.Size(), resultDesc.Data());
                 ZoneColor(kFailureColor);

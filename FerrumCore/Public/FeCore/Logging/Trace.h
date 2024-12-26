@@ -35,9 +35,9 @@ namespace FE::Trace
         //   3. Production builds.
         //
         // In this function we would want to crash immediately in production builds.
-        if (Result result = Env::GetServiceProvider()->Resolve<Logger>())
+        if (festd::expected result = Env::GetServiceProvider()->Resolve<Logger>())
         {
-            result.Unwrap()->LogCritical(fmt, std::forward<TArgs>(args)...);
+            result.value()->LogCritical(fmt, std::forward<TArgs>(args)...);
         }
         else
         {

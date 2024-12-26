@@ -1,19 +1,18 @@
 ﻿#pragma once
 #include <FeCore/Strings/StringSlice.h>
-#include <FeCore/Utils/Result.h>
-#include <Graphics/RHI/ImageEnums.h>
+#include <Graphics/RHI/Image.h>
 #include <Graphics/RHI/ImageFormat.h>
 
 namespace FE::Graphics
 {
     struct RawImage final
     {
-        uint8_t* Data = nullptr;
-        uint16_t Width = 0;
-        uint16_t Height = 0;
-        uint32_t ChannelCount = 0;
+        uint8_t* m_data = nullptr;
+        uint16_t m_width = 0;
+        uint16_t m_height = 0;
+        uint32_t m_channelCount = 0;
 
-        static Result<RawImage, StringSlice> LoadFromMemory(festd::span<const uint8_t> data);
+        static festd::expected<RawImage, StringSlice> LoadFromMemory(festd::span<const uint8_t> data);
         static void Free(RawImage& image);
     };
 
@@ -219,18 +218,18 @@ namespace FE::Graphics
         }
 
 
-        inline static RHI::ImageDim ConvertDimension(ResourceDimension dimension)
+        inline static RHI::ImageDimension ConvertDimension(ResourceDimension dimension)
         {
             switch (dimension)
             {
             case ResourceDimension::kTexture1D:
-                return RHI::ImageDim::kImage1D;
+                return RHI::ImageDimension::k1D;
             case ResourceDimension::kTexture2D:
-                return RHI::ImageDim::kImage2D;
+                return RHI::ImageDimension::k2D;
             case ResourceDimension::kTexture3D:
-                return RHI::ImageDim::kImage3D;
+                return RHI::ImageDimension::k3D;
             default:
-                return RHI::ImageDim::kImage2D;
+                return RHI::ImageDimension::k2D;
             }
         }
 
