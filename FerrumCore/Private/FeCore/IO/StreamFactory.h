@@ -11,7 +11,7 @@ namespace FE::IO
 
         explicit FileStreamFactory(Env::Configuration* pConfig);
 
-        Result<Rc<IStream>, ResultCode> OpenFileStream(StringSlice filename, OpenMode openMode) override;
+        festd::expected<Rc<IStream>, ResultCode> OpenFileStream(StringSlice filename, OpenMode openMode) override;
         bool FileExists(StringSlice filename) override;
         FileAttributeFlags GetFileAttributeFlags(StringSlice filename) override;
 

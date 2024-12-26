@@ -29,7 +29,9 @@
 
 namespace FE
 {
-    inline constexpr uint32_t kInvalidIndex = static_cast<uint32_t>(-1);
+    //! @brief Invalid index value.
+    inline constexpr uint32_t kInvalidIndex = std::numeric_limits<uint32_t>::max();
+
 
     template<class TEnum>
     inline constexpr std::underlying_type_t<TEnum> kDefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
@@ -109,38 +111,35 @@ namespace FE
 
     namespace Memory::Internal
     {
-        class EASTLPolymorphicAllocator final
+        struct EASTLPolymorphicAllocator final
         {
-            std::pmr::memory_resource* m_pMemoryResource = nullptr;
-
-        public:
             EASTLPolymorphicAllocator(std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_pMemoryResource(pMemoryResource)
+                : m_memoryResource(pMemoryResource)
             {
-                if (m_pMemoryResource == nullptr)
-                    m_pMemoryResource = std::pmr::get_default_resource();
+                if (m_memoryResource == nullptr)
+                    m_memoryResource = std::pmr::get_default_resource();
             }
 
             EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_pMemoryResource(pMemoryResource)
+                : m_memoryResource(pMemoryResource)
             {
-                if (m_pMemoryResource == nullptr)
-                    m_pMemoryResource = std::pmr::get_default_resource();
+                if (m_memoryResource == nullptr)
+                    m_memoryResource = std::pmr::get_default_resource();
             }
 
             void* allocate(size_t n, int = 0)
             {
-                return m_pMemoryResource->allocate(n);
+                return m_memoryResource->allocate(n);
             }
 
             void* allocate(size_t n, size_t alignment, size_t, int = 0)
             {
-                return m_pMemoryResource->allocate(n, alignment);
+                return m_memoryResource->allocate(n, alignment);
             }
 
             void deallocate(void* p, size_t size)
             {
-                m_pMemoryResource->deallocate(p, size);
+                m_memoryResource->deallocate(p, size);
             }
 
             const char* get_name() const
@@ -159,8 +158,12 @@ namespace FE
             {
                 return false;
             }
+
+        private:
+            std::pmr::memory_resource* m_memoryResource = nullptr;
         };
     } // namespace Memory::Internal
+
 
     namespace Memory
     {

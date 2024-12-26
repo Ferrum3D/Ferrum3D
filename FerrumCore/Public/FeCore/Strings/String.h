@@ -505,7 +505,7 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline Result<T, ParseError> Parse()
+        [[nodiscard]] inline festd::expected<T, ParseError> Parse()
         {
             return StringSlice(Data(), Size()).Parse<T>();
         }

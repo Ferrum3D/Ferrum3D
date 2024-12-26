@@ -12,13 +12,13 @@ namespace FE::IO
     }
 
 
-    Result<Rc<IStream>, ResultCode> FileStreamFactory::OpenFileStream(StringSlice filename, OpenMode openMode)
+    festd::expected<Rc<IStream>, ResultCode> FileStreamFactory::OpenFileStream(StringSlice filename, OpenMode openMode)
     {
         const Rc fileStream = Rc<FileStream>::New(&m_fileStreamPool);
         const FixedPath fullPath = m_parentDirectory / filename;
         const ResultCode result = fileStream->Open(fullPath, openMode);
         if (result != ResultCode::Success)
-            return Err(result);
+            return festd::unexpected(result);
 
         return static_pointer_cast<IStream>(fileStream);
     }

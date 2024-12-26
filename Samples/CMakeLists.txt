@@ -1,6 +1,2 @@
-add_subdirectory(Triangle)
-add_subdirectory(Uniforms)
 add_subdirectory(JobSystem)
-add_subdirectory(Textures)
 add_subdirectory(Models)
-add_subdirectory(TriangleMSAA)

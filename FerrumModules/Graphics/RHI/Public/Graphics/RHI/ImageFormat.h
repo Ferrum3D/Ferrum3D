@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <FeCore/Strings/Format.h>
-#include <FeCore/Strings/String.h>
 #include <Graphics/RHI/Common/BaseTypes.h>
 
 namespace FE::Graphics::RHI
@@ -53,10 +52,10 @@ namespace FE::Graphics::RHI
                                                       bool isSRGB, uint32_t index)
         {
             // clang-format off
-            return (festd::to_underlying(type)                        << 30)
+            return (festd::to_underlying(type)             << 30)
                  | (byteSize                               << 25)
-                 | (festd::to_underlying(channelCount)                << 23)
-                 | (festd::to_underlying(aspectFlags)                 << 20)
+                 | (festd::to_underlying(channelCount)     << 23)
+                 | (festd::to_underlying(aspectFlags)      << 20)
                  | ((blockCompressed           ? 1 : 0)    << 19)
                  | ((isSigned                  ? 1 : 0)    << 18)
                  | ((isSRGB                    ? 1 : 0)    << 17)
@@ -269,14 +268,11 @@ namespace FE::Graphics::RHI
 } // namespace FE::Graphics::RHI
 
 
-namespace FE::Fmt
+template<class TBuffer>
+struct FE::Fmt::ValueFormatter<TBuffer, FE::Graphics::RHI::Format>
 {
-    template<class TBuffer>
-    struct ValueFormatter<TBuffer, FE::Graphics::RHI::Format>
+    void Format(TBuffer& buffer, const FE::Graphics::RHI::Format& value) const
     {
-        void Format(TBuffer& buffer, const FE::Graphics::RHI::Format& value) const
-        {
-            buffer.Append(FE::Graphics::RHI::ToString(value));
-        }
-    };
-} // namespace FE::Fmt
+        buffer.Append(FE::Graphics::RHI::ToString(value));
+    }
+}; // namespace FE::Fmt

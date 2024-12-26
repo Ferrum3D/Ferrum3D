@@ -28,7 +28,7 @@ namespace FE::Graphics::Vulkan
 
         VkDescriptorSetLayout GetNativeSetLayout() const
         {
-            return m_layoutHandle.Layout;
+            return m_layoutHandle.m_layout;
         }
 
     private:

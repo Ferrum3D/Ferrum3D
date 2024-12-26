@@ -8,6 +8,8 @@ namespace FE::DI
 {
     struct Container final : public IServiceProvider
     {
+        Container();
+
         ServiceRegistryRoot* GetRegistryRoot()
         {
             return &m_registryRoot;
@@ -16,20 +18,16 @@ namespace FE::DI
         ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) override;
 
     private:
-        struct CallbackImpl final : ServiceRegistryCallback
+        struct CallbackImpl final : public ServiceRegistryCallback
         {
             void OnDetach(ServiceRegistry* pRegistry) override
             {
-                FE_PUSH_CLANG_WARNING("-Winvalid-offsetof")
-                Container* pParent =
-                    reinterpret_cast<Container*>(reinterpret_cast<uintptr_t>(this) - offsetof(Container, m_registryCallback));
-                FE_POP_CLANG_WARNING
-
-                std::lock_guard lk{ pParent->m_lock };
-                LifetimeScope* pRootLifetimeScope = pRegistry->GetRootLifetimeScope();
-                if (pRootLifetimeScope)
-                    Memory::DefaultDelete(pRootLifetimeScope);
+                std::lock_guard lk{ m_parent->m_lock };
+                if (LifetimeScope* rootLifetimeScope = pRegistry->GetRootLifetimeScope())
+                    Memory::DefaultDelete(rootLifetimeScope);
             }
+
+            Container* m_parent = nullptr;
         } m_registryCallback;
 
         Mutex m_lock;

@@ -112,6 +112,11 @@ namespace FE
             return { Data(), Size() };
         }
 
+        [[nodiscard]] explicit operator Env::Name() const noexcept
+        {
+            return Env::Name{ Data(), Size() };
+        }
+
         inline StringSlice Substring(uint32_t beginIndex, uint32_t length) const
         {
             auto begin = Data();

@@ -1,27 +1,33 @@
 ﻿#pragma once
-#include <FeCore/RTTI/RTTI.h>
-#include <FeCore/Strings/FixedString.h>
-#include <FeCore/Strings/String.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
-#include <Graphics/RHI/DeviceMemorySlice.h>
 #include <Graphics/RHI/DeviceObject.h>
 
 namespace FE::Graphics::RHI
 {
+    //! @brief Resource usage flags.
+    enum class ResourceUsage : uint32_t
+    {
+        //! @brief Specifies that the resource is only used on the GPU.
+        kDeviceOnly,
+
+        //! @brief Specifies that the resource can be mapped by the CPU and accessed in random order.
+        kHostRandomAccess,
+
+        //! @brief Specifies that the resource can be mapped and written through by the CPU, e.g. using memcpy.
+        kHostWriteThrough,
+    };
+
+
     struct Resource
         : public DeviceObject
         , public festd::intrusive_list_node
     {
-        [[nodiscard]] StringSlice GetName() const
+        [[nodiscard]] Env::Name GetName() const
         {
             return m_name;
         }
 
-        virtual void AllocateMemory(MemoryType type) = 0;
-        virtual void BindMemory(const DeviceMemorySlice& memory) = 0;
-
     protected:
-        FixedString<126> m_name;
+        Env::Name m_name;
 
         void Register()
         {
@@ -29,7 +35,7 @@ namespace FE::Graphics::RHI
             m_device->m_resourceList.push_back(*this);
         }
 
-        ~Resource()
+        ~Resource() override
         {
             festd::intrusive_list<>::remove(*this);
         }

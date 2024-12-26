@@ -6,18 +6,18 @@
 
 namespace FE::Graphics::Vulkan
 {
-    inline static VkImageViewType VKConvert(RHI::ImageDim dim, bool isArray)
+    inline static VkImageViewType VKConvert(RHI::ImageDimension dim, bool isArray)
     {
         switch (dim)
         {
-        case RHI::ImageDim::kImage1D:
+        case RHI::ImageDimension::k1D:
             return isArray ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
-        case RHI::ImageDim::kImage2D:
+        case RHI::ImageDimension::k2D:
             return isArray ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
-        case RHI::ImageDim::kImage3D:
+        case RHI::ImageDimension::k3D:
             FE_AssertMsg(!isArray, "Array of 3D images is not allowed");
             return VK_IMAGE_VIEW_TYPE_3D;
-        case RHI::ImageDim::kImageCubemap:
+        case RHI::ImageDimension::kCubemap:
             return isArray ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
         default:
             FE_AssertMsg(false, "Invalid ImageDim");

@@ -1,4 +1,7 @@
-﻿#include <FeCore/DI/BaseDI.h>
+﻿#include "Graphics/RHI/ResourcePool.h"
+
+
+#include <FeCore/DI/BaseDI.h>
 #include <FeCore/Logging/Trace.h>
 #include <Graphics/Assets/ImageAssetLoader.h>
 #include <Graphics/Assets/ImageAssetStorage.h>
@@ -33,19 +36,16 @@ namespace FE::Graphics
             ZoneScoped;
 
             DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
-
-            Rc stagingBuffer = pServiceProvider->ResolveRequired<RHI::Buffer>();
+            auto* resourcePool = pServiceProvider->ResolveRequired<RHI::ResourcePool>();
 
             const RHI::ImageDesc imageDesc = pStorage->GetImage()->GetDesc();
-            const RHI::FormatInfo formatInfo{ imageDesc.m_imageFormat };
-            const RHI::BufferDesc stagingBufferDesc{ MipSize, RHI::BindFlags::kNone };
-            const auto bufferName = Fmt::FixedFormat("Staging {}", pStorage->GetImage()->GetName());
-            stagingBuffer->Init(bufferName, stagingBufferDesc);
-            stagingBuffer->AllocateMemory(RHI::MemoryType::kHostVisible);
+            const RHI::BufferDesc stagingBufferDesc{ MipSize, RHI::BindFlags::kNone, RHI::ResourceUsage::kHostWriteThrough };
+            const auto bufferName = Fmt::FixedFormat("Staging Buffer {}", pStorage->GetImage()->GetName());
+            const Rc stagingBuffer = resourcePool->CreateBuffer(Env::Name{ bufferName }, stagingBufferDesc).value();
             stagingBuffer->UpdateData(PixelBuffer.data(), 0, PixelBuffer.size_bytes());
 
             // TODO: async copy...
-            Rc commandList = pServiceProvider->ResolveRequired<RHI::CommandList>();
+            const Rc commandList = pServiceProvider->ResolveRequired<RHI::CommandList>();
             commandList->Init({ RHI::HardwareQueueKindFlags::kTransfer, RHI::CommandListFlags::kOneTimeSubmit });
             commandList->Begin();
 
@@ -80,10 +80,10 @@ namespace FE::Graphics
 
             commandList->End();
 
-            Rc fence = pServiceProvider->ResolveRequired<RHI::Fence>();
+            const Rc fence = pServiceProvider->ResolveRequired<RHI::Fence>();
             fence->Init();
 
-            Rc<RHI::Device> device = commandList->GetDevice();
+            RHI::Device* device = commandList->GetDevice();
             Rc<RHI::CommandQueue> transferQueue = device->GetCommandQueue(RHI::HardwareQueueKindFlags::kTransfer);
             transferQueue->Execute(std::array{ commandList.Get() });
             transferQueue->SignalFence({ fence, 1 });
@@ -137,10 +137,9 @@ namespace FE::Graphics
         desc.m_bindFlags = RHI::ImageBindFlags::kShaderRead | RHI::ImageBindFlags::kTransferWrite;
         desc.m_dimension = DDS::ConvertDimension(dx10Header->resourceDimension);
 
-        storage->m_image = Env::GetServiceProvider()->ResolveRequired<RHI::Image>();
-        FE_Verify(storage->m_image->Init(result.pRequest->Path, desc) == RHI::ResultCode::kSuccess);
+        auto* resourcePool = Env::GetServiceProvider()->ResolveRequired<RHI::ResourcePool>();
 
-        storage->m_image->AllocateMemory(RHI::MemoryType::kDeviceLocal);
+        storage->m_image = resourcePool->CreateImage(Env::Name{ result.pRequest->Path }, desc).value();
 
         result.pRequest->pAllocator->deallocate(result.pRequest->pReadBuffer, result.pRequest->ReadBufferSize);
 

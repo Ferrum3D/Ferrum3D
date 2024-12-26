@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/RHI/ImageEnums.h>
+#include <Graphics/RHI/ImageFormat.h>
 
 namespace FE::Graphics::RHI
 {

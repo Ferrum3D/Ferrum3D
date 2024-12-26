@@ -11,38 +11,27 @@ namespace FE::Graphics::Vulkan
         explicit Image(RHI::Device* device);
         ~Image() override;
 
-        void InitInternal(StringSlice name, const RHI::ImageDesc& desc, VkImage nativeImage)
+        void InitInternal(Env::Name name, const RHI::ImageDesc& desc, VkImage nativeImage)
         {
             m_name = name;
             m_desc = desc;
             m_nativeImage = nativeImage;
         }
 
+        RHI::ResultCode InitInternal(VmaAllocator allocator, Env::Name name, const RHI::ImageDesc& desc);
+
         [[nodiscard]] VkImage GetNative() const
         {
             return m_nativeImage;
         }
 
-        [[nodiscard]] const VkMemoryRequirements& GetMemoryRequirements() const
-        {
-            return m_memoryRequirements;
-        }
-
-        RHI::ResultCode Init(StringSlice name, const RHI::ImageDesc& desc) override;
-
         const RHI::ImageDesc& GetDesc() override;
 
-        void AllocateMemory(RHI::MemoryType type) override;
-        void BindMemory(const RHI::DeviceMemorySlice& memory) override;
-
     private:
-        VkMemoryRequirements m_memoryRequirements{};
         VkImage m_nativeImage = VK_NULL_HANDLE;
+        VmaAllocation m_vmaAllocation = VK_NULL_HANDLE;
+        VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
         RHI::ImageDesc m_desc;
-
-        RHI::DeviceMemorySlice m_memory;
-        bool m_memoryOwned = false;
-        bool m_owned = false;
     };
 
     FE_ENABLE_NATIVE_CAST(Image);

@@ -32,9 +32,9 @@ namespace FE::Graphics
             //   The loaders will automatically unregister when the module detaches.
             DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
             m_assetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
-            m_assetManager->RegisterAssetLoader(DI::DefaultNew<ImageAssetLoader>().Unwrap());
-            m_assetManager->RegisterAssetLoader(DI::DefaultNew<MeshAssetLoader>().Unwrap());
-            m_assetManager->RegisterAssetLoader(DI::DefaultNew<ShaderAssetLoader>().Unwrap());
+            m_assetManager->RegisterAssetLoader(DI::DefaultNew<ImageAssetLoader>().value());
+            m_assetManager->RegisterAssetLoader(DI::DefaultNew<MeshAssetLoader>().value());
+            m_assetManager->RegisterAssetLoader(DI::DefaultNew<ShaderAssetLoader>().value());
         }
     };
 

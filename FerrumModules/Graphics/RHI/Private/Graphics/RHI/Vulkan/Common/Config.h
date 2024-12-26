@@ -3,6 +3,7 @@
 #include <FeCore/Base/PlatformInclude.h>
 
 #include <volk.h>
+#include <vk_mem_alloc.h>
 
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/Memory.h>

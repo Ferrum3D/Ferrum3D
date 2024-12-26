@@ -12,3 +12,12 @@ CPMAddPackage(
 )
 
 set_target_properties(volk PROPERTIES FOLDER "ThirdParty")
+
+
+CPMAddPackage(
+    NAME VulkanMemoryAllocator
+    GITHUB_REPOSITORY GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+    VERSION 3.1.0
+)
+
+set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "ThirdParty")

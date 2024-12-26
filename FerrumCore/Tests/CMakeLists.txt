@@ -20,7 +20,6 @@
 
     Time/DateTime.cpp
 
-    Utils/Result.cpp
     Utils/UUID.cpp
 
     main.cpp

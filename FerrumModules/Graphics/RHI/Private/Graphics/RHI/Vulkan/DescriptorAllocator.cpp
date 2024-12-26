@@ -1,6 +1,4 @@
-﻿#include <Graphics/RHI/Vulkan/Common/BaseTypes.h>
-#include <Graphics/RHI/Vulkan/DescriptorAllocator.h>
-#include <Graphics/RHI/Vulkan/ShaderModule.h>
+﻿#include <Graphics/RHI/Vulkan/DescriptorAllocator.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -69,9 +67,9 @@ namespace FE::Graphics::Vulkan
 
     void DescriptorAllocator::ReleaseDescriptorSetLayout(DescriptorSetLayoutHandle key)
     {
-        if (m_descriptorSetLayouts[key.Hash].Release(NativeCast(m_device)))
+        if (m_descriptorSetLayouts[key.m_hash].Release(NativeCast(m_device)))
         {
-            m_descriptorSetLayouts.erase(key.Hash);
+            m_descriptorSetLayouts.erase(key.m_hash);
         }
     }
 

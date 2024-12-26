@@ -13,7 +13,7 @@
 
 FE_PUSH_MSVC_WARNING(4702)
 #include <dragonbox/dragonbox_to_chars.h>
-FE_POP_MSVC_WARNING
+FE_POP_MSVC_WARNING()
 
 namespace FE::Fmt
 {
@@ -170,7 +170,7 @@ namespace FE::Fmt
             auto append = [&](uint32_t n) {
                 for (uint32_t i = 0; i < n; ++i)
                 {
-                    uint8_t c = value.Data[idx++];
+                    const uint8_t c = value.m_bytes[idx++];
                     buffer.Append(digits[(c & 0xF0) >> 4]);
                     buffer.Append(digits[(c & 0x0F) >> 0]);
                 }

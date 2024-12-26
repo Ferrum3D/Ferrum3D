@@ -23,11 +23,11 @@ namespace FE::Env
 
                 if (const auto doubleResult = value.Parse<double>())
                 {
-                    commandLineSection.Set(key, doubleResult.Unwrap());
+                    commandLineSection.Set(key, doubleResult.value());
                 }
                 else if (const auto intResult = value.Parse<int64_t>())
                 {
-                    commandLineSection.Set(key, intResult.Unwrap());
+                    commandLineSection.Set(key, intResult.value());
                 }
                 else
                 {

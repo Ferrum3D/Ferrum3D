@@ -1,7 +1,6 @@
 ﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Strings/FixedString.h>
 #include <gtest/gtest.h>
-#include <mimalloc.h>
 
 TEST(Strings, AssignmentFreesMemory)
 {
@@ -268,52 +267,52 @@ TEST(Strings, ParseErrors)
 {
 #define EXPECT_PARSE_ERR(expr, code, pos) EXPECT_EQ(expr, ::FE::ParseError(code, pos))
 
-    EXPECT_EQ(FE::String("1").Parse<int>().Unwrap(), 1);
-    EXPECT_EQ(FE::String("-2").Parse<int>().Unwrap(), -2);
-    EXPECT_EQ(FE::String("3").Parse<unsigned>().Unwrap(), 3);
-    EXPECT_EQ(FE::String("1.5").Parse<float>().Unwrap(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").Parse<float>().Unwrap(), -1.5f);
-    EXPECT_EQ(FE::String("false").Parse<bool>().Unwrap(), false);
-    EXPECT_EQ(FE::String("true").Parse<bool>().Unwrap(), true);
-    EXPECT_PARSE_ERR(FE::String("").Parse<int>().UnwrapErr(), FE::ParseErrorCode::UnexpectedEnd, 0);
-    EXPECT_PARSE_ERR(FE::String("").Parse<bool>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
-    EXPECT_PARSE_ERR(FE::String("-").Parse<int>().UnwrapErr(), FE::ParseErrorCode::UnexpectedEnd, 1);
-    EXPECT_PARSE_ERR(FE::String("--123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 1);
-    EXPECT_PARSE_ERR(FE::String("300").Parse<char>().UnwrapErr(), FE::ParseErrorCode::Overflow, 0);
-    EXPECT_PARSE_ERR(FE::String("123123123123123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::Overflow, 0);
-    EXPECT_PARSE_ERR(FE::String("123qq").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 3);
-    EXPECT_PARSE_ERR(FE::String("qq123").Parse<int>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
-    EXPECT_PARSE_ERR(FE::String("-123").Parse<unsigned>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
-    EXPECT_PARSE_ERR(FE::String("--123").Parse<float>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
-    EXPECT_PARSE_ERR(FE::String("123..7").Parse<float>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 4);
-    EXPECT_PARSE_ERR(FE::String("qq").Parse<bool>().UnwrapErr(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_EQ(FE::String("1").Parse<int>().value(), 1);
+    EXPECT_EQ(FE::String("-2").Parse<int>().value(), -2);
+    EXPECT_EQ(FE::String("3").Parse<unsigned>().value(), 3);
+    EXPECT_EQ(FE::String("1.5").Parse<float>().value(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<float>().value(), -1.5f);
+    EXPECT_EQ(FE::String("false").Parse<bool>().value(), false);
+    EXPECT_EQ(FE::String("true").Parse<bool>().value(), true);
+    EXPECT_PARSE_ERR(FE::String("").Parse<int>().error(), FE::ParseErrorCode::UnexpectedEnd, 0);
+    EXPECT_PARSE_ERR(FE::String("").Parse<bool>().error(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("-").Parse<int>().error(), FE::ParseErrorCode::UnexpectedEnd, 1);
+    EXPECT_PARSE_ERR(FE::String("--123").Parse<int>().error(), FE::ParseErrorCode::InvalidSyntax, 1);
+    EXPECT_PARSE_ERR(FE::String("300").Parse<char>().error(), FE::ParseErrorCode::Overflow, 0);
+    EXPECT_PARSE_ERR(FE::String("123123123123123").Parse<int>().error(), FE::ParseErrorCode::Overflow, 0);
+    EXPECT_PARSE_ERR(FE::String("123qq").Parse<int>().error(), FE::ParseErrorCode::InvalidSyntax, 3);
+    EXPECT_PARSE_ERR(FE::String("qq123").Parse<int>().error(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("-123").Parse<unsigned>().error(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("--123").Parse<float>().error(), FE::ParseErrorCode::InvalidSyntax, 0);
+    EXPECT_PARSE_ERR(FE::String("123..7").Parse<float>().error(), FE::ParseErrorCode::InvalidSyntax, 4);
+    EXPECT_PARSE_ERR(FE::String("qq").Parse<bool>().error(), FE::ParseErrorCode::InvalidSyntax, 0);
 }
 
 TEST(Strings, Parse)
 {
-    EXPECT_EQ(FE::String("123").Parse<int8_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<int16_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<int32_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<int64_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int8_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int16_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int32_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<int64_t>().value(), 123);
 
-    EXPECT_EQ(FE::String("-123").Parse<int8_t>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<int16_t>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<int32_t>().Unwrap(), -123);
-    EXPECT_EQ(FE::String("-123").Parse<int64_t>().Unwrap(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int8_t>().value(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int16_t>().value(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int32_t>().value(), -123);
+    EXPECT_EQ(FE::String("-123").Parse<int64_t>().value(), -123);
 
-    EXPECT_EQ(FE::String("123").Parse<uint8_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<uint16_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<uint32_t>().Unwrap(), 123);
-    EXPECT_EQ(FE::String("123").Parse<uint64_t>().Unwrap(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint8_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint16_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint32_t>().value(), 123);
+    EXPECT_EQ(FE::String("123").Parse<uint64_t>().value(), 123);
 
-    EXPECT_EQ(FE::String("1.5").Parse<float>().Unwrap(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").Parse<float>().Unwrap(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<float>().value(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<float>().value(), -1.5f);
 
-    EXPECT_EQ(FE::String("1.5").Parse<double>().Unwrap(), 1.5f);
-    EXPECT_EQ(FE::String("-1.5").Parse<double>().Unwrap(), -1.5f);
+    EXPECT_EQ(FE::String("1.5").Parse<double>().value(), 1.5f);
+    EXPECT_EQ(FE::String("-1.5").Parse<double>().value(), -1.5f);
 
-    EXPECT_EQ(FE::String("false").Parse<bool>().Unwrap(), false);
-    EXPECT_EQ(FE::String("true").Parse<bool>().Unwrap(), true);
-    EXPECT_EQ(FE::String("0").Parse<bool>().Unwrap(), false);
-    EXPECT_EQ(FE::String("1").Parse<bool>().Unwrap(), true);
+    EXPECT_EQ(FE::String("false").Parse<bool>().value(), false);
+    EXPECT_EQ(FE::String("true").Parse<bool>().value(), true);
+    EXPECT_EQ(FE::String("0").Parse<bool>().value(), false);
+    EXPECT_EQ(FE::String("1").Parse<bool>().value(), true);
 }

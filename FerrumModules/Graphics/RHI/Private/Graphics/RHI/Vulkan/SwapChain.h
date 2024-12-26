@@ -1,5 +1,7 @@
 ﻿#pragma once
+#include <Graphics/RHI/ResourcePool.h>
 #include <Graphics/RHI/Swapchain.h>
+#include <Graphics/RHI/Vulkan/Image.h>
 #include <Graphics/RHI/Vulkan/ImageFormat.h>
 
 namespace FE::Graphics::Vulkan
@@ -11,7 +13,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI_Class(Swapchain, "D8A71561-6AB2-4711-B941-0694D06D9D15");
 
-        Swapchain(RHI::Device* device, Logger* logger, RHI::Image* pDepthImage);
+        Swapchain(RHI::Device* device, Logger* logger, RHI::ResourcePool* resourcePool);
         ~Swapchain() override;
 
         VkSwapchainKHR GetNative() const
@@ -37,11 +39,12 @@ namespace FE::Graphics::Vulkan
         RHI::SwapchainDesc m_desc;
 
         Logger* m_logger = nullptr;
+        Rc<RHI::ResourcePool> m_resourcePool;
 
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
         VkSwapchainKHR m_nativeSwapchain = VK_NULL_HANDLE;
-        VkSurfaceFormatKHR m_colorFormat;
-        VkSurfaceCapabilitiesKHR m_capabilities;
+        VkSurfaceFormatKHR m_colorFormat = {};
+        VkSurfaceCapabilitiesKHR m_capabilities = {};
 
         Rc<Image> m_depthImage;
         Rc<ImageView> m_depthImageView;

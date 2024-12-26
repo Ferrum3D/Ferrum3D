@@ -77,7 +77,7 @@ namespace FE::Graphics
 
         FE_Assert(result.pController->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
 
-        CompilerJob* job = DI::New<CompilerJob>(&m_compilerJobPool).Unwrap();
+        CompilerJob* job = DI::New<CompilerJob>(&m_compilerJobPool).value();
         job->m_path = result.pRequest->Path;
         job->m_sourceCode = { reinterpret_cast<const char*>(result.pRequest->pReadBuffer), result.pRequest->ReadBufferSize };
         job->m_storage = static_cast<ShaderAssetStorage*>(result.pRequest->pUserData);
@@ -122,7 +122,7 @@ namespace FE::Graphics
         // TODO: check if already compiled
         // if (m_streamFactory->FileExists(spvFilename))
         // {
-        //     const Rc<IO::IStream> spvFile = m_streamFactory->OpenFileStream(spvFilename, IO::OpenMode::kReadWrite).Unwrap();
+        //     const Rc<IO::IStream> spvFile = m_streamFactory->OpenFileStream(spvFilename, IO::OpenMode::kReadWrite).value();
         //     const IO::FileStats stats = spvFile->GetStats();
         // }
 

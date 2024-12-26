@@ -1,9 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Utils/UUID.h>
-#include <cstddef>
-#include <cstdint>
-#include <string_view>
 
 namespace FE
 {
@@ -27,7 +24,7 @@ namespace FE
         return id;                                                                                                               \
     }                                                                                                                            \
                                                                                                                                  \
-    inline static std::string_view FeRTTI_GetSName()                                                                             \
+    inline static ::FE::festd::ascii_view FeRTTI_GetSName()                                                                      \
     {                                                                                                                            \
         return ::FE::TypeName<name>;                                                                                             \
     }
@@ -51,7 +48,7 @@ namespace FE
 #define FE_RTTI_Class(name, uuid)                                                                                                \
     FE_RTTI_Base(name, uuid);                                                                                                    \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
-    inline virtual std::string_view FeRTTI_GetName() const                                                                       \
+    inline virtual ::FE::festd::ascii_view FeRTTI_GetName() const                                                                \
     {                                                                                                                            \
         return ::FE::TypeName<name>;                                                                                             \
     }                                                                                                                            \
@@ -66,7 +63,7 @@ namespace FE
     {                                                                                                                            \
         return FeRTTI_IS_TYPE::FeRTTI_GetSID() == FeRTTI_GetID();                                                                \
     }                                                                                                                            \
-    FE_POP_CLANG_WARNING
+    FE_POP_CLANG_WARNING()
 
     //! @brief Cast a pointer to a base class to a derived class pointer if possible.
     //!
@@ -128,7 +125,7 @@ namespace FE
     //!
     //! @return Short name of type T.
     template<class T>
-    inline std::string_view fe_nameof() noexcept
+    inline festd::ascii_view fe_nameof() noexcept
     {
         return T::FeRTTI_GetSName();
     }
@@ -163,7 +160,7 @@ namespace FE
     //!
     //! \see fe_nameof()
     template<class T>
-    inline std::string_view fe_nameof(const T& object)
+    inline festd::ascii_view fe_nameof(const T& object)
     {
         return object.FeRTTI_GetName();
     }
