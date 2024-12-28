@@ -1,52 +1,50 @@
-﻿#include "FeCore/ECS/ECS.h"
-#include "FeCore/Memory/Memory.h"
-#include <cstdint>
+﻿#include <FeCore/ECS/ECS.h>
+#include <FeCore/Memory/Memory.h>
 
 namespace FE::ECS
 {
-    Archetype::Archetype(festd::span<uint32_t> componentSizes)
+    Archetype::Archetype(const festd::span<const uint32_t> componentSizes)
     {
-        m_entitySize = sizeof(Entity);
+        m_entitySize = 0;
+        for (const uint32_t componentSize : componentSizes)
+            m_entitySize += componentSize;
 
         m_componentSpecs.reserve(componentSizes.size());
 
-        for (uint32_t componentSize : componentSizes)
+        m_entityCount = ArchetypeChunk::CalculateEntityCount(m_entitySize);
+
+        uint32_t chunkOffset = 0;
+        for (const uint32_t componentSize : componentSizes)
         {
             ArchetypeComponentSpec componentSpec{};
             componentSpec.m_size = componentSize;
-            componentSpec.m_chunkOffset = m_entitySize;
+            componentSpec.m_chunkOffset = chunkOffset;
 
             m_componentSpecs.push_back(componentSpec);
-            m_entitySize += componentSize;
+            chunkOffset += componentSize * m_entityCount;
         }
-
-        m_chunks.reserve(1);
     }
 
-    template<class... TComponents>
-    Entity CreateEntity()
-    {
-        constexpr uint32_t componentSizes[] = { sizeof(TComponents)... };
-        Rc<Archetype> archetype = Rc<Archetype>::DefaultNew(componentSizes);
-        Entity entity = archetype->CreateEntity();
-        (AddComponent<TComponents>(entity), ...);
 
-        return entity;
-    }
-
-    Entity Archetype::CreateEntity()
+    Entity Archetype::CreateEntity(festd::vector<const ArchetypeChunk*>& globalChunkTable)
     {
         for (auto* chunk : m_chunks)
         {
-            const uint32_t index = chunk->m_indexAllocator.AllocateIndex();
-            if (index < ArchetypeChunk::CalculateEntityCount(sizeof(this->m_entitySize)))
+            const uint32_t currentEntityCount = chunk->m_allocatedEntityCount;
+            if (currentEntityCount < m_entityCount)
             {
-                Entity entity{};
+                const uint32_t index = chunk->m_indexAllocator.AllocateIndex();
+                FE_AssertDebug(index < m_entityCount);
+
+                Entity entity;
                 entity.m_chunkID = chunk->m_chunkID;
                 entity.m_entityID = index;
 
-                auto* lookupTable = chunk->GetIndexLookupTable(m_entitySize, chunk->m_indexAllocator.m_freeIndices.size());
-                lookupTable[index] = static_cast<uint16_t>(index);
+                uint16_t* lookupTable = chunk->GetIndexLookupTable(m_entitySize, m_entityCount);
+                lookupTable[index] = static_cast<uint16_t>(currentEntityCount);
+                ++chunk->m_allocatedEntityCount;
+
+                globalChunkTable.push_back(chunk);
 
                 return entity;
             }
@@ -54,27 +52,38 @@ namespace FE::ECS
 
         auto* newChunk = ArchetypeChunk::New();
         newChunk->m_archetype = this;
-        newChunk->m_chunkID = m_chunks.size();
+        newChunk->m_chunkID = globalChunkTable.size();
+        globalChunkTable.push_back(newChunk);
         m_chunks.push_back(newChunk);
 
-        uint32_t index = newChunk->m_indexAllocator.AllocateIndex();
+        const uint32_t index = newChunk->m_indexAllocator.AllocateIndex();
 
-        Entity entity{};
+        Entity entity;
         entity.m_chunkID = newChunk->m_chunkID;
         entity.m_entityID = index;
 
-        auto* lookupTable = newChunk->GetIndexLookupTable(m_entitySize, newChunk->m_indexAllocator.m_freeIndices.size());
+        uint16_t* lookupTable = newChunk->GetIndexLookupTable(m_entitySize, newChunk->m_indexAllocator.m_freeIndices.size());
         lookupTable[index] = static_cast<uint16_t>(index);
+
+        ++newChunk->m_allocatedEntityCount;
 
         return entity;
     }
 
-    void Archetype::DestroyEntity(Entity entity)
+
+    void Archetype::DestroyEntity(const Entity entity, festd::vector<const ArchetypeChunk*>& globalChunkTable)
     {
-        ArchetypeChunk* chunk = m_chunks[entity.m_chunkID];
+        auto chunk = const_cast<ArchetypeChunk*>(globalChunkTable.at(entity.m_chunkID));
 
         chunk->m_indexAllocator.FreeIndex(entity.m_entityID);
         auto* lookupTable = chunk->GetIndexLookupTable(m_entitySize, chunk->m_indexAllocator.m_freeIndices.size());
         lookupTable[entity.m_entityID] = UINT16_MAX;
+
+        --chunk->m_allocatedEntityCount;
+
+        if (chunk->m_allocatedEntityCount)
+        {
+            // DestroyEmptyChunk
+        }
     }
 } // namespace FE::ECS
