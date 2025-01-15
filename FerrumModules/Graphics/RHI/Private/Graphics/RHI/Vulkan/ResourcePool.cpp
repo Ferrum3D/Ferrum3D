@@ -11,6 +11,8 @@ namespace FE::Graphics::Vulkan
         : m_imagePool("ResourcePool/Images", sizeof(Image), 64 * 1024)
         , m_bufferPool("ResourcePool/Buffers", sizeof(Buffer), 64 * 1024)
     {
+        m_device = device;
+
         VmaAllocatorCreateInfo createInfo = {};
         createInfo.device = NativeCast(device);
         createInfo.physicalDevice = ImplCast(device)->GetNativeAdapter();

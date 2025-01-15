@@ -17,8 +17,6 @@ namespace FE::Graphics::RHI
             }
         }
 
-        ~ImageBase() override = default;
-
         void SetState(const ImageSubresourceRange& subresourceRange, ResourceState state) override
         {
             for (uint32_t i = 0; i < subresourceRange.m_arraySliceCount; ++i)

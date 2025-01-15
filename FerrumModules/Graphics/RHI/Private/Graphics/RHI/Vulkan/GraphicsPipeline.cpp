@@ -1,5 +1,4 @@
-﻿#include <festd/vector.h>
-#include <Graphics/RHI/Vulkan/CommandList.h>
+﻿#include <Graphics/RHI/Vulkan/CommandList.h>
 #include <Graphics/RHI/Vulkan/Common/Viewport.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
@@ -9,6 +8,7 @@
 #include <Graphics/RHI/Vulkan/ShaderModule.h>
 #include <Graphics/RHI/Vulkan/ShaderReflection.h>
 #include <Graphics/RHI/Vulkan/ShaderResourceGroup.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -18,8 +18,10 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    RHI::ResultCode GraphicsPipeline::Init(const RHI::GraphicsPipelineDesc& desc)
+    RHI::ResultCode GraphicsPipeline::InitInternal(VkPipelineCache cache, const Env::Name name,
+                                                   const RHI::GraphicsPipelineDesc& desc)
     {
+        m_name = name;
         m_desc = desc;
 
         festd::small_vector<VkDescriptorSetLayout> setLayouts;
@@ -75,7 +77,7 @@ namespace FE::Graphics::Vulkan
         pipelineCI.renderPass = NativeCast(m_desc.m_renderPass);
         pipelineCI.subpass = m_desc.m_subpassIndex;
 
-        vkCreateGraphicsPipelines(NativeCast(m_device), VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
+        vkCreateGraphicsPipelines(NativeCast(m_device), cache, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
         return RHI::ResultCode::kSuccess;
     }
 

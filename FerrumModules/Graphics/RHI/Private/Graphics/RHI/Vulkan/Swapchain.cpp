@@ -44,7 +44,6 @@ namespace FE::Graphics::Vulkan
         vkGetSwapchainImagesKHR(device, m_nativeSwapchain, &m_desc.m_frameCount, images.data());
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
-        auto* resourcePool = fe_assert_cast<ResourcePool*>(m_resourcePool.Get());
 
         const uint32_t width = m_desc.m_imageWidth;
         const uint32_t height = m_desc.m_imageHeight;
@@ -53,7 +52,7 @@ namespace FE::Graphics::Vulkan
         {
             const VkImage image = images[imageIndex];
             const auto imageDesc = RHI::ImageDesc::Img2D(RHI::ImageBindFlags::kColor, width, height, m_desc.m_format);
-            const Rc backBuffer = ImplCast(DI::New<Image>(&resourcePool->m_imagePool).value());
+            const Rc backBuffer = ImplCast(DI::New<Image>(std::pmr::get_default_resource()).value());
             const auto imageName = Fmt::FixedFormat("Swap Chain Color Target {}", imageIndex);
             backBuffer->InitInternal(Env::Name{ imageName }, imageDesc, image);
             m_images.push_back(backBuffer);

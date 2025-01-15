@@ -10,14 +10,14 @@ namespace FE::Graphics::RHI
     {
         kDontCare,
         kLoad,
-        kClear
+        kClear,
     };
 
 
     enum class AttachmentStoreOp : uint32_t
     {
         kDontCare,
-        kStore
+        kStore,
     };
 
 
@@ -44,9 +44,9 @@ namespace FE::Graphics::RHI
 
         SubpassAttachment() = default;
 
-        SubpassAttachment(ResourceState state, uint32_t index)
-            : m_index(index)
-            , m_state(state)
+        SubpassAttachment(const ResourceState state, const uint32_t index)
+            : m_state(state)
+            , m_index(index)
         {
         }
     };
@@ -96,8 +96,6 @@ namespace FE::Graphics::RHI
     struct RenderPass : public DeviceObject
     {
         FE_RTTI_Class(RenderPass, "CA5F6A54-76F3-4A00-8484-B2F9DEF4B3BB");
-
-        ~RenderPass() override = default;
 
         virtual ResultCode Init(const RenderPassDesc& desc) = 0;
 

@@ -9,8 +9,6 @@ namespace FE::Graphics::RHI
     {
         FE_RTTI_Class(DeviceObject, "52579F06-74CD-4151-8099-4D4283E8B6B0");
 
-        virtual ~DeviceObject() = default;
-
         [[nodiscard]] Device* GetDevice() const
         {
             return m_device;
@@ -18,12 +16,6 @@ namespace FE::Graphics::RHI
 
     private:
         friend struct Device;
-
-        DeviceObject(const DeviceObject&) = delete;
-        DeviceObject& operator=(const DeviceObject&) = delete;
-
-        DeviceObject(DeviceObject&&) = delete;
-        DeviceObject& operator=(DeviceObject&&) = delete;
 
         void DoDispose()
         {

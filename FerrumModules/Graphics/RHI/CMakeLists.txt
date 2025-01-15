@@ -19,16 +19,14 @@
     Public/Graphics/RHI/ImageFormat.h
     Public/Graphics/RHI/ImageSubresource.h
     Public/Graphics/RHI/ImageView.h
+    Public/Graphics/RHI/PipelineFactory.h
     Public/Graphics/RHI/DeviceFactory.h
-    Public/Graphics/RHI/DeviceMemorySlice.h
-    Public/Graphics/RHI/DeviceMemory.h
     Public/Graphics/RHI/GraphicsPipeline.h
     Public/Graphics/RHI/InputLayoutBuilder.h
     Public/Graphics/RHI/InputStreamLayout.h
     Public/Graphics/RHI/PipelineStates.h
     Public/Graphics/RHI/RenderPass.h
     Public/Graphics/RHI/Resource.h
-    Public/Graphics/RHI/ResourceCache.h
     Public/Graphics/RHI/ResourcePool.h
     Public/Graphics/RHI/ResourceState.h
     Public/Graphics/RHI/ShaderResourceGroup.h
@@ -53,6 +51,8 @@ set(COMMON_SOURCES
 )
 
 set(VULKAN_SOURCES
+    Private/Graphics/RHI/Vulkan/VmaImpl.cpp
+
     Private/Graphics/RHI/Vulkan/Common/BaseTypes.h
     Private/Graphics/RHI/Vulkan/Common/Config.cpp
     Private/Graphics/RHI/Vulkan/Common/Config.h
@@ -70,8 +70,6 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/Device.h
     Private/Graphics/RHI/Vulkan/DeviceFactory.cpp
     Private/Graphics/RHI/Vulkan/DeviceFactory.h
-    Private/Graphics/RHI/Vulkan/DeviceMemory.cpp
-    Private/Graphics/RHI/Vulkan/DeviceMemory.h
     Private/Graphics/RHI/Vulkan/Fence.cpp
     Private/Graphics/RHI/Vulkan/Fence.h
     Private/Graphics/RHI/Vulkan/Framebuffer.cpp
@@ -82,6 +80,8 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/ImageSubresource.h
     Private/Graphics/RHI/Vulkan/ImageView.cpp
     Private/Graphics/RHI/Vulkan/ImageView.h
+    Private/Graphics/RHI/Vulkan/PipelineFactory.h
+    Private/Graphics/RHI/Vulkan/PipelineFactory.cpp
     Private/Graphics/RHI/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/RHI/Vulkan/GraphicsPipeline.h
     Private/Graphics/RHI/Vulkan/PipelineStates.h
@@ -100,7 +100,6 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/ShaderResourceGroup.h
     Private/Graphics/RHI/Vulkan/Swapchain.cpp
     Private/Graphics/RHI/Vulkan/Swapchain.h
-    Private/Graphics/RHI/Vulkan/VmaImpl.cpp
 )
 
 

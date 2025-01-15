@@ -73,15 +73,12 @@ namespace FE::Graphics::RHI
 
         constexpr explicit Offset(int32_t x)
             : x(x)
-            , y(0)
-            , z(0)
         {
         }
 
         constexpr Offset(int32_t x, int32_t y)
             : x(x)
             , y(y)
-            , z(0)
         {
         }
 
@@ -102,21 +99,18 @@ namespace FE::Graphics::RHI
 
         constexpr Size() = default;
 
-        constexpr explicit Size(uint32_t w)
+        constexpr explicit Size(const uint32_t w)
             : width(w)
-            , height(0)
-            , depth(1)
         {
         }
 
-        constexpr Size(uint32_t w, uint32_t h)
+        constexpr Size(const uint32_t w, const uint32_t h)
             : width(w)
             , height(h)
-            , depth(1)
         {
         }
 
-        constexpr Size(uint32_t w, uint32_t h, uint32_t d)
+        constexpr Size(const uint32_t w, const uint32_t h, const uint32_t d)
             : width(w)
             , height(h)
             , depth(d)
@@ -125,9 +119,9 @@ namespace FE::Graphics::RHI
     };
 
 
-    inline uint32_t CalculateMipCount(Size size)
+    inline uint32_t CalculateMipCount(const Size size)
     {
-        return 1 + Math::FloorLog2(std::max(size.width, std::max(size.height, size.depth)));
+        return 1 + Math::FloorLog2(Math::Max(size.width, Math::Max(size.height, size.depth)));
     }
 } // namespace FE::Graphics::RHI
 
@@ -135,10 +129,8 @@ namespace FE::Graphics::RHI
 template<>
 struct eastl::hash<FE::Graphics::RHI::Size>
 {
-    inline size_t operator()(const FE::Graphics::RHI::Size& size) const noexcept
+    size_t operator()(const FE::Graphics::RHI::Size& size) const noexcept
     {
-        size_t seed = 0;
-        FE::HashCombine(seed, size.width, size.height, size.depth);
-        return seed;
+        return FE::HashAll(size.width, size.height, size.depth);
     }
 };

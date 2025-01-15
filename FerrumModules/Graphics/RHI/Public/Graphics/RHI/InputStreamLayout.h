@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/Strings/FixedString.h>
 #include <Graphics/RHI/ImageFormat.h>
 

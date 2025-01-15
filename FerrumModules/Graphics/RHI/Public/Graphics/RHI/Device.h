@@ -10,6 +10,7 @@ namespace FE::Graphics::RHI
     struct CommandQueue;
     struct DeviceService;
 
+
     struct Device
         : public Memory::RefCountedObjectBase
         , public EventBus<FrameEvents>::Handler
@@ -20,6 +21,12 @@ namespace FE::Graphics::RHI
         {
             FE_CORE_ASSERT(m_disposeQueue.empty(), "Device implementation didn't call DisposePending()");
         }
+
+        Device(const Device&) = delete;
+        Device(Device&&) = delete;
+
+        Device& operator=(const Device&) = delete;
+        Device& operator=(Device&&) = delete;
 
         virtual void WaitIdle() = 0;
 
@@ -42,7 +49,7 @@ namespace FE::Graphics::RHI
 
         struct PendingDisposer final
         {
-            RHI::DeviceObject* m_object = nullptr;
+            DeviceObject* m_object = nullptr;
             uint32_t m_framesLeft = 0;
         };
 

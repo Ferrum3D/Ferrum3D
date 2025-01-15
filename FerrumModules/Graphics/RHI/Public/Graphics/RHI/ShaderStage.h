@@ -10,7 +10,7 @@ namespace FE::Graphics::RHI
         kHull,
         kDomain,
         kGeometry,
-        kCompute
+        kCompute,
     };
 
 

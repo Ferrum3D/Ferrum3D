@@ -1,9 +1,9 @@
 ﻿#pragma once
-#include <festd/vector.h>
 #include <Graphics/RHI/Buffer.h>
 #include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/Sampler.h>
 #include <Graphics/RHI/ShaderResourceType.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::RHI
 {
@@ -16,25 +16,25 @@ namespace FE::Graphics::RHI
 
     struct ShaderResourceGroupData final
     {
-        void Set(uint32_t bindingIndex, Buffer* pBuffer)
+        void Set(const uint32_t bindingIndex, Buffer* buffer)
         {
-            SetImpl(bindingIndex, pBuffer);
+            SetImpl(bindingIndex, buffer);
         }
 
-        void Set(uint32_t bindingIndex, ImageView* pImageView)
+        void Set(const uint32_t bindingIndex, ImageView* imageView)
         {
-            SetImpl(bindingIndex, pImageView);
+            SetImpl(bindingIndex, imageView);
         }
 
-        void Set(uint32_t bindingIndex, Sampler* pSampler)
+        void Set(const uint32_t bindingIndex, Sampler* sampler)
         {
-            SetImpl(bindingIndex, pSampler);
+            SetImpl(bindingIndex, sampler);
         }
 
-        DeviceObject* Get(uint32_t bindingIndex) const
+        [[nodiscard]] DeviceObject* Get(const uint32_t bindingIndex) const
         {
             const auto iter = std::lower_bound(
-                m_entries.begin(), m_entries.end(), bindingIndex, [](const ShaderResourceEntry& lhs, uint32_t rhs) {
+                m_entries.begin(), m_entries.end(), bindingIndex, [](const ShaderResourceEntry& lhs, const uint32_t rhs) {
                     return lhs.m_index < rhs;
                 });
 
@@ -42,20 +42,18 @@ namespace FE::Graphics::RHI
             return iter->m_object.Get();
         }
 
-        festd::span<const ShaderResourceEntry> GetEntries() const
+        [[nodiscard]] festd::span<const ShaderResourceEntry> GetEntries() const
         {
             return m_entries;
         }
 
     private:
-        festd::small_vector<ShaderResourceEntry, 8> m_entries;
-
-        void SetImpl(uint32_t bindingIndex, DeviceObject* object)
+        void SetImpl(const uint32_t bindingIndex, DeviceObject* object)
         {
             FE_Assert(object);
 
-            auto iter = std::lower_bound(
-                m_entries.begin(), m_entries.end(), bindingIndex, [](const ShaderResourceEntry& lhs, uint32_t rhs) {
+            const auto iter = std::lower_bound(
+                m_entries.begin(), m_entries.end(), bindingIndex, [](const ShaderResourceEntry& lhs, const uint32_t rhs) {
                     return lhs.m_index < rhs;
                 });
 
@@ -69,5 +67,7 @@ namespace FE::Graphics::RHI
             entry.m_index = bindingIndex;
             entry.m_object = object;
         }
+
+        festd::small_vector<ShaderResourceEntry, 8> m_entries;
     };
 } // namespace FE::Graphics::RHI

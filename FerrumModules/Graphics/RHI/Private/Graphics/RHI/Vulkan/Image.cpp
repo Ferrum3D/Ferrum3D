@@ -1,7 +1,6 @@
 ﻿#include <Graphics/RHI/ImageSubresource.h>
 #include <Graphics/RHI/Vulkan/Common/BaseTypes.h>
 #include <Graphics/RHI/Vulkan/Device.h>
-#include <Graphics/RHI/Vulkan/DeviceMemory.h>
 #include <Graphics/RHI/Vulkan/Image.h>
 #include <Graphics/RHI/Vulkan/ImageFormat.h>
 #include <Graphics/RHI/Vulkan/ImageView.h>

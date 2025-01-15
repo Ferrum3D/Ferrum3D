@@ -18,7 +18,7 @@ namespace FE::Graphics::Vulkan
 
         RHI::ResultCode InitInternal(VmaAllocator allocator, Env::Name name, const RHI::BufferDesc& desc);
 
-        void* Map(uint32_t offset, uint32_t size) override;
+        void* Map() override;
         void Unmap() override;
 
         [[nodiscard]] const RHI::BufferDesc& GetDesc() const override;

@@ -35,6 +35,12 @@ namespace FE::Graphics::RHI
 
         ~GraphicsPipeline() override = default;
 
-        virtual ResultCode Init(const GraphicsPipelineDesc& desc) = 0;
+        [[nodiscard]] Env::Name GetName() const
+        {
+            return m_name;
+        }
+
+    protected:
+        Env::Name m_name;
     };
 } // namespace FE::Graphics::RHI

@@ -6,6 +6,7 @@ namespace FE::Graphics::RHI
     struct ImageView;
     struct RenderPass;
 
+
     struct FramebufferDesc final
     {
         festd::span<ImageView* const> m_renderTargetViews;
@@ -13,6 +14,7 @@ namespace FE::Graphics::RHI
         uint32_t m_width = 0;
         uint32_t m_height = 0;
     };
+
 
     struct Framebuffer : public DeviceObject
     {

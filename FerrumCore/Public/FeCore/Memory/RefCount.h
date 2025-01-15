@@ -20,6 +20,12 @@ namespace FE
             RefCountedObjectBase() = default;
             virtual ~RefCountedObjectBase() = default;
 
+            RefCountedObjectBase(const RefCountedObjectBase&) = delete;
+            RefCountedObjectBase& operator=(const RefCountedObjectBase&) = delete;
+
+            RefCountedObjectBase(RefCountedObjectBase&&) = delete;
+            RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
+
             [[nodiscard]] uint32_t GetRefCount() const
             {
                 return m_refCount.load(std::memory_order_relaxed);
@@ -41,12 +47,6 @@ namespace FE
 
         private:
             friend class ::FE::Internal::RcBase;
-
-            RefCountedObjectBase(const RefCountedObjectBase&) = delete;
-            RefCountedObjectBase& operator=(const RefCountedObjectBase&) = delete;
-
-            RefCountedObjectBase(RefCountedObjectBase&&) = delete;
-            RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
 
         protected:
             std::atomic<uint32_t> m_refCount = 0;
@@ -174,8 +174,6 @@ namespace FE
         }
 
         //! @brief Release a reference and get pointer to the stored pointer.
-        //!
-        //! It is the same as using unary '&' operator.
         [[nodiscard]] T** ReleaseAndGetAddressOf()
         {
             InternalRelease();

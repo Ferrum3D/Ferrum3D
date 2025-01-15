@@ -111,7 +111,7 @@ namespace FE::Graphics::RHI
 
         MultisampleState() = default;
 
-        MultisampleState(int32_t sampleCount, float minSampleShading, bool sampleShadingEnabled)
+        MultisampleState(const int32_t sampleCount, const float minSampleShading, const bool sampleShadingEnabled)
             : m_sampleCount(sampleCount)
             , m_minSampleShading(minSampleShading)
             , m_sampleShadingEnabled(sampleShadingEnabled)
@@ -148,13 +148,13 @@ namespace FE::Graphics::RHI
 
         ColorBlendState() = default;
 
-        ColorBlendState(festd::span<const TargetColorBlending> targetBlendStates)
+        ColorBlendState(const festd::span<const TargetColorBlending> targetBlendStates)
             : m_targetBlendStates(targetBlendStates)
             , m_blendConstants(0)
         {
         }
 
-        ColorBlendState(festd::span<const TargetColorBlending> targetBlendStates, Vector4F constants)
+        ColorBlendState(const festd::span<const TargetColorBlending> targetBlendStates, const Vector4F constants)
             : m_targetBlendStates(targetBlendStates)
             , m_blendConstants(constants)
         {

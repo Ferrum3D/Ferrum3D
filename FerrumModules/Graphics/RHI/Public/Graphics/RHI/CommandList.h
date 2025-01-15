@@ -3,7 +3,6 @@
 #include <Graphics/RHI/Common/Viewport.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/ResourceState.h>
-#include <array>
 
 namespace FE::Graphics::RHI
 {
@@ -14,7 +13,7 @@ namespace FE::Graphics::RHI
         uint32_t m_stencilValue = 0;
         bool m_isDepthStencil = false;
 
-        static ClearValueDesc FE_VECTORCALL CreateColorValue(Color4F color)
+        static ClearValueDesc FE_VECTORCALL CreateColorValue(const Color4F color)
         {
             ClearValueDesc result{};
             result.m_colorValue = color;
@@ -22,7 +21,7 @@ namespace FE::Graphics::RHI
             return result;
         }
 
-        static ClearValueDesc CreateDepthStencilValue(float depth = 1.0f, uint32_t stencil = 0)
+        static ClearValueDesc CreateDepthStencilValue(const float depth = 1.0f, const uint32_t stencil = 0)
         {
             ClearValueDesc result{};
             result.m_depthValue = depth;
@@ -35,6 +34,7 @@ namespace FE::Graphics::RHI
         ClearValueDesc() = default;
     };
 
+
     struct BufferCopyRegion final
     {
         uint64_t m_size = 0;
@@ -43,20 +43,19 @@ namespace FE::Graphics::RHI
 
         BufferCopyRegion() = default;
 
-        explicit BufferCopyRegion(uint64_t size)
-            : m_sourceOffset(0)
-            , m_destOffset(0)
-            , m_size(size)
+        explicit BufferCopyRegion(const uint64_t size)
+            : m_size(size)
         {
         }
 
-        BufferCopyRegion(uint32_t sourceOffset, uint32_t destOffset, uint64_t size)
-            : m_sourceOffset(sourceOffset)
+        BufferCopyRegion(const uint32_t sourceOffset, const uint32_t destOffset, const uint64_t size)
+            : m_size(size)
+            , m_sourceOffset(sourceOffset)
             , m_destOffset(destOffset)
-            , m_size(size)
         {
         }
     };
+
 
     struct BufferImageCopyRegion final
     {
@@ -67,22 +66,21 @@ namespace FE::Graphics::RHI
 
         BufferImageCopyRegion() = default;
 
-        explicit BufferImageCopyRegion(Size size)
-            : m_bufferOffset(0)
-            , m_imageSubresource()
-            , m_imageOffset()
-            , m_imageSize(size)
+        explicit BufferImageCopyRegion(const Size size)
+            : m_imageSize(size)
         {
         }
 
-        BufferImageCopyRegion(uint32_t buffetOffset, ImageSubresource imageSubresource, Offset imageOffset, Size imageSize)
-            : m_bufferOffset(buffetOffset)
-            , m_imageSubresource(imageSubresource)
-            , m_imageOffset(imageOffset)
+        BufferImageCopyRegion(const uint32_t buffetOffset, const ImageSubresource imageSubresource, const Offset imageOffset,
+                              const Size imageSize)
+            : m_imageOffset(imageOffset)
             , m_imageSize(imageSize)
+            , m_imageSubresource(imageSubresource)
+            , m_bufferOffset(buffetOffset)
         {
         }
     };
+
 
     struct ImageBlitRegion final
     {
@@ -116,8 +114,6 @@ namespace FE::Graphics::RHI
 
     struct CommandList : public DeviceObject
     {
-        ~CommandList() override = default;
-
         FE_RTTI_Class(CommandList, "80A845FD-5E8F-4BF1-BB75-880DE377D4A2");
 
         virtual ResultCode Init(const CommandListDesc& desc) = 0;

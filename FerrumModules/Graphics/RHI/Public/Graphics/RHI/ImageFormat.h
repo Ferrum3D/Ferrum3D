@@ -14,7 +14,7 @@ namespace FE::Graphics::RHI
 
     enum class ImageAspectFlags : uint32_t
     {
-        kNone,
+        kNone = 0,
         kColor = 1 << festd::to_underlying(ImageAspect::kColor),
         kDepth = 1 << festd::to_underlying(ImageAspect::kDepth),
         kStencil = 1 << festd::to_underlying(ImageAspect::kStencil),
@@ -79,12 +79,12 @@ namespace FE::Graphics::RHI
     //    name                         type  byteSize     channelCount aspectFlags bc  signed srgb index
     // clang-format off
 #define FE_BASIC_FORMAT_EXPANSION_BLOCK_1(_Func, baseName, bits, chan, baseIndex)                                                \
-    _Func(baseName##_SINT,              Int, bits*chan/8, chan,        Color,      0,  1,     0,   baseIndex + 0)                \
-    _Func(baseName##_UINT,              Int, bits*chan/8, chan,        Color,      0,  0,     0,   baseIndex + 1)
+    _Func(baseName## _SINT,              Int, bits*chan/8, chan,        Color,      0,  1,     0,   baseIndex + 0)               \
+    _Func(baseName## _UINT,              Int, bits*chan/8, chan,        Color,      0,  0,     0,   baseIndex + 1)
 
 #define FE_BASIC_FORMAT_EXPANSION_BLOCK_2(_Func, baseName, bits, chan, baseIndex)                                                \
-    _Func(baseName##_SNORM,            Norm, bits*chan/8, chan,        Color,      0,  1,     0,   baseIndex + 0)                \
-    _Func(baseName##_UNORM,            Norm, bits*chan/8, chan,        Color,      0,  0,     0,   baseIndex + 1)
+    _Func(baseName## _SNORM,            Norm, bits*chan/8, chan,        Color,      0,  1,     0,   baseIndex + 0)               \
+    _Func(baseName## _UNORM,            Norm, bits*chan/8, chan,        Color,      0,  0,     0,   baseIndex + 1)
     // clang-format on
 
 #define FE_BASIC_FORMAT_EXPANSION_BLOCK_8(_Func, baseName, chan, baseIndex)                                                      \
@@ -196,16 +196,16 @@ namespace FE::Graphics::RHI
         [[nodiscard]] uint32_t CalculateRowPitch(uint32_t width, uint32_t mipIndex = 0) const
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
-            const uint32_t blockCountW = std::max(Math::CeilDivide(width >> mipIndex, blockSize), 1u);
+            const uint32_t blockCountW = Math::Max(Math::CeilDivide(width >> mipIndex, blockSize), 1u);
             return blockCountW * m_byteSize;
         }
 
         [[nodiscard]] uint32_t CalculateMipByteSize(Size size, uint32_t mipIndex = 0) const
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
-            const uint32_t blockCountW = std::max(Math::CeilDivide(size.width >> mipIndex, blockSize), 1u);
-            const uint32_t blockCountH = std::max(Math::CeilDivide(size.height >> mipIndex, blockSize), 1u);
-            return std::max(size.depth >> mipIndex, 1u) * blockCountW * blockCountH * m_byteSize;
+            const uint32_t blockCountW = Math::Max(Math::CeilDivide(size.width >> mipIndex, blockSize), 1u);
+            const uint32_t blockCountH = Math::Max(Math::CeilDivide(size.height >> mipIndex, blockSize), 1u);
+            return Math::Max(size.depth >> mipIndex, 1u) * blockCountW * blockCountH * m_byteSize;
         }
 
         [[nodiscard]] uint32_t CalculateImageByteSize(Size size, uint32_t mipCount) const
@@ -242,7 +242,7 @@ namespace FE::Graphics::RHI
     static_assert(sizeof(Format) == sizeof(FormatInfo));
 
 
-    inline StringSlice ToString(Format format)
+    inline StringSlice ToString(const Format format)
     {
         switch (format)
         {
@@ -261,7 +261,7 @@ namespace FE::Graphics::RHI
     }
 
 
-    inline uint32_t GetFormatSize(Format format)
+    inline uint32_t GetFormatSize(const Format format)
     {
         return FormatInfo{ format }.m_byteSize;
     }

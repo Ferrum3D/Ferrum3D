@@ -16,7 +16,7 @@ namespace FE::Graphics::RHI
             m_usage = ResourceUsage::kDeviceOnly;
         }
 
-        BufferDesc(uint32_t size, BindFlags bindFlags, ResourceUsage usage)
+        BufferDesc(const uint32_t size, const BindFlags bindFlags, const ResourceUsage usage)
             : m_size(size)
             , m_flags(bindFlags)
             , m_usage(usage)
@@ -29,23 +29,12 @@ namespace FE::Graphics::RHI
     {
         FE_RTTI_Class(Buffer, "2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
-        ~Buffer() override = default;
-
-        virtual void* Map(uint32_t offset, uint32_t size) = 0;
-        void* Map(uint32_t offset);
-
+        virtual void* Map() = 0;
         virtual void Unmap() = 0;
 
         [[nodiscard]] virtual const BufferDesc& GetDesc() const = 0;
-
         void UpdateData(const void* data, uint32_t offset = 0, uint32_t size = UINT32_MAX);
     };
-
-
-    inline void* Buffer::Map(uint32_t offset)
-    {
-        return Map(offset, UINT32_MAX);
-    }
 
 
     inline void Buffer::UpdateData(const void* data, uint32_t offset, uint32_t size)
@@ -55,7 +44,7 @@ namespace FE::Graphics::RHI
             size = GetDesc().m_size - offset;
         }
 
-        void* map = Map(offset, size);
+        void* map = static_cast<uint8_t*>(Map()) + offset;
         memcpy(map, data, size);
         Unmap();
     }

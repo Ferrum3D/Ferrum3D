@@ -1,7 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Containers/ByteBuffer.h>
-#include <FeCore/Logging/Trace.h>
-#include <FeCore/Strings/FixedString.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/ShaderStage.h>
 
@@ -17,7 +14,7 @@ namespace FE::Graphics::RHI
 
         ShaderModuleDesc() = default;
 
-        ShaderModuleDesc(ShaderStage stage, festd::span<const uint8_t> byteCode)
+        ShaderModuleDesc(const ShaderStage stage, const festd::span<const uint8_t> byteCode)
             : m_byteCode(byteCode)
             , m_entryPoint("main")
             , m_stage(stage)

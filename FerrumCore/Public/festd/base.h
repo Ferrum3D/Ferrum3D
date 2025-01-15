@@ -59,7 +59,7 @@ namespace FE::festd
     template<class T, size_t TSize>
     constexpr std::conditional_t<TSize <= UINT32_MAX, uint32_t, size_t> size(const T (&)[TSize]) noexcept
     {
-        return static_cast<uint32_t>(TSize);
+        return static_cast<std::conditional_t<TSize <= UINT32_MAX, uint32_t, size_t>>(TSize);
     }
 
 

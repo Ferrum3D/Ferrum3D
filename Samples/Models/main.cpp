@@ -18,6 +18,7 @@
 #include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/InputLayoutBuilder.h>
 #include <Graphics/RHI/Module.h>
+#include <Graphics/RHI/PipelineFactory.h>
 #include <Graphics/RHI/RenderPass.h>
 #include <Graphics/RHI/ResourcePool.h>
 #include <Graphics/RHI/Sampler.h>
@@ -65,6 +66,7 @@ struct ExampleApplication final : public ApplicationModule
         m_transferQueue = m_device->GetCommandQueue(RHI::HardwareQueueKindFlags::kTransfer);
 
         const Rc resourcePool = pServiceProvider->ResolveRequired<RHI::ResourcePool>();
+        const Rc pipelineFactory = pServiceProvider->ResolveRequired<RHI::PipelineFactory>();
 
         m_window = pServiceProvider->ResolveRequired<RHI::IWindow>();
         m_window->Init(RHI::WindowDesc{ 800, 600, kExampleName });
@@ -180,8 +182,7 @@ struct ExampleApplication final : public ApplicationModule
 
         pipelineDesc.m_rasterization.m_cullMode = RHI::CullingModeFlags::kBack;
 
-        m_pipeline = pServiceProvider->ResolveRequired<RHI::GraphicsPipeline>();
-        m_pipeline->Init(pipelineDesc);
+        m_pipeline = pipelineFactory->CreateGraphicsPipeline("GraphicsPSO", pipelineDesc).value();
 
         m_fence = pServiceProvider->ResolveRequired<RHI::Fence>();
         m_fence->Init();

@@ -7,8 +7,6 @@ namespace FE::Graphics::RHI
     {
         FE_RTTI_Class(Fence, "D815152F-A41F-45C8-81AB-F921F19E8AA3");
 
-        ~Fence() override = default;
-
         virtual ResultCode Init(uint64_t initialValue = 0) = 0;
 
         virtual uint64_t GetCompletedValue() = 0;
@@ -22,7 +20,7 @@ namespace FE::Graphics::RHI
         Rc<Fence> m_fence;
         uint64_t m_value = 0;
 
-        bool IsReady() const
+        [[nodiscard]] bool IsReady() const
         {
             return m_fence->GetCompletedValue() >= m_value;
         }

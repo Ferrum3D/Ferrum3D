@@ -164,11 +164,10 @@ namespace FE::Graphics::RHI
     struct ImageView;
     struct DeviceMemory;
 
+
     struct Image : public Resource
     {
         FE_RTTI_Class(Image, "4C4B8F44-E965-479D-B12B-264C9BF63A49");
-
-        ~Image() override = default;
 
         virtual const ImageDesc& GetDesc() = 0;
 

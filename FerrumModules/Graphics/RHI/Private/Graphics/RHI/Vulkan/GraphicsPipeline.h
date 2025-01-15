@@ -11,7 +11,7 @@ namespace FE::Graphics::Vulkan
         GraphicsPipeline(RHI::Device* device);
         ~GraphicsPipeline() override;
 
-        RHI::ResultCode Init(const RHI::GraphicsPipelineDesc& desc) override;
+        RHI::ResultCode InitInternal(VkPipelineCache cache, Env::Name name, const RHI::GraphicsPipelineDesc& desc);
 
         [[nodiscard]] VkPipeline GetNative() const
         {

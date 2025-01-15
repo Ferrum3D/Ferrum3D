@@ -1,7 +1,6 @@
 ﻿#include <Graphics/RHI/Vulkan/Buffer.h>
 #include <Graphics/RHI/Vulkan/Common/Config.h>
 #include <Graphics/RHI/Vulkan/Device.h>
-#include <Graphics/RHI/Vulkan/DeviceMemory.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -89,7 +88,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void* Buffer::Map(uint32_t, uint32_t)
+    void* Buffer::Map()
     {
         FE_AssertDebug(m_desc.m_usage == RHI::ResourceUsage::kHostRandomAccess
                        || m_desc.m_usage == RHI::ResourceUsage::kHostWriteThrough);

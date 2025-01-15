@@ -18,8 +18,6 @@ namespace FE::Graphics::RHI
     {
         FE_RTTI_Class(IWindow, "2E09CD62-42A4-4E0D-BC2C-B11E849FBEAF");
 
-        ~IWindow() override = default;
-
         virtual ResultCode Init(const WindowDesc& desc) = 0;
 
         virtual void PollEvents() = 0;

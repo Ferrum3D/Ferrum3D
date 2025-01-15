@@ -12,7 +12,7 @@ namespace FE::Graphics::RHI
     {
         FE_RTTI_Class(ShaderCompilerDXC, "9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
-        explicit ShaderCompilerDXC(Logger* logger, GraphicsAPI api);
+        ShaderCompilerDXC(Logger* logger, GraphicsAPI api);
 
         ByteBuffer CompileShader(const ShaderCompilerArgs& args) override;
 

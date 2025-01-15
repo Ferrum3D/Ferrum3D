@@ -187,11 +187,20 @@ namespace FE
     //!
     //! @param seed - Initial hash value to combine with.
     //! @param args - The values to calculate hash of.
-    template<typename T, typename... Args>
-    inline void HashCombine(size_t& seed, const T& value, const Args&... args)
+    template<class T, class... Args>
+    void HashCombine(size_t& seed, const T& value, const Args&... args)
     {
         eastl::hash<T> hasher;
         seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         HashCombine(seed, args...);
+    }
+
+
+    template<class... TArgs>
+    size_t HashAll(const TArgs&... args)
+    {
+        size_t seed = Internal::HashSecret[0];
+        HashCombine(seed, args...);
+        return seed;
     }
 } // namespace FE

@@ -7,8 +7,6 @@ namespace FE::Graphics::RHI
 {
     struct DeviceFactory : public Memory::RefCountedObjectBase
     {
-        ~DeviceFactory() override = default;
-
         FE_RTTI_Class(DeviceFactory, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
         virtual ResultCode CreateDevice(Env::Name adapterName) = 0;

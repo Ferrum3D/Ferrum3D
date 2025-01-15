@@ -36,7 +36,7 @@ namespace FE::Graphics::RHI
         {
         }
 
-        ImageSubresourceRange(ImageSubresource subresource)
+        ImageSubresourceRange(const ImageSubresource subresource)
         {
             m_aspectFlags = static_cast<ImageAspectFlags>(1 << festd::to_underlying(subresource.m_aspect));
             m_minMipSlice = subresource.m_mipSlice;

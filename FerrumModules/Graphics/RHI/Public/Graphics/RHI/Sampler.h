@@ -9,7 +9,7 @@ namespace FE::Graphics::RHI
     enum class SamplerAddressMode : uint32_t
     {
         kRepeat,
-        kClamp
+        kClamp,
     };
 
 
@@ -17,7 +17,7 @@ namespace FE::Graphics::RHI
     {
         kNone = 0,
         kX16 = 16,
-        kMaxSupported = std::numeric_limits<int32_t>::max()
+        kMaxSupported = std::numeric_limits<int32_t>::max(),
     };
 
 

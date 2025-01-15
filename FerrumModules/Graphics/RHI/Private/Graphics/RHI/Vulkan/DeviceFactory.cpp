@@ -11,6 +11,7 @@
 #include <Graphics/RHI/Vulkan/Framebuffer.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
 #include <Graphics/RHI/Vulkan/ImageView.h>
+#include <Graphics/RHI/Vulkan/PipelineFactory.h>
 #include <Graphics/RHI/Vulkan/RenderPass.h>
 #include <Graphics/RHI/Vulkan/ResourcePool.h>
 #include <Graphics/RHI/Vulkan/Sampler.h>
@@ -115,13 +116,13 @@ namespace FE::Graphics::Vulkan
     {
         builder.Bind<RHI::Device>().To<Device>().InSingletonScope();
         builder.Bind<RHI::ResourcePool>().To<ResourcePool>().InSingletonScope();
+        builder.Bind<RHI::PipelineFactory>().To<PipelineFactory>().InSingletonScope();
 
         builder.Bind<RHI::Fence>().To<Fence>().InTransientScope();
         builder.Bind<RHI::CommandList>().To<CommandList>().InTransientScope();
         builder.Bind<RHI::Swapchain>().To<Swapchain>().InTransientScope();
         builder.Bind<RHI::ShaderModule>().To<ShaderModule>().InTransientScope();
         builder.Bind<RHI::RenderPass>().To<RenderPass>().InTransientScope();
-        builder.Bind<RHI::GraphicsPipeline>().To<GraphicsPipeline>().InTransientScope();
         builder.Bind<RHI::ImageView>().To<ImageView>().InTransientScope();
         builder.Bind<RHI::Framebuffer>().To<Framebuffer>().InTransientScope();
         builder.Bind<RHI::Sampler>().To<Sampler>().InTransientScope();
@@ -201,7 +202,7 @@ namespace FE::Graphics::Vulkan
 
         m_nativeAdapters.resize(adapterCount, VkPhysicalDevice{});
         vkEnumeratePhysicalDevices(m_instance, &adapterCount, m_nativeAdapters.data());
-        for (VkPhysicalDevice& physicalDevice : m_nativeAdapters)
+        for (const VkPhysicalDevice physicalDevice : m_nativeAdapters)
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(physicalDevice, &props);

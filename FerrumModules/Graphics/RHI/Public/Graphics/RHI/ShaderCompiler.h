@@ -14,7 +14,7 @@ namespace FE::Graphics::RHI
 
         HLSLShaderVersion() = default;
 
-        HLSLShaderVersion(uint32_t major, uint32_t minor)
+        HLSLShaderVersion(const uint32_t major, const uint32_t minor)
             : m_major(major)
             , m_minor(minor)
         {

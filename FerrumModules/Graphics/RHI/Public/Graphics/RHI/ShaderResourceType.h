@@ -11,7 +11,7 @@ namespace FE::Graphics::RHI
         kBufferSRV,
         kBufferUAV,
         kSampler,
-        kInputAttachment
+        kInputAttachment,
     };
 
 
