@@ -27,7 +27,7 @@ namespace FE::Graphics::Vulkan
         VkPipelineLayout m_layout = VK_NULL_HANDLE;
         VkPipeline m_nativePipeline = VK_NULL_HANDLE;
 
-        RHI::GraphicsPipelineDesc m_desc;
+        RHI::GraphicsPipelineDesc m_desc = {};
 
         struct VertexStates final
         {
@@ -47,7 +47,7 @@ namespace FE::Graphics::Vulkan
 
         struct BlendState final
         {
-            festd::vector<VkPipelineColorBlendAttachmentState> m_attachments{};
+            festd::fixed_vector<VkPipelineColorBlendAttachmentState, RHI::Limits::Pipeline::kMaxColorAttachments> m_attachments;
             VkPipelineColorBlendStateCreateInfo m_createInfo{};
         };
 

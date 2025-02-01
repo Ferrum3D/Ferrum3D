@@ -16,7 +16,7 @@ namespace FE::Graphics::Vulkan
         festd::expected<RHI::Buffer*, RHI::ResultCode> CreateBuffer(Env::Name name, const RHI::BufferDesc& desc) override;
 
     private:
-        VmaAllocator m_allocator;
+        VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
         Memory::PoolAllocator m_imagePool;
         Memory::PoolAllocator m_bufferPool;
     };

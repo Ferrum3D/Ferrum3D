@@ -1,5 +1,4 @@
-﻿#include <Graphics/RHI/Vulkan/CommandList.h>
-#include <Graphics/RHI/Vulkan/Device.h>
+﻿#include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/ImageFormat.h>
 #include <Graphics/RHI/Vulkan/PipelineStates.h>
 #include <Graphics/RHI/Vulkan/RenderPass.h>
@@ -48,6 +47,7 @@ namespace FE::Graphics::Vulkan
     RHI::ResultCode RenderPass::Init(const RHI::RenderPassDesc& desc)
     {
         m_desc = desc;
+        m_subpassAttachmentCount = desc.m_subpasses[0].m_renderTargetAttachments.size();
         BuildNativeRenderPass();
         return RHI::ResultCode::kSuccess;
     }
@@ -55,7 +55,7 @@ namespace FE::Graphics::Vulkan
 
     uint32_t RenderPass::GetAttachmentCount()
     {
-        return m_desc.m_attachments.size();
+        return m_subpassAttachmentCount;
     }
 
 
@@ -86,13 +86,13 @@ namespace FE::Graphics::Vulkan
 
         VkRenderPassCreateInfo renderPassCI{};
         renderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassCI.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
+        renderPassCI.attachmentCount = attachmentDescriptions.size();
         renderPassCI.pAttachments = attachmentDescriptions.data();
 
-        renderPassCI.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
+        renderPassCI.dependencyCount = subpassDependencies.size();
         renderPassCI.pDependencies = subpassDependencies.data();
 
-        renderPassCI.subpassCount = static_cast<uint32_t>(subpassDescriptions.size());
+        renderPassCI.subpassCount = subpassDescriptions.size();
         renderPassCI.pSubpasses = subpassDescriptions.data();
 
         vkCreateRenderPass(NativeCast(m_device), &renderPassCI, VK_NULL_HANDLE, &m_nativeRenderPass);
@@ -134,10 +134,10 @@ namespace FE::Graphics::Vulkan
             auto& nativeDesc = result.push_back();
             nativeDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-            nativeDesc.inputAttachmentCount = static_cast<uint32_t>(currentRefs.m_input.size());
+            nativeDesc.inputAttachmentCount = currentRefs.m_input.size();
             nativeDesc.pInputAttachments = currentRefs.m_input.data();
 
-            nativeDesc.colorAttachmentCount = static_cast<uint32_t>(currentRefs.m_rt.size());
+            nativeDesc.colorAttachmentCount = currentRefs.m_rt.size();
             nativeDesc.pColorAttachments = currentRefs.m_rt.data();
             nativeDesc.pResolveAttachments = currentRefs.m_resolve.data();
 

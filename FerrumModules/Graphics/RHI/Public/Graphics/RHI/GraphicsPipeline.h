@@ -19,7 +19,7 @@ namespace FE::Graphics::RHI
         festd::span<ShaderResourceGroup* const> m_shaderResourceGroups;
         festd::span<ShaderModule* const> m_shaders;
 
-        MultisampleState m_multisample;
+        int32_t m_sampleCount = 1;
         RasterizationState m_rasterization;
         DepthStencilState m_depthStencil;
         ColorBlendState m_colorBlend;

@@ -11,6 +11,7 @@ namespace FE::Graphics::Vulkan
     Image::Image(RHI::Device* device)
     {
         m_device = device;
+        m_type = RHI::ResourceType::kImage;
         Register();
     }
 

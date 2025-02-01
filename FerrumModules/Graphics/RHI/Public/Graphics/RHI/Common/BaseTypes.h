@@ -50,7 +50,7 @@ namespace FE::Graphics::RHI
         kDepthStencil = 1 << 6,
         kUnorderedAccess = 1 << 7,
         kIndirectDrawArgs = 1 << 8,
-        kInputAttachment = 1 << 9
+        kInputAttachment = 1 << 9,
     };
 
     FE_ENUM_OPERATORS(BindFlags);

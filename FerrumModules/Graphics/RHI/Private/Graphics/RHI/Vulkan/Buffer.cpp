@@ -7,6 +7,7 @@ namespace FE::Graphics::Vulkan
     Buffer::Buffer(RHI::Device* device)
     {
         m_device = device;
+        m_type = RHI::ResourceType::kBuffer;
         Register();
     }
 

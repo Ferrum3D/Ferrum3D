@@ -6,6 +6,11 @@ namespace FE::Graphics::RHI
 {
     struct FrameGraphBlackboard final
     {
+        explicit FrameGraphBlackboard(Memory::LinearAllocator* allocator)
+            : m_allocator(allocator)
+        {
+        }
+
         void Reset();
 
         template<class TPassData, class... TArgs>
@@ -25,7 +30,7 @@ namespace FE::Graphics::RHI
             void (*m_destructor)(void*);
         };
 
-        Memory::LinearAllocator m_allocator;
+        Memory::LinearAllocator* m_allocator = nullptr;
         PassDataNode* m_head = nullptr;
     };
 
@@ -39,7 +44,6 @@ namespace FE::Graphics::RHI
             node = node->m_next;
         }
 
-        m_allocator.Clear();
         m_head = nullptr;
     }
 
@@ -47,7 +51,7 @@ namespace FE::Graphics::RHI
     template<class TPassData, class... TArgs>
     TPassData* FrameGraphBlackboard::Add(TArgs&&... args)
     {
-        void* memory = m_allocator.allocate(sizeof(TPassData) + sizeof(PassDataNode));
+        void* memory = m_allocator->allocate(sizeof(TPassData) + sizeof(PassDataNode));
 
         PassDataNode* node = new (memory) PassDataNode();
         node->m_typeHash = TypeNameHash<TPassData>;

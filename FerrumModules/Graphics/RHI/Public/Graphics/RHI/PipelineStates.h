@@ -1,8 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/Vector4.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
-#include <utility>
+#include <Graphics/RHI/Common/Limits.h>
 
 namespace FE::Graphics::RHI
 {
@@ -95,70 +94,55 @@ namespace FE::Graphics::RHI
 
     struct RasterizationState final
     {
-        CullingModeFlags m_cullMode = CullingModeFlags::kNone;
-        PolygonMode m_polyMode = PolygonMode::kFill;
-        bool m_depthClampEnabled = false;
-        bool m_depthBiasEnabled = false;
-        bool m_rasterDiscardEnabled = false;
+        CullingModeFlags m_cullMode : 2;
+        PolygonMode m_polyMode : 2;
+
+        static const RasterizationState kDefaultBackCull;
     };
 
-
-    struct MultisampleState final
-    {
-        int32_t m_sampleCount = 1;
-        float m_minSampleShading = 1.0f;
-        bool m_sampleShadingEnabled = false;
-
-        MultisampleState() = default;
-
-        MultisampleState(const int32_t sampleCount, const float minSampleShading, const bool sampleShadingEnabled)
-            : m_sampleCount(sampleCount)
-            , m_minSampleShading(minSampleShading)
-            , m_sampleShadingEnabled(sampleShadingEnabled)
-        {
-        }
-    };
+    inline const RasterizationState RasterizationState::kDefaultBackCull = { CullingModeFlags::kBack, PolygonMode::kFill };
 
 
     struct DepthStencilState final
     {
-        CompareOp m_depthCompareOp = CompareOp::kLess;
-        bool m_depthTestEnabled = false;
-        bool m_depthWriteEnabled = false;
+        CompareOp m_depthCompareOp : 4;
+        uint32_t m_depthTestEnabled : 1;
+        uint32_t m_depthWriteEnabled : 1;
+
+        static const DepthStencilState kDisabled;
+        static const DepthStencilState kEnabled;
     };
+
+    inline const DepthStencilState DepthStencilState::kDisabled = { CompareOp::kLess, false, false };
+    inline const DepthStencilState DepthStencilState::kEnabled = { CompareOp::kLess, true, true };
 
 
     struct TargetColorBlending final
     {
-        ColorComponentFlags m_colorWriteFlags = ColorComponentFlags::kAll;
-        BlendFactor m_sourceFactor = BlendFactor::kOne;
-        BlendFactor m_destinationFactor = BlendFactor::kZero;
-        BlendOperation m_blendOp = BlendOperation::kAdd;
-        BlendFactor m_sourceAlphaFactor = BlendFactor::kOne;
-        BlendFactor m_destinationAlphaFactor = BlendFactor::kZero;
-        BlendOperation m_alphaBlendOp = BlendOperation::kAdd;
-        bool m_blendEnabled = false;
+        ColorComponentFlags m_colorWriteFlags : 4;
+        BlendFactor m_sourceFactor : 5;
+        BlendFactor m_destinationFactor : 5;
+        BlendOperation m_blendOp : 3;
+        BlendFactor m_sourceAlphaFactor : 5;
+        BlendFactor m_destinationAlphaFactor : 5;
+        BlendOperation m_alphaBlendOp : 3;
+        uint32_t m_blendEnabled : 1;
+
+        static const TargetColorBlending kDisabled;
     };
+
+
+    inline const TargetColorBlending TargetColorBlending::kDisabled = { ColorComponentFlags::kAll, BlendFactor::kOne,
+                                                                        BlendFactor::kZero,        BlendOperation::kAdd,
+                                                                        BlendFactor::kOne,         BlendFactor::kZero,
+                                                                        BlendOperation::kAdd,      false };
 
 
     struct ColorBlendState final
     {
-        festd::span<const TargetColorBlending> m_targetBlendStates;
+        TargetColorBlending m_targetBlendStates[Limits::Pipeline::kMaxColorAttachments];
         Vector4F m_blendConstants;
-
-        ColorBlendState() = default;
-
-        ColorBlendState(const festd::span<const TargetColorBlending> targetBlendStates)
-            : m_targetBlendStates(targetBlendStates)
-            , m_blendConstants(0)
-        {
-        }
-
-        ColorBlendState(const festd::span<const TargetColorBlending> targetBlendStates, const Vector4F constants)
-            : m_targetBlendStates(targetBlendStates)
-            , m_blendConstants(constants)
-        {
-        }
+        bool m_enableIndependentBlend = false;
     };
 
 
@@ -179,7 +163,7 @@ namespace FE::Graphics::RHI
         kTransfer = 1 << 12,
         kBottomOfPipe = 1 << 13,
         kHost = 1 << 14,
-        kAllGraphics = UINT32_MAX,
+        kAllGraphics = (1 << 15) - 1,
     };
 
     FE_ENUM_OPERATORS(PipelineStageFlags);

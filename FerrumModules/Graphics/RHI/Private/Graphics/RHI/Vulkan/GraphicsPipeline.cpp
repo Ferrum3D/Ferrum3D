@@ -1,12 +1,10 @@
-﻿#include <Graphics/RHI/Vulkan/CommandList.h>
-#include <Graphics/RHI/Vulkan/Common/Viewport.h>
+﻿#include <Graphics/RHI/Vulkan/Common/Viewport.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
 #include <Graphics/RHI/Vulkan/ImageFormat.h>
 #include <Graphics/RHI/Vulkan/PipelineStates.h>
 #include <Graphics/RHI/Vulkan/RenderPass.h>
 #include <Graphics/RHI/Vulkan/ShaderModule.h>
-#include <Graphics/RHI/Vulkan/ShaderReflection.h>
 #include <Graphics/RHI/Vulkan/ShaderResourceGroup.h>
 #include <festd/vector.h>
 
@@ -102,7 +100,7 @@ namespace FE::Graphics::Vulkan
                 vertexShader = shader;
         }
 
-        for (const auto& item : attributes)
+        for (const RHI::InputStreamAttributeDesc& item : attributes)
         {
             auto& attribute = states.m_attributeDesc.push_back();
             attribute.binding = item.m_bufferIndex;
@@ -123,9 +121,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    eastl::vector<VkPipelineShaderStageCreateInfo> GraphicsPipeline::BuildShaderStages()
+    festd::vector<VkPipelineShaderStageCreateInfo> GraphicsPipeline::BuildShaderStages()
     {
-        eastl::vector<VkPipelineShaderStageCreateInfo> result;
+        festd::vector<VkPipelineShaderStageCreateInfo> result;
         for (RHI::ShaderModule* shader : m_desc.m_shaders)
             result.push_back(ImplCast(shader)->GetStageCI());
 
@@ -152,9 +150,9 @@ namespace FE::Graphics::Vulkan
 
         VkPipelineRasterizationStateCreateInfo result{};
         result.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        result.depthClampEnable = rasterization.m_depthClampEnabled;
-        result.depthBiasEnable = rasterization.m_depthBiasEnabled;
-        result.rasterizerDiscardEnable = rasterization.m_rasterDiscardEnabled;
+        result.depthClampEnable = VK_FALSE;
+        result.depthBiasEnable = VK_FALSE;
+        result.rasterizerDiscardEnable = VK_FALSE;
         result.cullMode = VKConvert(rasterization.m_cullMode);
         result.polygonMode = VKConvert(rasterization.m_polyMode);
         result.lineWidth = 1.0f;
@@ -165,13 +163,11 @@ namespace FE::Graphics::Vulkan
 
     VkPipelineMultisampleStateCreateInfo GraphicsPipeline::BuildMultisampleState()
     {
-        const RHI::MultisampleState& multisample = m_desc.m_multisample;
-
         VkPipelineMultisampleStateCreateInfo result{};
         result.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        result.sampleShadingEnable = multisample.m_sampleShadingEnabled;
-        result.rasterizationSamples = GetVKSampleCountFlags(multisample.m_sampleCount);
-        result.minSampleShading = multisample.m_minSampleShading;
+        result.rasterizationSamples = GetVKSampleCountFlags(m_desc.m_sampleCount);
+        result.sampleShadingEnable = false;
+        result.minSampleShading = 1.0f;
         result.pSampleMask = nullptr;
         result.alphaToCoverageEnable = false;
         result.alphaToOneEnable = false;
@@ -195,7 +191,7 @@ namespace FE::Graphics::Vulkan
 
     VkPipelineColorBlendAttachmentState GraphicsPipeline::BuildBlendState(uint32_t attachmentIndex)
     {
-        auto& state = m_desc.m_colorBlend.m_targetBlendStates[attachmentIndex];
+        const RHI::TargetColorBlending& state = m_desc.m_colorBlend.m_targetBlendStates[attachmentIndex];
 
         VkPipelineColorBlendAttachmentState result{};
         result.blendEnable = state.m_blendEnabled;
@@ -212,8 +208,12 @@ namespace FE::Graphics::Vulkan
 
     void GraphicsPipeline::BuildBlendState(BlendState& state)
     {
-        for (uint32_t i = 0; i < m_desc.m_colorBlend.m_targetBlendStates.size(); ++i)
-            state.m_attachments.push_back(BuildBlendState(i));
+        const uint32_t attachmentCount = m_desc.m_renderPass->GetAttachmentCount();
+        for (uint32_t i = 0; i < attachmentCount; ++i)
+        {
+            const uint32_t attachmentIndex = m_desc.m_colorBlend.m_enableIndependentBlend ? i : 0;
+            state.m_attachments.push_back(BuildBlendState(attachmentIndex));
+        }
 
         state.m_createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         state.m_createInfo.logicOpEnable = false;

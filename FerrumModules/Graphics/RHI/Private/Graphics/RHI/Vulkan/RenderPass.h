@@ -67,6 +67,7 @@ namespace FE::Graphics::Vulkan
         RHI::RenderPassDesc m_desc;
 
         VkRenderPass m_nativeRenderPass = VK_NULL_HANDLE;
+        uint32_t m_subpassAttachmentCount = 0;
 
         struct SubpassAttachmentReferences final
         {

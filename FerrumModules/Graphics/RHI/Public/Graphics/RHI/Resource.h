@@ -17,6 +17,14 @@ namespace FE::Graphics::RHI
     };
 
 
+    enum class ResourceType : uint32_t
+    {
+        kUnknown,
+        kBuffer,
+        kImage,
+    };
+
+
     struct Resource
         : public DeviceObject
         , public festd::intrusive_list_node
@@ -26,8 +34,14 @@ namespace FE::Graphics::RHI
             return m_name;
         }
 
+        [[nodiscard]] ResourceType GetType() const
+        {
+            return m_type;
+        }
+
     protected:
         Env::Name m_name;
+        ResourceType m_type = ResourceType::kUnknown;
 
         void Register()
         {

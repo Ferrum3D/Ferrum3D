@@ -163,9 +163,7 @@ struct ExampleApplication final : public ApplicationModule
 
         pipelineDesc.m_renderPass = m_renderPass.Get();
         pipelineDesc.m_subpassIndex = 0;
-
-        const std::array colorBlendStates{ RHI::TargetColorBlending{} };
-        pipelineDesc.m_colorBlend = RHI::ColorBlendState(colorBlendStates);
+        pipelineDesc.m_colorBlend.m_targetBlendStates[0] = RHI::TargetColorBlending::kDisabled;
 
         const std::array shaders{ psModule, vsModule };
         pipelineDesc.m_shaders = festd::span(shaders);
@@ -174,13 +172,8 @@ struct ExampleApplication final : public ApplicationModule
         pipelineDesc.m_shaderResourceGroups = srgs;
         pipelineDesc.m_viewport = m_viewport;
         pipelineDesc.m_scissor = m_scissor;
-        pipelineDesc.m_rasterization = RHI::RasterizationState{};
-
-        pipelineDesc.m_depthStencil.m_depthWriteEnabled = true;
-        pipelineDesc.m_depthStencil.m_depthTestEnabled = true;
-        pipelineDesc.m_depthStencil.m_depthCompareOp = RHI::CompareOp::kLess;
-
-        pipelineDesc.m_rasterization.m_cullMode = RHI::CullingModeFlags::kBack;
+        pipelineDesc.m_rasterization = RHI::RasterizationState::kDefaultBackCull;
+        pipelineDesc.m_depthStencil = RHI::DepthStencilState::kEnabled;
 
         m_pipeline = pipelineFactory->CreateGraphicsPipeline("GraphicsPSO", pipelineDesc).value();
 

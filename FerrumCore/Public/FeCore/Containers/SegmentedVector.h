@@ -9,7 +9,7 @@ namespace FE
         template<class TOther, size_t TSizeOther>
         friend class SegmentedVector;
 
-        inline static uint32_t kElementsPerSegment = TSegmentByteSize / sizeof(T);
+        static constexpr uint32_t kElementsPerSegment = TSegmentByteSize / sizeof(T);
 
         static_assert(sizeof(T) <= TSegmentByteSize);
 

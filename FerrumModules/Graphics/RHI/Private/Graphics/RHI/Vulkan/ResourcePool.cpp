@@ -18,14 +18,14 @@ namespace FE::Graphics::Vulkan
         createInfo.physicalDevice = ImplCast(device)->GetNativeAdapter();
         createInfo.instance = NativeCast(ImplCast(device)->GetDeviceFactory());
         createInfo.vulkanApiVersion = VK_API_VERSION_1_2;
-        const VkResult result = vmaCreateAllocator(&createInfo, &m_allocator);
+        const VkResult result = vmaCreateAllocator(&createInfo, &m_vmaAllocator);
         FE_Assert(result == VK_SUCCESS);
     }
 
 
     ResourcePool::~ResourcePool()
     {
-        vmaDestroyAllocator(m_allocator);
+        vmaDestroyAllocator(m_vmaAllocator);
     }
 
 
@@ -36,7 +36,7 @@ namespace FE::Graphics::Vulkan
                 return RHI::ResultCode::kUnknownError;
             })
             .and_then([this, name, &desc](Image* image) -> festd::expected<RHI::Image*, RHI::ResultCode> {
-                const RHI::ResultCode result = image->InitInternal(m_allocator, name, desc);
+                const RHI::ResultCode result = image->InitInternal(m_vmaAllocator, name, desc);
                 if (result == RHI::ResultCode::kSuccess)
                     return image;
 
@@ -52,7 +52,7 @@ namespace FE::Graphics::Vulkan
                 return RHI::ResultCode::kUnknownError;
             })
             .and_then([this, name, &desc](Buffer* buffer) -> festd::expected<RHI::Buffer*, RHI::ResultCode> {
-                const RHI::ResultCode result = buffer->InitInternal(m_allocator, name, desc);
+                const RHI::ResultCode result = buffer->InitInternal(m_vmaAllocator, name, desc);
                 if (result == RHI::ResultCode::kSuccess)
                     return buffer;
 
