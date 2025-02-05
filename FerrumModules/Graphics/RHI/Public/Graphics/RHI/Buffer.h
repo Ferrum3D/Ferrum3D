@@ -22,6 +22,11 @@ namespace FE::Graphics::RHI
             , m_usage(usage)
         {
         }
+
+        [[nodiscard]] uint64_t GetHash() const
+        {
+            return festd::bit_cast<uint64_t>(*this);
+        }
     };
 
 
@@ -54,8 +59,8 @@ namespace FE::Graphics::RHI
 template<>
 struct eastl::hash<FE::Graphics::RHI::BufferDesc>
 {
-    size_t operator()(const FE::Graphics::RHI::BufferDesc& value) const noexcept
+    size_t operator()(const FE::Graphics::RHI::BufferDesc& desc) const noexcept
     {
-        return FE::festd::bit_cast<size_t>(value);
+        return desc.GetHash();
     }
 };

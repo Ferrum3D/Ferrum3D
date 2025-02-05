@@ -133,7 +133,7 @@ namespace FE::Console
         GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
         state.m_defaultAttributes = info.wAttributes;
 
-        std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+        std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
         state.m_buffer = static_cast<uint8_t*>(allocator->allocate(ConsoleState::kBufferSize));
         state.m_bufferPointer = state.m_buffer;
 

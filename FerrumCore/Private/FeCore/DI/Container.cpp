@@ -35,7 +35,7 @@ namespace FE::DI
         if (pLifetimeScope == nullptr)
         {
             std::pmr::memory_resource* pAllocator = pRegistry == m_registryRoot.GetRootRegistry()
-                ? Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear)
+                ? Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear)
                 : std::pmr::get_default_resource();
             pLifetimeScope = Memory::DefaultNew<LifetimeScope>(pAllocator, pRegistry, this);
             pRegistry->RegisterCallback(&m_registryCallback);

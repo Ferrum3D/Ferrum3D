@@ -101,7 +101,7 @@ namespace FE::Env
     struct ConfigurationSection final : public festd::intrusive_list_node
     {
         ConfigurationSection()
-            : m_allocator(Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear))
+            : m_allocator(Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear))
         {
         }
 

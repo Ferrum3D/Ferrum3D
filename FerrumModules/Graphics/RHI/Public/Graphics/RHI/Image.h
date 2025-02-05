@@ -72,6 +72,11 @@ namespace FE::Graphics::RHI
             m_depth = size.depth;
         }
 
+        [[nodsicard]] uint64_t GetHash() const
+        {
+            return DefaultHash(this, sizeof(*this));
+        }
+
         static ImageDesc Img1D(ImageBindFlags bindFlags, uint32_t width, Format format);
         static ImageDesc Img1DArray(ImageBindFlags bindFlags, uint32_t width, uint16_t arraySize, Format format);
         static ImageDesc Img2D(ImageBindFlags bindFlags, uint32_t width, uint32_t height, Format format, bool useMipMaps = false,
@@ -183,6 +188,6 @@ struct eastl::hash<FE::Graphics::RHI::ImageDesc>
 {
     size_t operator()(const FE::Graphics::RHI::ImageDesc& imageDesc) const
     {
-        return FE::DefaultHash(&imageDesc, sizeof(FE::Graphics::RHI::ImageDesc));
+        return imageDesc.GetHash();
     }
 };

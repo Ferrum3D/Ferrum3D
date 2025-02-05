@@ -200,11 +200,11 @@ namespace FE::Env
             {
                 switch (type)
                 {
-                case Memory::StaticAllocatorType::Default:
+                case Memory::StaticAllocatorType::kDefault:
                     return &m_defaultMemoryResource;
-                case Memory::StaticAllocatorType::Virtual:
+                case Memory::StaticAllocatorType::kVirtual:
                     return &m_virtualMemoryResource;
-                case Memory::StaticAllocatorType::Linear:
+                case Memory::StaticAllocatorType::kLinear:
                     return &m_linearMemoryResource;
                 default:
                     FE_DebugBreak();

@@ -6,6 +6,7 @@
     Public/Graphics/RHI/FrameGraph/Base.h
     Public/Graphics/RHI/FrameGraph/Blackboard.h
     Public/Graphics/RHI/FrameGraph/FrameGraph.h
+    Public/Graphics/RHI/FrameGraph/FrameGraphResourcePool.h
 
     Public/Graphics/RHI/AdapterInfo.h
     Public/Graphics/RHI/Buffer.h
@@ -48,6 +49,7 @@
 set(COMMON_SOURCES
     Private/Graphics/RHI/Device.cpp
     Private/Graphics/RHI/FrameGraph.cpp
+    Private/Graphics/RHI/FrameGraphResourcePool.cpp
     Private/Graphics/RHI/Module.cpp
     Private/Graphics/RHI/ShaderCompilerDXC.cpp
     Private/Graphics/RHI/Window.cpp
@@ -93,6 +95,8 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/PipelineStates.h
     Private/Graphics/RHI/Vulkan/RenderPass.cpp
     Private/Graphics/RHI/Vulkan/RenderPass.h
+    Private/Graphics/RHI/Vulkan/ResourceBarrierBatcher.cpp
+    Private/Graphics/RHI/Vulkan/ResourceBarrierBatcher.h
     Private/Graphics/RHI/Vulkan/ResourcePool.cpp
     Private/Graphics/RHI/Vulkan/ResourcePool.h
     Private/Graphics/RHI/Vulkan/ResourceState.h

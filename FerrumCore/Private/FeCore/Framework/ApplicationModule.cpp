@@ -97,7 +97,7 @@ namespace FE
         for (int32_t argIndex = 1; argIndex < argc; ++argIndex)
             m_commandLine.push_back(argv[argIndex]);
 
-        std::pmr::memory_resource* pStaticLinearAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+        std::pmr::memory_resource* pStaticLinearAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
         m_moduleRegistry = Rc<ModuleRegistry>::New(pStaticLinearAllocator);
 
         DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
@@ -167,7 +167,7 @@ namespace FE
         ZoneScoped;
         builder.Bind<Env::Configuration>()
             .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
                 *result = Memory::New<Env::Configuration>(allocator, m_commandLine);
                 return DI::ResultCode::kSuccess;
             })

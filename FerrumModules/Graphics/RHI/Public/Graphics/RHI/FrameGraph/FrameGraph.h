@@ -8,110 +8,6 @@
 
 namespace FE::Graphics::RHI
 {
-    namespace Internal
-    {
-        constexpr uint32_t kFrameGraphResourceIndexBits = 16;
-        constexpr uint32_t kFrameGraphResourceVersionBits = 10;
-
-        template<class T>
-        struct FrameGraphResourceHandle
-        {
-            struct Desc final
-            {
-                uint32_t m_resourceIndex : kFrameGraphResourceIndexBits;
-                uint32_t m_version : kFrameGraphResourceVersionBits;
-            };
-
-            union
-            {
-                Desc m_desc;
-                uint32_t m_value = kInvalidIndex;
-            };
-
-            [[nodiscard]] bool IsValid() const
-            {
-                return m_value != kInvalidIndex;
-            }
-
-            explicit operator uint32_t() const
-            {
-                return m_value;
-            }
-
-            explicit operator bool() const
-            {
-                return IsValid();
-            }
-
-            friend bool operator==(FrameGraphResourceHandle lhs, FrameGraphResourceHandle rhs)
-            {
-                return lhs.m_value == rhs.m_value;
-            }
-
-            friend bool operator!=(FrameGraphResourceHandle lhs, FrameGraphResourceHandle rhs)
-            {
-                return lhs.m_value != rhs.m_value;
-            }
-
-        private:
-            FrameGraphResourceHandle() = default;
-
-            friend T;
-            friend FrameGraph;
-            friend FrameGraphBuilder;
-
-            static T Create(uint32_t resourceIndex, uint32_t resourceVersion)
-            {
-                T handle;
-                handle.m_desc = { resourceIndex, resourceVersion };
-                return handle;
-            }
-        };
-    } // namespace Internal
-
-
-    struct ImageHandle : public Internal::FrameGraphResourceHandle<ImageHandle>
-    {
-    };
-
-
-    struct BufferHandle : public Internal::FrameGraphResourceHandle<BufferHandle>
-    {
-    };
-
-
-    enum class ImageWriteType : uint32_t
-    {
-        kTransferDestination,
-        kUnorderedAccess,
-        kColorTarget,
-        kDepthStencilTarget,
-    };
-
-
-    enum class ImageReadType : uint32_t
-    {
-        kTransferSource,
-        kShaderResource,
-        kDepthRead,
-    };
-
-
-    enum class BufferWriteType : uint32_t
-    {
-        kTransferDestination,
-        kUnorderedAccess,
-    };
-
-
-    enum class BufferReadType : uint32_t
-    {
-        kTransferSource,
-        kShaderResource,
-        kIndirectArgument,
-    };
-
-
     struct FrameGraphPass : public Memory::RefCountedObjectBase
     {
         virtual void Setup(const FrameGraphBuilder& builder, FrameGraphBlackboard& blackboard) = 0;
@@ -120,6 +16,8 @@ namespace FE::Graphics::RHI
 
     struct FrameGraph : public DeviceObject
     {
+        ~FrameGraph() override;
+
         void AddPass(FrameGraphPass* pass);
         void Execute();
 
@@ -196,12 +94,7 @@ namespace FE::Graphics::RHI
             }
         };
 
-        FrameGraph()
-            : m_linearAllocator(65536, Env::GetStaticAllocator(Memory::StaticAllocatorType::Virtual))
-            , m_blackboard(&m_linearAllocator)
-            , m_passes(&m_linearAllocator)
-        {
-        }
+        FrameGraph();
 
         BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const BufferDesc& desc);
         ImageHandle CreateImage(uint32_t passIndex, Env::Name name, const ImageDesc& desc);
@@ -215,6 +108,7 @@ namespace FE::Graphics::RHI
         FrameGraphBlackboard m_blackboard;
         SegmentedVector<PassData> m_passes;
         SegmentedVector<ResourceData> m_resources;
+        FrameGraphResourcePool* m_resourcePool = nullptr;
     };
 
 

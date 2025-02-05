@@ -4,18 +4,16 @@
 #include <FeCore/DI/BaseDI.h>
 #include <FeCore/Parallel/SpinLock.h>
 #include <FeCore/Strings/Unicode.h>
-#include <array>
 #include <mutex>
-#include <vector>
 
 namespace FE::Memory
 {
     //! @brief Type of global static allocator.
     enum class StaticAllocatorType : uint32_t
     {
-        Default, //!< Default global heap allocator.
-        Virtual, //!< Allocates virtual memory directly from the OS.
-        Linear,  //!< Global linear allocator, the allocated memory will be freed only upon process termination.
+        kDefault, //!< Default global heap allocator.
+        kVirtual, //!< Allocates virtual memory directly from the OS.
+        kLinear,  //!< Global linear allocator, the allocated memory will be freed only upon process termination.
     };
 } // namespace FE::Memory
 

@@ -123,11 +123,10 @@ namespace FE
         //! @brief Delete an object previously created via Memory::DefaultNew().
         //!
         //! @param pointer  - The pointer to the object to delete previously returned by Memory::DefaultNew().
-        //! @param byteSize - The size of the object to delete.
         //!
         //! @tparam T - The type of the object to delete.
         template<class T>
-        inline void DefaultDelete(T* pointer)
+        void DefaultDelete(T* pointer)
         {
             pointer->~T();
             DefaultFree(pointer);

@@ -29,7 +29,7 @@ namespace FE
     {
         ModuleRegistry()
         {
-            m_allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+            m_allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
         }
 
         IModule* Load(Env::Name moduleName, StringSlice modulePath)

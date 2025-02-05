@@ -156,7 +156,7 @@ namespace FE::DI
         void Initialize()
         {
             ZoneScoped;
-            std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+            std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
             m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_registries.push_back(*m_root);
             m_root->RegisterCallback(&m_registryCallback);

@@ -39,7 +39,7 @@ namespace FE
         {
             Env::CreateEnvironment();
 
-            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
 
             TApplication* application = Memory::New<TApplication>(allocator, argc, argv);
 

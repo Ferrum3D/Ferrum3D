@@ -27,6 +27,10 @@ namespace FE
     inline static ::FE::festd::ascii_view FeRTTI_GetSName()                                                                      \
     {                                                                                                                            \
         return ::FE::TypeName<name>;                                                                                             \
+    }                                                                                                                            \
+                                                                                                                                 \
+    struct FeRTTI_BaseDummyStruct##name                                                                                          \
+    {                                                                                                                            \
     }
 
     //! @brief Add RTTI functions to a class.
@@ -63,7 +67,11 @@ namespace FE
     {                                                                                                                            \
         return FeRTTI_IS_TYPE::FeRTTI_GetSID() == FeRTTI_GetID();                                                                \
     }                                                                                                                            \
-    FE_POP_CLANG_WARNING()
+    FE_POP_CLANG_WARNING()                                                                                                       \
+                                                                                                                                 \
+    struct FeRTTI_DummyStruct##name                                                                                              \
+    {                                                                                                                            \
+    }
 
     //! @brief Cast a pointer to a base class to a derived class pointer if possible.
     //!

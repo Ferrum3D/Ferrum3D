@@ -1,7 +1,23 @@
 #include <Graphics/RHI/FrameGraph/FrameGraph.h>
+#include <Graphics/RHI/FrameGraph/FrameGraphResourcePool.h>
 
 namespace FE::Graphics::RHI
 {
+    FrameGraph::FrameGraph()
+        : m_linearAllocator(UINT64_C(64 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
+        , m_blackboard(&m_linearAllocator)
+        , m_passes(&m_linearAllocator)
+    {
+        m_resourcePool = Memory::DefaultNew<FrameGraphResourcePool>();
+    }
+
+
+    FrameGraph::~FrameGraph()
+    {
+        Memory::DefaultDelete(m_resourcePool);
+    }
+
+
     void FrameGraph::AddPass(FrameGraphPass* pass)
     {
         PassData passData;
