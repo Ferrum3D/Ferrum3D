@@ -14,7 +14,8 @@ namespace FE::Graphics::RHI
 
         Viewport() = default;
 
-        Viewport(float minX, float maxX, float minY, float maxY, float minZ = 0, float maxZ = 1.0f)
+        constexpr Viewport(const float minX, const float maxX, const float minY, const float maxY, const float minZ = 0,
+                           const float maxZ = 1.0f)
             : minX(minX)
             , minY(minY)
             , minZ(minZ)
@@ -24,21 +25,31 @@ namespace FE::Graphics::RHI
         {
         }
 
-        [[nodiscard]] float Width() const
+        [[nodiscard]] constexpr float Width() const
         {
             return maxX - minX;
         }
 
-        [[nodiscard]] float Height() const
+        [[nodiscard]] constexpr float Height() const
         {
             return maxY - minY;
         }
 
-        [[nodiscard]] float Depth() const
+        [[nodiscard]] constexpr float Depth() const
         {
             return maxZ - minZ;
         }
+
+        [[nodiscard]] constexpr bool IsValid() const
+        {
+            return minX <= maxX && minY <= maxY && minZ <= maxZ;
+        }
+
+        static const Viewport kInvalid;
     };
+
+    inline const Viewport Viewport::kInvalid = { NAN, NAN, NAN, NAN, NAN, NAN };
+
 
     struct Scissor final
     {
@@ -57,7 +68,7 @@ namespace FE::Graphics::RHI
         {
         }
 
-        Scissor(int32_t minX, int32_t maxX, int32_t minY, int32_t maxY)
+        constexpr Scissor(const int32_t minX, const int32_t maxX, const int32_t minY, const int32_t maxY)
             : minX(minX)
             , minY(minY)
             , maxX(maxX)
@@ -74,5 +85,14 @@ namespace FE::Graphics::RHI
         {
             return maxY - minY;
         }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return minX <= maxX && minY <= maxY;
+        }
+
+        static const Scissor kInvalid;
     };
+
+    inline const Scissor Scissor::kInvalid = { INT32_MAX, INT32_MIN, INT32_MAX, INT32_MIN };
 } // namespace FE::Graphics::RHI

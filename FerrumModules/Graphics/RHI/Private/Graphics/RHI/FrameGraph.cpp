@@ -6,26 +6,46 @@ namespace FE::Graphics::RHI
     FrameGraph::FrameGraph()
         : m_linearAllocator(UINT64_C(64 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
         , m_blackboard(&m_linearAllocator)
+        , m_passProducers(&m_linearAllocator)
         , m_passes(&m_linearAllocator)
+        , m_resources(&m_linearAllocator)
     {
-        m_resourcePool = Memory::DefaultNew<FrameGraphResourcePool>();
+        m_resourcePool = Memory::New<FrameGraphResourcePool>(&m_linearAllocator);
+    }
+
+
+    uint32_t FrameGraph::AddPassInternal(const uint32_t producerIndex, const Env::Name name,
+                                         const GraphicsPipelineDesc& pipelineDesc)
+    {
+        PassData& passData = m_passes.push_back();
+        passData.m_name = name;
+        passData.m_type = PassType::kGraphics;
+        passData.m_producerIndex = producerIndex;
+        passData.m_graphicsPipelineDesc = pipelineDesc;
+        return m_passes.size() - 1;
     }
 
 
     FrameGraph::~FrameGraph()
     {
-        Memory::DefaultDelete(m_resourcePool);
+        Memory::Delete(&m_linearAllocator, m_resourcePool, sizeof(FrameGraphResourcePool), alignof(FrameGraphResourcePool));
     }
 
 
-    void FrameGraph::AddPass(FrameGraphPass* pass)
+    void FrameGraph::AddPassProducer(PassProducer* passProducer)
     {
-        PassData passData;
-        passData.m_pass = pass;
-        m_passes.push_back(passData);
+        m_passProducers.push_back(passProducer);
 
-        const FrameGraphBuilder builder{ this, m_passes.size() - 1 };
-        pass->Setup(builder, m_blackboard);
+        FrameGraphBuilder builder{ this, m_passProducers.size() - 1 };
+        passProducer->Setup(builder, m_blackboard);
+    }
+
+
+    void FrameGraph::Execute()
+    {
+        for (const PassData& passData : m_passes)
+        {
+        }
     }
 
 

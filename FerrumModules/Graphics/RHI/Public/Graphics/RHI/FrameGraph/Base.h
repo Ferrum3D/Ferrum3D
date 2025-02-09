@@ -5,6 +5,7 @@ namespace FE::Graphics::RHI
 {
     struct FrameGraph;
     struct FrameGraphBuilder;
+    struct FrameGraphPassBuilder;
     struct FrameGraphBlackboard;
     struct FrameGraphResourcePool;
 
@@ -60,6 +61,7 @@ namespace FE::Graphics::RHI
             friend T;
             friend FrameGraph;
             friend FrameGraphBuilder;
+            friend FrameGraphPassBuilder;
 
             static T Create(uint32_t resourceIndex, uint32_t resourceVersion)
             {
@@ -71,12 +73,12 @@ namespace FE::Graphics::RHI
     } // namespace Internal
 
 
-    struct ImageHandle : public Internal::FrameGraphResourceHandle<ImageHandle>
+    struct [[nodiscard]] ImageHandle : public Internal::FrameGraphResourceHandle<ImageHandle>
     {
     };
 
 
-    struct BufferHandle : public Internal::FrameGraphResourceHandle<BufferHandle>
+    struct [[nodiscard]] BufferHandle : public Internal::FrameGraphResourceHandle<BufferHandle>
     {
     };
 

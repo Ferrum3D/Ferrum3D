@@ -1,16 +1,17 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
 
 namespace FE::Graphics::RHI
 {
     enum class ShaderStage : uint32_t
     {
-        kVertex,
-        kPixel,
-        kHull,
-        kDomain,
-        kGeometry,
-        kCompute,
+        kVertex = 0,
+        kPixel = 1,
+        kHull = 2,
+        kDomain = 3,
+        kGeometry = 4,
+        kCompute = 5,
+
+        kGraphicsCount = kGeometry + 1,
     };
 
 

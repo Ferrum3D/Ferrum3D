@@ -19,6 +19,13 @@ namespace FE::Graphics::RHI
     };
 
 
+    enum class PassType : uint32_t
+    {
+        kGraphics,
+        kCompute,
+    };
+
+
     enum class HardwareQueueKindFlags : uint32_t
     {
         kNone = 0, //!< Invalid or unspecified value.

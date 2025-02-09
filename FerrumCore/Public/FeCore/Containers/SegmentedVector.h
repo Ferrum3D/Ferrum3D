@@ -62,13 +62,13 @@ namespace FE
             friend class SegmentedVector;
 
             T** m_segments = nullptr;
-            uint32_t m_SegmentIndex = 0;
-            uint32_t m_ElementIndex = 0;
+            uint32_t m_segmentIndex = 0;
+            uint32_t m_elementIndex = 0;
 
-            Iterator(T** ppSegments, uint32_t segmentIndex, uint32_t elementIndex)
-                : m_segments(ppSegments)
-                , m_SegmentIndex(segmentIndex)
-                , m_ElementIndex(elementIndex)
+            Iterator(T** segments, const uint32_t segmentIndex, const uint32_t elementIndex)
+                : m_segments(segments)
+                , m_segmentIndex(segmentIndex)
+                , m_elementIndex(elementIndex)
             {
             }
 
@@ -80,24 +80,24 @@ namespace FE
 
             reference operator*() const
             {
-                return m_segments[m_SegmentIndex][m_ElementIndex];
+                return m_segments[m_segmentIndex][m_elementIndex];
             }
 
             pointer operator->() const
             {
-                return &m_segments[m_SegmentIndex][m_ElementIndex];
+                return &m_segments[m_segmentIndex][m_elementIndex];
             }
 
             Iterator& operator++()
             {
-                if (m_ElementIndex < kElementsPerSegment - 1)
+                if (m_elementIndex < kElementsPerSegment - 1)
                 {
-                    ++m_ElementIndex;
+                    ++m_elementIndex;
                 }
                 else
                 {
-                    ++m_SegmentIndex;
-                    m_ElementIndex = 0;
+                    ++m_segmentIndex;
+                    m_elementIndex = 0;
                 }
 
                 return *this;
@@ -112,15 +112,15 @@ namespace FE
 
             Iterator& operator--()
             {
-                if (m_ElementIndex > 0)
+                if (m_elementIndex > 0)
                 {
-                    --m_ElementIndex;
+                    --m_elementIndex;
                 }
                 else
                 {
-                    FE_CORE_ASSERT(m_SegmentIndex > 0, "Iterator out of range");
-                    --m_SegmentIndex;
-                    m_ElementIndex = kElementsPerSegment - 1;
+                    FE_CORE_ASSERT(m_segmentIndex > 0, "Iterator out of range");
+                    --m_segmentIndex;
+                    m_elementIndex = kElementsPerSegment - 1;
                 }
 
                 return *this;
@@ -133,48 +133,48 @@ namespace FE
                 return t;
             }
 
-            Iterator operator+(int32_t rhs) const
+            Iterator operator+(const int32_t rhs) const
             {
-                const uint32_t initialIndex = m_SegmentIndex * kElementsPerSegment + m_ElementIndex;
+                const uint32_t initialIndex = m_segmentIndex * kElementsPerSegment + m_elementIndex;
                 const uint32_t newIndex = initialIndex + rhs;
                 return Iterator{ m_segments, newIndex / kElementsPerSegment, newIndex % kElementsPerSegment };
             }
 
-            Iterator operator-(int32_t rhs) const
+            Iterator operator-(const int32_t rhs) const
             {
-                const uint32_t initialIndex = m_SegmentIndex * kElementsPerSegment + m_ElementIndex;
+                const uint32_t initialIndex = m_segmentIndex * kElementsPerSegment + m_elementIndex;
                 const uint32_t newIndex = initialIndex - rhs;
                 return Iterator{ m_segments, newIndex / kElementsPerSegment, newIndex % kElementsPerSegment };
             }
 
-            Iterator& operator+=(int32_t rhs)
+            Iterator& operator+=(const int32_t rhs)
             {
-                const uint32_t initialIndex = m_SegmentIndex * kElementsPerSegment + m_ElementIndex;
+                const uint32_t initialIndex = m_segmentIndex * kElementsPerSegment + m_elementIndex;
                 const uint32_t newIndex = initialIndex + rhs;
-                m_SegmentIndex = newIndex / kElementsPerSegment;
-                m_ElementIndex = newIndex % kElementsPerSegment;
+                m_segmentIndex = newIndex / kElementsPerSegment;
+                m_elementIndex = newIndex % kElementsPerSegment;
                 return *this;
             }
 
-            Iterator& operator-=(int32_t rhs)
+            Iterator& operator-=(const int32_t rhs)
             {
-                const uint32_t initialIndex = m_SegmentIndex * kElementsPerSegment + m_ElementIndex;
+                const uint32_t initialIndex = m_segmentIndex * kElementsPerSegment + m_elementIndex;
                 const uint32_t newIndex = initialIndex - rhs;
-                m_SegmentIndex = newIndex / kElementsPerSegment;
-                m_ElementIndex = newIndex % kElementsPerSegment;
+                m_segmentIndex = newIndex / kElementsPerSegment;
+                m_elementIndex = newIndex % kElementsPerSegment;
                 return *this;
             }
 
             Iterator operator-(const Iterator& other) const
             {
-                const uint32_t lhsIndex = m_SegmentIndex * kElementsPerSegment + m_ElementIndex;
-                const uint32_t rhsIndex = other.m_SegmentIndex * kElementsPerSegment + other.m_ElementIndex;
+                const uint32_t lhsIndex = m_segmentIndex * kElementsPerSegment + m_elementIndex;
+                const uint32_t rhsIndex = other.m_segmentIndex * kElementsPerSegment + other.m_elementIndex;
                 return static_cast<int32_t>(lhsIndex) - static_cast<int32_t>(rhsIndex);
             }
 
             friend bool operator==(const Iterator& lhs, const Iterator& rhs)
             {
-                return lhs.m_SegmentIndex == rhs.m_SegmentIndex && lhs.m_ElementIndex == rhs.m_ElementIndex;
+                return lhs.m_segmentIndex == rhs.m_segmentIndex && lhs.m_elementIndex == rhs.m_elementIndex;
             }
 
             friend bool operator!=(const Iterator& lhs, const Iterator& rhs)
@@ -255,7 +255,7 @@ namespace FE
             return *this;
         }
 
-        [[nodiscard]] T& operator[](uint32_t index)
+        [[nodiscard]] T& operator[](const uint32_t index)
         {
             FE_CORE_ASSERT(index < m_size, "Index out of range");
 
@@ -264,7 +264,7 @@ namespace FE
             return m_segments[segmentIndex][elementIndex];
         }
 
-        [[nodiscard]] const T& operator[](uint32_t index) const
+        [[nodiscard]] const T& operator[](const uint32_t index) const
         {
             FE_CORE_ASSERT(index < m_size, "Index out of range");
 
@@ -315,6 +315,7 @@ namespace FE
         {
             if constexpr (!std::is_trivially_destructible_v<T>)
             {
+                // TODO: optimize, too many division operations
                 for (uint32_t elementIndex = 0; elementIndex < m_size; ++elementIndex)
                 {
                     m_segments[elementIndex / kElementsPerSegment][elementIndex % kElementsPerSegment].~T();
