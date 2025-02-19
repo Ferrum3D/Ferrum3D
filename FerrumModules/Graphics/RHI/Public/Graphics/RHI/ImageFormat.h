@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Strings/Format.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 
 namespace FE::Graphics::RHI
 {
@@ -176,6 +176,79 @@ namespace FE::Graphics::RHI
     static_assert((festd::to_underlying(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 71)));
 
 
+    // clang-format off
+#define FE_EXPAND_VERTEX_CHANNEL_FORMATS(_Func)                                                                                  \
+    _Func(R8_UINT)                                                                                                               \
+    _Func(R8_UNORM)                                                                                                              \
+    _Func(R16_UINT)                                                                                                              \
+    _Func(R16_UNORM)                                                                                                             \
+    _Func(R32_UINT)                                                                                                              \
+    _Func(R32_SFLOAT)                                                                                                            \
+    _Func(R32G32_UINT)                                                                                                           \
+    _Func(R32G32_SFLOAT)                                                                                                         \
+    _Func(R32G32B32_UINT)                                                                                                        \
+    _Func(R32G32B32_SFLOAT)                                                                                                      \
+    _Func(R32G32B32A32_UINT)                                                                                                     \
+    _Func(R32G32B32A32_SFLOAT)
+    // clang-format on
+
+    enum class VertexChannelFormat : uint32_t
+    {
+        kUndefined,
+
+#define FE_DECL_VERTEX_CHANNEL_FORMAT_ENUM_VALUE(name) k##name,
+
+        FE_EXPAND_VERTEX_CHANNEL_FORMATS(FE_DECL_VERTEX_CHANNEL_FORMAT_ENUM_VALUE)
+
+#undef FE_DECL_VERTEX_CHANNEL_FORMAT_ENUM_VALUE
+    };
+
+
+    inline VertexChannelFormat TranslateFormat(const Format format)
+    {
+        switch (format)
+        {
+        case Format::kUndefined:
+            return VertexChannelFormat::kUndefined;
+
+#define FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE(name)                                                                  \
+    case Format::k##name:                                                                                                        \
+        return VertexChannelFormat::k##name;
+
+            FE_EXPAND_VERTEX_CHANNEL_FORMATS(FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE)
+
+#undef FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE
+
+        default:
+            // The specified format is not supported as a vertex channel format.
+            FE_DebugBreak();
+            return VertexChannelFormat::kUndefined;
+        }
+    }
+
+
+    inline Format TranslateFormat(const VertexChannelFormat format)
+    {
+        switch (format)
+        {
+        case VertexChannelFormat::kUndefined:
+            return Format::kUndefined;
+
+#define FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE(name)                                                                  \
+    case VertexChannelFormat::k##name:                                                                                           \
+        return Format::k##name;
+
+            FE_EXPAND_VERTEX_CHANNEL_FORMATS(FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE)
+
+#undef FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE
+
+        default:
+            FE_DebugBreak();
+            return Format::kUndefined;
+        }
+    }
+
+
     union FormatInfo final
     {
         FormatInfo()
@@ -183,8 +256,13 @@ namespace FE::Graphics::RHI
         {
         }
 
-        explicit FormatInfo(Format format)
+        explicit FormatInfo(const Format format)
             : m_format(format)
+        {
+        }
+
+        explicit FormatInfo(const VertexChannelFormat format)
+            : m_format(TranslateFormat(format))
         {
         }
 
@@ -193,14 +271,14 @@ namespace FE::Graphics::RHI
             return festd::to_underlying(m_channelCount) + 1;
         }
 
-        [[nodiscard]] uint32_t CalculateRowPitch(uint32_t width, uint32_t mipIndex = 0) const
+        [[nodiscard]] uint32_t CalculateRowPitch(const uint32_t width, const uint32_t mipIndex = 0) const
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
             const uint32_t blockCountW = Math::Max(Math::CeilDivide(width >> mipIndex, blockSize), 1u);
             return blockCountW * m_byteSize;
         }
 
-        [[nodiscard]] uint32_t CalculateMipByteSize(Size size, uint32_t mipIndex = 0) const
+        [[nodiscard]] uint32_t CalculateMipByteSize(const Size size, const uint32_t mipIndex = 0) const
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
             const uint32_t blockCountW = Math::Max(Math::CeilDivide(size.width >> mipIndex, blockSize), 1u);
@@ -208,7 +286,7 @@ namespace FE::Graphics::RHI
             return Math::Max(size.depth >> mipIndex, 1u) * blockCountW * blockCountH * m_byteSize;
         }
 
-        [[nodiscard]] uint32_t CalculateImageByteSize(Size size, uint32_t mipCount) const
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Size size, const uint32_t mipCount) const
         {
             uint32_t totalSize = 0;
             for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
@@ -219,7 +297,7 @@ namespace FE::Graphics::RHI
             return totalSize;
         }
 
-        [[nodiscard]] uint32_t CalculateImageByteSize(Size size) const
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Size size) const
         {
             return CalculateImageByteSize(size, CalculateMipCount(size));
         }

@@ -2,8 +2,8 @@
 #include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/Vulkan/Buffer.h>
 #include <Graphics/RHI/Vulkan/CommandList.h>
-#include <Graphics/RHI/Vulkan/Common/BaseTypes.h>
-#include <Graphics/RHI/Vulkan/Common/Viewport.h>
+#include <Graphics/RHI/Vulkan/Base/BaseTypes.h>
+#include <Graphics/RHI/Vulkan/Base/Viewport.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/Framebuffer.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>

@@ -1,12 +1,11 @@
 ﻿set(PUBLIC_HEADERS
-    Public/Graphics/RHI/Common/BaseTypes.h
-    Public/Graphics/RHI/Common/Limits.h
-    Public/Graphics/RHI/Common/Viewport.h
+    Public/Graphics/RHI/Base/BaseTypes.h
+    Public/Graphics/RHI/Base/Limits.h
+    Public/Graphics/RHI/Base/Viewport.h
 
     Public/Graphics/RHI/FrameGraph/Base.h
     Public/Graphics/RHI/FrameGraph/Blackboard.h
     Public/Graphics/RHI/FrameGraph/FrameGraph.h
-    Public/Graphics/RHI/FrameGraph/FrameGraphResourcePool.h
 
     Public/Graphics/RHI/AdapterInfo.h
     Public/Graphics/RHI/Buffer.h
@@ -47,9 +46,13 @@
 )
 
 set(COMMON_SOURCES
-    Private/Graphics/RHI/Device.cpp
-    Private/Graphics/RHI/FrameGraph.cpp
-    Private/Graphics/RHI/FrameGraphResourcePool.cpp
+    Private/Graphics/RHI/Common/Device.cpp
+    Private/Graphics/RHI/Common/Device.h
+    Private/Graphics/RHI/Common/FrameGraph/FrameGraph.cpp
+    Private/Graphics/RHI/Common/FrameGraph/FrameGraph.h
+    Private/Graphics/RHI/Common/FrameGraph/FrameGraphResourcePool.cpp
+    Private/Graphics/RHI/Common/FrameGraph/FrameGraphResourcePool.h
+
     Private/Graphics/RHI/Module.cpp
     Private/Graphics/RHI/ShaderCompilerDXC.cpp
     Private/Graphics/RHI/Window.cpp
@@ -58,10 +61,10 @@ set(COMMON_SOURCES
 set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/VmaImpl.cpp
 
-    Private/Graphics/RHI/Vulkan/Common/BaseTypes.h
-    Private/Graphics/RHI/Vulkan/Common/Config.cpp
-    Private/Graphics/RHI/Vulkan/Common/Config.h
-    Private/Graphics/RHI/Vulkan/Common/Viewport.h
+    Private/Graphics/RHI/Vulkan/Base/BaseTypes.h
+    Private/Graphics/RHI/Vulkan/Base/Config.cpp
+    Private/Graphics/RHI/Vulkan/Base/Config.h
+    Private/Graphics/RHI/Vulkan/Base/Viewport.h
 
     Private/Graphics/RHI/Vulkan/FrameGraph/FrameGraph.cpp
     Private/Graphics/RHI/Vulkan/FrameGraph/FrameGraph.h

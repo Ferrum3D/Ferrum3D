@@ -7,7 +7,7 @@
 #include <FeCore/Logging/Trace.h>
 #include <Graphics/RHI/Device.h>
 #include <Graphics/RHI/DeviceFactory.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {

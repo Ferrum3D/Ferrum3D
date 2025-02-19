@@ -1,8 +1,8 @@
-﻿#include <Graphics/RHI/Vulkan/Common/Config.h>
+﻿#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {
-    StringSlice VKResultToString(VkResult result)
+    StringSlice VKResultToString(const VkResult result)
     {
         switch (result)
         {

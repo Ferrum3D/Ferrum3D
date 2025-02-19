@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <Graphics/RHI/Common/BaseTypes.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {

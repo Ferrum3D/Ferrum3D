@@ -5,76 +5,95 @@ namespace FE::Graphics::RHI
 {
     struct InputLayoutBuilder;
 
-    struct InputLayoutBufferBuilder final
+    struct [[nodiscard]] InputLayoutStreamBuilder final
     {
-        InputLayoutBufferBuilder& AddAttribute(Format format, Env::Name semantic)
+        InputLayoutStreamBuilder AddChannel(const Format format, const ShaderSemantic semantic)
         {
-            m_attributes.emplace_back(semantic, m_index, m_offset, format);
-            m_offset += GetFormatSize(format);
+            AddChannelInternal(TranslateFormat(format), semantic, GetFormatSize(format));
             return *this;
         }
 
-        InputLayoutBufferBuilder& AddPadding(uint32_t bytes)
+        InputLayoutStreamBuilder AddChannel(const VertexChannelFormat format, const ShaderSemantic semantic)
+        {
+            AddChannelInternal(format, semantic, GetFormatSize(TranslateFormat(format)));
+            return *this;
+        }
+
+        InputLayoutStreamBuilder AddPadding(const uint32_t bytes)
         {
             m_offset += bytes;
             return *this;
         }
 
-        InputLayoutBuilder& Build()
-        {
-            return *m_parent;
-        }
-
     private:
-        friend struct InputLayoutBuilder;
+        friend InputLayoutBuilder;
+
+        void AddChannelInternal(VertexChannelFormat format, ShaderSemantic semantic, uint32_t stride);
 
         InputLayoutBuilder* m_parent = nullptr;
-        InputStreamBufferDesc m_buffer{};
-        festd::vector<InputStreamAttributeDesc> m_attributes;
-
         uint32_t m_index = 0;
         uint32_t m_offset = 0;
     };
 
 
-    struct InputLayoutBuilder final
+    struct [[nodiscard]] InputLayoutBuilder final
     {
-        explicit InputLayoutBuilder(PrimitiveTopology topology = PrimitiveTopology::kTriangleList)
+        explicit InputLayoutBuilder(const PrimitiveTopology topology = PrimitiveTopology::kTriangleList)
         {
-            m_topology = topology;
+            m_layout.ResetStreams();
+            m_layout.m_topology = topology;
         }
 
-        InputLayoutBufferBuilder& AddBuffer(InputStreamRate inputRate)
+        void SetTopology(const PrimitiveTopology topology)
         {
-            auto& result = m_buffers.emplace_back();
-            result.m_buffer.m_inputRate = inputRate;
-            result.m_index = static_cast<uint32_t>(m_buffers.size() - 1);
-            result.m_parent = this;
+            m_layout.m_topology = topology;
+        }
 
-            return result;
+        InputLayoutStreamBuilder AddStream(const InputStreamRate inputRate)
+        {
+            const uint32_t streamIndex = m_streamsCount++;
+            if (inputRate == InputStreamRate::kPerInstance)
+                m_layout.m_perInstanceStreamsMask = Bit::Set(m_layout.m_perInstanceStreamsMask, streamIndex);
+
+            InputLayoutStreamBuilder streamBuilder;
+            streamBuilder.m_parent = this;
+            streamBuilder.m_index = streamIndex;
+            return streamBuilder;
         }
 
         InputStreamLayout Build()
         {
-            InputStreamLayout result;
-            result.m_topology = m_topology;
-
-            for (auto& bufferBuilder : m_buffers)
-            {
-                bufferBuilder.m_buffer.m_stride = bufferBuilder.m_offset;
-                result.PushBuffer(bufferBuilder.m_buffer);
-
-                for (auto& attribute : bufferBuilder.m_attributes)
-                {
-                    result.PushAttribute(attribute);
-                }
-            }
-
+            const InputStreamLayout result = m_layout;
+            m_layout.ResetStreams();
             return result;
         }
 
     private:
-        PrimitiveTopology m_topology;
-        festd::vector<InputLayoutBufferBuilder> m_buffers;
+        friend InputLayoutStreamBuilder;
+
+        InputStreamChannelDesc& NewChannel()
+        {
+            const uint32_t channelIndex = m_channelsCount++;
+            m_layout.m_activeChannelsMask = Bit::Set(m_layout.m_activeChannelsMask, channelIndex);
+            return m_layout.m_channels[channelIndex];
+        }
+
+        InputStreamLayout m_layout = {};
+        uint32_t m_channelsCount = 0;
+        uint32_t m_streamsCount = 0;
     };
+
+
+    inline void InputLayoutStreamBuilder::AddChannelInternal(const VertexChannelFormat format, const ShaderSemantic semantic,
+                                                             const uint32_t stride)
+    {
+        InputStreamChannelDesc& channel = m_parent->NewChannel();
+        channel.m_format = format;
+        channel.m_shaderSemanticName = semantic.m_name;
+        channel.m_shaderSemanticIndex = semantic.m_index;
+        channel.m_offset = m_offset;
+        channel.m_streamIndex = m_index;
+
+        m_offset += stride;
+    }
 } // namespace FE::Graphics::RHI

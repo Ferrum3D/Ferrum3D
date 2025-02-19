@@ -1,9 +1,9 @@
 #pragma once
-#include <Graphics/RHI/FrameGraph/FrameGraph.h>
+#include <Graphics/RHI/Common/FrameGraph/FrameGraph.h>
 
 namespace FE::Graphics::Vulkan
 {
-    struct FrameGraph final : public RHI::FrameGraph
+    struct FrameGraph final : public Common::FrameGraph
     {
         FrameGraph(RHI::Device* device);
 

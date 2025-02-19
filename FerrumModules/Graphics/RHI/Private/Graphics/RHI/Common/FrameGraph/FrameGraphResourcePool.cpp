@@ -1,8 +1,8 @@
-#include <Graphics/RHI/FrameGraph/FrameGraphResourcePool.h>
+#include <Graphics/RHI/Common/FrameGraph/FrameGraphResourcePool.h>
 
-namespace FE::Graphics::RHI
+namespace FE::Graphics::Common
 {
-    FrameGraphResourcePool::FrameGraphResourcePool(ResourcePool* pool)
+    FrameGraphResourcePool::FrameGraphResourcePool(RHI::ResourcePool* pool)
         : m_resourcePool(pool)
     {
     }
@@ -23,7 +23,8 @@ namespace FE::Graphics::RHI
     }
 
 
-    festd::expected<Image*, ResultCode> FrameGraphResourcePool::CreateImage(const Env::Name name, const ImageDesc& desc)
+    festd::expected<RHI::Image*, RHI::ResultCode> FrameGraphResourcePool::CreateImage(const Env::Name name,
+                                                                                      const RHI::ImageDesc& desc)
     {
         const uint64_t descHash = desc.GetHash();
 
@@ -45,7 +46,8 @@ namespace FE::Graphics::RHI
     }
 
 
-    festd::expected<Buffer*, ResultCode> FrameGraphResourcePool::CreateBuffer(const Env::Name name, const BufferDesc& desc)
+    festd::expected<RHI::Buffer*, RHI::ResultCode> FrameGraphResourcePool::CreateBuffer(const Env::Name name,
+                                                                                        const RHI::BufferDesc& desc)
     {
         const uint64_t descHash = desc.GetHash();
 
@@ -65,4 +67,4 @@ namespace FE::Graphics::RHI
 
         return result;
     }
-} // namespace FE::Graphics::RHI
+} // namespace FE::Graphics::Common

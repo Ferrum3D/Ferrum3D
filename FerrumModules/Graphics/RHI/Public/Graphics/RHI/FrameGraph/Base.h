@@ -55,20 +55,17 @@ namespace FE::Graphics::RHI
                 return lhs.m_value != rhs.m_value;
             }
 
-        private:
-            FrameGraphResourceHandle() = default;
-
-            friend T;
-            friend FrameGraph;
-            friend FrameGraphBuilder;
-            friend FrameGraphPassBuilder;
-
             static T Create(uint32_t resourceIndex, uint32_t resourceVersion)
             {
                 T handle;
                 handle.m_desc = { resourceIndex, resourceVersion };
                 return handle;
             }
+
+        private:
+            FrameGraphResourceHandle() = default;
+
+            friend T;
         };
     } // namespace Internal
 

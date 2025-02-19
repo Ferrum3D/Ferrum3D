@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <FeCore/Math/Vector4.h>
-#include <Graphics/RHI/Common/Limits.h>
+#include <Graphics/RHI/Base/Limits.h>
 
 namespace FE::Graphics::RHI
 {

@@ -187,6 +187,12 @@ namespace FE
         }
 
 
+        inline void Zero(void* memory, const size_t size)
+        {
+            memset(memory, 0, size);
+        }
+
+
         inline festd::span<const std::byte> MakeByteSpan(const char* str, uint32_t length = 0)
         {
             return { reinterpret_cast<const std::byte*>(str), length ? length : static_cast<uint32_t>(__builtin_strlen(str)) };

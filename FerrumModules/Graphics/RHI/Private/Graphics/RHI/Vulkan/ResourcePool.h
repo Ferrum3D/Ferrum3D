@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Memory/PoolAllocator.h>
 #include <Graphics/RHI/ResourcePool.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {

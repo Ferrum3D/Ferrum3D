@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/ImageFormat.h>
 
 namespace FE::Graphics::RHI

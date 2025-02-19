@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Configuration.h>
 #include <Graphics/RHI/DeviceFactory.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::DI
 {

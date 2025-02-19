@@ -2,7 +2,7 @@
 #include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/ShaderStage.h>
 
 namespace FE::Graphics::RHI

@@ -65,7 +65,7 @@ namespace FE::Graphics::RHI
             return Size{ m_width, m_height, m_depth };
         }
 
-        void SetSize(Size size)
+        void SetSize(const Size size)
         {
             m_width = size.width;
             m_height = size.height;

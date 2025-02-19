@@ -4,7 +4,7 @@
 #include <Graphics/RHI/Image.h>
 #include <Graphics/RHI/ShaderCompilerDXC.h>
 #include <Graphics/RHI/Vulkan/CommandQueue.h>
-#include <Graphics/RHI/Vulkan/Common/BaseTypes.h>
+#include <Graphics/RHI/Vulkan/Base/BaseTypes.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/DeviceFactory.h>
 #include <Graphics/RHI/Window.h>

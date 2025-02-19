@@ -1,5 +1,5 @@
 ﻿#include <Graphics/RHI/Vulkan/Buffer.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 
 namespace FE::Graphics::Vulkan

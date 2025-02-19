@@ -1,6 +1,6 @@
 #pragma once
 #include <Graphics/RHI/FrameGraph/FrameGraph.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -8,11 +8,20 @@ namespace FE::Graphics::Vulkan
 
     struct BufferBarrierDesc final
     {
-        VkBuffer m_buffer = VK_NULL_HANDLE;
-        uint32_t m_sourceAccess = 0;
-        uint32_t m_destAccess = 0;
-        RHI::HardwareQueueKindFlags m_sourceQueueKind = RHI::HardwareQueueKindFlags::kNone;
-        RHI::HardwareQueueKindFlags m_destQueueKind = RHI::HardwareQueueKindFlags::kNone;
+        VkBuffer m_buffer;
+        uint32_t m_sourceAccess : 16;
+        uint32_t m_destAccess : 16;
+        RHI::HardwareQueueKindFlags m_sourceQueueKind : 16;
+        RHI::HardwareQueueKindFlags m_destQueueKind : 16;
+
+        BufferBarrierDesc()
+            : m_buffer(VK_NULL_HANDLE)
+            , m_sourceAccess(0)
+            , m_destAccess(0)
+            , m_sourceQueueKind(RHI::HardwareQueueKindFlags::kNone)
+            , m_destQueueKind(RHI::HardwareQueueKindFlags::kNone)
+        {
+        }
 
         [[nodiscard]] uint64_t GetHash() const
         {
@@ -23,11 +32,20 @@ namespace FE::Graphics::Vulkan
 
     struct ImageBarrierDesc final
     {
-        VkImage m_image = VK_NULL_HANDLE;
-        uint32_t m_sourceAccess = 0;
-        uint32_t m_destAccess = 0;
-        RHI::HardwareQueueKindFlags m_sourceQueueKind = RHI::HardwareQueueKindFlags::kNone;
-        RHI::HardwareQueueKindFlags m_destQueueKind = RHI::HardwareQueueKindFlags::kNone;
+        VkImage m_image;
+        uint32_t m_sourceAccess : 16;
+        uint32_t m_destAccess : 16;
+        RHI::HardwareQueueKindFlags m_sourceQueueKind : 16;
+        RHI::HardwareQueueKindFlags m_destQueueKind : 16;
+
+        ImageBarrierDesc()
+            : m_image(VK_NULL_HANDLE)
+            , m_sourceAccess(0)
+            , m_destAccess(0)
+            , m_sourceQueueKind(RHI::HardwareQueueKindFlags::kNone)
+            , m_destQueueKind(RHI::HardwareQueueKindFlags::kNone)
+        {
+        }
 
         [[nodiscard]] uint64_t GetHash() const
         {

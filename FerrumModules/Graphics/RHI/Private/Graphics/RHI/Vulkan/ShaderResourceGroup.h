@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <Graphics/RHI/ShaderReflection.h>
 #include <Graphics/RHI/ShaderResourceGroup.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 #include <Graphics/RHI/Vulkan/DescriptorAllocator.h>
 
 namespace FE::Graphics::Vulkan

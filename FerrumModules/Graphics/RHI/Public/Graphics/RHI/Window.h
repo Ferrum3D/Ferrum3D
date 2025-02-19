@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/PlatformInclude.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/IWindow.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/Device.h>
 
 namespace FE::Graphics::RHI
@@ -32,6 +32,7 @@ namespace FE::Graphics::RHI
 
         void DoRelease() override
         {
+            // TODO: suspicious... probably unsafe when calling from a different module.
             m_device->QueueObjectDispose(this);
         }
     };

@@ -52,7 +52,7 @@ namespace FE::Graphics::Vulkan
         {
             const VkImage image = images[imageIndex];
             const auto imageDesc = RHI::ImageDesc::Img2D(RHI::ImageBindFlags::kColor, width, height, m_desc.m_format);
-            const Rc backBuffer = ImplCast(DI::New<Image>(std::pmr::get_default_resource()).value());
+            const Rc backBuffer = ImplCast(DI::DefaultNew<Image>().value());
             const auto imageName = Fmt::FixedFormat("Swap Chain Color Target {}", imageIndex);
             backBuffer->InitInternal(Env::Name{ imageName }, imageDesc, image);
             m_images.push_back(backBuffer);

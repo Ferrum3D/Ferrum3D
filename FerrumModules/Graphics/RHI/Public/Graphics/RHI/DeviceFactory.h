@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <Graphics/RHI/AdapterInfo.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 
 namespace FE::Graphics::RHI
 {

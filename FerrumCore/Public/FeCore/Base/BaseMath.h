@@ -85,6 +85,22 @@ namespace FE
 
 namespace FE::Bit
 {
+    //! @brief Set a bit specified by bitIndex to one and return the modified value.
+    template<class T>
+    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Set(const T value, const T bitIndex)
+    {
+        return value | (T(1u) << bitIndex);
+    }
+
+
+    //! @brief Reset a bit specified by bitIndex to zero and return the modified value.
+    template<class T>
+    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Clear(const T value, const T bitIndex)
+    {
+        return value & ~(T(1u) << bitIndex);
+    }
+
+
     //! @brief Count the number of trailing zeros in the given value.
     FE_FORCE_INLINE int32_t CountTrailingZeros(const uint32_t value)
     {
@@ -109,6 +125,17 @@ namespace FE::Bit
         return 32;
 #else
         return __builtin_clz(value);
+#endif
+    }
+
+
+    //! @brief Count the number of set bits in the given value.
+    FE_FORCE_INLINE uint32_t PopCount(const uint32_t value)
+    {
+#if FE_COMPILER_MSVC
+        return __popcnt(value);
+#else
+        return __builtin_popcount(value);
 #endif
     }
 
@@ -420,21 +447,6 @@ namespace FE::Math
     }
 
 
-    //! @brief Represents a component of a vector.
-    enum class Component : uint32_t
-    {
-        kX = 0,
-        kY = 1,
-        kZ = 2,
-        kW = 3,
-
-        kR = kX,
-        kG = kY,
-        kB = kZ,
-        kA = kW,
-    };
-
-
     //! @brief Represents a swizzle.
     //!
     //! @note The enum does not contain all the possible combinations as it would be too large.
@@ -450,10 +462,9 @@ namespace FE::Math
     };
 
 
-    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const Component x, const Component y, const Component z, const Component w)
+    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t w)
     {
-        return static_cast<Swizzle>(festd::to_underlying(x) | (festd::to_underlying(y) << 2) | (festd::to_underlying(z) << 4)
-                                    | (festd::to_underlying(w) << 6));
+        return static_cast<Swizzle>(x | (y << 2) | (z << 4) | (w << 6));
     }
 } // namespace FE::Math
 

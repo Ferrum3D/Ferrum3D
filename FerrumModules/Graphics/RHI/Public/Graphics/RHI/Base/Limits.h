@@ -13,5 +13,7 @@ namespace FE::Graphics::RHI::Limits
     {
         constexpr uint32_t kMaxColorAttachments = 8;
         constexpr uint32_t kMaxShaderResourceGroups = 8;
+        constexpr uint32_t kMaxVertexStreams = 12;
+        constexpr uint32_t kMaxStreamChannels = 15;
     } // namespace Pipeline
 } // namespace FE::Graphics::RHI::Limits

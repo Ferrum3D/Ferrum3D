@@ -3,7 +3,7 @@
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Parallel/SpinLock.h>
-#include <Graphics/RHI/Common/BaseTypes.h>
+#include <Graphics/RHI/Base/BaseTypes.h>
 
 namespace FE::Graphics::RHI
 {

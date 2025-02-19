@@ -1,25 +1,29 @@
-#include <Graphics/RHI/FrameGraph/FrameGraph.h>
-#include <Graphics/RHI/FrameGraph/FrameGraphResourcePool.h>
+#include <FeCore/DI/Activator.h>
+#include <Graphics/RHI/Common/FrameGraph/FrameGraph.h>
+#include <Graphics/RHI/Common/FrameGraph/FrameGraphResourcePool.h>
 
-namespace FE::Graphics::RHI
+namespace FE::Graphics::Common
 {
     FrameGraph::FrameGraph()
-        : m_linearAllocator(UINT64_C(64 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
-        , m_blackboard(&m_linearAllocator)
-        , m_passProducers(&m_linearAllocator)
-        , m_passes(&m_linearAllocator)
+        : m_passes(&m_linearAllocator)
         , m_resources(&m_linearAllocator)
     {
-        m_resourcePool = Memory::New<FrameGraphResourcePool>(&m_linearAllocator);
+        m_resourcePool = DI::DefaultNew<FrameGraphResourcePool>().value();
+    }
+
+
+    FrameGraph::PassDataBase& FrameGraph::GetPassData(const uint32_t passIndex)
+    {
+        return m_passes[passIndex];
     }
 
 
     uint32_t FrameGraph::AddPassInternal(const uint32_t producerIndex, const Env::Name name,
-                                         const GraphicsPipelineDesc& pipelineDesc)
+                                         const RHI::GraphicsPipelineDesc& pipelineDesc)
     {
         PassData& passData = m_passes.push_back();
         passData.m_name = name;
-        passData.m_type = PassType::kGraphics;
+        passData.m_type = RHI::PassType::kGraphics;
         passData.m_producerIndex = producerIndex;
         passData.m_graphicsPipelineDesc = pipelineDesc;
         return m_passes.size() - 1;
@@ -28,13 +32,21 @@ namespace FE::Graphics::RHI
 
     FrameGraph::~FrameGraph()
     {
-        Memory::Delete(&m_linearAllocator, m_resourcePool, sizeof(FrameGraphResourcePool), alignof(FrameGraphResourcePool));
+        Memory::Delete(&m_linearAllocator, m_resourcePool, sizeof(FrameGraphResourcePool));
     }
 
 
-    void FrameGraph::AddPassProducer(PassProducer* passProducer)
+    void FrameGraph::AddPassProducer(RHI::PassProducer* passProducer)
     {
         m_passProducers.push_back(passProducer);
+
+        struct FrameGraphBuilder : public RHI::FrameGraphBuilder
+        {
+            FrameGraphBuilder(FrameGraph* graph, const uint32_t passProducerIndex)
+                : RHI::FrameGraphBuilder(graph, passProducerIndex)
+            {
+            }
+        };
 
         FrameGraphBuilder builder{ this, m_passProducers.size() - 1 };
         passProducer->Setup(builder, m_blackboard);
@@ -64,25 +76,25 @@ namespace FE::Graphics::RHI
     }
 
 
-    BufferHandle FrameGraph::CreateBuffer(const uint32_t passIndex, const Env::Name name, const BufferDesc& desc)
+    RHI::BufferHandle FrameGraph::CreateBuffer(const uint32_t passIndex, const Env::Name name, const RHI::BufferDesc& desc)
     {
         const uint32_t resourceIndex = m_resources.size();
         ResourceData resourceData{ resourceIndex, desc };
         resourceData.m_name = name;
         resourceData.m_creatorPassIndex = passIndex;
         m_resources.push_back(resourceData);
-        return BufferHandle::Create(resourceIndex, 0);
+        return RHI::BufferHandle::Create(resourceIndex, 0);
     }
 
 
-    ImageHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const ImageDesc& desc)
+    RHI::ImageHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const RHI::ImageDesc& desc)
     {
         const uint32_t resourceIndex = m_resources.size();
         ResourceData resourceData{ resourceIndex, desc };
         resourceData.m_name = name;
         resourceData.m_creatorPassIndex = passIndex;
         m_resources.push_back(resourceData);
-        return ImageHandle::Create(resourceIndex, 0);
+        return RHI::ImageHandle::Create(resourceIndex, 0);
     }
 
 
@@ -129,4 +141,4 @@ namespace FE::Graphics::RHI
         resourceData.AddAccess(resourceAccess);
         return resourceVersion;
     }
-} // namespace FE::Graphics::RHI
+} // namespace FE::Graphics::Common

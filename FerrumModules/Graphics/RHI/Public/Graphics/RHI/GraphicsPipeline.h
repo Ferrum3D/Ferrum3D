@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/RHI/Common/Viewport.h>
+#include <Graphics/RHI/Base/Viewport.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/InputStreamLayout.h>
 #include <Graphics/RHI/PipelineStates.h>

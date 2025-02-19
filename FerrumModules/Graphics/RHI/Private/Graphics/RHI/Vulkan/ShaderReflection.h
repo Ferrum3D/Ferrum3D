@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <festd/vector.h>
 #include <Graphics/RHI/ShaderReflection.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 #include <spirv_hlsl.hpp>
 
 namespace FE::Graphics::Vulkan

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
+#include <Graphics/RHI/Base/Limits.h>
 #include <Graphics/RHI/ImageFormat.h>
 
 namespace FE::Graphics::RHI
@@ -17,101 +17,37 @@ namespace FE::Graphics::RHI
 
     enum class InputStreamRate : uint32_t
     {
-        kNone,
-        kPerVertex,
-        kPerInstance,
+        kPerVertex = 0,
+        kPerInstance = 1,
     };
 
 
-    struct InputStreamBufferDesc final
+    struct InputStreamChannelDesc final
     {
-        bool operator==(const InputStreamBufferDesc& rhs) const
-        {
-            return m_stride == rhs.m_stride && m_inputRate == rhs.m_inputRate;
-        }
-
-        bool operator!=(const InputStreamBufferDesc& rhs) const
-        {
-            return !(rhs == *this);
-        }
-
-        uint32_t m_stride;
-        InputStreamRate m_inputRate;
-    };
-
-
-    struct InputStreamAttributeDesc final
-    {
-        InputStreamAttributeDesc() = default;
-
-        InputStreamAttributeDesc(Env::Name shaderSemantic, uint32_t bufferIndex, uint32_t offset, Format elementFormat)
-            : m_shaderSemantic(shaderSemantic)
-            , m_bufferIndex(bufferIndex)
-            , m_offset(offset)
-            , m_elementFormat(elementFormat)
-        {
-        }
-
-        bool operator==(const InputStreamAttributeDesc& rhs) const
-        {
-            return m_shaderSemantic == rhs.m_shaderSemantic && m_bufferIndex == rhs.m_bufferIndex && m_offset == rhs.m_offset
-                && m_elementFormat == rhs.m_elementFormat;
-        }
-
-        bool operator!=(const InputStreamAttributeDesc& rhs) const
-        {
-            return !(rhs == *this);
-        }
-
-        Env::Name m_shaderSemantic;
-        uint32_t m_bufferIndex = 0;
-        uint32_t m_offset = 0;
-        Format m_elementFormat = Format::kUndefined;
+        ShaderSemanticName m_shaderSemanticName : 4;
+        uint32_t m_shaderSemanticIndex : 4;
+        VertexChannelFormat m_format : 10;
+        uint32_t m_streamIndex : 4;
+        uint32_t m_offset : 10;
     };
 
 
     struct InputStreamLayout final
     {
-        void PushBuffer(const InputStreamBufferDesc& bufferDesc)
+        PrimitiveTopology m_topology : 5;
+        uint32_t m_perInstanceStreamsMask : Limits::Pipeline::kMaxVertexStreams;
+        uint32_t m_activeChannelsMask : Limits::Pipeline::kMaxStreamChannels;
+        InputStreamChannelDesc m_channels[Limits::Pipeline::kMaxStreamChannels];
+
+        void ResetStreams()
         {
-            m_buffers.push_back(bufferDesc);
+            m_perInstanceStreamsMask = 0;
+            m_activeChannelsMask = 0;
         }
 
-        void PushAttribute(const InputStreamAttributeDesc& attributeDesc)
+        [[nodiscard]] uint32_t GetActiveChannelsCount() const
         {
-            m_attributes.push_back(attributeDesc);
+            return Bit::PopCount(m_activeChannelsMask);
         }
-
-        bool operator==(const InputStreamLayout& rhs) const
-        {
-            if (m_buffers.size() != rhs.m_buffers.size())
-                return false;
-
-            if (m_attributes.size() != rhs.m_attributes.size())
-                return false;
-
-            for (uint32_t i = 0; i < m_buffers.size(); ++i)
-            {
-                if (m_buffers[i] != rhs.m_buffers[i])
-                    return false;
-            }
-
-            for (uint32_t i = 0; i < m_attributes.size(); ++i)
-            {
-                if (m_attributes[i] != rhs.m_attributes[i])
-                    return false;
-            }
-
-            return m_topology == rhs.m_topology;
-        }
-
-        bool operator!=(const InputStreamLayout& rhs) const
-        {
-            return !(rhs == *this);
-        }
-
-        PrimitiveTopology m_topology;
-        festd::vector<InputStreamBufferDesc> m_buffers;
-        festd::vector<InputStreamAttributeDesc> m_attributes;
     };
 } // namespace FE::Graphics::RHI

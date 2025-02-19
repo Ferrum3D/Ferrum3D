@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <Graphics/RHI/ImageSubresource.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::RHI
 {

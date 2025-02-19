@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/RTTI/RTTI.h>
-#include <cstdint>
+#include <FeCore/Modules/Environment.h>
+#include <FeCore/Strings/Format.h>
+#include <Graphics/RHI/Base/Limits.h>
 
 namespace FE::Graphics::RHI
 {
@@ -70,26 +70,90 @@ namespace FE::Graphics::RHI
     };
 
 
+    enum class ShaderSemanticName : uint32_t
+    {
+        kPosition,
+        kColor,
+        kNormal,
+        kBinormal,
+        kTangent,
+        kBlendIndices,
+        kBlendWeight,
+        kTexCoord,
+        kCount,
+    };
+
+
+    inline StringSlice ToString(const ShaderSemanticName name)
+    {
+        switch (name)
+        {
+        case ShaderSemanticName::kPosition:
+            return "POSITION";
+        case ShaderSemanticName::kColor:
+            return "COLOR";
+        case ShaderSemanticName::kNormal:
+            return "NORMAL";
+        case ShaderSemanticName::kBinormal:
+            return "BINORMAL";
+        case ShaderSemanticName::kTangent:
+            return "TANGENT";
+        case ShaderSemanticName::kBlendIndices:
+            return "BLENDINDICES";
+        case ShaderSemanticName::kBlendWeight:
+            return "BLENDWEIGHT";
+        case ShaderSemanticName::kTexCoord:
+            return "TEXCOORD";
+        default:
+            FE_DebugBreak();
+            return nullptr;
+        }
+    }
+
+
+    struct ShaderSemantic final
+    {
+        ShaderSemanticName m_name : 4;
+        uint32_t m_index : 4;
+
+        [[nodiscard]] Env::Name ToName() const;
+    };
+
+
+    inline Env::Name ShaderSemantic::ToName() const
+    {
+        return Env::Name{ Fmt::FixedFormatSized<32>("{}{}", ToString(m_name), m_index) };
+    }
+
+
     struct Offset final
     {
-        int32_t x = 0;
-        int32_t y = 0;
-        int32_t z = 0;
+        int32_t x : Limits::Image::kMaxMipCount + 1;
+        int32_t y : Limits::Image::kMaxMipCount + 1;
+        int32_t z : Limits::Image::kMaxMipCount + 1;
 
-        constexpr Offset() = default;
-
-        constexpr explicit Offset(int32_t x)
-            : x(x)
+        constexpr Offset()
+            : x(0)
+            , y(0)
+            , z(0)
         {
         }
 
-        constexpr Offset(int32_t x, int32_t y)
+        constexpr explicit Offset(const int32_t x)
+            : x(x)
+            , y(0)
+            , z(0)
+        {
+        }
+
+        constexpr Offset(const int32_t x, const int32_t y)
             : x(x)
             , y(y)
+            , z(0)
         {
         }
 
-        constexpr Offset(int32_t x, int32_t y, int32_t z)
+        constexpr Offset(const int32_t x, const int32_t y, const int32_t z)
             : x(x)
             , y(y)
             , z(z)
@@ -100,20 +164,28 @@ namespace FE::Graphics::RHI
 
     struct Size final
     {
-        uint32_t width = 0;
-        uint32_t height = 0;
-        uint32_t depth = 1;
+        uint32_t width : Limits::Image::kMaxMipCount + 1;
+        uint32_t height : Limits::Image::kMaxMipCount + 1;
+        uint32_t depth : Limits::Image::kMaxMipCount + 1;
 
-        constexpr Size() = default;
+        constexpr Size()
+            : width(0)
+            , height(0)
+            , depth(1)
+        {
+        }
 
         constexpr explicit Size(const uint32_t w)
             : width(w)
+            , height(0)
+            , depth(1)
         {
         }
 
         constexpr Size(const uint32_t w, const uint32_t h)
             : width(w)
             , height(h)
+            , depth(1)
         {
         }
 

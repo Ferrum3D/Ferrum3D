@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <Graphics/RHI/DeviceService.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <festd/unordered_map.h>
 

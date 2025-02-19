@@ -4,5 +4,5 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 1
 
 FE_PUSH_MSVC_WARNING(4100 4189)
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 FE_POP_MSVC_WARNING()

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <Graphics/RHI/ShaderModule.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {

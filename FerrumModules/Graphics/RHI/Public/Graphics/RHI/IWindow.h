@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Strings/String.h>
-#include <Graphics/RHI/Common/Viewport.h>
+#include <Graphics/RHI/Base/Viewport.h>
 
 namespace FE::Graphics::RHI
 {

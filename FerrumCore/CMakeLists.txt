@@ -62,10 +62,12 @@
     Public/FeCore/Logging/Logger.h
     Public/FeCore/Logging/Trace.h
 
+    Public/FeCore/Math/Aabb.h
     Public/FeCore/Math/Color.h
     Public/FeCore/Math/Colors.h
     Public/FeCore/Math/Matrix4x4F.h
     Public/FeCore/Math/Quaternion.h
+    Public/FeCore/Math/Rect.h
     Public/FeCore/Math/Vector2.h
     Public/FeCore/Math/Vector3.h
     Public/FeCore/Math/Vector4.h

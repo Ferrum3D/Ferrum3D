@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <Graphics/RHI/ImageFormat.h>
-#include <Graphics/RHI/Vulkan/Common/Config.h>
+#include <Graphics/RHI/Vulkan/Base/Config.h>
 #include <array>
 #include <tuple>
 
