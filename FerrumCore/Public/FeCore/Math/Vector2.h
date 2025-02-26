@@ -200,7 +200,7 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::Epsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::kEpsilon)
         {
             return EqualEstimate(lhs.x, rhs.x, epsilon) && EqualEstimate(lhs.y, rhs.y, epsilon);
         }

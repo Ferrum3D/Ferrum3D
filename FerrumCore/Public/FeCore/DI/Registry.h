@@ -77,7 +77,7 @@ namespace FE::DI
 
         void Sort()
         {
-            ZoneScoped;
+            FE_PROFILER_FUNCTION();
             festd::sort(m_registrations, [this](const ServiceRegistration& lhs, const ServiceRegistration& rhs) {
                 return m_ids[lhs.m_index] < m_ids[rhs.m_index];
             });
@@ -155,7 +155,7 @@ namespace FE::DI
 
         void Initialize()
         {
-            ZoneScoped;
+            FE_PROFILER_FUNCTION();
             std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
             m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_registries.push_back(*m_root);
@@ -187,7 +187,7 @@ namespace FE::DI
 
         ServiceRegistry* Create()
         {
-            ZoneScoped;
+            FE_PROFILER_FUNCTION();
             std::unique_lock lk{ m_lock };
             ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
             m_registries.push_back(*pResult);

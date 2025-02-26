@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <FeCore/Math/Vector3Int.h>
 #include <Graphics/RHI/ImageFormat.h>
 #include <Graphics/RHI/ImageSubresource.h>
 #include <Graphics/RHI/Resource.h>
@@ -60,19 +61,19 @@ namespace FE::Graphics::RHI
             m_usage = ResourceUsage::kDeviceOnly;
         }
 
-        [[nodiscard]] Size GetSize() const
+        [[nodiscard]] Vector3Int GetSize() const
         {
-            return Size{ m_width, m_height, m_depth };
+            return Vector3Int{ m_width, m_height, m_depth };
         }
 
-        void SetSize(const Size size)
+        void SetSize(const Vector3Int size)
         {
-            m_width = size.width;
-            m_height = size.height;
-            m_depth = size.depth;
+            m_width = size.x;
+            m_height = size.y;
+            m_depth = size.z;
         }
 
-        [[nodsicard]] uint64_t GetHash() const
+        [[nodiscard]] uint64_t GetHash() const
         {
             return DefaultHash(this, sizeof(*this));
         }

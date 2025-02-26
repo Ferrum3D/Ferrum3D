@@ -25,7 +25,7 @@ namespace FE::Threading
         std::atomic<uint32_t> m_indexSeed;
 
     public:
-        FiberPool(Context::Callback fiberCallback);
+        explicit FiberPool(Context::Callback fiberCallback);
         ~FiberPool();
 
         FiberHandle Rent(bool extended);

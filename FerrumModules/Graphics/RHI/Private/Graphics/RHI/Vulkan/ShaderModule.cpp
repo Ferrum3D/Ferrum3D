@@ -4,26 +4,24 @@
 
 namespace FE::Graphics::Vulkan
 {
-    ShaderModule::ShaderModule(RHI::Device* device)
+    ShaderModule::ShaderModule(RHI::Device* device, const RHI::ShaderModuleDesc& desc)
     {
         m_device = device;
+        m_desc = desc;
     }
 
 
-    RHI::ResultCode ShaderModule::Init(const RHI::ShaderModuleDesc& desc)
+    void ShaderModule::InitInternal(const festd::span<const uint8_t> byteCode)
     {
-        m_desc = desc;
-
-        m_byteCode.resize(Math::CeilDivide(m_desc.m_byteCode.size(), 4));
-        memcpy(m_byteCode.data(), m_desc.m_byteCode.data(), m_desc.m_byteCode.size());
+        m_byteCode.resize(Math::CeilDivide(byteCode.size(), 4));
+        memcpy(m_byteCode.data(), byteCode.data(), byteCode.size());
 
         VkShaderModuleCreateInfo shaderCI{};
         shaderCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        shaderCI.codeSize = m_desc.m_byteCode.size();
+        shaderCI.codeSize = byteCode.size();
         shaderCI.pCode = m_byteCode.data();
 
-        vkCreateShaderModule(NativeCast(m_device), &shaderCI, VK_NULL_HANDLE, &m_nativeModule);
-        return RHI::ResultCode::kSuccess;
+        FE_VK_ASSERT(vkCreateShaderModule(NativeCast(m_device), &shaderCI, nullptr, &m_nativeModule));
     }
 
 
@@ -33,7 +31,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    VkPipelineShaderStageCreateInfo ShaderModule::GetStageCI()
+    VkPipelineShaderStageCreateInfo ShaderModule::GetStageCI() const
     {
         VkPipelineShaderStageCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

@@ -241,7 +241,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Quaternion lhs, Quaternion rhs,
-                                                                               float epsilon = Constants::Epsilon)
+                                                                               float epsilon = Constants::kEpsilon)
         {
             const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);

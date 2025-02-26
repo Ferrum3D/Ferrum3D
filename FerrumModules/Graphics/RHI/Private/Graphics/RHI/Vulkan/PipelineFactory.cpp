@@ -6,9 +6,11 @@
 namespace FE::Graphics::Vulkan
 {
     PipelineFactory::PipelineFactory(RHI::Device* device, Logger* logger)
-        : m_graphicsPipelinePool("GraphicsPipelinePool", sizeof(GraphicsPipeline), 64 * 1024)
+        : m_graphicsPipelinePool("GraphicsPipelinePool", sizeof(GraphicsPipeline))
         , m_logger(logger)
     {
+        m_device = device;
+
         m_logger->LogTrace("Creating Pipeline Factory");
 
         VkPipelineCacheCreateInfo pipelineCacheCI{};
@@ -28,19 +30,18 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    festd::expected<RHI::GraphicsPipeline*, RHI::ResultCode> PipelineFactory::CreateGraphicsPipeline(
-        const Env::Name name, const RHI::GraphicsPipelineDesc& desc)
+    RHI::GraphicsPipeline* PipelineFactory::CreateGraphicsPipeline(const RHI::GraphicsPipelineRequest& request)
     {
-        return DI::New<GraphicsPipeline>(&m_graphicsPipelinePool)
-            .map_error([](DI::ResultCode) {
-                return RHI::ResultCode::kUnknownError;
-            })
-            .and_then([this, name, &desc](GraphicsPipeline* pipeline) -> festd::expected<GraphicsPipeline*, RHI::ResultCode> {
-                const RHI::ResultCode result = pipeline->InitInternal(m_pipelineCache, name, desc);
-                if (result == RHI::ResultCode::kSuccess)
-                    return pipeline;
+        GraphicsPipeline* pipeline = DI::New<GraphicsPipeline>(&m_graphicsPipelinePool).value();
+        const RHI::ResultCode result = pipeline->InitInternal(m_pipelineCache, request.m_pipelineName, request.m_desc);
+        FE_Assert(result == RHI::ResultCode::kSuccess);
 
-                return festd::unexpected(result);
-            });
+        return pipeline;
+    }
+
+
+    void PipelineFactory::DispatchPending()
+    {
+        // TODO
     }
 } // namespace FE::Graphics::Vulkan

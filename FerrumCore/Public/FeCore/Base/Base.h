@@ -10,6 +10,13 @@
 #include <intrin.h>
 #include <tracy/Tracy.hpp>
 
+#define FE_PROFILER_FUNCTION() ZoneScoped
+
+#define FE_PROFILER_FUNCTION_TEXT(...)                                                                                           \
+    ZoneScoped;                                                                                                                  \
+    ZoneTextF(__VA_ARGS__)
+
+
 #if FE_DEBUG
 //! @brief Assertion without loggers, used in modules on which loggers depend.
 #    define FE_CORE_ASSERT(expression, msg)                                                                                      \
@@ -30,7 +37,7 @@
 namespace FE
 {
     //! @brief Invalid index value.
-    inline constexpr uint32_t kInvalidIndex = std::numeric_limits<uint32_t>::max();
+    inline constexpr uint32_t kInvalidIndex = Constants::kMaxU32;
 
 
     template<class TEnum>

@@ -12,8 +12,9 @@ namespace FE::Graphics::Vulkan
 
         FE_RTTI_Class(PipelineFactory, "437E4387-BDE0-42DA-8986-FA909D8BFEDE");
 
-        festd::expected<RHI::GraphicsPipeline*, RHI::ResultCode> CreateGraphicsPipeline(
-            Env::Name name, const RHI::GraphicsPipelineDesc& desc) override;
+        RHI::GraphicsPipeline* CreateGraphicsPipeline(const RHI::GraphicsPipelineRequest& request) override;
+
+        void DispatchPending() override;
 
     private:
         Memory::PoolAllocator m_graphicsPipelinePool;

@@ -261,7 +261,7 @@ namespace FE::Graphics::Vulkan
     {
         ZoneScoped;
 
-        const uint64_t tempValue = UINT64_MAX;
+        const uint64_t tempValue = Constants::kMaxU64;
         const VkPipelineStageFlags kWaitDstFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
         VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo{};

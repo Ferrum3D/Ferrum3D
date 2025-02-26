@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Math/Rect.h>
 #include <FeCore/Math/Vector3.h>
 
 namespace FE
@@ -19,22 +20,24 @@ namespace FE
             };
         };
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb()
-        {
-            m_simdVectorMin = _mm_setzero_ps();
-            m_simdVectorMax = _mm_setzero_ps();
-        }
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb() = default;
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const __m128 min, const __m128 max)
+            : m_simdVectorMin(min)
+            , m_simdVectorMax(max)
         {
-            m_simdVectorMin = min;
-            m_simdVectorMax = max;
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const Vector3F min, const Vector3F max)
             : min(min)
             , max(max)
         {
+        }
+
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const RectF rect, const float zMin = 0.0f, const float zMax = 1.0f)
+        {
+            m_simdVectorMin = _mm_setr_ps(rect.min.x, rect.min.y, zMin, 0.0f);
+            m_simdVectorMax = _mm_setr_ps(rect.max.x, rect.max.y, zMax, 0.0f);
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL Data()
@@ -47,6 +50,21 @@ namespace FE
             return m_values;
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Size() const
+        {
+            return max - min;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool IsValid() const
+        {
+            return Math::CmpGreaterMask(min, max) == 0;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectF FE_VECTORCALL GetRect() const
+        {
+            return RectF{ Vector2F{ min.x, min.y }, Vector2F{ max.x, max.y } };
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Aabb FE_VECTORCALL Zero()
         {
             return Aabb{ _mm_setzero_ps(), _mm_setzero_ps() };
@@ -54,7 +72,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Aabb FE_VECTORCALL Initial()
         {
-            return Aabb{ _mm_set1_ps(FLT_MAX), _mm_set1_ps(-FLT_MAX) };
+            return Aabb{ _mm_set1_ps(Constants::kMaxFloat), _mm_set1_ps(-Constants::kMaxFloat) };
         }
     };
 
@@ -140,7 +158,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Aabb& lhs, const Aabb& rhs,
-                                                                               const float epsilon = Constants::Epsilon)
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             return EqualEstimate(lhs.min, rhs.min, epsilon) && EqualEstimate(lhs.max, rhs.max, epsilon);
         }

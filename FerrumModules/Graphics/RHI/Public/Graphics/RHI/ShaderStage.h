@@ -10,6 +10,7 @@ namespace FE::Graphics::RHI
         kDomain = 3,
         kGeometry = 4,
         kCompute = 5,
+        kUndefined = Constants::kMaxU32,
 
         kGraphicsCount = kGeometry + 1,
     };

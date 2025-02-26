@@ -183,10 +183,10 @@ namespace FE
 
     //! @brief Combine hashes of specified values with seed.
     //!
-    //! @tparam Args - Types of values.
+    //! @tparam Args  Types of values.
     //!
-    //! @param seed - Initial hash value to combine with.
-    //! @param args - The values to calculate hash of.
+    //! @param seed Initial hash value to combine with.
+    //! @param args The values to calculate hash of.
     template<class T, class... Args>
     void HashCombine(size_t& seed, const T& value, const Args&... args)
     {
@@ -203,4 +203,39 @@ namespace FE
         HashCombine(seed, args...);
         return seed;
     }
+
+
+    struct Hasher final
+    {
+        explicit Hasher(const uint64_t seed = Internal::HashSecret[0])
+            : m_hash(seed)
+        {
+        }
+
+        ~Hasher() = default;
+
+        Hasher(const Hasher&) = delete;
+        Hasher& operator=(const Hasher&) = delete;
+        Hasher(Hasher&&) = delete;
+        Hasher& operator=(Hasher&&) = delete;
+
+        void UpdateRaw(const uint64_t hash)
+        {
+            m_hash ^= hash + 0x9e3779b9 + (m_hash << 6) + (m_hash >> 2);
+        }
+
+        template<class T>
+        void Update(const T& value)
+        {
+            UpdateRaw(eastl::hash<T>()(value));
+        }
+
+        [[nodiscard]] uint64_t Finalize() const
+        {
+            return m_hash;
+        }
+
+    private:
+        uint64_t m_hash;
+    };
 } // namespace FE

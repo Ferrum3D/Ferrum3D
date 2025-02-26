@@ -278,15 +278,15 @@ namespace FE::Graphics::RHI
             return blockCountW * m_byteSize;
         }
 
-        [[nodiscard]] uint32_t CalculateMipByteSize(const Size size, const uint32_t mipIndex = 0) const
+        [[nodiscard]] uint32_t CalculateMipByteSize(const Vector3UInt size, const uint32_t mipIndex = 0) const
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
-            const uint32_t blockCountW = Math::Max(Math::CeilDivide(size.width >> mipIndex, blockSize), 1u);
-            const uint32_t blockCountH = Math::Max(Math::CeilDivide(size.height >> mipIndex, blockSize), 1u);
-            return Math::Max(size.depth >> mipIndex, 1u) * blockCountW * blockCountH * m_byteSize;
+            const uint32_t blockCountX = Math::Max(Math::CeilDivide(size.x >> mipIndex, blockSize), 1u);
+            const uint32_t blockCountY = Math::Max(Math::CeilDivide(size.y >> mipIndex, blockSize), 1u);
+            return Math::Max(size.z >> mipIndex, 1u) * blockCountX * blockCountY * m_byteSize;
         }
 
-        [[nodiscard]] uint32_t CalculateImageByteSize(const Size size, const uint32_t mipCount) const
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Vector3UInt size, const uint32_t mipCount) const
         {
             uint32_t totalSize = 0;
             for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
@@ -297,7 +297,7 @@ namespace FE::Graphics::RHI
             return totalSize;
         }
 
-        [[nodiscard]] uint32_t CalculateImageByteSize(const Size size) const
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Vector3UInt size) const
         {
             return CalculateImageByteSize(size, CalculateMipCount(size));
         }

@@ -106,9 +106,7 @@ namespace FE
         //!
         //! \see SparseStorageDesc
         //!
-        //! @param alignment - The alignment required for the stored value.
-        //! @param valueSize - The size of the value to store.
-        //! @param capacity  - The number of chunks to allocate memory for.
+        //! @param desc Storage initialization parameters.
         inline void Init(const SparseStorageDesc& desc)
         {
             FE_CORE_ASSERT(m_ChunkSize == -1, "Sparse storage can only be initialized once");
@@ -126,8 +124,8 @@ namespace FE
 
         //! @brief Add a value into the SparseStorage.
         //!
-        //! @param key   - The key to associate the value with.
-        //! @param value - The pointer to the value.
+        //! @param key   The key to associate the value with.
+        //! @param value The pointer to the value.
         //!
         //! @return True if the value was new, False if it was updated.
         inline bool Insert(const TKey& key, void* value)
@@ -166,7 +164,7 @@ namespace FE
 
         //! @brief Check if the key is present.
         //!
-        //! @param key - The key to check for.
+        //! @param key The key to check for.
         //!
         //! @return True if the was found.
         [[nodiscard]] inline bool Contains(const TKey& key) const
@@ -176,7 +174,7 @@ namespace FE
 
         //! @brief Try to get value by key.
         //!
-        //! @param key - The key to get.
+        //! @param key The key to get.
         [[nodiscard]] inline void* TryGetAt(const TKey& key)
         {
             auto index = DenseIndex(key);
@@ -185,7 +183,7 @@ namespace FE
 
         //! @brief Remove a value from the SparseStorage by key.
         //!
-        //! @param key - The key to remove.
+        //! @param key The key to remove.
         //!
         //! @return True if the key was found and removed.
         inline bool Remove(const TKey& key)

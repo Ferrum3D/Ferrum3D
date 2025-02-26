@@ -4,10 +4,44 @@
 
 namespace FE
 {
+    namespace Constants
+    {
+        inline constexpr float PI = 3.14159265358979323f;
+
+        inline constexpr float kEpsilon = 1e-6f;
+        inline constexpr float kInfinity = std::numeric_limits<float>::infinity();
+        inline constexpr float kNan = std::numeric_limits<float>::quiet_NaN();
+
+        inline constexpr float kMaxFloat = FLT_MAX;
+        inline constexpr float kMinFloat = FLT_MIN;
+
+        inline constexpr int8_t kMinI8 = INT8_MIN;
+        inline constexpr int16_t kMinI16 = INT16_MIN;
+        inline constexpr int32_t kMinI32 = INT32_MIN;
+        inline constexpr int64_t kMinI64 = INT64_MIN;
+
+        inline constexpr int8_t kMaxI8 = INT8_MAX;
+        inline constexpr int16_t kMaxI16 = INT16_MAX;
+        inline constexpr int32_t kMaxI32 = INT32_MAX;
+        inline constexpr int64_t kMaxI64 = INT64_MAX;
+
+        inline constexpr uint8_t kMaxU8 = UINT8_MAX;
+        inline constexpr uint16_t kMaxU16 = UINT16_MAX;
+        inline constexpr uint32_t kMaxU32 = UINT32_MAX;
+        inline constexpr uint64_t kMaxU64 = UINT64_MAX;
+
+        template<class T>
+        inline constexpr T kMaxValue = std::numeric_limits<T>::max();
+
+        template<class T>
+        inline constexpr T kMinValue = std::numeric_limits<T>::min();
+    } // namespace Constants
+
+
     //! @brief Align up an integer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
     {
@@ -17,8 +51,8 @@ namespace FE
 
     //! @brief Align up a pointer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T>
     FE_FORCE_INLINE T* AlignUpPtr(T* x, const size_t alignment)
     {
@@ -28,8 +62,8 @@ namespace FE
 
     //! @brief Align up an integer.
     //!
-    //! @param x           - Value to align.
-    //! @tparam TAlignment - Alignment to use.
+    //! @param x Value to align.
+    //! @tparam TAlignment  Alignment to use.
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignUp(const T x)
     {
@@ -39,8 +73,8 @@ namespace FE
 
     //! @brief Align down an integer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
     {
@@ -50,8 +84,8 @@ namespace FE
 
     //! @brief Align down a pointer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T>
     FE_FORCE_INLINE T* AlignDownPtr(T* x, const size_t alignment)
     {
@@ -61,8 +95,8 @@ namespace FE
 
     //! @brief Align down an integer.
     //!
-    //! @param x           - Value to align.
-    //! @tparam TAlignment - Alignment to use.
+    //! @param x Value to align.
+    //! @tparam TAlignment  Alignment to use.
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignDown(const T x)
     {
@@ -72,8 +106,8 @@ namespace FE
 
     //! @brief Create a bitmask.
     //!
-    //! @param bitCount  - The number of ones in the created mask.
-    //! @param leftShift - The number of zeros to the right of the created mask.
+    //! @param bitCount  The number of ones in the created mask.
+    //! @param leftShift The number of zeros to the right of the created mask.
     template<class T>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T MakeMask(const T bitCount, const T leftShift)
     {
@@ -210,8 +244,8 @@ namespace FE::Bit
 
     //! @brief Traverse an unsigned integer and call a functor for each set bit.
     //!
-    //! @param word    - The unsigned integer to traverse.
-    //! @param functor - The functor to call for each set bit.
+    //! @param word    The unsigned integer to traverse.
+    //! @param functor The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint32_t word, TFunctor functor)
     {
@@ -226,8 +260,8 @@ namespace FE::Bit
 
     //! @brief Traverse an unsigned integer and call a functor for each set bit.
     //!
-    //! @param word    - The unsigned integer to traverse.
-    //! @param functor - The functor to call for each set bit.
+    //! @param word    The unsigned integer to traverse.
+    //! @param functor The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
     {
@@ -281,13 +315,6 @@ namespace FE::Math
             return (middle << 32) | static_cast<uint32_t>(p00);
         }
     } // namespace CompileTime
-
-
-    namespace Constants
-    {
-        inline constexpr float PI = 3.14159265358979323f;
-        inline constexpr float Epsilon = 1e-6f;
-    } // namespace Constants
 
 
     FE_FORCE_INLINE float Sin(const float x)
@@ -358,7 +385,7 @@ namespace FE::Math
 
     //! @brief Round a floating point number to the nearest integer.
     //!
-    //! @param x - The floating point number to round.
+    //! @param x The floating point number to round.
     //!
     //! @note This function behaves differently from std::round, it uses `floor(x + 0.5f)`.
     FE_FORCE_INLINE float Round(const float x)
@@ -367,7 +394,7 @@ namespace FE::Math
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::Epsilon)
+    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::kEpsilon)
     {
         return abs(lhs - rhs) < epsilon;
     }
@@ -443,7 +470,7 @@ namespace FE::Math
         if (Bit::ScanReverse(result, x))
             return result;
 
-        return UINT32_MAX;
+        return Constants::kMaxU32;
     }
 
 

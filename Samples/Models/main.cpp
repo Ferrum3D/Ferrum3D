@@ -94,11 +94,11 @@ struct ExampleApplication final : public ApplicationModule
             const float aspectRatio = imageWidth / imageHeight;
 
             auto constantData = Matrix4x4F::Identity();
-            constantData = constantData * Matrix4x4F::Projection(Math::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
-            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI);
+            constantData = constantData * Matrix4x4F::Projection(Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
+            constantData = constantData * Matrix4x4F::RotationY(Constants::PI);
             constantData = constantData * Matrix4x4F::RotationX(-0.5f);
             constantData = constantData * Matrix4x4F::Translation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
-            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI * -1.3f);
+            constantData = constantData * Matrix4x4F::RotationY(Constants::PI * -1.3f);
 
             const auto constantBufferDesc =
                 RHI::BufferDesc(sizeof(constantData), RHI::BindFlags::kConstantBuffer, RHI::ResourceUsage::kHostWriteThrough);

@@ -75,7 +75,7 @@ namespace FE::Graphics::RHI
 
     struct SubpassDependency final
     {
-        uint32_t m_sourceSubpassIndex = UINT32_MAX;
+        uint32_t m_sourceSubpassIndex = Constants::kMaxU32;
         PipelineStageFlags m_sourcePipelineStage = PipelineStageFlags::kColorAttachmentOutput;
         ResourceState m_sourceState = ResourceState::kCommon;
 

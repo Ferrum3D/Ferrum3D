@@ -43,8 +43,8 @@ namespace FE::Graphics::Vulkan
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                          uint32_t firstInstance) override;
 
-        void SetViewport(RHI::Viewport viewport) override;
-        void SetScissor(RHI::Scissor scissor) override;
+        void SetViewport(const Aabb& viewport) override;
+        void SetScissor(RectInt scissor) override;
 
         virtual void ResourceTransitionBarriers(festd::span<const RHI::ImageBarrierDesc> imageBarriers,
                                                 festd::span<const RHI::BufferBarrierDesc> bufferBarriers) override;

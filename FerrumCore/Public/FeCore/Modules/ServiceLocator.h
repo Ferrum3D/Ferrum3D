@@ -44,7 +44,7 @@ namespace FE
         //! The provided instance will be registered in the global environment,
         //! so that it can be used in multiple modules.
         //!
-        //! @param instance - The instance to register.
+        //! @param instance The instance to register.
         static void Register(T* instance)
         {
             FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");
@@ -96,8 +96,8 @@ namespace FE
 
     //! @brief Helper class that registers and unregisters instance in ServiceLocator.
     //!
-    //! @tparam TBase - The base class to derive.
-    //! @tparam TInterface - The interface to register in ServiceLocator.
+    //! @tparam TBase  The base class to derive.
+    //! @tparam TInterface  The interface to register in ServiceLocator.
     template<class TBase, class TInterface = TBase>
     struct ServiceLocatorImplBase
         : public TBase

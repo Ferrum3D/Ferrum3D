@@ -7,7 +7,7 @@ namespace FE
 {
     //! @brief Asset holder.
     //!
-    //! @tparam T - Asset storage type.
+    //! @tparam T  Asset storage type.
     //!
     //! This class is used to hold asset storage. It implements reference counting and
     //! provides interface for asset loading.

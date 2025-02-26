@@ -1,9 +1,8 @@
-﻿#include <festd/vector.h>
-#include <Graphics/RHI/ImageView.h>
-#include <Graphics/RHI/Vulkan/Buffer.h>
-#include <Graphics/RHI/Vulkan/CommandList.h>
+﻿#include <Graphics/RHI/ImageView.h>
 #include <Graphics/RHI/Vulkan/Base/BaseTypes.h>
 #include <Graphics/RHI/Vulkan/Base/Viewport.h>
+#include <Graphics/RHI/Vulkan/Buffer.h>
+#include <Graphics/RHI/Vulkan/CommandList.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/Framebuffer.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
@@ -12,6 +11,7 @@
 #include <Graphics/RHI/Vulkan/RenderPass.h>
 #include <Graphics/RHI/Vulkan/ResourceState.h>
 #include <Graphics/RHI/Vulkan/ShaderResourceGroup.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -57,35 +57,36 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+    void CommandList::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
+                           const uint32_t firstInstance)
     {
         vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
 
-    void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
-                                  uint32_t firstInstance)
+    void CommandList::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex,
+                                  const int32_t vertexOffset, const uint32_t firstInstance)
     {
         vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
 
-    void CommandList::SetViewport(RHI::Viewport viewport)
+    void CommandList::SetViewport(const Aabb& viewport)
     {
-        const VkViewport nativeViewport = VKConvert(viewport);
+        const VkViewport nativeViewport = VKConvertViewport(viewport);
         vkCmdSetViewport(m_commandBuffer, 0, 1, &nativeViewport);
     }
 
 
-    void CommandList::SetScissor(RHI::Scissor scissor)
+    void CommandList::SetScissor(const RectInt scissor)
     {
-        const VkRect2D rect = VKConvert(scissor);
+        const VkRect2D rect = VKConvertScissor(scissor);
         vkCmdSetScissor(m_commandBuffer, 0, 1, &rect);
     }
 
 
-    void CommandList::ResourceTransitionBarriers(festd::span<const RHI::ImageBarrierDesc> imageBarriers,
-                                                 festd::span<const RHI::BufferBarrierDesc> bufferBarriers)
+    void CommandList::ResourceTransitionBarriers(const festd::span<const RHI::ImageBarrierDesc> imageBarriers,
+                                                 const festd::span<const RHI::BufferBarrierDesc> bufferBarriers)
     {
         festd::small_vector<VkImageMemoryBarrier> nativeImageBarriers;
         for (const RHI::ImageBarrierDesc& barrier : imageBarriers)
@@ -183,7 +184,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandList::BindShaderResourceGroups(festd::span<RHI::ShaderResourceGroup* const> shaderResourceGroups,
+    void CommandList::BindShaderResourceGroups(const festd::span<RHI::ShaderResourceGroup* const> shaderResourceGroups,
                                                RHI::GraphicsPipeline* pipeline)
     {
         festd::small_vector<VkDescriptorSet> descriptorSets;
@@ -204,7 +205,7 @@ namespace FE::Graphics::Vulkan
 
 
     void CommandList::BeginRenderPass(RHI::RenderPass* renderPass, RHI::Framebuffer* framebuffer,
-                                      festd::span<const RHI::ClearValueDesc> clearValues)
+                                      const festd::span<const RHI::ClearValueDesc> clearValues)
     {
         festd::small_vector<VkClearValue> vkClearValues{};
         for (const RHI::ClearValueDesc& clearValue : clearValues)
@@ -245,21 +246,21 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void CommandList::BindIndexBuffer(RHI::Buffer* buffer, uint64_t byteOffset)
+    void CommandList::BindIndexBuffer(RHI::Buffer* buffer, const uint64_t byteOffset)
     {
         vkCmdBindIndexBuffer(m_commandBuffer, NativeCast(buffer), byteOffset, VK_INDEX_TYPE_UINT32);
     }
 
 
-    void CommandList::BindVertexBuffer(uint32_t slot, RHI::Buffer* buffer, uint64_t byteOffset)
+    void CommandList::BindVertexBuffer(const uint32_t slot, RHI::Buffer* buffer, const uint64_t byteOffset)
     {
         const VkBuffer nativeBuffer = NativeCast(buffer);
         vkCmdBindVertexBuffers(m_commandBuffer, slot, 1, &nativeBuffer, &byteOffset);
     }
 
 
-    void CommandList::BindVertexBuffers(uint32_t startSlot, festd::span<RHI::Buffer* const> buffers,
-                                        festd::span<const uint64_t> offsets)
+    void CommandList::BindVertexBuffers(const uint32_t startSlot, const festd::span<RHI::Buffer* const> buffers,
+                                        const festd::span<const uint64_t> offsets)
     {
         FE_AssertMsg(buffers.size() == offsets.size(), "Number of buffers must be the same as number of offsets");
 
@@ -296,8 +297,8 @@ namespace FE::Graphics::Vulkan
         copy.imageSubresource.baseArrayLayer = subresource.arrayLayer;
         copy.imageSubresource.layerCount = 1;
 
-        copy.imageOffset = VKConvert(region.m_imageOffset);
-        copy.imageExtent = VKConvert(region.m_imageSize);
+        copy.imageOffset = VKConvertOffset(region.m_imageOffset);
+        copy.imageExtent = VKConvertExtent(region.m_imageSize);
 
         vkCmdCopyBufferToImage(
             m_commandBuffer, NativeCast(source), NativeCast(dest), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
@@ -316,8 +317,8 @@ namespace FE::Graphics::Vulkan
         nativeBlit.srcSubresource.layerCount = 1;
         nativeBlit.srcSubresource.mipLevel = srcSubresource.mipLevel;
 
-        nativeBlit.srcOffsets[0] = VKConvert(region.m_sourceBounds[0]);
-        nativeBlit.srcOffsets[1] = VKConvert(region.m_sourceBounds[1]);
+        nativeBlit.srcOffsets[0] = VKConvertOffset(region.m_sourceBounds[0]);
+        nativeBlit.srcOffsets[1] = VKConvertOffset(region.m_sourceBounds[1]);
 
         // DEST
         nativeBlit.dstSubresource.aspectMask = dstSubresource.aspectMask;
@@ -325,8 +326,8 @@ namespace FE::Graphics::Vulkan
         nativeBlit.dstSubresource.layerCount = 1;
         nativeBlit.dstSubresource.mipLevel = dstSubresource.mipLevel;
 
-        nativeBlit.dstOffsets[0] = VKConvert(region.m_destBounds[0]);
-        nativeBlit.dstOffsets[1] = VKConvert(region.m_destBounds[1]);
+        nativeBlit.dstOffsets[0] = VKConvertOffset(region.m_destBounds[0]);
+        nativeBlit.dstOffsets[1] = VKConvertOffset(region.m_destBounds[1]);
 
         vkCmdBlitImage(m_commandBuffer,
                        NativeCast(source),

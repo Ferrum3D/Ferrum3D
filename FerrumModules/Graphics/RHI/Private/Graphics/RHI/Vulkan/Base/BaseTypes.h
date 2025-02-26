@@ -1,17 +1,18 @@
 ﻿#pragma once
+#include <FeCore/Math/Vector3Int.h>
 #include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {
-    inline VkExtent3D VKConvert(RHI::Size size)
+    inline VkExtent3D VKConvertExtent(const PackedVector3UInt size)
     {
-        return { static_cast<uint32_t>(size.width), static_cast<uint32_t>(size.height), static_cast<uint32_t>(size.depth) };
+        return VkExtent3D{ size.x, size.y, size.z };
     }
 
 
-    inline VkOffset3D VKConvert(RHI::Offset offset)
+    inline VkOffset3D VKConvertOffset(const PackedVector3Int offset)
     {
-        return { static_cast<int32_t>(offset.x), static_cast<int32_t>(offset.y), static_cast<int32_t>(offset.z) };
+        return VkOffset3D{ offset.x, offset.y, offset.z };
     }
 } // namespace FE::Graphics::Vulkan

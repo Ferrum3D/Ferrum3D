@@ -25,7 +25,7 @@ namespace FE::Graphics
         result.m_data = stbi_load_from_memory(data.data(), static_cast<int32_t>(data.size()), &w, &h, &channels, STBI_rgb_alpha);
         if (result.m_data)
         {
-            if (w >= UINT16_MAX || h >= UINT16_MAX)
+            if (w >= Constants::kMaxU16 || h >= Constants::kMaxU16)
                 return festd::unexpected("Image too big");
 
             result.m_width = static_cast<uint16_t>(w);

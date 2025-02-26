@@ -78,9 +78,10 @@ namespace FE
     //! Works just like normal `dynamic_cast<T*>`, except it only works with the classes that provide Ferrum3D RTTI
     //! via FE_RTTI_Class macro.
     //!
-    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! @param src      - The source value.
+    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //!
+    //! @param src The source value.
     //!
     //! @return The result pointer if destination type was derived from source type, `nullptr` otherwise.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
@@ -92,17 +93,18 @@ namespace FE
         return nullptr;
     }
 
-    //! @brief Assert that a variable can be dynamically casted to another type.
+    //! @brief Assert that a variable can be dynamically cast to another type.
     //!
-    //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be casted and won't return
+    //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be cast and won't return
     //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
     //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behavior.
     //!
     //! @note The function only works with the classes that provide Ferrum3D RTTI via FE_RTTI_Class macro.
     //!
-    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! @param src      - The source value.
+    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //!
+    //! @param src The source value.
     //!
     //! @return The result pointer if destination type was derived from source type.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
@@ -129,7 +131,7 @@ namespace FE
     //!
     //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! @tparam T - Type to get name of.
+    //! @tparam T  Type to get name of.
     //!
     //! @return Short name of type T.
     template<class T>
@@ -140,7 +142,7 @@ namespace FE
 
     //! @brief Get name of a type.
     //!
-    //! This functions is same as fe_nameof(), but can return name of derived class if called from a base class.\n
+    //! This function is same as fe_nameof(), but can return name of derived class if called from a base class.\n
     //! Returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
     //! Example:
     //! \code{.cpp}
@@ -162,7 +164,7 @@ namespace FE
     //!
     //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! @tparam T - Type to get name of.
+    //! @tparam T  Type to get name of.
     //!
     //! @return Short name of type T.
     //!

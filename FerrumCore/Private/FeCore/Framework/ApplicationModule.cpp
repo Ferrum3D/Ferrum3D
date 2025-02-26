@@ -92,7 +92,7 @@ namespace FE
 
     ApplicationModule::ApplicationModule(int32_t argc, const char** argv)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         for (int32_t argIndex = 1; argIndex < argc; ++argIndex)
             m_commandLine.push_back(argv[argIndex]);
@@ -164,7 +164,7 @@ namespace FE
 
     void ApplicationModule::RegisterServices(DI::ServiceRegistryBuilder builder)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
         builder.Bind<Env::Configuration>()
             .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
                 std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);

@@ -4,20 +4,13 @@
 
 namespace FE
 {
-    void* JobSystem::AllocateSmallBlock(size_t byteSize)
+    std::pmr::memory_resource* JobSystem::GetWaitGroupAllocator()
     {
-        return Memory::DefaultAllocate(byteSize);
+        return &m_waitGroupPool;
     }
 
 
-    void JobSystem::FreeSmallBlock(void* ptr, size_t byteSize)
-    {
-        (void)byteSize;
-        Memory::DefaultFree(ptr);
-    }
-
-
-    FE_FORCE_INLINE void JobSystem::ThreadProc(uint32_t workerIndex)
+    FE_FORCE_INLINE void JobSystem::ThreadProc(const uint32_t workerIndex)
     {
         m_semaphore.Acquire();
         m_workers[workerIndex].m_threadId = GetCurrentThreadID();
@@ -40,7 +33,7 @@ namespace FE
         {
             Worker& worker = m_workers[GetWorkerIndex()];
 
-            FiberWaitEntry* pWaitEntry = nullptr;
+            const FiberWaitEntry* waitEntry = nullptr;
             Job* pJob = nullptr;
             {
                 for (uint32_t attempt = 0; attempt < 8; ++attempt)
@@ -55,7 +48,7 @@ namespace FE
                             if (pEntry->m_switchCompleted)
                             {
                                 queue.m_readyFibersQueue.pop_front();
-                                pWaitEntry = pEntry;
+                                waitEntry = pEntry;
                                 break;
                             }
                         }
@@ -69,7 +62,7 @@ namespace FE
                         }
                     }
 
-                    if (pJob || pWaitEntry)
+                    if (pJob || waitEntry)
                         break;
 
                     const uint32_t spinCount = std::min(1 << attempt, 32);
@@ -85,10 +78,10 @@ namespace FE
                 m_semaphore.Release(m_workers.size() - 1);
             }
 
-            if (pWaitEntry)
+            if (waitEntry)
             {
                 worker.m_prevFiber = worker.m_currentFiber;
-                worker.m_currentFiber = pWaitEntry->m_fiber;
+                worker.m_currentFiber = waitEntry->m_fiber;
                 transferParams = m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
                 CleanUpAfterSwitch(transferParams);
                 continue;
@@ -112,7 +105,7 @@ namespace FE
     }
 
 
-    void JobSystem::FiberProcImpl(Context::TransferParams transferParams)
+    void JobSystem::FiberProcImpl(const Context::TransferParams transferParams)
     {
         const uintptr_t jobSystemAddress = transferParams.m_userData & ((UINT64_C(1) << 48) - 1);
         reinterpret_cast<JobSystem*>(jobSystemAddress)->FiberProc(transferParams);
@@ -121,6 +114,7 @@ namespace FE
 
     JobSystem::JobSystem()
         : m_fiberPool(&FiberProcImpl)
+        , m_waitGroupPool("JobSystem/WaitGroupPool", sizeof(WaitGroup), 64 * 1024)
     {
         const int32_t workerCount = std::thread::hardware_concurrency() - 1;
 
@@ -128,7 +122,7 @@ namespace FE
         for (int32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
         {
             const auto threadName = Fmt::FixedFormat("Worker {}", workerIndex);
-            const auto threadFunc = [](uintptr_t workerIndex) {
+            const auto threadFunc = [](const uintptr_t workerIndex) {
                 fe_assert_cast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
                     ->ThreadProc(static_cast<uint32_t>(workerIndex));
             };
@@ -166,7 +160,7 @@ namespace FE
     }
 
 
-    void JobSystem::AddJob(Job* pJob, JobPriority priority)
+    void JobSystem::AddJob(Job* pJob, const JobPriority priority)
     {
         JobQueue& queue = m_jobQueues[festd::to_underlying(priority)];
 

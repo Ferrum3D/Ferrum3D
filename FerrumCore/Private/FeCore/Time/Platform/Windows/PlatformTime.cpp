@@ -30,7 +30,7 @@ namespace FE::Platform
     }
 
 
-    bool ConvertUTCToLocalTime(SystemTimeInfo source, SystemTimeInfo& result)
+    bool ConvertUTCToLocalTime(const SystemTimeInfo source, SystemTimeInfo& result)
     {
         SYSTEMTIME utcTime, localTime;
         ConvertDateTimeToSystemTime(source, utcTime);
@@ -42,7 +42,7 @@ namespace FE::Platform
     }
 
 
-    bool ConvertLocalTimeToUTC(SystemTimeInfo source, SystemTimeInfo& result)
+    bool ConvertLocalTimeToUTC(const SystemTimeInfo source, SystemTimeInfo& result)
     {
         SYSTEMTIME localTime, utcTime;
         ConvertDateTimeToSystemTime(source, localTime);

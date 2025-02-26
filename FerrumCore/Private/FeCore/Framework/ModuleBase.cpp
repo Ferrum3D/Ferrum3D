@@ -14,7 +14,7 @@ namespace FE
 
     void ModuleBase::Initialize()
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
         DI::ServiceRegistryBuilder builder{ m_pRegistry.Get() };
         RegisterServices(builder);
         builder.Build();

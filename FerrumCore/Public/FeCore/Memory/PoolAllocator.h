@@ -5,7 +5,7 @@ namespace FE::Memory
 {
     struct PoolAllocator : public std::pmr::memory_resource
     {
-        PoolAllocator(const char* name, size_t elementByteSize, uint32_t pageByteSize)
+        PoolAllocator(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
         {
             Initialize(name, elementByteSize, pageByteSize);
         }
@@ -15,7 +15,12 @@ namespace FE::Memory
             FreePages();
         }
 
-        void Initialize(const char* name, size_t elementByteSize, uint32_t pageByteSize)
+        PoolAllocator(const PoolAllocator&) = delete;
+        PoolAllocator& operator=(const PoolAllocator&) = delete;
+        PoolAllocator(PoolAllocator&&) = delete;
+        PoolAllocator& operator=(PoolAllocator&&) = delete;
+
+        void Initialize(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
         {
             FE_CORE_ASSERT(m_elementByteSize == 0, "Pool already initialized");
             FE_CORE_ASSERT(elementByteSize > 0, "");
@@ -42,7 +47,7 @@ namespace FE::Memory
             m_freeList = nullptr;
         }
 
-        void Reinitialize(size_t elementByteSize, uint32_t pageByteSize)
+        void Reinitialize(const size_t elementByteSize, const uint32_t pageByteSize)
         {
             Deinitialize();
             Initialize(m_name, elementByteSize, pageByteSize);

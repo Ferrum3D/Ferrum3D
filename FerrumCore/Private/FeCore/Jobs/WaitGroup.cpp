@@ -39,7 +39,7 @@ namespace FE
             for (uint32_t spin = 0; spin < spinCount; ++spin)
                 _mm_pause();
 
-            spinCount = std::min(spinCount << 1, 32u);
+            spinCount = Math::Min(spinCount << 1, 32u);
         }
 
         const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
@@ -49,15 +49,15 @@ namespace FE
             return;
         }
 
-        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
+        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+        JobSystem* jobSystem = fe_assert_cast<JobSystem*>(jobSystemInterface);
 
-        FiberWaitEntry* pEntry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        while (pEntry)
+        FiberWaitEntry* entry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
+        while (entry)
         {
-            FiberWaitEntry* pNext = static_cast<FiberWaitEntry*>(pEntry->mpNext);
-            pJobSystem->AddReadyFiber(pEntry);
-            pEntry = pNext;
+            FiberWaitEntry* pNext = static_cast<FiberWaitEntry*>(entry->mpNext);
+            jobSystem->AddReadyFiber(entry);
+            entry = pNext;
         }
 
         m_lockAndQueue.store(0, std::memory_order_release);
@@ -79,7 +79,7 @@ namespace FE
                 for (uint32_t spin = 0; spin < spinCount; ++spin)
                     _mm_pause();
 
-                spinCount = std::min(spinCount << 1, 32u);
+                spinCount = Math::Min(spinCount << 1, 32u);
                 continue;
             }
 
@@ -94,23 +94,23 @@ namespace FE
             return;
         }
 
-        FiberWaitEntry* pQueueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
+        FiberWaitEntry* queueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
+        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+        JobSystem* jobSystem = fe_assert_cast<JobSystem*>(jobSystemInterface);
 
-        const uint32_t workerIndex = pJobSystem->GetWorkerIndex();
-        JobSystem::Worker& worker = pJobSystem->m_workers[workerIndex];
+        const uint32_t workerIndex = jobSystem->GetWorkerIndex();
+        JobSystem::Worker& worker = jobSystem->m_workers[workerIndex];
 
         FiberWaitEntry waitEntry;
         waitEntry.mpPrev = nullptr;
         waitEntry.mpNext = nullptr;
         waitEntry.m_priority = worker.m_priority;
         waitEntry.m_fiber = worker.m_currentFiber;
-        if (pQueueHead)
+        if (queueHead)
         {
             // Queue tail is stored in mpPrev to reduce the sizeof(FiberWaitEntry)
-            pQueueHead->mpPrev->mpNext = &waitEntry;
-            pQueueHead->mpPrev = &waitEntry;
+            queueHead->mpPrev->mpNext = &waitEntry;
+            queueHead->mpPrev = &waitEntry;
             m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
         }
         else
@@ -119,6 +119,6 @@ namespace FE
             m_lockAndQueue.store(reinterpret_cast<uint64_t>(&waitEntry), std::memory_order_release);
         }
 
-        pJobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);
+        jobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);
     }
 } // namespace FE

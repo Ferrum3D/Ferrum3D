@@ -1,5 +1,4 @@
-﻿#include <Graphics/RHI/Vulkan/Base/Viewport.h>
-#include <Graphics/RHI/Vulkan/Device.h>
+﻿#include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/GraphicsPipeline.h>
 #include <Graphics/RHI/Vulkan/ImageFormat.h>
 #include <Graphics/RHI/Vulkan/PipelineStates.h>

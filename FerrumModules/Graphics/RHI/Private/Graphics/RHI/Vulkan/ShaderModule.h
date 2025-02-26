@@ -53,7 +53,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI_Class(ShaderModule, "823A44B8-72BD-4F19-BCFA-32D077B06B3A");
 
-        ShaderModule(RHI::Device* device);
+        ShaderModule(RHI::Device* device, const RHI::ShaderModuleDesc& desc);
         ~ShaderModule() override;
 
         [[nodiscard]] VkShaderModule GetNative() const
@@ -61,11 +61,11 @@ namespace FE::Graphics::Vulkan
             return m_nativeModule;
         }
 
-        RHI::ResultCode Init(const RHI::ShaderModuleDesc& desc) override;
+        void InitInternal(festd::span<const uint8_t> byteCode);
 
         [[nodiscard]] const RHI::ShaderModuleDesc& GetDesc() const override;
 
-        VkPipelineShaderStageCreateInfo GetStageCI();
+        VkPipelineShaderStageCreateInfo GetStageCI() const;
         RHI::ShaderReflection* GetReflection() override;
 
     private:

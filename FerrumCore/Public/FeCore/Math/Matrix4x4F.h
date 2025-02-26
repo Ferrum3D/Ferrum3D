@@ -341,7 +341,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Matrix4x4F lhs, Matrix4x4F rhs,
-                                                                               float epsilon = Constants::Epsilon)
+                                                                               float epsilon = Constants::kEpsilon)
         {
             const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
             const __m128 epsilonBroadcast = _mm_set1_ps(epsilon);

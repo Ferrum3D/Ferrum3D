@@ -56,6 +56,16 @@ namespace FE::Env
 
         [[nodiscard]] const Record* GetRecord() const;
 
+        [[nodiscard]] uint32_t GetHandle() const
+        {
+            return m_handle;
+        }
+
+        [[nodiscard]] uint64_t GetHash() const
+        {
+            return GetRecord()->m_hash;
+        }
+
         [[nodiscard]] bool Valid() const
         {
             return m_handle != kInvalidIndex;
@@ -106,17 +116,21 @@ namespace FE::Env
             return rhs != lhs;
         }
 
+        static const Name kEmpty;
+
     private:
         uint32_t m_handle = kInvalidIndex;
     };
+
+    inline const Name Name::kEmpty;
 
 
     //! @brief Create a variable by unique name.
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! @tparam T   - Type of variable to create.
-    //! @param name - Unique name of variable to create.
+    //! @tparam T    Type of variable to create.
+    //! @param name Unique name of variable to create.
     //!
     //! @return The created variable.
     template<class T, class... Args>
@@ -126,8 +140,7 @@ namespace FE::Env
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! @tparam T    - Type of variable to create.
-    //! @param value - Value to initialize the variable with.
+    //! @tparam T     Type of variable to create.
     //!
     //! @return The created variable.
     template<class T, class... Args>
@@ -137,8 +150,8 @@ namespace FE::Env
     //!
     //! Creates a global variable by unique name, but doesn't initialize it.
     //!
-    //! @tparam T   - Type of variable to allocate.
-    //! @param name - Unique name of variable to allocate.
+    //! @tparam T    Type of variable to allocate.
+    //! @param name Unique name of variable to allocate.
     //!
     //! @return The allocated variable.
     template<class T>
@@ -148,8 +161,8 @@ namespace FE::Env
     //!
     //! Variable must be created by name before calling this function. Returns null if variable was not found.
     //!
-    //! @tparam T   - Type of variable to find.
-    //! @param name - Unique name of variable to find.
+    //! @tparam T    Type of variable to find.
+    //! @param name Unique name of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariable(Name name);
 
@@ -157,13 +170,11 @@ namespace FE::Env
     //!
     //! Variable must be created by type before calling this function. Returns null if variable was not found.
     //!
-    //! @tparam T - Type of variable to find.
+    //! @tparam T  Type of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariableByType();
 
     //! @brief Create global environment.
-    //!
-    //! @param allocator - Custom allocator.
     void CreateEnvironment();
 
     //! @brief Get global environment instance.
@@ -178,7 +189,7 @@ namespace FE::Env
     //! This function will most likely be called from another module that already have an environment attached
     //! or created.
     //!
-    //! @param instance - Instance of global environment to attach.
+    //! @param instance Instance of global environment to attach.
     void AttachEnvironment(Internal::IEnvironment& instance);
 
     //! @brief Detach global environment.
@@ -249,7 +260,7 @@ namespace FE::Env
         public:
             //! @brief Create uninitialized global variable storage.
             //!
-            //! @param name - Unique name of global variable.
+            //! @param name Unique name of global variable.
             GlobalVariableStorage(Name name)
                 : m_name(name)
                 , m_refCount(0)
@@ -259,7 +270,7 @@ namespace FE::Env
 
             //! @brief Call variable's constructor.
             //!
-            //! @param args - Arguments to call the constructor with.
+            //! @param args Arguments to call the constructor with.
             template<class... TArgs>
             void Construct(TArgs&&... args)
             {
@@ -320,7 +331,7 @@ namespace FE::Env
 
         //! @brief Allocate GlobalVariableStorage for a global variable.
         //!
-        //! @param name - The name of the variable.
+        //! @param name The name of the variable.
         //!
         //! @return The allocated GlobalVariableStorage.
         template<class T>
@@ -446,7 +457,7 @@ namespace FE::Env
 
         //! @brief Swap contents of two variables.
         //!
-        //! @param other - The variable to swap the content with.
+        //! @param other The variable to swap the content with.
         void Swap(GlobalVariable& other)
         {
             auto* t = other.m_storage;

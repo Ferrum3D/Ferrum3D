@@ -18,8 +18,8 @@ namespace FE::Graphics::RHI
         void PollEvents() override;
         bool CloseRequested() override;
         void* GetNativeHandle() override;
-        Viewport CreateViewport() override;
-        Scissor CreateScissor() override;
+        RectF CreateViewport() override;
+        RectInt CreateScissor() override;
 
     private:
         GLFWwindow* m_window = nullptr;

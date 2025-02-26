@@ -306,7 +306,7 @@ namespace FE
                 pAllocator = std::pmr::get_default_resource();
 
             festd::pmr::vector<StringSlice> result{ pAllocator };
-            Split(result, UINT32_MAX, c);
+            Split(result, Constants::kMaxU32, c);
             return result;
         }
 
@@ -411,6 +411,16 @@ namespace FE
         [[nodiscard]] Iterator end() const noexcept
         {
             return Iterator(Data() + Size());
+        }
+
+        [[nodiscard]] static StringSlice Copy(std::pmr::memory_resource* allocator, const char* src, const uint32_t srcSize)
+        {
+            return { Str::Copy(allocator, src, srcSize), srcSize };
+        }
+
+        [[nodiscard]] static StringSlice Copy(std::pmr::memory_resource* allocator, const StringSlice src)
+        {
+            return Copy(allocator, src.Data(), src.Size());
         }
     };
 

@@ -31,7 +31,7 @@ namespace FE::Graphics
             compilerArgs.m_entryPoint = "main";
             compilerArgs.m_sourceCode = m_sourceCode;
             compilerArgs.m_fullPath = m_path;
-            compilerArgs.m_version = RHI::HLSLShaderVersion{ 6, 1 };
+            compilerArgs.m_version = RHI::HLSLShaderVersion::kDefault;
 
             const StringSlice pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
             if (pathNoExt.EndsWith(".ps"))
@@ -75,19 +75,19 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        FE_Assert(result.pController->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
+        FE_Assert(result.m_controller->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
 
         CompilerJob* job = DI::New<CompilerJob>(&m_compilerJobPool).value();
-        job->m_path = result.pRequest->Path;
-        job->m_sourceCode = { reinterpret_cast<const char*>(result.pRequest->pReadBuffer), result.pRequest->ReadBufferSize };
-        job->m_storage = static_cast<ShaderAssetStorage*>(result.pRequest->pUserData);
+        job->m_path = result.m_request->m_path;
+        job->m_sourceCode = { reinterpret_cast<const char*>(result.m_request->m_readBuffer), result.m_request->m_readBufferSize };
+        job->m_storage = static_cast<ShaderAssetStorage*>(result.m_request->m_userData);
         job->m_loader = this;
         job->Schedule(m_jobSystem);
     }
 
 
     ShaderAssetLoader::ShaderAssetLoader(IO::IStreamFactory* pStreamFactory, IO::IAsyncStreamIO* pAsyncIO, IJobSystem* pJobSystem)
-        : m_compilerJobPool("ShaderAssetLoader/CompilerJob", sizeof(CompilerJob), 64 * 1024)
+        : m_compilerJobPool("ShaderAssetLoader/CompilerJob", sizeof(CompilerJob))
         , m_streamFactory(pStreamFactory)
         , m_asyncStreamIO(pAsyncIO)
         , m_jobSystem(pJobSystem)
@@ -133,14 +133,14 @@ namespace FE::Graphics
                 continue;
 
             IO::AsyncReadRequest request;
-            request.Path = path;
-            request.pCallback = this;
-            request.Priority = IO::Priority::kHigh;
-            request.pUserData = storage;
+            request.m_path = path;
+            request.m_callback = this;
+            request.m_priority = IO::Priority::kHigh;
+            request.m_userData = storage;
             m_asyncStreamIO->ReadAsync(request);
             return;
         }
 
-        Trace::ReportCritical("File not found");
+        FE_Assert(false, "File not found");
     }
 } // namespace FE::Graphics

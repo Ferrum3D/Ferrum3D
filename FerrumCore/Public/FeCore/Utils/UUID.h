@@ -78,7 +78,7 @@ namespace FE
         template<FormatFlags TFormat>
         static UUID FE_VECTORCALL Parse(festd::ascii_view string);
 
-        FE_FORCE_INLINE static int32_t FE_VECTORCALL Compare(UUID lhs, UUID rhs)
+        FE_FORCE_INLINE static int32_t FE_VECTORCALL Compare(const UUID lhs, const UUID rhs)
         {
             const __m128i kShuffle = _mm_setr_epi8(3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10);
             const __m128i kRotateSigned = _mm_set1_epi8(static_cast<int8_t>(128));

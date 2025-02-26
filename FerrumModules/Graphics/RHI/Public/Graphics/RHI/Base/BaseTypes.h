@@ -1,7 +1,7 @@
 ﻿#pragma once
+#include <FeCore/Math/Vector3UInt.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/Format.h>
-#include <Graphics/RHI/Base/Limits.h>
 
 namespace FE::Graphics::RHI
 {
@@ -70,6 +70,15 @@ namespace FE::Graphics::RHI
     };
 
 
+    enum class HLSLShaderVersion : uint32_t
+    {
+        k6_1 = 6 << 16 | 0,
+
+        kDefault = k6_1,
+        kUndefined = Constants::kMaxU32,
+    };
+
+
     enum class ShaderSemanticName : uint32_t
     {
         kPosition,
@@ -126,90 +135,8 @@ namespace FE::Graphics::RHI
     }
 
 
-    struct Offset final
+    inline uint32_t CalculateMipCount(const Vector3UInt size)
     {
-        int32_t x : Limits::Image::kMaxMipCount + 1;
-        int32_t y : Limits::Image::kMaxMipCount + 1;
-        int32_t z : Limits::Image::kMaxMipCount + 1;
-
-        constexpr Offset()
-            : x(0)
-            , y(0)
-            , z(0)
-        {
-        }
-
-        constexpr explicit Offset(const int32_t x)
-            : x(x)
-            , y(0)
-            , z(0)
-        {
-        }
-
-        constexpr Offset(const int32_t x, const int32_t y)
-            : x(x)
-            , y(y)
-            , z(0)
-        {
-        }
-
-        constexpr Offset(const int32_t x, const int32_t y, const int32_t z)
-            : x(x)
-            , y(y)
-            , z(z)
-        {
-        }
-    };
-
-
-    struct Size final
-    {
-        uint32_t width : Limits::Image::kMaxMipCount + 1;
-        uint32_t height : Limits::Image::kMaxMipCount + 1;
-        uint32_t depth : Limits::Image::kMaxMipCount + 1;
-
-        constexpr Size()
-            : width(0)
-            , height(0)
-            , depth(1)
-        {
-        }
-
-        constexpr explicit Size(const uint32_t w)
-            : width(w)
-            , height(0)
-            , depth(1)
-        {
-        }
-
-        constexpr Size(const uint32_t w, const uint32_t h)
-            : width(w)
-            , height(h)
-            , depth(1)
-        {
-        }
-
-        constexpr Size(const uint32_t w, const uint32_t h, const uint32_t d)
-            : width(w)
-            , height(h)
-            , depth(d)
-        {
-        }
-    };
-
-
-    inline uint32_t CalculateMipCount(const Size size)
-    {
-        return 1 + Math::FloorLog2(Math::Max(size.width, Math::Max(size.height, size.depth)));
+        return 1 + Math::FloorLog2(Math::Max(size.x, Math::Max(size.y, size.z)));
     }
 } // namespace FE::Graphics::RHI
-
-
-template<>
-struct eastl::hash<FE::Graphics::RHI::Size>
-{
-    size_t operator()(const FE::Graphics::RHI::Size& size) const noexcept
-    {
-        return FE::HashAll(size.width, size.height, size.depth);
-    }
-};

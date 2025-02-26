@@ -91,7 +91,7 @@ namespace FE
 
         //! @brief Create a SparseSet with initial capacity.
         //!
-        //! @param capacity - The capacity to initialize the SparseSet with.
+        //! @param capacity The capacity to initialize the SparseSet with.
         inline explicit SparseSet(uint32_t capacity)
         {
             m_Dense.reserve(capacity);
@@ -116,8 +116,8 @@ namespace FE
 
         //! @brief Add a value into the SparseSet.
         //!
-        //! @param key   - The key to associate the value with.
-        //! @param value - The value to add.
+        //! @param key   The key to associate the value with.
+        //! @param value The value to add.
         //!
         //! @return True if the value was new, False if it was updated.
         inline bool Insert(const TKey& key, const TValue& value)
@@ -127,7 +127,7 @@ namespace FE
 
         //! @brief Add a value into the SparseSet.
         //!
-        //! @param key - The key to associate the value with.
+        //! @param key The key to associate the value with.
         //!
         //! @return True if the value was new, False if it was updated.
         template<class... Args>
@@ -151,7 +151,7 @@ namespace FE
 
         //! @brief Check if the key is present.
         //!
-        //! @param key - The key to check for.
+        //! @param key The key to check for.
         //!
         //! @return True if the was found.
         [[nodiscard]] inline bool Contains(const TKey& key) const
@@ -161,8 +161,8 @@ namespace FE
 
         //! @brief Try to get value by key.
         //!
-        //! @param key    - The key to get.
-        //! @param [out] value - The value that was found.
+        //! @param key   The key to get.
+        //! @param value The value that was found.
         //!
         //! @return True if the key was found.
         [[nodiscard]] inline bool TryGetAt(const TKey& key, TValue& value)
@@ -179,7 +179,7 @@ namespace FE
 
         //! @brief Remove a value from the SparseSet by key.
         //!
-        //! @param key - The key to remove.
+        //! @param key The key to remove.
         //!
         //! @return True if the key was found and removed.
         inline bool Remove(const TKey& key)
@@ -200,7 +200,7 @@ namespace FE
 
         //! @brief Change capacity of the SparseSet.
         //!
-        //! @param capacity - The new capacity.
+        //! @param capacity The new capacity.
         inline void Reserve(uint32_t capacity)
         {
             if (capacity <= Capacity())

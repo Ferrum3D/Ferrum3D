@@ -336,7 +336,7 @@ TEST(SetBitsInRange, SingleWord)
     words[0] = 0;
 
     SetAllBitsInRange(words, 0, kBitSetBitsPerWord);
-    EXPECT_EQ(words[0], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[0], Constants::kMaxValue<BitSetWord>);
 }
 
 TEST(SetBitsInRange, SingleWordWithOffset)
@@ -377,7 +377,7 @@ TEST(SetBitsInRange, SingleWordWithOffset)
 
     SetAllBitsInRange(words, kBitSetBitsPerWord + 0, kBitSetBitsPerWord);
     EXPECT_EQ(words[0], 0);
-    EXPECT_EQ(words[1], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[1], Constants::kMaxValue<BitSetWord>);
 }
 
 TEST(SetBitsInRange, AcrossTwoWords)
@@ -415,7 +415,7 @@ TEST(SetBitsInRange, AcrossThreeWords)
 
     SetAllBitsInRange(words, kBitSetBitsPerWord - 1, 2 + kBitSetBitsPerWord);
     EXPECT_EQ(words[0], static_cast<BitSetWord>(1) << (kBitSetBitsPerWord - 1));
-    EXPECT_EQ(words[1], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[1], Constants::kMaxValue<BitSetWord>);
     EXPECT_EQ(words[2], 1);
     words[0] = 0;
     words[1] = 0;
@@ -423,7 +423,7 @@ TEST(SetBitsInRange, AcrossThreeWords)
 
     SetAllBitsInRange(words, kBitSetBitsPerWord - 2, 4 + kBitSetBitsPerWord);
     EXPECT_EQ(words[0], static_cast<BitSetWord>(3) << (kBitSetBitsPerWord - 2));
-    EXPECT_EQ(words[1], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[1], Constants::kMaxValue<BitSetWord>);
     EXPECT_EQ(words[2], 3);
 }
 
@@ -442,7 +442,7 @@ TEST(SetBitsInRange, AcrossThreeWordsWithOffset)
     SetAllBitsInRange(words, 2 * kBitSetBitsPerWord - 1, 2 + kBitSetBitsPerWord);
     EXPECT_EQ(words[0], 0xdeadbeefdeadbeef);
     EXPECT_EQ(words[1], static_cast<BitSetWord>(1) << (kBitSetBitsPerWord - 1));
-    EXPECT_EQ(words[2], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[2], Constants::kMaxValue<BitSetWord>);
     EXPECT_EQ(words[3], 1);
     words[1] = 0;
     words[2] = 0;
@@ -451,7 +451,7 @@ TEST(SetBitsInRange, AcrossThreeWordsWithOffset)
     SetAllBitsInRange(words, 2 * kBitSetBitsPerWord - 2, 4 + kBitSetBitsPerWord);
     EXPECT_EQ(words[0], 0xdeadbeefdeadbeef);
     EXPECT_EQ(words[1], static_cast<BitSetWord>(3) << (kBitSetBitsPerWord - 2));
-    EXPECT_EQ(words[2], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[2], Constants::kMaxValue<BitSetWord>);
     EXPECT_EQ(words[3], 3);
 }
 
@@ -469,25 +469,25 @@ TEST(ResetBitsInRange, SingleWord)
     const festd::span words{ memory, 1 };
 
     ResetAllBitsInRange(words, 0, 0);
-    EXPECT_EQ(words[0], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[0], Constants::kMaxValue<BitSetWord>);
     ResetAllBitsInRange(words, 5, 0);
-    EXPECT_EQ(words[0], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[0], Constants::kMaxValue<BitSetWord>);
     ResetAllBitsInRange(words, kBitSetBitsPerWord, 0);
-    EXPECT_EQ(words[0], std::numeric_limits<BitSetWord>::max());
+    EXPECT_EQ(words[0], Constants::kMaxValue<BitSetWord>);
 
     ResetAllBitsInRange(words, 5, 1);
     EXPECT_EQ(words[0], ~static_cast<BitSetWord>(1 << 5));
     ResetAllBitsInRange(words, 6, 1);
     EXPECT_EQ(words[0], ~static_cast<BitSetWord>(3 << 5));
-    words[0] = std::numeric_limits<BitSetWord>::max();
+    words[0] = Constants::kMaxValue<BitSetWord>;
 
     ResetAllBitsInRange(words, 0, 1);
     EXPECT_EQ(words[0], ~static_cast<BitSetWord>(1));
-    words[0] = std::numeric_limits<BitSetWord>::max();
+    words[0] = Constants::kMaxValue<BitSetWord>;
 
     ResetAllBitsInRange(words, kBitSetBitsPerWord - 1, 1);
-    EXPECT_EQ(words[0], std::numeric_limits<BitSetWord>::max() >> 1);
-    words[0] = std::numeric_limits<BitSetWord>::max();
+    EXPECT_EQ(words[0], Constants::kMaxValue<BitSetWord> >> 1);
+    words[0] = Constants::kMaxValue<BitSetWord>;
 
     ResetAllBitsInRange(words, 0, kBitSetBitsPerWord);
     EXPECT_EQ(words[0], 0);
@@ -512,13 +512,13 @@ TEST(ResetBitsInRange, AcrossThreeWordsWithOffset)
     EXPECT_EQ(words[1], ~(static_cast<BitSetWord>(1) << (kBitSetBitsPerWord - 1)));
     EXPECT_EQ(words[2], 0);
     EXPECT_EQ(words[3], ~static_cast<BitSetWord>(1));
-    words[1] = std::numeric_limits<BitSetWord>::max();
-    words[2] = std::numeric_limits<BitSetWord>::max();
-    words[3] = std::numeric_limits<BitSetWord>::max();
+    words[1] = Constants::kMaxValue<BitSetWord>;
+    words[2] = Constants::kMaxValue<BitSetWord>;
+    words[3] = Constants::kMaxValue<BitSetWord>;
 
     ResetAllBitsInRange(words, 2 * kBitSetBitsPerWord - 2, 4 + kBitSetBitsPerWord);
     EXPECT_EQ(words[0], 0xdeadbeefdeadbeef);
-    EXPECT_EQ(words[1], std::numeric_limits<BitSetWord>::max() >> 2);
+    EXPECT_EQ(words[1], Constants::kMaxValue<BitSetWord> >> 2);
     EXPECT_EQ(words[2], 0);
     EXPECT_EQ(words[3], ~static_cast<BitSetWord>(3));
 }

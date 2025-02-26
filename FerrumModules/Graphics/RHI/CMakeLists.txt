@@ -1,7 +1,6 @@
 ﻿set(PUBLIC_HEADERS
     Public/Graphics/RHI/Base/BaseTypes.h
     Public/Graphics/RHI/Base/Limits.h
-    Public/Graphics/RHI/Base/Viewport.h
 
     Public/Graphics/RHI/FrameGraph/Base.h
     Public/Graphics/RHI/FrameGraph/Blackboard.h
@@ -35,6 +34,7 @@
     Public/Graphics/RHI/Sampler.h
     Public/Graphics/RHI/ShaderCompiler.h
     Public/Graphics/RHI/ShaderCompilerDXC.h
+    Public/Graphics/RHI/ShaderLibrary.h
     Public/Graphics/RHI/ShaderModule.h
     Public/Graphics/RHI/ShaderReflection.h
     Public/Graphics/RHI/ShaderResourceGroup.h
@@ -105,6 +105,8 @@ set(VULKAN_SOURCES
     Private/Graphics/RHI/Vulkan/ResourceState.h
     Private/Graphics/RHI/Vulkan/Sampler.cpp
     Private/Graphics/RHI/Vulkan/Sampler.h
+    Private/Graphics/RHI/Vulkan/ShaderLibrary.cpp
+    Private/Graphics/RHI/Vulkan/ShaderLibrary.h
     Private/Graphics/RHI/Vulkan/ShaderModule.cpp
     Private/Graphics/RHI/Vulkan/ShaderModule.h
     Private/Graphics/RHI/Vulkan/ShaderReflection.cpp

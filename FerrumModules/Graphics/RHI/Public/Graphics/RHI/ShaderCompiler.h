@@ -1,27 +1,11 @@
 ﻿#pragma once
 #include <FeCore/Containers/ByteBuffer.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Strings/String.h>
 #include <Graphics/RHI/Base/BaseTypes.h>
 #include <Graphics/RHI/ShaderStage.h>
 
 namespace FE::Graphics::RHI
 {
-    struct HLSLShaderVersion final
-    {
-        uint32_t m_major = 6;
-        uint32_t m_minor = 0;
-
-        HLSLShaderVersion() = default;
-
-        HLSLShaderVersion(const uint32_t major, const uint32_t minor)
-            : m_major(major)
-            , m_minor(minor)
-        {
-        }
-    };
-
-
     struct ShaderCompilerArgs final
     {
         HLSLShaderVersion m_version;

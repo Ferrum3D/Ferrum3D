@@ -66,7 +66,7 @@ namespace FE
         inline void SetLSize(uint32_t size) noexcept
         {
             m_Data.Long.Size = size;
-            m_Data.Long.Indicator = std::numeric_limits<uint64_t>::max();
+            m_Data.Long.Indicator = Constants::kMaxU64;
         }
 
         inline void SetSize(uint32_t size) noexcept

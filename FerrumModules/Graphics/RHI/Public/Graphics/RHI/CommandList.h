@@ -1,6 +1,8 @@
 ﻿#pragma once
+#include <FeCore/Math/Aabb.h>
 #include <FeCore/Math/Colors.h>
-#include <Graphics/RHI/Base/Viewport.h>
+#include <FeCore/Math/Rect.h>
+#include <FeCore/Math/Vector3UInt.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/ResourceState.h>
 
@@ -59,20 +61,20 @@ namespace FE::Graphics::RHI
 
     struct BufferImageCopyRegion final
     {
-        Offset m_imageOffset;
-        Size m_imageSize;
+        PackedVector3Int m_imageOffset{ 0, 0, 0 };
+        PackedVector3UInt m_imageSize{ 0, 0, 0 };
         ImageSubresource m_imageSubresource;
         uint32_t m_bufferOffset = 0;
 
         BufferImageCopyRegion() = default;
 
-        explicit BufferImageCopyRegion(const Size size)
+        explicit BufferImageCopyRegion(const Vector3UInt size)
             : m_imageSize(size)
         {
         }
 
-        BufferImageCopyRegion(const uint32_t buffetOffset, const ImageSubresource imageSubresource, const Offset imageOffset,
-                              const Size imageSize)
+        BufferImageCopyRegion(const uint32_t buffetOffset, const ImageSubresource imageSubresource, const Vector3Int imageOffset,
+                              const Vector3UInt imageSize)
             : m_imageOffset(imageOffset)
             , m_imageSize(imageSize)
             , m_imageSubresource(imageSubresource)
@@ -86,8 +88,8 @@ namespace FE::Graphics::RHI
     {
         ImageSubresource m_source;
         ImageSubresource m_dest;
-        Offset m_sourceBounds[2];
-        Offset m_destBounds[2];
+        PackedVector3Int m_sourceBounds[2];
+        PackedVector3Int m_destBounds[2];
     };
 
 
@@ -121,8 +123,8 @@ namespace FE::Graphics::RHI
         virtual void Begin() = 0;
         virtual void End() = 0;
 
-        virtual void SetViewport(Viewport viewport) = 0;
-        virtual void SetScissor(Scissor scissor) = 0;
+        virtual void SetViewport(const Aabb& viewport) = 0;
+        virtual void SetScissor(RectInt scissor) = 0;
 
         virtual void ResourceTransitionBarriers(festd::span<const ImageBarrierDesc> imageBarriers,
                                                 festd::span<const BufferBarrierDesc> bufferBarriers) = 0;

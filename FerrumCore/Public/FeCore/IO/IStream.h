@@ -25,8 +25,8 @@ namespace FE::IO
 
         //! @brief Add offset to current stream position.
         //!
-        //! @param offset   - Offset to add to current position.
-        //! @param seekMode - Seek mode to use.
+        //! @param offset   Offset to add to current position.
+        //! @param seekMode Seek mode to use.
         //!
         //! @return Success or error code.
         virtual ResultCode Seek(intptr_t offset, SeekMode seekMode) = 0;
@@ -44,22 +44,22 @@ namespace FE::IO
 
         //! @brief Read contents of stream to a pre-allocated buffer.
         //!
-        //! @param buffer - The buffer to read to.
+        //! @param buffer The buffer to read to.
         //!
         //! @return Number of bytes actually read.
         virtual size_t ReadToBuffer(festd::span<std::byte> buffer) = 0;
 
         //! @brief Write contents of buffer to the stream.
         //!
-        //! @param buffer - The buffer to write from.
+        //! @param buffer The buffer to write from.
         //!
         //! @return Number of bytes actually written.
         virtual size_t WriteFromBuffer(festd::span<const std::byte> buffer) = 0;
 
         //! @brief Write to this stream from other stream.
         //!
-        //! @param stream - Pointer to stream to write from.
-        //! @param size   - Size in bytes of data to write.
+        //! @param stream Pointer to stream to write from.
+        //! @param size   Size in bytes of data to write.
         //!
         //! @return Number of bytes actually written.
         virtual size_t WriteFromStream(IStream* stream, size_t size) = 0;

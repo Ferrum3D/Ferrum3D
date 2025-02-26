@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Math/Vector3.h>
-#include <FeCore/SIMD/CommonSIMD.h>
+#include <FeCore/SIMD/Utils.h>
 
 namespace FE
 {
@@ -142,29 +142,16 @@ namespace FE
 
     namespace Math
     {
-        namespace Internal
-        {
-            FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL Dot4Impl(const __m128 lhs, const __m128 rhs)
-            {
-                const __m128 mul = _mm_mul_ps(lhs, rhs);
-                const __m128 t0 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(0, 0, 3, 2));
-                const __m128 t1 = _mm_add_ps(mul, t0);
-                const __m128 t2 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(0, 0, 0, 1));
-                return _mm_add_ps(t1, t2);
-            }
-        } // namespace Internal
-
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL DotBroadcast(const Vector4F lhs, const Vector4F rhs)
         {
-            const __m128 result = Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector);
+            const __m128 result = SIMD::DotProduct(lhs.m_simdVector, rhs.m_simdVector);
             return Vector4F{ _mm_shuffle_ps(result, result, _MM_SHUFFLE(0, 0, 0, 0)) };
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Vector4F lhs, const Vector4F rhs)
         {
-            return _mm_cvtss_f32(Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector));
+            return _mm_cvtss_f32(SIMD::DotProduct(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
@@ -259,7 +246,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(const Vector4F vec)
         {
-            return _mm_cvtss_f32(Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector));
+            return _mm_cvtss_f32(SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector));
         }
 
 
@@ -271,27 +258,27 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(const Vector4F vec)
         {
-            return _mm_cvtss_f32(_mm_sqrt_ss(Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector)));
+            return _mm_cvtss_f32(_mm_sqrt_ss(SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector)));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(const Vector4F vec)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector);
             return _mm_cvtss_f32(_mm_div_ss(_mm_set1_ps(1.0f), _mm_sqrt_ss(lengthSq)));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(const Vector4F vec)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector);
             return _mm_cvtss_f32(_mm_rsqrt_ss(lengthSq));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL Normalize(const Vector4F vec)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Vector4F{ _mm_div_ps(vec.m_simdVector, _mm_sqrt_ps(broadcast)) };
         }
@@ -299,7 +286,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL NormalizeEstimate(const Vector4F vec)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(vec.m_simdVector, vec.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(vec.m_simdVector, vec.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Vector4F{ _mm_mul_ps(vec.m_simdVector, _mm_rsqrt_ps(broadcast)) };
         }
@@ -354,7 +341,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Vector4F lhs, const Vector4F rhs,
-                                                                               const float epsilon = Constants::Epsilon)
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             const __m128 distance = Abs(lhs - rhs).m_simdVector;
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));

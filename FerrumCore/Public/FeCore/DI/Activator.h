@@ -13,7 +13,7 @@ namespace FE::DI
     {
         ResultCode Invoke(IServiceProvider* pServiceProvider, Memory::RefCountedObjectBase** result) const
         {
-            ZoneScoped;
+            FE_PROFILER_FUNCTION();
             return m_function(pServiceProvider, result);
         }
 

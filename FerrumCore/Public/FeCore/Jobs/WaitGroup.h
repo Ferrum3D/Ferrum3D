@@ -20,15 +20,20 @@ namespace FE
         {
             const uint32_t refCount = --m_refCount;
             if (refCount == 0)
-                Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->FreeSmallBlock(this, sizeof(WaitGroup));
+            {
+                IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+                std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
+                allocator->deallocate(this, sizeof(WaitGroup), alignof(WaitGroup));
+            }
 
             return refCount;
         }
 
         static WaitGroup* Create()
         {
-            void* ptr = Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AllocateSmallBlock(sizeof(WaitGroup));
-            return new (ptr) WaitGroup;
+            IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+            std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
+            return new (allocator->allocate(sizeof(WaitGroup), alignof(WaitGroup))) WaitGroup;
         }
 
         void Add(int32_t value);
@@ -47,7 +52,7 @@ namespace FE
     };
 
 
-    inline void WaitGroup::Add(int32_t value)
+    inline void WaitGroup::Add(const int32_t value)
     {
         FE_CORE_ASSERT(value > 0, "Invalid value");
         m_counter.fetch_add(value);

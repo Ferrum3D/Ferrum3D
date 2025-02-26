@@ -36,16 +36,16 @@ namespace FE::Graphics::RHI
     }
 
 
-    Viewport Window::CreateViewport()
+    RectF Window::CreateViewport()
     {
         int width, height;
         glfwGetWindowSize(m_window, &width, &height);
-        return { 0, static_cast<float>(width), 0, static_cast<float>(height) };
+        return RectF{ 0, 0, static_cast<float>(height), static_cast<float>(width) };
     }
 
 
-    Scissor Window::CreateScissor()
+    RectInt Window::CreateScissor()
     {
-        return Scissor(CreateViewport());
+        return RectInt(CreateViewport());
     }
 } // namespace FE::Graphics::RHI

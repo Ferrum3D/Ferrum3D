@@ -53,20 +53,20 @@ namespace FE
 
         //! @brief Decompose TimeValue into SystemTimeInfo.
         //!
-        //! @param time - The time value to decompose.
+        //! @param time The time value to decompose.
         [[nodiscard]] SystemTimeInfo DeconstructTime(TimeValue time);
 
 
         //! @brief Create TimeValue from SystemTimeInfo.
         //!
-        //! @param dateTime - SystemTimeInfo to compose from.
+        //! @param dateTime SystemTimeInfo to compose from.
         [[nodiscard]] TimeValue ConstructTime(SystemTimeInfo dateTime);
 
 
         //! @brief Convert date and time in UTC format to timezone specific local format.
         //!
-        //! @param source - SystemTimeInfo to convert from.
-        //! @param result - SystemTimeInfo to write the result to.
+        //! @param source SystemTimeInfo to convert from.
+        //! @param result SystemTimeInfo to write the result to.
         //!
         //! @return True if the operation was successful.
         bool ConvertUTCToLocalTime(SystemTimeInfo source, SystemTimeInfo& result);
@@ -74,8 +74,8 @@ namespace FE
 
         //! @brief Convert timezone specific local date and time to UTC format.
         //!
-        //! @param source - SystemTimeInfo to convert from.
-        //! @param result - SystemTimeInfo to write the result to.
+        //! @param source SystemTimeInfo to convert from.
+        //! @param result SystemTimeInfo to write the result to.
         //!
         //! @return True if the operation was successful.
         bool ConvertLocalTimeToUTC(SystemTimeInfo source, SystemTimeInfo& result);

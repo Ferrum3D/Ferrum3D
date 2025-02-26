@@ -43,7 +43,7 @@ namespace FE::Graphics::Vulkan
         waitInfo.semaphoreCount = 1;
         waitInfo.pSemaphores = &m_timelineSemaphore;
         waitInfo.pValues = &value;
-        FE_VK_ASSERT(vkWaitSemaphores(NativeCast(m_device), &waitInfo, UINT64_MAX));
+        FE_VK_ASSERT(vkWaitSemaphores(NativeCast(m_device), &waitInfo, Constants::kMaxU64));
     }
 
 

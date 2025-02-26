@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/Job.h>
+#include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Parallel/Fiber.h>
 #include <FeCore/Parallel/Semaphore.h>
 #include <FeCore/Parallel/Thread.h>
@@ -29,10 +30,9 @@ namespace FE
     private:
         friend struct WaitGroup;
 
-        void* AllocateSmallBlock(size_t byteSize) override;
-        void FreeSmallBlock(void* ptr, size_t byteSize) override;
+        std::pmr::memory_resource* GetWaitGroupAllocator() override;
 
-        void SwitchFromWaitingFiber(uint32_t workerIndex, FiberWaitEntry& entry)
+        void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
         {
             Worker& worker = m_workers[workerIndex];
             worker.m_lastWaitEntry = &entry;
@@ -51,7 +51,7 @@ namespace FE
             queue.m_readyFibersQueue.push_back(*pEntry);
         }
 
-        void CleanUpAfterSwitch(Context::TransferParams transferParams)
+        void CleanUpAfterSwitch(const Context::TransferParams transferParams)
         {
             const uint32_t workerIndex = GetWorkerIndex();
             Worker& worker = m_workers[workerIndex];
@@ -92,6 +92,7 @@ namespace FE
         JobQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)];
         festd::fixed_vector<Worker, 64> m_workers;
         Threading::FiberPool m_fiberPool;
+        Memory::PoolAllocator m_waitGroupPool;
 
         Threading::Semaphore m_semaphore;
         std::atomic<bool> m_shouldExit;

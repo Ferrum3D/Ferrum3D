@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Base/BaseMath.h>
 #include <FeCore/Logging/Trace.h>
-#include <FeCore/SIMD/CommonSIMD.h>
+#include <FeCore/SIMD/Utils.h>
 
 namespace FE
 {
@@ -356,7 +356,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Vector3F lhs, const Vector3F rhs,
-                                                                               const float epsilon = Constants::Epsilon)
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             const __m128 distance = Abs(lhs - rhs).m_simdVector;
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));

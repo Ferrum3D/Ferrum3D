@@ -5,10 +5,14 @@ namespace FE
 {
     enum class JobPriority : uint16_t
     {
-        kLow,
-        kNormal,
-        kHigh,
-        kCount,
+        kLow = 0,
+        kNormal = 1,
+        kHigh = 2,
+
+        // TODO
+        kBackground = kLow,
+
+        kCount = kHigh + 1,
     };
 
     struct Job;
@@ -25,7 +29,6 @@ namespace FE
     private:
         friend struct WaitGroup;
 
-        virtual void* AllocateSmallBlock(size_t byteSize) = 0;
-        virtual void FreeSmallBlock(void* ptr, size_t byteSize) = 0;
+        virtual std::pmr::memory_resource* GetWaitGroupAllocator() = 0;
     };
 } // namespace FE

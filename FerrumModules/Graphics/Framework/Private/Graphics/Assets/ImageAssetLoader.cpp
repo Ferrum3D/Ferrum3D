@@ -27,7 +27,7 @@ namespace FE::Graphics
         {
             ZoneScoped;
 
-            PixelBuffer = { result.pRequest->pReadBuffer, result.pRequest->ReadBufferSize };
+            PixelBuffer = { result.m_request->m_readBuffer, result.m_request->m_readBufferSize };
             Schedule(pLoader->m_jobSystem);
         }
 
@@ -112,16 +112,16 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        FE_Assert(result.pController->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
+        FE_Assert(result.m_controller->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
 
-        ImageAssetStorage* storage = static_cast<ImageAssetStorage*>(result.pRequest->pUserData);
-        const char* signature = reinterpret_cast<const char*>(result.pRequest->pReadBuffer);
+        ImageAssetStorage* storage = static_cast<ImageAssetStorage*>(result.m_request->m_userData);
+        const char* signature = reinterpret_cast<const char*>(result.m_request->m_readBuffer);
         FE_Assert(Str::ByteCompare(signature, "DDS ", 4) == 0);
 
-        const DDS::Header* header = reinterpret_cast<DDS::Header*>(result.pRequest->pReadBuffer + 4);
+        const DDS::Header* header = reinterpret_cast<DDS::Header*>(result.m_request->m_readBuffer + 4);
         const DDS::BaseHeader* baseHeader = &header->header;
         const DDS::HeaderDXT10* dx10Header = &header->headerDX10;
-        FE_Assert(result.BytesRead == sizeof(DDS::Header) + 4);
+        FE_Assert(result.m_bytesRead == sizeof(DDS::Header) + 4);
         FE_Verify(DDS::CheckHeader(header));
 
         storage->m_loadingState.store(ImageAssetStorage::LoadingState::kHeaderLoaded);
@@ -139,9 +139,9 @@ namespace FE::Graphics
 
         auto* resourcePool = Env::GetServiceProvider()->ResolveRequired<RHI::ResourcePool>();
 
-        storage->m_image = resourcePool->CreateImage(Env::Name{ result.pRequest->Path }, desc).value();
+        storage->m_image = resourcePool->CreateImage(Env::Name{ result.m_request->m_path }, desc).value();
 
-        result.pRequest->pAllocator->deallocate(result.pRequest->pReadBuffer, result.pRequest->ReadBufferSize);
+        result.m_request->m_allocator->deallocate(result.m_request->m_readBuffer, result.m_request->m_readBufferSize);
 
         uint32_t currentMipOffset = sizeof(DDS::Header) + 4;
         festd::fixed_vector<uint32_t, 16> mipOffsets;
@@ -164,18 +164,18 @@ namespace FE::Graphics
             job->MipSize = mipSizes[mipIndex];
 
             IO::AsyncReadRequest request;
-            request.pStream = result.pRequest->pStream;
-            request.ReadBufferSize = mipSizes[mipIndex];
-            request.Offset = mipOffsets[mipIndex];
-            request.Priority = result.pRequest->Priority + mipIndex;
-            request.pCallback = job;
+            request.m_stream = result.m_request->m_stream;
+            request.m_readBufferSize = mipSizes[mipIndex];
+            request.m_offset = mipOffsets[mipIndex];
+            request.m_priority = result.m_request->m_priority + mipIndex;
+            request.m_callback = job;
             m_asyncStreamIO->ReadAsync(request);
         }
     }
 
 
     ImageAssetLoader::ImageAssetLoader(IO::IStreamFactory* pStreamFactory, IO::IAsyncStreamIO* pAsyncIO, IJobSystem* pJobSystem)
-        : m_uploadJobPool("ImageAssetLoader/UploadJob", sizeof(MipUploadJob), 64 * 1024)
+        : m_uploadJobPool("ImageAssetLoader/UploadJob", sizeof(MipUploadJob))
         , m_streamFactory(pStreamFactory)
         , m_asyncStreamIO(pAsyncIO)
         , m_jobSystem(pJobSystem)
@@ -211,10 +211,10 @@ namespace FE::Graphics
         if (m_streamFactory->FileExists(ddsPath))
         {
             IO::AsyncReadRequest request;
-            request.Path = ddsPath;
-            request.ReadBufferSize = sizeof(DDS::Header) + 4;
-            request.pUserData = fe_assert_cast<ImageAssetStorage*>(storage);
-            request.pCallback = this;
+            request.m_path = ddsPath;
+            request.m_readBufferSize = sizeof(DDS::Header) + 4;
+            request.m_userData = fe_assert_cast<ImageAssetStorage*>(storage);
+            request.m_callback = this;
             storage->AddStrongRef();
             m_asyncStreamIO->ReadAsync(request);
             return;

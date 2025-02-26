@@ -14,6 +14,11 @@ namespace FE::Graphics::RHI
             return m_device;
         }
 
+        void SetImmediateDestroyPolicy()
+        {
+            m_destroyedImmediately = true;
+        }
+
     private:
         friend struct Device;
 
@@ -27,11 +32,18 @@ namespace FE::Graphics::RHI
 
     protected:
         Device* m_device = nullptr;
+        bool m_destroyedImmediately = false;
 
         DeviceObject() = default;
 
         void DoRelease() override
         {
+            if (m_destroyedImmediately)
+            {
+                DoDispose();
+                return;
+            }
+
             // TODO: suspicious... probably unsafe when calling from a different module.
             m_device->QueueObjectDispose(this);
         }

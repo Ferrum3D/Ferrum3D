@@ -5,7 +5,7 @@ namespace FE
 {
     //! @brief A weak asset holder.
     //!
-    //! @tparam T - Asset storage type.
+    //! @tparam T  Asset storage type.
     //!
     //! This class is used to hold a weak reference to asset storage. When the asset is no longer valid,
     //! the storage will be deleted, but all the weak references will remain.

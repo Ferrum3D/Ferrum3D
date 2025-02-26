@@ -6,9 +6,15 @@ namespace FE
     template<class T>
     struct RectBase final
     {
+        using SimdVecType = std::conditional_t<
+            std::is_same_v<T, float>, __m128,
+            std::conditional_t<std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t>, __m128i, EmptyStruct>>;
+
+        static constexpr bool kIsSimd = !std::is_same_v<T, EmptyStruct>;
+
         union
         {
-            __m128 m_simdVector;
+            SimdVecType m_simdVector;
             T m_values[4];
             struct
             {
@@ -21,14 +27,34 @@ namespace FE
             };
         };
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase()
-            : m_simdVector(_mm_setzero_ps())
-        {
-        }
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase() = default;
+
+        FE_FORCE_INLINE RectBase(const RectBase&) = default;
+        FE_FORCE_INLINE RectBase(RectBase&&) = default;
+        FE_FORCE_INLINE RectBase& operator=(const RectBase&) = default;
+        FE_FORCE_INLINE RectBase& operator=(RectBase&&) = default;
+        FE_FORCE_INLINE ~RectBase() = default;
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase(const Vector2Base<T> min, const Vector2Base<T> max)
             : min(min)
             , max(max)
+        {
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase(const T left, const T top, const T right, const T bottom)
+            : left(left)
+            , top(top)
+            , right(right)
+            , bottom(bottom)
+        {
+        }
+
+        template<class TOther>
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase(const RectBase<TOther> other)
+            : left(static_cast<T>(other.left))
+            , top(static_cast<T>(other.top))
+            , right(static_cast<T>(other.right))
+            , bottom(static_cast<T>(other.bottom))
         {
         }
 
@@ -56,11 +82,44 @@ namespace FE
         {
             return bottom - top;
         }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool IsValid() const
+        {
+            return left <= right && top <= bottom;
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static RectBase FE_VECTORCALL Zero()
+        {
+            return RectBase{ 0, 0, 0, 0 };
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static RectBase FE_VECTORCALL Initial()
+        {
+            const Vector2Base<T> min{ Constants::kMaxValue<T> };
+            const Vector2Base<T> max{ Constants::kMinValue<T> };
+            return RectBase{ min, max };
+        }
     };
 
     using RectF = RectBase<float>;
     using RectInt = RectBase<int32_t>;
     using RectUint = RectBase<uint32_t>;
+
+
+    template<>
+    template<>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase<float>::RectBase(const RectBase<int32_t> other)
+        : m_simdVector(_mm_cvtepi32_ps(other.m_simdVector))
+    {
+    }
+
+
+    template<>
+    template<>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase<int32_t>::RectBase(const RectBase<float> other)
+        : m_simdVector(_mm_cvtps_epi32(other.m_simdVector))
+    {
+    }
 
 
     namespace Math
@@ -119,7 +178,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const RectF lhs, const RectF rhs,
-                                                                               const float epsilon = Constants::Epsilon)
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);
@@ -129,7 +188,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EmptyEstimate(const RectF rect,
-                                                                               const float epsilon = Constants::Epsilon)
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
             const __m128 absValue = _mm_and_ps(rect.m_simdVector, kSignMask);

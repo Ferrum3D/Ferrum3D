@@ -1,25 +1,28 @@
 ﻿#pragma once
-#include <Graphics/RHI/Common/Viewport.h>
+#include <FeCore/Math/Aabb.h>
 #include <Graphics/RHI/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan
 {
-    inline VkViewport VKConvert(const RHI::Viewport& viewport)
+    inline VkViewport VKConvertViewport(const Aabb& viewport)
     {
-        VkViewport vp{};
-        vp.x = viewport.minX;
-        vp.y = viewport.minY;
-        vp.width = viewport.Width();
-        vp.height = viewport.Height();
-        vp.minDepth = viewport.minZ;
-        vp.maxDepth = viewport.maxZ;
+        const Vector3F size = viewport.Size();
+
+        VkViewport vp;
+        vp.x = viewport.min.x;
+        vp.y = viewport.min.y;
+        vp.width = size.x;
+        vp.height = size.y;
+        vp.minDepth = viewport.min.z;
+        vp.maxDepth = viewport.max.z;
         return vp;
     }
 
-    inline VkRect2D VKConvert(const RHI::Scissor& scissor)
+
+    inline VkRect2D VKConvertScissor(const RectInt scissor)
     {
-        VkRect2D rect{};
-        rect.offset = VkOffset2D{ scissor.minX, scissor.minY };
+        VkRect2D rect;
+        rect.offset = VkOffset2D{ scissor.min.x, scissor.min.y };
         rect.extent = VkExtent2D{ static_cast<uint32_t>(scissor.Width()), static_cast<uint32_t>(scissor.Height()) };
         return rect;
     }

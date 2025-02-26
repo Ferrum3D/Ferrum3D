@@ -1,7 +1,6 @@
 ﻿#pragma once
+#include <FeCore/Math/Aabb.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Strings/String.h>
-#include <Graphics/RHI/Base/Viewport.h>
 
 namespace FE::Graphics::RHI
 {
@@ -23,7 +22,7 @@ namespace FE::Graphics::RHI
         virtual void PollEvents() = 0;
         virtual bool CloseRequested() = 0;
         virtual void* GetNativeHandle() = 0;
-        virtual Viewport CreateViewport() = 0;
-        virtual Scissor CreateScissor() = 0;
+        virtual RectF CreateViewport() = 0;
+        virtual RectInt CreateScissor() = 0;
     };
 } // namespace FE::Graphics::RHI

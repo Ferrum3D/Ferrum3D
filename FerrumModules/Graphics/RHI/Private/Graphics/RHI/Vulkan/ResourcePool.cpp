@@ -8,8 +8,8 @@
 namespace FE::Graphics::Vulkan
 {
     ResourcePool::ResourcePool(RHI::Device* device)
-        : m_imagePool("ResourcePool/Images", sizeof(Image), 64 * 1024)
-        , m_bufferPool("ResourcePool/Buffers", sizeof(Buffer), 64 * 1024)
+        : m_imagePool("ResourcePool/Images", sizeof(Image))
+        , m_bufferPool("ResourcePool/Buffers", sizeof(Buffer))
     {
         m_device = device;
 

@@ -10,7 +10,7 @@ namespace FE::Platform
     {
         festd::small_vector<WCHAR, TLength> m_value;
 
-        WideString(StringSlice str)
+        WideString(const StringSlice str)
         {
             const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), nullptr, 0);
             if (length < 0)
@@ -36,13 +36,13 @@ namespace FE::Platform
     inline constexpr int64_t WindowsUnixEpochDifference = 11644473600;
 
 
-    inline static TimeValue ConvertWindowsTickToUnixSeconds(int64_t windowsTicks)
+    inline TimeValue ConvertWindowsTickToUnixSeconds(int64_t windowsTicks)
     {
         return windowsTicks / WindowsTicksPerSecond - WindowsUnixEpochDifference;
     }
 
 
-    inline static TimeValue ConvertFiletimeToUnixSeconds(FILETIME fileTime)
+    inline TimeValue ConvertFiletimeToUnixSeconds(FILETIME fileTime)
     {
         LARGE_INTEGER ftInt;
         ftInt.HighPart = fileTime.dwHighDateTime;
@@ -51,7 +51,7 @@ namespace FE::Platform
     }
 
 
-    inline static void ConvertDateTimeToSystemTime(SystemTimeInfo dateTime, SYSTEMTIME& result)
+    inline void ConvertDateTimeToSystemTime(SystemTimeInfo dateTime, SYSTEMTIME& result)
     {
         result.wYear = dateTime.Year + 1900;
         result.wMonth = dateTime.Month;
@@ -64,7 +64,7 @@ namespace FE::Platform
     }
 
 
-    inline static void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
+    inline void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
     {
         result.Year = systemTime.wYear - 1900;
         result.Month = static_cast<int8_t>(systemTime.wMonth);

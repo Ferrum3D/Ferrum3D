@@ -20,7 +20,7 @@ namespace FE::Internal
         {
             const uint32_t endWordIndex = CalculateWordIndex(startBitIndex + bitCount - 1);
             const uint32_t endBitIndexInWord = startBitIndex + bitCount - endWordIndex * kBitSetBitsPerWord;
-            words[startWordIndex] |= std::numeric_limits<BitSetWord>::max() << startBitIndexInWord;
+            words[startWordIndex] |= Constants::kMaxValue<BitSetWord> << startBitIndexInWord;
             words[endWordIndex] |= MakeMask<BitSetWord>(endBitIndexInWord, 0);
 
             if (endWordIndex > startWordIndex + 1)
@@ -49,7 +49,7 @@ namespace FE::Internal
         {
             const uint32_t endWordIndex = CalculateWordIndex(startBitIndex + bitCount - 1);
             const uint32_t endBitIndexInWord = startBitIndex + bitCount - endWordIndex * kBitSetBitsPerWord;
-            words[startWordIndex] &= ~(std::numeric_limits<BitSetWord>::max() << startBitIndexInWord);
+            words[startWordIndex] &= ~(Constants::kMaxValue<BitSetWord> << startBitIndexInWord);
             words[endWordIndex] &= ~MakeMask<BitSetWord>(endBitIndexInWord, 0);
 
             if (endWordIndex > startWordIndex + 1)
@@ -507,7 +507,7 @@ namespace FE
             //! @brief A bit vector using a polymorphic allocator.
             using bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
                 FE::Internal::PolymorphicAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
-        }
+        } // namespace pmr
 
         //! @brief A bit vector using the default allocator.
         using bit_vector = FE::Internal::BitSetImpl<
@@ -527,8 +527,8 @@ namespace FE
     {
         //! @brief Traverses a bit vector and calls a functor for each set bit.
         //!
-        //! @param bits    - The bit vector to traverse.
-        //! @param functor - The functor to call for each set bit.
+        //! @param bits    The bit vector to traverse.
+        //! @param functor The functor to call for each set bit.
         template<class TBase, class TFunctor>
         inline void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
         {

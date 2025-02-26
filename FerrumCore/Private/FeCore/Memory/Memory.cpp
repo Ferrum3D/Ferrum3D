@@ -29,7 +29,7 @@ namespace FE::Memory
     }
 
 
-    void* AllocateVirtual(size_t byteSize)
+    void* AllocateVirtual(const size_t byteSize)
     {
         FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
                        "Size must be aligned to virtual allocation granularity");
@@ -42,7 +42,7 @@ namespace FE::Memory
     }
 
 
-    void FreeVirtual(void* ptr, size_t byteSize)
+    void FreeVirtual(void* ptr, const size_t byteSize)
     {
 #if FE_PLATFORM_WINDOWS
         (void)byteSize;
@@ -53,7 +53,7 @@ namespace FE::Memory
     }
 
 
-    void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection)
+    void ProtectVirtual(void* ptr, const size_t byteSize, const ProtectFlags protection)
     {
 #if FE_PLATFORM_WINDOWS
         DWORD osProtect = 0;
@@ -81,19 +81,20 @@ namespace FE::Memory
 #endif
     }
 
-    void* DefaultAllocate(size_t byteSize)
+
+    void* DefaultAllocate(const size_t byteSize)
     {
         return mi_malloc(byteSize);
     }
 
 
-    void* DefaultAllocate(size_t byteSize, size_t byteAlignment)
+    void* DefaultAllocate(const size_t byteSize, const size_t byteAlignment)
     {
         return mi_malloc_aligned(byteSize, byteAlignment);
     }
 
 
-    void* DefaultReallocate(void* ptr, size_t newSize)
+    void* DefaultReallocate(void* ptr, const size_t newSize)
     {
         return mi_realloc(ptr, newSize);
     }

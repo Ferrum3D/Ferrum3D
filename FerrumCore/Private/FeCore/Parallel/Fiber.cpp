@@ -12,7 +12,7 @@ namespace FE::Threading
     inline static constexpr size_t TotalStackSize = NormalFiberCount * NormalStackSize + ExtendedFiberCount * ExtendedStackSize;
 
 
-    FiberPool::FiberPool(Context::Callback fiberCallback)
+    FiberPool::FiberPool(const Context::Callback fiberCallback)
     {
         const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
         const size_t totalGuardPagesSize = (TotalFiberCount + 1) * memorySpec.m_pageSize;
@@ -52,7 +52,7 @@ namespace FE::Threading
     }
 
 
-    FiberHandle FiberPool::Rent(bool extended)
+    FiberHandle FiberPool::Rent(const bool extended)
     {
         const uint32_t fiberCount = extended ? ExtendedFiberCount : NormalFiberCount;
         const uint32_t baseFiberIndex = extended ? NormalFiberCount : 0;
@@ -79,20 +79,20 @@ namespace FE::Threading
     }
 
 
-    void FiberPool::Return(FiberHandle fiberHandle)
+    void FiberPool::Return(const FiberHandle fiberHandle)
     {
         m_fibers[fiberHandle.m_value].m_isFree.store(true, std::memory_order_release);
     }
 
 
-    void FiberPool::Update(FiberHandle fiberHandle, Context::Handle context)
+    void FiberPool::Update(const FiberHandle fiberHandle, const Context::Handle context)
     {
         if (fiberHandle)
             m_fibers[fiberHandle.m_value].m_context = context;
     }
 
 
-    Context::TransferParams FiberPool::Switch(FiberHandle to, uintptr_t userData)
+    Context::TransferParams FiberPool::Switch(const FiberHandle to, const uintptr_t userData)
     {
         TracyFiberEnter(m_fibers[to.m_value].m_name.Data());
         return Context::Switch(m_fibers[to.m_value].m_context, userData);

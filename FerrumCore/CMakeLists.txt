@@ -70,6 +70,8 @@
     Public/FeCore/Math/Rect.h
     Public/FeCore/Math/Vector2.h
     Public/FeCore/Math/Vector3.h
+    Public/FeCore/Math/Vector3Int.h
+    Public/FeCore/Math/Vector3UInt.h
     Public/FeCore/Math/Vector4.h
     Public/FeCore/Math/VectorMath.h
 
@@ -95,14 +97,7 @@
 
     Public/FeCore/RTTI/RTTI.h
 
-    Public/FeCore/SIMD/CommonSIMD.h
-    Public/FeCore/SIMD/SIMDIntrin.h
-
-    Public/FeCore/SIMD/SSE/Float32x4.h
-    Public/FeCore/SIMD/SSE/Int32x4.h
-
-    Public/FeCore/SIMD/Scalar/Float32x4.h
-    Public/FeCore/SIMD/Scalar/Int32x4.h
+    Public/FeCore/SIMD/Utils.h
 
     Public/FeCore/Strings/FixedString.h
     Public/FeCore/Strings/Unicode.h

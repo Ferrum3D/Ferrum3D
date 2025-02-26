@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/RHI/Base/Viewport.h>
+#include <FeCore/Math/Aabb.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/InputStreamLayout.h>
 #include <Graphics/RHI/PipelineStates.h>
@@ -25,8 +25,8 @@ namespace FE::Graphics::RHI
         DepthStencilState m_depthStencil;
         ColorBlendState m_colorBlend;
         InputStreamLayout m_inputLayout;
-        Viewport m_viewport = Viewport::kInvalid;
-        Scissor m_scissor = Scissor::kInvalid;
+        Aabb m_viewport = Aabb::Initial();
+        RectInt m_scissor = RectInt::Initial();
 
         GraphicsPipelineDesc& SetShaders(ShaderModule* vertex, ShaderModule* pixel)
         {
@@ -66,10 +66,10 @@ namespace FE::Graphics::RHI
             return *this;
         }
 
-        GraphicsPipelineDesc& SetViewportAndScissor(const Viewport& viewport)
+        GraphicsPipelineDesc& SetViewportAndScissor(const Aabb& viewport)
         {
             m_viewport = viewport;
-            m_scissor = Scissor(viewport);
+            m_scissor = RectInt(viewport.GetRect());
             return *this;
         }
     };

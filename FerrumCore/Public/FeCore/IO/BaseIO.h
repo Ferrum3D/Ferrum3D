@@ -5,6 +5,11 @@
 
 namespace FE::IO
 {
+    struct IAsyncController;
+    struct IAsyncStreamIO;
+    struct AsyncReadResult;
+
+
     inline constexpr uint32_t kMaxPathLength = 260;
 
     using FixedPath = FixedString<kMaxPathLength>;
@@ -181,4 +186,16 @@ namespace FE::IO
             return OpenMode::kNone;
         }
     }
+
+
+    //! @brief Asynchronous read operation callback.
+    struct IAsyncReadCallback
+    {
+        FE_RTTI_Class(IAsyncReadCallback, "E1E0BD22-543A-4036-B918-134DB9C99D4F");
+
+        virtual ~IAsyncReadCallback() = default;
+
+        //! @brief Called when an operation associated with this callback completes.
+        virtual void AsyncIOCallback(const AsyncReadResult& result) = 0;
+    };
 } // namespace FE::IO

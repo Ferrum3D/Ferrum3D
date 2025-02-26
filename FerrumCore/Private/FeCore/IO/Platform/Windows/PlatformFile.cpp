@@ -133,8 +133,7 @@ namespace FE::IO::Platform
 
     ResultCode OpenFile(StringSlice filePath, OpenMode openMode, FileHandle& handle)
     {
-        ZoneScoped;
-        ZoneTextF("%.*s", filePath.Size(), filePath.Data());
+        FE_PROFILER_FUNCTION_TEXT("%.*s", filePath.Size(), filePath.Data());
 
         using namespace FE::Platform;
 
@@ -164,7 +163,7 @@ namespace FE::IO::Platform
 
     ResultCode GetFileStats(FileHandle fileHandle, FileStats& result)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         using namespace FE::Platform;
 
@@ -187,8 +186,7 @@ namespace FE::IO::Platform
 
     FileAttributeFlags GetFileAttributeFlags(StringSlice filePath)
     {
-        ZoneScoped;
-        ZoneTextF("%.*s", filePath.Size(), filePath.Data());
+        FE_PROFILER_FUNCTION_TEXT("%.*s", filePath.Size(), filePath.Data());
 
         using namespace FE::Platform;
 
@@ -213,7 +211,7 @@ namespace FE::IO::Platform
 
     bool FileExists(StringSlice filePath)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
         const FileAttributeFlags attributes = GetFileAttributeFlags(filePath);
         return attributes != FileAttributeFlags::kInvalid && attributes != FileAttributeFlags::kDirectory;
     }
@@ -221,15 +219,14 @@ namespace FE::IO::Platform
 
     void CloseFile(FileHandle fileHandle)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
         CloseHandle(HandleCast(fileHandle));
     }
 
 
     ResultCode ReadFile(FileHandle fileHandle, festd::span<std::byte> buffer, uint32_t& bytesRead)
     {
-        ZoneScoped;
-        ZoneTextF("%d", buffer.size());
+        FE_PROFILER_FUNCTION_TEXT("%d", buffer.size());
 
         static_assert(sizeof(bytesRead) == sizeof(DWORD));
 
@@ -248,8 +245,7 @@ namespace FE::IO::Platform
 
     ResultCode WriteFile(FileHandle fileHandle, festd::span<const std::byte> buffer, uint32_t& bytesWritten)
     {
-        ZoneScoped;
-        ZoneTextF("%d", buffer.size());
+        FE_PROFILER_FUNCTION_TEXT("%d", buffer.size());
 
         static_assert(sizeof(bytesWritten) == sizeof(DWORD));
 
@@ -268,7 +264,7 @@ namespace FE::IO::Platform
 
     ResultCode SeekFile(FileHandle fileHandle, intptr_t offset, SeekMode seekMode)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         LARGE_INTEGER distance;
         distance.QuadPart = offset;
@@ -283,7 +279,7 @@ namespace FE::IO::Platform
 
     ResultCode TellFile(FileHandle fileHandle, uintptr_t& position)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         LARGE_INTEGER distance;
         distance.QuadPart = 0;

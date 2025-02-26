@@ -35,7 +35,7 @@ namespace FE::IO
 
     AsyncReadRequestQueueEntry* AsyncStreamIO::TryDequeue()
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         std::lock_guard lk{ m_queueLock };
         if (m_queue.empty())
@@ -49,7 +49,7 @@ namespace FE::IO
 
     void AsyncStreamIO::ProcessRequest(AsyncReadRequestQueueEntry* entry)
     {
-        ZoneScoped;
+        FE_PROFILER_FUNCTION();
 
         constexpr uint32_t kSuccessColor = 0x4b4e6d;
         constexpr uint32_t kFailureColor = 0x9a031e;
@@ -59,12 +59,12 @@ namespace FE::IO
             status = AsyncOperationStatus::kCanceled;
 
         AsyncReadRequest& request = entry->m_request;
-        if (request.pStream == nullptr && status != AsyncOperationStatus::kCanceled)
+        if (request.m_stream == nullptr && status != AsyncOperationStatus::kCanceled)
         {
-            if (const auto result = m_streamFactory->OpenFileStream(request.Path, OpenMode::kReadOnly))
+            if (const auto result = m_streamFactory->OpenFileStream(request.m_path, OpenMode::kReadOnly))
             {
-                request.pStream = result.value();
-                const StringSlice zoneText = request.pStream->GetName();
+                request.m_stream = result.value();
+                const StringSlice zoneText = request.m_stream->GetName();
                 ZoneText(zoneText.Data(), zoneText.Size());
             }
             else
@@ -76,30 +76,33 @@ namespace FE::IO
             }
         }
 
-        if (request.pAllocator == nullptr)
-            request.pAllocator = std::pmr::get_default_resource();
+        if (request.m_path.Empty())
+            request.m_path = request.m_stream->GetName();
+
+        if (request.m_allocator == nullptr)
+            request.m_allocator = std::pmr::get_default_resource();
 
         AsyncReadResult result{};
-        result.pController = entry->m_pController.Get();
-        result.pRequest = &request;
+        result.m_controller = entry->m_pController.Get();
+        result.m_request = &request;
         if (status != AsyncOperationStatus::kFailed && status != AsyncOperationStatus::kCanceled)
         {
-            if (request.ReadBufferSize == 0)
-                request.ReadBufferSize = static_cast<uint32_t>(request.pStream->Length() - request.Offset);
+            if (request.m_readBufferSize == 0)
+                request.m_readBufferSize = static_cast<uint32_t>(request.m_stream->Length() - request.m_offset);
 
-            if (request.pReadBuffer == nullptr)
+            if (request.m_readBuffer == nullptr)
             {
-                request.pReadBuffer =
-                    static_cast<std::byte*>(request.pAllocator->allocate(request.ReadBufferSize, Memory::kDefaultAlignment));
+                request.m_readBuffer =
+                    static_cast<std::byte*>(request.m_allocator->allocate(request.m_readBufferSize, Memory::kDefaultAlignment));
             }
 
-            result.BytesRead = request.pStream->ReadToBuffer({ request.pReadBuffer, request.ReadBufferSize });
+            result.m_bytesRead = request.m_stream->ReadToBuffer({ request.m_readBuffer, request.m_readBufferSize });
             status = AsyncOperationStatus::kSucceeded;
             ZoneColor(kSuccessColor);
         }
 
         entry->m_status.store(status, std::memory_order_release);
-        request.pCallback->AsyncIOCallback(result);
+        request.m_callback->AsyncIOCallback(result);
     }
 
 
@@ -165,8 +168,8 @@ namespace FE::IO
         pEntry->m_pController = pController;
 
         const auto iter = eastl::upper_bound(
-            m_queue.begin(), m_queue.end(), request.Priority, [](Priority lhs, AsyncReadRequestQueueEntry* rhs) {
-                return lhs < rhs->m_request.Priority;
+            m_queue.begin(), m_queue.end(), request.m_priority, [](Priority lhs, AsyncReadRequestQueueEntry* rhs) {
+                return lhs < rhs->m_request.m_priority;
             });
 
         m_queue.insert(iter, pEntry);
