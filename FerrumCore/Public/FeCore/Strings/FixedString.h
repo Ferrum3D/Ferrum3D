@@ -11,41 +11,41 @@ namespace FE
 
         using SizeBaseType = std::conditional_t<TCapacity <= 255, uint16_t, uint32_t>;
 
-        TChar m_Data[TCapacity];
-        SizeBaseType m_Zero : 8;
-        SizeBaseType m_Size : (sizeof(SizeBaseType) - 1) * 8;
+        TChar m_data[TCapacity];
+        SizeBaseType m_zero : 8;
+        SizeBaseType m_size : (sizeof(SizeBaseType) - 1) * 8;
 
     public:
-        static constexpr uint32_t Cap = TCapacity;
+        static constexpr uint32_t kCapacity = TCapacity;
 
         using Iterator = Internal::StrIterator;
 
         FixedString() noexcept
-            : m_Zero(0)
-            , m_Size(0)
+            : m_zero(0)
+            , m_size(0)
         {
-            *m_Data = 0;
+            *m_data = 0;
         }
 
-        FixedString(uint32_t length, TChar value) noexcept
-            : m_Zero(0)
+        FixedString(uint32_t length, const TChar value) noexcept
+            : m_zero(0)
         {
             FE_CORE_ASSERT(length <= TCapacity, "Overflow");
-            memset(m_Data, value, length);
-            m_Size = static_cast<SizeBaseType>(length);
-            m_Data[m_Size] = 0;
+            memset(m_data, value, length);
+            m_size = static_cast<SizeBaseType>(length);
+            m_data[m_size] = 0;
         }
 
         FixedString(const TChar* str, uint32_t byteSize) noexcept
-            : m_Zero(0)
+            : m_zero(0)
         {
             FE_CORE_ASSERT(byteSize <= TCapacity, "Overflow");
-            memcpy(m_Data, str, byteSize);
-            m_Size = static_cast<SizeBaseType>(byteSize);
-            m_Data[m_Size] = 0;
+            memcpy(m_data, str, byteSize);
+            m_size = static_cast<SizeBaseType>(byteSize);
+            m_data[m_size] = 0;
         }
 
-        FixedString(StringSlice slice) noexcept
+        FixedString(const StringSlice slice) noexcept
             : FixedString(slice.Data(), slice.Size())
         {
         }
@@ -55,30 +55,30 @@ namespace FE
         {
         }
 
-        FixedString(Iterator begin, Iterator end) noexcept
+        FixedString(Iterator begin, const Iterator end) noexcept
             : FixedString(begin.m_Iter, end.m_Iter - begin.m_Iter)
         {
         }
 
         [[nodiscard]] const TChar* Data() const noexcept
         {
-            return m_Data;
+            return m_data;
         }
 
         [[nodiscard]] TChar* Data() noexcept
         {
-            return m_Data;
+            return m_data;
         }
 
         // O(1)
-        [[nodiscard]] TChar ByteAt(uint32_t index) const
+        [[nodiscard]] TChar ByteAt(const uint32_t index) const
         {
             FE_CORE_ASSERT(index < Size(), "Invalid index");
             return Data()[index];
         }
 
         // O(N)
-        [[nodiscard]] TCodepoint CodePointAt(uint32_t index) const
+        [[nodiscard]] TCodepoint CodePointAt(const uint32_t index) const
         {
             return Str::CodepointAt(Data(), Size(), index);
         }
@@ -86,7 +86,7 @@ namespace FE
         // O(1)
         [[nodiscard]] uint32_t Size() const noexcept
         {
-            return m_Size;
+            return m_size;
         }
 
         [[nodiscard]] bool Empty() const noexcept
@@ -117,7 +117,7 @@ namespace FE
             return Env::Name{ Data(), Size() };
         }
 
-        StringSlice Substring(uint32_t beginIndex, uint32_t length) const
+        StringSlice Substring(const uint32_t beginIndex, const uint32_t length) const
         {
             auto begin = Data();
             auto end = Data();
@@ -126,7 +126,7 @@ namespace FE
             return StringSlice(begin, end - begin);
         }
 
-        [[nodiscard]] StringSlice ASCIISubstring(uint32_t beginIndex, uint32_t length) const
+        [[nodiscard]] StringSlice ASCIISubstring(const uint32_t beginIndex, const uint32_t length) const
         {
             auto begin = Data() + beginIndex;
             auto end = Data() + beginIndex + length;
@@ -135,8 +135,8 @@ namespace FE
 
         void Clear() noexcept
         {
-            m_Size = 0;
-            *m_Data = 0;
+            m_size = 0;
+            *m_data = 0;
         }
 
         FixedString& Append(const TChar* str, uint32_t count)
@@ -147,17 +147,17 @@ namespace FE
                 return *this;
 
             memcpy(Data() + Size(), str, count);
-            m_Size += static_cast<SizeBaseType>(count);
-            m_Data[m_Size] = 0;
+            m_size += static_cast<SizeBaseType>(count);
+            m_data[m_size] = 0;
             return *this;
         }
 
-        FixedString& Append(StringSlice str)
+        FixedString& Append(const StringSlice str)
         {
             return Append(str.Data(), str.Size());
         }
 
-        FixedString& Append(TChar c)
+        FixedString& Append(const TChar c)
         {
             assert(Size() < Capacity());
             return Append(&c, 1);
@@ -168,41 +168,41 @@ namespace FE
             return Append(str, Str::ByteLength(str));
         }
 
-        void Resize(uint32_t length, TChar value) noexcept
+        void Resize(uint32_t length, const TChar value) noexcept
         {
             assert(length <= TCapacity);
-            memset(m_Data, value, length);
-            m_Size = static_cast<SizeBaseType>(length);
-            m_Data[m_Size] = 0;
+            memset(m_data, value, length);
+            m_size = static_cast<SizeBaseType>(length);
+            m_data[m_size] = 0;
         }
 
-        FixedString& operator+=(StringSlice str)
+        FixedString& operator+=(const StringSlice str)
         {
             return Append(str);
         }
 
-        FixedString& operator/=(const StringSlice& str)
+        FixedString& operator/=(const StringSlice str)
         {
-            if (!Empty() && m_Data[m_Size - 1] != '/')
+            if (!Empty() && m_data[m_size - 1] != '/')
                 Append('/');
             return Append(str);
         }
 
-        friend FixedString operator+(const FixedString& lhs, StringSlice rhs)
+        friend FixedString operator+(const FixedString& lhs, const StringSlice rhs)
         {
             FixedString t{ lhs };
             t += rhs;
             return t;
         }
 
-        friend FixedString operator/(const FixedString& lhs, StringSlice rhs)
+        friend FixedString operator/(const FixedString& lhs, const StringSlice rhs)
         {
             FixedString t{ lhs };
             t /= rhs;
             return t;
         }
 
-        [[nodiscard]] Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(const Iterator start, const TCodepoint search) const noexcept
         {
             const uint32_t size = Size();
             const TChar* data = Data();
@@ -212,18 +212,18 @@ namespace FE
             return Str::FindFirstOf(start.m_Iter, searchSize, search);
         }
 
-        [[nodiscard]] Iterator FindFirstOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(const TCodepoint search) const noexcept
         {
             return FindFirstOf(begin(), search);
         }
 
-        [[nodiscard]] Iterator FindLastOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindLastOf(const TCodepoint search) const noexcept
         {
             return Str::FindLastOf(Data(), Size(), search);
         }
 
-        [[nodiscard]] festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
-                                                                   std::pmr::memory_resource* pAllocator = nullptr) const
+        [[nodiscard]] festd::pmr::vector<StringSlice> Split(const TCodepoint c = ' ',
+                                                            std::pmr::memory_resource* pAllocator = nullptr) const
         {
             return StringSlice{ Data(), Size() }.Split(c, pAllocator);
         }
@@ -233,17 +233,17 @@ namespace FE
             return StringSlice{ Data(), Size() }.SplitLines(pAllocator);
         }
 
-        [[nodiscard]] StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripLeft(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return { Iterator{ Str::StripLeft(Data(), Size(), chars.Data(), chars.Size()) }, end() };
         }
 
-        [[nodiscard]] StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripRight(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return { begin(), Iterator{ Str::StripRight(Data(), Size(), chars.Data(), chars.Size()) } };
         }
 
-        [[nodiscard]] StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice Strip(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return StripLeft(chars).StripRight(chars);
         }
@@ -253,12 +253,12 @@ namespace FE
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        [[nodiscard]] bool IsEqualTo(const StringSlice& other, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool IsEqualTo(const StringSlice& other, const bool caseSensitive = true) const noexcept
         {
             return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
 
-        [[nodiscard]] bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool StartsWith(const StringSlice prefix, const bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
                 return false;
@@ -266,7 +266,7 @@ namespace FE
             return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool EndsWith(const StringSlice suffix, const bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
                 return false;
@@ -274,7 +274,7 @@ namespace FE
             return UTF8::AreEqual(Data() + Size() - suffix.Size(), suffix.Data(), suffix.Size(), suffix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] static FixedString Join(const StringSlice& separator, festd::span<StringSlice> strings)
+        [[nodiscard]] static FixedString Join(const StringSlice& separator, const festd::span<StringSlice> strings)
         {
             FixedString result;
             for (uint32_t i = 0; i < strings.size(); ++i)

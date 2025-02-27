@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <FeCore/IO/Path.h>
 #include <FeCore/Time/DateTime.h>
 
 namespace FE::IO
@@ -8,11 +7,6 @@ namespace FE::IO
     struct IAsyncController;
     struct IAsyncStreamIO;
     struct AsyncReadResult;
-
-
-    inline constexpr uint32_t kMaxPathLength = 260;
-
-    using FixedPath = FixedString<kMaxPathLength>;
 
 
     //! @brief Represents an I/O result code.

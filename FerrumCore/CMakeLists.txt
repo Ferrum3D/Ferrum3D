@@ -51,8 +51,9 @@
     Public/FeCore/IO/BaseIO.h
     Public/FeCore/IO/FileStream.h
     Public/FeCore/IO/IStream.h
-    Public/FeCore/IO/StreamBase.h
     Public/FeCore/IO/IStreamFactory.h
+    Public/FeCore/IO/StreamBase.h
+    Public/FeCore/IO/Path.h
 
     Public/FeCore/Jobs/IJobSystem.h
     Public/FeCore/Jobs/Job.h

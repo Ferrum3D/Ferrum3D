@@ -7,7 +7,7 @@ namespace FE
     //! @brief String class with UTF-8 support.
     class String final
     {
-        inline static constexpr uint32_t ShortCapacity = 24;
+        static constexpr uint32_t kShortCapacity = 24;
 
         struct LongMode
         {
@@ -19,7 +19,7 @@ namespace FE
 
         struct ShortMode
         {
-            TChar Data[ShortCapacity - 1];
+            TChar Data[kShortCapacity - 1];
             uint8_t Size;
         };
 
@@ -33,43 +33,43 @@ namespace FE
             };
         } m_Data;
 
-        [[nodiscard]] inline bool IsLong() const noexcept
+        [[nodiscard]] bool IsLong() const noexcept
         {
             return m_Data.Short.Size == 0xff;
         }
 
-        [[nodiscard]] inline uint32_t GetLCap() const noexcept
+        [[nodiscard]] uint32_t GetLCap() const noexcept
         {
             return m_Data.Long.Capacity;
         }
 
-        inline void SetLCap(uint32_t capacity) noexcept
+        void SetLCap(const uint32_t capacity) noexcept
         {
             m_Data.Long.Capacity = capacity;
         }
 
-        inline uint32_t GetSSize() const noexcept
+        uint32_t GetSSize() const noexcept
         {
-            return m_Data.Short.Size ^ (ShortCapacity - 1);
+            return m_Data.Short.Size ^ (kShortCapacity - 1);
         }
 
-        inline void SetSSize(uint32_t size) noexcept
+        void SetSSize(const uint32_t size) noexcept
         {
-            m_Data.Short.Size = static_cast<uint8_t>(size ^ (ShortCapacity - 1));
+            m_Data.Short.Size = static_cast<uint8_t>(size ^ (kShortCapacity - 1));
         }
 
-        inline uint32_t GetLSize() const noexcept
+        uint32_t GetLSize() const noexcept
         {
             return m_Data.Long.Size;
         }
 
-        inline void SetLSize(uint32_t size) noexcept
+        void SetLSize(const uint32_t size) noexcept
         {
             m_Data.Long.Size = size;
             m_Data.Long.Indicator = Constants::kMaxU64;
         }
 
-        inline void SetSize(uint32_t size) noexcept
+        void SetSize(const uint32_t size) noexcept
         {
             if (IsLong())
                 SetLSize(size);
@@ -77,7 +77,7 @@ namespace FE
                 SetSSize(size);
         }
 
-        inline void Zero() noexcept
+        void Zero() noexcept
         {
             m_Data.Words[0] = 0;
             m_Data.Words[1] = 0;
@@ -85,38 +85,38 @@ namespace FE
             SetSSize(0);
         }
 
-        inline static uint32_t Recommend(uint32_t s) noexcept
+        static uint32_t Recommend(const uint32_t s) noexcept
         {
-            if (s < ShortCapacity)
-                return ShortCapacity - 1;
+            if (s < kShortCapacity)
+                return kShortCapacity - 1;
 
             return AlignUp<Memory::kDefaultAlignment>(s + 1) - 1;
         }
 
-        inline static TChar* Allocate(uint32_t s) noexcept
+        static TChar* Allocate(const uint32_t s) noexcept
         {
             return static_cast<TChar*>(Memory::DefaultAllocate(s));
         }
 
-        inline static void Deallocate(TChar* c) noexcept
+        static void Deallocate(TChar* c) noexcept
         {
             Memory::DefaultFree(c);
         }
 
-        inline static void CopyData(TChar* dest, const TChar* src, uint32_t size) noexcept
+        static void CopyData(TChar* dest, const TChar* src, const uint32_t size) noexcept
         {
             TCharTraits::copy(dest, src, size);
         }
 
-        inline static void SetData(TChar* dest, TChar value, uint32_t size) noexcept
+        static void SetData(TChar* dest, const TChar value, const uint32_t size) noexcept
         {
             TCharTraits::assign(dest, size, value);
         }
 
-        inline TChar* InitImpl(uint32_t size) noexcept
+        TChar* InitImpl(const uint32_t size) noexcept
         {
             TChar* newPtr;
-            if (size < ShortCapacity)
+            if (size < kShortCapacity)
             {
                 SetSSize(size);
                 newPtr = m_Data.Short.Data;
@@ -133,22 +133,22 @@ namespace FE
             return newPtr;
         }
 
-        inline void Init(const TChar* str, uint32_t size) noexcept
+        void Init(const TChar* str, const uint32_t size) noexcept
         {
             TChar* ptr = InitImpl(size);
             CopyData(ptr, str, size);
             ptr[size] = '\0';
         }
 
-        inline void Init(uint32_t count, TChar value) noexcept
+        void Init(const uint32_t count, const TChar value) noexcept
         {
             TChar* ptr = InitImpl(count);
             SetData(ptr, value, count);
             ptr[count] = '\0';
         }
 
-        inline void GrowAndReplace(uint32_t oldCap, uint32_t deltaCap, uint32_t oldSize, uint32_t copyCount, uint32_t delCount,
-                                   uint32_t addCount, const TChar* newChars)
+        void GrowAndReplace(const uint32_t oldCap, const uint32_t deltaCap, uint32_t oldSize, const uint32_t copyCount,
+                            const uint32_t delCount, const uint32_t addCount, const TChar* newChars)
         {
             TChar* oldData = Data();
             uint32_t cap = Recommend(std::max(oldCap + deltaCap, 2 * oldCap));
@@ -160,7 +160,7 @@ namespace FE
             uint32_t copySize = oldSize - delCount - copyCount;
             if (copySize)
                 CopyData(newData + copyCount + addCount, oldData + delCount, copySize);
-            if (oldCap + 1 != ShortCapacity)
+            if (oldCap + 1 != kShortCapacity)
                 Deallocate(oldData);
             m_Data.Long.Data = (newData);
             SetLCap(cap + 1);
@@ -172,12 +172,12 @@ namespace FE
     public:
         using Iterator = Internal::StrIterator;
 
-        inline String() noexcept
+        String() noexcept
         {
             Zero();
         }
 
-        inline String(const String& other) noexcept
+        String(const String& other) noexcept
         {
             if (!other.IsLong())
                 m_Data = other.m_Data;
@@ -185,7 +185,7 @@ namespace FE
                 Init(other.m_Data.Long.Data, other.m_Data.Long.Size);
         }
 
-        inline String& operator=(const String& other) noexcept
+        String& operator=(const String& other) noexcept
         {
             Clear();
             Shrink();
@@ -196,13 +196,13 @@ namespace FE
             return *this;
         }
 
-        inline String(String&& other) noexcept
+        String(String&& other) noexcept
             : m_Data(other.m_Data)
         {
             other.Zero();
         }
 
-        inline String& operator=(String&& other) noexcept
+        String& operator=(String&& other) noexcept
         {
             Clear();
             Shrink();
@@ -211,27 +211,27 @@ namespace FE
             return *this;
         }
 
-        inline String(uint32_t length, TChar value) noexcept
+        String(const uint32_t length, const TChar value) noexcept
         {
             Init(length, value);
         }
 
-        inline String(const TChar* str, uint32_t byteSize) noexcept
+        String(const TChar* str, const uint32_t byteSize) noexcept
         {
             Init(str, byteSize);
         }
 
-        inline String(StringSlice slice) noexcept
+        String(const StringSlice slice) noexcept
         {
             Init(slice.Data(), slice.Size());
         }
 
-        inline String(const TChar* str) noexcept
+        String(const TChar* str) noexcept
             : String(str, Str::ByteLength(str))
         {
         }
 
-        inline ~String() noexcept
+        ~String() noexcept
         {
             if (IsLong())
             {
@@ -239,25 +239,25 @@ namespace FE
             }
         }
 
-        [[nodiscard]] inline const TChar* Data() const noexcept
+        [[nodiscard]] const TChar* Data() const noexcept
         {
             return IsLong() ? m_Data.Long.Data : m_Data.Short.Data;
         }
 
-        inline TChar* Data() noexcept
+        TChar* Data() noexcept
         {
             return IsLong() ? m_Data.Long.Data : m_Data.Short.Data;
         }
 
         // O(1)
-        [[nodiscard]] inline TChar ByteAt(uint32_t index) const
+        [[nodiscard]] TChar ByteAt(const uint32_t index) const
         {
             FE_CORE_ASSERT(index < Size(), "Invalid index");
             return Data()[index];
         }
 
         // O(N)
-        [[nodiscard]] inline TCodepoint CodePointAt(uint32_t index) const
+        [[nodiscard]] TCodepoint CodePointAt(const uint32_t index) const
         {
             if (IsLong())
                 return Str::CodepointAt(m_Data.Long.Data, m_Data.Long.Size, index);
@@ -266,34 +266,34 @@ namespace FE
         }
 
         // O(1)
-        [[nodiscard]] inline uint32_t Size() const noexcept
+        [[nodiscard]] uint32_t Size() const noexcept
         {
             return IsLong() ? GetLSize() : GetSSize();
         }
 
-        [[nodiscard]] inline bool Empty() const noexcept
+        [[nodiscard]] bool Empty() const noexcept
         {
             return Size() == 0;
         }
 
         // O(1)
-        [[nodiscard]] inline uint32_t Capacity() const noexcept
+        [[nodiscard]] uint32_t Capacity() const noexcept
         {
-            return (IsLong() ? GetLCap() : ShortCapacity) - 1;
+            return (IsLong() ? GetLCap() : kShortCapacity) - 1;
         }
 
         // O(N)
-        [[nodiscard]] inline uint32_t Length() const noexcept
+        [[nodiscard]] uint32_t Length() const noexcept
         {
             return UTF8::Length(Data(), Size());
         }
 
-        inline operator StringSlice() const noexcept
+        operator StringSlice() const noexcept
         {
             return { Data(), Size() };
         }
 
-        inline StringSlice Substring(uint32_t beginIndex, uint32_t length) const
+        StringSlice Substring(const uint32_t beginIndex, const uint32_t length) const
         {
             auto begin = Data();
             auto end = Data();
@@ -302,14 +302,14 @@ namespace FE
             return StringSlice(begin, static_cast<uint32_t>(end - begin));
         }
 
-        [[nodiscard]] inline StringSlice ASCIISubstring(uint32_t beginIndex, uint32_t length) const
+        [[nodiscard]] StringSlice ASCIISubstring(const uint32_t beginIndex, const uint32_t length) const
         {
             auto begin = Data() + beginIndex;
             auto end = Data() + beginIndex + length;
             return StringSlice(begin, static_cast<uint32_t>(end - begin));
         }
 
-        inline void Reserve(uint32_t reserve) noexcept
+        void Reserve(uint32_t reserve) noexcept
         {
             const uint32_t cap = Capacity();
             if (cap >= reserve)
@@ -329,7 +329,7 @@ namespace FE
             m_Data.Long.Data = newData;
         }
 
-        inline void Shrink() noexcept
+        void Shrink() noexcept
         {
             const uint32_t cap = Capacity();
             const uint32_t size = Size();
@@ -337,7 +337,7 @@ namespace FE
             if (reserve == cap)
                 return;
 
-            if (reserve == ShortCapacity - 1)
+            if (reserve == kShortCapacity - 1)
             {
                 TChar* newData = m_Data.Short.Data;
                 TChar* oldData = m_Data.Long.Data;
@@ -360,13 +360,13 @@ namespace FE
             }
         }
 
-        inline void Clear() noexcept
+        void Clear() noexcept
         {
             *Data() = '\0';
             SetSize(0);
         }
 
-        inline String& Append(const TChar* str, uint32_t count)
+        String& Append(const TChar* str, const uint32_t count)
         {
             FE_CORE_ASSERT(count == 0 || str != nullptr, "Couldn't append more than 0 chars from a null string");
             if (count == 0)
@@ -392,34 +392,34 @@ namespace FE
             return *this;
         }
 
-        inline String& Append(StringSlice str)
+        String& Append(const StringSlice str)
         {
             return Append(str.Data(), str.Size());
         }
 
-        inline String& Append(TChar cp)
+        String& Append(const TChar cp)
         {
             return Append(&cp, 1); // TODO: optimize this for single chars
         }
 
-        inline String& Append(const TChar* str)
+        String& Append(const TChar* str)
         {
             return Append(str, Str::ByteLength(str));
         }
 
-        inline String& operator+=(StringSlice str)
+        String& operator+=(const StringSlice str)
         {
             return Append(str);
         }
 
-        inline String& operator/=(StringSlice str)
+        String& operator/=(const StringSlice str)
         {
             if (Data()[Size() - 1] != '/')
                 Append('/');
             return Append(str);
         }
 
-        inline friend String operator+(const String& lhs, StringSlice rhs)
+        friend String operator+(const String& lhs, const StringSlice rhs)
         {
             String t;
             t.Reserve(lhs.Size() + rhs.Size() + 1);
@@ -428,7 +428,7 @@ namespace FE
             return t;
         }
 
-        inline friend String operator/(const String& lhs, StringSlice rhs)
+        friend String operator/(const String& lhs, const StringSlice rhs)
         {
             String t;
             t.Reserve(lhs.Size() + rhs.Size() + 2);
@@ -437,58 +437,58 @@ namespace FE
             return t;
         }
 
-        [[nodiscard]] inline Iterator FindFirstOf(Iterator start, TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(const Iterator start, const TCodepoint search) const noexcept
         {
             return StringSlice(Data(), Size()).FindFirstOf(start.m_Iter, search).m_Iter;
         }
 
-        [[nodiscard]] inline Iterator FindFirstOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindFirstOf(const TCodepoint search) const noexcept
         {
             return StringSlice(Data(), Size()).FindFirstOf(search).m_Iter;
         }
 
-        [[nodiscard]] inline Iterator FindLastOf(TCodepoint search) const noexcept
+        [[nodiscard]] Iterator FindLastOf(const TCodepoint search) const noexcept
         {
             return StringSlice(Data(), Size()).FindLastOf(search).m_Iter;
         }
 
-        [[nodiscard]] inline festd::pmr::vector<StringSlice> Split(TCodepoint c = ' ',
-                                                                   std::pmr::memory_resource* pAllocator = nullptr) const
+        [[nodiscard]] festd::pmr::vector<StringSlice> Split(const TCodepoint c = ' ',
+                                                            std::pmr::memory_resource* pAllocator = nullptr) const
         {
             return StringSlice(Data(), Size()).Split(c, pAllocator);
         }
 
-        [[nodiscard]] inline festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
+        [[nodiscard]] festd::pmr::vector<StringSlice> SplitLines(std::pmr::memory_resource* pAllocator = nullptr) const
         {
             return StringSlice(Data(), Size()).SplitLines(pAllocator);
         }
 
-        [[nodiscard]] inline StringSlice StripRight(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripRight(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return StringSlice(Data(), Size()).StripRight(chars);
         }
 
-        [[nodiscard]] inline StringSlice StripLeft(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice StripLeft(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return StringSlice(Data(), Size()).StripLeft(chars);
         }
 
-        [[nodiscard]] inline StringSlice Strip(StringSlice chars = "\n\r\t ") const noexcept
+        [[nodiscard]] StringSlice Strip(const StringSlice chars = "\n\r\t ") const noexcept
         {
             return StringSlice(Data(), Size()).Strip(chars);
         }
 
-        [[nodiscard]] inline int32_t Compare(StringSlice other) const noexcept
+        [[nodiscard]] int32_t Compare(const StringSlice other) const noexcept
         {
             return UTF8::Compare(Data(), other.Data(), Size(), other.Size());
         }
 
-        [[nodiscard]] inline bool IsEqualTo(StringSlice other, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool IsEqualTo(const StringSlice other, const bool caseSensitive = true) const noexcept
         {
             return UTF8::AreEqual(Data(), other.Data(), Size(), other.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline bool StartsWith(StringSlice prefix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool StartsWith(const StringSlice prefix, const bool caseSensitive = true) const noexcept
         {
             if (prefix.Size() > Size())
                 return false;
@@ -496,7 +496,7 @@ namespace FE
             return UTF8::AreEqual(Data(), prefix.Data(), prefix.Size(), prefix.Size(), caseSensitive);
         }
 
-        [[nodiscard]] inline bool EndsWith(StringSlice suffix, bool caseSensitive = true) const noexcept
+        [[nodiscard]] bool EndsWith(const StringSlice suffix, const bool caseSensitive = true) const noexcept
         {
             if (suffix.Size() > Size())
                 return false;
@@ -505,12 +505,12 @@ namespace FE
         }
 
         template<class T>
-        [[nodiscard]] inline festd::expected<T, ParseError> Parse()
+        [[nodiscard]] festd::expected<T, ParseError> Parse()
         {
             return StringSlice(Data(), Size()).Parse<T>();
         }
 
-        [[nodiscard]] inline static String Join(StringSlice separator, const festd::span<StringSlice>& strings)
+        [[nodiscard]] static String Join(const StringSlice separator, const festd::span<StringSlice>& strings)
         {
             String result;
             uint32_t capacity = 0;
@@ -532,18 +532,18 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] inline explicit operator UUID() const noexcept
+        [[nodiscard]] explicit operator UUID() const noexcept
         {
             return UUID(Data());
         }
 
-        [[nodiscard]] inline Iterator begin() const noexcept
+        [[nodiscard]] Iterator begin() const noexcept
         {
             auto ptr = Data();
             return Iterator(ptr);
         }
 
-        [[nodiscard]] inline Iterator end() const noexcept
+        [[nodiscard]] Iterator end() const noexcept
         {
             auto ptr = Data();
             auto size = Size();
