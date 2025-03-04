@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
+#include <festd/string.h>
 
 namespace FE
 {
@@ -39,7 +39,7 @@ namespace FE
             int32_t m_minuteBias = 0;
 
             //! @brief Standard time zone name, e.g. "EST".
-            FixedString<26> m_standardName;
+            Env::Name m_standardName;
         };
 
 

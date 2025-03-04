@@ -3,7 +3,6 @@
 #include <FeCore/Base/Base.h>
 #include <FeCore/DI/BaseDI.h>
 #include <FeCore/Parallel/SpinLock.h>
-#include <FeCore/Strings/Unicode.h>
 #include <mutex>
 
 namespace FE::Memory
@@ -47,8 +46,14 @@ namespace FE::Env
 
         explicit Name(std::string_view str);
 
-        Name(const char* data, uint32_t length = 0)
+        Name(const char* data, const uint32_t length)
             : Name(std::string_view{ data, length ? length : __builtin_strlen(data) })
+        {
+        }
+
+        template<uint32_t TSize>
+        Name(const char (&data)[TSize])
+            : Name(std::string_view{ data, __builtin_strlen(data) })
         {
         }
 
@@ -81,39 +86,80 @@ namespace FE::Env
             return Valid() ? GetRecord()->m_data : nullptr;
         }
 
+        [[nodiscard]] int32_t compare(const char* s) const
+        {
+            const Record* record = GetRecord();
+            return strncmp(record->m_data, s, record->m_size);
+        }
+
         explicit operator bool() const
         {
             return Valid();
         }
 
-        friend bool operator==(Name lhs, Name rhs)
+        explicit operator festd::ascii_view() const
+        {
+            const Record* record = GetRecord();
+            return record ? festd::ascii_view{ record->m_data, record->m_size } : festd::ascii_view{};
+        }
+
+        friend bool operator==(const Name lhs, const Name rhs)
         {
             return lhs.m_handle == rhs.m_handle;
         }
-
-        friend bool operator!=(Name lhs, Name rhs)
+        friend bool operator!=(const Name lhs, const Name rhs)
         {
             return lhs.m_handle != rhs.m_handle;
         }
 
-        friend bool operator==(Name lhs, std::string_view rhs)
+        friend bool operator==(const Name lhs, const char* rhs)
         {
-            return lhs.GetRecord()->m_data == rhs;
+            return lhs.compare(rhs) == 0;
+        }
+        friend bool operator!=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) != 0;
+        }
+        friend bool operator<(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) < 0;
+        }
+        friend bool operator>(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) > 0;
+        }
+        friend bool operator<=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) <= 0;
+        }
+        friend bool operator>=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) >= 0;
         }
 
-        friend bool operator!=(Name lhs, std::string_view rhs)
+        friend bool operator==(const char* lhs, const Name rhs)
         {
-            return lhs.GetRecord()->m_data != rhs;
+            return rhs.compare(lhs) == 0;
         }
-
-        friend bool operator==(std::string_view lhs, Name rhs)
+        friend bool operator!=(const char* lhs, const Name rhs)
         {
-            return rhs == lhs;
+            return rhs.compare(lhs) != 0;
         }
-
-        friend bool operator!=(std::string_view lhs, Name rhs)
+        friend bool operator<(const char* lhs, const Name rhs)
         {
-            return rhs != lhs;
+            return rhs.compare(lhs) > 0;
+        }
+        friend bool operator>(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) < 0;
+        }
+        friend bool operator<=(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) >= 0;
+        }
+        friend bool operator>=(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) <= 0;
         }
 
         static const Name kEmpty;

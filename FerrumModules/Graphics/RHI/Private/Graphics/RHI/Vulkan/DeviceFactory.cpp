@@ -51,7 +51,7 @@ namespace FE::Graphics::Vulkan
         constexpr static auto ignoredMessages =
             std::array{ "Validation Error: [ VUID-VkShaderModuleCreateInfo-pCode-08742", "Device Extension:" };
 
-        const StringSlice message = pMessage;
+        const festd::string_view message = pMessage;
         for (auto& msg : ignoredMessages)
         {
             if (message.StartsWith(msg))
@@ -146,7 +146,7 @@ namespace FE::Graphics::Vulkan
         vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
         for (const char* layer : kRequiredInstanceLayers)
         {
-            const StringSlice layerSlice{ layer };
+            const festd::string_view layerSlice{ layer };
             const bool found = eastl::any_of(layers.begin(), layers.end(), [&](const VkLayerProperties& props) {
                 return layerSlice == props.layerName;
             });
@@ -160,7 +160,7 @@ namespace FE::Graphics::Vulkan
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
         for (const char* ext : kRequiredInstanceExtensions)
         {
-            const StringSlice extSlice{ ext };
+            const festd::string_view extSlice{ ext };
             const bool found = eastl::any_of(extensions.begin(), extensions.end(), [&](const VkExtensionProperties& props) {
                 return extSlice == props.extensionName;
             });
@@ -206,7 +206,7 @@ namespace FE::Graphics::Vulkan
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(physicalDevice, &props);
-            m_logger->LogInfo("Found Vulkan-compatible GPU: {}", StringSlice(props.deviceName));
+            m_logger->LogInfo("Found Vulkan-compatible GPU: {}", festd::string_view(props.deviceName));
 
             RHI::AdapterInfo& info = m_adapters.push_back();
             info.m_kind = VKConvert(props.deviceType);

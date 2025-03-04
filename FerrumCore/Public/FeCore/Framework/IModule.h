@@ -3,7 +3,7 @@
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/LibraryLoader.h>
 #include <FeCore/Modules/ServiceLocator.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 #include <festd/unordered_map.h>
 
 namespace FE
@@ -32,7 +32,7 @@ namespace FE
             m_allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
         }
 
-        IModule* Load(Env::Name moduleName, StringSlice modulePath)
+        IModule* Load(Env::Name moduleName, festd::string_view modulePath)
         {
             std::lock_guard lk{ m_lock };
             const auto iter = m_entryMap.find(moduleName);

@@ -62,7 +62,7 @@ namespace FE
         Rc<EventBus<FrameEvents>> m_frameEventBus;
 
         festd::vector<festd::unique_ptr<LogSinkBase>> m_logSinks;
-        festd::vector<StringSlice> m_commandLine;
+        festd::vector<festd::string_view> m_commandLine;
 
         template<class TApplication, class TFunc>
         struct MainJob final : public Job

@@ -24,6 +24,6 @@ namespace FE::Graphics::RHI
     private:
         GLFWwindow* m_window = nullptr;
         HWND m_handle = nullptr;
-        String m_title;
+        festd::string m_title;
     };
 } // namespace FE::Graphics::RHI

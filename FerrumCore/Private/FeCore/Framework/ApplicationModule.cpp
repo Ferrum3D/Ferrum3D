@@ -59,7 +59,7 @@ namespace FE
         {
         }
 
-        void Log(LogSeverity severity, SourceLocation sourceLocation, StringSlice message)
+        void Log(LogSeverity severity, SourceLocation sourceLocation, festd::string_view message)
         {
             {
                 const auto date = DateTime<TZ::UTC>::Now().ToString(DateTimeFormatKind::kISO8601);
@@ -78,10 +78,10 @@ namespace FE
             {
                 const auto location = Fmt::FixedFormatSized<IO::kMaxPathLength + 16>(
                     "{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
-                Console::Write(StringSlice(location.Data(), location.Size()));
+                Console::Write(festd::string_view(location.data(), location.size()));
             }
 
-            Console::Write(StringSlice(message.Data(), message.Size()));
+            Console::Write(festd::string_view(message.data(), message.size()));
             Console::Write("\n");
 
             if (severity >= LogSeverity::kWarning)

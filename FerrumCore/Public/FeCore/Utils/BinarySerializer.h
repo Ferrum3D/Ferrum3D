@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/IO/IStream.h>
-#include <FeCore/Strings/String.h>
+#include <festd/string.h>
 
 namespace FE
 {
@@ -47,10 +47,10 @@ namespace FE
             return m_stream->WriteFromBuffer(array.data(), length) + sizeof(size_t);
         }
 
-        size_t WriteString(StringSlice string)
+        size_t WriteString(const festd::string string)
         {
-            Write<size_t>(string.Size());
-            return Write(string.Data(), string.Size());
+            Write<size_t>(string.size());
+            return Write(string.data(), string.size());
         }
 
         template<class T>
@@ -68,15 +68,15 @@ namespace FE
             return buffer;
         }
 
-        size_t ReadString(String& string)
+        size_t ReadString(festd::string& string)
         {
-            string = String(static_cast<uint32_t>(Read<size_t>()), '\0');
-            return m_stream->ReadToBuffer({ reinterpret_cast<std::byte*>(string.Data()), string.Size() });
+            string = festd::string(static_cast<uint32_t>(Read<size_t>()), '\0');
+            return m_stream->ReadToBuffer({ reinterpret_cast<std::byte*>(string.data()), string.size() });
         }
 
-        String ReadString()
+        festd::string ReadString()
         {
-            String string;
+            festd::string string;
             ReadString(string);
             return string;
         }

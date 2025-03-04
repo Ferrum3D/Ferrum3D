@@ -26,7 +26,7 @@ namespace FE::Graphics::RHI
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_window =
-            glfwCreateWindow(static_cast<int>(desc.m_width), static_cast<int>(desc.m_height), m_title.Data(), nullptr, nullptr);
+            glfwCreateWindow(static_cast<int>(desc.m_width), static_cast<int>(desc.m_height), m_title.data(), nullptr, nullptr);
 
         if (m_window == nullptr)
             return ResultCode::kUnknownError;

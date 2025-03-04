@@ -18,7 +18,7 @@
 
 namespace FE::Graphics
 {
-    festd::expected<RawImage, StringSlice> RawImage::LoadFromMemory(festd::span<const uint8_t> data)
+    festd::expected<RawImage, festd::string_view> RawImage::LoadFromMemory(festd::span<const uint8_t> data)
     {
         RawImage result;
         int32_t w, h, channels;

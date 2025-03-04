@@ -15,7 +15,7 @@ namespace FE::Threading
         struct alignas(Memory::kCacheLineSize) FiberInfo final
         {
             std::atomic<bool> m_isFree;
-            FixedString<116> m_name;
+            festd::basic_fixed_string<116> m_name;
             Context::Handle m_context;
         };
 

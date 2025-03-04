@@ -95,9 +95,9 @@ namespace FE::Graphics::Vulkan
         for (const char* extension : kRequiredDeviceExtensions)
         {
             const bool found = std::any_of(availableExt.begin(), availableExt.end(), [&](const VkExtensionProperties& props) {
-                return StringSlice(extension) == props.extensionName;
+                return festd::string_view(extension) == props.extensionName;
             });
-            FE_AssertMsg(found, "Vulkan device extension {} was not found", StringSlice(extension));
+            FE_AssertMsg(found, "Vulkan device extension {} was not found", festd::string_view(extension));
         }
 
         constexpr float queuePriority = 1.0f;

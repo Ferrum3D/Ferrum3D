@@ -94,7 +94,7 @@ namespace FE::Threading
 
     Context::TransferParams FiberPool::Switch(const FiberHandle to, const uintptr_t userData)
     {
-        TracyFiberEnter(m_fibers[to.m_value].m_name.Data());
+        TracyFiberEnter(m_fibers[to.m_value].m_name.data());
         return Context::Switch(m_fibers[to.m_value].m_context, userData);
     }
 } // namespace FE::Threading

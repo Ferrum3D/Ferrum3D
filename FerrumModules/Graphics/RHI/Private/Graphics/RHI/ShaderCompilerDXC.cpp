@@ -149,7 +149,7 @@ namespace FE::Graphics::RHI
 
         const uint32_t argsCount = compileArgs.size();
 
-        const StringSlice entryPointView{ args.m_entryPoint };
+        const festd::string_view entryPointView{ args.m_entryPoint };
         const std::pmr::wstring entryPoint{ entryPointView.begin(), entryPointView.end() };
         const std::pmr::wstring profile = GetTargetProfile(args.m_stage, args.m_version);
         CComPtr<IDxcOperationResult> compileResult;
@@ -187,7 +187,7 @@ namespace FE::Graphics::RHI
             if (SUCCEEDED(compileResult->GetErrorBuffer(&errors)) && SUCCEEDED(library->GetBlobAsUtf8(errors, &unicodeErrors)))
             {
                 auto errorString = static_cast<const char*>(unicodeErrors->GetBufferPointer());
-                m_logger->LogError("Shader compilation failed: {}", StringSlice(errorString));
+                m_logger->LogError("Shader compilation failed: {}", festd::string_view(errorString));
             }
         }
 

@@ -15,7 +15,7 @@ namespace FE::IO
     }
 
 
-    ResultCode FileStream::Seek(intptr_t offset, SeekMode seekMode)
+    ResultCode FileStream::Seek(const intptr_t offset, const SeekMode seekMode)
     {
         return Platform::SeekFile(m_handle, offset, seekMode);
     }
@@ -35,7 +35,7 @@ namespace FE::IO
     }
 
 
-    size_t FileStream::ReadToBuffer(festd::span<std::byte> buffer)
+    size_t FileStream::ReadToBuffer(const festd::span<std::byte> buffer)
     {
         uint32_t bytesRead;
         FE_IO_ASSERT(Platform::ReadFile(m_handle, buffer, bytesRead));
@@ -43,7 +43,7 @@ namespace FE::IO
     }
 
 
-    size_t FileStream::WriteImpl(festd::span<const std::byte> buffer)
+    size_t FileStream::WriteImpl(const festd::span<const std::byte> buffer)
     {
         uint32_t bytesWritten;
         FE_IO_ASSERT(Platform::WriteFile(m_handle, buffer, bytesWritten));
@@ -51,7 +51,7 @@ namespace FE::IO
     }
 
 
-    StringSlice FileStream::GetName()
+    festd::string_view FileStream::GetName()
     {
         return m_name;
     }
@@ -76,7 +76,7 @@ namespace FE::IO
     }
 
 
-    ResultCode FileStream::Open(StringSlice fileName, OpenMode openMode)
+    ResultCode FileStream::Open(const festd::string_view fileName, const OpenMode openMode)
     {
         ResultCode result = Platform::OpenFile(fileName, openMode, m_handle);
         if (result != ResultCode::Success)
@@ -92,7 +92,7 @@ namespace FE::IO
     }
 
 
-    void FileStream::Open(StandardDescriptor standardDescriptor)
+    void FileStream::Open(const StandardDescriptor standardDescriptor)
     {
         m_name = GetStandardDescriptorName(standardDescriptor);
         m_openMode = GetStandardDescriptorOpenMode(standardDescriptor);

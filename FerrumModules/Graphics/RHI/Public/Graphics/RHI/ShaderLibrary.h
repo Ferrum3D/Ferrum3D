@@ -11,8 +11,8 @@ namespace FE::Graphics::RHI
 
     struct ShaderDefine final
     {
-        StringSlice m_name;
-        StringSlice m_value;
+        festd::string_view m_name;
+        festd::string_view m_value;
     };
 
 

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 #include <Graphics/RHI/Image.h>
 #include <Graphics/RHI/ImageFormat.h>
 
@@ -12,7 +12,7 @@ namespace FE::Graphics
         uint16_t m_height = 0;
         uint32_t m_channelCount = 0;
 
-        static festd::expected<RawImage, StringSlice> LoadFromMemory(festd::span<const uint8_t> data);
+        static festd::expected<RawImage, festd::string_view> LoadFromMemory(festd::span<const uint8_t> data);
         static void Free(RawImage& image);
     };
 

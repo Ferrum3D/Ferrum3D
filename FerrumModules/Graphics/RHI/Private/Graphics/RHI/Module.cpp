@@ -25,7 +25,7 @@ namespace FE::Graphics::RHI
             DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
             Env::Configuration* config = serviceProvider->ResolveRequired<Env::Configuration>();
             Logger* logger = serviceProvider->ResolveRequired<Logger>();
-            const StringSlice apiName = config->GetString("Graphics/Api", "Vulkan");
+            const festd::string_view apiName = config->GetString("Graphics/Api", "Vulkan");
             if (apiName == "Vulkan")
             {
                 Rc deviceFactory = Rc<Vulkan::DeviceFactory>::DefaultNew(config, logger);

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 
 namespace FE
 {
@@ -39,7 +39,7 @@ namespace FE
     };
 
 
-    ThreadHandle CreateThread(StringSlice name, ThreadFunction startRoutine, uintptr_t pUserData = 0,
+    ThreadHandle CreateThread(festd::string_view name, ThreadFunction startRoutine, uintptr_t pUserData = 0,
                               Threading::Priority priority = Threading::Priority::kNormal, size_t stackSize = 0);
     void CloseThread(ThreadHandle& thread);
 

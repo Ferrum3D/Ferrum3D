@@ -37,7 +37,7 @@ namespace FE
         }
 
     public:
-        FE_RTTI_Class(ServiceLocator<T>, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
+        FE_RTTI_Class(ServiceLocator, "BE31ABA8-37F8-4AE1-8626-9D38FB9D8CB1");
 
         //! @brief Register the instance.
         //!

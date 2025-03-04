@@ -55,5 +55,5 @@ namespace FE::Graphics::Vulkan
                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
                                                                     FE_VK_SURFACE_EXT };
 
-    StringSlice VKResultToString(VkResult result);
+    festd::string_view VKResultToString(VkResult result);
 } // namespace FE::Graphics::Vulkan

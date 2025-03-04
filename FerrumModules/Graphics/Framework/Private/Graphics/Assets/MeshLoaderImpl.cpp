@@ -47,7 +47,7 @@ namespace FE::Graphics
         const aiScene* pScene = Importer.ReadFileFromMemory(fileData.data(), fileData.size(), kPostProcessFlags, ".fbx");
         if (!pScene)
         {
-            const StringSlice error = Importer.GetErrorString();
+            const festd::string_view error = Importer.GetErrorString();
             logger->LogError("Assimp Error: {}", error);
             return false;
         }

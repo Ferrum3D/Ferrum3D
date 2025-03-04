@@ -7,12 +7,12 @@ namespace FE
 {
     namespace
     {
-        static Threading::SpinLock g_ThreadDataPoolLock;
+        Threading::SpinLock GThreadDataPoolLock;
 
 
-        inline static NativeThreadData* AllocateThreadData()
+        NativeThreadData* AllocateThreadData()
         {
-            const std::lock_guard lock{ g_ThreadDataPoolLock };
+            const std::lock_guard lock{ GThreadDataPoolLock };
             Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
             NativeThreadData* pResult = Memory::New<NativeThreadData>(&state.m_threadDataAllocator);
             return pResult;
@@ -27,7 +27,7 @@ namespace FE
             {
                 if (pData)
                 {
-                    const std::lock_guard lock{ g_ThreadDataPoolLock };
+                    const std::lock_guard lock{ GThreadDataPoolLock };
                     Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
                     Memory::Delete(&state.m_threadDataAllocator, pData, sizeof(NativeThreadData));
                     pData = nullptr;
@@ -38,7 +38,7 @@ namespace FE
         thread_local ThreadDataHolder g_TLSThreadData;
 
 
-        static DWORD WINAPI ThreadRoutineImpl(LPVOID lpParam)
+        DWORD WINAPI ThreadRoutineImpl(const LPVOID lpParam)
         {
             auto* pData = static_cast<NativeThreadData*>(lpParam);
             g_TLSThreadData.pData = pData;
@@ -48,8 +48,8 @@ namespace FE
     } // namespace
 
 
-    ThreadHandle CreateThread(StringSlice name, ThreadFunction startRoutine, uintptr_t pUserData, Threading::Priority priority,
-                              size_t stackSize)
+    ThreadHandle CreateThread(const festd::string_view name, const ThreadFunction startRoutine, const uintptr_t pUserData,
+                              Threading::Priority priority, const size_t stackSize)
     {
         NativeThreadData* pData = AllocateThreadData();
 
@@ -65,7 +65,7 @@ namespace FE
 
         WCHAR wideName[64];
         const int32_t wideNameLength =
-            MultiByteToWideChar(CP_UTF8, 0, name.Data(), static_cast<int>(name.Size()), wideName, std::size(wideName));
+            MultiByteToWideChar(CP_UTF8, 0, name.data(), static_cast<int>(name.size()), wideName, std::size(wideName));
         wideName[wideNameLength] = 0;
 
         HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");

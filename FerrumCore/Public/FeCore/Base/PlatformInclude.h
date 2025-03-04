@@ -15,6 +15,7 @@
 #    undef CreateWindow
 #    undef MemoryBarrier
 #    undef GetCurrentDirectory
+#    undef SetCurrentDirectory
 #else
 #    error Unsupported platform
 #endif

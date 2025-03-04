@@ -1,22 +1,22 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <festd/vector.h>
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Modules/LibraryLoader.h>
+#include <festd/vector.h>
 
 namespace FE
 {
     namespace Platform
     {
-        ModuleHandle LoadModule(StringSlice name)
+        ModuleHandle LoadModule(const festd::string_view name)
         {
 #if FE_PLATFORM_WINDOWS
-            const int32_t nameSize = static_cast<int32_t>(name.Size());
-            const int32_t wideLength = MultiByteToWideChar(CP_UTF8, 0, name.Data(), nameSize, nullptr, 0);
+            const int32_t nameSize = static_cast<int32_t>(name.size());
+            const int32_t wideLength = MultiByteToWideChar(CP_UTF8, 0, name.data(), nameSize, nullptr, 0);
             FE_Assert(wideLength > 0);
 
             festd::small_vector<WCHAR, MAX_PATH + 1> wideName;
             wideName.resize(wideLength + 1, '\0');
-            MultiByteToWideChar(CP_UTF8, 0, name.Data(), nameSize, wideName.data(), wideLength);
+            MultiByteToWideChar(CP_UTF8, 0, name.data(), nameSize, wideName.data(), wideLength);
 
             const HMODULE hLibrary = LoadLibraryW(wideName.data());
             return { reinterpret_cast<uintptr_t>(hLibrary) };
@@ -26,7 +26,7 @@ namespace FE
         }
 
 
-        bool UnloadModule(ModuleHandle moduleHandle)
+        bool UnloadModule(const ModuleHandle moduleHandle)
         {
 #if FE_PLATFORM_WINDOWS
             return FreeLibrary(reinterpret_cast<HMODULE>(moduleHandle.m_value));
@@ -36,7 +36,7 @@ namespace FE
         }
 
 
-        void* FindModuleSymbol(ModuleHandle moduleHandle, const char* symbolName)
+        void* FindModuleSymbol(const ModuleHandle moduleHandle, const char* symbolName)
         {
 #if FE_PLATFORM_WINDOWS
             return (void*)GetProcAddress(reinterpret_cast<HMODULE>(moduleHandle.m_value), symbolName);
@@ -58,7 +58,7 @@ namespace FE
     }
 
 
-    LibraryLoader::LibraryLoader(StringSlice libraryName)
+    LibraryLoader::LibraryLoader(festd::string_view libraryName)
     {
         const bool result = Load(libraryName);
         FE_AssertMsg(result, "Couldn't load library \"{}\"", libraryName);

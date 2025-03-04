@@ -9,7 +9,7 @@ namespace FE::Graphics::RHI
         uint32_t m_width = 0;
         uint32_t m_height = 0;
 
-        StringSlice m_title;
+        festd::string_view m_title;
     };
 
 

@@ -46,7 +46,7 @@ namespace FE::IO
     struct AsyncOperationRequest
     {
         Rc<IStream> m_stream;       //!< The stream that the operation will be performed on, optional.
-        FixedPath m_path;           //!< The path to the file to open the stream for, must be provided if pStream is null.
+        Path m_path;                //!< The path to the file to open the stream for, must be provided if pStream is null.
         uintptr_t m_offset = 0;     //!< The starting offset to read from or write to.
         void* m_userData = nullptr; //!< An optional pointer to user data.
         Priority m_priority = Priority::kNormal; //!< Request priority.

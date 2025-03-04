@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Strings/FixedString.h>
+#include <festd/string.h>
 #include <Graphics/RHI/ImageFormat.h>
 #include <Graphics/RHI/ShaderResourceType.h>
 #include <Graphics/RHI/ShaderStage.h>

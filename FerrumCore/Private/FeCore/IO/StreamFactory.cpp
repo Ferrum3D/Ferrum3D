@@ -7,15 +7,16 @@ namespace FE::IO
     FileStreamFactory::FileStreamFactory(Env::Configuration* pConfig)
         : m_fileStreamPool("IO/FileStream", sizeof(FileStream), 64 * 1024)
     {
-        const IO::FixedPath currentDirectory = GetCurrentDirectory();
+        const Path currentDirectory = Directory::GetCurrentDirectory();
         m_parentDirectory = pConfig->GetString("AssetDirectory", currentDirectory);
     }
 
 
-    festd::expected<Rc<IStream>, ResultCode> FileStreamFactory::OpenFileStream(StringSlice filename, OpenMode openMode)
+    festd::expected<Rc<IStream>, ResultCode> FileStreamFactory::OpenFileStream(const festd::string_view filename,
+                                                                               const OpenMode openMode)
     {
         const Rc fileStream = Rc<FileStream>::New(&m_fileStreamPool);
-        const FixedPath fullPath = m_parentDirectory / filename;
+        const Path fullPath = m_parentDirectory / filename;
         const ResultCode result = fileStream->Open(fullPath, openMode);
         if (result != ResultCode::Success)
             return festd::unexpected(result);
@@ -24,14 +25,14 @@ namespace FE::IO
     }
 
 
-    bool FileStreamFactory::FileExists(StringSlice filename)
+    bool FileStreamFactory::FileExists(const festd::string_view filename)
     {
-        const FixedPath fullPath = m_parentDirectory / filename;
+        const Path fullPath = m_parentDirectory / filename;
         return Platform::FileExists(fullPath);
     }
 
 
-    FileAttributeFlags FileStreamFactory::GetFileAttributeFlags(StringSlice filename)
+    FileAttributeFlags FileStreamFactory::GetFileAttributeFlags(const festd::string_view filename)
     {
         return Platform::GetFileAttributeFlags(filename);
     }

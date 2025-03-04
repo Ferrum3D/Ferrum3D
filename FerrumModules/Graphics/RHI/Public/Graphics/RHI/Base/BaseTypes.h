@@ -93,7 +93,7 @@ namespace FE::Graphics::RHI
     };
 
 
-    inline StringSlice ToString(const ShaderSemanticName name)
+    inline festd::string_view ToString(const ShaderSemanticName name)
     {
         switch (name)
         {

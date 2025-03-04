@@ -64,19 +64,19 @@ namespace FE::IO
             if (const auto result = m_streamFactory->OpenFileStream(request.m_path, OpenMode::kReadOnly))
             {
                 request.m_stream = result.value();
-                const StringSlice zoneText = request.m_stream->GetName();
-                ZoneText(zoneText.Data(), zoneText.Size());
+                const festd::string_view zoneText = request.m_stream->GetName();
+                ZoneText(zoneText.data(), zoneText.size());
             }
             else
             {
-                const StringSlice resultDesc = GetResultDesc(result.error());
+                const festd::string_view resultDesc = GetResultDesc(result.error());
                 status = AsyncOperationStatus::kFailed;
-                ZoneTextF("Failed request: %.*s", resultDesc.Size(), resultDesc.Data());
+                ZoneTextF("Failed request: %.*s", resultDesc.size(), resultDesc.data());
                 ZoneColor(kFailureColor);
             }
         }
 
-        if (request.m_path.Empty())
+        if (request.m_path.empty())
             request.m_path = request.m_stream->GetName();
 
         if (request.m_allocator == nullptr)

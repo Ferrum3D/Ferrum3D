@@ -5,6 +5,7 @@
 #include <FeCore/Parallel/Fiber.h>
 #include <FeCore/Parallel/Semaphore.h>
 #include <FeCore/Parallel/Thread.h>
+#include <festd/vector.h>
 
 namespace FE
 {

@@ -11,8 +11,8 @@ namespace FE::Graphics::RHI
         HLSLShaderVersion m_version;
         ShaderStage m_stage = ShaderStage::kVertex;
         Env::Name m_entryPoint;
-        StringSlice m_sourceCode;
-        StringSlice m_fullPath;
+        festd::string_view m_sourceCode;
+        festd::string_view m_fullPath;
     };
 
 

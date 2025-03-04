@@ -8,8 +8,8 @@ namespace FE::Graphics
 {
     struct ShaderAssetLoader::CompilerJob : public Job
     {
-        IO::FixedPath m_path;
-        StringSlice m_sourceCode;
+        IO::Path m_path;
+        festd::string_view m_sourceCode;
         ShaderAssetStorage* m_storage = nullptr;
         ShaderAssetLoader* m_loader = nullptr;
         RHI::ShaderCompiler* m_compiler = nullptr;
@@ -33,7 +33,7 @@ namespace FE::Graphics
             compilerArgs.m_fullPath = m_path;
             compilerArgs.m_version = RHI::HLSLShaderVersion::kDefault;
 
-            const StringSlice pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
+            const festd::string_view pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
             if (pathNoExt.EndsWith(".ps"))
                 compilerArgs.m_stage = RHI::ShaderStage::kPixel;
             else if (pathNoExt.EndsWith(".vs"))
@@ -118,7 +118,7 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        const IO::FixedPath spvFilename = IO::FixedPath{ assetName } + m_spec.m_fileExtension;
+        const IO::Path spvFilename = IO::Path{ assetName } + m_spec.m_fileExtension;
         // TODO: check if already compiled
         // if (m_streamFactory->FileExists(spvFilename))
         // {
@@ -126,9 +126,9 @@ namespace FE::Graphics
         //     const IO::FileStats stats = spvFile->GetStats();
         // }
 
-        for (const StringSlice extension : m_spec.m_sourceExtensions)
+        for (const festd::string_view extension : m_spec.m_sourceExtensions)
         {
-            const IO::FixedPath path = IO::FixedPath{ assetName } + extension;
+            const IO::Path path = IO::Path{ assetName } + extension;
             if (!m_streamFactory->FileExists(path))
                 continue;
 

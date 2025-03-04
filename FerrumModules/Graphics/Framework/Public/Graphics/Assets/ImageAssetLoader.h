@@ -27,7 +27,7 @@ namespace FE::Graphics
 
         Memory::PoolAllocator m_uploadJobPool;
 
-        festd::fixed_vector<StringSlice, 2> m_sourceExtensions;
+        festd::fixed_vector<festd::string_view, 2> m_sourceExtensions;
         Assets::AssetLoaderSpec m_spec;
 
         IO::IStreamFactory* m_streamFactory = nullptr;

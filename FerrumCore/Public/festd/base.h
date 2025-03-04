@@ -1,4 +1,6 @@
 #pragma once
+#include <FeCore/Base/CompilerTraits.h>
+
 #include <EASTL/finally.h>
 #include <EASTL/optional.h>
 #include <EASTL/sort.h>

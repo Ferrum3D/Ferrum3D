@@ -14,10 +14,7 @@ namespace FE::Platform
         if (info.StandardName[0] == 0)
             return result;
 
-        const int32_t length = WideCharToMultiByte(CP_UTF8, 0, info.StandardName, -1, nullptr, 0, nullptr, nullptr);
-        result.m_standardName.Resize(length, ' ');
-        WideCharToMultiByte(
-            CP_UTF8, 0, info.StandardName, -1, result.m_standardName.Data(), result.m_standardName.Size(), nullptr, nullptr);
+        result.m_standardName = Env::Name{ ConvertWideString<festd::fixed_string>(info.StandardName) };
         return result;
     }
 

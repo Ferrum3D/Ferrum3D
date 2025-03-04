@@ -47,7 +47,7 @@ endfunction()
 function(fe_configure_target TARGET)
     if(FE_COMPILER_MSVC)
         target_compile_options(${TARGET} PRIVATE /EHs-c- /D_HAS_EXCEPTIONS=0 /fp:fast
-            /W4 /WX /wd4324 /wd4201)
+            /W4 /WX /wd4324 /wd4201 /wd4127)
     else()
         target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall -Werror
 			-Wno-deprecated-builtins -Wno-language-extension-token)

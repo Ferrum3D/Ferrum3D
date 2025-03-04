@@ -36,7 +36,7 @@ namespace FE::Graphics
         ZoneScoped;
 
         const Rc assetStream =
-            m_streamFactory->OpenFileStream(IO::FixedPath{ assetName } + ".fbx", IO::OpenMode::kReadOnly).value();
+            m_streamFactory->OpenFileStream(IO::Path{ assetName } + ".fbx", IO::OpenMode::kReadOnly).value();
 
         festd::vector<std::byte> buffer(static_cast<uint32_t>(assetStream->Length()), 0);
         assetStream->ReadToBuffer(buffer);

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 
 namespace FE
 {
@@ -93,10 +93,10 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] static ByteBuffer CopyFromString(StringSlice data) noexcept
+        [[nodiscard]] static ByteBuffer CopyFromString(festd::string_view data) noexcept
         {
-            ByteBuffer result(data.Size());
-            memcpy(result.m_begin, data.Data(), data.Size());
+            ByteBuffer result(data.size());
+            memcpy(result.m_begin, data.data(), data.size());
             return result;
         }
 

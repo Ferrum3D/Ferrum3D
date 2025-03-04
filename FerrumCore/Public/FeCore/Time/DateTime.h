@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/Format.h>
 #include <FeCore/Time/TimeSpan.h>
 
@@ -61,7 +60,7 @@ namespace FE
                 return m_data.Second;
             }
 
-            [[nodiscard]] FixStr64 ToString(DateTimeFormatKind formatKind) const;
+            [[nodiscard]] festd::basic_fixed_string<64> ToString(DateTimeFormatKind formatKind) const;
         };
     } // namespace Internal
 

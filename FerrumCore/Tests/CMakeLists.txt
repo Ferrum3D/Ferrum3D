@@ -6,6 +6,8 @@
     Containers/SegmentedVector.cpp
     Containers/SparseSet.cpp
 
+    IO/Path.cpp
+
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
     Math/Vector4.cpp

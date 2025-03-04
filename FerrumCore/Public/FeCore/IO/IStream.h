@@ -65,7 +65,7 @@ namespace FE::IO
         virtual size_t WriteFromStream(IStream* stream, size_t size) = 0;
 
         //! @brief Get name of the stream.
-        [[nodiscard]] virtual StringSlice GetName() = 0;
+        [[nodiscard]] virtual festd::string_view GetName() = 0;
 
         //! @brief Get OpenMode for this stream if supported.
         [[nodiscard]] virtual OpenMode GetOpenMode() const = 0;

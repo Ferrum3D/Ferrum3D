@@ -1,11 +1,12 @@
 ﻿#pragma once
 #include <FeCore/Logging/Logger.h>
+#include <FeCore/Modules/Environment.h>
 
 namespace FE::Trace
 {
     namespace Platform
     {
-        void AssertionReport(SourceLocation location, StringSlice message);
+        void AssertionReport(SourceLocation location, festd::string_view message);
     }
 
 

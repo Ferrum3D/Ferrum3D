@@ -5,19 +5,18 @@
 
 namespace FE::Platform
 {
-    template<uint32_t TLength>
     struct WideString
     {
-        festd::small_vector<WCHAR, TLength> m_value;
+        festd::small_vector<WCHAR, MAX_PATH> m_value;
 
-        WideString(const StringSlice str)
+        WideString(const festd::string_view str)
         {
-            const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), nullptr, 0);
+            const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
             if (length < 0)
                 return;
 
             m_value.resize(length + 1, 0);
-            MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), m_value.data(), m_value.size());
+            MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), m_value.data(), m_value.size());
         }
 
         [[nodiscard]] const WCHAR* data() const
@@ -32,17 +31,42 @@ namespace FE::Platform
     };
 
 
-    inline constexpr int64_t WindowsTicksPerSecond = 10000000;
-    inline constexpr int64_t WindowsUnixEpochDifference = 11644473600;
-
-
-    inline TimeValue ConvertWindowsTickToUnixSeconds(int64_t windowsTicks)
+    template<class TString>
+    TString ConvertWideString(const festd::span<const WCHAR> str)
     {
-        return windowsTicks / WindowsTicksPerSecond - WindowsUnixEpochDifference;
+        TString result;
+
+        const int32_t length = WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), nullptr, 0, nullptr, nullptr);
+        if (length < 0)
+            return result;
+
+        result.resize(length, 0);
+        WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), result.data(), result.size(), nullptr, nullptr);
+        return result;
     }
 
 
-    inline TimeValue ConvertFiletimeToUnixSeconds(FILETIME fileTime)
+    template<class TString>
+    TString ConvertWideString(const WCHAR* str, size_t length = Constants::kMaxValue<size_t>)
+    {
+        if (length == Constants::kMaxValue<size_t>)
+            length = wcslen(str);
+
+        return ConvertWideString<TString>(festd::span(str, static_cast<uint32_t>(length)));
+    }
+
+
+    inline constexpr int64_t kWindowsTicksPerSecond = 10000000;
+    inline constexpr int64_t kWindowsUnixEpochDifference = 11644473600;
+
+
+    inline TimeValue ConvertWindowsTickToUnixSeconds(const int64_t windowsTicks)
+    {
+        return windowsTicks / kWindowsTicksPerSecond - kWindowsUnixEpochDifference;
+    }
+
+
+    inline TimeValue ConvertFiletimeToUnixSeconds(const FILETIME fileTime)
     {
         LARGE_INTEGER ftInt;
         ftInt.HighPart = fileTime.dwHighDateTime;
@@ -51,7 +75,7 @@ namespace FE::Platform
     }
 
 
-    inline void ConvertDateTimeToSystemTime(SystemTimeInfo dateTime, SYSTEMTIME& result)
+    inline void ConvertDateTimeToSystemTime(const SystemTimeInfo dateTime, SYSTEMTIME& result)
     {
         result.wYear = dateTime.Year + 1900;
         result.wMonth = dateTime.Month;

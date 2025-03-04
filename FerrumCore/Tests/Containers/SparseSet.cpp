@@ -1,19 +1,19 @@
 ﻿#include <FeCore/Containers/SparseSet.h>
-#include <FeCore/Strings/String.h>
+#include <festd/string.h>
 #include <gtest/gtest.h>
 
-using FE::SparseSet;
+using namespace FE;
 
 TEST(SparseSet, Create)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
     EXPECT_EQ(sparseSet.Capacity(), 10);
     EXPECT_EQ(sparseSet.Size(), 0);
 }
 
 TEST(SparseSet, Insert)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
 
     sparseSet.Insert(0, "Zero");
     EXPECT_EQ(sparseSet.Capacity(), 10);
@@ -30,7 +30,7 @@ TEST(SparseSet, Insert)
 
 TEST(SparseSet, Contains)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     EXPECT_TRUE(sparseSet.Contains(0));
     sparseSet.Insert(9, "Nine");
@@ -40,9 +40,9 @@ TEST(SparseSet, Contains)
 
 TEST(SparseSet, TryGetAt)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
     sparseSet.Insert(0, "Zero");
-    FE::String value;
+    festd::string value;
     EXPECT_TRUE(sparseSet.TryGetAt(0, value));
     EXPECT_EQ(value, "Zero");
     EXPECT_FALSE(sparseSet.TryGetAt(2, value));
@@ -50,7 +50,7 @@ TEST(SparseSet, TryGetAt)
 
 TEST(SparseSet, Indexer)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     EXPECT_EQ(sparseSet[0], "Zero");
 
@@ -60,7 +60,7 @@ TEST(SparseSet, Indexer)
 
 TEST(SparseSet, Remove)
 {
-    SparseSet<uint32_t, FE::String> sparseSet(10);
+    SparseSet<uint32_t, festd::string> sparseSet(10);
     sparseSet.Insert(0, "Zero");
     sparseSet.Insert(1, "One");
     sparseSet.Insert(2, "Two");

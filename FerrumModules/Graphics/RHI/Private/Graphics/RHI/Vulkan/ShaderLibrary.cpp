@@ -151,8 +151,8 @@ namespace FE::Graphics::Vulkan
             const auto& [srcName, srcValue] = desc.m_defines[defineIndex];
             auto& [dstName, dstValue] = definesCopy[defineIndex];
 
-            dstName = StringSlice::Copy(&m_shaderInfoAllocator, srcName);
-            dstValue = StringSlice::Copy(&m_shaderInfoAllocator, srcValue);
+            dstName = festd::string_view::Copy(&m_shaderInfoAllocator, srcName);
+            dstValue = festd::string_view::Copy(&m_shaderInfoAllocator, srcValue);
         }
 
         ShaderInfo& shaderInfo = m_shaders.push_back();
@@ -165,7 +165,7 @@ namespace FE::Graphics::Vulkan
         task->m_shaderIndex = shaderIndex;
 
         IO::AsyncReadRequest request;
-        request.m_path = StringSlice{ desc.m_name };
+        request.m_path = festd::string_view{ desc.m_name };
         request.m_callback = task;
         m_asyncIO->ReadAsync(request);
 

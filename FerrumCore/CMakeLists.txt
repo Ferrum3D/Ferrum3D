@@ -1,11 +1,14 @@
 ﻿set(PUBLIC_HEADERS
     Public/festd/Internal/BitStorage.h
+    Public/festd/Internal/StringBase.h
+    Public/festd/Internal/StringStorageImpl.h
 
     Public/festd/base.h
     Public/festd/bit_vector.h
     Public/festd/fixed_function.h
     Public/festd/intrusive_list.h
     Public/festd/span.h
+    Public/festd/string.h
     Public/festd/unordered_map.h
     Public/festd/vector.h
 
@@ -52,8 +55,9 @@
     Public/FeCore/IO/FileStream.h
     Public/FeCore/IO/IStream.h
     Public/FeCore/IO/IStreamFactory.h
-    Public/FeCore/IO/StreamBase.h
     Public/FeCore/IO/Path.h
+    Public/FeCore/IO/PathParser.h
+    Public/FeCore/IO/StreamBase.h
 
     Public/FeCore/Jobs/IJobSystem.h
     Public/FeCore/Jobs/Job.h
@@ -100,12 +104,9 @@
 
     Public/FeCore/SIMD/Utils.h
 
-    Public/FeCore/Strings/FixedString.h
-    Public/FeCore/Strings/Unicode.h
     Public/FeCore/Strings/Format.h
-    Public/FeCore/Strings/String.h
-    Public/FeCore/Strings/StringBase.h
-    Public/FeCore/Strings/StringSlice.h
+    Public/FeCore/Strings/Parser.h
+    Public/FeCore/Strings/Utils.h
 
     Public/FeCore/Time/BaseTime.h
     Public/FeCore/Time/DateTime.h
@@ -131,10 +132,12 @@ set(COMMON_SOURCES
     Private/FeCore/Framework/ModuleBase.cpp
 
     Private/FeCore/IO/Platform/PlatformFile.h
+    Private/FeCore/IO/Platform/PlatformPath.h
     Private/FeCore/IO/AsyncStreamIO.h
     Private/FeCore/IO/AsyncStreamIO.cpp
     Private/FeCore/IO/BaseIO.cpp
     Private/FeCore/IO/FileStream.cpp
+    Private/FeCore/IO/Path.cpp
     Private/FeCore/IO/StreamFactory.h
     Private/FeCore/IO/StreamFactory.cpp
 
@@ -160,7 +163,7 @@ set(COMMON_SOURCES
     Private/FeCore/Platform/Windows/Common.h
 
     Private/FeCore/Strings/Format.cpp
-    Private/FeCore/Strings/StringSlice.cpp
+    Private/FeCore/Strings/Parser.cpp
 
     Private/FeCore/Time/Platform/PlatformTime.cpp
     Private/FeCore/Time/DateTime.cpp
@@ -168,6 +171,7 @@ set(COMMON_SOURCES
 
 set(WINDOWS_SOURCES
     Private/FeCore/IO/Platform/Windows/PlatformFile.cpp
+    Private/FeCore/IO/Platform/Windows/PlatformPath.cpp
 
     Private/FeCore/Logging/Platform/Windows/Trace.cpp
 
@@ -190,8 +194,16 @@ target_include_directories(FeCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Engine/FeCore")
 target_link_libraries(FeCore
-    fcontext mimalloc EASTL unordered_dense small_vector tl_expected
-    TracyClient jeaiii_itoa dragonbox::dragonbox_to_chars)
+    fcontext
+    mimalloc
+    TracyClient
+    utf8proc
+    EASTL
+    unordered_dense
+    small_vector
+    tl_expected
+    jeaiii_itoa
+    dragonbox::dragonbox_to_chars)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

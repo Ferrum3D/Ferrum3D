@@ -320,7 +320,7 @@ namespace FE::Graphics::RHI
     static_assert(sizeof(Format) == sizeof(FormatInfo));
 
 
-    inline StringSlice ToString(const Format format)
+    inline festd::string_view ToString(const Format format)
     {
         switch (format)
         {

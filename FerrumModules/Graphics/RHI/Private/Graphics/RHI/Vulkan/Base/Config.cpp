@@ -2,7 +2,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    StringSlice VKResultToString(const VkResult result)
+    festd::string_view VKResultToString(const VkResult result)
     {
         switch (result)
         {

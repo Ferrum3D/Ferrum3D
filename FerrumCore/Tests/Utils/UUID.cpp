@@ -1,4 +1,4 @@
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 #include <FeCore/Utils/UUID.h>
 #include <Tests/Common/TestCommon.h>
 
@@ -22,9 +22,6 @@ TEST(UUID, Parse)
     ASSERT_EQ(uuid1, FE::UUID("{62e1b7a1-c14a-4129-ac57-7e77289123e9}"));
     ASSERT_EQ(uuid1, FE::UUID("{62e1b7a1c14a4129ac577e77289123e9}"));
     ASSERT_EQ(uuid1, FE::UUID("62e1b7a1c14a4129ac577e77289123e9"));
-
-    const auto uuid3 = FE::StringSlice("62E1B7A1-C14A-4129-AC57-7E77289123E9").Parse<FE::UUID>();
-    ASSERT_EQ(uuid1, uuid3.value());
 
     EXPECT_TRUE(FE::UUID::Parse("62E1B7A1-C14A-4129-AC57-7E77289123E9").IsValid());
     EXPECT_TRUE(FE::UUID::Parse("62e1b7a1-c14a-4129-ac57-7e77289123e9").IsValid());

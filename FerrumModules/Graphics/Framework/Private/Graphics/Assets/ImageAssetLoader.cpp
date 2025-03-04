@@ -206,8 +206,8 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        const StringSlice pathSlice = assetName;
-        const IO::FixedPath ddsPath = IO::FixedPath{ pathSlice } + ".dds";
+        const festd::string_view pathSlice = assetName;
+        const IO::Path ddsPath = IO::Path{ pathSlice } + ".dds";
         if (m_streamFactory->FileExists(ddsPath))
         {
             IO::AsyncReadRequest request;
