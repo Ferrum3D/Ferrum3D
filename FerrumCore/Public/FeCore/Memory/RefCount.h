@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
+#include <FeCore/Base/BaseTypes.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <atomic>
 #include <memory_resource>
 
 namespace FE

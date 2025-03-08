@@ -18,8 +18,10 @@
     Public/FeCore/Assets/IAssetManager.h
     Public/FeCore/Assets/WeakAsset.h
 
+    Public/FeCore/Base/Assert.h
     Public/FeCore/Base/Base.h
     Public/FeCore/Base/BaseMath.h
+    Public/FeCore/Base/BaseTypes.h
     Public/FeCore/Base/CompilerTraits.h
     Public/FeCore/Base/Hash.h
     Public/FeCore/Base/Platform.h
@@ -32,8 +34,6 @@
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/LRUCacheMap.h
     Public/FeCore/Containers/SegmentedVector.h
-    Public/FeCore/Containers/SparseSet.h
-    Public/FeCore/Containers/SparseStorage.h
 
     Public/FeCore/DI/Activator.h
     Public/FeCore/DI/BaseDI.h
@@ -73,6 +73,7 @@
     Public/FeCore/Math/Matrix4x4F.h
     Public/FeCore/Math/Quaternion.h
     Public/FeCore/Math/Rect.h
+    Public/FeCore/Math/UUID.h
     Public/FeCore/Math/Vector2.h
     Public/FeCore/Math/Vector3.h
     Public/FeCore/Math/Vector3Int.h
@@ -82,7 +83,6 @@
 
     Public/FeCore/Memory/LinearAllocator.h
     Public/FeCore/Memory/Memory.h
-    Public/FeCore/Memory/NullableHandle.h
     Public/FeCore/Memory/PoolAllocator.h
     Public/FeCore/Memory/RefCount.h
 
@@ -92,14 +92,6 @@
     Public/FeCore/Modules/LibraryLoader.h
     Public/FeCore/Modules/ServiceLocator.h
 
-    Public/FeCore/Parallel/Context.h
-    Public/FeCore/Parallel/Event.h
-    Public/FeCore/Parallel/Fiber.h
-    Public/FeCore/Parallel/Mutex.h
-    Public/FeCore/Parallel/Semaphore.h
-    Public/FeCore/Parallel/SpinLock.h
-    Public/FeCore/Parallel/Thread.h
-
     Public/FeCore/RTTI/RTTI.h
 
     Public/FeCore/SIMD/Utils.h
@@ -108,18 +100,24 @@
     Public/FeCore/Strings/Parser.h
     Public/FeCore/Strings/Utils.h
 
+    Public/FeCore/Threading/Context.h
+    Public/FeCore/Threading/Event.h
+    Public/FeCore/Threading/Fiber.h
+    Public/FeCore/Threading/Mutex.h
+    Public/FeCore/Threading/Semaphore.h
+    Public/FeCore/Threading/SpinLock.h
+    Public/FeCore/Threading/Thread.h
+
     Public/FeCore/Time/BaseTime.h
     Public/FeCore/Time/DateTime.h
     Public/FeCore/Time/TimeSpan.h
-
-    Public/FeCore/Utils/BinarySerializer.h
-    Public/FeCore/Utils/BoolPointer.h
-    Public/FeCore/Utils/UUID.h
 )
 
 set(COMMON_SOURCES
     Private/FeCore/Assets/AssetManager.h
     Private/FeCore/Assets/AssetManager.cpp
+
+    Private/FeCore/Base/Assert.cpp
 
     Private/FeCore/Console/Console.cpp
 
@@ -157,29 +155,29 @@ set(COMMON_SOURCES
     Private/FeCore/Modules/Environment.cpp
     Private/FeCore/Modules/LibraryLoader.cpp
 
-    Private/FeCore/Parallel/Context.cpp
-    Private/FeCore/Parallel/Fiber.cpp
-
     Private/FeCore/Platform/Windows/Common.h
 
     Private/FeCore/Strings/Format.cpp
     Private/FeCore/Strings/Parser.cpp
+
+    Private/FeCore/Threading/Context.cpp
+    Private/FeCore/Threading/Fiber.cpp
 
     Private/FeCore/Time/Platform/PlatformTime.cpp
     Private/FeCore/Time/DateTime.cpp
 )
 
 set(WINDOWS_SOURCES
+    Private/FeCore/Base/Platform/Windows/PlatformAssert.cpp
+
     Private/FeCore/IO/Platform/Windows/PlatformFile.cpp
     Private/FeCore/IO/Platform/Windows/PlatformPath.cpp
 
-    Private/FeCore/Logging/Platform/Windows/Trace.cpp
+    Private/FeCore/Threading/Platform/Windows/Event.cpp
+    Private/FeCore/Threading/Platform/Windows/Thread.cpp
+    Private/FeCore/Threading/Platform/Windows/Mutex.cpp
+    Private/FeCore/Threading/Platform/Windows/Semaphore.cpp
 
-    Private/FeCore/Parallel/Platform/Windows/Event.cpp
-    Private/FeCore/Parallel/Platform/Windows/Thread.cpp
-    Private/FeCore/Parallel/Platform/Windows/Mutex.cpp
-    Private/FeCore/Parallel/Platform/Windows/Semaphore.cpp
-    
     Private/FeCore/Time/Platform/Windows/PlatformTime.cpp
 )
 

@@ -111,7 +111,7 @@ namespace FE::Graphics::Common
 
         const uint32_t resourceVersion = resourceData.GetLastVersion() + 1;
         if (resourceVersion == 1)
-            FE_AssertMsg(resourceData.m_isImported, "Reading from a resource that has just been created");
+            FE_Assert(resourceData.m_isImported, "Reading from a resource that has just been created");
 
         ResourceAccess* resourceAccess = Memory::New<ResourceAccess>(&m_linearAllocator);
         resourceAccess->m_passIndex = passIndex;

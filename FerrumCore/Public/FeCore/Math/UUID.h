@@ -125,12 +125,12 @@ namespace FE
     {
         if (Bit::AllSet(TFormat, FormatFlags::kBraces | FormatFlags::kHyphens))
         {
-            FE_CORE_ASSERT(string.length() == 38 && string[0] == '{' && string[37] == '}', "Invalid format");
+            FE_Assert(string.length() == 38 && string[0] == '{' && string[37] == '}', "Invalid format");
             string = string.substr(1, 36);
         }
         else if (Bit::AnySet(TFormat, FormatFlags::kBraces))
         {
-            FE_CORE_ASSERT(string.length() == 34 && string[0] == '{' && string[33] == '}', "Invalid format");
+            FE_Assert(string.length() == 34 && string[0] == '{' && string[33] == '}', "Invalid format");
             string = string.substr(1, 32);
         }
 

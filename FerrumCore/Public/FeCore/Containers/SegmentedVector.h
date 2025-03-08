@@ -118,7 +118,7 @@ namespace FE
                 }
                 else
                 {
-                    FE_CORE_ASSERT(m_segmentIndex > 0, "Iterator out of range");
+                    FE_Assert(m_segmentIndex > 0, "Iterator out of range");
                     --m_segmentIndex;
                     m_elementIndex = kElementsPerSegment - 1;
                 }
@@ -257,7 +257,7 @@ namespace FE
 
         [[nodiscard]] T& operator[](const uint32_t index)
         {
-            FE_CORE_ASSERT(index < m_size, "Index out of range");
+            FE_Assert(index < m_size, "Index out of range");
 
             const uint32_t segmentIndex = index / kElementsPerSegment;
             const uint32_t elementIndex = index % kElementsPerSegment;
@@ -266,7 +266,7 @@ namespace FE
 
         [[nodiscard]] const T& operator[](const uint32_t index) const
         {
-            FE_CORE_ASSERT(index < m_size, "Index out of range");
+            FE_Assert(index < m_size, "Index out of range");
 
             const uint32_t segmentIndex = index / kElementsPerSegment;
             const uint32_t elementIndex = index % kElementsPerSegment;
@@ -288,7 +288,7 @@ namespace FE
             }
             else
             {
-                FE_CORE_ASSERT(m_segments[segmentIndex], "");
+                FE_Assert(m_segments[segmentIndex]);
             }
 
             ++m_size;

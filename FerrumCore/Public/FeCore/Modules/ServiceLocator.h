@@ -47,8 +47,8 @@ namespace FE
         //! @param instance The instance to register.
         static void Register(T* instance)
         {
-            FE_CORE_ASSERT(instance, "ServiceLocator instance was a nullptr");
-            FE_CORE_ASSERT(Get() == nullptr, "Couldn't register a ServiceLocator instance twice");
+            FE_Assert(instance, "ServiceLocator instance was a nullptr");
+            FE_Assert(Get() == nullptr, "Couldn't register a ServiceLocator instance twice");
             std::unique_lock lk(m_Mutex);
             m_Owner = Env::CreateGlobalVariableByType<T*>(instance);
         }
@@ -56,7 +56,7 @@ namespace FE
         //! @brief Unregister the instance.
         static void Unregister()
         {
-            FE_CORE_ASSERT(m_Owner, "ServiceLocator instance was a nullptr");
+            FE_Assert(m_Owner, "ServiceLocator instance was a nullptr");
             std::unique_lock lk(m_Mutex);
             *m_Owner = nullptr;
             m_Owner.Reset();

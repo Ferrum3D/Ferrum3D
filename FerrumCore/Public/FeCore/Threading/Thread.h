@@ -46,13 +46,13 @@ namespace FE
     uint64_t GetCurrentThreadID();
 
 
-    inline const NativeThreadData& GetNativeThreadData(ThreadHandle threadHandle)
+    inline const NativeThreadData& GetNativeThreadData(const ThreadHandle threadHandle)
     {
         return *reinterpret_cast<const NativeThreadData*>(threadHandle.m_value);
     }
 
 
-    inline uint64_t GetThreadID(ThreadHandle threadHandle)
+    inline uint64_t GetThreadID(const ThreadHandle threadHandle)
     {
         return GetNativeThreadData(threadHandle).m_id;
     }

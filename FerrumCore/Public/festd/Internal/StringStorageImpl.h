@@ -207,27 +207,27 @@ namespace FE::Internal
 
         char* InitializeImpl(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_CORE_ASSERT(length <= kCapacity, "Fixed string overflow");
+            FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
             return m_data;
         }
 
         char* Reinitialize(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_CORE_ASSERT(length <= kCapacity, "Fixed string overflow");
+            FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
             return m_data;
         }
 
         char* ReserveImpl(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_CORE_ASSERT(length <= kCapacity, "Fixed string overflow");
+            FE_Assert(length <= kCapacity, "Fixed string overflow");
             return m_data;
         }
 
         char* ResizeImpl(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_CORE_ASSERT(length <= kCapacity, "Fixed string overflow");
+            FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
             return m_data;
         }

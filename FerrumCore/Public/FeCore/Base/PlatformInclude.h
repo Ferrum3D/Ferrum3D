@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Base/Platform.h>
+#include <FeCore/Base/PlatformTraits.h>
 
 #if FE_PLATFORM_WINDOWS
 #    define NOMINMAX

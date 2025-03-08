@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
-#include <FeCore/Parallel/Context.h>
+#include <FeCore/Threading/Context.h>
 #include <FeCore/Strings/Format.h>
 
 namespace FE::Threading

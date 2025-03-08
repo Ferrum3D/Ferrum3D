@@ -75,7 +75,7 @@ namespace FE
         {
             for (auto& [name, pEntry] : m_entryMap)
             {
-                Trace::ReportError("Module \"{}\" was never unloaded", name);
+                FE_AssertMsg(false, "Module \"{}\" was never unloaded", name);
             }
         }
 

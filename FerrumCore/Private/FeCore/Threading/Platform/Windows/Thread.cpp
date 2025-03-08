@@ -1,21 +1,16 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Modules/EnvironmentPrivate.h>
-#include <FeCore/Parallel/Thread.h>
+#include <FeCore/Threading/Thread.h>
 
 namespace FE
 {
     namespace
     {
-        Threading::SpinLock GThreadDataPoolLock;
-
-
         NativeThreadData* AllocateThreadData()
         {
-            const std::lock_guard lock{ GThreadDataPoolLock };
             Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-            NativeThreadData* pResult = Memory::New<NativeThreadData>(&state.m_threadDataAllocator);
-            return pResult;
+            const std::lock_guard lock{ state.m_lock };
+            return Memory::New<NativeThreadData>(&state.m_threadDataAllocator);
         }
 
 
@@ -27,21 +22,21 @@ namespace FE
             {
                 if (pData)
                 {
-                    const std::lock_guard lock{ GThreadDataPoolLock };
                     Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
+                    const std::lock_guard lock{ state.m_lock };
                     Memory::Delete(&state.m_threadDataAllocator, pData, sizeof(NativeThreadData));
                     pData = nullptr;
                 }
             }
         };
 
-        thread_local ThreadDataHolder g_TLSThreadData;
+        thread_local ThreadDataHolder GTLSThreadData;
 
 
         DWORD WINAPI ThreadRoutineImpl(const LPVOID lpParam)
         {
             auto* pData = static_cast<NativeThreadData*>(lpParam);
-            g_TLSThreadData.pData = pData;
+            GTLSThreadData.pData = pData;
             pData->m_startRoutine(pData->m_userData);
             return 0;
         }
@@ -55,7 +50,7 @@ namespace FE
 
         DWORD threadID;
         const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, pData, CREATE_SUSPENDED, &threadID);
-        FE_CORE_ASSERT(hThread, "CreateThread failed");
+        FE_CoreAssert(hThread, "CreateThread failed");
 
         pData->m_id = threadID;
         pData->m_priority = priority;
@@ -81,11 +76,10 @@ namespace FE
         if (priority != Threading::Priority::kNormal)
         {
             const BOOL priorityRes = SetThreadPriority(hThread, static_cast<int>(priority));
-            FE_CORE_ASSERT(priorityRes, "SetThreadPriority failed");
+            FE_CoreAssert(priorityRes, "SetThreadPriority failed");
         }
 
-        const DWORD resumeRes = ResumeThread(hThread);
-        FE_CORE_ASSERT(resumeRes != static_cast<DWORD>(-1), "ResumeThread failed");
+        FE_CoreVerify(ResumeThread(hThread) != Constants::kMaxValue<DWORD>);
 
         return ThreadHandle{ reinterpret_cast<uint64_t>(pData) };
     }
@@ -97,11 +91,10 @@ namespace FE
             return;
 
         const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.m_value);
-        const DWORD waitRes = WaitForSingleObject(data.m_threadHandle, INFINITE);
-        FE_CORE_ASSERT(waitRes == WAIT_OBJECT_0, "WaitForSingleObject failed on thread");
+        FE_CoreVerify(WaitForSingleObject(data.m_threadHandle, INFINITE) == WAIT_OBJECT_0);
 
         const BOOL closeRes = CloseHandle(data.m_threadHandle);
-        FE_CORE_ASSERT(closeRes, "CloseHandle failed on thread");
+        FE_CoreAssert(closeRes, "CloseHandle failed on thread");
         thread.Reset();
     }
 

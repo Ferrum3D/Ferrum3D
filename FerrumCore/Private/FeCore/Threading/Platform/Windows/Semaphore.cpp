@@ -1,5 +1,5 @@
 #include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Parallel/Semaphore.h>
+#include <FeCore/Threading/Semaphore.h>
 
 namespace FE::Threading
 {

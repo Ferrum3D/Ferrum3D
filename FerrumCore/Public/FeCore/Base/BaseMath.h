@@ -1,43 +1,11 @@
 ﻿#pragma once
+#include <FeCore/Base/Assert.h>
+#include <FeCore/Base/BaseTypes.h>
 #include <FeCore/Base/CompilerTraits.h>
 #include <festd/base.h>
 
 namespace FE
 {
-    namespace Constants
-    {
-        inline constexpr float PI = 3.14159265358979323f;
-
-        inline constexpr float kEpsilon = 1e-6f;
-        inline constexpr float kInfinity = std::numeric_limits<float>::infinity();
-        inline constexpr float kNan = std::numeric_limits<float>::quiet_NaN();
-
-        inline constexpr float kMaxFloat = FLT_MAX;
-        inline constexpr float kMinFloat = FLT_MIN;
-
-        inline constexpr int8_t kMinI8 = INT8_MIN;
-        inline constexpr int16_t kMinI16 = INT16_MIN;
-        inline constexpr int32_t kMinI32 = INT32_MIN;
-        inline constexpr int64_t kMinI64 = INT64_MIN;
-
-        inline constexpr int8_t kMaxI8 = INT8_MAX;
-        inline constexpr int16_t kMaxI16 = INT16_MAX;
-        inline constexpr int32_t kMaxI32 = INT32_MAX;
-        inline constexpr int64_t kMaxI64 = INT64_MAX;
-
-        inline constexpr uint8_t kMaxU8 = UINT8_MAX;
-        inline constexpr uint16_t kMaxU16 = UINT16_MAX;
-        inline constexpr uint32_t kMaxU32 = UINT32_MAX;
-        inline constexpr uint64_t kMaxU64 = UINT64_MAX;
-
-        template<class T>
-        inline constexpr T kMaxValue = std::numeric_limits<T>::max();
-
-        template<class T>
-        inline constexpr T kMinValue = std::numeric_limits<T>::min();
-    } // namespace Constants
-
-
     //! @brief Align up an integer.
     //!
     //! @param x         Value to align.
@@ -45,7 +13,7 @@ namespace FE
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
     {
-        return static_cast<T>((x + (alignment - 1u)) & ~(alignment - 1u));
+        return static_cast<T>((x + (static_cast<T>(alignment) - 1u)) & ~(static_cast<T>(alignment) - 1u));
     }
 
 
@@ -67,7 +35,7 @@ namespace FE
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignUp(const T x)
     {
-        return (x + (TAlignment - 1)) & ~(TAlignment - 1);
+        return (x + (static_cast<T>(TAlignment) - 1)) & ~(static_cast<T>(TAlignment) - 1);
     }
 
 
@@ -78,7 +46,7 @@ namespace FE
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
     {
-        return x & ~(alignment - 1);
+        return x & ~(static_cast<T>(alignment) - 1);
     }
 
 
@@ -100,7 +68,7 @@ namespace FE
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignDown(const T x)
     {
-        return x & ~(TAlignment - 1);
+        return x & ~(static_cast<T>(TAlignment) - 1);
     }
 
 

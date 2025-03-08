@@ -17,7 +17,7 @@ namespace FE
         void Schedule(IJobSystem* pJobSystem, WaitGroup* pCompletionWaitGroup = nullptr,
                       JobPriority priority = JobPriority::kNormal)
         {
-            FE_CORE_ASSERT(m_completionWaitGroup == nullptr, "Already scheduled");
+            FE_Assert(m_completionWaitGroup == nullptr, "Already scheduled");
             if (pCompletionWaitGroup)
             {
                 m_completionWaitGroup = pCompletionWaitGroup;

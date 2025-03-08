@@ -2,7 +2,7 @@
 #include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Logging/Trace.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <Graphics/RHI/Base/BaseTypes.h>
 
 namespace FE::Graphics::RHI
@@ -19,7 +19,7 @@ namespace FE::Graphics::RHI
 
         ~Device() override
         {
-            FE_CORE_ASSERT(m_disposeQueue.empty(), "Device implementation didn't call DisposePending()");
+            FE_Assert(m_disposeQueue.empty(), "Device implementation didn't call DisposePending()");
         }
 
         Device(const Device&) = delete;

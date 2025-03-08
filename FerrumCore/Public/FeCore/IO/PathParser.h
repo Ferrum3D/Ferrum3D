@@ -44,7 +44,8 @@ namespace FE::PathParser
 
     [[nodiscard]] constexpr const char* SkipSeparators(const char* str, const uint32_t length)
     {
-        while (str < str + length && IsPathSeparator(*str))
+        const char* end = str + length;
+        while (str < end && IsPathSeparator(*str))
             ++str;
 
         return str;
@@ -53,7 +54,8 @@ namespace FE::PathParser
 
     [[nodiscard]] constexpr const char* SkipUntilSeparator(const char* str, const uint32_t length)
     {
-        while (str < str + length && !IsPathSeparator(*str))
+        const char* end = str + length;
+        while (str < end && !IsPathSeparator(*str))
             ++str;
 
         return str;

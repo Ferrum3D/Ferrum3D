@@ -31,8 +31,8 @@ namespace FE::Memory
 
     void* PoolAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
     {
-        FE_CORE_ASSERT(byteSize <= m_elementByteSize, "");
-        FE_CORE_ASSERT(byteAlignment <= kDefaultAlignment, "");
+        FE_CoreAssert(byteSize <= m_elementByteSize);
+        FE_CoreAssert(byteAlignment <= kDefaultAlignment);
 
 #if FE_DEBUG
         ++m_allocationCount;
@@ -59,7 +59,7 @@ namespace FE::Memory
 
     void PoolAllocator::do_deallocate(void* ptr, size_t, size_t)
     {
-        FE_CORE_ASSERT(m_allocationCount-- > 0, "");
+        FE_CoreAssert(m_allocationCount-- > 0);
         *static_cast<void**>(ptr) = m_freeList;
         m_freeList = ptr;
     }

@@ -31,7 +31,7 @@ namespace FE::DI
             activator.m_function = [](IServiceProvider* provider, Memory::RefCountedObjectBase** result) {
                 ResolveContext ctx{ std::pmr::get_default_resource(), provider };
 
-                FE_CORE_ASSERT(result, "result was null");
+                FE_Assert(result, "result was null");
                 *result = ctx.CreateService<T>();
                 return ctx.m_resolveResult;
             };

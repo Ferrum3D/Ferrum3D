@@ -4,7 +4,6 @@
     Containers/BitSet.cpp
     Containers/LRUCacheMap.cpp
     Containers/SegmentedVector.cpp
-    Containers/SparseSet.cpp
 
     IO/Path.cpp
 
@@ -28,6 +27,9 @@
 )
 
 add_executable(FeCoreTests ${SRC})
+
+fe_configure_target(FeCoreTests)
+fe_enable_sse_for_target(FeCoreTests)
 
 target_include_directories(FeCoreTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 

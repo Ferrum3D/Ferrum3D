@@ -23,8 +23,7 @@ namespace FE::Platform
     {
         DWORD pathLength;
         WCHAR buffer[IO::kMaxPathLength + 1];
-        const BOOL result = ::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, buffer, &pathLength);
-        FE_CORE_ASSERT(result, "QueryFullProcessImageName failed");
+        FE_Verify(::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, buffer, &pathLength));
         return ConvertWideString<IO::Path>({ buffer, pathLength });
     }
 } // namespace FE::Platform

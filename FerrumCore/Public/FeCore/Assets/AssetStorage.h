@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE::Assets
 {

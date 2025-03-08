@@ -38,7 +38,7 @@ namespace FE::Graphics::RHI
                     return lhs.m_index < rhs;
                 });
 
-            FE_CORE_ASSERT(iter != m_entries.end(), "Index out of range");
+            FE_Assert(iter != m_entries.end(), "Index out of range");
             return iter->m_object.Get();
         }
 

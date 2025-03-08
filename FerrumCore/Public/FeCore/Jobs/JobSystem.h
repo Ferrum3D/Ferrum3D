@@ -2,9 +2,9 @@
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Memory/PoolAllocator.h>
-#include <FeCore/Parallel/Fiber.h>
-#include <FeCore/Parallel/Semaphore.h>
-#include <FeCore/Parallel/Thread.h>
+#include <FeCore/Threading/Fiber.h>
+#include <FeCore/Threading/Semaphore.h>
+#include <FeCore/Threading/Thread.h>
 #include <festd/vector.h>
 
 namespace FE
@@ -65,7 +65,7 @@ namespace FE
             }
             else if (worker.m_prevFiber)
             {
-                FE_CORE_ASSERT(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
+                FE_Assert(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
                 m_fiberPool.Return(worker.m_prevFiber);
             }
 
@@ -108,7 +108,7 @@ namespace FE
                     return threadIndex;
             }
 
-            FE_CORE_ASSERT(0, "Thread not found");
+            FE_Assert(0, "Thread not found");
             return kInvalidIndex;
         }
 

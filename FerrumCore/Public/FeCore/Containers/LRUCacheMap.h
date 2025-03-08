@@ -69,7 +69,7 @@ namespace FE
         template<class... Args>
         void Emplace(const TKey& key, Args&&... args)
         {
-            FE_CORE_ASSERT(m_Capacity > 0, "Cache capacity was zero");
+            FE_Assert(m_Capacity > 0, "Cache capacity was zero");
 
             auto it = m_Map.find(key);
             m_Queue.emplace_front(std::piecewise_construct,

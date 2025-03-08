@@ -39,7 +39,7 @@ namespace FE
                 | (static_cast<uint64_t>(p[6]) << 48) | (static_cast<uint64_t>(p[7]) << 56);
         }
 
-        inline constexpr uint64_t WyRead3(const char* p, size_t k)
+        inline constexpr uint64_t WyRead3(const char* p, const size_t k)
         {
             return ((static_cast<uint64_t>(p[0])) << 16) | ((static_cast<uint64_t>(p[k >> 1])) << 8) | p[k - 1];
         }
@@ -99,9 +99,8 @@ namespace FE
     } // namespace Internal
 
 
-    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(const void* data, size_t len) noexcept
+    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(const char* p, const size_t len) noexcept
     {
-        const char* p = static_cast<const char*>(data);
         uint64_t seed = Internal::HashSecret[0], a = 0, b = 0;
         seed ^= Internal::WyMix(seed ^ Internal::HashSecret[0], Internal::HashSecret[1]);
         if (len <= 16)
@@ -152,19 +151,19 @@ namespace FE
     }
 
 
-    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(std::string_view str) noexcept
+    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(const std::string_view str) noexcept
     {
         return CompileTimeHash(str.data(), str.length());
     }
 
 
-    [[nodiscard]] inline uint64_t DefaultHash(const void* data, size_t len) noexcept
+    [[nodiscard]] inline uint64_t DefaultHash(const void* data, const size_t len) noexcept
     {
         return wyhash(data, len, Internal::HashSecret[0], Internal::HashSecret);
     }
 
 
-    [[nodiscard]] inline uint64_t DefaultHash(std::string_view str) noexcept
+    [[nodiscard]] inline uint64_t DefaultHash(const std::string_view str) noexcept
     {
         return DefaultHash(str.data(), str.length());
     }

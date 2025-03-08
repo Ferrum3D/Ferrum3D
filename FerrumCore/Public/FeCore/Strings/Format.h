@@ -60,7 +60,7 @@ namespace FE::Fmt
             }
             else
             {
-                FE_CORE_ASSERT(false, "Not implemented");
+                FE_Assert(false, "Not implemented");
             }
         }
     };
@@ -235,12 +235,12 @@ namespace FE::Fmt
                     }
                     if (*it != '}')
                     {
-                        FE_CORE_ASSERT(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
+                        FE_Assert(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
                         argIndex = 0;
                         autoIndex = false;
                         while (true)
                         {
-                            FE_CORE_ASSERT(it != fmt.end(), "Invalid arg index");
+                            FE_Assert(it != fmt.end(), "Invalid arg index");
                             if (*it <= '9' && *it >= '0')
                             {
                                 argIndex *= 10;
@@ -254,7 +254,7 @@ namespace FE::Fmt
                             ++it;
                         }
 
-                        FE_CORE_ASSERT(*it == '}', "Invalid arg index");
+                        FE_Assert(*it == '}', "Invalid arg index");
                     }
                     buffer.append(begin, braceIt);
                     begin = it;
@@ -268,7 +268,7 @@ namespace FE::Fmt
                 else if (*it == '}')
                 {
                     ++it;
-                    FE_CORE_ASSERT(*it == '}', "must be escaped");
+                    FE_Assert(*it == '}', "must be escaped");
 
                     buffer.append(begin, it);
                     begin = it;

@@ -61,7 +61,7 @@ namespace FE::DI
             {
                 if constexpr (!std::is_same_v<TImpl, TInterface>)
                 {
-                    FE_CORE_ASSERT(fe_typeid<TImpl>() != fe_typeid<TInterface>(), "");
+                    FE_Assert(fe_typeid<TImpl>() != fe_typeid<TInterface>());
                 }
 
                 *m_target.m_activator = ServiceActivator::CreateForType<TImpl>();

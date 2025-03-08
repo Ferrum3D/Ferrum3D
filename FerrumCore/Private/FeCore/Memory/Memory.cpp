@@ -1,6 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <mimalloc.h>
 
 namespace FE::Memory
@@ -31,8 +31,8 @@ namespace FE::Memory
 
     void* AllocateVirtual(const size_t byteSize)
     {
-        FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
-                       "Size must be aligned to virtual allocation granularity");
+        FE_CoreAssert(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
+                      "Size must be aligned to virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         return VirtualAlloc(nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);

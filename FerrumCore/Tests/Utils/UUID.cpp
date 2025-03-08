@@ -1,5 +1,5 @@
 #include <festd/string.h>
-#include <FeCore/Utils/UUID.h>
+#include <FeCore/Math/UUID.h>
 #include <Tests/Common/TestCommon.h>
 
 TEST(UUID, Parse)

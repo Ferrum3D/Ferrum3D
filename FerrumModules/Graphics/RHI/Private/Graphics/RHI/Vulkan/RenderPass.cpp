@@ -142,7 +142,7 @@ namespace FE::Graphics::Vulkan
             nativeDesc.pResolveAttachments = currentRefs.m_resolve.data();
 
             nativeDesc.pDepthStencilAttachment =
-                currentRefs.m_depthStencil.attachment == static_cast<uint32_t>(-1) ? nullptr : &currentRefs.m_depthStencil;
+                currentRefs.m_depthStencil.attachment == kInvalidIndex ? nullptr : &currentRefs.m_depthStencil;
             nativeDesc.pPreserveAttachments = currentRefs.m_preserve;
         }
 

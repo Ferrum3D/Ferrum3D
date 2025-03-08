@@ -69,7 +69,7 @@ namespace FE::DI
             , m_constant(false)
             , m_function(false)
         {
-            FE_CORE_ASSERT(index < (1 << 28), "Too many services in one registry");
+            FE_Assert(index < (1 << 28), "Too many services in one registry");
         }
     };
 

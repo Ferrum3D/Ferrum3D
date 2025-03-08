@@ -1,14 +1,14 @@
-﻿#include <festd/vector.h>
-#include <FeCore/Logging/Trace.h>
+﻿#include <FeCore/Logging/Trace.h>
 #include <Graphics/RHI/DeviceObject.h>
 #include <Graphics/RHI/Image.h>
 #include <Graphics/RHI/ShaderCompilerDXC.h>
-#include <Graphics/RHI/Vulkan/CommandQueue.h>
 #include <Graphics/RHI/Vulkan/Base/BaseTypes.h>
+#include <Graphics/RHI/Vulkan/CommandQueue.h>
 #include <Graphics/RHI/Vulkan/Device.h>
 #include <Graphics/RHI/Vulkan/DeviceFactory.h>
 #include <Graphics/RHI/Window.h>
 #include <algorithm>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -67,8 +67,8 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        FE_AssertMsg(false, "Memory type not found");
-        return static_cast<uint32_t>(-1);
+        FE_Assert(false, "Memory type not found");
+        return kInvalidIndex;
     }
 
 

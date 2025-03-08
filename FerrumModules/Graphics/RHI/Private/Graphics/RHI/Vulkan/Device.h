@@ -79,7 +79,7 @@ namespace FE::Graphics::Vulkan
             }
 
             FE_AssertMsg(false, "Couldn't find queue family");
-            return static_cast<uint32_t>(-1);
+            return kInvalidIndex;
         }
 
         DeviceFactory* GetDeviceFactory() const

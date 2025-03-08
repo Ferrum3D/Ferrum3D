@@ -5,7 +5,7 @@
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Modules/Environment.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <festd/intrusive_list.h>
 #include <festd/vector.h>
 
@@ -54,7 +54,7 @@ namespace FE::DI
 
                     [[maybe_unused]] const ResultCode resultCode =
                         m_activators[registration.GetIndex()].Invoke(nullptr, &pObject);
-                    FE_CORE_ASSERT(resultCode == ResultCode::kSuccess, "");
+                    FE_Assert(resultCode == ResultCode::kSuccess);
 
                     pObject->Release();
                 }
@@ -172,7 +172,7 @@ namespace FE::DI
             m_root.Reset();
 
             // All references to all the registries must be eliminated at this point.
-            FE_CORE_ASSERT(m_registries.empty(), "Service registry leaks detected");
+            FE_Assert(m_registries.empty(), "Service registry leaks detected");
         }
 
         Reader Read()

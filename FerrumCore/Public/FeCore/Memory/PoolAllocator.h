@@ -22,18 +22,18 @@ namespace FE::Memory
 
         void Initialize(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
         {
-            FE_CORE_ASSERT(m_elementByteSize == 0, "Pool already initialized");
-            FE_CORE_ASSERT(elementByteSize > 0, "");
+            FE_CoreAssert(m_elementByteSize == 0, "Pool already initialized");
+            FE_CoreAssert(elementByteSize > 0);
             m_name = name;
 
 #if FE_DEBUG
             const PlatformSpec platformSpec = GetPlatformSpec();
-            FE_CORE_ASSERT(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
-                           "Page size must be aligned to virtual allocation granularity");
+            FE_CoreAssert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
+                          "Page size must be aligned to virtual allocation granularity");
 #endif
 
             m_elementByteSize = AlignUp<kDefaultAlignment>(elementByteSize);
-            FE_CORE_ASSERT(pageByteSize > m_elementByteSize, "");
+            FE_CoreAssert(pageByteSize > m_elementByteSize);
 
             m_pageByteSize = pageByteSize;
         }
@@ -80,7 +80,7 @@ namespace FE::Memory
 
         void FreePages()
         {
-            FE_CORE_ASSERT(m_allocationCount == 0, "Leak detected");
+            FE_CoreAssert(m_allocationCount == 0, "Leak detected");
 
             Page* pPage = m_pageList;
             while (pPage)

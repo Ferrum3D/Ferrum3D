@@ -1,6 +1,6 @@
 ﻿#include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/Fiber.h>
+#include <FeCore/Threading/Fiber.h>
 
 namespace FE::Threading
 {

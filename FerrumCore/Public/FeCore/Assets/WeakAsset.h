@@ -81,7 +81,7 @@ namespace FE
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_storage, "Asset was empty");
+            FE_Assert(m_storage, "Asset was empty");
             return *m_storage;
         }
 

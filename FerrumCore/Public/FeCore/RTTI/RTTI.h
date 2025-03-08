@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
-#include <FeCore/Utils/UUID.h>
+#include <FeCore/Base/Hash.h>
+#include <FeCore/Math/UUID.h>
+#include <festd/base.h>
+#include <type_traits>
 
 namespace FE
 {
@@ -110,7 +112,7 @@ namespace FE
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_assert_cast(TSrc* src)
     {
-        FE_CORE_ASSERT(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
+        FE_CoreAssert(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
         return static_cast<TDstPtr>(src);
     }
 

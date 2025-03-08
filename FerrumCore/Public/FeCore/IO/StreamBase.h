@@ -20,12 +20,12 @@ namespace FE::IO
             return IsReadAllowed(GetOpenMode());
         }
 
-        size_t WriteFromStream(IStream* stream, size_t size) override
+        size_t WriteFromStream(IStream* stream, const size_t size) override
         {
-            FE_AssertMsg(stream, "Stream was nullptr");
-            FE_AssertMsg(stream->ReadAllowed(), "Source stream was write-only");
-            FE_AssertMsg(WriteAllowed(), "Destination stream was read-only");
-            FE_AssertMsg(stream != this, "Destination and source streams are the same");
+            FE_Assert(stream != nullptr);
+            FE_Assert(stream->ReadAllowed(), "Source stream was write-only");
+            FE_Assert(WriteAllowed(), "Destination stream was read-only");
+            FE_Assert(stream != this, "Destination and source streams are the same");
 
             std::byte tempBuffer[512];
             size_t result = 0;
@@ -45,7 +45,7 @@ namespace FE::IO
 
         FileStats GetStats() const override
         {
-            FE_AssertMsg(false, "Not supported");
+            FE_Assert(false, "Not supported");
             return {};
         }
     };
@@ -62,7 +62,7 @@ namespace FE::IO
             }
         }
 
-        void SetBufferSize(uint32_t byteSize)
+        void SetBufferSize(const uint32_t byteSize)
         {
             if (m_buffer != nullptr)
             {
@@ -82,14 +82,14 @@ namespace FE::IO
 
         void SetBufferAllocator(std::pmr::memory_resource* pBufferAllocator)
         {
-            FE_CORE_ASSERT(m_buffer == nullptr, "Buffer already allocated");
+            FE_Assert(m_buffer == nullptr, "Buffer already allocated");
 
             if (pBufferAllocator == nullptr)
                 pBufferAllocator = std::pmr::get_default_resource();
             m_bufferAllocator = pBufferAllocator;
         }
 
-        size_t WriteFromBuffer(festd::span<const std::byte> buffer) final
+        size_t WriteFromBuffer(const festd::span<const std::byte> buffer) final
         {
             EnsureBufferAllocated();
 

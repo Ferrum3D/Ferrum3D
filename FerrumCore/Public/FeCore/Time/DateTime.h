@@ -120,8 +120,10 @@ namespace FE
         {
             return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
         }
-
-        return lhs.ToUnixTime() == rhs.ToUnixTime();
+        else
+        {
+            return lhs.ToUnixTime() == rhs.ToUnixTime();
+        }
     }
 
 

@@ -239,7 +239,7 @@ namespace FE::Internal
         {
             value_type result;
             const int32_t bytesRead = UTF8::DecodeForward(m_iter, -1, &result);
-            FE_CORE_ASSERT(bytesRead > 0, "Unicode Error");
+            FE_Assert(bytesRead > 0, "Unicode Error");
             return result;
         }
 
@@ -247,7 +247,7 @@ namespace FE::Internal
         {
             value_type result;
             const int32_t bytesRead = UTF8::DecodeForward(m_iter, -1, &result);
-            FE_CORE_ASSERT(bytesRead > 0, "Unicode Error");
+            FE_Assert(bytesRead > 0, "Unicode Error");
             m_iter += bytesRead;
             return *this;
         }
@@ -263,7 +263,7 @@ namespace FE::Internal
         {
             value_type result;
             const int32_t bytesRead = UTF8::DecodeBackward(m_iter, &result);
-            FE_CORE_ASSERT(bytesRead > 0, "Unicode Error");
+            FE_Assert(bytesRead > 0, "Unicode Error");
             m_iter -= bytesRead;
             return *this;
         }

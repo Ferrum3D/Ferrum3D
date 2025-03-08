@@ -94,7 +94,7 @@ namespace FE::Env
 
         void CheckType(ConfigurationValueType expected) const
         {
-            FE_AssertMsg(m_type == expected, "Type mismatch");
+            FE_Assert(m_type == expected, "Type mismatch");
         }
     };
 

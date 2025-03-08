@@ -153,7 +153,7 @@ namespace FE::IO
             m_data = view.data();
             m_size = view.size();
 
-            FE_CORE_ASSERT(m_size <= kMaxPathLength, "Path too long");
+            FE_Assert(m_size <= kMaxPathLength, "Path too long");
 
             const char* afterRoot = PathParser::SkipPathRoot(m_data, m_size);
             const char* relativeStart = PathParser::SkipSeparators(afterRoot, m_size - static_cast<uint32_t>(afterRoot - m_data));

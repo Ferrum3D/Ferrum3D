@@ -1,6 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Logging/Trace.h>
-#include <FeCore/Parallel/Event.h>
+#include <FeCore/Threading/Event.h>
 
 namespace FE::Threading
 {

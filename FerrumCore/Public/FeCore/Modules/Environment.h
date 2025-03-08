@@ -2,7 +2,7 @@
 #include <EASTL/fixed_vector.h>
 #include <FeCore/Base/Base.h>
 #include <FeCore/DI/BaseDI.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <mutex>
 
 namespace FE::Memory
@@ -403,7 +403,7 @@ namespace FE::Env
         //! \breif Attach an instance of global environment to current module.
         inline void AttachGlobalEnvironment(void* environmentPointer)
         {
-            FE_CORE_ASSERT(!EnvironmentAttached(), "Attempt to attach second environment");
+            FE_CoreAssert(!EnvironmentAttached(), "Attempt to attach second environment");
             FE::Env::AttachEnvironment(*static_cast<IEnvironment*>(environmentPointer));
         }
 
@@ -513,22 +513,22 @@ namespace FE::Env
 
         T* Get() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_storage->Get());
         }
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return *const_cast<T*>(m_storage->Get());
         }
 
         T* operator->() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_storage->Get());
         }
 
@@ -560,14 +560,14 @@ namespace FE::Env
     {
         const Name::Record* pRecord = name.GetRecord();
         const std::string_view nameView{ pRecord->m_data, pRecord->m_size };
-        FE_CORE_ASSERT(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
+        FE_CoreAssert(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
         return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
     }
 
     template<class T, class... Args>
     inline GlobalVariable<T> CreateGlobalVariable(std::string_view name, Args&&... args)
     {
-        FE_CORE_ASSERT(name[0] != '#', "Names that start with a '#' are reserved for type name variables");
+        FE_CoreAssert(name[0] != '#', "Names that start with a '#' are reserved for type name variables");
         return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
     }
 

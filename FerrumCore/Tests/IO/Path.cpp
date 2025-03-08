@@ -1,5 +1,6 @@
 #include <FeCore/IO/Path.h>
 #include <FeCore/Logging/Trace.h>
+#include <festd/vector.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -70,4 +71,14 @@ TEST(PathView, RootPaths)
     EXPECT_EQ(IO::PathView{ "C:/" }.root_path(), "C:/");
     EXPECT_EQ(IO::PathView{ "/" }.root_path(), "/");
     EXPECT_EQ(IO::PathView{ "foo.txt" }.root_path(), "");
+}
+
+TEST(PathView, Traverse)
+{
+    const festd::vector expected{ "C:", "Foo", "Bar", "File.txt" };
+
+    uint32_t tokenIndex = 0;
+    IO::TraversePath("C:/Foo/Bar////File.txt", [&](const festd::string_view token) {
+        EXPECT_EQ(token, expected[tokenIndex++]);
+    });
 }

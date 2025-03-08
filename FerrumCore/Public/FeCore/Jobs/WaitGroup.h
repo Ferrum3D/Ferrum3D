@@ -54,7 +54,7 @@ namespace FE
 
     inline void WaitGroup::Add(const int32_t value)
     {
-        FE_CORE_ASSERT(value > 0, "Invalid value");
+        FE_Assert(value > 0, "Invalid value");
         m_counter.fetch_add(value);
     }
 
