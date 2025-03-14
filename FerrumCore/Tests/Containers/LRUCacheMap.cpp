@@ -1,14 +1,13 @@
 #include <FeCore/Containers/LRUCacheMap.h>
-#include <FeCore/Strings/String.h>
+#include <festd/string.h>
 #include <gtest/gtest.h>
 
-using FE::LRUCacheMap;
-using FE::String;
+using namespace FE;
 
 TEST(LRUCacheMap, AddValues)
 {
-    String value;
-    LRUCacheMap<int, String> cache(3);
+    festd::string value;
+    LRUCacheMap<int32_t, festd::string> cache(3);
     cache.Emplace(0, "Zero");
     cache.Emplace(1, "One");
     cache.Emplace(2, "Two");
@@ -29,7 +28,7 @@ TEST(LRUCacheMap, AddValues)
 
 TEST(LRUCacheMap, SetCapacity)
 {
-    LRUCacheMap<int, int> cache(1);
+    LRUCacheMap<int32_t, int32_t> cache(1);
     cache.Emplace(0, 0);
     cache.Emplace(1, 1);
     EXPECT_FALSE(cache.HasKey(0));

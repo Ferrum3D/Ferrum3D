@@ -8,17 +8,17 @@ namespace FE
     {
         [[nodiscard]] int32_t Days() const
         {
-            return static_cast<int32_t>(m_seconds / (60 * 60 * 24));
+            return static_cast<int32_t>(m_seconds / (UINT64_C(60 * 60) * 24));
         }
 
         [[nodiscard]] int32_t Hours() const
         {
-            return static_cast<int32_t>((m_seconds / (60 * 60)) % 24);
+            return static_cast<int32_t>((m_seconds / UINT64_C(60 * 60)) % 24);
         }
 
         [[nodiscard]] double TotalHours() const
         {
-            return m_seconds / (60.0 * 60.0);
+            return static_cast<double>(m_seconds) / (60.0 * 60.0);
         }
 
         [[nodiscard]] int32_t Minutes() const
@@ -28,7 +28,7 @@ namespace FE
 
         [[nodiscard]] double TotalMinutes() const
         {
-            return m_seconds / 60.0;
+            return static_cast<double>(m_seconds) / 60.0;
         }
 
         [[nodiscard]] int32_t Seconds() const
@@ -51,17 +51,17 @@ namespace FE
             return TimeSpan{ -m_seconds };
         }
 
-        [[nodiscard]] friend TimeSpan operator+(TimeSpan lhs, TimeSpan rhs)
+        [[nodiscard]] friend TimeSpan operator+(const TimeSpan lhs, const TimeSpan rhs)
         {
             return TimeSpan{ lhs.m_seconds + rhs.m_seconds };
         }
 
-        [[nodiscard]] friend TimeSpan operator-(TimeSpan lhs, TimeSpan rhs)
+        [[nodiscard]] friend TimeSpan operator-(const TimeSpan lhs, const TimeSpan rhs)
         {
             return TimeSpan{ lhs.m_seconds - rhs.m_seconds };
         }
 
-        [[nodiscard]] static TimeSpan FromSeconds(TimeValue seconds)
+        [[nodiscard]] static TimeSpan FromSeconds(const TimeValue seconds)
         {
             return TimeSpan(seconds);
         }
@@ -69,7 +69,7 @@ namespace FE
     private:
         TimeValue m_seconds;
 
-        explicit TimeSpan(TimeValue time)
+        explicit TimeSpan(const TimeValue time)
         {
             m_seconds = time;
         }

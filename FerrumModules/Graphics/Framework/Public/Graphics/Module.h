@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Framework/ModuleBase.h>
+#include <FeCore/Modules/ModuleBase.h>
 #include <Graphics/Assets/ImageAssetStorage.h>
 #include <Graphics/Assets/MeshAssetStorage.h>
 #include <Graphics/Assets/ShaderAssetStorage.h>

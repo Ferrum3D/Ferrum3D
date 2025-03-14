@@ -58,7 +58,7 @@ private:
         return FE::Memory::DefaultAllocate(bytes, align);
     }
 
-    void do_deallocate(void* ptr, size_t bytes, size_t align) override
+    void do_deallocate(void* ptr, size_t bytes, size_t) override
     {
         ++m_deallocationCount;
         m_totalSize -= bytes;

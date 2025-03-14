@@ -20,7 +20,7 @@ TEST(DateTime, Basic)
 TEST(DateTime, ConvertTimeZone)
 {
     const auto timeZoneInfo = Platform::GetTimeZoneInfo();
-    printf("Time zone: \"%s\" (%d bias)\n", timeZoneInfo.m_standardName.Data(), timeZoneInfo.m_minuteBias);
+    printf("Time zone: \"%s\" (%d bias)\n", timeZoneInfo.m_standardName.c_str(), timeZoneInfo.m_minuteBias);
 
     const DateTime<TZ::Local> localTime = DateTime<TZ::Local>::Now();
     const DateTime<TZ::UTC> utcTime = TZ::Convert::To<TZ::UTC>(localTime);

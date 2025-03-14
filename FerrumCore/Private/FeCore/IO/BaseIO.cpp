@@ -1,33 +1,16 @@
-﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/IO/BaseIO.h>
+﻿#include <FeCore/IO/BaseIO.h>
+#include <FeCore/IO/Platform/PlatformPath.h>
 
 namespace FE::IO
 {
-    FixedPath GetCurrentDirectory()
-    {
-#if FE_PLATFORM_WINDOWS
-        wchar_t buf[kMaxPathLength];
-        GetCurrentDirectoryW(kMaxPathLength, buf);
-
-        const int32_t length = WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0, nullptr, nullptr);
-        assert(length > 0);
-
-        FixedPath result;
-        result.Resize(length - 1, 0);
-        WideCharToMultiByte(CP_UTF8, 0, buf, -1, result.Data(), result.Size(), nullptr, nullptr);
-        return result;
-#else
-#    error Not implemented :(
-#endif
-    }
-
-
-    StringSlice GetResultDesc(ResultCode code)
+    festd::string_view GetResultDesc(const ResultCode code)
     {
         switch (code)
         {
         case ResultCode::Success:
             return "Success";
+        case ResultCode::Canceled:
+            return "Operation was canceled";
         case ResultCode::PermissionDenied:
             return "Permission denied";
         case ResultCode::NoFileOrDirectory:
@@ -59,5 +42,22 @@ namespace FE::IO
         default:
             return "Unknown error";
         }
+    }
+
+
+    ResultCode Directory::TraverseRecursively(const festd::string_view path, const festd::string_view pattern,
+                                              const festd::fixed_function<48, bool(const DirectoryEntry&)>& f)
+    {
+        FE_PROFILER_ZONE_TEXT("%.*s", path.size(), path.data());
+
+        Platform::DirectoryIterationParams params;
+        params.m_path = GetAbsolutePath(path);
+        params.m_pattern = pattern;
+        params.m_callbackData = reinterpret_cast<uintptr_t>(&f);
+        params.m_callback = [](const uintptr_t callbackData, const DirectoryEntry& entry) {
+            return (*reinterpret_cast<const std::decay_t<decltype(f)>*>(callbackData))(entry);
+        };
+
+        return Platform::IterateDirectoryRecursively(params);
     }
 } // namespace FE::IO

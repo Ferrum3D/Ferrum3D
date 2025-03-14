@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
-#include <Graphics/RHI/Image.h>
-#include <Graphics/RHI/ImageFormat.h>
+#include <festd/string.h>
+#include <Graphics/Core/Image.h>
+#include <Graphics/Core/ImageFormat.h>
 
 namespace FE::Graphics
 {
@@ -12,7 +12,7 @@ namespace FE::Graphics
         uint16_t m_height = 0;
         uint32_t m_channelCount = 0;
 
-        static festd::expected<RawImage, StringSlice> LoadFromMemory(festd::span<const uint8_t> data);
+        static festd::expected<RawImage, festd::string_view> LoadFromMemory(festd::span<const uint8_t> data);
         static void Free(RawImage& image);
     };
 
@@ -218,41 +218,41 @@ namespace FE::Graphics
         }
 
 
-        inline static RHI::ImageDimension ConvertDimension(ResourceDimension dimension)
+        inline static Core::ImageDimension ConvertDimension(ResourceDimension dimension)
         {
             switch (dimension)
             {
             case ResourceDimension::kTexture1D:
-                return RHI::ImageDimension::k1D;
+                return Core::ImageDimension::k1D;
             case ResourceDimension::kTexture2D:
-                return RHI::ImageDimension::k2D;
+                return Core::ImageDimension::k2D;
             case ResourceDimension::kTexture3D:
-                return RHI::ImageDimension::k3D;
+                return Core::ImageDimension::k3D;
             default:
-                return RHI::ImageDimension::k2D;
+                return Core::ImageDimension::k2D;
             }
         }
 
 
-        inline static RHI::Format ConvertFormat(Format dxgiFormat)
+        inline static Core::Format ConvertFormat(Format dxgiFormat)
         {
             switch (dxgiFormat)
             {
 #define FE_EXPAND_DXGI_FORMAT_CONVERSION(name, type, byteSize, channelCount, aspectFlags, bc, sign, srgb, index)                 \
     case Format::name:                                                                                                           \
-        return RHI::Format::k##name;
+        return Core::Format::k##name;
 
                 FE_EXPAND_BC_FORMATS(FE_EXPAND_DXGI_FORMAT_CONVERSION)
 
 #undef FE_EXPAND_DXGI_FORMAT_CONVERSION
 
             case Format::R32G32B32A32_FLOAT:
-                return RHI::Format::kR32G32B32A32_SFLOAT;
+                return Core::Format::kR32G32B32A32_SFLOAT;
             case Format::R8G8B8A8_UNORM:
-                return RHI::Format::kR8G8B8A8_UNORM;
+                return Core::Format::kR8G8B8A8_UNORM;
 
             default:
-                return RHI::Format::kUndefined;
+                return Core::Format::kUndefined;
             }
         }
     } // namespace DDS

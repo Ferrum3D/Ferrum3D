@@ -1,7 +1,7 @@
 ﻿#include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/Format.h>
-#include <FeCore/Strings/String.h>
 #include <Tests/Common/TestCommon.h>
+#include <festd/vector.h>
 
 using ::testing::AtLeast;
 
@@ -12,7 +12,7 @@ TEST(EnvironmentTest, EnvName)
     const Env::Name empty;
     ASSERT_FALSE(empty);
     EXPECT_EQ(empty.size(), 0);
-    EXPECT_EQ(empty, StringSlice{ "" });
+    EXPECT_EQ(empty, festd::string_view{ "" });
     EXPECT_EQ(empty, Env::Name{});
     EXPECT_EQ(empty.c_str(), nullptr);
     EXPECT_EQ(empty.GetRecord(), nullptr);
@@ -28,13 +28,13 @@ TEST(EnvironmentTest, EnvName)
     EXPECT_EQ(test1, test3);
     EXPECT_EQ(test1, test4);
     EXPECT_EQ(test1.size(), 7);
-    EXPECT_EQ(test2, StringSlice{ "name124" });
+    EXPECT_EQ(test2, festd::string_view{ "name124" });
     EXPECT_EQ(test2.size(), 7);
-    EXPECT_EQ(test3, StringSlice{ "name123" });
+    EXPECT_EQ(test3, festd::string_view{ "name123" });
     EXPECT_EQ(test3.size(), 7);
-    EXPECT_EQ(test1, StringSlice{ "name123" });
+    EXPECT_EQ(test1, festd::string_view{ "name123" });
     EXPECT_EQ(test4.size(), 7);
-    EXPECT_EQ(test4, StringSlice{ "name123" });
+    EXPECT_EQ(test4, festd::string_view{ "name123" });
 }
 
 TEST(EnvironmentTest, EnvNamePages)
@@ -43,16 +43,16 @@ TEST(EnvironmentTest, EnvNamePages)
     festd::vector<Env::Name> names;
     for (uint32_t i = 0; i < 64 * 1024; ++i)
     {
-        const String s = Fmt::Format("{}{}{}{}", longStr, longStr, longStr, i);
-        const Env::Name name{ std::string_view{ s.Data(), s.Size() } };
+        const festd::string s = Fmt::Format("{}{}{}{}", longStr, longStr, longStr, i);
+        const Env::Name name{ std::string_view{ s.data(), s.size() } };
         ASSERT_TRUE(name.Valid());
         names.push_back(name);
     }
 
     for (uint32_t i = 0; i < 64 * 1024; ++i)
     {
-        const String s = Fmt::Format("{}{}{}{}", longStr, longStr, longStr, i);
-        const Env::Name name{ std::string_view{ s.Data(), s.Size() } };
+        const festd::string s = Fmt::Format("{}{}{}{}", longStr, longStr, longStr, i);
+        const Env::Name name{ std::string_view{ s.data(), s.size() } };
         ASSERT_TRUE(name.Valid());
         EXPECT_EQ(s, name);
         EXPECT_EQ(name, names[i]);
@@ -64,7 +64,7 @@ TEST(EnvironmentTest, CreateVar)
 {
     auto intVar = Env::CreateGlobalVariable<int>(Env::Name{ "CreateVar" }, 123);
     ASSERT_EQ(*intVar, 123);
-    ASSERT_EQ(intVar.GetName(), std::string_view{ "CreateVar" });
+    ASSERT_EQ(intVar.GetName(), festd::string_view{ "CreateVar" });
 }
 
 TEST(EnvironmentTest, SharedVar)
@@ -76,8 +76,8 @@ TEST(EnvironmentTest, SharedVar)
     ASSERT_EQ(instance1, instance2);
     ASSERT_EQ(*instance1, *instance2);
 
-    ASSERT_EQ(instance1.GetName(), std::string_view{ "SharedVar" });
-    ASSERT_EQ(instance2.GetName(), std::string_view{ "SharedVar" });
+    ASSERT_EQ(instance1.GetName(), festd::string_view{ "SharedVar" });
+    ASSERT_EQ(instance2.GetName(), festd::string_view{ "SharedVar" });
 }
 
 TEST(EnvironmentTest, FindVar)
@@ -91,7 +91,7 @@ TEST(EnvironmentTest, FindVar)
 
     ASSERT_EQ(*var123, 123);
 
-    EXPECT_EQ(var123.GetName(), std::string_view{ "FindVar" });
+    EXPECT_EQ(var123.GetName(), festd::string_view{ "FindVar" });
 }
 
 TEST(EnvironmentTest, NoCopies)

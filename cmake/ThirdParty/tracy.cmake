@@ -1,7 +1,7 @@
 ﻿CPMAddPackage(
     NAME Tracy
     GITHUB_REPOSITORY wolfpld/tracy
-    VERSION 0.11.0
+    VERSION 0.11.1
 	OPTIONS "TRACY_FIBERS ON"
 	        "TRACY_STATIC OFF"
 )

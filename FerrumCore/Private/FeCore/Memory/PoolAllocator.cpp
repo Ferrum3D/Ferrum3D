@@ -4,62 +4,68 @@ namespace FE::Memory
 {
     inline PoolAllocator::Page* PoolAllocator::AllocatePage()
     {
-        Page* pResult = static_cast<Page*>(AllocateVirtual(m_pageByteSize));
-        pResult->m_next = m_pageList;
-        pResult->m_current = pResult + 1;
-        m_pageList = pResult;
-        return pResult;
+        Page* result = static_cast<Page*>(AllocateVirtual(m_pageByteSize));
+        result->m_next = m_pageList;
+        result->m_current = result + 1;
+        m_pageList = result;
+        return result;
     }
 
 
-    inline void* PoolAllocator::AllocateFromPage(Page* pPage) const
+    inline void* PoolAllocator::AllocateFromPage(Page* page) const
     {
-        if (!pPage)
+        if (!page)
             return nullptr;
 
-        const uint8_t* pPageEnd = reinterpret_cast<const uint8_t*>(pPage) + m_pageByteSize;
+        const uint8_t* pageEnd = reinterpret_cast<const uint8_t*>(page) + m_pageByteSize;
         const size_t elementByteSize = m_elementByteSize;
 
-        uint8_t* pResult = static_cast<uint8_t*>(pPage->m_current);
-        if (pResult + elementByteSize > pPageEnd)
+        uint8_t* result = static_cast<uint8_t*>(page->m_current);
+        if (result + elementByteSize > pageEnd)
             return nullptr;
 
-        pPage->m_current = pResult + elementByteSize;
-        return pResult;
+        page->m_current = result + elementByteSize;
+        return result;
     }
 
 
-    void* PoolAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
+    void* PoolAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
     {
-        FE_CORE_ASSERT(byteSize <= m_elementByteSize, "");
-        FE_CORE_ASSERT(byteAlignment <= kDefaultAlignment, "");
+        FE_CoreAssert(m_elementByteSize > 0, "Pool must be initialized");
+        FE_CoreAssert(byteSize <= m_elementByteSize);
+        FE_CoreAssert(byteAlignment <= kDefaultAlignment);
 
 #if FE_DEBUG
         ++m_allocationCount;
 #endif
 
-        void* pResult;
+        void* result;
         if (!m_freeList)
         {
-            pResult = AllocateFromPage(m_pageList);
-            if (!pResult)
+            result = AllocateFromPage(m_pageList);
+            if (!result)
             {
-                Page* pPage = AllocatePage();
-                pResult = AllocateFromPage(pPage);
+                Page* page = AllocatePage();
+                result = AllocateFromPage(page);
             }
 
-            return pResult;
+            return result;
         }
 
-        pResult = m_freeList;
-        m_freeList = *static_cast<void**>(pResult);
-        return pResult;
+        result = m_freeList;
+        m_freeList = *static_cast<void**>(result);
+        return result;
     }
 
 
     void PoolAllocator::do_deallocate(void* ptr, size_t, size_t)
     {
-        FE_CORE_ASSERT(m_allocationCount-- > 0, "");
+        FE_CoreAssert(m_allocationCount > 0);
+
+#if FE_DEBUG
+        --m_allocationCount;
+#endif
+
         *static_cast<void**>(ptr) = m_freeList;
         m_freeList = ptr;
     }

@@ -15,8 +15,8 @@ namespace FE::Assets
     struct AssetLoaderSpec final
     {
         Env::Name m_assetTypeName;
-        StringSlice m_fileExtension;
-        festd::span<const StringSlice> m_sourceExtensions;
+        festd::string_view m_fileExtension;
+        festd::span<const festd::string_view> m_sourceExtensions;
     };
 
 

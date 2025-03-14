@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 
 namespace FE
 {
@@ -10,7 +10,7 @@ namespace FE
         };
 
 
-        ModuleHandle LoadModule(StringSlice fullPath);
+        ModuleHandle LoadModule(festd::string_view fullPath);
         bool UnloadModule(ModuleHandle moduleHandle);
 
         void* FindModuleSymbol(ModuleHandle moduleHandle, const char* symbolName);
@@ -20,9 +20,9 @@ namespace FE
     struct LibraryLoader final
     {
         LibraryLoader() = default;
-        LibraryLoader(StringSlice libraryName);
+        LibraryLoader(festd::string_view libraryName);
 
-        bool Load(StringSlice libraryName)
+        bool Load(festd::string_view libraryName)
         {
             m_handle = Platform::LoadModule(libraryName);
             return m_handle.IsValid();

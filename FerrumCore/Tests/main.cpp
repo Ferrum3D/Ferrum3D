@@ -1,12 +1,15 @@
-﻿#include <FeCore/Modules/Environment.h>
+﻿#include <FeCore/Base/Platform.h>
+#include <FeCore/Modules/Environment.h>
 #include <gtest/gtest.h>
+
+using namespace FE;
 
 int main(int argc, char** argv)
 {
-    FE::Env::CreateEnvironment();
+    Env::CreateEnvironment();
     testing::FLAGS_gtest_print_utf8 = true;
 
-    if (FE::Env::IsDebuggerPresent())
+    if (Platform::IsDebuggerPresent())
     {
         testing::FLAGS_gtest_break_on_failure = true;
         testing::FLAGS_gtest_catch_exceptions = false;

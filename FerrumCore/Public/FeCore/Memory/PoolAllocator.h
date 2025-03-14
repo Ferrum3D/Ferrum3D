@@ -5,7 +5,9 @@ namespace FE::Memory
 {
     struct PoolAllocator : public std::pmr::memory_resource
     {
-        PoolAllocator(const char* name, size_t elementByteSize, uint32_t pageByteSize)
+        PoolAllocator() = default;
+
+        PoolAllocator(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
         {
             Initialize(name, elementByteSize, pageByteSize);
         }
@@ -15,20 +17,25 @@ namespace FE::Memory
             FreePages();
         }
 
-        void Initialize(const char* name, size_t elementByteSize, uint32_t pageByteSize)
+        PoolAllocator(const PoolAllocator&) = delete;
+        PoolAllocator& operator=(const PoolAllocator&) = delete;
+        PoolAllocator(PoolAllocator&&) = delete;
+        PoolAllocator& operator=(PoolAllocator&&) = delete;
+
+        void Initialize(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
         {
-            FE_CORE_ASSERT(m_elementByteSize == 0, "Pool already initialized");
-            FE_CORE_ASSERT(elementByteSize > 0, "");
+            FE_CoreAssert(m_elementByteSize == 0, "Pool already initialized");
+            FE_CoreAssert(elementByteSize > 0);
             m_name = name;
 
 #if FE_DEBUG
             const PlatformSpec platformSpec = GetPlatformSpec();
-            FE_CORE_ASSERT(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
-                           "Page size must be aligned to virtual allocation granularity");
+            FE_CoreAssert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
+                          "Page size must be aligned to virtual allocation granularity");
 #endif
 
             m_elementByteSize = AlignUp<kDefaultAlignment>(elementByteSize);
-            FE_CORE_ASSERT(pageByteSize > m_elementByteSize, "");
+            FE_CoreAssert(pageByteSize > m_elementByteSize);
 
             m_pageByteSize = pageByteSize;
         }
@@ -42,7 +49,7 @@ namespace FE::Memory
             m_freeList = nullptr;
         }
 
-        void Reinitialize(size_t elementByteSize, uint32_t pageByteSize)
+        void Reinitialize(const size_t elementByteSize, const uint32_t pageByteSize)
         {
             Deinitialize();
             Initialize(m_name, elementByteSize, pageByteSize);
@@ -71,11 +78,11 @@ namespace FE::Memory
 
         inline Page* AllocatePage();
 
-        inline void* AllocateFromPage(Page* pPage) const;
+        inline void* AllocateFromPage(Page* page) const;
 
         void FreePages()
         {
-            FE_CORE_ASSERT(m_allocationCount == 0, "Leak detected");
+            FE_CoreAssert(m_allocationCount == 0, "Leak detected");
 
             Page* pPage = m_pageList;
             while (pPage)
@@ -88,10 +95,50 @@ namespace FE::Memory
 
     protected:
         void* do_allocate(size_t byteSize, size_t byteAlignment) override;
-        void do_deallocate(void* ptr, size_t, size_t) override;
-        bool do_is_equal(const memory_resource& other) const noexcept override
+        void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override;
+        [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
         {
             return this == &other;
+        }
+    };
+
+
+    template<class T>
+    struct Pool final : private PoolAllocator
+    {
+        Pool() = default;
+
+        explicit Pool(const char* name, const uint32_t pageByteSize = 64 * 1024)
+            : PoolAllocator(name, sizeof(T), pageByteSize)
+        {
+        }
+
+        void Initialize(const char* name, const uint32_t pageByteSize = 64 * 1024)
+        {
+            PoolAllocator::Initialize(name, sizeof(T), pageByteSize);
+        }
+
+        using PoolAllocator::Deinitialize;
+
+        [[nodiscard]] PoolAllocator* GetAllocator()
+        {
+            return this;
+        }
+
+        void Reinitialize(const uint32_t pageByteSize = 64 * 1024)
+        {
+            PoolAllocator::Reinitialize(sizeof(T), pageByteSize);
+        }
+
+        template<class... TArgs>
+        T* New(TArgs&&... args)
+        {
+            return Memory::New<T>(GetAllocator(), festd::forward<TArgs>(args)...);
+        }
+
+        void Delete(const T* ptr)
+        {
+            Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
         }
     };
 } // namespace FE::Memory

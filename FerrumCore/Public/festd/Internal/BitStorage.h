@@ -16,19 +16,19 @@ namespace FE::Internal
     static_assert(1 << kBitSetWordBitShift == kBitSetBitsPerWord);
 
 
-    constexpr uint32_t GetNewBitSetCapacity(uint32_t currentCapacity, uint32_t minimum)
+    constexpr uint32_t GetNewBitSetCapacity(const uint32_t currentCapacity, const uint32_t minimum)
     {
         return Math::Max(minimum, currentCapacity * 2);
     }
 
 
-    constexpr uint32_t CalculateNextLevelWordCount(uint32_t count)
+    constexpr uint32_t CalculateNextLevelWordCount(const uint32_t count)
     {
         return (count + kBitSetBitsPerWord - 1) >> kBitSetWordBitShift;
     }
 
 
-    constexpr uint32_t CalculateWordIndex(uint32_t bitIndex)
+    constexpr uint32_t CalculateWordIndex(const uint32_t bitIndex)
     {
         return bitIndex >> kBitSetWordBitShift;
     }
@@ -72,7 +72,7 @@ namespace FE::Internal
         }
 
         template<bool TKeepData>
-        FE_FORCE_INLINE void GrowImpl(uint32_t length, uint32_t capacity, std::pmr::memory_resource* allocator)
+        FE_FORCE_INLINE void GrowImpl(const uint32_t length, uint32_t capacity, std::pmr::memory_resource* allocator)
         {
             //
             // While some parts of the top-level mask of a hierarchical bitset can just be set to zeros and
@@ -128,23 +128,23 @@ namespace FE::Internal
             FE_AssertDebug(length <= capacity);
         }
 
-        void InitializeImpl(uint32_t length, std::pmr::memory_resource* allocator)
+        void InitializeImpl(const uint32_t length, std::pmr::memory_resource* allocator)
         {
             GrowImpl<false>(length, length, allocator);
         }
 
-        void ReinitializeImpl(uint32_t length, std::pmr::memory_resource* allocator)
+        void ReinitializeImpl(const uint32_t length, std::pmr::memory_resource* allocator)
         {
             GrowImpl<false>(length, length, allocator);
         }
 
-        void ReserveImpl(uint32_t length, std::pmr::memory_resource* allocator)
+        void ReserveImpl(const uint32_t length, std::pmr::memory_resource* allocator)
         {
             if (length > m_capacity)
                 GrowImpl<true>(m_size, length, allocator);
         }
 
-        void ResizeImpl(uint32_t length, std::pmr::memory_resource* allocator)
+        void ResizeImpl(const uint32_t length, std::pmr::memory_resource* allocator)
         {
             GrowImpl<true>(length, Math::Max(m_capacity, length), allocator);
         }
@@ -213,25 +213,25 @@ namespace FE::Internal
             return m_topLevel;
         }
 
-        void InitializeImpl(uint32_t length, std::pmr::memory_resource*)
+        void InitializeImpl(const uint32_t length, std::pmr::memory_resource*)
         {
             FE_AssertDebug(length <= kCapacity);
             memset(this, 0, sizeof(*this));
             m_size = length;
         }
 
-        void ReinitializeImpl(uint32_t length, std::pmr::memory_resource*)
+        void ReinitializeImpl(const uint32_t length, std::pmr::memory_resource*)
         {
             FE_AssertDebug(length <= kCapacity);
             m_size = length;
         }
 
-        void ReserveImpl(uint32_t length, std::pmr::memory_resource*)
+        void ReserveImpl(const uint32_t length, std::pmr::memory_resource*)
         {
             FE_AssertDebug(length <= kCapacity);
         }
 
-        void ResizeImpl(uint32_t length, std::pmr::memory_resource*)
+        void ResizeImpl(const uint32_t length, std::pmr::memory_resource*)
         {
             FE_AssertDebug(length <= kCapacity);
             m_size = length;

@@ -27,6 +27,7 @@ namespace FE
     void WaitGroup::Signal()
     {
         const int32_t prevValue = m_counter.fetch_sub(1);
+        FE_Assert(prevValue > 0);
         if (prevValue > 1)
             return;
 
@@ -39,7 +40,7 @@ namespace FE
             for (uint32_t spin = 0; spin < spinCount; ++spin)
                 _mm_pause();
 
-            spinCount = std::min(spinCount << 1, 32u);
+            spinCount = Math::Min(spinCount << 1, 32u);
         }
 
         const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
@@ -49,15 +50,15 @@ namespace FE
             return;
         }
 
-        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
+        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+        auto* jobSystem = fe_assert_cast<JobSystem*>(jobSystemInterface);
 
-        FiberWaitEntry* pEntry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        while (pEntry)
+        auto entry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
+        while (entry)
         {
-            FiberWaitEntry* pNext = static_cast<FiberWaitEntry*>(pEntry->mpNext);
-            pJobSystem->AddReadyFiber(pEntry);
-            pEntry = pNext;
+            auto* next = static_cast<FiberWaitEntry*>(entry->m_next);
+            jobSystem->AddReadyFiber(entry);
+            entry = next;
         }
 
         m_lockAndQueue.store(0, std::memory_order_release);
@@ -66,6 +67,8 @@ namespace FE
 
     void WaitGroup::Wait()
     {
+        FE_PROFILER_ZONE();
+
         uint32_t spinCount = 1;
         while (true)
         {
@@ -79,7 +82,7 @@ namespace FE
                 for (uint32_t spin = 0; spin < spinCount; ++spin)
                     _mm_pause();
 
-                spinCount = std::min(spinCount << 1, 32u);
+                spinCount = Math::Min(spinCount << 1, 32u);
                 continue;
             }
 
@@ -94,31 +97,29 @@ namespace FE
             return;
         }
 
-        FiberWaitEntry* pQueueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        IJobSystem* pJobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        JobSystem* pJobSystem = fe_assert_cast<JobSystem*>(pJobSystemInterface);
+        auto* queueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
+        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+        auto* jobSystem = fe_assert_cast<JobSystem*>(jobSystemInterface);
 
-        const uint32_t workerIndex = pJobSystem->GetWorkerIndex();
-        JobSystem::Worker& worker = pJobSystem->m_workers[workerIndex];
+        const uint32_t workerIndex = jobSystem->GetWorkerIndex();
+        const JobSystem::Worker& worker = jobSystem->m_workers[workerIndex];
 
         FiberWaitEntry waitEntry;
-        waitEntry.mpPrev = nullptr;
-        waitEntry.mpNext = nullptr;
         waitEntry.m_priority = worker.m_priority;
+        waitEntry.m_affinityMask = worker.m_affinityMask;
         waitEntry.m_fiber = worker.m_currentFiber;
-        if (pQueueHead)
+        if (queueHead)
         {
-            // Queue tail is stored in mpPrev to reduce the sizeof(FiberWaitEntry)
-            pQueueHead->mpPrev->mpNext = &waitEntry;
-            pQueueHead->mpPrev = &waitEntry;
+            queueHead->m_queueTail->m_next = &waitEntry;
+            queueHead->m_queueTail = &waitEntry;
             m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
         }
         else
         {
-            waitEntry.mpPrev = &waitEntry;
+            waitEntry.m_queueTail = &waitEntry;
             m_lockAndQueue.store(reinterpret_cast<uint64_t>(&waitEntry), std::memory_order_release);
         }
 
-        pJobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);
+        jobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);
     }
 } // namespace FE

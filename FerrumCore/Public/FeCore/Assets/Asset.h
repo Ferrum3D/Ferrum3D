@@ -7,7 +7,7 @@ namespace FE
 {
     //! @brief Asset holder.
     //!
-    //! @tparam T - Asset storage type.
+    //! @tparam T  Asset storage type.
     //!
     //! This class is used to hold asset storage. It implements reference counting and
     //! provides interface for asset loading.
@@ -38,7 +38,7 @@ namespace FE
 
         Asset& operator=(Asset&& other) noexcept
         {
-            Asset(std::move(other)).Swap(*this);
+            Asset(festd::move(other)).Swap(*this);
             return *this;
         }
 
@@ -83,7 +83,7 @@ namespace FE
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_storage, "Asset was empty");
+            FE_Assert(m_storage, "Asset was empty");
             return *m_storage;
         }
 

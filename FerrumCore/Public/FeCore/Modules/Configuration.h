@@ -3,7 +3,8 @@
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Modules/Environment.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
+#include <festd/vector.h>
 
 namespace FE::Env
 {
@@ -20,48 +21,48 @@ namespace FE::Env
     {
         ConfigurationValue() = default;
 
-        ConfigurationValue(Name value)
+        ConfigurationValue(const Name value)
             : m_type(ConfigurationValueType::kString)
         {
             SetImpl(value);
         }
 
-        ConfigurationValue(int64_t value)
+        ConfigurationValue(const int64_t value)
             : m_type(ConfigurationValueType::kInt)
         {
             SetImpl(value);
         }
 
-        ConfigurationValue(double value)
+        ConfigurationValue(const double value)
             : m_type(ConfigurationValueType::kDouble)
         {
             SetImpl(value);
         }
 
-        ConfigurationValueType GetType() const
+        [[nodiscard]] ConfigurationValueType GetType() const
         {
             return m_type;
         }
 
-        const Name& AsName() const
+        [[nodiscard]] Name AsName() const
         {
             CheckType(ConfigurationValueType::kString);
             return GetImpl<Name>();
         }
 
-        StringSlice AsString() const
+        [[nodiscard]] festd::string_view AsString() const
         {
             CheckType(ConfigurationValueType::kString);
-            return GetImpl<Name>();
+            return festd::string_view{ GetImpl<Name>() };
         }
 
-        int64_t AsInt() const
+        [[nodiscard]] int64_t AsInt() const
         {
             CheckType(ConfigurationValueType::kInt);
             return GetImpl<int64_t>();
         }
 
-        double AsDouble() const
+        [[nodiscard]] double AsDouble() const
         {
             CheckType(ConfigurationValueType::kDouble);
             return GetImpl<double>();
@@ -86,14 +87,14 @@ namespace FE::Env
         }
 
         template<class T>
-        const T& GetImpl() const
+        [[nodiscard]] const T& GetImpl() const
         {
             return *reinterpret_cast<const T*>(&m_storage);
         }
 
-        void CheckType(ConfigurationValueType expected) const
+        void CheckType(const ConfigurationValueType expected) const
         {
-            FE_AssertMsg(m_type == expected, "Type mismatch");
+            FE_Assert(m_type == expected, "Type mismatch");
         }
     };
 
@@ -101,7 +102,7 @@ namespace FE::Env
     struct ConfigurationSection final : public festd::intrusive_list_node
     {
         ConfigurationSection()
-            : m_allocator(Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear))
+            : m_allocator(GetStaticAllocator(Memory::StaticAllocatorType::kLinear))
         {
         }
 
@@ -110,108 +111,108 @@ namespace FE::Env
         {
         }
 
-        Name GetKey() const
+        [[nodiscard]] Name GetKey() const
         {
             return m_key;
         }
 
-        ConfigurationValue GetValue() const
+        [[nodiscard]] ConfigurationValue GetValue() const
         {
             return m_value;
         }
 
-        ConfigurationValue Get(StringSlice path) const
+        [[nodiscard]] ConfigurationValue Get(const festd::string_view path) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return {};
 
-            return pSection->m_value;
+            return section->m_value;
         }
 
-        Env::Name GetName(StringSlice path, Env::Name defaultValue) const
+        [[nodiscard]] Name GetName(const festd::string_view path, const Name defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->m_value.AsName();
+            return section->m_value.AsName();
         }
 
-        StringSlice GetString(StringSlice path, StringSlice defaultValue) const
+        [[nodiscard]] festd::string_view GetString(const festd::string_view path, const festd::string_view defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->m_value.AsString();
+            return section->m_value.AsString();
         }
 
-        int64_t GetInt(StringSlice path, int64_t defaultValue) const
+        [[nodiscard]] int64_t GetInt(const festd::string_view path, const int64_t defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->m_value.AsInt();
+            return section->m_value.AsInt();
         }
 
-        double GetDouble(StringSlice path, double defaultValue) const
+        [[nodiscard]] double GetDouble(const festd::string_view path, const double defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->m_value.AsDouble();
+            return section->m_value.AsDouble();
         }
 
-        void Set(StringSlice path, ConfigurationValue value)
+        void Set(const festd::string_view path, const ConfigurationValue value)
         {
-            ConfigurationSection* pSection = this;
+            ConfigurationSection* section = this;
 
             auto begin = path.begin();
-            auto end = path.FindFirstOf('/');
+            auto end = path.find_first_of('/');
             while (true)
             {
-                const StringSlice token{ begin, end };
-                pSection = pSection->FindChild(token);
-                if (pSection == nullptr)
+                const festd::string_view token{ begin, end };
+                section = section->FindChild(token);
+                if (section == nullptr)
                 {
-                    pSection = Memory::New<ConfigurationSection>(m_allocator, m_allocator);
-                    m_children.push_back(*pSection);
-                    pSection->m_key = Name{ token.Data(), static_cast<uint32_t>(token.Size()) };
+                    section = Memory::New<ConfigurationSection>(m_allocator, m_allocator);
+                    m_children.push_back(*section);
+                    section->m_key = Name{ token.data(), token.size() };
                 }
 
                 if (end == path.end())
                     break;
 
                 begin = end;
-                end = path.FindFirstOf(++end, '/');
+                end = path.find_first_of(++end, '/');
             }
 
-            pSection->m_value = value;
+            section->m_value = value;
         }
 
-        const ConfigurationSection* GetSection(StringSlice path) const
+        [[nodiscard]] const ConfigurationSection* GetSection(const festd::string_view path) const
         {
-            const ConfigurationSection* pSection = this;
+            const ConfigurationSection* section = this;
 
             auto begin = path.begin();
-            auto end = path.FindFirstOf('/');
+            auto end = path.find_first_of('/');
             while (true)
             {
-                const StringSlice token{ begin, end };
-                pSection = pSection->FindChild(token);
-                if (pSection == nullptr)
+                const festd::string_view token{ begin, end };
+                section = section->FindChild(token);
+                if (section == nullptr)
                     break;
                 if (end == path.end())
                     break;
 
                 begin = end;
-                end = path.FindFirstOf(++end, '/');
+                end = path.find_first_of(++end, '/');
             }
 
-            return pSection;
+            return section;
         }
 
     private:
@@ -222,10 +223,10 @@ namespace FE::Env
         Name m_key;
         ConfigurationValue m_value;
 
-        ConfigurationSection* FindChild(StringSlice key)
+        ConfigurationSection* FindChild(const festd::string_view key)
         {
             Name keyName;
-            if (!Name::TryGetExisting({ key.Data(), key.Size() }, keyName))
+            if (!Name::TryGetExisting({ key.data(), key.size() }, keyName))
                 return nullptr;
 
             for (ConfigurationSection& child : m_children)
@@ -237,10 +238,10 @@ namespace FE::Env
             return nullptr;
         }
 
-        const ConfigurationSection* FindChild(StringSlice key) const
+        [[nodiscard]] const ConfigurationSection* FindChild(const festd::string_view key) const
         {
             Name keyName;
-            if (!Name::TryGetExisting({ key.Data(), key.Size() }, keyName))
+            if (!Name::TryGetExisting({ key.data(), key.size() }, keyName))
                 return nullptr;
 
             for (const ConfigurationSection& child : m_children)
@@ -275,9 +276,9 @@ namespace FE::Env
     {
         FE_RTTI_Class(Configuration, "FE804C2B-6671-47E7-8A96-4CD59680CCE4");
 
-        Configuration(festd::span<const StringSlice> commandLine);
+        Configuration(festd::span<const festd::string_view> commandLine);
 
-        const ConfigurationSection* GetSection(StringSlice path) const
+        const ConfigurationSection* GetSection(const festd::string_view path) const
         {
             std::lock_guard lk{ m_lock };
             for (const ConfigurationSection& section : m_rootSections)
@@ -289,7 +290,7 @@ namespace FE::Env
             return nullptr;
         }
 
-        ConfigurationValue Get(StringSlice path) const
+        ConfigurationValue Get(const festd::string_view path) const
         {
             std::lock_guard lk{ m_lock };
             for (const ConfigurationSection& section : m_rootSections)
@@ -301,7 +302,7 @@ namespace FE::Env
             return {};
         }
 
-        Env::Name GetName(StringSlice path, Env::Name defaultValue) const
+        Name GetName(const festd::string_view path, const Name defaultValue) const
         {
             const ConfigurationSection* pSection = GetSection(path);
             if (pSection == nullptr)
@@ -310,31 +311,31 @@ namespace FE::Env
             return pSection->GetValue().AsName();
         }
 
-        StringSlice GetString(StringSlice path, StringSlice defaultValue) const
+        festd::string_view GetString(const festd::string_view path, const festd::string_view defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->GetValue().AsString();
+            return section->GetValue().AsString();
         }
 
-        int64_t GetInt(StringSlice path, int64_t defaultValue) const
+        int64_t GetInt(const festd::string_view path, const int64_t defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->GetValue().AsInt();
+            return section->GetValue().AsInt();
         }
 
-        double GetDouble(StringSlice path, double defaultValue) const
+        double GetDouble(const festd::string_view path, const double defaultValue) const
         {
-            const ConfigurationSection* pSection = GetSection(path);
-            if (pSection == nullptr)
+            const ConfigurationSection* section = GetSection(path);
+            if (section == nullptr)
                 return defaultValue;
 
-            return pSection->GetValue().AsDouble();
+            return section->GetValue().AsDouble();
         }
 
     private:

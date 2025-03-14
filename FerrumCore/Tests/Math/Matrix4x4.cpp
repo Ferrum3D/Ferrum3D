@@ -257,7 +257,7 @@ TEST(Matrix4x4, Transpose)
 TEST(Matrix4x4, InverseTransform)
 {
     Matrix4x4F m = Matrix4x4F::Translation(Vector3F(1, 2, 3));
-    m = m * Matrix4x4F::RotationX(Math::Constants::PI / 4.0f);
+    m = m * Matrix4x4F::RotationX(Constants::PI / 4.0f);
     m = m * Matrix4x4F::Scale(Vector3F(4, 5, 6));
 
     const Matrix4x4F identity = m * Math::InverseTransform(m);

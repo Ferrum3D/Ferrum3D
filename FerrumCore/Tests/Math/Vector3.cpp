@@ -1,8 +1,21 @@
+#include <FeCore/Math/Random.h>
 #include <FeCore/Math/Vector3.h>
+#include <FeCore/Threading/Thread.h>
 #include <gtest/gtest.h>
 #include <random>
 
 using namespace FE;
+
+namespace
+{
+    DefaultRandom GRandom;
+
+    FE_FORCE_INLINE float RandFloat()
+    {
+        return GRandom.RandFloat();
+    }
+} // namespace
+
 
 TEST(Vector3, GetXYZ)
 {
@@ -44,7 +57,7 @@ TEST(Vector3, Equality)
     EXPECT_EQ(Vector3F(1, 2, 3), Vector3F(1, 2, 3));
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    EXPECT_EQ(Vector3F(_mm_setr_ps(1, 2, 3, rand())), Vector3F(_mm_setr_ps(1, 2, 3, rand())));
+    EXPECT_EQ(Vector3F(_mm_setr_ps(1, 2, 3, RandFloat())), Vector3F(_mm_setr_ps(1, 2, 3, RandFloat())));
 
     EXPECT_NE(Vector3F(1, 2, 3), Vector3F(0, 2, 3));
     EXPECT_NE(Vector3F(1, 2, 3), Vector3F(1, 0, 3));
@@ -66,8 +79,8 @@ TEST(Vector3, Comparison)
     Vector3F b{ 1, 5, 6 };
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    a.m_values[3] = rand();
-    b.m_values[3] = rand();
+    a.m_values[3] = RandFloat();
+    b.m_values[3] = RandFloat();
 
     EXPECT_EQ(Math::CmpEqualMask(a, b), 0b001);
     EXPECT_EQ(Math::CmpLessMask(a, b), 0b010);
@@ -83,9 +96,9 @@ TEST(Vector3, Addition)
     Vector3F c{ 2, 4, 6 };
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    a.m_values[3] = rand();
-    b.m_values[3] = rand();
-    c.m_values[3] = rand();
+    a.m_values[3] = RandFloat();
+    b.m_values[3] = RandFloat();
+    c.m_values[3] = RandFloat();
 
     EXPECT_TRUE(Math::EqualEstimate(a + b, c));
 }
@@ -97,9 +110,9 @@ TEST(Vector3, Subtraction)
     Vector3F c{ 0, 0, 0 };
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    a.m_values[3] = rand();
-    b.m_values[3] = rand();
-    c.m_values[3] = rand();
+    a.m_values[3] = RandFloat();
+    b.m_values[3] = RandFloat();
+    c.m_values[3] = RandFloat();
 
     EXPECT_TRUE(Math::EqualEstimate(a - b, c));
 }
@@ -111,9 +124,9 @@ TEST(Vector3, Multiplication)
     Vector3F c{ 1, 4, 9 };
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    a.m_values[3] = rand();
-    b.m_values[3] = rand();
-    c.m_values[3] = rand();
+    a.m_values[3] = RandFloat();
+    b.m_values[3] = RandFloat();
+    c.m_values[3] = RandFloat();
 
     EXPECT_TRUE(Math::EqualEstimate(a * b, c));
 
@@ -127,9 +140,9 @@ TEST(Vector3, Division)
     Vector3F c{ 1, 0, 3.5f };
 
     // Put in random garbage into the w component to ensure it's excluded from the calculations.
-    a.m_values[3] = rand();
-    b.m_values[3] = rand();
-    c.m_values[3] = rand();
+    a.m_values[3] = RandFloat();
+    b.m_values[3] = RandFloat();
+    c.m_values[3] = RandFloat();
 
     EXPECT_TRUE(Math::EqualEstimate(a / b, c));
 

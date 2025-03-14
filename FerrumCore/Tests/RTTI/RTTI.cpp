@@ -1,6 +1,6 @@
 #include <FeCore/RTTI/RTTI.h>
 #include <gtest/gtest.h>
-#include <FeCore/Strings/String.h>
+#include <festd/string.h>
 
 class Base
 {

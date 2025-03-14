@@ -15,11 +15,7 @@ namespace FE
             };
         };
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base()
-            : x(0)
-            , y(0)
-        {
-        }
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(T value)
             : x(value)
@@ -200,7 +196,7 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::Epsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::kEpsilon)
         {
             return EqualEstimate(lhs.x, rhs.x, epsilon) && EqualEstimate(lhs.y, rhs.y, epsilon);
         }

@@ -15,7 +15,7 @@ namespace FE::IO
 
 
     //! @brief Returns true if the specified status indicates that an operation is in a final state.
-    inline constexpr bool IsFinalStatus(AsyncOperationStatus status)
+    inline constexpr bool IsFinalStatus(const AsyncOperationStatus status)
     {
         switch (status)
         {
@@ -42,49 +42,45 @@ namespace FE::IO
     };
 
 
-    struct IAsyncReadCallback;
-
     //! @brief Basic asynchronous operation request. Don't use it directly, see e.g. AsyncReadRequest.
     struct AsyncOperationRequest
     {
-        Rc<IStream> pStream;       //!< The stream that the operation will be performed on, optional.
-        FixedPath Path;            //!< The path to the file to open the stream for, must be provided if pStream is null.
-        uintptr_t Offset = 0;      //!< The starting offset to read from or write to.
-        void* pUserData = nullptr; //!< An optional pointer to user data.
-        Priority Priority = Priority::kNormal; //!< Request priority.
+        Rc<IStream> m_stream;     //!< The stream that the operation will be performed on, optional.
+        Path m_path;              //!< The path to the file to open the stream for, must be provided if pStream is null.
+        uintptr_t m_offset = 0;   //!< The starting offset to read from or write to.
+        uintptr_t m_userData = 0; //!< An optional pointer to user data.
+        Priority m_priority = Priority::kNormal; //!< Request priority.
     };
 
 
     //! @brief Asynchronous read operation request.
     struct AsyncReadRequest : public AsyncOperationRequest
     {
-        IAsyncReadCallback* pCallback = nullptr;         //!< The callback to call when the read is completed.
-        std::pmr::memory_resource* pAllocator = nullptr; //!< The allocator to use to allocate memory to read to.
-                                                         //!< Optional: will be assigned by the I/O thread by default.
+        IAsyncReadCallback* m_callback = nullptr;         //!< The callback to call when the read is completed.
+        std::pmr::memory_resource* m_allocator = nullptr; //!< The allocator to use to allocate memory to read to.
+                                                          //!< Optional: will be assigned by the I/O thread by default.
 
-        std::byte* pReadBuffer = nullptr; //!< The buffer to read to. Optional will be allocated by the I/O thread by default.
-        uint32_t ReadBufferSize = 0;      //!< The size of the buffer to read to.
-                                          //!< Optional: the size of the file will be used by default.
+        std::byte* m_readBuffer = nullptr; //!< The buffer to read to. Optional, will be allocated by the I/O thread by default.
+        uint32_t m_readBufferSize = 0;     //!< The size of the buffer to read to.
+                                           //!< Optional: the size of the file will be used by default.
+        uint32_t m_overallocateBytes = 0; //!< Optional: if the buffer is allocated by the I/O thread, this option allows the user
+                                          //!< to additionally allocate some extra memory at the end of the allocated buffer.
+                                          //!< For instance, this can be useful for text files to reserve
+                                          //!< one byte for the terminating zero.
+                                          //!< Note: this overallocated memory is not guaranteed to be zeroed.
     };
 
 
     struct AsyncReadResult final
     {
-        const AsyncReadRequest* pRequest = nullptr;
-        IAsyncController* pController = nullptr;
-        size_t BytesRead = 0;
-    };
+        const AsyncReadRequest* m_request = nullptr;
+        IAsyncController* m_controller = nullptr;
+        size_t m_bytesRead = 0;
 
-
-    //! @brief Asynchronous read operation callback.
-    struct IAsyncReadCallback
-    {
-        FE_RTTI_Class(IAsyncReadCallback, "E1E0BD22-543A-4036-B918-134DB9C99D4F");
-
-        virtual ~IAsyncReadCallback() = default;
-
-        //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback(const AsyncReadResult& result) = 0;
+        void FreeData() const
+        {
+            m_request->m_allocator->deallocate(m_request->m_readBuffer, m_request->m_readBufferSize);
+        }
     };
 
 
@@ -109,11 +105,11 @@ namespace FE::IO
         //! a file block by block, specify ReadBufferSize in the request.
         //!
         //! The memory can be either allocated by the caller or by the I/O thread itself.
-        //! However the caller is always responsible for deallocating the storage
+        //! However, the caller is always responsible for deallocating the storage
         //! after the operation is completed.
         //!
-        //! @param request      - Read operation request specification.
-        //! @param ppController - A pointer to the variable that receives a pointer to IAsyncController.
+        //! @param request      Read operation request specification.
+        //! @param ppController A pointer to the variable that receives a pointer to IAsyncController.
         virtual void ReadAsync(const AsyncReadRequest& request, IAsyncController** ppController = nullptr) = 0;
     };
 } // namespace FE::IO

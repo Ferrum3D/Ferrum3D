@@ -28,6 +28,9 @@ namespace FE::DI
     };
 
 
+    struct ServiceRegistry;
+
+
     //! @brief Base interface for dependency injection containers.
     struct IServiceProvider
     {

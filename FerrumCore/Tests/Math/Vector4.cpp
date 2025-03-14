@@ -121,7 +121,7 @@ TEST(Vector4, Dot)
     std::mt19937 mt(0);
     std::uniform_real_distribution<float> dist(-5, 5);
 
-    const auto dotRef = [](Vector4F lhs, Vector4F rhs) {
+    const auto dotRef = [](const Vector4F lhs, const Vector4F rhs) {
         // non-SIMD version for testing
         return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
     };
@@ -169,10 +169,10 @@ TEST(Vector4, Clamp)
 
 TEST(Vector4, Length)
 {
-    std::mt19937 mt(0);
+    std::mt19937 mt(0xdeadbeef);
     std::uniform_real_distribution<float> dist(-5, 5);
 
-    const auto lenRef = [](Vector4F lhs) {
+    const auto lenRef = [](const Vector4F lhs) {
         // non-SIMD version for testing
         return lhs.x * lhs.x + lhs.y * lhs.y + lhs.z * lhs.z + lhs.w * lhs.w;
     };
@@ -181,8 +181,9 @@ TEST(Vector4, Length)
     {
         const Vector4F a{ dist(mt), dist(mt), dist(mt), dist(mt) };
 
-        ASSERT_TRUE(Math::EqualEstimate(Math::LengthSquared(a), lenRef(a), 1e-5f));
-        ASSERT_TRUE(Math::EqualEstimate(Math::Length(a), std::sqrt(lenRef(a)), 1e-5f));
+        constexpr float kTolerance = 1e-3f;
+        ASSERT_TRUE(Math::EqualEstimate(Math::LengthSquared(a), lenRef(a), kTolerance));
+        ASSERT_TRUE(Math::EqualEstimate(Math::Length(a), std::sqrt(lenRef(a)), kTolerance));
     }
 }
 

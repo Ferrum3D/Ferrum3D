@@ -39,7 +39,7 @@ namespace FE
                 | (static_cast<uint64_t>(p[6]) << 48) | (static_cast<uint64_t>(p[7]) << 56);
         }
 
-        inline constexpr uint64_t WyRead3(const char* p, size_t k)
+        inline constexpr uint64_t WyRead3(const char* p, const size_t k)
         {
             return ((static_cast<uint64_t>(p[0])) << 16) | ((static_cast<uint64_t>(p[k >> 1])) << 8) | p[k - 1];
         }
@@ -99,9 +99,8 @@ namespace FE
     } // namespace Internal
 
 
-    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(const void* data, size_t len) noexcept
+    [[nodiscard]] constexpr uint64_t CompileTimeHash(const char* p, const size_t len) noexcept
     {
-        const char* p = static_cast<const char*>(data);
         uint64_t seed = Internal::HashSecret[0], a = 0, b = 0;
         seed ^= Internal::WyMix(seed ^ Internal::HashSecret[0], Internal::HashSecret[1]);
         if (len <= 16)
@@ -152,21 +151,21 @@ namespace FE
     }
 
 
-    [[nodiscard]] inline constexpr uint64_t CompileTimeHash(std::string_view str) noexcept
-    {
-        return CompileTimeHash(str.data(), str.length());
-    }
-
-
-    [[nodiscard]] inline uint64_t DefaultHash(const void* data, size_t len) noexcept
+    [[nodiscard]] inline uint64_t DefaultHash(const void* data, const size_t len) noexcept
     {
         return wyhash(data, len, Internal::HashSecret[0], Internal::HashSecret);
     }
 
 
-    [[nodiscard]] inline uint64_t DefaultHash(std::string_view str) noexcept
+    [[nodiscard]] inline uint64_t DefaultHashWithSeed(const uint64_t seed, const void* data, const size_t len) noexcept
     {
-        return DefaultHash(str.data(), str.length());
+        return wyhash(data, len, seed, Internal::HashSecret);
+    }
+
+
+    [[nodiscard]] inline uint64_t DefaultHashWithSeed(const uint64_t seed, const std::string_view str) noexcept
+    {
+        return DefaultHashWithSeed(seed, str.data(), str.length());
     }
 
 
@@ -175,7 +174,7 @@ namespace FE
 
 
     template<class T>
-    inline constexpr uint64_t TypeNameHash = CompileTimeHash(TypeName<T>);
+    inline constexpr uint64_t TypeNameHash = CompileTimeHash(TypeName<T>.data(), TypeName<T>.length());
 
 
     inline void HashCombine(size_t& /* seed */) {}
@@ -183,15 +182,60 @@ namespace FE
 
     //! @brief Combine hashes of specified values with seed.
     //!
-    //! @tparam Args - Types of values.
+    //! @tparam Args  Types of values.
     //!
-    //! @param seed - Initial hash value to combine with.
-    //! @param args - The values to calculate hash of.
-    template<typename T, typename... Args>
-    inline void HashCombine(size_t& seed, const T& value, const Args&... args)
+    //! @param seed Initial hash value to combine with.
+    //! @param args The values to calculate hash of.
+    template<class T, class... Args>
+    void HashCombine(size_t& seed, const T& value, const Args&... args)
     {
         eastl::hash<T> hasher;
         seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         HashCombine(seed, args...);
     }
+
+
+    template<class... TArgs>
+    size_t HashAll(const TArgs&... args)
+    {
+        size_t seed = Internal::HashSecret[0];
+        HashCombine(seed, args...);
+        return seed;
+    }
+
+
+    struct Hasher final
+    {
+        explicit Hasher(const uint64_t seed = Internal::HashSecret[0])
+            : m_hash(seed)
+        {
+        }
+
+        ~Hasher() = default;
+
+        Hasher(const Hasher&) = delete;
+        Hasher& operator=(const Hasher&) = delete;
+        Hasher(Hasher&&) = delete;
+        Hasher& operator=(Hasher&&) = delete;
+
+        Hasher& UpdateRaw(const uint64_t hash)
+        {
+            m_hash ^= hash + 0x9e3779b9 + (m_hash << 6) + (m_hash >> 2);
+            return *this;
+        }
+
+        template<class T>
+        Hasher& Update(const T& value)
+        {
+            return UpdateRaw(eastl::hash<T>()(value));
+        }
+
+        [[nodiscard]] uint64_t Finalize() const
+        {
+            return m_hash;
+        }
+
+    private:
+        uint64_t m_hash;
+    };
 } // namespace FE

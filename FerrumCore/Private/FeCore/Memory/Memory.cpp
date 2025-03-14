@@ -1,10 +1,17 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Memory/tlsf.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <mimalloc.h>
 
 namespace FE::Memory
 {
+    namespace
+    {
+        constexpr uint32_t kMemoryProfilerCallstackDepth = 32;
+    }
+
+
     PlatformSpec GetPlatformSpec()
     {
         static PlatformSpec s_result;
@@ -29,10 +36,10 @@ namespace FE::Memory
     }
 
 
-    void* AllocateVirtual(size_t byteSize)
+    void* AllocateVirtual(const size_t byteSize)
     {
-        FE_CORE_ASSERT(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
-                       "Size must be aligned to virtual allocation granularity");
+        FE_CoreAssert(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
+                      "Size must be aligned to virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         return VirtualAlloc(nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -42,7 +49,7 @@ namespace FE::Memory
     }
 
 
-    void FreeVirtual(void* ptr, size_t byteSize)
+    void FreeVirtual(void* ptr, const size_t byteSize)
     {
 #if FE_PLATFORM_WINDOWS
         (void)byteSize;
@@ -53,7 +60,7 @@ namespace FE::Memory
     }
 
 
-    void ProtectVirtual(void* ptr, size_t byteSize, ProtectFlags protection)
+    void ProtectVirtual(void* ptr, const size_t byteSize, const ProtectFlags protection)
     {
 #if FE_PLATFORM_WINDOWS
         DWORD osProtect = 0;
@@ -81,26 +88,72 @@ namespace FE::Memory
 #endif
     }
 
-    void* DefaultAllocate(size_t byteSize)
+
+    void* DefaultAllocate(const size_t byteSize)
     {
-        return mi_malloc(byteSize);
+        void* ptr = mi_malloc(byteSize);
+        TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
+        return ptr;
     }
 
 
-    void* DefaultAllocate(size_t byteSize, size_t byteAlignment)
+    void* DefaultAllocate(const size_t byteSize, const size_t byteAlignment)
     {
-        return mi_malloc_aligned(byteSize, byteAlignment);
+        void* ptr = mi_malloc_aligned(byteSize, byteAlignment);
+        TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
+        return ptr;
     }
 
 
-    void* DefaultReallocate(void* ptr, size_t newSize)
+    void* DefaultReallocate(void* ptr, const size_t newSize)
     {
-        return mi_realloc(ptr, newSize);
+        void* newPtr = mi_realloc(ptr, newSize);
+        TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
+        TracySecureAllocS(newPtr, newSize, kMemoryProfilerCallstackDepth);
+        return newPtr;
     }
 
 
     void DefaultFree(void* ptr)
     {
+        TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
         mi_free(ptr);
+    }
+
+
+    TlsfAllocator::TlsfAllocator(void* memory, const size_t size)
+    {
+        if (memory == nullptr)
+        {
+            memory = AllocateVirtual(size);
+            m_ownedMemory = memory;
+        }
+
+        m_size = size;
+        m_impl = tlsf_create_with_pool(memory, size);
+    }
+
+
+    TlsfAllocator::~TlsfAllocator()
+    {
+        tlsf_destroy(m_impl);
+
+        if (m_ownedMemory != nullptr)
+            FreeVirtual(m_ownedMemory, m_size);
+    }
+
+
+    void* TlsfAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
+    {
+        return tlsf_memalign(m_impl, byteAlignment, byteSize);
+    }
+
+
+    void TlsfAllocator::do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment)
+    {
+        (void)byteSize;
+        (void)byteAlignment;
+
+        tlsf_free(m_impl, ptr);
     }
 } // namespace FE::Memory

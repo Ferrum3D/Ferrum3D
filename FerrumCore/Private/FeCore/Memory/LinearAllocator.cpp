@@ -8,7 +8,10 @@ namespace FE::Memory
         if (pCurrentPage == nullptr)
         {
             if (m_firstPage == nullptr)
+            {
                 m_firstPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
+                m_firstPage->pNext = nullptr;
+            }
 
             m_currentMarker.m_page = m_firstPage;
             m_currentMarker.m_offset = sizeof(Page);
@@ -26,11 +29,11 @@ namespace FE::Memory
     }
 
 
-    LinearAllocator::LinearAllocator(size_t pageByteSize, std::pmr::memory_resource* pPageAllocator)
+    LinearAllocator::LinearAllocator(const size_t pageByteSize, std::pmr::memory_resource* pPageAllocator)
         : m_pageByteSize(pageByteSize)
         , m_pageAllocator(pPageAllocator)
     {
-        FE_CORE_ASSERT(pageByteSize > 0, "Page size must be greater than zero");
+        FE_CoreAssert(pageByteSize > 0, "Page size must be greater than zero");
         if (m_pageAllocator == nullptr)
         {
             m_pageAllocator = std::pmr::get_default_resource();

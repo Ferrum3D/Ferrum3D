@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Base/Platform.h>
+#include <FeCore/Base/PlatformTraits.h>
 
 #if FE_PLATFORM_WINDOWS
 #    define NOMINMAX
@@ -15,6 +15,7 @@
 #    undef CreateWindow
 #    undef MemoryBarrier
 #    undef GetCurrentDirectory
+#    undef SetCurrentDirectory
 #else
 #    error Unsupported platform
 #endif

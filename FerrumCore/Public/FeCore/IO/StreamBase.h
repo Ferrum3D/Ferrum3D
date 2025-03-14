@@ -20,12 +20,12 @@ namespace FE::IO
             return IsReadAllowed(GetOpenMode());
         }
 
-        size_t WriteFromStream(IStream* stream, size_t size) override
+        size_t WriteFromStream(IStream* stream, const size_t size) override
         {
-            FE_AssertMsg(stream, "Stream was nullptr");
-            FE_AssertMsg(stream->ReadAllowed(), "Source stream was write-only");
-            FE_AssertMsg(WriteAllowed(), "Destination stream was read-only");
-            FE_AssertMsg(stream != this, "Destination and source streams are the same");
+            FE_Assert(stream != nullptr);
+            FE_Assert(stream->ReadAllowed(), "Source stream was write-only");
+            FE_Assert(WriteAllowed(), "Destination stream was read-only");
+            FE_Assert(stream != this, "Destination and source streams are the same");
 
             std::byte tempBuffer[512];
             size_t result = 0;
@@ -45,7 +45,7 @@ namespace FE::IO
 
         FileStats GetStats() const override
         {
-            FE_AssertMsg(false, "Not supported");
+            FE_Assert(false, "Not supported");
             return {};
         }
     };
@@ -53,7 +53,7 @@ namespace FE::IO
 
     struct BufferedStream : public StreamBase
     {
-        ~BufferedStream()
+        ~BufferedStream() override
         {
             if (m_buffer)
             {
@@ -62,12 +62,13 @@ namespace FE::IO
             }
         }
 
-        void SetBufferSize(uint32_t byteSize)
+        void SetBufferSize(const size_t byteSize)
         {
-            if (m_buffer != nullptr)
+            if (m_buffer != nullptr && m_bufferCapacity != byteSize)
             {
                 FlushWrites();
                 m_bufferAllocator->deallocate(m_buffer, m_bufferCapacity, Memory::kDefaultAlignment);
+                m_buffer = nullptr;
             }
 
             FE_Assert(m_bufferPosition == 0);
@@ -76,52 +77,55 @@ namespace FE::IO
 
         void EnsureBufferAllocated()
         {
-            if (m_buffer == nullptr)
+            if (m_buffer == nullptr && m_bufferCapacity > 0)
                 m_buffer = Memory::AllocateArray<std::byte>(m_bufferAllocator, m_bufferCapacity, Memory::kDefaultAlignment);
         }
 
         void SetBufferAllocator(std::pmr::memory_resource* pBufferAllocator)
         {
-            FE_CORE_ASSERT(m_buffer == nullptr, "Buffer already allocated");
+            FE_Assert(m_buffer == nullptr, "Buffer already allocated");
 
             if (pBufferAllocator == nullptr)
                 pBufferAllocator = std::pmr::get_default_resource();
             m_bufferAllocator = pBufferAllocator;
         }
 
-        size_t WriteFromBuffer(festd::span<const std::byte> buffer) final
+        size_t WriteFromBuffer(const void* buffer, const size_t byteSize) final
         {
             EnsureBufferAllocated();
 
-            if (m_bufferPosition + buffer.size() > m_bufferCapacity)
+            if (m_bufferPosition + byteSize > m_bufferCapacity)
                 FlushWrites();
 
-            if (buffer.size() > m_bufferCapacity)
-                return WriteImpl(buffer);
+            if (byteSize > m_bufferCapacity)
+                return WriteImpl(buffer, byteSize);
 
-            Memory::Copy(buffer, festd::span{ m_buffer + m_bufferPosition, buffer.size() });
-            m_bufferPosition += buffer.size();
-            return buffer.size();
+            memcpy(m_buffer + m_bufferPosition, buffer, byteSize);
+            m_bufferPosition += byteSize;
+            return byteSize;
         }
 
         void FlushWrites() final
         {
-            const size_t bytesWritten = WriteImpl({ m_buffer, m_bufferPosition });
-            FE_Assert(bytesWritten == m_bufferPosition);
-            m_bufferPosition = 0;
+            if (m_bufferPosition > 0)
+            {
+                const size_t bytesWritten = WriteImpl(m_buffer, m_bufferPosition);
+                FE_Assert(bytesWritten == m_bufferPosition);
+                m_bufferPosition = 0;
+            }
         }
 
     protected:
         std::pmr::memory_resource* m_bufferAllocator = nullptr;
         std::byte* m_buffer = nullptr;
-        uint32_t m_bufferCapacity = 1024;
-        uint32_t m_bufferPosition = 0;
+        size_t m_bufferCapacity = 4 * 1024;
+        size_t m_bufferPosition = 0;
 
-        BufferedStream(std::pmr::memory_resource* pBufferAllocator)
+        explicit BufferedStream(std::pmr::memory_resource* pBufferAllocator)
         {
             SetBufferAllocator(pBufferAllocator);
         }
 
-        virtual size_t WriteImpl(festd::span<const std::byte> buffer) = 0;
+        virtual size_t WriteImpl(const void* buffer, size_t byteSize) = 0;
     };
 } // namespace FE::IO

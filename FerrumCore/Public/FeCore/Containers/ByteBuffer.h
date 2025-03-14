@@ -1,38 +1,62 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
+#include <festd/vector.h>
 
 namespace FE
 {
     //! @brief A buffer that stores contiguous memory as an array of bytes.
     struct ByteBuffer final
     {
-        ByteBuffer() = default;
+        ByteBuffer()
+            : m_allocator(std::pmr::get_default_resource())
+        {
+        }
+
+        explicit ByteBuffer(std::pmr::memory_resource* allocator)
+            : m_allocator(allocator)
+        {
+        }
 
         ByteBuffer(const ByteBuffer& other)
         {
+            if (&other == this)
+                return;
+
+            m_allocator = other.m_allocator;
             Allocate(other.size());
-            memcpy(m_begin, other.m_begin, other.size());
+
+            if (m_begin)
+                memcpy(m_begin, other.m_begin, other.size());
         }
 
         ByteBuffer& operator=(const ByteBuffer& other)
         {
             if (&other == this)
-            {
                 return *this;
-            }
 
             Deallocate();
-            Allocate(other.size());
-            memcpy(m_begin, other.m_begin, other.size());
+            m_allocator = other.m_allocator;
+
+            if (other.m_begin)
+            {
+                Allocate(other.size());
+                memcpy(m_begin, other.m_begin, other.size());
+            }
+
             return *this;
         }
 
         ByteBuffer(ByteBuffer&& other) noexcept
         {
+            if (&other == this)
+                return;
+
             m_begin = other.m_begin;
             m_end = other.m_end;
+            m_allocator = other.m_allocator;
             other.m_begin = nullptr;
             other.m_end = nullptr;
+            other.m_allocator = nullptr;
         }
 
         ByteBuffer& operator=(ByteBuffer&& other) noexcept
@@ -40,10 +64,13 @@ namespace FE
             if (&other == this)
                 return *this;
 
+            Deallocate();
             m_begin = other.m_begin;
             m_end = other.m_end;
+            m_allocator = other.m_allocator;
             other.m_begin = nullptr;
             other.m_end = nullptr;
+            other.m_allocator = nullptr;
             return *this;
         }
 
@@ -53,34 +80,31 @@ namespace FE
         }
 
         //! @brief Create a ByteBuffer with specified size.
-        explicit ByteBuffer(uint32_t size)
+        explicit ByteBuffer(const uint32_t size, std::pmr::memory_resource* allocator = nullptr)
+            : m_allocator(allocator ? allocator : std::pmr::get_default_resource())
         {
             Allocate(size);
         }
 
         //! @brief Copy data from a span.
-        explicit ByteBuffer(festd::span<uint8_t> data)
+        explicit ByteBuffer(const festd::span<const std::byte> data, std::pmr::memory_resource* allocator = nullptr)
+            : m_allocator(allocator ? allocator : std::pmr::get_default_resource())
         {
-            Allocate(data.size());
-            memcpy(m_begin, data.data(), data.size());
-        }
-
-        //! @brief Move data from a vector.
-        explicit ByteBuffer(festd::vector<uint8_t>&& data) noexcept
-        {
-            m_begin = data.begin();
-            m_end = data.end();
-            data.reset_lose_memory();
+            if (data.size() > 0)
+            {
+                Allocate(data.size());
+                memcpy(m_begin, data.data(), data.size());
+            }
         }
 
         template<class T>
         [[nodiscard]] static ByteBuffer MoveFromVector(festd::vector<T>&& data) noexcept
         {
-            festd::vector<T> temp = std::move(data);
+            festd::vector<T> temp = festd::move(data);
 
             ByteBuffer result;
-            result.m_begin = reinterpret_cast<uint8_t*>(temp.begin());
-            result.m_end = reinterpret_cast<uint8_t*>(temp.end());
+            result.m_begin = reinterpret_cast<std::byte*>(temp.begin());
+            result.m_end = reinterpret_cast<std::byte*>(temp.end());
             temp.reset_lose_memory();
             return result;
         }
@@ -93,19 +117,19 @@ namespace FE
             return result;
         }
 
-        [[nodiscard]] static ByteBuffer CopyFromString(StringSlice data) noexcept
+        [[nodiscard]] static ByteBuffer CopyFromString(const festd::string_view data) noexcept
         {
-            ByteBuffer result(data.Size());
-            memcpy(result.m_begin, data.Data(), data.Size());
+            ByteBuffer result(data.size());
+            memcpy(result.m_begin, data.data(), data.size());
             return result;
         }
 
-        [[nodiscard]] uint8_t* data()
+        [[nodiscard]] std::byte* data()
         {
             return m_begin;
         }
 
-        [[nodiscard]] const uint8_t* data() const
+        [[nodiscard]] const std::byte* data() const
         {
             return m_begin;
         }
@@ -120,22 +144,31 @@ namespace FE
             Deallocate();
         }
 
-    private:
-        uint8_t* m_begin = nullptr;
-        uint8_t* m_end = nullptr;
-
-        void Allocate(uint32_t size)
+        operator festd::span<const std::byte>() const
         {
-            void* ptr = Memory::DefaultAllocate(size);
-            m_begin = static_cast<uint8_t*>(ptr);
+            return { m_begin, m_end };
+        }
+
+    private:
+        std::pmr::memory_resource* m_allocator = nullptr;
+        std::byte* m_begin = nullptr;
+        std::byte* m_end = nullptr;
+
+        void Allocate(const uint32_t size)
+        {
+            void* ptr = m_allocator->allocate(size, Memory::kDefaultAlignment);
+            m_begin = static_cast<std::byte*>(ptr);
             m_end = m_begin + size;
         }
 
         void Deallocate()
         {
-            Memory::DefaultFree(m_begin);
-            m_begin = nullptr;
-            m_end = nullptr;
+            if (m_begin)
+            {
+                m_allocator->deallocate(m_begin, m_end - m_begin);
+                m_begin = nullptr;
+                m_end = nullptr;
+            }
         }
     };
 } // namespace FE

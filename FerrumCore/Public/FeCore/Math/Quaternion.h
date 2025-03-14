@@ -64,28 +64,28 @@ namespace FE
             return Quaternion{ _mm_load_ps(values) };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationX(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationX(const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
             const float cos = Math::Cos(angle * 0.5f);
             return Quaternion{ sin, 0.0f, 0.0f, cos };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationY(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationY(const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
             const float cos = Math::Cos(angle * 0.5f);
             return Quaternion{ 0.0f, sin, 0.0f, cos };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationZ(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationZ(const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
             const float cos = Math::Cos(angle * 0.5f);
             return Quaternion{ 0.0f, 0.0f, sin, cos };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL AxisAngle(Vector3F axis, float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL AxisAngle(const Vector3F axis, const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
             const float cos = Math::Cos(angle * 0.5f);
@@ -94,31 +94,31 @@ namespace FE
     };
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator+(Quaternion lhs, Quaternion rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator+(const Quaternion lhs, const Quaternion rhs)
     {
         return Quaternion{ _mm_add_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator-(Quaternion lhs, Quaternion rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator-(const Quaternion lhs, const Quaternion rhs)
     {
         return Quaternion{ _mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector) };
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(Quaternion lhs, float rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(const Quaternion lhs, const float rhs)
     {
         return Quaternion{ _mm_mul_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator/(Quaternion lhs, float rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator/(const Quaternion lhs, const float rhs)
     {
         return Quaternion{ _mm_div_ps(lhs.m_simdVector, _mm_set1_ps(rhs)) };
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(Quaternion lhs, Quaternion rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator*(const Quaternion lhs, const Quaternion rhs)
     {
         const __m128 a1123 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(3, 2, 1, 1));
         const __m128 a2231 = _mm_shuffle_ps(lhs.m_simdVector, lhs.m_simdVector, _MM_SHUFFLE(1, 3, 2, 2));
@@ -144,104 +144,105 @@ namespace FE
 
     namespace Math
     {
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Im(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Im(const Quaternion quat)
         {
             return Vector3F{ quat.m_simdVector };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Re(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Re(const Quaternion quat)
         {
             return quat.w;
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Quaternion lhs, const Quaternion rhs)
         {
-            return _mm_cvtss_f32(Internal::Dot4Impl(lhs.m_simdVector, rhs.m_simdVector));
+            return _mm_cvtss_f32(SIMD::DotProduct(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(const Quaternion quat)
         {
-            return _mm_cvtss_f32(Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector));
+            return _mm_cvtss_f32(SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(const Quaternion quat)
         {
-            return _mm_cvtss_f32(_mm_sqrt_ss(Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector)));
+            return _mm_cvtss_f32(_mm_sqrt_ss(SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector)));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(const Quaternion quat)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
             return _mm_cvtss_f32(_mm_div_ss(_mm_set1_ps(1.0f), _mm_sqrt_ss(lengthSq)));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(const Quaternion quat)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
             return _mm_cvtss_f32(_mm_rsqrt_ss(lengthSq));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Normalize(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Normalize(const Quaternion quat)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Quaternion{ _mm_div_ps(quat.m_simdVector, _mm_sqrt_ps(broadcast)) };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL NormalizeEstimate(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL NormalizeEstimate(const Quaternion quat)
         {
-            const __m128 lengthSq = Internal::Dot4Impl(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Quaternion{ _mm_mul_ps(quat.m_simdVector, _mm_rsqrt_ps(broadcast)) };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmpeq_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpNotEqualMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpNotEqualMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmpneq_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmplt_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmpgt_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessEqualMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpLessEqualMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmple_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterEqualMask(Quaternion lhs, Quaternion rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpGreaterEqualMask(const Quaternion lhs,
+                                                                                         const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmpge_ps(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Quaternion lhs, Quaternion rhs,
-                                                                               float epsilon = Constants::Epsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Quaternion lhs, const Quaternion rhs,
+                                                                               const float epsilon = Constants::kEpsilon)
         {
             const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);
@@ -251,13 +252,13 @@ namespace FE
     } // namespace Math
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(Quaternion lhs, Quaternion rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator==(const Quaternion lhs, const Quaternion rhs)
     {
         return Math::CmpNotEqualMask(lhs, rhs) == 0;
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator!=(Quaternion lhs, Quaternion rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL operator!=(const Quaternion lhs, const Quaternion rhs)
     {
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }

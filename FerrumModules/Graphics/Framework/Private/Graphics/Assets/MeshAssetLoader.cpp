@@ -3,10 +3,10 @@
 #include <Graphics/Assets/MeshAssetLoader.h>
 #include <Graphics/Assets/MeshAssetStorage.h>
 #include <Graphics/Assets/MeshLoaderImpl.h>
-#include <Graphics/RHI/CommandList.h>
-#include <Graphics/RHI/CommandQueue.h>
-#include <Graphics/RHI/Fence.h>
-#include <Graphics/RHI/ResourcePool.h>
+#include <Graphics/Core/CommandList.h>
+#include <Graphics/Core/CommandQueue.h>
+#include <Graphics/Core/Fence.h>
+#include <Graphics/Core/ResourcePool.h>
 
 namespace FE::Graphics
 {
@@ -36,7 +36,7 @@ namespace FE::Graphics
         ZoneScoped;
 
         const Rc assetStream =
-            m_streamFactory->OpenFileStream(IO::FixedPath{ assetName } + ".fbx", IO::OpenMode::kReadOnly).value();
+            m_streamFactory->OpenFileStream(IO::Path{ assetName } + ".fbx", IO::OpenMode::kReadOnly).value();
 
         festd::vector<std::byte> buffer(static_cast<uint32_t>(assetStream->Length()), 0);
         assetStream->ReadToBuffer(buffer);
@@ -54,45 +54,45 @@ namespace FE::Graphics
         const uint32_t indexSize = indexData.size() * sizeof(indexData[0]);
 
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
-        auto* resourcePool = pServiceProvider->ResolveRequired<RHI::ResourcePool>();
+        auto* resourcePool = pServiceProvider->ResolveRequired<Core::ResourcePool>();
 
-        Rc<RHI::Buffer> indexBufferStaging, vertexBufferStaging;
+        Rc<Core::Buffer> indexBufferStaging, vertexBufferStaging;
         {
-            auto desc = RHI::BufferDesc(vertexSize, RHI::BindFlags::kNone, RHI::ResourceUsage::kHostWriteThrough);
+            auto desc = Core::BufferDesc(vertexSize, Core::BindFlags::kNone, Core::ResourceUsage::kHostWriteThrough);
             vertexBufferStaging = resourcePool->CreateBuffer("Staging vertex", desc).value();
             vertexBufferStaging->UpdateData(vertexData.data());
 
-            desc.m_usage = RHI::ResourceUsage::kDeviceOnly;
-            desc.m_flags = RHI::BindFlags::kVertexBuffer;
+            desc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            desc.m_flags = Core::BindFlags::kVertexBuffer;
             meshStorage->m_vertexBuffer = resourcePool->CreateBuffer("Vertex", desc).value();
         }
         {
-            auto desc = RHI::BufferDesc(indexSize, RHI::BindFlags::kNone, RHI::ResourceUsage::kHostWriteThrough);
+            auto desc = Core::BufferDesc(indexSize, Core::BindFlags::kNone, Core::ResourceUsage::kHostWriteThrough);
             indexBufferStaging = resourcePool->CreateBuffer("Staging index", desc).value();
             indexBufferStaging->UpdateData(indexData.data());
 
-            desc.m_usage = RHI::ResourceUsage::kDeviceOnly;
-            desc.m_flags = RHI::BindFlags::kIndexBuffer;
+            desc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            desc.m_flags = Core::BindFlags::kIndexBuffer;
             meshStorage->m_indexBuffer = resourcePool->CreateBuffer("Index", desc).value();
         }
 
-        const Rc commandList = pServiceProvider->ResolveRequired<RHI::CommandList>();
-        commandList->Init({ RHI::HardwareQueueKindFlags::kTransfer, RHI::CommandListFlags::kOneTimeSubmit });
+        const Rc commandList = pServiceProvider->ResolveRequired<Core::CommandList>();
+        commandList->Init({ Core::HardwareQueueKindFlags::kTransfer, Core::CommandListFlags::kOneTimeSubmit });
         commandList->Begin();
 
-        const RHI::BufferCopyRegion vertexCopyRegion{ vertexSize };
-        const RHI::BufferCopyRegion indexCopyRegion{ indexSize };
+        const Core::BufferCopyRegion vertexCopyRegion{ vertexSize };
+        const Core::BufferCopyRegion indexCopyRegion{ indexSize };
 
         commandList->CopyBuffers(vertexBufferStaging.Get(), meshStorage->m_vertexBuffer.Get(), vertexCopyRegion);
         commandList->CopyBuffers(indexBufferStaging.Get(), meshStorage->m_indexBuffer.Get(), indexCopyRegion);
 
         commandList->End();
 
-        const Rc fence = pServiceProvider->ResolveRequired<RHI::Fence>();
+        const Rc fence = pServiceProvider->ResolveRequired<Core::Fence>();
         fence->Init();
 
-        RHI::Device* device = commandList->GetDevice();
-        const Rc<RHI::CommandQueue> transferQueue = device->GetCommandQueue(RHI::HardwareQueueKindFlags::kTransfer);
+        Core::Device* device = commandList->GetDevice();
+        const Rc<Core::CommandQueue> transferQueue = device->GetCommandQueue(Core::HardwareQueueKindFlags::kTransfer);
         transferQueue->Execute(std::array{ commandList.Get() });
         transferQueue->SignalFence({ fence, 1 });
         fence->Wait(1);

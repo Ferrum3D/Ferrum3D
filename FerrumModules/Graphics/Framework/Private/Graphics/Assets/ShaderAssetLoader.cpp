@@ -2,21 +2,21 @@
 #include <FeCore/Utils/BinarySerializer.h>
 #include <Graphics/Assets/ShaderAssetLoader.h>
 #include <Graphics/Assets/ShaderAssetStorage.h>
-#include <Graphics/RHI/ShaderCompiler.h>
+#include <Graphics/Core/ShaderCompiler.h>
 
 namespace FE::Graphics
 {
     struct ShaderAssetLoader::CompilerJob : public Job
     {
-        IO::FixedPath m_path;
-        StringSlice m_sourceCode;
+        IO::Path m_path;
+        festd::string_view m_sourceCode;
         ShaderAssetStorage* m_storage = nullptr;
         ShaderAssetLoader* m_loader = nullptr;
-        RHI::ShaderCompiler* m_compiler = nullptr;
-        Rc<RHI::ShaderModule> m_shaderModule;
+        Core::ShaderCompiler* m_compiler = nullptr;
+        Rc<Core::ShaderModule> m_shaderModule;
         Logger* m_logger = nullptr;
 
-        CompilerJob(RHI::ShaderCompiler* compiler, RHI::ShaderModule* shaderModule, Logger* logger)
+        CompilerJob(Core::ShaderCompiler* compiler, Core::ShaderModule* shaderModule, Logger* logger)
             : m_compiler(compiler)
             , m_shaderModule(shaderModule)
             , m_logger(logger)
@@ -27,25 +27,25 @@ namespace FE::Graphics
         {
             ZoneScoped;
 
-            RHI::ShaderCompilerArgs compilerArgs;
+            Core::ShaderCompilerArgs compilerArgs;
             compilerArgs.m_entryPoint = "main";
             compilerArgs.m_sourceCode = m_sourceCode;
             compilerArgs.m_fullPath = m_path;
-            compilerArgs.m_version = RHI::HLSLShaderVersion{ 6, 1 };
+            compilerArgs.m_version = Core::ShaderModel::kDefault;
 
-            const StringSlice pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
+            const festd::string_view pathNoExt{ m_path.begin(), m_path.FindLastOf('.') };
             if (pathNoExt.EndsWith(".ps"))
-                compilerArgs.m_stage = RHI::ShaderStage::kPixel;
+                compilerArgs.m_stage = Core::ShaderStage::kPixel;
             else if (pathNoExt.EndsWith(".vs"))
-                compilerArgs.m_stage = RHI::ShaderStage::kVertex;
+                compilerArgs.m_stage = Core::ShaderStage::kVertex;
             else if (pathNoExt.EndsWith(".cs"))
-                compilerArgs.m_stage = RHI::ShaderStage::kCompute;
+                compilerArgs.m_stage = Core::ShaderStage::kCompute;
             else if (pathNoExt.EndsWith(".gs"))
-                compilerArgs.m_stage = RHI::ShaderStage::kGeometry;
+                compilerArgs.m_stage = Core::ShaderStage::kGeometry;
             else if (pathNoExt.EndsWith(".hs"))
-                compilerArgs.m_stage = RHI::ShaderStage::kHull;
+                compilerArgs.m_stage = Core::ShaderStage::kHull;
             else if (pathNoExt.EndsWith(".ds"))
-                compilerArgs.m_stage = RHI::ShaderStage::kDomain;
+                compilerArgs.m_stage = Core::ShaderStage::kDomain;
 
             const ByteBuffer byteCode = m_compiler->CompileShader(compilerArgs);
             if (byteCode.size() == 0)
@@ -56,11 +56,11 @@ namespace FE::Graphics
             {
                 // TODO: save to a SPIR-V file
 
-                RHI::ShaderModuleDesc moduleDesc;
+                Core::ShaderModuleDesc moduleDesc;
                 moduleDesc.m_byteCode = byteCode;
                 moduleDesc.m_entryPoint = compilerArgs.m_entryPoint;
                 moduleDesc.m_stage = compilerArgs.m_stage;
-                FE_Verify(m_shaderModule->Init(moduleDesc) == RHI::ResultCode::kSuccess);
+                FE_Verify(m_shaderModule->Init(moduleDesc) == Core::ResultCode::kSuccess);
                 m_storage->m_shaderModule = m_shaderModule;
                 m_storage->m_ready.store(true, std::memory_order_release);
             }
@@ -75,19 +75,19 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        FE_Assert(result.pController->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
+        FE_Assert(result.m_controller->GetStatus() == IO::AsyncOperationStatus::kSucceeded);
 
         CompilerJob* job = DI::New<CompilerJob>(&m_compilerJobPool).value();
-        job->m_path = result.pRequest->Path;
-        job->m_sourceCode = { reinterpret_cast<const char*>(result.pRequest->pReadBuffer), result.pRequest->ReadBufferSize };
-        job->m_storage = static_cast<ShaderAssetStorage*>(result.pRequest->pUserData);
+        job->m_path = result.m_request->m_path;
+        job->m_sourceCode = { reinterpret_cast<const char*>(result.m_request->m_readBuffer), result.m_request->m_readBufferSize };
+        job->m_storage = static_cast<ShaderAssetStorage*>(result.m_request->m_userData);
         job->m_loader = this;
         job->Schedule(m_jobSystem);
     }
 
 
     ShaderAssetLoader::ShaderAssetLoader(IO::IStreamFactory* pStreamFactory, IO::IAsyncStreamIO* pAsyncIO, IJobSystem* pJobSystem)
-        : m_compilerJobPool("ShaderAssetLoader/CompilerJob", sizeof(CompilerJob), 64 * 1024)
+        : m_compilerJobPool("ShaderAssetLoader/CompilerJob", sizeof(CompilerJob))
         , m_streamFactory(pStreamFactory)
         , m_asyncStreamIO(pAsyncIO)
         , m_jobSystem(pJobSystem)
@@ -118,7 +118,7 @@ namespace FE::Graphics
     {
         ZoneScoped;
 
-        const IO::FixedPath spvFilename = IO::FixedPath{ assetName } + m_spec.m_fileExtension;
+        const IO::Path spvFilename = IO::Path{ assetName } + m_spec.m_fileExtension;
         // TODO: check if already compiled
         // if (m_streamFactory->FileExists(spvFilename))
         // {
@@ -126,21 +126,21 @@ namespace FE::Graphics
         //     const IO::FileStats stats = spvFile->GetStats();
         // }
 
-        for (const StringSlice extension : m_spec.m_sourceExtensions)
+        for (const festd::string_view extension : m_spec.m_sourceExtensions)
         {
-            const IO::FixedPath path = IO::FixedPath{ assetName } + extension;
+            const IO::Path path = IO::Path{ assetName } + extension;
             if (!m_streamFactory->FileExists(path))
                 continue;
 
             IO::AsyncReadRequest request;
-            request.Path = path;
-            request.pCallback = this;
-            request.Priority = IO::Priority::kHigh;
-            request.pUserData = storage;
+            request.m_path = path;
+            request.m_callback = this;
+            request.m_priority = IO::Priority::kHigh;
+            request.m_userData = storage;
             m_asyncStreamIO->ReadAsync(request);
             return;
         }
 
-        Trace::ReportCritical("File not found");
+        FE_Assert(false, "File not found");
     }
 } // namespace FE::Graphics

@@ -1,15 +1,8 @@
 ﻿#pragma once
 #include <EASTL/tuple.h>
 #include <FeCore/Base/Base.h>
-#include <FeCore/Strings/FixedString.h>
-#include <FeCore/Strings/String.h>
-#include <FeCore/Strings/Unicode.h>
-#include <array>
-#include <cstdlib>
+#include <festd/string.h>
 #include <itoa/jeaiii_to_text.h>
-#include <ostream>
-#include <sstream>
-#include <string_view>
 
 FE_PUSH_MSVC_WARNING(4702)
 #include <dragonbox/dragonbox_to_chars.h>
@@ -39,7 +32,7 @@ namespace FE::Fmt
         {
             char buf[24];
             auto* ptr = jeaiii::to_text_from_integer(buf, value);
-            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
         }
 
         template<class TBuffer>
@@ -47,7 +40,7 @@ namespace FE::Fmt
         {
             char buf[24];
             auto* ptr = jeaiii::to_text_from_integer(buf, value);
-            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
         }
     } // namespace Internal
 
@@ -67,7 +60,7 @@ namespace FE::Fmt
             }
             else
             {
-                FE_CORE_ASSERT(false, "Not implemented");
+                FE_Assert(false, "Not implemented");
             }
         }
     };
@@ -80,7 +73,7 @@ namespace FE::Fmt
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
         }
     };
 
@@ -91,7 +84,7 @@ namespace FE::Fmt
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary64>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.Append(buf, static_cast<uint32_t>(ptr - buf));
+            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
         }
     };
 
@@ -100,34 +93,34 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const char* value) const
         {
-            buffer.Append(value);
+            buffer.append(value, ASCII::Length(value));
         }
     };
 
     template<class TBuffer>
-    struct ValueFormatter<TBuffer, String>
+    struct ValueFormatter<TBuffer, festd::string>
     {
-        void Format(TBuffer& buffer, const String& value) const
+        void Format(TBuffer& buffer, const festd::string& value) const
         {
-            buffer.Append(value);
+            buffer += value;
         }
     };
 
     template<class TBuffer>
-    struct ValueFormatter<TBuffer, StringSlice>
+    struct ValueFormatter<TBuffer, festd::string_view>
     {
-        void Format(TBuffer& buffer, StringSlice value) const
+        void Format(TBuffer& buffer, festd::string_view value) const
         {
-            buffer.Append(value);
+            buffer += value;
         }
     };
 
     template<class TBuffer, uint32_t TSize>
-    struct ValueFormatter<TBuffer, FixedString<TSize>>
+    struct ValueFormatter<TBuffer, festd::basic_fixed_string<TSize>>
     {
-        void Format(TBuffer& buffer, const FixedString<TSize>& value) const
+        void Format(TBuffer& buffer, const festd::basic_fixed_string<TSize>& value) const
         {
-            buffer.Append(value);
+            buffer += value;
         }
     };
 
@@ -136,7 +129,7 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const char (&value)[TSize]) const
         {
-            buffer.Append(value);
+            buffer += value;
         }
     };
 
@@ -146,7 +139,7 @@ namespace FE::Fmt
         void Format(TBuffer& buffer, const Env::Name& name) const
         {
             const Env::Name::Record* pRecord = name.GetRecord();
-            buffer.Append(pRecord->m_data, pRecord->m_size);
+            buffer.append(pRecord->m_data, pRecord->m_size);
         }
     };
 
@@ -155,7 +148,7 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const std::string_view& value) const
         {
-            buffer.Append(value.data(), static_cast<uint32_t>(value.size()));
+            buffer.append(value.data(), static_cast<uint32_t>(value.size()));
         }
     };
 
@@ -166,24 +159,25 @@ namespace FE::Fmt
         {
             static char digits[] = "0123456789ABCDEF";
             int32_t idx = 0;
-            buffer.Reserve(buffer.Size() + 36);
-            auto append = [&](uint32_t n) {
+            buffer.reserve(buffer.size() + 36);
+
+            const auto append = [&](const uint32_t n) {
                 for (uint32_t i = 0; i < n; ++i)
                 {
                     const uint8_t c = value.m_bytes[idx++];
-                    buffer.Append(digits[(c & 0xF0) >> 4]);
-                    buffer.Append(digits[(c & 0x0F) >> 0]);
+                    buffer.append(digits[(c & 0xF0) >> 4]);
+                    buffer.append(digits[(c & 0x0F) >> 0]);
                 }
             };
 
             append(4);
-            buffer.Append('-');
+            buffer.append('-');
             append(2);
-            buffer.Append('-');
+            buffer.append('-');
             append(2);
-            buffer.Append('-');
+            buffer.append('-');
             append(2);
-            buffer.Append('-');
+            buffer.append('-');
             append(6);
         }
     };
@@ -222,7 +216,7 @@ namespace FE::Fmt
         };
 
         template<class TBuffer, size_t TArgCount>
-        void FormatImpl(TBuffer& buffer, StringSlice fmt, FormatArgs<TBuffer, TArgCount>& args)
+        void FormatImpl(TBuffer& buffer, festd::string_view fmt, FormatArgs<TBuffer, TArgCount>& args)
         {
             size_t argIndex = 0;
             bool autoIndex = true;
@@ -234,19 +228,19 @@ namespace FE::Fmt
                     auto braceIt = it;
                     if (*++it == '{')
                     {
-                        buffer.Append(StringSlice(begin, it));
+                        buffer.append(begin, it);
                         begin = it;
                         begin++;
                         continue;
                     }
                     if (*it != '}')
                     {
-                        FE_CORE_ASSERT(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
+                        FE_Assert(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
                         argIndex = 0;
                         autoIndex = false;
                         while (true)
                         {
-                            FE_CORE_ASSERT(it != fmt.end(), "Invalid arg index");
+                            FE_Assert(it != fmt.end(), "Invalid arg index");
                             if (*it <= '9' && *it >= '0')
                             {
                                 argIndex *= 10;
@@ -260,9 +254,9 @@ namespace FE::Fmt
                             ++it;
                         }
 
-                        FE_CORE_ASSERT(*it == '}', "Invalid arg index");
+                        FE_Assert(*it == '}', "Invalid arg index");
                     }
-                    buffer.Append(StringSlice(begin, braceIt));
+                    buffer.append(begin, braceIt);
                     begin = it;
                     begin++;
 
@@ -274,46 +268,58 @@ namespace FE::Fmt
                 else if (*it == '}')
                 {
                     ++it;
-                    FE_CORE_ASSERT(*it == '}', "must be escaped");
+                    FE_Assert(*it == '}', "must be escaped");
 
-                    buffer.Append(StringSlice(begin, it));
+                    buffer.append(begin, it);
                     begin = it;
                     begin++;
                     continue;
                 }
             }
-            buffer.Append(StringSlice(begin, fmt.end()));
+            buffer.append(begin, fmt.end());
         }
     } // namespace Internal
 
+
     template<class TBuffer, class... TArgs>
-    inline void FormatTo(TBuffer& buffer, StringSlice fmt, TArgs&&... args)
+    inline void FormatTo(TBuffer& buffer, festd::string_view fmt, TArgs&&... args)
     {
         Internal::FormatArgs<TBuffer, sizeof...(TArgs)> formatArgs{ Internal::FormatArg<TBuffer>::Create(&args)... };
         Internal::FormatImpl<TBuffer, sizeof...(TArgs)>(buffer, fmt, formatArgs);
     }
 
+
     template<class... TArgs>
-    inline String Format(StringSlice fmt, TArgs&&... args)
+    inline festd::string Format(festd::string_view fmt, TArgs&&... args)
     {
-        String buffer;
-        FormatTo<String, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        festd::string buffer;
+        FormatTo<festd::string, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
         return buffer;
     }
+
 
     template<uint32_t TSize, class... TArgs>
-    inline FixedString<TSize> FixedFormatSized(StringSlice fmt, TArgs&&... args)
+    inline festd::basic_fixed_string<TSize> FixedFormatSized(festd::string_view fmt, TArgs&&... args)
     {
-        FixedString<TSize> buffer;
-        FormatTo<FixedString<TSize>, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        festd::basic_fixed_string<TSize> buffer;
+        FormatTo<festd::basic_fixed_string<TSize>, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
         return buffer;
     }
 
+
     template<class... TArgs>
-    inline FixStr256 FixedFormat(StringSlice fmt, TArgs&&... args)
+    inline festd::fixed_string FixedFormat(festd::string_view fmt, TArgs&&... args)
     {
-        FixStr256 buffer;
-        FormatTo<FixStr256, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
+        festd::fixed_string buffer;
+        FormatTo<festd::fixed_string, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
         return buffer;
+    }
+
+
+    template<class... TArgs>
+    inline Env::Name FormatName(festd::string_view fmt, TArgs&&... args)
+    {
+        // TODO: temp allocator
+        return Env::Name{ FixedFormat(fmt, festd::forward<TArgs>(args)...) };
     }
 } // namespace FE::Fmt
