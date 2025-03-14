@@ -61,7 +61,7 @@ namespace FE::DI
             {
                 if constexpr (!std::is_same_v<TImpl, TInterface>)
                 {
-                    FE_CORE_ASSERT(fe_typeid<TImpl>() != fe_typeid<TInterface>(), "");
+                    FE_Assert(fe_typeid<TImpl>() != fe_typeid<TInterface>());
                 }
 
                 *m_target.m_activator = ServiceActivator::CreateForType<TImpl>();
@@ -70,7 +70,7 @@ namespace FE::DI
 
             RegistryToBuilder ToFunc(ActivatorFunction&& function)
             {
-                *m_target.m_activator = ServiceActivator::CreateFromFunction(std::forward<ActivatorFunction>(function));
+                *m_target.m_activator = ServiceActivator::CreateFromFunction(festd::forward<ActivatorFunction>(function));
                 m_target.m_registration->SetFunction(true);
                 return RegistryToBuilder(m_target);
             }
@@ -100,7 +100,7 @@ namespace FE::DI
             friend struct DI::ServiceRegistryBuilder;
             ServiceRegistrationSpec m_target;
 
-            RegistryBindBuilder(ServiceRegistrationSpec registrationSpec)
+            RegistryBindBuilder(const ServiceRegistrationSpec registrationSpec)
                 : m_target(registrationSpec)
             {
             }
@@ -128,4 +128,7 @@ namespace FE::DI
 
         Internal::ServiceRegistrationSpec BindImpl(const UUID& id);
     };
+
+
+    void RegisterCoreServices(ServiceRegistryBuilder builder);
 } // namespace FE::DI

@@ -1,31 +1,61 @@
-﻿#include <FeCore/Jobs/JobSystem.h>
+﻿#include <FeCore/Base/Platform.h>
+#include <FeCore/Jobs/JobSystem.h>
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Strings/Format.h>
 
 namespace FE
 {
-    void* JobSystem::AllocateSmallBlock(size_t byteSize)
+    std::pmr::memory_resource* JobSystem::GetWaitGroupAllocator()
     {
-        return Memory::DefaultAllocate(byteSize);
+        return &m_waitGroupPool;
     }
 
 
-    void JobSystem::FreeSmallBlock(void* ptr, size_t byteSize)
+    void JobSystem::AddReadyFiber(FiberWaitEntry* entry)
     {
-        (void)byteSize;
-        Memory::DefaultFree(ptr);
+        entry->m_orderHint = m_jobCounter.fetch_add(1, std::memory_order_relaxed);
+
+        const FiberAffinityMask affinityMask = entry->m_affinityMask;
+        const JobPriority priority = entry->m_priority;
+        GlobalQueueSet& globalQueueSet = m_globalQueues[festd::to_underlying(priority)];
+        switch (affinityMask)
+        {
+        case FiberAffinityMask::kAll:
+            globalQueueSet.m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kGeneric)].Enqueue(entry);
+            break;
+
+        case FiberAffinityMask::kAllForeground:
+            globalQueueSet.m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kForeground)].Enqueue(entry);
+            break;
+
+        case FiberAffinityMask::kAllBackground:
+            globalQueueSet.m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kBackground)].Enqueue(entry);
+            break;
+
+        case FiberAffinityMask::kNone:
+        case FiberAffinityMask::kMainThread:
+        default:
+            {
+                FE_AssertDebug(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
+                const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
+
+                Worker& worker = m_workers[threadIndex];
+                worker.m_readyFiberQueues[festd::to_underlying(priority)].Enqueue(entry);
+                break;
+            }
+        }
     }
 
 
-    FE_FORCE_INLINE void JobSystem::ThreadProc(uint32_t workerIndex)
+    FE_FORCE_INLINE void JobSystem::ThreadProc(const uint32_t workerIndex)
     {
         m_semaphore.Acquire();
-        m_workers[workerIndex].m_threadId = GetCurrentThreadID();
+        m_workers[workerIndex].m_threadId = Threading::GetCurrentThreadID();
 
         const Threading::FiberHandle initialFiber = m_fiberPool.Rent(false);
         m_workers[workerIndex].m_currentFiber = initialFiber;
         m_workers[workerIndex].m_prevFiber.Reset();
-        m_fiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this));
+        m_fiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this), m_workers[workerIndex].m_name.c_str());
     }
 
 
@@ -40,63 +70,161 @@ namespace FE
         {
             Worker& worker = m_workers[GetWorkerIndex()];
 
-            FiberWaitEntry* pWaitEntry = nullptr;
-            Job* pJob = nullptr;
-            {
-                for (uint32_t attempt = 0; attempt < 8; ++attempt)
-                {
-                    for (int32_t queueIndex = festd::to_underlying(JobPriority::kHigh); queueIndex >= 0; --queueIndex)
-                    {
-                        JobQueue& queue = m_jobQueues[queueIndex];
-                        std::lock_guard lk{ queue.m_lock };
-                        if (!queue.m_readyFibersQueue.empty())
-                        {
-                            FiberWaitEntry* pEntry = &queue.m_readyFibersQueue.front();
-                            if (pEntry->m_switchCompleted)
-                            {
-                                queue.m_readyFibersQueue.pop_front();
-                                pWaitEntry = pEntry;
-                                break;
-                            }
-                        }
+            const FiberWaitEntry* waitEntry = nullptr;
+            Job* job = nullptr;
+            auto affinityMask = FiberAffinityMask::kNone;
 
-                        if (!queue.m_queue.empty())
+            for (uint32_t attempt = 0; attempt < 8; ++attempt)
+            {
+                for (int32_t queueIndex = festd::to_underlying(JobPriority::kHigh); queueIndex >= 0; --queueIndex)
+                {
+                    GlobalQueueSet& globalQueueSet = m_globalQueues[queueIndex];
+
+                    // Firstly, try to continue pending fiber.
+
+                    FiberWaitEntry* fibers[3] = {};
+                    ConcurrentQueue* queues[3] = {};
+
+                    queues[0] = &worker.m_readyFiberQueues[queueIndex];
+                    queues[1] = &globalQueueSet.m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kGeneric)];
+                    queues[2] = &globalQueueSet.m_readyFiberQueues[festd::to_underlying(worker.m_threadPoolType)];
+
+                    // Since we use single-consumer queues, and we might push a job back to the front of the queue,
+                    // we need this lock here.
+
+                    std::unique_lock lock{ globalQueueSet.m_consumerLocks[queueIndex] };
+
+                    for (uint32_t i = 0; i < 3; ++i)
+                        fibers[i] = static_cast<FiberWaitEntry*>(queues[i]->TryDequeue());
+
+                    // We can potentially have three fibers: one from the local queue, and two from the global queues.
+                    // Check which one has been scheduled earlier.
+
+                    uint32_t fiberIndex = kInvalidIndex;
+                    uint64_t fiberOrderHint = Constants::kMaxU64;
+                    for (uint32_t i = 0; i < 3; ++i)
+                    {
+                        if (fibers[i] && fibers[i]->m_orderHint < fiberOrderHint)
                         {
-                            worker.m_priority = static_cast<JobPriority>(queueIndex);
-                            pJob = &queue.m_queue.front();
-                            queue.m_queue.pop_front();
-                            break;
+                            fiberIndex = i;
+                            fiberOrderHint = fibers[i]->m_orderHint;
                         }
                     }
 
-                    if (pJob || pWaitEntry)
+                    for (uint32_t i = 0; i < 3; ++i)
+                    {
+                        // Push the rest of the fibers back to the front of the queue.
+                        if (i != fiberIndex && fibers[i])
+                            queues[i]->PushFront(fibers[i]);
+                    }
+
+                    if (fiberIndex != kInvalidIndex)
+                    {
+                        worker.m_priority = static_cast<JobPriority>(queueIndex);
+                        waitEntry = fibers[fiberIndex];
+
+                        switch (fiberIndex)
+                        {
+                        case 0:
+                            affinityMask = static_cast<FiberAffinityMask>(1 << GetWorkerIndex());
+                            break;
+                        case 1:
+                            affinityMask = FiberAffinityMask::kAll;
+                            break;
+                        case 2:
+                            affinityMask = worker.m_threadPoolType == JobThreadPoolType::kForeground
+                                ? FiberAffinityMask::kAllForeground
+                                : FiberAffinityMask::kAllBackground;
+                            break;
+                        default:
+                            FE_DebugBreak();
+                            break;
+                        }
+
                         break;
+                    }
 
-                    const uint32_t spinCount = std::min(1 << attempt, 32);
-                    for (uint32_t spin = 0; spin < spinCount; ++spin)
-                        _mm_pause();
+                    // If we don't have any ready fibers, try to get a new job.
+                    // The same logic applies here.
+
+                    Job* jobs[3] = {};
+
+                    queues[0] = &worker.m_jobQueues[queueIndex];
+                    queues[1] = &globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kGeneric)];
+                    queues[2] = &globalQueueSet.m_jobQueues[festd::to_underlying(worker.m_threadPoolType)];
+
+                    for (uint32_t i = 0; i < 3; ++i)
+                        jobs[i] = static_cast<Job*>(queues[i]->TryDequeue());
+
+                    uint32_t jobIndex = kInvalidIndex;
+                    uint64_t jobOrderHint = Constants::kMaxU64;
+                    for (uint32_t i = 0; i < 3; ++i)
+                    {
+                        if (jobs[i] && jobs[i]->m_orderHint < jobOrderHint)
+                        {
+                            jobIndex = i;
+                            jobOrderHint = jobs[i]->m_orderHint;
+                        }
+                    }
+
+                    for (uint32_t i = 0; i < 3; ++i)
+                    {
+                        if (i != jobIndex && jobs[i])
+                            queues[i]->PushFront(jobs[i]);
+                    }
+
+                    if (jobIndex != kInvalidIndex)
+                    {
+                        worker.m_priority = static_cast<JobPriority>(queueIndex);
+                        job = jobs[jobIndex];
+
+                        switch (jobIndex)
+                        {
+                        case 0:
+                            affinityMask = static_cast<FiberAffinityMask>(1 << GetWorkerIndex());
+                            break;
+                        case 1:
+                            affinityMask = FiberAffinityMask::kAll;
+                            break;
+                        case 2:
+                            affinityMask = worker.m_threadPoolType == JobThreadPoolType::kForeground
+                                ? FiberAffinityMask::kAllForeground
+                                : FiberAffinityMask::kAllBackground;
+                            break;
+                        default:
+                            FE_DebugBreak();
+                            break;
+                        }
+
+                        break;
+                    }
                 }
+
+                if (job || waitEntry)
+                    break;
+
+                const uint32_t spinCount = Math::Min(1u << attempt, 32u);
+                for (uint32_t spin = 0; spin < spinCount; ++spin)
+                    _mm_pause();
             }
 
-            if (!m_initialJobPickedUp.exchange(true))
-            {
-                // The initial job must be picked up by the Main Thread.
-                // After that we can safely let the other workers run.
-                m_semaphore.Release(m_workers.size() - 1);
-            }
-
-            if (pWaitEntry)
+            if (waitEntry)
             {
                 worker.m_prevFiber = worker.m_currentFiber;
-                worker.m_currentFiber = pWaitEntry->m_fiber;
-                transferParams = m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
+                worker.m_currentFiber = waitEntry->m_fiber;
+                worker.m_affinityMask = waitEntry->m_affinityMask;
+                const char* switchMessage = worker.m_name.c_str();
+                transferParams = m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this), switchMessage);
                 CleanUpAfterSwitch(transferParams);
                 continue;
             }
-            if (pJob)
+
+            if (job)
             {
-                Rc completionWaitGroup = pJob->m_completionWaitGroup;
-                pJob->Execute();
+                worker.m_affinityMask = affinityMask;
+
+                Rc completionWaitGroup = job->m_completionWaitGroup;
+                job->Execute();
                 if (completionWaitGroup)
                     completionWaitGroup->Signal();
 
@@ -112,7 +240,7 @@ namespace FE
     }
 
 
-    void JobSystem::FiberProcImpl(Context::TransferParams transferParams)
+    void JobSystem::FiberProcImpl(const Context::TransferParams transferParams)
     {
         const uintptr_t jobSystemAddress = transferParams.m_userData & ((UINT64_C(1) << 48) - 1);
         reinterpret_cast<JobSystem*>(jobSystemAddress)->FiberProc(transferParams);
@@ -121,21 +249,41 @@ namespace FE
 
     JobSystem::JobSystem()
         : m_fiberPool(&FiberProcImpl)
+        , m_waitGroupPool("JobSystem/WaitGroupPool", sizeof(WaitGroup), 64 * 1024)
     {
-        const int32_t workerCount = std::thread::hardware_concurrency() - 1;
+        const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
+        const uint32_t threadCount = cpuInfo.m_physicalCores < 8 ? cpuInfo.m_logicalCores : cpuInfo.m_physicalCores;
+        const uint32_t workerCount = Math::Clamp(threadCount, 4u, kMaxWorkerCount);
+        const uint32_t foregroundWorkerCount = Math::CeilDivide(workerCount, 2);
+        const uint32_t backgroundWorkerCount = workerCount - foregroundWorkerCount;
 
-        m_workers.reserve(workerCount + 1);
-        for (int32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
+        Worker& mainThread = m_workers[0];
+        mainThread.m_threadId = Threading::GetCurrentThreadID();
+        mainThread.m_name = "Main Thread";
+        mainThread.m_threadPoolType = JobThreadPoolType::kForeground;
+
+        for (uint32_t workerIndex = 1; workerIndex < kMaxWorkerCount; ++workerIndex)
         {
-            const auto threadName = Fmt::FixedFormat("Worker {}", workerIndex);
-            const auto threadFunc = [](uintptr_t workerIndex) {
+            const bool isForeground = workerIndex < foregroundWorkerCount;
+            const bool isBackground = workerIndex >= 32 && workerIndex < 32 + backgroundWorkerCount;
+            if (!isForeground && !isBackground)
+                continue;
+
+            const auto threadName = isForeground ? Fmt::FixedFormat("Foreground Worker {}", workerIndex)
+                                                 : Fmt::FixedFormat("Background Worker {}", workerIndex - 32);
+            const auto threadFunc = [](const uintptr_t workerIndex) {
                 fe_assert_cast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
                     ->ThreadProc(static_cast<uint32_t>(workerIndex));
             };
 
-            Worker& worker = m_workers.push_back();
-            worker.m_thread = CreateThread(threadName, threadFunc, workerIndex);
+            Worker& worker = m_workers[workerIndex];
+            worker.m_thread = Threading::CreateThread(threadName, threadFunc, workerIndex);
+            worker.m_name = threadName;
+            worker.m_threadPoolType = isForeground ? JobThreadPoolType::kForeground : JobThreadPoolType::kBackground;
         }
+
+        m_foregroundWorkerCount = foregroundWorkerCount;
+        m_backgroundWorkerCount = backgroundWorkerCount;
     }
 
 
@@ -144,7 +292,7 @@ namespace FE
         m_shouldExit.store(true, std::memory_order_release);
         for (Worker& worker : m_workers)
         {
-            CloseThread(worker.m_thread);
+            Threading::CloseThread(worker.m_thread);
         }
     }
 
@@ -152,11 +300,11 @@ namespace FE
     void JobSystem::Start()
     {
         const Threading::FiberHandle initialFiber = m_fiberPool.Rent(false);
-        Worker& mainThread = m_workers.push_back();
-        mainThread.m_threadId = GetCurrentThreadID();
+        Worker& mainThread = m_workers[0];
         mainThread.m_currentFiber = initialFiber;
-        mainThread.m_prevFiber.Reset();
-        m_fiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this));
+        FE_Assert(mainThread.m_threadId == Threading::GetCurrentThreadID());
+        m_semaphore.Release(m_backgroundWorkerCount + m_foregroundWorkerCount - 1);
+        m_fiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this), mainThread.m_name.c_str());
     }
 
 
@@ -166,11 +314,44 @@ namespace FE
     }
 
 
-    void JobSystem::AddJob(Job* pJob, JobPriority priority)
+    void JobSystem::Schedule(const JobScheduleInfo& info)
     {
-        JobQueue& queue = m_jobQueues[festd::to_underlying(priority)];
+        info.m_job->m_orderHint = m_jobCounter.fetch_add(1, std::memory_order_relaxed);
 
-        std::lock_guard lk{ queue.m_lock };
-        queue.m_queue.push_back(*pJob);
+        const FiberAffinityMask affinityMask = info.m_affinityMask;
+        const JobPriority priority = info.m_priority;
+        GlobalQueueSet& globalQueueSet = m_globalQueues[festd::to_underlying(priority)];
+        switch (affinityMask)
+        {
+        case FiberAffinityMask::kAll:
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kGeneric)].Enqueue(info.m_job);
+            break;
+
+        case FiberAffinityMask::kAllForeground:
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kForeground)].Enqueue(info.m_job);
+            break;
+
+        case FiberAffinityMask::kAllBackground:
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kBackground)].Enqueue(info.m_job);
+            break;
+
+        case FiberAffinityMask::kNone:
+        case FiberAffinityMask::kMainThread:
+        default:
+            {
+                FE_AssertDebug(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
+                const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
+
+                Worker& worker = m_workers[threadIndex];
+                worker.m_jobQueues[festd::to_underlying(priority)].Enqueue(info.m_job);
+                break;
+            }
+        }
+    }
+
+
+    FiberAffinityMask JobSystem::GetAffinityMaskForCurrentThread() const
+    {
+        return static_cast<FiberAffinityMask>(UINT64_C(1) << GetWorkerIndex());
     }
 } // namespace FE

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/DI/LifetimeScope.h>
 #include <FeCore/DI/Registry.h>
-#include <FeCore/Parallel/Mutex.h>
+#include <FeCore/Threading/Mutex.h>
 #include <festd/unordered_map.h>
 
 namespace FE::DI
@@ -30,7 +30,7 @@ namespace FE::DI
             Container* m_parent = nullptr;
         } m_registryCallback;
 
-        Mutex m_lock;
+        Threading::Mutex m_lock;
         ServiceRegistryRoot m_registryRoot;
     };
 } // namespace FE::DI

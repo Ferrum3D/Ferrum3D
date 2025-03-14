@@ -3,9 +3,8 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Modules/Environment.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <festd/intrusive_list.h>
 #include <festd/vector.h>
 
@@ -25,38 +24,37 @@ namespace FE::DI
         : public Memory::RefCountedObjectBase
         , public festd::intrusive_list_node
     {
-        ServiceRegistry(std::pmr::memory_resource* pAllocator)
-            : m_ids(pAllocator)
-            , m_activators(pAllocator)
-            , m_registrations(pAllocator)
-            , m_callbacks(pAllocator)
+        ServiceRegistry(std::pmr::memory_resource* allocator)
+            : m_ids(allocator)
+            , m_activators(allocator)
+            , m_registrations(allocator)
+            , m_callbacks(allocator)
         {
         }
 
-        void RegisterCallback(ServiceRegistryCallback* pCallback)
+        void RegisterCallback(ServiceRegistryCallback* callback)
         {
             std::lock_guard lk{ m_callbackListLock };
-            m_callbacks.push_back(pCallback);
+            m_callbacks.push_back(callback);
         }
 
         ~ServiceRegistry() override
         {
-            for (ServiceRegistryCallback* pCallback : m_callbacks)
+            for (ServiceRegistryCallback* callback : m_callbacks)
             {
-                pCallback->OnDetach(this);
+                callback->OnDetach(this);
             }
 
             for (const ServiceRegistration& registration : m_registrations)
             {
                 if (registration.IsConstant())
                 {
-                    Memory::RefCountedObjectBase* pObject;
+                    Memory::RefCountedObjectBase* object;
 
-                    [[maybe_unused]] const ResultCode resultCode =
-                        m_activators[registration.GetIndex()].Invoke(nullptr, &pObject);
-                    FE_CORE_ASSERT(resultCode == ResultCode::kSuccess, "");
+                    const ResultCode resultCode = m_activators[registration.GetIndex()].Invoke(nullptr, &object);
+                    FE_Assert(resultCode == ResultCode::kSuccess);
 
-                    pObject->Release();
+                    object->Release();
                 }
             }
         }
@@ -77,7 +75,7 @@ namespace FE::DI
 
         void Sort()
         {
-            ZoneScoped;
+            FE_PROFILER_ZONE();
             festd::sort(m_registrations, [this](const ServiceRegistration& lhs, const ServiceRegistration& rhs) {
                 return m_ids[lhs.m_index] < m_ids[rhs.m_index];
             });
@@ -96,7 +94,7 @@ namespace FE::DI
             return nullptr;
         }
 
-        ServiceActivator* GetActivator(uint32_t index)
+        ServiceActivator* GetActivator(const uint32_t index)
         {
             return &m_activators[index];
         }
@@ -110,8 +108,8 @@ namespace FE::DI
         friend struct LifetimeScope;
         friend struct ServiceRegistryRoot;
 
-        SegmentedVector<UUID, 1024> m_ids = nullptr;
-        SegmentedVector<ServiceActivator> m_activators = nullptr;
+        SegmentedVector<UUID, 2048> m_ids = nullptr;
+        SegmentedVector<ServiceActivator, 16384> m_activators = nullptr;
         festd::pmr::vector<ServiceRegistration> m_registrations;
         festd::pmr::vector<ServiceRegistryCallback*> m_callbacks;
         LifetimeScope* m_rootLifetimeScope = nullptr;
@@ -155,8 +153,8 @@ namespace FE::DI
 
         void Initialize()
         {
-            ZoneScoped;
-            std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+            FE_PROFILER_ZONE();
+            std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
             m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
             m_registries.push_back(*m_root);
             m_root->RegisterCallback(&m_registryCallback);
@@ -172,7 +170,7 @@ namespace FE::DI
             m_root.Reset();
 
             // All references to all the registries must be eliminated at this point.
-            FE_CORE_ASSERT(m_registries.empty(), "Service registry leaks detected");
+            FE_Assert(m_registries.empty(), "Service registry leaks detected");
         }
 
         Reader Read()
@@ -187,7 +185,7 @@ namespace FE::DI
 
         ServiceRegistry* Create()
         {
-            ZoneScoped;
+            FE_PROFILER_ZONE();
             std::unique_lock lk{ m_lock };
             ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
             m_registries.push_back(*pResult);

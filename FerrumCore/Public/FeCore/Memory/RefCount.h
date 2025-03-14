@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
+#include <FeCore/Base/BaseTypes.h>
 #include <FeCore/RTTI/RTTI.h>
+#include <atomic>
 #include <memory_resource>
 
 namespace FE
@@ -19,6 +20,12 @@ namespace FE
 
             RefCountedObjectBase() = default;
             virtual ~RefCountedObjectBase() = default;
+
+            RefCountedObjectBase(const RefCountedObjectBase&) = delete;
+            RefCountedObjectBase& operator=(const RefCountedObjectBase&) = delete;
+
+            RefCountedObjectBase(RefCountedObjectBase&&) = delete;
+            RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
 
             [[nodiscard]] uint32_t GetRefCount() const
             {
@@ -42,16 +49,20 @@ namespace FE
         private:
             friend class ::FE::Internal::RcBase;
 
-            RefCountedObjectBase(const RefCountedObjectBase&) = delete;
-            RefCountedObjectBase& operator=(const RefCountedObjectBase&) = delete;
-
-            RefCountedObjectBase(RefCountedObjectBase&&) = delete;
-            RefCountedObjectBase& operator=(RefCountedObjectBase&&) = delete;
-
-        protected:
             std::atomic<uint32_t> m_refCount = 0;
             uint32_t m_allocationSize = 0;
             std::pmr::memory_resource* m_allocator = nullptr;
+
+        protected:
+            FE_FORCE_INLINE std::pmr::memory_resource* GetObjectAllocator() const
+            {
+                return m_allocator;
+            }
+
+            FE_FORCE_INLINE uint32_t GetObjectAllocationSize() const
+            {
+                return m_allocationSize;
+            }
 
             virtual void DoRelease()
             {
@@ -69,11 +80,11 @@ namespace FE
         class RcBase
         {
         protected:
-            static void SetupRefCounter(Memory::RefCountedObjectBase* pObject, std::pmr::memory_resource* pAllocator,
-                                        uint32_t allocationSize)
+            static void SetupRefCounter(Memory::RefCountedObjectBase* object, std::pmr::memory_resource* allocator,
+                                        const uint32_t allocationSize)
             {
-                pObject->m_allocationSize = allocationSize;
-                pObject->m_allocator = pAllocator;
+                object->m_allocationSize = allocationSize;
+                object->m_allocator = allocator;
             }
         };
     } // namespace Internal
@@ -91,8 +102,8 @@ namespace FE
             InternalRelease();
         }
 
-        Rc(T* pObject)
-            : m_object(pObject)
+        Rc(T* object)
+            : m_object(object)
         {
             InternalAddRef();
         }
@@ -110,7 +121,7 @@ namespace FE
             InternalAddRef();
         }
 
-        Rc(Rc&& other)
+        Rc(Rc&& other) noexcept
             : m_object(other.Detach())
         {
         }
@@ -123,7 +134,7 @@ namespace FE
 
         Rc& operator=(const Rc& other)
         {
-            if (static_cast<Internal::RcBase*>(this) == static_cast<const Internal::RcBase*>(&other))
+            if (this == &other)
                 return *this;
 
             Attach(other.Get());
@@ -142,7 +153,7 @@ namespace FE
             return *this;
         }
 
-        Rc& operator=(Rc&& other)
+        Rc& operator=(Rc&& other) noexcept
         {
             Attach(other.Detach());
             return *this;
@@ -174,8 +185,6 @@ namespace FE
         }
 
         //! @brief Release a reference and get pointer to the stored pointer.
-        //!
-        //! It is the same as using unary '&' operator.
         [[nodiscard]] T** ReleaseAndGetAddressOf()
         {
             InternalRelease();
@@ -219,21 +228,31 @@ namespace FE
         }
 
         template<class... TArgs>
-        static T* New(std::pmr::memory_resource* pAllocator, TArgs&&... args)
+        FE_FORCE_INLINE static T* New(std::pmr::memory_resource* allocator, TArgs&&... args)
         {
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(festd::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
-                SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
+                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }
 
         template<class... TArgs>
-        static T* DefaultNew(TArgs&&... args)
+        FE_FORCE_INLINE static T* DefaultNew(TArgs&&... args)
         {
-            std::pmr::memory_resource* pAllocator = std::pmr::get_default_resource();
-            T* ptr = new (pAllocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
+            std::pmr::memory_resource* allocator = std::pmr::get_default_resource();
+            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(festd::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
-                SetupRefCounter(ptr, pAllocator, static_cast<uint32_t>(sizeof(T)));
+                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
+            return ptr;
+        }
+
+        template<class TFactoryFunctor>
+        FE_FORCE_INLINE static T* Allocate(std::pmr::memory_resource* allocator, const TFactoryFunctor& factory)
+        {
+            void* memory = allocator->allocate(sizeof(T), Memory::kDefaultAlignment);
+            T* ptr = factory(memory);
+            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
+                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
         }
 

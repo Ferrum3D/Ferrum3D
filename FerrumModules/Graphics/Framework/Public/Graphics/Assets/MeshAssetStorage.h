@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
-#include <Graphics/RHI/Buffer.h>
+#include <Graphics/Core/Buffer.h>
 
 namespace FE::Graphics
 {
@@ -24,12 +24,12 @@ namespace FE::Graphics
             return true;
         }
 
-        [[nodiscard]] RHI::Buffer* GetIndexBuffer() const
+        [[nodiscard]] Core::Buffer* GetIndexBuffer() const
         {
             return m_indexBuffer.Get();
         }
 
-        [[nodiscard]] RHI::Buffer* GetVertexBuffer() const
+        [[nodiscard]] Core::Buffer* GetVertexBuffer() const
         {
             return m_vertexBuffer.Get();
         }
@@ -42,8 +42,8 @@ namespace FE::Graphics
     private:
         friend struct MeshAssetLoader;
 
-        Rc<RHI::Buffer> m_indexBuffer;
-        Rc<RHI::Buffer> m_vertexBuffer;
+        Rc<Core::Buffer> m_indexBuffer;
+        Rc<Core::Buffer> m_vertexBuffer;
 
     protected:
         void Delete() override;

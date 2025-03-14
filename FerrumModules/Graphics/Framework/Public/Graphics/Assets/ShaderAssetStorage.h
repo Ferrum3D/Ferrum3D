@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
 #include <FeCore/Containers/ByteBuffer.h>
-#include <Graphics/RHI/ShaderModule.h>
+#include <Graphics/Core/ShaderModule.h>
 
 namespace FE::Graphics
 {
@@ -25,7 +25,7 @@ namespace FE::Graphics
             return m_ready.load(std::memory_order_acquire);
         }
 
-        [[nodiscard]] inline RHI::ShaderModule* GetShaderModule() const
+        [[nodiscard]] inline Core::ShaderModule* GetShaderModule() const
         {
             return m_shaderModule.Get();
         }
@@ -33,7 +33,7 @@ namespace FE::Graphics
     private:
         friend struct ShaderAssetLoader;
 
-        Rc<RHI::ShaderModule> m_shaderModule;
+        Rc<Core::ShaderModule> m_shaderModule;
         std::atomic<bool> m_ready = false;
 
     protected:

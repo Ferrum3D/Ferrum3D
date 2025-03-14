@@ -2,20 +2,16 @@
 #include <EASTL/fixed_vector.h>
 #include <FeCore/Base/Base.h>
 #include <FeCore/DI/BaseDI.h>
-#include <FeCore/Parallel/SpinLock.h>
-#include <FeCore/Strings/Unicode.h>
-#include <array>
-#include <mutex>
-#include <vector>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE::Memory
 {
     //! @brief Type of global static allocator.
     enum class StaticAllocatorType : uint32_t
     {
-        Default, //!< Default global heap allocator.
-        Virtual, //!< Allocates virtual memory directly from the OS.
-        Linear,  //!< Global linear allocator, the allocated memory will be freed only upon process termination.
+        kDefault, //!< Default global heap allocator, can also be obtained with `std::pmr::get_default_resource()`.
+        kVirtual, //!< Allocates virtual memory directly from the OS.
+        kLinear,  //!< Global linear allocator, the allocated memory will be freed only upon process termination.
     };
 } // namespace FE::Memory
 
@@ -32,9 +28,6 @@ namespace FE::Env
     } // namespace Internal
 
 
-    bool IsDebuggerPresent();
-
-
     //! @brief A shared string with fast equality comparison that is never deallocated.
     struct Name final
     {
@@ -49,14 +42,36 @@ namespace FE::Env
 
         explicit Name(std::string_view str);
 
-        Name(const char* data, uint32_t length = 0)
+        Name(const char* data, const uint32_t length)
             : Name(std::string_view{ data, length ? length : __builtin_strlen(data) })
         {
         }
 
-        static bool TryGetExisting(std::string_view str, Name& result);
+        template<uint32_t TSize>
+        Name(const char (&data)[TSize])
+            : Name(std::string_view{ data, __builtin_strlen(data) })
+        {
+        }
+
+        [[nodiscard]] static bool TryGetExisting(std::string_view str, Name& result);
+
+        [[nodiscard]] static Name CreateFromHandle(const uint32_t handle)
+        {
+            return festd::bit_cast<Name>(handle);
+        }
 
         [[nodiscard]] const Record* GetRecord() const;
+
+        [[nodiscard]] uint32_t GetHandle() const
+        {
+            return m_handle;
+        }
+
+        [[nodiscard]] uint64_t GetHash() const
+        {
+            constexpr uint64_t kEmptyStringHash = CompileTimeHash("", 0);
+            return Valid() ? GetRecord()->m_hash : kEmptyStringHash;
+        }
 
         [[nodiscard]] bool Valid() const
         {
@@ -73,52 +88,97 @@ namespace FE::Env
             return Valid() ? GetRecord()->m_data : nullptr;
         }
 
+        [[nodiscard]] int32_t compare(const char* s) const
+        {
+            const Record* record = GetRecord();
+            return strncmp(record->m_data, s, record->m_size);
+        }
+
         explicit operator bool() const
         {
             return Valid();
         }
 
-        friend bool operator==(Name lhs, Name rhs)
+        explicit operator festd::ascii_view() const
+        {
+            const Record* record = GetRecord();
+            return record ? festd::ascii_view{ record->m_data, record->m_size } : festd::ascii_view{};
+        }
+
+        friend bool operator==(const Name lhs, const Name rhs)
         {
             return lhs.m_handle == rhs.m_handle;
         }
-
-        friend bool operator!=(Name lhs, Name rhs)
+        friend bool operator!=(const Name lhs, const Name rhs)
         {
             return lhs.m_handle != rhs.m_handle;
         }
 
-        friend bool operator==(Name lhs, std::string_view rhs)
+        friend bool operator==(const Name lhs, const char* rhs)
         {
-            return lhs.GetRecord()->m_data == rhs;
+            return lhs.compare(rhs) == 0;
+        }
+        friend bool operator!=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) != 0;
+        }
+        friend bool operator<(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) < 0;
+        }
+        friend bool operator>(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) > 0;
+        }
+        friend bool operator<=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) <= 0;
+        }
+        friend bool operator>=(const Name lhs, const char* rhs)
+        {
+            return lhs.compare(rhs) >= 0;
         }
 
-        friend bool operator!=(Name lhs, std::string_view rhs)
+        friend bool operator==(const char* lhs, const Name rhs)
         {
-            return lhs.GetRecord()->m_data != rhs;
+            return rhs.compare(lhs) == 0;
+        }
+        friend bool operator!=(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) != 0;
+        }
+        friend bool operator<(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) > 0;
+        }
+        friend bool operator>(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) < 0;
+        }
+        friend bool operator<=(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) >= 0;
+        }
+        friend bool operator>=(const char* lhs, const Name rhs)
+        {
+            return rhs.compare(lhs) <= 0;
         }
 
-        friend bool operator==(std::string_view lhs, Name rhs)
-        {
-            return rhs == lhs;
-        }
-
-        friend bool operator!=(std::string_view lhs, Name rhs)
-        {
-            return rhs != lhs;
-        }
+        static const Name kEmpty;
 
     private:
         uint32_t m_handle = kInvalidIndex;
     };
+
+    inline const Name Name::kEmpty;
 
 
     //! @brief Create a variable by unique name.
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! @tparam T   - Type of variable to create.
-    //! @param name - Unique name of variable to create.
+    //! @tparam T    Type of variable to create.
+    //! @param name Unique name of variable to create.
     //!
     //! @return The created variable.
     template<class T, class... Args>
@@ -128,8 +188,7 @@ namespace FE::Env
     //!
     //! Creates a global variable or finds an existing with the same identifier. Shared between different modules.
     //!
-    //! @tparam T    - Type of variable to create.
-    //! @param value - Value to initialize the variable with.
+    //! @tparam T     Type of variable to create.
     //!
     //! @return The created variable.
     template<class T, class... Args>
@@ -139,8 +198,8 @@ namespace FE::Env
     //!
     //! Creates a global variable by unique name, but doesn't initialize it.
     //!
-    //! @tparam T   - Type of variable to allocate.
-    //! @param name - Unique name of variable to allocate.
+    //! @tparam T    Type of variable to allocate.
+    //! @param name Unique name of variable to allocate.
     //!
     //! @return The allocated variable.
     template<class T>
@@ -150,8 +209,8 @@ namespace FE::Env
     //!
     //! Variable must be created by name before calling this function. Returns null if variable was not found.
     //!
-    //! @tparam T   - Type of variable to find.
-    //! @param name - Unique name of variable to find.
+    //! @tparam T    Type of variable to find.
+    //! @param name Unique name of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariable(Name name);
 
@@ -159,14 +218,17 @@ namespace FE::Env
     //!
     //! Variable must be created by type before calling this function. Returns null if variable was not found.
     //!
-    //! @tparam T - Type of variable to find.
+    //! @tparam T  Type of variable to find.
     template<class T>
     GlobalVariable<T> FindGlobalVariableByType();
 
+    struct ApplicationInfo final
+    {
+        const char* m_name = nullptr;
+    };
+
     //! @brief Create global environment.
-    //!
-    //! @param allocator - Custom allocator.
-    void CreateEnvironment();
+    void CreateEnvironment(const ApplicationInfo& info);
 
     //! @brief Get global environment instance.
     //!
@@ -180,7 +242,7 @@ namespace FE::Env
     //! This function will most likely be called from another module that already have an environment attached
     //! or created.
     //!
-    //! @param instance - Instance of global environment to attach.
+    //! @param instance Instance of global environment to attach.
     void AttachEnvironment(Internal::IEnvironment& instance);
 
     //! @brief Detach global environment.
@@ -195,6 +257,8 @@ namespace FE::Env
     //! @return True if environment is attached.
     bool EnvironmentAttached();
 
+    const ApplicationInfo& GetApplicationInfo();
+
     //! \internal
     namespace Internal
     {
@@ -206,11 +270,13 @@ namespace FE::Env
             Removed
         };
 
+
         struct VariableResult final
         {
             void* pData = nullptr;
             VariableResultCode Code = VariableResultCode::NotFound;
         };
+
 
         //! @brief Environment interface.
         //!
@@ -236,11 +302,12 @@ namespace FE::Env
             virtual void Destroy() = 0;
         };
 
+
         //! @brief Storage of global variable. Allocated once for variable.
         template<class T>
         class GlobalVariableStorage
         {
-            std::aligned_storage_t<sizeof(T), alignof(T)> m_storage;
+            alignas(T) char m_storage[sizeof(T)];
             Name m_name;
             uint32_t m_refCount;
             Threading::SpinLock m_mutex;
@@ -251,22 +318,23 @@ namespace FE::Env
         public:
             //! @brief Create uninitialized global variable storage.
             //!
-            //! @param name - Unique name of global variable.
-            GlobalVariableStorage(Name name)
+            //! @param name Unique name of global variable.
+            GlobalVariableStorage(const Name name)
                 : m_name(name)
                 , m_refCount(0)
                 , m_isConstructed(false)
             {
+                Memory::Zero(m_storage, sizeof(T));
             }
 
             //! @brief Call variable's constructor.
             //!
-            //! @param args - Arguments to call the constructor with.
+            //! @param args Arguments to call the constructor with.
             template<class... TArgs>
             void Construct(TArgs&&... args)
             {
                 std::unique_lock lk(m_mutex);
-                new (&m_storage) T(std::forward<TArgs>(args)...);
+                new (m_storage) T(festd::forward<TArgs>(args)...);
                 m_isConstructed = true;
             }
 
@@ -274,7 +342,7 @@ namespace FE::Env
             void Destruct()
             {
                 std::unique_lock lk(m_mutex);
-                reinterpret_cast<T*>(&m_storage)->~T();
+                reinterpret_cast<T*>(m_storage)->~T();
                 m_isConstructed = false;
             }
 
@@ -289,7 +357,7 @@ namespace FE::Env
             //! @brief Get underlying variable.
             const T* Get() const
             {
-                return reinterpret_cast<const T*>(&m_storage);
+                return reinterpret_cast<const T*>(m_storage);
             }
 
             //! @brief Add a reference to internal counter.
@@ -312,7 +380,7 @@ namespace FE::Env
                     env.RemoveVariable(m_name);
 
                     if (m_isConstructed)
-                        reinterpret_cast<T*>(&m_storage)->~T();
+                        reinterpret_cast<T*>(m_storage)->~T();
 
                     lk.unlock();
                     Memory::DefaultFree(this);
@@ -322,7 +390,7 @@ namespace FE::Env
 
         //! @brief Allocate GlobalVariableStorage for a global variable.
         //!
-        //! @param name - The name of the variable.
+        //! @param name The name of the variable.
         //!
         //! @return The allocated GlobalVariableStorage.
         template<class T>
@@ -333,13 +401,13 @@ namespace FE::Env
             auto [data, code] = GetEnvironment().CreateVariable(name, storageSize, storageAlignment);
 
             GlobalVariableStorage<T>* storage = nullptr;
-            if (code == Internal::VariableResultCode::Created)
+            if (code == VariableResultCode::Created)
             {
                 storage = new (data) GlobalVariableStorage<T>(name);
             }
-            else if (code == Internal::VariableResultCode::Found)
+            else if (code == VariableResultCode::Found)
             {
-                storage = reinterpret_cast<GlobalVariableStorage<T>*>(data);
+                storage = static_cast<GlobalVariableStorage<T>*>(data);
             }
 
             return storage;
@@ -348,19 +416,20 @@ namespace FE::Env
         //! \breif Attach an instance of global environment to current module.
         inline void AttachGlobalEnvironment(void* environmentPointer)
         {
-            FE_CORE_ASSERT(!EnvironmentAttached(), "Attempt to attach second environment");
+            FE_CoreAssert(!EnvironmentAttached(), "Attempt to attach second environment");
             FE::Env::AttachEnvironment(*static_cast<IEnvironment*>(environmentPointer));
         }
 
         //! @brief Implementation of FE::Env::CreateGlobalVariable
         template<class T, class... TArgs>
-        inline GlobalVariable<T> CreateGlobalVariableImpl(Name name, TArgs&&... args)
+        GlobalVariable<T> CreateGlobalVariableImpl(const Name name, TArgs&&... args)
         {
-            Internal::GlobalVariableStorage<T>* storage = Internal::AllocateVariableStorage<T>(name);
-            storage->Construct(std::forward<TArgs>(args)...);
-            return FE::Env::GlobalVariable<T>(storage);
+            GlobalVariableStorage<T>* storage = Internal::AllocateVariableStorage<T>(name);
+            storage->Construct(festd::forward<TArgs>(args)...);
+            return Env::GlobalVariable<T>(storage);
         }
     } // namespace Internal
+
 
     //! @brief Shared pointer to global variable storage.
     //!
@@ -403,13 +472,19 @@ namespace FE::Env
 
         GlobalVariable& operator=(const GlobalVariable& other)
         {
+            if (this == &other)
+                return *this;
+
             GlobalVariable(other).Swap(*this);
             return *this;
         }
 
         GlobalVariable& operator=(GlobalVariable&& other) noexcept
         {
-            GlobalVariable(std::move(other)).Swap(*this);
+            if (this == &other)
+                return *this;
+
+            GlobalVariable(festd::move(other)).Swap(*this);
             return *this;
         }
 
@@ -448,9 +523,12 @@ namespace FE::Env
 
         //! @brief Swap contents of two variables.
         //!
-        //! @param other - The variable to swap the content with.
+        //! @param other The variable to swap the content with.
         void Swap(GlobalVariable& other)
         {
+            if (this == &other)
+                return;
+
             auto* t = other.m_storage;
             other.m_storage = m_storage;
             m_storage = t;
@@ -458,22 +536,22 @@ namespace FE::Env
 
         T* Get() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_storage->Get());
         }
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return *const_cast<T*>(m_storage->Get());
         }
 
         T* operator->() const
         {
-            FE_CORE_ASSERT(m_storage, "Global variable was empty");
-            FE_CORE_ASSERT(m_storage->IsConstructed(), "Global variable was not constructed");
+            FE_CoreAssert(m_storage, "Global variable was empty");
+            FE_CoreAssert(m_storage->IsConstructed(), "Global variable was not constructed");
             return const_cast<T*>(m_storage->Get());
         }
 
@@ -500,20 +578,23 @@ namespace FE::Env
     std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);
     DI::IServiceProvider* GetServiceProvider();
 
+    DI::ServiceRegistry* CreateServiceRegistry();
+    DI::ServiceRegistry* GetRootServiceRegistry();
+
     template<class T, class... Args>
-    inline GlobalVariable<T> CreateGlobalVariable(Name name, Args&&... args)
+    inline GlobalVariable<T> CreateGlobalVariable(const Name name, Args&&... args)
     {
         const Name::Record* pRecord = name.GetRecord();
         const std::string_view nameView{ pRecord->m_data, pRecord->m_size };
-        FE_CORE_ASSERT(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
-        return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
+        FE_CoreAssert(nameView[0] != '#', "Names that start with a '#' are reserved for type name variables");
+        return Internal::CreateGlobalVariableImpl<T, Args...>(name, festd::forward<Args>(args)...);
     }
 
     template<class T, class... Args>
-    inline GlobalVariable<T> CreateGlobalVariable(std::string_view name, Args&&... args)
+    inline GlobalVariable<T> CreateGlobalVariable(const std::string_view name, Args&&... args)
     {
-        FE_CORE_ASSERT(name[0] != '#', "Names that start with a '#' are reserved for type name variables");
-        return Internal::CreateGlobalVariableImpl<T, Args...>(name, std::forward<Args>(args)...);
+        FE_CoreAssert(name[0] != '#', "Names that start with a '#' are reserved for type name variables");
+        return Internal::CreateGlobalVariableImpl<T, Args...>(name, festd::forward<Args>(args)...);
     }
 
     template<class T, class... Args>
@@ -528,17 +609,17 @@ namespace FE::Env
         vec.push_back('\0');
 
         const Name name{ vec.data(), vec.size() - 1 };
-        return Internal::CreateGlobalVariableImpl<T>(name, std::forward<Args>(args)...);
+        return Internal::CreateGlobalVariableImpl<T>(name, festd::forward<Args>(args)...);
     }
 
     template<class T>
-    inline GlobalVariable<T> AllocateGlobalVariable(Name name)
+    inline GlobalVariable<T> AllocateGlobalVariable(const Name name)
     {
         return GlobalVariable<T>(Internal::AllocateVariableStorage<T>(name));
     }
 
     template<class T>
-    inline GlobalVariable<T> FindGlobalVariable(Name name)
+    inline GlobalVariable<T> FindGlobalVariable(const Name name)
     {
         using StorageType = typename GlobalVariable<T>::StorageType;
 
@@ -550,7 +631,7 @@ namespace FE::Env
     }
 
     template<class T>
-    inline GlobalVariable<T> FindGlobalVariable(std::string_view name)
+    inline GlobalVariable<T> FindGlobalVariable(const std::string_view name)
     {
         return FindGlobalVariable<T>(Name{ name });
     }
@@ -558,7 +639,7 @@ namespace FE::Env
     template<class T>
     inline GlobalVariable<T> FindGlobalVariableByType()
     {
-        std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>;
+        const std::string_view typeName = FE::TypeName<std::remove_pointer_t<T>>;
         eastl::fixed_vector<char, 64> vec;
         vec.reserve(static_cast<uint32_t>(typeName.length()) + 2);
         vec.push_back('#');
@@ -575,7 +656,7 @@ namespace FE::Env
 template<>
 struct eastl::hash<FE::Env::Name>
 {
-    size_t operator()(FE::Env::Name name) const
+    size_t operator()(const FE::Env::Name name) const
     {
         return name.GetRecord()->m_hash;
     }

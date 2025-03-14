@@ -1,17 +1,22 @@
 ﻿#pragma once
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/Job.h>
-#include <FeCore/Parallel/Fiber.h>
-#include <FeCore/Parallel/Semaphore.h>
-#include <FeCore/Parallel/Thread.h>
+#include <FeCore/Memory/PoolAllocator.h>
+#include <FeCore/Threading/Fiber.h>
+#include <FeCore/Threading/Semaphore.h>
+#include <FeCore/Threading/Thread.h>
+#include <festd/vector.h>
 
 namespace FE
 {
-    struct FiberWaitEntry final : festd::intrusive_list_node
+    struct FiberWaitEntry final : public ConcurrentQueueNode
     {
+        FiberWaitEntry* m_queueTail = nullptr;
+        std::atomic<uint64_t> m_orderHint = 0;
+        FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         Threading::FiberHandle m_fiber;
-        JobPriority m_priority;
-        std::atomic<bool> m_switchCompleted;
+        JobPriority m_priority = JobPriority::kNormal;
+        std::atomic<bool> m_switchCompleted = false;
     };
 
 
@@ -24,34 +29,30 @@ namespace FE
 
         void Start() override;
         void Stop() override;
-        void AddJob(Job* pJob, JobPriority priority) override;
+        void Schedule(const JobScheduleInfo& info) override;
+        FiberAffinityMask GetAffinityMaskForCurrentThread() const override;
 
     private:
         friend struct WaitGroup;
 
-        void* AllocateSmallBlock(size_t byteSize) override;
-        void FreeSmallBlock(void* ptr, size_t byteSize) override;
+        std::pmr::memory_resource* GetWaitGroupAllocator() override;
 
-        void SwitchFromWaitingFiber(uint32_t workerIndex, FiberWaitEntry& entry)
+        void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
         {
             Worker& worker = m_workers[workerIndex];
             worker.m_lastWaitEntry = &entry;
             worker.m_prevFiber = worker.m_currentFiber;
             worker.m_currentFiber = m_fiberPool.Rent(false);
 
-            const Context::TransferParams tp = m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this));
+            const char* switchMessage = worker.m_name.c_str();
+            const Context::TransferParams tp =
+                m_fiberPool.Switch(worker.m_currentFiber, reinterpret_cast<uintptr_t>(this), switchMessage);
             CleanUpAfterSwitch(tp);
         }
 
-        void AddReadyFiber(FiberWaitEntry* pEntry)
-        {
-            JobQueue& queue = m_jobQueues[festd::to_underlying(pEntry->m_priority)];
+        void AddReadyFiber(FiberWaitEntry* entry);
 
-            std::lock_guard lk{ queue.m_lock };
-            queue.m_readyFibersQueue.push_back(*pEntry);
-        }
-
-        void CleanUpAfterSwitch(Context::TransferParams transferParams)
+        void CleanUpAfterSwitch(const Context::TransferParams transferParams)
         {
             const uint32_t workerIndex = GetWorkerIndex();
             Worker& worker = m_workers[workerIndex];
@@ -64,49 +65,64 @@ namespace FE
             }
             else if (worker.m_prevFiber)
             {
-                FE_CORE_ASSERT(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
+                FE_Assert(worker.m_lastWaitEntry == nullptr, "Wait entry was not cleaned up");
                 m_fiberPool.Return(worker.m_prevFiber);
             }
 
             worker.m_prevFiber.Reset();
         }
 
-        struct JobQueue final
-        {
-            Threading::SpinLock m_lock;
-            festd::intrusive_list<Job> m_queue;
-            festd::intrusive_list<FiberWaitEntry> m_readyFibersQueue;
-        };
-
         struct alignas(Memory::kCacheLineSize) Worker final
         {
-            uint64_t m_threadId;
-            ThreadHandle m_thread;
+            uint64_t m_threadId = 0;
+            Threading::ThreadHandle m_thread;
+            festd::fixed_string m_name;
+            Context::Handle m_exitContext;
+
             Threading::FiberHandle m_prevFiber;
             Threading::FiberHandle m_currentFiber;
             FiberWaitEntry* m_lastWaitEntry = nullptr;
-            Context::Handle m_exitContext;
+
+            JobThreadPoolType m_threadPoolType = JobThreadPoolType::kGeneric;
             JobPriority m_priority = JobPriority::kNormal;
+            FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
+
+            // Jobs in these queues can only be processed by this worker (due to affinity).
+            ConcurrentQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)] = {};
+            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(JobPriority::kCount)] = {};
         };
 
-        JobQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)];
-        festd::fixed_vector<Worker, 64> m_workers;
+        struct alignas(Memory::kCacheLineSize) GlobalQueueSet final
+        {
+            Threading::SpinLock m_consumerLocks[festd::to_underlying(JobThreadPoolType::kCount)] = {};
+            ConcurrentQueue m_jobQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
+            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
+        };
+
+        std::atomic<uint64_t> m_jobCounter = 0;
+        GlobalQueueSet m_globalQueues[festd::to_underlying(JobPriority::kCount)];
+
+        static constexpr uint32_t kMaxWorkerCount = 64;
+        festd::array<Worker, kMaxWorkerCount> m_workers;
         Threading::FiberPool m_fiberPool;
+        Memory::PoolAllocator m_waitGroupPool;
+
+        uint32_t m_backgroundWorkerCount = 0;
+        uint32_t m_foregroundWorkerCount = 0;
 
         Threading::Semaphore m_semaphore;
         std::atomic<bool> m_shouldExit;
-        std::atomic<bool> m_initialJobPickedUp;
 
         uint32_t GetWorkerIndex() const
         {
-            const uint64_t threadID = GetCurrentThreadID();
+            const uint64_t threadID = Threading::GetCurrentThreadID();
             for (uint32_t threadIndex = 0; threadIndex < m_workers.size(); ++threadIndex)
             {
                 if (m_workers[threadIndex].m_threadId == threadID)
                     return threadIndex;
             }
 
-            FE_CORE_ASSERT(0, "Thread not found");
+            FE_Assert(0, "Thread not found");
             return kInvalidIndex;
         }
 

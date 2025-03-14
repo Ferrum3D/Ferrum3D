@@ -103,7 +103,7 @@ TEST(SegmentedVector, CopyMove)
 
     int32_t** ppSegments = vec.segments();
     int32_t* pFirstSegment = ppSegments[0];
-    SegmentedVector<int32_t, 8> moved = std::move(vec);
+    SegmentedVector<int32_t, 8> moved = festd::move(vec);
     EXPECT_EQ(ppSegments, moved.segments());
     EXPECT_EQ(pFirstSegment, moved.segments()[0]);
 
@@ -143,4 +143,20 @@ TEST(SegmentedVector, Iterator)
 
     iter -= 2;
     EXPECT_EQ(*iter, 3);
+}
+
+TEST(SegmentedVector, ManyElements)
+{
+    SegmentedVector<int32_t, 8> vec;
+    for (int32_t valueIndex = 0; valueIndex < 10000; ++valueIndex)
+    {
+        vec.push_back(valueIndex);
+    }
+
+    EXPECT_EQ(vec.size(), 10000);
+
+    for (int32_t valueIndex = 0; valueIndex < 10000; ++valueIndex)
+    {
+        EXPECT_EQ(valueIndex, vec[valueIndex]);
+    }
 }

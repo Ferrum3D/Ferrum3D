@@ -2,125 +2,99 @@
 #include <FeCore/Platform/Windows/Common.h>
 #include <festd/vector.h>
 
-namespace FE::IO::Platform
+namespace FE::Platform
 {
-    inline static HANDLE HandleCast(FileHandle handle)
+    namespace
     {
-        return reinterpret_cast<HANDLE>(handle.m_value);
-    }
-
-
-    inline static ResultCode ConvertWin32Error(DWORD error)
-    {
-        switch (error)
+        HANDLE HandleCast(const FileHandle handle)
         {
-        case ERROR_ALREADY_EXISTS:
-        case ERROR_FILE_EXISTS:
-            return ResultCode::FileExists;
-        case ERROR_FILE_NOT_FOUND:
-        case ERROR_PATH_NOT_FOUND:
-            return ResultCode::NoFileOrDirectory;
-        case ERROR_ACCESS_DENIED:
-            return ResultCode::PermissionDenied;
-        case ERROR_SHARING_VIOLATION:
-        case ERROR_INVALID_PARAMETER:
-            return ResultCode::InvalidArgument;
-        case ERROR_FILE_TOO_LARGE:
-            return ResultCode::FileTooLarge;
-        case ERROR_TOO_MANY_OPEN_FILES:
-            return ResultCode::TooManyOpenFiles;
-        case ERROR_SEEK:
-            return ResultCode::InvalidSeek;
-        case ERROR_NOT_SUPPORTED:
-            return ResultCode::NotSupported;
-        default:
-            return ResultCode::UnknownError;
+            return reinterpret_cast<HANDLE>(handle.m_value);
         }
-    }
 
 
-    inline static DWORD GetFileAccessFlags(OpenMode openMode)
-    {
-        switch (openMode)
+        DWORD GetFileAccessFlags(const IO::OpenMode openMode)
         {
-        case OpenMode::kNone:
-            return 0;
-        case OpenMode::kReadOnly:
-            return GENERIC_READ;
-        case OpenMode::kWriteOnly:
-        case OpenMode::kCreate:
-        case OpenMode::kCreateNew:
-            return GENERIC_WRITE;
-        case OpenMode::kAppend:
-        case OpenMode::kTruncate:
-        case OpenMode::kReadWrite:
-            return GENERIC_READ | GENERIC_WRITE;
-        default:
+            switch (openMode)
+            {
+            case IO::OpenMode::kNone:
+                return 0;
+            case IO::OpenMode::kReadOnly:
+                return GENERIC_READ;
+            case IO::OpenMode::kWriteOnly:
+            case IO::OpenMode::kCreate:
+            case IO::OpenMode::kCreateNew:
+                return GENERIC_WRITE;
+            case IO::OpenMode::kAppend:
+            case IO::OpenMode::kTruncate:
+            case IO::OpenMode::kReadWrite:
+                return GENERIC_READ | GENERIC_WRITE;
+            default:
+                return 0;
+            }
+        }
+
+
+        DWORD GetFileShareMode(const IO::OpenMode openMode)
+        {
+            if (openMode == IO::OpenMode::kReadOnly)
+                return FILE_SHARE_READ;
+
             return 0;
         }
-    }
 
 
-    inline static DWORD GetFileShareMode(OpenMode openMode)
-    {
-        if (openMode == OpenMode::kReadOnly)
-            return FILE_SHARE_READ;
-
-        return 0;
-    }
-
-
-    inline static DWORD GetFileCreationDisposition(OpenMode openMode)
-    {
-        switch (openMode)
+        DWORD GetFileCreationDisposition(const IO::OpenMode openMode)
         {
-        case OpenMode::kNone:
-            return 0;
-        case OpenMode::kReadOnly:
-        case OpenMode::kWriteOnly:
-        case OpenMode::kReadWrite:
-        case OpenMode::kAppend:
-            return OPEN_EXISTING;
-        case OpenMode::kCreate:
-            return CREATE_ALWAYS;
-        case OpenMode::kCreateNew:
-            return CREATE_NEW;
-        case OpenMode::kTruncate:
-            return TRUNCATE_EXISTING;
-        default:
-            return 0;
+            switch (openMode)
+            {
+            case IO::OpenMode::kNone:
+                return 0;
+            case IO::OpenMode::kReadOnly:
+            case IO::OpenMode::kWriteOnly:
+            case IO::OpenMode::kReadWrite:
+            case IO::OpenMode::kAppend:
+                return OPEN_EXISTING;
+            case IO::OpenMode::kCreate:
+                return CREATE_ALWAYS;
+            case IO::OpenMode::kCreateNew:
+                return CREATE_NEW;
+            case IO::OpenMode::kTruncate:
+                return TRUNCATE_EXISTING;
+            default:
+                return 0;
+            }
         }
-    }
 
 
-    inline static DWORD GetFileSeekMode(SeekMode seekMode)
-    {
-        switch (seekMode)
+        DWORD GetFileSeekMode(const IO::SeekMode seekMode)
         {
-        case SeekMode::kBegin:
-            return FILE_BEGIN;
-        case SeekMode::kCurrent:
-            return FILE_CURRENT;
-        case SeekMode::kEnd:
-            return FILE_END;
-        default:
-            return 0;
+            switch (seekMode)
+            {
+            case IO::SeekMode::kBegin:
+                return FILE_BEGIN;
+            case IO::SeekMode::kCurrent:
+                return FILE_CURRENT;
+            case IO::SeekMode::kEnd:
+                return FILE_END;
+            default:
+                return 0;
+            }
         }
-    }
+    } // namespace
 
 
-    FileHandle GetStandardFile(StandardDescriptor descriptor)
+    FileHandle GetStandardFile(const IO::StandardDescriptor descriptor)
     {
         DWORD stdDescriptor;
         switch (descriptor)
         {
-        case StandardDescriptor::kSTDIN:
+        case IO::StandardDescriptor::kSTDIN:
             stdDescriptor = STD_INPUT_HANDLE;
             break;
-        case StandardDescriptor::kSTDOUT:
+        case IO::StandardDescriptor::kSTDOUT:
             stdDescriptor = STD_OUTPUT_HANDLE;
             break;
-        case StandardDescriptor::kSTDERR:
+        case IO::StandardDescriptor::kSTDERR:
             stdDescriptor = STD_ERROR_HANDLE;
             break;
         default:
@@ -131,16 +105,13 @@ namespace FE::IO::Platform
     }
 
 
-    ResultCode OpenFile(StringSlice filePath, OpenMode openMode, FileHandle& handle)
+    IO::ResultCode OpenFile(const festd::string_view filePath, const IO::OpenMode openMode, FileHandle& handle)
     {
-        ZoneScoped;
-        ZoneTextF("%.*s", filePath.Size(), filePath.Data());
+        FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
 
-        using namespace FE::Platform;
-
-        const WideString<MAX_PATH> widePath{ filePath };
+        const WideString widePath{ filePath };
         if (widePath.m_value.empty())
-            return ResultCode::InvalidArgument;
+            return IO::ResultCode::InvalidArgument;
 
         const DWORD desiredFileAccessFlags = GetFileAccessFlags(openMode);
         const DWORD fileShareMode = GetFileShareMode(openMode);
@@ -155,143 +126,140 @@ namespace FE::IO::Platform
                                                     nullptr);
 
         if (nativeFileHandle == INVALID_HANDLE_VALUE)
-            return ConvertWin32Error(GetLastError());
+            return ConvertWin32IOError(GetLastError());
 
         handle = FileHandle::FromPointer(nativeFileHandle);
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
 
 
-    ResultCode GetFileStats(FileHandle fileHandle, FileStats& result)
+    IO::ResultCode GetFileStats(const FileHandle fileHandle, IO::FileStats& result)
     {
-        ZoneScoped;
-
-        using namespace FE::Platform;
+        FE_PROFILER_ZONE();
 
         const HANDLE hFile = HandleCast(fileHandle);
         FILETIME creationFT, accessFT, writeFT;
         if (!GetFileTime(hFile, &creationFT, &accessFT, &writeFT))
-            return ConvertWin32Error(GetLastError());
+            return ConvertWin32IOError(GetLastError());
 
         LARGE_INTEGER fileSize;
         if (!GetFileSizeEx(hFile, &fileSize))
-            return ConvertWin32Error(GetLastError());
+            return ConvertWin32IOError(GetLastError());
 
         result.m_creationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(creationFT));
         result.m_accessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
         result.m_modificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
         result.m_byteSize = static_cast<uint64_t>(fileSize.QuadPart);
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
 
 
-    FileAttributeFlags GetFileAttributeFlags(StringSlice filePath)
+    IO::FileAttributeFlags GetFileAttributeFlags(const festd::string_view filePath)
     {
-        ZoneScoped;
-        ZoneTextF("%.*s", filePath.Size(), filePath.Data());
+        FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
 
-        using namespace FE::Platform;
-
-        const WideString<MAX_PATH> widePath{ filePath };
+        const WideString widePath{ filePath };
         if (widePath.m_value.empty())
-            return FileAttributeFlags::kInvalid;
+            return IO::FileAttributeFlags::kInvalid;
 
         const DWORD attributes = GetFileAttributesW(widePath.m_value.data());
-        if (attributes == INVALID_FILE_ATTRIBUTES)
-            return FileAttributeFlags::kInvalid;
-
-        FileAttributeFlags result = FileAttributeFlags::kNone;
-        if (attributes & FILE_ATTRIBUTE_HIDDEN)
-            result |= FileAttributeFlags::kHidden;
-        if (attributes & FILE_ATTRIBUTE_DIRECTORY)
-            result |= FileAttributeFlags::kDirectory;
-        if (attributes & FILE_ATTRIBUTE_READONLY)
-            result |= FileAttributeFlags::kReadOnly;
-        return result;
+        return ConvertFileAttributeFlags(attributes);
     }
 
 
-    bool FileExists(StringSlice filePath)
+    bool FileExists(const festd::string_view filePath)
     {
-        ZoneScoped;
-        const FileAttributeFlags attributes = GetFileAttributeFlags(filePath);
-        return attributes != FileAttributeFlags::kInvalid && attributes != FileAttributeFlags::kDirectory;
+        FE_PROFILER_ZONE();
+        const IO::FileAttributeFlags attributes = GetFileAttributeFlags(filePath);
+        return attributes != IO::FileAttributeFlags::kInvalid && attributes != IO::FileAttributeFlags::kDirectory;
     }
 
 
-    void CloseFile(FileHandle fileHandle)
+    void CloseFile(const FileHandle fileHandle)
     {
-        ZoneScoped;
+        FE_PROFILER_ZONE();
         CloseHandle(HandleCast(fileHandle));
     }
 
 
-    ResultCode ReadFile(FileHandle fileHandle, festd::span<std::byte> buffer, uint32_t& bytesRead)
+    IO::ResultCode ReadFile(const FileHandle fileHandle, void* buffer, const size_t byteSize, size_t& bytesRead)
     {
-        ZoneScoped;
-        ZoneTextF("%d", buffer.size());
+        FE_PROFILER_ZONE_TEXT("%" PRIu64, byteSize);
 
-        static_assert(sizeof(bytesRead) == sizeof(DWORD));
-
-        if (!::ReadFile(HandleCast(fileHandle),
-                        buffer.data(),
-                        static_cast<DWORD>(buffer.size()),
-                        reinterpret_cast<DWORD*>(&bytesRead),
-                        nullptr))
+        bytesRead = 0;
+        while (bytesRead < byteSize)
         {
-            return ConvertWin32Error(GetLastError());
+            const size_t bytesToRead = Math::Min<size_t>(byteSize - bytesRead, Constants::kMaxValue<DWORD>);
+
+            DWORD dwBytesRead = 0;
+            if (!::ReadFile(HandleCast(fileHandle),
+                            static_cast<std::byte*>(buffer) + bytesRead,
+                            static_cast<DWORD>(bytesToRead),
+                            &dwBytesRead,
+                            nullptr))
+            {
+                return ConvertWin32IOError(GetLastError());
+            }
+
+            bytesRead += dwBytesRead;
         }
 
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
 
 
-    ResultCode WriteFile(FileHandle fileHandle, festd::span<const std::byte> buffer, uint32_t& bytesWritten)
+    IO::ResultCode WriteFile(const FileHandle fileHandle, const void* buffer, const size_t byteSize, size_t& bytesWritten)
     {
-        ZoneScoped;
-        ZoneTextF("%d", buffer.size());
+        FE_PROFILER_ZONE_TEXT("%" PRIu64, byteSize);
 
-        static_assert(sizeof(bytesWritten) == sizeof(DWORD));
-
-        if (!::WriteFile(HandleCast(fileHandle),
-                         buffer.data(),
-                         static_cast<DWORD>(buffer.size()),
-                         reinterpret_cast<DWORD*>(&bytesWritten),
-                         nullptr))
+        bytesWritten = 0;
+        while (bytesWritten < byteSize)
         {
-            return ConvertWin32Error(GetLastError());
+            const size_t bytesToWrite = Math::Min<size_t>(byteSize - bytesWritten, Constants::kMaxValue<DWORD>);
+
+            DWORD dwBytesWritten = 0;
+            if (!::WriteFile(HandleCast(fileHandle),
+                             static_cast<const std::byte*>(buffer) + bytesWritten,
+                             static_cast<DWORD>(bytesToWrite),
+                             &dwBytesWritten,
+                             nullptr))
+            {
+                return ConvertWin32IOError(GetLastError());
+            }
+
+            bytesWritten += dwBytesWritten;
         }
 
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
 
 
-    ResultCode SeekFile(FileHandle fileHandle, intptr_t offset, SeekMode seekMode)
+    IO::ResultCode SeekFile(const FileHandle fileHandle, const intptr_t offset, const IO::SeekMode seekMode)
     {
-        ZoneScoped;
+        FE_PROFILER_ZONE();
 
         LARGE_INTEGER distance;
         distance.QuadPart = offset;
         if (!SetFilePointerEx(HandleCast(fileHandle), distance, nullptr, GetFileSeekMode(seekMode)))
         {
-            return ConvertWin32Error(GetLastError());
+            return ConvertWin32IOError(GetLastError());
         }
 
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
 
 
-    ResultCode TellFile(FileHandle fileHandle, uintptr_t& position)
+    IO::ResultCode TellFile(const FileHandle fileHandle, uintptr_t& position)
     {
-        ZoneScoped;
+        FE_PROFILER_ZONE();
 
         LARGE_INTEGER distance;
         distance.QuadPart = 0;
         if (!SetFilePointerEx(HandleCast(fileHandle), distance, reinterpret_cast<PLARGE_INTEGER>(&position), FILE_CURRENT))
         {
-            return ConvertWin32Error(GetLastError());
+            return ConvertWin32IOError(GetLastError());
         }
 
-        return ResultCode::Success;
+        return IO::ResultCode::Success;
     }
-} // namespace FE::IO::Platform
+} // namespace FE::Platform

@@ -1,23 +1,23 @@
 ﻿#pragma once
 #include <FeCore/Base/PlatformInclude.h>
+#include <FeCore/IO/BaseIO.h>
 #include <FeCore/Time/BaseTime.h>
 #include <festd/vector.h>
 
 namespace FE::Platform
 {
-    template<uint32_t TLength>
     struct WideString
     {
-        festd::small_vector<WCHAR, TLength> m_value;
+        festd::small_vector<WCHAR, MAX_PATH> m_value;
 
-        WideString(StringSlice str)
+        WideString(const festd::string_view str)
         {
-            const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), nullptr, 0);
+            const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
             if (length < 0)
                 return;
 
             m_value.resize(length + 1, 0);
-            MultiByteToWideChar(CP_UTF8, 0, str.Data(), str.Size(), m_value.data(), m_value.size());
+            MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), m_value.data(), m_value.size());
         }
 
         [[nodiscard]] const WCHAR* data() const
@@ -32,17 +32,42 @@ namespace FE::Platform
     };
 
 
-    inline constexpr int64_t WindowsTicksPerSecond = 10000000;
-    inline constexpr int64_t WindowsUnixEpochDifference = 11644473600;
-
-
-    inline static TimeValue ConvertWindowsTickToUnixSeconds(int64_t windowsTicks)
+    template<class TString>
+    TString ConvertWideString(const festd::span<const WCHAR> str)
     {
-        return windowsTicks / WindowsTicksPerSecond - WindowsUnixEpochDifference;
+        TString result;
+
+        const int32_t length = WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), nullptr, 0, nullptr, nullptr);
+        if (length < 0)
+            return result;
+
+        result.resize(length, 0);
+        WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), result.data(), result.size(), nullptr, nullptr);
+        return result;
     }
 
 
-    inline static TimeValue ConvertFiletimeToUnixSeconds(FILETIME fileTime)
+    template<class TString>
+    TString ConvertWideString(const WCHAR* str, size_t length = Constants::kMaxValue<size_t>)
+    {
+        if (length == Constants::kMaxValue<size_t>)
+            length = wcslen(str);
+
+        return ConvertWideString<TString>(festd::span(str, static_cast<uint32_t>(length)));
+    }
+
+
+    inline constexpr int64_t kWindowsTicksPerSecond = 10000000;
+    inline constexpr int64_t kWindowsUnixEpochDifference = 11644473600;
+
+
+    inline TimeValue ConvertWindowsTickToUnixSeconds(const int64_t windowsTicks)
+    {
+        return windowsTicks / kWindowsTicksPerSecond - kWindowsUnixEpochDifference;
+    }
+
+
+    inline TimeValue ConvertFiletimeToUnixSeconds(const FILETIME fileTime)
     {
         LARGE_INTEGER ftInt;
         ftInt.HighPart = fileTime.dwHighDateTime;
@@ -51,27 +76,73 @@ namespace FE::Platform
     }
 
 
-    inline static void ConvertDateTimeToSystemTime(SystemTimeInfo dateTime, SYSTEMTIME& result)
+    inline void ConvertDateTimeToSystemTime(const SystemTimeInfo dateTime, SYSTEMTIME& result)
     {
-        result.wYear = dateTime.Year + 1900;
-        result.wMonth = dateTime.Month;
-        result.wDay = dateTime.Day;
-        result.wDayOfWeek = dateTime.DayOfWeek;
-        result.wHour = dateTime.Hour;
-        result.wMinute = dateTime.Minute;
-        result.wSecond = dateTime.Second;
+        result.wYear = static_cast<WORD>(dateTime.Year + 1900);
+        result.wMonth = static_cast<WORD>(dateTime.Month) + 1;
+        result.wDay = static_cast<WORD>(dateTime.Day);
+        result.wDayOfWeek = static_cast<WORD>(dateTime.DayOfWeek);
+        result.wHour = static_cast<WORD>(dateTime.Hour);
+        result.wMinute = static_cast<WORD>(dateTime.Minute);
+        result.wSecond = static_cast<WORD>(dateTime.Second);
         result.wMilliseconds = 0;
     }
 
 
-    inline static void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
+    inline void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
     {
         result.Year = systemTime.wYear - 1900;
-        result.Month = static_cast<int8_t>(systemTime.wMonth);
-        result.Day = static_cast<int8_t>(systemTime.wDay);
-        result.DayOfWeek = static_cast<int8_t>(systemTime.wDayOfWeek);
-        result.Hour = static_cast<int8_t>(systemTime.wHour);
-        result.Minute = static_cast<int8_t>(systemTime.wMinute);
-        result.Second = static_cast<int8_t>(systemTime.wSecond);
+        result.Month = systemTime.wMonth;
+        result.Day = systemTime.wDay;
+        result.DayOfWeek = systemTime.wDayOfWeek;
+        result.Hour = systemTime.wHour;
+        result.Minute = systemTime.wMinute;
+        result.Second = systemTime.wSecond;
+    }
+
+
+    inline IO::FileAttributeFlags ConvertFileAttributeFlags(const DWORD attributes)
+    {
+        if (attributes == INVALID_FILE_ATTRIBUTES)
+            return IO::FileAttributeFlags::kInvalid;
+
+        IO::FileAttributeFlags result = IO::FileAttributeFlags::kNone;
+        if (attributes & FILE_ATTRIBUTE_HIDDEN)
+            result |= IO::FileAttributeFlags::kHidden;
+        if (attributes & FILE_ATTRIBUTE_DIRECTORY)
+            result |= IO::FileAttributeFlags::kDirectory;
+        if (attributes & FILE_ATTRIBUTE_READONLY)
+            result |= IO::FileAttributeFlags::kReadOnly;
+
+        return result;
+    }
+
+
+    inline IO::ResultCode ConvertWin32IOError(const DWORD error)
+    {
+        switch (error)
+        {
+        case ERROR_ALREADY_EXISTS:
+        case ERROR_FILE_EXISTS:
+            return IO::ResultCode::FileExists;
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_PATH_NOT_FOUND:
+            return IO::ResultCode::NoFileOrDirectory;
+        case ERROR_ACCESS_DENIED:
+            return IO::ResultCode::PermissionDenied;
+        case ERROR_SHARING_VIOLATION:
+        case ERROR_INVALID_PARAMETER:
+            return IO::ResultCode::InvalidArgument;
+        case ERROR_FILE_TOO_LARGE:
+            return IO::ResultCode::FileTooLarge;
+        case ERROR_TOO_MANY_OPEN_FILES:
+            return IO::ResultCode::TooManyOpenFiles;
+        case ERROR_SEEK:
+            return IO::ResultCode::InvalidSeek;
+        case ERROR_NOT_SUPPORTED:
+            return IO::ResultCode::NotSupported;
+        default:
+            return IO::ResultCode::UnknownError;
+        }
     }
 } // namespace FE::Platform

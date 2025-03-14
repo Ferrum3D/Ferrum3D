@@ -1,25 +1,25 @@
 ﻿#pragma once
 #include <FeCore/IO/BaseIO.h>
 
-namespace FE::IO::Platform
+namespace FE::Platform
 {
-    FileHandle GetStandardFile(StandardDescriptor descriptor);
+    FileHandle GetStandardFile(IO::StandardDescriptor descriptor);
 
-    ResultCode OpenFile(StringSlice filePath, OpenMode openMode, FileHandle& handle);
+    IO::ResultCode OpenFile(festd::string_view filePath, IO::OpenMode openMode, FileHandle& handle);
 
-    ResultCode GetFileStats(FileHandle fileHandle, FileStats& result);
+    IO::ResultCode GetFileStats(FileHandle fileHandle, IO::FileStats& result);
 
-    FileAttributeFlags GetFileAttributeFlags(StringSlice filePath);
+    IO::FileAttributeFlags GetFileAttributeFlags(festd::string_view filePath);
 
-    bool FileExists(StringSlice filePath);
+    bool FileExists(festd::string_view filePath);
 
     void CloseFile(FileHandle fileHandle);
 
-    ResultCode ReadFile(FileHandle fileHandle, festd::span<std::byte> buffer, uint32_t& bytesRead);
+    IO::ResultCode ReadFile(FileHandle fileHandle, void* buffer, size_t byteSize, size_t& bytesRead);
 
-    ResultCode WriteFile(FileHandle fileHandle, festd::span<const std::byte> buffer, uint32_t& bytesWritten);
+    IO::ResultCode WriteFile(FileHandle fileHandle, const void* buffer, size_t byteSize, size_t& bytesWritten);
 
-    ResultCode SeekFile(FileHandle fileHandle, intptr_t offset, SeekMode seekMode);
+    IO::ResultCode SeekFile(FileHandle fileHandle, intptr_t offset, IO::SeekMode seekMode);
 
-    ResultCode TellFile(FileHandle fileHandle, uintptr_t& position);
-} // namespace FE::IO::Platform
+    IO::ResultCode TellFile(FileHandle fileHandle, uintptr_t& position);
+} // namespace FE::Platform

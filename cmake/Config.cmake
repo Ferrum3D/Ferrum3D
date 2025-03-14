@@ -15,41 +15,18 @@ if (WIN32)
     set(CMAKE_USE_WIN32_THREADS_INIT ON)
 endif()
 
-option(FE_USE_SSE3 "Set this option to use SSE3 instructions in engine" ON)
-option(FE_USE_SSE41 "Set this option to use SSE4.1 instructions in engine" ON)
-
-if (FE_USE_SSE41)
-    if (NOT FE_USE_SSE3)
-        message(WARNING "SSE4.1 instructions are enabled, but SSE3 are not")
-        message(NOTICE "SSE3 instructions will be enabled automatically")
-        set(FE_USE_SSE3 ON)
-    endif()
-else()
-    message(FATAL_ERROR "Builds without SSE4.1 enabled are not supported yet")
-endif()
-
-if (FE_USE_SSE3)
-    add_compile_definitions(FE_SSE3_SUPPORTED=1)
-endif()
-if (FE_USE_SSE41)
-    add_compile_definitions(FE_SSE41_SUPPORTED=1)
-endif()
-
 add_compile_definitions(TRACY_DELAYED_INIT)
 add_compile_definitions(TRACY_MANUAL_LIFETIME)
 
-function(fe_enable_sse_for_target SSE_TARGET)
-    if (FE_USE_SSE41 AND NOT FE_COMPILER_MSVC)
-        target_compile_options(${SSE_TARGET} PUBLIC -msse4.1)
-    endif()
-endfunction()
-
 function(fe_configure_target TARGET)
     if(FE_COMPILER_MSVC)
-        target_compile_options(${TARGET} PRIVATE /EHs-c- /D_HAS_EXCEPTIONS=0 /fp:fast
-            /W4 /WX /wd4324 /wd4201)
+        target_compile_options(${TARGET} PRIVATE
+            /EHs-c- /D_HAS_EXCEPTIONS=0 /fp:fast
+            /Zc:preprocessor /arch:AVX /utf-8
+            /W4 /WX /wd4324 /wd4201 /wd4127 /wd4373
+            $<$<CONFIG:Debug>:/d2Obforceinline>)
     else()
-        target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall -Werror
+        target_compile_options(${TARGET} PRIVATE -fno-exceptions -Wall -Werror -mavx -ffast-math
 			-Wno-deprecated-builtins -Wno-language-extension-token)
     endif()
 endfunction()

@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
 #include <FeCore/Strings/Format.h>
 #include <FeCore/Time/TimeSpan.h>
 
@@ -16,52 +15,52 @@ namespace FE
         class DateTimeBase
         {
         protected:
-            SystemTimeInfo m_Data{};
+            SystemTimeInfo m_data{};
 
             DateTimeBase() = default;
 
-            DateTimeBase(SystemTimeInfo data)
-                : m_Data(data)
+            explicit DateTimeBase(const SystemTimeInfo data)
+                : m_data(data)
             {
             }
 
         public:
             [[nodiscard]] int32_t Year() const
             {
-                return static_cast<int32_t>(m_Data.Year) + 1900;
+                return m_data.Year + 1900;
             }
 
             [[nodiscard]] int32_t Month() const
             {
-                return m_Data.Month;
+                return m_data.Month;
             }
 
             [[nodiscard]] int32_t Day() const
             {
-                return m_Data.Day;
+                return m_data.Day;
             }
 
             [[nodiscard]] int32_t DayOfWeek() const
             {
-                return m_Data.DayOfWeek;
+                return m_data.DayOfWeek;
             }
 
             [[nodiscard]] int32_t Hour() const
             {
-                return m_Data.Hour;
+                return m_data.Hour;
             }
 
             [[nodiscard]] int32_t Minute() const
             {
-                return m_Data.Minute;
+                return m_data.Minute;
             }
 
             [[nodiscard]] int32_t Second() const
             {
-                return m_Data.Second;
+                return m_data.Second;
             }
 
-            [[nodiscard]] FixStr64 ToString(DateTimeFormatKind formatKind) const;
+            [[nodiscard]] festd::basic_fixed_string<64> ToString(DateTimeFormatKind formatKind) const;
         };
     } // namespace Internal
 
@@ -74,8 +73,8 @@ namespace FE
     {
         friend TZ::Convert;
 
-        DateTime(SystemTimeInfo data)
-            : Internal::DateTimeBase(data)
+        explicit DateTime(const SystemTimeInfo data)
+            : DateTimeBase(data)
         {
         }
 
@@ -89,7 +88,7 @@ namespace FE
 
         [[nodiscard]] TimeValue ToUnixTime() const
         {
-            return TTimeZone::ToUnixTime(m_Data);
+            return TTimeZone::ToUnixTime(m_data);
         }
 
         [[nodiscard]] static DateTime FromUnixTime(TimeValue time)
@@ -121,8 +120,10 @@ namespace FE
         {
             return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
         }
-
-        return lhs.ToUnixTime() == rhs.ToUnixTime();
+        else
+        {
+            return lhs.ToUnixTime() == rhs.ToUnixTime();
+        }
     }
 
 
@@ -139,12 +140,12 @@ namespace FE
         {
             UTC() = delete;
 
-            [[nodiscard]] static TimeValue ToUnixTime(SystemTimeInfo dateTime)
+            [[nodiscard]] static TimeValue ToUnixTime(const SystemTimeInfo dateTime)
             {
                 return Platform::ConstructTime(dateTime);
             }
 
-            [[nodiscard]] static SystemTimeInfo FromUnixTime(TimeValue time)
+            [[nodiscard]] static SystemTimeInfo FromUnixTime(const TimeValue time)
             {
                 return Platform::DeconstructTime(time);
             }
@@ -155,17 +156,17 @@ namespace FE
         {
             Local() = delete;
 
-            [[nodiscard]] static TimeValue ToUnixTime(SystemTimeInfo dateTime)
+            [[nodiscard]] static TimeValue ToUnixTime(const SystemTimeInfo dateTime)
             {
                 SystemTimeInfo utc;
-                Platform::ConvertLocalTimeToUTC(dateTime, utc);
+                FE_Verify(Platform::ConvertLocalTimeToUTC(dateTime, utc));
                 return Platform::ConstructTime(utc);
             }
 
-            [[nodiscard]] static SystemTimeInfo FromUnixTime(TimeValue time)
+            [[nodiscard]] static SystemTimeInfo FromUnixTime(const TimeValue time)
             {
                 SystemTimeInfo local;
-                Platform::ConvertUTCToLocalTime(Platform::DeconstructTime(time), local);
+                FE_Verify(Platform::ConvertUTCToLocalTime(Platform::DeconstructTime(time), local));
                 return local;
             }
         };

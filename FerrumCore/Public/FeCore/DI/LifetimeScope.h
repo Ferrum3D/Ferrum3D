@@ -1,32 +1,35 @@
 ﻿#pragma once
+#include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/DI/Registration.h>
 #include <FeCore/DI/Registry.h>
-#include <FeCore/Memory/PoolAllocator.h>
 #include <festd/unordered_map.h>
 
 namespace FE::DI
 {
     struct LifetimeScope final
     {
-        LifetimeScope(std::pmr::memory_resource* pAllocator, ServiceRegistry* pRegistry, IServiceProvider* pRootProvider)
-            : m_table(pAllocator)
-            , m_registry(pRegistry)
+        LifetimeScope(std::pmr::memory_resource* allocator, ServiceRegistry* registry, IServiceProvider* pRootProvider)
+            : m_table(allocator)
+            , m_objectsInActivationOrder(allocator)
+            , m_registry(registry)
             , m_rootProvider(pRootProvider)
         {
-            if (pRegistry->m_rootLifetimeScope == nullptr)
-                pRegistry->m_rootLifetimeScope = this;
+            if (registry->m_rootLifetimeScope == nullptr)
+                registry->m_rootLifetimeScope = this;
         }
 
         ~LifetimeScope();
 
-        ResultCode Resolve(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult);
+        ResultCode Resolve(ServiceRegistration registration, Memory::RefCountedObjectBase** result);
 
     private:
         festd::pmr::segmented_unordered_dense_map<ServiceRegistration, Memory::RefCountedObjectBase*> m_table;
+        SegmentedVector<Memory::RefCountedObjectBase*> m_objectsInActivationOrder;
+
         ServiceRegistry* m_registry;
         IServiceProvider* m_rootProvider;
 
-        ResultCode ActivateImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult);
+        ResultCode ActivateImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult) const;
         ResultCode ResolveImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult);
     };
 } // namespace FE::DI

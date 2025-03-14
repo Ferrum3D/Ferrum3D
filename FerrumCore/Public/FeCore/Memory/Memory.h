@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <FeCore/Memory/NullableHandle.h>
 #include <FeCore/Memory/RefCount.h>
 
 namespace FE
@@ -54,42 +53,43 @@ namespace FE
 
         //! @brief Create a new object of type T using the provided allocator.
         //!
-        //! @param pAllocator - The allocator to use.
-        //! @param args       - The arguments to call the constructor of T with.
+        //! @param pAllocator The allocator to use.
+        //! @param args       The arguments to call the constructor of T with.
         //!
-        //! @tparam T          - The type of the object to allocate.
-        //! @tparam TAllocator - The type of the provided allocator.
+        //! @tparam T           The type of the object to allocate.
+        //! @tparam TAllocator  The type of the provided allocator.
         //!
         //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
         [[nodiscard]] inline T* New(TAllocator* pAllocator, TArgs&&... args)
         {
-            return new (pAllocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
+            return new (pAllocator->allocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
         }
 
 
         //! @brief Create a new object of type T using the default allocator.
         //!
-        //! @param args - The arguments to call the constructor of T with.
+        //! @param args The arguments to call the constructor of T with.
         //!
-        //! @tparam T - The type of the object to allocate.
+        //! @tparam T  The type of the object to allocate.
         //!
         //! @return The allocated object.
         template<class T, class... TArgs>
         [[nodiscard]] inline T* DefaultNew(TArgs&&... args)
         {
-            return new (DefaultAllocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
+            return new (DefaultAllocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
         }
 
 
         //! @brief Delete an object previously created via Memory::New().
         //!
-        //! @param pAllocator - The allocator to use.
-        //! @param pointer    - The pointer to the object to delete previously returned by Memory::New().
-        //! @param byteSize   - The size of the object to delete.
+        //! @param pAllocator    The allocator to use.
+        //! @param pointer       The pointer to the object to delete previously returned by Memory::New().
+        //! @param byteSize      The size of the object to delete.
+        //! @param byteAlignment The alignment that was specified when Memory::New() was called.
         //!
-        //! @tparam T          - The type of the object to delete.
-        //! @tparam TAllocator - The type of the provided allocator.
+        //! @tparam T           The type of the object to delete.
+        //! @tparam TAllocator  The type of the provided allocator.
         template<class T, class TAllocator>
         inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {
@@ -98,36 +98,91 @@ namespace FE
         }
 
 
+        //! @brief A memory resource synchronized using a lock.
+        //!
+        //! @tparam TBase Base memory resource.
+        //! @tparam TLock Type of the lock to use.
         template<class TBase, class TLock>
-        class LockedMemoryResource final : public TBase
+        struct LockedMemoryResource final : public TBase
         {
-            TLock m_lock;
-
-        public:
             using TBase::TBase;
 
-            inline void* do_allocate(size_t byteSize, size_t byteAlignment) override
+            void* do_allocate(const size_t byteSize, const size_t byteAlignment) override
             {
                 std::lock_guard lk{ m_lock };
                 return TBase::do_allocate(byteSize, byteAlignment);
             }
 
-            inline void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override
+            void do_deallocate(void* ptr, const size_t byteSize, const size_t byteAlignment) override
             {
                 std::lock_guard lk{ m_lock };
                 TBase::do_deallocate(ptr, byteSize, byteAlignment);
             }
+
+        private:
+            TLock m_lock;
+        };
+
+
+        struct FixedBlockAllocator final : public std::pmr::memory_resource
+        {
+            FixedBlockAllocator(void* memory, const size_t size)
+                : m_begin(static_cast<std::byte*>(memory))
+                , m_end(m_begin + size)
+            {
+            }
+
+        private:
+            std::byte* m_begin = nullptr;
+            std::byte* m_end = nullptr;
+
+            void* do_allocate(const size_t byteSize, const size_t byteAlignment) override
+            {
+                std::byte* alignedBegin = AlignUpPtr(m_begin, byteAlignment);
+                if (byteSize > static_cast<size_t>(m_end - alignedBegin))
+                    return nullptr;
+
+                void* ptr = alignedBegin;
+                m_begin = alignedBegin + byteSize;
+                return ptr;
+            }
+
+            void do_deallocate(void*, size_t, size_t) override {}
+
+            [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
+            {
+                return this == &other;
+            }
+        };
+
+
+        struct TlsfAllocator final : public std::pmr::memory_resource
+        {
+            TlsfAllocator(void* memory, size_t size);
+            ~TlsfAllocator() override;
+
+        private:
+            void* do_allocate(size_t byteSize, size_t byteAlignment) override;
+            void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override;
+
+            [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
+            {
+                return this == &other;
+            }
+
+            void* m_impl = nullptr;
+            size_t m_size = 0;
+            void* m_ownedMemory = nullptr;
         };
 
 
         //! @brief Delete an object previously created via Memory::DefaultNew().
         //!
-        //! @param pointer  - The pointer to the object to delete previously returned by Memory::DefaultNew().
-        //! @param byteSize - The size of the object to delete.
+        //! @param pointer The pointer to the object to delete previously returned by Memory::DefaultNew().
         //!
-        //! @tparam T - The type of the object to delete.
+        //! @tparam T  The type of the object to delete.
         template<class T>
-        inline void DefaultDelete(T* pointer)
+        void DefaultDelete(T* pointer)
         {
             pointer->~T();
             DefaultFree(pointer);
@@ -185,7 +240,7 @@ namespace FE
             {
             }
 
-            [[nodiscard]] T* allocate(size_t n) const
+            [[nodiscard]] T* allocate(const size_t n) const
             {
                 return static_cast<T*>(DefaultAllocate(n * sizeof(T)));
             }
@@ -218,7 +273,7 @@ namespace FE
         template<class T, class... TArgs>
         [[nodiscard]] unique_ptr<T> make_unique(TArgs&&... args)
         {
-            return unique_ptr<T>(Memory::DefaultNew<T>(std::forward<TArgs>(args)...));
+            return unique_ptr<T>(Memory::DefaultNew<T>(festd::forward<TArgs>(args)...));
         }
     } // namespace festd
 
@@ -231,11 +286,12 @@ namespace FE
     //!
     //! @note To cast a base class to derived, use dynamic_pointer_cast.
     //!
-    //! @param src    - Source pointer.
-    //! @tparam TDest - The type of result pointer.
-    //! @tparam TSrc  - The type of source pointer.
+    //! @param src Source pointer.
     //!
-    //! @return An instance of Rc<TDest> that holds the same object but statically casted.
+    //! @tparam TDest  The type of result pointer.
+    //! @tparam TSrc   The type of source pointer.
+    //!
+    //! @return An instance of Rc<TDest> that holds the same object but statically cast.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
     {
@@ -251,11 +307,12 @@ namespace FE
     //!
     //! @note To cast a derived class to base, use `static_cast`.
     //!
-    //! @param src    - Source pointer.
-    //! @tparam TDest - The type of result pointer.
-    //! @tparam TSrc  - The type of source pointer.
+    //! @param src Source pointer.
     //!
-    //! @return An instance of Rc<TDest> that holds the same object but dynamically casted.
+    //! @tparam TDest  The type of result pointer.
+    //! @tparam TSrc   The type of source pointer.
+    //!
+    //! @return An instance of Rc<TDest> that holds the same object but dynamically cast.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
@@ -269,11 +326,12 @@ namespace FE
     //! The result pointer is then used to create a new Rc<T>.\n
     //! It can be used to cast a base class to derived.
     //!
-    //! @param src    - Source pointer.
-    //! @tparam TDest - The type of result pointer.
-    //! @tparam TSrc  - The type of source pointer.
+    //! @param src Source pointer.
     //!
-    //! @return An instance of Rc<TDest> that holds the same object but dynamically casted.
+    //! @tparam TDest  The type of result pointer.
+    //! @tparam TSrc   The type of source pointer.
+    //!
+    //! @return An instance of Rc<TDest> that holds the same object but dynamically cast.
     template<class TDest, class TSrc>
     [[nodiscard]] inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {

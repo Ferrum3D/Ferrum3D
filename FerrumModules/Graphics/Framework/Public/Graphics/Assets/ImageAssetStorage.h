@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Assets/AssetStorage.h>
-#include <Graphics/RHI/Image.h>
-#include <Graphics/RHI/ImageView.h>
+#include <Graphics/Core/Image.h>
 
 namespace FE::Graphics
 {
@@ -25,16 +24,10 @@ namespace FE::Graphics
             return m_loadingState.load(std::memory_order_acquire) == LoadingState::kCompleted;
         }
 
-        [[nodiscard]] inline RHI::Image* GetImage() const
+        [[nodiscard]] inline Core::Image* GetImage() const
         {
             std::lock_guard lk{ m_mutex };
             return m_image.Get();
-        }
-
-        [[nodiscard]] inline RHI::ImageView* GetImageView() const
-        {
-            std::lock_guard lk{ m_mutex };
-            return m_imageView.Get();
         }
 
     private:
@@ -48,8 +41,7 @@ namespace FE::Graphics
             kCompleted,
         };
 
-        Rc<RHI::Image> m_image;
-        Rc<RHI::ImageView> m_imageView;
+        Rc<Core::Image> m_image;
         std::atomic<LoadingState> m_loadingState = LoadingState::kNone;
         std::atomic<uint32_t> m_loadedMipCount = 0;
 

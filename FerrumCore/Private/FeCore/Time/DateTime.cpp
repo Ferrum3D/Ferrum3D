@@ -2,54 +2,48 @@
 
 namespace FE::Internal
 {
-    inline constexpr StringSlice DayNames[] = {
-        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-    };
-
-
-    inline constexpr StringSlice DayNamesShort[] = {
-        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-    };
-
-
-    inline constexpr StringSlice MonthNames[] = {
-        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
-    };
-
-
-    inline constexpr StringSlice MonthNamesShort[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    };
-
-
-    inline static TChar* StrToDecimal(TChar* str, uint32_t value, int32_t minLength)
+    namespace
     {
-        TChar* begin = str;
-        do
+        constexpr festd::string_view kDayNames[] = {
+            "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+        };
+
+
+        constexpr festd::string_view kMonthNames[] = {
+            "January", "February", "March",     "April",   "May",      "June",
+            "July",    "August",   "September", "October", "November", "December",
+        };
+
+
+        char* StrToDecimal(char* str, uint32_t value, int32_t minLength)
         {
-            const uint64_t digit = value % 10;
-            value /= 10;
+            char* begin = str;
+            do
+            {
+                const uint64_t digit = value % 10;
+                value /= 10;
 
-            *str++ = '0' + static_cast<TChar>(digit);
-            --minLength;
+                *str++ = static_cast<char>('0' + digit);
+                --minLength;
+            }
+            while (value || minLength > 0);
+
+            char* end = str;
+            *str-- = 0;
+
+            while (begin < str)
+            {
+                const char temp = *str;
+                *str-- = *begin;
+                *begin++ = temp;
+            }
+
+            return end;
         }
-        while (value || minLength > 0);
-
-        TChar* end = str;
-        *str-- = 0;
-
-        while (begin < str)
-        {
-            const TChar temp = *str;
-            *str-- = *begin;
-            *begin++ = temp;
-        }
-
-        return end;
-    }
+    } // namespace
 
 
-    FixStr64 DateTimeBase::ToString(DateTimeFormatKind formatKind) const
+    festd::basic_fixed_string<64> DateTimeBase::ToString(const DateTimeFormatKind formatKind) const
     {
         char result[64];
         result[0] = 0;
@@ -83,14 +77,14 @@ namespace FE::Internal
         case DateTimeFormatKind::kLong:
             iter = Str::Copy(iter,
                              static_cast<uint32_t>(sizeof(result) - (iter - result)),
-                             DayNames[DayOfWeek()].Data(),
-                             DayNames[DayOfWeek()].Size());
+                             kDayNames[DayOfWeek()].data(),
+                             kDayNames[DayOfWeek()].size());
             *iter++ = ',';
             *iter++ = ' ';
             iter = Str::Copy(iter,
                              static_cast<uint32_t>(sizeof(result) - (iter - result)),
-                             MonthNames[Month()].Data(),
-                             MonthNames[Month()].Size());
+                             kMonthNames[Month()].data(),
+                             kMonthNames[Month()].size());
             *iter++ = ' ';
             iter = StrToDecimal(iter, Day(), -1);
             *iter++ = ',';

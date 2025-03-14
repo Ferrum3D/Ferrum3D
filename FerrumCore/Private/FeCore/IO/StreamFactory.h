@@ -11,12 +11,14 @@ namespace FE::IO
 
         explicit FileStreamFactory(Env::Configuration* pConfig);
 
-        festd::expected<Rc<IStream>, ResultCode> OpenFileStream(StringSlice filename, OpenMode openMode) override;
-        bool FileExists(StringSlice filename) override;
-        FileAttributeFlags GetFileAttributeFlags(StringSlice filename) override;
+        festd::expected<Rc<IStream>, ResultCode> OpenFileStream(festd::string_view filename, OpenMode openMode) override;
+        festd::expected<Rc<IStream>, ResultCode> OpenUnbufferedFileStream(festd::string_view filename,
+                                                                          OpenMode openMode) override;
+        bool FileExists(festd::string_view filename) override;
+        FileAttributeFlags GetFileAttributeFlags(festd::string_view filename) override;
 
     private:
-        FixedPath m_parentDirectory;
+        Path m_parentDirectory;
         Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock> m_fileStreamPool;
     };
 } // namespace FE::IO

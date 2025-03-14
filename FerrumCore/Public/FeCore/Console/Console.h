@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/StringSlice.h>
+#include <festd/string.h>
 
 namespace FE::Console
 {
@@ -33,6 +33,6 @@ namespace FE::Console
     void Init();
 
     void SetTextColor(Color color);
-    void Write(StringSlice text);
+    void Write(festd::string_view text);
     void Flush();
 } // namespace FE::Console

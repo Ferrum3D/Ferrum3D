@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Parallel/SpinLock.h>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE::Assets
 {
@@ -18,7 +18,7 @@ namespace FE::Assets
 
         //! @brief Construct an instance of AssetStorage with a loader.
         //!
-        //! @param loader - Loader that will be used to load the asset data.
+        //! @param loader Loader that will be used to load the asset data.
         explicit AssetStorage(IAssetLoader* loader, std::pmr::memory_resource* allocator = nullptr) noexcept
             : m_allocator(allocator)
             , m_loader(loader)

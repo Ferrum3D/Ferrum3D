@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
-#include <FeCore/Utils/UUID.h>
+#include <FeCore/Base/Hash.h>
+#include <FeCore/Math/UUID.h>
+#include <festd/base.h>
+#include <type_traits>
 
 namespace FE
 {
@@ -27,6 +29,10 @@ namespace FE
     inline static ::FE::festd::ascii_view FeRTTI_GetSName()                                                                      \
     {                                                                                                                            \
         return ::FE::TypeName<name>;                                                                                             \
+    }                                                                                                                            \
+                                                                                                                                 \
+    struct FeRTTI_BaseDummyStruct##name                                                                                          \
+    {                                                                                                                            \
     }
 
     //! @brief Add RTTI functions to a class.
@@ -63,16 +69,21 @@ namespace FE
     {                                                                                                                            \
         return FeRTTI_IS_TYPE::FeRTTI_GetSID() == FeRTTI_GetID();                                                                \
     }                                                                                                                            \
-    FE_POP_CLANG_WARNING()
+    FE_POP_CLANG_WARNING()                                                                                                       \
+                                                                                                                                 \
+    struct FeRTTI_DummyStruct##name                                                                                              \
+    {                                                                                                                            \
+    }
 
     //! @brief Cast a pointer to a base class to a derived class pointer if possible.
     //!
     //! Works just like normal `dynamic_cast<T*>`, except it only works with the classes that provide Ferrum3D RTTI
     //! via FE_RTTI_Class macro.
     //!
-    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! @param src      - The source value.
+    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //!
+    //! @param src The source value.
     //!
     //! @return The result pointer if destination type was derived from source type, `nullptr` otherwise.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
@@ -84,23 +95,24 @@ namespace FE
         return nullptr;
     }
 
-    //! @brief Assert that a variable can be dynamically casted to another type.
+    //! @brief Assert that a variable can be dynamically cast to another type.
     //!
-    //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be casted and won't return
+    //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be cast and won't return
     //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
     //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behavior.
     //!
     //! @note The function only works with the classes that provide Ferrum3D RTTI via FE_RTTI_Class macro.
     //!
-    //! @tparam TDstPtr - Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc    - Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //! @param src      - The source value.
+    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
+    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
+    //!
+    //! @param src The source value.
     //!
     //! @return The result pointer if destination type was derived from source type.
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_assert_cast(TSrc* src)
     {
-        FE_CORE_ASSERT(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
+        FE_CoreAssert(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
         return static_cast<TDstPtr>(src);
     }
 
@@ -121,7 +133,7 @@ namespace FE
     //!
     //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! @tparam T - Type to get name of.
+    //! @tparam T  Type to get name of.
     //!
     //! @return Short name of type T.
     template<class T>
@@ -132,7 +144,7 @@ namespace FE
 
     //! @brief Get name of a type.
     //!
-    //! This functions is same as fe_nameof(), but can return name of derived class if called from a base class.\n
+    //! This function is same as fe_nameof(), but can return name of derived class if called from a base class.\n
     //! Returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
     //! Example:
     //! \code{.cpp}
@@ -154,7 +166,7 @@ namespace FE
     //!
     //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
     //!
-    //! @tparam T - Type to get name of.
+    //! @tparam T  Type to get name of.
     //!
     //! @return Short name of type T.
     //!

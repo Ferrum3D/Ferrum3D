@@ -3,61 +3,67 @@
 
 namespace FE::DI
 {
-    ResultCode LifetimeScope::ActivateImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
+    ResultCode LifetimeScope::ActivateImpl(const ServiceRegistration registration, Memory::RefCountedObjectBase** result) const
     {
-        return m_registry->GetActivator(registration.GetIndex())->Invoke(m_rootProvider, ppResult);
+        return m_registry->GetActivator(registration.GetIndex())->Invoke(m_rootProvider, result);
     }
 
 
-    ResultCode LifetimeScope::ResolveImpl(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
+    ResultCode LifetimeScope::ResolveImpl(const ServiceRegistration registration, Memory::RefCountedObjectBase** result)
     {
         auto iter = m_table.find(registration);
         if (iter != m_table.end())
         {
-            *ppResult = iter->second;
+            *result = iter->second;
             return ResultCode::kSuccess;
         }
 
-        const ResultCode activationResult = ActivateImpl(registration, ppResult);
+        const ResultCode activationResult = ActivateImpl(registration, result);
         if (activationResult != ResultCode::kSuccess)
         {
-            *ppResult = nullptr;
+            *result = nullptr;
             return activationResult;
         }
 
         if (registration.GetLifetime() != Lifetime::kTransient)
         {
             // We don't want to hold references to transient objects.
-            (*ppResult)->AddRef();
+            (*result)->AddRef();
         }
 
-        m_table[registration] = *ppResult;
+        m_table[registration] = *result;
+        m_objectsInActivationOrder.push_back(*result);
         return ResultCode::kSuccess;
     }
 
 
     LifetimeScope::~LifetimeScope()
     {
-        for (auto& [registration, pObject] : m_table)
+        for (auto iter = m_objectsInActivationOrder.rbegin(); iter != m_objectsInActivationOrder.rend(); ++iter)
         {
-            pObject->Release();
+            auto* object = *iter;
+            object->Release();
         }
 
         m_table.clear();
+        m_objectsInActivationOrder.clear();
     }
 
 
-    ResultCode LifetimeScope::Resolve(ServiceRegistration registration, Memory::RefCountedObjectBase** ppResult)
+    ResultCode LifetimeScope::Resolve(const ServiceRegistration registration, Memory::RefCountedObjectBase** result)
     {
+        FE_PROFILER_ZONE();
+
         switch (registration.GetLifetime())
         {
         case Lifetime::kTransient:
-            return ActivateImpl(registration, ppResult);
+            return ActivateImpl(registration, result);
         case Lifetime::kSingleton:
-            return ResolveImpl(registration, ppResult);
+            return ResolveImpl(registration, result);
         case Lifetime::kThread:
+        case Lifetime::kCount:
         default:
-            *ppResult = nullptr;
+            *result = nullptr;
             return ResultCode::kInvalidOperation;
         }
     }

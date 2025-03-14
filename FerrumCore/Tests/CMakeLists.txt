@@ -4,7 +4,8 @@
     Containers/BitSet.cpp
     Containers/LRUCacheMap.cpp
     Containers/SegmentedVector.cpp
-    Containers/SparseSet.cpp
+
+    IO/Path.cpp
 
     Math/Matrix4x4.cpp
     Math/Vector3.cpp
@@ -27,9 +28,11 @@
 
 add_executable(FeCoreTests ${SRC})
 
+fe_configure_target(FeCoreTests)
+
 target_include_directories(FeCoreTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-set_target_properties(FeCoreTests PROPERTIES FOLDER "Engine/FeCore")
+set_target_properties(FeCoreTests PROPERTIES FOLDER "Core")
 target_link_libraries(FeCoreTests gtest gmock FeCore)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCoreTests PROPERTY SOURCES)

@@ -17,12 +17,12 @@ namespace FE::DI
             return static_cast<Lifetime>(m_lifetime);
         }
 
-        void SetLifetime(Lifetime lifetime)
+        void SetLifetime(const Lifetime lifetime)
         {
             m_lifetime = festd::to_underlying(lifetime);
         }
 
-        void SetConstant(bool value)
+        void SetConstant(const bool value)
         {
             m_constant = value;
         }
@@ -32,7 +32,7 @@ namespace FE::DI
             return m_constant;
         }
 
-        void SetFunction(bool value)
+        void SetFunction(const bool value)
         {
             m_function = value;
         }
@@ -63,13 +63,13 @@ namespace FE::DI
         uint32_t m_constant : 1;
         uint32_t m_function : 1;
 
-        ServiceRegistration(uint32_t index)
+        ServiceRegistration(const uint32_t index)
             : m_index(index)
             , m_lifetime(0)
             , m_constant(false)
             , m_function(false)
         {
-            FE_CORE_ASSERT(index < (1 << 28), "Too many services in one registry");
+            FE_Assert(index < (1 << 28), "Too many services in one registry");
         }
     };
 
@@ -79,7 +79,7 @@ namespace FE::DI
 template<>
 struct eastl::hash<FE::DI::ServiceRegistration>
 {
-    uint64_t operator()(FE::DI::ServiceRegistration value) const
+    uint64_t operator()(const FE::DI::ServiceRegistration value) const
     {
         return FE::DefaultHash(&value, sizeof(value));
     }

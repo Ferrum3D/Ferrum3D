@@ -1,2 +1,2 @@
-﻿add_subdirectory(RHI)
+﻿add_subdirectory(Core)
 add_subdirectory(Framework)

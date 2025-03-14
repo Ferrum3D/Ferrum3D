@@ -1,31 +1,32 @@
 ﻿#include <FeCore/Assets/Asset.h>
-#include <FeCore/Framework/ApplicationModule.h>
+#include <FeCore/Modules/ApplicationModule.h>
 #include <FeCore/Math/Colors.h>
 #include <FeCore/Math/Matrix4x4F.h>
 #include <Graphics/Assets/ImageAssetStorage.h>
 #include <Graphics/Assets/MeshAssetStorage.h>
 #include <Graphics/Assets/ShaderAssetStorage.h>
 #include <Graphics/Module.h>
-#include <Graphics/RHI/Buffer.h>
-#include <Graphics/RHI/CommandList.h>
-#include <Graphics/RHI/CommandQueue.h>
-#include <Graphics/RHI/Device.h>
-#include <Graphics/RHI/DeviceFactory.h>
-#include <Graphics/RHI/Fence.h>
-#include <Graphics/RHI/Framebuffer.h>
-#include <Graphics/RHI/GraphicsPipeline.h>
-#include <Graphics/RHI/IWindow.h>
-#include <Graphics/RHI/ImageView.h>
-#include <Graphics/RHI/InputLayoutBuilder.h>
-#include <Graphics/RHI/Module.h>
-#include <Graphics/RHI/RenderPass.h>
-#include <Graphics/RHI/ResourcePool.h>
-#include <Graphics/RHI/Sampler.h>
-#include <Graphics/RHI/ShaderCompiler.h>
-#include <Graphics/RHI/ShaderModule.h>
-#include <Graphics/RHI/ShaderReflection.h>
-#include <Graphics/RHI/ShaderResourceGroup.h>
-#include <Graphics/RHI/Swapchain.h>
+#include <Graphics/Core/Buffer.h>
+#include <Graphics/Core/CommandList.h>
+#include <Graphics/Core/CommandQueue.h>
+#include <Graphics/Core/Device.h>
+#include <Graphics/Core/DeviceFactory.h>
+#include <Graphics/Core/Fence.h>
+#include <Graphics/Core/Framebuffer.h>
+#include <Graphics/Core/GraphicsPipeline.h>
+#include <Graphics/Core/IWindow.h>
+#include <Graphics/Core/ImageView.h>
+#include <Graphics/Core/InputLayoutBuilder.h>
+#include <Graphics/Core/Module.h>
+#include <Graphics/Core/PipelineFactory.h>
+#include <Graphics/Core/RenderPass.h>
+#include <Graphics/Core/ResourcePool.h>
+#include <Graphics/Core/Sampler.h>
+#include <Graphics/Core/ShaderCompiler.h>
+#include <Graphics/Core/ShaderModule.h>
+#include <Graphics/Core/ShaderReflection.h>
+#include <Graphics/Core/ShaderResourceGroup.h>
+#include <Graphics/Core/Swapchain.h>
 
 using namespace FE;
 using namespace FE::Graphics;
@@ -55,36 +56,37 @@ struct ExampleApplication final : public ApplicationModule
         DI::IServiceProvider* pServiceProvider = Env::GetServiceProvider();
         const Rc assetManager = pServiceProvider->ResolveRequired<Assets::IAssetManager>();
 
-        m_factory = pServiceProvider->ResolveRequired<RHI::DeviceFactory>();
-        m_device = pServiceProvider->ResolveRequired<RHI::Device>();
+        m_factory = pServiceProvider->ResolveRequired<Core::DeviceFactory>();
+        m_device = pServiceProvider->ResolveRequired<Core::Device>();
 
-        const RHI::AdapterInfo adapterInfo = m_factory->EnumerateAdapters()[0];
+        const Core::AdapterInfo adapterInfo = m_factory->EnumerateAdapters()[0];
         m_factory->CreateDevice(adapterInfo.m_name);
 
-        m_graphicsQueue = m_device->GetCommandQueue(RHI::HardwareQueueKindFlags::kGraphics);
-        m_transferQueue = m_device->GetCommandQueue(RHI::HardwareQueueKindFlags::kTransfer);
+        m_graphicsQueue = m_device->GetCommandQueue(Core::HardwareQueueKindFlags::kGraphics);
+        m_transferQueue = m_device->GetCommandQueue(Core::HardwareQueueKindFlags::kTransfer);
 
-        const Rc resourcePool = pServiceProvider->ResolveRequired<RHI::ResourcePool>();
+        const Rc resourcePool = pServiceProvider->ResolveRequired<Core::ResourcePool>();
+        const Rc pipelineFactory = pServiceProvider->ResolveRequired<Core::PipelineFactory>();
 
-        m_window = pServiceProvider->ResolveRequired<RHI::IWindow>();
-        m_window->Init(RHI::WindowDesc{ 800, 600, kExampleName });
+        m_window = pServiceProvider->ResolveRequired<Core::IWindow>();
+        m_window->Init(Core::WindowDesc{ 800, 600, kExampleName });
         m_viewport = m_window->CreateViewport();
         m_scissor = m_window->CreateScissor();
 
-        RHI::SwapchainDesc swapchainDesc{};
+        Core::SwapchainDesc swapchainDesc{};
         swapchainDesc.m_frameCount = 2;
         swapchainDesc.m_imageWidth = m_scissor.Width();
         swapchainDesc.m_imageHeight = m_scissor.Height();
         swapchainDesc.m_nativeWindowHandle = m_window->GetNativeHandle();
         swapchainDesc.m_queue = m_graphicsQueue.Get();
         swapchainDesc.m_verticalSync = true;
-        m_swapChain = pServiceProvider->ResolveRequired<RHI::Swapchain>();
+        m_swapChain = pServiceProvider->ResolveRequired<Core::Swapchain>();
         m_swapChain->Init(swapchainDesc);
 
         m_meshAsset = Asset<MeshAssetStorage>::LoadSynchronously(assetManager.Get(), "Models/cube");
         m_textureAsset = Asset<ImageAssetStorage>::LoadSynchronously(assetManager.Get(), "Textures/image");
-        m_textureSampler = pServiceProvider->ResolveRequired<RHI::Sampler>();
-        m_textureSampler->Init(RHI::SamplerDesc{});
+        m_textureSampler = pServiceProvider->ResolveRequired<Core::Sampler>();
+        m_textureSampler->Init(Core::SamplerDesc{});
 
         {
             const float imageWidth = static_cast<float>(m_swapChain->GetDesc().m_imageWidth);
@@ -92,14 +94,14 @@ struct ExampleApplication final : public ApplicationModule
             const float aspectRatio = imageWidth / imageHeight;
 
             auto constantData = Matrix4x4F::Identity();
-            constantData = constantData * Matrix4x4F::Projection(Math::Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
-            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI);
+            constantData = constantData * Matrix4x4F::Projection(Constants::PI * 0.5, aspectRatio, 0.1f, 10.0f);
+            constantData = constantData * Matrix4x4F::RotationY(Constants::PI);
             constantData = constantData * Matrix4x4F::RotationX(-0.5f);
             constantData = constantData * Matrix4x4F::Translation(Vector3F(0.0f, 0.8f, -1.5f) * 2);
-            constantData = constantData * Matrix4x4F::RotationY(Math::Constants::PI * -1.3f);
+            constantData = constantData * Matrix4x4F::RotationY(Constants::PI * -1.3f);
 
             const auto constantBufferDesc =
-                RHI::BufferDesc(sizeof(constantData), RHI::BindFlags::kConstantBuffer, RHI::ResourceUsage::kHostWriteThrough);
+                Core::BufferDesc(sizeof(constantData), Core::BindFlags::kConstantBuffer, Core::ResourceUsage::kHostWriteThrough);
             m_constantBuffer = resourcePool->CreateBuffer("Constant Buffer", constantBufferDesc).value();
             m_constantBuffer->UpdateData(constantData.RowMajorData());
         }
@@ -107,63 +109,61 @@ struct ExampleApplication final : public ApplicationModule
         m_vertexShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(assetManager.Get(), "Shaders/Shader.vs");
         m_pixelShaderAsset = Asset<ShaderAssetStorage>::LoadSynchronously(assetManager.Get(), "Shaders/Shader.ps");
 
-        RHI::RenderPassDesc renderPassDesc{};
+        Core::RenderPassDesc renderPassDesc{};
 
-        RHI::AttachmentDesc attachmentDesc{};
+        Core::AttachmentDesc attachmentDesc{};
         attachmentDesc.m_format = m_swapChain->GetDesc().m_format;
-        attachmentDesc.m_initialState = RHI::ResourceState::kUndefined;
-        attachmentDesc.m_finalState = RHI::ResourceState::kPresent;
+        attachmentDesc.m_initialState = Core::ResourceState::kUndefined;
+        attachmentDesc.m_finalState = Core::ResourceState::kPresent;
 
-        RHI::AttachmentDesc depthAttachmentDesc{};
+        Core::AttachmentDesc depthAttachmentDesc{};
         depthAttachmentDesc.m_format = m_swapChain->GetDSV()->GetDesc().m_format;
-        depthAttachmentDesc.m_storeOp = RHI::AttachmentStoreOp::kStore;
-        depthAttachmentDesc.m_loadOp = RHI::AttachmentLoadOp::kClear;
-        depthAttachmentDesc.m_initialState = RHI::ResourceState::kUndefined;
-        depthAttachmentDesc.m_finalState = RHI::ResourceState::kDepthWrite;
+        depthAttachmentDesc.m_storeOp = Core::AttachmentStoreOp::kStore;
+        depthAttachmentDesc.m_loadOp = Core::AttachmentLoadOp::kClear;
+        depthAttachmentDesc.m_initialState = Core::ResourceState::kUndefined;
+        depthAttachmentDesc.m_finalState = Core::ResourceState::kDepthWrite;
 
         const std::array attachments{ attachmentDesc, depthAttachmentDesc };
         renderPassDesc.m_attachments = attachments;
 
-        RHI::SubpassDesc subpassDesc{};
-        const RHI::SubpassAttachment renderTargetAttachment{ RHI::ResourceState::kRenderTarget, 0 };
+        Core::SubpassDesc subpassDesc{};
+        const Core::SubpassAttachment renderTargetAttachment{ Core::ResourceState::kRenderTarget, 0 };
         subpassDesc.m_renderTargetAttachments = festd::span{ &renderTargetAttachment, 1 };
-        subpassDesc.m_depthStencilAttachment = RHI::SubpassAttachment{ RHI::ResourceState::kDepthWrite, 1 };
+        subpassDesc.m_depthStencilAttachment = Core::SubpassAttachment{ Core::ResourceState::kDepthWrite, 1 };
         renderPassDesc.m_subpasses = festd::span(&subpassDesc, 1);
-        RHI::SubpassDependency dependency{};
+        Core::SubpassDependency dependency{};
         renderPassDesc.m_subpassDependencies = festd::span(&dependency, 1);
 
-        m_renderPass = pServiceProvider->ResolveRequired<RHI::RenderPass>();
+        m_renderPass = pServiceProvider->ResolveRequired<Core::RenderPass>();
         m_renderPass->Init(renderPassDesc);
 
-        RHI::ShaderModule* psModule = m_pixelShaderAsset->GetShaderModule();
-        RHI::ShaderModule* vsModule = m_vertexShaderAsset->GetShaderModule();
-        const RHI::ShaderReflection* psReflection = psModule->GetReflection();
-        const RHI::ShaderReflection* vsReflection = vsModule->GetReflection();
+        Core::ShaderModule* psModule = m_pixelShaderAsset->GetShaderModule();
+        Core::ShaderModule* vsModule = m_vertexShaderAsset->GetShaderModule();
+        const Core::ShaderReflection* psReflection = psModule->GetReflection();
+        const Core::ShaderReflection* vsReflection = vsModule->GetReflection();
 
-        m_srg = pServiceProvider->ResolveRequired<RHI::ShaderResourceGroup>();
+        m_srg = pServiceProvider->ResolveRequired<Core::ShaderResourceGroup>();
 
         const std::array shadersReflection{ psReflection, vsReflection };
         m_srg->Init({ shadersReflection });
 
-        RHI::ShaderResourceGroupData srgData{};
+        Core::ShaderResourceGroupData srgData{};
         srgData.Set(psReflection->GetResourceBindingIndex("g_Sampler"), m_textureSampler.Get());
         srgData.Set(psReflection->GetResourceBindingIndex("g_Texture"), m_textureAsset->GetImageView());
         srgData.Set(vsReflection->GetResourceBindingIndex("Settings"), m_constantBuffer.Get());
         m_srg->Update(srgData);
 
-        RHI::GraphicsPipelineDesc pipelineDesc{};
-        pipelineDesc.m_inputLayout = RHI::InputLayoutBuilder(RHI::PrimitiveTopology::kTriangleList)
-                                         .AddBuffer(RHI::InputStreamRate::kPerVertex)
-                                         .AddAttribute(RHI::Format::kR32G32B32_SFLOAT, "POSITION")
-                                         .AddAttribute(RHI::Format::kR32G32_SFLOAT, "TEXCOORD")
+        Core::GraphicsPipelineDesc pipelineDesc{};
+        pipelineDesc.m_inputLayout = Core::InputLayoutBuilder(Core::PrimitiveTopology::kTriangleList)
+                                         .AddBuffer(Core::InputStreamRate::kPerVertex)
+                                         .AddAttribute(Core::Format::kR32G32B32_SFLOAT, "POSITION")
+                                         .AddAttribute(Core::Format::kR32G32_SFLOAT, "TEXCOORD")
                                          .Build()
                                          .Build();
 
         pipelineDesc.m_renderPass = m_renderPass.Get();
         pipelineDesc.m_subpassIndex = 0;
-
-        const std::array colorBlendStates{ RHI::TargetColorBlending{} };
-        pipelineDesc.m_colorBlend = RHI::ColorBlendState(colorBlendStates);
+        pipelineDesc.m_colorBlend.m_targetBlendStates[0] = Core::TargetColorBlending::kDisabled;
 
         const std::array shaders{ psModule, vsModule };
         pipelineDesc.m_shaders = festd::span(shaders);
@@ -172,18 +172,12 @@ struct ExampleApplication final : public ApplicationModule
         pipelineDesc.m_shaderResourceGroups = srgs;
         pipelineDesc.m_viewport = m_viewport;
         pipelineDesc.m_scissor = m_scissor;
-        pipelineDesc.m_rasterization = RHI::RasterizationState{};
+        pipelineDesc.m_rasterization = Core::RasterizationState::kDefaultBackCull;
+        pipelineDesc.m_depthStencil = Core::DepthStencilState::kEnabled;
 
-        pipelineDesc.m_depthStencil.m_depthWriteEnabled = true;
-        pipelineDesc.m_depthStencil.m_depthTestEnabled = true;
-        pipelineDesc.m_depthStencil.m_depthCompareOp = RHI::CompareOp::kLess;
+        m_pipeline = pipelineFactory->CreateGraphicsPipeline("GraphicsPSO", pipelineDesc).value();
 
-        pipelineDesc.m_rasterization.m_cullMode = RHI::CullingModeFlags::kBack;
-
-        m_pipeline = pServiceProvider->ResolveRequired<RHI::GraphicsPipeline>();
-        m_pipeline->Init(pipelineDesc);
-
-        m_fence = pServiceProvider->ResolveRequired<RHI::Fence>();
+        m_fence = pServiceProvider->ResolveRequired<Core::Fence>();
         m_fence->Init();
         m_fenceValue = 0;
 
@@ -196,23 +190,23 @@ struct ExampleApplication final : public ApplicationModule
 
         for (uint32_t i = 0; i < m_swapChain->GetImageCount(); ++i)
         {
-            RHI::FramebufferDesc framebufferDesc{};
+            Core::FramebufferDesc framebufferDesc{};
             framebufferDesc.m_renderPass = m_renderPass.Get();
             const auto views = eastl::vector{ m_rTVs[i], m_swapChain->GetDSV() };
             framebufferDesc.m_renderTargetViews = views;
             framebufferDesc.m_width = m_scissor.Width();
             framebufferDesc.m_height = m_scissor.Height();
 
-            const Rc framebuffer = pServiceProvider->ResolveRequired<RHI::Framebuffer>();
+            const Rc framebuffer = pServiceProvider->ResolveRequired<Core::Framebuffer>();
             framebuffer->Init(framebufferDesc);
             m_framebuffers.push_back(framebuffer);
 
-            const Rc cmd = pServiceProvider->ResolveRequired<RHI::CommandList>();
-            cmd->Init({ RHI::HardwareQueueKindFlags::kGraphics, RHI::CommandListFlags::kNone });
+            const Rc cmd = pServiceProvider->ResolveRequired<Core::CommandList>();
+            cmd->Init({ Core::HardwareQueueKindFlags::kGraphics, Core::CommandListFlags::kNone });
             m_commandLists.push_back(cmd);
 
-            const std::array clearValues{ RHI::ClearValueDesc::CreateColorValue(Colors::kMediumAquamarine),
-                                          RHI::ClearValueDesc::CreateDepthStencilValue() };
+            const std::array clearValues{ Core::ClearValueDesc::CreateColorValue(Colors::kMediumAquamarine),
+                                          Core::ClearValueDesc::CreateDepthStencilValue() };
 
             cmd->Begin();
             cmd->BindGraphicsPipeline(m_pipeline.Get());
@@ -239,13 +233,13 @@ private:
         return m_window->CloseRequested();
     }
 
-    void Tick(const FrameEventArgs& frameEventArgs) override
+    void Tick(const float deltaTimte) override
     {
         m_window->PollEvents();
         if (m_window->CloseRequested())
             return;
 
-        const uint32_t frameIndex = frameEventArgs.m_frameIndex % m_fenceValues.size();
+        const uint32_t frameIndex = m_frameIndex % m_fenceValues.size();
         m_fence->Wait(m_fenceValues[frameIndex]);
         m_swapChain->BeginFrame({ m_fence, ++m_fenceValue });
 
@@ -257,40 +251,40 @@ private:
         m_swapChain->Present({ m_fence, m_fenceValue });
     }
 
-    ModuleDependency<RHI::GraphicsRHIModule> m_rhiModule;
+    ModuleDependency<Core::GraphicsCoreModule> m_rhiModule;
     ModuleDependency<GraphicsModule> m_graphicsModule;
 
-    Rc<RHI::DeviceFactory> m_factory;
-    Rc<RHI::Device> m_device;
+    Rc<Core::DeviceFactory> m_factory;
+    Rc<Core::Device> m_device;
 
-    Rc<RHI::Fence> m_fence;
+    Rc<Core::Fence> m_fence;
     uint64_t m_fenceValue = 0;
     festd::vector<uint64_t> m_fenceValues;
 
-    festd::vector<Rc<RHI::Framebuffer>> m_framebuffers;
-    festd::vector<Rc<RHI::CommandList>> m_commandLists;
-    Rc<RHI::CommandQueue> m_graphicsQueue;
-    Rc<RHI::CommandQueue> m_transferQueue;
+    festd::vector<Rc<Core::Framebuffer>> m_framebuffers;
+    festd::vector<Rc<Core::CommandList>> m_commandLists;
+    Rc<Core::CommandQueue> m_graphicsQueue;
+    Rc<Core::CommandQueue> m_transferQueue;
 
-    Rc<RHI::RenderPass> m_renderPass;
-    Rc<RHI::Swapchain> m_swapChain;
-    Rc<RHI::GraphicsPipeline> m_pipeline;
-    festd::vector<RHI::ImageView*> m_rTVs;
+    Rc<Core::RenderPass> m_renderPass;
+    Rc<Core::Swapchain> m_swapChain;
+    Rc<Core::GraphicsPipeline> m_pipeline;
+    festd::vector<Core::ImageView*> m_rTVs;
 
-    Rc<RHI::ShaderResourceGroup> m_srg;
+    Rc<Core::ShaderResourceGroup> m_srg;
 
     Asset<ShaderAssetStorage> m_pixelShaderAsset;
     Asset<ShaderAssetStorage> m_vertexShaderAsset;
 
-    Rc<RHI::Buffer> m_constantBuffer;
+    Rc<Core::Buffer> m_constantBuffer;
 
     Asset<MeshAssetStorage> m_meshAsset;
     Asset<ImageAssetStorage> m_textureAsset;
-    Rc<RHI::Sampler> m_textureSampler;
+    Rc<Core::Sampler> m_textureSampler;
 
-    Rc<RHI::IWindow> m_window;
-    RHI::Viewport m_viewport;
-    RHI::Scissor m_scissor;
+    Rc<Core::IWindow> m_window;
+    Core::Viewport m_viewport;
+    Core::Scissor m_scissor;
 };
 
 int main(int argc, const char** argv)

@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <FeCore/Base/Assert.h>
+#include <FeCore/Base/BaseTypes.h>
 #include <FeCore/Base/CompilerTraits.h>
 #include <festd/base.h>
 
@@ -6,74 +8,107 @@ namespace FE
 {
     //! @brief Align up an integer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
     {
-        return static_cast<T>((x + (alignment - 1u)) & ~(alignment - 1u));
+        return static_cast<T>((x + (static_cast<T>(alignment) - 1u)) & ~(static_cast<T>(alignment) - 1u));
     }
 
 
     //! @brief Align up a pointer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T>
     FE_FORCE_INLINE T* AlignUpPtr(T* x, const size_t alignment)
     {
-        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(x), alignment));
+        return reinterpret_cast<T*>(AlignUp(reinterpret_cast<uintptr_t>(x), alignment));
     }
 
 
     //! @brief Align up an integer.
     //!
-    //! @param x           - Value to align.
-    //! @tparam TAlignment - Alignment to use.
+    //! @param x           Value to align.
+    //! @tparam TAlignment Alignment to use.
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignUp(const T x)
     {
-        return (x + (TAlignment - 1)) & ~(TAlignment - 1);
+        return (x + (static_cast<T>(TAlignment) - 1)) & ~(static_cast<T>(TAlignment) - 1);
     }
 
 
     //! @brief Align down an integer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
     FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
     {
-        return x & ~(alignment - 1);
+        return x & ~(static_cast<T>(alignment) - 1);
     }
 
 
     //! @brief Align down a pointer.
     //!
-    //! @param x         - Value to align.
-    //! @param alignment - Alignment to use.
+    //! @param x         Value to align.
+    //! @param alignment Alignment to use.
     template<class T>
     FE_FORCE_INLINE T* AlignDownPtr(T* x, const size_t alignment)
     {
-        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(x), alignment));
+        return reinterpret_cast<T*>(AlignDown(reinterpret_cast<uintptr_t>(x), alignment));
     }
 
 
     //! @brief Align down an integer.
     //!
-    //! @param x           - Value to align.
-    //! @tparam TAlignment - Alignment to use.
+    //! @param x           Value to align.
+    //! @tparam TAlignment Alignment to use.
     template<uint32_t TAlignment, class T>
     FE_FORCE_INLINE constexpr T AlignDown(const T x)
     {
-        return x & ~(TAlignment - 1);
+        return x & ~(static_cast<T>(TAlignment) - 1);
+    }
+
+
+    //! @brief Check if an integer is aligned.
+    //!
+    //! @param x         Value to check.
+    //! @param alignment Alignment to use.
+    template<class T, class TAlignmentType = T>
+    FE_FORCE_INLINE constexpr bool IsAligned(T x, const TAlignmentType alignment)
+    {
+        return (x & (static_cast<T>(alignment) - 1)) == 0;
+    }
+
+
+    //! @brief Check if a pointer is aligned.
+    //!
+    //! @param x         Value to check.
+    //! @param alignment Alignment to use.
+    template<class T>
+    FE_FORCE_INLINE bool IsAlignedPtr(T* x, const size_t alignment)
+    {
+        return IsAligned(reinterpret_cast<uintptr_t>(x), alignment);
+    }
+
+
+    //! @brief Check if an integer is aligned.
+    //!
+    //! @param x           Value to check.
+    //! @tparam TAlignment Alignment to use.
+    template<uint32_t TAlignment, class T>
+    FE_FORCE_INLINE constexpr bool IsAligned(const T x)
+    {
+        return (x & (static_cast<T>(TAlignment) - 1)) == 0;
     }
 
 
     //! @brief Create a bitmask.
     //!
-    //! @param bitCount  - The number of ones in the created mask.
-    //! @param leftShift - The number of zeros to the right of the created mask.
+    //! @param bitCount  The number of ones in the created mask.
+    //! @param leftShift The number of zeros to the right of the created mask.
     template<class T>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr T MakeMask(const T bitCount, const T leftShift)
     {
@@ -85,6 +120,22 @@ namespace FE
 
 namespace FE::Bit
 {
+    //! @brief Set a bit specified by bitIndex to one and return the modified value.
+    template<class T>
+    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Set(const T value, const T bitIndex)
+    {
+        return value | (T(1u) << bitIndex);
+    }
+
+
+    //! @brief Reset a bit specified by bitIndex to zero and return the modified value.
+    template<class T>
+    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Clear(const T value, const T bitIndex)
+    {
+        return value & ~(T(1u) << bitIndex);
+    }
+
+
     //! @brief Count the number of trailing zeros in the given value.
     FE_FORCE_INLINE int32_t CountTrailingZeros(const uint32_t value)
     {
@@ -99,6 +150,20 @@ namespace FE::Bit
     }
 
 
+    //! @brief Count the number of trailing zeros in the given value.
+    FE_FORCE_INLINE int32_t CountTrailingZeros(const uint64_t value)
+    {
+#if FE_COMPILER_MSVC
+        unsigned long result = 0;
+        if (_BitScanForward64(&result, value))
+            return result;
+        return 64;
+#else
+        return __builtin_ctzll(value);
+#endif
+    }
+
+
     //! @brief Count the number of leading zeros in the given value.
     FE_FORCE_INLINE int32_t CountLeadingZeros(const uint32_t value)
     {
@@ -109,6 +174,42 @@ namespace FE::Bit
         return 32;
 #else
         return __builtin_clz(value);
+#endif
+    }
+
+
+    //! @brief Count the number of leading zeros in the given value.
+    FE_FORCE_INLINE int32_t CountLeadingZeros(const uint64_t value)
+    {
+#if FE_COMPILER_MSVC
+        unsigned long result = 0;
+        if (_BitScanReverse64(&result, value))
+            return 63 - result;
+        return 64;
+#else
+        return __builtin_clzll(value);
+#endif
+    }
+
+
+    //! @brief Count the number of set bits in the given value.
+    FE_FORCE_INLINE uint32_t PopCount(const uint32_t value)
+    {
+#if FE_COMPILER_MSVC
+        return __popcnt(value);
+#else
+        return __builtin_popcount(value);
+#endif
+    }
+
+
+    //! @brief Count the number of set bits in the given value.
+    FE_FORCE_INLINE uint32_t PopCount(const uint64_t value)
+    {
+#if FE_COMPILER_MSVC
+        return static_cast<uint32_t>(__popcnt64(value));
+#else
+        return __builtin_popcountll(value);
 #endif
     }
 
@@ -183,8 +284,8 @@ namespace FE::Bit
 
     //! @brief Traverse an unsigned integer and call a functor for each set bit.
     //!
-    //! @param word    - The unsigned integer to traverse.
-    //! @param functor - The functor to call for each set bit.
+    //! @param word    The unsigned integer to traverse.
+    //! @param functor The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint32_t word, TFunctor functor)
     {
@@ -199,8 +300,8 @@ namespace FE::Bit
 
     //! @brief Traverse an unsigned integer and call a functor for each set bit.
     //!
-    //! @param word    - The unsigned integer to traverse.
-    //! @param functor - The functor to call for each set bit.
+    //! @param word    The unsigned integer to traverse.
+    //! @param functor The functor to call for each set bit.
     template<class TFunctor>
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
     {
@@ -254,13 +355,6 @@ namespace FE::Math
             return (middle << 32) | static_cast<uint32_t>(p00);
         }
     } // namespace CompileTime
-
-
-    namespace Constants
-    {
-        inline constexpr float PI = 3.14159265358979323f;
-        inline constexpr float Epsilon = 1e-6f;
-    } // namespace Constants
 
 
     FE_FORCE_INLINE float Sin(const float x)
@@ -331,7 +425,7 @@ namespace FE::Math
 
     //! @brief Round a floating point number to the nearest integer.
     //!
-    //! @param x - The floating point number to round.
+    //! @param x The floating point number to round.
     //!
     //! @note This function behaves differently from std::round, it uses `floor(x + 0.5f)`.
     FE_FORCE_INLINE float Round(const float x)
@@ -340,7 +434,7 @@ namespace FE::Math
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::Epsilon)
+    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::kEpsilon)
     {
         return abs(lhs - rhs) < epsilon;
     }
@@ -416,23 +510,8 @@ namespace FE::Math
         if (Bit::ScanReverse(result, x))
             return result;
 
-        return UINT32_MAX;
+        return Constants::kMaxU32;
     }
-
-
-    //! @brief Represents a component of a vector.
-    enum class Component : uint32_t
-    {
-        kX = 0,
-        kY = 1,
-        kZ = 2,
-        kW = 3,
-
-        kR = kX,
-        kG = kY,
-        kB = kZ,
-        kA = kW,
-    };
 
 
     //! @brief Represents a swizzle.
@@ -450,10 +529,9 @@ namespace FE::Math
     };
 
 
-    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const Component x, const Component y, const Component z, const Component w)
+    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t w)
     {
-        return static_cast<Swizzle>(festd::to_underlying(x) | (festd::to_underlying(y) << 2) | (festd::to_underlying(z) << 4)
-                                    | (festd::to_underlying(w) << 6));
+        return static_cast<Swizzle>(x | (y << 2) | (z << 4) | (w << 6));
     }
 } // namespace FE::Math
 

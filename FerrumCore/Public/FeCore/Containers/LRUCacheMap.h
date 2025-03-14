@@ -20,7 +20,7 @@ namespace FE
 
         //! @brief Create the cache with initial capacity.
         //!
-        //! @param capacity - Initial capacity.
+        //! @param capacity Initial capacity.
         explicit LRUCacheMap(size_t capacity)
             : m_Capacity(capacity)
         {
@@ -28,7 +28,7 @@ namespace FE
 
         //! @brief Get value by a key.
         //!
-        //! @param key - The key to find.
+        //! @param key The key to find.
         //!
         //! @return The corresponding value if the key was in the cache, nullopt otherwise.
         festd::optional<TValue> operator[](const TKey& key)
@@ -42,7 +42,7 @@ namespace FE
 
         //! @brief Change capacity of the cache, will remove least recently used when shrinking.
         //!
-        //! @param capacity - The new capacity.
+        //! @param capacity The new capacity.
         void SetCapacity(size_t capacity)
         {
             m_Capacity = capacity;
@@ -64,12 +64,12 @@ namespace FE
 
         //! @brief Emplace a key-value pair to the cache.
         //!
-        //! @param key  - The key to associate the value with.
-        //! @param args - Arguments for value constructor.
+        //! @param key  The key to associate the value with.
+        //! @param args Arguments for value constructor.
         template<class... Args>
         void Emplace(const TKey& key, Args&&... args)
         {
-            FE_CORE_ASSERT(m_Capacity > 0, "Cache capacity was zero");
+            FE_Assert(m_Capacity > 0, "Cache capacity was zero");
 
             auto it = m_Map.find(key);
             m_Queue.emplace_front(std::piecewise_construct,
@@ -87,7 +87,7 @@ namespace FE
 
         //! @brief Check if a key is present, but do not promote to most recently used.
         //!
-        //! @param key - The key to check for.
+        //! @param key The key to check for.
         //!
         //! @return True if the key is in the cache.
         bool HasKey(const TKey& key)
@@ -98,8 +98,8 @@ namespace FE
 
         //! @brief Try get a value from the cache.
         //!
-        //! @param  key   - The key to find.
-        //! @param [out] value - The value that will be set on success.
+        //! @param key   The key to find.
+        //! @param value The value that will be set on success.
         //!
         //! @return True if the key is in the cache.
         bool TryGetValue(const TKey& key, TValue& value)

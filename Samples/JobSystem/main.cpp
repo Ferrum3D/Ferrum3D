@@ -1,6 +1,4 @@
 ﻿#include <FeCore/DI/Builder.h>
-#include <FeCore/EventBus/CoreEvents.h>
-#include <FeCore/EventBus/EventBus.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Jobs/JobSystem.h>
 #include <FeCore/Logging/Trace.h>
@@ -175,7 +173,6 @@ struct MainJob final : Job
 int main()
 {
     Env::CreateEnvironment();
-    Rc eventBus = Rc<EventBus<FrameEvents>>::DefaultNew();
 
     DI::ServiceRegistryBuilder builder{ Env::Internal::GetRootServiceRegistry() };
     builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();

@@ -44,7 +44,7 @@ namespace FE::Console
             {
             }
 
-            void SetTextColor(Color color) const
+            void SetTextColor(const Color color) const
             {
                 FlushIfNecessary(sizeof(BufferRecordHeader));
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextColor, color };
@@ -53,30 +53,30 @@ namespace FE::Console
                 m_state->m_lastPayloadSizePointer = nullptr;
             }
 
-            void WriteText(StringSlice text) const
+            void WriteText(const festd::string_view text) const
             {
-                if (m_state->m_lastPayloadSizePointer != nullptr && GetSpaceLeft() >= text.Size())
+                if (m_state->m_lastPayloadSizePointer != nullptr && GetSpaceLeft() >= text.size())
                 {
-                    *m_state->m_lastPayloadSizePointer += text.Size();
-                    memcpy(m_state->m_bufferPointer, text.Data(), text.Size());
-                    m_state->m_bufferPointer += text.Size();
+                    *m_state->m_lastPayloadSizePointer += text.size();
+                    memcpy(m_state->m_bufferPointer, text.data(), text.size());
+                    m_state->m_bufferPointer += text.size();
                     return;
                 }
 
-                FlushIfNecessary(sizeof(BufferRecordHeader) + sizeof(uint32_t) + text.Size());
+                FlushIfNecessary(sizeof(BufferRecordHeader) + sizeof(uint32_t) + text.size());
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextPayload, Color::kDefault };
                 *m_state->m_bufferPointer = festd::bit_cast<uint8_t>(header);
                 m_state->m_bufferPointer += sizeof(BufferRecordHeader);
 
                 m_state->m_lastPayloadSizePointer = reinterpret_cast<uint32_t*>(m_state->m_bufferPointer);
-                *m_state->m_lastPayloadSizePointer = text.Size();
+                *m_state->m_lastPayloadSizePointer = text.size();
                 m_state->m_bufferPointer += sizeof(uint32_t);
 
-                memcpy(m_state->m_bufferPointer, text.Data(), text.Size());
-                m_state->m_bufferPointer += text.Size();
+                memcpy(m_state->m_bufferPointer, text.data(), text.size());
+                m_state->m_bufferPointer += text.size();
             }
 
-            void FlushIfNecessary(uint32_t bytes) const
+            void FlushIfNecessary(const uint32_t bytes) const
             {
                 if (bytes > GetSpaceLeft())
                     Flush();
@@ -98,8 +98,8 @@ namespace FE::Console
                     const uint32_t payloadSize = *reinterpret_cast<uint32_t*>(pointer);
                     pointer += sizeof(uint32_t);
 
-                    const StringSlice payload{ reinterpret_cast<const char*>(pointer), payloadSize };
-                    const Platform::WideString<256> wideText{ payload };
+                    const festd::string_view payload{ reinterpret_cast<const char*>(pointer), payloadSize };
+                    const Platform::WideString wideText{ payload };
                     WriteConsoleW(m_state->m_consoleHandle, wideText.data(), wideText.size(), nullptr, nullptr);
 
                     if (IsDebuggerPresent())
@@ -133,7 +133,7 @@ namespace FE::Console
         GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
         state.m_defaultAttributes = info.wAttributes;
 
-        std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::Linear);
+        std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
         state.m_buffer = static_cast<uint8_t*>(allocator->allocate(ConsoleState::kBufferSize));
         state.m_bufferPointer = state.m_buffer;
 
@@ -152,14 +152,14 @@ namespace FE::Console
     }
 
 
-    void SetTextColor(Color color)
+    void SetTextColor(const Color color)
     {
         const BufferWriter writer{ Env::Internal::SharedState::Get().m_consoleState };
         writer.SetTextColor(color);
     }
 
 
-    void Write(StringSlice text)
+    void Write(const festd::string_view text)
     {
         const BufferWriter writer{ Env::Internal::SharedState::Get().m_consoleState };
         writer.WriteText(text);

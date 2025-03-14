@@ -5,7 +5,7 @@ namespace FE
 {
     //! @brief A weak asset holder.
     //!
-    //! @tparam T - Asset storage type.
+    //! @tparam T  Asset storage type.
     //!
     //! This class is used to hold a weak reference to asset storage. When the asset is no longer valid,
     //! the storage will be deleted, but all the weak references will remain.
@@ -50,7 +50,7 @@ namespace FE
 
         WeakAsset& operator=(WeakAsset&& other) noexcept
         {
-            WeakAsset(std::move(other)).Swap(*this);
+            WeakAsset(festd::move(other)).Swap(*this);
             return *this;
         }
 
@@ -81,7 +81,7 @@ namespace FE
 
         T& operator*() const
         {
-            FE_CORE_ASSERT(m_storage, "Asset was empty");
+            FE_Assert(m_storage, "Asset was empty");
             return *m_storage;
         }
 

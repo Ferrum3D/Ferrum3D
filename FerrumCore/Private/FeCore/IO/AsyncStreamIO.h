@@ -1,10 +1,9 @@
 ﻿#pragma once
-#include <FeCore/EventBus/CoreEvents.h>
 #include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Logging/Logger.h>
 #include <FeCore/Memory/PoolAllocator.h>
-#include <FeCore/Parallel/Event.h>
-#include <FeCore/Parallel/Thread.h>
+#include <FeCore/Threading/Event.h>
+#include <FeCore/Threading/Thread.h>
 #include <festd/vector.h>
 
 namespace FE::IO
@@ -29,7 +28,7 @@ namespace FE::IO
         void ReadAsync(const AsyncReadRequest& request, IAsyncController** ppController) override;
 
     private:
-        ThreadHandle m_thread;
+        Threading::ThreadHandle m_thread;
         Threading::Event m_queueEvent;
         Logger* m_logger = nullptr;
         std::atomic<bool> m_exitRequested;

@@ -9,11 +9,7 @@
     {
       "name": "default-base",
       "hidden": true,
-      "binaryDir": "${sourceDir}/cmake-build/${presetName}",
-      "cacheVariables": {
-        "FE_USE_SSE41": "ON",
-        "FE_USE_SSE3": "ON"
-      }
+      "binaryDir": "${sourceDir}/cmake-build/${presetName}"
     },
     {
       "name": "windows-base",
@@ -51,9 +47,9 @@
       }
     },
     {
-      "name": "windows-debug-msvc-avx",
+      "name": "windows-debug-msvc",
       "inherits": "windows-base",
-      "displayName": "Windows x64 Debug with MSVC, SSE4.1 and AVX2",
+      "displayName": "Windows x64 Debug with MSVC",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -61,9 +57,9 @@
       }
     },
     {
-      "name": "windows-release-msvc-avx",
+      "name": "windows-release-msvc",
       "inherits": "windows-base",
-      "displayName": "Windows x64 Release with MSVC, SSE4.1 and AVX2",
+      "displayName": "Windows x64 Release with MSVC",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -71,9 +67,9 @@
       }
     },
     {
-      "name": "windows-debug-clang-avx",
+      "name": "windows-debug-clang",
       "inherits": "windows-base",
-      "displayName": "Windows x64 Debug with Clang, SSE4.1 and AVX2",
+      "displayName": "Windows x64 Debug with Clang",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -81,9 +77,9 @@
       }
     },
     {
-      "name": "windows-release-clang-avx",
+      "name": "windows-release-clang",
       "inherits": "windows-base",
-      "displayName": "Windows x64 Release with Clang, SSE4.1 and AVX2",
+      "displayName": "Windows x64 Release with Clang",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -91,9 +87,9 @@
       }
     },
     {
-      "name": "linux-debug-clang-avx",
+      "name": "linux-debug-clang",
       "inherits": "linux-base",
-      "displayName": "Linux x64 Debug with Clang, SSE4.1 and AVX2",
+      "displayName": "Linux x64 Debug with Clang",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "clang++",
@@ -103,12 +99,12 @@
   ],
   "buildPresets": [
     {
-      "name": "windows-debug-msvc-avx",
-      "configurePreset": "windows-debug-msvc-avx"
+      "name": "windows-debug-msvc",
+      "configurePreset": "windows-debug-msvc"
     },
     {
-      "name": "linux-debug-clang-avx",
-      "configurePreset": "linux-debug-clang-avx"
+      "name": "linux-debug-clang",
+      "configurePreset": "linux-debug-clang"
     }
   ]
 }

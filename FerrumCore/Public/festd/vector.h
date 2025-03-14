@@ -1,6 +1,6 @@
 #pragma once
-#include <EASTL/vector.h>
 #include <EASTL/fixed_vector.h>
+#include <EASTL/vector.h>
 #include <FeCore/Memory/Memory.h>
 #include <gch/small_vector.hpp>
 

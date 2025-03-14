@@ -3,29 +3,90 @@
 
 namespace FE
 {
+    //! \brief Describes the priority of a job.
+    //!
+    //! Jobs with different priorities are assigned to different queues.
+    //! Each worker thread has a set of queues (one for each priority)
+    //! for the jobs that can only run on that thread (due to affinity).
+    //! There is also two global sets of queues: one for foreground jobs
+    //! and one for background jobs.
     enum class JobPriority : uint16_t
     {
-        kLow,
-        kNormal,
-        kHigh,
+        kLow = 0,
+        kNormal = 1,
+        kHigh = 2,
+
+        kCount = kHigh + 1,
+    };
+
+
+    //! \brief Specifies which threads a job is allowed to run on.
+    //!
+    //! There are two good reasons for this to exist:
+    //! Firstly, some jobs can only safely run on a certain thread, e.g. Windows
+    //! message loop jobs should only run on the main thread.
+    //! Secondly, we have so-called "foreground" and "background" jobs.
+    //! Foreground jobs must be executed within one frame, while background jobs
+    //! can span multiple frames. While we can allow foreground jobs to preempt
+    //! background jobs, we cannot allow background jobs to preempt foreground
+    //! jobs. Thus, we need a separate foreground thread pool.
+    //!
+    //! In the JobSystem, each thread is assigned a unique ID. Foreground thread
+    //! IDs are in range [0, 31] (MainThread being thread 0 - the first
+    //! foreground thread), while background thread IDs are in range [32, 63].
+    //! So, for instance, UINT32_MAX specifies an affinity mask that matches
+    //! all foreground threads.
+    //!
+    //! Note: currently it is only possible to specify affinity either for
+    //!   a single thread (e.g, main thread, worker5, etc.) or for an entire
+    //!   thread pool (e.g., all foreground threads or all background threads).
+    //!   Values like 0b11 are considered invalid.
+    //!   So, we intentionally do not provide any bit operators as all
+    //!   the correct combinations can be specified using the enum values
+    //!   or IJobSystem::GetAffinityMaskForCurrentThread().
+    enum class FiberAffinityMask : uint64_t
+    {
+        kNone = 0,
+        kMainThread = 1,
+        kAllForeground = 0x00000000ffffffff,
+        kAllBackground = 0xffffffff00000000,
+        kAll = kMainThread | kAllForeground | kAllBackground,
+    };
+
+
+    enum class JobThreadPoolType : uint32_t
+    {
+        kGeneric,
+        kForeground,
+        kBackground,
         kCount,
     };
 
+
     struct Job;
+
+
+    struct JobScheduleInfo final
+    {
+        Job* m_job = nullptr;
+        JobPriority m_priority = JobPriority::kNormal;
+        FiberAffinityMask m_affinityMask = FiberAffinityMask::kAll;
+    };
 
 
     struct IJobSystem : public Memory::RefCountedObjectBase
     {
         FE_RTTI_Class(IJobSystem, "F9FB743A-B543-4B64-A36B-B055434DE90B");
 
-        virtual void AddJob(Job* pJob, JobPriority priority = JobPriority::kNormal) = 0;
+        virtual void Schedule(const JobScheduleInfo& info) = 0;
         virtual void Start() = 0;
         virtual void Stop() = 0;
+
+        virtual FiberAffinityMask GetAffinityMaskForCurrentThread() const = 0;
 
     private:
         friend struct WaitGroup;
 
-        virtual void* AllocateSmallBlock(size_t byteSize) = 0;
-        virtual void FreeSmallBlock(void* ptr, size_t byteSize) = 0;
+        virtual std::pmr::memory_resource* GetWaitGroupAllocator() = 0;
     };
 } // namespace FE

@@ -11,12 +11,36 @@ namespace FE::Memory
         };
 
     public:
-        class Marker final
+        struct Marker final
         {
             friend class LinearAllocator;
 
+        private:
             Page* m_page = nullptr;
             size_t m_offset = sizeof(Page);
+        };
+
+        struct Scope final
+        {
+            explicit Scope(LinearAllocator& allocator)
+                : m_allocator(&allocator)
+            {
+                m_marker = allocator.GetMarker();
+            }
+
+            ~Scope()
+            {
+                m_allocator->Restore(m_marker);
+            }
+
+            Scope(const Scope&) = delete;
+            Scope(Scope&&) = delete;
+            Scope& operator=(const Scope&) = delete;
+            Scope& operator=(Scope&&) = delete;
+
+        private:
+            LinearAllocator* m_allocator;
+            Marker m_marker;
         };
 
     private:
@@ -58,7 +82,7 @@ namespace FE::Memory
     };
 
 
-    inline void* LinearAllocator::do_allocate(size_t byteSize, size_t byteAlignment)
+    inline void* LinearAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
     {
         if (AlignUp(sizeof(Page), byteAlignment) + byteSize > m_pageByteSize)
             return nullptr;
@@ -70,9 +94,7 @@ namespace FE::Memory
         if (newOffset > m_pageByteSize)
             NewPage();
 
-        const size_t oldOffset = m_currentMarker.m_offset;
         m_currentMarker.m_offset = newOffset;
-
-        return reinterpret_cast<uint8_t*>(m_currentMarker.m_page) + oldOffset;
+        return reinterpret_cast<uint8_t*>(m_currentMarker.m_page) + newOffset - byteSize;
     }
 } // namespace FE::Memory

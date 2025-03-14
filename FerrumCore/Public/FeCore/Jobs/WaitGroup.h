@@ -20,15 +20,35 @@ namespace FE
         {
             const uint32_t refCount = --m_refCount;
             if (refCount == 0)
-                Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->FreeSmallBlock(this, sizeof(WaitGroup));
+            {
+                IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+                std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
+                allocator->deallocate(this, sizeof(WaitGroup), alignof(WaitGroup));
+            }
 
             return refCount;
         }
 
-        static WaitGroup* Create()
+        static WaitGroup* Create(const int32_t counter = 1)
         {
-            void* ptr = Env::GetServiceProvider()->ResolveRequired<IJobSystem>()->AllocateSmallBlock(sizeof(WaitGroup));
-            return new (ptr) WaitGroup;
+            IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+            std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
+            auto* result = new (allocator->allocate(sizeof(WaitGroup), alignof(WaitGroup))) WaitGroup;
+            if (counter)
+                result->Add(counter);
+            return result;
+        }
+
+        static void WaitAll(const festd::span<WaitGroup* const> waitGroups)
+        {
+            for (WaitGroup* waitGroup : waitGroups)
+                waitGroup->Wait();
+        }
+
+        static void WaitAll(const festd::span<const Rc<WaitGroup>> waitGroups)
+        {
+            for (const Rc<WaitGroup>& waitGroup : waitGroups)
+                waitGroup->Wait();
         }
 
         void Add(int32_t value);
@@ -37,9 +57,9 @@ namespace FE
         void Wait();
 
     private:
-        std::atomic<uint32_t> m_refCount;
-        std::atomic<int32_t> m_counter;
-        std::atomic<uint64_t> m_lockAndQueue;
+        std::atomic<uint32_t> m_refCount = 0;
+        std::atomic<int32_t> m_counter = 0;
+        std::atomic<uint64_t> m_lockAndQueue = 0;
 
         bool SignalSlowImpl();
 
@@ -47,9 +67,9 @@ namespace FE
     };
 
 
-    inline void WaitGroup::Add(int32_t value)
+    inline void WaitGroup::Add(const int32_t value)
     {
-        FE_CORE_ASSERT(value > 0, "Invalid value");
+        FE_Assert(value > 0, "Invalid value");
         m_counter.fetch_add(value);
     }
 

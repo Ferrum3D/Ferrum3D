@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <festd/Internal/BitStorage.h>
 
 namespace FE::Internal
 {
-    inline void SetAllBitsInRange(festd::span<BitSetWord> words, uint32_t startBitIndex, uint32_t bitCount)
+    inline void SetAllBitsInRange(const festd::span<BitSetWord> words, const uint32_t startBitIndex, const uint32_t bitCount)
     {
         if (bitCount == 0)
             return;
@@ -20,7 +20,7 @@ namespace FE::Internal
         {
             const uint32_t endWordIndex = CalculateWordIndex(startBitIndex + bitCount - 1);
             const uint32_t endBitIndexInWord = startBitIndex + bitCount - endWordIndex * kBitSetBitsPerWord;
-            words[startWordIndex] |= std::numeric_limits<BitSetWord>::max() << startBitIndexInWord;
+            words[startWordIndex] |= Constants::kMaxValue<BitSetWord> << startBitIndexInWord;
             words[endWordIndex] |= MakeMask<BitSetWord>(endBitIndexInWord, 0);
 
             if (endWordIndex > startWordIndex + 1)
@@ -32,7 +32,7 @@ namespace FE::Internal
     }
 
 
-    inline void ResetAllBitsInRange(festd::span<BitSetWord> words, uint32_t startBitIndex, uint32_t bitCount)
+    inline void ResetAllBitsInRange(const festd::span<BitSetWord> words, const uint32_t startBitIndex, const uint32_t bitCount)
     {
         if (bitCount == 0)
             return;
@@ -49,7 +49,7 @@ namespace FE::Internal
         {
             const uint32_t endWordIndex = CalculateWordIndex(startBitIndex + bitCount - 1);
             const uint32_t endBitIndexInWord = startBitIndex + bitCount - endWordIndex * kBitSetBitsPerWord;
-            words[startWordIndex] &= ~(std::numeric_limits<BitSetWord>::max() << startBitIndexInWord);
+            words[startWordIndex] &= ~(Constants::kMaxValue<BitSetWord> << startBitIndexInWord);
             words[endWordIndex] &= ~MakeMask<BitSetWord>(endBitIndexInWord, 0);
 
             if (endWordIndex > startWordIndex + 1)
@@ -179,19 +179,19 @@ namespace FE::Internal
     {
         BasicBitSetViewImpl() = default;
 
-        BasicBitSetViewImpl(const uint64_t* words, const uint64_t* topLevelWords, uint32_t bitCount)
+        BasicBitSetViewImpl(const uint64_t* words, const uint64_t* topLevelWords, const uint32_t bitCount)
             : m_words(words)
             , m_topLevel(topLevelWords)
             , m_size(bitCount)
         {
         }
 
-        [[nodiscard]] BitSetWord data_at(uint32_t wordIndex) const
+        [[nodiscard]] BitSetWord data_at(const uint32_t wordIndex) const
         {
             return m_words[wordIndex];
         }
 
-        [[nodiscard]] BitSetWord data_lookup_at(uint32_t wordIndex) const
+        [[nodiscard]] BitSetWord data_lookup_at(const uint32_t wordIndex) const
         {
             return m_topLevel[wordIndex];
         }
@@ -304,7 +304,7 @@ namespace FE::Internal
             ResetAllBitsInRange({ topLevelWords, topLevelWordCount }, 0, wordCount);
         }
 
-        void set(uint32_t bitIndex)
+        void set(const uint32_t bitIndex)
         {
             BitSetWord* words = TStorage::WordsDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -313,18 +313,18 @@ namespace FE::Internal
             SetTopLevel(wordIndex);
         }
 
-        void reset(uint32_t bitIndex)
+        void reset(const uint32_t bitIndex)
         {
             BitSetWord* words = TStorage::WordsDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
 
-            words[wordIndex] |= UINT64_C(1) << (bitIndex - wordIndex * kBitSetBitsPerWord);
+            words[wordIndex] &= ~(UINT64_C(1) << (bitIndex - wordIndex * kBitSetBitsPerWord));
             if (words[wordIndex] == 0)
                 ResetTopLevel(wordIndex);
         }
 
 
-        void set(uint32_t bitIndex, bool value)
+        void set(const uint32_t bitIndex, const bool value)
         {
             if (value)
                 set(bitIndex);
@@ -337,7 +337,7 @@ namespace FE::Internal
             TStorage::ReserveImpl(bitCount, TStorage::GetAllocator());
         }
 
-        void resize(uint32_t bitCount, bool bitValue)
+        void resize(uint32_t bitCount, const bool bitValue)
         {
             const uint32_t prevSize = TStorage::SizeImpl();
 
@@ -420,7 +420,7 @@ namespace FE::Internal
         }
 
     private:
-        FE_FORCE_INLINE void SetTopLevel(uint32_t bitIndex)
+        FE_FORCE_INLINE void SetTopLevel(const uint32_t bitIndex)
         {
             BitSetWord* topLevelWords = TStorage::TopLevelDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -428,7 +428,7 @@ namespace FE::Internal
             topLevelWords[wordIndex] |= UINT64_C(1) << (bitIndex - wordIndex * kBitSetBitsPerWord);
         }
 
-        FE_FORCE_INLINE void ResetTopLevel(uint32_t bitIndex)
+        FE_FORCE_INLINE void ResetTopLevel(const uint32_t bitIndex)
         {
             BitSetWord* topLevelWords = TStorage::TopLevelDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -443,7 +443,7 @@ namespace FE::Internal
     {
         using TBase::TBase;
 
-        [[nodiscard]] bool test(uint32_t bitIndex) const
+        [[nodiscard]] bool test(const uint32_t bitIndex) const
         {
             const BitSetWord* words = TBase::data();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -507,7 +507,7 @@ namespace FE
             //! @brief A bit vector using a polymorphic allocator.
             using bit_vector = FE::Internal::BitSetImpl<FE::Internal::BasicBitSetImpl<
                 FE::Internal::PolymorphicAllocatorBitSetStorage<FE::Internal::DynamicBitSetStorage>>>;
-        }
+        } // namespace pmr
 
         //! @brief A bit vector using the default allocator.
         using bit_vector = FE::Internal::BitSetImpl<
@@ -527,8 +527,8 @@ namespace FE
     {
         //! @brief Traverses a bit vector and calls a functor for each set bit.
         //!
-        //! @param bits    - The bit vector to traverse.
-        //! @param functor - The functor to call for each set bit.
+        //! @param bits    The bit vector to traverse.
+        //! @param functor The functor to call for each set bit.
         template<class TBase, class TFunctor>
         inline void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
         {

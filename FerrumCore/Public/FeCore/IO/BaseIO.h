@@ -1,19 +1,35 @@
 ﻿#pragma once
-#include <FeCore/Strings/FixedString.h>
-#include <FeCore/Strings/StringSlice.h>
+#include <FeCore/IO/Path.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/Time/DateTime.h>
+
+namespace FE::Platform
+{
+    struct FileHandle final : public TypedHandle<FileHandle, uint64_t>
+    {
+        static FileHandle FromPointer(const void* ptr)
+        {
+            return FileHandle{ reinterpret_cast<uint64_t>(ptr) };
+        }
+    };
+} // namespace FE::Platform
+
 
 namespace FE::IO
 {
-    inline constexpr uint32_t kMaxPathLength = 260;
+    struct IStream;
+    struct IStreamFactory;
 
-    using FixedPath = FixedString<kMaxPathLength>;
+    struct IAsyncController;
+    struct IAsyncStreamIO;
+    struct AsyncReadResult;
 
 
     //! @brief Represents an I/O result code.
     enum class ResultCode : int32_t
     {
         Success = 0,
+        Canceled = 1,           //!< Operation was canceled.
         PermissionDenied = -1,  //!< Permission denied.
         NoFileOrDirectory = -2, //!< No such file or directory.
         FileExists = -3,        //!< File already exists.
@@ -31,7 +47,7 @@ namespace FE::IO
         UnknownError = kDefaultErrorCode<ResultCode>,
     };
 
-    StringSlice GetResultDesc(ResultCode code);
+    festd::string_view GetResultDesc(ResultCode code);
 
 #define FE_IO_ASSERT(expr)                                                                                                       \
     do                                                                                                                           \
@@ -40,21 +56,6 @@ namespace FE::IO
         FE_AssertMsg(code == ::FE::IO::ResultCode::Success, "IO error: {}", ::FE::IO::GetResultDesc(code));                      \
     }                                                                                                                            \
     while (0)
-
-
-    namespace Platform
-    {
-        struct FileHandle final : TypedHandle<FileHandle, uint64_t>
-        {
-            static FileHandle FromPointer(const void* ptr)
-            {
-                return FileHandle{ reinterpret_cast<uint64_t>(ptr) };
-            }
-        };
-    } // namespace Platform
-
-
-    FixedPath GetCurrentDirectory();
 
 
     //! @brief I/O operation priority.
@@ -77,13 +78,13 @@ namespace FE::IO
     };
 
 
-    inline Priority operator-(Priority lhs, int32_t rhs)
+    inline Priority operator-(const Priority lhs, const int32_t rhs)
     {
         return static_cast<Priority>(festd::to_underlying(lhs) - rhs);
     }
 
 
-    inline Priority operator+(Priority lhs, int32_t rhs)
+    inline Priority operator+(const Priority lhs, const int32_t rhs)
     {
         return static_cast<Priority>(festd::to_underlying(lhs) + rhs);
     }
@@ -120,7 +121,7 @@ namespace FE::IO
 
     enum class OpenMode
     {
-        kNone,
+        kNone = 0,
         kReadOnly = 1 << 6,
         kWriteOnly = 1 << 7,
         kAppend = kWriteOnly | 1,
@@ -131,13 +132,21 @@ namespace FE::IO
     };
 
 
-    inline constexpr bool IsWriteAllowed(OpenMode mode)
+    struct DirectoryEntry final
+    {
+        PathView m_path;
+        FileAttributeFlags m_attributes = FileAttributeFlags::kNone;
+        FileStats m_stats;
+    };
+
+
+    constexpr bool IsWriteAllowed(const OpenMode mode)
     {
         return (festd::to_underlying(mode) & festd::to_underlying(OpenMode::kWriteOnly)) != 0;
     }
 
 
-    inline constexpr bool IsReadAllowed(OpenMode mode)
+    constexpr bool IsReadAllowed(const OpenMode mode)
     {
         return (festd::to_underlying(mode) & festd::to_underlying(OpenMode::kReadOnly)) != 0;
     }
@@ -151,7 +160,7 @@ namespace FE::IO
     };
 
 
-    inline constexpr const char* GetStandardDescriptorName(StandardDescriptor descriptor)
+    constexpr const char* GetStandardDescriptorName(const StandardDescriptor descriptor)
     {
         switch (descriptor)
         {
@@ -167,7 +176,7 @@ namespace FE::IO
     }
 
 
-    inline constexpr OpenMode GetStandardDescriptorOpenMode(StandardDescriptor descriptor)
+    constexpr OpenMode GetStandardDescriptorOpenMode(const StandardDescriptor descriptor)
     {
         switch (descriptor)
         {
@@ -181,4 +190,39 @@ namespace FE::IO
             return OpenMode::kNone;
         }
     }
+
+
+    //! @brief Asynchronous read operation callback.
+    struct IAsyncReadCallback
+    {
+        FE_RTTI_Class(IAsyncReadCallback, "E1E0BD22-543A-4036-B918-134DB9C99D4F");
+
+        virtual ~IAsyncReadCallback() = default;
+
+        //! @brief Called when an operation associated with this callback completes.
+        virtual void AsyncIOCallback(const AsyncReadResult& result) = 0;
+    };
+
+
+    namespace Directory
+    {
+        //! @brief Iterate over a directory recursively.
+        //!
+        //! @param path    Path to the directory to iterate over.
+        //! @param pattern Wildcard pattern.
+        //! @param f       The function to be called for each directory entry.
+        ResultCode TraverseRecursively(festd::string_view path, festd::string_view pattern,
+                                       const festd::fixed_function<48, bool(const DirectoryEntry&)>& f);
+
+
+        //! @brief Iterate over a directory recursively.
+        //!
+        //! @param path    Path to the directory to iterate over.
+        //! @param f       The function to be called for each directory entry.
+        inline ResultCode TraverseRecursively(const festd::string_view path,
+                                              const festd::fixed_function<48, bool(const DirectoryEntry&)>& f)
+        {
+            return TraverseRecursively(path, "*", f);
+        }
+    } // namespace Directory
 } // namespace FE::IO
