@@ -1,3 +1,4 @@
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Base/Viewport.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Fence.h>
@@ -86,11 +87,11 @@ namespace FE::Graphics::Vulkan
         const uint32_t waitSemaphoreCount = m_waitSemaphores.size() + m_waitFences.size();
         const uint32_t signalSemaphoreCount = m_signalSemaphores.size() + m_signalFences.size();
 
-        // TODO: thread temp allocator
+        Memory::FiberTempAllocator tempAllocator;
 
-        festd::pmr::vector<VkSemaphore> waitSemaphores{ m_linearAllocator };
-        festd::pmr::vector<uint64_t> waitSemaphoreValues{ m_linearAllocator };
-        festd::pmr::vector<VkPipelineStageFlags> waitStageMasks{ m_linearAllocator };
+        festd::pmr::vector<VkSemaphore> waitSemaphores{ &tempAllocator };
+        festd::pmr::vector<uint64_t> waitSemaphoreValues{ &tempAllocator };
+        festd::pmr::vector<VkPipelineStageFlags> waitStageMasks{ &tempAllocator };
         waitSemaphores.reserve(waitSemaphoreCount);
         waitSemaphoreValues.reserve(waitSemaphoreCount);
         waitStageMasks.reserve(waitSemaphoreCount);
@@ -109,8 +110,8 @@ namespace FE::Graphics::Vulkan
             waitStageMasks.push_back(stageMask);
         }
 
-        festd::pmr::vector<VkSemaphore> signalSemaphores{ m_linearAllocator };
-        festd::pmr::vector<uint64_t> signalSemaphoreValues{ m_linearAllocator };
+        festd::pmr::vector<VkSemaphore> signalSemaphores{ &tempAllocator };
+        festd::pmr::vector<uint64_t> signalSemaphoreValues{ &tempAllocator };
         signalSemaphores.reserve(signalSemaphoreCount);
         signalSemaphoreValues.reserve(signalSemaphoreCount);
 

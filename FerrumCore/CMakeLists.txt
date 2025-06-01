@@ -76,6 +76,7 @@
     Public/FeCore/Math/Vector4.h
     Public/FeCore/Math/VectorMath.h
 
+    Public/FeCore/Memory/FiberTempAllocator.h
     Public/FeCore/Memory/LinearAllocator.h
     Public/FeCore/Memory/Memory.h
     Public/FeCore/Memory/PoolAllocator.h
@@ -145,6 +146,7 @@ set(COMMON_SOURCES
     Private/FeCore/Math/Colors.cpp
     Private/FeCore/Math/Matrix4x4F.cpp
 
+    Private/FeCore/Memory/FiberTempAllocator.cpp
     Private/FeCore/Memory/LinearAllocator.cpp
     Private/FeCore/Memory/Memory.cpp
     Private/FeCore/Memory/PoolAllocator.cpp

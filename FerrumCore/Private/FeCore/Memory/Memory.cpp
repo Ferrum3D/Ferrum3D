@@ -9,7 +9,16 @@ namespace FE::Memory
     namespace
     {
         constexpr uint32_t kMemoryProfilerCallstackDepth = 32;
-    }
+
+#if FE_PLATFORM_WINDOWS
+        decltype(&VirtualAlloc2) GetVirtualAlloc2()
+        {
+            static auto virtualAlloc2 =
+                reinterpret_cast<decltype(&VirtualAlloc2)>(GetProcAddress(GetModuleHandleW(L"kernelbase.dll"), "VirtualAlloc2"));
+            return virtualAlloc2;
+        }
+#endif
+    } // namespace
 
 
     PlatformSpec GetPlatformSpec()
@@ -38,11 +47,75 @@ namespace FE::Memory
 
     void* AllocateVirtual(const size_t byteSize)
     {
-        FE_CoreAssert(AlignUp(byteSize, GetPlatformSpec().m_granularity) == byteSize,
-                      "Size must be aligned to virtual allocation granularity");
+        FE_CoreAssert(IsAligned(byteSize, GetPlatformSpec().m_granularity),
+                      "Size must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         return VirtualAlloc(nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+#    error Not implemented :(
+#endif
+    }
+
+
+    void* AllocateVirtual(const size_t byteSize, const size_t byteAlignment)
+    {
+        FE_CoreAssert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
+        FE_CoreAssert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
+                      "Alignment must be a multiple of virtual allocation granularity");
+
+#if FE_PLATFORM_WINDOWS
+        MEM_ADDRESS_REQUIREMENTS requirements = {};
+        requirements.Alignment = byteAlignment;
+
+        MEM_EXTENDED_PARAMETER extendedParameter = {};
+        extendedParameter.Type = MemExtendedParameterAddressRequirements;
+        extendedParameter.Pointer = &requirements;
+
+        return GetVirtualAlloc2()(
+            GetCurrentProcess(), nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE, &extendedParameter, 1);
+#else
+#    error Not implemented :(
+#endif
+    }
+
+
+    void* ReserveVirtual(const size_t byteSize)
+    {
+#if FE_PLATFORM_WINDOWS
+        return VirtualAlloc(nullptr, byteSize, MEM_RESERVE, PAGE_READWRITE);
+#else
+#    error Not implemented :(
+#endif
+    }
+
+
+    void* ReserveVirtual(const size_t byteSize, const size_t byteAlignment)
+    {
+        FE_CoreAssert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
+        FE_CoreAssert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
+                      "Alignment must be a multiple of virtual allocation granularity");
+
+#if FE_PLATFORM_WINDOWS
+        MEM_ADDRESS_REQUIREMENTS requirements = {};
+        requirements.Alignment = byteAlignment;
+
+        MEM_EXTENDED_PARAMETER extendedParameter = {};
+        extendedParameter.Type = MemExtendedParameterAddressRequirements;
+        extendedParameter.Pointer = &requirements;
+
+        return GetVirtualAlloc2()(GetCurrentProcess(), nullptr, byteSize, MEM_RESERVE, PAGE_READWRITE, &extendedParameter, 1);
+#else
+#    error Not implemented :(
+#endif
+    }
+
+
+    void CommitVirtual(void* ptr, const size_t byteSize)
+    {
+#if FE_PLATFORM_WINDOWS
+        (void)byteSize;
+        VirtualAlloc(ptr, byteSize, MEM_COMMIT, PAGE_READWRITE);
 #else
 #    error Not implemented :(
 #endif

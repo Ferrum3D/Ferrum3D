@@ -1,3 +1,4 @@
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <FeCore/Strings/Encoding.h>
 #include <FeCore/Threading/Thread.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
@@ -90,9 +91,9 @@ namespace FE::Framework::Windows
         m_desc = desc;
         m_parent = ImplCast(desc.m_parent);
 
-        // TODO: thread temp allocator
+        Memory::FiberTempAllocator tempAllocator;
 
-        const Str::Utf8ToUtf16 windowName{ desc.m_title.data(), desc.m_title.size() };
+        const Str::Utf8ToUtf16 windowName{ desc.m_title.data(), desc.m_title.size(), &tempAllocator };
 
         const HWND parentHandle = m_parent ? m_parent->m_hwnd : nullptr;
 
@@ -241,11 +242,11 @@ namespace FE::Framework::Windows
         FE_Assert(Threading::IsMainThread());
         FE_AssertDebug(m_hwnd);
 
-        // TODO: thread temp allocator
+        Memory::FiberTempAllocator tempAllocator;
 
         m_desc.m_title = title;
 
-        const Str::Utf8ToUtf16 windowTitle{ title.data(), title.size() };
+        const Str::Utf8ToUtf16 windowTitle{ title.data(), title.size(), &tempAllocator };
         SetWindowTextW(m_hwnd, windowTitle.ToWideString());
     }
 
