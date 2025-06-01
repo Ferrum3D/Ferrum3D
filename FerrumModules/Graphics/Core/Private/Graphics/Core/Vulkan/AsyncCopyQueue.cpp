@@ -66,6 +66,13 @@ namespace FE::Graphics::Vulkan
                     anyProcessing = true;
                     ProcessCommandList(freeProcessorIndex);
                 }
+                else if (anyProcessing)
+                {
+                    for (uint32_t i = 0; i < 32; ++i)
+                        _mm_pause();
+
+                    continue;
+                }
             }
 
             if (!anyProcessing)
@@ -220,10 +227,17 @@ namespace FE::Graphics::Vulkan
 
                         FE_PROFILER_ZONE_NAMED("Stall");
 
-                        while (!FinalizeFinishedProcessors())
+                        if (!FinalizeFinishedProcessors())
                         {
-                            for (uint32_t i = 0; i < 32; ++i)
-                                _mm_pause();
+                            festd::fixed_vector<VkFence, kMaxInFlightSubmits> waitFences;
+                            for (uint32_t i = 0; i < kMaxInFlightSubmits; ++i)
+                            {
+                                if (m_inFlightProcessors[i].m_isProcessing)
+                                    waitFences.push_back(m_inFlightProcessors[i].m_fence);
+                            }
+
+                            VerifyVulkan(vkWaitForFences(
+                                NativeCast(m_device), waitFences.size(), waitFences.data(), VK_FALSE, Constants::kMaxU64));
                         }
                     }
 

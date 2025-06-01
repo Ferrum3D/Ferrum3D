@@ -11,43 +11,91 @@ namespace FE::Threading
         inline constexpr uint32_t kNormalFiberCount = 128;
         inline constexpr uint32_t kExtendedFiberCount = 32;
         inline constexpr uint32_t kTotalFiberCount = kNormalFiberCount + kExtendedFiberCount;
-        inline constexpr size_t kTotalStackSize = kNormalFiberCount * kNormalStackSize + kExtendedFiberCount * kExtendedStackSize;
+        inline constexpr size_t kTotalStackSize = (kExtendedFiberCount + kNormalFiberCount) * kExtendedStackSize;
+
+        inline constexpr uint32_t kFiberTempAllocatorPageSize = 16 * 1024;
     } // namespace
+
+
+    FiberRuntimeInfo& FiberRuntimeInfo::Get()
+    {
+        //
+        // To get the current fiber runtime info we need to get a pointer to the block of memory
+        // allocated for the fiber's stack.
+        // Since these blocks of memory are aligned to kExtendedStackSize, we can use a pointer
+        // located somewhere on the stack and align it down to the start of the block.
+        //
+
+        auto* addressOnStack = FE_StackAlloc(std::byte, 0);
+        auto* fiberStackStart = AlignDownPtr(addressOnStack, kExtendedStackSize);
+        auto* result = reinterpret_cast<FiberRuntimeInfo*>(fiberStackStart);
+
+        if (result->m_magic != kFiberMagic)
+            FE_DebugBreak();
+
+        return *result;
+    }
 
 
     FiberPool::FiberPool(const Context::Callback fiberCallback)
     {
         FE_PROFILER_ZONE();
 
-        const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
-        const size_t totalGuardPagesSize = (kTotalFiberCount + 1) * memorySpec.m_pageSize;
+        m_tempPagePool.Initialize("FiberTempMemoryPool", kFiberTempAllocatorPageSize);
 
-        m_stackMemorySize = AlignUp(totalGuardPagesSize + kTotalStackSize, memorySpec.m_granularity);
-        m_stackMemory = Memory::AllocateVirtual(m_stackMemorySize);
+        const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
+
+        m_stackMemorySize = kTotalStackSize + kExtendedStackSize * 2;
+        m_stackMemory = Memory::ReserveVirtual(m_stackMemorySize, kExtendedStackSize);
 
         m_fibers = Memory::DefaultAllocateArray<FiberInfo>(kTotalFiberCount);
         eastl::uninitialized_default_fill(m_fibers, m_fibers + kTotalFiberCount);
 
-        std::byte* ptr = static_cast<std::byte*>(m_stackMemory);
+        auto* ptr = static_cast<std::byte*>(m_stackMemory);
+
+        // First guard page.
+        ptr += kExtendedStackSize;
+
         for (uint32_t i = 0; i < kNormalFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
-            ptr += memorySpec.m_pageSize + kNormalStackSize; // top of the stack
+            Memory::CommitVirtual(ptr, kNormalStackSize - memorySpec.m_pageSize);
+
+            auto* runtimeInfo = new (ptr) FiberRuntimeInfo(kFiberTempAllocatorPageSize, &m_tempPagePool);
+            runtimeInfo->m_handle = FiberHandle{ i };
+            FE_Assert(IsAlignedPtr(runtimeInfo, kExtendedStackSize));
+
+            ptr += kNormalStackSize - memorySpec.m_pageSize; // top of the stack, last page is reserved
+
+            const size_t stackByteSize = kNormalStackSize - memorySpec.m_pageSize - sizeof(FiberRuntimeInfo);
+            m_fibers[i].m_runtimeInfo = runtimeInfo;
+            m_fibers[i].m_context = Context::Create(ptr, stackByteSize, fiberCallback);
             m_fibers[i].m_isFree = true;
-            m_fibers[i].m_context = Context::Create(ptr, kNormalStackSize, fiberCallback);
             Fmt::FormatTo(m_fibers[i].m_name, "Fiber {}", i);
+            runtimeInfo->m_name = m_fibers[i].m_name.c_str();
+
+            ptr = AlignUpPtr(ptr, kExtendedStackSize);
         }
         for (uint32_t i = 0; i < kExtendedFiberCount; ++i)
         {
-            Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
-            ptr += memorySpec.m_pageSize + kExtendedStackSize;
+            Memory::CommitVirtual(ptr, kExtendedStackSize - memorySpec.m_pageSize);
+
+            auto* runtimeInfo = new (ptr) FiberRuntimeInfo(kFiberTempAllocatorPageSize, &m_tempPagePool);
+            runtimeInfo->m_handle = FiberHandle{ i };
+            FE_Assert(IsAlignedPtr(runtimeInfo, kExtendedStackSize));
+
+            ptr += kExtendedStackSize - memorySpec.m_pageSize; // top of the stack, last page is reserved
+
+            const size_t stackByteSize = kExtendedStackSize - memorySpec.m_pageSize - sizeof(FiberRuntimeInfo);
+            m_fibers[i + kNormalFiberCount].m_runtimeInfo = runtimeInfo;
+            m_fibers[i + kNormalFiberCount].m_context = Context::Create(ptr, stackByteSize, fiberCallback);
             m_fibers[i + kNormalFiberCount].m_isFree = true;
-            m_fibers[i + kNormalFiberCount].m_context = Context::Create(ptr, kExtendedStackSize, fiberCallback);
             Fmt::FormatTo(m_fibers[i + kNormalFiberCount].m_name, "Fiber Big {}", i);
+            runtimeInfo->m_name = m_fibers[i + kNormalFiberCount].m_name.c_str();
+
+            ptr = AlignUpPtr(ptr, kExtendedStackSize);
         }
 
-        Memory::ProtectVirtual(ptr, memorySpec.m_pageSize, Memory::ProtectFlags::kNone);
-        FE_Assert(ptr + memorySpec.m_pageSize == static_cast<std::byte*>(m_stackMemory) + totalGuardPagesSize + kTotalStackSize);
+        FE_Assert(ptr + kExtendedStackSize == static_cast<std::byte*>(m_stackMemory) + m_stackMemorySize);
     }
 
 
@@ -86,6 +134,7 @@ namespace FE::Threading
 
     void FiberPool::Return(const FiberHandle fiberHandle)
     {
+        FE_Assert(m_fibers[fiberHandle.m_value].m_runtimeInfo->m_tempAllocator.IsEmpty());
         m_fibers[fiberHandle.m_value].m_isFree.store(true, std::memory_order_release);
     }
 

@@ -16,6 +16,10 @@ namespace FE
 
 
         [[nodiscard]] void* AllocateVirtual(size_t byteSize);
+        [[nodiscard]] void* AllocateVirtual(size_t byteSize, size_t byteAlignment);
+        [[nodiscard]] void* ReserveVirtual(size_t byteSize);
+        [[nodiscard]] void* ReserveVirtual(size_t byteSize, size_t byteAlignment);
+        void CommitVirtual(void* ptr, size_t byteSize);
         void FreeVirtual(void* ptr, size_t byteSize);
 
 

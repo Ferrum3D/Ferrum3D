@@ -1,4 +1,5 @@
 #include <FeCore/DI/Activator.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>
@@ -548,10 +549,10 @@ namespace FE::Framework::Windows
     Core::AlertResponse PlatformApplication::ShowAlert(const Core::AlertKind kind, const festd::string_view title,
                                                        const festd::string_view message, const Core::AlertButtons buttons)
     {
-        // TODO: thread temp allocator
+        Memory::FiberTempAllocator tempAllocator;
 
-        const Str::Utf8ToUtf16 wideTitle{ title.data(), title.size() };
-        const Str::Utf8ToUtf16 wideMessage{ message.data(), message.size() };
+        const Str::Utf8ToUtf16 wideTitle{ title.data(), title.size(), &tempAllocator };
+        const Str::Utf8ToUtf16 wideMessage{ message.data(), message.size(), &tempAllocator };
 
         const UINT type = ConvertKind(kind) | ConvertButtons(buttons);
         const int32_t response = MessageBoxW(nullptr, wideMessage.ToWideString(), wideTitle.ToWideString(), type);

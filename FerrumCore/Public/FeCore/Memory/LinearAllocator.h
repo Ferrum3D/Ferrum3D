@@ -52,7 +52,6 @@ namespace FE::Memory
         void NewPage();
 
     protected:
-        void* do_allocate(size_t byteSize, size_t byteAlignment) override;
         void do_deallocate(void*, size_t, size_t) override {}
         bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
         {
@@ -65,7 +64,15 @@ namespace FE::Memory
 
         void Collect();
 
-        Marker GetMarker() const
+        void* do_allocate(size_t byteSize, size_t byteAlignment) override;
+
+        [[nodiscard]] bool IsEmpty() const
+        {
+            return m_currentMarker.m_page == nullptr
+                || m_currentMarker.m_offset == sizeof(Page) && m_currentMarker.m_page == m_firstPage;
+        }
+
+        [[nodiscard]] Marker GetMarker() const
         {
             return m_currentMarker;
         }

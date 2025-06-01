@@ -1,5 +1,6 @@
 ﻿#include <FeCore/Console/Console.h>
 #include <FeCore/IO/Path.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/Time/DateTime.h>
 #include <Framework/Application/Application.h>
@@ -165,6 +166,8 @@ private:
         {
             FE_PROFILER_ZONE();
 
+            Memory::FiberTempAllocator tempAllocator;
+
             Core::InputLayoutBuilder inputLayoutBuilder;
             inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
                 .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
@@ -183,8 +186,6 @@ private:
                 .SetRasterization(Core::RasterizationState::kFillNoCull);
 
             m_pipeline = m_pipelineFactory->CreateGraphicsPipeline(pipelineRequest);
-
-            auto pipelineWaitGroup = m_pipeline->GetCompletionWaitGroup();
 
             Core::GeometryAllocationDesc geometryDesc;
             geometryDesc.m_name = "Triangle";
@@ -209,13 +210,13 @@ private:
 
             const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
 
-            Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &m_tempAllocator, 256 };
+            Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
             copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
 
             Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build();
             auto copyWaitGroup = m_copyQueue->ExecuteCommandList(copyCommandList);
 
-            const Rc<WaitGroup> waitGroups[] = { pipelineWaitGroup, copyWaitGroup };
+            const Rc<WaitGroup> waitGroups[] = { m_pipeline->GetCompletionWaitGroup(), copyWaitGroup };
             WaitGroup::WaitAll(waitGroups);
             copyCommandList.Free();
         }
@@ -224,10 +225,9 @@ private:
         {
             FE_PROFILER_ZONE();
 
-            const auto pass = builder.AddPass("DrawTriangle");
+            Memory::FiberTempAllocator tempAllocator;
 
-            // TODO: thread temp allocator
-            const Memory::LinearAllocator::Scope tempAllocatorScope{ m_tempAllocator };
+            const auto pass = builder.AddPass("DrawTriangle");
 
             // Geometry views and draw arguments are copied into the FrameGraph's internal buffer
             // that lives until the rendering thread finishes. So we don't need to store this data in the
@@ -238,7 +238,7 @@ private:
             Core::DrawCall drawCall;
             drawCall.InitForSingleInstance(&geometryView, m_pipeline.Get());
 
-            Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &m_tempAllocator };
+            Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &tempAllocator };
             drawListBuilder.AddDrawCall(drawCall);
 
             PassData& passData = blackboard.Add<PassData>();
@@ -271,7 +271,6 @@ private:
         Core::GeometryHandle m_geometry;
 
         Rc<Core::GraphicsPipeline> m_pipeline;
-        Memory::LinearAllocator m_tempAllocator;
     };
 
     Rc<WaitGroup> ScheduleUpdate() override

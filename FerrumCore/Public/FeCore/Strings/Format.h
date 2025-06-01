@@ -319,7 +319,6 @@ namespace FE::Fmt
     template<class... TArgs>
     inline Env::Name FormatName(festd::string_view fmt, TArgs&&... args)
     {
-        // TODO: temp allocator
         return Env::Name{ FixedFormat(fmt, festd::forward<TArgs>(args)...) };
     }
 } // namespace FE::Fmt

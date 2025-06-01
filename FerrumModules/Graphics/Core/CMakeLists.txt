@@ -131,7 +131,6 @@ target_include_directories(FeGraphicsCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/P
 set_target_properties(FeGraphicsCore PROPERTIES FOLDER "Modules/Graphics")
 target_link_libraries(FeGraphicsCore
     volk
-    glfw
     dxc
     FeCore
     spirv-cross-core
