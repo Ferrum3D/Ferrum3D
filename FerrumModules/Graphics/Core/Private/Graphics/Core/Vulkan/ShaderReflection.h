@@ -14,6 +14,7 @@ namespace FE::Graphics::Vulkan
 
         festd::span<const Core::ShaderInputAttribute> GetInputAttributes() const override;
         festd::span<const Core::ShaderResourceBinding> GetResourceBindings() const override;
+        festd::span<const Core::ShaderRootConstant> GetRootConstants() const override;
 
         uint32_t GetResourceBindingIndex(Env::Name name) const override;
         uint32_t GetInputAttributeLocation(Env::Name semantic) const override;
@@ -21,6 +22,7 @@ namespace FE::Graphics::Vulkan
     private:
         festd::small_vector<Core::ShaderInputAttribute> m_inputAttributes;
         festd::small_vector<Core::ShaderResourceBinding> m_resourceBindings;
+        festd::small_vector<Core::ShaderRootConstant> m_rootConstants;
 
         void ParseInputAttributes(const spirv_cross::CompilerHLSL* pCompiler,
                                   const spirv_cross::ShaderResources& shaderResources);

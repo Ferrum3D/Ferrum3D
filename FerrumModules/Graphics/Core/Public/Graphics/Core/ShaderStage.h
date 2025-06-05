@@ -36,17 +36,17 @@ namespace FE::Graphics::Core
         switch (shaderStage)
         {
         case ShaderStage::kVertex:
-            return "vs_main";
+            return "main_vs";
         case ShaderStage::kPixel:
-            return "ps_main";
+            return "main_ps";
         case ShaderStage::kHull:
-            return "hs_main";
+            return "main_hs";
         case ShaderStage::kDomain:
-            return "ds_main";
+            return "main_ds";
         case ShaderStage::kGeometry:
-            return "gs_main";
+            return "main_gs";
         case ShaderStage::kCompute:
-            return "cs_main";
+            return "main_cs";
 
         case ShaderStage::kUndefined:
             FE_Assert(false, "Only shader header files can have an undefined stage");

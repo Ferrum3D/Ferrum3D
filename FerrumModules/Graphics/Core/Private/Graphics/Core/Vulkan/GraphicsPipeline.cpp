@@ -1,15 +1,76 @@
-﻿#include <Graphics/Core/Vulkan/Device.h>
+﻿#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/ImageFormat.h>
 #include <Graphics/Core/Vulkan/PipelineStates.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
-#include <Graphics/Core/Vulkan/ShaderResourceGroup.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
 {
-    GraphicsPipeline::GraphicsPipeline(Core::Device* device)
+    namespace
+    {
+        VkDescriptorType GetDescriptorType(const Core::ShaderResourceType type)
+        {
+            switch (type)
+            {
+            case Core::ShaderResourceType::kConstantBuffer:
+                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            case Core::ShaderResourceType::kTextureSRV:
+                return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            case Core::ShaderResourceType::kTextureUAV:
+                return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            case Core::ShaderResourceType::kBufferSRV:
+                return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+            case Core::ShaderResourceType::kBufferUAV:
+                return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            case Core::ShaderResourceType::kSampler:
+                return VK_DESCRIPTOR_TYPE_SAMPLER;
+            case Core::ShaderResourceType::kInputAttachment:
+                return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+            case Core::ShaderResourceType::kNone:
+            default:
+                FE_AssertMsg(false, "Invalid ShaderResourceType");
+                return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+            }
+        }
+
+
+        DescriptorSetLayoutHandle CreateDescriptorSetLayout(DescriptorAllocator* descriptorAllocator,
+                                                            const festd::span<const Core::ShaderReflection*> shaderReflections)
+        {
+            FE_PROFILER_ZONE();
+
+            Memory::FiberTempAllocator temp;
+
+            festd::pmr::vector<VkDescriptorSetLayoutBinding> vkBindings{ &temp };
+            vkBindings.reserve(shaderReflections.size() * 8);
+
+            for (const Core::ShaderReflection* pReflection : shaderReflections)
+            {
+                const festd::span bindings = pReflection->GetResourceBindings();
+                for (const Core::ShaderResourceBinding& binding : bindings)
+                {
+                    VkDescriptorSetLayoutBinding& vkBinding = vkBindings.emplace_back();
+                    vkBinding.binding = binding.m_slot;
+                    vkBinding.descriptorCount = binding.m_count;
+                    vkBinding.descriptorType = GetDescriptorType(binding.m_type);
+                    vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
+                }
+            }
+
+            VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
+            layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutCreateInfo.bindingCount = vkBindings.size();
+            layoutCreateInfo.pBindings = vkBindings.data();
+            return descriptorAllocator->CreateDescriptorSetLayout(layoutCreateInfo);
+        }
+    } // namespace
+
+
+    GraphicsPipeline::GraphicsPipeline(Core::Device* device, DescriptorAllocator* descriptorAllocator)
+        : m_descriptorAllocator(descriptorAllocator)
     {
         m_device = device;
     }
@@ -67,6 +128,7 @@ namespace FE::Graphics::Vulkan
 
         WaitGroup::WaitAll(shaderWaitGroups);
 
+        festd::fixed_vector<const Core::ShaderReflection*, kMaxShaderCount> shaderReflections;
         for (uint32_t shaderStageIndex = 0; shaderStageIndex < festd::size(m_desc.m_shaders); ++shaderStageIndex)
         {
             const Env::Name shaderName = m_desc.m_shaders[shaderStageIndex];
@@ -81,6 +143,8 @@ namespace FE::Graphics::Vulkan
                 m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
                 return;
             }
+
+            shaderReflections.push_back(context.m_shaderLibrary->GetReflection(shaderHandle));
 
             VkPipelineShaderStageCreateInfo& shaderStageCI = shaderStages.push_back();
             shaderStageCI = {};
@@ -217,24 +281,39 @@ namespace FE::Graphics::Vulkan
         colorBlendCI.logicOp = VK_LOGIC_OP_COPY;
         colorBlendCI.attachmentCount = colorBlendAttachments.size();
         colorBlendCI.pAttachments = colorBlendAttachments.data();
-        memcpy(colorBlendCI.blendConstants,
-               m_desc.m_colorBlend.m_blendConstants.Data(),
-               festd::size_bytes(colorBlendCI.blendConstants));
         pipelineCI.pColorBlendState = &colorBlendCI;
 
-        festd::fixed_vector<VkDescriptorSetLayout, Limits::kMaxShaderResourceGroups> setLayouts;
-        for (const Core::ShaderResourceGroup* srg : m_desc.m_shaderResourceGroups)
+        festd::fixed_vector<VkPushConstantRange, Limits::kMaxShaderResourceGroups> pushConstantRanges;
+        for (const Core::ShaderReflection* reflection : shaderReflections)
         {
-            if (srg)
-                setLayouts.push_back(ImplCast(srg)->GetNativeSetLayout());
+            for (const Core::ShaderRootConstant& rootConstants : reflection->GetRootConstants())
+            {
+                if (rootConstants.m_byteSize > 0)
+                {
+                    VkPushConstantRange& range = pushConstantRanges.push_back();
+                    range.size = rootConstants.m_byteSize;
+                    range.offset = rootConstants.m_offset;
+                    range.stageFlags = VK_SHADER_STAGE_ALL;
+                }
+            }
         }
+
+        m_layoutHandle = CreateDescriptorSetLayout(m_descriptorAllocator, shaderReflections);
+        m_descriptorSet = m_descriptorAllocator->AllocateDescriptorSet(m_layoutHandle.m_layout);
 
         const VkDevice device = NativeCast(m_device);
 
         VkPipelineLayoutCreateInfo layoutCI{};
         layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layoutCI.pSetLayouts = setLayouts.data();
-        layoutCI.setLayoutCount = setLayouts.size();
+        layoutCI.pSetLayouts = &m_layoutHandle.m_layout;
+        layoutCI.setLayoutCount = 1;
+
+        if (!pushConstantRanges.empty())
+        {
+            layoutCI.pushConstantRangeCount = pushConstantRanges.size();
+            layoutCI.pPushConstantRanges = pushConstantRanges.data();
+        }
+
         if (const VkResult result = vkCreatePipelineLayout(device, &layoutCI, VK_NULL_HANDLE, &m_layout); result != VK_SUCCESS)
         {
             context.m_logger->LogError("Failed to create pipeline layout: {}", VKResultToString(result));

@@ -4,10 +4,11 @@
 #include <FeCore/Threading/Event.h>
 #include <FeCore/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
+#include <Graphics/Core/Fence.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
-#include <festd/bit_vector.h>
+#include <festd/ring_buffer.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -18,50 +19,49 @@ namespace FE::Graphics::Vulkan
         AsyncCopyQueue(Core::Device* device, Core::ResourcePool* resourcePool);
         ~AsyncCopyQueue() override;
 
-        Rc<WaitGroup> ExecuteCommandList(const Core::AsyncCopyCommandList& commandList) override;
+        void ExecuteCommandList(Core::AsyncCopyCommandList* commandList) override;
         void Drain() override;
 
     private:
-        static constexpr uint32_t kMaxInFlightSubmits = 8;
         static constexpr uint32_t kStagingAllocationAlignment = 256;
         static constexpr uint32_t kUploadBufferSize = 4 * 1024 * 1024;
 
+        struct ProcessingItem final
+        {
+            Core::AsyncCopyCommandList m_queueItem;
+            Rc<CommandBuffer> m_commandBuffer;
+            uint64_t m_fenceValue = 0;
+
+            festd::small_vector<VmaVirtualAllocation> m_stagingAllocations;
+        };
+
         void ThreadProc();
-        bool FinalizeFinishedProcessors();
-        void ProcessCommandList(uint32_t processorIndex);
+        bool FinalizeFinishedProcessors(bool wait = false);
+        void ProcessCommandList(ProcessingItem* item);
+        VkDeviceSize AllocateStagingMemory(ProcessingItem* item, size_t byteSize, size_t byteAlignment);
+        void SubmitCommandList(VkCommandBuffer commandBuffer, uint64_t fenceValue) const;
+        Rc<CommandBuffer> AcquireCommandBuffer();
 
         Core::ResourcePool* m_resourcePool = nullptr;
 
         Threading::ThreadHandle m_thread;
         Threading::Event m_threadEvent;
-        std::atomic<bool> m_threadRunning = false;
+        Threading::Event m_suspendEvent;
+        std::atomic<bool> m_exitRequested = false;
+        Threading::SharedSpinLock m_suspendLock;
 
         VkQueue m_queue = VK_NULL_HANDLE;
         Rc<Buffer> m_uploadBuffer;
-        VmaVirtualBlock m_uploadBufferBlock = VK_NULL_HANDLE;
+        VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
+        uint64_t m_fenceValue = 0;
+        Rc<Core::Fence> m_fence;
 
-        struct Slot final
-        {
-            Rc<WaitGroup> m_waitGroup;
-            Core::AsyncCopyCommandList m_commandList;
-        };
+        uint32_t m_commandBufferCounter = 0;
+        festd::small_vector<Rc<CommandBuffer>> m_freeCommandBuffers;
+        festd::small_ring_buffer<ProcessingItem*, 32> m_processingItems;
+        Memory::Pool<ProcessingItem> m_processingItemPool{ "AsyncCopyProcessingItemPool" };
 
-        struct InFlightProcessor final
-        {
-            VmaVirtualAllocation m_stagingAllocation = VK_NULL_HANDLE;
-            VkFence m_fence = VK_NULL_HANDLE;
-            Rc<CommandBuffer> m_commandBuffer;
-            uint32_t m_slotIndex = kInvalidIndex;
-            bool m_isProcessing = false;
-            bool m_isQueued = false;
-        };
-
-        festd::array<InFlightProcessor, kMaxInFlightSubmits> m_inFlightProcessors;
-        uint32_t m_busyProcessorCount = 0;
-
-        Threading::SpinLock m_lock;
-        festd::bit_vector m_freeSlots;
-        festd::bit_vector m_queuedSlots;
-        SegmentedVector<Slot> m_slots;
+        ConcurrentOnceConsumedQueue m_requestQueue;
+        festd::small_vector<Core::AsyncCopyCommandList*> m_requestCache;
     };
 } // namespace FE::Graphics::Vulkan

@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <festd/string.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/ShaderResourceType.h>
 #include <Graphics/Core/ShaderStage.h>
+#include <festd/string.h>
 
 namespace FE::Graphics::Core
 {
@@ -19,10 +19,18 @@ namespace FE::Graphics::Core
     {
         Env::Name m_name;
         uint32_t m_stride;
-        uint32_t m_slot : 8;
-        uint32_t m_space : 8;
-        uint32_t m_count : 16;
+        uint32_t m_slot : 16;
+        uint32_t m_space : 16;
+        uint32_t m_count;
         ShaderResourceType m_type = ShaderResourceType::kNone;
+    };
+
+
+    struct ShaderRootConstant final
+    {
+        Env::Name m_name;
+        uint32_t m_offset : 16;
+        uint32_t m_byteSize : 16;
     };
 
 
@@ -34,6 +42,7 @@ namespace FE::Graphics::Core
 
         virtual festd::span<const ShaderInputAttribute> GetInputAttributes() const = 0;
         virtual festd::span<const ShaderResourceBinding> GetResourceBindings() const = 0;
+        virtual festd::span<const ShaderRootConstant> GetRootConstants() const = 0;
 
         virtual uint32_t GetResourceBindingIndex(Env::Name name) const = 0;
         virtual uint32_t GetInputAttributeLocation(Env::Name semantic) const = 0;

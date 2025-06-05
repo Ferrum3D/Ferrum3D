@@ -8,7 +8,6 @@
 
 namespace FE::Graphics::Core
 {
-    struct ShaderResourceGroup;
     struct ShaderModule;
 
 
@@ -22,7 +21,6 @@ namespace FE::Graphics::Core
 
     struct GraphicsPipelineDesc final
     {
-        ShaderResourceGroup* m_shaderResourceGroups[Limits::Pipeline::kMaxShaderResourceGroups];
         Env::Name m_shaders[festd::to_underlying(ShaderStage::kGraphicsCount)];
 
         Format m_rtvFormats[Limits::Pipeline::kMaxColorAttachments];
@@ -37,7 +35,6 @@ namespace FE::Graphics::Core
 
         GraphicsPipelineDesc()
         {
-            memset(&m_shaderResourceGroups, 0, festd::size_bytes(m_shaderResourceGroups));
             memset(&m_shaders, 0xff, festd::size_bytes(m_shaders));
             memset(&m_rtvFormats, 0, festd::size_bytes(m_rtvFormats));
 
@@ -48,8 +45,6 @@ namespace FE::Graphics::Core
         [[nodiscard]] uint64_t GetHash() const
         {
             Hasher hasher;
-            hasher.UpdateRaw(DefaultHash(&m_shaderResourceGroups, festd::size_bytes(m_shaderResourceGroups)));
-
             for (const Env::Name shader : m_shaders)
                 hasher.UpdateRaw(shader.GetHash());
 

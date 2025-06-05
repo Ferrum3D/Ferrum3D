@@ -1,5 +1,6 @@
 ﻿#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Device.h>
+#include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 
 namespace FE::Graphics::Vulkan
@@ -22,6 +23,27 @@ namespace FE::Graphics::Vulkan
                 }
             }
         };
+
+
+        struct ScopedMapper final
+        {
+            Buffer* m_buffer = nullptr;
+            void* m_data = nullptr;
+
+            std::byte* Map()
+            {
+                if (m_data == nullptr)
+                    m_data = m_buffer->Map();
+
+                return static_cast<std::byte*>(m_data);
+            }
+
+            ~ScopedMapper()
+            {
+                if (m_data != nullptr)
+                    m_buffer->Unmap();
+            }
+        };
     } // namespace
 
 
@@ -30,130 +52,112 @@ namespace FE::Graphics::Vulkan
         for (;;)
         {
             m_threadEvent.Wait();
-            m_threadRunning = true;
+
+            if (m_exitRequested)
+                break;
 
             FE_PROFILER_ZONE_NAMED("AsyncCopyThread");
 
             FinalizeFinishedProcessors();
 
-            bool anyProcessing = false;
-            uint32_t freeProcessorIndex = kInvalidIndex;
-            for (uint32_t i = 0; i < kMaxInFlightSubmits; ++i)
+            if (m_requestCache.empty())
             {
-                const auto& processor = m_inFlightProcessors[i];
-                if (processor.m_isProcessing || processor.m_isQueued)
-                    anyProcessing = true;
-                else
-                    freeProcessorIndex = i;
-            }
-
-            if (freeProcessorIndex != kInvalidIndex)
-            {
-                uint32_t slotToProcess;
+                auto* item = static_cast<Core::AsyncCopyCommandList*>(m_requestQueue.DequeueAll());
+                while (item)
                 {
-                    std::lock_guard lock{ m_lock };
-                    slotToProcess = m_queuedSlots.find_first();
-                    if (slotToProcess != kInvalidIndex)
-                    {
-                        m_queuedSlots.reset(slotToProcess);
-                        m_inFlightProcessors[freeProcessorIndex].m_slotIndex = slotToProcess;
-                        m_inFlightProcessors[freeProcessorIndex].m_isQueued = true;
-                    }
-                }
-
-                if (slotToProcess != kInvalidIndex)
-                {
-                    anyProcessing = true;
-                    ProcessCommandList(freeProcessorIndex);
-                }
-                else if (anyProcessing)
-                {
-                    for (uint32_t i = 0; i < 32; ++i)
-                        _mm_pause();
-
-                    continue;
+                    m_requestCache.push_back(item);
+                    item = static_cast<Core::AsyncCopyCommandList*>(item->m_next);
                 }
             }
 
-            if (!anyProcessing)
+            Core::AsyncCopyCommandList* item = nullptr;
+            if (!m_requestCache.empty())
             {
-                std::lock_guard lock{ m_lock };
-                if (m_queuedSlots.find_first() == kInvalidIndex)
+                item = m_requestCache.back();
+                m_requestCache.pop_back();
+            }
+
+            if (item)
+            {
+                ProcessingItem* processingItem = m_processingItemPool.New();
+                processingItem->m_queueItem = *item;
+                processingItem->m_fenceValue = ++m_fenceValue;
+
+                if (m_processingItems.full())
+                    m_processingItems.reserve(m_processingItems.capacity() * 2);
+
+                m_processingItems.push_back(processingItem);
+
+                ProcessCommandList(processingItem);
+            }
+            else if (m_requestCache.empty() && m_processingItems.empty())
+            {
+                // Block producers to ensure no one adds new requests before we go idle.
+                std::unique_lock lock{ m_suspendLock };
+                if (m_requestQueue.Empty())
                 {
                     m_threadEvent.Reset();
-                    m_threadRunning = false;
+                    m_suspendEvent.Send();
                 }
             }
         }
     }
 
 
-    bool AsyncCopyQueue::FinalizeFinishedProcessors()
+    bool AsyncCopyQueue::FinalizeFinishedProcessors(const bool wait)
     {
         FE_PROFILER_ZONE();
 
-        bool anyFinalized = false;
-        for (uint32_t i = 0; i < kMaxInFlightSubmits; ++i)
+        bool loopedOnce = false;
+        for (;;)
         {
-            auto& processor = m_inFlightProcessors[i];
-            if (processor.m_isProcessing)
+            bool anyProgress = false;
+            while (!m_processingItems.empty())
             {
-                const uint32_t slotIndex = processor.m_slotIndex;
-                Slot& slot = m_slots[slotIndex];
-                const VkResult fenceStatus = vkGetFenceStatus(NativeCast(m_device), processor.m_fence);
-                if (fenceStatus == VK_SUCCESS)
-                {
-                    vmaVirtualFree(m_uploadBufferBlock, processor.m_stagingAllocation);
+                ProcessingItem* item = m_processingItems.front();
+                if (item->m_fenceValue > m_fence->GetCompletedValue())
+                    break;
 
-                    processor.m_slotIndex = kInvalidIndex;
-                    processor.m_isProcessing = false;
-                    processor.m_isQueued = false;
+                FE_Assert(item->m_fenceValue != 0);
 
-                    std::lock_guard lock{ m_lock };
+                if (item->m_queueItem.m_signalWaitGroup)
+                    item->m_queueItem.m_signalWaitGroup->Signal();
 
-                    slot.m_waitGroup->Signal();
-                    slot.m_waitGroup.Reset();
+                m_freeCommandBuffers.push_back(item->m_commandBuffer);
+                for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
+                    vmaVirtualFree(m_uploadRingBuffer, stagingAllocation);
 
-                    m_freeSlots.set(slotIndex);
+                m_processingItems.pop_front();
+                m_processingItemPool.Delete(item);
 
-                    anyFinalized = true;
-                }
-                else
-                {
-                    FE_Assert(fenceStatus == VK_NOT_READY);
-                }
+                anyProgress = true;
             }
-        }
 
-        return anyFinalized;
+            if (!anyProgress && wait)
+            {
+                if (m_processingItems.empty())
+                    return false;
+
+                FE_Assert(!loopedOnce, "Infinite loop detected");
+                m_fence->Wait(m_processingItems.front()->m_fenceValue);
+                loopedOnce = true;
+                continue;
+            }
+
+            return true;
+        }
     }
 
 
-    void AsyncCopyQueue::ProcessCommandList(const uint32_t processorIndex)
+    void AsyncCopyQueue::ProcessCommandList(ProcessingItem* item)
     {
         FE_PROFILER_ZONE();
 
-        InFlightProcessor& processor = m_inFlightProcessors[processorIndex];
-        if (processor.m_commandBuffer)
-        {
-            VerifyVulkan(vkResetCommandBuffer(processor.m_commandBuffer->GetNative(), 0));
-            VerifyVulkan(vkResetFences(NativeCast(m_device), 1, &processor.m_fence));
-        }
-        else
-        {
-            FE_Assert(processor.m_fence == VK_NULL_HANDLE);
+        FE_Assert(item->m_commandBuffer == nullptr);
 
-            const Env::Name name = Fmt::FormatName("AsyncCopyCommandBuffer_{}", processorIndex);
-            processor.m_commandBuffer = CommandBuffer::Create(m_device, name, Core::HardwareQueueKindFlags::kTransfer);
+        item->m_commandBuffer = AcquireCommandBuffer();
 
-            VkFenceCreateInfo fenceCI = {};
-            fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            vkCreateFence(NativeCast(m_device), &fenceCI, nullptr, &processor.m_fence);
-        }
-
-        const Slot& slot = m_slots[processor.m_slotIndex];
-
-        const VkCommandBuffer commandBuffer = processor.m_commandBuffer->GetNative();
+        const VkCommandBuffer commandBuffer = item->m_commandBuffer->GetNative();
 
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -162,7 +166,10 @@ namespace FE::Graphics::Vulkan
         CommandBatcher batcher;
         batcher.m_commandBuffer = commandBuffer;
 
-        Memory::SegmentedBufferReader reader{ slot.m_commandList.m_buffer };
+        ScopedMapper mapper;
+        mapper.m_buffer = m_uploadBuffer.Get();
+
+        Memory::SegmentedBufferReader reader{ item->m_queueItem.m_buffer };
         for (;;)
         {
             using namespace Core::InternalAsyncCopyCommands;
@@ -210,46 +217,28 @@ namespace FE::Graphics::Vulkan
                     AsyncUploadBufferCommand cmd;
                     FE_Verify(reader.Read(cmd));
 
-                    VmaVirtualAllocationCreateInfo stagingAllocationCI = {};
-                    stagingAllocationCI.size = cmd.m_size;
-                    stagingAllocationCI.alignment = kStagingAllocationAlignment;
-
-                    FE_Assert(cmd.m_size <= kUploadBufferSize, "Not supported yet.");
-
-                    VkDeviceSize allocationOffset;
-                    for (;;)
+                    uint32_t uploadedBytes = 0;
+                    while (uploadedBytes < cmd.m_size)
                     {
-                        const VkResult allocationResult = vmaVirtualAllocate(
-                            m_uploadBufferBlock, &stagingAllocationCI, &processor.m_stagingAllocation, &allocationOffset);
+                        const uint32_t allocationSize = Math::Min(cmd.m_size - uploadedBytes, kUploadBufferSize);
 
-                        if (allocationResult == VK_SUCCESS)
-                            break;
+                        const VkDeviceSize allocationOffset =
+                            AllocateStagingMemory(item, allocationSize, kStagingAllocationAlignment);
 
-                        FE_PROFILER_ZONE_NAMED("Stall");
+                        auto* data = mapper.Map();
+                        auto* copyDestination = data + allocationOffset;
+                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + uploadedBytes;
+                        memcpy(copyDestination, copySource, allocationSize);
 
-                        if (!FinalizeFinishedProcessors())
-                        {
-                            festd::fixed_vector<VkFence, kMaxInFlightSubmits> waitFences;
-                            for (uint32_t i = 0; i < kMaxInFlightSubmits; ++i)
-                            {
-                                if (m_inFlightProcessors[i].m_isProcessing)
-                                    waitFences.push_back(m_inFlightProcessors[i].m_fence);
-                            }
+                        VkBufferCopy copy;
+                        copy.srcOffset = allocationOffset;
+                        copy.dstOffset = cmd.m_destinationOffset;
+                        copy.size = cmd.m_size;
+                        vkCmdCopyBuffer(commandBuffer, m_uploadBuffer->GetNative(), NativeCast(cmd.m_buffer), 1, &copy);
 
-                            VerifyVulkan(vkWaitForFences(
-                                NativeCast(m_device), waitFences.size(), waitFences.data(), VK_FALSE, Constants::kMaxU64));
-                        }
+                        uploadedBytes += allocationSize;
                     }
 
-                    void* data = static_cast<std::byte*>(m_uploadBuffer->Map()) + allocationOffset;
-                    memcpy(data, cmd.m_data, cmd.m_size);
-                    m_uploadBuffer->Unmap();
-
-                    VkBufferCopy copy;
-                    copy.srcOffset = allocationOffset;
-                    copy.dstOffset = cmd.m_destinationOffset;
-                    copy.size = cmd.m_size;
-                    vkCmdCopyBuffer(commandBuffer, m_uploadBuffer->GetNative(), NativeCast(cmd.m_buffer), 1, &copy);
                     break;
                 }
 
@@ -261,17 +250,102 @@ namespace FE::Graphics::Vulkan
         }
 
         batcher.Flush();
+        SubmitCommandList(commandBuffer, item->m_fenceValue);
+    }
 
+
+    VkDeviceSize AsyncCopyQueue::AllocateStagingMemory(ProcessingItem* item, const size_t byteSize, const size_t byteAlignment)
+    {
+        VmaVirtualAllocationCreateInfo stagingAllocationCI = {};
+        stagingAllocationCI.size = byteSize;
+        stagingAllocationCI.alignment = byteAlignment;
+
+        const VkCommandBuffer commandBuffer = item->m_commandBuffer->GetNative();
+
+        item->m_stagingAllocations.push_back(VK_NULL_HANDLE);
+
+        VkDeviceSize allocationOffset;
+        for (;;)
+        {
+            const VkResult allocationResult = vmaVirtualAllocate(
+                m_uploadRingBuffer, &stagingAllocationCI, &item->m_stagingAllocations.back(), &allocationOffset);
+
+            if (allocationResult == VK_SUCCESS)
+                break;
+
+            FE_PROFILER_ZONE_NAMED("Stall");
+            if (!FinalizeFinishedProcessors())
+            {
+                //
+                // We could not free any staging memory by waiting for already submitted commands to finish.
+                // We can try to submit the current command buffer and wait for it to finish.
+                //
+
+                if (item->m_stagingAllocations.empty())
+                {
+                    // We did not allocate any staging memory for the current submit, there is nothing we can do.
+                    FE_DebugBreak();
+                    break;
+                }
+
+                SubmitCommandList(commandBuffer, item->m_fenceValue);
+                m_fence->Wait(item->m_fenceValue);
+
+                for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
+                    vmaVirtualFree(m_uploadRingBuffer, stagingAllocation);
+
+                item->m_stagingAllocations.clear();
+                item->m_stagingAllocations.push_back(VK_NULL_HANDLE);
+
+                item->m_fenceValue = ++m_fenceValue;
+
+                // We can use the same command buffer since we have waited for it to finish.
+
+                VkCommandBufferBeginInfo beginInfo = {};
+                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+            }
+        }
+
+        return allocationOffset;
+    }
+
+
+    void AsyncCopyQueue::SubmitCommandList(const VkCommandBuffer commandBuffer, const uint64_t fenceValue) const
+    {
         VerifyVulkan(vkEndCommandBuffer(commandBuffer));
+
+        VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
+        timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &fenceValue;
+        timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1;
+
+        const VkSemaphore signalSemaphore = NativeCast(m_fence.Get());
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = &timelineSemaphoreSubmitInfo;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &signalSemaphore;
 
-        VerifyVulkan(vkQueueSubmit(m_queue, 1, &submitInfo, processor.m_fence));
+        VerifyVulkan(vkQueueSubmit(m_queue, 1, &submitInfo, nullptr));
+    }
 
-        processor.m_isProcessing = true;
+
+    Rc<CommandBuffer> AsyncCopyQueue::AcquireCommandBuffer()
+    {
+        if (!m_freeCommandBuffers.empty())
+        {
+            const auto commandBuffer = m_freeCommandBuffers.back();
+            m_freeCommandBuffers.pop_back();
+            return commandBuffer;
+        }
+
+        return CommandBuffer::Create(m_device,
+                                     Fmt::FormatName("AsyncCopyCommandBuffer_{}", m_commandBufferCounter++),
+                                     Core::HardwareQueueKindFlags::kTransfer);
     }
 
 
@@ -279,6 +353,8 @@ namespace FE::Graphics::Vulkan
         : m_resourcePool(resourcePool)
     {
         m_device = device;
+
+        m_processingItems.reserve(m_processingItems.get_container().capacity());
 
         m_thread = Threading::CreateThread(
             "AsyncCopyThread",
@@ -288,13 +364,18 @@ namespace FE::Graphics::Vulkan
             reinterpret_cast<uintptr_t>(this));
 
         m_threadEvent = Threading::Event::CreateManualReset();
+        m_suspendEvent = Threading::Event::CreateManualReset();
 
         const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceUsage::kHostWriteThrough };
         m_uploadBuffer = ImplCast(m_resourcePool->CreateBuffer("AsyncUploadBuffer", uploadDesc));
 
+        m_fence = Fence::Create(m_device);
+        m_fence->Init();
+
         VmaVirtualBlockCreateInfo virtualBlockCI = {};
         virtualBlockCI.size = kUploadBufferSize;
-        VerifyVulkan(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadBufferBlock));
+        virtualBlockCI.flags = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT;
+        VerifyVulkan(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadRingBuffer));
 
         const auto* vkDevice = ImplCast(m_device);
         const uint32_t queueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::HardwareQueueKindFlags::kTransfer);
@@ -304,46 +385,35 @@ namespace FE::Graphics::Vulkan
 
     AsyncCopyQueue::~AsyncCopyQueue()
     {
-        Drain();
+        {
+            std::unique_lock lock{ m_suspendLock };
+            m_exitRequested = true;
+        }
+
         Threading::CloseThread(m_thread);
     }
 
 
-    Rc<WaitGroup> AsyncCopyQueue::ExecuteCommandList(const Core::AsyncCopyCommandList& commandList)
+    void AsyncCopyQueue::ExecuteCommandList(Core::AsyncCopyCommandList* commandList)
     {
-        std::lock_guard lock{ m_lock };
+        std::shared_lock lock{ m_suspendLock };
 
-        uint32_t slotIndex = m_freeSlots.find_first();
-        if (slotIndex == kInvalidIndex)
-        {
-            m_freeSlots.resize(Math::Max(m_freeSlots.size() * 2, 256u), true);
-            m_queuedSlots.resize(Math::Max(m_queuedSlots.size() * 2, 256u), false);
-            m_slots.resize(Math::Max(m_slots.size() * 2, 256u));
-            slotIndex = m_freeSlots.find_first();
-        }
-
-        FE_Assert(slotIndex != kInvalidIndex);
-
-        m_freeSlots.reset(slotIndex);
-        m_queuedSlots.set(slotIndex);
-
-        Slot& slot = m_slots[slotIndex];
-        slot.m_waitGroup = WaitGroup::Create();
-        slot.m_commandList = commandList;
+        m_requestQueue.Enqueue(commandList);
         m_threadEvent.Send();
-        return slot.m_waitGroup;
     }
 
 
     void AsyncCopyQueue::Drain()
     {
-        while (m_threadRunning > 0)
         {
-            // TODO: wait
-            for (uint32_t i = 0; i < 32; ++i)
-                _mm_pause();
+            std::unique_lock lock{ m_suspendLock };
+            m_suspendEvent.Reset();
+            m_threadEvent.Send();
         }
 
+        m_suspendEvent.Wait();
+        FE_Assert(m_requestQueue.Empty());
+        FE_Assert(m_requestCache.empty());
         VerifyVulkan(vkQueueWaitIdle(m_queue));
     }
 } // namespace FE::Graphics::Vulkan

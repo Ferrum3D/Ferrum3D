@@ -159,7 +159,6 @@ namespace FE::Graphics::Core
     struct ColorBlendState final
     {
         TargetColorBlending m_targetBlendStates[Limits::Pipeline::kMaxColorAttachments];
-        Vector4F m_blendConstants;
         bool m_enableIndependentBlend = false;
 
         [[nodiscard]] uint64_t GetHash(const uint32_t renderTargetCount) const
@@ -177,7 +176,6 @@ namespace FE::Graphics::Core
             }
 
             hasher.Update(renderTargetCount);
-            hasher.UpdateRaw(DefaultHash(&m_blendConstants, sizeof(m_blendConstants)));
             hasher.Update(m_enableIndependentBlend);
             return hasher.Finalize();
         }
@@ -189,27 +187,4 @@ namespace FE::Graphics::Core
             return state;
         }
     };
-
-
-    enum class PipelineStageFlags : uint32_t
-    {
-        kTopOfPipe = 1 << 0,
-        kDrawIndirect = 1 << 1,
-        kVertexInput = 1 << 2,
-        kVertexShader = 1 << 3,
-        kTessellationControlShader = 1 << 4,
-        kTessellationEvaluationShader = 1 << 5,
-        kGeometryShader = 1 << 6,
-        kFragmentShader = 1 << 7,
-        kEarlyFragmentTests = 1 << 8,
-        kLateFragmentTests = 1 << 9,
-        kColorAttachmentOutput = 1 << 10,
-        kComputeShader = 1 << 11,
-        kTransfer = 1 << 12,
-        kBottomOfPipe = 1 << 13,
-        kHost = 1 << 14,
-        kAllGraphics = (1 << 15) - 1,
-    };
-
-    FE_ENUM_OPERATORS(PipelineStageFlags);
 } // namespace FE::Graphics::Core

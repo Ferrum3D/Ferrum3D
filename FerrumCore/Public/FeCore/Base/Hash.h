@@ -224,6 +224,11 @@ namespace FE
             return *this;
         }
 
+        Hasher& UpdateRaw(const void* data, const size_t byteSize)
+        {
+            return UpdateRaw(DefaultHash(data, byteSize));
+        }
+
         template<class T>
         Hasher& Update(const T& value)
         {

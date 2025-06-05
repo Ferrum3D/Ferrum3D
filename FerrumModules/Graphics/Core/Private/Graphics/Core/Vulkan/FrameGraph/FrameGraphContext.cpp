@@ -5,7 +5,6 @@
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/Image.h>
-#include <Graphics/Core/Vulkan/ShaderResourceGroup.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
@@ -80,7 +79,7 @@ namespace FE::Graphics::Vulkan
         m_resourceBarrierBatcher.Flush();
         VerifyVulkan(vkEndCommandBuffer(m_graphicsCommandBuffer->GetNative()));
 
-        VkSubmitInfo submitInfo = {};
+        VkSubmitInfo submitInfo;
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.pNext = nullptr;
 
@@ -209,37 +208,30 @@ namespace FE::Graphics::Vulkan
         renderingInfo.renderArea = VKConvertScissor(m_viewportScissorState.m_scissor);
         vkCmdBeginRendering(vkCommandBuffer, &renderingInfo);
 
-        festd::small_vector<VkDescriptorSet> descriptorSets;
-        for (uint32_t srgIndex = 0; srgIndex < drawList.m_sharedShaderResourceGroupCount; ++srgIndex)
-        {
-            const ShaderResourceGroup* srg = ImplCast(drawList.m_sharedShaderResourceGroups[srgIndex]);
-            descriptorSets.push_back(srg->GetNativeSet());
-        }
-
         for (uint32_t drawIndex = 0; drawIndex < drawList.m_drawCallCount; ++drawIndex)
         {
             const Core::DrawCall& drawCall = drawList.m_drawCalls[drawIndex];
 
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, drawCall.m_stencilRef);
 
-            for (uint32_t srgIndex = 0; srgIndex < drawCall.m_shaderResourceGroupCount; ++srgIndex)
-            {
-                const ShaderResourceGroup* srg = ImplCast(drawCall.m_shaderResourceGroups[srgIndex]);
-                descriptorSets.push_back(srg->GetNativeSet());
-            }
-
             const GraphicsPipeline* pipeline = ImplCast(drawCall.m_pipeline);
 
-            if (!descriptorSets.empty())
+            const VkDescriptorSet descriptorSet = pipeline->GetDescriptorSet();
+            const VkPipelineLayout pipelineLayout = pipeline->GetNativeLayout();
+            if (descriptorSet)
             {
-                vkCmdBindDescriptorSets(vkCommandBuffer,
-                                        VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        pipeline->GetNativeLayout(),
-                                        0,
-                                        descriptorSets.size(),
-                                        descriptorSets.data(),
-                                        0,
-                                        nullptr);
+                vkCmdBindDescriptorSets(
+                    vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+            }
+
+            if (drawCall.m_rootConstantsByteSize > 0)
+            {
+                vkCmdPushConstants(vkCommandBuffer,
+                                   pipelineLayout,
+                                   VK_SHADER_STAGE_ALL,
+                                   0,
+                                   drawCall.m_rootConstantsByteSize,
+                                   drawCall.m_rootConstants);
             }
 
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetNative());
@@ -301,8 +293,6 @@ namespace FE::Graphics::Vulkan
                 FE_DebugBreak();
                 break;
             }
-
-            descriptorSets.resize(drawList.m_sharedShaderResourceGroupCount);
         }
 
         vkCmdEndRendering(vkCommandBuffer);

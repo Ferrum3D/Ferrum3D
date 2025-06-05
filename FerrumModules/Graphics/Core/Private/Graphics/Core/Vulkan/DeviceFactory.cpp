@@ -15,7 +15,6 @@
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
-#include <Graphics/Core/Vulkan/ShaderResourceGroup.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
@@ -139,7 +138,6 @@ namespace FE::Graphics::Vulkan
                 return DI::ResultCode::kSuccess;
             })
             .InTransientScope();
-        builder.Bind<Core::ShaderResourceGroup>().To<ShaderResourceGroup>().InTransientScope();
         builder.Bind<Core::FrameGraph>().To<FrameGraph>().InTransientScope();
         builder.Bind<Core::Viewport>().To<Viewport>().InTransientScope();
     }
