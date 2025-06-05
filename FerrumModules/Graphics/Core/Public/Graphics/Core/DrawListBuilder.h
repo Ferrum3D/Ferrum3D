@@ -11,14 +11,8 @@ namespace FE::Graphics::Core
             : m_linearAllocator(linearAllocator)
             , m_tempAllocator(tempAllocator)
             , m_geometryViewCache(tempAllocator)
-            , m_tempSharedSRGs(m_tempAllocator)
             , m_tempDrawCalls(m_tempAllocator)
         {
-        }
-
-        void AddSharedShaderResourceGroup(const ShaderResourceGroup* group)
-        {
-            m_tempSharedSRGs.push_back(group);
         }
 
         void AddDrawCall(const DrawCall& drawCall)
@@ -27,7 +21,7 @@ namespace FE::Graphics::Core
             tempDrawCall.m_instanceOffset = drawCall.m_instanceOffset;
             tempDrawCall.m_instanceCount = drawCall.m_instanceCount;
             tempDrawCall.m_stencilRef = drawCall.m_stencilRef;
-            tempDrawCall.m_shaderResourceGroupCount = drawCall.m_shaderResourceGroupCount;
+            tempDrawCall.m_rootConstantsByteSize = drawCall.m_rootConstantsByteSize;
             tempDrawCall.m_unused = 0;
 
             const auto& pipelineDesc = drawCall.m_pipeline->GetDesc();
@@ -35,26 +29,19 @@ namespace FE::Graphics::Core
 
             tempDrawCall.m_geometryView = AddGeometryView(drawCall.m_geometryView, activeStreamCount);
             tempDrawCall.m_pipeline = drawCall.m_pipeline;
-            tempDrawCall.m_shaderResourceGroups =
-                DuplicateArray(drawCall.m_shaderResourceGroups, drawCall.m_shaderResourceGroupCount);
+            tempDrawCall.m_rootConstants =
+                DuplicateArray(static_cast<const uint8_t*>(drawCall.m_rootConstants), drawCall.m_rootConstantsByteSize);
         }
 
         [[nodiscard]] DrawList Build()
         {
-            const uint32_t sharedSRGCount = m_tempSharedSRGs.size();
-            auto** sharedSRGs = Memory::AllocateArray<const ShaderResourceGroup*>(m_linearAllocator, sharedSRGCount);
-            m_tempSharedSRGs.copy_to(sharedSRGs);
-
             const uint32_t drawCallCount = m_tempDrawCalls.size();
             auto* drawCalls = Memory::AllocateArray<DrawCall>(m_linearAllocator, drawCallCount);
             m_tempDrawCalls.copy_to(drawCalls);
 
             DrawList list;
-            list.m_sharedShaderResourceGroupCount = sharedSRGCount;
-            list.m_sharedShaderResourceGroups = sharedSRGs;
             list.m_drawCallCount = drawCallCount;
             list.m_drawCalls = drawCalls;
-            list.m_unused = 0;
             return list;
         }
 
@@ -92,8 +79,6 @@ namespace FE::Graphics::Core
         }
 
         festd::pmr::segmented_unordered_dense_map<uint64_t, GeometryView*> m_geometryViewCache;
-
-        SegmentedVector<const ShaderResourceGroup*, 256> m_tempSharedSRGs;
         SegmentedVector<DrawCall> m_tempDrawCalls;
     };
 } // namespace FE::Graphics::Core

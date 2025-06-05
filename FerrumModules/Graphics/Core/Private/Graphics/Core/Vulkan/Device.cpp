@@ -127,6 +127,9 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
         deviceFeatures12.pNext = &deviceFeatures13;
         deviceFeatures12.timelineSemaphore = true;
+        deviceFeatures12.descriptorIndexing = true;
+        deviceFeatures12.descriptorBindingPartiallyBound = true;
+        deviceFeatures12.descriptorBindingVariableDescriptorCount = true;
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

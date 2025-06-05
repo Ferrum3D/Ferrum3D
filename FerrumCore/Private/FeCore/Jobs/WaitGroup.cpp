@@ -105,6 +105,7 @@ namespace FE
         const JobSystem::Worker& worker = jobSystem->m_workers[workerIndex];
 
         FiberWaitEntry waitEntry;
+        waitEntry.m_next = nullptr;
         waitEntry.m_priority = worker.m_priority;
         waitEntry.m_affinityMask = worker.m_affinityMask;
         waitEntry.m_fiber = worker.m_currentFiber;

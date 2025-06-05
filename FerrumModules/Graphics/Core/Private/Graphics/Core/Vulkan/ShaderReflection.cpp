@@ -72,7 +72,7 @@ namespace FE::Graphics::Vulkan
 
 
     inline static Core::ShaderResourceType ConvertResourceType(const SpvC::CompilerHLSL* pCompiler,
-                                                              const SpvC::Resource* pResource)
+                                                               const SpvC::Resource* pResource)
     {
         const SpvC::SPIRType& type = pCompiler->get_type(pResource->type_id);
 
@@ -165,6 +165,12 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    festd::span<const Core::ShaderRootConstant> ShaderReflection::GetRootConstants() const
+    {
+        return m_rootConstants;
+    }
+
+
     void ShaderReflection::ParseInputAttributes(const SpvC::CompilerHLSL* pCompiler, const SpvC::ShaderResources& shaderResources)
     {
         FE_PROFILER_ZONE();
@@ -205,6 +211,16 @@ namespace FE::Graphics::Vulkan
         parseList(shaderResources.separate_samplers);
         parseList(shaderResources.atomic_counters);
         parseList(shaderResources.acceleration_structures);
+
+        for (const SpvC::Resource& resource : shaderResources.push_constant_buffers)
+        {
+            Core::ShaderRootConstant rootConstant;
+            rootConstant.m_name = Env::Name(pCompiler->get_name(resource.id));
+            rootConstant.m_offset = 0;
+            rootConstant.m_byteSize =
+                static_cast<uint32_t>(pCompiler->get_declared_struct_size(pCompiler->get_type(resource.base_type_id)));
+            m_rootConstants.push_back(rootConstant);
+        }
     }
 
 

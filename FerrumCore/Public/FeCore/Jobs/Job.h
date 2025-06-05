@@ -9,7 +9,7 @@ namespace FE
 {
     struct Job
         : public festd::intrusive_list_node
-        , public ConcurrentQueueNode
+        , public ConcurrentQueue::Node
     {
         Job() = default;
         virtual ~Job() = default;

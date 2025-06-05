@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Containers/ConcurrentQueue.h>
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Memory/SegmentedBuffer.h>
 #include <Graphics/Core/Buffer.h>
@@ -48,7 +49,7 @@ namespace FE::Graphics::Core
     } // namespace InternalAsyncCopyCommands
 
 
-    struct AsyncCopyCommandList final
+    struct AsyncCopyCommandList final : public ConcurrentOnceConsumedQueue::Node
     {
         void Free()
         {
@@ -56,6 +57,7 @@ namespace FE::Graphics::Core
         }
 
         Memory::SegmentedBuffer m_buffer;
+        WaitGroup* m_signalWaitGroup;
     };
 
 
@@ -74,7 +76,7 @@ namespace FE::Graphics::Core
         void UploadBuffer(const Buffer* buffer, const void* data, uint32_t sourceOffset, uint32_t destinationOffset,
                           uint32_t size);
 
-        AsyncCopyCommandList Build();
+        AsyncCopyCommandList Build(WaitGroup* signalWaitGroup = nullptr);
 
     private:
         struct CommandState final
@@ -163,9 +165,13 @@ namespace FE::Graphics::Core
     }
 
 
-    inline AsyncCopyCommandList AsyncCopyCommandListBuilder::Build()
+    inline AsyncCopyCommandList AsyncCopyCommandListBuilder::Build(WaitGroup* signalWaitGroup)
     {
-        return AsyncCopyCommandList{ m_bufferBuilder.Build() };
+        AsyncCopyCommandList commandList;
+        commandList.m_next = nullptr;
+        commandList.m_buffer = m_bufferBuilder.Build();
+        commandList.m_signalWaitGroup = signalWaitGroup;
+        return commandList;
     }
 
 
@@ -173,7 +179,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI_Class(AsyncCopyQueue, "2C1855F0-034B-47B7-869A-F9512903212F");
 
-        virtual Rc<WaitGroup> ExecuteCommandList(const AsyncCopyCommandList& commandList) = 0;
+        virtual void ExecuteCommandList(AsyncCopyCommandList* commandList) = 0;
         virtual void Drain() = 0;
     };
 } // namespace FE::Graphics::Core

@@ -7,6 +7,7 @@
     Public/festd/bit_vector.h
     Public/festd/fixed_function.h
     Public/festd/intrusive_list.h
+    Public/festd/ring_buffer.h
     Public/festd/span.h
     Public/festd/string.h
     Public/festd/unordered_map.h

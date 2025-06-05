@@ -1,5 +1,6 @@
 ﻿#include <FeCore/Console/Console.h>
 #include <FeCore/IO/Path.h>
+#include <FeCore/Math/Matrix4x4F.h>
 #include <FeCore/Memory/FiberTempAllocator.h>
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/Time/DateTime.h>
@@ -213,11 +214,12 @@ private:
             Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
             copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
 
-            Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build();
-            auto copyWaitGroup = m_copyQueue->ExecuteCommandList(copyCommandList);
+            const Rc copyWaitGroup = WaitGroup::Create();
+            Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build(copyWaitGroup.Get());
 
-            const Rc<WaitGroup> waitGroups[] = { m_pipeline->GetCompletionWaitGroup(), copyWaitGroup };
-            WaitGroup::WaitAll(waitGroups);
+            m_copyQueue->ExecuteCommandList(&copyCommandList);
+
+            WaitGroup::WaitAll({ m_pipeline->GetCompletionWaitGroup(), copyWaitGroup.Get() });
             copyCommandList.Free();
         }
 
@@ -237,6 +239,9 @@ private:
 
             Core::DrawCall drawCall;
             drawCall.InitForSingleInstance(&geometryView, m_pipeline.Get());
+
+            const Matrix4x4F worldMatrix = Matrix4x4F::RotationZ(Constants::PI * 0.2f);
+            drawCall.SetRootConstants(worldMatrix);
 
             Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &tempAllocator };
             drawListBuilder.AddDrawCall(drawCall);

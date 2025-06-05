@@ -51,6 +51,16 @@ namespace FE
                 waitGroup->Wait();
         }
 
+        static void WaitAll(const std::initializer_list<WaitGroup*> waitGroups)
+        {
+            WaitAll(festd::span(waitGroups));
+        }
+
+        static void WaitAll(const std::initializer_list<const Rc<WaitGroup>> waitGroups)
+        {
+            WaitAll(festd::span(waitGroups));
+        }
+
         void Add(int32_t value);
         void Signal();
         bool IsSignaled() const;

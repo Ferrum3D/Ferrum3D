@@ -4,21 +4,11 @@
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
-#include <Graphics/Core/Vulkan/ShaderResourceGroup.h>
 
 namespace FE::Graphics::Vulkan
 {
     struct PipelineFactory::AsyncCompilationJob final : public Job
     {
-        ~AsyncCompilationJob() override
-        {
-            for (Core::ShaderResourceGroup* group : m_context.m_desc.m_shaderResourceGroups)
-            {
-                if (group)
-                    group->Release();
-            }
-        }
-
         void Execute() override
         {
             FE_PROFILER_ZONE();
@@ -80,12 +70,6 @@ namespace FE::Graphics::Vulkan
         m_graphicsPipelinesMap[hash] = pipeline;
 
         const Rc waitGroup = WaitGroup::Create();
-
-        for (Core::ShaderResourceGroup* group : request.m_desc.m_shaderResourceGroups)
-        {
-            if (group)
-                group->AddRef();
-        }
 
         AsyncCompilationJob* job = Memory::New<AsyncCompilationJob>(&m_jobPool);
         job->m_factory = this;

@@ -9,7 +9,7 @@
 
 namespace FE
 {
-    struct FiberWaitEntry final : public ConcurrentQueueNode
+    struct FiberWaitEntry final : public ConcurrentQueue::Node
     {
         FiberWaitEntry* m_queueTail = nullptr;
         std::atomic<uint64_t> m_orderHint = 0;

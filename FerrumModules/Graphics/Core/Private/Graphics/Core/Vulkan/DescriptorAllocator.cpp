@@ -65,7 +65,7 @@ namespace FE::Graphics::Vulkan
             return { iter->second.GetSetLayout(), hash };
 
         VkDescriptorSetLayout layout;
-        vkCreateDescriptorSetLayout(NativeCast(m_device), &createInfo, nullptr, &layout);
+        VerifyVulkan(vkCreateDescriptorSetLayout(NativeCast(m_device), &createInfo, nullptr, &layout));
         m_descriptorSetLayouts[hash] = SetLayoutCacheEntry(layout);
         return { layout, hash };
     }

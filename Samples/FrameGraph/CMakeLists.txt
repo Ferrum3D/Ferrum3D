@@ -1,4 +1,11 @@
-﻿add_executable(FrameGraph main.cpp)
+﻿set(SHADER_SOURCES
+    Shaders/Shader.ps.hlsl
+    Shaders/Shader.vs.hlsl
+)
+
+set_source_files_properties(${SHADER_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+add_executable(FrameGraph ${SHADER_SOURCES} main.cpp)
 
 fe_configure_target(FrameGraph)
 

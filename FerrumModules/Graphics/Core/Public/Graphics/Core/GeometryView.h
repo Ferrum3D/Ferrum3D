@@ -7,7 +7,6 @@
 namespace FE::Graphics::Core
 {
     struct GraphicsPipeline;
-    struct ShaderResourceGroup;
 
 
     enum class IndexType : uint32_t
@@ -75,28 +74,32 @@ namespace FE::Graphics::Core
         uint32_t m_instanceOffset : 16;
         uint32_t m_instanceCount : 16;
         uint32_t m_stencilRef : 8;
-        uint32_t m_shaderResourceGroupCount : 4;
-        uint32_t m_unused : 20;
+        uint32_t m_rootConstantsByteSize : 16;
+        uint32_t m_unused : 8;
         const GeometryView* m_geometryView;
         const GraphicsPipeline* m_pipeline;
-        const ShaderResourceGroup* const* m_shaderResourceGroups;
-
-#if FE_DEBUG
-        DrawCall()
-        {
-            memset(this, 0xcc, sizeof(*this));
-        }
-#endif
+        const void* m_rootConstants;
 
         void InitForSingleInstance(const GeometryView* geometryView, const GraphicsPipeline* pipeline)
         {
             m_instanceOffset = 0;
             m_instanceCount = 1;
             m_stencilRef = 0;
-            m_shaderResourceGroupCount = 0;
             m_geometryView = geometryView;
             m_pipeline = pipeline;
-            m_shaderResourceGroups = nullptr;
+            m_rootConstants = nullptr;
+        }
+
+        void SetRootConstants(const void* rootConstants, const uint32_t rootConstantsByteSize)
+        {
+            m_rootConstants = rootConstants;
+            m_rootConstantsByteSize = rootConstantsByteSize;
+        }
+
+        template<class TRootParameters>
+        void SetRootConstants(const TRootParameters& rootParameters)
+        {
+            SetRootConstants(&rootParameters, sizeof(TRootParameters));
         }
 
         [[nodiscard]] uint64_t GetHash() const
@@ -105,20 +108,21 @@ namespace FE::Graphics::Core
             hasher.Update(m_instanceOffset);
             hasher.Update(m_instanceCount);
             hasher.Update(m_stencilRef);
-            hasher.Update(m_shaderResourceGroupCount);
 
             const auto& pipelineDesc = m_pipeline->GetDesc();
             hasher.UpdateRaw(m_geometryView->GetHash(pipelineDesc.m_inputLayout.CalculateActiveStreamCount()));
 
             //
-            // Shader resource groups and pipelines are created using special factories.
+            // Pipelines are created by the pipeline factory.
             // Therefore, they are guaranteed to be unique, so we can hash the pointers rather than their descriptions.
             //
 
             hasher.Update(m_pipeline);
 
-            for (uint32_t i = 0; i < m_shaderResourceGroupCount; ++i)
-                hasher.Update(m_shaderResourceGroups[i]);
+            if (m_rootConstantsByteSize > 0)
+            {
+                hasher.UpdateRaw(m_rootConstants, m_rootConstantsByteSize);
+            }
 
             return hasher.Finalize();
         }
@@ -127,10 +131,7 @@ namespace FE::Graphics::Core
 
     struct DrawList final
     {
-        uint32_t m_drawCallCount : 8;
-        uint32_t m_sharedShaderResourceGroupCount : 4;
-        uint32_t m_unused : 20;
+        uint32_t m_drawCallCount;
         const DrawCall* m_drawCalls;
-        const ShaderResourceGroup* const* m_sharedShaderResourceGroups;
     };
 } // namespace FE::Graphics::Core

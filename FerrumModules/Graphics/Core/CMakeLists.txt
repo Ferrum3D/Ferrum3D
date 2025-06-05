@@ -35,8 +35,6 @@
     Public/Graphics/Core/ShaderDefines.h
     Public/Graphics/Core/ShaderLibrary.h
     Public/Graphics/Core/ShaderReflection.h
-    Public/Graphics/Core/ShaderResourceGroup.h
-    Public/Graphics/Core/ShaderResourceGroupData.h
     Public/Graphics/Core/ShaderResourceType.h
     Public/Graphics/Core/ShaderStage.h
     Public/Graphics/Core/Viewport.h
@@ -109,8 +107,6 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/ShaderLibrary.h
     Private/Graphics/Core/Vulkan/ShaderReflection.cpp
     Private/Graphics/Core/Vulkan/ShaderReflection.h
-    Private/Graphics/Core/Vulkan/ShaderResourceGroup.cpp
-    Private/Graphics/Core/Vulkan/ShaderResourceGroup.h
     Private/Graphics/Core/Vulkan/Viewport.cpp
     Private/Graphics/Core/Vulkan/Viewport.h
 )
