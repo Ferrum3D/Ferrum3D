@@ -7,6 +7,7 @@ project(Ferrum3D VERSION 0.1.0
 
 enable_testing()
 set(FE_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+set(FE_THIRD_PARTY_DIR "${FE_PROJECT_ROOT}/ThirdParty")
 list(PREPEND CMAKE_MODULE_PATH "${FE_PROJECT_ROOT}/cmake")
 
 include(Config)

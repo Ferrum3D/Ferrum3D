@@ -5,7 +5,6 @@
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompiler.h>
 
-#include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/dxcapi.h>
 
 namespace FE::Graphics::Core

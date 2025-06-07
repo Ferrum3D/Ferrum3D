@@ -274,7 +274,7 @@ namespace FE::Graphics::Vulkan
                 break;
 
             FE_PROFILER_ZONE_NAMED("Stall");
-            if (!FinalizeFinishedProcessors())
+            if (!FinalizeFinishedProcessors(true))
             {
                 //
                 // We could not free any staging memory by waiting for already submitted commands to finish.

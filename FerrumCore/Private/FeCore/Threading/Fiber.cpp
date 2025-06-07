@@ -49,7 +49,7 @@ namespace FE::Threading
         m_stackMemory = Memory::ReserveVirtual(m_stackMemorySize, kExtendedStackSize);
 
         m_fibers = Memory::DefaultAllocateArray<FiberInfo>(kTotalFiberCount);
-        eastl::uninitialized_default_fill(m_fibers, m_fibers + kTotalFiberCount);
+        eastl::uninitialized_value_construct(m_fibers, m_fibers + kTotalFiberCount);
 
         auto* ptr = static_cast<std::byte*>(m_stackMemory);
 

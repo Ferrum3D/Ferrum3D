@@ -1,11 +1,6 @@
-﻿CPMAddPackage(
-    NAME jeaiii_itoa
-    GITHUB_REPOSITORY jeaiii/itoa
-	GIT_TAG main
-)
-
-add_library(jeaiii_itoa INTERFACE)
-target_include_directories(jeaiii_itoa INTERFACE ${jeaiii_itoa_SOURCE_DIR}/include)
+﻿add_library(jeaiii_itoa INTERFACE)
+target_include_directories(jeaiii_itoa INTERFACE ${FE_THIRD_PARTY_DIR}/jeaiii_itoa/include)
 set_target_properties(jeaiii_itoa PROPERTIES FOLDER "ThirdParty")
 
-CPMAddPackage("gh:jk-jeon/dragonbox#1.1.3")
+add_subdirectory(${FE_THIRD_PARTY_DIR}/dragonbox)
+set_target_properties(dragonbox PROPERTIES FOLDER "ThirdParty")

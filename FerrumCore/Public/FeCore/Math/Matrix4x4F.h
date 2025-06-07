@@ -6,7 +6,8 @@ namespace FE
 {
     namespace Internal
     {
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Transpose4Impl(__m128 row0, __m128 row1, __m128 row2, __m128 row3, __m128* out)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Transpose4Impl(const __m128 row0, const __m128 row1, const __m128 row2,
+                                                                  const __m128 row3, __m128* out)
         {
             const __m128 t0 = _mm_shuffle_ps(row0, row1, _MM_SHUFFLE(1, 0, 1, 0));
             const __m128 t1 = _mm_shuffle_ps(row0, row1, _MM_SHUFFLE(3, 2, 3, 2));
@@ -49,8 +50,8 @@ namespace FE
             return m_values;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromRows(Vector4F row0, Vector4F row1,
-                                                                                       Vector4F row2, Vector4F row3)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromRows(const Vector4F row0, const Vector4F row1,
+                                                                                       const Vector4F row2, const Vector4F row3)
         {
             Matrix4x4F result;
             result.m_rows[0] = row0;
@@ -60,8 +61,10 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromColumns(Vector4F column0, Vector4F column1,
-                                                                                          Vector4F column2, Vector4F column3)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL FromColumns(const Vector4F column0,
+                                                                                          const Vector4F column1,
+                                                                                          const Vector4F column2,
+                                                                                          const Vector4F column3)
         {
             Matrix4x4F result;
             Internal::Transpose4Impl(
@@ -106,7 +109,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationX(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationX(const float angle)
         {
             const float sin = Math::Sin(angle);
             const float cos = Math::Cos(angle);
@@ -119,7 +122,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationY(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationY(const float angle)
         {
             const float sin = Math::Sin(angle);
             const float cos = Math::Cos(angle);
@@ -132,7 +135,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationZ(float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL RotationZ(const float angle)
         {
             const float sin = Math::Sin(angle);
             const float cos = Math::Cos(angle);
@@ -145,7 +148,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Rotation(Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Rotation(const Quaternion quat)
         {
             const float wx2 = 2.0f * quat.w * quat.x;
             const float wy2 = 2.0f * quat.w * quat.y;
@@ -165,7 +168,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Scale(Vector3F scale)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Scale(const Vector3F scale)
         {
             const __m128 zero = _mm_setzero_ps();
 
@@ -177,7 +180,7 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Translation(Vector3F translation)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Translation(const Vector3F translation)
         {
             Matrix4x4F result;
             result.m_simdVectors[0] = _mm_insert_ps(_mm_load_ps(&Internal::kIdentity4Values[0]), translation.m_simdVector, 0x30);
@@ -187,8 +190,9 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Projection(float fovY, float aspectRatio,
-                                                                                         float near, float far)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4F FE_VECTORCALL Projection(const float fovY,
+                                                                                         const float aspectRatio,
+                                                                                         const float near, const float far)
         {
             const float cotY = Math::Cos(0.5f * fovY) / Math::Sin(0.5f * fovY);
             const float cotX = cotY / aspectRatio;
@@ -265,7 +269,7 @@ namespace FE
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator*(Vector4F lhs, const Matrix4x4F& rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4F FE_VECTORCALL operator*(const Vector4F lhs, const Matrix4x4F& rhs)
     {
         return Vector4F::Swizzle<Math::Swizzle::kWWWW>(lhs) * rhs.m_rows[3]
             + Vector4F::Swizzle<Math::Swizzle::kZZZZ>(lhs) * rhs.m_rows[2]
@@ -274,7 +278,7 @@ namespace FE
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator*(const Matrix4x4F& lhs, float rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator*(const Matrix4x4F& lhs, const float rhs)
     {
         const __m128 broadcast = _mm_set1_ps(rhs);
 
@@ -287,7 +291,7 @@ namespace FE
     }
 
 
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator/(const Matrix4x4F& lhs, float rhs)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4F FE_VECTORCALL operator/(const Matrix4x4F& lhs, const float rhs)
     {
         const __m128 broadcast = _mm_set1_ps(rhs);
 
@@ -330,7 +334,7 @@ namespace FE
 
 
         template<uint32_t TColumnIndex>
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void FE_VECTORCALL ReplaceColumn(Matrix4x4F& matrix, Vector4F column)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void FE_VECTORCALL ReplaceColumn(Matrix4x4F& matrix, const Vector4F column)
         {
             constexpr uint32_t sourceMask = TColumnIndex << 4u;
             matrix.m_simdVectors[0] = _mm_insert_ps(matrix.m_simdVectors[0], column.m_simdVector, sourceMask | (0 << 6));

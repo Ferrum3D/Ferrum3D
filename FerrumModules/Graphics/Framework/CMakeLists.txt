@@ -1,25 +1,12 @@
 ﻿set(PUBLIC_HEADERS
-    Public/Graphics/Assets/ImageAssetLoader.h
-    Public/Graphics/Assets/ImageAssetStorage.h
-    Public/Graphics/Assets/MeshAssetLoader.h
-    Public/Graphics/Assets/MeshAssetStorage.h
-    Public/Graphics/Assets/ShaderAssetLoader.h
-    Public/Graphics/Assets/ShaderAssetStorage.h
+    Public/Graphics/Assets/TextureAssetManager.h
 
     Public/Graphics/Module.h
 )
 
 set(COMMON_SOURCES
-    Private/Graphics/Assets/ImageAssetLoader.cpp
-    Private/Graphics/Assets/ImageAssetStorage.cpp
-    Private/Graphics/Assets/ImageLoaderImpl.h
-    Private/Graphics/Assets/ImageLoaderImpl.cpp
-    Private/Graphics/Assets/MeshAssetLoader.cpp
-    Private/Graphics/Assets/MeshAssetStorage.cpp
-    Private/Graphics/Assets/MeshLoaderImpl.h
-    Private/Graphics/Assets/MeshLoaderImpl.cpp
-    Private/Graphics/Assets/ShaderAssetLoader.cpp
-    Private/Graphics/Assets/ShaderAssetStorage.cpp
+    Private/Graphics/Assets/TextureAssetManager.cpp
+    Private/Graphics/Assets/TextureAssetManager.h
 
     Private/Graphics/Module.cpp
 )
