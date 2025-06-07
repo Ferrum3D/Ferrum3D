@@ -128,6 +128,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.pNext = &deviceFeatures13;
         deviceFeatures12.timelineSemaphore = true;
         deviceFeatures12.descriptorIndexing = true;
+        deviceFeatures12.runtimeDescriptorArray = true;
         deviceFeatures12.descriptorBindingPartiallyBound = true;
         deviceFeatures12.descriptorBindingVariableDescriptorCount = true;
 

@@ -1,14 +1,9 @@
-﻿CPMAddPackage(
-    NAME mimalloc
-    GITHUB_REPOSITORY microsoft/mimalloc
-    VERSION 2.1.4
-    OPTIONS
-          "MI_BUILD_TESTS OFF"
-          "MI_BUILD_SHARED ON"
-          "MI_BUILD_STATIC OFF"
-		  "MI_OVERRIDE OFF"
-		  "MI_WIN_REDIRECT OFF"
-)
+﻿set(MI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(MI_BUILD_SHARED ON CACHE BOOL "" FORCE)
+set(MI_BUILD_STATIC OFF CACHE BOOL "" FORCE)
+set(MI_OVERRIDE OFF CACHE BOOL "" FORCE)
+set(MI_WIN_REDIRECT OFF CACHE BOOL "" FORCE)
 
 
+add_subdirectory(${FE_THIRD_PARTY_DIR}/mimalloc)
 set_target_properties(mimalloc PROPERTIES FOLDER "ThirdParty")

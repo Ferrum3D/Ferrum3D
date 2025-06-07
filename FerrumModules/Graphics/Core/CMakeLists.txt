@@ -128,6 +128,7 @@ set_target_properties(FeGraphicsCore PROPERTIES FOLDER "Modules/Graphics")
 target_link_libraries(FeGraphicsCore
     volk
     dxc
+    dxil
     FeCore
     spirv-cross-core
     spirv-cross-hlsl
@@ -137,3 +138,15 @@ target_link_libraries(FeGraphicsCore
 
 get_property("TARGET_SOURCE_FILES" TARGET FeGraphicsCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})
+
+add_custom_command(TARGET FeGraphicsCore POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${FE_THIRD_PARTY_DIR}/dxc/bin/x64/dxil.dll"
+        $<TARGET_FILE_DIR:FeGraphicsCore>
+)
+
+add_custom_command(TARGET FeGraphicsCore POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${FE_THIRD_PARTY_DIR}/dxc/bin/x64/dxcompiler.dll"
+        $<TARGET_FILE_DIR:FeGraphicsCore>
+)

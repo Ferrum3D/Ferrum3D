@@ -1,4 +1,4 @@
-﻿include(ThirdParty/get_cpm)
+﻿# include(ThirdParty/get_cpm)
 include(ThirdParty/eastl)
 include(ThirdParty/utf8proc)
 include(ThirdParty/small_vector)

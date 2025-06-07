@@ -4,20 +4,9 @@ elseif()
     set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_XCB_KHR)
 endif()
 
-CPMAddPackage(
-    NAME volk
-    GITHUB_REPOSITORY zeux/volk
-    VERSION 1.3.270
-    GIT_TAG 1.3.270
-)
-
+add_subdirectory(${FE_THIRD_PARTY_DIR}/volk)
 set_target_properties(volk PROPERTIES FOLDER "ThirdParty")
 
 
-CPMAddPackage(
-    NAME VulkanMemoryAllocator
-    GITHUB_REPOSITORY GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-    VERSION 3.1.0
-)
-
+add_subdirectory(${FE_THIRD_PARTY_DIR}/VulkanMemoryAllocator)
 set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "ThirdParty")
