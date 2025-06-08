@@ -21,6 +21,10 @@ namespace FE::Env::Internal
         Memory::PoolAllocator m_threadDataAllocator;
         Console::ConsoleState m_consoleState{};
         festd::fixed_vector<Trace::AssertionHandler, Trace::kMaxAssertionHandlers> m_assertionHandlers;
+        festd::array<festd::vector<void*>, 12> m_compressorCache;
+        festd::array<festd::vector<void*>, 12> m_gDeflateCompressorCache;
+        festd::vector<void*> m_decompressorCache;
+        festd::vector<void*> m_gDeflateDecompressorCache;
 
         SharedState();
 

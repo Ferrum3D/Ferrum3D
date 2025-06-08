@@ -29,6 +29,8 @@
     Public/FeCore/Base/PlatformInclude.h
     Public/FeCore/Base/PlatformTraits.h
 
+    Public/FeCore/Compression/Compression.h
+
     Public/FeCore/Console/Console.h
     Public/FeCore/Console/ConsolePrivate.h
 
@@ -114,6 +116,8 @@
     Public/FeCore/Time/BaseTime.h
     Public/FeCore/Time/DateTime.h
     Public/FeCore/Time/TimeSpan.h
+
+    Public/FeCore/Utils/Crc32.h
 )
 
 set(COMMON_SOURCES
@@ -121,6 +125,9 @@ set(COMMON_SOURCES
     Private/FeCore/Assets/AssetManager.cpp
 
     Private/FeCore/Base/Assert.cpp
+
+    Private/FeCore/Compression/Compression.cpp
+    Private/FeCore/Compression/CompressionInternal.h
 
     Private/FeCore/Console/Console.cpp
 
@@ -167,11 +174,14 @@ set(COMMON_SOURCES
     Private/FeCore/Strings/Format.cpp
     Private/FeCore/Strings/Parser.cpp
 
+    Private/FeCore/Threading/Platform/ThreadingInternal.h
     Private/FeCore/Threading/Context.cpp
     Private/FeCore/Threading/Fiber.cpp
 
     Private/FeCore/Time/Platform/PlatformTime.cpp
     Private/FeCore/Time/DateTime.cpp
+
+    Private/FeCore/Utils/Crc32.cpp
 )
 
 set(WINDOWS_SOURCES
@@ -200,6 +210,7 @@ set_target_properties(FeCore PROPERTIES FOLDER "Core")
 target_link_libraries(FeCore
     fcontext
     mimalloc
+    libdeflate
     TracyClient
     utf8proc
     EASTL

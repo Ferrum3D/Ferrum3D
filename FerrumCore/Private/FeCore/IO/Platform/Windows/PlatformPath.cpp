@@ -91,7 +91,7 @@ namespace FE::Platform
                 entry.m_stats.m_accessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
                 entry.m_stats.m_modificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
                 if (!params.m_callback(params.m_callbackData, entry))
-                    return IO::ResultCode::Canceled;
+                    return IO::ResultCode::kCanceled;
 
                 if (Bit::AllSet(attributeFlags, IO::FileAttributeFlags::kDirectory))
                     directoryStack.push_back(fullFilename);
@@ -102,6 +102,6 @@ namespace FE::Platform
                 return ConvertWin32IOError(lastError);
         }
 
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 } // namespace FE::Platform

@@ -13,7 +13,7 @@ namespace FE::Threading
         inline constexpr uint32_t kTotalFiberCount = kNormalFiberCount + kExtendedFiberCount;
         inline constexpr size_t kTotalStackSize = (kExtendedFiberCount + kNormalFiberCount) * kExtendedStackSize;
 
-        inline constexpr uint32_t kFiberTempAllocatorPageSize = 16 * 1024;
+        inline constexpr uint32_t kFiberTempAllocatorPageSize = 64 * 1024;
     } // namespace
 
 
@@ -41,7 +41,7 @@ namespace FE::Threading
     {
         FE_PROFILER_ZONE();
 
-        m_tempPagePool.Initialize("FiberTempMemoryPool", kFiberTempAllocatorPageSize);
+        m_tempPagePool.Initialize("FiberTempMemoryPool", kFiberTempAllocatorPageSize, kFiberTempAllocatorPageSize * 4);
 
         const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
 

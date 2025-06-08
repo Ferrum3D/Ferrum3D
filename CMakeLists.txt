@@ -18,5 +18,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(FerrumCore)
-add_subdirectory(FerrumModules)
+add_subdirectory(Modules)
+add_subdirectory(Tools)
 add_subdirectory(Samples)

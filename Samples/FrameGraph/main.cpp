@@ -5,6 +5,7 @@
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/Time/DateTime.h>
 #include <Framework/Application/Application.h>
+#include <Graphics/Assets/ITextureAssetManager.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/DrawListBuilder.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
@@ -14,6 +15,7 @@
 #include <Graphics/Core/Module.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/Viewport.h>
+#include <Graphics/Module.h>
 
 using namespace FE;
 using namespace FE::Graphics;
@@ -21,92 +23,13 @@ using namespace FE::Graphics;
 inline constexpr const char* kExampleName = "Ferrum3D - FrameGraph Sample";
 
 
-struct LogColorScope final
-{
-    explicit LogColorScope(const LogSeverity severity)
-    {
-        Console::Color color;
-        switch (severity)
-        {
-        default:
-            FE_DebugBreak();
-            [[fallthrough]];
-
-        case LogSeverity::kWarning:
-            color = Console::Color::kYellow;
-            break;
-
-        case LogSeverity::kError:
-        case LogSeverity::kCritical:
-            color = Console::Color::kRed;
-            break;
-
-        case LogSeverity::kTrace:
-        case LogSeverity::kDebug:
-            color = Console::Color::kAqua;
-            break;
-
-        case LogSeverity::kInfo:
-            color = Console::Color::kLime;
-            break;
-        }
-
-        Console::SetTextColor(color);
-    }
-
-    ~LogColorScope()
-    {
-        Console::SetTextColor(Console::Color::kDefault);
-    }
-};
-
-
-struct StdoutLogSink final : public LogSinkBase
-{
-    StdoutLogSink(Logger* logger)
-        : LogSinkBase(logger)
-    {
-    }
-
-    void Log(const LogSeverity severity, const SourceLocation sourceLocation, const festd::string_view message) override
-    {
-        {
-            const auto location = Fmt::FixedFormatSized<IO::kMaxPathLength + 16>(
-                "{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
-            Console::Write(festd::string_view(location.data(), location.size()));
-        }
-
-        {
-            const auto date = DateTime<TZ::Local>::Now().ToString(DateTimeFormatKind::kISO8601);
-            Console::Write(date);
-        }
-
-        Console::Write(" [");
-
-        {
-            LogColorScope colorScope{ severity };
-            Console::Write(LogSeverityToString(severity));
-        }
-
-        Console::Write("] ");
-
-        Console::Write(festd::string_view(message.data(), message.size()));
-        Console::Write("\n");
-
-        if (severity >= LogSeverity::kWarning)
-            Console::Flush();
-    }
-};
-
-
 struct ExampleApplication final : public Framework::Application
 {
     FE_RTTI_Class(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
 
     ExampleApplication(const int32_t argc, const char** argv)
+        : Application(argc, argv)
     {
-        for (int32_t argIndex = 1; argIndex < argc; ++argIndex)
-            m_commandLine.push_back(argv[argIndex]);
     }
 
     ~ExampleApplication() override
@@ -114,14 +37,13 @@ struct ExampleApplication final : public Framework::Application
         m_device->WaitIdle();
     }
 
-private:
-    void InitializeApp() override
+    void InitializeApp()
     {
         FE_PROFILER_ZONE();
 
         DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
 
-        m_logSink = festd::make_unique<StdoutLogSink>(serviceProvider->ResolveRequired<Logger>());
+        m_logSink = festd::make_unique<Framework::StdoutLogSink>(serviceProvider->ResolveRequired<Logger>());
 
         m_factory = serviceProvider->ResolveRequired<Core::DeviceFactory>();
 
@@ -145,8 +67,16 @@ private:
 
         m_passProducer = DI::DefaultNew<PassProducer>().value();
         m_passProducer->Init(m_viewport.Get());
+
+        ITextureAssetManager* textureAssetManager = serviceProvider->ResolveRequired<ITextureAssetManager>();
+        m_texture = textureAssetManager->Load("Textures/test1.ftx");
+        m_texture->m_completionWaitGroup->Wait();
+        FE_Assert(m_texture->m_status == AssetLoadingStatus::kCompletelyLoaded);
+
+        m_passProducer->m_texture = m_texture->m_resource;
     }
 
+private:
     struct PassProducer final : public Core::PassProducer
     {
         FE_RTTI_Class(PassProducer, "A22B22E2-2196-4439-8D70-AFB8E64379AD");
@@ -172,7 +102,7 @@ private:
             Core::InputLayoutBuilder inputLayoutBuilder;
             inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
                 .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
-                .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kColor);
+                .AddChannel(Core::VertexChannelFormat::kR32G32_SFLOAT, Core::ShaderSemantic::kTexCoord);
 
             const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
 
@@ -188,31 +118,37 @@ private:
 
             m_pipeline = m_pipelineFactory->CreateGraphicsPipeline(pipelineRequest);
 
-            Core::GeometryAllocationDesc geometryDesc;
-            geometryDesc.m_name = "Triangle";
-            geometryDesc.m_inputLayout = inputLayout;
-            geometryDesc.m_indexType = Core::IndexType::kUint32;
-            geometryDesc.m_indexCount = 0;
-            geometryDesc.m_vertexCount = 3;
-            m_geometry = m_geometryPool->Allocate(geometryDesc);
-            m_geometryPool->GetAvailabilityWaitGroup(m_geometry)->Wait();
-
             struct Vertex final
             {
                 PackedVector3F m_position;
-                PackedVector3F m_color;
+                Vector2F m_uv;
             };
 
             static const Vertex kVertexData[] = {
-                { PackedVector3F(0.0f, -0.5f, 0.0f), PackedVector3F(1.0f, 0.3f, 0.3f) },
-                { PackedVector3F(0.5f, 0.5f, 0.0f), PackedVector3F(0.3f, 1.0f, 0.3f) },
-                { PackedVector3F(-0.5f, 0.5f, 0.0f), PackedVector3F(0.3f, 0.3f, 1.0f) },
+                { { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } },
+                { { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } },
+                { { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+                { { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
             };
+
+            static const uint16_t kIndexData[] = {
+                0, 1, 2, 2, 3, 0,
+            };
+
+            Core::GeometryAllocationDesc geometryDesc;
+            geometryDesc.m_name = "Triangle";
+            geometryDesc.m_inputLayout = inputLayout;
+            geometryDesc.m_indexType = Core::IndexType::kUint16;
+            geometryDesc.m_indexCount = festd::size(kIndexData);
+            geometryDesc.m_vertexCount = festd::size(kVertexData);
+            m_geometry = m_geometryPool->Allocate(geometryDesc);
+            m_geometryPool->GetAvailabilityWaitGroup(m_geometry)->Wait();
 
             const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
 
             Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
             copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
+            copyCommandListBuilder.UploadBuffer(geometryView.m_indexBufferView.m_buffer, kIndexData);
 
             const Rc copyWaitGroup = WaitGroup::Create();
             Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build(copyWaitGroup.Get());
@@ -227,7 +163,7 @@ private:
         {
             FE_PROFILER_ZONE();
 
-            Memory::FiberTempAllocator tempAllocator;
+            Memory::FiberTempAllocator temp;
 
             const auto pass = builder.AddPass("DrawTriangle");
 
@@ -240,10 +176,7 @@ private:
             Core::DrawCall drawCall;
             drawCall.InitForSingleInstance(&geometryView, m_pipeline.Get());
 
-            const Matrix4x4F worldMatrix = Matrix4x4F::RotationZ(Constants::PI * 0.2f);
-            drawCall.SetRootConstants(worldMatrix);
-
-            Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &tempAllocator };
+            Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &temp };
             drawListBuilder.AddDrawCall(drawCall);
 
             PassData& passData = blackboard.Add<PassData>();
@@ -252,14 +185,31 @@ private:
             const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
             const RectF viewport{ 0, 0, static_cast<float>(viewportDesc.m_width), static_cast<float>(viewportDesc.m_height) };
 
-            const Core::ImageHandle colorTarget = pass.Write(graph.GetRenderTarget(), Core::ImageWriteType::kColorTarget);
-            const Core::ImageHandle depthTarget = pass.Write(graph.GetDepthStencil(), Core::ImageWriteType::kDepthStencilTarget);
+            const Core::RenderTargetHandle colorTarget =
+                pass.Write(graph.GetMainColorTarget(), Core::ImageWriteType::kColorTarget);
+            const Core::RenderTargetHandle depthTarget =
+                pass.Write(graph.GetMainDepthStencilTarget(), Core::ImageWriteType::kDepthStencilTarget);
 
-            pass.SetFunction([colorTarget, depthTarget, viewport](Core::FrameGraphContext* context) {
+            pass.SetFunction([colorTarget, depthTarget, viewport, t = m_texture](Core::FrameGraphContext* context) {
                 FE_PROFILER_ZONE();
 
-                auto& localBlackboard = context->GetFrameGraph()->GetBlackboard();
+                auto* frameGraph = context->GetFrameGraph();
+                auto& localBlackboard = frameGraph->GetBlackboard();
                 const auto& localPassData = localBlackboard.GetRequired<PassData>();
+
+                struct ShaderConstants final
+                {
+                    Matrix4x4F m_worldMatrix;
+                    Core::ImageSRVDescriptor m_textureSRV;
+                    Core::SamplerDescriptor m_sampler;
+                    Vector2UInt m_padding;
+                };
+
+                ShaderConstants shaderConstants;
+                shaderConstants.m_worldMatrix = Matrix4x4F::RotationZ(Constants::PI * 0.2f);
+                shaderConstants.m_textureSRV = frameGraph->GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                shaderConstants.m_sampler = frameGraph->GetSampler(Core::SamplerState::kLinearWrap);
+                context->SetRootConstants(shaderConstants);
 
                 context->SetRenderTarget(colorTarget, depthTarget);
                 context->SetRenderTargetLoadOperations(
@@ -275,6 +225,7 @@ private:
         Rc<Core::GeometryPool> m_geometryPool;
         Core::GeometryHandle m_geometry;
 
+        Rc<Core::Texture> m_texture;
         Rc<Core::GraphicsPipeline> m_pipeline;
     };
 
@@ -292,27 +243,17 @@ private:
         return nullptr;
     }
 
-    void RegisterServices(DI::ServiceRegistryBuilder builder) override
-    {
-        builder.Bind<Env::Configuration>()
-            .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-                *result = Memory::New<Env::Configuration>(allocator, m_commandLine);
-                return DI::ResultCode::kSuccess;
-            })
-            .InSingletonScope();
-    }
-
     void LoadModules(ModuleLoadingList& modules) override
     {
         modules.Add<Framework::FrameworkModule>();
         modules.Add<Core::GraphicsCoreModule>();
+        modules.Add<GraphicsModule>();
     }
 
-    festd::unique_ptr<StdoutLogSink> m_logSink;
-    festd::vector<festd::string_view> m_commandLine;
+    festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
     Rc<Core::DeviceFactory> m_factory;
     Rc<Core::Device> m_device;
+    Rc<TextureAsset> m_texture;
 
     Rc<Core::Viewport> m_viewport;
     Rc<Core::FrameGraph> m_frameGraph;
@@ -334,7 +275,8 @@ int main(const int32_t argc, const char** argv)
 
     int32_t exitCode = 0;
     FunctorJob mainJob([application, &exitCode] {
-        application->Initialize();
+        application->InitializeWindow();
+        application->InitializeApp();
         exitCode = application->Run();
     });
 

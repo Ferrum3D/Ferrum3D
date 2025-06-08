@@ -20,7 +20,7 @@ namespace FE
         uint32_t m_segmentTableSize = 0;
         uint32_t m_size = 0;
 
-        void GrowSegmentTable(const uint32_t minSize = 0)
+        void GrowSegmentTable(const uint32_t minSize)
         {
             const uint32_t newSize = m_segmentTableSize == 0 ? kSegmentTableGranularity
                                                              : Math::Max(m_segmentTableSize * 2, Math::CeilPowerOfTwo(minSize));
@@ -296,7 +296,7 @@ namespace FE
             const uint32_t elementIndex = m_size % kElementsPerSegment;
 
             if (m_segmentTableSize <= segmentIndex)
-                GrowSegmentTable();
+                GrowSegmentTable(segmentIndex + 1);
 
             if (elementIndex == 0)
             {

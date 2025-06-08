@@ -11,7 +11,7 @@ namespace FE
     //! @param x         Value to align.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr T AlignUp(const T x, const TAlignmentType alignment)
     {
         return static_cast<T>((x + (static_cast<T>(alignment) - 1u)) & ~(static_cast<T>(alignment) - 1u));
     }
@@ -44,7 +44,7 @@ namespace FE
     //! @param x         Value to align.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr T AlignDown(const T x, const TAlignmentType alignment)
     {
         return x & ~(static_cast<T>(alignment) - 1);
     }
@@ -77,7 +77,7 @@ namespace FE
     //! @param x         Value to check.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr bool IsAligned(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr bool IsAligned(const T x, const TAlignmentType alignment)
     {
         return (x & (static_cast<T>(alignment) - 1)) == 0;
     }
@@ -117,6 +117,7 @@ namespace FE
         return mask << leftShift;
     }
 } // namespace FE
+
 
 namespace FE::Bit
 {
@@ -234,7 +235,7 @@ namespace FE::Bit
     //! @brief Search for the first set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanForward64(uint32_t& result, const uint64_t value)
+    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanForward64(reinterpret_cast<unsigned long*>(&result), value);
@@ -268,7 +269,7 @@ namespace FE::Bit
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanReverse64(uint32_t& result, const uint64_t value)
+    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanReverse64(reinterpret_cast<unsigned long*>(&result), value);
@@ -306,7 +307,7 @@ namespace FE::Bit
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
     {
         uint32_t currentIndex;
-        while (ScanForward64(currentIndex, word))
+        while (ScanForward(currentIndex, word))
         {
             functor(currentIndex);
             word &= ~(UINT64_C(1) << currentIndex);
@@ -484,7 +485,7 @@ namespace FE::Math
     {
         const uint64_t x64 = 2 * static_cast<uint64_t>(x) - 1;
         uint32_t result;
-        Bit::ScanReverse64(result, x64);
+        Bit::ScanReverse(result, x64);
         return static_cast<uint32_t>(1 << result);
     }
 
@@ -498,7 +499,7 @@ namespace FE::Math
 
     template<class T1, class T2>
     FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y)
-        -> std::enable_if_t<std::is_unsigned_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
+        -> std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
     {
         return (x + y - 1) / y;
     }

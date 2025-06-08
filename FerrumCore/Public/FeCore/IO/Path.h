@@ -346,26 +346,6 @@ namespace FE::IO
     Path NormalizePath(festd::string_view path);
 
 
-    template<class TBuffer>
-    struct Fmt::ValueFormatter<TBuffer, IO::PathView>
-    {
-        void Format(TBuffer& buffer, const IO::PathView& value) const
-        {
-            buffer += festd::string_view(value.data(), value.size());
-        }
-    };
-
-
-    template<class TBuffer>
-    struct Fmt::ValueFormatter<TBuffer, IO::Path>
-    {
-        void Format(TBuffer& buffer, const IO::Path& value) const
-        {
-            buffer += festd::string_view(value.data(), value.size());
-        }
-    };
-
-
     namespace Directory
     {
         //! @brief Get the current working directory for the current process.
@@ -378,3 +358,26 @@ namespace FE::IO
         Path GetExecutableDirectory();
     } // namespace Directory
 } // namespace FE::IO
+
+
+namespace FE::Fmt
+{
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, IO::PathView>
+    {
+        void Format(TBuffer& buffer, const IO::PathView& value) const
+        {
+            buffer += festd::string_view(value.data(), value.size());
+        }
+    };
+
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, IO::Path>
+    {
+        void Format(TBuffer& buffer, const IO::Path& value) const
+        {
+            buffer += festd::string_view(value.data(), value.size());
+        }
+    };
+} // namespace FE::Fmt

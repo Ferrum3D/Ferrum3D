@@ -124,25 +124,25 @@ namespace FE::Platform
         {
         case ERROR_ALREADY_EXISTS:
         case ERROR_FILE_EXISTS:
-            return IO::ResultCode::FileExists;
+            return IO::ResultCode::kFileExists;
         case ERROR_FILE_NOT_FOUND:
         case ERROR_PATH_NOT_FOUND:
-            return IO::ResultCode::NoFileOrDirectory;
+            return IO::ResultCode::kNoFileOrDirectory;
         case ERROR_ACCESS_DENIED:
-            return IO::ResultCode::PermissionDenied;
+            return IO::ResultCode::kPermissionDenied;
         case ERROR_SHARING_VIOLATION:
         case ERROR_INVALID_PARAMETER:
-            return IO::ResultCode::InvalidArgument;
+            return IO::ResultCode::kInvalidArgument;
         case ERROR_FILE_TOO_LARGE:
-            return IO::ResultCode::FileTooLarge;
+            return IO::ResultCode::kFileTooLarge;
         case ERROR_TOO_MANY_OPEN_FILES:
-            return IO::ResultCode::TooManyOpenFiles;
+            return IO::ResultCode::kTooManyOpenFiles;
         case ERROR_SEEK:
-            return IO::ResultCode::InvalidSeek;
+            return IO::ResultCode::kInvalidSeek;
         case ERROR_NOT_SUPPORTED:
-            return IO::ResultCode::NotSupported;
+            return IO::ResultCode::kNotSupported;
         default:
-            return IO::ResultCode::UnknownError;
+            return IO::ResultCode::kUnknownError;
         }
     }
 } // namespace FE::Platform
