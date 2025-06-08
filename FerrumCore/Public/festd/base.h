@@ -78,6 +78,7 @@ namespace FE::festd
     using eastl::begin;
     using eastl::end;
     using eastl::sort;
+    using eastl::swap;
 
     using eastl::copy;
     using eastl::copy_if;
@@ -130,11 +131,51 @@ namespace FE::festd
         return eastl::lower_bound(begin(container), end(container), value);
     }
 
-
     template<class TContainer, class T, class TFunctor>
     auto lower_bound(TContainer& container, const T& value, TFunctor compare) -> decltype(begin(container))
     {
         return eastl::lower_bound(begin(container), end(container), value, compare);
+    }
+
+    template<class TContainer, class T>
+    uint32_t lower_bound_index(TContainer& container, const T& value)
+    {
+        const auto iter = eastl::lower_bound(begin(container), end(container), value);
+        return static_cast<uint32_t>(iter - begin(container));
+    }
+
+    template<class TContainer, class T, class TFunctor>
+    uint32_t lower_bound_index(TContainer& container, const T& value, TFunctor compare)
+    {
+        const auto iter = eastl::lower_bound(begin(container), end(container), value, compare);
+        return static_cast<uint32_t>(iter - begin(container));
+    }
+
+
+    template<class TContainer, class T>
+    auto upper_bound(TContainer& container, const T& value) -> decltype(begin(container))
+    {
+        return eastl::upper_bound(begin(container), end(container), value);
+    }
+
+    template<class TContainer, class T, class TFunctor>
+    auto upper_bound(TContainer& container, const T& value, TFunctor compare) -> decltype(begin(container))
+    {
+        return eastl::upper_bound(begin(container), end(container), value, compare);
+    }
+
+    template<class TContainer, class T>
+    uint32_t upper_bound_index(TContainer& container, const T& value)
+    {
+        const auto iter = eastl::upper_bound(begin(container), end(container), value);
+        return static_cast<uint32_t>(iter - begin(container));
+    }
+
+    template<class TContainer, class T, class TFunctor>
+    uint32_t upper_bound_index(TContainer& container, const T& value, TFunctor compare)
+    {
+        const auto iter = eastl::upper_bound(begin(container), end(container), value, compare);
+        return static_cast<uint32_t>(iter - begin(container));
     }
 
 

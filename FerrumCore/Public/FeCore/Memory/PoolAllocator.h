@@ -82,7 +82,7 @@ namespace FE::Memory
 
         void FreePages()
         {
-            FE_CoreAssert(m_allocationCount == 0, "Leak detected");
+            FE_CoreAssertDebug(m_allocationCount == 0, "Leak detected");
 
             Page* pPage = m_pageList;
             while (pPage)
@@ -141,4 +141,10 @@ namespace FE::Memory
             Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
         }
     };
+
+
+    template<class TLock>
+    using LockedPoolAllocator = LockedMemoryResource<PoolAllocator, TLock>;
+
+    using SpinLockedPoolAllocator = SpinLockedMemoryResource<PoolAllocator>;
 } // namespace FE::Memory

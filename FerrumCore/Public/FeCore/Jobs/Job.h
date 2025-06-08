@@ -3,15 +3,16 @@
 #include <FeCore/Jobs/IJobSystem.h>
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Memory/Memory.h>
-#include <festd/intrusive_list.h>
 
 namespace FE
 {
-    struct Job
-        : public festd::intrusive_list_node
-        , public ConcurrentQueue::Node
+    struct Job : public ConcurrentQueue::Node
     {
-        Job() = default;
+        Job()
+        {
+            m_next = nullptr;
+        }
+
         virtual ~Job() = default;
 
         Job(const Job&) = delete;

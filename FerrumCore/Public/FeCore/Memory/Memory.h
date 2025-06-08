@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/RefCount.h>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE
 {
@@ -124,8 +125,11 @@ namespace FE
             }
 
         private:
-            TLock m_lock;
+            TracyLockable(TLock, m_lock);
         };
+
+        template<class TBase>
+        using SpinLockedMemoryResource = LockedMemoryResource<TBase, Threading::SpinLock>;
 
 
         struct FixedBlockAllocator final : public std::pmr::memory_resource
@@ -265,6 +269,138 @@ namespace FE
             {
                 return false;
             }
+        };
+
+
+        struct BlockWriter final
+        {
+            BlockWriter(void* ptr, const size_t size)
+                : m_ptr(static_cast<std::byte*>(ptr))
+                , m_end(m_ptr + size)
+            {
+            }
+
+            BlockWriter(const festd::span<std::byte> bytes)
+                : m_ptr(bytes.data())
+                , m_end(m_ptr + bytes.size())
+            {
+            }
+
+            void Reset(void* ptr, const size_t size)
+            {
+                m_ptr = static_cast<std::byte*>(ptr);
+                m_end = m_ptr + size;
+            }
+
+            void Reset(const festd::span<std::byte> bytes)
+            {
+                m_ptr = bytes.data();
+                m_end = m_ptr + bytes.size();
+            }
+
+            [[nodiscard]] bool WriteBytes(const void* data, const size_t size)
+            {
+                if (m_ptr + size > m_end)
+                    return false;
+
+                memcpy(m_ptr, data, size);
+                m_ptr += size;
+                return true;
+            }
+
+            template<class T>
+            T& Write(const T& value)
+            {
+                FE_Assert(m_ptr + sizeof(T) <= m_end, "Insufficient space");
+
+                T* p = new (m_ptr) T(value);
+                m_ptr += sizeof(T);
+                return *p;
+            }
+
+            template<class T>
+            T& Write()
+            {
+                FE_Assert(m_ptr + sizeof(T) <= m_end, "Insufficient space");
+
+                T* p = new (m_ptr) T();
+                m_ptr += sizeof(T);
+                return *p;
+            }
+
+            festd::span<std::byte> AllocateSpan(const size_t size)
+            {
+                FE_Assert(m_ptr + size <= m_end, "Insufficient space");
+                FE_Assert(size <= Constants::kMaxU32);
+
+                std::byte* p = m_ptr;
+                m_ptr += size;
+                return { p, static_cast<uint32_t>(size) };
+            }
+
+            [[nodiscard]] size_t AvailableSpace() const
+            {
+                return static_cast<size_t>(m_end - m_ptr);
+            }
+
+            std::byte* m_ptr = nullptr;
+            std::byte* m_end = nullptr;
+        };
+
+
+        struct BlockReader final
+        {
+            BlockReader(const void* ptr, const size_t size)
+                : m_ptr(static_cast<const std::byte*>(ptr))
+                , m_end(m_ptr + size)
+            {
+            }
+
+            BlockReader(const festd::span<const std::byte> bytes)
+                : m_ptr(bytes.data())
+                , m_end(m_ptr + bytes.size())
+            {
+            }
+
+            void Reset(const void* ptr, const size_t size)
+            {
+                m_ptr = static_cast<const std::byte*>(ptr);
+                m_end = m_ptr + size;
+            }
+
+            void Reset(const festd::span<const std::byte> bytes)
+            {
+                m_ptr = bytes.data();
+                m_end = m_ptr + bytes.size();
+            }
+
+            [[nodiscard]] bool ReadBytes(void* data, const size_t size)
+            {
+                if (m_ptr + size > m_end)
+                    return false;
+
+                memcpy(data, m_ptr, size);
+                m_ptr += size;
+                return true;
+            }
+
+            template<class T>
+            [[nodiscard]] const T& Read()
+            {
+                FE_Assert(m_ptr + sizeof(T) <= m_end, "Insufficient space");
+
+                const T* p = reinterpret_cast<const T*>(m_ptr);
+                m_ptr += sizeof(T);
+                return *p;
+            }
+
+            [[nodiscard]] size_t AvailableSpace() const
+            {
+                return static_cast<size_t>(m_end - m_ptr);
+            }
+
+            const std::byte* m_ptr = nullptr;
+            const std::byte* m_end = nullptr;
         };
     } // namespace Memory
 

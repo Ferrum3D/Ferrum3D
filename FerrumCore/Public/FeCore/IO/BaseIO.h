@@ -23,28 +23,31 @@ namespace FE::IO
     struct IAsyncController;
     struct IAsyncStreamIO;
     struct AsyncReadResult;
+    struct AsyncBlockReadResult;
 
 
     //! @brief Represents an I/O result code.
     enum class ResultCode : int32_t
     {
-        Success = 0,
-        Canceled = 1,           //!< Operation was canceled.
-        PermissionDenied = -1,  //!< Permission denied.
-        NoFileOrDirectory = -2, //!< No such file or directory.
-        FileExists = -3,        //!< File already exists.
-        FileTooLarge = -4,      //!< File is too large.
-        FilenameTooLong = -5,   //!< Filename is too long.
-        NotDirectory = -6,      //!< Not a directory.
-        IsDirectory = -7,       //!< Is a directory.
-        DirectoryNotEmpty = -8, //!< Directory is not empty.
-        TooManyOpenFiles = -9,  //!< Too many files are open.
-        InvalidSeek = -10,      //!< Invalid seek operation.
-        IOError = -11,          //!< IO error.
-        DeadLock = -12,         //!< Resource deadlock would occur.
-        NotSupported = -13,     //!< Operation is not supported.
-        InvalidArgument = -14,  //!< Argument value has not been accepted.
-        UnknownError = kDefaultErrorCode<ResultCode>,
+        kSuccess = 0,
+        kCanceled = 1,             //!< Operation was canceled.
+        kPermissionDenied = -1,    //!< Permission denied.
+        kNoFileOrDirectory = -2,   //!< No such file or directory.
+        kFileExists = -3,          //!< File already exists.
+        kFileTooLarge = -4,        //!< File is too large.
+        kFilenameTooLong = -5,     //!< Filename is too long.
+        kNotDirectory = -6,        //!< Not a directory.
+        kIsDirectory = -7,         //!< Is a directory.
+        kDirectoryNotEmpty = -8,   //!< Directory is not empty.
+        kTooManyOpenFiles = -9,    //!< Too many files are open.
+        kInvalidSeek = -10,        //!< Invalid seek operation.
+        kIOError = -11,            //!< IO error.
+        kDeadLock = -12,           //!< Resource deadlock would occur.
+        kNotSupported = -13,       //!< Operation is not supported.
+        kInvalidArgument = -14,    //!< Argument value has not been accepted.
+        kInvalidFormat = -15,      //!< Invalid file format.
+        kDecompressionError = -16, //!< Block file decompression failed.
+        kUnknownError = kDefaultErrorCode<ResultCode>,
     };
 
     festd::string_view GetResultDesc(ResultCode code);
@@ -53,7 +56,7 @@ namespace FE::IO
     do                                                                                                                           \
     {                                                                                                                            \
         ::FE::IO::ResultCode code = expr;                                                                                        \
-        FE_AssertMsg(code == ::FE::IO::ResultCode::Success, "IO error: {}", ::FE::IO::GetResultDesc(code));                      \
+        FE_AssertMsg(code == ::FE::IO::ResultCode::kSuccess, "IO error: {}", ::FE::IO::GetResultDesc(code));                     \
     }                                                                                                                            \
     while (0)
 
@@ -200,7 +203,10 @@ namespace FE::IO
         virtual ~IAsyncReadCallback() = default;
 
         //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback(const AsyncReadResult& result) = 0;
+        virtual void AsyncIOCallback([[maybe_unused]] const AsyncReadResult& result) {}
+
+        //! @brief Called when an operation associated with this callback completes.
+        virtual void AsyncIOCallback([[maybe_unused]] const AsyncBlockReadResult& result) {}
     };
 
 

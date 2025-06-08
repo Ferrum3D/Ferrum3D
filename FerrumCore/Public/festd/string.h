@@ -465,6 +465,21 @@ namespace FE::Internal
             return str.size() <= size && memcmp(data + size - str.size(), str.data(), str.size()) == 0;
         }
 
+        [[nodiscard]] Iter find(const StringImpl<BasicStringViewImpl> str) const
+        {
+            const uint32_t byteSize = TBase::size();
+            const uint32_t otherByteSize = str.size();
+            const char* data = TBase::data();
+            const char* otherData = str.data();
+            for (uint32_t i = 0; i < byteSize - otherByteSize + 1; ++i)
+            {
+                if (memcmp(data + i, otherData, otherByteSize) == 0)
+                    return Iter{ data + i };
+            }
+
+            return end();
+        }
+
         [[nodiscard]] explicit operator Env::Name() const noexcept
         {
             return Env::Name{ TBase::data(), TBase::size() };

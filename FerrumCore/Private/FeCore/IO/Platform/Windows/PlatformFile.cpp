@@ -111,7 +111,7 @@ namespace FE::Platform
 
         const WideString widePath{ filePath };
         if (widePath.m_value.empty())
-            return IO::ResultCode::InvalidArgument;
+            return IO::ResultCode::kInvalidArgument;
 
         const DWORD desiredFileAccessFlags = GetFileAccessFlags(openMode);
         const DWORD fileShareMode = GetFileShareMode(openMode);
@@ -129,7 +129,7 @@ namespace FE::Platform
             return ConvertWin32IOError(GetLastError());
 
         handle = FileHandle::FromPointer(nativeFileHandle);
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 
 
@@ -150,7 +150,7 @@ namespace FE::Platform
         result.m_accessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
         result.m_modificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
         result.m_byteSize = static_cast<uint64_t>(fileSize.QuadPart);
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 
 
@@ -201,10 +201,13 @@ namespace FE::Platform
                 return ConvertWin32IOError(GetLastError());
             }
 
+            if (dwBytesRead == 0)
+                break;
+
             bytesRead += dwBytesRead;
         }
 
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 
 
@@ -230,7 +233,7 @@ namespace FE::Platform
             bytesWritten += dwBytesWritten;
         }
 
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 
 
@@ -245,7 +248,7 @@ namespace FE::Platform
             return ConvertWin32IOError(GetLastError());
         }
 
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 
 
@@ -260,6 +263,6 @@ namespace FE::Platform
             return ConvertWin32IOError(GetLastError());
         }
 
-        return IO::ResultCode::Success;
+        return IO::ResultCode::kSuccess;
     }
 } // namespace FE::Platform

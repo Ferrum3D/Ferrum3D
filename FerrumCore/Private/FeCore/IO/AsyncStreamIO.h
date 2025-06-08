@@ -8,13 +8,68 @@
 
 namespace FE::IO
 {
-    struct AsyncReadRequestQueueEntry final
+    struct AsyncController;
+
+
+    struct AsyncRequestQueueEntry
     {
-        Rc<IAsyncController> m_pController;
-        AsyncReadRequest m_request;
-        std::atomic<AsyncOperationStatus> m_status = AsyncOperationStatus::kQueued;
-        std::atomic<ResultCode> m_lastResult = ResultCode::Success;
+        enum class Type : uint32_t
+        {
+            kRead,
+            kReadBlock,
+            kCount,
+        };
+
+        Type m_type;
+        Priority m_priority;
         std::atomic<bool> m_cancellationRequested = false;
+        Rc<AsyncController> m_controller;
+        std::atomic<AsyncOperationStatus> m_status = AsyncOperationStatus::kQueued;
+        std::atomic<ResultCode> m_lastResult = ResultCode::kSuccess;
+        AsyncOperationRequest* m_requestPtr = nullptr;
+    };
+
+
+    struct AsyncController final : public IAsyncController
+    {
+        AsyncRequestQueueEntry* m_requestEntry = nullptr;
+
+        FE_RTTI_Class(AsyncController, "4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
+
+        explicit AsyncController(AsyncRequestQueueEntry* entry)
+            : m_requestEntry(entry)
+        {
+        }
+
+        ~AsyncController() override = default;
+
+        void Cancel() override
+        {
+            m_requestEntry->m_cancellationRequested.store(true, std::memory_order_release);
+        }
+
+        AsyncOperationStatus GetStatus() const override
+        {
+            return m_requestEntry->m_status.load(std::memory_order_acquire);
+        }
+
+        ResultCode GetLastOperationResult() const override
+        {
+            return m_requestEntry->m_lastResult.load(std::memory_order_acquire);
+        }
+    };
+
+
+    struct AsyncReadRequestQueueEntry : public AsyncRequestQueueEntry
+    {
+        AsyncReadRequest m_request;
+    };
+
+
+    struct AsyncBlockReadRequestQueueEntry : public AsyncRequestQueueEntry
+    {
+        AsyncBlockReadRequest m_request;
+        std::atomic<uint32_t> m_remainingBlockCount = 0;
     };
 
 
@@ -22,10 +77,11 @@ namespace FE::IO
     {
         FE_RTTI_Class(AsyncStreamIO, "1ADBD843-E841-4B14-96EA-4AA08C901084");
 
-        AsyncStreamIO(Logger* pLogger, IStreamFactory* pStreamFactory);
+        AsyncStreamIO(Logger* logger, IJobSystem* jobSystem, IStreamFactory* streamFactory);
         ~AsyncStreamIO() override;
 
-        void ReadAsync(const AsyncReadRequest& request, IAsyncController** ppController) override;
+        void ReadAsync(const AsyncReadRequest& request, Priority priority, IAsyncController** ppController) override;
+        void ReadAsync(const AsyncBlockReadRequest& request, Priority priority, IAsyncController** ppController) override;
 
     private:
         Threading::ThreadHandle m_thread;
@@ -33,15 +89,23 @@ namespace FE::IO
         Logger* m_logger = nullptr;
         std::atomic<bool> m_exitRequested;
 
+        IJobSystem* m_jobSystem = nullptr;
         IStreamFactory* m_streamFactory = nullptr;
 
         TracyLockable(Threading::SpinLock, m_queueLock);
-        Memory::PoolAllocator m_requestPool;
-        Memory::PoolAllocator m_controllerPool;
-        festd::vector<AsyncReadRequestQueueEntry*> m_queue;
+        festd::vector<AsyncRequestQueueEntry*> m_queue;
 
-        AsyncReadRequestQueueEntry* TryDequeue();
-        void ProcessRequest(AsyncReadRequestQueueEntry* entry);
+        Memory::SpinLockedPoolAllocator m_blockDecompressionJobPool;
+        Memory::SpinLockedPoolAllocator m_requestPools[festd::to_underlying(AsyncRequestQueueEntry::Type::kCount)];
+        Memory::SpinLockedPoolAllocator m_controllerPool{ "AsyncControllerPool", sizeof(AsyncController) };
+
+        void EnqueueImpl(Priority priority, AsyncRequestQueueEntry* entry);
+
+        AsyncRequestQueueEntry* TryDequeue();
+        void ProcessGenericRequest(AsyncRequestQueueEntry* entry);
+
+        void ProcessRequest(AsyncReadRequestQueueEntry* entry, AsyncOperationStatus status);
+        void ProcessRequest(AsyncBlockReadRequestQueueEntry* entry, AsyncOperationStatus status);
 
         void ReaderThread();
     };

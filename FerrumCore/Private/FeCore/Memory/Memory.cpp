@@ -155,7 +155,7 @@ namespace FE::Memory
 
         DWORD oldProtect = 0;
         const BOOL result = VirtualProtect(ptr, byteSize, osProtect, &oldProtect);
-        assert(result);
+        FE_CoreAssert(result);
 #else
 #    error Not implemented :(
 #endif

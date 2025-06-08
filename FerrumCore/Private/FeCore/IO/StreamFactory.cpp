@@ -21,7 +21,7 @@ namespace FE::IO
         const Rc fileStream = Rc<FileStream>::New(&m_fileStreamPool);
         const Path fullPath = m_parentDirectory / filename;
         const ResultCode result = fileStream->Open(fullPath, openMode);
-        if (result != ResultCode::Success)
+        if (result != ResultCode::kSuccess)
             return festd::unexpected(result);
 
         return static_pointer_cast<IStream>(fileStream);
@@ -38,7 +38,7 @@ namespace FE::IO
 
         const Path fullPath = m_parentDirectory / filename;
         const ResultCode result = fileStream->Open(fullPath, openMode);
-        if (result != ResultCode::Success)
+        if (result != ResultCode::kSuccess)
             return festd::unexpected(result);
 
         return static_pointer_cast<IStream>(fileStream);

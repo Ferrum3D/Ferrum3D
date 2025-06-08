@@ -60,6 +60,17 @@ namespace FE::IO
             return ReadToBuffer(buffer.data(), buffer.size());
         }
 
+        //! @brief Read a POD type from the stream.
+        //!
+        //! @param value The value to read into.
+        //!
+        //! @return True if successful.
+        template<class T>
+        bool Read(T& value)
+        {
+            return ReadToBuffer(&value, sizeof(T)) == sizeof(T);
+        }
+
         //! @brief Write contents of buffer to the stream.
         //!
         //! @param buffer The buffer to write from.
@@ -76,6 +87,17 @@ namespace FE::IO
         size_t WriteFromBuffer(const festd::span<const std::byte> buffer)
         {
             return WriteFromBuffer(buffer.data(), buffer.size());
+        }
+
+        //! @brief Write a POD type to the stream.
+        //!
+        //! @param value The value to write.
+        //!
+        //! @return True if successful.
+        template<class T>
+        bool Write(const T& value)
+        {
+            return WriteFromBuffer(&value, sizeof(T)) == sizeof(T);
         }
 
         //! @brief Write to this stream from other stream.

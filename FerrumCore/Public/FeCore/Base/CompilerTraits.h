@@ -112,7 +112,11 @@ namespace FE::Build
 {
     FE_FORCE_INLINE bool IsDebug()
     {
-        return FE_DEBUG;
+#if FE_DEBUG
+        return true;
+#else
+        return false;
+#endif
     }
 
 
