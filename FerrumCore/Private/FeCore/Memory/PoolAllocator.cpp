@@ -60,7 +60,7 @@ namespace FE::Memory
 
     void PoolAllocator::do_deallocate(void* ptr, size_t, size_t)
     {
-        FE_CoreAssert(m_allocationCount > 0);
+        FE_CoreAssertDebug(m_allocationCount > 0);
 
 #if FE_DEBUG
         --m_allocationCount;

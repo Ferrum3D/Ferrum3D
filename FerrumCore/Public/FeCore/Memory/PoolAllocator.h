@@ -82,7 +82,7 @@ namespace FE::Memory
 
         void FreePages()
         {
-            FE_CoreAssert(m_allocationCount == 0, "Leak detected");
+            FE_CoreAssertDebug(m_allocationCount == 0, "Leak detected");
 
             Page* pPage = m_pageList;
             while (pPage)

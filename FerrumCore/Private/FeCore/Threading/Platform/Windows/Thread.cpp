@@ -1,5 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Modules/EnvironmentPrivate.h>
+#include <FeCore/Threading/Platform/ThreadingInternal.h>
 #include <FeCore/Threading/Thread.h>
 
 namespace FE::Threading
@@ -41,6 +42,13 @@ namespace FE::Threading
             return 0;
         }
     } // namespace
+
+
+    void Internal::Init()
+    {
+        Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
+        state.m_threadDataAllocator.Initialize("NativeThreadData", sizeof(NativeThreadData), 64 * 1024);
+    }
 
 
     ThreadHandle CreateThread(const festd::string_view name, const ThreadFunction startRoutine, const uintptr_t pUserData,

@@ -25,7 +25,7 @@ namespace FE
     };
 
 
-    struct ModuleRegistry final : public ServiceLocatorImplBase<Memory::RefCountedObjectBase, ModuleRegistry>
+    struct ModuleRegistry final
     {
         ModuleRegistry() = default;
 
@@ -77,12 +77,13 @@ namespace FE
             FE_Assert(iter != m_entryMap.end());
             if (--iter->second->m_refCount == 0)
             {
+                Memory::DefaultDelete(iter->second->m_module);
                 m_entryPool.Delete(iter->second);
                 m_entryMap.erase(iter);
             }
         }
 
-        ~ModuleRegistry() override
+        ~ModuleRegistry()
         {
             for (auto& [name, pEntry] : m_entryMap)
             {
@@ -109,7 +110,7 @@ namespace FE
     {
         ModuleLoadingList()
         {
-            m_moduleRegistry = ServiceLocator<ModuleRegistry>::Get();
+            m_moduleRegistry = Env::GetModuleRegistry();
         }
 
         ~ModuleLoadingList()

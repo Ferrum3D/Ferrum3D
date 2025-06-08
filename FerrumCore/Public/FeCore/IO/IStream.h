@@ -78,6 +78,17 @@ namespace FE::IO
             return WriteFromBuffer(buffer.data(), buffer.size());
         }
 
+        //! @brief Write a POD type to the stream.
+        //!
+        //! @param value The value to write.
+        //!
+        //! @return True if successful.
+        template<class T>
+        bool Write(const T& value)
+        {
+            return WriteFromBuffer(&value, sizeof(T)) == sizeof(T);
+        }
+
         //! @brief Write to this stream from other stream.
         //!
         //! @param stream Pointer to stream to write from.

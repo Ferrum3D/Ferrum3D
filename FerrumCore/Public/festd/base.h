@@ -78,6 +78,7 @@ namespace FE::festd
     using eastl::begin;
     using eastl::end;
     using eastl::sort;
+    using eastl::swap;
 
     using eastl::copy;
     using eastl::copy_if;

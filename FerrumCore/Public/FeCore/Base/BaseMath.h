@@ -498,7 +498,7 @@ namespace FE::Math
 
     template<class T1, class T2>
     FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y)
-        -> std::enable_if_t<std::is_unsigned_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
+        -> std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
     {
         return (x + y - 1) / y;
     }

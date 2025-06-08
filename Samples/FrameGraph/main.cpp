@@ -21,92 +21,13 @@ using namespace FE::Graphics;
 inline constexpr const char* kExampleName = "Ferrum3D - FrameGraph Sample";
 
 
-struct LogColorScope final
-{
-    explicit LogColorScope(const LogSeverity severity)
-    {
-        Console::Color color;
-        switch (severity)
-        {
-        default:
-            FE_DebugBreak();
-            [[fallthrough]];
-
-        case LogSeverity::kWarning:
-            color = Console::Color::kYellow;
-            break;
-
-        case LogSeverity::kError:
-        case LogSeverity::kCritical:
-            color = Console::Color::kRed;
-            break;
-
-        case LogSeverity::kTrace:
-        case LogSeverity::kDebug:
-            color = Console::Color::kAqua;
-            break;
-
-        case LogSeverity::kInfo:
-            color = Console::Color::kLime;
-            break;
-        }
-
-        Console::SetTextColor(color);
-    }
-
-    ~LogColorScope()
-    {
-        Console::SetTextColor(Console::Color::kDefault);
-    }
-};
-
-
-struct StdoutLogSink final : public LogSinkBase
-{
-    StdoutLogSink(Logger* logger)
-        : LogSinkBase(logger)
-    {
-    }
-
-    void Log(const LogSeverity severity, const SourceLocation sourceLocation, const festd::string_view message) override
-    {
-        {
-            const auto location = Fmt::FixedFormatSized<IO::kMaxPathLength + 16>(
-                "{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
-            Console::Write(festd::string_view(location.data(), location.size()));
-        }
-
-        {
-            const auto date = DateTime<TZ::Local>::Now().ToString(DateTimeFormatKind::kISO8601);
-            Console::Write(date);
-        }
-
-        Console::Write(" [");
-
-        {
-            LogColorScope colorScope{ severity };
-            Console::Write(LogSeverityToString(severity));
-        }
-
-        Console::Write("] ");
-
-        Console::Write(festd::string_view(message.data(), message.size()));
-        Console::Write("\n");
-
-        if (severity >= LogSeverity::kWarning)
-            Console::Flush();
-    }
-};
-
-
 struct ExampleApplication final : public Framework::Application
 {
     FE_RTTI_Class(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
 
     ExampleApplication(const int32_t argc, const char** argv)
+        : Application(argc, argv)
     {
-        for (int32_t argIndex = 1; argIndex < argc; ++argIndex)
-            m_commandLine.push_back(argv[argIndex]);
     }
 
     ~ExampleApplication() override
@@ -114,14 +35,13 @@ struct ExampleApplication final : public Framework::Application
         m_device->WaitIdle();
     }
 
-private:
-    void InitializeApp() override
+    void InitializeApp()
     {
         FE_PROFILER_ZONE();
 
         DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
 
-        m_logSink = festd::make_unique<StdoutLogSink>(serviceProvider->ResolveRequired<Logger>());
+        m_logSink = festd::make_unique<Framework::StdoutLogSink>(serviceProvider->ResolveRequired<Logger>());
 
         m_factory = serviceProvider->ResolveRequired<Core::DeviceFactory>();
 
@@ -147,6 +67,7 @@ private:
         m_passProducer->Init(m_viewport.Get());
     }
 
+private:
     struct PassProducer final : public Core::PassProducer
     {
         FE_RTTI_Class(PassProducer, "A22B22E2-2196-4439-8D70-AFB8E64379AD");
@@ -292,25 +213,13 @@ private:
         return nullptr;
     }
 
-    void RegisterServices(DI::ServiceRegistryBuilder builder) override
-    {
-        builder.Bind<Env::Configuration>()
-            .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-                *result = Memory::New<Env::Configuration>(allocator, m_commandLine);
-                return DI::ResultCode::kSuccess;
-            })
-            .InSingletonScope();
-    }
-
     void LoadModules(ModuleLoadingList& modules) override
     {
         modules.Add<Framework::FrameworkModule>();
         modules.Add<Core::GraphicsCoreModule>();
     }
 
-    festd::unique_ptr<StdoutLogSink> m_logSink;
-    festd::vector<festd::string_view> m_commandLine;
+    festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
     Rc<Core::DeviceFactory> m_factory;
     Rc<Core::Device> m_device;
 
@@ -334,7 +243,8 @@ int main(const int32_t argc, const char** argv)
 
     int32_t exitCode = 0;
     FunctorJob mainJob([application, &exitCode] {
-        application->Initialize();
+        application->InitializeWindow();
+        application->InitializeApp();
         exitCode = application->Run();
     });
 

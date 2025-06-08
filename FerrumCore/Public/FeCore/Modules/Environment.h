@@ -4,6 +4,13 @@
 #include <FeCore/DI/BaseDI.h>
 #include <FeCore/Threading/SpinLock.h>
 
+
+namespace FE
+{
+    struct ModuleRegistry;
+} // namespace FE
+
+
 namespace FE::Memory
 {
     //! @brief Type of global static allocator.
@@ -541,6 +548,11 @@ namespace FE::Env
             return const_cast<T*>(m_storage->Get());
         }
 
+        StorageType* GetStorage() const
+        {
+            return m_storage;
+        }
+
         T& operator*() const
         {
             FE_CoreAssert(m_storage, "Global variable was empty");
@@ -578,6 +590,7 @@ namespace FE::Env
     std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);
     DI::IServiceProvider* GetServiceProvider();
 
+    ModuleRegistry* GetModuleRegistry();
     DI::ServiceRegistry* CreateServiceRegistry();
     DI::ServiceRegistry* GetRootServiceRegistry();
 

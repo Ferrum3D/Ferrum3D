@@ -14,7 +14,7 @@ namespace FE::Platform
         constexpr int32_t kMaxMessageSize = 8 * 1024;
 
         const wchar_t* wideMessage = L"Unknown Error (Error message had invalid encoding)";
-        const wchar_t* wideFilename = L"Unknown File (Filename had invalid encoding)";
+        [[maybe_unused]] const wchar_t* wideFilename = L"Unknown File (Filename had invalid encoding)";
 
         const int32_t clampedMessageSize = Math::Min(static_cast<int32_t>(messageSize), kMaxMessageSize);
         const int32_t messageLength = MultiByteToWideChar(CP_UTF8, 0, message, clampedMessageSize, nullptr, 0);
@@ -54,13 +54,14 @@ namespace FE::Platform
             wideMessage = buffer;
         }
 
+        OutputDebugStringW(wideMessage);
+
         if (crash)
         {
+#if FE_DEBUG
             _wassert(wideMessage, wideFilename, sourceLocation.m_lineNumber);
-        }
-        else
-        {
-            OutputDebugStringW(wideMessage);
+#endif
+            FE_DebugBreak();
         }
 
         VirtualFree(allocation, 0, MEM_RELEASE);

@@ -1,4 +1,5 @@
 ﻿#include <FeCore/Base/Platform.h>
+#include <FeCore/Compression/CompressionInternal.h>
 #include <FeCore/Console/Console.h>
 #include <FeCore/DI/Container.h>
 #include <FeCore/Memory/LinearAllocator.h>
@@ -7,6 +8,7 @@
 #include <FeCore/Modules/EnvironmentPrivate.h>
 #include <FeCore/Modules/IModule.h>
 #include <FeCore/Platform/Windows/Common.h>
+#include <FeCore/Threading/Platform/ThreadingInternal.h>
 #include <FeCore/Threading/Thread.h>
 #include <cstdio>
 #include <festd/unordered_map.h>
@@ -171,13 +173,22 @@ namespace FE::Env
 
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
-            Rc<ModuleRegistry> m_moduleRegistry;
+            ModuleRegistry m_moduleRegistry;
 
             Environment(const ApplicationInfo& appInfo)
                 : m_appInfo(appInfo)
                 , m_linearMemoryResource(UINT64_C(2) * 1024 * 1024, &m_virtualMemoryResource)
             {
                 std::pmr::set_default_resource(&m_defaultMemoryResource);
+            }
+
+            void Init()
+            {
+                Console::Init();
+                Threading::Internal::Init();
+                Compression::Internal::Init();
+
+                m_diContainer.GetRegistryRoot()->Initialize();
             }
 
             std::pmr::memory_resource* GetStaticAllocator(const Memory::StaticAllocatorType type)
@@ -251,6 +262,7 @@ namespace FE::Env
                     }
                 }
 
+                Compression::Internal::Shutdown();
                 Memory::DefaultDelete(this);
             }
         };
@@ -262,7 +274,6 @@ namespace FE::Env
 
         SharedState::SharedState()
             : m_mainThreadId(Threading::GetCurrentThreadID())
-            , m_threadDataAllocator("NativeThreadData", sizeof(Threading::NativeThreadData), 64 * 1024)
         {
         }
 
@@ -295,6 +306,12 @@ namespace FE::Env
     DI::IServiceProvider* GetServiceProvider()
     {
         return &Internal::GEnvInstance->m_diContainer;
+    }
+
+
+    ModuleRegistry* GetModuleRegistry()
+    {
+        return &Internal::GEnvInstance->m_moduleRegistry;
     }
 
 
@@ -366,10 +383,7 @@ namespace FE::Env
 
             Internal::GIsEnvOwner = true;
             Internal::GEnvInstance = Memory::DefaultNew<Internal::Environment>(info);
-
-            Console::Init();
-            Internal::GEnvInstance->m_diContainer.GetRegistryRoot()->Initialize();
-            Internal::GEnvInstance->m_moduleRegistry = Rc<ModuleRegistry>::New(&Internal::GEnvInstance->m_linearMemoryResource);
+            Internal::GEnvInstance->Init();
         }
     }
 
@@ -398,6 +412,7 @@ namespace FE::Env
         if (Internal::GIsEnvOwner)
         {
             Internal::GEnvInstance->Destroy();
+
             tracy::ShutdownProfiler();
         }
 

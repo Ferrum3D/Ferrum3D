@@ -29,6 +29,8 @@
     Public/FeCore/Base/PlatformInclude.h
     Public/FeCore/Base/PlatformTraits.h
 
+    Public/FeCore/Compression/Compression.h
+
     Public/FeCore/Console/Console.h
     Public/FeCore/Console/ConsolePrivate.h
 
@@ -122,6 +124,9 @@ set(COMMON_SOURCES
 
     Private/FeCore/Base/Assert.cpp
 
+    Private/FeCore/Compression/Compression.cpp
+    Private/FeCore/Compression/CompressionInternal.h
+
     Private/FeCore/Console/Console.cpp
 
     Private/FeCore/DI/BaseDI.cpp
@@ -167,6 +172,7 @@ set(COMMON_SOURCES
     Private/FeCore/Strings/Format.cpp
     Private/FeCore/Strings/Parser.cpp
 
+    Private/FeCore/Threading/Platform/ThreadingInternal.h
     Private/FeCore/Threading/Context.cpp
     Private/FeCore/Threading/Fiber.cpp
 
@@ -200,6 +206,7 @@ set_target_properties(FeCore PROPERTIES FOLDER "Core")
 target_link_libraries(FeCore
     fcontext
     mimalloc
+    libdeflate
     TracyClient
     utf8proc
     EASTL
