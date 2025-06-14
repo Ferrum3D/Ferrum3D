@@ -127,8 +127,8 @@ private:
 
         m_logger->LogInfo("Compressing to {}", fileName);
 
-        auto cpuContext = Compression::Context::Create(Compression::Method::kDeflate);
-        auto gpuContext = Compression::Context::Create(Compression::Method::kGDeflate);
+        auto cpuContext = Compression::Compressor::Create(Compression::Method::kDeflate);
+        auto gpuContext = Compression::Compressor::Create(Compression::Method::kGDeflate);
 
         auto out = m_streamFactory->OpenFileStream(fileName, IO::OpenMode::kCreate).value();
 
@@ -158,7 +158,10 @@ private:
         mipChainInfo.m_reserved = 0;
         writer.Write(mipChainInfo);
 
-        FE_Verify(cpuContext.Compress(tempUncompressedBuffer.data(),
+        Crc32 crc32;
+
+        FE_Verify(cpuContext.Compress(crc32,
+                                      tempUncompressedBuffer.data(),
                                       writer.m_ptr - tempUncompressedBuffer.data(),
                                       tempCompressedBuffer.data(),
                                       tempCompressedBuffer.size()));
@@ -172,7 +175,8 @@ private:
             const uint32_t blockBytesEnd = Math::Min(blockByteOffset + fileBlockByteSize, compressedDataByteSize);
             const uint32_t blockByteSize = blockBytesEnd - blockByteOffset;
 
-            FE_Verify(gpuContext.Compress(reinterpret_cast<const std::byte*>(compressedData.data()) + blockByteOffset,
+            FE_Verify(gpuContext.Compress(crc32,
+                                          reinterpret_cast<const std::byte*>(compressedData.data()) + blockByteOffset,
                                           blockByteSize,
                                           tempCompressedBuffer.data(),
                                           tempCompressedBuffer.size()));

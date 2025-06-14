@@ -14,9 +14,6 @@ namespace FE::Graphics::Core
 
         kColorTarget = 1 << 2,
         kDepthStencilTarget = 1 << 3,
-
-        kTransferSrc = 1 << 4,
-        kTransferDst = 1 << 5,
     };
 
     FE_ENUM_OPERATORS(ImageBindFlags);
@@ -37,6 +34,77 @@ namespace FE::Graphics::Core
         uint32_t m_mipSliceCount : 4;
         uint32_t m_firstArraySlice : 12;
         uint32_t m_arraySize : 12;
+    };
+
+
+    struct ImageSubresourceIterator final
+    {
+        struct Slice final
+        {
+            int32_t m_mipIndex : 16;
+            int32_t m_arrayIndex : 16;
+        };
+
+        struct Iter final
+        {
+            ImageSubresource m_subresource;
+            Slice m_currentSlice;
+
+            Iter operator++()
+            {
+                ++m_currentSlice.m_mipIndex;
+                if (m_currentSlice.m_mipIndex == m_subresource.m_mostDetailedMipSlice + m_subresource.m_mipSliceCount)
+                {
+                    ++m_currentSlice.m_arrayIndex;
+                    m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
+                }
+
+                return *this;
+            }
+
+            Iter operator++(int)
+            {
+                const Iter iter = *this;
+                ++*this;
+                return iter;
+            }
+
+            [[nodiscard]] Slice operator*() const
+            {
+                return m_currentSlice;
+            }
+
+            [[nodiscard]] bool operator==(const Iter other) const
+            {
+                return festd::bit_cast<uint32_t>(m_currentSlice) == festd::bit_cast<uint32_t>(other.m_currentSlice);
+            }
+
+            [[nodiscard]] bool operator!=(const Iter other) const
+            {
+                return festd::bit_cast<uint32_t>(m_currentSlice) != festd::bit_cast<uint32_t>(other.m_currentSlice);
+            }
+        };
+
+        ImageSubresource m_subresource;
+
+        explicit ImageSubresourceIterator(const ImageSubresource subresource)
+            : m_subresource(subresource)
+        {
+        }
+
+        [[nodiscard]] Iter begin() const
+        {
+            return { m_subresource,
+                     { static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice),
+                       static_cast<int32_t>(m_subresource.m_firstArraySlice) } };
+        }
+
+        [[nodiscard]] Iter end() const
+        {
+            return { m_subresource,
+                     { static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice + m_subresource.m_mipSliceCount),
+                       static_cast<int32_t>(m_subresource.m_firstArraySlice + m_subresource.m_arraySize) } };
+        }
     };
 
 

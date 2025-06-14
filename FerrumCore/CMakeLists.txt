@@ -116,6 +116,8 @@
     Public/FeCore/Time/BaseTime.h
     Public/FeCore/Time/DateTime.h
     Public/FeCore/Time/TimeSpan.h
+
+    Public/FeCore/Utils/Crc32.h
 )
 
 set(COMMON_SOURCES
@@ -178,6 +180,8 @@ set(COMMON_SOURCES
 
     Private/FeCore/Time/Platform/PlatformTime.cpp
     Private/FeCore/Time/DateTime.cpp
+
+    Private/FeCore/Utils/Crc32.cpp
 )
 
 set(WINDOWS_SOURCES

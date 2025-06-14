@@ -60,6 +60,17 @@ namespace FE::IO
             return ReadToBuffer(buffer.data(), buffer.size());
         }
 
+        //! @brief Read a POD type from the stream.
+        //!
+        //! @param value The value to read into.
+        //!
+        //! @return True if successful.
+        template<class T>
+        bool Read(T& value)
+        {
+            return ReadToBuffer(&value, sizeof(T)) == sizeof(T);
+        }
+
         //! @brief Write contents of buffer to the stream.
         //!
         //! @param buffer The buffer to write from.

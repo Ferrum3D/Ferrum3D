@@ -3,6 +3,7 @@
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Memory/SegmentedBuffer.h>
 #include <Graphics/Core/Buffer.h>
+#include <Graphics/Core/Image.h>
 
 namespace FE::Graphics::Core
 {
@@ -14,6 +15,7 @@ namespace FE::Graphics::Core
             kCopyBuffer,
             kCopyBufferContinuation,
             kUploadBuffer,
+            kUploadImage,
         };
 
 
@@ -46,6 +48,17 @@ namespace FE::Graphics::Core
             const Buffer* m_buffer;
             const void* m_data;
         };
+
+
+        struct AsyncUploadImageCommand final
+        {
+            AsyncCopyCommandType m_type;
+            uint32_t m_sourceOffset;
+            uint32_t m_sourceSize;
+            ImageSubresource m_subresource;
+            const Image* m_image;
+            const void* m_data;
+        };
     } // namespace InternalAsyncCopyCommands
 
 
@@ -75,6 +88,8 @@ namespace FE::Graphics::Core
         void UploadBuffer(const Buffer* buffer, const void* data);
         void UploadBuffer(const Buffer* buffer, const void* data, uint32_t sourceOffset, uint32_t destinationOffset,
                           uint32_t size);
+
+        void UploadImage(const Image* image, const void* data, uint32_t sourceSize, uint32_t sourceOffset = 0);
 
         AsyncCopyCommandList Build(WaitGroup* signalWaitGroup = nullptr);
 
@@ -162,6 +177,22 @@ namespace FE::Graphics::Core
         command.m_size = size;
         m_bufferBuilder.WriteBytes(&command, sizeof(command));
         m_prev.m_type = AsyncCopyCommandType::kUploadBuffer;
+    }
+
+
+    inline void AsyncCopyCommandListBuilder::UploadImage(const Image* image, const void* data, uint32_t sourceSize,
+                                                         const uint32_t sourceOffset)
+    {
+        using namespace InternalAsyncCopyCommands;
+
+        AsyncUploadImageCommand command;
+        command.m_type = AsyncCopyCommandType::kUploadImage;
+        command.m_image = image;
+        command.m_data = data;
+        command.m_sourceOffset = sourceOffset;
+        command.m_sourceSize = sourceSize;
+        m_bufferBuilder.WriteBytes(&command, sizeof(command));
+        m_prev.m_type = AsyncCopyCommandType::kUploadImage;
     }
 
 

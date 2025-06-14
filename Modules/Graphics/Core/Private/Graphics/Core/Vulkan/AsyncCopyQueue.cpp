@@ -1,6 +1,7 @@
 ﻿#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
+#include <Graphics/Core/Vulkan/Image.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 
 namespace FE::Graphics::Vulkan
@@ -235,6 +236,65 @@ namespace FE::Graphics::Vulkan
                         copy.dstOffset = cmd.m_destinationOffset;
                         copy.size = cmd.m_size;
                         vkCmdCopyBuffer(commandBuffer, m_uploadBuffer->GetNative(), NativeCast(cmd.m_buffer), 1, &copy);
+
+                        uploadedBytes += allocationSize;
+                    }
+
+                    break;
+                }
+
+            case AsyncCopyCommandType::kUploadImage:
+                {
+                    batcher.Flush();
+
+                    AsyncUploadImageCommand cmd;
+                    FE_Verify(reader.Read(cmd));
+
+                    const Core::ImageDesc imageDesc = cmd.m_image->GetDesc();
+                    const Core::FormatInfo formatInfo{ imageDesc.m_imageFormat };
+                    const Core::ImageSubresource subresource = cmd.m_subresource;
+
+                    FE_Assert(subresource.m_firstArraySlice + subresource.m_arraySize <= imageDesc.m_arraySize);
+                    FE_Assert(subresource.m_mostDetailedMipSlice + subresource.m_mipSliceCount <= imageDesc.m_mipSliceCount);
+
+                    const Core::ImageSubresourceIterator subresourceIterator{ subresource };
+
+                    uint32_t uploadedBytes = 0;
+                    for (const auto [mipIndex, arrayIndex] : subresourceIterator)
+                    {
+                        const uint32_t allocationSize = formatInfo.CalculateMipByteSize(imageDesc.GetSize(), mipIndex);
+
+                        FE_Assert(uploadedBytes + allocationSize <= cmd.m_sourceSize);
+
+                        FE_Assert(allocationSize <= kUploadBufferSize,
+                                  "Currently, each mip level must entirely fit into staging buffer");
+
+                        const VkDeviceSize allocationOffset =
+                            AllocateStagingMemory(item, allocationSize, kStagingAllocationAlignment);
+
+                        auto* data = mapper.Map();
+                        auto* copyDestination = data + allocationOffset;
+                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + uploadedBytes;
+                        memcpy(copyDestination, copySource, allocationSize);
+
+                        VkBufferImageCopy copy;
+                        copy.imageSubresource.aspectMask = TranslateImageAspectFlags(imageDesc.m_imageFormat);
+                        copy.imageSubresource.mipLevel = mipIndex;
+                        copy.imageSubresource.baseArrayLayer = arrayIndex;
+                        copy.imageSubresource.layerCount = 1;
+                        copy.imageExtent.width = Math::Max(1u, imageDesc.m_width >> mipIndex);
+                        copy.imageExtent.height = Math::Max(1u, imageDesc.m_height >> mipIndex);
+                        copy.imageExtent.depth = Math::Max(1u, imageDesc.m_depth >> mipIndex);
+                        copy.imageOffset.x = 0;
+                        copy.imageOffset.y = 0;
+                        copy.imageOffset.z = 0;
+                        copy.bufferOffset = allocationOffset;
+                        vkCmdCopyBufferToImage(commandBuffer,
+                                               m_uploadBuffer->GetNative(),
+                                               NativeCast(cmd.m_image),
+                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                               1,
+                                               &copy);
 
                         uploadedBytes += allocationSize;
                     }

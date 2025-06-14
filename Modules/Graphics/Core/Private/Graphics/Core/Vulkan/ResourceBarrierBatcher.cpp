@@ -5,17 +5,17 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        VkAccessFlags ConvertBufferAccessFlags(const uint64_t access)
+        VkAccessFlags2 ConvertBufferAccessFlags(const uint64_t access)
         {
             if (access < festd::to_underlying(Core::BufferWriteType::kCount))
             {
                 switch (static_cast<Core::BufferWriteType>(access))
                 {
                 case Core::BufferWriteType::kTransferDestination:
-                    return VK_ACCESS_TRANSFER_WRITE_BIT;
+                    return VK_ACCESS_2_TRANSFER_WRITE_BIT;
 
                 case Core::BufferWriteType::kUnorderedAccess:
-                    return VK_ACCESS_MEMORY_READ_BIT;
+                    return VK_ACCESS_2_MEMORY_READ_BIT;
 
                 case Core::BufferWriteType::kCount:
                 default:
@@ -27,13 +27,13 @@ namespace FE::Graphics::Vulkan
             switch (static_cast<Core::BufferReadType>(access))
             {
             case Core::BufferReadType::kTransferSource:
-                return VK_ACCESS_TRANSFER_READ_BIT;
+                return VK_ACCESS_2_TRANSFER_READ_BIT;
 
             case Core::BufferReadType::kShaderResource:
-                return VK_ACCESS_SHADER_READ_BIT;
+                return VK_ACCESS_2_SHADER_READ_BIT;
 
             case Core::BufferReadType::kIndirectArgument:
-                return VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+                return VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
 
             case Core::BufferReadType::kCount:
             default:
@@ -92,24 +92,6 @@ namespace FE::Graphics::Vulkan
                 return { 0, VK_IMAGE_LAYOUT_UNDEFINED };
             }
         }
-
-
-        bool IsBarrierCompatible(const BufferBarrierDesc& a, const BufferBarrierDesc& b)
-        {
-            if (a.m_buffer != b.m_buffer)
-                return false;
-
-            if (a.m_sourceQueueKind != b.m_sourceQueueKind || a.m_destQueueKind != b.m_destQueueKind)
-                return false;
-
-            if (a.m_sourceAccess != b.m_sourceAccess || a.m_destAccess != b.m_destAccess)
-                return false;
-
-            if (a.m_offset >= b.m_offset + b.m_size || b.m_offset >= a.m_offset + a.m_size)
-                return false;
-
-            return true;
-        }
     } // namespace
 
 
@@ -125,22 +107,22 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         const uint64_t hash = desc.GetHash();
+
+        bool needFlush = false;
         for (auto& [barrierDesc, barrierHash] : m_bufferBarriers)
         {
             if (barrierHash == hash)
                 return;
 
-            if (IsBarrierCompatible(barrierDesc, desc))
+            if (barrierDesc.m_buffer == desc.m_buffer)
             {
-                const uint32_t start = Math::Min(barrierDesc.m_offset, desc.m_offset);
-                const uint32_t end = Math::Max(barrierDesc.m_offset + barrierDesc.m_size, desc.m_offset + desc.m_size);
-
-                barrierDesc.m_offset = start;
-                barrierDesc.m_size = end - start;
-                barrierHash = barrierDesc.GetHash();
-                return;
+                needFlush = true;
+                break;
             }
         }
+
+        if (needFlush)
+            Flush();
 
         m_bufferBarriers.push_back({ desc, hash });
     }
@@ -176,48 +158,71 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        festd::small_vector<VkBufferMemoryBarrier> nativeBufferBarriers;
+        festd::small_vector<VkBufferMemoryBarrier2> nativeBufferBarriers;
         nativeBufferBarriers.reserve(m_bufferBarriers.size());
         for (const auto& [barrierDesc, hash] : m_bufferBarriers)
         {
-            VkBufferMemoryBarrier& barrier = nativeBufferBarriers.emplace_back();
-            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            VkBufferMemoryBarrier2& barrier = nativeBufferBarriers.emplace_back();
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
             barrier.buffer = barrierDesc.m_buffer;
             barrier.srcAccessMask = ConvertBufferAccessFlags(barrierDesc.m_sourceAccess);
+            barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             barrier.dstAccessMask = ConvertBufferAccessFlags(barrierDesc.m_destAccess);
-            barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueKind);
-            barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueKind);
-            barrier.offset = barrierDesc.m_offset;
-            barrier.size = barrierDesc.m_size;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+            barrier.offset = 0;
+            barrier.size = VK_WHOLE_SIZE;
+
+            if (barrierDesc.m_sourceQueueKind != barrierDesc.m_destQueueKind)
+            {
+                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueKind);
+                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueKind);
+            }
+            else
+            {
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            }
         }
 
-        festd::small_vector<VkImageMemoryBarrier> nativeImageBarriers;
+        festd::small_vector<VkImageMemoryBarrier2> nativeImageBarriers;
         nativeImageBarriers.reserve(m_imageBarriers.size());
         for (const auto& [barrierDesc, hash] : m_imageBarriers)
         {
-            VkImageMemoryBarrier& barrier = nativeImageBarriers.emplace_back();
+            VkImageMemoryBarrier2& barrier = nativeImageBarriers.emplace_back();
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.image = barrierDesc.m_image;
 
             const auto [srcAccessFlags, oldLayout] = ConvertImageAccessFlags(barrierDesc.m_sourceAccess);
             barrier.srcAccessMask = srcAccessFlags;
+            barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             barrier.oldLayout = oldLayout;
 
             const auto [dstAccessFlags, newLayout] = ConvertImageAccessFlags(barrierDesc.m_destAccess);
             barrier.dstAccessMask = dstAccessFlags;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             barrier.newLayout = newLayout;
+
+            if (barrierDesc.m_sourceQueueKind != barrierDesc.m_destQueueKind)
+            {
+                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueKind);
+                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueKind);
+            }
+            else
+            {
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            }
         }
 
-        vkCmdPipelineBarrier(m_commandBuffer,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                             VK_DEPENDENCY_BY_REGION_BIT,
-                             0,
-                             nullptr,
-                             nativeBufferBarriers.size(),
-                             nativeBufferBarriers.data(),
-                             nativeImageBarriers.size(),
-                             nativeImageBarriers.data());
+        VkDependencyInfo dependencyInfo = {};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.bufferMemoryBarrierCount = nativeBufferBarriers.size();
+        dependencyInfo.pBufferMemoryBarriers = nativeBufferBarriers.data();
+        dependencyInfo.imageMemoryBarrierCount = nativeImageBarriers.size();
+        dependencyInfo.pImageMemoryBarriers = nativeImageBarriers.data();
+
+        vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 
         m_bufferBarriers.clear();
         m_imageBarriers.clear();

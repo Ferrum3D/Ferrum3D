@@ -7,38 +7,43 @@ namespace FE::IO
     {
         switch (code)
         {
-        case ResultCode::Success:
+        case ResultCode::kSuccess:
             return "Success";
-        case ResultCode::Canceled:
+        case ResultCode::kCanceled:
             return "Operation was canceled";
-        case ResultCode::PermissionDenied:
+        case ResultCode::kPermissionDenied:
             return "Permission denied";
-        case ResultCode::NoFileOrDirectory:
+        case ResultCode::kNoFileOrDirectory:
             return "No such file or directory";
-        case ResultCode::FileExists:
+        case ResultCode::kFileExists:
             return "File already exists";
-        case ResultCode::FileTooLarge:
+        case ResultCode::kFileTooLarge:
             return "File is too large";
-        case ResultCode::FilenameTooLong:
+        case ResultCode::kFilenameTooLong:
             return "Filename is too long";
-        case ResultCode::NotDirectory:
+        case ResultCode::kNotDirectory:
             return "Not a directory";
-        case ResultCode::IsDirectory:
+        case ResultCode::kIsDirectory:
             return "Is a directory";
-        case ResultCode::DirectoryNotEmpty:
+        case ResultCode::kDirectoryNotEmpty:
             return "Directory is not empty";
-        case ResultCode::TooManyOpenFiles:
+        case ResultCode::kTooManyOpenFiles:
             return "Too many files are open";
-        case ResultCode::InvalidSeek:
+        case ResultCode::kInvalidSeek:
             return "Invalid seek operation";
-        case ResultCode::IOError:
+        case ResultCode::kIOError:
             return "IO error";
-        case ResultCode::DeadLock:
+        case ResultCode::kDeadLock:
             return "Resource deadlock would occur";
-        case ResultCode::NotSupported:
+        case ResultCode::kNotSupported:
             return "Operation is not supported";
-        case ResultCode::InvalidArgument:
+        case ResultCode::kInvalidArgument:
             return "Argument value has not been accepted";
+        case ResultCode::kInvalidFormat:
+            return "Invalid file format";
+        case ResultCode::kDecompressionError:
+            return "Block file decompression failed";
+        case ResultCode::kUnknownError:
         default:
             return "Unknown error";
         }

@@ -28,21 +28,6 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        VkImageAspectFlags GetAspectFlags(const Core::Format format)
-        {
-            const Core::FormatInfo formatInfo{ format };
-
-            VkImageAspectFlags aspectMask = 0;
-            if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kColor))
-                aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-            if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kDepth))
-                aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-            if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kStencil))
-                aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-
-            return aspectMask;
-        }
-
         VulkanObjectPoolType GImagePool{ "VulkanImagePool", sizeof(Image) };
     } // namespace
 
@@ -88,7 +73,7 @@ namespace FE::Graphics::Vulkan
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCI.format = Translate(m_desc.m_imageFormat);
         viewCI.viewType = Translate(m_desc.m_dimension, m_desc.m_arraySize > 1);
-        viewCI.subresourceRange.aspectMask = GetAspectFlags(m_desc.m_imageFormat);
+        viewCI.subresourceRange.aspectMask = TranslateImageAspectFlags(m_desc.m_imageFormat);
         viewCI.subresourceRange.baseMipLevel = subresource.m_mostDetailedMipSlice;
         viewCI.subresourceRange.levelCount = subresource.m_mipSliceCount;
         viewCI.subresourceRange.baseArrayLayer = subresource.m_firstArraySlice;
@@ -119,7 +104,7 @@ namespace FE::Graphics::Vulkan
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCI.format = Translate(m_desc.m_imageFormat);
         viewCI.viewType = Translate(m_desc.m_dimension, m_desc.m_arraySize > 1);
-        viewCI.subresourceRange.aspectMask = GetAspectFlags(m_desc.m_imageFormat);
+        viewCI.subresourceRange.aspectMask = TranslateImageAspectFlags(m_desc.m_imageFormat);
         viewCI.subresourceRange.levelCount = m_desc.m_mipSliceCount;
         viewCI.subresourceRange.layerCount = m_desc.m_arraySize;
         viewCI.subresourceRange.baseMipLevel = 0;
@@ -160,29 +145,27 @@ namespace FE::Graphics::Vulkan
         VkImageCreateInfo imageCI{};
         imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
-        VkImageUsageFlags usage = VK_FLAGS_NONE;
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kDepthStencilTarget))
-            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
+        VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kShaderRead))
             usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kColorTarget))
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kUnorderedAccess))
             usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kTransferDst))
-            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kDepthStencilTarget))
+            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kTransferSrc))
-            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kColorTarget))
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        imageCI.usage = usage;
 
         switch (desc.m_dimension)
         {
         case ImageDimension::k1D:
             imageCI.imageType = VK_IMAGE_TYPE_1D;
+            FE_Assert(desc.m_height == 1);
+            FE_Assert(desc.m_depth == 1);
             break;
         case ImageDimension::kCubemap:
             FE_AssertMsg(desc.m_arraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.m_arraySize);
@@ -190,6 +173,7 @@ namespace FE::Graphics::Vulkan
             [[fallthrough]];
         case ImageDimension::k2D:
             imageCI.imageType = VK_IMAGE_TYPE_2D;
+            FE_Assert(desc.m_depth == 1);
             break;
         case ImageDimension::k3D:
             imageCI.imageType = VK_IMAGE_TYPE_3D;
@@ -199,26 +183,12 @@ namespace FE::Graphics::Vulkan
             break;
         }
 
-        Logger* logger = Env::GetServiceProvider()->ResolveRequired<Logger>();
-
         imageCI.extent = VKConvertExtent(desc.GetSize());
-        if (desc.m_dimension != ImageDimension::k2D && imageCI.extent.height > 1)
-        {
-            logger->LogWarning("Expected ImageSize.Height = 1 for a 1D image, but got {}", imageCI.extent.height);
-            imageCI.extent.height = 1;
-        }
-        if (desc.m_dimension != ImageDimension::k3D && imageCI.extent.depth > 1)
-        {
-            logger->LogWarning("Expected ImageSize.Depth = 1 for a non-3D image, but got {}", imageCI.extent.depth);
-            imageCI.extent.depth = 1;
-        }
-
         imageCI.mipLevels = desc.m_mipSliceCount;
         imageCI.arrayLayers = desc.m_arraySize;
         imageCI.format = Translate(desc.m_imageFormat);
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCI.usage = usage;
         imageCI.samples = GetVKSampleCountFlags(desc.m_sampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 

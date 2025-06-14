@@ -11,7 +11,7 @@ namespace FE
     //! @param x         Value to align.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr T AlignUp(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr T AlignUp(const T x, const TAlignmentType alignment)
     {
         return static_cast<T>((x + (static_cast<T>(alignment) - 1u)) & ~(static_cast<T>(alignment) - 1u));
     }
@@ -44,7 +44,7 @@ namespace FE
     //! @param x         Value to align.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr T AlignDown(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr T AlignDown(const T x, const TAlignmentType alignment)
     {
         return x & ~(static_cast<T>(alignment) - 1);
     }
@@ -77,7 +77,7 @@ namespace FE
     //! @param x         Value to check.
     //! @param alignment Alignment to use.
     template<class T, class TAlignmentType = T>
-    FE_FORCE_INLINE constexpr bool IsAligned(T x, const TAlignmentType alignment)
+    FE_FORCE_INLINE constexpr bool IsAligned(const T x, const TAlignmentType alignment)
     {
         return (x & (static_cast<T>(alignment) - 1)) == 0;
     }
@@ -117,6 +117,7 @@ namespace FE
         return mask << leftShift;
     }
 } // namespace FE
+
 
 namespace FE::Bit
 {

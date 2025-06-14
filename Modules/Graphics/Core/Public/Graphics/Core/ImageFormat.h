@@ -277,7 +277,7 @@ namespace FE::Graphics::Core
         {
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
             const uint32_t blockCountW = Math::Max(Math::CeilDivide(width >> mipIndex, blockSize), 1u);
-            return blockCountW * m_byteSize;
+            return blockCountW * m_texelByteSize;
         }
 
         [[nodiscard]] uint32_t CalculateMipByteSize(const Vector3UInt size, const uint32_t mipIndex = 0) const
@@ -285,7 +285,8 @@ namespace FE::Graphics::Core
             const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
             const uint32_t blockCountX = Math::Max(Math::CeilDivide(size.x >> mipIndex, blockSize), 1u);
             const uint32_t blockCountY = Math::Max(Math::CeilDivide(size.y >> mipIndex, blockSize), 1u);
-            return Math::Max(size.z >> mipIndex, 1u) * blockCountX * blockCountY * m_byteSize;
+            const uint32_t blockCountZ = Math::Max(size.z >> mipIndex, 1u);
+            return blockCountX * blockCountY * blockCountZ * m_texelByteSize;
         }
 
         [[nodiscard]] uint32_t CalculateImageByteSize(const Vector3UInt size, const uint32_t mipCount) const
@@ -312,7 +313,7 @@ namespace FE::Graphics::Core
             uint32_t m_isBlockCompressed : 1;
             ImageAspectFlags m_aspectFlags : 3;
             FormatChannelCount m_channelCount : 2;
-            uint32_t m_byteSize : 5;
+            uint32_t m_texelByteSize : 5;
             FormatType m_type : 2;
         };
 
@@ -343,12 +344,12 @@ namespace FE::Graphics::Core
 
     inline uint32_t GetFormatSize(const Format format)
     {
-        return FormatInfo{ format }.m_byteSize;
+        return FormatInfo{ format }.m_texelByteSize;
     }
 
     inline uint32_t GetFormatSize(const VertexChannelFormat format)
     {
-        return FormatInfo{ format }.m_byteSize;
+        return FormatInfo{ format }.m_texelByteSize;
     }
 } // namespace FE::Graphics::Core
 

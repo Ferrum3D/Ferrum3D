@@ -35,7 +35,7 @@ namespace FE::Graphics::Core
                     IO::AsyncReadRequest request;
                     request.m_callback = this;
                     request.m_path = entry.m_path;
-                    request.m_userData = shaderName.GetHandle();
+                    request.m_userData0 = shaderName.GetHandle();
                     request.m_overallocateBytes = 1;
                     m_asyncIO->ReadAsync(request);
                 }
@@ -43,7 +43,7 @@ namespace FE::Graphics::Core
                 return true;
             });
 
-        FE_AssertMsg(iterationResult == IO::ResultCode::Success,
+        FE_AssertMsg(iterationResult == IO::ResultCode::kSuccess,
                      "Failed to traverse the Shaders directory: {}",
                      IO::GetResultDesc(iterationResult));
 
@@ -64,7 +64,7 @@ namespace FE::Graphics::Core
 
         const auto iter = m_filesMap.find(path);
         if (iter == m_filesMap.end())
-            return festd::unexpected(IO::ResultCode::NoFileOrDirectory);
+            return festd::unexpected(IO::ResultCode::kNoFileOrDirectory);
 
         return iter->second;
     }
@@ -132,7 +132,7 @@ namespace FE::Graphics::Core
         file->m_source[file->m_sourceSize] = '\0';
 
         std::lock_guard lk{ m_lock };
-        m_filesMap[Env::Name::CreateFromHandle(static_cast<uint32_t>(result.m_request->m_userData))] = file;
+        m_filesMap[Env::Name::CreateFromHandle(static_cast<uint32_t>(result.m_request->m_userData0))] = file;
 
         m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
     }

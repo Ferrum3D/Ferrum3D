@@ -13,8 +13,6 @@ namespace FE::Graphics::Vulkan
         uint32_t m_destAccess : 16;
         Core::HardwareQueueKindFlags m_sourceQueueKind : 16;
         Core::HardwareQueueKindFlags m_destQueueKind : 16;
-        uint32_t m_offset = 0;
-        uint32_t m_size = 0;
 
         BufferBarrierDesc()
             : m_sourceAccess(0)

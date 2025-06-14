@@ -200,7 +200,7 @@ namespace FE::Graphics::Vulkan
             const Core::FormatInfo formatInfo{ channel.m_format };
 
             VkVertexInputBindingDescription& binding = vertexBindings[bindingIndex];
-            binding.stride = Math::Max(binding.stride, channel.m_offset + formatInfo.m_byteSize);
+            binding.stride = Math::Max(binding.stride, channel.m_offset + formatInfo.m_texelByteSize);
 
             const Core::ShaderHandle vsHandle = shaderHandles[festd::to_underlying(Core::ShaderStage::kVertex)];
             const ShaderReflection* vsReflection = context.m_shaderLibrary->GetReflection(vsHandle);

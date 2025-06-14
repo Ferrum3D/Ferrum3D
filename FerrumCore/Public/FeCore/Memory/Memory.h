@@ -324,6 +324,16 @@ namespace FE
                 return *p;
             }
 
+            festd::span<std::byte> AllocateSpan(const size_t size)
+            {
+                FE_Assert(m_ptr + size <= m_end, "Insufficient space");
+                FE_Assert(size <= Constants::kMaxU32);
+
+                std::byte* p = m_ptr;
+                m_ptr += size;
+                return { p, static_cast<uint32_t>(size) };
+            }
+
             [[nodiscard]] size_t AvailableSpace() const
             {
                 return static_cast<size_t>(m_end - m_ptr);
@@ -378,6 +388,11 @@ namespace FE
                 const T* p = reinterpret_cast<const T*>(m_ptr);
                 m_ptr += sizeof(T);
                 return *p;
+            }
+
+            [[nodiscard]] size_t AvailableSpace() const
+            {
+                return static_cast<size_t>(m_end - m_ptr);
             }
 
             const std::byte* m_ptr = nullptr;
