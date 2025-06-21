@@ -22,7 +22,8 @@ namespace FE::Graphics::Core
     {
         kUnknown,
         kBuffer,
-        kImage,
+        kTexture,
+        kRenderTarget,
     };
 
 
@@ -40,18 +41,25 @@ namespace FE::Graphics::Core
             return m_type;
         }
 
+        [[nodiscard]] uint32_t GetResourceID() const
+        {
+            return m_resourceID;
+        }
+
     protected:
         Env::Name m_name;
+        uint32_t m_resourceID = kInvalidIndex;
         ResourceType m_type = ResourceType::kUnknown;
 
         void Register()
         {
-            m_device->RegisterResource(this);
+            m_resourceID = m_device->RegisterResource(this);
         }
 
         ~Resource() override
         {
-            festd::intrusive_list<>::remove(*this);
+            m_device->UnregisterResource(m_resourceID, this);
+            m_resourceID = kInvalidIndex;
         }
     };
 } // namespace FE::Graphics::Core

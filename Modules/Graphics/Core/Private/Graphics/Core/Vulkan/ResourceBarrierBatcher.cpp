@@ -190,7 +190,7 @@ namespace FE::Graphics::Vulkan
         for (const auto& [barrierDesc, hash] : m_imageBarriers)
         {
             VkImageMemoryBarrier2& barrier = nativeImageBarriers.emplace_back();
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             barrier.image = barrierDesc.m_image;
 
             const auto [srcAccessFlags, oldLayout] = ConvertImageAccessFlags(barrierDesc.m_sourceAccess);
@@ -202,6 +202,12 @@ namespace FE::Graphics::Vulkan
             barrier.dstAccessMask = dstAccessFlags;
             barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             barrier.newLayout = newLayout;
+
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.baseMipLevel = barrierDesc.m_subresource.m_mostDetailedMipSlice;
+            barrier.subresourceRange.levelCount = barrierDesc.m_subresource.m_mipSliceCount;
+            barrier.subresourceRange.baseArrayLayer = barrierDesc.m_subresource.m_firstArraySlice;
+            barrier.subresourceRange.layerCount = barrierDesc.m_subresource.m_arraySize;
 
             if (barrierDesc.m_sourceQueueKind != barrierDesc.m_destQueueKind)
             {

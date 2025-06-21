@@ -141,4 +141,10 @@ namespace FE::Memory
             Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
         }
     };
+
+
+    template<class TLock>
+    using LockedPoolAllocator = LockedMemoryResource<PoolAllocator, TLock>;
+
+    using SpinLockedPoolAllocator = SpinLockedMemoryResource<PoolAllocator>;
 } // namespace FE::Memory

@@ -26,31 +26,10 @@ namespace FE::Graphics::Vulkan
                 return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             }
         }
-
-
-        VulkanObjectPoolType GImagePool{ "VulkanImagePool", sizeof(Image) };
     } // namespace
 
 
-    Image* Image::Create(Core::Device* device)
-    {
-        FE_PROFILER_ZONE();
-
-        return Rc<Image>::Allocate(&GImagePool, [device](void* memory) {
-            return new (memory) Image(device);
-        });
-    }
-
-
-    Image::Image(Core::Device* device)
-    {
-        m_device = device;
-        m_type = Core::ResourceType::kImage;
-        Register();
-    }
-
-
-    VkImageView Image::GetSubresourceView(const Core::ImageSubresource& subresource)
+    VkImageView Image::GetSubresourceView(const VkDevice device, const Core::ImageSubresource& subresource)
     {
         FE_PROFILER_ZONE();
 
@@ -81,24 +60,16 @@ namespace FE::Graphics::Vulkan
         viewCI.image = m_nativeImage;
 
         VkImageView view = VK_NULL_HANDLE;
-        VerifyVulkan(vkCreateImageView(NativeCast(m_device), &viewCI, nullptr, &view));
+        VerifyVulkan(vkCreateImageView(device, &viewCI, nullptr, &view));
 
         m_viewCache.insert(it, ViewCacheEntry{ key, view });
         return view;
     }
 
 
-    const Core::ImageDesc& Image::GetDesc() const
-    {
-        return m_desc;
-    }
-
-
-    void Image::InitView()
+    void Image::InitView(const VkDevice device)
     {
         FE_PROFILER_ZONE();
-
-        const VkDevice vkDevice = NativeCast(m_device);
 
         VkImageViewCreateInfo viewCI{};
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -110,7 +81,7 @@ namespace FE::Graphics::Vulkan
         viewCI.subresourceRange.baseMipLevel = 0;
         viewCI.subresourceRange.baseArrayLayer = 0;
         viewCI.image = m_nativeImage;
-        VerifyVulkan(vkCreateImageView(vkDevice, &viewCI, nullptr, &m_view));
+        VerifyVulkan(vkCreateImageView(device, &viewCI, nullptr, &m_view));
 
         m_wholeImageSubresource.m_firstArraySlice = 0;
         m_wholeImageSubresource.m_mostDetailedMipSlice = 0;
@@ -119,45 +90,29 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Image::InitInternal(const Env::Name name, const Core::ImageDesc& desc, const VkImage nativeImage)
+    void Image::InitInternal(const VkDevice device, const Core::ImageDesc& desc, const VkImage nativeImage)
     {
         FE_PROFILER_ZONE();
 
-        m_name = name;
         m_desc = desc;
         m_nativeImage = nativeImage;
 
-        InitView();
+        InitView(device);
     }
 
 
-    void Image::InitInternal(const VmaAllocator allocator, const Env::Name name, const Core::ImageDesc& desc)
+    void Image::InitInternal(const VkDevice device, const char* name, const VmaAllocator allocator, const VkImageUsageFlags usage,
+                             const Core::ImageDesc& desc)
     {
         FE_PROFILER_ZONE();
 
-        using Core::ImageBindFlags;
         using Core::ImageDimension;
 
         m_desc = desc;
-        m_name = name;
         m_vmaAllocator = allocator;
 
         VkImageCreateInfo imageCI{};
         imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-
-        VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kShaderRead))
-            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kUnorderedAccess))
-            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kDepthStencilTarget))
-            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-        if (Bit::AllSet(desc.m_bindFlags, ImageBindFlags::kColorTarget))
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
         imageCI.usage = usage;
 
         switch (desc.m_dimension)
@@ -168,7 +123,7 @@ namespace FE::Graphics::Vulkan
             FE_Assert(desc.m_depth == 1);
             break;
         case ImageDimension::kCubemap:
-            FE_AssertMsg(desc.m_arraySize == 6, "Cubemap image must have ArraySize = 6, but got {}", desc.m_arraySize);
+            FE_AssertMsg(desc.m_arraySize == 6, "Cubemap image must have exactly 6 slices, but got {}", desc.m_arraySize);
             imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             [[fallthrough]];
         case ImageDimension::k2D:
@@ -193,53 +148,32 @@ namespace FE::Graphics::Vulkan
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VmaAllocationCreateInfo allocationCI{};
-        allocationCI.usage = VMA_MEMORY_USAGE_AUTO;
-
-        switch (desc.m_usage)
-        {
-        default:
-            FE_DebugBreak();
-            [[fallthrough]];
-
-        case Core::ResourceUsage::kDeviceOnly:
-            allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-            break;
-
-        case Core::ResourceUsage::kHostRandomAccess:
-            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            break;
-
-        case Core::ResourceUsage::kHostWriteThrough:
-            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-            break;
-        }
+        allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
         // TODO: maybe handle OOM differently
         VerifyVulkan(vmaCreateImage(allocator, &imageCI, &allocationCI, &m_nativeImage, &m_vmaAllocation, nullptr));
-        vmaSetAllocationName(allocator, m_vmaAllocation, m_name.c_str());
+        vmaSetAllocationName(allocator, m_vmaAllocation, name);
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeImage);
-        nameInfo.pObjectName = m_name.c_str();
-        VerifyVulkan(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
+        nameInfo.pObjectName = name;
+        VerifyVulkan(vkSetDebugUtilsObjectNameEXT(device, &nameInfo));
 
-        InitView();
+        InitView(device);
     }
 
 
-    Image::~Image()
+    void Image::Shutdown(const VkDevice device)
     {
-        const VkDevice vkDevice = NativeCast(m_device);
-
         for (const ViewCacheEntry& entry : m_viewCache)
-            vkDestroyImageView(vkDevice, entry.m_view, nullptr);
+            vkDestroyImageView(device, entry.m_view, nullptr);
 
         m_viewCache.clear();
 
         if (m_view != VK_NULL_HANDLE)
-            vkDestroyImageView(vkDevice, m_view, nullptr);
+            vkDestroyImageView(device, m_view, nullptr);
 
         if (m_vmaAllocator != nullptr)
             vmaDestroyImage(m_vmaAllocator, m_nativeImage, m_vmaAllocation);

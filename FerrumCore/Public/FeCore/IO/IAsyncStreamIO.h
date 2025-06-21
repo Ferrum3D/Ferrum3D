@@ -156,11 +156,8 @@ namespace FE::IO
         //! @param request      Read operation request specification.
         //! @param priority     The priority of the operation.
         //! @param ppController A pointer to the variable that receives a pointer to IAsyncController.
-        void ReadAsync(const AsyncReadRequest& request, const Priority priority = Priority::kNormal,
-                       IAsyncController** ppController = nullptr)
-        {
-            ReadAsync(festd::span(&request, 1), priority, ppController);
-        }
+        virtual void ReadAsync(const AsyncReadRequest& request, Priority priority = Priority::kNormal,
+                               IAsyncController** ppController = nullptr) = 0;
 
         //! @brief Enqueue an asynchronous block read operation.
         //!
@@ -171,18 +168,7 @@ namespace FE::IO
         //! @param request      Read operation request specification.
         //! @param priority     The priority of the operation.
         //! @param ppController A pointer to the variable that receives a pointer to IAsyncController.
-        void ReadAsync(const AsyncBlockReadRequest& request, const Priority priority = Priority::kNormal,
-                       IAsyncController** ppController = nullptr)
-        {
-            ReadAsync(festd::span(&request, 1), priority, ppController);
-        }
-
-        //! @brief Batch version of ReadAsync.
-        virtual void ReadAsync(festd::span<const AsyncReadRequest> requests, Priority priority = Priority::kNormal,
-                               IAsyncController** ppController = nullptr) = 0;
-
-        //! @brief Batch version of ReadAsync.
-        virtual void ReadAsync(festd::span<const AsyncBlockReadRequest> requests, Priority priority = Priority::kNormal,
+        virtual void ReadAsync(const AsyncBlockReadRequest& request, Priority priority = Priority::kNormal,
                                IAsyncController** ppController = nullptr) = 0;
     };
 } // namespace FE::IO

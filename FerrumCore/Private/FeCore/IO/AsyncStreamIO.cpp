@@ -17,6 +17,8 @@ namespace FE::IO
         {
             void Execute() override
             {
+                FE_PROFILER_ZONE();
+
                 const auto decompressor = Compression::Decompressor::Create(m_method);
 
                 const auto decompressionResult =
@@ -49,6 +51,8 @@ namespace FE::IO
         {
             void Execute() override
             {
+                FE_PROFILER_ZONE();
+
                 Memory::FiberTempAllocator temp;
 
                 auto& request = m_entry->m_request;
@@ -101,14 +105,17 @@ namespace FE::IO
                 result.m_bytesRead = readPtr - request.m_readBuffer;
                 result.m_blockIndex = m_blockIndex;
                 request.m_callback->AsyncIOCallback(result);
-                Memory::Delete(m_entryAllocator, m_entry);
+
+                if (m_entry->m_remainingBlockCount.fetch_sub(1, std::memory_order_release) == 1)
+                    Memory::Delete(m_entryAllocator, m_entry);
+
                 Memory::Delete(m_jobAllocator, this);
             }
 
             IJobSystem* m_jobSystem;
             AsyncBlockReadRequestQueueEntry* m_entry;
-            Memory::PoolAllocator* m_entryAllocator;
-            Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock>* m_jobAllocator;
+            Memory::SpinLockedPoolAllocator* m_entryAllocator;
+            Memory::SpinLockedPoolAllocator* m_jobAllocator;
             uint32_t m_pageDecompressedSize;
             uint32_t m_tailPageDecompressedSize;
             Compression::Method m_method;
@@ -270,7 +277,10 @@ namespace FE::IO
 
                     request.m_offset += sizeof(Compression::PageHeader);
 
-                    void* segment = pageBufferBuilder.AllocateSegment(pageHeader.m_compressedSize);
+                    const uint32_t segmentSize = pageHeader.m_compressedSize + sizeof(Compression::PageHeader);
+                    std::byte* segment = pageBufferBuilder.AllocateSegment(segmentSize);
+                    memcpy(segment, &pageHeader, sizeof(Compression::PageHeader));
+                    segment += sizeof(Compression::PageHeader);
                     if (request.m_stream->ReadToBuffer(segment, pageHeader.m_compressedSize) != pageHeader.m_compressedSize)
                     {
                         status = AsyncOperationStatus::kFailed;
@@ -400,6 +410,9 @@ namespace FE::IO
         // They will also delete themselves.
         deleteJobsIfFailed.dismiss();
 
+        if (!jobs.empty())
+            entry->m_remainingBlockCount = jobs.size();
+
         for (auto* job : jobs)
         {
             job->ScheduleBackground(m_jobSystem, nullptr, request.m_decompressionPriority);
@@ -503,6 +516,8 @@ namespace FE::IO
         m_requestPools[festd::to_underlying(AsyncBlockReadRequestQueueEntry::Type::kReadBlock)].Initialize(
             "AsyncBlockReadRequestPool", sizeof(AsyncBlockReadRequestQueueEntry));
 
+        m_blockDecompressionJobPool.Initialize("AsyncBlockDecompressionJobPool", sizeof(BlockDecompressJob));
+
         const auto threadFunc = [](const uintptr_t userData) {
             reinterpret_cast<AsyncStreamIO*>(userData)->ReaderThread();
         };
@@ -520,24 +535,20 @@ namespace FE::IO
     }
 
 
-    void AsyncStreamIO::ReadAsync(const festd::span<const AsyncReadRequest> requests, Priority priority,
-                                  IAsyncController** ppController)
+    void AsyncStreamIO::ReadAsync(const AsyncReadRequest& request, const Priority priority, IAsyncController** ppController)
     {
         std::lock_guard lk{ m_queueLock };
 
         constexpr uint32_t poolIndex = festd::to_underlying(AsyncReadRequestQueueEntry::Type::kRead);
-        auto* controller = m_controllerPool.New();
-        auto** entries = EnqueueImpl(priority, requests.size());
-        for (const auto& request : requests)
-        {
-            auto* entry = Memory::New<AsyncReadRequestQueueEntry>(&m_requestPools[poolIndex]);
-            entry->m_type = AsyncRequestQueueEntry::Type::kRead;
-            entry->m_priority = priority;
-            entry->m_request = request;
-            entry->m_requestPtr = &entry->m_request;
-            entry->m_controller = controller;
-            *entries++ = entry;
-        }
+        auto* entry = Memory::New<AsyncReadRequestQueueEntry>(&m_requestPools[poolIndex]);
+        auto* controller = Rc<AsyncController>::New(&m_controllerPool, entry);
+        entry->m_type = AsyncRequestQueueEntry::Type::kRead;
+        entry->m_priority = priority;
+        entry->m_request = request;
+        entry->m_requestPtr = &entry->m_request;
+        entry->m_controller = controller;
+
+        EnqueueImpl(priority, entry);
 
         if (ppController)
             *ppController = controller;
@@ -546,24 +557,20 @@ namespace FE::IO
     }
 
 
-    void AsyncStreamIO::ReadAsync(const festd::span<const AsyncBlockReadRequest> requests, Priority priority,
-                                  IAsyncController** ppController)
+    void AsyncStreamIO::ReadAsync(const AsyncBlockReadRequest& request, const Priority priority, IAsyncController** ppController)
     {
         std::lock_guard lk{ m_queueLock };
 
         constexpr uint32_t poolIndex = festd::to_underlying(AsyncBlockReadRequestQueueEntry::Type::kReadBlock);
-        auto* controller = m_controllerPool.New();
-        auto** entries = EnqueueImpl(priority, requests.size());
-        for (const auto& request : requests)
-        {
-            auto* entry = Memory::New<AsyncBlockReadRequestQueueEntry>(&m_requestPools[poolIndex]);
-            entry->m_type = AsyncRequestQueueEntry::Type::kReadBlock;
-            entry->m_priority = priority;
-            entry->m_request = request;
-            entry->m_requestPtr = &entry->m_request;
-            entry->m_controller = controller;
-            *entries++ = entry;
-        }
+        auto* entry = Memory::New<AsyncBlockReadRequestQueueEntry>(&m_requestPools[poolIndex]);
+        auto* controller = Rc<AsyncController>::New(&m_controllerPool, entry);
+        entry->m_type = AsyncRequestQueueEntry::Type::kReadBlock;
+        entry->m_priority = priority;
+        entry->m_request = request;
+        entry->m_requestPtr = &entry->m_request;
+        entry->m_controller = controller;
+
+        EnqueueImpl(priority, entry);
 
         if (ppController)
             *ppController = controller;
@@ -572,16 +579,12 @@ namespace FE::IO
     }
 
 
-    AsyncRequestQueueEntry** AsyncStreamIO::EnqueueImpl(const Priority priority, const uint32_t count)
+    void AsyncStreamIO::EnqueueImpl(const Priority priority, AsyncRequestQueueEntry* entry)
     {
-        const auto index = festd::upper_bound_index(m_queue, priority, [](const Priority lhs, const AsyncRequestQueueEntry* rhs) {
+        const auto iter = festd::upper_bound(m_queue, priority, [](const Priority lhs, const AsyncRequestQueueEntry* rhs) {
             return lhs < rhs->m_priority;
         });
 
-        m_queue.resize(m_queue.size() + count);
-        memmove(static_cast<void*>(m_queue.data() + index + count),
-                static_cast<const void*>(m_queue.data() + index),
-                (m_queue.size() - index - count) * sizeof(AsyncRequestQueueEntry*));
-        return m_queue.data() + index;
+        m_queue.insert(iter, entry);
     }
 } // namespace FE::IO

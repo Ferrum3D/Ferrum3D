@@ -56,7 +56,7 @@ namespace FE::IO
     do                                                                                                                           \
     {                                                                                                                            \
         ::FE::IO::ResultCode code = expr;                                                                                        \
-        FE_AssertMsg(code == ::FE::IO::ResultCode::Success, "IO error: {}", ::FE::IO::GetResultDesc(code));                      \
+        FE_AssertMsg(code == ::FE::IO::ResultCode::kSuccess, "IO error: {}", ::FE::IO::GetResultDesc(code));                     \
     }                                                                                                                            \
     while (0)
 
@@ -203,10 +203,10 @@ namespace FE::IO
         virtual ~IAsyncReadCallback() = default;
 
         //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback(const AsyncReadResult& result) {}
+        virtual void AsyncIOCallback([[maybe_unused]] const AsyncReadResult& result) {}
 
         //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback(const AsyncBlockReadResult& result) {}
+        virtual void AsyncIOCallback([[maybe_unused]] const AsyncBlockReadResult& result) {}
     };
 
 

@@ -21,17 +21,13 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    struct Image final : public Core::Image
+    struct Device;
+
+    struct Image
     {
-        FE_RTTI_Class(Image, "9726C432-92C1-489C-9623-55330B3530E8");
+        void Shutdown(VkDevice device);
 
-        ~Image() override;
-
-        static Image* Create(Core::Device* device);
-
-        void InitInternal(Env::Name name, const Core::ImageDesc& desc, VkImage nativeImage);
-
-        void InitInternal(VmaAllocator allocator, Env::Name name, const Core::ImageDesc& desc);
+        void InitInternal(VkDevice device, const Core::ImageDesc& desc, VkImage nativeImage);
 
         [[nodiscard]] VkImage GetNative() const
         {
@@ -43,14 +39,13 @@ namespace FE::Graphics::Vulkan
             return m_view;
         }
 
-        [[nodiscard]] VkImageView GetSubresourceView(const Core::ImageSubresource& subresource);
+        [[nodiscard]] VkImageView GetSubresourceView(VkDevice device, const Core::ImageSubresource& subresource);
 
-        const Core::ImageDesc& GetDesc() const override;
+    protected:
+        void InitInternal(VkDevice device, const char* name, VmaAllocator allocator, VkImageUsageFlags usage,
+                          const Core::ImageDesc& desc);
 
-    private:
-        explicit Image(Core::Device* device);
-
-        void InitView();
+        void InitView(VkDevice device);
 
         VkImage m_nativeImage = VK_NULL_HANDLE;
         VmaAllocation m_vmaAllocation = VK_NULL_HANDLE;
@@ -63,11 +58,9 @@ namespace FE::Graphics::Vulkan
             VkImageView m_view = VK_NULL_HANDLE;
         };
 
-        Core::ImageSubresource m_wholeImageSubresource;
+        Core::ImageSubresource m_wholeImageSubresource = Core::ImageSubresource::kInvalid;
         festd::small_vector<ViewCacheEntry, 6> m_viewCache;
 
-        Core::ImageDesc m_desc;
+        Core::ImageDesc m_desc = {};
     };
-
-    FE_ENABLE_NATIVE_CAST(Image);
 } // namespace FE::Graphics::Vulkan

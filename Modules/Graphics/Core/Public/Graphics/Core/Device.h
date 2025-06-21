@@ -19,6 +19,7 @@ namespace FE::Graphics::Core
         friend Resource;
 
         virtual void QueueObjectDispose(DeviceObject* object) = 0;
-        virtual void RegisterResource(Resource* resource) = 0;
+        virtual uint32_t RegisterResource(Resource* resource) = 0;
+        virtual void UnregisterResource(uint32_t id, Resource* resource) = 0;
     };
 } // namespace FE::Graphics::Core

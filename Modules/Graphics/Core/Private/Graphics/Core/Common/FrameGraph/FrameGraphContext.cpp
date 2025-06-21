@@ -26,6 +26,16 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraphContext::SetRootConstants(const void* data, const uint32_t size)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kRootConstants), "Root constants already set");
+        m_setStateMask |= PipelineStateFlags::kRootConstants;
+
+        memcpy(m_rootConstants, data, size);
+        m_rootConstantsSize = size;
+    }
+
+
     void FrameGraphContext::SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations)
     {
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kLoadOperations), "Load operations already set");
@@ -44,11 +54,20 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::SetRenderTargets(const festd::span<const Core::ImageHandle> renderTargets,
-                                             const Core::ImageHandle depthStencil)
+    void FrameGraphContext::SetRenderTargets(const festd::span<const Core::RenderTargetHandle> renderTargets,
+                                             const Core::RenderTargetHandle depthStencil)
     {
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kRenderTargets), "Render targets already set");
         m_setStateMask |= PipelineStateFlags::kRenderTargets;
+
+        for (Core::RenderTargetHandle handle : renderTargets)
+        {
+            if (handle.IsValid())
+                FE_Assert(handle.m_desc.m_accessType == festd::to_underlying(Core::ImageWriteType::kColorTarget));
+        }
+
+        if (depthStencil.IsValid())
+            FE_Assert(depthStencil.m_desc.m_accessType == festd::to_underlying(Core::ImageWriteType::kDepthStencilTarget));
 
         festd::copy(renderTargets.begin(), renderTargets.end(), m_renderTargetState.m_renderTargets);
         m_renderTargetState.m_renderTargetCount = renderTargets.size();
@@ -74,7 +93,8 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(m_setStateMask == PipelineStateFlags::kAll, "All pipeline states must be set before drawing");
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequired),
+                  "All pipeline states must be set before drawing");
         DrawImpl(drawList);
 
         m_setStateMask = PipelineStateFlags::kNone;

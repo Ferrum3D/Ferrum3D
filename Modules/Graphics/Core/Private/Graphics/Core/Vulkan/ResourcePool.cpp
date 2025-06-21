@@ -1,8 +1,9 @@
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
-#include <Graphics/Core/Vulkan/Image.h>
+#include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
+#include <Graphics/Core/Vulkan/Texture.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -27,13 +28,23 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::Image* ResourcePool::CreateImage(const Env::Name name, const Core::ImageDesc& desc)
+    Core::Texture* ResourcePool::CreateTexture(const Env::Name name, const Core::ImageDesc& desc)
     {
         FE_PROFILER_ZONE();
 
-        Image* image = Image::Create(m_device);
-        image->InitInternal(m_vmaAllocator, name, desc);
-        return image;
+        Texture* texture = Texture::Create(m_device);
+        texture->InitInternal(m_vmaAllocator, name, desc);
+        return texture;
+    }
+
+
+    Core::RenderTarget* ResourcePool::CreateRenderTarget(const Env::Name name, const Core::ImageDesc& desc)
+    {
+        FE_PROFILER_ZONE();
+
+        RenderTarget* renderTarget = RenderTarget::Create(m_device);
+        renderTarget->InitInternal(m_vmaAllocator, name, desc);
+        return renderTarget;
     }
 
 

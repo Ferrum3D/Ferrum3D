@@ -10,6 +10,9 @@ namespace FE::Graphics::Vulkan
 {
     using VulkanObjectPoolType = Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock>;
 
+#define FE_DECLARE_VULKAN_OBJECT_POOL(Type)                                                                                      \
+    static ::FE::Graphics::Vulkan::VulkanObjectPoolType G##Type##Pool{ FE_MAKE_STRING(Vulkan##Type##ObjectPool), sizeof(Type) };
+
     inline VkExtent3D VKConvertExtent(const PackedVector3UInt size)
     {
         return VkExtent3D{ size.x, size.y, size.z };

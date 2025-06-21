@@ -9,10 +9,11 @@ namespace FE::Graphics::Vulkan
 {
     struct ShaderLibrary;
     struct GraphicsPipeline;
+    struct BindlessManager;
 
     struct PipelineFactory final : Core::PipelineFactory
     {
-        PipelineFactory(Core::Device* device, IJobSystem* jobSystem, Logger* logger);
+        PipelineFactory(Core::Device* device, BindlessManager* bindlessManager, IJobSystem* jobSystem, Logger* logger);
         ~PipelineFactory() override;
 
         FE_RTTI_Class(PipelineFactory, "437E4387-BDE0-42DA-8986-FA909D8BFEDE");
@@ -25,6 +26,7 @@ namespace FE::Graphics::Vulkan
         Rc<ShaderLibrary> m_shaderLibrary;
         Memory::PoolAllocator m_graphicsPipelinePool;
         Memory::PoolAllocator m_jobPool;
+        BindlessManager* m_bindlessManager = nullptr;
         IJobSystem* m_jobSystem = nullptr;
         Logger* m_logger = nullptr;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;

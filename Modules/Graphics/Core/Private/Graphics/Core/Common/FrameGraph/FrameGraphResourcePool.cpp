@@ -25,7 +25,7 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::Image* FrameGraphResourcePool::CreateImage(const Env::Name name, const Core::ImageDesc& desc)
+    Core::RenderTarget* FrameGraphResourcePool::CreateRenderTarget(const Env::Name name, const Core::ImageDesc& desc)
     {
         FE_PROFILER_ZONE();
 
@@ -37,7 +37,7 @@ namespace FE::Graphics::Common
             return iter->second.Get();
         }
 
-        const auto result = m_resourcePool->CreateImage(name, desc);
+        const auto result = m_resourcePool->CreateRenderTarget(name, desc);
         ImageInfo& createdImageInfo = m_createdImages.push_back();
         createdImageInfo.m_image = result;
         createdImageInfo.m_descHash = descHash;

@@ -12,7 +12,8 @@ namespace FE::Graphics::Vulkan
 
         FE_RTTI_Class(ResourcePool, "32B0D24A-62EB-47D5-869D-897424FD3439");
 
-        Core::Image* CreateImage(Env::Name name, const Core::ImageDesc& desc) override;
+        Core::Texture* CreateTexture(Env::Name name, const Core::ImageDesc& desc) override;
+        Core::RenderTarget* CreateRenderTarget(Env::Name name, const Core::ImageDesc& desc) override;
         Core::Buffer* CreateBuffer(Env::Name name, const Core::BufferDesc& desc) override;
 
         [[nodiscard]] VmaAllocator GetAllocator() const

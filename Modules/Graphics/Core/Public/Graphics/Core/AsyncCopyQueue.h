@@ -3,7 +3,7 @@
 #include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Memory/SegmentedBuffer.h>
 #include <Graphics/Core/Buffer.h>
-#include <Graphics/Core/Image.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
 {
@@ -15,7 +15,7 @@ namespace FE::Graphics::Core
             kCopyBuffer,
             kCopyBufferContinuation,
             kUploadBuffer,
-            kUploadImage,
+            kUploadTexture,
         };
 
 
@@ -50,13 +50,12 @@ namespace FE::Graphics::Core
         };
 
 
-        struct AsyncUploadImageCommand final
+        struct AsyncUploadTextureCommand final
         {
             AsyncCopyCommandType m_type;
             uint32_t m_sourceOffset;
-            uint32_t m_sourceSize;
             ImageSubresource m_subresource;
-            const Image* m_image;
+            const Texture* m_texture;
             const void* m_data;
         };
     } // namespace InternalAsyncCopyCommands
@@ -89,7 +88,7 @@ namespace FE::Graphics::Core
         void UploadBuffer(const Buffer* buffer, const void* data, uint32_t sourceOffset, uint32_t destinationOffset,
                           uint32_t size);
 
-        void UploadImage(const Image* image, const void* data, uint32_t sourceSize, uint32_t sourceOffset = 0);
+        void UploadTexture(const Texture* texture, const void* data, uint32_t sourceOffset, ImageSubresource subresource);
 
         AsyncCopyCommandList Build(WaitGroup* signalWaitGroup = nullptr);
 
@@ -180,19 +179,19 @@ namespace FE::Graphics::Core
     }
 
 
-    inline void AsyncCopyCommandListBuilder::UploadImage(const Image* image, const void* data, uint32_t sourceSize,
-                                                         const uint32_t sourceOffset)
+    inline void AsyncCopyCommandListBuilder::UploadTexture(const Texture* texture, const void* data, const uint32_t sourceOffset,
+                                                           const ImageSubresource subresource)
     {
         using namespace InternalAsyncCopyCommands;
 
-        AsyncUploadImageCommand command;
-        command.m_type = AsyncCopyCommandType::kUploadImage;
-        command.m_image = image;
+        AsyncUploadTextureCommand command;
+        command.m_type = AsyncCopyCommandType::kUploadTexture;
+        command.m_texture = texture;
+        command.m_subresource = subresource;
         command.m_data = data;
         command.m_sourceOffset = sourceOffset;
-        command.m_sourceSize = sourceSize;
         m_bufferBuilder.WriteBytes(&command, sizeof(command));
-        m_prev.m_type = AsyncCopyCommandType::kUploadImage;
+        m_prev.m_type = AsyncCopyCommandType::kUploadTexture;
     }
 
 

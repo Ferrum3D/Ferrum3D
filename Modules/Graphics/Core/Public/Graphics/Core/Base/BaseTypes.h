@@ -63,13 +63,6 @@ namespace FE::Graphics::Core
     FE_ENUM_OPERATORS(BindFlags);
 
 
-    enum class MemoryType : uint32_t
-    {
-        kDeviceLocal,
-        kHostVisible,
-    };
-
-
     enum class ShaderSemanticName : uint32_t
     {
         kPosition,

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/RefCount.h>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE
 {
@@ -124,8 +125,11 @@ namespace FE
             }
 
         private:
-            TLock m_lock;
+            TracyLockable(TLock, m_lock);
         };
+
+        template<class TBase>
+        using SpinLockedMemoryResource = LockedMemoryResource<TBase, Threading::SpinLock>;
 
 
         struct FixedBlockAllocator final : public std::pmr::memory_resource

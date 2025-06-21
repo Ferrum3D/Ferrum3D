@@ -72,7 +72,10 @@ namespace FE::IO
     void FileStream::Close()
     {
         if (m_handle)
+        {
+            FlushWrites();
             Platform::CloseFile(m_handle);
+        }
     }
 
 
@@ -81,16 +84,16 @@ namespace FE::IO
         FE_PROFILER_ZONE_TEXT("%.*s", fileName.size(), fileName.data());
 
         ResultCode result = Platform::OpenFile(fileName, openMode, m_handle);
-        if (result != ResultCode::Success)
+        if (result != ResultCode::kSuccess)
             return result;
 
         result = Platform::GetFileStats(m_handle, m_stats);
-        if (result != ResultCode::Success)
+        if (result != ResultCode::kSuccess)
             return result;
 
         m_name = fileName;
         m_openMode = openMode;
-        return ResultCode::Success;
+        return ResultCode::kSuccess;
     }
 
 

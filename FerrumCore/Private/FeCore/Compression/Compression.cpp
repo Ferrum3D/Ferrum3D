@@ -387,12 +387,11 @@ namespace FE::Compression
             {
                 size_t decompressedSize;
                 libdeflate_gdeflate_in_page inPage;
+                inPage.nbytes = srcSize;
+                inPage.data = src;
 
                 const libdeflate_result decompressionResult =
                     libdeflate_gdeflate_decompress(CastGDecompressor(m_impl), &inPage, 1, dst, dstSize, &decompressedSize);
-
-                if (decompressedSize > dstSize)
-                    return DecompressionResult{ ResultCode::kInsufficientSpace, 0 };
 
                 if (decompressionResult == LIBDEFLATE_BAD_DATA)
                     return DecompressionResult{ ResultCode::kInvalidFormat, 0 };
@@ -403,7 +402,7 @@ namespace FE::Compression
                 if (decompressionResult != LIBDEFLATE_SUCCESS)
                     return DecompressionResult{ ResultCode::kUnknownError, 0 };
 
-                return DecompressionResult{ ResultCode::kSuccess, decompressedSize };
+                return DecompressionResult{ ResultCode::kSuccess, dstSize };
             }
         }
     }

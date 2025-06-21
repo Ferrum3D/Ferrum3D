@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Jobs/Job.h>
+#include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Threading/Event.h>
 #include <FeCore/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
@@ -51,6 +52,8 @@ namespace FE::Graphics::Vulkan
         Threading::SharedSpinLock m_suspendLock;
 
         VkQueue m_queue = VK_NULL_HANDLE;
+        uint32_t m_transferQueueFamilyIndex = kInvalidIndex;
+        uint32_t m_graphicsQueueFamilyIndex = kInvalidIndex;
         Rc<Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
         uint64_t m_fenceValue = 0;
@@ -63,5 +66,6 @@ namespace FE::Graphics::Vulkan
 
         ConcurrentOnceConsumedQueue m_requestQueue;
         festd::small_vector<Core::AsyncCopyCommandList*> m_requestCache;
+        Memory::LinearAllocator m_threadTempAllocator;
     };
 } // namespace FE::Graphics::Vulkan

@@ -27,8 +27,6 @@ namespace FE::Graphics::Vulkan
                 return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             case Core::ShaderResourceType::kSampler:
                 return VK_DESCRIPTOR_TYPE_SAMPLER;
-            case Core::ShaderResourceType::kInputAttachment:
-                return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
             case Core::ShaderResourceType::kNone:
             default:
                 FE_AssertMsg(false, "Invalid ShaderResourceType");
@@ -290,6 +288,10 @@ namespace FE::Graphics::Vulkan
             {
                 if (rootConstants.m_byteSize > 0)
                 {
+                    // HACK: assume VK_SHADER_STAGE_ALL always works.
+                    if (!pushConstantRanges.empty())
+                        break;
+
                     VkPushConstantRange& range = pushConstantRanges.push_back();
                     range.size = rootConstants.m_byteSize;
                     range.offset = rootConstants.m_offset;
@@ -298,14 +300,13 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        m_layoutHandle = CreateDescriptorSetLayout(m_descriptorAllocator, shaderReflections);
-        m_descriptorSet = m_descriptorAllocator->AllocateDescriptorSet(m_layoutHandle.m_layout);
+        m_descriptorSetLayout = context.m_bindlessSetLayout;
 
         const VkDevice device = NativeCast(m_device);
 
         VkPipelineLayoutCreateInfo layoutCI{};
         layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layoutCI.pSetLayouts = &m_layoutHandle.m_layout;
+        layoutCI.pSetLayouts = &m_descriptorSetLayout;
         layoutCI.setLayoutCount = 1;
 
         if (!pushConstantRanges.empty())

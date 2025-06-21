@@ -21,7 +21,6 @@ namespace FE::Graphics::Core
             tempDrawCall.m_instanceOffset = drawCall.m_instanceOffset;
             tempDrawCall.m_instanceCount = drawCall.m_instanceCount;
             tempDrawCall.m_stencilRef = drawCall.m_stencilRef;
-            tempDrawCall.m_rootConstantsByteSize = drawCall.m_rootConstantsByteSize;
             tempDrawCall.m_unused = 0;
 
             const auto& pipelineDesc = drawCall.m_pipeline->GetDesc();
@@ -29,8 +28,6 @@ namespace FE::Graphics::Core
 
             tempDrawCall.m_geometryView = AddGeometryView(drawCall.m_geometryView, activeStreamCount);
             tempDrawCall.m_pipeline = drawCall.m_pipeline;
-            tempDrawCall.m_rootConstants =
-                DuplicateArray(static_cast<const uint8_t*>(drawCall.m_rootConstants), drawCall.m_rootConstantsByteSize);
         }
 
         [[nodiscard]] DrawList Build()

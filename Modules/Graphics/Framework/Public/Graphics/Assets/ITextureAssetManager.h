@@ -1,14 +1,14 @@
 #pragma once
 #include <FeCore/Memory/Memory.h>
-#include <Graphics/Core/Image.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics
 {
     enum class AssetLoadingStatus : uint32_t
     {
         kNone,
-        kLoading,
-        kSucceeded,
+        kHasLoadedMips,
+        kCompletelyLoaded,
         kFailed,
     };
 
@@ -16,8 +16,9 @@ namespace FE::Graphics
     struct TextureAsset final : public Memory::RefCountedObjectBase
     {
         Env::Name m_name;
-        Rc<Core::Image> m_resource;
+        Rc<Core::Texture> m_resource;
         std::atomic<AssetLoadingStatus> m_status = AssetLoadingStatus::kNone;
+        Rc<WaitGroup> m_completionWaitGroup;
     };
 
 

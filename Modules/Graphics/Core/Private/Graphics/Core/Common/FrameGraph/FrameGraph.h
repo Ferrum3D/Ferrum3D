@@ -12,16 +12,16 @@ namespace FE::Graphics::Common
         void RegisterViewport(Core::Viewport* viewport) override;
         Core::Viewport* GetViewport() override;
 
-        Core::ImageHandle GetRenderTarget() const override;
-        Core::ImageHandle GetDepthStencil() const override;
+        Core::RenderTargetHandle GetMainColorTarget() const override;
+        Core::RenderTargetHandle GetMainDepthStencilTarget() const override;
 
         void AddPassProducer(Core::PassProducer* passProducer) final;
         void Execute() final;
 
-        Core::Image* GetImage(Core::ImageHandle image) const final;
+        Core::RenderTarget* GetRenderTarget(Core::RenderTargetHandle image) const final;
         Core::Buffer* GetBuffer(Core::BufferHandle buffer) const final;
 
-        Core::ImageHandle ImportImage(Core::Image* image) override;
+        Core::RenderTargetHandle ImportRenderTarget(Core::RenderTarget* image) override;
         Core::BufferHandle ImportBuffer(Core::Buffer* buffer) override;
 
     protected:
@@ -73,7 +73,7 @@ namespace FE::Graphics::Common
             ResourceData(const uint32_t resourceIndex, const Core::ImageDesc& desc)
                 : m_imageDesc(desc)
                 , m_resourceIndex(resourceIndex)
-                , m_resourceType(Core::ResourceType::kImage)
+                , m_resourceType(Core::ResourceType::kRenderTarget)
                 , m_isImported(false)
             {
             }
@@ -97,7 +97,7 @@ namespace FE::Graphics::Common
         uint32_t AddPassInternal(uint32_t producerIndex, Env::Name name) final;
 
         Core::BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const Core::BufferDesc& desc) final;
-        Core::ImageHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::ImageDesc& desc) final;
+        Core::RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::ImageDesc& desc) final;
 
         uint32_t ReadResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;
         uint32_t WriteResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;
@@ -107,8 +107,8 @@ namespace FE::Graphics::Common
         FrameGraphResourcePool* m_resourcePool = nullptr;
 
         Rc<Core::Viewport> m_viewport;
-        Core::ImageHandle m_currentRenderTargetHandle;
-        Core::ImageHandle m_currentDepthStencilHandle;
+        Core::RenderTargetHandle m_currentRenderTargetHandle;
+        Core::RenderTargetHandle m_currentDepthStencilHandle;
 
         Rc<Core::FrameGraphContext> m_currentContext;
     };

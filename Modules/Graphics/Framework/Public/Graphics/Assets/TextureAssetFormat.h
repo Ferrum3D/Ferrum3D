@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/Core/Image.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Data
 {
@@ -9,7 +9,7 @@ namespace FE::Graphics::Data
     struct TextureHeader final
     {
         uint32_t m_magic;
-        Core::ImageDescBase m_desc;
+        Core::ImageDesc m_desc;
     };
 
 

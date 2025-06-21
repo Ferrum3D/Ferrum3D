@@ -24,13 +24,16 @@ namespace FE::Graphics::Common
 
         TracyLockable(Threading::SpinLock, m_resourceListLock);
         TracyLockable(Threading::SpinLock, m_disposeQueueLock);
-        TracyLockable(Threading::SpinLock, m_serviceListLock);
 
         festd::intrusive_list<> m_resourceList;
         festd::vector<PendingDisposer> m_disposeQueue;
 
+        uint32_t m_currentResourceId = 0;
+        festd::vector<uint32_t> m_resourceIdFreeList;
+
         void QueueObjectDispose(Core::DeviceObject* object) override;
-        void RegisterResource(Core::Resource* resource) override;
+        uint32_t RegisterResource(Core::Resource* resource) override;
+        void UnregisterResource(uint32_t id, Core::Resource* resource) override;
         void EndFrame() override;
     };
 } // namespace FE::Graphics::Common

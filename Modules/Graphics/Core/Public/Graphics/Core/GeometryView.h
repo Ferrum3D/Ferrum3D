@@ -74,11 +74,9 @@ namespace FE::Graphics::Core
         uint32_t m_instanceOffset : 16;
         uint32_t m_instanceCount : 16;
         uint32_t m_stencilRef : 8;
-        uint32_t m_rootConstantsByteSize : 16;
-        uint32_t m_unused : 8;
+        uint32_t m_unused : 24;
         const GeometryView* m_geometryView;
         const GraphicsPipeline* m_pipeline;
-        const void* m_rootConstants;
 
         void InitForSingleInstance(const GeometryView* geometryView, const GraphicsPipeline* pipeline)
         {
@@ -87,19 +85,6 @@ namespace FE::Graphics::Core
             m_stencilRef = 0;
             m_geometryView = geometryView;
             m_pipeline = pipeline;
-            m_rootConstants = nullptr;
-        }
-
-        void SetRootConstants(const void* rootConstants, const uint32_t rootConstantsByteSize)
-        {
-            m_rootConstants = rootConstants;
-            m_rootConstantsByteSize = rootConstantsByteSize;
-        }
-
-        template<class TRootParameters>
-        void SetRootConstants(const TRootParameters& rootParameters)
-        {
-            SetRootConstants(&rootParameters, sizeof(TRootParameters));
         }
 
         [[nodiscard]] uint64_t GetHash() const
@@ -118,11 +103,6 @@ namespace FE::Graphics::Core
             //
 
             hasher.Update(m_pipeline);
-
-            if (m_rootConstantsByteSize > 0)
-            {
-                hasher.UpdateRaw(m_rootConstants, m_rootConstantsByteSize);
-            }
 
             return hasher.Finalize();
         }

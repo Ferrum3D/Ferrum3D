@@ -6,6 +6,7 @@
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
+#include <Graphics/Core/Vulkan/BindlessManager.h>
 #include <Graphics/Core/Vulkan/DescriptorAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
@@ -49,7 +50,8 @@ namespace FE::Graphics::Vulkan
         {
             constexpr static auto ignoredMessages =
                 std::array{ "vkCreateShaderModule(): SPIR-V Extension SPV_GOOGLE_hlsl_functionality1",
-                            "VUID-vkQueueSubmit-pSignalSemaphores-00067" };
+                            "VUID-vkQueueSubmit-pSignalSemaphores-00067",
+                            "VkShaderModuleCreateInfo-pCode-08742" };
 
             const std::string_view message = pMessage;
             for (auto& msg : ignoredMessages)
@@ -131,6 +133,7 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
         builder.Bind<Common::FrameGraphResourcePool>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
+        builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services
         builder.Bind<Core::Fence>()

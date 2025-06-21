@@ -1,8 +1,8 @@
 ﻿#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
-#include <Graphics/Core/Vulkan/Image.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
+#include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
@@ -388,21 +388,28 @@ namespace FE::Graphics::Vulkan
         FE_Assert(m_renderFinishedSemaphores.size() == kMaxInFlightFrames);
         FE_Assert(m_renderTargets.empty());
 
-        const Core::ImageDesc colorTargetDesc =
-            Core::ImageDesc::Img2D(Core::ImageBindFlags::kColorTarget, width, height, m_rtvFormat);
+        const Core::ImageDesc colorTargetDesc = Core::ImageDesc::Img2D(width, height, m_rtvFormat);
 
         for (uint32_t i = 0; i < imageCount; ++i)
         {
-            const Rc image = Image::Create(m_device);
-            image->InitInternal(Fmt::FormatName("Swapchain Color Target {}", i), colorTargetDesc, images[i]);
+            const Env::Name imageName = Fmt::FormatName("Swapchain Color Target {}", i);
+
+            const Rc image = RenderTarget::Create(m_device);
+            image->InitInternal(imageName, colorTargetDesc, images[i]);
             image->SetImmediateDestroyPolicy();
+
+            VkDebugUtilsObjectNameInfoEXT nameInfo{};
+            nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+            nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(image->GetNative());
+            nameInfo.pObjectName = imageName.c_str();
+            VerifyVulkan(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
             m_renderTargets.push_back(image);
         }
 
-        const Core::ImageDesc depthTargetDesc =
-            Core::ImageDesc::Img2D(Core::ImageBindFlags::kDepthStencilTarget, width, height, Core::kMainDepthTargetFormat);
-        m_depthTarget = ImplCast(m_resourcePool->CreateImage("Swapchain Depth Stencil Target", depthTargetDesc));
+        const Core::ImageDesc depthTargetDesc = Core::ImageDesc::Img2D(width, height, Core::kMainDepthTargetFormat);
+        m_depthTarget = ImplCast(m_resourcePool->CreateRenderTarget("Swapchain Depth Stencil Target", depthTargetDesc));
         m_depthTarget->SetImmediateDestroyPolicy();
     }
 
@@ -446,13 +453,13 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::Image* Viewport::GetCurrentColorTarget()
+    Core::RenderTarget* Viewport::GetCurrentColorTarget()
     {
         return m_renderTargets[m_imageIndex].Get();
     }
 
 
-    Core::Image* Viewport::GetDepthTarget()
+    Core::RenderTarget* Viewport::GetDepthTarget()
     {
         return m_depthTarget.Get();
     }

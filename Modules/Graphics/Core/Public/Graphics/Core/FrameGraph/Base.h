@@ -22,6 +22,7 @@ namespace FE::Graphics::Core
             {
                 uint32_t m_resourceIndex : kFrameGraphResourceIndexBits;
                 uint32_t m_version : kFrameGraphResourceVersionBits;
+                uint32_t m_accessType : 6;
             };
 
             union
@@ -45,20 +46,20 @@ namespace FE::Graphics::Core
                 return IsValid();
             }
 
-            friend bool operator==(FrameGraphResourceHandle lhs, FrameGraphResourceHandle rhs)
+            friend bool operator==(const FrameGraphResourceHandle lhs, const FrameGraphResourceHandle rhs)
             {
                 return lhs.m_value == rhs.m_value;
             }
 
-            friend bool operator!=(FrameGraphResourceHandle lhs, FrameGraphResourceHandle rhs)
+            friend bool operator!=(const FrameGraphResourceHandle lhs, const FrameGraphResourceHandle rhs)
             {
                 return lhs.m_value != rhs.m_value;
             }
 
-            static T Create(uint32_t resourceIndex, uint32_t resourceVersion)
+            static T Create(const uint32_t resourceIndex, const uint32_t resourceVersion, const uint32_t accessType)
             {
                 T handle;
-                handle.m_desc = { resourceIndex, resourceVersion };
+                handle.m_desc = { resourceIndex, resourceVersion, accessType };
                 return handle;
             }
 
@@ -70,12 +71,12 @@ namespace FE::Graphics::Core
     } // namespace Internal
 
 
-    struct [[nodiscard]] ImageHandle : public Internal::FrameGraphResourceHandle<ImageHandle>
+    struct [[nodiscard]] RenderTargetHandle : public Internal::FrameGraphResourceHandle<RenderTargetHandle>
     {
-        static const ImageHandle kInvalid;
+        static const RenderTargetHandle kInvalid;
     };
 
-    inline const ImageHandle ImageHandle::kInvalid = ImageHandle{};
+    inline const RenderTargetHandle RenderTargetHandle::kInvalid = RenderTargetHandle{};
 
 
     struct [[nodiscard]] BufferHandle : public Internal::FrameGraphResourceHandle<BufferHandle>
@@ -88,6 +89,7 @@ namespace FE::Graphics::Core
 
     enum class ImageWriteType : uint32_t
     {
+        kUndefined,
         kTransferDestination,
         kUnorderedAccess,
         kColorTarget,
@@ -107,6 +109,7 @@ namespace FE::Graphics::Core
 
     enum class BufferWriteType : uint32_t
     {
+        kUndefined,
         kTransferDestination,
         kUnorderedAccess,
         kCount,
@@ -119,5 +122,30 @@ namespace FE::Graphics::Core
         kShaderResource,
         kIndirectArgument,
         kCount,
+    };
+
+
+    struct [[nodiscard]] SamplerDescriptor final : public TypedHandle<SamplerDescriptor, uint32_t>
+    {
+    };
+
+
+    struct [[nodiscard]] ImageSRVDescriptor final : public TypedHandle<ImageSRVDescriptor, uint32_t>
+    {
+    };
+
+
+    struct [[nodiscard]] ImageUAVDescriptor final : public TypedHandle<ImageUAVDescriptor, uint32_t>
+    {
+    };
+
+
+    struct [[nodiscard]] BufferSRVDescriptor final : public TypedHandle<BufferSRVDescriptor, uint32_t>
+    {
+    };
+
+
+    struct [[nodiscard]] BufferUAVDescriptor final : public TypedHandle<BufferUAVDescriptor, uint32_t>
+    {
     };
 } // namespace FE::Graphics::Core

@@ -131,6 +131,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.runtimeDescriptorArray = true;
         deviceFeatures12.descriptorBindingPartiallyBound = true;
         deviceFeatures12.descriptorBindingVariableDescriptorCount = true;
+        deviceFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

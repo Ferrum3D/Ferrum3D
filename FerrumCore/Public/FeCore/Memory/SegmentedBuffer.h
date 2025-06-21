@@ -57,7 +57,7 @@ namespace FE::Memory
         SegmentedBufferManualBuilder& operator=(const SegmentedBufferManualBuilder&) = delete;
         SegmentedBufferManualBuilder& operator=(SegmentedBufferManualBuilder&&) = delete;
 
-        void* AllocateSegment(const uint32_t size)
+        std::byte* AllocateSegment(const uint32_t size)
         {
             auto* segment =
                 static_cast<SegmentedBuffer::Segment*>(m_buffer.m_allocator->allocate(size + sizeof(SegmentedBuffer::Segment)));
@@ -65,7 +65,7 @@ namespace FE::Memory
             segment->m_size = size;
             segment->m_capacity = size + sizeof(SegmentedBuffer::Segment);
             m_segments.push_back(segment);
-            return segment + 1;
+            return reinterpret_cast<std::byte*>(segment + 1);
         }
 
         SegmentedBuffer Build()
@@ -171,11 +171,11 @@ namespace FE::Memory
             if (m_segmentOffset + size > segment->m_size)
             {
                 m_segmentIndex++;
-                m_segmentOffset = sizeof(SegmentedBuffer::Segment);
+                m_segmentOffset = 0;
                 return ReadBytes(data, size);
             }
 
-            memcpy(data, reinterpret_cast<const std::byte*>(segment) + m_segmentOffset, size);
+            memcpy(data, reinterpret_cast<const std::byte*>(segment + 1) + m_segmentOffset, size);
             m_segmentOffset += size;
             return true;
         }
@@ -200,7 +200,7 @@ namespace FE::Memory
         }
 
         uint32_t m_segmentIndex = 0;
-        uint32_t m_segmentOffset = sizeof(SegmentedBuffer::Segment);
+        uint32_t m_segmentOffset = 0;
         SegmentedBuffer m_buffer;
     };
 } // namespace FE::Memory

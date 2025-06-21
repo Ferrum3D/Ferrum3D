@@ -69,6 +69,7 @@ namespace FE::IO
     struct AsyncBlockReadRequestQueueEntry : public AsyncRequestQueueEntry
     {
         AsyncBlockReadRequest m_request;
+        std::atomic<uint32_t> m_remainingBlockCount = 0;
     };
 
 
@@ -79,9 +80,8 @@ namespace FE::IO
         AsyncStreamIO(Logger* logger, IJobSystem* jobSystem, IStreamFactory* streamFactory);
         ~AsyncStreamIO() override;
 
-        void ReadAsync(festd::span<const AsyncReadRequest> requests, Priority priority, IAsyncController** ppController) override;
-        void ReadAsync(festd::span<const AsyncBlockReadRequest> requests, Priority priority,
-                       IAsyncController** ppController) override;
+        void ReadAsync(const AsyncReadRequest& request, Priority priority, IAsyncController** ppController) override;
+        void ReadAsync(const AsyncBlockReadRequest& request, Priority priority, IAsyncController** ppController) override;
 
     private:
         Threading::ThreadHandle m_thread;
@@ -95,11 +95,11 @@ namespace FE::IO
         TracyLockable(Threading::SpinLock, m_queueLock);
         festd::vector<AsyncRequestQueueEntry*> m_queue;
 
-        Memory::PoolAllocator m_requestPools[festd::to_underlying(AsyncRequestQueueEntry::Type::kCount)];
-        Memory::Pool<AsyncController> m_controllerPool{ "AsyncControllerPool" };
-        Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock> m_blockDecompressionJobPool;
+        Memory::SpinLockedPoolAllocator m_blockDecompressionJobPool;
+        Memory::SpinLockedPoolAllocator m_requestPools[festd::to_underlying(AsyncRequestQueueEntry::Type::kCount)];
+        Memory::SpinLockedPoolAllocator m_controllerPool{ "AsyncControllerPool", sizeof(AsyncController) };
 
-        AsyncRequestQueueEntry** EnqueueImpl(Priority priority, uint32_t count);
+        void EnqueueImpl(Priority priority, AsyncRequestQueueEntry* entry);
 
         AsyncRequestQueueEntry* TryDequeue();
         void ProcessGenericRequest(AsyncRequestQueueEntry* entry);

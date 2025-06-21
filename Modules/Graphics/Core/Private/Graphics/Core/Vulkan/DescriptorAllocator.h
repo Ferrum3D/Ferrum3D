@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <festd/unordered_map.h>

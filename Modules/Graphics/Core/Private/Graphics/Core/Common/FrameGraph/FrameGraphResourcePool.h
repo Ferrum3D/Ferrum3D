@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
 #include <Graphics/Core/Buffer.h>
-#include <Graphics/Core/Image.h>
+#include <Graphics/Core/RenderTarget.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <festd/unordered_map.h>
 
@@ -16,13 +16,13 @@ namespace FE::Graphics::Common
 
         void Reset();
 
-        Core::Image* CreateImage(Env::Name name, const Core::ImageDesc& desc);
+        Core::RenderTarget* CreateRenderTarget(Env::Name name, const Core::ImageDesc& desc);
         Core::Buffer* CreateBuffer(Env::Name name, const Core::BufferDesc& desc);
 
     private:
         struct ImageInfo final
         {
-            Rc<Core::Image> m_image;
+            Rc<Core::RenderTarget> m_image;
             uint64_t m_descHash = 0;
         };
 
@@ -35,7 +35,7 @@ namespace FE::Graphics::Common
         SegmentedVector<ImageInfo> m_createdImages;
         SegmentedVector<BufferInfo> m_createdBuffers;
 
-        festd::unordered_dense_map<uint64_t, Rc<Core::Image>> m_imagesMap;
+        festd::unordered_dense_map<uint64_t, Rc<Core::RenderTarget>> m_imagesMap;
         festd::unordered_dense_map<uint64_t, Rc<Core::Buffer>> m_buffersMap;
 
         Core::ResourcePool* m_resourcePool = nullptr;

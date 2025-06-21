@@ -137,7 +137,6 @@ namespace FE::Graphics::Vulkan
         if (!resourceType.array.empty())
             result.m_count = static_cast<uint8_t>(resourceType.array.front());
 
-        FE_Assert(result.m_count != 0);
         return result;
     }
 

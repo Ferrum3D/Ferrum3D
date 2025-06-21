@@ -1,10 +1,11 @@
 #pragma once
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ImageFormat.h>
+#include <Graphics/Core/RenderTarget.h>
 
 namespace FE::Graphics::Core
 {
-    constexpr Format kMainDepthTargetFormat = Format::kD24_UNORM_S8_UINT;
+    constexpr auto kMainDepthTargetFormat = Format::kD32_SFLOAT_S8_UINT;
 
 
     struct ViewportDesc final
@@ -25,7 +26,7 @@ namespace FE::Graphics::Core
         virtual Format GetColorTargetFormat() = 0;
         virtual Format GetDepthTargetFormat() = 0;
 
-        virtual Image* GetCurrentColorTarget() = 0;
-        virtual Image* GetDepthTarget() = 0;
+        virtual RenderTarget* GetCurrentColorTarget() = 0;
+        virtual RenderTarget* GetDepthTarget() = 0;
     };
 } // namespace FE::Graphics::Core

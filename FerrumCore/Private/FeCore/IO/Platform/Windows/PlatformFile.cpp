@@ -201,6 +201,9 @@ namespace FE::Platform
                 return ConvertWin32IOError(GetLastError());
             }
 
+            if (dwBytesRead == 0)
+                break;
+
             bytesRead += dwBytesRead;
         }
 

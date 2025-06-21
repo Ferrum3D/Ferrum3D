@@ -19,7 +19,6 @@
     Public/Graphics/Core/GeometryPool.h
     Public/Graphics/Core/GeometryView.h
     Public/Graphics/Core/GraphicsPipeline.h
-    Public/Graphics/Core/Image.h
     Public/Graphics/Core/ImageBase.h
     Public/Graphics/Core/ImageFormat.h
     Public/Graphics/Core/InputLayoutBuilder.h
@@ -27,9 +26,9 @@
     Public/Graphics/Core/Module.h
     Public/Graphics/Core/PipelineFactory.h
     Public/Graphics/Core/PipelineStates.h
+    Public/Graphics/Core/RenderTarget.h
     Public/Graphics/Core/Resource.h
     Public/Graphics/Core/ResourcePool.h
-    Public/Graphics/Core/ResourceState.h
     Public/Graphics/Core/Sampler.h
     Public/Graphics/Core/ShaderCompiler.h
     Public/Graphics/Core/ShaderDefines.h
@@ -37,6 +36,7 @@
     Public/Graphics/Core/ShaderReflection.h
     Public/Graphics/Core/ShaderResourceType.h
     Public/Graphics/Core/ShaderStage.h
+    Public/Graphics/Core/Texture.h
     Public/Graphics/Core/Viewport.h
 )
 
@@ -76,6 +76,8 @@ set(VULKAN_SOURCES
 
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.cpp
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.h
+    Private/Graphics/Core/Vulkan/BindlessManager.cpp
+    Private/Graphics/Core/Vulkan/BindlessManager.h
     Private/Graphics/Core/Vulkan/Buffer.cpp
     Private/Graphics/Core/Vulkan/Buffer.h
     Private/Graphics/Core/Vulkan/DescriptorAllocator.cpp
@@ -96,17 +98,20 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/PipelineFactory.cpp
     Private/Graphics/Core/Vulkan/PipelineFactory.h
     Private/Graphics/Core/Vulkan/PipelineStates.h
+    Private/Graphics/Core/Vulkan/RenderTarget.cpp
+    Private/Graphics/Core/Vulkan/RenderTarget.h
     Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.cpp
     Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.h
     Private/Graphics/Core/Vulkan/ResourcePool.cpp
     Private/Graphics/Core/Vulkan/ResourcePool.h
-    Private/Graphics/Core/Vulkan/ResourceState.h
     Private/Graphics/Core/Vulkan/Sampler.cpp
     Private/Graphics/Core/Vulkan/Sampler.h
     Private/Graphics/Core/Vulkan/ShaderLibrary.cpp
     Private/Graphics/Core/Vulkan/ShaderLibrary.h
     Private/Graphics/Core/Vulkan/ShaderReflection.cpp
     Private/Graphics/Core/Vulkan/ShaderReflection.h
+    Private/Graphics/Core/Vulkan/Texture.cpp
+    Private/Graphics/Core/Vulkan/Texture.h
     Private/Graphics/Core/Vulkan/Viewport.cpp
     Private/Graphics/Core/Vulkan/Viewport.h
 )

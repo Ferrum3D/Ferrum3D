@@ -1,10 +1,11 @@
 #include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Base/Viewport.h>
+#include <Graphics/Core/Vulkan/BindlessManager.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
-#include <Graphics/Core/Vulkan/Image.h>
+#include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
@@ -55,8 +56,9 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    FrameGraphContext::FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph)
+    FrameGraphContext::FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph, BindlessManager* bindlessManager)
         : Common::FrameGraphContext(frameGraph)
+        , m_bindlessManager(bindlessManager)
         , m_resourceBarrierBatcher(device)
         , m_signalSemaphores(frameGraph->GetAllocator())
         , m_waitSemaphores(frameGraph->GetAllocator())
@@ -177,8 +179,9 @@ namespace FE::Graphics::Vulkan
 
         for (uint32_t rtIndex = 0; rtIndex < m_renderTargetState.m_renderTargetCount; ++rtIndex)
         {
-            const Image* image = ImplCast(m_frameGraph->GetImage(m_renderTargetState.m_renderTargets[rtIndex]));
-            FE_Assert(Bit::AllSet(image->GetDesc().m_bindFlags, Core::ImageBindFlags::kColorTarget));
+            const RenderTarget* image = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_renderTargets[rtIndex]));
+            const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
+            FE_Assert(Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kColor));
 
             auto& attachmentInfo = colorAttachments[rtIndex];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -188,8 +191,9 @@ namespace FE::Graphics::Vulkan
                 attachmentInfo, rtIndex, m_renderTargetState.m_loadOperations, m_renderTargetState.m_storeOperations);
         }
 
-        const Image* depthImage = ImplCast(m_frameGraph->GetImage(m_renderTargetState.m_depthStencil));
-        FE_Assert(Bit::AllSet(depthImage->GetDesc().m_bindFlags, Core::ImageBindFlags::kDepthStencilTarget));
+        const RenderTarget* depthImage = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_depthStencil));
+        const Core::FormatInfo formatInfo{ depthImage->GetDesc().m_imageFormat };
+        FE_Assert(Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kDepthStencil));
 
         VkRenderingAttachmentInfo depthAttachment{};
         depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -216,7 +220,7 @@ namespace FE::Graphics::Vulkan
 
             const GraphicsPipeline* pipeline = ImplCast(drawCall.m_pipeline);
 
-            const VkDescriptorSet descriptorSet = pipeline->GetDescriptorSet();
+            const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
             const VkPipelineLayout pipelineLayout = pipeline->GetNativeLayout();
             if (descriptorSet)
             {
@@ -224,14 +228,9 @@ namespace FE::Graphics::Vulkan
                     vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
             }
 
-            if (drawCall.m_rootConstantsByteSize > 0)
+            if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kRootConstants))
             {
-                vkCmdPushConstants(vkCommandBuffer,
-                                   pipelineLayout,
-                                   VK_SHADER_STAGE_ALL,
-                                   0,
-                                   drawCall.m_rootConstantsByteSize,
-                                   drawCall.m_rootConstants);
+                vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_rootConstantsSize, m_rootConstants);
             }
 
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetNative());

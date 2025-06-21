@@ -9,7 +9,7 @@ namespace FE::Graphics::Vulkan
 {
     struct DeviceFactory;
     struct FrameGraphContext;
-    struct Image;
+    struct RenderTarget;
 
     struct Viewport final : public Core::Viewport
     {
@@ -27,8 +27,8 @@ namespace FE::Graphics::Vulkan
 
         void Resize(uint32_t width, uint32_t height);
 
-        Core::Image* GetCurrentColorTarget() override;
-        Core::Image* GetDepthTarget() override;
+        Core::RenderTarget* GetCurrentColorTarget() override;
+        Core::RenderTarget* GetDepthTarget() override;
 
         Core::Format GetColorTargetFormat() override;
         Core::Format GetDepthTargetFormat() override;
@@ -74,10 +74,10 @@ namespace FE::Graphics::Vulkan
         Rc<Fence> m_fence;
         festd::small_vector<Rc<Semaphore>> m_imageAvailableSemaphores;
         festd::small_vector<Rc<Semaphore>> m_renderFinishedSemaphores;
-        festd::small_vector<Rc<Image>> m_renderTargets;
+        festd::small_vector<Rc<RenderTarget>> m_renderTargets;
         festd::small_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
 
-        Rc<Image> m_depthTarget;
+        Rc<RenderTarget> m_depthTarget;
     };
 
     FE_ENABLE_IMPL_CAST(Viewport);

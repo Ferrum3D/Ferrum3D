@@ -5,11 +5,13 @@
 
 namespace FE::Graphics::Vulkan
 {
+    struct BindlessManager;
+
     struct FrameGraphContext final : public Common::FrameGraphContext
     {
         FE_RTTI_Class(FrameGraphContext, "C27FC437-A09A-49F7-B3B6-DEE56C0CF04F");
 
-        FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph);
+        FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph, BindlessManager* bindlessManager);
 
         void Init(CommandBuffer* graphicsCommandBuffer);
         void Submit();
@@ -33,6 +35,8 @@ namespace FE::Graphics::Vulkan
             Rc<Semaphore> m_semaphore;
             VkPipelineStageFlags m_stageMask;
         };
+
+        BindlessManager* m_bindlessManager;
 
         ResourceBarrierBatcher m_resourceBarrierBatcher;
         SegmentedVector<Rc<Semaphore>, 256> m_signalSemaphores;

@@ -25,6 +25,53 @@ namespace FE::Graphics::Vulkan
                 return VK_SAMPLER_ADDRESS_MODE_REPEAT;
             }
         }
+
+
+        VkFilter Translate(const Core::SamplerFilter filter)
+        {
+            switch (filter)
+            {
+            case Core::SamplerFilter::kPoint:
+                return VK_FILTER_NEAREST;
+            case Core::SamplerFilter::kLinear:
+                return VK_FILTER_LINEAR;
+            default:
+                FE_DebugBreak();
+                return VK_FILTER_NEAREST;
+            }
+        }
+
+
+        VkSamplerMipmapMode TranslateMipmapMode(const Core::SamplerFilter filter)
+        {
+            switch (filter)
+            {
+            case Core::SamplerFilter::kPoint:
+                return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            case Core::SamplerFilter::kLinear:
+                return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            default:
+                FE_DebugBreak();
+                return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            }
+        }
+
+
+        VkBorderColor Translate(const Core::SamplerBorderColor color)
+        {
+            switch (color)
+            {
+            case Core::SamplerBorderColor::kTransparentBlack:
+                return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+            case Core::SamplerBorderColor::kOpaqueBlack:
+                return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            case Core::SamplerBorderColor::kOpaqueWhite:
+                return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+            default:
+                FE_DebugBreak();
+                return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            }
+        }
     } // namespace
 
 
@@ -34,11 +81,11 @@ namespace FE::Graphics::Vulkan
 
         VkSamplerCreateInfo samplerCI = {};
         samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerCI.magFilter = VK_FILTER_LINEAR;
-        samplerCI.minFilter = VK_FILTER_LINEAR;
-        samplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerCI.magFilter = Translate(samplerState.m_magFilter);
+        samplerCI.minFilter = Translate(samplerState.m_minFilter);
+        samplerCI.borderColor = Translate(samplerState.m_borderColor);
         samplerCI.unnormalizedCoordinates = VK_FALSE;
-        samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerCI.mipmapMode = TranslateMipmapMode(samplerState.m_mipFilter);
         samplerCI.mipLodBias = static_cast<float>(samplerState.m_mipBias);
         samplerCI.minLod = static_cast<float>(samplerState.m_minLod);
         samplerCI.maxLod = static_cast<float>(samplerState.m_maxLod);

@@ -65,12 +65,31 @@ namespace FE::Graphics::Common
     }
 
 
-    void Device::RegisterResource(Core::Resource* resource)
+    uint32_t Device::RegisterResource(Core::Resource* resource)
     {
         FE_PROFILER_ZONE();
 
         std::lock_guard lock{ m_resourceListLock };
         m_resourceList.push_back(*resource);
+
+        if (!m_resourceIdFreeList.empty())
+        {
+            const uint32_t id = m_resourceIdFreeList.back();
+            m_resourceIdFreeList.pop_back();
+            return id;
+        }
+
+        return m_currentResourceId++;
+    }
+
+
+    void Device::UnregisterResource(const uint32_t id, Core::Resource* resource)
+    {
+        FE_PROFILER_ZONE();
+
+        std::lock_guard lock{ m_resourceListLock };
+        festd::intrusive_list<>::remove(*resource);
+        m_resourceIdFreeList.push_back(id);
     }
 
 

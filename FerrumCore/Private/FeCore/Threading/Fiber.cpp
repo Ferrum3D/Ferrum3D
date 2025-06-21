@@ -41,7 +41,7 @@ namespace FE::Threading
     {
         FE_PROFILER_ZONE();
 
-        m_tempPagePool.Initialize("FiberTempMemoryPool", kFiberTempAllocatorPageSize);
+        m_tempPagePool.Initialize("FiberTempMemoryPool", kFiberTempAllocatorPageSize, kFiberTempAllocatorPageSize * 4);
 
         const Memory::PlatformSpec memorySpec = Memory::GetPlatformSpec();
 

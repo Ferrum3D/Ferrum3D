@@ -235,7 +235,7 @@ namespace FE::Bit
     //! @brief Search for the first set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanForward64(uint32_t& result, const uint64_t value)
+    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanForward64(reinterpret_cast<unsigned long*>(&result), value);
@@ -269,7 +269,7 @@ namespace FE::Bit
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanReverse64(uint32_t& result, const uint64_t value)
+    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const uint64_t value)
     {
 #if FE_COMPILER_MSVC
         return _BitScanReverse64(reinterpret_cast<unsigned long*>(&result), value);
@@ -307,7 +307,7 @@ namespace FE::Bit
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
     {
         uint32_t currentIndex;
-        while (ScanForward64(currentIndex, word))
+        while (ScanForward(currentIndex, word))
         {
             functor(currentIndex);
             word &= ~(UINT64_C(1) << currentIndex);
@@ -485,7 +485,7 @@ namespace FE::Math
     {
         const uint64_t x64 = 2 * static_cast<uint64_t>(x) - 1;
         uint32_t result;
-        Bit::ScanReverse64(result, x64);
+        Bit::ScanReverse(result, x64);
         return static_cast<uint32_t>(1 << result);
     }
 

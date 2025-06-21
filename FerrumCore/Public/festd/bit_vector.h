@@ -461,12 +461,12 @@ namespace FE::Internal
             for (uint32_t topLevelIndex = 0; topLevelIndex < topLevelWordCount; ++topLevelIndex)
             {
                 uint32_t nonEmptyWordIndex;
-                if (Bit::ScanForward64(nonEmptyWordIndex, topLevelWords[topLevelIndex]))
+                if (Bit::ScanForward(nonEmptyWordIndex, topLevelWords[topLevelIndex]))
                 {
                     const uint32_t wordIndex = topLevelIndex * kBitSetBitsPerWord + nonEmptyWordIndex;
 
                     uint32_t result;
-                    Bit::ScanForward64(result, words[wordIndex]);
+                    Bit::ScanForward(result, words[wordIndex]);
                     return result + wordIndex * kBitSetBitsPerWord;
                 }
             }
@@ -530,7 +530,7 @@ namespace FE
         //! @param bits    The bit vector to traverse.
         //! @param functor The functor to call for each set bit.
         template<class TBase, class TFunctor>
-        inline void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
+        void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
         {
             const uint32_t bitCount = bits.size();
             const uint32_t wordCount = Internal::CalculateNextLevelWordCount(bitCount);
@@ -539,13 +539,13 @@ namespace FE
             {
                 uint32_t nonEmptyWordIndex;
                 uint64_t currentLookupWord = bits.data_lookup_at(topLevelIndex);
-                while (ScanForward64(nonEmptyWordIndex, currentLookupWord))
+                while (ScanForward(nonEmptyWordIndex, currentLookupWord))
                 {
                     const uint32_t wordIndex = topLevelIndex * Internal::kBitSetBitsPerWord + nonEmptyWordIndex;
 
                     uint32_t currentIndex;
                     uint64_t currentWord = bits.data_at(wordIndex);
-                    while (ScanForward64(currentIndex, currentWord))
+                    while (ScanForward(currentIndex, currentWord))
                     {
                         functor(currentIndex + wordIndex * Internal::kBitSetBitsPerWord);
                         currentWord &= ~(UINT64_C(1) << currentIndex);
@@ -554,6 +554,31 @@ namespace FE
                     currentLookupWord &= ~(UINT64_C(1) << nonEmptyWordIndex);
                 }
             }
+        }
+
+
+        template<class TBase>
+        uint32_t PopCount(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits)
+        {
+            uint32_t popCount = 0;
+            const uint32_t bitCount = bits.size();
+            const uint32_t wordCount = Internal::CalculateNextLevelWordCount(bitCount);
+            const uint32_t topLevelWordCount = Internal::CalculateNextLevelWordCount(wordCount);
+            for (uint32_t topLevelIndex = 0; topLevelIndex < topLevelWordCount; ++topLevelIndex)
+            {
+                uint32_t nonEmptyWordIndex;
+                uint64_t currentLookupWord = bits.data_lookup_at(topLevelIndex);
+                while (ScanForward(nonEmptyWordIndex, currentLookupWord))
+                {
+                    const uint32_t wordIndex = topLevelIndex * Internal::kBitSetBitsPerWord + nonEmptyWordIndex;
+                    const uint64_t currentWord = bits.data_at(wordIndex);
+                    popCount += PopCount(currentWord);
+
+                    currentLookupWord &= ~(UINT64_C(1) << nonEmptyWordIndex);
+                }
+            }
+
+            return popCount;
         }
     } // namespace Bit
 } // namespace FE

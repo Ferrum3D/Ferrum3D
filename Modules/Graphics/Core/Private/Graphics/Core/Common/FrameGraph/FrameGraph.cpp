@@ -43,13 +43,13 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::ImageHandle FrameGraph::GetRenderTarget() const
+    Core::RenderTargetHandle FrameGraph::GetMainColorTarget() const
     {
         return m_currentRenderTargetHandle;
     }
 
 
-    Core::ImageHandle FrameGraph::GetDepthStencil() const
+    Core::RenderTargetHandle FrameGraph::GetMainDepthStencilTarget() const
     {
         return m_currentDepthStencilHandle;
     }
@@ -65,8 +65,8 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        m_currentRenderTargetHandle = ImportImage(m_viewport->GetCurrentColorTarget());
-        m_currentDepthStencilHandle = ImportImage(m_viewport->GetDepthTarget());
+        m_currentRenderTargetHandle = ImportRenderTarget(m_viewport->GetCurrentColorTarget());
+        m_currentDepthStencilHandle = ImportRenderTarget(m_viewport->GetDepthTarget());
 
         for (const auto& passProducer : m_passProducers)
         {
@@ -86,16 +86,16 @@ namespace FE::Graphics::Common
         FinishExecute();
         FE_Assert(m_currentContext == nullptr);
 
-        m_currentRenderTargetHandle = Core::ImageHandle::kInvalid;
-        m_currentDepthStencilHandle = Core::ImageHandle::kInvalid;
+        m_currentRenderTargetHandle = Core::RenderTargetHandle::kInvalid;
+        m_currentDepthStencilHandle = Core::RenderTargetHandle::kInvalid;
     }
 
 
-    Core::Image* FrameGraph::GetImage(const Core::ImageHandle image) const
+    Core::RenderTarget* FrameGraph::GetRenderTarget(const Core::RenderTargetHandle image) const
     {
         const ResourceData& resourceData = m_resources[image.m_desc.m_resourceIndex];
-        FE_AssertDebug(resourceData.m_resourceType == Core::ResourceType::kImage);
-        return static_cast<Core::Image*>(resourceData.m_resource.Get());
+        FE_AssertDebug(resourceData.m_resourceType == Core::ResourceType::kRenderTarget);
+        return static_cast<Core::RenderTarget*>(resourceData.m_resource.Get());
     }
 
 
@@ -107,7 +107,7 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::ImageHandle FrameGraph::ImportImage(Core::Image* image)
+    Core::RenderTargetHandle FrameGraph::ImportRenderTarget(Core::RenderTarget* image)
     {
         const uint32_t resourceIndex = m_resources.size();
         ResourceData resourceData{ resourceIndex, image->GetDesc() };
@@ -116,7 +116,7 @@ namespace FE::Graphics::Common
         resourceData.m_isImported = true;
         resourceData.m_creatorPassIndex = kInvalidIndex;
         m_resources.push_back(resourceData);
-        return Core::ImageHandle::Create(resourceIndex, 0);
+        return Core::RenderTargetHandle::Create(resourceIndex, 0, 0);
     }
 
 
@@ -129,7 +129,7 @@ namespace FE::Graphics::Common
         resourceData.m_isImported = true;
         resourceData.m_creatorPassIndex = kInvalidIndex;
         m_resources.push_back(resourceData);
-        return Core::BufferHandle::Create(resourceIndex, 0);
+        return Core::BufferHandle::Create(resourceIndex, 0, 0);
     }
 
 
@@ -155,18 +155,18 @@ namespace FE::Graphics::Common
         resourceData.m_name = name;
         resourceData.m_creatorPassIndex = passIndex;
         m_resources.push_back(resourceData);
-        return Core::BufferHandle::Create(resourceIndex, 0);
+        return Core::BufferHandle::Create(resourceIndex, 0, 0);
     }
 
 
-    Core::ImageHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const Core::ImageDesc& desc)
+    Core::RenderTargetHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const Core::ImageDesc& desc)
     {
         const uint32_t resourceIndex = m_resources.size();
         ResourceData resourceData{ resourceIndex, desc };
         resourceData.m_name = name;
         resourceData.m_creatorPassIndex = passIndex;
         m_resources.push_back(resourceData);
-        return Core::ImageHandle::Create(resourceIndex, 0);
+        return Core::RenderTargetHandle::Create(resourceIndex, 0, 0);
     }
 
 

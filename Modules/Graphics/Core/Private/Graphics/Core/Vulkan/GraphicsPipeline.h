@@ -14,6 +14,7 @@ namespace FE::Graphics::Vulkan
         Core::DefinesStorage m_defines;
         Core::GraphicsPipelineDesc m_desc;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+        VkDescriptorSetLayout m_bindlessSetLayout = VK_NULL_HANDLE;
         ShaderLibrary* m_shaderLibrary = nullptr;
         Logger* m_logger = nullptr;
     };
@@ -44,14 +45,8 @@ namespace FE::Graphics::Vulkan
             return m_layout;
         }
 
-        [[nodiscard]] VkDescriptorSet GetDescriptorSet() const
-        {
-            return m_descriptorSet;
-        }
-
     private:
-        VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
-        DescriptorSetLayoutHandle m_layoutHandle;
+        VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
         DescriptorAllocator* m_descriptorAllocator = nullptr;
 
         VkPipelineLayout m_layout = VK_NULL_HANDLE;

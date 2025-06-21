@@ -105,7 +105,7 @@ namespace FE
         static constexpr uint32_t kMaxWorkerCount = 64;
         festd::array<Worker, kMaxWorkerCount> m_workers;
         Threading::FiberPool m_fiberPool;
-        Memory::PoolAllocator m_waitGroupPool;
+        Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock> m_waitGroupPool;
 
         uint32_t m_backgroundWorkerCount = 0;
         uint32_t m_foregroundWorkerCount = 0;

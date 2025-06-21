@@ -45,21 +45,7 @@ namespace FE::Graphics::Core
         virtual void Unmap() = 0;
 
         [[nodiscard]] virtual const BufferDesc& GetDesc() const = 0;
-        void UpdateData(const void* data, uint32_t offset = 0, uint32_t size = Constants::kMaxU32);
     };
-
-
-    inline void Buffer::UpdateData(const void* data, const uint32_t offset, uint32_t size)
-    {
-        if (size == Constants::kMaxU32)
-        {
-            size = GetDesc().m_size - offset;
-        }
-
-        void* map = static_cast<uint8_t*>(Map()) + offset;
-        memcpy(map, data, size);
-        Unmap();
-    }
 } // namespace FE::Graphics::Core
 
 

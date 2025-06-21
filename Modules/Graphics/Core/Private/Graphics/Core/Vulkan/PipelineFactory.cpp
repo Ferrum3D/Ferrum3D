@@ -1,5 +1,6 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/Jobs/Job.h>
+#include <Graphics/Core/Vulkan/BindlessManager.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
@@ -23,9 +24,11 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    PipelineFactory::PipelineFactory(Core::Device* device, IJobSystem* jobSystem, Logger* logger)
+    PipelineFactory::PipelineFactory(Core::Device* device, BindlessManager* bindlessManager, IJobSystem* jobSystem,
+                                     Logger* logger)
         : m_graphicsPipelinePool("GraphicsPipelinePool", sizeof(GraphicsPipeline))
         , m_jobPool("PipelineAsyncCompilationJobPool", sizeof(AsyncCompilationJob))
+        , m_bindlessManager(bindlessManager)
         , m_jobSystem(jobSystem)
         , m_logger(logger)
     {
@@ -79,6 +82,7 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_pipelineCache = m_pipelineCache;
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
         job->m_context.m_logger = m_logger;
+        job->m_context.m_bindlessSetLayout = m_bindlessManager->GetDescriptorSetLayout();
         job->ScheduleBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;

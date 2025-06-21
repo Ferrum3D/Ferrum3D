@@ -1,4 +1,5 @@
 #pragma once
+#include <Graphics/Core/ImageBase.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Device.h>
 
@@ -31,15 +32,15 @@ namespace FE::Graphics::Vulkan
 
     struct ImageBarrierDesc final
     {
-        VkImage m_image;
+        VkImage m_image = VK_NULL_HANDLE;
         uint32_t m_sourceAccess : 16;
         uint32_t m_destAccess : 16;
         Core::HardwareQueueKindFlags m_sourceQueueKind : 16;
         Core::HardwareQueueKindFlags m_destQueueKind : 16;
+        Core::ImageSubresource m_subresource = {};
 
         ImageBarrierDesc()
-            : m_image(VK_NULL_HANDLE)
-            , m_sourceAccess(0)
+            : m_sourceAccess(0)
             , m_destAccess(0)
             , m_sourceQueueKind(Core::HardwareQueueKindFlags::kNone)
             , m_destQueueKind(Core::HardwareQueueKindFlags::kNone)

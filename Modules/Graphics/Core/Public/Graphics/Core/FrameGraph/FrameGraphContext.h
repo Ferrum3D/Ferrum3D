@@ -157,20 +157,28 @@ namespace FE::Graphics::Core
 
         virtual void EnqueueFenceToSignal(const FenceSyncPoint& fence) = 0;
 
+        virtual void SetRootConstants(const void* data, uint32_t size) = 0;
+
+        template<class T>
+        void SetRootConstants(const T& data)
+        {
+            SetRootConstants(&data, sizeof(T));
+        }
+
         virtual void SetRenderTargetLoadOperations(const RenderTargetLoadOperations& operations) = 0;
 
         virtual void SetRenderTargetStoreOperations(const RenderTargetStoreOperations& operations) = 0;
 
-        virtual void SetRenderTargets(festd::span<const ImageHandle> renderTargets, ImageHandle depthStencil) = 0;
+        virtual void SetRenderTargets(festd::span<const RenderTargetHandle> renderTargets, RenderTargetHandle depthStencil) = 0;
 
-        void SetRenderTarget(const ImageHandle renderTarget, const ImageHandle depthStencilTarget)
+        void SetRenderTarget(const RenderTargetHandle renderTarget, const RenderTargetHandle depthStencilTarget)
         {
             SetRenderTargets({ &renderTarget, 1 }, depthStencilTarget);
         }
 
-        void SetRenderTarget(const ImageHandle renderTarget)
+        void SetRenderTarget(const RenderTargetHandle renderTarget)
         {
-            SetRenderTargets({ &renderTarget, 1 }, ImageHandle::kInvalid);
+            SetRenderTargets({ &renderTarget, 1 }, RenderTargetHandle::kInvalid);
         }
 
         virtual void SetViewportAndScissor(const Aabb& viewport, RectInt scissor) = 0;

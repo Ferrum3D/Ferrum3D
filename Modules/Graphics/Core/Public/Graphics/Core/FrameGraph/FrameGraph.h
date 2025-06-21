@@ -4,7 +4,9 @@
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
 #include <Graphics/Core/GraphicsPipeline.h>
-#include <Graphics/Core/Image.h>
+#include <Graphics/Core/RenderTarget.h>
+#include <Graphics/Core/Sampler.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
 {
@@ -34,17 +36,20 @@ namespace FE::Graphics::Core
         virtual void RegisterViewport(Viewport* viewport) = 0;
         virtual Viewport* GetViewport() = 0;
 
-        virtual ImageHandle GetRenderTarget() const = 0;
-        virtual ImageHandle GetDepthStencil() const = 0;
+        virtual RenderTargetHandle GetMainColorTarget() const = 0;
+        virtual RenderTargetHandle GetMainDepthStencilTarget() const = 0;
 
         virtual void AddPassProducer(PassProducer* passProducer) = 0;
         virtual void Execute() = 0;
 
-        virtual Image* GetImage(ImageHandle image) const = 0;
+        virtual RenderTarget* GetRenderTarget(RenderTargetHandle image) const = 0;
         virtual Buffer* GetBuffer(BufferHandle buffer) const = 0;
 
-        virtual ImageHandle ImportImage(Image* image) = 0;
+        virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image) = 0;
         virtual BufferHandle ImportBuffer(Buffer* buffer) = 0;
+
+        virtual ImageSRVDescriptor GetSRV(Texture* texture, ImageSubresource subresource) = 0;
+        virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
     protected:
         friend FrameGraphBuilder;
@@ -78,7 +83,7 @@ namespace FE::Graphics::Core
         virtual uint32_t AddPassInternal(uint32_t producerIndex, Env::Name name) = 0;
 
         virtual BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const BufferDesc& desc) = 0;
-        virtual ImageHandle CreateImage(uint32_t passIndex, Env::Name name, const ImageDesc& desc) = 0;
+        virtual RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const ImageDesc& desc) = 0;
 
         virtual uint32_t ReadResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) = 0;
         virtual uint32_t WriteResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) = 0;
@@ -96,7 +101,7 @@ namespace FE::Graphics::Core
             return m_graph->CreateBuffer(m_passIndex, name, desc);
         }
 
-        ImageHandle CreateImage(const Env::Name name, const ImageDesc& desc) const
+        RenderTargetHandle CreateImage(const Env::Name name, const ImageDesc& desc) const
         {
             return m_graph->CreateImage(m_passIndex, name, desc);
         }
@@ -106,15 +111,15 @@ namespace FE::Graphics::Core
             FE_Assert(buffer.IsValid());
             const uint32_t flags = festd::to_underlying(readType);
             const uint32_t newVersion = m_graph->ReadResource(m_passIndex, buffer.m_desc.m_resourceIndex, flags);
-            return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion);
+            return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        ImageHandle Read(const ImageHandle image, const ImageReadType readType) const
+        RenderTargetHandle Read(const RenderTargetHandle image, const ImageReadType readType) const
         {
             FE_Assert(image.IsValid());
             const uint32_t flags = festd::to_underlying(readType);
             const uint32_t newVersion = m_graph->ReadResource(m_passIndex, image.m_desc.m_resourceIndex, flags);
-            return ImageHandle::Create(image.m_desc.m_resourceIndex, newVersion);
+            return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
         }
 
         BufferHandle Write(const BufferHandle buffer, const BufferWriteType writeType) const
@@ -122,15 +127,15 @@ namespace FE::Graphics::Core
             FE_Assert(buffer.IsValid());
             const uint32_t flags = festd::to_underlying(writeType);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, buffer.m_desc.m_resourceIndex, flags);
-            return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion);
+            return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        ImageHandle Write(const ImageHandle image, const ImageWriteType writeType) const
+        RenderTargetHandle Write(const RenderTargetHandle image, const ImageWriteType writeType) const
         {
             FE_Assert(image.IsValid());
             const uint32_t flags = festd::to_underlying(writeType);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, image.m_desc.m_resourceIndex, flags);
-            return ImageHandle::Create(image.m_desc.m_resourceIndex, newVersion);
+            return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
         }
 
         template<class TFunction>
