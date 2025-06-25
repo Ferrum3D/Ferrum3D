@@ -33,11 +33,12 @@ namespace FE::Graphics::Common
 
         if (const auto iter = m_imagesMap.find(descHash); iter != m_imagesMap.end())
         {
+            Core::RenderTarget* result = iter->second.Get();
             m_imagesMap.erase(iter);
-            return iter->second.Get();
+            return result;
         }
 
-        const auto result = m_resourcePool->CreateRenderTarget(name, desc);
+        Core::RenderTarget* result = m_resourcePool->CreateRenderTarget(name, desc);
         ImageInfo& createdImageInfo = m_createdImages.push_back();
         createdImageInfo.m_image = result;
         createdImageInfo.m_descHash = descHash;
@@ -54,11 +55,12 @@ namespace FE::Graphics::Common
 
         if (const auto iter = m_buffersMap.find(descHash); iter != m_buffersMap.end())
         {
+            Core::Buffer* result = iter->second.Get();
             m_buffersMap.erase(iter);
-            return iter->second.Get();
+            return result;
         }
 
-        const auto result = m_resourcePool->CreateBuffer(name, desc);
+        Core::Buffer* result = m_resourcePool->CreateBuffer(name, desc);
         BufferInfo& createdBufferInfo = m_createdBuffers.push_back();
         createdBufferInfo.m_buffer = result;
         createdBufferInfo.m_descHash = descHash;

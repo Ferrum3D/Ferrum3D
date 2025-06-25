@@ -1,24 +1,12 @@
 ﻿#pragma once
-#include <FeCore/Jobs/WaitGroup.h>
 #include <FeCore/Math/Aabb.h>
-#include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/InputStreamLayout.h>
+#include <Graphics/Core/PipelineBase.h>
 #include <Graphics/Core/PipelineStates.h>
 #include <Graphics/Core/ShaderStage.h>
 
 namespace FE::Graphics::Core
 {
-    struct ShaderModule;
-
-
-    enum class PipelineStatus : uint32_t
-    {
-        kNotReady,
-        kReady,
-        kError,
-    };
-
-
     struct GraphicsPipelineDesc final
     {
         Env::Name m_shaders[festd::to_underlying(ShaderStage::kGraphicsCount)];
@@ -48,7 +36,7 @@ namespace FE::Graphics::Core
             for (const Env::Name shader : m_shaders)
                 hasher.UpdateRaw(shader.GetHash());
 
-            hasher.UpdateRaw(DefaultHash(&m_rtvFormats, m_renderTargetCount * sizeof(Format)));
+            hasher.Update(&m_rtvFormats, m_renderTargetCount * sizeof(Format));
 
             if (m_depthStencil.m_depthTestEnabled || m_depthStencil.m_stencilTestEnabled)
                 hasher.Update(festd::to_underlying(m_dsvFormat));
@@ -77,7 +65,8 @@ namespace FE::Graphics::Core
         GraphicsPipelineDesc& SetRTVFormats(const festd::span<const Format> formats)
         {
             FE_Assert(formats.size() <= Limits::Pipeline::kMaxColorAttachments);
-            std::copy(formats.begin(), formats.end(), m_rtvFormats);
+            memcpy(m_rtvFormats, formats.data(), formats.size_bytes());
+            m_renderTargetCount = static_cast<int32_t>(formats.size());
             return *this;
         }
 
@@ -127,7 +116,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct GraphicsPipeline : public DeviceObject
+    struct GraphicsPipeline : public PipelineBase
     {
         FE_RTTI_Class(GraphicsPipeline, "4EBE406C-C4D7-40E5-9485-91C18C8C2527");
 
@@ -138,24 +127,7 @@ namespace FE::Graphics::Core
             return m_desc;
         }
 
-        [[nodiscard]] PipelineStatus GetStatus() const
-        {
-            return m_status.load(std::memory_order_acquire);
-        }
-
-        [[nodiscard]] bool IsReady() const
-        {
-            return m_status.load(std::memory_order_acquire) == PipelineStatus::kReady;
-        }
-
-        [[nodiscard]] WaitGroup* GetCompletionWaitGroup() const
-        {
-            return m_completionWaitGroup.Get();
-        }
-
     protected:
-        std::atomic<PipelineStatus> m_status = PipelineStatus::kNotReady;
         GraphicsPipelineDesc m_desc;
-        Rc<WaitGroup> m_completionWaitGroup;
     };
 } // namespace FE::Graphics::Core

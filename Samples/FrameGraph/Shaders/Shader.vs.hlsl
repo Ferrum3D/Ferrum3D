@@ -23,7 +23,7 @@ struct Constants
 [[vk::push_constant]] Constants GConstants;
 
 
-PixelAttributes main_vs(const in VertexInput input)
+PixelAttributes main(const in VertexInput input)
 {
     PixelAttributes output;
     output.m_pos = mul(float4(input.m_pos, 1.0f), GConstants.m_worldTransform);

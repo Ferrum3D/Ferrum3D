@@ -1,5 +1,6 @@
 #pragma once
 #include <festd/string.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Core
 {

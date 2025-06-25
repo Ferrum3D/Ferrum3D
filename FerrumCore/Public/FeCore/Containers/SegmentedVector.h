@@ -328,6 +328,15 @@ namespace FE
             new (push_back_uninitialized()) T(festd::move(value));
         }
 
+        void pop_back()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            --m_size;
+            if constexpr (!std::is_trivially_destructible_v<T>)
+                m_segments[m_size / kElementsPerSegment][m_size % kElementsPerSegment].~T();
+        }
+
         void resize(const uint32_t newSize, const T& value = T{})
         {
             if (newSize > m_size)
@@ -404,6 +413,38 @@ namespace FE
         [[nodiscard]] T** segments() const
         {
             return m_segments;
+        }
+
+        [[nodiscard]] T& back()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            const uint32_t index = m_size - 1;
+            const uint32_t segmentIndex = index / kElementsPerSegment;
+            const uint32_t elementIndex = index % kElementsPerSegment;
+            return m_segments[segmentIndex][elementIndex];
+        }
+
+        [[nodiscard]] const T& back() const
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            const uint32_t index = m_size - 1;
+            const uint32_t segmentIndex = index / kElementsPerSegment;
+            const uint32_t elementIndex = index % kElementsPerSegment;
+            return m_segments[segmentIndex][elementIndex];
+        }
+
+        [[nodiscard]] T& front()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+            return m_segments[0][0];
+        }
+
+        [[nodiscard]] const T& front() const
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+            return m_segments[0][0];
         }
 
         [[nodiscard]] uint32_t size() const

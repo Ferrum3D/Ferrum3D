@@ -5,9 +5,6 @@
 
 namespace FE::Graphics::Core
 {
-    constexpr auto kMainDepthTargetFormat = Format::kD32_SFLOAT_S8_UINT;
-
-
     struct ViewportDesc final
     {
         uint32_t m_width = 0;
@@ -24,9 +21,6 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;
 
         virtual Format GetColorTargetFormat() = 0;
-        virtual Format GetDepthTargetFormat() = 0;
-
         virtual RenderTarget* GetCurrentColorTarget() = 0;
-        virtual RenderTarget* GetDepthTarget() = 0;
     };
 } // namespace FE::Graphics::Core

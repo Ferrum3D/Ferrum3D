@@ -107,6 +107,22 @@ namespace FE::Graphics::Core
     };
 
 
+    enum class ImageAccessType : uint32_t
+    {
+        kUndefined,
+        kTransferDestination,
+        kUnorderedAccess,
+        kColorTarget,
+        kDepthStencilTarget,
+        kTransferSource,
+        kShaderResource,
+        kDepthRead,
+        kCount,
+    };
+
+    static_assert(festd::to_underlying(ImageAccessType::kCount) == festd::to_underlying(ImageReadType::kCount));
+
+
     enum class BufferWriteType : uint32_t
     {
         kUndefined,
@@ -123,6 +139,20 @@ namespace FE::Graphics::Core
         kIndirectArgument,
         kCount,
     };
+
+
+    enum class BufferAccessType : uint32_t
+    {
+        kUndefined,
+        kTransferDestination,
+        kUnorderedAccess,
+        kTransferSource,
+        kShaderResource,
+        kIndirectArgument,
+        kCount,
+    };
+
+    static_assert(festd::to_underlying(BufferAccessType::kCount) == festd::to_underlying(BufferReadType::kCount));
 
 
     struct [[nodiscard]] SamplerDescriptor final : public TypedHandle<SamplerDescriptor, uint32_t>

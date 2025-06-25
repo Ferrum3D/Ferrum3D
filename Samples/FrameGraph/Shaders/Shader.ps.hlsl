@@ -20,7 +20,7 @@ SamplerState GSamplers[] : register(s0);
 Texture2D GTextures[] : register(t1);
 
 
-void main_ps(const in PixelAttributes input, out float4 output : SV_Target0)
+void main(const in PixelAttributes input, out float4 output : SV_Target0)
 {
     const Texture2D texture = GTextures[GConstants.m_textureIndex];
     const SamplerState sampler = GSamplers[GConstants.m_samplerIndex];

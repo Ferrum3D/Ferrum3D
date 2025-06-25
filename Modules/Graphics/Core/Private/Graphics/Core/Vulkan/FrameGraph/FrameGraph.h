@@ -16,9 +16,10 @@ namespace FE::Graphics::Vulkan
         Core::SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
 
     private:
+        void PrepareSetup() override;
         void PrepareExecute() override;
         void FinishExecute() override;
-        void FinishPassExecute(const PassData& pass) override;
+        void PreparePassExecute(uint32_t passIndex) override;
 
         BindlessManager* m_bindlessManager = nullptr;
     };

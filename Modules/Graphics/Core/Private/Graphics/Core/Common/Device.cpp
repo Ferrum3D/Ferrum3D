@@ -1,4 +1,5 @@
-﻿#include <Graphics/Core/Common/Device.h>
+﻿#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Resource.h>
@@ -97,21 +98,30 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        std::lock_guard lock{ m_disposeQueueLock };
-        for (uint32_t i = 0; i < m_disposeQueue.size();)
-        {
-            // m_logger->LogInfo("Trying to delete object at {}, frames left: {}...",
-            //                   reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object),
-            //                   m_disposeQueue[i].m_framesLeft);
-            if (--m_disposeQueue[i].m_framesLeft > 0)
-            {
-                ++i;
-                continue;
-            }
+        Memory::FiberTempAllocator temp;
 
-            m_disposeQueue[i].m_object->DoDispose();
-            // m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object));
-            m_disposeQueue.erase_unsorted(m_disposeQueue.begin() + i);
+        // Copy to avoid deadlocks
+        festd::pmr::vector<Core::DeviceObject*> objectsToDispose{ &temp };
+        {
+            std::lock_guard lock{ m_disposeQueueLock };
+            for (uint32_t i = 0; i < m_disposeQueue.size();)
+            {
+                // m_logger->LogInfo("Trying to delete object at {}, frames left: {}...",
+                //                   reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object),
+                //                   m_disposeQueue[i].m_framesLeft);
+                if (--m_disposeQueue[i].m_framesLeft > 0)
+                {
+                    ++i;
+                    continue;
+                }
+
+                objectsToDispose.push_back(m_disposeQueue[i].m_object);
+                // m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object));
+                m_disposeQueue.erase_unsorted(m_disposeQueue.begin() + i);
+            }
         }
+
+        for (Core::DeviceObject* object : objectsToDispose)
+            object->DoDispose();
     }
 } // namespace FE::Graphics::Common

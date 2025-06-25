@@ -60,9 +60,7 @@ namespace FE::Graphics::Vulkan
 
         festd::pmr::vector<VkDescriptorBindingFlags> descriptorBindingFlags{ &temp };
         descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-        descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT
-                                         | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
-                                         | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+        descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI = {};
         flagsCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
@@ -177,20 +175,8 @@ namespace FE::Graphics::Vulkan
 
     VkDescriptorSet BindlessManager::AllocateDescriptorSet() const
     {
-        Memory::FiberTempAllocator temp;
-
-        festd::pmr::vector<uint32_t> descriptorCounts{ &temp };
-        descriptorCounts.push_back(kSamplerCount);
-        descriptorCounts.push_back(kTextureSRVCount);
-
-        VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescriptorCountAllocateInfo = {};
-        variableDescriptorCountAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
-        variableDescriptorCountAllocateInfo.descriptorSetCount = 1;
-        variableDescriptorCountAllocateInfo.pDescriptorCounts = descriptorCounts.data();
-
-        VkDescriptorSetAllocateInfo allocInfo;
+        VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.pNext = &variableDescriptorCountAllocateInfo;
         allocInfo.descriptorPool = m_descriptorPool;
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &m_descriptorSetLayout;

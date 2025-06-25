@@ -10,14 +10,14 @@ namespace FE::Graphics::Vulkan
     struct BufferBarrierDesc final
     {
         VkBuffer m_buffer = VK_NULL_HANDLE;
-        uint32_t m_sourceAccess : 16;
-        uint32_t m_destAccess : 16;
+        Core::BufferAccessType m_sourceAccess : 16;
+        Core::BufferAccessType m_destAccess : 16;
         Core::HardwareQueueKindFlags m_sourceQueueKind : 16;
         Core::HardwareQueueKindFlags m_destQueueKind : 16;
 
         BufferBarrierDesc()
-            : m_sourceAccess(0)
-            , m_destAccess(0)
+            : m_sourceAccess(Core::BufferAccessType::kUndefined)
+            , m_destAccess(Core::BufferAccessType::kUndefined)
             , m_sourceQueueKind(Core::HardwareQueueKindFlags::kNone)
             , m_destQueueKind(Core::HardwareQueueKindFlags::kNone)
         {
@@ -33,15 +33,16 @@ namespace FE::Graphics::Vulkan
     struct ImageBarrierDesc final
     {
         VkImage m_image = VK_NULL_HANDLE;
-        uint32_t m_sourceAccess : 16;
-        uint32_t m_destAccess : 16;
+        Core::ImageAccessType m_sourceAccess : 16;
+        Core::ImageAccessType m_destAccess : 16;
         Core::HardwareQueueKindFlags m_sourceQueueKind : 16;
         Core::HardwareQueueKindFlags m_destQueueKind : 16;
         Core::ImageSubresource m_subresource = {};
+        Core::Format m_format = Core::Format::kUndefined;
 
         ImageBarrierDesc()
-            : m_sourceAccess(0)
-            , m_destAccess(0)
+            : m_sourceAccess(Core::ImageAccessType::kUndefined)
+            , m_destAccess(Core::ImageAccessType::kUndefined)
             , m_sourceQueueKind(Core::HardwareQueueKindFlags::kNone)
             , m_destQueueKind(Core::HardwareQueueKindFlags::kNone)
         {

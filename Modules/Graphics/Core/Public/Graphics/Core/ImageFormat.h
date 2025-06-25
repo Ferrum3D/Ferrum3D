@@ -9,20 +9,8 @@ namespace FE::Graphics::Core
         kColor,
         kDepth,
         kStencil,
+        kDepthStencil,
     };
-
-
-    enum class ImageAspectFlags : uint32_t
-    {
-        kNone = 0,
-        kColor = 1 << festd::to_underlying(ImageAspect::kColor),
-        kDepth = 1 << festd::to_underlying(ImageAspect::kDepth),
-        kStencil = 1 << festd::to_underlying(ImageAspect::kStencil),
-        kDepthStencil = kDepth | kStencil,
-        kAll = kDepth | kStencil | kColor,
-    };
-
-    FE_ENUM_OPERATORS(ImageAspectFlags);
 
 
     enum class FormatType : uint32_t
@@ -48,7 +36,7 @@ namespace FE::Graphics::Core
     namespace Internal
     {
         constexpr uint32_t MakeFormatEnumValue(const FormatType type, const uint32_t byteSize,
-                                               const FormatChannelCount channelCount, const ImageAspectFlags aspectFlags,
+                                               const FormatChannelCount channelCount, const ImageAspect aspectFlags,
                                                const bool blockCompressed, const bool isSigned, const bool isSRGB,
                                                const uint32_t index)
         {
@@ -70,7 +58,7 @@ namespace FE::Graphics::Core
     Internal::MakeFormatEnumValue(FormatType::k##type,                                                                           \
                                   static_cast<uint32_t>(byteSize),                                                               \
                                   FormatChannelCount::k##channelCount,                                                           \
-                                  ImageAspectFlags::k##aspectFlags,                                                              \
+                                  ImageAspect::k##aspectFlags,                                                                   \
                                   static_cast<bool>(bc),                                                                         \
                                   static_cast<bool>(sign),                                                                       \
                                   static_cast<bool>(srgb),                                                                       \
@@ -305,13 +293,18 @@ namespace FE::Graphics::Core
             return CalculateImageByteSize(size, CalculateMipCount(size));
         }
 
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_format != Format::kUndefined;
+        }
+
         struct
         {
             uint32_t m_formatIndex : 17;
             uint32_t m_isSRGB : 1;
             uint32_t m_isSigned : 1;
             uint32_t m_isBlockCompressed : 1;
-            ImageAspectFlags m_aspectFlags : 3;
+            ImageAspect m_aspectFlags : 3;
             FormatChannelCount m_channelCount : 2;
             uint32_t m_texelByteSize : 5;
             FormatType m_type : 2;

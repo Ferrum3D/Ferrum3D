@@ -106,7 +106,7 @@ namespace FE::Graphics::Vulkan
 
         shaderInfo->m_name = desc.m_name;
         shaderInfo->m_stage = desc.m_stage;
-        shaderInfo->m_entryPoint = GetShaderEntryPointName(desc.m_stage);
+        shaderInfo->m_entryPoint = "main";
         shaderInfo->m_definesStorage.Init(desc.m_defines);
         shaderInfo->m_completionWaitGroup = WaitGroup::Create();
 

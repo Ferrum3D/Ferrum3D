@@ -45,8 +45,8 @@ namespace FE::Graphics::Core
         virtual RenderTarget* GetRenderTarget(RenderTargetHandle image) const = 0;
         virtual Buffer* GetBuffer(BufferHandle buffer) const = 0;
 
-        virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image) = 0;
-        virtual BufferHandle ImportBuffer(Buffer* buffer) = 0;
+        virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image, ImageAccessType access) = 0;
+        virtual BufferHandle ImportBuffer(Buffer* buffer, BufferAccessType access) = 0;
 
         virtual ImageSRVDescriptor GetSRV(Texture* texture, ImageSubresource subresource) = 0;
         virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
@@ -99,6 +99,16 @@ namespace FE::Graphics::Core
         BufferHandle CreateBuffer(const Env::Name name, const BufferDesc& desc) const
         {
             return m_graph->CreateBuffer(m_passIndex, name, desc);
+        }
+
+        template<class T>
+        BufferHandle CreateStructuredBuffer(const Env::Name name, const uint32_t elementCount) const
+        {
+            BufferDesc desc;
+            desc.m_size = sizeof(T) * elementCount;
+            desc.m_flags = BindFlags::kUnorderedAccess | BindFlags::kShaderResource;
+            desc.m_usage = ResourceUsage::kDeviceOnly;
+            return CreateBuffer(name, desc);
         }
 
         RenderTargetHandle CreateImage(const Env::Name name, const ImageDesc& desc) const

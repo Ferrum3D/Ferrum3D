@@ -5,19 +5,30 @@
 
 namespace FE::Graphics::Vulkan
 {
+    inline VkImageAspectFlags TranslateImageAspectFlags(const Core::ImageAspect aspect)
+    {
+        switch (aspect)
+        {
+        default:
+            FE_DebugBreak();
+            [[fallthrough]];
+
+        case Core::ImageAspect::kColor:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+        case Core::ImageAspect::kDepth:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+        case Core::ImageAspect::kStencil:
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
+        case Core::ImageAspect::kDepthStencil:
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }
+
+
     inline VkImageAspectFlags TranslateImageAspectFlags(const Core::Format format)
     {
         const Core::FormatInfo formatInfo{ format };
-
-        VkImageAspectFlags aspectMask = 0;
-        if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kColor))
-            aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-        if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kDepth))
-            aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kStencil))
-            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-
-        return aspectMask;
+        return TranslateImageAspectFlags(formatInfo.m_aspectFlags);
     }
 
 

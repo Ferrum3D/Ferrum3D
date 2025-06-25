@@ -1,6 +1,8 @@
 #include <Graphics/Core/Vulkan/BindlessManager.h>
+#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
@@ -22,10 +24,7 @@ namespace FE::Graphics::Vulkan
         if (subresource == Core::ImageSubresource::kInvalid)
         {
             const Core::ImageDesc textureDesc = textureImpl->GetDesc();
-            subresource.m_mostDetailedMipSlice = 0;
-            subresource.m_mipSliceCount = textureDesc.m_mipSliceCount;
-            subresource.m_firstArraySlice = 0;
-            subresource.m_arraySize = textureDesc.m_arraySize;
+            subresource = Core::ImageSubresource::CreateWhole(textureDesc);
         }
 
         const Core::ImageSubresourceIterator subresourceIterator{ subresource };
@@ -42,8 +41,8 @@ namespace FE::Graphics::Vulkan
                 barrier.m_subresource.m_mipSliceCount = 1;
                 barrier.m_subresource.m_firstArraySlice = arrayIndex;
                 barrier.m_subresource.m_arraySize = 1;
-                barrier.m_sourceAccess = festd::to_underlying(Core::ImageWriteType::kTransferDestination);
-                barrier.m_destAccess = festd::to_underlying(Core::ImageReadType::kShaderResource);
+                barrier.m_sourceAccess = Core::ImageAccessType::kTransferDestination;
+                barrier.m_destAccess = Core::ImageAccessType::kShaderResource;
                 barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kTransfer;
                 barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
                 context->m_resourceBarrierBatcher.AddBarrier(barrier);
@@ -64,12 +63,18 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraph::PrepareExecute()
+    void FrameGraph::PrepareSetup()
     {
         FE_PROFILER_ZONE();
 
         Viewport* viewport = ImplCast(m_viewport.Get());
         viewport->PrepareFrame();
+    }
+
+
+    void FrameGraph::PrepareExecute()
+    {
+        FE_PROFILER_ZONE();
 
         FrameGraphContext* context = Rc<FrameGraphContext>::New(&m_linearAllocator, m_device, this, m_bindlessManager);
         context->Init(ImplCast(m_viewport.Get())->GetCurrentGraphicsCommandBuffer());
@@ -95,9 +100,67 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraph::FinishPassExecute(const PassData& pass)
+    void FrameGraph::PreparePassExecute(const uint32_t passIndex)
     {
-        (void)pass;
-        ImplCast(m_currentContext.Get())->m_resourceBarrierBatcher.Flush();
+        FrameGraphContext* context = ImplCast(m_currentContext.Get());
+        auto& barriers = context->m_resourceBarrierBatcher;
+        auto& pass = m_passes[passIndex];
+
+        ResourceAccess* access = pass.m_accessesListHead;
+        while (access)
+        {
+            auto& resource = m_resources[access->m_resourceIndex];
+
+            if (resource.m_accessState == access->m_flags)
+            {
+                access = access->m_next;
+                continue;
+            }
+
+            switch (resource.m_resourceType)
+            {
+            default:
+            case Core::ResourceType::kTexture:
+            case Core::ResourceType::kUnknown:
+                FE_DebugBreak();
+                [[fallthrough]];
+
+            case Core::ResourceType::kBuffer:
+                {
+                    const auto* buffer = fe_assert_cast<Buffer*>(resource.m_resource.Get());
+
+                    BufferBarrierDesc barrier;
+                    barrier.m_buffer = buffer->GetNative();
+                    barrier.m_sourceAccess = static_cast<Core::BufferAccessType>(resource.m_accessState);
+                    barrier.m_destAccess = static_cast<Core::BufferAccessType>(access->m_flags);
+                    barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+                    barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+
+                    barriers.AddBarrier(barrier);
+                }
+                break;
+
+            case Core::ResourceType::kRenderTarget:
+                {
+                    const auto* renderTarget = fe_assert_cast<RenderTarget*>(resource.m_resource.Get());
+
+                    ImageBarrierDesc barrier;
+                    barrier.m_image = renderTarget->GetNative();
+                    barrier.m_subresource = Core::ImageSubresource::CreateWhole(renderTarget->GetDesc());
+                    barrier.m_sourceAccess = static_cast<Core::ImageAccessType>(resource.m_accessState);
+                    barrier.m_destAccess = static_cast<Core::ImageAccessType>(access->m_flags);
+                    barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+                    barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+
+                    barriers.AddBarrier(barrier);
+                }
+                break;
+            }
+
+            resource.m_accessState = access->m_flags;
+            access = access->m_next;
+        }
+
+        barriers.Flush();
     }
 } // namespace FE::Graphics::Vulkan

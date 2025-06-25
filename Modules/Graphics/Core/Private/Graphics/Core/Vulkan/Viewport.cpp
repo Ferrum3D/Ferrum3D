@@ -107,23 +107,30 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        void ImageMemoryBarrier(const VkCommandBuffer cmdbuffer, const VkImage image, const VkAccessFlags srcAccessMask,
-                                const VkAccessFlags dstAccessMask, const VkImageLayout oldImageLayout,
+        void ImageMemoryBarrier(const VkCommandBuffer cmdbuffer, const VkImage image, const VkAccessFlags2 srcAccessMask,
+                                const VkAccessFlags2 dstAccessMask, const VkImageLayout oldImageLayout,
                                 const VkImageLayout newImageLayout, const VkPipelineStageFlags srcStageMask,
                                 const VkPipelineStageFlags dstStageMask, const VkImageAspectFlags aspect)
         {
-            VkImageMemoryBarrier imageMemoryBarrier = {};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            VkImageMemoryBarrier2 imageMemoryBarrier = {};
+            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.srcAccessMask = srcAccessMask;
+            imageMemoryBarrier.srcStageMask = srcStageMask;
             imageMemoryBarrier.dstAccessMask = dstAccessMask;
+            imageMemoryBarrier.dstStageMask = dstStageMask;
             imageMemoryBarrier.oldLayout = oldImageLayout;
             imageMemoryBarrier.newLayout = newImageLayout;
             imageMemoryBarrier.image = image;
             imageMemoryBarrier.subresourceRange = { aspect, 0, 1, 0, 1 };
 
-            vkCmdPipelineBarrier(cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = 1;
+            dependencyInfo.pImageMemoryBarriers = &imageMemoryBarrier;
+
+            vkCmdPipelineBarrier2(cmdbuffer, &dependencyInfo);
         }
 
 
@@ -201,9 +208,6 @@ namespace FE::Graphics::Vulkan
 
         AcquireNextImage();
 
-        Image* colorTarget = m_renderTargets[m_imageIndex].Get();
-        Image* depthStencil = m_depthTarget.Get();
-
         const VkCommandBuffer commandBuffer = GetCurrentGraphicsCommandBuffer()->GetNative();
 
         VerifyVulkan(vkResetCommandBuffer(commandBuffer, 0));
@@ -211,25 +215,6 @@ namespace FE::Graphics::Vulkan
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-        ImageMemoryBarrier(commandBuffer,
-                           colorTarget->GetNative(),
-                           0,
-                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                           VK_IMAGE_LAYOUT_UNDEFINED,
-                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_IMAGE_ASPECT_COLOR_BIT);
-        ImageMemoryBarrier(commandBuffer,
-                           depthStencil->GetNative(),
-                           0,
-                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                           VK_IMAGE_LAYOUT_UNDEFINED,
-                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                           VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                           VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                           VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
 
 
@@ -407,10 +392,6 @@ namespace FE::Graphics::Vulkan
 
             m_renderTargets.push_back(image);
         }
-
-        const Core::ImageDesc depthTargetDesc = Core::ImageDesc::Img2D(width, height, Core::kMainDepthTargetFormat);
-        m_depthTarget = ImplCast(m_resourcePool->CreateRenderTarget("Swapchain Depth Stencil Target", depthTargetDesc));
-        m_depthTarget->SetImmediateDestroyPolicy();
     }
 
 
@@ -426,7 +407,6 @@ namespace FE::Graphics::Vulkan
         }
 
         m_renderTargets.clear();
-        m_depthTarget.Reset();
     }
 
 
@@ -459,21 +439,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::RenderTarget* Viewport::GetDepthTarget()
-    {
-        return m_depthTarget.Get();
-    }
-
-
     Core::Format Viewport::GetColorTargetFormat()
     {
         return m_rtvFormat;
-    }
-
-
-    Core::Format Viewport::GetDepthTargetFormat()
-    {
-        return Core::kMainDepthTargetFormat;
     }
 
 

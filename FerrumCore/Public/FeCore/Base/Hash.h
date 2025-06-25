@@ -224,7 +224,7 @@ namespace FE
             return *this;
         }
 
-        Hasher& UpdateRaw(const void* data, const size_t byteSize)
+        Hasher& Update(const void* data, const size_t byteSize)
         {
             return UpdateRaw(DefaultHash(data, byteSize));
         }

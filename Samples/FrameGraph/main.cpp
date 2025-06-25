@@ -111,7 +111,7 @@ private:
                 .SetPixelShader("Shader.ps.hlsl")
                 .SetVertexShader("Shader.vs.hlsl")
                 .SetRTVFormat(viewport->GetColorTargetFormat())
-                .SetDSVFormat(viewport->GetDepthTargetFormat())
+                .SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
                 .SetColorBlend(Core::TargetColorBlending::kDisabled)
                 .SetDepthStencil(Core::DepthStencilState::kDisabled)
                 .SetRasterization(Core::RasterizationState::kFillNoCull);
@@ -165,8 +165,6 @@ private:
 
             Memory::FiberTempAllocator temp;
 
-            const auto pass = builder.AddPass("DrawTriangle");
-
             // Geometry views and draw arguments are copied into the FrameGraph's internal buffer
             // that lives until the rendering thread finishes. So we don't need to store this data in the
             // blackboard.
@@ -185,12 +183,26 @@ private:
             const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
             const RectF viewport{ 0, 0, static_cast<float>(viewportDesc.m_width), static_cast<float>(viewportDesc.m_height) };
 
-            const Core::RenderTargetHandle colorTarget =
-                pass.Write(graph.GetMainColorTarget(), Core::ImageWriteType::kColorTarget);
-            const Core::RenderTargetHandle depthTarget =
-                pass.Write(graph.GetMainDepthStencilTarget(), Core::ImageWriteType::kDepthStencilTarget);
+            // const auto computePass = builder.AddPass("TestCompute");
+            //
+            // const Core::BufferHandle instanceData = computePass.CreateStructuredBuffer<Matrix4x4F>("InstanceDataBuffer", 2);
+            //
+            // computePass.SetFunction([instanceData](Core::FrameGraphContext* context) {
+            //     FE_PROFILER_ZONE();
+            //
+            //     auto* frameGraph = context->GetFrameGraph();
+            //     auto& localBlackboard = frameGraph->GetBlackboard();
+            //     const auto& localPassData = localBlackboard.GetRequired<PassData>();
+            // });
 
-            pass.SetFunction([colorTarget, depthTarget, viewport, t = m_texture](Core::FrameGraphContext* context) {
+            const auto graphicsPass = builder.AddPass("DrawTriangle");
+
+            const Core::RenderTargetHandle colorTarget =
+                graphicsPass.Write(graph.GetMainColorTarget(), Core::ImageWriteType::kColorTarget);
+            const Core::RenderTargetHandle depthTarget =
+                graphicsPass.Write(graph.GetMainDepthStencilTarget(), Core::ImageWriteType::kDepthStencilTarget);
+
+            graphicsPass.SetFunction([colorTarget, depthTarget, viewport, t = m_texture](Core::FrameGraphContext* context) {
                 FE_PROFILER_ZONE();
 
                 auto* frameGraph = context->GetFrameGraph();

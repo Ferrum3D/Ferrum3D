@@ -181,7 +181,7 @@ namespace FE::Graphics::Vulkan
         {
             const RenderTarget* image = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_renderTargets[rtIndex]));
             const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
-            FE_Assert(Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kColor));
+            FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
 
             auto& attachmentInfo = colorAttachments[rtIndex];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -193,7 +193,7 @@ namespace FE::Graphics::Vulkan
 
         const RenderTarget* depthImage = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_depthStencil));
         const Core::FormatInfo formatInfo{ depthImage->GetDesc().m_imageFormat };
-        FE_Assert(Bit::AllSet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kDepthStencil));
+        FE_Assert(Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kDepthStencil));
 
         VkRenderingAttachmentInfo depthAttachment{};
         depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

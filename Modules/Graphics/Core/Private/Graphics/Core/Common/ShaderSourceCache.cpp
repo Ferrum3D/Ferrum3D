@@ -105,12 +105,6 @@ namespace FE::Graphics::Core
                 stage = ShaderStage::kPixel;
             else if (stem.ends_with(".vs"))
                 stage = ShaderStage::kVertex;
-            else if (stem.ends_with(".hs"))
-                stage = ShaderStage::kHull;
-            else if (stem.ends_with(".ds"))
-                stage = ShaderStage::kDomain;
-            else if (stem.ends_with(".gs"))
-                stage = ShaderStage::kGeometry;
             else if (stem.ends_with(".cs"))
                 stage = ShaderStage::kCompute;
 

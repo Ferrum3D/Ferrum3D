@@ -86,7 +86,6 @@
     Public/FeCore/Memory/RefCount.h
     Public/FeCore/Memory/SegmentedBuffer.h
 
-    Public/FeCore/Modules/ApplicationModule.h
     Public/FeCore/Modules/Configuration.h
     Public/FeCore/Modules/Environment.h
     Public/FeCore/Modules/EnvironmentPrivate.h
@@ -161,7 +160,6 @@ set(COMMON_SOURCES
     Private/FeCore/Memory/tlsf.c
     Private/FeCore/Memory/tlsf.h
 
-    Private/FeCore/Modules/ApplicationModule.cpp
     Private/FeCore/Modules/Configuration.cpp
     Private/FeCore/Modules/Environment.cpp
     Private/FeCore/Modules/LibraryLoader.cpp

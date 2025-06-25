@@ -9,66 +9,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    namespace
-    {
-        VkDescriptorType GetDescriptorType(const Core::ShaderResourceType type)
-        {
-            switch (type)
-            {
-            case Core::ShaderResourceType::kConstantBuffer:
-                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            case Core::ShaderResourceType::kTextureSRV:
-                return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            case Core::ShaderResourceType::kTextureUAV:
-                return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            case Core::ShaderResourceType::kBufferSRV:
-                return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-            case Core::ShaderResourceType::kBufferUAV:
-                return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            case Core::ShaderResourceType::kSampler:
-                return VK_DESCRIPTOR_TYPE_SAMPLER;
-            case Core::ShaderResourceType::kNone:
-            default:
-                FE_AssertMsg(false, "Invalid ShaderResourceType");
-                return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-            }
-        }
-
-
-        DescriptorSetLayoutHandle CreateDescriptorSetLayout(DescriptorAllocator* descriptorAllocator,
-                                                            const festd::span<const Core::ShaderReflection*> shaderReflections)
-        {
-            FE_PROFILER_ZONE();
-
-            Memory::FiberTempAllocator temp;
-
-            festd::pmr::vector<VkDescriptorSetLayoutBinding> vkBindings{ &temp };
-            vkBindings.reserve(shaderReflections.size() * 8);
-
-            for (const Core::ShaderReflection* pReflection : shaderReflections)
-            {
-                const festd::span bindings = pReflection->GetResourceBindings();
-                for (const Core::ShaderResourceBinding& binding : bindings)
-                {
-                    VkDescriptorSetLayoutBinding& vkBinding = vkBindings.emplace_back();
-                    vkBinding.binding = binding.m_slot;
-                    vkBinding.descriptorCount = binding.m_count;
-                    vkBinding.descriptorType = GetDescriptorType(binding.m_type);
-                    vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
-                }
-            }
-
-            VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
-            layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutCreateInfo.bindingCount = vkBindings.size();
-            layoutCreateInfo.pBindings = vkBindings.data();
-            return descriptorAllocator->CreateDescriptorSetLayout(layoutCreateInfo);
-        }
-    } // namespace
-
-
-    GraphicsPipeline::GraphicsPipeline(Core::Device* device, DescriptorAllocator* descriptorAllocator)
-        : m_descriptorAllocator(descriptorAllocator)
+    GraphicsPipeline::GraphicsPipeline(Core::Device* device)
     {
         m_device = device;
     }

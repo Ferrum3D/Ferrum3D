@@ -14,6 +14,8 @@
 #define FE_PROFILER_ZONE() ZoneScoped
 #define FE_PROFILER_ZONE_NAMED(name) ZoneScopedN(name)
 
+#define FE_PROFILER_LOCK(type, name) TracyLockable(type, name)
+
 #define FE_PROFILER_ZONE_TEXT(...)                                                                                               \
     ZoneScoped;                                                                                                                  \
     ZoneTextF(__VA_ARGS__)

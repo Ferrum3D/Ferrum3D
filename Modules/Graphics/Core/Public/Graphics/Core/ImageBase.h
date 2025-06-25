@@ -12,106 +12,6 @@ namespace FE::Graphics::Core
     };
 
 
-    struct ImageSubresource final
-    {
-        uint32_t m_mostDetailedMipSlice : 4;
-        uint32_t m_mipSliceCount : 4;
-        uint32_t m_firstArraySlice : 12;
-        uint32_t m_arraySize : 12;
-
-        static const ImageSubresource kInvalid;
-
-        friend bool operator==(const ImageSubresource& lhs, const ImageSubresource& rhs)
-        {
-            return festd::bit_cast<uint32_t>(lhs) == festd::bit_cast<uint32_t>(rhs);
-        }
-
-        friend bool operator!=(const ImageSubresource& lhs, const ImageSubresource& rhs)
-        {
-            return festd::bit_cast<uint32_t>(lhs) != festd::bit_cast<uint32_t>(rhs);
-        }
-    };
-
-    inline const ImageSubresource ImageSubresource::kInvalid = festd::bit_cast<ImageSubresource>(kInvalidIndex);
-
-
-    struct ImageSubresourceIterator final
-    {
-        struct Slice final
-        {
-            int32_t m_mipIndex : 16;
-            int32_t m_arrayIndex : 16;
-        };
-
-        struct Iter final
-        {
-            ImageSubresource m_subresource;
-            Slice m_currentSlice;
-
-            Iter operator++()
-            {
-                ++m_currentSlice.m_mipIndex;
-
-                const uint32_t lastMipSlice = m_subresource.m_mostDetailedMipSlice + m_subresource.m_mipSliceCount;
-                if (m_currentSlice.m_mipIndex == static_cast<int32_t>(lastMipSlice))
-                {
-                    ++m_currentSlice.m_arrayIndex;
-                    m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
-                }
-
-                return *this;
-            }
-
-            Iter operator++(int)
-            {
-                const Iter iter = *this;
-                ++*this;
-                return iter;
-            }
-
-            [[nodiscard]] Slice operator*() const
-            {
-                return m_currentSlice;
-            }
-
-            [[nodiscard]] bool operator==(const Iter other) const
-            {
-                return festd::bit_cast<uint32_t>(m_currentSlice) == festd::bit_cast<uint32_t>(other.m_currentSlice);
-            }
-
-            [[nodiscard]] bool operator!=(const Iter other) const
-            {
-                return festd::bit_cast<uint32_t>(m_currentSlice) != festd::bit_cast<uint32_t>(other.m_currentSlice);
-            }
-        };
-
-        ImageSubresource m_subresource;
-
-        explicit ImageSubresourceIterator(const ImageSubresource subresource)
-            : m_subresource(subresource)
-        {
-        }
-
-        [[nodiscard]] Iter begin() const
-        {
-            Iter iter;
-            iter.m_subresource = m_subresource;
-            iter.m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
-            iter.m_currentSlice.m_arrayIndex = static_cast<int32_t>(m_subresource.m_firstArraySlice);
-            return iter;
-        }
-
-        [[nodiscard]] Iter end() const
-        {
-            Iter iter;
-            iter.m_subresource = m_subresource;
-            iter.m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
-            iter.m_currentSlice.m_arrayIndex = static_cast<int32_t>(m_subresource.m_firstArraySlice + m_subresource.m_arraySize);
-            return iter;
-        }
-    };
-
-
     struct ImageDesc final
     {
         uint32_t m_width : 14;
@@ -220,4 +120,121 @@ namespace FE::Graphics::Core
         desc.SetSize({ width, height, depth });
         return desc;
     }
+
+
+    struct ImageSubresource final
+    {
+        uint32_t m_mostDetailedMipSlice : 4;
+        uint32_t m_mipSliceCount : 4;
+        uint32_t m_firstArraySlice : 11;
+        uint32_t m_arraySize : 11;
+        ImageAspect m_aspect : 2;
+
+        static ImageSubresource CreateWhole(const ImageDesc imageDesc)
+        {
+            ImageSubresource subresource;
+            subresource.m_mostDetailedMipSlice = 0;
+            subresource.m_mipSliceCount = imageDesc.m_mipSliceCount;
+            subresource.m_firstArraySlice = 0;
+            subresource.m_arraySize = imageDesc.m_arraySize;
+            subresource.m_aspect = FormatInfo{ imageDesc.m_imageFormat }.m_aspectFlags;
+            return subresource;
+        }
+
+        static const ImageSubresource kInvalid;
+
+        friend bool operator==(const ImageSubresource& lhs, const ImageSubresource& rhs)
+        {
+            return festd::bit_cast<uint32_t>(lhs) == festd::bit_cast<uint32_t>(rhs);
+        }
+
+        friend bool operator!=(const ImageSubresource& lhs, const ImageSubresource& rhs)
+        {
+            return festd::bit_cast<uint32_t>(lhs) != festd::bit_cast<uint32_t>(rhs);
+        }
+    };
+
+    inline const ImageSubresource ImageSubresource::kInvalid = festd::bit_cast<ImageSubresource>(kInvalidIndex);
+
+
+    struct ImageSubresourceIterator final
+    {
+        struct Slice final
+        {
+            int32_t m_mipIndex : 16;
+            int32_t m_arrayIndex : 16;
+        };
+
+        struct Iter final
+        {
+            ImageSubresource m_subresource;
+            Slice m_currentSlice;
+
+            Iter operator++()
+            {
+                ++m_currentSlice.m_mipIndex;
+
+                const uint32_t lastMipSlice = m_subresource.m_mostDetailedMipSlice + m_subresource.m_mipSliceCount;
+                if (m_currentSlice.m_mipIndex == static_cast<int32_t>(lastMipSlice))
+                {
+                    ++m_currentSlice.m_arrayIndex;
+                    m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
+                }
+
+                return *this;
+            }
+
+            Iter operator++(int)
+            {
+                const Iter iter = *this;
+                ++*this;
+                return iter;
+            }
+
+            [[nodiscard]] Slice operator*() const
+            {
+                return m_currentSlice;
+            }
+
+            [[nodiscard]] bool operator==(const Iter other) const
+            {
+                return festd::bit_cast<uint32_t>(m_currentSlice) == festd::bit_cast<uint32_t>(other.m_currentSlice);
+            }
+
+            [[nodiscard]] bool operator!=(const Iter other) const
+            {
+                return festd::bit_cast<uint32_t>(m_currentSlice) != festd::bit_cast<uint32_t>(other.m_currentSlice);
+            }
+        };
+
+        ImageSubresource m_subresource;
+
+        explicit ImageSubresourceIterator(const ImageSubresource subresource)
+            : m_subresource(subresource)
+        {
+        }
+
+        explicit ImageSubresourceIterator(const ImageDesc imageDesc)
+            : m_subresource(ImageSubresource::CreateWhole(imageDesc))
+        {
+        }
+
+        [[nodiscard]] Iter begin() const
+        {
+            Iter iter;
+            iter.m_subresource = m_subresource;
+            iter.m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
+            iter.m_currentSlice.m_arrayIndex = static_cast<int32_t>(m_subresource.m_firstArraySlice);
+            return iter;
+        }
+
+        [[nodiscard]] Iter end() const
+        {
+            Iter iter;
+            iter.m_subresource = m_subresource;
+            iter.m_currentSlice.m_mipIndex = static_cast<int32_t>(m_subresource.m_mostDetailedMipSlice);
+            iter.m_currentSlice.m_arrayIndex = static_cast<int32_t>(m_subresource.m_firstArraySlice + m_subresource.m_arraySize);
+            return iter;
+        }
+    };
 } // namespace FE::Graphics::Core

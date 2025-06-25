@@ -28,10 +28,7 @@ namespace FE::Graphics::Vulkan
         void Resize(uint32_t width, uint32_t height);
 
         Core::RenderTarget* GetCurrentColorTarget() override;
-        Core::RenderTarget* GetDepthTarget() override;
-
         Core::Format GetColorTargetFormat() override;
-        Core::Format GetDepthTargetFormat() override;
 
         void PrepareFrame();
 
@@ -76,8 +73,6 @@ namespace FE::Graphics::Vulkan
         festd::small_vector<Rc<Semaphore>> m_renderFinishedSemaphores;
         festd::small_vector<Rc<RenderTarget>> m_renderTargets;
         festd::small_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
-
-        Rc<RenderTarget> m_depthTarget;
     };
 
     FE_ENABLE_IMPL_CAST(Viewport);

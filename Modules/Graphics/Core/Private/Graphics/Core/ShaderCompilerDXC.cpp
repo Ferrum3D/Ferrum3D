@@ -41,17 +41,11 @@ namespace FE::Graphics::Core
             switch (stage)
             {
             case ShaderStage::kVertex:
-                return L"vs_6_6";
+                return L"vs_6_7";
             case ShaderStage::kPixel:
-                return L"ps_6_6";
-            case ShaderStage::kHull:
-                return L"hs_6_6";
-            case ShaderStage::kDomain:
-                return L"ds_6_6";
-            case ShaderStage::kGeometry:
-                return L"gs_6_6";
+                return L"ps_6_7";
             case ShaderStage::kCompute:
-                return L"cs_6_6";
+                return L"cs_6_7";
             case ShaderStage::kUndefined:
             default:
                 FE_Assert(false, "Invalid ShaderStage");
@@ -177,9 +171,8 @@ namespace FE::Graphics::Core
         const Str::Utf8ToUtf16 shaderNameUtf16{ shaderName.data(), shaderName.size(), &linearAllocator };
         compilerArgs.push_back(shaderNameUtf16.ToWideString());
 
-        const Str::Utf8ToUtf16 entryPointUtf16{ GetShaderEntryPointName(args.m_stage), &linearAllocator };
         compilerArgs.push_back(L"-E");
-        compilerArgs.push_back(entryPointUtf16.ToWideString());
+        compilerArgs.push_back(L"main");
 
         compilerArgs.push_back(L"-T");
         compilerArgs.push_back(GetShaderTargetProfile(args.m_stage));

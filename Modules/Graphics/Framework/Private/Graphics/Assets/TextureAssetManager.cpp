@@ -154,6 +154,8 @@ namespace FE::Graphics
             const Data::MipChainInfo mipChain = mipRequest.m_info;
             const Core::FormatInfo formatInfo{ request->m_header.m_desc.m_imageFormat };
 
+            FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
+
             uint32_t mipChainByteSize = 0;
             for (uint32_t j = 0; j < mipChain.m_mipSliceCount; ++j)
             {
@@ -203,6 +205,7 @@ namespace FE::Graphics
         subresource.m_mipSliceCount = mipInfo.m_mipSliceCount;
         subresource.m_firstArraySlice = mipInfo.m_arraySlice;
         subresource.m_arraySize = 1;
+        subresource.m_aspect = Core::ImageAspect::kColor;
         copyCommandListBuilder.UploadTexture(request->m_asset->m_resource.Get(), data, 0, subresource);
 
         const Rc uploadWaitGroup = WaitGroup::Create();
