@@ -40,6 +40,8 @@ namespace FE::Threading
                               Priority priority = Priority::kNormal, size_t stackSize = 0);
     void CloseThread(ThreadHandle& thread);
 
+    void Sleep(uint32_t milliseconds);
+
     uint64_t GetCurrentThreadID();
     uint64_t GetMainThreadID();
 

@@ -20,7 +20,7 @@ namespace FE::DI
         static ServiceActivator CreateFromFunction(ActivatorFunction&& func)
         {
             ServiceActivator result;
-            result.m_function = festd::move(func);
+            result.m_function = std::move(func);
             return result;
         }
 
@@ -102,13 +102,13 @@ namespace FE::DI
             template<class T, class... TArgs>
             FE_FORCE_INLINE std::enable_if_t<std::is_base_of_v<Memory::RefCountedObjectBase, T>, T*> NewImpl(TArgs&&... args)
             {
-                return Rc<T>::New(m_allocator, festd::forward<TArgs>(args)...);
+                return Rc<T>::New(m_allocator, std::forward<TArgs>(args)...);
             }
 
             template<class T, class... TArgs>
             FE_FORCE_INLINE std::enable_if_t<!std::is_base_of_v<Memory::RefCountedObjectBase, T>, T*> NewImpl(TArgs&&... args)
             {
-                return Memory::New<T>(m_allocator, festd::forward<TArgs>(args)...);
+                return Memory::New<T>(m_allocator, std::forward<TArgs>(args)...);
             }
 
             template<class T, class TArg>

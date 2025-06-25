@@ -9,5 +9,5 @@ namespace FE::festd
     using eastl::ring_buffer;
 
     template<class T, size_t TCapacity>
-    using small_ring_buffer = ring_buffer<T, eastl::fixed_vector<T, TCapacity>>;
+    using inline_ring_buffer = ring_buffer<T, eastl::fixed_vector<T, TCapacity>>;
 } // namespace FE::festd

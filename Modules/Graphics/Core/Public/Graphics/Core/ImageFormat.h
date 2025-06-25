@@ -9,20 +9,8 @@ namespace FE::Graphics::Core
         kColor,
         kDepth,
         kStencil,
+        kDepthStencil,
     };
-
-
-    enum class ImageAspectFlags : uint32_t
-    {
-        kNone = 0,
-        kColor = 1 << festd::to_underlying(ImageAspect::kColor),
-        kDepth = 1 << festd::to_underlying(ImageAspect::kDepth),
-        kStencil = 1 << festd::to_underlying(ImageAspect::kStencil),
-        kDepthStencil = kDepth | kStencil,
-        kAll = kDepth | kStencil | kColor,
-    };
-
-    FE_ENUM_OPERATORS(ImageAspectFlags);
 
 
     enum class FormatType : uint32_t
@@ -48,7 +36,7 @@ namespace FE::Graphics::Core
     namespace Internal
     {
         constexpr uint32_t MakeFormatEnumValue(const FormatType type, const uint32_t byteSize,
-                                               const FormatChannelCount channelCount, const ImageAspectFlags aspectFlags,
+                                               const FormatChannelCount channelCount, const ImageAspect aspectFlags,
                                                const bool blockCompressed, const bool isSigned, const bool isSRGB,
                                                const uint32_t index)
         {
@@ -70,7 +58,7 @@ namespace FE::Graphics::Core
     Internal::MakeFormatEnumValue(FormatType::k##type,                                                                           \
                                   static_cast<uint32_t>(byteSize),                                                               \
                                   FormatChannelCount::k##channelCount,                                                           \
-                                  ImageAspectFlags::k##aspectFlags,                                                              \
+                                  ImageAspect::k##aspectFlags,                                                                   \
                                   static_cast<bool>(bc),                                                                         \
                                   static_cast<bool>(sign),                                                                       \
                                   static_cast<bool>(srgb),                                                                       \
@@ -94,7 +82,8 @@ namespace FE::Graphics::Core
 
 #define FE_BASIC_FORMAT_EXPANSION_BLOCK_16(_Func, baseName, chan, baseIndex)                                                     \
     FE_BASIC_FORMAT_EXPANSION_BLOCK_1(_Func, baseName, 16, chan, baseIndex)                                                      \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK_2(_Func, baseName, 16, chan, baseIndex + 2)
+    FE_BASIC_FORMAT_EXPANSION_BLOCK_2(_Func, baseName, 16, chan, baseIndex + 2)                                                  \
+    _Func(baseName##_SFLOAT, Float, 2 * chan, chan, Color, 0, 1, 0, baseIndex + 4)
 
 #define FE_BASIC_FORMAT_EXPANSION_BLOCK_32(_Func, baseName, chan, baseIndex)                                                     \
     FE_BASIC_FORMAT_EXPANSION_BLOCK_1(_Func, baseName, 32, chan, baseIndex)                                                      \
@@ -108,52 +97,54 @@ namespace FE::Graphics::Core
 
     // clang-format off
 #define FE_EXPAND_BASIC_FORMATS(_Func)                                                                                           \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8,             8,       1,         10)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16,            16,      1,         15)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32,            32,      1,         20)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64,            64,      1,         25)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8G8,           8,       2,         30)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16G16,         16,      2,         35)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32,         32,      2,         40)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64,         64,      2,         45)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32B32,      32,      3,         50)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64B64,      64,      3,         55)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8G8B8A8,       8,       4,         60)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16G16B16A16,   16,      4,         65)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32B32A32,   32,      4,         70)                                               \
-    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64B64A64,   64,      4,         75)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8,              8,      1,         10)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16,            16,      1,         20)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32,            32,      1,         30)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64,            64,      1,         40)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8G8,            8,      2,         50)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16G16,         16,      2,         60)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32,         32,      2,         70)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64,         64,      2,         80)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32B32,      32,      3,         90)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64B64,      64,      3,        100)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R8G8B8A8,        8,      4,        110)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R16G16B16A16,   16,      4,        120)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R32G32B32A32,   32,      4,        130)                                               \
+    FE_BASIC_FORMAT_EXPANSION_BLOCK(_Func, R64G64B64A64,   64,      4,        140)                                               \
     /*    name                         type  byteSize     channelCount aspectFlags bc  signed srgb index       */                \
-    _Func(R8_SRGB,                     Norm, 1,           1,           Color,      0,  0,     1,   14           )                \
-    _Func(R8G8_SRGB,                   Norm, 2,           1,           Color,      0,  0,     1,   19           )                \
-    _Func(R8G8B8_SRGB,                 Norm, 3,           1,           Color,      0,  0,     1,   34           )                \
-    _Func(R8G8B8A8_SRGB,               Norm, 4,           1,           Color,      0,  0,     1,   54           )                \
-    _Func(B8G8R8A8_SRGB,               Norm, 4,           1,           Color,      0,  0,     1,   64           )                \
-    _Func(B8G8R8A8_UNORM,              Norm, 4,           1,           Color,      0,  0,     0,   74           )
+    _Func(R8_SRGB,                     Norm, 1,           1,           Color,      0,  0,     1,  150           )                \
+    _Func(R8G8_SRGB,                   Norm, 2,           1,           Color,      0,  0,     1,  151           )                \
+    _Func(R8G8B8_SRGB,                 Norm, 3,           1,           Color,      0,  0,     1,  152           )                \
+    _Func(R8G8B8A8_SRGB,               Norm, 4,           1,           Color,      0,  0,     1,  153           )                \
+    _Func(B8G8R8A8_SRGB,               Norm, 4,           1,           Color,      0,  0,     1,  154           )                \
+    _Func(B8G8R8A8_UNORM,              Norm, 4,           1,           Color,      0,  0,     0,  155           )
 
 #define FE_EXPAND_BC_FORMATS(_Func)                                                                                              \
-    _Func(BC1_UNORM,                   Norm, 8,           4,           Color,      1,  0,     0,   80           )                \
-    _Func(BC1_SRGB,                    Norm, 8,           4,           Color,      1,  0,     1,   81           )                \
-    _Func(BC2_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,   82           )                \
-    _Func(BC2_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,   83           )                \
-    _Func(BC3_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,   84           )                \
-    _Func(BC3_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,   85           )                \
-    _Func(BC4_UNORM,                   Norm, 8,           1,           Color,      1,  0,     0,   86           )                \
-    _Func(BC4_SNORM,                   Norm, 8,           1,           Color,      1,  1,     0,   87           )                \
-    _Func(BC5_UNORM,                   Norm, 16,          2,           Color,      1,  0,     0,   88           )                \
-    _Func(BC5_SNORM,                   Norm, 16,          2,           Color,      1,  1,     0,   89           )                \
-    _Func(BC6H_UFLOAT,                Float, 16,          3,           Color,      1,  0,     0,   90           )                \
-    _Func(BC6H_SFLOAT,                Float, 16,          3,           Color,      1,  1,     0,   91           )                \
-    _Func(BC7_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,   92           )                \
-    _Func(BC7_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,   93           )
+    _Func(BC1_UNORM,                   Norm, 8,           4,           Color,      1,  0,     0,  200           )                \
+    _Func(BC1_SRGB,                    Norm, 8,           4,           Color,      1,  0,     1,  201           )                \
+    _Func(BC2_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,  202           )                \
+    _Func(BC2_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,  203           )                \
+    _Func(BC3_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,  204           )                \
+    _Func(BC3_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,  205           )                \
+    _Func(BC4_UNORM,                   Norm, 8,           1,           Color,      1,  0,     0,  206           )                \
+    _Func(BC4_SNORM,                   Norm, 8,           1,           Color,      1,  1,     0,  207           )                \
+    _Func(BC5_UNORM,                   Norm, 16,          2,           Color,      1,  0,     0,  208           )                \
+    _Func(BC5_SNORM,                   Norm, 16,          2,           Color,      1,  1,     0,  209           )                \
+    _Func(BC6H_UFLOAT,                Float, 16,          3,           Color,      1,  0,     0,  210           )                \
+    _Func(BC6H_SFLOAT,                Float, 16,          3,           Color,      1,  1,     0,  211           )                \
+    _Func(BC7_UNORM,                   Norm, 16,          4,           Color,      1,  0,     0,  212           )                \
+    _Func(BC7_SRGB,                    Norm, 16,          4,           Color,      1,  0,     1,  213           )
 
 #define FE_EXPAND_PACK_FORMATS(_Func)                                                                                            \
-    _Func(R11G11B10_SFLOAT,           Float, 4,           3,           Color,      0,  1,     0,   94           )
+    _Func(A2R10G10B10_UINT,             Int, 4,           4,           Color,      0,  0,     0,  300           )                \
+    _Func(A2R10G10B10_UNORM,           Norm, 4,           4,           Color,      0,  0,     0,  301           )                \
+    _Func(B10G11R11_UFLOAT,           Float, 4,           3,           Color,      0,  0,     0,  302           )
 
 #define FE_EXPAND_DS_FORMATS(_Func)                                                                                              \
-    _Func(D16_UNORM,                   Norm, 2,           1,           Depth,      0,  0,     0,   95           )                \
-    _Func(D32_SFLOAT,                 Float, 4,           1,           Depth,      0,  1,     0,   96           )                \
-    _Func(D24_UNORM_S8_UINT,           None, 4,           2,    DepthStencil,      0,  0,     0,   97           )                \
-    _Func(D32_SFLOAT_S8_UINT,          None, 8,           2,    DepthStencil,      0,  1,     0,   98           )
+    _Func(D16_UNORM,                   Norm, 2,           1,           Depth,      0,  0,     0,  400           )                \
+    _Func(D32_SFLOAT,                 Float, 4,           1,           Depth,      0,  1,     0,  401           )                \
+    _Func(D24_UNORM_S8_UINT,           None, 4,           2,    DepthStencil,      0,  0,     0,  402           )                \
+    _Func(D32_SFLOAT_S8_UINT,          None, 8,           2,    DepthStencil,      0,  1,     0,  403           )
     // clang-format on
 
 #define FE_EXPAND_FORMATS(_Func)                                                                                                 \
@@ -175,23 +166,53 @@ namespace FE::Graphics::Core
 #undef FE_DECL_FORMAT_ENUM_VALUE
     };
 
-    static_assert((festd::to_underlying(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 71)));
+    // static_assert((festd::to_underlying(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 43)));
 
 
     // clang-format off
 #define FE_EXPAND_VERTEX_CHANNEL_FORMATS(_Func)                                                                                  \
+    _Func(R8_SINT)                                                                                                               \
     _Func(R8_UINT)                                                                                                               \
+    _Func(R8_SNORM)                                                                                                              \
     _Func(R8_UNORM)                                                                                                              \
+    _Func(R8G8_SINT)                                                                                                             \
+    _Func(R8G8_UINT)                                                                                                             \
+    _Func(R8G8_SNORM)                                                                                                            \
+    _Func(R8G8_UNORM)                                                                                                            \
+    _Func(R8G8B8A8_SINT)                                                                                                         \
+    _Func(R8G8B8A8_UINT)                                                                                                         \
+    _Func(R8G8B8A8_SNORM)                                                                                                        \
+    _Func(R8G8B8A8_UNORM)                                                                                                        \
+    _Func(R16_SINT)                                                                                                              \
     _Func(R16_UINT)                                                                                                              \
+    _Func(R16_SNORM)                                                                                                             \
     _Func(R16_UNORM)                                                                                                             \
+    _Func(R16_SFLOAT)                                                                                                            \
+    _Func(R16G16_SINT)                                                                                                           \
+    _Func(R16G16_UINT)                                                                                                           \
+    _Func(R16G16_SNORM)                                                                                                          \
+    _Func(R16G16_UNORM)                                                                                                          \
+    _Func(R16G16_SFLOAT)                                                                                                         \
+    _Func(R16G16B16A16_SINT)                                                                                                     \
+    _Func(R16G16B16A16_UINT)                                                                                                     \
+    _Func(R16G16B16A16_SNORM)                                                                                                    \
+    _Func(R16G16B16A16_UNORM)                                                                                                    \
+    _Func(R16G16B16A16_SFLOAT)                                                                                                   \
+    _Func(R32_SINT)                                                                                                              \
     _Func(R32_UINT)                                                                                                              \
     _Func(R32_SFLOAT)                                                                                                            \
+    _Func(R32G32_SINT)                                                                                                           \
     _Func(R32G32_UINT)                                                                                                           \
     _Func(R32G32_SFLOAT)                                                                                                         \
+    _Func(R32G32B32_SINT)                                                                                                        \
     _Func(R32G32B32_UINT)                                                                                                        \
     _Func(R32G32B32_SFLOAT)                                                                                                      \
+    _Func(R32G32B32A32_SINT)                                                                                                     \
     _Func(R32G32B32A32_UINT)                                                                                                     \
-    _Func(R32G32B32A32_SFLOAT)
+    _Func(R32G32B32A32_SFLOAT)                                                                                                   \
+    _Func(A2R10G10B10_UINT)                                                                                                      \
+    _Func(A2R10G10B10_UNORM)                                                                                                     \
+    _Func(B10G11R11_UFLOAT)
     // clang-format on
 
     enum class VertexChannelFormat : uint32_t
@@ -289,7 +310,26 @@ namespace FE::Graphics::Core
             return blockCountX * blockCountY * blockCountZ * m_texelByteSize;
         }
 
+        [[nodiscard]] uint32_t CalculateMipByteSize(const Vector2UInt size, const uint32_t mipIndex = 0) const
+        {
+            const uint32_t blockSize = m_isBlockCompressed ? 4 : 1;
+            const uint32_t blockCountX = Math::Max(Math::CeilDivide(size.x >> mipIndex, blockSize), 1u);
+            const uint32_t blockCountY = Math::Max(Math::CeilDivide(size.y >> mipIndex, blockSize), 1u);
+            return blockCountX * blockCountY * m_texelByteSize;
+        }
+
         [[nodiscard]] uint32_t CalculateImageByteSize(const Vector3UInt size, const uint32_t mipCount) const
+        {
+            uint32_t totalSize = 0;
+            for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+            {
+                totalSize += CalculateMipByteSize(size, mipCount);
+            }
+
+            return totalSize;
+        }
+
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Vector2UInt size, const uint32_t mipCount) const
         {
             uint32_t totalSize = 0;
             for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
@@ -305,13 +345,23 @@ namespace FE::Graphics::Core
             return CalculateImageByteSize(size, CalculateMipCount(size));
         }
 
+        [[nodiscard]] uint32_t CalculateImageByteSize(const Vector2UInt size) const
+        {
+            return CalculateImageByteSize(size, CalculateMipCount(size));
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_format != Format::kUndefined;
+        }
+
         struct
         {
             uint32_t m_formatIndex : 17;
             uint32_t m_isSRGB : 1;
             uint32_t m_isSigned : 1;
             uint32_t m_isBlockCompressed : 1;
-            ImageAspectFlags m_aspectFlags : 3;
+            ImageAspect m_aspectFlags : 3;
             FormatChannelCount m_channelCount : 2;
             uint32_t m_texelByteSize : 5;
             FormatType m_type : 2;
@@ -359,6 +409,6 @@ struct FE::Fmt::ValueFormatter<TBuffer, FE::Graphics::Core::Format>
 {
     void Format(TBuffer& buffer, const FE::Graphics::Core::Format& value) const
     {
-        buffer.Append(FE::Graphics::Core::ToString(value));
+        buffer += FE::Graphics::Core::ToString(value);
     }
 }; // namespace FE::Fmt

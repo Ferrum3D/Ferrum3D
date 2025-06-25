@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Base/BaseTypes.h>
 #include <FeCore/Math/Rect.h>
 #include <FeCore/Math/Vector3.h>
 
@@ -16,11 +17,17 @@ namespace FE
             };
             struct
             {
-                Vector3F min, max;
+                Vector3 min, max;
             };
         };
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb() = default;
+
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(ForceInitType)
+            : m_simdVectorMin(_mm_setzero_ps())
+            , m_simdVectorMax(_mm_setzero_ps())
+        {
+        }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const __m128 min, const __m128 max)
             : m_simdVectorMin(min)
@@ -28,7 +35,7 @@ namespace FE
         {
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const Vector3F min, const Vector3F max)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb(const Vector3 min, const Vector3 max)
             : min(min)
             , max(max)
         {
@@ -50,7 +57,7 @@ namespace FE
             return m_values;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Size() const
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Size() const
         {
             return max - min;
         }
@@ -62,7 +69,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectF FE_VECTORCALL GetRect() const
         {
-            return RectF{ Vector2F{ min.x, min.y }, Vector2F{ max.x, max.y } };
+            return RectF{ Vector2{ min.x, min.y }, Vector2{ max.x, max.y } };
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Aabb FE_VECTORCALL Zero()
@@ -96,7 +103,7 @@ namespace FE
         {
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE PackedAabb(const Vector3F min, const Vector3F max)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE PackedAabb(const Vector3 min, const Vector3 max)
             : min(min)
             , max(max)
         {
@@ -110,7 +117,7 @@ namespace FE
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Aabb() const
         {
-            return Aabb{ Vector3F{ min }, Vector3F{ max } };
+            return Aabb{ Vector3{ min }, Vector3{ max } };
         }
     };
 
@@ -125,34 +132,34 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Union(const Aabb& lhs, const Vector3F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Union(const Aabb& lhs, const Vector3 rhs)
         {
             return Aabb{ Min(lhs.min, rhs), Max(lhs.min, rhs) };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Offset(const Aabb& lhs, const Vector3F offset)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Offset(const Aabb& lhs, const Vector3 offset)
         {
             return Aabb{ lhs.min + offset, lhs.max + offset };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Inflate(const Aabb& lhs, const Vector3F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb FE_VECTORCALL Inflate(const Aabb& lhs, const Vector3 rhs)
         {
             return Aabb{ lhs.min, lhs.max + rhs };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL DistanceSquared(const Aabb& lhs, const Vector3F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL DistanceSquared(const Aabb& lhs, const Vector3 rhs)
         {
-            const Vector3F closestPoint = Clamp(rhs, lhs.min, lhs.max);
+            const Vector3 closestPoint = Clamp(rhs, lhs.min, lhs.max);
             return DistanceSquared(closestPoint, rhs);
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Distance(const Aabb& lhs, const Vector3F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Distance(const Aabb& lhs, const Vector3 rhs)
         {
-            const Vector3F closestPoint = Clamp(rhs, lhs.min, lhs.max);
+            const Vector3 closestPoint = Clamp(rhs, lhs.min, lhs.max);
             return Distance(closestPoint, rhs);
         }
 

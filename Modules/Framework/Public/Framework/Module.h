@@ -1,14 +1,12 @@
-﻿#pragma once
-#include <FeCore/Modules/ModuleBase.h>
+#pragma once
+#include <FeCore/Modules/Environment.h>
 
 namespace FE::Framework
 {
-    struct FrameworkModule : public ModuleBase
+    struct Module final : public Env::Module
     {
-        ~FrameworkModule() override = default;
+        void RegisterServices(const DI::ServiceRegistryBuilder& builder) override;
 
-        FE_RTTI_Class(FrameworkModule, "F433B734-4DA2-4F44-80E4-2E9B245EA20B");
-
-        inline static constexpr const char* LibraryPath = "FeFramework";
+        FE_DECLARE_MODULE(Module);
     };
 } // namespace FE::Framework

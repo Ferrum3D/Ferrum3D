@@ -17,6 +17,11 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int(ForceInitType)
+            : m_simdVector(_mm_setzero_si128())
+        {
+        }
+
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int(const int32_t value)
             : m_simdVector(_mm_set1_epi32(value))
         {
@@ -27,7 +32,7 @@ namespace FE
         {
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int(const Vector3F vec)
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int(const Vector3 vec)
             : m_simdVector(_mm_cvtps_epi32(vec.m_simdVector))
         {
         }
@@ -47,9 +52,9 @@ namespace FE
             return m_values;
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Vector3F() const
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Vector3() const
         {
-            return Vector3F{ _mm_cvtepi32_ps(m_simdVector) };
+            return Vector3{ _mm_cvtepi32_ps(m_simdVector) };
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3Int FE_VECTORCALL Zero()

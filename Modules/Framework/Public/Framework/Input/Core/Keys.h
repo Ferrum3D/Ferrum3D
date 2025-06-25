@@ -5,7 +5,7 @@ namespace FE::Input::Core
 {
     // clang-format off
     //        Name                                        Windows virtual key
-#define AV_EXPAND_KEYS(_Func)                                                                                                    \
+#define FE_EXPAND_KEYS(_Func)                                                                                                    \
         _Func(Tab,                                      (0x09)) /* VK_TAB */                                                     \
         _Func(LeftArrow,                                (0x25)) /* VK_LEFT */                                                    \
         _Func(RightArrow,                               (0x27)) /* VK_RIGHT */                                                   \
@@ -130,8 +130,8 @@ namespace FE::Input::Core
     {
         kInvalid = 0,
 
-#define AV_DECLARE_KEY(name, vk) k##name = (vk),
-        AV_EXPAND_KEYS(AV_DECLARE_KEY)
-#undef AV_DECLARE_KEY
+#define FE_DECLARE_KEY(name, vk) k##name = (vk),
+        FE_EXPAND_KEYS(FE_DECLARE_KEY)
+#undef FE_DECLARE_KEY
     };
 } // namespace FE::Input::Core

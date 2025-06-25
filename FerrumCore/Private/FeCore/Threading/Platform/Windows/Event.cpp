@@ -34,12 +34,12 @@ namespace FE::Threading
 
     Event Event::CreateAutoReset(const bool initialState)
     {
-        return reinterpret_cast<uintptr_t>(CreateEventW(nullptr, FALSE, initialState, nullptr));
+        return Event{ reinterpret_cast<uintptr_t>(CreateEventW(nullptr, FALSE, initialState, nullptr)) };
     }
 
 
     Event Event::CreateManualReset(const bool initialState)
     {
-        return reinterpret_cast<uintptr_t>(CreateEventW(nullptr, TRUE, initialState, nullptr));
+        return Event{ reinterpret_cast<uintptr_t>(CreateEventW(nullptr, TRUE, initialState, nullptr)) };
     }
 } // namespace FE::Threading

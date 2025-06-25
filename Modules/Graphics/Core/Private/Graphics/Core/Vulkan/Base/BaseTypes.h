@@ -8,6 +8,8 @@
 
 namespace FE::Graphics::Vulkan
 {
+    inline constexpr uint32_t kMaxInFlightFrames = 2;
+
     using VulkanObjectPoolType = Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock>;
 
 #define FE_DECLARE_VULKAN_OBJECT_POOL(Type)                                                                                      \
@@ -40,24 +42,5 @@ namespace FE::Graphics::Vulkan
         explicit Semaphore(Core::Device* device, Env::Name name);
 
         VkSemaphore m_nativeSemaphore = VK_NULL_HANDLE;
-    };
-
-
-    struct CommandBuffer final : public Core::DeviceObject
-    {
-        ~CommandBuffer() override;
-
-        static CommandBuffer* Create(Core::Device* device, Env::Name name, Core::HardwareQueueKindFlags queueFlags);
-
-        [[nodiscard]] VkCommandBuffer GetNative() const
-        {
-            return m_nativeCommandBuffer;
-        }
-
-    private:
-        explicit CommandBuffer(Core::Device* device, Env::Name name, Core::HardwareQueueKindFlags queueFlags);
-
-        VkCommandBuffer m_nativeCommandBuffer = VK_NULL_HANDLE;
-        VkCommandPool m_nativeCommandPool = VK_NULL_HANDLE;
     };
 } // namespace FE::Graphics::Vulkan

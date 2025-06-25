@@ -102,14 +102,16 @@ namespace FE::Internal
 
         BasicStringImpl()
         {
-            char* data = TStorage::InitializeImpl(0, TStorage::GetAllocator());
-            data[0] = '\0';
+            if (char* data = TStorage::InitializeImpl(0, TStorage::GetAllocator()))
+                data[0] = '\0';
         }
 
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(std::pmr::memory_resource* allocator)
             : TStorage(allocator)
         {
+            if (char* data = TStorage::InitializeImpl(0, TStorage::GetAllocator()))
+                data[0] = '\0';
         }
 
         ~BasicStringImpl()
@@ -375,6 +377,16 @@ namespace FE::Internal
             return StringImpl<BasicStringViewImpl>{ startIt, endIt };
         }
 
+        [[nodiscard]] StringImpl<BasicStringViewImpl> substr(const Iter startIter, const Iter endIter) const
+        {
+            return StringImpl<BasicStringViewImpl>{ startIter, endIter };
+        }
+
+        [[nodiscard]] StringImpl<BasicStringViewImpl> substr(const Iter startIter) const
+        {
+            return StringImpl<BasicStringViewImpl>{ startIter, end() };
+        }
+
         [[nodiscard]] int32_t compare(const char* other) const
         {
             return UTF8::Compare(TBase::data(), other, TBase::size(), ASCII::Length(other));
@@ -405,6 +417,7 @@ namespace FE::Internal
 
         [[nodiscard]] Iter find_last_of(Iter position, const int32_t codepoint) const
         {
+            --position;
             while (position != begin())
             {
                 if (*position == codepoint)
@@ -685,6 +698,7 @@ namespace FE::Internal
 
 
     using DefaultDynamicStringStorage = DefaultAllocatorStringStorage<DynamicStringStorage>;
+    using PolymorphicStringStorage = PolymorphicAllocatorStringStorage<DynamicStringStorage>;
 
     template<uint32_t TCapacity>
     using DefaultFixedStringStorage = DefaultAllocatorStringStorage<FixedStringStorage<TCapacity>>;
@@ -693,6 +707,11 @@ namespace FE::Internal
 
 namespace FE::festd
 {
+    namespace pmr
+    {
+        using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicStringStorage>>;
+    }
+
     using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultDynamicStringStorage>>;
     using string_view = FE::Internal::StringImpl<FE::Internal::BasicStringViewImpl>;
 
@@ -702,6 +721,7 @@ namespace FE::festd
     using fixed_string = basic_fixed_string<256>;
 
     static_assert(sizeof(string) == sizeof(uintptr_t) * 3);
+    static_assert(sizeof(pmr::string) == sizeof(string) + sizeof(uintptr_t));
     static_assert(sizeof(string_view) == sizeof(uintptr_t) * 2);
 } // namespace FE::festd
 
@@ -718,4 +738,25 @@ namespace FE
     {
         return DefaultHash(str.data(), str.size());
     }
+
+
+    namespace Str
+    {
+        inline festd::string_view Duplicate(const festd::string_view str, std::pmr::memory_resource* allocator)
+        {
+            void* memory = allocator->allocate(str.size() + 1);
+            memcpy(memory, str.data(), str.size());
+            return { static_cast<char*>(memory), str.size() };
+        }
+    } // namespace Str
 } // namespace FE
+
+
+template<class TBase>
+struct eastl::hash<FE::Internal::StringImpl<TBase>>
+{
+    size_t operator()(const FE::Internal::StringImpl<TBase>& str) const
+    {
+        return FE::DefaultHash(str.data(), str.size());
+    }
+};

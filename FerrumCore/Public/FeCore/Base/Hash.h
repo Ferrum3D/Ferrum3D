@@ -71,7 +71,7 @@ namespace FE
         // signature since it has multiple templates.
         struct SVWrapper final
         {
-            std::string_view value;
+            std::string_view m_value;
         };
 
         //! @brief Remove leading and trailing spaces from a string view.
@@ -170,7 +170,7 @@ namespace FE
 
 
     template<class T>
-    inline constexpr std::string_view TypeName = Internal::TypeNameImpl<T>().value;
+    inline constexpr std::string_view TypeName = Internal::TypeNameImpl<T>().m_value;
 
 
     template<class T>
@@ -224,7 +224,7 @@ namespace FE
             return *this;
         }
 
-        Hasher& UpdateRaw(const void* data, const size_t byteSize)
+        Hasher& Update(const void* data, const size_t byteSize)
         {
             return UpdateRaw(DefaultHash(data, byteSize));
         }

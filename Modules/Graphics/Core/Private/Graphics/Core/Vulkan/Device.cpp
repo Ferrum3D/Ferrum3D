@@ -8,8 +8,13 @@
 
 namespace FE::Graphics::Vulkan
 {
-    constexpr auto kRequiredDeviceExtensions =
-        std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
+    constexpr auto kRequiredDeviceExtensions = std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                           VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                                                           VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
+                                                           VK_EXT_MESH_SHADER_EXTENSION_NAME,
+                                                           VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+                                                           VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+                                                           VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME };
 
 
     void Device::FindQueueFamilies()
@@ -25,7 +30,7 @@ namespace FE::Graphics::Vulkan
         uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(m_nativeAdapter, &familyCount, nullptr);
 
-        festd::small_vector<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
+        festd::inline_vector<VkQueueFamilyProperties> families(familyCount, VkQueueFamilyProperties{});
         vkGetPhysicalDeviceQueueFamilyProperties(m_nativeAdapter, &familyCount, families.data());
         for (uint32_t i = 0; i < families.size(); ++i)
         {
@@ -96,7 +101,7 @@ namespace FE::Graphics::Vulkan
 
         uint32_t availableExtCount;
         vkEnumerateDeviceExtensionProperties(m_nativeAdapter, nullptr, &availableExtCount, nullptr);
-        festd::small_vector<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
+        festd::inline_vector<VkExtensionProperties> availableExt(availableExtCount, VkExtensionProperties{});
         vkEnumerateDeviceExtensionProperties(m_nativeAdapter, nullptr, &availableExtCount, availableExt.data());
         for (const char* extension : kRequiredDeviceExtensions)
         {
@@ -107,7 +112,7 @@ namespace FE::Graphics::Vulkan
         }
 
         constexpr float queuePriority = 1.0f;
-        festd::small_vector<VkDeviceQueueCreateInfo> queuesCI{};
+        festd::inline_vector<VkDeviceQueueCreateInfo> queuesCI{};
         for (auto& queue : m_queueFamilyIndices)
         {
             auto& queueCI = queuesCI.emplace_back();
@@ -117,9 +122,20 @@ namespace FE::Graphics::Vulkan
             queueCI.pQueuePriorities = &queuePriority;
         }
 
+        VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
+        meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        meshShaderFeatures.pNext = nullptr;
+        meshShaderFeatures.meshShader = true;
+        meshShaderFeatures.taskShader = true;
+
+        VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorTypeFeatures{};
+        mutableDescriptorTypeFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
+        mutableDescriptorTypeFeatures.pNext = &meshShaderFeatures;
+        mutableDescriptorTypeFeatures.mutableDescriptorType = true;
+
         VkPhysicalDeviceVulkan13Features deviceFeatures13{};
         deviceFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-        deviceFeatures13.pNext = nullptr;
+        deviceFeatures13.pNext = &mutableDescriptorTypeFeatures;
         deviceFeatures13.synchronization2 = true;
         deviceFeatures13.dynamicRendering = true;
 
@@ -127,11 +143,20 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
         deviceFeatures12.pNext = &deviceFeatures13;
         deviceFeatures12.timelineSemaphore = true;
+        deviceFeatures12.scalarBlockLayout = true;
         deviceFeatures12.descriptorIndexing = true;
         deviceFeatures12.runtimeDescriptorArray = true;
         deviceFeatures12.descriptorBindingPartiallyBound = true;
         deviceFeatures12.descriptorBindingVariableDescriptorCount = true;
         deviceFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
+        deviceFeatures12.descriptorBindingStorageImageUpdateAfterBind = true;
+        deviceFeatures12.descriptorBindingStorageBufferUpdateAfterBind = true;
+
+        deviceFeatures12.shaderSampledImageArrayNonUniformIndexing = true;
+        deviceFeatures12.shaderStorageBufferArrayNonUniformIndexing = true;
+        deviceFeatures12.shaderStorageImageArrayNonUniformIndexing = true;
+        deviceFeatures12.shaderUniformTexelBufferArrayNonUniformIndexing = true;
+        deviceFeatures12.shaderStorageTexelBufferArrayNonUniformIndexing = true;
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -142,6 +167,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy = true;
         deviceFeatures.sampleRateShading = true;
+        deviceFeatures.shaderImageGatherExtended = true;
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -172,12 +198,13 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         vkDeviceWaitIdle(m_nativeDevice);
+        ForceReleasePendingDisposers();
     }
 
 
     Device::~Device()
     {
-        DisposePending();
+        ForceReleasePendingDisposers();
 
         m_samplerCache.Shutdown();
 

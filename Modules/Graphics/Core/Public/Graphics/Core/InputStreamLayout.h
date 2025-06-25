@@ -39,6 +39,13 @@ namespace FE::Graphics::Core
         uint32_t m_activeChannelsMask : Limits::Pipeline::kMaxStreamChannels;
         InputStreamChannelDesc m_channels[Limits::Pipeline::kMaxStreamChannels];
 
+        InputStreamLayout() = default;
+
+        explicit InputStreamLayout(ForceInitType)
+        {
+            memset(this, 0, sizeof(*this));
+        }
+
         void ResetStreams()
         {
             m_perInstanceStreamsMask = 0;
@@ -51,6 +58,16 @@ namespace FE::Graphics::Core
             Bit::Traverse(m_activeChannelsMask, [&](const uint32_t channelIndex) {
                 if (m_channels[channelIndex].m_streamIndex == streamIndex)
                     stride += GetFormatSize(m_channels[channelIndex].m_format);
+            });
+
+            return stride;
+        }
+
+        [[nodiscard]] uint32_t CalculateTotalStride() const
+        {
+            uint32_t stride = 0;
+            Bit::Traverse(m_activeChannelsMask, [&](const uint32_t channelIndex) {
+                stride += GetFormatSize(m_channels[channelIndex].m_format);
             });
 
             return stride;
@@ -81,8 +98,13 @@ namespace FE::Graphics::Core
             return DefaultHash(this, sizeof(*this));
         }
 
+        [[nodiscard]] bool IsEmpty() const
+        {
+            return m_activeChannelsMask == 0;
+        }
+
         static const InputStreamLayout kNull;
     };
 
-    inline const InputStreamLayout InputStreamLayout::kNull = { PrimitiveTopology::kNone, 0, 0, {} };
+    inline const InputStreamLayout InputStreamLayout::kNull{ kForceInit };
 } // namespace FE::Graphics::Core

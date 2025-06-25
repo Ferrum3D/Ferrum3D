@@ -16,7 +16,7 @@ namespace FE::DI
     struct ServiceRegistryCallback
     {
         virtual ~ServiceRegistryCallback() = default;
-        virtual void OnDetach(ServiceRegistry* pRegistry) = 0;
+        virtual void OnDetach(ServiceRegistry* registry) = 0;
     };
 
 
@@ -47,11 +47,11 @@ namespace FE::DI
 
             for (const ServiceRegistration& registration : m_registrations)
             {
-                if (registration.IsConstant())
+                if (registration.m_isConstant)
                 {
                     Memory::RefCountedObjectBase* object;
 
-                    const ResultCode resultCode = m_activators[registration.GetIndex()].Invoke(nullptr, &object);
+                    const ResultCode resultCode = m_activators[registration.m_index].Invoke(nullptr, &object);
                     FE_Assert(resultCode == ResultCode::kSuccess);
 
                     object->Release();
@@ -121,8 +121,8 @@ namespace FE::DI
     {
         struct Reader final
         {
-            explicit Reader(ServiceRegistryRoot* pParent)
-                : m_parent(pParent)
+            explicit Reader(ServiceRegistryRoot* parent)
+                : m_parent(parent)
             {
                 m_parent->m_lock.lock();
             }
@@ -154,8 +154,8 @@ namespace FE::DI
         void Initialize()
         {
             FE_PROFILER_ZONE();
-            std::pmr::memory_resource* pAllocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-            m_root = Rc<ServiceRegistry>::DefaultNew(pAllocator);
+            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
+            m_root = Rc<ServiceRegistry>::DefaultNew(allocator);
             m_registries.push_back(*m_root);
             m_root->RegisterCallback(&m_registryCallback);
         }
@@ -183,11 +183,12 @@ namespace FE::DI
             return m_root.Get();
         }
 
-        ServiceRegistry* Create()
+        ServiceRegistry* CreateRegistry()
         {
             FE_PROFILER_ZONE();
             std::unique_lock lk{ m_lock };
-            ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(std::pmr::get_default_resource());
+            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
+            ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(allocator);
             m_registries.push_back(*pResult);
             pResult->RegisterCallback(&m_registryCallback);
             return pResult;
@@ -200,10 +201,10 @@ namespace FE::DI
 
         struct CallbackImpl final : public ServiceRegistryCallback
         {
-            void OnDetach(ServiceRegistry* pRegistry) override
+            void OnDetach(ServiceRegistry* registry) override
             {
                 std::unique_lock lk{ m_parent->m_lock };
-                festd::intrusive_list<ServiceRegistry>::remove(*pRegistry);
+                festd::intrusive_list<ServiceRegistry>::remove(*registry);
             }
 
             ServiceRegistryRoot* m_parent = nullptr;

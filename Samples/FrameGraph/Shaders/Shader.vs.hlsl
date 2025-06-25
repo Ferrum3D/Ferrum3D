@@ -1,7 +1,10 @@
-﻿struct PixelAttributes
+﻿#include "Common.hlsli"
+
+struct PixelAttributes
 {
     float4 m_pos : SV_Position;
     float2 m_uv : TEXCOORD0;
+    uint m_index : DEBUG_INDEX;
 };
 
 
@@ -14,19 +17,22 @@ struct VertexInput
 
 struct Constants
 {
-    float4x4 m_worldTransform;
-    uint m_textureIndex;
-    uint m_samplerIndex;
-    uint2 m_padding;
+    Texture2DDescriptor<float4> m_texture;
+    SamplerDescriptor m_sampler;
+    StructuredBufferDescriptor<float4x4> m_instanceData;
+    uint m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;
 
 
-PixelAttributes main_vs(const in VertexInput input)
+PixelAttributes main(const in VertexInput input)
 {
+    const float4x4 worldTransform = GConstants.m_instanceData.Load(0);
+
     PixelAttributes output;
-    output.m_pos = mul(float4(input.m_pos, 1.0f), GConstants.m_worldTransform);
+    output.m_pos = mul(float4(input.m_pos, 1.0f), worldTransform);
     output.m_uv = input.m_uv;
+    output.m_index = 0;
     return output;
 }

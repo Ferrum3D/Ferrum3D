@@ -14,6 +14,13 @@ namespace FE::festd
             using size_type = uint32_t;
             using std::allocator<T>::allocator;
         };
+
+        template<typename T>
+        struct TinyPolymorphicAllocator : std::pmr::polymorphic_allocator<T>
+        {
+            using size_type = uint32_t;
+            using std::pmr::polymorphic_allocator<T>::polymorphic_allocator;
+        };
     } // namespace Internal
 
 
@@ -21,7 +28,10 @@ namespace FE::festd
     {
         template<class T>
         using vector = eastl::vector<T, Memory::Internal::EASTLPolymorphicAllocator>;
-    }
+
+        template<class T, size_t TInlineCapacity = gch::default_buffer_size_v<Internal::TinyPolymorphicAllocator<T>>>
+        using inline_vector = gch::small_vector<T, TInlineCapacity, Internal::TinyPolymorphicAllocator<T>>;
+    } // namespace pmr
 
 
     template<class T, uint32_t TSize>
@@ -31,16 +41,16 @@ namespace FE::festd
 
 
 #if __INTELLISENSE__
-    template<class T, size_t TCapacity = gch::default_buffer_size_v<Internal::TinyAllocator<T>>>
-    using small_vector = gch::small_vector<T, TCapacity, Internal::TinyAllocator<T>>;
+    template<class T, size_t TInlineCapacity = gch::default_buffer_size_v<Internal::TinyAllocator<T>>>
+    using inline_vector = gch::small_vector<T, TInlineCapacity, Internal::TinyAllocator<T>>;
 #else
-    template<class T, size_t TCapacity = gch::default_buffer_size_v<Memory::StdDefaultAllocator<T, uint32_t>>>
-    using small_vector = gch::small_vector<T, TCapacity, Memory::StdDefaultAllocator<T, uint32_t>>;
+    template<class T, size_t TInlineCapacity = gch::default_buffer_size_v<Memory::StdDefaultAllocator<T, uint32_t>>>
+    using inline_vector = gch::small_vector<T, TInlineCapacity, Memory::StdDefaultAllocator<T, uint32_t>>;
 
     static_assert(sizeof(gch::small_vector<int, gch::default_buffer_size_v<Memory::StdDefaultAllocator<int, uint32_t>>,
                                            Memory::StdDefaultAllocator<int, uint32_t>>)
                       == sizeof(gch::small_vector<int, gch::default_buffer_size_v<Internal::TinyAllocator<int>>,
                                                   Internal::TinyAllocator<int>>),
-                  "Intellisense doesn't report the correct size for small_vector");
+                  "Intellisense doesn't report the correct size for inline_vector");
 #endif
 } // namespace FE::festd

@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DeviceObject.h>
@@ -45,11 +46,76 @@ namespace FE::Graphics::Core
         virtual RenderTarget* GetRenderTarget(RenderTargetHandle image) const = 0;
         virtual Buffer* GetBuffer(BufferHandle buffer) const = 0;
 
-        virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image) = 0;
-        virtual BufferHandle ImportBuffer(Buffer* buffer) = 0;
+        virtual ImageDesc GetResourceDesc(RenderTargetHandle image) const = 0;
+        virtual BufferDesc GetResourceDesc(BufferHandle buffer) const = 0;
 
-        virtual ImageSRVDescriptor GetSRV(Texture* texture, ImageSubresource subresource) = 0;
+        virtual Env::Name GetResourceName(RenderTargetHandle image) const = 0;
+        virtual Env::Name GetResourceName(BufferHandle buffer) const = 0;
+
+        virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image, ImageAccessType access) = 0;
+        virtual BufferHandle ImportBuffer(Buffer* buffer, BufferAccessType access) = 0;
+
+        virtual ImageSRVDescriptor GetSRV(const Texture* texture, ImageSubresource subresource) = 0;
+        virtual ImageSRVDescriptor GetSRV(const RenderTarget* texture, ImageSubresource subresource) = 0;
+        virtual ImageUAVDescriptor GetUAV(const RenderTarget* texture, ImageSubresource subresource) = 0;
+        virtual BufferSRVDescriptor GetSRV(const Buffer* buffer, uint32_t offset, uint32_t size) = 0;
+        virtual BufferUAVDescriptor GetUAV(const Buffer* buffer, uint32_t offset, uint32_t size) = 0;
         virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
+
+        ImageSRVDescriptor GetSRV(const Texture* texture)
+        {
+            return GetSRV(texture, ImageSubresource::kInvalid);
+        }
+
+        ImageSRVDescriptor GetSRV(const RenderTarget* texture)
+        {
+            return GetSRV(texture, ImageSubresource::kInvalid);
+        }
+
+        ImageUAVDescriptor GetUAV(const RenderTarget* texture)
+        {
+            return GetUAV(texture, ImageSubresource::kInvalid);
+        }
+
+        BufferSRVDescriptor GetSRV(const Buffer* buffer)
+        {
+            return GetSRV(buffer, 0, buffer->GetDesc().m_size);
+        }
+
+        BufferUAVDescriptor GetUAV(const Buffer* buffer)
+        {
+            return GetUAV(buffer, 0, buffer->GetDesc().m_size);
+        }
+
+        ImageSRVDescriptor GetSRV(const RenderTargetHandle image, const ImageSubresource subresource)
+        {
+            return GetSRV(GetRenderTarget(image), subresource);
+        }
+
+        ImageUAVDescriptor GetUAV(const RenderTargetHandle image, const ImageSubresource subresource)
+        {
+            return GetUAV(GetRenderTarget(image), subresource);
+        }
+
+        ImageSRVDescriptor GetSRV(const RenderTargetHandle image)
+        {
+            return GetSRV(GetRenderTarget(image));
+        }
+
+        ImageUAVDescriptor GetUAV(const RenderTargetHandle image)
+        {
+            return GetUAV(GetRenderTarget(image));
+        }
+
+        BufferSRVDescriptor GetSRV(const BufferHandle buffer)
+        {
+            return GetSRV(GetBuffer(buffer));
+        }
+
+        BufferUAVDescriptor GetUAV(const BufferHandle buffer)
+        {
+            return GetUAV(GetBuffer(buffer));
+        }
 
     protected:
         friend FrameGraphBuilder;
@@ -90,7 +156,7 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
-        SegmentedVector<Rc<PassProducer>> m_passProducers;
+        SegmentedVector<PassProducer*> m_passProducers;
     };
 
 
@@ -99,6 +165,16 @@ namespace FE::Graphics::Core
         BufferHandle CreateBuffer(const Env::Name name, const BufferDesc& desc) const
         {
             return m_graph->CreateBuffer(m_passIndex, name, desc);
+        }
+
+        template<class T>
+        BufferHandle CreateStructuredBuffer(const Env::Name name, const uint32_t elementCount) const
+        {
+            BufferDesc desc;
+            desc.m_size = sizeof(T) * elementCount;
+            desc.m_flags = BindFlags::kUnorderedAccess | BindFlags::kShaderResource;
+            desc.m_usage = ResourceUsage::kDeviceOnly;
+            return CreateBuffer(name, desc);
         }
 
         RenderTargetHandle CreateImage(const Env::Name name, const ImageDesc& desc) const
@@ -122,18 +198,31 @@ namespace FE::Graphics::Core
             return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        BufferHandle Write(const BufferHandle buffer, const BufferWriteType writeType) const
+        BufferHandle Write(const BufferHandle buffer) const
         {
             FE_Assert(buffer.IsValid());
-            const uint32_t flags = festd::to_underlying(writeType);
+            constexpr uint32_t flags = festd::to_underlying(BufferWriteType::kUnorderedAccess);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, buffer.m_desc.m_resourceIndex, flags);
             return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        RenderTargetHandle Write(const RenderTargetHandle image, const ImageWriteType writeType) const
+        RenderTargetHandle WriteRenderTarget(const RenderTargetHandle image) const
         {
             FE_Assert(image.IsValid());
+            const ImageDesc desc = m_graph->GetResourceDesc(image);
+            const FormatInfo formatInfo{ desc.m_imageFormat };
+            const ImageWriteType writeType = formatInfo.m_aspectFlags == ImageAspect::kColor
+                ? ImageWriteType::kColorTarget
+                : ImageWriteType::kDepthStencilTarget;
             const uint32_t flags = festd::to_underlying(writeType);
+            const uint32_t newVersion = m_graph->WriteResource(m_passIndex, image.m_desc.m_resourceIndex, flags);
+            return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
+        }
+
+        RenderTargetHandle WriteUAV(const RenderTargetHandle image) const
+        {
+            FE_Assert(image.IsValid());
+            const uint32_t flags = festd::to_underlying(ImageWriteType::kUnorderedAccess);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, image.m_desc.m_resourceIndex, flags);
             return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
         }
@@ -141,12 +230,12 @@ namespace FE::Graphics::Core
         template<class TFunction>
         void SetFunction(TFunction&& function) const
         {
-            TFunction* f = Memory::New<TFunction>(&m_graph->m_linearAllocator, festd::forward<TFunction>(function));
+            TFunction* f = Memory::New<TFunction>(&m_graph->m_linearAllocator, std::forward<TFunction>(function));
 
             auto& passData = m_graph->GetPassData(m_passIndex);
             passData.m_executeCallbackData = f;
             passData.m_execute = [](void* callbackData, FrameGraphContext* context) {
-                (*static_cast<TFunction*>(callbackData))(context);
+                (*static_cast<TFunction*>(callbackData))(*context);
             };
             passData.m_callbackDestructor = [](void* callbackData) {
                 static_cast<TFunction*>(callbackData)->~TFunction();
@@ -182,8 +271,55 @@ namespace FE::Graphics::Core
             return { m_graph, passIndex };
         }
 
+        [[nodiscard]] FrameGraph& GetGraph() const
+        {
+            return *m_graph;
+        }
+
     private:
         FrameGraph* m_graph;
         uint32_t m_passProducerIndex;
     };
 } // namespace FE::Graphics::Core
+
+
+namespace FE::Graphics
+{
+#define FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(name, baseDescriptor)                                                                    \
+    template<class T>                                                                                                            \
+    using name = baseDescriptor;
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture1DDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture2DDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture3DDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture1DArrayDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture2DArrayDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(TextureCubeDescriptor, ImageSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(TextureCubeArrayDescriptor, ImageSRVDescriptor);
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture1DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture2DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture3DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture1DArrayDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture2DArrayDescriptor, ImageUAVDescriptor);
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture1DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture2DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture3DDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture1DArrayDescriptor, ImageUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture2DArrayDescriptor, ImageUAVDescriptor);
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(BufferDescriptor, BufferSRVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(StructuredBufferDescriptor, BufferSRVDescriptor);
+    using ByteAddressBufferDescriptor = BufferSRVDescriptor;
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWBufferDescriptor, BufferUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWStructuredBufferDescriptor, BufferUAVDescriptor);
+    using RWByteAddressBufferDescriptor = BufferUAVDescriptor;
+
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentStructuredBufferDescriptor, BufferUAVDescriptor);
+    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWStructuredBufferDescriptor, BufferUAVDescriptor);
+    using GloballyCoherentRWByteAddressBufferDescriptor = BufferUAVDescriptor;
+
+#undef FE_FRAME_GRAPH_ALIAS_DESCRIPTOR
+} // namespace FE::Graphics

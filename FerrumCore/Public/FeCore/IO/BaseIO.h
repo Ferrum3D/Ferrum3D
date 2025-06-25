@@ -71,23 +71,23 @@ namespace FE::IO
     enum class Priority : int32_t
     {
         kLevelBits = 20,
-        kLevelDiff = (1 << kLevelBits) - 1,
+        kLevelDiff = 1 << kLevelBits,
 
-        kLowest = 1 << kLevelBits,
-        kLow = 2 << kLevelBits,
-        kNormal = 3 << kLevelBits,
-        kHigh = 4 << kLevelBits,
-        kHighest = 5 << kLevelBits,
+        kLowest = 0,
+        kLow = 1 << kLevelBits,
+        kNormal = 2 << kLevelBits,
+        kHigh = 3 << kLevelBits,
+        kHighest = 4 << kLevelBits,
     };
 
 
-    inline Priority operator-(const Priority lhs, const int32_t rhs)
+    constexpr Priority operator-(const Priority lhs, const int32_t rhs)
     {
         return static_cast<Priority>(festd::to_underlying(lhs) - rhs);
     }
 
 
-    inline Priority operator+(const Priority lhs, const int32_t rhs)
+    constexpr Priority operator+(const Priority lhs, const int32_t rhs)
     {
         return static_cast<Priority>(festd::to_underlying(lhs) + rhs);
     }
@@ -95,9 +95,9 @@ namespace FE::IO
 
     enum class StandardDescriptor
     {
-        kSTDIN,
-        kSTDOUT,
-        kSTDERR,
+        kStdin,
+        kStdout,
+        kStderr,
     };
 
 
@@ -113,15 +113,19 @@ namespace FE::IO
     enum class FileAttributeFlags : uint32_t
     {
         kNone = 0,
-        kHidden = 1 << 0,
-        kDirectory = 1 << 1,
-        kReadOnly = 1 << 2,
+        kHidden = 1u << 0,
+        kDirectory = 1u << 1,
+        kReadOnly = 1u << 2,
         kInvalid = 1u << 31,
     };
 
     FE_ENUM_OPERATORS(FileAttributeFlags);
 
 
+    //! @brief File open mode.
+    //!
+    //! The modes which allow writing have the kWriteOnly flag set.
+    //! The modes which allow reading have the kReadOnly flag set.
     enum class OpenMode
     {
         kNone = 0,
@@ -163,34 +167,37 @@ namespace FE::IO
     };
 
 
-    constexpr const char* GetStandardDescriptorName(const StandardDescriptor descriptor)
+    inline const char* GetStandardDescriptorName(const StandardDescriptor descriptor)
     {
         switch (descriptor)
         {
-        case StandardDescriptor::kSTDIN:
-            return "STDIN";
-        case StandardDescriptor::kSTDOUT:
-            return "STDOUT";
-        case StandardDescriptor::kSTDERR:
-            return "STDERR";
         default:
+            FE_DebugBreak();
             return "<Unknown>";
+
+        case StandardDescriptor::kStdin:
+            return "STDIN";
+        case StandardDescriptor::kStdout:
+            return "STDOUT";
+        case StandardDescriptor::kStderr:
+            return "STDERR";
         }
     }
 
 
-    constexpr OpenMode GetStandardDescriptorOpenMode(const StandardDescriptor descriptor)
+    inline OpenMode GetStandardDescriptorOpenMode(const StandardDescriptor descriptor)
     {
         switch (descriptor)
         {
-        case StandardDescriptor::kSTDIN:
-            return OpenMode::kReadOnly;
-        case StandardDescriptor::kSTDOUT:
-            return OpenMode::kAppend;
-        case StandardDescriptor::kSTDERR:
-            return OpenMode::kAppend;
         default:
+            FE_DebugBreak();
             return OpenMode::kNone;
+
+        case StandardDescriptor::kStdin:
+            return OpenMode::kReadOnly;
+        case StandardDescriptor::kStdout:
+        case StandardDescriptor::kStderr:
+            return OpenMode::kAppend;
         }
     }
 

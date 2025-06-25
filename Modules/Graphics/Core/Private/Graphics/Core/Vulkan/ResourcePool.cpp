@@ -12,6 +12,7 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_device = device;
+        SetImmediateDestroyPolicy();
 
         VmaAllocatorCreateInfo createInfo = {};
         createInfo.device = NativeCast(device);
@@ -24,6 +25,22 @@ namespace FE::Graphics::Vulkan
 
     ResourcePool::~ResourcePool()
     {
+        m_device->WaitIdle();
+
+        if (Build::IsDebug())
+        {
+            festd::vector<const Core::Resource*> resources;
+            festd::vector<const char*> names;
+            for (const Core::Resource& resource : ImplCast(m_device)->GetResources())
+            {
+                resources.push_back(&resource);
+                names.push_back(resource.GetName().c_str());
+            }
+
+            if (!resources.empty())
+                FE_DebugBreak();
+        }
+
         vmaDestroyAllocator(m_vmaAllocator);
     }
 

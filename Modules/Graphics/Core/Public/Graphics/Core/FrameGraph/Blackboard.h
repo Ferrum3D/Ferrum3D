@@ -62,7 +62,7 @@ namespace FE::Graphics::Core
 
         m_head = node;
 
-        return *new (node + 1) TPassData(festd::forward<TArgs>(args)...);
+        return *new (node + 1) TPassData(std::forward<TArgs>(args)...);
     }
 
 

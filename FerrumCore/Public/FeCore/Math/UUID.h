@@ -27,7 +27,9 @@ namespace FE
             kDefault = kHyphens | kUppercase,
         };
 
-        UUID() noexcept
+        UUID() = default;
+
+        explicit UUID(ForceInitType)
             : m_simdVector(_mm_setzero_si128())
         {
         }
@@ -38,32 +40,32 @@ namespace FE
         }
 
         //! @brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
-        explicit UUID(const festd::ascii_view string) noexcept
+        explicit UUID(const festd::ascii_view string)
         {
             m_simdVector = Parse(string).m_simdVector;
         }
 
-        [[nodiscard]] uint8_t* data() noexcept
+        [[nodiscard]] uint8_t* data()
         {
             return m_bytes;
         }
 
-        [[nodiscard]] const uint8_t* data() const noexcept
+        [[nodiscard]] const uint8_t* data() const
         {
             return m_bytes;
         }
 
-        [[nodiscard]] size_t size() const noexcept
+        [[nodiscard]] size_t size() const
         {
             return sizeof(m_simdVector);
         }
 
-        [[nodiscard]] bool IsZero() const noexcept
+        [[nodiscard]] bool IsZero() const
         {
             return _mm_movemask_epi8(_mm_cmpeq_epi8(m_simdVector, _mm_setzero_si128())) == 0xffff;
         }
 
-        [[nodiscard]] bool IsValid() const noexcept
+        [[nodiscard]] bool IsValid() const
         {
             return !IsZero();
         }

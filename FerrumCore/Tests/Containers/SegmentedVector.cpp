@@ -103,7 +103,7 @@ TEST(SegmentedVector, CopyMove)
 
     int32_t** ppSegments = vec.segments();
     int32_t* pFirstSegment = ppSegments[0];
-    SegmentedVector<int32_t, 8> moved = festd::move(vec);
+    SegmentedVector<int32_t, 8> moved = std::move(vec);
     EXPECT_EQ(ppSegments, moved.segments());
     EXPECT_EQ(pFirstSegment, moved.segments()[0]);
 

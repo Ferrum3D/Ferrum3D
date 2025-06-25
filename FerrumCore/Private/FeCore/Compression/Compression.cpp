@@ -1,7 +1,7 @@
 #include <FeCore/Compression/Compression.h>
-#include <FeCore/Compression/CompressionInternal.h>
+#include <FeCore/Compression/CompressionPrivate.h>
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Modules/EnvironmentPrivate.h>
+#include <festd/vector.h>
 
 #include <libdeflate.h>
 
@@ -9,6 +9,18 @@ namespace FE::Compression
 {
     namespace
     {
+        struct CompressionState final
+        {
+            Threading::SpinLock m_lock;
+            festd::array<festd::vector<void*>, 12> m_compressorCache;
+            festd::array<festd::vector<void*>, 12> m_gDeflateCompressorCache;
+            festd::vector<void*> m_decompressorCache;
+            festd::vector<void*> m_gDeflateDecompressorCache;
+        };
+
+        CompressionState* GCompressionState;
+
+
         uint32_t EncodeBlockMagic(const Method method)
         {
             return Math::MakeFourCC('F', 'C', 'B', festd::to_underlying(method));
@@ -17,10 +29,8 @@ namespace FE::Compression
 
         void* AllocateCompressorImpl(const int32_t level)
         {
-            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-            std::unique_lock lock{ state.m_lock };
-            auto& cache = state.m_compressorCache[level - 1];
+            std::unique_lock lock{ GCompressionState->m_lock };
+            auto& cache = GCompressionState->m_compressorCache[level - 1];
             if (cache.empty())
                 return libdeflate_alloc_compressor(level);
 
@@ -32,10 +42,8 @@ namespace FE::Compression
 
         void* AllocateGDeflateCompressorImpl(const int32_t level)
         {
-            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-            std::unique_lock lock{ state.m_lock };
-            auto& cache = state.m_gDeflateCompressorCache[level - 1];
+            std::unique_lock lock{ GCompressionState->m_lock };
+            auto& cache = GCompressionState->m_gDeflateCompressorCache[level - 1];
             if (cache.empty())
                 return libdeflate_alloc_gdeflate_compressor(level);
 
@@ -47,10 +55,8 @@ namespace FE::Compression
 
         void* AllocateDecompressorImpl()
         {
-            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-            std::unique_lock lock{ state.m_lock };
-            auto& cache = state.m_decompressorCache;
+            std::unique_lock lock{ GCompressionState->m_lock };
+            auto& cache = GCompressionState->m_decompressorCache;
             if (cache.empty())
                 return libdeflate_alloc_decompressor();
 
@@ -62,10 +68,8 @@ namespace FE::Compression
 
         void* AllocateGDeflateDecompressorImpl()
         {
-            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-            std::unique_lock lock{ state.m_lock };
-            auto& cache = state.m_gDeflateDecompressorCache;
+            std::unique_lock lock{ GCompressionState->m_lock };
+            auto& cache = GCompressionState->m_gDeflateDecompressorCache;
             if (cache.empty())
                 return libdeflate_alloc_gdeflate_decompressor();
 
@@ -100,23 +104,43 @@ namespace FE::Compression
     } // namespace
 
 
-    void Internal::Init()
+    void Internal::Init(std::pmr::memory_resource* allocator)
     {
+        FE_CoreAssert(GCompressionState == nullptr, "Compression already initialized");
+        GCompressionState = Memory::New<CompressionState>(allocator);
+
         libdeflate_set_memory_allocator(&Memory::DefaultAllocate, &Memory::DefaultFree);
     }
 
 
     void Internal::Shutdown()
     {
-        Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-        for (auto& cache : state.m_compressorCache)
+        for (auto& cache : GCompressionState->m_compressorCache)
         {
             for (void* impl : cache)
                 libdeflate_free_compressor(static_cast<libdeflate_compressor*>(impl));
 
             cache.clear();
         }
+
+        for (auto& cache : GCompressionState->m_gDeflateCompressorCache)
+        {
+            for (void* impl : cache)
+                libdeflate_free_gdeflate_compressor(static_cast<libdeflate_gdeflate_compressor*>(impl));
+
+            cache.clear();
+        }
+
+        for (void* impl : GCompressionState->m_decompressorCache)
+            libdeflate_free_decompressor(static_cast<libdeflate_decompressor*>(impl));
+        GCompressionState->m_decompressorCache.clear();
+
+        for (void* impl : GCompressionState->m_gDeflateDecompressorCache)
+            libdeflate_free_gdeflate_decompressor(static_cast<libdeflate_gdeflate_decompressor*>(impl));
+        GCompressionState->m_gDeflateDecompressorCache.clear();
+
+        GCompressionState->~CompressionState();
+        GCompressionState = nullptr;
     }
 
 
@@ -125,14 +149,12 @@ namespace FE::Compression
         if (!m_impl)
             return;
 
-        Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-        std::unique_lock lock{ state.m_lock };
+        std::unique_lock lock{ GCompressionState->m_lock };
 
         if (m_method == Method::kGDeflate)
-            state.m_gDeflateCompressorCache[m_level - 1].push_back(m_impl);
+            GCompressionState->m_gDeflateCompressorCache[m_level - 1].push_back(m_impl);
         else
-            state.m_compressorCache[m_level - 1].push_back(m_impl);
+            GCompressionState->m_compressorCache[m_level - 1].push_back(m_impl);
 
         m_impl = nullptr;
     }
@@ -244,7 +266,7 @@ namespace FE::Compression
                 const size_t bound = libdeflate_gdeflate_compress_bound(CastGCompressor(m_impl), srcSize, &pageCount);
                 const size_t pageBound = bound / pageCount;
 
-                festd::small_vector<libdeflate_gdeflate_out_page, 16> outPages;
+                festd::inline_vector<libdeflate_gdeflate_out_page, 16> outPages;
                 outPages.resize(static_cast<uint32_t>(pageCount));
                 for (libdeflate_gdeflate_out_page& outPage : outPages)
                 {
@@ -323,14 +345,12 @@ namespace FE::Compression
         if (!m_impl)
             return;
 
-        Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-
-        std::unique_lock lock{ state.m_lock };
+        std::unique_lock lock{ GCompressionState->m_lock };
 
         if (m_method == Method::kGDeflate)
-            state.m_gDeflateDecompressorCache.push_back(m_impl);
+            GCompressionState->m_gDeflateDecompressorCache.push_back(m_impl);
         else
-            state.m_decompressorCache.push_back(m_impl);
+            GCompressionState->m_decompressorCache.push_back(m_impl);
 
         m_impl = nullptr;
     }

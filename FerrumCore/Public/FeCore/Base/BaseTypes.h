@@ -4,9 +4,14 @@
 
 namespace FE
 {
+    enum class ForceInitType : uint32_t;
+
+    inline constexpr auto kForceInit = static_cast<ForceInitType>(0);
+
+
     namespace Constants
     {
-        inline constexpr float PI = 3.14159265358979323f;
+        inline constexpr float kPI = 3.14159265358979323f;
 
         inline constexpr float kEpsilon = 1e-6f;
         inline constexpr float kInfinity = std::numeric_limits<float>::infinity();
@@ -122,15 +127,15 @@ namespace FE
     {
         struct EASTLPolymorphicAllocator final
         {
-            EASTLPolymorphicAllocator(std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_memoryResource(pMemoryResource)
+            EASTLPolymorphicAllocator(std::pmr::memory_resource* memoryResource = nullptr)
+                : m_memoryResource(memoryResource)
             {
                 if (m_memoryResource == nullptr)
                     m_memoryResource = std::pmr::get_default_resource();
             }
 
-            EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_memoryResource(pMemoryResource)
+            EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* memoryResource = nullptr)
+                : m_memoryResource(memoryResource)
             {
                 if (m_memoryResource == nullptr)
                     m_memoryResource = std::pmr::get_default_resource();

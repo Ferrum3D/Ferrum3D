@@ -1,13 +1,67 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
+#include <FeCore/Base/StackTrace.h>
+#include <FeCore/Console/Console.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Memory/MemoryPrivate.h>
 #include <FeCore/Memory/tlsf.h>
+#include <FeCore/Strings/Format.h>
 #include <FeCore/Threading/SpinLock.h>
+
+#include <DebugHeap.h>
 #include <mimalloc.h>
 
 namespace FE::Memory
 {
     namespace
     {
+        struct MemoryState final
+        {
+            Threading::SpinLock m_lock;
+            DebugHeap* m_debugHeap = nullptr;
+
+            MemoryState()
+            {
+                constexpr size_t kGigabyte = 0x40000000;
+                if (Build::IsDevelopment())
+                    m_debugHeap = DebugHeapInit(8 * kGigabyte);
+            }
+
+            ~MemoryState()
+            {
+                if (m_debugHeap)
+                {
+                    DebugHeapWalk(
+                        m_debugHeap,
+                        [](void* ptr, const size_t size, const uint32_t callstackHandle, void*) {
+                            const Trace::CallStack callstack{ callstackHandle };
+
+                            Console::SetTextColor(Console::Color::kRed);
+                            Console::Write(
+                                Fmt::FixedFormat("Memory leak detected: {}; {} bytes\n", reinterpret_cast<uintptr_t>(ptr), size));
+
+                            void** frames = callstack.GetFrames();
+                            for (uint32_t frameIndex = 0; frames[frameIndex] != nullptr; ++frameIndex)
+                            {
+                                const Trace::SymbolInfo symbolInfo = Trace::SymbolInfo::Resolve(frames[frameIndex]);
+                                Console::Write(Fmt::FixedFormatSized<512>("{}\t[{}]\t{}:{}: {}\n",
+                                                                          symbolInfo.m_moduleName,
+                                                                          symbolInfo.m_address,
+                                                                          symbolInfo.m_fileName,
+                                                                          symbolInfo.m_lineNumber,
+                                                                          symbolInfo.m_symbolName));
+                            }
+
+                            Console::SetTextColor(Console::Color::kDefault);
+                        },
+                        nullptr);
+                    DebugHeapDestroy(m_debugHeap);
+                }
+            }
+        };
+
+        MemoryState* GMemoryState;
+
+
         constexpr uint32_t kMemoryProfilerCallstackDepth = 32;
 
 #if FE_PLATFORM_WINDOWS
@@ -18,30 +72,168 @@ namespace FE::Memory
             return virtualAlloc2;
         }
 #endif
+
+        void* MallocImpl(const size_t byteSize)
+        {
+            if (Build::IsDevelopment())
+            {
+                if (GMemoryState->m_debugHeap)
+                {
+                    std::lock_guard lock{ GMemoryState->m_lock };
+                    const Trace::CallStack callstack = Trace::CallStack::Capture(32, Trace::CallStack::kDefaultSkipFrames + 2);
+                    return DebugHeapAllocate(GMemoryState->m_debugHeap, byteSize, kDefaultAlignment, callstack.m_value);
+                }
+            }
+
+            return mi_malloc(byteSize);
+        }
+
+        void* MallocAlignedImpl(const size_t byteSize, const size_t byteAlignment)
+        {
+            if (Build::IsDevelopment())
+            {
+                if (GMemoryState->m_debugHeap)
+                {
+                    std::lock_guard lock{ GMemoryState->m_lock };
+                    const Trace::CallStack callstack = Trace::CallStack::Capture(32, Trace::CallStack::kDefaultSkipFrames + 2);
+                    return DebugHeapAllocate(GMemoryState->m_debugHeap, byteSize, byteAlignment, callstack.m_value);
+                }
+            }
+
+            return mi_malloc_aligned(byteSize, byteAlignment);
+        }
+
+        void* ReallocImpl(void* ptr, const size_t byteSize)
+        {
+            if (Build::IsDevelopment())
+            {
+                if (GMemoryState->m_debugHeap)
+                {
+                    std::lock_guard lock{ GMemoryState->m_lock };
+                    if (byteSize == 0)
+                    {
+                        if (ptr != nullptr)
+                            DebugHeapFree(GMemoryState->m_debugHeap, ptr);
+
+                        return nullptr;
+                    }
+
+                    const Trace::CallStack callstack = Trace::CallStack::Capture(32, Trace::CallStack::kDefaultSkipFrames + 2);
+
+                    if (ptr == nullptr)
+                        return DebugHeapAllocate(GMemoryState->m_debugHeap, byteSize, kDefaultAlignment, callstack.m_value);
+
+                    const size_t oldSize = DebugHeapGetAllocSize(GMemoryState->m_debugHeap, ptr);
+                    void* newPtr = DebugHeapAllocate(GMemoryState->m_debugHeap, byteSize, kDefaultAlignment, callstack.m_value);
+                    memcpy(newPtr, ptr, Math::Min(oldSize, byteSize));
+                    DebugHeapFree(GMemoryState->m_debugHeap, ptr);
+                    return newPtr;
+                }
+            }
+
+            return mi_realloc(ptr, byteSize);
+        }
+
+        void FreeImpl(void* ptr)
+        {
+            if (Build::IsDevelopment())
+            {
+                if (GMemoryState->m_debugHeap)
+                {
+                    if (ptr == nullptr)
+                        return;
+
+                    std::lock_guard lock{ GMemoryState->m_lock };
+                    DebugHeapFree(GMemoryState->m_debugHeap, ptr);
+                    return;
+                }
+            }
+
+            mi_free(ptr);
+        }
+
+        size_t GetAllocatedSizeImpl(const void* ptr)
+        {
+            if (Build::IsDevelopment())
+            {
+                if (GMemoryState->m_debugHeap)
+                {
+                    std::unique_lock lock{ GMemoryState->m_lock };
+                    return DebugHeapGetAllocSize(GMemoryState->m_debugHeap, const_cast<void*>(ptr));
+                }
+            }
+
+            return mi_usable_size(ptr);
+        }
+
+        void AssertPointerIsValidImpl(const void* ptr)
+        {
+            if (!Build::IsDevelopment())
+                return;
+
+            if (!GMemoryState->m_debugHeap)
+                return;
+
+            std::unique_lock lock{ GMemoryState->m_lock };
+
+            const Trace::CallStack callstack{ DebugHeapGetCallstackIfInvalid(GMemoryState->m_debugHeap, const_cast<void*>(ptr)) };
+
+            if (callstack.IsValid())
+            {
+                void** frames = callstack.GetFrames();
+                for (uint32_t frameIndex = 0; frames[frameIndex] != nullptr; ++frameIndex)
+                {
+                    const Trace::SymbolInfo symbolInfo = Trace::SymbolInfo::Resolve(frames[frameIndex]);
+                    Console::Write(Fmt::FixedFormatSized<512>("{}\t[{}]\t{}:{}: {}\n",
+                                                              symbolInfo.m_moduleName,
+                                                              symbolInfo.m_address,
+                                                              symbolInfo.m_fileName,
+                                                              symbolInfo.m_lineNumber,
+                                                              symbolInfo.m_symbolName));
+                }
+
+                // Flush might allocate memory, so we need to unlock the heap lock.
+                lock.unlock();
+                Console::Flush();
+                FE_DebugBreak();
+            }
+        }
     } // namespace
+
+
+    void Internal::Init(std::pmr::memory_resource* allocator)
+    {
+        FE_CoreAssert(GMemoryState == nullptr, "Memory already initialized");
+        GMemoryState = Memory::New<MemoryState>(allocator);
+    }
+
+
+    void Internal::Shutdown()
+    {
+        FE_CoreAssert(GMemoryState != nullptr, "Memory not initialized");
+        GMemoryState->~MemoryState();
+        GMemoryState = nullptr;
+    }
 
 
     PlatformSpec GetPlatformSpec()
     {
-        static PlatformSpec s_result;
-        if (s_result.m_pageSize != 0)
-            return s_result;
-
-        static Threading::SpinLock s_spinLock;
-        std::lock_guard lk{ s_spinLock };
-        if (s_result.m_pageSize != 0)
-            return s_result;
+        static PlatformSpec cachedSpec = [] {
+            PlatformSpec spec = {};
 
 #if FE_PLATFORM_WINDOWS
-        SYSTEM_INFO info;
-        GetSystemInfo(&info);
-        s_result.m_pageSize = info.dwPageSize;
-        s_result.m_granularity = info.dwAllocationGranularity;
+            SYSTEM_INFO info;
+            GetSystemInfo(&info);
+
+            spec.m_pageSize = info.dwPageSize;
+            spec.m_granularity = info.dwAllocationGranularity;
 #else
 #    error Not implemented :(
 #endif
+            return spec;
+        }();
 
-        return s_result;
+        return cachedSpec;
     }
 
 
@@ -114,7 +306,6 @@ namespace FE::Memory
     void CommitVirtual(void* ptr, const size_t byteSize)
     {
 #if FE_PLATFORM_WINDOWS
-        (void)byteSize;
         VirtualAlloc(ptr, byteSize, MEM_COMMIT, PAGE_READWRITE);
 #else
 #    error Not implemented :(
@@ -122,10 +313,9 @@ namespace FE::Memory
     }
 
 
-    void FreeVirtual(void* ptr, const size_t byteSize)
+    void FreeVirtual(void* ptr, [[maybe_unused]] const size_t byteSize)
     {
 #if FE_PLATFORM_WINDOWS
-        (void)byteSize;
         VirtualFree(ptr, 0, MEM_RELEASE);
 #else
 #    error Not implemented :(
@@ -164,7 +354,7 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize)
     {
-        void* ptr = mi_malloc(byteSize);
+        void* ptr = MallocImpl(byteSize);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
     }
@@ -172,7 +362,7 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize, const size_t byteAlignment)
     {
-        void* ptr = mi_malloc_aligned(byteSize, byteAlignment);
+        void* ptr = MallocAlignedImpl(byteSize, byteAlignment);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
     }
@@ -180,7 +370,7 @@ namespace FE::Memory
 
     void* DefaultReallocate(void* ptr, const size_t newSize)
     {
-        void* newPtr = mi_realloc(ptr, newSize);
+        void* newPtr = ReallocImpl(ptr, newSize);
         TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
         TracySecureAllocS(newPtr, newSize, kMemoryProfilerCallstackDepth);
         return newPtr;
@@ -190,11 +380,23 @@ namespace FE::Memory
     void DefaultFree(void* ptr)
     {
         TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
-        mi_free(ptr);
+        FreeImpl(ptr);
     }
 
 
-    TlsfAllocator::TlsfAllocator(void* memory, const size_t size)
+    size_t GetAllocatedSize(const void* ptr)
+    {
+        return GetAllocatedSizeImpl(ptr);
+    }
+
+
+    void AssertPointerIsValid(const void* ptr)
+    {
+        AssertPointerIsValidImpl(ptr);
+    }
+
+
+    TLSFAllocator::TLSFAllocator(void* memory, const size_t size)
     {
         if (memory == nullptr)
         {
@@ -207,7 +409,7 @@ namespace FE::Memory
     }
 
 
-    TlsfAllocator::~TlsfAllocator()
+    TLSFAllocator::~TLSFAllocator()
     {
         tlsf_destroy(m_impl);
 
@@ -216,17 +418,16 @@ namespace FE::Memory
     }
 
 
-    void* TlsfAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
+    void* TLSFAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
     {
         return tlsf_memalign(m_impl, byteAlignment, byteSize);
     }
 
 
-    void TlsfAllocator::do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment)
+    void TLSFAllocator::do_deallocate(void* ptr, const size_t byteSize, const size_t byteAlignment)
     {
-        (void)byteSize;
-        (void)byteAlignment;
-
+        FE_Unused(byteSize);
+        FE_Unused(byteAlignment);
         tlsf_free(m_impl, ptr);
     }
 } // namespace FE::Memory

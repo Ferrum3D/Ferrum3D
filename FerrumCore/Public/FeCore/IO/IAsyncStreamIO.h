@@ -17,7 +17,7 @@ namespace FE::IO
 
 
     //! @brief Returns true if the specified status indicates that an operation is in a final state.
-    inline constexpr bool IsFinalStatus(const AsyncOperationStatus status)
+    constexpr bool IsFinalStatus(const AsyncOperationStatus status)
     {
         switch (status)
         {

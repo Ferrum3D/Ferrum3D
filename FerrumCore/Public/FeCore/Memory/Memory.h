@@ -39,12 +39,16 @@ namespace FE
         [[nodiscard]] void* DefaultReallocate(void* ptr, size_t newSize);
         void DefaultFree(void* ptr);
 
+        [[nodiscard]] size_t GetAllocatedSize(const void* ptr);
+
+        void AssertPointerIsValid(const void* ptr);
+
 
         //! @brief Allocate an uninitialized array using the provided allocator.
         template<class T, class TAllocator>
-        [[nodiscard]] inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] inline T* AllocateArray(TAllocator* allocator, size_t elementCount, size_t byteAlignment = alignof(T))
         {
-            return static_cast<T*>(pAllocator->allocate(elementCount * sizeof(T), byteAlignment));
+            return static_cast<T*>(allocator->allocate(elementCount * sizeof(T), byteAlignment));
         }
 
 
@@ -58,7 +62,7 @@ namespace FE
 
         //! @brief Create a new object of type T using the provided allocator.
         //!
-        //! @param pAllocator The allocator to use.
+        //! @param allocator The allocator to use.
         //! @param args       The arguments to call the constructor of T with.
         //!
         //! @tparam T           The type of the object to allocate.
@@ -66,9 +70,9 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
-        [[nodiscard]] inline T* New(TAllocator* pAllocator, TArgs&&... args)
+        [[nodiscard]] inline T* New(TAllocator* allocator, TArgs&&... args)
         {
-            return new (pAllocator->allocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
+            return new (allocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
 
 
@@ -82,13 +86,13 @@ namespace FE
         template<class T, class... TArgs>
         [[nodiscard]] inline T* DefaultNew(TArgs&&... args)
         {
-            return new (DefaultAllocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
+            return new (DefaultAllocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
 
 
         //! @brief Delete an object previously created via Memory::New().
         //!
-        //! @param pAllocator    The allocator to use.
+        //! @param allocator    The allocator to use.
         //! @param pointer       The pointer to the object to delete previously returned by Memory::New().
         //! @param byteSize      The size of the object to delete.
         //! @param byteAlignment The alignment that was specified when Memory::New() was called.
@@ -96,10 +100,10 @@ namespace FE
         //! @tparam T           The type of the object to delete.
         //! @tparam TAllocator  The type of the provided allocator.
         template<class T, class TAllocator>
-        inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
+        inline void Delete(TAllocator* allocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {
             pointer->~T();
-            pAllocator->deallocate(pointer, byteSize, byteAlignment);
+            allocator->deallocate(pointer, byteSize, byteAlignment);
         }
 
 
@@ -125,7 +129,7 @@ namespace FE
             }
 
         private:
-            TracyLockable(TLock, m_lock);
+            TLock m_lock;
         };
 
         template<class TBase>
@@ -164,10 +168,10 @@ namespace FE
         };
 
 
-        struct TlsfAllocator final : public std::pmr::memory_resource
+        struct TLSFAllocator final : public std::pmr::memory_resource
         {
-            TlsfAllocator(void* memory, size_t size);
-            ~TlsfAllocator() override;
+            TLSFAllocator(void* memory, size_t size);
+            ~TLSFAllocator() override;
 
         private:
             void* do_allocate(size_t byteSize, size_t byteAlignment) override;
@@ -192,8 +196,11 @@ namespace FE
         template<class T>
         void DefaultDelete(T* pointer)
         {
-            pointer->~T();
-            DefaultFree(pointer);
+            if (pointer)
+            {
+                pointer->~T();
+                DefaultFree(pointer);
+            }
         }
 
 
@@ -280,7 +287,7 @@ namespace FE
             {
             }
 
-            BlockWriter(const festd::span<std::byte> bytes)
+            explicit BlockWriter(const festd::span<std::byte> bytes)
                 : m_ptr(bytes.data())
                 , m_end(m_ptr + bytes.size())
             {
@@ -413,7 +420,7 @@ namespace FE
         template<class T, class... TArgs>
         [[nodiscard]] unique_ptr<T> make_unique(TArgs&&... args)
         {
-            return unique_ptr<T>(Memory::DefaultNew<T>(festd::forward<TArgs>(args)...));
+            return unique_ptr<T>(Memory::DefaultNew<T>(std::forward<TArgs>(args)...));
         }
     } // namespace festd
 

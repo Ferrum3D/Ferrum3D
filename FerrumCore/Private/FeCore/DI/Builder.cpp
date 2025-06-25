@@ -6,7 +6,6 @@
 #include <FeCore/Jobs/JobSystem.h>
 #include <FeCore/Logging/Logger.h>
 
-
 namespace FE::DI
 {
     ServiceRegistryBuilder::ServiceRegistryBuilder(ServiceRegistry* pRegistry)
@@ -15,15 +14,15 @@ namespace FE::DI
     }
 
 
-    Internal::ServiceRegistrationSpec ServiceRegistryBuilder::BindImpl(const UUID& id)
+    Internal::ServiceRegistrationSpec ServiceRegistryBuilder::BindImpl(const UUID& id) const
     {
         ServiceRegistration* pRegistration = m_registry->Add(id);
-        ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->GetIndex());
+        ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->m_index);
         return { pRegistration, pActivator };
     }
 
 
-    void RegisterCoreServices(ServiceRegistryBuilder builder)
+    void RegisterCoreServices(const ServiceRegistryBuilder& builder)
     {
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
         builder.Bind<Logger>().ToSelf().InSingletonScope();

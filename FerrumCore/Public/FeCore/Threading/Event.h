@@ -1,18 +1,10 @@
 ﻿#pragma once
-#include <FeCore/Memory/PoolAllocator.h>
+#include <festd/base.h>
 
 namespace FE::Threading
 {
-    class Event final
+    struct Event final
     {
-        uintptr_t m_nativeEvent = 0;
-
-        Event(uintptr_t nativeEvent)
-            : m_nativeEvent(nativeEvent)
-        {
-        }
-
-    public:
         Event() = default;
 
         ~Event()
@@ -28,9 +20,8 @@ namespace FE::Threading
 
         Event& operator=(Event&& other) noexcept
         {
-            Close();
-            m_nativeEvent = other.m_nativeEvent;
-            other.m_nativeEvent = 0;
+            festd::swap(m_nativeEvent, other.m_nativeEvent);
+            other.Close();
             return *this;
         }
 
@@ -41,5 +32,13 @@ namespace FE::Threading
 
         static Event CreateAutoReset(bool initialState = false);
         static Event CreateManualReset(bool initialState = false);
+
+    private:
+        uintptr_t m_nativeEvent = 0;
+
+        explicit Event(const uintptr_t nativeEvent)
+            : m_nativeEvent(nativeEvent)
+        {
+        }
     };
 } // namespace FE::Threading

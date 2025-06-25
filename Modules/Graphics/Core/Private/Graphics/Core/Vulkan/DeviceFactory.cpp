@@ -1,4 +1,5 @@
-﻿#include <FeCore/DI/Builder.h>
+﻿#include <FeCore/Base/Platform.h>
+#include <FeCore/DI/Builder.h>
 #include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Logging/Trace.h>
 #include <festd/vector.h>
@@ -13,6 +14,7 @@
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GeometryPool.h>
+#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
@@ -63,7 +65,7 @@ namespace FE::Graphics::Vulkan
             const LogSeverity type = GetLogMessageType(flags);
             static_cast<Logger*>(pUserData)->Log(type, "{}", message);
 
-            if (Build::IsDebug() && type == LogSeverity::kError)
+            if (Platform::IsDebuggerPresent() && type == LogSeverity::kError)
                 FE_DebugBreak();
 
             return VK_FALSE;
@@ -83,7 +85,10 @@ namespace FE::Graphics::Vulkan
                 return Core::AdapterKind::kVirtual;
             case VK_PHYSICAL_DEVICE_TYPE_CPU:
                 return Core::AdapterKind::kCPU;
+
             default:
+            case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+            case VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM:
                 return Core::AdapterKind::kNone;
             }
         }
@@ -116,7 +121,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void DeviceFactory::RegisterServices(DI::ServiceRegistryBuilder& builder)
+    void DeviceFactory::RegisterServices(const DI::ServiceRegistryBuilder& builder)
     {
         FE_PROFILER_ZONE();
 
@@ -134,6 +139,7 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Common::FrameGraphResourcePool>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
         builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
+        builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services
         builder.Bind<Core::Fence>()
@@ -188,8 +194,15 @@ namespace FE::Graphics::Vulkan
         appInfo.pEngineName = "Ferrum3D";
         appInfo.pApplicationName = config->GetName("ApplicationName", Env::Name::kEmpty).c_str();
 
+        constexpr VkValidationFeatureEnableEXT enabledValidationFeatures[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
+        VkValidationFeaturesEXT validationFeatures = {};
+        validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+        validationFeatures.enabledValidationFeatureCount = festd::size(enabledValidationFeatures);
+        validationFeatures.pEnabledValidationFeatures = enabledValidationFeatures;
+
         VkInstanceCreateInfo instanceCI{};
         instanceCI.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        instanceCI.pNext = &validationFeatures;
         instanceCI.pApplicationInfo = &appInfo;
         instanceCI.enabledLayerCount = static_cast<uint32_t>(kRequiredInstanceLayers.size());
         instanceCI.ppEnabledLayerNames = kRequiredInstanceLayers.data();

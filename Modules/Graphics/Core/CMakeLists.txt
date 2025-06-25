@@ -9,12 +9,12 @@
 
     Public/Graphics/Core/AdapterInfo.h
     Public/Graphics/Core/AsyncCopyQueue.h
+    Public/Graphics/Core/ComputePipeline.h
     Public/Graphics/Core/Buffer.h
     Public/Graphics/Core/Device.h
     Public/Graphics/Core/DeviceFactory.h
     Public/Graphics/Core/DeviceObject.h
     Public/Graphics/Core/DrawArguments.h
-    Public/Graphics/Core/DrawListBuilder.h
     Public/Graphics/Core/Fence.h
     Public/Graphics/Core/GeometryPool.h
     Public/Graphics/Core/GeometryView.h
@@ -23,19 +23,23 @@
     Public/Graphics/Core/ImageFormat.h
     Public/Graphics/Core/InputLayoutBuilder.h
     Public/Graphics/Core/InputStreamLayout.h
+    Public/Graphics/Core/Meshlet.h
     Public/Graphics/Core/Module.h
+    Public/Graphics/Core/PipelineBase.h
     Public/Graphics/Core/PipelineFactory.h
     Public/Graphics/Core/PipelineStates.h
+    Public/Graphics/Core/PipelineVariantSet.h
     Public/Graphics/Core/RenderTarget.h
     Public/Graphics/Core/Resource.h
     Public/Graphics/Core/ResourcePool.h
     Public/Graphics/Core/Sampler.h
     Public/Graphics/Core/ShaderCompiler.h
-    Public/Graphics/Core/ShaderDefines.h
     Public/Graphics/Core/ShaderLibrary.h
     Public/Graphics/Core/ShaderReflection.h
     Public/Graphics/Core/ShaderResourceType.h
+    Public/Graphics/Core/ShaderSpecialization.h
     Public/Graphics/Core/ShaderStage.h
+    Public/Graphics/Core/ShaderVariant.h
     Public/Graphics/Core/Texture.h
     Public/Graphics/Core/Viewport.h
 )
@@ -53,9 +57,13 @@ set(COMMON_SOURCES
     Private/Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.cpp
     Private/Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.h
 
+    Private/Graphics/Core/AsyncCopyQueue.cpp
+    Private/Graphics/Core/ImageBase.cpp
     Private/Graphics/Core/Module.cpp
+    Private/Graphics/Core/PipelineVariantSet.cpp
     Private/Graphics/Core/ShaderCompilerDXC.cpp
     Private/Graphics/Core/ShaderCompilerDXC.h
+    Private/Graphics/Core/ShaderSpecialization.cpp
 )
 
 set(VULKAN_SOURCES
@@ -80,6 +88,10 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/BindlessManager.h
     Private/Graphics/Core/Vulkan/Buffer.cpp
     Private/Graphics/Core/Vulkan/Buffer.h
+    Private/Graphics/Core/Vulkan/CommandBuffer.cpp
+    Private/Graphics/Core/Vulkan/CommandBuffer.h
+    Private/Graphics/Core/Vulkan/ComputePipeline.cpp
+    Private/Graphics/Core/Vulkan/ComputePipeline.h
     Private/Graphics/Core/Vulkan/DescriptorAllocator.cpp
     Private/Graphics/Core/Vulkan/DescriptorAllocator.h
     Private/Graphics/Core/Vulkan/Device.cpp
@@ -90,6 +102,8 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/Fence.h
     Private/Graphics/Core/Vulkan/GeometryPool.cpp
     Private/Graphics/Core/Vulkan/GeometryPool.h
+    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.cpp
+    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.h
     Private/Graphics/Core/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/Core/Vulkan/GraphicsPipeline.h
     Private/Graphics/Core/Vulkan/Image.cpp
@@ -122,7 +136,7 @@ set(VULKAN_WINDOWS_SOURCES
 )
 
 
-add_library(FeGraphicsCore SHARED ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${VULKAN_SOURCES} ${VULKAN_WINDOWS_SOURCES})
+add_library(FeGraphicsCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${VULKAN_SOURCES} ${VULKAN_WINDOWS_SOURCES})
 
 fe_configure_target(FeGraphicsCore)
 

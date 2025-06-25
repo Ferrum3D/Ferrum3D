@@ -1,41 +1,34 @@
 #include <Graphics/Core/FrameGraph/Base.h>
+#include <Graphics/Core/Vulkan/Image.h>
 #include <Graphics/Core/Vulkan/ResourceBarrierBatcher.h>
 
 namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        VkAccessFlags2 ConvertBufferAccessFlags(const uint64_t access)
+        VkAccessFlags2 ConvertBufferAccessFlags(const Core::BufferAccessType access)
         {
-            if (access < festd::to_underlying(Core::BufferWriteType::kCount))
+            switch (access)
             {
-                switch (static_cast<Core::BufferWriteType>(access))
-                {
-                case Core::BufferWriteType::kTransferDestination:
-                    return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            case Core::BufferAccessType::kUndefined:
+                return VK_ACCESS_2_NONE;
 
-                case Core::BufferWriteType::kUnorderedAccess:
-                    return VK_ACCESS_2_MEMORY_READ_BIT;
+            case Core::BufferAccessType::kTransferDestination:
+                return VK_ACCESS_2_TRANSFER_WRITE_BIT;
 
-                case Core::BufferWriteType::kCount:
-                default:
-                    FE_DebugBreak();
-                    return 0;
-                }
-            }
+            case Core::BufferAccessType::kUnorderedAccess:
+                return VK_ACCESS_2_MEMORY_READ_BIT;
 
-            switch (static_cast<Core::BufferReadType>(access))
-            {
-            case Core::BufferReadType::kTransferSource:
+            case Core::BufferAccessType::kTransferSource:
                 return VK_ACCESS_2_TRANSFER_READ_BIT;
 
-            case Core::BufferReadType::kShaderResource:
+            case Core::BufferAccessType::kShaderResource:
                 return VK_ACCESS_2_SHADER_READ_BIT;
 
-            case Core::BufferReadType::kIndirectArgument:
+            case Core::BufferAccessType::kIndirectArgument:
                 return VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
 
-            case Core::BufferReadType::kCount:
+            case Core::BufferAccessType::kCount:
             default:
                 FE_DebugBreak();
                 return 0;
@@ -45,48 +38,40 @@ namespace FE::Graphics::Vulkan
 
         struct AccessFlagsWithLayout final
         {
-            VkAccessFlags m_accessFlags;
+            VkAccessFlags2 m_accessFlags;
             VkImageLayout m_imageLayout;
         };
 
 
-        AccessFlagsWithLayout ConvertImageAccessFlags(const uint64_t access)
+        AccessFlagsWithLayout ConvertImageAccessFlags(const Core::ImageAccessType access)
         {
-            if (access < festd::to_underlying(Core::ImageWriteType::kCount))
+            switch (access)
             {
-                switch (static_cast<Core::ImageWriteType>(access))
-                {
-                case Core::ImageWriteType::kTransferDestination:
-                    return { VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL };
+            case Core::ImageAccessType::kUndefined:
+                return { 0, VK_IMAGE_LAYOUT_UNDEFINED };
 
-                case Core::ImageWriteType::kUnorderedAccess:
-                    return { VK_ACCESS_MEMORY_READ_BIT, VK_IMAGE_LAYOUT_GENERAL };
+            case Core::ImageAccessType::kTransferDestination:
+                return { VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL };
 
-                case Core::ImageWriteType::kColorTarget:
-                    return { VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+            case Core::ImageAccessType::kUnorderedAccess:
+                return { VK_ACCESS_2_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL };
 
-                case Core::ImageWriteType::kDepthStencilTarget:
-                    return { VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+            case Core::ImageAccessType::kColorTarget:
+                return { VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
-                case Core::ImageWriteType::kCount:
-                default:
-                    FE_DebugBreak();
-                    return { 0, VK_IMAGE_LAYOUT_UNDEFINED };
-                }
-            }
+            case Core::ImageAccessType::kDepthStencilTarget:
+                return { VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
-            switch (static_cast<Core::ImageReadType>(access))
-            {
-            case Core::ImageReadType::kTransferSource:
-                return { VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL };
+            case Core::ImageAccessType::kTransferSource:
+                return { VK_ACCESS_2_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL };
 
-            case Core::ImageReadType::kShaderResource:
-                return { VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+            case Core::ImageAccessType::kShaderResource:
+                return { VK_ACCESS_2_SHADER_READ_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
-            case Core::ImageReadType::kDepthRead:
-                return { VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
+            case Core::ImageAccessType::kDepthRead:
+                return { VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
 
-            case Core::ImageReadType::kCount:
+            case Core::ImageAccessType::kCount:
             default:
                 FE_DebugBreak();
                 return { 0, VK_IMAGE_LAYOUT_UNDEFINED };
@@ -158,9 +143,12 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        festd::small_vector<VkBufferMemoryBarrier2> nativeBufferBarriers;
+        if (m_imageBarriers.empty() && m_bufferBarriers.empty())
+            return;
+
+        festd::inline_vector<VkBufferMemoryBarrier2> nativeBufferBarriers;
         nativeBufferBarriers.reserve(m_bufferBarriers.size());
-        for (const auto& [barrierDesc, hash] : m_bufferBarriers)
+        for (const auto [barrierDesc, hash] : m_bufferBarriers)
         {
             VkBufferMemoryBarrier2& barrier = nativeBufferBarriers.emplace_back();
             barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
@@ -185,9 +173,9 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        festd::small_vector<VkImageMemoryBarrier2> nativeImageBarriers;
+        festd::inline_vector<VkImageMemoryBarrier2> nativeImageBarriers;
         nativeImageBarriers.reserve(m_imageBarriers.size());
-        for (const auto& [barrierDesc, hash] : m_imageBarriers)
+        for (const auto [barrierDesc, hash] : m_imageBarriers)
         {
             VkImageMemoryBarrier2& barrier = nativeImageBarriers.emplace_back();
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -203,7 +191,7 @@ namespace FE::Graphics::Vulkan
             barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             barrier.newLayout = newLayout;
 
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.aspectMask = TranslateImageAspectFlags(barrierDesc.m_subresource.m_aspect);
             barrier.subresourceRange.baseMipLevel = barrierDesc.m_subresource.m_mostDetailedMipSlice;
             barrier.subresourceRange.levelCount = barrierDesc.m_subresource.m_mipSliceCount;
             barrier.subresourceRange.baseArrayLayer = barrierDesc.m_subresource.m_firstArraySlice;
@@ -223,10 +211,14 @@ namespace FE::Graphics::Vulkan
 
         VkDependencyInfo dependencyInfo = {};
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+
         dependencyInfo.bufferMemoryBarrierCount = nativeBufferBarriers.size();
-        dependencyInfo.pBufferMemoryBarriers = nativeBufferBarriers.data();
+        if (dependencyInfo.bufferMemoryBarrierCount > 0)
+            dependencyInfo.pBufferMemoryBarriers = nativeBufferBarriers.data();
+
         dependencyInfo.imageMemoryBarrierCount = nativeImageBarriers.size();
-        dependencyInfo.pImageMemoryBarriers = nativeImageBarriers.data();
+        if (dependencyInfo.imageMemoryBarrierCount > 0)
+            dependencyInfo.pImageMemoryBarriers = nativeImageBarriers.data();
 
         vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 

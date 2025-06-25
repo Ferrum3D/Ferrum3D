@@ -5,8 +5,8 @@ namespace FE::IO
 {
     struct FileStream final : public BufferedStream
     {
-        explicit FileStream(std::pmr::memory_resource* pBufferAllocator = nullptr)
-            : BufferedStream(pBufferAllocator)
+        explicit FileStream(std::pmr::memory_resource* bufferAllocator = nullptr)
+            : BufferedStream(bufferAllocator)
         {
         }
 

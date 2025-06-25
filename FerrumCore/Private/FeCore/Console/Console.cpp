@@ -1,12 +1,28 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Console/Console.h>
-#include <FeCore/Modules/EnvironmentPrivate.h>
+#include <FeCore/Console/ConsolePrivate.h>
 #include <FeCore/Platform/Windows/Common.h>
 
 namespace FE::Console
 {
     namespace
     {
+        struct ConsoleState final
+        {
+            static constexpr uint32_t kBufferSize = 4096;
+
+            void* m_consoleHandle = nullptr;
+            uint16_t m_defaultAttributes = 0;
+            bool m_isExclusive = false;
+
+            std::byte m_buffer[kBufferSize];
+            std::byte* m_bufferPointer = nullptr;
+            uint32_t* m_lastPayloadSizePointer = nullptr;
+        };
+
+        ConsoleState* GConsoleState;
+
+
         enum class BufferRecordHeaderType : uint8_t
         {
             kTextColor = 0,
@@ -25,22 +41,21 @@ namespace FE::Console
 
         void SetTextColorImpl(Color color)
         {
-            const ConsoleState& state = Env::Internal::SharedState::Get().m_consoleState;
             if (color == Color::kDefault)
             {
-                SetConsoleTextAttribute(state.m_consoleHandle, state.m_defaultAttributes);
+                SetConsoleTextAttribute(GConsoleState->m_consoleHandle, GConsoleState->m_defaultAttributes);
                 return;
             }
 
-            const WORD combinedColor = static_cast<WORD>(color) | (state.m_defaultAttributes & 0xfff0);
-            SetConsoleTextAttribute(state.m_consoleHandle, combinedColor);
+            const WORD combinedColor = static_cast<WORD>(color) | (GConsoleState->m_defaultAttributes & 0xfff0);
+            SetConsoleTextAttribute(GConsoleState->m_consoleHandle, combinedColor);
         }
 
 
         struct BufferWriter final
         {
-            explicit BufferWriter(ConsoleState& state)
-                : m_state(&state)
+            BufferWriter()
+                : m_state(GConsoleState)
             {
             }
 
@@ -48,7 +63,7 @@ namespace FE::Console
             {
                 FlushIfNecessary(sizeof(BufferRecordHeader));
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextColor, color };
-                *m_state->m_bufferPointer = festd::bit_cast<uint8_t>(header);
+                *m_state->m_bufferPointer = festd::bit_cast<std::byte>(header);
                 m_state->m_bufferPointer += sizeof(BufferRecordHeader);
                 m_state->m_lastPayloadSizePointer = nullptr;
             }
@@ -65,7 +80,7 @@ namespace FE::Console
 
                 FlushIfNecessary(sizeof(BufferRecordHeader) + sizeof(uint32_t) + text.size());
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextPayload, Color::kDefault };
-                *m_state->m_bufferPointer = festd::bit_cast<uint8_t>(header);
+                *m_state->m_bufferPointer = festd::bit_cast<std::byte>(header);
                 m_state->m_bufferPointer += sizeof(BufferRecordHeader);
 
                 m_state->m_lastPayloadSizePointer = reinterpret_cast<uint32_t*>(m_state->m_bufferPointer);
@@ -84,7 +99,7 @@ namespace FE::Console
 
             void Flush() const
             {
-                uint8_t* pointer = m_state->m_buffer;
+                std::byte* pointer = m_state->m_buffer;
                 while (pointer < m_state->m_bufferPointer)
                 {
                     const BufferRecordHeader header = festd::bit_cast<BufferRecordHeader>(*pointer);
@@ -124,27 +139,26 @@ namespace FE::Console
     } // namespace
 
 
-    void Init()
+    void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        ConsoleState& state = Env::Internal::SharedState::Get().m_consoleState;
-        state.m_consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        FE_CoreAssert(GConsoleState == nullptr, "Console already initialized");
+        GConsoleState = Memory::New<ConsoleState>(allocator);
+
+        GConsoleState->m_consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
         CONSOLE_SCREEN_BUFFER_INFO info;
-        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-        state.m_defaultAttributes = info.wAttributes;
-
-        std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-        state.m_buffer = static_cast<uint8_t*>(allocator->allocate(ConsoleState::kBufferSize));
-        state.m_bufferPointer = state.m_buffer;
+        GetConsoleScreenBufferInfo(GConsoleState->m_consoleHandle, &info);
+        GConsoleState->m_defaultAttributes = info.wAttributes;
+        GConsoleState->m_bufferPointer = GConsoleState->m_buffer;
 
         DWORD consoleProcessIds[2];
         const DWORD processCount = GetConsoleProcessList(consoleProcessIds, 2);
-        state.m_isExclusive = processCount <= 1;
+        GConsoleState->m_isExclusive = processCount <= 1;
 
         SetConsoleCP(CP_UTF8);
         SetConsoleOutputCP(CP_UTF8);
 
-        if (state.m_isExclusive)
+        if (GConsoleState->m_isExclusive)
         {
             SetConsoleTitleW(L"Ferrum3D Console");
             ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -152,23 +166,31 @@ namespace FE::Console
     }
 
 
+    void Internal::Shutdown()
+    {
+        FE_CoreAssert(GConsoleState != nullptr, "Console not initialized");
+        GConsoleState->~ConsoleState();
+        GConsoleState = nullptr;
+    }
+
+
     void SetTextColor(const Color color)
     {
-        const BufferWriter writer{ Env::Internal::SharedState::Get().m_consoleState };
+        const BufferWriter writer;
         writer.SetTextColor(color);
     }
 
 
     void Write(const festd::string_view text)
     {
-        const BufferWriter writer{ Env::Internal::SharedState::Get().m_consoleState };
+        const BufferWriter writer;
         writer.WriteText(text);
     }
 
 
     void Flush()
     {
-        const BufferWriter writer{ Env::Internal::SharedState::Get().m_consoleState };
+        const BufferWriter writer;
         writer.Flush();
     }
 } // namespace FE::Console

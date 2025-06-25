@@ -17,6 +17,11 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(ForceInitType)
+            : m_simdVector(_mm_setzero_ps())
+        {
+        }
+
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(const float value)
             : m_simdVector(_mm_set1_ps(value))
         {
@@ -27,7 +32,7 @@ namespace FE
         {
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(const Vector4F vec)
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F(const Vector4 vec)
             : m_simdVector(vec.m_simdVector)
         {
         }
@@ -52,6 +57,11 @@ namespace FE
             return m_values;
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE explicit operator Vector4() const
+        {
+            return Vector4{ m_simdVector };
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL LoadUnaligned(const float* values)
         {
             return Color4F{ _mm_loadu_ps(values) };
@@ -69,12 +79,6 @@ namespace FE
             const __m128i intVector = _mm_setr_epi32(r, g, b, a);
             const __m128 floatVector = _mm_cvtepi32_ps(intVector);
             return Color4F{ _mm_mul_ps(floatVector, _mm_set1_ps(1.0f / 255.0f)) };
-        }
-
-        template<Math::Swizzle TSwizzle>
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL Swizzle(const Color4F color)
-        {
-            return Color4F{ _mm_shuffle_ps(color.m_simdVector, color.m_simdVector, festd::to_underlying(TSwizzle)) };
         }
     };
 
@@ -175,34 +179,6 @@ namespace FE
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
             return mask == 0;
         }
-
-
-        namespace Pack
-        {
-            FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL RGBA8UnormToRGBA32Float(const uint32_t source)
-            {
-                const uint8_t r = (source >> 16) & 0xff;
-                const uint8_t g = (source >> 8) & 0xff;
-                const uint8_t b = (source >> 0) & 0xff;
-                const uint8_t a = (source >> 24) & 0xff;
-
-                const __m128i intVector = _mm_setr_epi32(r, g, b, a);
-                const __m128 floatVector = _mm_cvtepi32_ps(intVector);
-                return Color4F{ _mm_mul_ps(floatVector, _mm_set1_ps(1.0f / 255.0f)) };
-            }
-
-
-            FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL RGBA32FloatToRGBA8Unorm(const Color4F source)
-            {
-                const __m128i t = _mm_cvttps_epi32(_mm_mul_ps(source.m_simdVector, _mm_set1_ps(255.0f)));
-                const __m128i v = _mm_min_epi32(t, _mm_set1_epi32(255));
-                const uint32_t r = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 0));
-                const uint32_t g = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 1));
-                const uint32_t b = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 2));
-                const uint32_t a = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 3));
-                return (r << 16) | (g << 8) | (b << 0) | (a << 24);
-            }
-        } // namespace Pack
     } // namespace Math
 
 

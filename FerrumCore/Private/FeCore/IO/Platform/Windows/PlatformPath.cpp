@@ -1,6 +1,7 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/IO/Platform/PlatformPath.h>
 #include <FeCore/Platform/Windows/Common.h>
+#include <FeCore/Strings/Utils.h>
 
 namespace FE::Platform
 {
@@ -52,15 +53,18 @@ namespace FE::Platform
 
     IO::ResultCode IterateDirectoryRecursively(const DirectoryIterationParams& params)
     {
-        festd::small_vector<IO::Path, 4> directoryStack;
+        festd::inline_vector<IO::Path, 4> directoryStack;
         directoryStack.push_back(params.m_path);
+
+        const auto patterns = Str::SplitFixed<8>(params.m_pattern, ';');
 
         while (!directoryStack.empty())
         {
-            const IO::Path pattern = MakePlatformPreferred(directoryStack.back() / params.m_pattern);
-            const WideString widePattern{ pattern };
-
+            const IO::Path currentDirectory = directoryStack.back();
             directoryStack.pop_back();
+
+            const IO::Path fullPattern = MakePlatformPreferred(currentDirectory / "*");
+            const WideString widePattern{ fullPattern };
 
             WIN32_FIND_DATAW findFileData;
             const HANDLE hFile = FindFirstFileW(widePattern.data(), &findFileData);
@@ -77,11 +81,17 @@ namespace FE::Platform
                 if (filename == "." || filename == "..")
                     continue;
 
-                const IO::Path fullFilename = params.m_path / filename;
+                const IO::Path fullFilename = currentDirectory / filename;
                 const IO::FileAttributeFlags attributeFlags = ConvertFileAttributeFlags(findFileData.dwFileAttributes);
                 const FILETIME creationFT = findFileData.ftCreationTime;
                 const FILETIME accessFT = findFileData.ftLastAccessTime;
                 const FILETIME writeFT = findFileData.ftLastWriteTime;
+
+                if (!Bit::AnySet(attributeFlags, IO::FileAttributeFlags::kDirectory))
+                {
+                    if (!Str::MatchAny(filename, patterns))
+                        continue;
+                }
 
                 IO::DirectoryEntry entry;
                 entry.m_path = IO::PathView{ fullFilename };

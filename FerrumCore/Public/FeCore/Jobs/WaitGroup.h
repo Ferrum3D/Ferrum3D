@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Modules/ServiceLocator.h>
+#include <FeCore/Jobs/Base.h>
+#include <FeCore/Modules/Environment.h>
 
 namespace FE
 {
@@ -20,24 +20,12 @@ namespace FE
         {
             const uint32_t refCount = --m_refCount;
             if (refCount == 0)
-            {
-                IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-                std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
-                allocator->deallocate(this, sizeof(WaitGroup), alignof(WaitGroup));
-            }
+                DestroyImpl();
 
             return refCount;
         }
 
-        static WaitGroup* Create(const int32_t counter = 1)
-        {
-            IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-            std::pmr::memory_resource* allocator = jobSystem->GetWaitGroupAllocator();
-            auto* result = new (allocator->allocate(sizeof(WaitGroup), alignof(WaitGroup))) WaitGroup;
-            if (counter)
-                result->Add(counter);
-            return result;
-        }
+        static WaitGroup* Create(uint32_t counter = 1);
 
         static void WaitAll(const festd::span<WaitGroup* const> waitGroups)
         {
@@ -62,6 +50,7 @@ namespace FE
         }
 
         void Add(int32_t value);
+        void SignalAll();
         void Signal();
         bool IsSignaled() const;
         void Wait();
@@ -71,7 +60,9 @@ namespace FE
         std::atomic<int32_t> m_counter = 0;
         std::atomic<uint64_t> m_lockAndQueue = 0;
 
+        void SignalImpl();
         bool SignalSlowImpl();
+        void DestroyImpl();
 
         WaitGroup() = default;
     };
@@ -79,8 +70,27 @@ namespace FE
 
     inline void WaitGroup::Add(const int32_t value)
     {
-        FE_Assert(value > 0, "Invalid value");
+        FE_AssertDebug(value > 0, "Invalid value");
         m_counter.fetch_add(value);
+    }
+
+
+    FE_FORCE_INLINE void WaitGroup::SignalAll()
+    {
+        const int32_t prevValue = m_counter.exchange(0);
+        FE_Assert(prevValue > 0);
+        SignalImpl();
+    }
+
+
+    FE_FORCE_INLINE void WaitGroup::Signal()
+    {
+        const int32_t prevValue = m_counter.fetch_sub(1);
+        if (prevValue > 1)
+            return;
+
+        FE_Assert(prevValue == 1);
+        SignalImpl();
     }
 
 

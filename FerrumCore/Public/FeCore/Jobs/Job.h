@@ -8,11 +8,7 @@ namespace FE
 {
     struct Job : public ConcurrentQueue::Node
     {
-        Job()
-        {
-            m_next = nullptr;
-        }
-
+        Job() = default;
         virtual ~Job() = default;
 
         Job(const Job&) = delete;

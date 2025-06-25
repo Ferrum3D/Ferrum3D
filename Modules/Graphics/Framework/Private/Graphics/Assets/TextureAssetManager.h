@@ -56,12 +56,14 @@ namespace FE::Graphics
             uint32_t m_mipChainIndex = 0;
             const std::byte* m_data = nullptr;
             std::pmr::memory_resource* m_bufferAllocator = nullptr;
+            Core::AsyncCopyCommandList* m_commandList = nullptr;
         };
 
         void AsyncIOCallback(const IO::AsyncBlockReadResult& result) override;
 
-        bool OnHeaderLoaded(festd::span<const std::byte> data, Request* request, IO::IStream* stream);
-        bool OnMipChainLoaded(const std::byte* data, Request* request, uint32_t mipChainIndex,
+        bool OnHeaderLoaded(festd::span<const std::byte> data, Request* request, IO::IStream* stream,
+                            std::pmr::memory_resource* bufferAllocator);
+        bool OnMipChainLoaded(const std::byte* data, Request* request, uint32_t mipChainIndex, const std::byte* dataToDelete,
                               std::pmr::memory_resource* bufferAllocator);
 
         Logger* m_logger;

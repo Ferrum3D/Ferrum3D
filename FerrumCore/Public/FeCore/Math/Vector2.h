@@ -17,6 +17,12 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(ForceInitType)
+            : x(0)
+            , y(0)
+        {
+        }
+
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(T value)
             : x(value)
             , y(value)
@@ -39,6 +45,11 @@ namespace FE
             return m_values;
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T operator[](const uint32_t index) const
+        {
+            return m_values[index];
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base Zero()
         {
             return Vector2Base{ 0, 0 };
@@ -54,18 +65,24 @@ namespace FE
             return Vector2Base{ values[0], values[1] };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisX(T length = 1.0f)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisX(const T length = 1)
         {
             return Vector2Base{ length, 0 };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisY(T length = 1.0f)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base AxisY(const T length = 1)
         {
             return Vector2Base{ 0, length };
         }
+
+        template<class TOther>
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE explicit operator Vector2Base<TOther>() const
+        {
+            return Vector2Base<TOther>{ static_cast<TOther>(x), static_cast<TOther>(y) };
+        }
     };
 
-    using Vector2F = Vector2Base<float>;
+    using Vector2 = Vector2Base<float>;
     using Vector2Int = Vector2Base<int32_t>;
     using Vector2UInt = Vector2Base<uint32_t>;
 
@@ -121,19 +138,19 @@ namespace FE
 
     namespace Math
     {
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(Vector2Base<float> lhs, Vector2Base<float> rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Vector2Base<float> lhs, const Vector2Base<float> rhs)
         {
             return lhs.x * rhs.x + lhs.y * rhs.y;
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Abs(Vector2F vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Abs(const Vector2 vec)
         {
-            return Vector2F{ Abs(vec.x), Abs(vec.y) };
+            return Vector2{ Abs(vec.x), Abs(vec.y) };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Int Abs(Vector2Int vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Int Abs(const Vector2Int vec)
         {
             return Vector2Int{ Abs(vec.x), Abs(vec.y) };
         }
@@ -160,43 +177,92 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Saturate(Vector2F vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Saturate(const Vector2 vec)
         {
-            return Vector2F{ Saturate(vec.x), Saturate(vec.y) };
+            return Vector2{ Saturate(vec.x), Saturate(vec.y) };
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float LengthSquared(Vector2F vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Floor(const Vector2 vec)
+        {
+            return Vector2{ Floor(vec.x), Floor(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Ceil(const Vector2 vec)
+        {
+            return Vector2{ Ceil(vec.x), Ceil(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Round(const Vector2 vec)
+        {
+            return Vector2{ Round(vec.x), Round(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Reciprocal(const Vector2 vec)
+        {
+            return Vector2{ 1.0f / vec.x, 1.0f / vec.y };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 ReciprocalEstimate(const Vector2 vec)
+        {
+            return Vector2{ 1.0f / vec.x, 1.0f / vec.y };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Sqrt(const Vector2 vec)
+        {
+            return Vector2{ Sqrt(vec.x), Sqrt(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 ReciprocalSqrt(const Vector2 vec)
+        {
+            return Vector2{ 1.0f / Sqrt(vec.x), 1.0f / Sqrt(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 ReciprocalSqrtEstimate(const Vector2 vec)
+        {
+            return Vector2{ 1.0f / Sqrt(vec.x), 1.0f / Sqrt(vec.y) };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float LengthSquared(const Vector2 vec)
         {
             return Dot(vec, vec);
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Length(Vector2F vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Length(const Vector2 vec)
         {
             return Sqrt(LengthSquared(vec));
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2F Normalize(Vector2F vec)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2 Normalize(const Vector2 vec)
         {
             return vec / Length(vec);
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float DistanceSquared(Vector2F lhs, Vector2F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float DistanceSquared(const Vector2 lhs, const Vector2 rhs)
         {
             return LengthSquared(lhs - rhs);
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Distance(Vector2F lhs, Vector2F rhs)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float Distance(const Vector2 lhs, const Vector2 rhs)
         {
             return Length(lhs - rhs);
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(Vector2F lhs, Vector2F rhs, float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(const Vector2 lhs, const Vector2 rhs,
+                                                                 const float epsilon = Constants::kEpsilon)
         {
             return EqualEstimate(lhs.x, rhs.x, epsilon) && EqualEstimate(lhs.y, rhs.y, epsilon);
         }

@@ -1,8 +1,13 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Threading/SharedSpinLock.h>
 
 namespace FE::DI
 {
+    struct ServiceRegistry;
+    struct ServiceRegistryBuilder;
+
+
     //! @brief Represents a dependency injection result code.
     enum class ResultCode : int32_t
     {
@@ -26,9 +31,6 @@ namespace FE::DI
 
         kCount,
     };
-
-
-    struct ServiceRegistry;
 
 
     //! @brief Base interface for dependency injection containers.

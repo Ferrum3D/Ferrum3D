@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
-#include <FeCore/Threading/SpinLock.h>
 #include <FeCore/Strings/Format.h>
+#include <FeCore/Threading/SpinLock.h>
 #include <festd/intrusive_list.h>
 
 namespace FE
@@ -18,10 +18,14 @@ namespace FE
     };
 
 
-    inline constexpr const char* LogSeverityToString(LogSeverity severity)
+    inline const char* LogSeverityToString(const LogSeverity severity)
     {
         switch (severity)
         {
+        default:
+            FE_DebugBreak();
+            return "<unknown>";
+
         case LogSeverity::kTrace:
             return "trace";
         case LogSeverity::kDebug:
@@ -34,8 +38,6 @@ namespace FE
             return "error";
         case LogSeverity::kCritical:
             return "critical";
-        default:
-            return "<unk>";
         }
     }
 
@@ -101,7 +103,7 @@ namespace FE
         void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)
         {
             festd::string message;
-            Fmt::FormatTo(message, fmt.m_value, festd::forward<TArgs>(args)...);
+            Fmt::FormatTo(message, fmt.m_value, std::forward<TArgs>(args)...);
 
             std::lock_guard lock{ m_lock };
             for (LogSinkBase& sink : m_sinks)
@@ -113,37 +115,37 @@ namespace FE
         template<class... TArgs>
         void LogTrace(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kTrace, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kTrace, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
         void LogDebug(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kDebug, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kDebug, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
         void LogInfo(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kInfo, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kInfo, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
         void LogWarning(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kWarning, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kWarning, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
         void LogError(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kError, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kError, fmt, std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
         void LogCritical(LogFormatString fmt, TArgs&&... args)
         {
-            Log(LogSeverity::kCritical, fmt, festd::forward<TArgs>(args)...);
+            Log(LogSeverity::kCritical, fmt, std::forward<TArgs>(args)...);
         }
 
     private:

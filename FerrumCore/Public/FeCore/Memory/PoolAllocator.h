@@ -133,7 +133,7 @@ namespace FE::Memory
         template<class... TArgs>
         T* New(TArgs&&... args)
         {
-            return Memory::New<T>(GetAllocator(), festd::forward<TArgs>(args)...);
+            return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);
         }
 
         void Delete(const T* ptr)

@@ -90,7 +90,7 @@ static void MergeSortImplAsync(festd::span<int32_t> array, festd::span<int32_t> 
 
     pWaitGroup->Wait();
     MergeArraysSync(festd::span(left), festd::span(right), mergingSpace);
-    Memory::Copy(mergingSpace, array);
+    Memory::Copy(array, mergingSpace);
 }
 
 static void ParallelSort(festd::span<int32_t> array)
@@ -153,7 +153,7 @@ struct MainJob final : Job
         }
 
         values2.resize(length);
-        Memory::Copy(festd::span(values1), festd::span(values2));
+        Memory::Copy(festd::span(values2), festd::span(values1));
 
         auto parallel = MeasureTime([&values1]() {
             ParallelSort(festd::span(values1));

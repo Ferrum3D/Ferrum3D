@@ -20,10 +20,10 @@ namespace FE::DI
     private:
         struct CallbackImpl final : public ServiceRegistryCallback
         {
-            void OnDetach(ServiceRegistry* pRegistry) override
+            void OnDetach(ServiceRegistry* registry) override
             {
                 std::lock_guard lk{ m_parent->m_lock };
-                if (LifetimeScope* rootLifetimeScope = pRegistry->GetRootLifetimeScope())
+                if (LifetimeScope* rootLifetimeScope = registry->GetRootLifetimeScope())
                     Memory::DefaultDelete(rootLifetimeScope);
             }
 

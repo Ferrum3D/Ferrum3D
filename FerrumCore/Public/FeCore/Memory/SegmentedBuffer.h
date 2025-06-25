@@ -61,11 +61,16 @@ namespace FE::Memory
         {
             auto* segment =
                 static_cast<SegmentedBuffer::Segment*>(m_buffer.m_allocator->allocate(size + sizeof(SegmentedBuffer::Segment)));
-            SIMD::SSE::Zero(segment, sizeof(SegmentedBuffer::Segment));
+            Zero(segment, sizeof(SegmentedBuffer::Segment));
             segment->m_size = size;
             segment->m_capacity = size + sizeof(SegmentedBuffer::Segment);
             m_segments.push_back(segment);
             return reinterpret_cast<std::byte*>(segment + 1);
+        }
+
+        [[nodiscard]] festd::span<SegmentedBuffer::Segment* const> GetSegments() const
+        {
+            return { m_segments.data(), m_segments.size() };
         }
 
         SegmentedBuffer Build()
@@ -85,7 +90,7 @@ namespace FE::Memory
         }
 
     private:
-        festd::small_vector<SegmentedBuffer::Segment*> m_segments;
+        festd::inline_vector<SegmentedBuffer::Segment*> m_segments;
         SegmentedBuffer m_buffer;
     };
 
@@ -111,6 +116,13 @@ namespace FE::Memory
 
         void* WriteBytes(const void* data, const uint32_t size)
         {
+            void* ptr = Allocate(size);
+            memcpy(ptr, data, size);
+            return ptr;
+        }
+
+        void* Allocate(const uint32_t size)
+        {
             SegmentedBuffer::Segment* segment;
             if (!m_segments.empty() && m_segments.back()->m_size + size + sizeof(SegmentedBuffer::Segment) <= m_segmentCapacity)
             {
@@ -119,14 +131,13 @@ namespace FE::Memory
             else
             {
                 segment = static_cast<SegmentedBuffer::Segment*>(m_buffer.m_allocator->allocate(m_segmentCapacity));
-                SIMD::SSE::Zero(segment, sizeof(SegmentedBuffer::Segment));
+                Zero(segment, sizeof(SegmentedBuffer::Segment));
                 segment->m_size = 0;
                 segment->m_capacity = m_segmentCapacity;
                 m_segments.push_back(segment);
             }
 
             void* result = reinterpret_cast<std::byte*>(segment + 1) + segment->m_size;
-            memcpy(result, data, size);
             segment->m_size += size;
             return result;
         }
@@ -149,7 +160,7 @@ namespace FE::Memory
         }
 
     private:
-        festd::small_vector<SegmentedBuffer::Segment*> m_segments;
+        festd::inline_vector<SegmentedBuffer::Segment*> m_segments;
         SegmentedBuffer m_buffer;
         uint32_t m_segmentCapacity = 0;
     };
@@ -180,6 +191,22 @@ namespace FE::Memory
             return true;
         }
 
+        [[nodiscard]] bool SkipBytes(const uint32_t size)
+        {
+            if (m_segmentIndex >= m_buffer.m_segmentCount)
+                return false;
+
+            const SegmentedBuffer::Segment* segment = m_buffer.m_segments[m_segmentIndex];
+            if (m_segmentOffset + size > segment->m_size)
+            {
+                m_segmentIndex++;
+                m_segmentOffset = 0;
+                return SkipBytes(size);
+            }
+
+            m_segmentOffset += size;
+            return true;
+        }
 
         [[nodiscard]] bool ReadBytesNoConsume(void* data, const uint32_t size) const
         {

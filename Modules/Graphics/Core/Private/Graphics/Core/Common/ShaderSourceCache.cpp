@@ -20,15 +20,28 @@ namespace FE::Graphics::Core
     {
         FE_PROFILER_ZONE();
 
-        const IO::Path absoluteShadersFolderPath = IO::GetAbsolutePath("Shaders");
+        ReadDirectory(IO::GetAbsolutePath("Shaders"));
+        ReadDirectory(IO::GetAbsolutePath("../../Modules/Graphics/Framework/Shaders"));
+
+        // TODO: probably we can wait later...
+        while (m_loadingTasksCount.load(std::memory_order_acquire) > 0)
+        {
+            for (uint32_t i = 0; i < 32; ++i)
+                _mm_pause();
+        }
+    }
+
+
+    void ShaderSourceCache::ReadDirectory(const IO::Path& path)
+    {
         const IO::ResultCode iterationResult =
-            IO::Directory::TraverseRecursively(absoluteShadersFolderPath, [&](const IO::DirectoryEntry& entry) {
+            IO::Directory::TraverseRecursively(path, "*.hlsl;*.hlsli;*.h", [&](const IO::DirectoryEntry& entry) {
                 if (!Bit::AnySet(entry.m_attributes, IO::FileAttributeFlags::kDirectory))
                 {
                     const festd::string_view pathStrView{ entry.m_path };
-                    FE_Assert(pathStrView.starts_with(absoluteShadersFolderPath));
+                    FE_Assert(pathStrView.starts_with(path));
 
-                    const festd::string_view shaderNameView = pathStrView.substr_ascii(absoluteShadersFolderPath.size() + 1);
+                    const festd::string_view shaderNameView = pathStrView.substr_ascii(path.size() + 1);
                     const Env::Name shaderName{ shaderNameView };
                     m_loadingTasksCount.fetch_add(1, std::memory_order_release);
 
@@ -44,15 +57,9 @@ namespace FE::Graphics::Core
             });
 
         FE_AssertMsg(iterationResult == IO::ResultCode::kSuccess,
-                     "Failed to traverse the Shaders directory: {}",
+                     "Failed to traverse directory {}: {}",
+                     path,
                      IO::GetResultDesc(iterationResult));
-
-        // TODO: probably we can wait later...
-        while (m_loadingTasksCount.load(std::memory_order_acquire) > 0)
-        {
-            for (uint32_t i = 0; i < 32; ++i)
-                _mm_pause();
-        }
     }
 
 
@@ -61,6 +68,8 @@ namespace FE::Graphics::Core
         FE_PROFILER_ZONE();
 
         FE_Assert(!IsLoading());
+
+        std::shared_lock lk{ m_lock };
 
         const auto iter = m_filesMap.find(path);
         if (iter == m_filesMap.end())
@@ -74,8 +83,9 @@ namespace FE::Graphics::Core
     {
         FE_PROFILER_ZONE();
 
-        auto deferFree = festd::defer([&result] {
+        auto deferFree = festd::defer([&result, this] {
             result.FreeData();
+            m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
         });
 
         switch (result.m_controller->GetStatus())
@@ -95,25 +105,11 @@ namespace FE::Graphics::Core
             break;
         }
 
-        ShaderStage stage = ShaderStage::kUndefined;
         const IO::PathView pathView{ result.m_request->m_path };
+        const ShaderStage stage = GetShaderStageFromName(pathView.stem());
 
-        if (pathView.extension() != ".hlsli")
+        if (pathView.extension() != ".hlsli" && pathView.extension() != ".h")
         {
-            const festd::string_view stem = pathView.stem();
-            if (stem.ends_with(".ps"))
-                stage = ShaderStage::kPixel;
-            else if (stem.ends_with(".vs"))
-                stage = ShaderStage::kVertex;
-            else if (stem.ends_with(".hs"))
-                stage = ShaderStage::kHull;
-            else if (stem.ends_with(".ds"))
-                stage = ShaderStage::kDomain;
-            else if (stem.ends_with(".gs"))
-                stage = ShaderStage::kGeometry;
-            else if (stem.ends_with(".cs"))
-                stage = ShaderStage::kCompute;
-
             if (stage == ShaderStage::kUndefined)
             {
                 m_logger->LogError("Couldn't determine shader stage: {}", result.m_request->m_path);
@@ -131,8 +127,19 @@ namespace FE::Graphics::Core
         file->m_stage = stage;
         file->m_source[file->m_sourceSize] = '\0';
 
+        const auto shaderName = Env::Name::CreateFromHandle(static_cast<uint32_t>(result.m_request->m_userData0));
+
+        const festd::string_view shaderNameStrView{ shaderName };
+
         std::lock_guard lk{ m_lock };
-        m_filesMap[Env::Name::CreateFromHandle(static_cast<uint32_t>(result.m_request->m_userData0))] = file;
+        m_filesMap[shaderName] = file;
+
+        constexpr festd::string_view fidelityFxPrefix = "ThirdParty/FidelityFX/";
+        if (shaderNameStrView.starts_with(fidelityFxPrefix))
+        {
+            const auto alias = shaderNameStrView.substr_ascii(fidelityFxPrefix.size());
+            m_filesMap[Env::Name{ alias }] = file;
+        }
 
         m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
     }

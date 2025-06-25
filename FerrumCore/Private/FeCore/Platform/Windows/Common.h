@@ -8,9 +8,10 @@ namespace FE::Platform
 {
     struct WideString
     {
-        festd::small_vector<WCHAR, MAX_PATH> m_value;
+        festd::pmr::inline_vector<WCHAR, MAX_PATH> m_value;
 
-        WideString(const festd::string_view str)
+        WideString(const festd::string_view str, std::pmr::memory_resource* allocator = nullptr)
+            : m_value(allocator ? allocator : std::pmr::get_default_resource())
         {
             const int32_t length = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
             if (length < 0)
@@ -78,26 +79,26 @@ namespace FE::Platform
 
     inline void ConvertDateTimeToSystemTime(const SystemTimeInfo dateTime, SYSTEMTIME& result)
     {
-        result.wYear = static_cast<WORD>(dateTime.Year + 1900);
-        result.wMonth = static_cast<WORD>(dateTime.Month) + 1;
-        result.wDay = static_cast<WORD>(dateTime.Day);
-        result.wDayOfWeek = static_cast<WORD>(dateTime.DayOfWeek);
-        result.wHour = static_cast<WORD>(dateTime.Hour);
-        result.wMinute = static_cast<WORD>(dateTime.Minute);
-        result.wSecond = static_cast<WORD>(dateTime.Second);
+        result.wYear = static_cast<WORD>(dateTime.m_year + 1900);
+        result.wMonth = static_cast<WORD>(dateTime.m_month) + 1;
+        result.wDay = static_cast<WORD>(dateTime.m_day);
+        result.wDayOfWeek = static_cast<WORD>(dateTime.m_dayOfWeek);
+        result.wHour = static_cast<WORD>(dateTime.m_hour);
+        result.wMinute = static_cast<WORD>(dateTime.m_minute);
+        result.wSecond = static_cast<WORD>(dateTime.m_second);
         result.wMilliseconds = 0;
     }
 
 
     inline void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
     {
-        result.Year = systemTime.wYear - 1900;
-        result.Month = systemTime.wMonth;
-        result.Day = systemTime.wDay;
-        result.DayOfWeek = systemTime.wDayOfWeek;
-        result.Hour = systemTime.wHour;
-        result.Minute = systemTime.wMinute;
-        result.Second = systemTime.wSecond;
+        result.m_year = systemTime.wYear - 1900;
+        result.m_month = systemTime.wMonth;
+        result.m_day = systemTime.wDay;
+        result.m_dayOfWeek = systemTime.wDayOfWeek;
+        result.m_hour = systemTime.wHour;
+        result.m_minute = systemTime.wMinute;
+        result.m_second = systemTime.wSecond;
     }
 
 

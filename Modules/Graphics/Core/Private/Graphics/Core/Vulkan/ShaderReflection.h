@@ -15,19 +15,22 @@ namespace FE::Graphics::Vulkan
         festd::span<const Core::ShaderInputAttribute> GetInputAttributes() const override;
         festd::span<const Core::ShaderResourceBinding> GetResourceBindings() const override;
         festd::span<const Core::ShaderRootConstant> GetRootConstants() const override;
+        festd::span<const Env::Name> GetSpecializationConstantNames() const override;
 
         uint32_t GetResourceBindingIndex(Env::Name name) const override;
         uint32_t GetInputAttributeLocation(Env::Name semantic) const override;
 
     private:
-        festd::small_vector<Core::ShaderInputAttribute> m_inputAttributes;
-        festd::small_vector<Core::ShaderResourceBinding> m_resourceBindings;
-        festd::small_vector<Core::ShaderRootConstant> m_rootConstants;
+        festd::inline_vector<Core::ShaderInputAttribute> m_inputAttributes;
+        festd::inline_vector<Core::ShaderResourceBinding> m_resourceBindings;
+        festd::inline_vector<Core::ShaderRootConstant> m_rootConstants;
+        festd::inline_vector<Env::Name> m_specializationConstantNames;
 
-        void ParseInputAttributes(const spirv_cross::CompilerHLSL* pCompiler,
+        void ParseInputAttributes(const spirv_cross::CompilerHLSL* compiler,
                                   const spirv_cross::ShaderResources& shaderResources);
-        void ParseResourceBindings(const spirv_cross::CompilerHLSL* pCompiler,
+        void ParseResourceBindings(const spirv_cross::CompilerHLSL* compiler,
                                    const spirv_cross::ShaderResources& shaderResources);
+        void ParseSpecializationConstants(const spirv_cross::CompilerHLSL* compiler);
     };
 
     FE_ENABLE_IMPL_CAST(ShaderReflection);

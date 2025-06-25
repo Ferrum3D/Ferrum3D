@@ -29,6 +29,25 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase(ForceInitType)
+        {
+            if constexpr (std::is_same_v<T, float>)
+            {
+                m_simdVector = _mm_setzero_ps();
+            }
+            else if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t>)
+            {
+                m_simdVector = _mm_setzero_si128();
+            }
+            else
+            {
+                left = 0;
+                top = 0;
+                right = 0;
+                bottom = 0;
+            }
+        }
+
         FE_FORCE_INLINE RectBase(const RectBase&) = default;
         FE_FORCE_INLINE RectBase(RectBase&&) = default;
         FE_FORCE_INLINE RectBase& operator=(const RectBase&) = default;
@@ -56,6 +75,12 @@ namespace FE
             , right(static_cast<T>(other.right))
             , bottom(static_cast<T>(other.bottom))
         {
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static RectBase FE_VECTORCALL FromPosAndSize(const Vector2Base<T> pos,
+                                                                                           const Vector2Base<T> size)
+        {
+            return RectBase{ pos, pos + size };
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE T* Data()
@@ -103,7 +128,7 @@ namespace FE
 
     using RectF = RectBase<float>;
     using RectInt = RectBase<int32_t>;
-    using RectUint = RectBase<uint32_t>;
+    using RectUInt = RectBase<uint32_t>;
 
 
     template<>

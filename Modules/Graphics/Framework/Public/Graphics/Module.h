@@ -1,14 +1,12 @@
-﻿#pragma once
-#include <FeCore/Modules/ModuleBase.h>
+#pragma once
+#include <FeCore/Modules/Environment.h>
 
 namespace FE::Graphics
 {
-    struct GraphicsModule : public ModuleBase
+    struct Module final : public Env::Module
     {
-        ~GraphicsModule() override = default;
+        void RegisterServices(const DI::ServiceRegistryBuilder& builder) override;
 
-        FE_RTTI_Class(GraphicsModule, "1746E16A-F5EF-4AD0-A91D-541CA8D5F2E8");
-
-        inline static constexpr const char* LibraryPath = "FeGraphics";
+        FE_DECLARE_MODULE(Module);
     };
 } // namespace FE::Graphics

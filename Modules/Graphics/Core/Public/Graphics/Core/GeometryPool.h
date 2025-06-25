@@ -13,11 +13,13 @@ namespace FE::Graphics::Core
 
     struct GeometryAllocationDesc final
     {
-        Env::Name m_name;
-        InputStreamLayout m_inputLayout;
-        IndexType m_indexType;
-        uint32_t m_indexCount;
-        uint32_t m_vertexCount;
+        Env::Name m_name = Env::Name::kEmpty;
+        InputStreamLayout m_inputLayout = InputStreamLayout::kNull;
+        IndexType m_indexType = IndexType::kUint16;
+        uint32_t m_indexCount = 0;
+        uint32_t m_vertexCount = 0;
+        uint32_t m_primitiveCount = 0;
+        uint32_t m_meshletCount = 0;
     };
 
 
@@ -30,6 +32,7 @@ namespace FE::Graphics::Core
         virtual void Free(GeometryHandle handle) = 0;
 
         virtual GeometryView GetView(GeometryHandle handle) = 0;
+        virtual MeshletGeometryView GetMeshletView(GeometryHandle handle) = 0;
 
         virtual WaitGroup* GetAvailabilityWaitGroup(GeometryHandle handle) = 0;
     };

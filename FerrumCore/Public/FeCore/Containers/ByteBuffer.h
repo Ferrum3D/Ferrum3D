@@ -100,7 +100,7 @@ namespace FE
         template<class T>
         [[nodiscard]] static ByteBuffer MoveFromVector(festd::vector<T>&& data) noexcept
         {
-            festd::vector<T> temp = festd::move(data);
+            festd::vector<T> temp = std::move(data);
 
             ByteBuffer result;
             result.m_begin = reinterpret_cast<std::byte*>(temp.begin());

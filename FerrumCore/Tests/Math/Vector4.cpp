@@ -6,7 +6,7 @@ using namespace FE;
 
 TEST(Vector4, GetXYZW)
 {
-    const Vector4F vector{ 1, 2, 3, 4 };
+    const Vector4 vector{ 1, 2, 3, 4 };
     EXPECT_EQ(vector.x, 1);
     EXPECT_EQ(vector.y, 2);
     EXPECT_EQ(vector.z, 3);
@@ -20,24 +20,24 @@ TEST(Vector4, GetXYZW)
 
 TEST(Vector4, CreateFunctions)
 {
-    EXPECT_EQ(Vector4F::Zero(), Vector4F(0));
+    EXPECT_EQ(Vector4::Zero(), Vector4(0));
 
-    EXPECT_EQ(Vector4F::AxisX(), Vector4F(1, 0, 0, 0));
-    EXPECT_EQ(Vector4F::AxisY(), Vector4F(0, 1, 0, 0));
-    EXPECT_EQ(Vector4F::AxisZ(), Vector4F(0, 0, 1, 0));
-    EXPECT_EQ(Vector4F::AxisW(), Vector4F(0, 0, 0, 1));
+    EXPECT_EQ(Vector4::AxisX(), Vector4(1, 0, 0, 0));
+    EXPECT_EQ(Vector4::AxisY(), Vector4(0, 1, 0, 0));
+    EXPECT_EQ(Vector4::AxisZ(), Vector4(0, 0, 1, 0));
+    EXPECT_EQ(Vector4::AxisW(), Vector4(0, 0, 0, 1));
 }
 
 TEST(Vector4, Load)
 {
     const float alignas(__m128) values[] = { 1, 2, 3, 4, 5 };
-    const Vector4F vector1 = Vector4F::LoadAligned(values);
+    const Vector4 vector1 = Vector4::LoadAligned(values);
     EXPECT_EQ(vector1.x, 1);
     EXPECT_EQ(vector1.y, 2);
     EXPECT_EQ(vector1.z, 3);
     EXPECT_EQ(vector1.w, 4);
 
-    const Vector4F vector2 = Vector4F::LoadUnaligned(values + 1);
+    const Vector4 vector2 = Vector4::LoadUnaligned(values + 1);
     EXPECT_EQ(vector2.x, 2);
     EXPECT_EQ(vector2.y, 3);
     EXPECT_EQ(vector2.z, 4);
@@ -46,28 +46,28 @@ TEST(Vector4, Load)
 
 TEST(Vector4, Equality)
 {
-    EXPECT_EQ(Vector4F(1, 2, 3, 4), Vector4F(1, 2, 3, 4));
+    EXPECT_EQ(Vector4(1, 2, 3, 4), Vector4(1, 2, 3, 4));
 
-    EXPECT_NE(Vector4F(1, 2, 3, 4), Vector4F(0, 2, 3, 4));
-    EXPECT_NE(Vector4F(1, 2, 3, 4), Vector4F(1, 0, 3, 4));
-    EXPECT_NE(Vector4F(1, 2, 3, 4), Vector4F(1, 2, 0, 4));
-    EXPECT_NE(Vector4F(1, 2, 3, 4), Vector4F(1, 2, 3, 0));
+    EXPECT_NE(Vector4(1, 2, 3, 4), Vector4(0, 2, 3, 4));
+    EXPECT_NE(Vector4(1, 2, 3, 4), Vector4(1, 0, 3, 4));
+    EXPECT_NE(Vector4(1, 2, 3, 4), Vector4(1, 2, 0, 4));
+    EXPECT_NE(Vector4(1, 2, 3, 4), Vector4(1, 2, 3, 0));
 
-    EXPECT_TRUE(Math::EqualEstimate(Vector4F(1, 2, 3, 4), Vector4F(1.1f, 2.1f, 3.1f, 4.1f), 0.11f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector4F(0.01f), Vector4F::Zero(), 0.02f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector4F::Zero(), Vector4F(0.01f), 0.02f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector4F(0.0f), Vector4F(-0.0f)));
+    EXPECT_TRUE(Math::EqualEstimate(Vector4(1, 2, 3, 4), Vector4(1.1f, 2.1f, 3.1f, 4.1f), 0.11f));
+    EXPECT_TRUE(Math::EqualEstimate(Vector4(0.01f), Vector4::Zero(), 0.02f));
+    EXPECT_TRUE(Math::EqualEstimate(Vector4::Zero(), Vector4(0.01f), 0.02f));
+    EXPECT_TRUE(Math::EqualEstimate(Vector4(0.0f), Vector4(-0.0f)));
 
-    EXPECT_FALSE(Math::EqualEstimate(Vector4F(1, 2, 3, 4), Vector4F(1.2f, 2.1f, 3.1f, 4.1f), 0.11f));
-    EXPECT_FALSE(Math::EqualEstimate(Vector4F(1, 2, 3, 4), Vector4F(1.1f, 2.2f, 3.1f, 4.1f), 0.11f));
-    EXPECT_FALSE(Math::EqualEstimate(Vector4F(1, 2, 3, 4), Vector4F(1.1f, 2.1f, 3.2f, 4.1f), 0.11f));
-    EXPECT_FALSE(Math::EqualEstimate(Vector4F(1, 2, 3, 4), Vector4F(1.1f, 2.1f, 3.1f, 4.2f), 0.11f));
+    EXPECT_FALSE(Math::EqualEstimate(Vector4(1, 2, 3, 4), Vector4(1.2f, 2.1f, 3.1f, 4.1f), 0.11f));
+    EXPECT_FALSE(Math::EqualEstimate(Vector4(1, 2, 3, 4), Vector4(1.1f, 2.2f, 3.1f, 4.1f), 0.11f));
+    EXPECT_FALSE(Math::EqualEstimate(Vector4(1, 2, 3, 4), Vector4(1.1f, 2.1f, 3.2f, 4.1f), 0.11f));
+    EXPECT_FALSE(Math::EqualEstimate(Vector4(1, 2, 3, 4), Vector4(1.1f, 2.1f, 3.1f, 4.2f), 0.11f));
 }
 
 TEST(Vector4, Comparison)
 {
-    const Vector4F a{ 1, 2, 10, -1 };
-    const Vector4F b{ 1, 5, 6, -1 };
+    const Vector4 a{ 1, 2, 10, -1 };
+    const Vector4 b{ 1, 5, 6, -1 };
 
     EXPECT_EQ(Math::CmpEqualMask(a, b), 0b1001);
     EXPECT_EQ(Math::CmpLessMask(a, b), 0b010);
@@ -78,42 +78,42 @@ TEST(Vector4, Comparison)
 
 TEST(Vector4, Addition)
 {
-    const Vector4F a{ 1, 2, 3, -1 };
-    const Vector4F b{ 1, 2, 3, 1 };
-    const Vector4F c{ 2, 4, 6, 0 };
+    const Vector4 a{ 1, 2, 3, -1 };
+    const Vector4 b{ 1, 2, 3, 1 };
+    const Vector4 c{ 2, 4, 6, 0 };
 
     EXPECT_TRUE(Math::EqualEstimate(a + b, c));
 }
 
 TEST(Vector4, Subtraction)
 {
-    const Vector4F a{ 1, 2, 3, 0 };
-    const Vector4F b{ 1, 2, 3, 0 };
-    const Vector4F c{ 0, 0, 0, 0 };
+    const Vector4 a{ 1, 2, 3, 0 };
+    const Vector4 b{ 1, 2, 3, 0 };
+    const Vector4 c{ 0, 0, 0, 0 };
 
     EXPECT_TRUE(Math::EqualEstimate(a - b, c));
 }
 
 TEST(Vector4, Multiplication)
 {
-    const Vector4F a{ 1, 2, 3, 123 };
-    const Vector4F b{ 1, 2, 3, 0 };
-    const Vector4F c{ 1, 4, 9, 0 };
+    const Vector4 a{ 1, 2, 3, 123 };
+    const Vector4 b{ 1, 2, 3, 0 };
+    const Vector4 c{ 1, 4, 9, 0 };
 
     EXPECT_TRUE(Math::EqualEstimate(a * b, c));
 
-    EXPECT_TRUE(Math::EqualEstimate(a * 2.0f, Vector4F{ 2, 4, 6, 246 }));
+    EXPECT_TRUE(Math::EqualEstimate(a * 2.0f, Vector4{ 2, 4, 6, 246 }));
 }
 
 TEST(Vector4, Division)
 {
-    const Vector4F a{ 1, 0, 7, 1 };
-    const Vector4F b{ 1, 2, 2, 1 };
-    const Vector4F c{ 1, 0, 3.5f, 1 };
+    const Vector4 a{ 1, 0, 7, 1 };
+    const Vector4 b{ 1, 2, 2, 1 };
+    const Vector4 c{ 1, 0, 3.5f, 1 };
 
     EXPECT_TRUE(Math::EqualEstimate(a / b, c));
 
-    EXPECT_TRUE(Math::EqualEstimate(b / 2.0f, Vector4F{ 0.5f, 1.0f, 1.0f, 0.5f }));
+    EXPECT_TRUE(Math::EqualEstimate(b / 2.0f, Vector4{ 0.5f, 1.0f, 1.0f, 0.5f }));
 }
 
 TEST(Vector4, Dot)
@@ -121,15 +121,15 @@ TEST(Vector4, Dot)
     std::mt19937 mt(0);
     std::uniform_real_distribution<float> dist(-5, 5);
 
-    const auto dotRef = [](const Vector4F lhs, const Vector4F rhs) {
+    const auto dotRef = [](const Vector4 lhs, const Vector4 rhs) {
         // non-SIMD version for testing
         return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
     };
 
     for (int32_t i = 0; i < 100'000; ++i)
     {
-        const Vector4F a{ dist(mt), dist(mt), dist(mt), dist(mt) };
-        const Vector4F b{ dist(mt), dist(mt), dist(mt), dist(mt) };
+        const Vector4 a{ dist(mt), dist(mt), dist(mt), dist(mt) };
+        const Vector4 b{ dist(mt), dist(mt), dist(mt), dist(mt) };
 
         const float actual = Math::Dot(a, b);
         const float expected = dotRef(a, b);
@@ -140,27 +140,27 @@ TEST(Vector4, Dot)
 
 TEST(Vector4, AbsNeg)
 {
-    const Vector4F a{ -1.0f, 2.0f, -0.0f, 0.0f };
-    EXPECT_EQ(Math::Abs(a), Vector4F(1.0f, 2.0f, 0.0f, 0.0f));
-    EXPECT_TRUE(Math::EqualEstimate(-a, Vector4F{ 1.0f, -2.0f, 0.0f, 0.0f }));
+    const Vector4 a{ -1.0f, 2.0f, -0.0f, 0.0f };
+    EXPECT_EQ(Math::Abs(a), Vector4(1.0f, 2.0f, 0.0f, 0.0f));
+    EXPECT_TRUE(Math::EqualEstimate(-a, Vector4{ 1.0f, -2.0f, 0.0f, 0.0f }));
 }
 
 TEST(Vector4, MinMax)
 {
-    const Vector4F a{ 1, 5, 10, 1 };
-    const Vector4F b{ 10, 2, 3, 1 };
-    EXPECT_EQ(Math::Max(a, b), Vector4F(10, 5, 10, 1));
-    EXPECT_EQ(Math::Min(a, b), Vector4F(1, 2, 3, 1));
+    const Vector4 a{ 1, 5, 10, 1 };
+    const Vector4 b{ 10, 2, 3, 1 };
+    EXPECT_EQ(Math::Max(a, b), Vector4(10, 5, 10, 1));
+    EXPECT_EQ(Math::Min(a, b), Vector4(1, 2, 3, 1));
 }
 
 TEST(Vector4, Clamp)
 {
-    const Vector4F greater{ 10.5f };
-    const Vector4F fits{ 5.5f };
-    const Vector4F less{ -7.5f };
+    const Vector4 greater{ 10.5f };
+    const Vector4 fits{ 5.5f };
+    const Vector4 less{ -7.5f };
 
-    const Vector4F min{ -1.0f };
-    const Vector4F max{ 7.0f };
+    const Vector4 min{ -1.0f };
+    const Vector4 max{ 7.0f };
 
     EXPECT_EQ(Math::Clamp(greater, min, max), max);
     EXPECT_EQ(Math::Clamp(fits, min, max), fits);
@@ -172,14 +172,14 @@ TEST(Vector4, Length)
     std::mt19937 mt(0xdeadbeef);
     std::uniform_real_distribution<float> dist(-5, 5);
 
-    const auto lenRef = [](const Vector4F lhs) {
+    const auto lenRef = [](const Vector4 lhs) {
         // non-SIMD version for testing
         return lhs.x * lhs.x + lhs.y * lhs.y + lhs.z * lhs.z + lhs.w * lhs.w;
     };
 
     for (int32_t i = 0; i < 100'000; ++i)
     {
-        const Vector4F a{ dist(mt), dist(mt), dist(mt), dist(mt) };
+        const Vector4 a{ dist(mt), dist(mt), dist(mt), dist(mt) };
 
         constexpr float kTolerance = 1e-3f;
         ASSERT_TRUE(Math::EqualEstimate(Math::LengthSquared(a), lenRef(a), kTolerance));
@@ -189,13 +189,13 @@ TEST(Vector4, Length)
 
 TEST(Vector4, Normalize)
 {
-    const Vector4F a{ 1.0f, 0.0f, 0.0f, 0.0f };
+    const Vector4 a{ 1.0f, 0.0f, 0.0f, 0.0f };
     EXPECT_TRUE(Math::EqualEstimate(Math::Normalize(a), a));
     EXPECT_TRUE(Math::EqualEstimate(Math::NormalizeEstimate(a), a, 1e-3f));
 
-    const Vector4F b{ 1.0f, 2.0f, 3.0f, -1.0f };
+    const Vector4 b{ 1.0f, 2.0f, 3.0f, -1.0f };
     const float length = 3.872983346f;
-    const Vector4F expected{ 1.0f / length, 2.0f / length, 3.0f / length, -1.0f / length };
-    const Vector4F actual = Math::Normalize(b);
+    const Vector4 expected{ 1.0f / length, 2.0f / length, 3.0f / length, -1.0f / length };
+    const Vector4 actual = Math::Normalize(b);
     EXPECT_TRUE(Math::EqualEstimate(actual, expected, 1e-5f));
 }

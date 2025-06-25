@@ -30,8 +30,6 @@ namespace FE::Console
     };
 
 
-    void Init();
-
     void SetTextColor(Color color);
     void Write(festd::string_view text);
     void Flush();

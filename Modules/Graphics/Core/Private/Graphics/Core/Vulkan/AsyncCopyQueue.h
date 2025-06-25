@@ -1,14 +1,15 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Threading/Event.h>
+#include <FeCore/Threading/SharedSpinLock.h>
 #include <FeCore/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <festd/ring_buffer.h>
 
 namespace FE::Graphics::Vulkan
@@ -25,7 +26,7 @@ namespace FE::Graphics::Vulkan
 
     private:
         static constexpr uint32_t kStagingAllocationAlignment = 256;
-        static constexpr uint32_t kUploadBufferSize = 4 * 1024 * 1024;
+        static constexpr uint32_t kUploadBufferSize = 16 * 1024 * 1024;
 
         struct ProcessingItem final
         {
@@ -33,14 +34,13 @@ namespace FE::Graphics::Vulkan
             Rc<CommandBuffer> m_commandBuffer;
             uint64_t m_fenceValue = 0;
 
-            festd::small_vector<VmaVirtualAllocation> m_stagingAllocations;
+            festd::inline_vector<VmaVirtualAllocation> m_stagingAllocations;
         };
 
         void ThreadProc();
         bool FinalizeFinishedProcessors(bool wait = false);
         void ProcessCommandList(ProcessingItem* item);
         VkDeviceSize AllocateStagingMemory(ProcessingItem* item, size_t byteSize, size_t byteAlignment);
-        void SubmitCommandList(VkCommandBuffer commandBuffer, uint64_t fenceValue) const;
         Rc<CommandBuffer> AcquireCommandBuffer();
 
         Core::ResourcePool* m_resourcePool = nullptr;
@@ -60,12 +60,12 @@ namespace FE::Graphics::Vulkan
         Rc<Core::Fence> m_fence;
 
         uint32_t m_commandBufferCounter = 0;
-        festd::small_vector<Rc<CommandBuffer>> m_freeCommandBuffers;
-        festd::small_ring_buffer<ProcessingItem*, 32> m_processingItems;
+        festd::inline_vector<Rc<CommandBuffer>> m_freeCommandBuffers;
+        festd::inline_ring_buffer<ProcessingItem*, 32> m_processingItems;
         Memory::Pool<ProcessingItem> m_processingItemPool{ "AsyncCopyProcessingItemPool" };
 
         ConcurrentOnceConsumedQueue m_requestQueue;
-        festd::small_vector<Core::AsyncCopyCommandList*> m_requestCache;
+        festd::inline_vector<Core::AsyncCopyCommandList*> m_requestCache;
         Memory::LinearAllocator m_threadTempAllocator;
     };
 } // namespace FE::Graphics::Vulkan

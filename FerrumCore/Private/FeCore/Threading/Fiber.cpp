@@ -101,6 +101,12 @@ namespace FE::Threading
 
     FiberPool::~FiberPool()
     {
+        for (uint32_t i = 0; i < kTotalFiberCount; ++i)
+        {
+            m_fibers[i].m_runtimeInfo->~FiberRuntimeInfo();
+            m_fibers[i].~FiberInfo();
+        }
+
         Memory::DefaultFree(m_fibers);
     }
 

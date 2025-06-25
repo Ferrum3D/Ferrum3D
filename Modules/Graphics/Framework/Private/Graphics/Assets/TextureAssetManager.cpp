@@ -2,6 +2,18 @@
 
 namespace FE::Graphics
 {
+    namespace
+    {
+        bool LoadingFailed()
+        {
+            if (Build::IsDebug())
+                FE_DebugBreak();
+
+            return false;
+        }
+    } // namespace
+
+
     TextureAssetManager::TextureAssetManager(Logger* logger, IJobSystem* jobSystem, IO::IAsyncStreamIO* asyncIO,
                                              Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopy)
         : m_logger(logger)
@@ -52,9 +64,13 @@ namespace FE::Graphics
             m_request->m_asset->m_completionWaitGroup->Signal();
             m_manager->m_requestPool.Delete(m_request);
         }
+        else if (loadedMipCount == 1)
+        {
+            m_request->m_asset->m_status.store(AssetLoadingStatus::kHasLoadedLods, std::memory_order_release);
+        }
         else
         {
-            m_request->m_asset->m_status.store(AssetLoadingStatus::kHasLoadedMips, std::memory_order_release);
+            FE_AssertDebug(m_request->m_asset->m_status.load(std::memory_order_relaxed) == AssetLoadingStatus::kHasLoadedLods);
         }
 
         m_manager->m_mipFinalizerJobPool.Delete(this);
@@ -82,6 +98,7 @@ namespace FE::Graphics
 
         const festd::span data{ readRequest->m_readBuffer, static_cast<uint32_t>(result.m_bytesRead) };
 
+        bool success;
         switch (request->m_stage)
         {
         default:
@@ -89,56 +106,57 @@ namespace FE::Graphics
             [[fallthrough]];
 
         case LoadingStage::kHeader:
-            if (!OnHeaderLoaded(data, request, readRequest->m_stream.Get()))
-            {
-                request->m_asset->m_status.store(AssetLoadingStatus::kFailed, std::memory_order_release);
-                request->m_asset->m_completionWaitGroup->Signal();
-                m_requestPool.Delete(request);
-            }
+            success = OnHeaderLoaded(data, request, readRequest->m_stream.Get(), readRequest->m_allocator);
             break;
 
         case LoadingStage::kMips:
-            if (!OnMipChainLoaded(readRequest->m_readBuffer,
-                                  request,
-                                  static_cast<uint32_t>(readRequest->m_userData1),
-                                  readRequest->m_allocator))
-            {
-                request->m_asset->m_status.store(AssetLoadingStatus::kFailed, std::memory_order_release);
-                request->m_asset->m_completionWaitGroup->Signal();
-                m_requestPool.Delete(request);
-            }
+            success = OnMipChainLoaded(readRequest->m_readBuffer,
+                                       request,
+                                       static_cast<uint32_t>(readRequest->m_userData1),
+                                       readRequest->m_readBuffer,
+                                       readRequest->m_allocator);
             break;
+        }
+
+        if (!success)
+        {
+            request->m_asset->m_status.store(AssetLoadingStatus::kFailed, std::memory_order_release);
+            request->m_asset->m_completionWaitGroup->Signal();
+            m_requestPool.Delete(request);
         }
     }
 
 
-    bool TextureAssetManager::OnHeaderLoaded(const festd::span<const std::byte> data, Request* request, IO::IStream* stream)
+    bool TextureAssetManager::OnHeaderLoaded(const festd::span<const std::byte> data, Request* request, IO::IStream* stream,
+                                             std::pmr::memory_resource* bufferAllocator)
     {
         FE_PROFILER_ZONE();
 
         Memory::BlockReader reader{ data };
 
         if (reader.AvailableSpace() < sizeof(Data::TextureHeader))
-            return false;
+            return LoadingFailed();
 
         const auto header = reader.Read<Data::TextureHeader>();
 
         if (header.m_magic != Data::kTextureMagic)
-            return false;
+            return LoadingFailed();
 
         if (header.m_desc.m_mipSliceCount > Core::Limits::Image::kMaxMipCount)
-            return false;
+            return LoadingFailed();
 
         FE_Assert(header.m_desc.m_arraySize == 1, "Not implemented");
 
-        for (uint32_t i = 0; i < header.m_desc.m_mipSliceCount; ++i)
+        for (uint32_t mipIndex = 0; mipIndex < header.m_desc.m_mipSliceCount;)
         {
             if (reader.AvailableSpace() < sizeof(Data::MipChainInfo))
-                return false;
+                return LoadingFailed();
 
             const auto mipInfo = reader.Read<Data::MipChainInfo>();
             auto& mipRequest = request->m_mipChains.push_back();
             mipRequest.m_info = mipInfo;
+
+            mipIndex += mipInfo.m_mipSliceCount;
         }
 
         request->m_loadedMipChainsMask.resize(request->m_mipChains.size(), false);
@@ -148,11 +166,14 @@ namespace FE::Graphics
 
         request->m_asset->m_resource = m_resourcePool->CreateTexture(request->m_asset->m_name, request->m_header.m_desc);
 
+        bool memoryFreeDeferred = false;
         for (uint32_t i = 0; i < request->m_mipChains.size(); ++i)
         {
             Request::MipChainRequest& mipRequest = request->m_mipChains[i];
             const Data::MipChainInfo mipChain = mipRequest.m_info;
             const Core::FormatInfo formatInfo{ request->m_header.m_desc.m_imageFormat };
+
+            FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
 
             uint32_t mipChainByteSize = 0;
             for (uint32_t j = 0; j < mipChain.m_mipSliceCount; ++j)
@@ -164,10 +185,11 @@ namespace FE::Graphics
             if (reader.AvailableSpace() > 0)
             {
                 // The least detailed mip chain might be in the same block as the header.
-                if (!OnMipChainLoaded(reader.m_ptr, request, i, nullptr))
-                    return false;
+                if (!OnMipChainLoaded(reader.m_ptr, request, i, data.data(), bufferAllocator))
+                    return LoadingFailed();
 
                 reader.m_ptr = reader.m_end;
+                memoryFreeDeferred = true;
             }
             else
             {
@@ -180,19 +202,21 @@ namespace FE::Graphics
                 m_asyncIO->ReadAsync(mipBlockReadRequest, IO::Priority::kNormal + static_cast<int32_t>(i));
             }
         }
+
+        if (!memoryFreeDeferred)
+            bufferAllocator->deallocate(const_cast<std::byte*>(data.data()), Compression::kBlockSize);
+
         return true;
     }
 
 
     bool TextureAssetManager::OnMipChainLoaded(const std::byte* data, Request* request, const uint32_t mipChainIndex,
-                                               std::pmr::memory_resource* bufferAllocator)
+                                               const std::byte* dataToDelete, std::pmr::memory_resource* bufferAllocator)
     {
         FE_PROFILER_ZONE();
 
         Request::MipChainRequest& mipRequest = request->m_mipChains[mipChainIndex];
         const Data::MipChainInfo mipInfo = mipRequest.m_info;
-
-        Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &m_asyncCopyCommandPagePool, kAsyncCopyCommandSegmentSize };
 
         const uint32_t loadedBlockCount = mipRequest.m_loadedBlockCount.fetch_add(1, std::memory_order_acq_rel);
         if (loadedBlockCount + 1 < mipInfo.m_blockCount)
@@ -203,11 +227,14 @@ namespace FE::Graphics
         subresource.m_mipSliceCount = mipInfo.m_mipSliceCount;
         subresource.m_firstArraySlice = mipInfo.m_arraySlice;
         subresource.m_arraySize = 1;
+        subresource.m_aspect = Core::ImageAspect::kColor;
+
+        Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &m_asyncCopyCommandPagePool, kAsyncCopyCommandSegmentSize };
         copyCommandListBuilder.UploadTexture(request->m_asset->m_resource.Get(), data, 0, subresource);
 
         const Rc uploadWaitGroup = WaitGroup::Create();
-        auto* copyCommandList = Memory::New<Core::AsyncCopyCommandList>(&m_asyncCopyCommandListPool,
-                                                                        copyCommandListBuilder.Build(uploadWaitGroup.Get()));
+        Core::AsyncCopyCommandList* copyCommandList =
+            copyCommandListBuilder.Build(&m_asyncCopyCommandListPool, uploadWaitGroup.Get());
         m_asyncCopy->ExecuteCommandList(copyCommandList);
 
         auto* mipJob = m_mipFinalizerJobPool.New();
@@ -215,8 +242,9 @@ namespace FE::Graphics
         mipJob->m_uploadWaitGroup = uploadWaitGroup;
         mipJob->m_request = request;
         mipJob->m_mipChainIndex = mipChainIndex;
-        mipJob->m_data = data;
+        mipJob->m_data = dataToDelete;
         mipJob->m_bufferAllocator = bufferAllocator;
+        mipJob->m_commandList = copyCommandList;
         mipJob->ScheduleBackground(m_jobSystem);
 
         return true;

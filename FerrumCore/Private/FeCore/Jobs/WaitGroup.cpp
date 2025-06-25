@@ -1,36 +1,17 @@
 ﻿#include <FeCore/Jobs/JobSystem.h>
 #include <FeCore/Jobs/WaitGroup.h>
+#include <FeCore/Memory/PoolAllocator.h>
 
 namespace FE
 {
-    FE_FORCE_INLINE bool WaitGroup::SignalSlowImpl()
+    namespace
     {
-        uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
-        if (lockAndQueue == 0)
-        {
-            if (m_lockAndQueue.compare_exchange_weak(lockAndQueue, 1, std::memory_order_acquire))
-            {
-                // The queue is empty
-                return true;
-            }
-
-            return false;
-        }
-
-        if (lockAndQueue & 1)
-            return false;
-
-        return m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire);
-    }
+        Memory::SpinLockedPoolAllocator GWaitGroupAllocator{ "WaitGroupAllocator", sizeof(WaitGroup) };
+    } // namespace
 
 
-    void WaitGroup::Signal()
+    void WaitGroup::SignalImpl()
     {
-        const int32_t prevValue = m_counter.fetch_sub(1);
-        FE_Assert(prevValue > 0);
-        if (prevValue > 1)
-            return;
-
         uint32_t spinCount = 1;
         while (true)
         {
@@ -62,6 +43,45 @@ namespace FE
         }
 
         m_lockAndQueue.store(0, std::memory_order_release);
+    }
+
+
+    FE_FORCE_INLINE bool WaitGroup::SignalSlowImpl()
+    {
+        uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
+        if (lockAndQueue == 0)
+        {
+            if (m_lockAndQueue.compare_exchange_weak(lockAndQueue, 1, std::memory_order_acquire))
+            {
+                // The queue is empty
+                return true;
+            }
+
+            return false;
+        }
+
+        if (lockAndQueue & 1)
+            return false;
+
+        return m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire);
+    }
+
+
+    void WaitGroup::DestroyImpl()
+    {
+        GWaitGroupAllocator.deallocate(this, sizeof(WaitGroup), alignof(WaitGroup));
+    }
+
+
+    WaitGroup* WaitGroup::Create(const uint32_t counter)
+    {
+        FE_AssertDebug(counter <= Constants::kMaxI32);
+
+        auto* group = new (GWaitGroupAllocator.allocate(sizeof(WaitGroup), alignof(WaitGroup))) WaitGroup;
+        if (counter)
+            group->Add(static_cast<int32_t>(counter));
+
+        return group;
     }
 
 
@@ -102,6 +122,8 @@ namespace FE
         auto* jobSystem = fe_assert_cast<JobSystem*>(jobSystemInterface);
 
         const uint32_t workerIndex = jobSystem->GetWorkerIndex();
+        FE_Assert(workerIndex != kInvalidIndex, "WaitGroup::Wait() can only be called from a fiber");
+
         const JobSystem::Worker& worker = jobSystem->m_workers[workerIndex];
 
         FiberWaitEntry waitEntry;

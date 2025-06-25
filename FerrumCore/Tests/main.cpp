@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 {
     Env::ApplicationInfo appInfo;
     appInfo.m_name = "FerrumCoreTests";
-    Env::CreateEnvironment(appInfo);
+    Env::Init(appInfo);
 
     testing::FLAGS_gtest_print_utf8 = true;
 

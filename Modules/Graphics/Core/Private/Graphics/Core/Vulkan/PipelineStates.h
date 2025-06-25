@@ -192,16 +192,14 @@ namespace FE::Graphics::Vulkan
     inline VkShaderStageFlags Translate(const Core::ShaderStageFlags source)
     {
         VkShaderStageFlags result = 0;
-        if (Bit::AllSet(source, Core::ShaderStageFlags::kPixel))
-            result |= VK_SHADER_STAGE_FRAGMENT_BIT;
         if (Bit::AllSet(source, Core::ShaderStageFlags::kVertex))
             result |= VK_SHADER_STAGE_VERTEX_BIT;
-        if (Bit::AllSet(source, Core::ShaderStageFlags::kHull))
-            result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        if (Bit::AllSet(source, Core::ShaderStageFlags::kDomain))
-            result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        if (Bit::AllSet(source, Core::ShaderStageFlags::kGeometry))
-            result |= VK_SHADER_STAGE_GEOMETRY_BIT;
+        if (Bit::AllSet(source, Core::ShaderStageFlags::kAmplification))
+            result |= VK_SHADER_STAGE_TASK_BIT_EXT;
+        if (Bit::AllSet(source, Core::ShaderStageFlags::kMesh))
+            result |= VK_SHADER_STAGE_MESH_BIT_EXT;
+        if (Bit::AllSet(source, Core::ShaderStageFlags::kPixel))
+            result |= VK_SHADER_STAGE_FRAGMENT_BIT;
         if (Bit::AllSet(source, Core::ShaderStageFlags::kCompute))
             result |= VK_SHADER_STAGE_COMPUTE_BIT;
 
@@ -215,14 +213,12 @@ namespace FE::Graphics::Vulkan
         {
         case Core::ShaderStage::kVertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
+        case Core::ShaderStage::kAmplification:
+            return VK_SHADER_STAGE_TASK_BIT_EXT;
+        case Core::ShaderStage::kMesh:
+            return VK_SHADER_STAGE_MESH_BIT_EXT;
         case Core::ShaderStage::kPixel:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case Core::ShaderStage::kHull:
-            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        case Core::ShaderStage::kDomain:
-            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        case Core::ShaderStage::kGeometry:
-            return VK_SHADER_STAGE_GEOMETRY_BIT;
         case Core::ShaderStage::kCompute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
         case Core::ShaderStage::kUndefined:

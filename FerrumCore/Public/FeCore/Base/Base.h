@@ -14,6 +14,8 @@
 #define FE_PROFILER_ZONE() ZoneScoped
 #define FE_PROFILER_ZONE_NAMED(name) ZoneScopedN(name)
 
+#define FE_PROFILER_LOCK(type, name) TracyLockable(type, name)
+
 #define FE_PROFILER_ZONE_TEXT(...)                                                                                               \
     ZoneScoped;                                                                                                                  \
     ZoneTextF(__VA_ARGS__)
@@ -23,19 +25,19 @@ namespace FE
 {
     namespace Memory
     {
-        template<class T>
-        void Copy(festd::span<const T> source, festd::span<T> destination)
+        template<class T, class = std::enable_if_t<std::is_trivially_copyable_v<T>>>
+        void Copy(festd::span<T> destination, festd::span<const T> source)
         {
             FE_CoreAssert(source.size() == destination.size(), "Size mismatch");
-            eastl::copy(source.begin(), source.end(), destination.begin());
+            memcpy(destination.data(), source.data(), source.size_bytes());
         }
 
 
-        template<class T>
-        void Copy(festd::span<T> source, festd::span<T> destination)
+        template<class T, class = std::enable_if_t<std::is_trivially_copyable_v<T>>>
+        void Copy(festd::span<T> destination, festd::span<T> source)
         {
             FE_CoreAssert(source.size() == destination.size(), "Size mismatch");
-            eastl::copy(source.begin(), source.end(), destination.begin());
+            memcpy(destination.data(), source.data(), source.size_bytes());
         }
 
 

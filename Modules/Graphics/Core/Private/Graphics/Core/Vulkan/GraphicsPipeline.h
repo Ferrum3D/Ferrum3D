@@ -2,7 +2,6 @@
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Core/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
-#include <Graphics/Core/Vulkan/DescriptorAllocator.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -11,7 +10,8 @@ namespace FE::Graphics::Vulkan
 
     struct GraphicsPipelineInitContext final
     {
-        Core::DefinesStorage m_defines;
+        Env::Name m_defines;
+        festd::inline_vector<Core::ShaderSpecializationConstant> m_specializationConstants;
         Core::GraphicsPipelineDesc m_desc;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_bindlessSetLayout = VK_NULL_HANDLE;
@@ -24,16 +24,12 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI_Class(GraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");
 
-        GraphicsPipeline(Core::Device* device, DescriptorAllocator* descriptorAllocator);
+        using InitContext = GraphicsPipelineInitContext;
+
+        GraphicsPipeline(Core::Device* device);
         ~GraphicsPipeline() override;
 
         void InitInternal(const GraphicsPipelineInitContext& context);
-
-        void SetCompletionWaitGroup(WaitGroup* waitGroup)
-        {
-            FE_Assert(m_completionWaitGroup == nullptr, "Already set");
-            m_completionWaitGroup = waitGroup;
-        }
 
         [[nodiscard]] VkPipeline GetNative() const
         {
@@ -47,8 +43,6 @@ namespace FE::Graphics::Vulkan
 
     private:
         VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
-        DescriptorAllocator* m_descriptorAllocator = nullptr;
-
         VkPipelineLayout m_layout = VK_NULL_HANDLE;
         VkPipeline m_nativePipeline = VK_NULL_HANDLE;
     };

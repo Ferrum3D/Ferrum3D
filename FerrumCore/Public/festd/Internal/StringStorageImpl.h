@@ -221,7 +221,7 @@ namespace FE::Internal
 
         char* ReserveImpl(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_Assert(length <= kCapacity, "Fixed string overflow");
+            FE_Unused(length);
             return m_data;
         }
 

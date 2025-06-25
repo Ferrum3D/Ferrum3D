@@ -27,37 +27,37 @@ namespace FE
         public:
             [[nodiscard]] int32_t Year() const
             {
-                return m_data.Year + 1900;
+                return m_data.m_year + 1900;
             }
 
             [[nodiscard]] int32_t Month() const
             {
-                return m_data.Month;
+                return m_data.m_month;
             }
 
             [[nodiscard]] int32_t Day() const
             {
-                return m_data.Day;
+                return m_data.m_day;
             }
 
             [[nodiscard]] int32_t DayOfWeek() const
             {
-                return m_data.DayOfWeek;
+                return m_data.m_dayOfWeek;
             }
 
             [[nodiscard]] int32_t Hour() const
             {
-                return m_data.Hour;
+                return m_data.m_hour;
             }
 
             [[nodiscard]] int32_t Minute() const
             {
-                return m_data.Minute;
+                return m_data.m_minute;
             }
 
             [[nodiscard]] int32_t Second() const
             {
-                return m_data.Second;
+                return m_data.m_second;
             }
 
             [[nodiscard]] festd::basic_fixed_string<64> ToString(DateTimeFormatKind formatKind) const;

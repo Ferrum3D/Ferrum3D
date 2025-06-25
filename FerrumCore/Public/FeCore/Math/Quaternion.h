@@ -17,12 +17,17 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(ForceInitType)
+            : m_simdVector(_mm_setzero_ps())
+        {
+        }
+
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(__m128 vec)
             : m_simdVector(vec)
         {
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(Vector3F vec, float w)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(Vector3 vec, float w)
         {
             const __m128 t = _mm_shuffle_ps(_mm_set_ss(w), vec.m_simdVector, _MM_SHUFFLE(3, 2, 1, 0));
             m_simdVector = _mm_shuffle_ps(vec.m_simdVector, t, _MM_SHUFFLE(0, 2, 1, 0));
@@ -64,6 +69,19 @@ namespace FE
             return Quaternion{ _mm_load_ps(values) };
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL LoadUnaligned(const double* values)
+        {
+            const __m256d doubles = _mm256_loadu_pd(values);
+            return Quaternion{ _mm256_cvtpd_ps(doubles) };
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL LoadAligned(const double* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 31) == 0);
+            const __m256d doubles = _mm256_load_pd(values);
+            return Quaternion{ _mm256_cvtpd_ps(doubles) };
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL RotationX(const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
@@ -85,7 +103,7 @@ namespace FE
             return Quaternion{ 0.0f, 0.0f, sin, cos };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL AxisAngle(const Vector3F axis, const float angle)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL AxisAngle(const Vector3 axis, const float angle)
         {
             const float sin = Math::Sin(angle * 0.5f);
             const float cos = Math::Cos(angle * 0.5f);
@@ -144,9 +162,9 @@ namespace FE
 
     namespace Math
     {
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3F FE_VECTORCALL Im(const Quaternion quat)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Im(const Quaternion quat)
         {
-            return Vector3F{ quat.m_simdVector };
+            return Vector3{ quat.m_simdVector };
         }
 
 
