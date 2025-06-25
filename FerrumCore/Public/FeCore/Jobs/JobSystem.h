@@ -5,7 +5,6 @@
 #include <FeCore/Threading/Fiber.h>
 #include <FeCore/Threading/Semaphore.h>
 #include <FeCore/Threading/Thread.h>
-#include <festd/vector.h>
 
 namespace FE
 {
@@ -34,8 +33,6 @@ namespace FE
 
     private:
         friend struct WaitGroup;
-
-        std::pmr::memory_resource* GetWaitGroupAllocator() override;
 
         void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
         {
@@ -105,7 +102,6 @@ namespace FE
         static constexpr uint32_t kMaxWorkerCount = 64;
         festd::array<Worker, kMaxWorkerCount> m_workers;
         Threading::FiberPool m_fiberPool;
-        Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock> m_waitGroupPool;
 
         uint32_t m_backgroundWorkerCount = 0;
         uint32_t m_foregroundWorkerCount = 0;

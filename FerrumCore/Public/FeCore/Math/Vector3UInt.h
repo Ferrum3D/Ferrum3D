@@ -17,6 +17,11 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3UInt() = default;
 
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3UInt(ForceInitType)
+            : m_simdVector(_mm_setzero_si128())
+        {
+        }
+
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3UInt(const uint32_t value)
             : m_simdVector(_mm_set1_epi32(static_cast<int32_t>(value)))
         {
@@ -27,7 +32,7 @@ namespace FE
         {
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3UInt(const Vector3F vec)
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3UInt(const Vector3 vec)
             : m_simdVector(_mm_cvtps_epi32(vec.m_simdVector))
         {
         }
@@ -52,13 +57,13 @@ namespace FE
             return m_values;
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Vector3F() const
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Vector3() const
         {
             const __m128i lo = _mm_and_si128(m_simdVector, _mm_set1_epi32(0xffff));
             const __m128i hi = _mm_srli_epi32(m_simdVector, 16);
             const __m128 loFloat = _mm_cvtepi32_ps(lo);
             const __m128 hiFloat = _mm_mul_ps(_mm_set1_ps(1 << 16), _mm_cvtepi32_ps(hi));
-            return Vector3F{ _mm_add_ps(hiFloat, loFloat) };
+            return Vector3{ _mm_add_ps(hiFloat, loFloat) };
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3UInt FE_VECTORCALL Zero()

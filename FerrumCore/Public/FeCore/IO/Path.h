@@ -21,9 +21,19 @@ namespace FE::IO
 
         PathView() = default;
 
+        explicit PathView(const char* data)
+        {
+            Parse(data);
+        }
+
         explicit PathView(const festd::string_view view)
         {
             Parse(view);
+        }
+
+        explicit PathView(const Env::Name name)
+        {
+            Parse(festd::string_view(name));
         }
 
         [[nodiscard]] const char* data() const

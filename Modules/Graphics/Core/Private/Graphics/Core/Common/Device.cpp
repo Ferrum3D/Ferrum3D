@@ -1,4 +1,5 @@
-﻿#include <Graphics/Core/Common/Device.h>
+﻿#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Resource.h>
@@ -8,7 +9,8 @@ namespace FE::Graphics::Common
     Device::Device(Logger* pLogger)
         : m_logger(pLogger)
     {
-#define FE_FORMAT_FUNC(name, type, byteSize, channelCount, aspectFlags, bc, sign, srgb, index) Core::Format::k##name,
+#if FE_DEVELOPMENT
+#    define FE_FORMAT_FUNC(name, type, byteSize, channelCount, aspectFlags, bc, sign, srgb, index) Core::Format::k##name,
 
         constexpr Core::Format formats[] = { FE_EXPAND_FORMATS(FE_FORMAT_FUNC) };
 
@@ -18,17 +20,14 @@ namespace FE::Graphics::Common
         for (const Core::Format format : formats)
         {
             const Core::FormatInfo formatInfo{ format };
-
-            if (Build::IsDebug())
+            for (const uint32_t index : formatIndices)
             {
-                for (const uint32_t index : formatIndices)
-                {
-                    FE_Assert(formatInfo.m_formatIndex != index);
-                }
+                FE_Assert(formatInfo.m_formatIndex != index);
             }
 
             formatIndices.push_back(formatInfo.m_formatIndex);
         }
+#endif
     }
 
 
@@ -36,10 +35,9 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        for (uint32_t i = 0; i < m_disposeQueue.size(); ++i)
+        for (const PendingDisposer& disposer : m_disposeQueue)
         {
             // Don't use a range-based for loop here, since more objects can be added while we are iterating
-            const PendingDisposer disposer = m_disposeQueue[i];
             disposer.m_object->DoDispose();
             m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.m_object));
         }
@@ -61,7 +59,7 @@ namespace FE::Graphics::Common
         std::lock_guard lock{ m_disposeQueueLock };
         PendingDisposer& disposer = m_disposeQueue.push_back();
         disposer.m_object = object;
-        disposer.m_framesLeft = 3;
+        disposer.m_framesLeft = 10;
     }
 
 
@@ -97,21 +95,69 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        std::lock_guard lock{ m_disposeQueueLock };
-        for (uint32_t i = 0; i < m_disposeQueue.size();)
+        Memory::FiberTempAllocator temp;
+
+        // Copy to avoid deadlocks
+        festd::pmr::vector<Core::DeviceObject*> objectsToDispose{ &temp };
         {
-            // m_logger->LogInfo("Trying to delete object at {}, frames left: {}...",
-            //                   reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object),
-            //                   m_disposeQueue[i].m_framesLeft);
-            if (--m_disposeQueue[i].m_framesLeft > 0)
+            std::lock_guard lock{ m_disposeQueueLock };
+            objectsToDispose = GetObjectsToDispose(&temp, false);
+        }
+
+        for (Core::DeviceObject* object : objectsToDispose)
+            object->DoDispose();
+    }
+
+
+    void Device::ForceReleasePendingDisposers()
+    {
+        FE_PROFILER_ZONE();
+
+        for (;;)
+        {
+            // TODO: this can be called from outside of the fibers, so we cannot use the temp allocator
+            // Memory::FiberTempAllocator temp;
+
+            // Copy to avoid deadlocks
+            festd::pmr::vector<Core::DeviceObject*> objectsToDispose;
             {
-                ++i;
-                continue;
+                std::lock_guard lock{ m_disposeQueueLock };
+                objectsToDispose = GetObjectsToDispose(std::pmr::get_default_resource(), true);
             }
 
-            m_disposeQueue[i].m_object->DoDispose();
-            // m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object));
-            m_disposeQueue.erase_unsorted(m_disposeQueue.begin() + i);
+            if (objectsToDispose.empty())
+                break;
+
+            for (Core::DeviceObject* object : objectsToDispose)
+                object->DoDispose();
         }
+    }
+
+
+    festd::pmr::vector<Core::DeviceObject*> Device::GetObjectsToDispose(std::pmr::memory_resource* allocator, const bool force)
+    {
+        festd::pmr::vector<Core::DeviceObject*> objectsToDispose{ allocator };
+        objectsToDispose.reserve(m_disposeQueue.size());
+        for (PendingDisposer& disposer : m_disposeQueue)
+        {
+            if (force || --disposer.m_framesLeft == 0)
+                objectsToDispose.push_back(disposer.m_object);
+        }
+
+        if (force)
+        {
+            m_disposeQueue.clear();
+        }
+        else
+        {
+            m_disposeQueue.erase(eastl::remove_if(m_disposeQueue.begin(),
+                                                  m_disposeQueue.end(),
+                                                  [](const PendingDisposer& disposer) {
+                                                      return disposer.m_framesLeft == 0;
+                                                  }),
+                                 m_disposeQueue.end());
+        }
+
+        return objectsToDispose;
     }
 } // namespace FE::Graphics::Common

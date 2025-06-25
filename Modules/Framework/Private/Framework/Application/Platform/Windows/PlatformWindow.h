@@ -40,7 +40,7 @@ namespace FE::Framework::Windows
         PlatformWindow* m_parent = nullptr;
         PlatformApplication* m_application = nullptr;
         Logger* m_logger = nullptr;
-        festd::small_vector<PlatformWindow*> m_children;
+        festd::inline_vector<PlatformWindow*> m_children;
         Core::PlatformWindowDesc m_desc;
     };
 

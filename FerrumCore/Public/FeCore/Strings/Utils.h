@@ -45,4 +45,67 @@ namespace FE::Str
         Split(s, tokens, delimiter, TSize);
         return tokens;
     }
+
+
+    inline bool Match(const festd::string_view s, const festd::string_view pattern)
+    {
+        auto sIter = s.begin();
+        auto pIter = pattern.begin();
+
+        while (sIter != s.end() && pIter != pattern.end() && *pIter != '*')
+        {
+            if (*sIter != *pIter && *pIter != '?')
+                return false;
+
+            ++sIter;
+            ++pIter;
+        }
+
+        auto se = s.end();
+        auto pe = pattern.end();
+        while (sIter != s.end())
+        {
+            if (pIter != pattern.end())
+            {
+                if (*pIter == '*')
+                {
+                    ++pIter;
+                    if (pIter == pattern.end())
+                        return true;
+
+                    pe = pIter;
+                    se = sIter;
+                    ++se;
+                    continue;
+                }
+
+                if (*sIter == *pIter || *pIter == '?')
+                {
+                    ++sIter;
+                    ++pIter;
+                    continue;
+                }
+            }
+
+            pIter = pe;
+            sIter = se++;
+        }
+
+        while (pIter != pattern.end() && *pIter == '*')
+            ++pIter;
+
+        return pIter == pattern.end();
+    }
+
+
+    inline bool MatchAny(const festd::string_view s, const festd::span<const festd::string_view> patterns)
+    {
+        for (const festd::string_view pattern : patterns)
+        {
+            if (Match(s, pattern))
+                return true;
+        }
+
+        return false;
+    }
 } // namespace FE::Str

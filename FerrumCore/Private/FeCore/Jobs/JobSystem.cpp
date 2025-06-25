@@ -5,12 +5,6 @@
 
 namespace FE
 {
-    std::pmr::memory_resource* JobSystem::GetWaitGroupAllocator()
-    {
-        return &m_waitGroupPool;
-    }
-
-
     void JobSystem::AddReadyFiber(FiberWaitEntry* entry)
     {
         entry->m_orderHint = m_jobCounter.fetch_add(1, std::memory_order_relaxed);
@@ -249,11 +243,11 @@ namespace FE
 
     JobSystem::JobSystem()
         : m_fiberPool(&FiberProcImpl)
-        , m_waitGroupPool("JobSystem/WaitGroupPool", sizeof(WaitGroup), 64 * 1024)
     {
         const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
         const uint32_t threadCount = cpuInfo.m_physicalCores < 8 ? cpuInfo.m_logicalCores : cpuInfo.m_physicalCores;
         const uint32_t workerCount = Math::Clamp(threadCount, 4u, kMaxWorkerCount);
+        // const uint32_t workerCount = 2;
         const uint32_t foregroundWorkerCount = Math::CeilDivide(workerCount, 2);
         const uint32_t backgroundWorkerCount = workerCount - foregroundWorkerCount;
 

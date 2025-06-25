@@ -388,9 +388,39 @@ namespace FE::Math
     }
 
 
+    FE_FORCE_INLINE float Fmod(const float x, const float y)
+    {
+        return fmodf(x, y);
+    }
+
+
+    FE_FORCE_INLINE float Reciprocal(const float x)
+    {
+        return 1.0f / x;
+    }
+
+
+    FE_FORCE_INLINE float ReciprocalEstimate(const float x)
+    {
+        return _mm_cvtss_f32(_mm_rcp_ss(_mm_set1_ps(x)));
+    }
+
+
     FE_FORCE_INLINE float Sqrt(const float x)
     {
         return sqrtf(x);
+    }
+
+
+    FE_FORCE_INLINE float ReciprocalSqrt(const float x)
+    {
+        return 1.0f / sqrtf(x);
+    }
+
+
+    FE_FORCE_INLINE float ReciprocalSqrtEstimate(const float x)
+    {
+        return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set1_ps(x)));
     }
 
 
@@ -428,7 +458,7 @@ namespace FE::Math
     //!
     //! @param x The floating point number to round.
     //!
-    //! @note This function behaves differently from std::round, it uses `floor(x + 0.5f)`.
+    //! @note This function behaves differently from std::round, it is equivalent to `floor(x + 0.5f)`.
     FE_FORCE_INLINE float Round(const float x)
     {
         return floorf(x + 0.5f);
@@ -515,24 +545,48 @@ namespace FE::Math
     }
 
 
-    //! @brief Represents a swizzle.
-    //!
-    //! @note The enum does not contain all the possible combinations as it would be too large.
-    //!       Use MakeSwizzle() to create a swizzle that is not in this enum.
-    enum class Swizzle : uint32_t
+    template<class T, uint32_t TArraySize>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void SmallSort(T (&x)[TArraySize])
     {
-        kXXXX = 0x00,
-        kYYYY = 0x55,
-        kZZZZ = 0xaa,
-        kWWWW = 0xff,
+#define FE_COMPARE_SWAP(x, y)                                                                                                    \
+    {                                                                                                                            \
+        T t = (x);                                                                                                               \
+        (x) = t > (y) ? (y) : t;                                                                                                 \
+        (y) = t > (y) ? t : (y);                                                                                                 \
+    }
 
-        kXYZW = 0xe4,
-    };
+        if constexpr (TArraySize <= 1)
+        {
+            return;
+        }
 
+        if constexpr (TArraySize == 2)
+        {
+            FE_COMPARE_SWAP(x[0], x[1]);
+            return;
+        }
 
-    FE_FORCE_INLINE constexpr Swizzle MakeSwizzle(const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t w)
-    {
-        return static_cast<Swizzle>(x | (y << 2) | (z << 4) | (w << 6));
+        if constexpr (TArraySize == 3)
+        {
+            FE_COMPARE_SWAP(x[0], x[2]);
+            FE_COMPARE_SWAP(x[0], x[1]);
+            FE_COMPARE_SWAP(x[1], x[2]);
+            return;
+        }
+
+        if constexpr (TArraySize == 4)
+        {
+            FE_COMPARE_SWAP(x[0], x[1]);
+            FE_COMPARE_SWAP(x[2], x[3]);
+            FE_COMPARE_SWAP(x[0], x[2]);
+            FE_COMPARE_SWAP(x[1], x[3]);
+            FE_COMPARE_SWAP(x[1], x[2]);
+            return;
+        }
+
+        static_assert(TArraySize <= 4, "SmallSort is not implemented for this size");
+
+#undef FE_COMPARE_SWAP
     }
 } // namespace FE::Math
 

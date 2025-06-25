@@ -27,10 +27,23 @@ namespace FE::Graphics::Vulkan
 
         const Core::FormatInfo formatInfo{ desc.m_imageFormat };
         VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        if (Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kColor))
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        if (Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspectFlags::kDepthStencil))
+
+        switch (formatInfo.m_aspectFlags)
+        {
+        default:
+            FE_DebugBreak();
+            [[fallthrough]];
+
+        case Core::ImageAspect::kColor:
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+            break;
+
+        case Core::ImageAspect::kDepth:
+        case Core::ImageAspect::kStencil:
+        case Core::ImageAspect::kDepthStencil:
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            break;
+        }
 
         FE_Assert(!formatInfo.m_isBlockCompressed);
 

@@ -24,7 +24,7 @@ namespace FE::Platform
 
         [[nodiscard]] bool MeetsMinimalRequirements() const
         {
-            return m_flags.m_avx;
+            return m_flags.m_avx2;
         }
     };
 

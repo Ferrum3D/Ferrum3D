@@ -17,8 +17,8 @@ namespace FE::SIMD
 
     namespace AVX
     {
-        static constexpr uint32_t kByteSize = sizeof(__m256);
-        static constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
+        inline constexpr uint32_t kByteSize = sizeof(__m256);
+        inline constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Zero(void* buffer, const uint32_t alignedSize)
@@ -50,8 +50,28 @@ namespace FE::SIMD
 
     namespace SSE
     {
-        static constexpr uint32_t kByteSize = sizeof(__m128);
-        static constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
+        inline constexpr uint32_t kByteSize = sizeof(__m128);
+        inline constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
+
+
+        namespace Masks
+        {
+            inline const __m128 kFloatX = _mm_castsi128_ps(_mm_setr_epi32(UINT32_MAX, 0, 0, 0));
+            inline const __m128 kFloatY = _mm_castsi128_ps(_mm_setr_epi32(0, UINT32_MAX, 0, 0));
+            inline const __m128 kFloatZ = _mm_castsi128_ps(_mm_setr_epi32(0, 0, UINT32_MAX, 0));
+            inline const __m128 kFloatW = _mm_castsi128_ps(_mm_setr_epi32(0, 0, 0, UINT32_MAX));
+
+            inline const __m128 kFloatXYZ = _mm_castsi128_ps(_mm_setr_epi32(UINT32_MAX, UINT32_MAX, UINT32_MAX, 0));
+        } // namespace Masks
+
+
+        namespace Constants
+        {
+            inline const __m128 kFloat1111 = _mm_set1_ps(1.0f);
+            inline const __m128 kFloat0000 = _mm_setzero_ps();
+
+            inline const __m128 kFloat1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
+        } // namespace Constants
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Zero(void* buffer, const uint32_t alignedSize)

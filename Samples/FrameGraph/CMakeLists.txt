@@ -1,5 +1,10 @@
 ﻿set(SHADER_SOURCES
+    Shaders/Common.hlsli
+    Shaders/Shader.as.hlsl
+    Shaders/Shader.cs.hlsl
+    Shaders/Shader.ms.hlsl
     Shaders/Shader.ps.hlsl
+    Shaders/ShaderMesh.ps.hlsl
     Shaders/Shader.vs.hlsl
 )
 

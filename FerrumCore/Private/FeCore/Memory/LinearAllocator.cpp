@@ -55,7 +55,7 @@ namespace FE::Memory
     }
 
 
-    void LinearAllocator::Collect()
+    void LinearAllocator::FreeUnusedMemory()
     {
         Page* pPage = m_currentMarker.m_page;
         if (pPage == nullptr)

@@ -47,7 +47,7 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        void SetSubresourceState(const uint32_t mipIndex, const uint32_t arrayIndex, const TextureSubresourceState state)
+        void SetSubresourceState(const uint32_t mipIndex, const uint32_t arrayIndex, const TextureSubresourceState state) const
         {
             FE_AssertDebug(state < TextureSubresourceState::kCount);
 
@@ -82,7 +82,7 @@ namespace FE::Graphics::Vulkan
             static constexpr uint32_t kCount = 4;
         };
 
-        festd::small_vector<PackedSubresourceStates, 8> m_subresourceUploadStates;
+        mutable festd::inline_vector<PackedSubresourceStates, 8> m_subresourceUploadStates;
     };
 
     FE_ENABLE_NATIVE_CAST(Texture);

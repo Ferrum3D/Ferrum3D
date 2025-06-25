@@ -69,6 +69,7 @@ namespace FE::Graphics::Core
             m_minFilter = filter;
             m_magFilter = filter;
             m_mipFilter = filter;
+            m_maxLod = Limits::Image::kMaxMipCount;
         }
 
         [[nodiscard]] uint64_t GetHash() const

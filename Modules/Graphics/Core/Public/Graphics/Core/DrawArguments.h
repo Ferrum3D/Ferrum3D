@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Base/Base.h>
+#include <cstdint>
 
 namespace FE::Graphics::Core
 {
@@ -34,6 +34,12 @@ namespace FE::Graphics::Core
             DrawArgumentsIndexed m_indexed;
             DrawArgumentsLinear m_linear;
         };
+
+        DrawArguments()
+            : m_type(DrawArgumentsType::kIndexed)
+            , m_indexed{ 0, 0, 0 }
+        {
+        }
 
         void Init(const DrawArgumentsIndexed& args)
         {

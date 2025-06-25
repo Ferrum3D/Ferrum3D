@@ -3,6 +3,7 @@
 #include <Graphics/Core/DrawArguments.h>
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Core/InputStreamLayout.h>
+#include <Graphics/Core/Meshlet.h>
 
 namespace FE::Graphics::Core
 {
@@ -24,10 +25,16 @@ namespace FE::Graphics::Core
 
     struct IndexBufferView final
     {
-        const Buffer* m_buffer;
-        uint32_t m_byteOffset;
+        const Buffer* m_buffer = nullptr;
+        uint32_t m_byteOffset = 0;
         uint32_t m_byteSize : 30;
         IndexType m_indexType : 2;
+
+        IndexBufferView()
+            : m_byteSize(0)
+            , m_indexType(IndexType::kUint16)
+        {
+        }
 
         [[nodiscard]] uint64_t GetHash() const
         {
@@ -38,9 +45,9 @@ namespace FE::Graphics::Core
 
     struct StreamBufferView final
     {
-        const Buffer* m_buffer;
-        uint32_t m_byteOffset;
-        uint32_t m_byteSize;
+        const Buffer* m_buffer = nullptr;
+        uint32_t m_byteOffset = 0;
+        uint32_t m_byteSize = 0;
 
         [[nodiscard]] uint64_t GetHash() const
         {
@@ -53,7 +60,7 @@ namespace FE::Graphics::Core
     {
         DrawArguments m_drawArguments;
         IndexBufferView m_indexBufferView;
-        const StreamBufferView* m_streamBufferViews;
+        const StreamBufferView* m_streamBufferViews = nullptr;
 
         [[nodiscard]] uint64_t GetHash(const uint32_t streamCount) const
         {
@@ -69,16 +76,45 @@ namespace FE::Graphics::Core
     };
 
 
+    struct MeshletGeometryView final
+    {
+        uint32_t m_meshletCount = 0;
+        IndexBufferView m_indexBufferView;
+        StreamBufferView m_vertexBufferView;
+        StreamBufferView m_primitiveBufferView;
+        StreamBufferView m_meshletBufferView;
+
+        [[nodiscard]] uint64_t GetHash() const
+        {
+            Hasher hasher;
+            hasher.Update(m_meshletCount);
+            hasher.UpdateRaw(m_indexBufferView.GetHash());
+            hasher.UpdateRaw(m_vertexBufferView.GetHash());
+            hasher.UpdateRaw(m_primitiveBufferView.GetHash());
+            hasher.UpdateRaw(m_meshletBufferView.GetHash());
+            return hasher.Finalize();
+        }
+    };
+
+
     struct DrawCall final
     {
         uint32_t m_instanceOffset : 16;
         uint32_t m_instanceCount : 16;
         uint32_t m_stencilRef : 8;
         uint32_t m_unused : 24;
-        const GeometryView* m_geometryView;
-        const GraphicsPipeline* m_pipeline;
+        GeometryView m_geometryView;
+        const GraphicsPipeline* m_pipeline = nullptr;
 
-        void InitForSingleInstance(const GeometryView* geometryView, const GraphicsPipeline* pipeline)
+        DrawCall()
+            : m_instanceOffset(0)
+            , m_instanceCount(0)
+            , m_stencilRef(0)
+            , m_unused(0)
+        {
+        }
+
+        void InitForSingleInstance(const GeometryView& geometryView, const GraphicsPipeline* pipeline)
         {
             m_instanceOffset = 0;
             m_instanceCount = 1;
@@ -95,7 +131,7 @@ namespace FE::Graphics::Core
             hasher.Update(m_stencilRef);
 
             const auto& pipelineDesc = m_pipeline->GetDesc();
-            hasher.UpdateRaw(m_geometryView->GetHash(pipelineDesc.m_inputLayout.CalculateActiveStreamCount()));
+            hasher.UpdateRaw(m_geometryView.GetHash(pipelineDesc.m_inputLayout.CalculateActiveStreamCount()));
 
             //
             // Pipelines are created by the pipeline factory.
@@ -106,12 +142,5 @@ namespace FE::Graphics::Core
 
             return hasher.Finalize();
         }
-    };
-
-
-    struct DrawList final
-    {
-        uint32_t m_drawCallCount;
-        const DrawCall* m_drawCalls;
     };
 } // namespace FE::Graphics::Core

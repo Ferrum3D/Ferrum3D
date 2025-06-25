@@ -1,22 +1,23 @@
-﻿#include <FeCore/Base/Platform.h>
-#include <FeCore/Compression/CompressionInternal.h>
-#include <FeCore/Console/Console.h>
+﻿#include <FeCore/Base/AssertPrivate.h>
+#include <FeCore/Base/Platform.h>
+#include <FeCore/Base/StackTracePrivate.h>
+#include <FeCore/Compression/CompressionPrivate.h>
+#include <FeCore/Console/ConsolePrivate.h>
+#include <FeCore/DI/Builder.h>
 #include <FeCore/DI/Container.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Memory/MemoryPrivate.h>
 #include <FeCore/Modules/Environment.h>
-#include <FeCore/Modules/EnvironmentPrivate.h>
-#include <FeCore/Modules/IModule.h>
 #include <FeCore/Platform/Windows/Common.h>
-#include <FeCore/Threading/Platform/ThreadingInternal.h>
+#include <FeCore/Threading/SharedSpinLock.h>
 #include <FeCore/Threading/Thread.h>
-#include <cstdio>
+#include <FeCore/Threading/ThreadingPrivate.h>
 #include <festd/unordered_map.h>
-#include <sstream>
 
 namespace FE::Env
 {
-    namespace Internal
+    namespace
     {
         inline constexpr uint32_t kNamePageShift = 16;
         inline constexpr uint32_t kNamePageByteSize = 1 << kNamePageShift;
@@ -28,81 +29,92 @@ namespace FE::Env
         {
             struct NameHandle final
             {
-                uint32_t BlockIndex : kNamePageShift - kNameBlockShift;
-                uint32_t PageIndex : 32 - kNamePageShift + kNameBlockShift;
+                uint32_t m_blockIndex : kNamePageShift - kNameBlockShift;
+                uint32_t m_pageIndex : 32 - kNamePageShift + kNameBlockShift;
             };
 
-            static constexpr uint32_t PageListByteSize = 64 * 1024;
-            static constexpr uint32_t MaxPageCount = PageListByteSize / sizeof(void*);
+            static constexpr uint32_t kPageListByteSize = 64 * 1024;
+            static constexpr uint32_t kMaxPageCount = kPageListByteSize / sizeof(void*);
 
-            Threading::SpinLock m_Lock;
-            void** m_ppPages;
-            uint32_t m_CurrentPageIndex = kInvalidIndex;
-            uint32_t m_Offset = kNamePageByteSize;
-            festd::unordered_dense_map<uint64_t, uint32_t> m_Map;
+            Threading::SharedSpinLock m_lock;
+            void** m_pages;
+            uint32_t m_currentPageIndex = kInvalidIndex;
+            uint32_t m_offset = kNamePageByteSize;
+            festd::unordered_dense_map<uint64_t, uint32_t> m_map;
 
         public:
             NameDataAllocator()
             {
-                m_ppPages = static_cast<void**>(Memory::AllocateVirtual(PageListByteSize));
+                m_pages = static_cast<void**>(Memory::AllocateVirtual(kPageListByteSize));
             }
 
             ~NameDataAllocator()
             {
-                while (m_CurrentPageIndex != kInvalidIndex)
+                while (m_currentPageIndex != kInvalidIndex)
                 {
-                    Memory::FreeVirtual(m_ppPages[m_CurrentPageIndex], kNamePageByteSize);
-                    --m_CurrentPageIndex;
+                    Memory::FreeVirtual(m_pages[m_currentPageIndex], kNamePageByteSize);
+                    --m_currentPageIndex;
                 }
 
-                Memory::FreeVirtual(m_ppPages, PageListByteSize);
+                Memory::FreeVirtual(static_cast<void*>(m_pages), kPageListByteSize);
             }
 
             uint32_t TryFind(const uint64_t hash)
             {
-                std::lock_guard lk{ m_Lock };
-                const auto it = m_Map.find(hash);
-                if (it != m_Map.end())
+                std::shared_lock lk{ m_lock };
+                const auto it = m_map.find(hash);
+                if (it != m_map.end())
                     return it->second;
                 return kInvalidIndex;
             }
 
             Name::Record* Allocate(uint64_t hash, const size_t stringByteSize, uint32_t& handle)
             {
-                std::lock_guard lk{ m_Lock };
+                std::lock_guard lk{ m_lock };
                 const size_t recordHeaderSize = offsetof(Name::Record, m_data);
                 const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
-                if (recordSize + m_Offset > kNamePageByteSize)
+                if (recordSize + m_offset > kNamePageByteSize)
                 {
-                    m_ppPages[++m_CurrentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
-                    m_Offset = 0;
+                    m_pages[++m_currentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
+                    FE_CoreAssert(m_currentPageIndex < kMaxPageCount);
+                    m_offset = 0;
                 }
 
                 NameHandle result;
-                result.PageIndex = m_CurrentPageIndex;
-                result.BlockIndex = m_Offset >> kNameBlockShift;
+                result.m_pageIndex = m_currentPageIndex;
+                result.m_blockIndex = m_offset >> kNameBlockShift;
                 handle = festd::bit_cast<uint32_t>(result);
-                m_Map.insert(std::make_pair(hash, handle));
+                m_map.insert(std::make_pair(hash, handle));
 
-                void* ptr = static_cast<uint8_t*>(m_ppPages[m_CurrentPageIndex]) + m_Offset;
-                m_Offset += static_cast<uint32_t>(recordSize);
-                FE_CoreAssert((m_Offset >> kNameBlockShift) << kNameBlockShift == m_Offset);
+                void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
+                m_offset += static_cast<uint32_t>(recordSize);
+                FE_CoreAssert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
                 return static_cast<Name::Record*>(ptr);
             }
 
             Name::Record* ResolvePointer(const uint32_t handleValue) const
             {
                 const NameHandle handle = festd::bit_cast<NameHandle>(handleValue);
-                const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_ppPages[handle.PageIndex]);
-                const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.BlockIndex) << kNameBlockShift);
+                const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_pages[handle.m_pageIndex]);
+                const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.m_blockIndex) << kNameBlockShift);
                 return reinterpret_cast<Name::Record*>(recordAddress);
             }
         };
 
 
-        class DefaultMemoryResource final : public std::pmr::memory_resource
+        struct DefaultMemoryResource final : public std::pmr::memory_resource
         {
-        public:
+            DefaultMemoryResource()
+            {
+                m_previousResource = std::pmr::get_default_resource();
+                std::pmr::set_default_resource(this);
+            }
+
+            ~DefaultMemoryResource()
+            {
+                std::pmr::set_default_resource(m_previousResource);
+            }
+
             void* do_allocate(const size_t size, const size_t alignment) override
             {
                 return Memory::DefaultAllocate(size, alignment);
@@ -113,10 +125,13 @@ namespace FE::Env
                 Memory::DefaultFree(p);
             }
 
-            bool do_is_equal(const memory_resource& other) const noexcept override
+            [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
             {
                 return this == &other;
             }
+
+        private:
+            std::pmr::memory_resource* m_previousResource = nullptr;
         };
 
 
@@ -134,59 +149,65 @@ namespace FE::Env
                 return Memory::FreeVirtual(p, size);
             }
 
-            bool do_is_equal(const memory_resource& other) const noexcept override
+            [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
             {
                 return this == &other;
             }
         };
 
 
-        class Environment : public IEnvironment
+        struct Environment final
         {
-            festd::unordered_dense_map<Name, void*> m_map;
-            Threading::Mutex m_lock;
-
-            VariableResult FindVariableNoLock(const Name name)
+            struct HighPriorityInitializer final
             {
-                VariableResult result;
-                const auto it = m_map.find(name);
-                if (it != m_map.end())
+                HighPriorityInitializer(std::pmr::memory_resource* allocator)
                 {
-                    result.Code = VariableResultCode::Found;
-                    result.pData = it->second;
-                    return result;
+                    tracy::StartupProfiler();
+
+                    Console::Internal::Init(allocator);
+                    Trace::Internal::InitStackTrace(allocator);
+                    Memory::Internal::Init(allocator);
+                    Trace::Internal::Init(allocator);
+                    Threading::Internal::Init(allocator);
+                    Compression::Internal::Init(allocator);
                 }
 
-                result.Code = VariableResultCode::NotFound;
-                result.pData = nullptr;
-                return result;
-            }
+                ~HighPriorityInitializer()
+                {
+                    Compression::Internal::Shutdown();
+                    Threading::Internal::Shutdown();
+                    Trace::Internal::Shutdown();
+                    Memory::Internal::Shutdown();
+                    Trace::Internal::ShutdownStackTrace();
+                    Console::Internal::Shutdown();
 
-        public:
-            ApplicationInfo m_appInfo;
+                    tracy::ShutdownProfiler();
+                }
+            };
 
-            DefaultMemoryResource m_defaultMemoryResource;
             VirtualMemoryResource m_virtualMemoryResource;
-            Memory::LockedMemoryResource<Memory::LinearAllocator, Threading::SpinLock> m_linearMemoryResource;
+            Memory::SpinLockedLinearAllocator m_linearMemoryResource;
+            DefaultMemoryResource m_defaultMemoryResource;
 
-            SharedState m_sharedState;
+            HighPriorityInitializer m_highPriorityInitializer;
 
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
-            ModuleRegistry m_moduleRegistry;
 
-            Environment(const ApplicationInfo& appInfo)
-                : m_appInfo(appInfo)
-                , m_linearMemoryResource(UINT64_C(2) * 1024 * 1024, &m_virtualMemoryResource)
-            {
-                std::pmr::set_default_resource(&m_defaultMemoryResource);
-            }
+            ApplicationInfo m_appInfo;
 
-            void Init()
+            Environment()
+                : m_linearMemoryResource(UINT64_C(2) * 1024 * 1024, &m_virtualMemoryResource)
+                , m_highPriorityInitializer(&m_linearMemoryResource)
             {
-                Console::Init();
-                Threading::Internal::Init();
-                Compression::Internal::Init();
+                const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
+                if (!cpuInfo.MeetsMinimalRequirements())
+                {
+                    const festd::fixed_string message = Fmt::FixedFormat(
+                        "Your CPU {} does not meet minimal requirements. AVX support is required to run application",
+                        festd::string_view(cpuInfo.m_cpuName));
+                    Platform::FatalInitError(message.c_str());
+                }
 
                 m_diContainer.GetRegistryRoot()->Initialize();
             }
@@ -206,142 +227,70 @@ namespace FE::Env
                     return nullptr;
                 }
             }
-
-            VariableResult FindVariable(const Name name) override
-            {
-                std::unique_lock lk{ m_lock };
-                return FindVariableNoLock(name);
-            }
-
-            VariableResult CreateVariable(const Name name, const size_t size, const size_t alignment) override
-            {
-                std::unique_lock lk{ m_lock };
-                VariableResult result = FindVariableNoLock(name);
-                if (result.Code == VariableResultCode::Found)
-                    return result;
-
-                result.Code = VariableResultCode::Created;
-                result.pData = Memory::DefaultAllocate(size, alignment);
-                m_map[name] = result.pData;
-                return result;
-            }
-
-            VariableResult RemoveVariable(const Name name) override
-            {
-                std::unique_lock lk{ m_lock };
-                VariableResult result;
-
-                auto it = m_map.find(name);
-                if (it == m_map.end())
-                {
-                    result.pData = nullptr;
-                    result.Code = VariableResultCode::NotFound;
-                    return result;
-                }
-
-                result.Code = VariableResultCode::Removed;
-                result.pData = it->second;
-                m_map.erase(it);
-                return result;
-            }
-
-            void Destroy() override
-            {
-                if (Build::IsDevelopment() && !m_map.empty())
-                {
-                    printf("%" PRIu64 " global environment variable leaks detected\n", m_map.size());
-                    Console::SetTextColor(Console::Color::kRed);
-                    Console::Write("Destructors of leaked variables won't be called!");
-                    Console::Write("Be sure to free all global variables before global environment shut-down");
-                    Console::SetTextColor(Console::Color::kDefault);
-                    Console::Flush();
-                    for (auto& [name, data] : m_map)
-                    {
-                        printf("%s", name.c_str());
-                        Memory::DefaultFree(data);
-                    }
-                }
-
-                Compression::Internal::Shutdown();
-                Memory::DefaultDelete(this);
-            }
         };
 
 
-        static Environment* GEnvInstance = nullptr;
-        static bool GIsEnvOwner = false;
+        Module* GModuleList = nullptr;
 
 
-        SharedState::SharedState()
-            : m_mainThreadId(Threading::GetCurrentThreadID())
-        {
-        }
-
-
-        SharedState& SharedState::Get()
-        {
-            return GEnvInstance->m_sharedState;
-        }
-    } // namespace Internal
+#pragma warning(disable : 4075)
+#pragma warning(disable : 4073)
+#pragma init_seg(lib)
+        Environment GEnvironment;
+    } // namespace
 
 
     DI::ServiceRegistry* CreateServiceRegistry()
     {
-        return Internal::GEnvInstance->m_diContainer.GetRegistryRoot()->Create();
+        return GEnvironment.m_diContainer.GetRegistryRoot()->CreateRegistry();
     }
 
 
     DI::ServiceRegistry* GetRootServiceRegistry()
     {
-        return Internal::GEnvInstance->m_diContainer.GetRegistryRoot()->GetRootRegistry();
+        return GEnvironment.m_diContainer.GetRegistryRoot()->GetRootRegistry();
     }
 
 
     std::pmr::memory_resource* GetStaticAllocator(const Memory::StaticAllocatorType type)
     {
-        return Internal::GEnvInstance->GetStaticAllocator(type);
+        return GEnvironment.GetStaticAllocator(type);
     }
 
 
     DI::IServiceProvider* GetServiceProvider()
     {
-        return &Internal::GEnvInstance->m_diContainer;
-    }
-
-
-    ModuleRegistry* GetModuleRegistry()
-    {
-        return &Internal::GEnvInstance->m_moduleRegistry;
+        return &GEnvironment.m_diContainer;
     }
 
 
     Name::Name(const std::string_view str)
     {
-        auto& nameAllocator = Internal::GEnvInstance->m_nameDataAllocator;
+        auto& nameAllocator = GEnvironment.m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
         m_handle = nameAllocator.TryFind(hash);
-        if (Valid())
+        if (IsValid())
         {
             FE_CoreAssert(str == GetRecord()->m_data, "Env::Name collision");
             return;
         }
 
         const size_t recordHeaderSize = offsetof(Name::Record, m_data);
-        FE_CoreAssert(str.size() < Internal::kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
+        FE_CoreAssert(str.size() < kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
 
-        Record* pRecord = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
-        pRecord->m_size = static_cast<uint16_t>(str.size());
-        pRecord->m_hash = hash;
-        memcpy(pRecord->m_data, str.data(), str.size());
+        Record* record = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
+        record->m_size = static_cast<uint16_t>(str.size());
+        record->m_hash = hash;
+        memcpy(record->m_data, str.data(), str.size());
     }
 
 
     bool Name::TryGetExisting(const std::string_view str, Name& result)
     {
-        auto& nameAllocator = Internal::GEnvInstance->m_nameDataAllocator;
+        auto& nameAllocator = GEnvironment.m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
         result.m_handle = nameAllocator.TryFind(hash);
-        if (result.Valid())
+        if (result.IsValid())
         {
             FE_CoreAssert(str == result.GetRecord()->m_data, "Env::Name collision");
             return true;
@@ -353,90 +302,54 @@ namespace FE::Env
 
     const Name::Record* Name::GetRecord() const
     {
-        if (!Valid())
+        if (!IsValid())
             return nullptr;
 
-        return Internal::GEnvInstance->m_nameDataAllocator.ResolvePointer(m_handle);
+        return GEnvironment.m_nameDataAllocator.ResolvePointer(m_handle);
     }
 
 
-    void CreateEnvironment(const ApplicationInfo& info)
+    void Module::Register(Module* module)
     {
-        tracy::StartupProfiler();
+        FE_CoreAssert(!module->m_next, "Module already registered");
+        module->m_next = GModuleList;
+        GModuleList = module;
+    }
 
+
+    Module* Module::GetModuleList()
+    {
+        return GModuleList;
+    }
+
+
+    void Module::ShutdownModules()
+    {
+        Module* module = GetModuleList();
+        while (module)
         {
-            FE_PROFILER_ZONE();
-
-            if (Internal::GEnvInstance)
-            {
-                return;
-            }
-
-            const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
-            if (!cpuInfo.MeetsMinimalRequirements())
-            {
-                const festd::fixed_string message =
-                    Fmt::FixedFormat("Your CPU {} does not meet minimal requirements. AVX support is required to run application",
-                                     festd::string_view(cpuInfo.m_cpuName));
-                Platform::FatalInitError(message.c_str());
-            }
-
-            Internal::GIsEnvOwner = true;
-            Internal::GEnvInstance = Memory::DefaultNew<Internal::Environment>(info);
-            Internal::GEnvInstance->Init();
-        }
-    }
-
-
-    Internal::IEnvironment& GetEnvironment()
-    {
-        FE_CoreAssert(Internal::GEnvInstance, "Environment must be created explicitly");
-        return *Internal::GEnvInstance;
-    }
-
-
-    void AttachEnvironment(Internal::IEnvironment& instance)
-    {
-        DetachEnvironment();
-
-        Internal::GEnvInstance = &static_cast<Internal::Environment&>(instance);
-        std::pmr::set_default_resource(&Internal::GEnvInstance->m_defaultMemoryResource);
-    }
-
-
-    void DetachEnvironment()
-    {
-        if (!Internal::GEnvInstance)
-            return;
-
-        if (Internal::GIsEnvOwner)
-        {
-            Internal::GEnvInstance->Destroy();
-
-            tracy::ShutdownProfiler();
+            Module* next = module->m_next;
+            module->Shutdown();
+            module = next;
         }
 
-        Internal::GEnvInstance = nullptr;
+        GModuleList = nullptr;
     }
 
 
-    [[maybe_unused]] struct EnvironmentRelease
+    void Init(const ApplicationInfo& info)
     {
-        ~EnvironmentRelease()
-        {
-            DetachEnvironment();
-        }
-    } g_EnvRelease;
+        FE_CoreAssert(!GEnvironment.m_appInfo.m_name, "Application info already set");
+        GEnvironment.m_appInfo = info;
 
-
-    bool EnvironmentAttached()
-    {
-        return Internal::GEnvInstance != nullptr;
+        DI::ServiceRegistryBuilder builder{ GetRootServiceRegistry() };
+        DI::RegisterCoreServices(builder);
+        builder.Build();
     }
 
 
     const ApplicationInfo& GetApplicationInfo()
     {
-        return Internal::GEnvInstance->m_appInfo;
+        return GEnvironment.m_appInfo;
     }
 } // namespace FE::Env

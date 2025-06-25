@@ -1,23 +1,17 @@
-﻿#include <FeCore/Assets/IAssetManager.h>
+﻿#include <FeCore/DI/Builder.h>
+#include <Graphics/Assets/ModelAssetManager.h>
 #include <Graphics/Assets/TextureAssetManager.h>
 #include <Graphics/Module.h>
 
 namespace FE::Graphics
 {
-    class GraphicsModuleImpl final : public ServiceLocatorImplBase<GraphicsModule>
+    void Module::RegisterServices(const DI::ServiceRegistryBuilder& builder)
     {
-    public:
-        FE_RTTI_Class(GraphicsModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
+        FE_PROFILER_ZONE();
 
-        void RegisterServices(DI::ServiceRegistryBuilder builder) override
-        {
-            builder.Bind<ITextureAssetManager>().To<TextureAssetManager>().InSingletonScope();
-        }
-    };
-
-    extern "C" FE_DLL_EXPORT void CreateModuleInstance(Env::Internal::IEnvironment& environment, IModule** ppModule)
-    {
-        Env::AttachEnvironment(environment);
-        *ppModule = Memory::DefaultNew<GraphicsModuleImpl>();
+        builder.Bind<ITextureAssetManager>().To<TextureAssetManager>().InSingletonScope();
+        builder.Bind<IModelAssetManager>().To<ModelAssetManager>().InSingletonScope();
     }
+
+    FE_IMPLEMENT_MODULE(Module);
 } // namespace FE::Graphics

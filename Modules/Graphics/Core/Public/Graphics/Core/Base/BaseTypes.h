@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <FeCore/Math/Vector2.h>
 #include <FeCore/Math/Vector3UInt.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Strings/Format.h>
@@ -143,5 +144,11 @@ namespace FE::Graphics::Core
     inline uint32_t CalculateMipCount(const Vector3UInt size)
     {
         return 1 + Math::FloorLog2(Math::Max(size.x, Math::Max(size.y, size.z)));
+    }
+
+
+    inline uint32_t CalculateMipCount(const Vector2UInt size)
+    {
+        return 1 + Math::FloorLog2(Math::Max(size.x, size.y));
     }
 } // namespace FE::Graphics::Core

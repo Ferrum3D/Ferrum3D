@@ -527,7 +527,7 @@ namespace FE::Str
     private:
         void Convert(const char* source, const uint32_t sourceSize)
         {
-            Initialize(sourceSize);
+            Initialize(sourceSize + 1);
 
             const uint32_t result = ConvertUtf8ToUtf16(source, sourceSize, m_data, m_capacity);
             FE_Assert(result != Constants::kMaxU32, "Failed to convert UTF-8 to UTF-16");
@@ -578,7 +578,7 @@ namespace FE::Str
     private:
         void Convert(const char16_t* source, const uint32_t sourceSize)
         {
-            Initialize(sourceSize);
+            Initialize(sourceSize + 1);
 
             const uint32_t result = ConvertUtf16ToUtf8(source, sourceSize, m_data, m_capacity);
             FE_Assert(result != Constants::kMaxU32, "Failed to convert UTF-16 to UTF-8");

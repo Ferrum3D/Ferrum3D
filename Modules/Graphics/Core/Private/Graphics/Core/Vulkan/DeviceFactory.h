@@ -26,7 +26,7 @@ namespace FE::Graphics::Vulkan
 
         Core::ResultCode CreateDevice(Env::Name adapterName) override;
 
-        void RegisterServices(DI::ServiceRegistryBuilder& builder);
+        void RegisterServices(const DI::ServiceRegistryBuilder& builder);
 
         [[nodiscard]] festd::span<const Core::AdapterInfo> EnumerateAdapters() const override;
 
@@ -34,8 +34,8 @@ namespace FE::Graphics::Vulkan
         VkInstance m_instance = VK_NULL_HANDLE;
         VkDebugReportCallbackEXT m_debug = VK_NULL_HANDLE;
 
-        festd::small_vector<Core::AdapterInfo> m_adapters;
-        festd::small_vector<VkPhysicalDevice> m_nativeAdapters;
+        festd::inline_vector<Core::AdapterInfo> m_adapters;
+        festd::inline_vector<VkPhysicalDevice> m_nativeAdapters;
         Rc<Logger> m_logger;
     };
 

@@ -1,32 +1,40 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Modules/EnvironmentPrivate.h>
-#include <FeCore/Threading/Platform/ThreadingInternal.h>
+#include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Threading/Thread.h>
+#include <FeCore/Threading/ThreadingPrivate.h>
 
 namespace FE::Threading
 {
     namespace
     {
+        struct ThreadingState final
+        {
+            SpinLock m_lock;
+            uint64_t m_mainThreadID = 0;
+            Memory::Pool<NativeThreadData> m_threadDataAllocator{ "NativeThreadData", 64 * 1024 };
+        };
+
+        ThreadingState* GThreadingState;
+
+
         NativeThreadData* AllocateThreadData()
         {
-            Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-            const std::lock_guard lock{ state.m_lock };
-            return Memory::New<NativeThreadData>(&state.m_threadDataAllocator);
+            const std::lock_guard lock{ GThreadingState->m_lock };
+            return GThreadingState->m_threadDataAllocator.New();
         }
 
 
         struct ThreadDataHolder final
         {
-            NativeThreadData* pData = nullptr;
+            NativeThreadData* m_data = nullptr;
 
             ~ThreadDataHolder()
             {
-                if (pData)
+                if (m_data)
                 {
-                    Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-                    const std::lock_guard lock{ state.m_lock };
-                    Memory::Delete(&state.m_threadDataAllocator, pData, sizeof(NativeThreadData));
-                    pData = nullptr;
+                    const std::lock_guard lock{ GThreadingState->m_lock };
+                    GThreadingState->m_threadDataAllocator.Delete(m_data);
+                    m_data = nullptr;
                 }
             }
         };
@@ -37,17 +45,26 @@ namespace FE::Threading
         DWORD WINAPI ThreadRoutineImpl(const LPVOID lpParam)
         {
             auto* pData = static_cast<NativeThreadData*>(lpParam);
-            GTLSThreadData.pData = pData;
+            GTLSThreadData.m_data = pData;
             pData->m_startRoutine(pData->m_userData);
             return 0;
         }
     } // namespace
 
 
-    void Internal::Init()
+    void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
-        state.m_threadDataAllocator.Initialize("NativeThreadData", sizeof(NativeThreadData), 64 * 1024);
+        FE_CoreAssert(GThreadingState == nullptr, "Threading already initialized");
+        GThreadingState = Memory::New<ThreadingState>(allocator);
+        GThreadingState->m_mainThreadID = ::GetCurrentThreadId();
+    }
+
+
+    void Internal::Shutdown()
+    {
+        FE_CoreAssert(GThreadingState != nullptr, "Threading not initialized");
+        GThreadingState->~ThreadingState();
+        GThreadingState = nullptr;
     }
 
 
@@ -56,31 +73,28 @@ namespace FE::Threading
     {
         FE_PROFILER_ZONE();
 
-        NativeThreadData* pData = AllocateThreadData();
+        NativeThreadData* data = AllocateThreadData();
 
         DWORD threadID;
-        const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, pData, CREATE_SUSPENDED, &threadID);
+        const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, data, CREATE_SUSPENDED, &threadID);
         FE_CoreAssert(hThread, "CreateThread failed");
 
-        pData->m_id = threadID;
-        pData->m_priority = priority;
-        pData->m_threadHandle = hThread;
-        pData->m_userData = pUserData;
-        pData->m_startRoutine = startRoutine;
+        data->m_id = threadID;
+        data->m_priority = priority;
+        data->m_threadHandle = hThread;
+        data->m_userData = pUserData;
+        data->m_startRoutine = startRoutine;
 
-        WCHAR wideName[64];
-        const int32_t wideNameLength =
-            MultiByteToWideChar(CP_UTF8, 0, name.data(), static_cast<int>(name.size()), wideName, festd::size(wideName));
-        wideName[wideNameLength] = 0;
-
-        HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
-        if (hKernel32)
+        if (Build::IsDevelopment())
         {
-            using SetThreadDescriptionProc = HRESULT(WINAPI*)(HANDLE, PCWSTR);
-            const SetThreadDescriptionProc setThreadDescription =
-                reinterpret_cast<SetThreadDescriptionProc>(GetProcAddress(hKernel32, "SetThreadDescription"));
-            if (setThreadDescription)
-                setThreadDescription(hThread, wideName);
+            const Str::Utf8ToUtf16 wideName{ name.data(), name.size() };
+
+            if (const HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll"))
+            {
+                using SetThreadDescriptionProc = HRESULT(WINAPI*)(HANDLE, PCWSTR);
+                if (const auto setThreadDescription = reinterpret_cast<void*>(GetProcAddress(hKernel32, "SetThreadDescription")))
+                    reinterpret_cast<SetThreadDescriptionProc>(setThreadDescription)(hThread, wideName.ToWideString());
+            }
         }
 
         if (priority != Priority::kNormal)
@@ -91,7 +105,7 @@ namespace FE::Threading
 
         FE_CoreVerify(ResumeThread(hThread) != Constants::kMaxValue<DWORD>);
 
-        return ThreadHandle{ reinterpret_cast<uint64_t>(pData) };
+        return ThreadHandle{ reinterpret_cast<uint64_t>(data) };
     }
 
 
@@ -111,6 +125,13 @@ namespace FE::Threading
     }
 
 
+    void Sleep(const uint32_t milliseconds)
+    {
+        FE_PROFILER_ZONE();
+        ::Sleep(milliseconds);
+    }
+
+
     uint64_t GetCurrentThreadID()
     {
         return ::GetCurrentThreadId();
@@ -119,6 +140,6 @@ namespace FE::Threading
 
     uint64_t GetMainThreadID()
     {
-        return Env::Internal::SharedState::Get().m_mainThreadId;
+        return GThreadingState->m_mainThreadID;
     }
 } // namespace FE::Threading

@@ -88,13 +88,13 @@ namespace FE::Platform
         DWORD stdDescriptor;
         switch (descriptor)
         {
-        case IO::StandardDescriptor::kSTDIN:
+        case IO::StandardDescriptor::kStdin:
             stdDescriptor = STD_INPUT_HANDLE;
             break;
-        case IO::StandardDescriptor::kSTDOUT:
+        case IO::StandardDescriptor::kStdout:
             stdDescriptor = STD_OUTPUT_HANDLE;
             break;
-        case IO::StandardDescriptor::kSTDERR:
+        case IO::StandardDescriptor::kStderr:
             stdDescriptor = STD_ERROR_HANDLE;
             break;
         default:

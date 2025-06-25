@@ -230,7 +230,7 @@ namespace FE
         template<class... TArgs>
         FE_FORCE_INLINE static T* New(std::pmr::memory_resource* allocator, TArgs&&... args)
         {
-            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(festd::forward<TArgs>(args)...);
+            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
                 SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;
@@ -240,7 +240,7 @@ namespace FE
         FE_FORCE_INLINE static T* DefaultNew(TArgs&&... args)
         {
             std::pmr::memory_resource* allocator = std::pmr::get_default_resource();
-            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(festd::forward<TArgs>(args)...);
+            T* ptr = new (allocator->allocate(sizeof(T), Memory::kDefaultAlignment)) T(std::forward<TArgs>(args)...);
             if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
                 SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
             return ptr;

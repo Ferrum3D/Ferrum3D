@@ -5,34 +5,18 @@ namespace FE::Graphics::Common
 {
     FrameGraphContext::FrameGraphContext(Core::FrameGraph* frameGraph)
         : m_linearAllocator(frameGraph->GetAllocator())
-        , m_signalFences(frameGraph->GetAllocator())
-        , m_waitFences(frameGraph->GetAllocator())
     {
         m_frameGraph = frameGraph;
     }
 
 
-    void FrameGraphContext::EnqueueFenceToWait(const Core::FenceSyncPoint& fence)
+    void FrameGraphContext::PushConstants(const void* data, const uint32_t size)
     {
-        FE_Assert(fence.m_fence);
-        m_waitFences.push_back(fence);
-    }
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kPushConstants), "Push constants already set");
+        m_setStateMask |= PipelineStateFlags::kPushConstants;
 
-
-    void FrameGraphContext::EnqueueFenceToSignal(const Core::FenceSyncPoint& fence)
-    {
-        FE_Assert(fence.m_fence);
-        m_signalFences.push_back(fence);
-    }
-
-
-    void FrameGraphContext::SetRootConstants(const void* data, const uint32_t size)
-    {
-        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kRootConstants), "Root constants already set");
-        m_setStateMask |= PipelineStateFlags::kRootConstants;
-
-        memcpy(m_rootConstants, data, size);
-        m_rootConstantsSize = size;
+        memcpy(m_pushConstants, data, size);
+        m_pushConstantsSize = size;
     }
 
 
@@ -75,7 +59,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::SetViewportAndScissor(const Aabb& viewport, const RectInt scissor)
+    void FrameGraphContext::SetViewportAndScissor(const RectF viewport, const RectInt scissor)
     {
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kViewportScissor), "Viewport and scissor already set");
         m_setStateMask |= PipelineStateFlags::kViewportScissor;
@@ -89,13 +73,39 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::Draw(const Core::DrawList& drawList)
+    void FrameGraphContext::Draw(const Core::DrawCall& drawCall)
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequired),
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
                   "All pipeline states must be set before drawing");
-        DrawImpl(drawList);
+        DrawImpl(drawCall);
+
+        m_setStateMask = PipelineStateFlags::kNone;
+        m_viewportScissorState.m_dirty = false;
+    }
+
+
+    void FrameGraphContext::DispatchMesh(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount, uint32_t stencilRef)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+                  "All pipeline states must be set before dispatching mesh shader");
+        DispatchMeshImpl(pipeline, workGroupCount, stencilRef);
+
+        m_setStateMask = PipelineStateFlags::kNone;
+        m_viewportScissorState.m_dirty = false;
+    }
+
+
+    void FrameGraphContext::Dispatch(const Core::ComputePipeline* pipeline, const Vector3UInt workGroupCount)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+                  "Only compute related pipeline states can be set before dispatching");
+        DispatchImpl(pipeline, workGroupCount);
 
         m_setStateMask = PipelineStateFlags::kNone;
         m_viewportScissorState.m_dirty = false;

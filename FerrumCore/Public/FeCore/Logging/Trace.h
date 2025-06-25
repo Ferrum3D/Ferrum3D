@@ -7,7 +7,7 @@ namespace FE::Trace::Internal
     template<class... TArgs>
     void AssertionReportFormatted(const LogFormatString fmt, TArgs&&... args)
     {
-        const festd::fixed_string message = Fmt::FixedFormat(fmt.m_value, festd::forward<TArgs>(args)...);
+        const festd::fixed_string message = Fmt::FixedFormat(fmt.m_value, std::forward<TArgs>(args)...);
         AssertionReport(fmt.m_location, message.data(), message.size(), false);
     }
 } // namespace FE::Trace::Internal

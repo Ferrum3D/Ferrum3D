@@ -12,9 +12,9 @@ namespace FE::Graphics::Common
         kStoreOperations = 1 << 1,
         kRenderTargets = 1 << 2,
         kViewportScissor = 1 << 3,
-        kRootConstants = 1 << 4,
-        kAllRequired = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor,
-        kAll = kAllRequired | kRootConstants,
+        kPushConstants = 1 << 4,
+        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor,
+        kAll = kAllRequiredForGraphics | kPushConstants,
     };
 
     FE_ENUM_OPERATORS(PipelineStateFlags);
@@ -24,11 +24,7 @@ namespace FE::Graphics::Common
     {
         FE_RTTI_Class(FrameGraphContext, "521A8CCE-6A61-4D51-962C-16ABAB20AE89");
 
-        void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) final;
-
-        void EnqueueFenceToSignal(const Core::FenceSyncPoint& fence) final;
-
-        void SetRootConstants(const void* data, uint32_t size) override;
+        void PushConstants(const void* data, uint32_t size) override;
 
         void SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations) final;
 
@@ -37,18 +33,23 @@ namespace FE::Graphics::Common
         void SetRenderTargets(festd::span<const Core::RenderTargetHandle> renderTargets,
                               Core::RenderTargetHandle depthStencil) final;
 
-        void SetViewportAndScissor(const Aabb& viewport, RectInt scissor) final;
+        void SetViewportAndScissor(RectF viewport, RectInt scissor) final;
 
-        void Draw(const Core::DrawList& drawList) final;
+        void Draw(const Core::DrawCall& drawCall) final;
+        void DispatchMesh(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount, uint32_t stencilRef) override;
+        void Dispatch(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) override;
 
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
 
-        virtual void DrawImpl(const Core::DrawList& drawList) = 0;
+        virtual void DrawImpl(const Core::DrawCall& drawCall) = 0;
+        virtual void DispatchMeshImpl(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount,
+                                      uint32_t stencilRef) = 0;
+        virtual void DispatchImpl(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) = 0;
 
         struct ViewportScissorState final
         {
-            Aabb m_viewport = Aabb::Initial();
+            RectF m_viewport = RectF::Initial();
             RectInt m_scissor = RectInt::Initial();
             bool m_dirty = true;
         };
@@ -69,10 +70,7 @@ namespace FE::Graphics::Common
         ViewportScissorState m_viewportScissorState;
         RenderTargetState m_renderTargetState;
 
-        std::byte m_rootConstants[Core::Limits::Pipeline::kMaxRootConstantsByteSize];
-        uint32_t m_rootConstantsSize = 0;
-
-        SegmentedVector<Core::FenceSyncPoint, 256> m_signalFences;
-        SegmentedVector<Core::FenceSyncPoint, 256> m_waitFences;
+        std::byte m_pushConstants[Core::Limits::Pipeline::kMaxPushConstantsByteSize] = {};
+        uint32_t m_pushConstantsSize = 0;
     };
 } // namespace FE::Graphics::Common

@@ -1,5 +1,6 @@
 ﻿#include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Jobs/Job.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
@@ -17,7 +18,11 @@ namespace FE::Graphics::Vulkan
 
     void ShaderLibrary::CompilationTask::Execute()
     {
+        std::unique_lock lock{ m_parent->m_lock };
+
         ShaderInfo* shaderInfo = m_parent->m_shaders[m_shaderIndex];
+
+        lock.unlock();
 
         FE_PROFILER_ZONE_TEXT(shaderInfo->m_name.c_str());
 
@@ -27,12 +32,14 @@ namespace FE::Graphics::Vulkan
 
         Core::ShaderCompiler* compiler = m_parent->m_shaderCompiler;
 
-        // TODO: temp allocator
-        const auto definesList = shaderInfo->m_definesStorage.ToVector();
+        Memory::FiberTempAllocator temp;
+        const auto definesList = Core::SplitDefines(shaderInfo->m_defines, &temp);
+
+        const IO::PathView pathView{ shaderInfo->m_name };
 
         Core::ShaderCompilerArgs args;
         args.m_shaderName = shaderInfo->m_name;
-        args.m_stage = shaderInfo->m_stage;
+        args.m_stage = Core::GetShaderStageFromName(pathView.stem());
         args.m_defines = definesList;
 
         const Core::ShaderCompilerResult result = compiler->CompileShader(args);
@@ -51,14 +58,14 @@ namespace FE::Graphics::Vulkan
 
         const festd::span byteCode{ shaderModuleCI.pCode,
                                     shaderModuleCI.pCode + Math::CeilDivide(shaderModuleCI.codeSize, sizeof(uint32_t)) };
-        shaderInfo->m_reflection = Rc<ShaderReflection>::New(m_parent->m_reflectionPool.GetAllocator(), byteCode);
+        shaderInfo->m_reflection = Rc<ShaderReflection>::New(&m_parent->m_reflectionPool, byteCode);
     }
 
 
     ShaderLibrary::ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler, IJobSystem* jobSystem)
         : m_taskPool("Graphics/Core/ShaderLibrary/TaskPool", sizeof(CompilationTask))
-        , m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool")
-        , m_reflectionPool("Graphics/Core/ShaderLibrary/ShaderReflectionPool")
+        , m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool", sizeof(ShaderInfo))
+        , m_reflectionPool("Graphics/Core/ShaderLibrary/ShaderReflectionPool", sizeof(ShaderReflection))
         , m_shaderCompiler(shaderCompiler)
         , m_jobSystem(jobSystem)
     {
@@ -68,18 +75,22 @@ namespace FE::Graphics::Vulkan
 
     ShaderLibrary::~ShaderLibrary()
     {
-        for (const ShaderInfo* shaderInfo : m_shaders)
+        for (ShaderInfo* shaderInfo : m_shaders)
         {
-            m_shaderPool.Delete(shaderInfo);
+            const VkDevice device = NativeCast(m_device);
+            vkDestroyShaderModule(device, shaderInfo->m_shaderModule, nullptr);
+            Memory::Delete(&m_shaderPool, shaderInfo, sizeof(*shaderInfo));
         }
     }
 
 
-    Core::ShaderHandle ShaderLibrary::GetShader(const Core::ShaderPermutationDesc& desc)
+    Core::ShaderHandle ShaderLibrary::GetShader(const Env::Name name, const Env::Name defines)
     {
         FE_PROFILER_ZONE();
 
-        const uint64_t hash = desc.GetHash();
+        std::lock_guard lock{ m_lock };
+
+        const uint64_t hash = HashAll(name, defines);
         const uint32_t shaderIndex = m_shaders.size();
         const auto [iter, inserted] = m_shadersMap.insert({ hash, shaderIndex });
         if (!inserted)
@@ -87,27 +98,19 @@ namespace FE::Graphics::Vulkan
             if (Build::IsDebug())
             {
                 const ShaderInfo* shaderInfo = m_shaders[iter->second];
-                FE_Assert(shaderInfo->m_name == desc.m_name);
-                FE_Assert(shaderInfo->m_stage == desc.m_stage);
-
-                for (uint32_t defineIndex = 0; defineIndex < desc.m_defines.size(); ++defineIndex)
-                {
-                    const Core::ShaderDefine define = shaderInfo->m_definesStorage[defineIndex];
-                    FE_Assert(desc.m_defines[defineIndex].m_name == define.m_name);
-                    FE_Assert(desc.m_defines[defineIndex].m_value == define.m_value);
-                }
+                FE_Assert(shaderInfo->m_name == name);
+                FE_Assert(shaderInfo->m_defines == defines);
             }
 
             return Core::ShaderHandle{ iter->second };
         }
 
-        ShaderInfo* shaderInfo = m_shaderPool.New();
+        auto* shaderInfo = Memory::New<ShaderInfo>(&m_shaderPool);
         m_shaders.push_back(shaderInfo);
 
-        shaderInfo->m_name = desc.m_name;
-        shaderInfo->m_stage = desc.m_stage;
-        shaderInfo->m_entryPoint = GetShaderEntryPointName(desc.m_stage);
-        shaderInfo->m_definesStorage.Init(desc.m_defines);
+        shaderInfo->m_name = name;
+        shaderInfo->m_defines = defines;
+        shaderInfo->m_entryPoint = "main";
         shaderInfo->m_completionWaitGroup = WaitGroup::Create();
 
         auto* task = Memory::New<CompilationTask>(&m_taskPool);

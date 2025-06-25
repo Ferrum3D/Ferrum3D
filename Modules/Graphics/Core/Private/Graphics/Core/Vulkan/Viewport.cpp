@@ -1,6 +1,7 @@
 ﻿#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
 #include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
@@ -9,7 +10,7 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        festd::small_vector<VkSurfaceFormatKHR> EnumerateSurfaceFormats(const VkPhysicalDevice physicalDevice,
+        festd::inline_vector<VkSurfaceFormatKHR> EnumerateSurfaceFormats(const VkPhysicalDevice physicalDevice,
                                                                         const VkSurfaceKHR surface)
         {
             FE_PROFILER_ZONE();
@@ -17,13 +18,13 @@ namespace FE::Graphics::Vulkan
             uint32_t formatCount = 0;
             VerifyVulkan(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr));
 
-            festd::small_vector<VkSurfaceFormatKHR> formats{ formatCount };
+            festd::inline_vector<VkSurfaceFormatKHR> formats{ formatCount };
             VerifyVulkan(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data()));
             return formats;
         }
 
 
-        festd::small_vector<VkPresentModeKHR> EnumeratePresentModes(const VkPhysicalDevice physicalDevice,
+        festd::inline_vector<VkPresentModeKHR> EnumeratePresentModes(const VkPhysicalDevice physicalDevice,
                                                                     const VkSurfaceKHR surface)
         {
             FE_PROFILER_ZONE();
@@ -31,7 +32,7 @@ namespace FE::Graphics::Vulkan
             uint32_t modeCount = 0;
             VerifyVulkan(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, nullptr));
 
-            festd::small_vector<VkPresentModeKHR> modes{ modeCount };
+            festd::inline_vector<VkPresentModeKHR> modes{ modeCount };
             VerifyVulkan(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, modes.data()));
             return modes;
         }
@@ -107,23 +108,30 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        void ImageMemoryBarrier(const VkCommandBuffer cmdbuffer, const VkImage image, const VkAccessFlags srcAccessMask,
-                                const VkAccessFlags dstAccessMask, const VkImageLayout oldImageLayout,
+        void ImageMemoryBarrier(const VkCommandBuffer cmdbuffer, const VkImage image, const VkAccessFlags2 srcAccessMask,
+                                const VkAccessFlags2 dstAccessMask, const VkImageLayout oldImageLayout,
                                 const VkImageLayout newImageLayout, const VkPipelineStageFlags srcStageMask,
                                 const VkPipelineStageFlags dstStageMask, const VkImageAspectFlags aspect)
         {
-            VkImageMemoryBarrier imageMemoryBarrier = {};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            VkImageMemoryBarrier2 imageMemoryBarrier = {};
+            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.srcAccessMask = srcAccessMask;
+            imageMemoryBarrier.srcStageMask = srcStageMask;
             imageMemoryBarrier.dstAccessMask = dstAccessMask;
+            imageMemoryBarrier.dstStageMask = dstStageMask;
             imageMemoryBarrier.oldLayout = oldImageLayout;
             imageMemoryBarrier.newLayout = newImageLayout;
             imageMemoryBarrier.image = image;
             imageMemoryBarrier.subresourceRange = { aspect, 0, 1, 0, 1 };
 
-            vkCmdPipelineBarrier(cmdbuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = 1;
+            dependencyInfo.pImageMemoryBarriers = &imageMemoryBarrier;
+
+            vkCmdPipelineBarrier2(cmdbuffer, &dependencyInfo);
         }
 
 
@@ -133,18 +141,15 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool)
+    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsCommandQueue* commandQueue)
         : m_logger(logger)
         , m_resourcePool(resourcePool)
+        , m_commandQueue(commandQueue)
     {
         FE_PROFILER_ZONE();
 
         m_device = device;
         m_deviceFactory = ImplCast(device)->GetDeviceFactory();
-
-        const uint32_t graphicsFamily = ImplCast(device)->GetQueueFamilyIndex(Core::HardwareQueueKindFlags::kGraphics);
-
-        vkGetDeviceQueue(NativeCast(device), graphicsFamily, 0, &m_queue);
     }
 
 
@@ -154,7 +159,21 @@ namespace FE::Graphics::Vulkan
 
         m_imageAvailableSemaphores.clear();
         m_renderFinishedSemaphores.clear();
-        m_graphicsCommandBuffers.clear();
+
+        const VkDevice vkDevice = NativeCast(m_device);
+        const VkInstance vkInstance = m_deviceFactory->GetNative();
+
+        if (m_swapchain)
+        {
+            vkDestroySwapchainKHR(vkDevice, m_swapchain, nullptr);
+            m_swapchain = VK_NULL_HANDLE;
+        }
+
+        if (m_surface)
+        {
+            vkDestroySurfaceKHR(vkInstance, m_surface, nullptr);
+            m_surface = VK_NULL_HANDLE;
+        }
     }
 
 
@@ -170,13 +189,7 @@ namespace FE::Graphics::Vulkan
         {
             m_imageAvailableSemaphores.push_back(Semaphore::Create(m_device, Fmt::FormatName("ImageAvailableSemaphore_{}", i)));
             m_renderFinishedSemaphores.push_back(Semaphore::Create(m_device, Fmt::FormatName("RenderFinishedSemaphore_{}", i)));
-
-            const Env::Name name = Fmt::FormatName("GraphicsCommandBuffer_{}", i);
-            m_graphicsCommandBuffers.push_back(CommandBuffer::Create(m_device, name, Core::HardwareQueueKindFlags::kGraphics));
         }
-
-        m_fence = Fence::Create(m_device);
-        m_fence->Init(0);
 
         CreateSurface();
         CreateSwapChain();
@@ -190,60 +203,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::PrepareFrame()
-    {
-        FE_PROFILER_ZONE();
-
-        if (m_frameIndex > kMaxInFlightFrames)
-        {
-            m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
-        }
-
-        AcquireNextImage();
-
-        Image* colorTarget = m_renderTargets[m_imageIndex].Get();
-        Image* depthStencil = m_depthTarget.Get();
-
-        const VkCommandBuffer commandBuffer = GetCurrentGraphicsCommandBuffer()->GetNative();
-
-        VerifyVulkan(vkResetCommandBuffer(commandBuffer, 0));
-
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-        ImageMemoryBarrier(commandBuffer,
-                           colorTarget->GetNative(),
-                           0,
-                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                           VK_IMAGE_LAYOUT_UNDEFINED,
-                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_IMAGE_ASPECT_COLOR_BIT);
-        ImageMemoryBarrier(commandBuffer,
-                           depthStencil->GetNative(),
-                           0,
-                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                           VK_IMAGE_LAYOUT_UNDEFINED,
-                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                           VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                           VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                           VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    }
-
-
     void Viewport::AcquireNextImage()
     {
         FE_PROFILER_ZONE();
 
-        if (m_frameIndex > kMaxInFlightFrames)
-        {
-            m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
-        }
+        m_commandQueue->WaitForPreviousFrame();
 
-        const uint32_t semaphoreIndex = m_frameIndex % kMaxInFlightFrames;
-        Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
+        const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
+        const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
+        const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
         const VkResult result = vkAcquireNextImageKHR(
             NativeCast(m_device), m_swapchain, Constants::kMaxU64, semaphore->GetNative(), VK_NULL_HANDLE, &m_imageIndex);
 
@@ -381,7 +349,7 @@ namespace FE::Graphics::Vulkan
 
         m_logger->LogDebug("Created Vulkan swapchain with {} images", imageCount);
 
-        festd::small_vector<VkImage> images{ imageCount };
+        festd::inline_vector<VkImage> images{ imageCount };
         VerifyVulkan(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, images.data()));
 
         FE_Assert(m_imageAvailableSemaphores.size() == kMaxInFlightFrames);
@@ -407,10 +375,6 @@ namespace FE::Graphics::Vulkan
 
             m_renderTargets.push_back(image);
         }
-
-        const Core::ImageDesc depthTargetDesc = Core::ImageDesc::Img2D(width, height, Core::kMainDepthTargetFormat);
-        m_depthTarget = ImplCast(m_resourcePool->CreateRenderTarget("Swapchain Depth Stencil Target", depthTargetDesc));
-        m_depthTarget->SetImmediateDestroyPolicy();
     }
 
 
@@ -419,14 +383,7 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_device->WaitIdle();
-
-        if (m_frameIndex > 1)
-        {
-            m_fence->Wait(m_frameIndex - 1);
-        }
-
         m_renderTargets.clear();
-        m_depthTarget.Reset();
     }
 
 
@@ -459,21 +416,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::RenderTarget* Viewport::GetDepthTarget()
-    {
-        return m_depthTarget.Get();
-    }
-
-
     Core::Format Viewport::GetColorTargetFormat()
     {
         return m_rtvFormat;
-    }
-
-
-    Core::Format Viewport::GetDepthTargetFormat()
-    {
-        return Core::kMainDepthTargetFormat;
     }
 
 
@@ -483,7 +428,9 @@ namespace FE::Graphics::Vulkan
 
         Image* renderTarget = m_renderTargets[m_imageIndex].Get();
 
-        ImageMemoryBarrier(frameGraphContext->m_graphicsCommandBuffer->GetNative(),
+        CommandBuffer* commandBuffer = frameGraphContext->m_graphicsCommandBuffer.Get();
+
+        ImageMemoryBarrier(commandBuffer->GetNative(),
                            renderTarget->GetNative(),
                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                            0,
@@ -493,13 +440,14 @@ namespace FE::Graphics::Vulkan
                            0,
                            VK_IMAGE_ASPECT_COLOR_BIT);
 
-        const uint32_t semaphoreIndex = m_frameIndex % kMaxInFlightFrames;
+        const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
+        const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
         const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
-        frameGraphContext->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
-        frameGraphContext->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
-        frameGraphContext->EnqueueFenceToSignal({ m_fence, m_frameIndex++ });
+        commandBuffer->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
+        commandBuffer->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
+        commandBuffer->EnqueueFenceToSignal(m_commandQueue->CloseFrame());
 
-        frameGraphContext->Submit();
+        commandBuffer->Submit();
 
         const VkSemaphore waitSemaphore = m_renderFinishedSemaphores[semaphoreIndex]->GetNative();
 
@@ -511,7 +459,8 @@ namespace FE::Graphics::Vulkan
         presentInfo.pSwapchains = &m_swapchain;
         presentInfo.pImageIndices = &m_imageIndex;
 
-        const VkResult presentResult = vkQueuePresentKHR(m_queue, &presentInfo);
+        const VkQueue queue = m_commandQueue->GetNative();
+        const VkResult presentResult = vkQueuePresentKHR(queue, &presentInfo);
         if (presentResult == VK_SUBOPTIMAL_KHR || presentResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RecreateSwapchain();

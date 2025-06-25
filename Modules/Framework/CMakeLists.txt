@@ -6,12 +6,30 @@
 
     Public/Framework/Application/Application.h
 
+    Public/Framework/Entities/Archetype.h
+    Public/Framework/Entities/Base.h
+    Public/Framework/Entities/Entity.h
+    Public/Framework/Entities/EntityComponentRegistry.h
+    Public/Framework/Entities/EntityRegistry.h
+    Public/Framework/Entities/EntitySystem.h
+    Public/Framework/Entities/EntityUpdateContext.h
+    Public/Framework/Entities/EntityWorld.h
+    Public/Framework/Entities/EntityWorldSystem.h
+
     Public/Framework/Input/Core/Keys.h
 
     Public/Framework/Module.h
 )
 
 set(COMMON_SOURCES
+    Private/Framework/Application/Application.cpp
+
+    Private/Framework/Entities/Archetype.cpp
+    Private/Framework/Entities/Entity.cpp
+    Private/Framework/Entities/EntityComponentRegistry.cpp
+    Private/Framework/Entities/EntityRegistry.cpp
+    Private/Framework/Entities/EntityWorld.cpp
+
     Private/Framework/Module.cpp
 )
 
@@ -22,7 +40,7 @@ set(WINDOWS_SOURCES
     Private/Framework/Application/Platform/Windows/PlatformWindow.h
 )
 
-add_library(FeFramework SHARED ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES})
+add_library(FeFramework STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES})
 
 fe_configure_target(FeFramework)
 

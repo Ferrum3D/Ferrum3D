@@ -14,7 +14,7 @@ namespace FE::Memory
     FiberTempAllocator::~FiberTempAllocator()
     {
         m_allocator->Restore(m_marker);
-        m_allocator->Collect();
+        m_allocator->FreeUnusedMemory();
     }
 
 

@@ -2,8 +2,7 @@
 #include <FeCore/Memory/Memory.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/ShaderResourceType.h>
-#include <Graphics/Core/ShaderStage.h>
-#include <festd/string.h>
+#include <Graphics/Core/ShaderSpecialization.h>
 
 namespace FE::Graphics::Core
 {
@@ -43,6 +42,7 @@ namespace FE::Graphics::Core
         virtual festd::span<const ShaderInputAttribute> GetInputAttributes() const = 0;
         virtual festd::span<const ShaderResourceBinding> GetResourceBindings() const = 0;
         virtual festd::span<const ShaderRootConstant> GetRootConstants() const = 0;
+        virtual festd::span<const Env::Name> GetSpecializationConstantNames() const = 0;
 
         virtual uint32_t GetResourceBindingIndex(Env::Name name) const = 0;
         virtual uint32_t GetInputAttributeLocation(Env::Name semantic) const = 0;

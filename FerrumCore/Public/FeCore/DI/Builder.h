@@ -2,7 +2,6 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>
 #include <FeCore/DI/Registry.h>
-#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::DI
 {
@@ -20,9 +19,9 @@ namespace FE::DI
 
         struct [[nodiscard]] RegistryToBuilder final
         {
-            void InScope(Lifetime lifetime)
+            void InScope(const Lifetime lifetime)
             {
-                m_target.m_registration->SetLifetime(lifetime);
+                m_target.m_registration->m_lifetime = lifetime;
             }
 
             void InSingletonScope()
@@ -70,8 +69,8 @@ namespace FE::DI
 
             RegistryToBuilder ToFunc(ActivatorFunction&& function)
             {
-                *m_target.m_activator = ServiceActivator::CreateFromFunction(festd::forward<ActivatorFunction>(function));
-                m_target.m_registration->SetFunction(true);
+                *m_target.m_activator = ServiceActivator::CreateFromFunction(std::forward<ActivatorFunction>(function));
+                m_target.m_registration->m_isFunction = true;
                 return RegistryToBuilder(m_target);
             }
 
@@ -83,8 +82,8 @@ namespace FE::DI
                 };
 
                 *m_target.m_activator = ServiceActivator::CreateFromFunction(factory);
-                m_target.m_registration->SetLifetime(Lifetime::kSingleton);
-                m_target.m_registration->SetConstant(true);
+                m_target.m_registration->m_lifetime = Lifetime::kSingleton;
+                m_target.m_registration->m_isConstant = true;
                 pConst->AddRef();
             }
 
@@ -97,7 +96,7 @@ namespace FE::DI
         private:
             static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TInterface>);
 
-            friend struct DI::ServiceRegistryBuilder;
+            friend struct ServiceRegistryBuilder;
             ServiceRegistrationSpec m_target;
 
             RegistryBindBuilder(const ServiceRegistrationSpec registrationSpec)
@@ -117,8 +116,8 @@ namespace FE::DI
 
         void Build();
 
-        template<class TInterface, class = std::enable_if_t<!std::is_base_of_v<ServiceLocatorObjectMarker, TInterface>>>
-        Internal::RegistryBindBuilder<TInterface> Bind()
+        template<class TInterface>
+        Internal::RegistryBindBuilder<TInterface> Bind() const
         {
             return BindImpl(fe_typeid<TInterface>());
         }
@@ -126,9 +125,9 @@ namespace FE::DI
     private:
         Rc<ServiceRegistry> m_registry;
 
-        Internal::ServiceRegistrationSpec BindImpl(const UUID& id);
+        Internal::ServiceRegistrationSpec BindImpl(const UUID& id) const;
     };
 
 
-    void RegisterCoreServices(ServiceRegistryBuilder builder);
+    void RegisterCoreServices(const ServiceRegistryBuilder& builder);
 } // namespace FE::DI

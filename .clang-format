@@ -46,7 +46,7 @@ BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 130
-CompactNamespaces: false
+CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
@@ -84,3 +84,6 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++17
 UseTab: Never
+
+MacroBlockBegin: "^FE_HOST_BEGIN_NAMESPACE$"
+MacroBlockEnd: "^FE_HOST_END_NAMESPACE$"

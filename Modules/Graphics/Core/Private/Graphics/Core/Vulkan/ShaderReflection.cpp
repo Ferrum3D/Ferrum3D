@@ -6,139 +6,142 @@ namespace FE::Graphics::Vulkan
     namespace SpvC = spirv_cross;
 
 
-    inline static Core::Format SPIRTypeToFormat(const SpvC::SPIRType& type)
+    namespace
     {
-        using Core::Format;
-
-        switch (type.basetype)
+        Core::Format SPIRTypeToFormat(const SpvC::SPIRType& type)
         {
-        case SpvC::SPIRType::BaseType::Half:
-            FE_AssertMsg(false, "Float16 is not supported");
-            return Format::kUndefined;
+            using Core::Format;
 
-        case SpvC::SPIRType::BaseType::Float:
-            switch (type.vecsize)
+            switch (type.basetype)
             {
-            case 1:
-                return Format::kR32_SFLOAT;
-            case 2:
-                return Format::kR32G32_SFLOAT;
-            case 3:
-                return Format::kR32G32B32_SFLOAT;
-            case 4:
-                return Format::kR32G32B32A32_SFLOAT;
+            case SpvC::SPIRType::BaseType::Half:
+                FE_AssertMsg(false, "Float16 is not supported");
+                return Format::kUndefined;
+
+            case SpvC::SPIRType::BaseType::Float:
+                switch (type.vecsize)
+                {
+                case 1:
+                    return Format::kR32_SFLOAT;
+                case 2:
+                    return Format::kR32G32_SFLOAT;
+                case 3:
+                    return Format::kR32G32B32_SFLOAT;
+                case 4:
+                    return Format::kR32G32B32A32_SFLOAT;
+                default:
+                    FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
+                    return Format::kUndefined;
+                }
+
+            case SpvC::SPIRType::BaseType::Int:
+                switch (type.vecsize)
+                {
+                case 1:
+                    return Format::kR32_SINT;
+                case 2:
+                    return Format::kR32G32_SINT;
+                case 3:
+                    return Format::kR32G32B32_SINT;
+                case 4:
+                    return Format::kR32G32B32A32_SINT;
+                default:
+                    FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
+                    return Format::kUndefined;
+                }
+
+            case SpvC::SPIRType::BaseType::UInt:
+                switch (type.vecsize)
+                {
+                case 1:
+                    return Format::kR32_UINT;
+                case 2:
+                    return Format::kR32G32_UINT;
+                case 3:
+                    return Format::kR32G32B32_UINT;
+                case 4:
+                    return Format::kR32G32B32A32_UINT;
+                default:
+                    FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
+                    return Format::kUndefined;
+                }
+
             default:
-                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
+                FE_AssertMsg(false, "Invalid format");
                 return Format::kUndefined;
             }
-
-        case SpvC::SPIRType::BaseType::Int:
-            switch (type.vecsize)
-            {
-            case 1:
-                return Format::kR32_SINT;
-            case 2:
-                return Format::kR32G32_SINT;
-            case 3:
-                return Format::kR32G32B32_SINT;
-            case 4:
-                return Format::kR32G32B32A32_SINT;
-            default:
-                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
-                return Format::kUndefined;
-            }
-
-        case SpvC::SPIRType::BaseType::UInt:
-            switch (type.vecsize)
-            {
-            case 1:
-                return Format::kR32_UINT;
-            case 2:
-                return Format::kR32G32_UINT;
-            case 3:
-                return Format::kR32G32B32_UINT;
-            case 4:
-                return Format::kR32G32B32A32_UINT;
-            default:
-                FE_AssertMsg(false, "VecSize {} in parameters is not allowed", type.vecsize);
-                return Format::kUndefined;
-            }
-
-        default:
-            FE_AssertMsg(false, "Invalid format");
-            return Format::kUndefined;
         }
-    }
 
 
-    inline static Core::ShaderResourceType ConvertResourceType(const SpvC::CompilerHLSL* pCompiler,
-                                                               const SpvC::Resource* pResource)
-    {
-        const SpvC::SPIRType& type = pCompiler->get_type(pResource->type_id);
-
-        switch (type.basetype)
+        Core::ShaderResourceType ConvertResourceType(const SpvC::CompilerHLSL* compiler, const SpvC::Resource* pResource)
         {
-        case SpvC::SPIRType::SampledImage:
-        case SpvC::SPIRType::Image:
-            if (type.image.dim == spv::Dim::DimBuffer)
+            const SpvC::SPIRType& type = compiler->get_type(pResource->type_id);
+
+            switch (type.basetype)
             {
-                if (type.image.sampled != 2)
-                    return Core::ShaderResourceType::kBufferSRV;
+            case SpvC::SPIRType::SampledImage:
+            case SpvC::SPIRType::Image:
+                if (type.image.dim == spv::Dim::DimBuffer)
+                {
+                    if (type.image.sampled != 2)
+                        return Core::ShaderResourceType::kBufferSRV;
+                    else
+                        return Core::ShaderResourceType::kBufferUAV;
+                }
                 else
-                    return Core::ShaderResourceType::kBufferUAV;
-            }
-            else
-            {
-                if (type.image.sampled != 2)
-                    return Core::ShaderResourceType::kTextureSRV;
-                else
-                    return Core::ShaderResourceType::kTextureUAV;
-            }
+                {
+                    if (type.image.sampled != 2)
+                        return Core::ShaderResourceType::kTextureSRV;
+                    else
+                        return Core::ShaderResourceType::kTextureUAV;
+                }
 
-        case SpvC::SPIRType::Sampler:
-            return Core::ShaderResourceType::kSampler;
+            case SpvC::SPIRType::Sampler:
+                return Core::ShaderResourceType::kSampler;
 
-        case SpvC::SPIRType::Struct:
-            if (type.storage == spv::StorageClassStorageBuffer)
-            {
-                const SpvC::Bitset flags = pCompiler->get_buffer_block_flags(pResource->id);
-                const bool readonly = flags.get(spv::DecorationNonWritable);
-                if (readonly)
-                    return Core::ShaderResourceType::kTextureSRV;
-                else
-                    return Core::ShaderResourceType::kTextureUAV;
+            case SpvC::SPIRType::Struct:
+                if (type.storage == spv::StorageClassStorageBuffer)
+                {
+                    const SpvC::Bitset flags = compiler->get_buffer_block_flags(pResource->id);
+                    const bool readonly = flags.get(spv::DecorationNonWritable);
+                    if (readonly)
+                        return Core::ShaderResourceType::kTextureSRV;
+                    else
+                        return Core::ShaderResourceType::kTextureUAV;
+                }
+                else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform)
+                {
+                    return Core::ShaderResourceType::kConstantBuffer;
+                }
+
+                FE_AssertMsg(false, "Invalid resource type");
+                return Core::ShaderResourceType::kNone;
+
+            default:
+                FE_AssertMsg(false, "Invalid resource type");
+                return Core::ShaderResourceType::kNone;
             }
-            else if (type.storage == spv::StorageClassPushConstant || type.storage == spv::StorageClassUniform)
-            {
-                return Core::ShaderResourceType::kConstantBuffer;
-            }
-
-            FE_AssertMsg(false, "Invalid resource type");
-            return Core::ShaderResourceType::kNone;
-
-        default:
-            FE_AssertMsg(false, "Invalid resource type");
-            return Core::ShaderResourceType::kNone;
         }
-    }
 
 
-    inline static Core::ShaderResourceBinding ConvertBinding(const SpvC::CompilerHLSL* pCompiler, const SpvC::Resource* pResource)
-    {
-        const SpvC::SPIRType& resourceType = pCompiler->get_type(pResource->type_id);
+        Core::ShaderResourceBinding ConvertBinding(const SpvC::CompilerHLSL* compiler, const SpvC::Resource* pResource)
+        {
+            const SpvC::SPIRType& resourceType = compiler->get_type(pResource->type_id);
 
-        Core::ShaderResourceBinding result;
-        result.m_name = Env::Name(pCompiler->get_name(pResource->id));
-        result.m_type = ConvertResourceType(pCompiler, pResource);
-        result.m_slot = static_cast<uint8_t>(pCompiler->get_decoration(pResource->id, spv::DecorationBinding));
-        result.m_space = static_cast<uint8_t>(pCompiler->get_decoration(pResource->id, spv::DecorationDescriptorSet));
-        result.m_count = 1;
+            Core::ShaderResourceBinding result;
+            result.m_name = Env::Name(compiler->get_name(pResource->id));
+            result.m_type = ConvertResourceType(compiler, pResource);
+            result.m_stride = 0;
+            result.m_slot = static_cast<uint8_t>(compiler->get_decoration(pResource->id, spv::DecorationBinding));
+            result.m_space = static_cast<uint8_t>(compiler->get_decoration(pResource->id, spv::DecorationDescriptorSet));
+            result.m_count = 1;
 
-        if (!resourceType.array.empty())
-            result.m_count = static_cast<uint8_t>(resourceType.array.front());
+            if (!resourceType.array.empty())
+                result.m_count = static_cast<uint8_t>(resourceType.array.front());
 
-        return result;
-    }
+            return result;
+        }
+    } // namespace
 
 
     ShaderReflection::ShaderReflection(const festd::span<const uint32_t> byteCode)
@@ -170,13 +173,19 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void ShaderReflection::ParseInputAttributes(const SpvC::CompilerHLSL* pCompiler, const SpvC::ShaderResources& shaderResources)
+    festd::span<const Env::Name> ShaderReflection::GetSpecializationConstantNames() const
+    {
+        return m_specializationConstantNames;
+    }
+
+
+    void ShaderReflection::ParseInputAttributes(const SpvC::CompilerHLSL* compiler, const SpvC::ShaderResources& shaderResources)
     {
         FE_PROFILER_ZONE();
 
         for (const auto& resource : shaderResources.stage_inputs)
         {
-            const auto& semantic = pCompiler->get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
+            const auto& semantic = compiler->get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
             auto semanticSize = semantic.length();
             if (!semantic.empty() && semantic.back() == '0')
             {
@@ -184,22 +193,21 @@ namespace FE::Graphics::Vulkan
             }
 
             auto& current = m_inputAttributes.emplace_back();
-            current.m_location = pCompiler->get_decoration(resource.id, spv::DecorationLocation);
+            current.m_location = compiler->get_decoration(resource.id, spv::DecorationLocation);
             current.m_shaderSemantic = Env::Name(semantic.c_str(), static_cast<uint32_t>(semanticSize));
-            current.m_elementFormat = SPIRTypeToFormat(pCompiler->get_type(resource.base_type_id));
+            current.m_elementFormat = SPIRTypeToFormat(compiler->get_type(resource.base_type_id));
         }
     }
 
 
-    void ShaderReflection::ParseResourceBindings(const SpvC::CompilerHLSL* pCompiler,
-                                                 const SpvC::ShaderResources& shaderResources)
+    void ShaderReflection::ParseResourceBindings(const SpvC::CompilerHLSL* compiler, const SpvC::ShaderResources& shaderResources)
     {
         FE_PROFILER_ZONE();
 
         const auto parseList = [&](const SpvC::SmallVector<SpvC::Resource>& resources) {
             for (const SpvC::Resource& resource : resources)
             {
-                m_resourceBindings.push_back(ConvertBinding(pCompiler, &resource));
+                m_resourceBindings.push_back(ConvertBinding(compiler, &resource));
             }
         };
 
@@ -214,11 +222,31 @@ namespace FE::Graphics::Vulkan
         for (const SpvC::Resource& resource : shaderResources.push_constant_buffers)
         {
             Core::ShaderRootConstant rootConstant;
-            rootConstant.m_name = Env::Name(pCompiler->get_name(resource.id));
+            rootConstant.m_name = Env::Name(compiler->get_name(resource.id));
             rootConstant.m_offset = 0;
             rootConstant.m_byteSize =
-                static_cast<uint32_t>(pCompiler->get_declared_struct_size(pCompiler->get_type(resource.base_type_id)));
+                static_cast<uint32_t>(compiler->get_declared_struct_size(compiler->get_type(resource.base_type_id)));
             m_rootConstants.push_back(rootConstant);
+        }
+    }
+
+
+    void ShaderReflection::ParseSpecializationConstants(const spirv_cross::CompilerHLSL* compiler)
+    {
+        FE_PROFILER_ZONE();
+
+        auto specializationConstants = compiler->get_specialization_constants();
+        festd::sort(specializationConstants,
+                    [](const SpvC::SpecializationConstant& lhs, const SpvC::SpecializationConstant& rhs) {
+                        return lhs.constant_id < rhs.constant_id;
+                    });
+
+        for (uint32_t i = 0; i < specializationConstants.size(); ++i)
+            FE_Assert(specializationConstants[i].constant_id == i);
+
+        for (const auto& specializationConstant : specializationConstants)
+        {
+            m_specializationConstantNames.push_back(Env::Name(compiler->get_name(specializationConstant.id)));
         }
     }
 

@@ -293,7 +293,7 @@ namespace FE::Fmt
     inline festd::string Format(festd::string_view fmt, TArgs&&... args)
     {
         festd::string buffer;
-        FormatTo<festd::string, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
+        FormatTo<festd::string, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
         return buffer;
     }
 
@@ -302,7 +302,7 @@ namespace FE::Fmt
     inline festd::basic_fixed_string<TSize> FixedFormatSized(festd::string_view fmt, TArgs&&... args)
     {
         festd::basic_fixed_string<TSize> buffer;
-        FormatTo<festd::basic_fixed_string<TSize>, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
+        FormatTo<festd::basic_fixed_string<TSize>, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
         return buffer;
     }
 
@@ -311,7 +311,7 @@ namespace FE::Fmt
     inline festd::fixed_string FixedFormat(festd::string_view fmt, TArgs&&... args)
     {
         festd::fixed_string buffer;
-        FormatTo<festd::fixed_string, TArgs...>(buffer, fmt, festd::forward<TArgs>(args)...);
+        FormatTo<festd::fixed_string, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
         return buffer;
     }
 
@@ -319,6 +319,6 @@ namespace FE::Fmt
     template<class... TArgs>
     inline Env::Name FormatName(festd::string_view fmt, TArgs&&... args)
     {
-        return Env::Name{ FixedFormat(fmt, festd::forward<TArgs>(args)...) };
+        return Env::Name{ FixedFormat(fmt, std::forward<TArgs>(args)...) };
     }
 } // namespace FE::Fmt

@@ -3,6 +3,40 @@
 
 namespace FE::Platform
 {
+    namespace
+    {
+        double QueryTicksPerSecond()
+        {
+            LARGE_INTEGER frequency;
+            QueryPerformanceFrequency(&frequency);
+            return static_cast<double>(frequency.QuadPart);
+        }
+
+        double GTicksPerSecond = QueryTicksPerSecond();
+        double GSecondsPerTick = 1.0 / QueryTicksPerSecond();
+    } // namespace
+
+
+    uint64_t GetTicks()
+    {
+        LARGE_INTEGER counter;
+        FE_Verify(QueryPerformanceCounter(&counter));
+        return counter.QuadPart;
+    }
+
+
+    double GetTicksPerSecond()
+    {
+        return GTicksPerSecond;
+    }
+
+
+    double GetSecondsPerTick()
+    {
+        return GSecondsPerTick;
+    }
+
+
     TimeZoneInfo GetTimeZoneInfo()
     {
         TIME_ZONE_INFORMATION info;

@@ -2,6 +2,7 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Logging/Trace.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 
@@ -12,16 +13,17 @@ namespace FE::Graphics::Core
     namespace
     {
         constexpr const char* kCompilerArgs[] = { "-spirv",
-                                                  "-fspv-target-env=vulkan1.1",
+                                                  "-fspv-target-env=vulkan1.3",
                                                   "-fspv-extension=KHR",
                                                   "-fspv-extension=SPV_EXT_descriptor_indexing",
+                                                  "-fspv-extension=SPV_EXT_mesh_shader",
                                                   "-fspv-extension=SPV_GOOGLE_hlsl_functionality1",
                                                   "-fspv-extension=SPV_GOOGLE_user_type",
                                                   "-fvk-use-dx-layout",
                                                   "-fspv-reflect",
                                                   "-Od",
                                                   "-Zi",
-                                                  "/Qstrip_debug" };
+                                                  "-Zpr" };
 
 
         LPWSTR ConvertString(std::pmr::memory_resource* allocator, const festd::string_view source)
@@ -41,17 +43,15 @@ namespace FE::Graphics::Core
             switch (stage)
             {
             case ShaderStage::kVertex:
-                return L"vs_6_6";
+                return L"vs_6_7";
+            case ShaderStage::kAmplification:
+                return L"as_6_7";
+            case ShaderStage::kMesh:
+                return L"ms_6_7";
             case ShaderStage::kPixel:
-                return L"ps_6_6";
-            case ShaderStage::kHull:
-                return L"hs_6_6";
-            case ShaderStage::kDomain:
-                return L"ds_6_6";
-            case ShaderStage::kGeometry:
-                return L"gs_6_6";
+                return L"ps_6_7";
             case ShaderStage::kCompute:
-                return L"cs_6_6";
+                return L"cs_6_7";
             case ShaderStage::kUndefined:
             default:
                 FE_Assert(false, "Invalid ShaderStage");
@@ -69,16 +69,12 @@ namespace FE::Graphics::Core
             {
             }
 
-            HRESULT STDMETHODCALLTYPE LoadSource(LPCWSTR filenameWide, IDxcBlob** includeSource) override
+            HRESULT STDMETHODCALLTYPE LoadSource(const LPCWSTR filenameWide, IDxcBlob** includeSource) override
             {
                 FE_PROFILER_ZONE();
 
-                IO::Path path;
-                while (*filenameWide)
-                {
-                    path.append(*filenameWide);
-                    ++filenameWide;
-                }
+                const Str::Utf16ToUtf8 pathUtf8{ filenameWide };
+                const IO::Path path = IO::NormalizePath({ pathUtf8.data(), pathUtf8.size() });
 
                 const Env::Name name{ path };
                 if (const festd::expected result = m_shaderSourceCache->GetSource(name))
@@ -98,7 +94,6 @@ namespace FE::Graphics::Core
                     return hr;
                 }
 
-                m_logger->LogError("Failed to load shader source file: {}", name);
                 return E_FAIL;
             }
 
@@ -114,7 +109,11 @@ namespace FE::Graphics::Core
 
             ULONG STDMETHODCALLTYPE Release() override
             {
-                return --m_refCount;
+                const uint32_t refCount = --m_refCount;
+                if (refCount == 0)
+                    Memory::DefaultDelete(this);
+
+                return refCount;
             }
 
         private:
@@ -168,18 +167,20 @@ namespace FE::Graphics::Core
         sourceBuffer.Size = source.size();
         sourceBuffer.Encoding = DXC_CP_UTF8;
 
-        // TODO: replace with thread-local stack allocator
-        Memory::LinearAllocator linearAllocator{ 16 * 1024 };
-        festd::pmr::vector<LPCWSTR> compilerArgs{ &linearAllocator };
+        Memory::FiberTempAllocator temp;
+        festd::pmr::vector<LPCWSTR> compilerArgs{ &temp };
         compilerArgs.reserve(32);
 
-        const festd::string_view shaderName{ args.m_shaderName };
-        const Str::Utf8ToUtf16 shaderNameUtf16{ shaderName.data(), shaderName.size(), &linearAllocator };
+        const IO::PathView shaderName{ args.m_shaderName };
+        const festd::string_view shaderFilename = shaderName.filename();
+        const Str::Utf8ToUtf16 shaderNameUtf16{ shaderFilename.data(), shaderFilename.size(), &temp };
         compilerArgs.push_back(shaderNameUtf16.ToWideString());
 
-        const Str::Utf8ToUtf16 entryPointUtf16{ GetShaderEntryPointName(args.m_stage), &linearAllocator };
         compilerArgs.push_back(L"-E");
-        compilerArgs.push_back(entryPointUtf16.ToWideString());
+        compilerArgs.push_back(L"main");
+
+        compilerArgs.push_back(L"-I");
+        compilerArgs.push_back(L"");
 
         compilerArgs.push_back(L"-T");
         compilerArgs.push_back(GetShaderTargetProfile(args.m_stage));
@@ -188,12 +189,12 @@ namespace FE::Graphics::Core
         {
             const festd::fixed_string defineString = Fmt::FixedFormat("{}={}", m_name, m_value);
             compilerArgs.push_back(L"-D");
-            compilerArgs.push_back(ConvertString(&linearAllocator, defineString));
+            compilerArgs.push_back(ConvertString(&temp, defineString));
         }
 
         for (const char* arg : kCompilerArgs)
         {
-            compilerArgs.push_back(ConvertString(&linearAllocator, arg));
+            compilerArgs.push_back(ConvertString(&temp, arg));
         }
 
         Rc<IDxcResult> result;

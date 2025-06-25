@@ -1,18 +1,21 @@
 #pragma once
+#include <FeCore/Math/Rect.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/RenderTarget.h>
 
 namespace FE::Graphics::Core
 {
-    constexpr auto kMainDepthTargetFormat = Format::kD32_SFLOAT_S8_UINT;
-
-
     struct ViewportDesc final
     {
         uint32_t m_width = 0;
         uint32_t m_height = 0;
         uint64_t m_nativeWindowHandle = 0;
+
+        [[nodiscard]] RectF GetRect() const
+        {
+            return RectF{ 0.0f, 0.0f, static_cast<float>(m_width), static_cast<float>(m_height) };
+        }
     };
 
 
@@ -24,9 +27,6 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;
 
         virtual Format GetColorTargetFormat() = 0;
-        virtual Format GetDepthTargetFormat() = 0;
-
         virtual RenderTarget* GetCurrentColorTarget() = 0;
-        virtual RenderTarget* GetDepthTarget() = 0;
     };
 } // namespace FE::Graphics::Core

@@ -9,66 +9,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    namespace
-    {
-        VkDescriptorType GetDescriptorType(const Core::ShaderResourceType type)
-        {
-            switch (type)
-            {
-            case Core::ShaderResourceType::kConstantBuffer:
-                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            case Core::ShaderResourceType::kTextureSRV:
-                return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            case Core::ShaderResourceType::kTextureUAV:
-                return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            case Core::ShaderResourceType::kBufferSRV:
-                return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-            case Core::ShaderResourceType::kBufferUAV:
-                return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            case Core::ShaderResourceType::kSampler:
-                return VK_DESCRIPTOR_TYPE_SAMPLER;
-            case Core::ShaderResourceType::kNone:
-            default:
-                FE_AssertMsg(false, "Invalid ShaderResourceType");
-                return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-            }
-        }
-
-
-        DescriptorSetLayoutHandle CreateDescriptorSetLayout(DescriptorAllocator* descriptorAllocator,
-                                                            const festd::span<const Core::ShaderReflection*> shaderReflections)
-        {
-            FE_PROFILER_ZONE();
-
-            Memory::FiberTempAllocator temp;
-
-            festd::pmr::vector<VkDescriptorSetLayoutBinding> vkBindings{ &temp };
-            vkBindings.reserve(shaderReflections.size() * 8);
-
-            for (const Core::ShaderReflection* pReflection : shaderReflections)
-            {
-                const festd::span bindings = pReflection->GetResourceBindings();
-                for (const Core::ShaderResourceBinding& binding : bindings)
-                {
-                    VkDescriptorSetLayoutBinding& vkBinding = vkBindings.emplace_back();
-                    vkBinding.binding = binding.m_slot;
-                    vkBinding.descriptorCount = binding.m_count;
-                    vkBinding.descriptorType = GetDescriptorType(binding.m_type);
-                    vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
-                }
-            }
-
-            VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
-            layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutCreateInfo.bindingCount = vkBindings.size();
-            layoutCreateInfo.pBindings = vkBindings.data();
-            return descriptorAllocator->CreateDescriptorSetLayout(layoutCreateInfo);
-        }
-    } // namespace
-
-
-    GraphicsPipeline::GraphicsPipeline(Core::Device* device, DescriptorAllocator* descriptorAllocator)
-        : m_descriptorAllocator(descriptorAllocator)
+    GraphicsPipeline::GraphicsPipeline(Core::Device* device)
     {
         m_device = device;
     }
@@ -81,6 +22,18 @@ namespace FE::Graphics::Vulkan
         namespace Limits = Core::Limits::Pipeline;
 
         m_desc = context.m_desc;
+
+        const bool isMeshShadingPipeline = m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kMesh)] != Env::Name::kEmpty;
+        if (isMeshShadingPipeline)
+            FE_Assert(m_desc.m_inputLayout.IsEmpty());
+
+        if (m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kAmplification)])
+            FE_Assert(isMeshShadingPipeline);
+
+        if (m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kVertex)])
+            FE_Assert(!isMeshShadingPipeline);
+
+        FE_Assert(m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kPixel)]);
 
         VkFormat rtvFormats[Core::Limits::Pipeline::kMaxColorAttachments];
         for (int32_t rtIndex = 0; rtIndex < m_desc.m_renderTargetCount; ++rtIndex)
@@ -107,22 +60,20 @@ namespace FE::Graphics::Vulkan
         for (uint32_t shaderStageIndex = 0; shaderStageIndex < festd::size(m_desc.m_shaders); ++shaderStageIndex)
         {
             const Env::Name shaderName = m_desc.m_shaders[shaderStageIndex];
-            if (!shaderName.Valid())
+            if (!shaderName.IsValid())
                 continue;
 
-            Core::ShaderPermutationDesc permutationDesc;
-            permutationDesc.m_name = shaderName;
-            permutationDesc.m_stage = static_cast<Core::ShaderStage>(shaderStageIndex);
-
-            festd::pmr::vector<Core::ShaderDefine> defines = context.m_defines.ToVector();
-            permutationDesc.m_defines = defines;
-
-            const Core::ShaderHandle shaderHandle = context.m_shaderLibrary->GetShader(permutationDesc);
+            const Core::ShaderHandle shaderHandle = context.m_shaderLibrary->GetShader(shaderName, context.m_defines);
             shaderHandles[shaderStageIndex] = shaderHandle;
 
             WaitGroup* waitGroup = context.m_shaderLibrary->GetCompletionWaitGroup(shaderHandle);
             shaderWaitGroups.push_back(waitGroup);
         }
+
+        uint32_t specializationConstantOffset = 0;
+        festd::fixed_vector<VkSpecializationMapEntry, Limits::kMaxSpecializationConstants> specializationMapEntries;
+        festd::fixed_vector<VkSpecializationInfo, kMaxShaderCount> specializationInfos;
+        festd::fixed_vector<int32_t, Limits::kMaxSpecializationConstants> specializationData;
 
         WaitGroup::WaitAll(shaderWaitGroups);
 
@@ -130,7 +81,7 @@ namespace FE::Graphics::Vulkan
         for (uint32_t shaderStageIndex = 0; shaderStageIndex < festd::size(m_desc.m_shaders); ++shaderStageIndex)
         {
             const Env::Name shaderName = m_desc.m_shaders[shaderStageIndex];
-            if (!shaderName.Valid())
+            if (!shaderName.IsValid())
                 continue;
 
             const Core::ShaderHandle shaderHandle = shaderHandles[shaderStageIndex];
@@ -142,7 +93,8 @@ namespace FE::Graphics::Vulkan
                 return;
             }
 
-            shaderReflections.push_back(context.m_shaderLibrary->GetReflection(shaderHandle));
+            ShaderReflection* reflection = context.m_shaderLibrary->GetReflection(shaderHandle);
+            shaderReflections.push_back(reflection);
 
             VkPipelineShaderStageCreateInfo& shaderStageCI = shaderStages.push_back();
             shaderStageCI = {};
@@ -150,6 +102,34 @@ namespace FE::Graphics::Vulkan
             shaderStageCI.module = shaderModuleInfo.m_shaderModule;
             shaderStageCI.pName = shaderModuleInfo.m_entryPoint;
             shaderStageCI.stage = Translate(static_cast<Core::ShaderStage>(shaderStageIndex));
+
+            uint32_t specializationConstantCount = 0;
+            for (const Core::ShaderSpecializationConstant constant : context.m_specializationConstants)
+            {
+                const uint32_t constantIndex = festd::find_index(reflection->GetSpecializationConstantNames(), constant.m_name);
+                if (constantIndex == kInvalidIndex)
+                    continue;
+
+                VkSpecializationMapEntry& entry = specializationMapEntries.push_back();
+                entry.constantID = constantIndex;
+                entry.offset = specializationConstantOffset;
+                entry.size = sizeof(constant.m_value);
+                specializationConstantOffset += sizeof(int32_t);
+                specializationData.push_back(constant.m_value);
+            }
+
+            if (specializationConstantCount > 0)
+            {
+                VkSpecializationInfo& specializationInfo = specializationInfos.push_back();
+                specializationInfo.mapEntryCount = specializationConstantCount;
+                specializationInfo.pMapEntries =
+                    specializationMapEntries.data() + specializationMapEntries.size() - specializationConstantCount;
+                specializationInfo.dataSize = specializationConstantCount * sizeof(int32_t);
+                specializationInfo.pData = specializationData.data() + specializationData.size() - specializationConstantCount;
+
+                if (!specializationMapEntries.empty())
+                    shaderStageCI.pSpecializationInfo = &specializationInfo;
+            }
         }
 
         pipelineCI.pStages = shaderStages.data();
@@ -168,61 +148,69 @@ namespace FE::Graphics::Vulkan
         dynamicStateCI.dynamicStateCount = festd::size(dynamicStates);
         pipelineCI.pDynamicState = &dynamicStateCI;
 
-        festd::fixed_vector<VkVertexInputBindingDescription, Limits::kMaxVertexStreams> vertexBindings;
-        festd::fixed_vector<VkVertexInputAttributeDescription, Limits::kMaxStreamChannels> vertexAttributes;
+        if (isMeshShadingPipeline)
+        {
+            pipelineCI.pVertexInputState = nullptr;
+            pipelineCI.pInputAssemblyState = nullptr;
+        }
+        else
+        {
+            festd::fixed_vector<VkVertexInputBindingDescription, Limits::kMaxVertexStreams> vertexBindings;
+            festd::fixed_vector<VkVertexInputAttributeDescription, Limits::kMaxStreamChannels> vertexAttributes;
 
-        VkPipelineVertexInputStateCreateInfo vertexInputCI = {};
-        vertexInputCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            VkPipelineVertexInputStateCreateInfo vertexInputCI = {};
+            vertexInputCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        Bit::Traverse(m_desc.m_inputLayout.m_activeChannelsMask, [&](const uint32_t channelIndex) {
-            const Core::InputStreamLayout& layout = m_desc.m_inputLayout;
-            const Core::InputStreamChannelDesc& channel = layout.m_channels[channelIndex];
+            Bit::Traverse(m_desc.m_inputLayout.m_activeChannelsMask, [&](const uint32_t channelIndex) {
+                const Core::InputStreamLayout& layout = m_desc.m_inputLayout;
+                const Core::InputStreamChannelDesc& channel = layout.m_channels[channelIndex];
 
-            uint32_t bindingIndex = festd::find_index_if(vertexBindings, [&](const VkVertexInputBindingDescription& binding) {
-                return binding.binding == channel.m_streamIndex;
+                uint32_t bindingIndex = festd::find_index_if(vertexBindings, [&](const VkVertexInputBindingDescription& binding) {
+                    return binding.binding == channel.m_streamIndex;
+                });
+
+                if (bindingIndex == kInvalidIndex)
+                {
+                    bindingIndex = vertexBindings.size();
+
+                    const bool isPerInstanceStream = layout.m_perInstanceStreamsMask & (1 << channel.m_streamIndex);
+
+                    VkVertexInputBindingDescription& newBinding = vertexBindings.push_back();
+                    newBinding = {};
+                    newBinding.binding = channel.m_streamIndex;
+                    newBinding.inputRate = isPerInstanceStream ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+                    newBinding.stride = 0;
+                }
+
+                const Core::FormatInfo formatInfo{ channel.m_format };
+
+                VkVertexInputBindingDescription& binding = vertexBindings[bindingIndex];
+                binding.stride = Math::Max(binding.stride, channel.m_offset + formatInfo.m_texelByteSize);
+
+                const Core::ShaderHandle vsHandle = shaderHandles[festd::to_underlying(Core::ShaderStage::kVertex)];
+                const ShaderReflection* vsReflection = context.m_shaderLibrary->GetReflection(vsHandle);
+
+                const Core::ShaderSemantic channelSemantic{ channel.m_shaderSemanticName, channel.m_shaderSemanticIndex };
+
+                VkVertexInputAttributeDescription& attribute = vertexAttributes.push_back();
+                attribute = {};
+                attribute.location = vsReflection->GetInputAttributeLocation(channelSemantic.ToName());
+                attribute.binding = channel.m_streamIndex;
+                attribute.format = Translate(formatInfo.m_format);
+                attribute.offset = channel.m_offset;
             });
 
-            if (bindingIndex == kInvalidIndex)
-            {
-                bindingIndex = vertexBindings.size();
+            vertexInputCI.pVertexBindingDescriptions = vertexBindings.data();
+            vertexInputCI.vertexBindingDescriptionCount = vertexBindings.size();
+            vertexInputCI.pVertexAttributeDescriptions = vertexAttributes.data();
+            vertexInputCI.vertexAttributeDescriptionCount = vertexAttributes.size();
+            pipelineCI.pVertexInputState = &vertexInputCI;
 
-                const bool isPerInstanceStream = layout.m_perInstanceStreamsMask & (1 << channel.m_streamIndex);
-
-                VkVertexInputBindingDescription& newBinding = vertexBindings.push_back();
-                newBinding = {};
-                newBinding.binding = channel.m_streamIndex;
-                newBinding.inputRate = isPerInstanceStream ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-                newBinding.stride = 0;
-            }
-
-            const Core::FormatInfo formatInfo{ channel.m_format };
-
-            VkVertexInputBindingDescription& binding = vertexBindings[bindingIndex];
-            binding.stride = Math::Max(binding.stride, channel.m_offset + formatInfo.m_texelByteSize);
-
-            const Core::ShaderHandle vsHandle = shaderHandles[festd::to_underlying(Core::ShaderStage::kVertex)];
-            const ShaderReflection* vsReflection = context.m_shaderLibrary->GetReflection(vsHandle);
-
-            const Core::ShaderSemantic channelSemantic{ channel.m_shaderSemanticName, channel.m_shaderSemanticIndex };
-
-            VkVertexInputAttributeDescription& attribute = vertexAttributes.push_back();
-            attribute = {};
-            attribute.location = vsReflection->GetInputAttributeLocation(channelSemantic.ToName());
-            attribute.binding = channel.m_streamIndex;
-            attribute.format = Translate(formatInfo.m_format);
-            attribute.offset = channel.m_offset;
-        });
-
-        vertexInputCI.pVertexBindingDescriptions = vertexBindings.data();
-        vertexInputCI.vertexBindingDescriptionCount = vertexBindings.size();
-        vertexInputCI.pVertexAttributeDescriptions = vertexAttributes.data();
-        vertexInputCI.vertexAttributeDescriptionCount = vertexAttributes.size();
-        pipelineCI.pVertexInputState = &vertexInputCI;
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyCI = {};
-        inputAssemblyCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssemblyCI.topology = Translate(m_desc.m_inputLayout.m_topology);
-        pipelineCI.pInputAssemblyState = &inputAssemblyCI;
+            VkPipelineInputAssemblyStateCreateInfo inputAssemblyCI = {};
+            inputAssemblyCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            inputAssemblyCI.topology = Translate(m_desc.m_inputLayout.m_topology);
+            pipelineCI.pInputAssemblyState = &inputAssemblyCI;
+        }
 
         VkPipelineViewportStateCreateInfo viewportCI = {};
         viewportCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

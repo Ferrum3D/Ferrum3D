@@ -107,6 +107,22 @@ namespace FE::Graphics::Core
     };
 
 
+    enum class ImageAccessType : uint32_t
+    {
+        kUndefined,
+        kTransferDestination,
+        kUnorderedAccess,
+        kColorTarget,
+        kDepthStencilTarget,
+        kTransferSource,
+        kShaderResource,
+        kDepthRead,
+        kCount,
+    };
+
+    static_assert(festd::to_underlying(ImageAccessType::kCount) == festd::to_underlying(ImageReadType::kCount));
+
+
     enum class BufferWriteType : uint32_t
     {
         kUndefined,
@@ -125,6 +141,22 @@ namespace FE::Graphics::Core
     };
 
 
+    enum class BufferAccessType : uint32_t
+    {
+        kUndefined,
+        kTransferDestination,
+        kUnorderedAccess,
+        kTransferSource,
+        kShaderResource,
+        kIndirectArgument,
+        kCount,
+    };
+
+    static_assert(festd::to_underlying(BufferAccessType::kCount) == festd::to_underlying(BufferReadType::kCount));
+} // namespace FE::Graphics::Core
+
+namespace FE::Graphics
+{
     struct [[nodiscard]] SamplerDescriptor final : public TypedHandle<SamplerDescriptor, uint32_t>
     {
     };
@@ -148,4 +180,4 @@ namespace FE::Graphics::Core
     struct [[nodiscard]] BufferUAVDescriptor final : public TypedHandle<BufferUAVDescriptor, uint32_t>
     {
     };
-} // namespace FE::Graphics::Core
+} // namespace FE::Graphics

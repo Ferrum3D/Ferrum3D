@@ -225,7 +225,7 @@ namespace FE::IO
             }
         }
 
-        festd::small_vector<BlockDecompressJob*, 64> jobs;
+        festd::inline_vector<BlockDecompressJob*, 64> jobs;
 
         auto deleteJobsIfFailed = festd::defer([&] {
             for (auto* job : jobs)
@@ -561,6 +561,8 @@ namespace FE::IO
     void AsyncStreamIO::ReadAsync(const AsyncBlockReadRequest& request, const Priority priority, IAsyncController** ppController)
     {
         std::lock_guard lk{ m_queueLock };
+
+        FE_Assert(request.m_blockCount > 0);
 
         constexpr uint32_t poolIndex = festd::to_underlying(AsyncBlockReadRequestQueueEntry::Type::kReadBlock);
         auto* entry = Memory::New<AsyncBlockReadRequestQueueEntry>(&m_requestPools[poolIndex]);

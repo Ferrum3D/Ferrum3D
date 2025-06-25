@@ -13,12 +13,6 @@
     Public/festd/unordered_map.h
     Public/festd/vector.h
 
-    Public/FeCore/Assets/Asset.h
-    Public/FeCore/Assets/AssetStorage.h
-    Public/FeCore/Assets/IAssetLoader.h
-    Public/FeCore/Assets/IAssetManager.h
-    Public/FeCore/Assets/WeakAsset.h
-
     Public/FeCore/Base/Assert.h
     Public/FeCore/Base/Base.h
     Public/FeCore/Base/BaseMath.h
@@ -28,15 +22,14 @@
     Public/FeCore/Base/Platform.h
     Public/FeCore/Base/PlatformInclude.h
     Public/FeCore/Base/PlatformTraits.h
+    Public/FeCore/Base/StackTrace.h
 
     Public/FeCore/Compression/Compression.h
 
     Public/FeCore/Console/Console.h
-    Public/FeCore/Console/ConsolePrivate.h
 
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/ConcurrentQueue.h
-    Public/FeCore/Containers/LRUCacheMap.h
     Public/FeCore/Containers/SegmentedVector.h
 
     Public/FeCore/DI/Activator.h
@@ -56,6 +49,7 @@
     Public/FeCore/IO/PathParser.h
     Public/FeCore/IO/StreamBase.h
 
+    Public/FeCore/Jobs/Base.h
     Public/FeCore/Jobs/IJobSystem.h
     Public/FeCore/Jobs/Job.h
     Public/FeCore/Jobs/JobSystem.h
@@ -67,17 +61,18 @@
     Public/FeCore/Math/Aabb.h
     Public/FeCore/Math/Color.h
     Public/FeCore/Math/Colors.h
-    Public/FeCore/Math/Matrix4x4F.h
+    Public/FeCore/Math/Matrix4x4.h
+    Public/FeCore/Math/Packing.h
     Public/FeCore/Math/Quaternion.h
     Public/FeCore/Math/Random.h
     Public/FeCore/Math/Rect.h
+    Public/FeCore/Math/Transform.h
     Public/FeCore/Math/UUID.h
     Public/FeCore/Math/Vector2.h
     Public/FeCore/Math/Vector3.h
     Public/FeCore/Math/Vector3Int.h
     Public/FeCore/Math/Vector3UInt.h
     Public/FeCore/Math/Vector4.h
-    Public/FeCore/Math/VectorMath.h
 
     Public/FeCore/Memory/FiberTempAllocator.h
     Public/FeCore/Memory/LinearAllocator.h
@@ -86,14 +81,9 @@
     Public/FeCore/Memory/RefCount.h
     Public/FeCore/Memory/SegmentedBuffer.h
 
-    Public/FeCore/Modules/ApplicationModule.h
     Public/FeCore/Modules/Configuration.h
     Public/FeCore/Modules/Environment.h
-    Public/FeCore/Modules/EnvironmentPrivate.h
-    Public/FeCore/Modules/IModule.h
     Public/FeCore/Modules/LibraryLoader.h
-    Public/FeCore/Modules/ModuleBase.h
-    Public/FeCore/Modules/ServiceLocator.h
 
     Public/FeCore/RTTI/RTTI.h
 
@@ -117,19 +107,21 @@
     Public/FeCore/Time/DateTime.h
     Public/FeCore/Time/TimeSpan.h
 
+    Public/FeCore/Utils/Core.natvis
     Public/FeCore/Utils/Crc32.h
 )
 
 set(COMMON_SOURCES
-    Private/FeCore/Assets/AssetManager.h
-    Private/FeCore/Assets/AssetManager.cpp
-
     Private/FeCore/Base/Assert.cpp
+    Private/FeCore/Base/AssertPrivate.h
+    Private/FeCore/Base/StackTrace.cpp
+    Private/FeCore/Base/StackTracePrivate.h
 
     Private/FeCore/Compression/Compression.cpp
-    Private/FeCore/Compression/CompressionInternal.h
+    Private/FeCore/Compression/CompressionPrivate.h
 
     Private/FeCore/Console/Console.cpp
+    Private/FeCore/Console/ConsolePrivate.h
 
     Private/FeCore/DI/BaseDI.cpp
     Private/FeCore/DI/Builder.cpp
@@ -152,20 +144,19 @@ set(COMMON_SOURCES
     Private/FeCore/Logging/Logger.cpp
 
     Private/FeCore/Math/Colors.cpp
-    Private/FeCore/Math/Matrix4x4F.cpp
+    Private/FeCore/Math/Matrix4x4.cpp
 
     Private/FeCore/Memory/FiberTempAllocator.cpp
     Private/FeCore/Memory/LinearAllocator.cpp
     Private/FeCore/Memory/Memory.cpp
+    Private/FeCore/Memory/MemoryPrivate.h
     Private/FeCore/Memory/PoolAllocator.cpp
     Private/FeCore/Memory/tlsf.c
     Private/FeCore/Memory/tlsf.h
 
-    Private/FeCore/Modules/ApplicationModule.cpp
     Private/FeCore/Modules/Configuration.cpp
     Private/FeCore/Modules/Environment.cpp
     Private/FeCore/Modules/LibraryLoader.cpp
-    Private/FeCore/Modules/ModuleBase.cpp
 
     Private/FeCore/Platform/Windows/Common.h
     Private/FeCore/Platform/Windows/Platform.cpp
@@ -174,9 +165,9 @@ set(COMMON_SOURCES
     Private/FeCore/Strings/Format.cpp
     Private/FeCore/Strings/Parser.cpp
 
-    Private/FeCore/Threading/Platform/ThreadingInternal.h
     Private/FeCore/Threading/Context.cpp
     Private/FeCore/Threading/Fiber.cpp
+    Private/FeCore/Threading/ThreadingPrivate.h
 
     Private/FeCore/Time/Platform/PlatformTime.cpp
     Private/FeCore/Time/DateTime.cpp
@@ -208,8 +199,10 @@ target_include_directories(FeCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Core")
 target_link_libraries(FeCore
+    xxhash
+    DebugHeap
     fcontext
-    mimalloc
+    mimalloc-static
     libdeflate
     TracyClient
     utf8proc

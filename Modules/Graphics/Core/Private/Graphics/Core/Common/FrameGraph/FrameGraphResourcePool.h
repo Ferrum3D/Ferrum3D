@@ -20,21 +20,6 @@ namespace FE::Graphics::Common
         Core::Buffer* CreateBuffer(Env::Name name, const Core::BufferDesc& desc);
 
     private:
-        struct ImageInfo final
-        {
-            Rc<Core::RenderTarget> m_image;
-            uint64_t m_descHash = 0;
-        };
-
-        struct BufferInfo final
-        {
-            Rc<Core::Buffer> m_buffer;
-            uint64_t m_descHash = 0;
-        };
-
-        SegmentedVector<ImageInfo> m_createdImages;
-        SegmentedVector<BufferInfo> m_createdBuffers;
-
         festd::unordered_dense_map<uint64_t, Rc<Core::RenderTarget>> m_imagesMap;
         festd::unordered_dense_map<uint64_t, Rc<Core::Buffer>> m_buffersMap;
 

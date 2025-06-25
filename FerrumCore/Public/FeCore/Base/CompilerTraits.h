@@ -15,7 +15,7 @@
 #    define FE_DEVELOPMENT 1
 #endif
 
-//! @brief Utility to support "overloading" for a function-like macro.
+//! @brief Utility to support "overloading" of function-like macros.
 //!
 //! Example:
 //! @code{.cpp}
@@ -31,6 +31,7 @@
 #define FE_JOIN_IMPL(a, b) a##b
 #define FE_JOIN(a, b) FE_JOIN_IMPL(a, b)
 #define FE_UNIQUE_IDENT(name) FE_JOIN(name, __LINE__)
+#define FE_Unused(x) ((void)(x))
 
 // clang-format off
 #define FE_MACRO_ARGUMENT_COUNT(...) FE_MACRO_ARGUMENT_NUMBERS(__VA_ARGS__,                                                      \

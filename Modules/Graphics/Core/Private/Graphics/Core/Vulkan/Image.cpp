@@ -29,7 +29,7 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    VkImageView Image::GetSubresourceView(const VkDevice device, const Core::ImageSubresource& subresource)
+    VkImageView Image::GetSubresourceView(const VkDevice device, const Core::ImageSubresource& subresource) const
     {
         FE_PROFILER_ZONE();
 

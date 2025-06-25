@@ -4,7 +4,9 @@
 #include <FeCore/IO/Path.h>
 #include <FeCore/Modules/Configuration.h>
 #include <Framework/Application/Application.h>
+#include <Framework/Module.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
+#include <Graphics/Core/Module.h>
 #include <Graphics/Module.h>
 
 #include <bc7enc/bc7enc.h>
@@ -119,7 +121,7 @@ private:
             m_logger->LogInfo("Progress: {}/{} blocks", yb, blockCountY);
         }
 
-        constexpr uint32_t fileBlockByteSize = 256 * 1024;
+        constexpr uint32_t fileBlockByteSize = Compression::kBlockSize;
         festd::vector<std::byte> tempUncompressedBuffer{ fileBlockByteSize };
         festd::vector<std::byte> tempCompressedBuffer;
 
@@ -191,12 +193,6 @@ private:
         return nullptr;
     }
 
-    void LoadModules(ModuleLoadingList& modules) override
-    {
-        modules.Add<Framework::FrameworkModule>();
-        modules.Add<GraphicsModule>();
-    }
-
     festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
     Rc<Logger> m_logger;
     Rc<IO::IStreamFactory> m_streamFactory;
@@ -207,7 +203,11 @@ int main(const int32_t argc, const char** argv)
 {
     Env::ApplicationInfo applicationInfo;
     applicationInfo.m_name = "TextureCompressor";
-    Env::CreateEnvironment(applicationInfo);
+
+    Framework::Module::Init();
+    Core::Module::Init();
+    Module::Init();
+    Env::Init(applicationInfo);
 
     std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
 
@@ -227,5 +227,6 @@ int main(const int32_t argc, const char** argv)
     jobSystem->Start();
 
     Memory::Delete(allocator, application);
+    Env::Module::ShutdownModules();
     return exitCode;
 }

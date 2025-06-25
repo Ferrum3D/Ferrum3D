@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/BaseTypes.h>
 
 #include <EASTL/array.h>
+#include <EASTL/bonus/adaptors.h>
 #include <EASTL/finally.h>
+#include <EASTL/numeric.h>
 #include <EASTL/optional.h>
 #include <EASTL/sort.h>
 #include <string_view>
@@ -10,6 +12,27 @@
 
 namespace FE::festd
 {
+    template<typename, template<typename> class, typename = std::void_t<>>
+    struct detect : std::false_type
+    {
+    };
+
+    template<typename T, template<typename> class TOp>
+    struct detect<T, TOp, std::void_t<TOp<T>>> : std::true_type
+    {
+    };
+
+    template<typename T, template<typename> class TOp>
+    inline constexpr bool detect_v = detect<T, TOp>::value;
+
+
+    template<class TContainer>
+    using ContainerType = std::remove_reference_t<decltype(*eastl::begin(std::declval<TContainer>()))>;
+
+    template<class TIter>
+    using IteratorType = std::remove_reference_t<decltype(*std::declval<TIter>())>;
+
+
     using ascii_view = std::string_view;
 
     using eastl::array;
@@ -24,39 +47,10 @@ namespace FE::festd
     using eastl::optional;
 
 
-    //
-    // We redeclare std::move and std::forward here because the STL versions are not inlined
-    // in non-optimized builds with MSVC even with /d2Obforceinline.
-    // So we have to explicitly mark these __forceinline
-    //
-
-
-    template<typename T>
-    FE_ALWAYS_INLINE constexpr std::remove_reference_t<T>&& move(T&& x) noexcept
-    {
-        return static_cast<std::remove_reference_t<T>&&>(x);
-    }
-
-
-    template<typename T>
-    FE_ALWAYS_INLINE constexpr T&& forward(std::remove_reference_t<T>& x) noexcept
-    {
-        return static_cast<T&&>(x);
-    }
-
-
-    template<typename T>
-    FE_ALWAYS_INLINE constexpr T&& forward(std::remove_reference_t<T>&& x) noexcept
-    {
-        static_assert(!std::is_lvalue_reference_v<T>);
-        return static_cast<T&&>(x);
-    }
-
-
     template<typename TFunc>
     [[nodiscard]] auto defer(TFunc&& f)
     {
-        return eastl::finally<TFunc>(forward<TFunc>(f));
+        return eastl::finally<TFunc>(std::forward<TFunc>(f));
     }
 
 
@@ -83,6 +77,9 @@ namespace FE::festd
     using eastl::copy;
     using eastl::copy_if;
     using eastl::copy_n;
+    using eastl::reverse;
+
+    using eastl::iota;
 
 
     //! @brief Returns the size of a container.
@@ -122,6 +119,15 @@ namespace FE::festd
     void sort(TContainer& container, TFunctor compare)
     {
         eastl::sort(begin(container), end(container), compare);
+    }
+
+
+    //! @brief Returns the only element of a container. Asserts if the container is empty or has more than one element.
+    template<class TContainer>
+    auto single(TContainer& container) -> decltype(*begin(container))
+    {
+        FE_AssertDebug(size(container) == 1);
+        return *begin(container);
     }
 
 
@@ -179,6 +185,27 @@ namespace FE::festd
     }
 
 
+    template<class TContainer>
+    auto find(TContainer& container, const ContainerType<TContainer>& value) -> decltype(begin(container))
+    {
+        return eastl::find(begin(container), end(container), value);
+    }
+
+
+    template<class TContainer, class TFunctor>
+    auto find_if(TContainer& container, TFunctor predicate) -> decltype(begin(container))
+    {
+        return eastl::find_if(begin(container), end(container), predicate);
+    }
+
+
+    template<class TContainer, class TFunctor>
+    auto find_if_not(TContainer& container, TFunctor predicate) -> decltype(begin(container))
+    {
+        return eastl::find_if_not(begin(container), end(container), predicate);
+    }
+
+
     template<class TIter, class TFunctor>
     uint32_t find_index_if(const TIter& begin, const TIter& end, TFunctor predicate)
     {
@@ -194,17 +221,24 @@ namespace FE::festd
     }
 
 
-    template<class TIter, class T>
-    uint32_t find_index(const TIter& begin, const TIter& end, const T& value)
+    template<class TIter>
+    uint32_t find_index(const TIter& begin, const TIter& end, const IteratorType<TIter>& value)
     {
         auto iter = eastl::find(begin, end, value);
         return iter == end ? kInvalidIndex : static_cast<uint32_t>(iter - begin);
     }
 
 
-    template<class TContainer, class T>
-    uint32_t find_index(const TContainer& container, const T& value)
+    template<class TContainer>
+    uint32_t find_index(const TContainer& container, const ContainerType<TContainer>& value)
     {
         return find_index(begin(container), end(container), value);
+    }
+
+
+    template<class TContainer, class T>
+    void iota(TContainer& container, const T& value)
+    {
+        festd::iota(begin(container), end(container), value);
     }
 } // namespace FE::festd

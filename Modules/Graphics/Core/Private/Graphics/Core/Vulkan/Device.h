@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include <FeCore/Containers/LRUCacheMap.h>
 #include <FeCore/Logging/Trace.h>
 #include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Sampler.h>
+#include <festd/unordered_map.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics::Vulkan
@@ -158,7 +158,7 @@ namespace FE::Graphics::Vulkan
         VulkanObjectCache<SamplerFactory> m_samplerCache;
 
         DeviceFactory* m_deviceFactory = nullptr;
-        festd::small_vector<QueueFamilyData> m_queueFamilyIndices;
+        festd::inline_vector<QueueFamilyData> m_queueFamilyIndices;
 
         void FindQueueFamilies();
     };

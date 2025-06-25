@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/IO/BaseIO.h>
 #include <FeCore/Memory/PoolAllocator.h>
+#include <FeCore/Threading/SharedSpinLock.h>
 #include <Graphics/Core/ShaderStage.h>
 #include <festd/unordered_map.h>
 
@@ -39,13 +40,15 @@ namespace FE::Graphics::Core
         festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> GetSource(Env::Name path);
 
     private:
+        void ReadDirectory(const IO::Path& path);
+
         void AsyncIOCallback(const IO::AsyncReadResult& result) override;
 
         Memory::Pool<ShaderSourceFile> m_filePool;
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
         IO::IAsyncStreamIO* m_asyncIO;
         Logger* m_logger;
-        Threading::SpinLock m_lock;
+        Threading::SharedSpinLock m_lock;
         std::atomic<uint32_t> m_loadingTasksCount;
     };
 

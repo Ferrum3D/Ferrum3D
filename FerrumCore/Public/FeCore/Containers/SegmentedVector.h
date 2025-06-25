@@ -5,76 +5,13 @@
 namespace FE
 {
     template<class T, uint32_t TSegmentByteSize = 4096>
-    class SegmentedVector final
+    struct SegmentedVector final
     {
-        template<class TOther, uint32_t TSizeOther>
-        friend class SegmentedVector;
-
         static constexpr uint32_t kElementsPerSegment = TSegmentByteSize / sizeof(T);
-        static constexpr uint32_t kSegmentTableGranularity = SIMD::AVX::kByteSize / sizeof(T*);
 
-        static_assert(sizeof(T) <= TSegmentByteSize);
-
-        std::pmr::memory_resource* m_allocator = nullptr;
-        T** m_segments = nullptr;
-        uint32_t m_segmentTableSize = 0;
-        uint32_t m_size = 0;
-
-        void GrowSegmentTable(const uint32_t minSize)
-        {
-            const uint32_t newSize = m_segmentTableSize == 0 ? kSegmentTableGranularity
-                                                             : Math::Max(m_segmentTableSize * 2, Math::CeilPowerOfTwo(minSize));
-
-            T** newTable = Memory::AllocateArray<T*>(m_allocator, newSize);
-            SIMD::AVX::Zero(static_cast<void*>(&newTable[m_segmentTableSize]), (newSize - m_segmentTableSize) * sizeof(T*));
-
-            if (m_segments)
-            {
-                SIMD::AVX::Copy(static_cast<void*>(newTable), static_cast<void*>(m_segments), m_segmentTableSize * sizeof(T*));
-                m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize);
-            }
-
-            m_segmentTableSize = newSize;
-            m_segments = newTable;
-        }
-
-        void ResetImpl()
-        {
-            if (!m_segments)
-                return;
-
-            clear();
-
-            for (uint32_t segmentIndex = 0; segmentIndex < m_segmentTableSize; ++segmentIndex)
-            {
-                if (m_segments[segmentIndex] == nullptr)
-                    break;
-
-                m_allocator->deallocate(m_segments[segmentIndex], TSegmentByteSize, alignof(T));
-            }
-
-            m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize, alignof(T*));
-            m_segments = nullptr;
-        }
-
-    public:
         template<bool TConst>
-        class Iterator final
+        struct Iterator final
         {
-            friend class SegmentedVector;
-
-            T** m_segments = nullptr;
-            uint32_t m_segmentIndex = 0;
-            uint32_t m_elementIndex = 0;
-
-            Iterator(T** segments, const uint32_t segmentIndex, const uint32_t elementIndex)
-                : m_segments(segments)
-                , m_segmentIndex(segmentIndex)
-                , m_elementIndex(elementIndex)
-            {
-            }
-
-        public:
             using difference_type = int32_t;
             using value_type = T;
             using pointer = std::conditional_t<TConst, const T*, T*>;
@@ -189,6 +126,20 @@ namespace FE
             {
                 return !(lhs == rhs);
             }
+
+        private:
+            friend struct SegmentedVector;
+
+            T** m_segments = nullptr;
+            uint32_t m_segmentIndex = 0;
+            uint32_t m_elementIndex = 0;
+
+            Iterator(T** segments, const uint32_t segmentIndex, const uint32_t elementIndex)
+                : m_segments(segments)
+                , m_segmentIndex(segmentIndex)
+                , m_elementIndex(elementIndex)
+            {
+            }
         };
 
         SegmentedVector(std::pmr::memory_resource* pAllocator = nullptr)
@@ -208,8 +159,11 @@ namespace FE
         {
             const uint32_t segmentCount = Math::CeilDivide(other.m_size, kElementsPerSegment);
             m_segmentTableSize = segmentCount;
+            if (segmentCount == 0)
+                return;
+
             m_segments = Memory::AllocateArray<T*>(m_allocator, segmentCount);
-            memset(m_segments, 0, sizeof(T*) * segmentCount);
+            memset(static_cast<void*>(m_segments), 0, sizeof(T*) * segmentCount);
             for (const T& element : other)
             {
                 push_back(element);
@@ -222,8 +176,11 @@ namespace FE
         {
             const uint32_t segmentCount = Math::CeilDivide(other.m_size, kElementsPerSegment);
             m_segmentTableSize = segmentCount;
+            if (segmentCount == 0)
+                return;
+
             m_segments = Memory::AllocateArray<T*>(m_allocator, segmentCount);
-            memset(m_segments, 0, sizeof(T*) * segmentCount);
+            memset(static_cast<void*>(m_segments), 0, sizeof(T*) * segmentCount);
             for (const T& element : other)
             {
                 push_back(element);
@@ -268,7 +225,7 @@ namespace FE
                 return *this;
 
             ResetImpl();
-            new (this) SegmentedVector(festd::move(other));
+            new (this) SegmentedVector(std::move(other));
             return *this;
         }
 
@@ -325,7 +282,16 @@ namespace FE
 
         void push_back(T&& value)
         {
-            new (push_back_uninitialized()) T(festd::move(value));
+            new (push_back_uninitialized()) T(std::move(value));
+        }
+
+        void pop_back()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            --m_size;
+            if constexpr (!std::is_trivially_destructible_v<T>)
+                m_segments[m_size / kElementsPerSegment][m_size % kElementsPerSegment].~T();
         }
 
         void resize(const uint32_t newSize, const T& value = T{})
@@ -383,6 +349,18 @@ namespace FE
             m_size = 0;
         }
 
+        void clear_and_shrink()
+        {
+            ResetImpl();
+        }
+
+        void reset_lose_memory()
+        {
+            m_segments = nullptr;
+            m_segmentTableSize = 0;
+            m_size = 0;
+        }
+
         void copy_to(T* destination)
         {
             if (m_size == 0)
@@ -404,6 +382,43 @@ namespace FE
         [[nodiscard]] T** segments() const
         {
             return m_segments;
+        }
+
+        [[nodiscard]] uint32_t segment_count() const
+        {
+            return Math::CeilDivide(m_size, kElementsPerSegment);
+        }
+
+        [[nodiscard]] T& back()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            const uint32_t index = m_size - 1;
+            const uint32_t segmentIndex = index / kElementsPerSegment;
+            const uint32_t elementIndex = index % kElementsPerSegment;
+            return m_segments[segmentIndex][elementIndex];
+        }
+
+        [[nodiscard]] const T& back() const
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+
+            const uint32_t index = m_size - 1;
+            const uint32_t segmentIndex = index / kElementsPerSegment;
+            const uint32_t elementIndex = index % kElementsPerSegment;
+            return m_segments[segmentIndex][elementIndex];
+        }
+
+        [[nodiscard]] T& front()
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+            return m_segments[0][0];
+        }
+
+        [[nodiscard]] const T& front() const
+        {
+            FE_Assert(m_size > 0, "Vector is empty");
+            return m_segments[0][0];
         }
 
         [[nodiscard]] uint32_t size() const
@@ -454,6 +469,56 @@ namespace FE
         [[nodiscard]] auto rend() const
         {
             return eastl::reverse_iterator{ begin() };
+        }
+
+    private:
+        template<class TOther, uint32_t TSizeOther>
+        friend struct SegmentedVector;
+
+        static constexpr uint32_t kSegmentTableGranularity = SIMD::AVX::kByteSize / sizeof(T*);
+        static_assert(sizeof(T) <= TSegmentByteSize);
+
+        std::pmr::memory_resource* m_allocator = nullptr;
+        T** m_segments = nullptr;
+        uint32_t m_segmentTableSize = 0;
+        uint32_t m_size = 0;
+
+        void GrowSegmentTable(const uint32_t minSize)
+        {
+            const uint32_t newSize = m_segmentTableSize == 0 ? kSegmentTableGranularity
+                                                             : Math::Max(m_segmentTableSize * 2, Math::CeilPowerOfTwo(minSize));
+
+            T** newTable = Memory::AllocateArray<T*>(m_allocator, newSize);
+            SIMD::AVX::Zero(static_cast<void*>(&newTable[m_segmentTableSize]), (newSize - m_segmentTableSize) * sizeof(T*));
+
+            if (m_segments)
+            {
+                SIMD::AVX::Copy(static_cast<void*>(newTable), static_cast<void*>(m_segments), m_segmentTableSize * sizeof(T*));
+                m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize);
+            }
+
+            m_segmentTableSize = newSize;
+            m_segments = newTable;
+        }
+
+        void ResetImpl()
+        {
+            if (!m_segments)
+                return;
+
+            clear();
+
+            for (uint32_t segmentIndex = 0; segmentIndex < m_segmentTableSize; ++segmentIndex)
+            {
+                if (m_segments[segmentIndex] == nullptr)
+                    break;
+
+                m_allocator->deallocate(static_cast<void*>(m_segments[segmentIndex]), TSegmentByteSize, alignof(T));
+            }
+
+            m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize, alignof(T*));
+            m_segmentTableSize = 0;
+            m_segments = nullptr;
         }
     };
 } // namespace FE

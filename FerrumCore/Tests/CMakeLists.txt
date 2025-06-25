@@ -2,7 +2,6 @@
     Common/TestCommon.h
 
     Containers/BitSet.cpp
-    Containers/LRUCacheMap.cpp
     Containers/SegmentedVector.cpp
 
     IO/Path.cpp
@@ -12,7 +11,6 @@
     Math/Vector4.cpp
 
     Modules/Environment.cpp
-    Modules/ServiceLocator.cpp
 
     RTTI/RTTI.cpp
 

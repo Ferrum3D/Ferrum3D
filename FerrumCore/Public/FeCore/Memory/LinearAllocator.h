@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
+#include <FeCore/Threading/SpinLock.h>
 
 namespace FE::Memory
 {
@@ -62,7 +63,7 @@ namespace FE::Memory
         LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pPageAllocator = nullptr);
         ~LinearAllocator() override;
 
-        void Collect();
+        void FreeUnusedMemory();
 
         void* do_allocate(size_t byteSize, size_t byteAlignment) override;
 
@@ -86,6 +87,12 @@ namespace FE::Memory
         {
             m_currentMarker = {};
         }
+
+        void FreeMemory()
+        {
+            Clear();
+            FreeUnusedMemory();
+        }
     };
 
 
@@ -104,4 +111,6 @@ namespace FE::Memory
         m_currentMarker.m_offset = newOffset;
         return reinterpret_cast<uint8_t*>(m_currentMarker.m_page) + newOffset - byteSize;
     }
+
+    using SpinLockedLinearAllocator = LockedMemoryResource<LinearAllocator, Threading::SpinLock>;
 } // namespace FE::Memory

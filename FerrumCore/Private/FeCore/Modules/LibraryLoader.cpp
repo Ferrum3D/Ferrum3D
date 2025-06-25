@@ -16,7 +16,7 @@ namespace FE
             const int32_t wideLength = MultiByteToWideChar(CP_UTF8, 0, name.data(), nameSize, nullptr, 0);
             FE_Assert(wideLength > 0);
 
-            festd::small_vector<WCHAR, MAX_PATH + 1> wideName;
+            festd::inline_vector<WCHAR, MAX_PATH + 1> wideName;
             wideName.resize(wideLength + 1, '\0');
             MultiByteToWideChar(CP_UTF8, 0, name.data(), nameSize, wideName.data(), wideLength);
 
