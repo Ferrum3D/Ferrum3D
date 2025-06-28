@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Math/Aabb.h>
 #include <FeCore/Math/Colors.h>
+#include <Graphics/Core/ComputePipeline.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/FrameGraph/Base.h>
@@ -190,6 +191,18 @@ namespace FE::Graphics::Core
         }
 
         virtual void Draw(const DrawList& drawList) = 0;
+
+        virtual void Dispatch(const ComputePipeline* pipeline, Vector3UInt workGroupCount) = 0;
+
+        void Dispatch(const ComputePipeline* pipeline, const Vector2UInt workGroupCount)
+        {
+            Dispatch(pipeline, { workGroupCount.x, workGroupCount.y, 1 });
+        }
+
+        void Dispatch(const ComputePipeline* pipeline, const uint32_t workGroupCount)
+        {
+            Dispatch(pipeline, { workGroupCount, 1, 1 });
+        }
 
     protected:
         FrameGraph* m_frameGraph = nullptr;

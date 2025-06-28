@@ -1,5 +1,6 @@
 #include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/BindlessManager.h>
+#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 
@@ -19,17 +20,37 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        VkWriteDescriptorSet CreateWrite(const VkDescriptorSet set, const uint32_t binding, const VkDescriptorType type,
-                                         const uint32_t count, const VkDescriptorImageInfo* imageInfo)
+        void CreateWrite(festd::pmr::vector<VkWriteDescriptorSet>& writes, uint32_t& binding, const VkDescriptorSet set,
+                         const VkDescriptorType type, const uint32_t count, const VkDescriptorImageInfo* imageInfo)
         {
-            VkWriteDescriptorSet write = {};
+            const uint32_t currentBinding = binding++;
+            if (count == 0)
+                return;
+
+            VkWriteDescriptorSet& write = writes.push_back();
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.dstSet = set;
-            write.dstBinding = binding;
+            write.dstBinding = currentBinding;
             write.descriptorType = type;
             write.descriptorCount = count;
             write.pImageInfo = imageInfo;
-            return write;
+        }
+
+
+        void CreateWrite(festd::pmr::vector<VkWriteDescriptorSet>& writes, uint32_t& binding, const VkDescriptorSet set,
+                         const VkDescriptorType type, const uint32_t count, const VkDescriptorBufferInfo* bufferInfo)
+        {
+            const uint32_t currentBinding = binding++;
+            if (count == 0)
+                return;
+
+            VkWriteDescriptorSet& write = writes.push_back();
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.dstSet = set;
+            write.dstBinding = currentBinding;
+            write.descriptorType = type;
+            write.descriptorCount = count;
+            write.pBufferInfo = bufferInfo;
         }
     } // namespace
 
@@ -43,8 +64,10 @@ namespace FE::Graphics::Vulkan
         Memory::FiberTempAllocator temp;
 
         festd::pmr::vector<VkDescriptorPoolSize> sizes{ &temp };
-        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, kSamplerCount * kMaxDescriptorSets * 2 });
-        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kTextureSRVCount * kMaxDescriptorSets * 2 });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, kSamplerCount * kMaxDescriptorSets });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kSampledImageCount * kMaxDescriptorSets });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, kStorageImageCount * kMaxDescriptorSets });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, kStorageBufferCount * kMaxDescriptorSets });
 
         VkDescriptorPoolCreateInfo poolCI = {};
         poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -56,11 +79,17 @@ namespace FE::Graphics::Vulkan
 
         festd::pmr::vector<VkDescriptorSetLayoutBinding> bindings{ &temp };
         bindings.push_back(CreateBinding(0, VK_DESCRIPTOR_TYPE_SAMPLER, kSamplerCount));
-        bindings.push_back(CreateBinding(1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kTextureSRVCount));
+        bindings.push_back(CreateBinding(1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kSampledImageCount));
+        bindings.push_back(CreateBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, kStorageImageCount));
+        bindings.push_back(CreateBinding(3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, kStorageBufferCount));
 
         festd::pmr::vector<VkDescriptorBindingFlags> descriptorBindingFlags{ &temp };
-        descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-        descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+
+        for (uint32_t i = 0; i < bindings.size(); ++i)
+        {
+            descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+                                             | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+        }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI = {};
         flagsCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
@@ -103,12 +132,27 @@ namespace FE::Graphics::Vulkan
     {
         Memory::FiberTempAllocator temp;
 
+        uint32_t binding = 0;
+
         // clang-format off
         festd::pmr::vector<VkWriteDescriptorSet> writes{ &temp };
-        writes.push_back(CreateWrite(m_descriptorSet, 0, VK_DESCRIPTOR_TYPE_SAMPLER, m_samplerDescriptors.size(), m_samplerDescriptors.data()));
-        writes.push_back(CreateWrite(m_descriptorSet, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, m_imageSRVDescriptors.size(), m_imageSRVDescriptors.data()));
+        CreateWrite(writes, binding, m_descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLER, m_samplerDescriptors.size(), m_samplerDescriptors.data());
+        CreateWrite(writes, binding, m_descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, m_sampledImageDescriptors.size(), m_sampledImageDescriptors.data());
+        CreateWrite(writes, binding, m_descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, m_storageImageDescriptors.size(), m_storageImageDescriptors.data());
+        CreateWrite(writes, binding, m_descriptorSet, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, m_storageBufferDescriptors.size(), m_storageBufferDescriptors.data());
         vkUpdateDescriptorSets(NativeCast(m_device), writes.size(), writes.data(), 0, nullptr);
         // clang-format on
+
+        m_samplers.clear();
+        m_samplerDescriptors.clear();
+        m_sampledImageDescriptors.clear();
+        m_sampledImageDescriptorMap.clear();
+        m_storageImageDescriptors.clear();
+        m_storageBufferDescriptors.clear();
+
+        m_sampledImageDescriptorMap.clear();
+        m_storageImageDescriptorMap.clear();
+        m_storageBufferDescriptorMap.clear();
 
         RetiredSet retiredSet;
         retiredSet.m_set = m_descriptorSet;
@@ -123,19 +167,19 @@ namespace FE::Graphics::Vulkan
     {
         const uint64_t key = static_cast<uint64_t>(texture->GetResourceID()) << 32 | festd::bit_cast<uint32_t>(subresource);
 
-        const auto it = m_imageDescriptorMap.find(key);
-        if (it != m_imageDescriptorMap.end())
+        const auto it = m_sampledImageDescriptorMap.find(key);
+        if (it != m_sampledImageDescriptorMap.end())
         {
             const uint32_t descriptorIndex = it->second;
-            FE_AssertDebug(m_imageSRVDescriptors[descriptorIndex].imageView
+            FE_AssertDebug(m_sampledImageDescriptors[descriptorIndex].imageView
                            == ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource));
             return descriptorIndex;
         }
 
-        const uint32_t descriptorIndex = m_imageSRVDescriptors.size();
-        m_imageDescriptorMap[key] = descriptorIndex;
+        const uint32_t descriptorIndex = m_sampledImageDescriptors.size();
+        m_sampledImageDescriptorMap[key] = descriptorIndex;
 
-        VkDescriptorImageInfo& imageInfo = m_imageSRVDescriptors.push_back();
+        VkDescriptorImageInfo& imageInfo = m_sampledImageDescriptors.push_back();
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource);
         imageInfo.sampler = VK_NULL_HANDLE;
@@ -146,8 +190,57 @@ namespace FE::Graphics::Vulkan
 
     uint32_t BindlessManager::RegisterUAV(Core::Texture* texture, const Core::ImageSubresource subresource)
     {
-        FE_DebugBreak();
-        return RegisterSRV(texture, subresource);
+        const uint64_t key = static_cast<uint64_t>(texture->GetResourceID()) << 32 | festd::bit_cast<uint32_t>(subresource);
+
+        const auto it = m_storageImageDescriptorMap.find(key);
+        if (it != m_storageImageDescriptorMap.end())
+        {
+            const uint32_t descriptorIndex = it->second;
+            FE_AssertDebug(m_storageImageDescriptors[descriptorIndex].imageView
+                           == ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource));
+            return descriptorIndex;
+        }
+
+        const uint32_t descriptorIndex = m_storageImageDescriptors.size();
+        m_storageImageDescriptorMap[key] = descriptorIndex;
+
+        VkDescriptorImageInfo& imageInfo = m_storageImageDescriptors.push_back();
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageInfo.imageView = ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource);
+        imageInfo.sampler = VK_NULL_HANDLE;
+
+        return descriptorIndex;
+    }
+
+
+    uint32_t BindlessManager::RegisterSRV(Core::Buffer* buffer)
+    {
+        const uint64_t key = buffer->GetResourceID();
+
+        const auto it = m_storageBufferDescriptorMap.find(key);
+        if (it != m_storageBufferDescriptorMap.end())
+        {
+            const uint32_t descriptorIndex = it->second;
+            FE_AssertDebug(m_storageBufferDescriptors[descriptorIndex].buffer == NativeCast(buffer));
+            return descriptorIndex;
+        }
+
+        const uint32_t descriptorIndex = m_storageBufferDescriptors.size();
+        m_storageBufferDescriptorMap[key] = descriptorIndex;
+
+        VkDescriptorBufferInfo& bufferInfo = m_storageBufferDescriptors.push_back();
+        bufferInfo.buffer = NativeCast(buffer);
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
+
+        return descriptorIndex;
+    }
+
+
+    uint32_t BindlessManager::RegisterUAV(Core::Buffer* buffer)
+    {
+        // In Vulkan both SRV and UAV descriptors are mapped to storage buffers
+        return RegisterSRV(buffer);
     }
 
 

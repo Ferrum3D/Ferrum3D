@@ -84,6 +84,7 @@ private:
         struct PassData final
         {
             Core::DrawList m_drawList;
+            Core::ComputePipeline* m_computePipeline = nullptr;
         };
 
         PassProducer(Core::PipelineFactory* pipelineFactory, Core::AsyncCopyQueue* copyQueue, Core::GeometryPool* geometryPool)
@@ -106,8 +107,8 @@ private:
 
             const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
 
-            Core::GraphicsPipelineRequest pipelineRequest;
-            pipelineRequest.m_desc.SetInputLayout(inputLayout)
+            Core::GraphicsPipelineRequest graphicsPipelineRequest;
+            graphicsPipelineRequest.m_desc.SetInputLayout(inputLayout)
                 .SetPixelShader("Shader.ps.hlsl")
                 .SetVertexShader("Shader.vs.hlsl")
                 .SetRTVFormat(viewport->GetColorTargetFormat())
@@ -116,7 +117,12 @@ private:
                 .SetDepthStencil(Core::DepthStencilState::kDisabled)
                 .SetRasterization(Core::RasterizationState::kFillNoCull);
 
-            m_pipeline = m_pipelineFactory->CreateGraphicsPipeline(pipelineRequest);
+            m_graphicsPipeline = m_pipelineFactory->CreateGraphicsPipeline(graphicsPipelineRequest);
+
+            Core::ComputePipelineRequest computePipelineRequest;
+            computePipelineRequest.m_desc.SetComputeShader("Shader.cs.hlsl");
+
+            m_computePipeline = m_pipelineFactory->CreateComputePipeline(computePipelineRequest);
 
             struct Vertex final
             {
@@ -155,7 +161,9 @@ private:
 
             m_copyQueue->ExecuteCommandList(&copyCommandList);
 
-            WaitGroup::WaitAll({ m_pipeline->GetCompletionWaitGroup(), copyWaitGroup.Get() });
+            WaitGroup::WaitAll({ m_graphicsPipeline->GetCompletionWaitGroup(),
+                                 m_computePipeline->GetCompletionWaitGroup(),
+                                 copyWaitGroup.Get() });
             copyCommandList.Free();
         }
 
@@ -172,37 +180,24 @@ private:
             const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
 
             Core::DrawCall drawCall;
-            drawCall.InitForSingleInstance(&geometryView, m_pipeline.Get());
+            drawCall.InitForSingleInstance(&geometryView, m_graphicsPipeline.Get());
 
             Core::DrawListBuilder drawListBuilder{ graph.GetAllocator(), &temp };
             drawListBuilder.AddDrawCall(drawCall);
 
             PassData& passData = blackboard.Add<PassData>();
             passData.m_drawList = drawListBuilder.Build();
+            passData.m_computePipeline = m_computePipeline.Get();
 
             const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
-            const RectF viewport{ 0, 0, static_cast<float>(viewportDesc.m_width), static_cast<float>(viewportDesc.m_height) };
+            const RectF viewport = viewportDesc.GetRect();
 
-            // const auto computePass = builder.AddPass("TestCompute");
-            //
-            // const Core::BufferHandle instanceData = computePass.CreateStructuredBuffer<Matrix4x4F>("InstanceDataBuffer", 2);
-            //
-            // computePass.SetFunction([instanceData](Core::FrameGraphContext* context) {
-            //     FE_PROFILER_ZONE();
-            //
-            //     auto* frameGraph = context->GetFrameGraph();
-            //     auto& localBlackboard = frameGraph->GetBlackboard();
-            //     const auto& localPassData = localBlackboard.GetRequired<PassData>();
-            // });
+            const auto computePass = builder.AddPass("TestCompute");
 
-            const auto graphicsPass = builder.AddPass("DrawTriangle");
+            Core::BufferHandle instanceData = computePass.CreateStructuredBuffer<Matrix4x4F>("InstanceDataBuffer", 1);
+            instanceData = computePass.Write(instanceData);
 
-            const Core::RenderTargetHandle colorTarget =
-                graphicsPass.Write(graph.GetMainColorTarget(), Core::ImageWriteType::kColorTarget);
-            const Core::RenderTargetHandle depthTarget =
-                graphicsPass.Write(graph.GetMainDepthStencilTarget(), Core::ImageWriteType::kDepthStencilTarget);
-
-            graphicsPass.SetFunction([colorTarget, depthTarget, viewport, t = m_texture](Core::FrameGraphContext* context) {
+            computePass.SetFunction([instanceData](Core::FrameGraphContext* context) {
                 FE_PROFILER_ZONE();
 
                 auto* frameGraph = context->GetFrameGraph();
@@ -212,24 +207,53 @@ private:
                 struct ShaderConstants final
                 {
                     Matrix4x4F m_worldMatrix;
-                    Core::ImageSRVDescriptor m_textureSRV;
-                    Core::SamplerDescriptor m_sampler;
-                    Vector2UInt m_padding;
+                    Core::BufferUAVDescriptor m_instanceData;
+                    PackedVector3F m_padding;
                 };
 
                 ShaderConstants shaderConstants;
                 shaderConstants.m_worldMatrix = Matrix4x4F::RotationZ(Constants::PI * 0.2f);
-                shaderConstants.m_textureSRV = frameGraph->GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
-                shaderConstants.m_sampler = frameGraph->GetSampler(Core::SamplerState::kLinearWrap);
+                shaderConstants.m_instanceData = frameGraph->GetUAV(instanceData);
                 context->SetRootConstants(shaderConstants);
-
-                context->SetRenderTarget(colorTarget, depthTarget);
-                context->SetRenderTargetLoadOperations(
-                    Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
-                context->SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
-                context->SetViewport(viewport);
-                context->Draw(localPassData.m_drawList);
+                context->Dispatch(localPassData.m_computePipeline, 1);
             });
+
+            const auto graphicsPass = builder.AddPass("DrawTriangle");
+
+            const Core::RenderTargetHandle colorTarget = graphicsPass.Write(graph.GetMainColorTarget());
+            const Core::RenderTargetHandle depthTarget = graphicsPass.Write(graph.GetMainDepthStencilTarget());
+
+            instanceData = graphicsPass.Read(instanceData, Core::BufferReadType::kShaderResource);
+
+            graphicsPass.SetFunction(
+                [colorTarget, depthTarget, instanceData, viewport, t = m_texture](Core::FrameGraphContext* context) {
+                    FE_PROFILER_ZONE();
+
+                    auto* frameGraph = context->GetFrameGraph();
+                    auto& localBlackboard = frameGraph->GetBlackboard();
+                    const auto& localPassData = localBlackboard.GetRequired<PassData>();
+
+                    struct ShaderConstants final
+                    {
+                        Core::ImageSRVDescriptor m_textureSRV;
+                        Core::SamplerDescriptor m_sampler;
+                        Core::BufferSRVDescriptor m_instanceData;
+                        uint32_t m_padding;
+                    };
+
+                    ShaderConstants shaderConstants;
+                    shaderConstants.m_textureSRV = frameGraph->GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                    shaderConstants.m_sampler = frameGraph->GetSampler(Core::SamplerState::kLinearWrap);
+                    shaderConstants.m_instanceData = frameGraph->GetSRV(instanceData);
+                    context->SetRootConstants(shaderConstants);
+
+                    context->SetRenderTarget(colorTarget, depthTarget);
+                    context->SetRenderTargetLoadOperations(
+                        Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
+                    context->SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
+                    context->SetViewport(viewport);
+                    context->Draw(localPassData.m_drawList);
+                });
         }
 
         Rc<Core::PipelineFactory> m_pipelineFactory;
@@ -238,7 +262,8 @@ private:
         Core::GeometryHandle m_geometry;
 
         Rc<Core::Texture> m_texture;
-        Rc<Core::GraphicsPipeline> m_pipeline;
+        Rc<Core::GraphicsPipeline> m_graphicsPipeline;
+        Rc<Core::ComputePipeline> m_computePipeline;
     };
 
     Rc<WaitGroup> ScheduleUpdate() override

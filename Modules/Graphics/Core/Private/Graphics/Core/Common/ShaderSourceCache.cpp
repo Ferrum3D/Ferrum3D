@@ -62,6 +62,8 @@ namespace FE::Graphics::Core
 
         FE_Assert(!IsLoading());
 
+        std::shared_lock lk{ m_lock };
+
         const auto iter = m_filesMap.find(path);
         if (iter == m_filesMap.end())
             return festd::unexpected(IO::ResultCode::kNoFileOrDirectory);

@@ -13,8 +13,8 @@ namespace FE::Graphics::Common
         kRenderTargets = 1 << 2,
         kViewportScissor = 1 << 3,
         kRootConstants = 1 << 4,
-        kAllRequired = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor,
-        kAll = kAllRequired | kRootConstants,
+        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor,
+        kAll = kAllRequiredForGraphics | kRootConstants,
     };
 
     FE_ENUM_OPERATORS(PipelineStateFlags);
@@ -41,10 +41,13 @@ namespace FE::Graphics::Common
 
         void Draw(const Core::DrawList& drawList) final;
 
+        void Dispatch(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) override;
+
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
 
         virtual void DrawImpl(const Core::DrawList& drawList) = 0;
+        virtual void DispatchImpl(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) = 0;
 
         struct ViewportScissorState final
         {

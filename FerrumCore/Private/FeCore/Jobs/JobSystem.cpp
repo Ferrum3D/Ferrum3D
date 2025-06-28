@@ -254,6 +254,7 @@ namespace FE
         const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
         const uint32_t threadCount = cpuInfo.m_physicalCores < 8 ? cpuInfo.m_logicalCores : cpuInfo.m_physicalCores;
         const uint32_t workerCount = Math::Clamp(threadCount, 4u, kMaxWorkerCount);
+        // const uint32_t workerCount = 2;
         const uint32_t foregroundWorkerCount = Math::CeilDivide(workerCount, 2);
         const uint32_t backgroundWorkerCount = workerCount - foregroundWorkerCount;
 

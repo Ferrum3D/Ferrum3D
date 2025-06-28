@@ -17,7 +17,11 @@ namespace FE::Graphics::Vulkan
 
     void ShaderLibrary::CompilationTask::Execute()
     {
+        std::unique_lock lock{ m_parent->m_lock };
+
         ShaderInfo* shaderInfo = m_parent->m_shaders[m_shaderIndex];
+
+        lock.unlock();
 
         FE_PROFILER_ZONE_TEXT(shaderInfo->m_name.c_str());
 
@@ -51,14 +55,14 @@ namespace FE::Graphics::Vulkan
 
         const festd::span byteCode{ shaderModuleCI.pCode,
                                     shaderModuleCI.pCode + Math::CeilDivide(shaderModuleCI.codeSize, sizeof(uint32_t)) };
-        shaderInfo->m_reflection = Rc<ShaderReflection>::New(m_parent->m_reflectionPool.GetAllocator(), byteCode);
+        shaderInfo->m_reflection = Rc<ShaderReflection>::New(&m_parent->m_reflectionPool, byteCode);
     }
 
 
     ShaderLibrary::ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler, IJobSystem* jobSystem)
         : m_taskPool("Graphics/Core/ShaderLibrary/TaskPool", sizeof(CompilationTask))
-        , m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool")
-        , m_reflectionPool("Graphics/Core/ShaderLibrary/ShaderReflectionPool")
+        , m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool", sizeof(ShaderInfo))
+        , m_reflectionPool("Graphics/Core/ShaderLibrary/ShaderReflectionPool", sizeof(ShaderReflection))
         , m_shaderCompiler(shaderCompiler)
         , m_jobSystem(jobSystem)
     {
@@ -68,9 +72,9 @@ namespace FE::Graphics::Vulkan
 
     ShaderLibrary::~ShaderLibrary()
     {
-        for (const ShaderInfo* shaderInfo : m_shaders)
+        for (ShaderInfo* shaderInfo : m_shaders)
         {
-            m_shaderPool.Delete(shaderInfo);
+            m_shaderPool.deallocate(shaderInfo, sizeof(ShaderInfo));
         }
     }
 
@@ -78,6 +82,8 @@ namespace FE::Graphics::Vulkan
     Core::ShaderHandle ShaderLibrary::GetShader(const Core::ShaderPermutationDesc& desc)
     {
         FE_PROFILER_ZONE();
+
+        std::lock_guard lock{ m_lock };
 
         const uint64_t hash = desc.GetHash();
         const uint32_t shaderIndex = m_shaders.size();
@@ -101,7 +107,7 @@ namespace FE::Graphics::Vulkan
             return Core::ShaderHandle{ iter->second };
         }
 
-        ShaderInfo* shaderInfo = m_shaderPool.New();
+        auto* shaderInfo = Memory::New<ShaderInfo>(&m_shaderPool);
         m_shaders.push_back(shaderInfo);
 
         shaderInfo->m_name = desc.m_name;

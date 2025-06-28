@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/Math/Rect.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/RenderTarget.h>
@@ -10,6 +11,11 @@ namespace FE::Graphics::Core
         uint32_t m_width = 0;
         uint32_t m_height = 0;
         uint64_t m_nativeWindowHandle = 0;
+
+        [[nodiscard]] RectF GetRect() const
+        {
+            return RectF{ 0.0f, 0.0f, static_cast<float>(m_width), static_cast<float>(m_height) };
+        }
     };
 
 

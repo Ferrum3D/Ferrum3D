@@ -7,10 +7,10 @@
 
 struct Constants
 {
-    float4x4 m_worldTransform;
     uint m_textureIndex;
     uint m_samplerIndex;
-    uint2 m_padding;
+    uint m_instanceData;
+    uint m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;

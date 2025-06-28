@@ -34,6 +34,7 @@ namespace FE::Graphics::Vulkan
         [[nodiscard]] ShaderModuleInfo GetShaderModule(const Core::ShaderHandle shaderHandle) const
         {
             const ShaderInfo* shaderInfo = m_shaders[shaderHandle.m_value];
+            FE_Assert(shaderInfo->m_completionWaitGroup->IsSignaled());
             ShaderModuleInfo shaderModuleInfo;
             shaderModuleInfo.m_shaderModule = shaderInfo->m_shaderModule;
             shaderModuleInfo.m_entryPoint = shaderInfo->m_entryPoint;
@@ -42,7 +43,9 @@ namespace FE::Graphics::Vulkan
 
         [[nodiscard]] ShaderReflection* GetReflection(const Core::ShaderHandle shaderHandle) const
         {
-            return m_shaders[shaderHandle.m_value]->m_reflection.Get();
+            const ShaderInfo* shaderInfo = m_shaders[shaderHandle.m_value];
+            FE_Assert(shaderInfo->m_completionWaitGroup->IsSignaled());
+            return shaderInfo->m_reflection.Get();
         }
 
     private:
@@ -59,9 +62,10 @@ namespace FE::Graphics::Vulkan
             const char* m_entryPoint = nullptr;
         };
 
-        Memory::PoolAllocator m_taskPool;
-        Memory::Pool<ShaderInfo> m_shaderPool;
-        Memory::Pool<ShaderReflection> m_reflectionPool;
+        Threading::SpinLock m_lock;
+        Memory::SpinLockedPoolAllocator m_taskPool;
+        Memory::SpinLockedPoolAllocator m_shaderPool;
+        Memory::SpinLockedPoolAllocator m_reflectionPool;
         festd::unordered_dense_map<uint64_t, uint32_t> m_shadersMap;
         SegmentedVector<ShaderInfo*> m_shaders;
         Core::ShaderCompiler* m_shaderCompiler = nullptr;

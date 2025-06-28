@@ -30,9 +30,21 @@ namespace FE::Graphics::Vulkan
 
         void InitInternal(const ComputePipelineInitContext& context);
 
+        [[nodiscard]] VkPipeline GetNative() const
+        {
+            return m_nativePipeline;
+        }
+
+        [[nodiscard]] VkPipelineLayout GetNativeLayout() const
+        {
+            return m_layout;
+        }
+
     private:
         VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
         VkPipelineLayout m_layout = VK_NULL_HANDLE;
         VkPipeline m_nativePipeline = VK_NULL_HANDLE;
     };
+
+    FE_ENABLE_IMPL_CAST(ComputePipeline);
 } // namespace FE::Graphics::Vulkan

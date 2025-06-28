@@ -13,6 +13,8 @@ namespace FE::Graphics::Vulkan
         FrameGraph(Core::Device* device, Common::FrameGraphResourcePool* resourcePool, BindlessManager* bindlessManager);
 
         Core::ImageSRVDescriptor GetSRV(Core::Texture* texture, Core::ImageSubresource subresource) override;
+        Core::BufferSRVDescriptor GetSRV(Core::Buffer* buffer) override;
+        Core::BufferUAVDescriptor GetUAV(Core::Buffer* buffer) override;
         Core::SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
 
     private:

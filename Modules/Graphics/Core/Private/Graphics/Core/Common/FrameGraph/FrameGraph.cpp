@@ -221,6 +221,20 @@ namespace FE::Graphics::Common
     }
 
 
+    Core::ImageDesc FrameGraph::GetResourceDesc(const Core::RenderTargetHandle image) const
+    {
+        const ResourceData& resourceData = m_resources[image.m_desc.m_resourceIndex];
+        return resourceData.m_imageDesc;
+    }
+
+
+    Core::BufferDesc FrameGraph::GetResourceDesc(const Core::BufferHandle buffer) const
+    {
+        const ResourceData& resourceData = m_resources[buffer.m_desc.m_resourceIndex];
+        return resourceData.m_bufferDesc;
+    }
+
+
     Core::RenderTargetHandle FrameGraph::ImportRenderTarget(Core::RenderTarget* image, const Core::ImageAccessType access)
     {
         FE_Assert(image);

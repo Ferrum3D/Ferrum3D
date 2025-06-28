@@ -45,11 +45,26 @@ namespace FE::Graphics::Core
         virtual RenderTarget* GetRenderTarget(RenderTargetHandle image) const = 0;
         virtual Buffer* GetBuffer(BufferHandle buffer) const = 0;
 
+        virtual ImageDesc GetResourceDesc(RenderTargetHandle image) const = 0;
+        virtual BufferDesc GetResourceDesc(BufferHandle buffer) const = 0;
+
         virtual RenderTargetHandle ImportRenderTarget(RenderTarget* image, ImageAccessType access) = 0;
         virtual BufferHandle ImportBuffer(Buffer* buffer, BufferAccessType access) = 0;
 
         virtual ImageSRVDescriptor GetSRV(Texture* texture, ImageSubresource subresource) = 0;
+        virtual BufferSRVDescriptor GetSRV(Buffer* buffer) = 0;
+        virtual BufferUAVDescriptor GetUAV(Buffer* buffer) = 0;
         virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
+
+        BufferSRVDescriptor GetSRV(const BufferHandle buffer)
+        {
+            return GetSRV(GetBuffer(buffer));
+        }
+
+        BufferUAVDescriptor GetUAV(const BufferHandle buffer)
+        {
+            return GetUAV(GetBuffer(buffer));
+        }
 
     protected:
         friend FrameGraphBuilder;
@@ -132,17 +147,22 @@ namespace FE::Graphics::Core
             return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        BufferHandle Write(const BufferHandle buffer, const BufferWriteType writeType) const
+        BufferHandle Write(const BufferHandle buffer) const
         {
             FE_Assert(buffer.IsValid());
-            const uint32_t flags = festd::to_underlying(writeType);
+            constexpr uint32_t flags = festd::to_underlying(BufferWriteType::kUnorderedAccess);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, buffer.m_desc.m_resourceIndex, flags);
             return BufferHandle::Create(buffer.m_desc.m_resourceIndex, newVersion, flags);
         }
 
-        RenderTargetHandle Write(const RenderTargetHandle image, const ImageWriteType writeType) const
+        RenderTargetHandle Write(const RenderTargetHandle image) const
         {
             FE_Assert(image.IsValid());
+            const ImageDesc desc = m_graph->GetResourceDesc(image);
+            const FormatInfo formatInfo{ desc.m_imageFormat };
+            const ImageWriteType writeType = formatInfo.m_aspectFlags == ImageAspect::kColor
+                ? ImageWriteType::kColorTarget
+                : ImageWriteType::kDepthStencilTarget;
             const uint32_t flags = festd::to_underlying(writeType);
             const uint32_t newVersion = m_graph->WriteResource(m_passIndex, image.m_desc.m_resourceIndex, flags);
             return RenderTargetHandle::Create(image.m_desc.m_resourceIndex, newVersion, flags);

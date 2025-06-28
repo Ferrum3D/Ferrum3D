@@ -21,6 +21,9 @@ namespace FE::Graphics::Common
         Core::RenderTarget* GetRenderTarget(Core::RenderTargetHandle image) const final;
         Core::Buffer* GetBuffer(Core::BufferHandle buffer) const final;
 
+        Core::ImageDesc GetResourceDesc(Core::RenderTargetHandle image) const override;
+        Core::BufferDesc GetResourceDesc(Core::BufferHandle buffer) const override;
+
         Core::RenderTargetHandle ImportRenderTarget(Core::RenderTarget* image, Core::ImageAccessType access) override;
         Core::BufferHandle ImportBuffer(Core::Buffer* buffer, Core::BufferAccessType access) override;
 

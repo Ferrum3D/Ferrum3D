@@ -56,6 +56,20 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    Core::BufferSRVDescriptor FrameGraph::GetSRV(Core::Buffer* buffer)
+    {
+        const uint32_t descriptorIndex = m_bindlessManager->RegisterSRV(buffer);
+        return Core::BufferSRVDescriptor{ descriptorIndex };
+    }
+
+
+    Core::BufferUAVDescriptor FrameGraph::GetUAV(Core::Buffer* buffer)
+    {
+        const uint32_t descriptorIndex = m_bindlessManager->RegisterUAV(buffer);
+        return Core::BufferUAVDescriptor{ descriptorIndex };
+    }
+
+
     Core::SamplerDescriptor FrameGraph::GetSampler(const Core::SamplerState sampler)
     {
         const uint32_t descriptorIndex = m_bindlessManager->RegisterSampler(sampler);

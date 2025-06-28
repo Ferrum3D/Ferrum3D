@@ -1,4 +1,5 @@
 ﻿set(SHADER_SOURCES
+    Shaders/Shader.cs.hlsl
     Shaders/Shader.ps.hlsl
     Shaders/Shader.vs.hlsl
 )

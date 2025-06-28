@@ -93,9 +93,22 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequired),
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
                   "All pipeline states must be set before drawing");
         DrawImpl(drawList);
+
+        m_setStateMask = PipelineStateFlags::kNone;
+        m_viewportScissorState.m_dirty = false;
+    }
+
+
+    void FrameGraphContext::Dispatch(const Core::ComputePipeline* pipeline, const Vector3UInt workGroupCount)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+                  "Only compute related pipeline states can be set before dispatching");
+        DispatchImpl(pipeline, workGroupCount);
 
         m_setStateMask = PipelineStateFlags::kNone;
         m_viewportScissorState.m_dirty = false;

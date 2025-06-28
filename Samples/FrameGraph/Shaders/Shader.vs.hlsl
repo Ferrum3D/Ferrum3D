@@ -14,19 +14,23 @@ struct VertexInput
 
 struct Constants
 {
-    float4x4 m_worldTransform;
     uint m_textureIndex;
     uint m_samplerIndex;
-    uint2 m_padding;
+    uint m_instanceData;
+    uint m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;
 
+StructuredBuffer<float4x4> GBuffers[] : register(t3);
+
 
 PixelAttributes main(const in VertexInput input)
 {
+    const float4x4 worldTransform = GBuffers[GConstants.m_instanceData][0];
+
     PixelAttributes output;
-    output.m_pos = mul(float4(input.m_pos, 1.0f), GConstants.m_worldTransform);
+    output.m_pos = mul(float4(input.m_pos, 1.0f), worldTransform);
     output.m_uv = input.m_uv;
     return output;
 }

@@ -17,6 +17,7 @@ namespace FE::Graphics::Vulkan
         void Submit();
 
         void DrawImpl(const Core::DrawList& drawList) override;
+        void DispatchImpl(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) override;
 
         void EnqueueSemaphoreToWait(Semaphore* semaphore, const VkPipelineStageFlags stageMask)
         {

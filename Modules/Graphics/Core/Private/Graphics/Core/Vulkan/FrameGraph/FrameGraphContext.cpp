@@ -2,6 +2,7 @@
 #include <Graphics/Core/Vulkan/Base/Viewport.h>
 #include <Graphics/Core/Vulkan/BindlessManager.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
@@ -164,8 +165,6 @@ namespace FE::Graphics::Vulkan
     {
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
 
-        m_resourceBarrierBatcher.Flush();
-
         if (m_viewportScissorState.m_dirty)
         {
             const VkViewport viewport = VKConvertViewport(m_viewportScissorState.m_viewport);
@@ -219,6 +218,7 @@ namespace FE::Graphics::Vulkan
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, drawCall.m_stencilRef);
 
             const GraphicsPipeline* pipeline = ImplCast(drawCall.m_pipeline);
+            FE_Assert(pipeline->IsReady());
 
             const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
             const VkPipelineLayout pipelineLayout = pipeline->GetNativeLayout();
@@ -295,5 +295,31 @@ namespace FE::Graphics::Vulkan
         }
 
         vkCmdEndRendering(vkCommandBuffer);
+    }
+
+
+    void FrameGraphContext::DispatchImpl(const Core::ComputePipeline* pipeline, const Vector3UInt workGroupCount)
+    {
+        const ComputePipeline* pipelineImpl = ImplCast(pipeline);
+        FE_Assert(pipelineImpl->IsReady());
+
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+
+        const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
+        const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
+        if (descriptorSet)
+        {
+            vkCmdBindDescriptorSets(
+                vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        }
+
+        if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kRootConstants))
+        {
+            vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_rootConstantsSize, m_rootConstants);
+        }
+
+        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
+
+        vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
     }
 } // namespace FE::Graphics::Vulkan
