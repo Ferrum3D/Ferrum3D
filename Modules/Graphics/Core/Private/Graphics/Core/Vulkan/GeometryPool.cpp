@@ -6,9 +6,22 @@ namespace FE::Graphics::Vulkan
         : m_resourcePool(resourcePool)
     {
         m_device = device;
+        SetImmediateDestroyPolicy();
 
         // TODO: async allocation
         m_dummyWaitGroup = WaitGroup::Create(0);
+    }
+
+
+    GeometryPool::~GeometryPool()
+    {
+        if (Build::IsDevelopment())
+        {
+            Bit::Traverse(m_allocatedGeometries.view(), [&](const uint32_t index) {
+                [[maybe_unused]] auto& geometry = m_geometries[index];
+                FE_AssertMsg(false, "Geometry not freed");
+            });
+        }
     }
 
 
@@ -18,13 +31,22 @@ namespace FE::Graphics::Vulkan
 
         const uint32_t freeIndex = m_freeGeometries.find_first();
 
-        auto& geometry = freeIndex == kInvalidIndex ? m_geometries.push_back() : m_geometries[freeIndex];
-
+        uint32_t geometryIndex;
         if (freeIndex == kInvalidIndex)
         {
-            geometry.Invalidate();
-            m_freeGeometries.resize(m_geometries.size() + 1, false);
+            geometryIndex = m_geometries.size();
+            m_geometries.push_back().Invalidate();
+            m_freeGeometries.resize(geometryIndex + 1, false);
+            m_allocatedGeometries.resize(geometryIndex + 1, true);
         }
+        else
+        {
+            geometryIndex = freeIndex;
+            m_freeGeometries.set(freeIndex, false);
+            m_allocatedGeometries.set(freeIndex, true);
+        }
+
+        auto& geometry = m_geometries[geometryIndex];
 
         FE_Assert(desc.m_inputLayout.m_perInstanceStreamsMask == 0, "Not implemented");
 
@@ -46,6 +68,7 @@ namespace FE::Graphics::Vulkan
             bufferDesc.m_flags = Core::BindFlags::kVertexBuffer;
 
             Core::Buffer* buffer = m_resourcePool->CreateBuffer(Fmt::FormatName("VertexBuffer_{}", desc.m_name), bufferDesc);
+            buffer->AddRef();
             geometry.m_buffers.push_back(buffer);
 
             streamView.m_buffer = buffer;
@@ -59,6 +82,7 @@ namespace FE::Graphics::Vulkan
             bufferDesc.m_flags = Core::BindFlags::kIndexBuffer;
 
             Core::Buffer* buffer = m_resourcePool->CreateBuffer(Fmt::FormatName("IndexBuffer_{}", desc.m_name), bufferDesc);
+            buffer->AddRef();
             geometry.m_buffers.push_back(buffer);
 
             auto& indexView = geometry.m_view.m_indexBufferView;
@@ -84,7 +108,7 @@ namespace FE::Graphics::Vulkan
 
         geometry.m_view.m_streamBufferViews = geometry.m_streamBufferViews;
 
-        return Core::GeometryHandle{ m_geometries.size() - 1 };
+        return Core::GeometryHandle{ geometryIndex };
     }
 
 
@@ -93,6 +117,7 @@ namespace FE::Graphics::Vulkan
         const uint32_t index = handle.m_value;
         m_geometries[index].Invalidate();
         m_freeGeometries.set(index);
+        m_allocatedGeometries.reset(index);
     }
 
 
@@ -105,6 +130,6 @@ namespace FE::Graphics::Vulkan
     WaitGroup* GeometryPool::GetAvailabilityWaitGroup(const Core::GeometryHandle handle)
     {
         (void)handle;
-        return m_dummyWaitGroup;
+        return m_dummyWaitGroup.Get();
     }
 } // namespace FE::Graphics::Vulkan

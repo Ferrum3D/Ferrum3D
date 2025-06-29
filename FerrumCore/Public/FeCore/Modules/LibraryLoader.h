@@ -22,7 +22,7 @@ namespace FE
         LibraryLoader() = default;
         LibraryLoader(festd::string_view libraryName);
 
-        bool Load(festd::string_view libraryName)
+        bool Load(const festd::string_view libraryName)
         {
             m_handle = Platform::LoadModule(libraryName);
             return m_handle.IsValid();

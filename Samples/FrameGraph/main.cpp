@@ -94,6 +94,11 @@ private:
         {
         }
 
+        ~PassProducer() override
+        {
+            m_geometryPool->Free(m_geometry);
+        }
+
         void Init(Core::Viewport* viewport)
         {
             FE_PROFILER_ZONE();
@@ -256,9 +261,9 @@ private:
                 });
         }
 
-        Rc<Core::PipelineFactory> m_pipelineFactory;
-        Rc<Core::AsyncCopyQueue> m_copyQueue;
-        Rc<Core::GeometryPool> m_geometryPool;
+        Core::PipelineFactory* m_pipelineFactory;
+        Core::AsyncCopyQueue* m_copyQueue;
+        Core::GeometryPool* m_geometryPool;
         Core::GeometryHandle m_geometry;
 
         Rc<Core::Texture> m_texture;
@@ -288,8 +293,8 @@ private:
     }
 
     festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
-    Rc<Core::DeviceFactory> m_factory;
-    Rc<Core::Device> m_device;
+    Core::DeviceFactory* m_factory;
+    Core::Device* m_device;
     Rc<TextureAsset> m_texture;
 
     Rc<Core::Viewport> m_viewport;

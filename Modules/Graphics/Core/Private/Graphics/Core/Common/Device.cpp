@@ -37,10 +37,9 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE();
 
-        for (uint32_t i = 0; i < m_disposeQueue.size(); ++i)
+        for (const PendingDisposer& disposer : m_disposeQueue)
         {
             // Don't use a range-based for loop here, since more objects can be added while we are iterating
-            const PendingDisposer disposer = m_disposeQueue[i];
             disposer.m_object->DoDispose();
             m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.m_object));
         }
@@ -104,24 +103,63 @@ namespace FE::Graphics::Common
         festd::pmr::vector<Core::DeviceObject*> objectsToDispose{ &temp };
         {
             std::lock_guard lock{ m_disposeQueueLock };
-            for (uint32_t i = 0; i < m_disposeQueue.size();)
-            {
-                // m_logger->LogInfo("Trying to delete object at {}, frames left: {}...",
-                //                   reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object),
-                //                   m_disposeQueue[i].m_framesLeft);
-                if (--m_disposeQueue[i].m_framesLeft > 0)
-                {
-                    ++i;
-                    continue;
-                }
-
-                objectsToDispose.push_back(m_disposeQueue[i].m_object);
-                // m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(m_disposeQueue[i].m_object));
-                m_disposeQueue.erase_unsorted(m_disposeQueue.begin() + i);
-            }
+            objectsToDispose = GetObjectsToDispose(&temp, false);
         }
 
         for (Core::DeviceObject* object : objectsToDispose)
             object->DoDispose();
+    }
+
+
+    void Device::ForceReleasePendingDisposers()
+    {
+        FE_PROFILER_ZONE();
+
+        for (;;)
+        {
+            // TODO: this can be called from outside of the fibers, so we cannot use the temp allocator
+            // Memory::FiberTempAllocator temp;
+
+            // Copy to avoid deadlocks
+            festd::pmr::vector<Core::DeviceObject*> objectsToDispose;
+            {
+                std::lock_guard lock{ m_disposeQueueLock };
+                objectsToDispose = GetObjectsToDispose(std::pmr::get_default_resource(), true);
+            }
+
+            if (objectsToDispose.empty())
+                break;
+
+            for (Core::DeviceObject* object : objectsToDispose)
+                object->DoDispose();
+        }
+    }
+
+
+    festd::pmr::vector<Core::DeviceObject*> Device::GetObjectsToDispose(std::pmr::memory_resource* allocator, const bool force)
+    {
+        festd::pmr::vector<Core::DeviceObject*> objectsToDispose{ allocator };
+        objectsToDispose.reserve(m_disposeQueue.size());
+        for (PendingDisposer& disposer : m_disposeQueue)
+        {
+            if (force || --disposer.m_framesLeft == 0)
+                objectsToDispose.push_back(disposer.m_object);
+        }
+
+        if (force)
+        {
+            m_disposeQueue.clear();
+        }
+        else
+        {
+            m_disposeQueue.erase(eastl::remove_if(m_disposeQueue.begin(),
+                                                  m_disposeQueue.end(),
+                                                  [](const PendingDisposer& disposer) {
+                                                      return disposer.m_framesLeft == 0;
+                                                  }),
+                                 m_disposeQueue.end());
+        }
+
+        return objectsToDispose;
     }
 } // namespace FE::Graphics::Common

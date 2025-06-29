@@ -162,6 +162,14 @@ namespace FE::Graphics::Vulkan
         m_imageAvailableSemaphores.clear();
         m_renderFinishedSemaphores.clear();
         m_graphicsCommandBuffers.clear();
+
+        const VkInstance vkInstance = m_deviceFactory->GetNative();
+
+        if (m_surface)
+        {
+            vkDestroySurfaceKHR(vkInstance, m_surface, nullptr);
+            m_surface = VK_NULL_HANDLE;
+        }
     }
 
 

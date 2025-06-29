@@ -74,7 +74,9 @@ namespace FE::Graphics::Vulkan
     {
         for (ShaderInfo* shaderInfo : m_shaders)
         {
-            m_shaderPool.deallocate(shaderInfo, sizeof(ShaderInfo));
+            const VkDevice device = NativeCast(m_device);
+            vkDestroyShaderModule(device, shaderInfo->m_shaderModule, nullptr);
+            Memory::Delete(&m_shaderPool, shaderInfo, sizeof(*shaderInfo));
         }
     }
 

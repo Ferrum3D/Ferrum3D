@@ -116,6 +116,7 @@
     Public/FeCore/Time/DateTime.h
     Public/FeCore/Time/TimeSpan.h
 
+    Public/FeCore/Utils/Core.natvis
     Public/FeCore/Utils/Crc32.h
 )
 
@@ -206,6 +207,7 @@ target_include_directories(FeCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
 
 set_target_properties(FeCore PROPERTIES FOLDER "Core")
 target_link_libraries(FeCore
+    DebugHeap
     fcontext
     mimalloc
     libdeflate

@@ -23,8 +23,14 @@ namespace FE::DI
         ResultCode Resolve(ServiceRegistration registration, Memory::RefCountedObjectBase** result);
 
     private:
+        struct Entry final
+        {
+            Memory::RefCountedObjectBase* m_object;
+            ServiceRegistration m_registration;
+        };
+
         festd::pmr::segmented_unordered_dense_map<ServiceRegistration, Memory::RefCountedObjectBase*> m_table;
-        SegmentedVector<Memory::RefCountedObjectBase*> m_objectsInActivationOrder;
+        SegmentedVector<Entry> m_objectsInActivationOrder;
 
         ServiceRegistry* m_registry;
         IServiceProvider* m_rootProvider;

@@ -32,7 +32,7 @@ namespace FE::DI
         }
 
         m_table[registration] = *result;
-        m_objectsInActivationOrder.push_back(*result);
+        m_objectsInActivationOrder.push_back({ *result, registration });
         return ResultCode::kSuccess;
     }
 
@@ -41,8 +41,13 @@ namespace FE::DI
     {
         for (auto iter = m_objectsInActivationOrder.rbegin(); iter != m_objectsInActivationOrder.rend(); ++iter)
         {
-            auto* object = *iter;
-            object->Release();
+            const auto [object, registration] = *iter;
+            if (registration.GetLifetime() == Lifetime::kSingleton)
+            {
+                const uint32_t expectedRefCount = registration.IsConstant() ? 2 : 1;
+                FE_Assert(object->GetRefCount() == expectedRefCount);
+                object->Release();
+            }
         }
 
         m_table.clear();

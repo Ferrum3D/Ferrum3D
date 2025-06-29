@@ -146,7 +146,7 @@ namespace FE::Graphics::Common
 
         for (uint32_t passProducerIndex = 0; passProducerIndex < m_passProducers.size(); ++passProducerIndex)
         {
-            Core::PassProducer* passProducer = m_passProducers[passProducerIndex].Get();
+            Core::PassProducer* passProducer = m_passProducers[passProducerIndex];
             Core::FrameGraphBuilder builder{ this, passProducerIndex };
             passProducer->Setup(*this, builder, m_blackboard);
         }

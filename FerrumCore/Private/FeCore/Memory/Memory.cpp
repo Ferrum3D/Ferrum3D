@@ -1,6 +1,7 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/tlsf.h>
+#include <FeCore/Modules/EnvironmentPrivate.h>
 #include <FeCore/Threading/SpinLock.h>
 #include <mimalloc.h>
 
@@ -18,6 +19,85 @@ namespace FE::Memory
             return virtualAlloc2;
         }
 #endif
+
+        void* MallocImpl(const size_t byteSize)
+        {
+            if (Build::IsDevelopment())
+            {
+                auto& sharedState = Env::Internal::SharedState::Get();
+                if (sharedState.m_debugHeapHolder.m_heap)
+                {
+                    std::lock_guard lock{ sharedState.m_debugHeapHolder.m_lock };
+                    return DebugHeapAllocate(sharedState.m_debugHeapHolder.m_heap, byteSize, kDefaultAlignment);
+                }
+            }
+
+            return mi_malloc(byteSize);
+        }
+
+        void* MallocAlignedImpl(const size_t byteSize, const size_t byteAlignment)
+        {
+            if (Build::IsDevelopment())
+            {
+                auto& sharedState = Env::Internal::SharedState::Get();
+                if (sharedState.m_debugHeapHolder.m_heap)
+                {
+                    std::lock_guard lock{ sharedState.m_debugHeapHolder.m_lock };
+                    return DebugHeapAllocate(sharedState.m_debugHeapHolder.m_heap, byteSize, byteAlignment);
+                }
+            }
+
+            return mi_malloc_aligned(byteSize, byteAlignment);
+        }
+
+        void* ReallocImpl(void* ptr, const size_t byteSize)
+        {
+            if (Build::IsDevelopment())
+            {
+                auto& sharedState = Env::Internal::SharedState::Get();
+                if (sharedState.m_debugHeapHolder.m_heap)
+                {
+                    std::lock_guard lock{ sharedState.m_debugHeapHolder.m_lock };
+                    if (byteSize == 0)
+                    {
+                        if (ptr != nullptr)
+                            DebugHeapFree(sharedState.m_debugHeapHolder.m_heap, ptr);
+
+                        return nullptr;
+                    }
+
+                    if (ptr == nullptr)
+                        return DebugHeapAllocate(sharedState.m_debugHeapHolder.m_heap, byteSize, kDefaultAlignment);
+
+                    const size_t oldSize = DebugHeapGetAllocSize(sharedState.m_debugHeapHolder.m_heap, ptr);
+                    void* newPtr = DebugHeapAllocate(sharedState.m_debugHeapHolder.m_heap, byteSize, kDefaultAlignment);
+                    memcpy(newPtr, ptr, Math::Min(oldSize, byteSize));
+                    DebugHeapFree(sharedState.m_debugHeapHolder.m_heap, ptr);
+                    return newPtr;
+                }
+            }
+
+            return mi_realloc(ptr, byteSize);
+        }
+
+        void FreeImpl(void* ptr)
+        {
+            if (Build::IsDevelopment())
+            {
+                auto& sharedState = Env::Internal::SharedState::Get();
+                if (sharedState.m_debugHeapHolder.m_heap)
+                {
+                    if (ptr == nullptr)
+                        return;
+
+                    std::lock_guard lock{ sharedState.m_debugHeapHolder.m_lock };
+                    DebugHeapFree(sharedState.m_debugHeapHolder.m_heap, ptr);
+                    return;
+                }
+            }
+
+            mi_free(ptr);
+        }
     } // namespace
 
 
@@ -164,7 +244,7 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize)
     {
-        void* ptr = mi_malloc(byteSize);
+        void* ptr = MallocImpl(byteSize);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
     }
@@ -172,7 +252,7 @@ namespace FE::Memory
 
     void* DefaultAllocate(const size_t byteSize, const size_t byteAlignment)
     {
-        void* ptr = mi_malloc_aligned(byteSize, byteAlignment);
+        void* ptr = MallocAlignedImpl(byteSize, byteAlignment);
         TracySecureAllocS(ptr, byteSize, kMemoryProfilerCallstackDepth);
         return ptr;
     }
@@ -180,7 +260,7 @@ namespace FE::Memory
 
     void* DefaultReallocate(void* ptr, const size_t newSize)
     {
-        void* newPtr = mi_realloc(ptr, newSize);
+        void* newPtr = ReallocImpl(ptr, newSize);
         TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
         TracySecureAllocS(newPtr, newSize, kMemoryProfilerCallstackDepth);
         return newPtr;
@@ -190,7 +270,7 @@ namespace FE::Memory
     void DefaultFree(void* ptr)
     {
         TracySecureFreeS(ptr, kMemoryProfilerCallstackDepth);
-        mi_free(ptr);
+        FreeImpl(ptr);
     }
 
 

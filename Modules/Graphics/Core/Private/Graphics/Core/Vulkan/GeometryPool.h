@@ -12,6 +12,7 @@ namespace FE::Graphics::Vulkan
         FE_RTTI_Class(GeometryPool, "161485C5-B425-4A6A-B65A-0B60C1C60FFE");
 
         GeometryPool(Core::Device* device, Core::ResourcePool* resourcePool);
+        ~GeometryPool() override;
 
         Core::GeometryHandle Allocate(const Core::GeometryAllocationDesc& desc) override;
         void Free(Core::GeometryHandle handle) override;
@@ -37,10 +38,11 @@ namespace FE::Graphics::Vulkan
             }
         };
 
-        WaitGroup* m_dummyWaitGroup = nullptr;
+        Rc<WaitGroup> m_dummyWaitGroup = nullptr;
 
         Core::ResourcePool* m_resourcePool = nullptr;
         SegmentedVector<Geometry> m_geometries;
         festd::bit_vector m_freeGeometries;
+        festd::bit_vector m_allocatedGeometries;
     };
 } // namespace FE::Graphics::Vulkan

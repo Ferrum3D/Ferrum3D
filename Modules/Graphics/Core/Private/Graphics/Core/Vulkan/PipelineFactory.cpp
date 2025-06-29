@@ -29,6 +29,7 @@ namespace FE::Graphics::Vulkan
     PipelineFactory::PipelineFactory(Core::Device* device, BindlessManager* bindlessManager, IJobSystem* jobSystem,
                                      Logger* logger)
         : m_graphicsPipelinePool("GraphicsPipelinePool", sizeof(GraphicsPipeline))
+        , m_computePipelinePool("ComputePipelinePool", sizeof(ComputePipeline))
         , m_jobPool("PipelineAsyncCompilationJobPool",
                     Math::Max(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
         , m_bindlessManager(bindlessManager)
@@ -38,6 +39,7 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_device = device;
+        SetImmediateDestroyPolicy();
 
         m_logger->LogTrace("Creating Pipeline Factory");
 
@@ -55,7 +57,18 @@ namespace FE::Graphics::Vulkan
     PipelineFactory::~PipelineFactory()
     {
         for (const auto [hash, pipeline] : m_graphicsPipelinesMap)
+        {
+            FE_AssertDebug(pipeline->GetRefCount() == 1);
+            pipeline->SetImmediateDestroyPolicy();
             pipeline->Release();
+        }
+
+        for (const auto [hash, pipeline] : m_computePipelinesMap)
+        {
+            FE_AssertDebug(pipeline->GetRefCount() == 1);
+            pipeline->SetImmediateDestroyPolicy();
+            pipeline->Release();
+        }
 
         if (m_pipelineCache)
             vkDestroyPipelineCache(NativeCast(m_device), m_pipelineCache, nullptr);
@@ -106,7 +119,7 @@ namespace FE::Graphics::Vulkan
         if (it != m_computePipelinesMap.end())
             return it->second;
 
-        auto* pipeline = DI::New<ComputePipeline>(&m_graphicsPipelinePool).value();
+        auto* pipeline = DI::New<ComputePipeline>(&m_computePipelinePool).value();
         pipeline->AddRef();
         m_computePipelinesMap[hash] = pipeline;
         lock.unlock();

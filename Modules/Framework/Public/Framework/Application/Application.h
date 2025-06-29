@@ -204,5 +204,9 @@ namespace FE::Framework
 
             Console::Flush();
         }
+
+        Console::Flush();
+        m_application->m_jobSystem->Stop();
+        m_application->m_exitCode = 0;
     }
 } // namespace FE::Framework

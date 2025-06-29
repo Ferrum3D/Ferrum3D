@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="FE::SegmentedVector&lt;*&gt;">
+        <Intrinsic Name="element_at" Expression="m_segments[i / kElementsPerSegment][i % kElementsPerSegment]">
+            <Parameter Name="i" Type="unsigned int"/>
+        </Intrinsic>
+        <DisplayString Condition="m_size == 0">[{m_size}] {{}}</DisplayString>
+        <DisplayString Condition="m_size == 1">[{m_size}] {{ {element_at(0)} }}</DisplayString>
+        <DisplayString Condition="m_size == 2">[{m_size}] {{ {element_at(0)}, {element_at(1))} }}</DisplayString>
+        <DisplayString Condition="m_size &gt; 2">[{m_size}] {{ {element_at(0)}, {element_at(1)}, ... }}</DisplayString>
+        <Expand>
+            <Item Name="[size]">m_size</Item>
+            <IndexListItems>
+                <Size>m_size</Size>
+                <ValueNode>(element_at($i))</ValueNode>
+            </IndexListItems>
+        </Expand>
+    </Type>
+
+    <Type Name="FE::Env::Name">
+        <DisplayString>
+            {this->c_str()}
+        </DisplayString>
+    </Type>
+</AutoVisualizer>

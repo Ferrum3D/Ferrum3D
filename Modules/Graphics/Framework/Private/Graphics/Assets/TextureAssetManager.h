@@ -56,6 +56,7 @@ namespace FE::Graphics
             uint32_t m_mipChainIndex = 0;
             const std::byte* m_data = nullptr;
             std::pmr::memory_resource* m_bufferAllocator = nullptr;
+            Core::AsyncCopyCommandList* m_commandList = nullptr;
         };
 
         void AsyncIOCallback(const IO::AsyncBlockReadResult& result) override;

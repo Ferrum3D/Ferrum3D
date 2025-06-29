@@ -5,7 +5,7 @@ namespace FE::Graphics::Core
 {
     class GraphicsCoreModuleImpl final : public ServiceLocatorImplBase<GraphicsCoreModule>
     {
-        Rc<DeviceFactory> m_deviceFactory;
+        DeviceFactory* m_deviceFactory = nullptr;
 
     public:
         FE_RTTI_Class(GraphicsCoreModuleImpl, "CB3A80B7-EED3-4FBF-8694-1ED61246234A");
@@ -22,7 +22,7 @@ namespace FE::Graphics::Core
                 const Rc deviceFactory = DI::DefaultNew<Vulkan::DeviceFactory>().value();
                 deviceFactory->RegisterServices(builder);
 
-                m_deviceFactory = deviceFactory;
+                m_deviceFactory = deviceFactory.Get();
                 builder.Bind<DeviceFactory>().ToConst(deviceFactory.Get());
             }
             else

@@ -105,7 +105,7 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
-        SegmentedVector<Rc<PassProducer>> m_passProducers;
+        SegmentedVector<PassProducer*> m_passProducers;
     };
 
 

@@ -86,7 +86,8 @@ namespace FE::Internal
             const uint32_t topLevelWordCount = CalculateNextLevelWordCount(wordCount);
             const uint32_t totalAllocatedWordCount = wordCount + topLevelWordCount;
 
-            BitSetWord* newWords = Memory::AllocateArray<BitSetWord>(allocator, totalAllocatedWordCount);
+            BitSetWord* newWords =
+                totalAllocatedWordCount > 0 ? Memory::AllocateArray<BitSetWord>(allocator, totalAllocatedWordCount) : nullptr;
             BitSetWord* newTopLevel = newWords + wordCount;
 
             const uint32_t usedWordCount = CalculateNextLevelWordCount(length);

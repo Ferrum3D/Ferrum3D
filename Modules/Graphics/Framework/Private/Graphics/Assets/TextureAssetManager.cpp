@@ -41,6 +41,9 @@ namespace FE::Graphics
 
         m_uploadWaitGroup->Wait();
 
+        m_commandList->Free();
+        Memory::Delete(&m_manager->m_asyncCopyCommandListPool, m_commandList);
+
         std::lock_guard lock{ m_request->m_loadedMipChainsMaskLock };
         FE_AssertDebug(!m_request->m_loadedMipChainsMask.test(m_mipChainIndex));
         m_request->m_loadedMipChainsMask.set(m_mipChainIndex);
@@ -220,6 +223,7 @@ namespace FE::Graphics
         mipJob->m_mipChainIndex = mipChainIndex;
         mipJob->m_data = data;
         mipJob->m_bufferAllocator = bufferAllocator;
+        mipJob->m_commandList = copyCommandList;
         mipJob->ScheduleBackground(m_jobSystem);
 
         return true;

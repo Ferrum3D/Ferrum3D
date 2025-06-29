@@ -141,35 +141,15 @@ namespace FE::Env
         };
 
 
-        class Environment : public IEnvironment
+        struct Environment : public IEnvironment
         {
-            festd::unordered_dense_map<Name, void*> m_map;
-            Threading::Mutex m_lock;
+            SharedState m_sharedState;
 
-            VariableResult FindVariableNoLock(const Name name)
-            {
-                VariableResult result;
-                const auto it = m_map.find(name);
-                if (it != m_map.end())
-                {
-                    result.Code = VariableResultCode::Found;
-                    result.pData = it->second;
-                    return result;
-                }
-
-                result.Code = VariableResultCode::NotFound;
-                result.pData = nullptr;
-                return result;
-            }
-
-        public:
             ApplicationInfo m_appInfo;
 
             DefaultMemoryResource m_defaultMemoryResource;
             VirtualMemoryResource m_virtualMemoryResource;
             Memory::LockedMemoryResource<Memory::LinearAllocator, Threading::SpinLock> m_linearMemoryResource;
-
-            SharedState m_sharedState;
 
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
@@ -263,13 +243,49 @@ namespace FE::Env
                 }
 
                 Compression::Internal::Shutdown();
-                Memory::DefaultDelete(this);
+                this->~Environment();
+            }
+
+        private:
+            festd::unordered_dense_map<Name, void*> m_map;
+            Threading::Mutex m_lock;
+
+            VariableResult FindVariableNoLock(const Name name)
+            {
+                VariableResult result;
+                const auto it = m_map.find(name);
+                if (it != m_map.end())
+                {
+                    result.Code = VariableResultCode::Found;
+                    result.pData = it->second;
+                    return result;
+                }
+
+                result.Code = VariableResultCode::NotFound;
+                result.pData = nullptr;
+                return result;
             }
         };
 
 
         static Environment* GEnvInstance = nullptr;
         static bool GIsEnvOwner = false;
+        static std::byte GEnvInstanceStorage[sizeof(Environment)];
+
+
+        DebugHeapHolder::DebugHeapHolder()
+        {
+            constexpr size_t kGigabyte = 0x40000000;
+            if (Build::IsDevelopment())
+                m_heap = DebugHeapInit(8 * kGigabyte);
+        }
+
+
+        DebugHeapHolder::~DebugHeapHolder()
+        {
+            if (m_heap)
+                DebugHeapDestroy(m_heap);
+        }
 
 
         SharedState::SharedState()
@@ -382,7 +398,8 @@ namespace FE::Env
             }
 
             Internal::GIsEnvOwner = true;
-            Internal::GEnvInstance = Memory::DefaultNew<Internal::Environment>(info);
+            Internal::GEnvInstance = reinterpret_cast<Internal::Environment*>(Internal::GEnvInstanceStorage);
+            new (Internal::GEnvInstanceStorage) Internal::Environment(info);
             Internal::GEnvInstance->Init();
         }
     }

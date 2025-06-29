@@ -522,6 +522,7 @@ namespace FE::Graphics::Vulkan
         : m_resourcePool(resourcePool)
     {
         m_device = device;
+        SetImmediateDestroyPolicy();
 
         m_processingItems.reserve(m_processingItems.get_container().capacity());
 
@@ -558,6 +559,8 @@ namespace FE::Graphics::Vulkan
         {
             std::unique_lock lock{ m_suspendLock };
             m_exitRequested = true;
+            m_suspendEvent.Reset();
+            m_threadEvent.Send();
         }
 
         Threading::CloseThread(m_thread);

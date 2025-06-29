@@ -111,6 +111,13 @@ namespace FE::Threading
     }
 
 
+    void Sleep(const uint32_t milliseconds)
+    {
+        FE_PROFILER_ZONE();
+        ::Sleep(milliseconds);
+    }
+
+
     uint64_t GetCurrentThreadID()
     {
         return ::GetCurrentThreadId();

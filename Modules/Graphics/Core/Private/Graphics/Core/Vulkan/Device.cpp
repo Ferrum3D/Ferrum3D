@@ -174,12 +174,13 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         vkDeviceWaitIdle(m_nativeDevice);
+        ForceReleasePendingDisposers();
     }
 
 
     Device::~Device()
     {
-        DisposePending();
+        ForceReleasePendingDisposers();
 
         m_samplerCache.Shutdown();
 
