@@ -163,7 +163,14 @@ namespace FE::Graphics::Vulkan
         m_renderFinishedSemaphores.clear();
         m_graphicsCommandBuffers.clear();
 
+        const VkDevice vkDevice = NativeCast(m_device);
         const VkInstance vkInstance = m_deviceFactory->GetNative();
+
+        if (m_swapchain)
+        {
+            vkDestroySwapchainKHR(vkDevice, m_swapchain, nullptr);
+            m_swapchain = VK_NULL_HANDLE;
+        }
 
         if (m_surface)
         {

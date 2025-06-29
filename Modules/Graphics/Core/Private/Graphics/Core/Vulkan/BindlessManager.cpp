@@ -106,6 +106,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    BindlessManager::~BindlessManager()
+    {
+        const VkDevice device = NativeCast(m_device);
+
+        vkDestroyDescriptorSetLayout(device, m_descriptorSetLayout, nullptr);
+        vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
+    }
+
+
     void BindlessManager::BeginFrame()
     {
         const uint64_t completedValue = m_fence->GetCompletedValue();

@@ -12,6 +12,7 @@ namespace FE::Graphics::Vulkan
     struct BindlessManager final : public Core::DeviceObject
     {
         BindlessManager(Core::Device* device);
+        ~BindlessManager() override;
 
         void BeginFrame();
         Core::FenceSyncPoint CloseFrame();
