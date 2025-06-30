@@ -2,6 +2,7 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Logging/Trace.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 
@@ -63,16 +64,16 @@ namespace FE::Graphics::Core
             {
             }
 
-            HRESULT STDMETHODCALLTYPE LoadSource(LPCWSTR filenameWide, IDxcBlob** includeSource) override
+            HRESULT STDMETHODCALLTYPE LoadSource(const LPCWSTR filenameWide, IDxcBlob** includeSource) override
             {
                 FE_PROFILER_ZONE();
 
-                IO::Path path;
-                while (*filenameWide)
-                {
-                    path.append(*filenameWide);
-                    ++filenameWide;
-                }
+                // TODO: this is a hack for relative paths
+
+                const Str::Utf16ToUtf8 pathUtf8{ filenameWide };
+                festd::fixed_string path{ pathUtf8.data(), pathUtf8.size() };
+                if (path.starts_with(".\\"))
+                    path = path.substr(2);
 
                 const Env::Name name{ path };
                 if (const festd::expected result = m_shaderSourceCache->GetSource(name))
@@ -162,13 +163,12 @@ namespace FE::Graphics::Core
         sourceBuffer.Size = source.size();
         sourceBuffer.Encoding = DXC_CP_UTF8;
 
-        // TODO: replace with thread-local stack allocator
-        Memory::LinearAllocator linearAllocator{ 16 * 1024 };
-        festd::pmr::vector<LPCWSTR> compilerArgs{ &linearAllocator };
+        Memory::FiberTempAllocator temp;
+        festd::pmr::vector<LPCWSTR> compilerArgs{ &temp };
         compilerArgs.reserve(32);
 
         const festd::string_view shaderName{ args.m_shaderName };
-        const Str::Utf8ToUtf16 shaderNameUtf16{ shaderName.data(), shaderName.size(), &linearAllocator };
+        const Str::Utf8ToUtf16 shaderNameUtf16{ shaderName.data(), shaderName.size(), &temp };
         compilerArgs.push_back(shaderNameUtf16.ToWideString());
 
         compilerArgs.push_back(L"-E");
@@ -181,12 +181,12 @@ namespace FE::Graphics::Core
         {
             const festd::fixed_string defineString = Fmt::FixedFormat("{}={}", m_name, m_value);
             compilerArgs.push_back(L"-D");
-            compilerArgs.push_back(ConvertString(&linearAllocator, defineString));
+            compilerArgs.push_back(ConvertString(&temp, defineString));
         }
 
         for (const char* arg : kCompilerArgs)
         {
-            compilerArgs.push_back(ConvertString(&linearAllocator, arg));
+            compilerArgs.push_back(ConvertString(&temp, arg));
         }
 
         Rc<IDxcResult> result;

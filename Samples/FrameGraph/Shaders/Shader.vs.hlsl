@@ -1,4 +1,6 @@
-﻿struct PixelAttributes
+﻿#include "Common.hlsli"
+
+struct PixelAttributes
 {
     float4 m_pos : SV_Position;
     float2 m_uv : TEXCOORD0;
@@ -14,20 +16,18 @@ struct VertexInput
 
 struct Constants
 {
-    uint m_textureIndex;
-    uint m_samplerIndex;
-    uint m_instanceData;
+    ImageSRVDescriptor m_texture;
+    SamplerDescriptor m_sampler;
+    BufferSRVDescriptor m_instanceData;
     uint m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;
 
-StructuredBuffer<float4x4> GBuffers[] : register(t3);
-
 
 PixelAttributes main(const in VertexInput input)
 {
-    const float4x4 worldTransform = GBuffers[GConstants.m_instanceData][0];
+    const float4x4 worldTransform = GConstants.m_instanceData.Get<float4x4>()[0];
 
     PixelAttributes output;
     output.m_pos = mul(float4(input.m_pos, 1.0f), worldTransform);

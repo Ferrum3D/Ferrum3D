@@ -35,7 +35,7 @@ namespace FE::Graphics::Vulkan
             [[fallthrough]];
 
         case Core::ImageAspect::kColor:
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
             break;
 
         case Core::ImageAspect::kDepth:

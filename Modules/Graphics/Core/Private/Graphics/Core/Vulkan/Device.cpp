@@ -8,8 +8,9 @@
 
 namespace FE::Graphics::Vulkan
 {
-    constexpr auto kRequiredDeviceExtensions =
-        std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
+    constexpr auto kRequiredDeviceExtensions = std::array{ VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                           VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                                                           VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME };
 
 
     void Device::FindQueueFamilies()
@@ -117,9 +118,14 @@ namespace FE::Graphics::Vulkan
             queueCI.pQueuePriorities = &queuePriority;
         }
 
+        VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorTypeFeatures{};
+        mutableDescriptorTypeFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
+        mutableDescriptorTypeFeatures.pNext = nullptr;
+        mutableDescriptorTypeFeatures.mutableDescriptorType = true;
+
         VkPhysicalDeviceVulkan13Features deviceFeatures13{};
         deviceFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-        deviceFeatures13.pNext = nullptr;
+        deviceFeatures13.pNext = &mutableDescriptorTypeFeatures;
         deviceFeatures13.synchronization2 = true;
         deviceFeatures13.dynamicRendering = true;
 
@@ -134,6 +140,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageBufferUpdateAfterBind = true;
+        deviceFeatures12.shaderSampledImageArrayNonUniformIndexing = true;
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

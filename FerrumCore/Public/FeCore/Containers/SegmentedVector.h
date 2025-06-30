@@ -392,6 +392,13 @@ namespace FE
             m_size = 0;
         }
 
+        void reset_lose_memory()
+        {
+            m_segments = nullptr;
+            m_segmentTableSize = 0;
+            m_size = 0;
+        }
+
         void copy_to(T* destination)
         {
             if (m_size == 0)

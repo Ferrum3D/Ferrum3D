@@ -52,6 +52,7 @@ namespace FE::Graphics::Core
         virtual BufferHandle ImportBuffer(Buffer* buffer, BufferAccessType access) = 0;
 
         virtual ImageSRVDescriptor GetSRV(Texture* texture, ImageSubresource subresource) = 0;
+        virtual ImageUAVDescriptor GetUAV(RenderTarget* texture, ImageSubresource subresource) = 0;
         virtual BufferSRVDescriptor GetSRV(Buffer* buffer) = 0;
         virtual BufferUAVDescriptor GetUAV(Buffer* buffer) = 0;
         virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;

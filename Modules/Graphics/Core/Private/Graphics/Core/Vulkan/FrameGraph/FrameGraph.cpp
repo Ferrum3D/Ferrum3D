@@ -56,6 +56,13 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    Core::ImageUAVDescriptor FrameGraph::GetUAV(Core::RenderTarget* renderTarget, Core::ImageSubresource subresource)
+    {
+        const uint32_t descriptorIndex = m_bindlessManager->RegisterUAV(renderTarget, subresource);
+        return Core::ImageUAVDescriptor{ descriptorIndex };
+    }
+
+
     Core::BufferSRVDescriptor FrameGraph::GetSRV(Core::Buffer* buffer)
     {
         const uint32_t descriptorIndex = m_bindlessManager->RegisterSRV(buffer);
