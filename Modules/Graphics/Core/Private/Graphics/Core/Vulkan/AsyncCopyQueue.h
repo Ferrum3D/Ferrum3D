@@ -9,6 +9,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <festd/ring_buffer.h>
 
 namespace FE::Graphics::Vulkan
@@ -40,7 +41,6 @@ namespace FE::Graphics::Vulkan
         bool FinalizeFinishedProcessors(bool wait = false);
         void ProcessCommandList(ProcessingItem* item);
         VkDeviceSize AllocateStagingMemory(ProcessingItem* item, size_t byteSize, size_t byteAlignment);
-        void SubmitCommandList(VkCommandBuffer commandBuffer, uint64_t fenceValue) const;
         Rc<CommandBuffer> AcquireCommandBuffer();
 
         Core::ResourcePool* m_resourcePool = nullptr;

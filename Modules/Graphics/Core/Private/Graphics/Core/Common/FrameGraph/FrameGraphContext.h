@@ -24,10 +24,6 @@ namespace FE::Graphics::Common
     {
         FE_RTTI_Class(FrameGraphContext, "521A8CCE-6A61-4D51-962C-16ABAB20AE89");
 
-        void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) final;
-
-        void EnqueueFenceToSignal(const Core::FenceSyncPoint& fence) final;
-
         void SetRootConstants(const void* data, uint32_t size) override;
 
         void SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations) final;
@@ -74,8 +70,5 @@ namespace FE::Graphics::Common
 
         std::byte m_rootConstants[Core::Limits::Pipeline::kMaxRootConstantsByteSize];
         uint32_t m_rootConstantsSize = 0;
-
-        SegmentedVector<Core::FenceSyncPoint, 256> m_signalFences;
-        SegmentedVector<Core::FenceSyncPoint, 256> m_waitFences;
     };
 } // namespace FE::Graphics::Common

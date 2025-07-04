@@ -62,7 +62,7 @@ namespace FE::Memory
         LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pPageAllocator = nullptr);
         ~LinearAllocator() override;
 
-        void Collect();
+        void FreeUnusedMemory();
 
         void* do_allocate(size_t byteSize, size_t byteAlignment) override;
 
@@ -85,6 +85,12 @@ namespace FE::Memory
         void Clear()
         {
             m_currentMarker = {};
+        }
+
+        void FreeMemory()
+        {
+            Clear();
+            FreeUnusedMemory();
         }
     };
 

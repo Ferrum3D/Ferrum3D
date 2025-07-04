@@ -55,6 +55,7 @@ namespace FE
 
             m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize, alignof(T*));
             m_segments = nullptr;
+            m_segmentTableSize = 0;
         }
 
     public:
@@ -390,6 +391,11 @@ namespace FE
             }
 
             m_size = 0;
+        }
+
+        void clear_and_shrink()
+        {
+            ResetImpl();
         }
 
         void reset_lose_memory()

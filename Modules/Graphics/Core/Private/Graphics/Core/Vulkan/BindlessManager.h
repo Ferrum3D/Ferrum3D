@@ -17,6 +17,8 @@ namespace FE::Graphics::Vulkan
         BindlessManager(Core::Device* device);
         ~BindlessManager() override;
 
+        FE_RTTI_Class(BindlessManager, "E8C1D00D-415A-4D82-B576-3ABEACA818EA");
+
         void BeginFrame();
         Core::FenceSyncPoint CloseFrame();
 

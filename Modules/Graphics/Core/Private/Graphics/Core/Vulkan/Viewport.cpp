@@ -1,6 +1,7 @@
 ﻿#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
 #include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
@@ -140,18 +141,15 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool)
+    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsCommandQueue* commandQueue)
         : m_logger(logger)
         , m_resourcePool(resourcePool)
+        , m_commandQueue(commandQueue)
     {
         FE_PROFILER_ZONE();
 
         m_device = device;
         m_deviceFactory = ImplCast(device)->GetDeviceFactory();
-
-        const uint32_t graphicsFamily = ImplCast(device)->GetQueueFamilyIndex(Core::HardwareQueueKindFlags::kGraphics);
-
-        vkGetDeviceQueue(NativeCast(device), graphicsFamily, 0, &m_queue);
     }
 
 
@@ -161,7 +159,6 @@ namespace FE::Graphics::Vulkan
 
         m_imageAvailableSemaphores.clear();
         m_renderFinishedSemaphores.clear();
-        m_graphicsCommandBuffers.clear();
 
         const VkDevice vkDevice = NativeCast(m_device);
         const VkInstance vkInstance = m_deviceFactory->GetNative();
@@ -192,13 +189,7 @@ namespace FE::Graphics::Vulkan
         {
             m_imageAvailableSemaphores.push_back(Semaphore::Create(m_device, Fmt::FormatName("ImageAvailableSemaphore_{}", i)));
             m_renderFinishedSemaphores.push_back(Semaphore::Create(m_device, Fmt::FormatName("RenderFinishedSemaphore_{}", i)));
-
-            const Env::Name name = Fmt::FormatName("GraphicsCommandBuffer_{}", i);
-            m_graphicsCommandBuffers.push_back(CommandBuffer::Create(m_device, name, Core::HardwareQueueKindFlags::kGraphics));
         }
-
-        m_fence = Fence::Create(m_device);
-        m_fence->Init(0);
 
         CreateSurface();
         CreateSwapChain();
@@ -212,38 +203,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Viewport::PrepareFrame()
-    {
-        FE_PROFILER_ZONE();
-
-        if (m_frameIndex > kMaxInFlightFrames)
-        {
-            m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
-        }
-
-        AcquireNextImage();
-
-        const VkCommandBuffer commandBuffer = GetCurrentGraphicsCommandBuffer()->GetNative();
-
-        VerifyVulkan(vkResetCommandBuffer(commandBuffer, 0));
-
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-    }
-
-
     void Viewport::AcquireNextImage()
     {
         FE_PROFILER_ZONE();
 
-        if (m_frameIndex > kMaxInFlightFrames)
-        {
-            m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
-        }
+        m_commandQueue->WaitForPreviousFrame();
 
-        const uint32_t semaphoreIndex = m_frameIndex % kMaxInFlightFrames;
-        Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
+        const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
+        const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
+        const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
         const VkResult result = vkAcquireNextImageKHR(
             NativeCast(m_device), m_swapchain, Constants::kMaxU64, semaphore->GetNative(), VK_NULL_HANDLE, &m_imageIndex);
 
@@ -415,12 +383,6 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_device->WaitIdle();
-
-        if (m_frameIndex > 1)
-        {
-            m_fence->Wait(m_frameIndex - 1);
-        }
-
         m_renderTargets.clear();
     }
 
@@ -466,7 +428,9 @@ namespace FE::Graphics::Vulkan
 
         Image* renderTarget = m_renderTargets[m_imageIndex].Get();
 
-        ImageMemoryBarrier(frameGraphContext->m_graphicsCommandBuffer->GetNative(),
+        CommandBuffer* commandBuffer = frameGraphContext->m_graphicsCommandBuffer.Get();
+
+        ImageMemoryBarrier(commandBuffer->GetNative(),
                            renderTarget->GetNative(),
                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                            0,
@@ -476,13 +440,14 @@ namespace FE::Graphics::Vulkan
                            0,
                            VK_IMAGE_ASPECT_COLOR_BIT);
 
-        const uint32_t semaphoreIndex = m_frameIndex % kMaxInFlightFrames;
+        const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
+        const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
         const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
-        frameGraphContext->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
-        frameGraphContext->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
-        frameGraphContext->EnqueueFenceToSignal({ m_fence, m_frameIndex++ });
+        commandBuffer->EnqueueSemaphoreToWait(m_imageAvailableSemaphores[semaphoreIndex].Get(), stageFlags);
+        commandBuffer->EnqueueSemaphoreToSignal(m_renderFinishedSemaphores[semaphoreIndex].Get());
+        commandBuffer->EnqueueFenceToSignal(m_commandQueue->CloseFrame());
 
-        frameGraphContext->Submit();
+        commandBuffer->Submit();
 
         const VkSemaphore waitSemaphore = m_renderFinishedSemaphores[semaphoreIndex]->GetNative();
 
@@ -494,7 +459,8 @@ namespace FE::Graphics::Vulkan
         presentInfo.pSwapchains = &m_swapchain;
         presentInfo.pImageIndices = &m_imageIndex;
 
-        const VkResult presentResult = vkQueuePresentKHR(m_queue, &presentInfo);
+        const VkQueue queue = m_commandQueue->GetNative();
+        const VkResult presentResult = vkQueuePresentKHR(queue, &presentInfo);
         if (presentResult == VK_SUBOPTIMAL_KHR || presentResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RecreateSwapchain();

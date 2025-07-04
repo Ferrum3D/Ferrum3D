@@ -2,14 +2,17 @@
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/RenderTarget.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
 {
-    FrameGraph::FrameGraph(Core::Device* device, Common::FrameGraphResourcePool* resourcePool, BindlessManager* bindlessManager)
+    FrameGraph::FrameGraph(Core::Device* device, Common::FrameGraphResourcePool* resourcePool, BindlessManager* bindlessManager,
+                           GraphicsCommandQueue* commandQueue)
         : Common::FrameGraph(device, resourcePool)
+        , m_commandQueue(commandQueue)
         , m_bindlessManager(bindlessManager)
     {
     }
@@ -88,8 +91,10 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        Viewport* viewport = ImplCast(m_viewport.Get());
-        viewport->PrepareFrame();
+        m_commandQueue->WaitForPreviousFrame();
+        m_commandQueue->GetCurrentGraphicsCommandBuffer()->Begin();
+        ImplCast(m_viewport.Get())->AcquireNextImage();
+        m_bindlessManager->BeginFrame();
     }
 
 
@@ -98,10 +103,9 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         FrameGraphContext* context = Rc<FrameGraphContext>::New(&m_linearAllocator, m_device, this, m_bindlessManager);
-        context->Init(ImplCast(m_viewport.Get())->GetCurrentGraphicsCommandBuffer());
+        context->Init(m_commandQueue->GetCurrentGraphicsCommandBuffer());
 
         m_currentContext = context;
-        m_bindlessManager->BeginFrame();
         context->m_resourceBarrierBatcher.Flush();
     }
 
@@ -115,7 +119,6 @@ namespace FE::Graphics::Vulkan
 
         context->m_resourceBarrierBatcher.Flush();
         context->EnqueueFenceToSignal(m_bindlessManager->CloseFrame());
-
         viewport->Present(context);
         m_currentContext.Reset();
     }

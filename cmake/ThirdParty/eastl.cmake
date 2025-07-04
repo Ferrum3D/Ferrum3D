@@ -12,6 +12,8 @@ set(EASTL_SOURCES
     ${FE_THIRD_PARTY_DIR}/EASTL/source/string.cpp
     ${FE_THIRD_PARTY_DIR}/EASTL/source/thread_support.cpp
     ${FE_THIRD_PARTY_DIR}/EASTL/EASTL.natvis
+
+    ${FE_THIRD_PARTY_DIR}/small_vector/small_vector.natvis
 )
 
 add_library(EASTL STATIC ${EASTL_SOURCES})

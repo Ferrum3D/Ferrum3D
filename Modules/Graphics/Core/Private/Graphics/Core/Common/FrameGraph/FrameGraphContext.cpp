@@ -5,24 +5,8 @@ namespace FE::Graphics::Common
 {
     FrameGraphContext::FrameGraphContext(Core::FrameGraph* frameGraph)
         : m_linearAllocator(frameGraph->GetAllocator())
-        , m_signalFences(frameGraph->GetAllocator())
-        , m_waitFences(frameGraph->GetAllocator())
     {
         m_frameGraph = frameGraph;
-    }
-
-
-    void FrameGraphContext::EnqueueFenceToWait(const Core::FenceSyncPoint& fence)
-    {
-        FE_Assert(fence.m_fence);
-        m_waitFences.push_back(fence);
-    }
-
-
-    void FrameGraphContext::EnqueueFenceToSignal(const Core::FenceSyncPoint& fence)
-    {
-        FE_Assert(fence.m_fence);
-        m_signalFences.push_back(fence);
     }
 
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <Graphics/Core/Common/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
+#include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <Graphics/Core/Vulkan/ResourceBarrierBatcher.h>
 
 namespace FE::Graphics::Vulkan
@@ -14,22 +15,12 @@ namespace FE::Graphics::Vulkan
         FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph, BindlessManager* bindlessManager);
 
         void Init(CommandBuffer* graphicsCommandBuffer);
-        void Submit();
 
         void DrawImpl(const Core::DrawList& drawList) override;
         void DispatchImpl(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) override;
 
-        void EnqueueSemaphoreToWait(Semaphore* semaphore, const VkPipelineStageFlags stageMask)
-        {
-            FE_Assert(semaphore && semaphore->GetNative());
-            m_waitSemaphores.push_back({ semaphore, stageMask });
-        }
-
-        void EnqueueSemaphoreToSignal(Semaphore* semaphore)
-        {
-            FE_Assert(semaphore && semaphore->GetNative());
-            m_signalSemaphores.push_back(semaphore);
-        }
+        void EnqueueFenceToSignal(const Core::FenceSyncPoint& fence) override;
+        void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) override;
 
         struct WaitSemaphore final
         {

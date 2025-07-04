@@ -25,6 +25,7 @@ namespace FE::Graphics::Vulkan
         DescriptorAllocator(Core::Device* device)
         {
             m_device = device;
+            SetImmediateDestroyPolicy();
         }
 
         ~DescriptorAllocator() override;

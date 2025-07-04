@@ -13,6 +13,7 @@
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GeometryPool.h>
+#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
@@ -83,7 +84,10 @@ namespace FE::Graphics::Vulkan
                 return Core::AdapterKind::kVirtual;
             case VK_PHYSICAL_DEVICE_TYPE_CPU:
                 return Core::AdapterKind::kCPU;
+
             default:
+            case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+            case VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM:
                 return Core::AdapterKind::kNone;
             }
         }
@@ -134,6 +138,7 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Common::FrameGraphResourcePool>().ToSelf().InSingletonScope();
         builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
         builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
+        builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services
         builder.Bind<Core::Fence>()

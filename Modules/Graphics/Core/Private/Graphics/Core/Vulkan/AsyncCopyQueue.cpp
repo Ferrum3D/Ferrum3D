@@ -216,12 +216,9 @@ namespace FE::Graphics::Vulkan
         Memory::LinearAllocator::Scope tempAllocatorScope{ m_threadTempAllocator };
 
         item->m_commandBuffer = AcquireCommandBuffer();
+        item->m_commandBuffer->Begin();
 
         const VkCommandBuffer commandBuffer = item->m_commandBuffer->GetNative();
-
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
         CommandBatcher batcher{ &m_threadTempAllocator, commandBuffer };
 
@@ -419,7 +416,8 @@ namespace FE::Graphics::Vulkan
         }
 
         batcher.Flush();
-        SubmitCommandList(commandBuffer, item->m_fenceValue);
+        item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
+        item->m_commandBuffer->Submit();
     }
 
 
@@ -428,8 +426,6 @@ namespace FE::Graphics::Vulkan
         VmaVirtualAllocationCreateInfo stagingAllocationCI = {};
         stagingAllocationCI.size = byteSize;
         stagingAllocationCI.alignment = byteAlignment;
-
-        const VkCommandBuffer commandBuffer = item->m_commandBuffer->GetNative();
 
         item->m_stagingAllocations.push_back(VK_NULL_HANDLE);
 
@@ -457,7 +453,8 @@ namespace FE::Graphics::Vulkan
                     break;
                 }
 
-                SubmitCommandList(commandBuffer, item->m_fenceValue);
+                item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
+                item->m_commandBuffer->Submit();
                 m_fence->Wait(item->m_fenceValue);
 
                 for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
@@ -465,41 +462,14 @@ namespace FE::Graphics::Vulkan
 
                 item->m_stagingAllocations.clear();
                 item->m_stagingAllocations.push_back(VK_NULL_HANDLE);
-
                 item->m_fenceValue = ++m_fenceValue;
 
                 // We can use the same command buffer since we have waited for it to finish.
-
-                VkCommandBufferBeginInfo beginInfo = {};
-                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                VerifyVulkan(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+                item->m_commandBuffer->Begin();
             }
         }
 
         return allocationOffset;
-    }
-
-
-    void AsyncCopyQueue::SubmitCommandList(const VkCommandBuffer commandBuffer, const uint64_t fenceValue) const
-    {
-        VerifyVulkan(vkEndCommandBuffer(commandBuffer));
-
-        VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
-        timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-        timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &fenceValue;
-        timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1;
-
-        const VkSemaphore signalSemaphore = NativeCast(m_fence.Get());
-
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext = &timelineSemaphoreSubmitInfo;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &signalSemaphore;
-
-        VerifyVulkan(vkQueueSubmit(m_queue, 1, &submitInfo, nullptr));
     }
 
 
@@ -512,9 +482,14 @@ namespace FE::Graphics::Vulkan
             return commandBuffer;
         }
 
-        return CommandBuffer::Create(m_device,
-                                     Fmt::FormatName("AsyncCopyCommandBuffer_{}", m_commandBufferCounter++),
-                                     Core::HardwareQueueKindFlags::kTransfer);
+        CommandBufferDesc desc;
+        desc.m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        desc.m_commandPool = ImplCast(m_device)->GetCommandPool(Core::HardwareQueueKindFlags::kTransfer);
+        desc.m_name = Fmt::FormatName("AsyncCopyCommandBuffer_{}", m_commandBufferCounter++);
+        desc.m_pageAllocator = std::pmr::get_default_resource();
+        desc.m_queue = m_queue;
+
+        return CommandBuffer::Create(m_device, desc);
     }
 
 

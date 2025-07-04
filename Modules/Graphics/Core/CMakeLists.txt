@@ -78,12 +78,14 @@ set(VULKAN_SOURCES
 
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.cpp
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.h
-    Private/Graphics/Core/Vulkan/ComputePipeline.cpp
-    Private/Graphics/Core/Vulkan/ComputePipeline.h
     Private/Graphics/Core/Vulkan/BindlessManager.cpp
     Private/Graphics/Core/Vulkan/BindlessManager.h
     Private/Graphics/Core/Vulkan/Buffer.cpp
     Private/Graphics/Core/Vulkan/Buffer.h
+    Private/Graphics/Core/Vulkan/CommandBuffer.cpp
+    Private/Graphics/Core/Vulkan/CommandBuffer.h
+    Private/Graphics/Core/Vulkan/ComputePipeline.cpp
+    Private/Graphics/Core/Vulkan/ComputePipeline.h
     Private/Graphics/Core/Vulkan/DescriptorAllocator.cpp
     Private/Graphics/Core/Vulkan/DescriptorAllocator.h
     Private/Graphics/Core/Vulkan/Device.cpp
@@ -94,6 +96,8 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/Fence.h
     Private/Graphics/Core/Vulkan/GeometryPool.cpp
     Private/Graphics/Core/Vulkan/GeometryPool.h
+    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.cpp
+    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.h
     Private/Graphics/Core/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/Core/Vulkan/GraphicsPipeline.h
     Private/Graphics/Core/Vulkan/Image.cpp

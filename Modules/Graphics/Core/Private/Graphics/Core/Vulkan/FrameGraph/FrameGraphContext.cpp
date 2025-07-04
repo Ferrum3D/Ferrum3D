@@ -75,92 +75,6 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraphContext::Submit()
-    {
-        FE_PROFILER_ZONE();
-
-        m_resourceBarrierBatcher.Flush();
-        VerifyVulkan(vkEndCommandBuffer(m_graphicsCommandBuffer->GetNative()));
-
-        VkSubmitInfo submitInfo;
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext = nullptr;
-
-        const uint32_t waitSemaphoreCount = m_waitSemaphores.size() + m_waitFences.size();
-        const uint32_t signalSemaphoreCount = m_signalSemaphores.size() + m_signalFences.size();
-
-        Memory::FiberTempAllocator tempAllocator;
-
-        festd::pmr::vector<VkSemaphore> waitSemaphores{ &tempAllocator };
-        festd::pmr::vector<uint64_t> waitSemaphoreValues{ &tempAllocator };
-        festd::pmr::vector<VkPipelineStageFlags> waitStageMasks{ &tempAllocator };
-        waitSemaphores.reserve(waitSemaphoreCount);
-        waitSemaphoreValues.reserve(waitSemaphoreCount);
-        waitStageMasks.reserve(waitSemaphoreCount);
-
-        for (const auto& [fence, value] : m_waitFences)
-        {
-            waitSemaphores.push_back(NativeCast(fence.Get()));
-            waitSemaphoreValues.push_back(value);
-            waitStageMasks.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        }
-
-        for (const auto& [semaphore, stageMask] : m_waitSemaphores)
-        {
-            waitSemaphores.push_back(semaphore->GetNative());
-            waitSemaphoreValues.push_back(0);
-            waitStageMasks.push_back(stageMask);
-        }
-
-        festd::pmr::vector<VkSemaphore> signalSemaphores{ &tempAllocator };
-        festd::pmr::vector<uint64_t> signalSemaphoreValues{ &tempAllocator };
-        signalSemaphores.reserve(signalSemaphoreCount);
-        signalSemaphoreValues.reserve(signalSemaphoreCount);
-
-        for (const auto& [fence, value] : m_signalFences)
-        {
-            signalSemaphores.push_back(NativeCast(fence.Get()));
-            signalSemaphoreValues.push_back(value);
-        }
-
-        for (const auto& semaphore : m_signalSemaphores)
-        {
-            signalSemaphores.push_back(semaphore->GetNative());
-            signalSemaphoreValues.push_back(0);
-        }
-
-        submitInfo.pWaitSemaphores = waitSemaphores.data();
-        submitInfo.pWaitDstStageMask = waitStageMasks.data();
-        submitInfo.waitSemaphoreCount = waitSemaphoreCount;
-        submitInfo.pSignalSemaphores = signalSemaphores.data();
-        submitInfo.signalSemaphoreCount = signalSemaphoreCount;
-
-        VkTimelineSemaphoreSubmitInfo timelineSemaphoreInfo = {};
-        timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-
-        if (!m_waitFences.empty())
-        {
-            timelineSemaphoreInfo.waitSemaphoreValueCount = waitSemaphoreCount;
-            timelineSemaphoreInfo.pWaitSemaphoreValues = waitSemaphoreValues.data();
-            submitInfo.pNext = &timelineSemaphoreInfo;
-        }
-
-        if (!m_signalFences.empty())
-        {
-            timelineSemaphoreInfo.signalSemaphoreValueCount = signalSemaphoreCount;
-            timelineSemaphoreInfo.pSignalSemaphoreValues = signalSemaphoreValues.data();
-            submitInfo.pNext = &timelineSemaphoreInfo;
-        }
-
-        VkCommandBuffer commandBuffer = m_graphicsCommandBuffer->GetNative();
-        submitInfo.pCommandBuffers = &commandBuffer;
-        submitInfo.commandBufferCount = 1;
-
-        const VkQueue queue = ImplCast(m_frameGraph->GetViewport())->GetQueue();
-        VerifyVulkan(vkQueueSubmit(queue, 1, &submitInfo, nullptr));
-    }
-
-
     void FrameGraphContext::DrawImpl(const Core::DrawList& drawList)
     {
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
@@ -321,5 +235,17 @@ namespace FE::Graphics::Vulkan
         vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
 
         vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
+    }
+
+
+    void FrameGraphContext::EnqueueFenceToSignal(const Core::FenceSyncPoint& fence)
+    {
+        m_graphicsCommandBuffer->EnqueueFenceToSignal(fence);
+    }
+
+
+    void FrameGraphContext::EnqueueFenceToWait(const Core::FenceSyncPoint& fence)
+    {
+        m_graphicsCommandBuffer->EnqueueFenceToWait(fence);
     }
 } // namespace FE::Graphics::Vulkan

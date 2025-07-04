@@ -1,4 +1,5 @@
 #pragma once
+#include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/ImageBase.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Device.h>
