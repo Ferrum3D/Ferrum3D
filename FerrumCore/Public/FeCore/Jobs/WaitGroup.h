@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Modules/ServiceLocator.h>
+#include <FeCore/Modules/Environment.h>
 
 namespace FE
 {

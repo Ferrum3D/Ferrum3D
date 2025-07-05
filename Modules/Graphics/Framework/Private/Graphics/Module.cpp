@@ -1,10 +1,9 @@
-﻿#include <FeCore/Assets/IAssetManager.h>
-#include <Graphics/Assets/TextureAssetManager.h>
+﻿#include <Graphics/Assets/TextureAssetManager.h>
 #include <Graphics/Module.h>
 
 namespace FE::Graphics
 {
-    class GraphicsModuleImpl final : public ServiceLocatorImplBase<GraphicsModule>
+    class GraphicsModuleImpl final : public GraphicsModule
     {
     public:
         FE_RTTI_Class(GraphicsModuleImpl, "3DD2CC5D-7629-4A44-A34A-5B84C9A80E95");
@@ -15,9 +14,10 @@ namespace FE::Graphics
         }
     };
 
-    extern "C" FE_DLL_EXPORT void CreateModuleInstance(Env::Internal::IEnvironment& environment, IModule** ppModule)
+
+    extern "C" FE_DLL_EXPORT void CreateModuleInstance(const Env::EnvironmentHandle environment, IModule** module)
     {
         Env::AttachEnvironment(environment);
-        *ppModule = Memory::DefaultNew<GraphicsModuleImpl>();
+        *module = Memory::DefaultNew<GraphicsModuleImpl>();
     }
 } // namespace FE::Graphics

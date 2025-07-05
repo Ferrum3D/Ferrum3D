@@ -28,73 +28,73 @@ namespace FE::Env
         {
             struct NameHandle final
             {
-                uint32_t BlockIndex : kNamePageShift - kNameBlockShift;
-                uint32_t PageIndex : 32 - kNamePageShift + kNameBlockShift;
+                uint32_t m_blockIndex : kNamePageShift - kNameBlockShift;
+                uint32_t m_pageIndex : 32 - kNamePageShift + kNameBlockShift;
             };
 
-            static constexpr uint32_t PageListByteSize = 64 * 1024;
-            static constexpr uint32_t MaxPageCount = PageListByteSize / sizeof(void*);
+            static constexpr uint32_t kPageListByteSize = 64 * 1024;
+            static constexpr uint32_t kMaxPageCount = kPageListByteSize / sizeof(void*);
 
-            Threading::SpinLock m_Lock;
-            void** m_ppPages;
-            uint32_t m_CurrentPageIndex = kInvalidIndex;
-            uint32_t m_Offset = kNamePageByteSize;
-            festd::unordered_dense_map<uint64_t, uint32_t> m_Map;
+            Threading::SpinLock m_lock;
+            void** m_pages;
+            uint32_t m_currentPageIndex = kInvalidIndex;
+            uint32_t m_offset = kNamePageByteSize;
+            festd::unordered_dense_map<uint64_t, uint32_t> m_map;
 
         public:
             NameDataAllocator()
             {
-                m_ppPages = static_cast<void**>(Memory::AllocateVirtual(PageListByteSize));
+                m_pages = static_cast<void**>(Memory::AllocateVirtual(kPageListByteSize));
             }
 
             ~NameDataAllocator()
             {
-                while (m_CurrentPageIndex != kInvalidIndex)
+                while (m_currentPageIndex != kInvalidIndex)
                 {
-                    Memory::FreeVirtual(m_ppPages[m_CurrentPageIndex], kNamePageByteSize);
-                    --m_CurrentPageIndex;
+                    Memory::FreeVirtual(m_pages[m_currentPageIndex], kNamePageByteSize);
+                    --m_currentPageIndex;
                 }
 
-                Memory::FreeVirtual(m_ppPages, PageListByteSize);
+                Memory::FreeVirtual(static_cast<void*>(m_pages), kPageListByteSize);
             }
 
             uint32_t TryFind(const uint64_t hash)
             {
-                std::lock_guard lk{ m_Lock };
-                const auto it = m_Map.find(hash);
-                if (it != m_Map.end())
+                std::lock_guard lk{ m_lock };
+                const auto it = m_map.find(hash);
+                if (it != m_map.end())
                     return it->second;
                 return kInvalidIndex;
             }
 
             Name::Record* Allocate(uint64_t hash, const size_t stringByteSize, uint32_t& handle)
             {
-                std::lock_guard lk{ m_Lock };
+                std::lock_guard lk{ m_lock };
                 const size_t recordHeaderSize = offsetof(Name::Record, m_data);
                 const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
-                if (recordSize + m_Offset > kNamePageByteSize)
+                if (recordSize + m_offset > kNamePageByteSize)
                 {
-                    m_ppPages[++m_CurrentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
-                    m_Offset = 0;
+                    m_pages[++m_currentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
+                    m_offset = 0;
                 }
 
                 NameHandle result;
-                result.PageIndex = m_CurrentPageIndex;
-                result.BlockIndex = m_Offset >> kNameBlockShift;
+                result.m_pageIndex = m_currentPageIndex;
+                result.m_blockIndex = m_offset >> kNameBlockShift;
                 handle = festd::bit_cast<uint32_t>(result);
-                m_Map.insert(std::make_pair(hash, handle));
+                m_map.insert(std::make_pair(hash, handle));
 
-                void* ptr = static_cast<uint8_t*>(m_ppPages[m_CurrentPageIndex]) + m_Offset;
-                m_Offset += static_cast<uint32_t>(recordSize);
-                FE_CoreAssert((m_Offset >> kNameBlockShift) << kNameBlockShift == m_Offset);
+                void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
+                m_offset += static_cast<uint32_t>(recordSize);
+                FE_CoreAssert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
                 return static_cast<Name::Record*>(ptr);
             }
 
             Name::Record* ResolvePointer(const uint32_t handleValue) const
             {
                 const NameHandle handle = festd::bit_cast<NameHandle>(handleValue);
-                const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_ppPages[handle.PageIndex]);
-                const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.BlockIndex) << kNameBlockShift);
+                const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_pages[handle.m_pageIndex]);
+                const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.m_blockIndex) << kNameBlockShift);
                 return reinterpret_cast<Name::Record*>(recordAddress);
             }
         };
@@ -113,7 +113,7 @@ namespace FE::Env
                 Memory::DefaultFree(p);
             }
 
-            bool do_is_equal(const memory_resource& other) const noexcept override
+            [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
             {
                 return this == &other;
             }
@@ -141,7 +141,7 @@ namespace FE::Env
         };
 
 
-        struct Environment : public IEnvironment
+        struct Environment final
         {
             SharedState m_sharedState;
 
@@ -154,6 +154,8 @@ namespace FE::Env
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
             ModuleRegistry m_moduleRegistry;
+
+            Threading::Mutex m_lock;
 
             Environment(const ApplicationInfo& appInfo)
                 : m_appInfo(appInfo)
@@ -187,83 +189,10 @@ namespace FE::Env
                 }
             }
 
-            VariableResult FindVariable(const Name name) override
+            void Destroy()
             {
-                std::unique_lock lk{ m_lock };
-                return FindVariableNoLock(name);
-            }
-
-            VariableResult CreateVariable(const Name name, const size_t size, const size_t alignment) override
-            {
-                std::unique_lock lk{ m_lock };
-                VariableResult result = FindVariableNoLock(name);
-                if (result.Code == VariableResultCode::Found)
-                    return result;
-
-                result.Code = VariableResultCode::Created;
-                result.pData = Memory::DefaultAllocate(size, alignment);
-                m_map[name] = result.pData;
-                return result;
-            }
-
-            VariableResult RemoveVariable(const Name name) override
-            {
-                std::unique_lock lk{ m_lock };
-                VariableResult result;
-
-                auto it = m_map.find(name);
-                if (it == m_map.end())
-                {
-                    result.pData = nullptr;
-                    result.Code = VariableResultCode::NotFound;
-                    return result;
-                }
-
-                result.Code = VariableResultCode::Removed;
-                result.pData = it->second;
-                m_map.erase(it);
-                return result;
-            }
-
-            void Destroy() override
-            {
-                if (Build::IsDevelopment() && !m_map.empty())
-                {
-                    printf("%" PRIu64 " global environment variable leaks detected\n", m_map.size());
-                    Console::SetTextColor(Console::Color::kRed);
-                    Console::Write("Destructors of leaked variables won't be called!");
-                    Console::Write("Be sure to free all global variables before global environment shut-down");
-                    Console::SetTextColor(Console::Color::kDefault);
-                    Console::Flush();
-                    for (auto& [name, data] : m_map)
-                    {
-                        printf("%s", name.c_str());
-                        Memory::DefaultFree(data);
-                    }
-                }
-
                 Compression::Internal::Shutdown();
                 this->~Environment();
-            }
-
-        private:
-            festd::unordered_dense_map<Name, void*> m_map;
-            Threading::Mutex m_lock;
-
-            VariableResult FindVariableNoLock(const Name name)
-            {
-                VariableResult result;
-                const auto it = m_map.find(name);
-                if (it != m_map.end())
-                {
-                    result.Code = VariableResultCode::Found;
-                    result.pData = it->second;
-                    return result;
-                }
-
-                result.Code = VariableResultCode::NotFound;
-                result.pData = nullptr;
-                return result;
             }
         };
 
@@ -345,10 +274,10 @@ namespace FE::Env
         const size_t recordHeaderSize = offsetof(Name::Record, m_data);
         FE_CoreAssert(str.size() < Internal::kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
 
-        Record* pRecord = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
-        pRecord->m_size = static_cast<uint16_t>(str.size());
-        pRecord->m_hash = hash;
-        memcpy(pRecord->m_data, str.data(), str.size());
+        Record* record = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
+        record->m_size = static_cast<uint16_t>(str.size());
+        record->m_hash = hash;
+        memcpy(record->m_data, str.data(), str.size());
     }
 
 
@@ -405,18 +334,18 @@ namespace FE::Env
     }
 
 
-    Internal::IEnvironment& GetEnvironment()
+    EnvironmentHandle GetEnvironment()
     {
         FE_CoreAssert(Internal::GEnvInstance, "Environment must be created explicitly");
-        return *Internal::GEnvInstance;
+        return EnvironmentHandle{ reinterpret_cast<uintptr_t>(Internal::GEnvInstance) };
     }
 
 
-    void AttachEnvironment(Internal::IEnvironment& instance)
+    void AttachEnvironment(const EnvironmentHandle instance)
     {
         DetachEnvironment();
 
-        Internal::GEnvInstance = &static_cast<Internal::Environment&>(instance);
+        Internal::GEnvInstance = reinterpret_cast<Internal::Environment*>(instance.m_value);
         std::pmr::set_default_resource(&Internal::GEnvInstance->m_defaultMemoryResource);
     }
 
@@ -446,7 +375,7 @@ namespace FE::Env
     } g_EnvRelease;
 
 
-    bool EnvironmentAttached()
+    bool IsEnvironmentAttached()
     {
         return Internal::GEnvInstance != nullptr;
     }

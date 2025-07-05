@@ -93,8 +93,10 @@ namespace FE::Graphics::Vulkan
 
         m_commandQueue->WaitForPreviousFrame();
         m_commandQueue->GetCurrentGraphicsCommandBuffer()->Begin();
-        ImplCast(m_viewport.Get())->AcquireNextImage();
         m_bindlessManager->BeginFrame();
+
+        if (m_viewport)
+            ImplCast(m_viewport.Get())->AcquireNextImage();
     }
 
 
@@ -114,12 +116,13 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        Viewport* viewport = ImplCast(m_viewport.Get());
         FrameGraphContext* context = ImplCast(m_currentContext.Get());
-
         context->m_resourceBarrierBatcher.Flush();
         context->EnqueueFenceToSignal(m_bindlessManager->CloseFrame());
-        viewport->Present(context);
+
+        if (m_viewport)
+            ImplCast(m_viewport.Get())->Present(context);
+
         m_currentContext.Reset();
     }
 

@@ -128,21 +128,24 @@ namespace FE::Graphics::Common
 
         PrepareSetup();
 
-        Core::RenderTarget* colorTarget = m_viewport->GetCurrentColorTarget();
-        const Core::ImageDesc colorTargetDesc = colorTarget->GetDesc();
-        const Core::ImageDesc depthTargetDesc =
-            Core::ImageDesc::Img2D(colorTargetDesc.m_width, colorTargetDesc.m_height, Core::Format::kD32_SFLOAT_S8_UINT);
+        if (m_viewport)
+        {
+            Core::RenderTarget* colorTarget = m_viewport->GetCurrentColorTarget();
+            const Core::ImageDesc colorTargetDesc = colorTarget->GetDesc();
+            const Core::ImageDesc depthTargetDesc =
+                Core::ImageDesc::Img2D(colorTargetDesc.m_width, colorTargetDesc.m_height, Core::Format::kD32_SFLOAT_S8_UINT);
 
-        ResourceData depthTargetData{ 0, depthTargetDesc };
-        depthTargetData.m_name = "MainDepthTarget";
-        depthTargetData.m_creatorPassIndex = kInvalidIndex;
-        depthTargetData.m_resource = m_resourcePool->CreateRenderTarget(depthTargetData.m_name, depthTargetDesc);
-        depthTargetData.m_isImported = true;
-        depthTargetData.m_refCount = 1;
-        m_resources.push_back(depthTargetData);
+            ResourceData depthTargetData{ 0, depthTargetDesc };
+            depthTargetData.m_name = "MainDepthTarget";
+            depthTargetData.m_creatorPassIndex = kInvalidIndex;
+            depthTargetData.m_resource = m_resourcePool->CreateRenderTarget(depthTargetData.m_name, depthTargetDesc);
+            depthTargetData.m_isImported = true;
+            depthTargetData.m_refCount = 1;
+            m_resources.push_back(depthTargetData);
 
-        m_currentDepthStencilHandle = Core::RenderTargetHandle::Create(0, 0, 0);
-        m_currentRenderTargetHandle = ImportRenderTarget(colorTarget, Core::ImageAccessType::kUndefined);
+            m_currentDepthStencilHandle = Core::RenderTargetHandle::Create(0, 0, 0);
+            m_currentRenderTargetHandle = ImportRenderTarget(colorTarget, Core::ImageAccessType::kUndefined);
+        }
 
         for (uint32_t passProducerIndex = 0; passProducerIndex < m_passProducers.size(); ++passProducerIndex)
         {

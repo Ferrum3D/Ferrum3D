@@ -1,8 +1,8 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Jobs/Job.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Threading/Event.h>
+#include <FeCore/Threading/SharedSpinLock.h>
 #include <FeCore/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Fence.h>

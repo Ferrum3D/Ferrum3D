@@ -47,11 +47,11 @@ namespace FE::DI
 
             for (const ServiceRegistration& registration : m_registrations)
             {
-                if (registration.IsConstant())
+                if (registration.m_isConstant)
                 {
                     Memory::RefCountedObjectBase* object;
 
-                    const ResultCode resultCode = m_activators[registration.GetIndex()].Invoke(nullptr, &object);
+                    const ResultCode resultCode = m_activators[registration.m_index].Invoke(nullptr, &object);
                     FE_Assert(resultCode == ResultCode::kSuccess);
 
                     object->Release();

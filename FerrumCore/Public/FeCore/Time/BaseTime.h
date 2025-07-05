@@ -17,13 +17,13 @@ namespace FE
     //! @brief Decomposed date and time info.
     struct alignas(uint64_t) SystemTimeInfo final
     {
-        int32_t Year : 16;     //!< Year since 1900.
-        int32_t Month : 8;     //!< Month 0-11.
-        int32_t Day : 8;       //!< Day of month 1-31.
-        int32_t DayOfWeek : 8; //!< Day since Sunday 0-6.
-        int32_t Hour : 8;      //!< Hour 0-23.
-        int32_t Minute : 8;    //!< Minutes 0-59.
-        int32_t Second : 8;    //!< Seconds 0-60.
+        int32_t m_year : 16;     //!< Year since 1900.
+        int32_t m_month : 8;     //!< Month 0-11.
+        int32_t m_day : 8;       //!< Day of month 1-31.
+        int32_t m_dayOfWeek : 8; //!< Day since Sunday 0-6.
+        int32_t m_hour : 8;      //!< Hour 0-23.
+        int32_t m_minute : 8;    //!< Minutes 0-59.
+        int32_t m_second : 8;    //!< Seconds 0-60.
     };
 
     static_assert(sizeof(SystemTimeInfo) == sizeof(uint64_t));

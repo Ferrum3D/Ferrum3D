@@ -209,8 +209,11 @@ namespace FE
         {
             const uint32_t segmentCount = Math::CeilDivide(other.m_size, kElementsPerSegment);
             m_segmentTableSize = segmentCount;
+            if (segmentCount == 0)
+                return;
+
             m_segments = Memory::AllocateArray<T*>(m_allocator, segmentCount);
-            memset(m_segments, 0, sizeof(T*) * segmentCount);
+            memset(static_cast<void*>(m_segments), 0, sizeof(T*) * segmentCount);
             for (const T& element : other)
             {
                 push_back(element);
@@ -223,8 +226,11 @@ namespace FE
         {
             const uint32_t segmentCount = Math::CeilDivide(other.m_size, kElementsPerSegment);
             m_segmentTableSize = segmentCount;
+            if (segmentCount == 0)
+                return;
+
             m_segments = Memory::AllocateArray<T*>(m_allocator, segmentCount);
-            memset(m_segments, 0, sizeof(T*) * segmentCount);
+            memset(static_cast<void*>(m_segments), 0, sizeof(T*) * segmentCount);
             for (const T& element : other)
             {
                 push_back(element);

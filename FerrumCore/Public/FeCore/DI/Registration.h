@@ -7,40 +7,17 @@ namespace FE::DI
     {
         ServiceRegistration() = default;
 
-        [[nodiscard]] uint32_t GetIndex() const
-        {
-            return m_index;
-        }
+        static constexpr uint32_t kLifetimeBits = 2;
+        static constexpr uint32_t kMaxLifetimeCount = 1 << kLifetimeBits;
+        static_assert(kMaxLifetimeCount >= festd::to_underlying(Lifetime::kCount));
 
-        Lifetime GetLifetime() const
-        {
-            return static_cast<Lifetime>(m_lifetime);
-        }
+        static constexpr uint32_t kIndexBits = 32 - kLifetimeBits - 2;
+        static constexpr uint32_t kMaxIndex = (1 << kIndexBits) - 1;
 
-        void SetLifetime(const Lifetime lifetime)
-        {
-            m_lifetime = festd::to_underlying(lifetime);
-        }
-
-        void SetConstant(const bool value)
-        {
-            m_constant = value;
-        }
-
-        bool IsConstant() const
-        {
-            return m_constant;
-        }
-
-        void SetFunction(const bool value)
-        {
-            m_function = value;
-        }
-
-        bool IsFunction() const
-        {
-            return m_function;
-        }
+        uint32_t m_index : kIndexBits;
+        Lifetime m_lifetime : kLifetimeBits;
+        uint32_t m_isConstant : 1;
+        uint32_t m_isFunction : 1;
 
         friend bool operator==(const ServiceRegistration& lhs, const ServiceRegistration& rhs)
         {
@@ -55,26 +32,19 @@ namespace FE::DI
     private:
         friend struct ServiceRegistry;
 
-        static constexpr uint32_t LifetimeBits = 2;
-        static_assert((1 << LifetimeBits) >= festd::to_underlying(Lifetime::kCount));
-
-        uint32_t m_index : 28;
-        uint32_t m_lifetime : LifetimeBits;
-        uint32_t m_constant : 1;
-        uint32_t m_function : 1;
-
         ServiceRegistration(const uint32_t index)
             : m_index(index)
-            , m_lifetime(0)
-            , m_constant(false)
-            , m_function(false)
+            , m_lifetime(Lifetime::kSingleton)
+            , m_isConstant(false)
+            , m_isFunction(false)
         {
-            FE_Assert(index < (1 << 28), "Too many services in one registry");
+            FE_Assert(index <= kMaxIndex, "Too many services in one registry");
         }
     };
 
     static_assert(sizeof(ServiceRegistration) == sizeof(uint32_t));
 } // namespace FE::DI
+
 
 template<>
 struct eastl::hash<FE::DI::ServiceRegistration>

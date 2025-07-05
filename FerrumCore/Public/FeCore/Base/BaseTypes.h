@@ -122,15 +122,15 @@ namespace FE
     {
         struct EASTLPolymorphicAllocator final
         {
-            EASTLPolymorphicAllocator(std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_memoryResource(pMemoryResource)
+            EASTLPolymorphicAllocator(std::pmr::memory_resource* memoryResource = nullptr)
+                : m_memoryResource(memoryResource)
             {
                 if (m_memoryResource == nullptr)
                     m_memoryResource = std::pmr::get_default_resource();
             }
 
-            EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* pMemoryResource = nullptr)
-                : m_memoryResource(pMemoryResource)
+            EASTLPolymorphicAllocator(const char*, std::pmr::memory_resource* memoryResource = nullptr)
+                : m_memoryResource(memoryResource)
             {
                 if (m_memoryResource == nullptr)
                     m_memoryResource = std::pmr::get_default_resource();

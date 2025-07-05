@@ -18,7 +18,7 @@ namespace FE::DI
     Internal::ServiceRegistrationSpec ServiceRegistryBuilder::BindImpl(const UUID& id)
     {
         ServiceRegistration* pRegistration = m_registry->Add(id);
-        ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->GetIndex());
+        ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->m_index);
         return { pRegistration, pActivator };
     }
 

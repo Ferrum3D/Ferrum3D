@@ -13,12 +13,6 @@
     Public/festd/unordered_map.h
     Public/festd/vector.h
 
-    Public/FeCore/Assets/Asset.h
-    Public/FeCore/Assets/AssetStorage.h
-    Public/FeCore/Assets/IAssetLoader.h
-    Public/FeCore/Assets/IAssetManager.h
-    Public/FeCore/Assets/WeakAsset.h
-
     Public/FeCore/Base/Assert.h
     Public/FeCore/Base/Base.h
     Public/FeCore/Base/BaseMath.h
@@ -92,7 +86,6 @@
     Public/FeCore/Modules/IModule.h
     Public/FeCore/Modules/LibraryLoader.h
     Public/FeCore/Modules/ModuleBase.h
-    Public/FeCore/Modules/ServiceLocator.h
 
     Public/FeCore/RTTI/RTTI.h
 
@@ -121,9 +114,6 @@
 )
 
 set(COMMON_SOURCES
-    Private/FeCore/Assets/AssetManager.h
-    Private/FeCore/Assets/AssetManager.cpp
-
     Private/FeCore/Base/Assert.cpp
 
     Private/FeCore/Compression/Compression.cpp

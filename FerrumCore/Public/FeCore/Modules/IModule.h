@@ -3,7 +3,6 @@
 #include <FeCore/Logging/Trace.h>
 #include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Modules/LibraryLoader.h>
-#include <FeCore/Modules/ServiceLocator.h>
 #include <FeCore/Threading/Thread.h>
 #include <festd/string.h>
 #include <festd/unordered_map.h>
@@ -12,7 +11,7 @@ namespace FE
 {
     struct IModule;
 
-    using CreateModuleInstanceProc = void (*)(Env::Internal::IEnvironment&, IModule**);
+    using CreateModuleInstanceProc = void (*)(Env::EnvironmentHandle, IModule**);
 
 
     //! @brief Base interface for dynamic modules.

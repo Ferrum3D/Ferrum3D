@@ -34,7 +34,7 @@ namespace FE::Trace
     {
         Platform::AssertionReport(sourceLocation, message, messageSize, false);
 
-        if (Env::EnvironmentAttached())
+        if (Env::IsEnvironmentAttached())
         {
             Env::Internal::SharedState& state = Env::Internal::SharedState::Get();
             const std::lock_guard lock{ state.m_lock };

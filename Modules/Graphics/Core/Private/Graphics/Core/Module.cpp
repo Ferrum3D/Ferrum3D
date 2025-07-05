@@ -3,7 +3,7 @@
 
 namespace FE::Graphics::Core
 {
-    class GraphicsCoreModuleImpl final : public ServiceLocatorImplBase<GraphicsCoreModule>
+    class GraphicsCoreModuleImpl final : public GraphicsCoreModule
     {
         DeviceFactory* m_deviceFactory = nullptr;
 
@@ -33,7 +33,7 @@ namespace FE::Graphics::Core
     };
 
 
-    extern "C" FE_DLL_EXPORT void CreateModuleInstance(Env::Internal::IEnvironment& environment, IModule** module)
+    extern "C" FE_DLL_EXPORT void CreateModuleInstance(const Env::EnvironmentHandle environment, IModule** module)
     {
         FE_PROFILER_ZONE();
 

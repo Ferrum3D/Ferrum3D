@@ -42,9 +42,9 @@ namespace FE
 
         //! @brief Allocate an uninitialized array using the provided allocator.
         template<class T, class TAllocator>
-        [[nodiscard]] inline T* AllocateArray(TAllocator* pAllocator, size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] inline T* AllocateArray(TAllocator* allocator, size_t elementCount, size_t byteAlignment = alignof(T))
         {
-            return static_cast<T*>(pAllocator->allocate(elementCount * sizeof(T), byteAlignment));
+            return static_cast<T*>(allocator->allocate(elementCount * sizeof(T), byteAlignment));
         }
 
 
@@ -58,7 +58,7 @@ namespace FE
 
         //! @brief Create a new object of type T using the provided allocator.
         //!
-        //! @param pAllocator The allocator to use.
+        //! @param allocator The allocator to use.
         //! @param args       The arguments to call the constructor of T with.
         //!
         //! @tparam T           The type of the object to allocate.
@@ -66,9 +66,9 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
-        [[nodiscard]] inline T* New(TAllocator* pAllocator, TArgs&&... args)
+        [[nodiscard]] inline T* New(TAllocator* allocator, TArgs&&... args)
         {
-            return new (pAllocator->allocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
+            return new (allocator->allocate(sizeof(T), alignof(T))) T(festd::forward<TArgs>(args)...);
         }
 
 
@@ -88,7 +88,7 @@ namespace FE
 
         //! @brief Delete an object previously created via Memory::New().
         //!
-        //! @param pAllocator    The allocator to use.
+        //! @param allocator    The allocator to use.
         //! @param pointer       The pointer to the object to delete previously returned by Memory::New().
         //! @param byteSize      The size of the object to delete.
         //! @param byteAlignment The alignment that was specified when Memory::New() was called.
@@ -96,10 +96,10 @@ namespace FE
         //! @tparam T           The type of the object to delete.
         //! @tparam TAllocator  The type of the provided allocator.
         template<class T, class TAllocator>
-        inline void Delete(TAllocator* pAllocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
+        inline void Delete(TAllocator* allocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {
             pointer->~T();
-            pAllocator->deallocate(pointer, byteSize, byteAlignment);
+            allocator->deallocate(pointer, byteSize, byteAlignment);
         }
 
 

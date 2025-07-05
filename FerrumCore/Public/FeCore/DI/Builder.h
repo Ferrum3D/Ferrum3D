@@ -2,7 +2,6 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/DI/Registration.h>
 #include <FeCore/DI/Registry.h>
-#include <FeCore/Modules/ServiceLocator.h>
 
 namespace FE::DI
 {
@@ -22,7 +21,7 @@ namespace FE::DI
         {
             void InScope(Lifetime lifetime)
             {
-                m_target.m_registration->SetLifetime(lifetime);
+                m_target.m_registration->m_lifetime = lifetime;
             }
 
             void InSingletonScope()
@@ -71,7 +70,7 @@ namespace FE::DI
             RegistryToBuilder ToFunc(ActivatorFunction&& function)
             {
                 *m_target.m_activator = ServiceActivator::CreateFromFunction(festd::forward<ActivatorFunction>(function));
-                m_target.m_registration->SetFunction(true);
+                m_target.m_registration->m_isFunction = true;
                 return RegistryToBuilder(m_target);
             }
 
@@ -83,8 +82,8 @@ namespace FE::DI
                 };
 
                 *m_target.m_activator = ServiceActivator::CreateFromFunction(factory);
-                m_target.m_registration->SetLifetime(Lifetime::kSingleton);
-                m_target.m_registration->SetConstant(true);
+                m_target.m_registration->m_lifetime = Lifetime::kSingleton;
+                m_target.m_registration->m_isConstant = true;
                 pConst->AddRef();
             }
 
@@ -117,7 +116,7 @@ namespace FE::DI
 
         void Build();
 
-        template<class TInterface, class = std::enable_if_t<!std::is_base_of_v<ServiceLocatorObjectMarker, TInterface>>>
+        template<class TInterface>
         Internal::RegistryBindBuilder<TInterface> Bind()
         {
             return BindImpl(fe_typeid<TInterface>());
