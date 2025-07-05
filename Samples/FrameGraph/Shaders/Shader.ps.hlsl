@@ -9,18 +9,15 @@ struct PixelAttributes
 
 struct Constants
 {
-    ImageSRVDescriptor m_texture;
+    Texture2DDescriptor<float4> m_texture;
     SamplerDescriptor m_sampler;
-    BufferSRVDescriptor m_instanceData;
+    StructuredBufferDescriptor<float4x4> m_instanceData;
     uint m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;
 
-
 void main(const in PixelAttributes input, out float4 output : SV_Target0)
 {
-    const Texture2D texture = GConstants.m_texture.Get2D<float4>();
-    const SamplerState sampler = GConstants.m_sampler.Get();
-    output = texture.Sample(sampler, input.m_uv);
+    output = GConstants.m_texture.Sample(GConstants.m_sampler.Get(), input.m_uv);
 }

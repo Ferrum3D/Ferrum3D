@@ -151,6 +151,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.tessellationShader = true;
         deviceFeatures.samplerAnisotropy = true;
         deviceFeatures.sampleRateShading = true;
+        deviceFeatures.shaderImageGatherExtended = true;
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

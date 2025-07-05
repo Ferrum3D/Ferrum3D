@@ -1,99 +1,170 @@
 #pragma once
 
+#define NUM_THREADS(x, y, z) [numthreads(x, y, z)]
+
 static const uint kInvalidIndex = 0xffffffff;
 
 
-template<class TResource, int TDummyArg>
-TResource GetResourceFromDescriptorHeap(const in uint index)
+template<typename TResource, typename T, uint TDim>
+struct ImageSRVDescriptorBase
 {
-    TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(index)];
-    return resource;
-}
+    T Sample(SamplerState s, vector<float, TDim> location)
+    {
+        return Get().Sample(s, location);
+    }
 
+    T SampleLevel(SamplerState s, vector<float, TDim> location, float lod)
+    {
+        return Get().SampleLevel(s, location, lod);
+    }
 
-struct DescriptorBase
-{
-    uint m_index;
+    T SampleGrad(SamplerState s, vector<float, TDim> location, vector<float, TDim> ddx, vector<float, TDim> ddy)
+    {
+        return Get().SampleGrad(s, location, ddx, ddy);
+    }
+
+    T Load(vector<uint, TDim> location)
+    {
+        return Get().Load(location);
+    }
 
     bool IsValid()
     {
         return m_index != kInvalidIndex;
     }
+
+    TResource Get()
+    {
+        TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(m_index)];
+        return resource;
+    }
+
+    uint m_index;
 };
 
 
-struct SamplerDescriptor : DescriptorBase
+// clang-format off
+template<typename T> struct Texture1DDescriptor : ImageSRVDescriptorBase<Texture1D<T>, T, 1> {};
+template<typename T> struct Texture2DDescriptor : ImageSRVDescriptorBase<Texture2D<T>, T, 2> {};
+template<typename T> struct Texture3DDescriptor : ImageSRVDescriptorBase<Texture3D<T>, T, 3> {};
+template<typename T> struct Texture1DArrayDescriptor : ImageSRVDescriptorBase<Texture1DArray<T>, T, 2> {};
+template<typename T> struct Texture2DArrayDescriptor : ImageSRVDescriptorBase<Texture2DArray<T>, T, 3> {};
+template<typename T> struct TextureCubeDescriptor : ImageSRVDescriptorBase<TextureCube<T>, T, 3> {};
+template<typename T> struct TextureCubeArrayDescriptor : ImageSRVDescriptorBase<Texture2DArray<T>, T, 4> {};
+// clang-format on
+
+
+template<typename TResource, typename T, uint TDim>
+struct ImageUAVDescriptorBase
+{
+    void Store(vector<uint, TDim> location, T value)
+    {
+        Get()[location] = value;
+    }
+
+    T Load(vector<uint, TDim> location)
+    {
+        return Get().Load(location);
+    }
+
+    bool IsValid()
+    {
+        return m_index != kInvalidIndex;
+    }
+
+    TResource Get()
+    {
+        TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(m_index)];
+        return resource;
+    }
+
+    uint m_index;
+};
+
+
+// clang-format off
+template<typename StorageType> struct RWTexture1DDescriptor : ImageUAVDescriptorBase<RWTexture1D<StorageType>, StorageType, 1> {};
+template<typename StorageType> struct RWTexture2DDescriptor : ImageUAVDescriptorBase<RWTexture2D<StorageType>, StorageType, 2> {};
+template<typename StorageType> struct RWTexture3DDescriptor : ImageUAVDescriptorBase<RWTexture3D<StorageType>, StorageType, 3> {};
+template<typename StorageType> struct RWTexture1DArrayDescriptor : ImageUAVDescriptorBase<RWTexture1DArray<StorageType>, StorageType, 2> {};
+template<typename StorageType> struct RWTexture2DArrayDescriptor : ImageUAVDescriptorBase<RWTexture2DArray<StorageType>, StorageType, 3> {};
+// clang-format on
+
+
+template<typename TResource, typename T>
+struct BufferSRVDescriptorBase
+{
+    T Load(uint index)
+    {
+        return Get()[index];
+    }
+
+    bool IsValid()
+    {
+        return m_index != kInvalidIndex;
+    }
+
+    TResource Get()
+    {
+        TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(m_index)];
+        return resource;
+    }
+
+    uint m_index;
+};
+
+
+// clang-format off
+template<typename T> struct BufferDescriptor : BufferSRVDescriptorBase<Buffer<T>, T> {};
+template<typename T> struct StructuredBufferDescriptor : BufferSRVDescriptorBase<StructuredBuffer<T>, T> {};
+// clang-format on
+
+
+template<typename TResource, typename T>
+struct BufferUAVDescriptorBase
+{
+    void Store(uint index, T value)
+    {
+        Get()[index] = value;
+    }
+
+    T Load(uint index)
+    {
+        return Get()[index];
+    }
+
+    bool IsValid()
+    {
+        return m_index != kInvalidIndex;
+    }
+
+    TResource Get()
+    {
+        TResource resource = ResourceDescriptorHeap[NonUniformResourceIndex(m_index)];
+        return resource;
+    }
+
+    uint m_index;
+};
+
+
+// clang-format off
+template<typename T> struct RWBufferDescriptor : BufferUAVDescriptorBase<RWBuffer<T>, T> {};
+template<typename T> struct RWStructuredBufferDescriptor : BufferUAVDescriptorBase<RWStructuredBuffer<T>, T> {};
+// clang-format on
+
+
+struct SamplerDescriptor
 {
     SamplerState Get()
     {
-        SamplerState sampler = SamplerDescriptorHeap[NonUniformResourceIndex(m_index)];
-        return sampler;
+        return SamplerDescriptorHeap[NonUniformResourceIndex(m_index)];
     }
+
+    bool IsValid()
+    {
+        return m_index != kInvalidIndex;
+    }
+
+    uint m_index;
 };
-
-
-struct ImageSRVDescriptor : DescriptorBase
-{
-    template<class T>
-    Texture1D<T> Get1D()
-    {
-        return GetResourceFromDescriptorHeap<Texture1D<T>, 0>(m_index);
-    }
-
-    template<class T>
-    Texture2D<T> Get2D()
-    {
-        return GetResourceFromDescriptorHeap<Texture2D<T>, 0>(m_index);
-    }
-
-    template<class T>
-    Texture3D<T> Get3D()
-    {
-        return GetResourceFromDescriptorHeap<Texture3D<T>, 0>(m_index);
-    }
-};
-
-
-struct ImageUAVDescriptor : DescriptorBase
-{
-    template<class T>
-    RWTexture1D<T> Get1D()
-    {
-        return GetResourceFromDescriptorHeap<RWTexture1D<T>, 0>(m_index);
-    }
-
-    template<class T>
-    RWTexture2D<T> Get2D()
-    {
-        return GetResourceFromDescriptorHeap<RWTexture2D<T>, 0>(m_index);
-    }
-
-    template<class T>
-    RWTexture3D<T> Get3D()
-    {
-        return GetResourceFromDescriptorHeap<RWTexture3D<T>, 0>(m_index);
-    }
-};
-
-
-struct BufferSRVDescriptor : DescriptorBase
-{
-    template<class T>
-    StructuredBuffer<T> Get()
-    {
-        return GetResourceFromDescriptorHeap<StructuredBuffer<T>, 0>(m_index);
-    }
-};
-
-
-struct BufferUAVDescriptor : DescriptorBase
-{
-    template<class T>
-    RWStructuredBuffer<T> Get()
-    {
-        return GetResourceFromDescriptorHeap<RWStructuredBuffer<T>, 0>(m_index);
-    }
-};
-
-
-#define NUM_THREADS(x, y, z) [numthreads(x, y, z)]

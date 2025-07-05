@@ -11,7 +11,6 @@ namespace FE::Graphics::Vulkan
         m_fence->Init(0);
 
         const VkCommandPool commandPool = ImplCast(device)->GetCommandPool(Core::HardwareQueueKindFlags::kGraphics);
-
         const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::HardwareQueueKindFlags::kGraphics);
         vkGetDeviceQueue(NativeCast(device), queueFamilyIndex, 0, &m_nativeQueue);
 

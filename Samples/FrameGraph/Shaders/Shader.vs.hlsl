@@ -16,9 +16,9 @@ struct VertexInput
 
 struct Constants
 {
-    ImageSRVDescriptor m_texture;
+    Texture2DDescriptor<float4> m_texture;
     SamplerDescriptor m_sampler;
-    BufferSRVDescriptor m_instanceData;
+    StructuredBufferDescriptor<float4x4> m_instanceData;
     uint m_padding;
 };
 
@@ -27,7 +27,7 @@ struct Constants
 
 PixelAttributes main(const in VertexInput input)
 {
-    const float4x4 worldTransform = GConstants.m_instanceData.Get<float4x4>()[0];
+    const float4x4 worldTransform = GConstants.m_instanceData.Load(0);
 
     PixelAttributes output;
     output.m_pos = mul(float4(input.m_pos, 1.0f), worldTransform);
