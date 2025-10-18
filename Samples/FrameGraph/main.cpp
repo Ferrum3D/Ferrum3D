@@ -434,42 +434,65 @@ namespace
                 const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
                 const RectF viewport = viewportDesc.GetRect();
 
-                const auto computePass = builder.AddPass("TestCompute");
-
-                Core::BufferHandle instanceData = computePass.CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 1);
-                instanceData = computePass.Write(instanceData);
+                Core::BufferHandle instanceData;
 
                 static float rotation = 0.0f;
                 rotation += deltaTime * Constants::kPI * 0.5f;
                 rotation = Math::Fmod(rotation, Constants::kPI * 2.0f);
 
-                computePass.SetFunction([instanceData, viewport](Core::FrameGraphContext& context) {
-                    FE_PROFILER_ZONE();
+                for (uint32_t computePassIndex = 0; computePassIndex < 3; ++computePassIndex)
+                {
+                    const auto computePass = builder.AddPass("TestCompute");
 
-                    auto& frameGraph = context.GetGraph();
-                    auto& localBlackboard = frameGraph.GetBlackboard();
-                    const auto& localPassData = localBlackboard.GetRequired<PassData>();
+                    if (computePassIndex == 0)
+                        instanceData = computePass.CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 3);
+                    instanceData = computePass.Write(instanceData);
 
-                    struct ShaderConstants final
-                    {
-                        Matrix4x4 m_worldMatrix;
-                        BufferUAVDescriptor m_instanceData;
-                        PackedVector3F m_padding;
-                    };
+                    computePass.SetFunction([instanceData, viewport, computePassIndex](Core::FrameGraphContext& context) {
+                        FE_PROFILER_ZONE();
 
-                    const float aspectRatio = viewport.Width() / viewport.Height();
+                        auto& frameGraph = context.GetGraph();
+                        auto& localBlackboard = frameGraph.GetBlackboard();
+                        const auto& localPassData = localBlackboard.GetRequired<PassData>();
 
-                    ShaderConstants shaderConstants;
-                    shaderConstants.m_worldMatrix = Matrix4x4::RotationX(Constants::kPI * 0.5f);
-                    shaderConstants.m_worldMatrix *= Matrix4x4::RotationY(rotation);
-                    shaderConstants.m_worldMatrix *=
-                        Matrix4x4::LookAt(Vector3(0.0f, 2.5f, -2.0f), Vector3::AxisY(), Vector3::AxisY());
-                    shaderConstants.m_worldMatrix *= Matrix4x4::Projection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
+                        struct ShaderConstants final
+                        {
+                            Matrix4x4 m_matrix;
+                            BufferUAVDescriptor m_instanceData;
+                            uint32_t m_offset;
+                            Vector2 m_padding;
+                        };
 
-                    shaderConstants.m_instanceData = frameGraph.GetUAV(instanceData);
-                    context.PushConstants(shaderConstants);
-                    context.Dispatch(localPassData.m_computePipeline, 1);
-                });
+                        const float aspectRatio = viewport.Width() / viewport.Height();
+
+                        const auto worldMatrix = Matrix4x4::RotationX(Constants::kPI * 0.5f) * Matrix4x4::RotationY(rotation);
+                        const auto invWorldMatrix =
+                            Matrix4x4::RotationY(-rotation) * Matrix4x4::RotationX(-Constants::kPI * 0.5f);
+
+                        const auto viewMatrix = Matrix4x4::LookAt(Vector3(0.0f, 2.5f, -2.0f), Vector3::AxisY(), Vector3::AxisY());
+                        const auto projectionMatrix = Matrix4x4::Projection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
+
+                        ShaderConstants shaderConstants;
+                        shaderConstants.m_offset = computePassIndex;
+
+                        if (computePassIndex == 0)
+                        {
+                            shaderConstants.m_matrix = worldMatrix;
+                        }
+                        else if (computePassIndex == 1)
+                        {
+                            shaderConstants.m_matrix = viewMatrix * projectionMatrix;
+                        }
+                        else
+                        {
+                            shaderConstants.m_matrix = Math::Transpose(invWorldMatrix);
+                        }
+
+                        shaderConstants.m_instanceData = frameGraph.GetUAV(instanceData);
+                        context.PushConstants(shaderConstants);
+                        context.Dispatch(localPassData.m_computePipeline, 1);
+                    });
+                }
 
                 const auto graphicsPass = builder.AddPass("DrawTriangle");
 

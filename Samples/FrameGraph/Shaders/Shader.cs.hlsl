@@ -2,9 +2,10 @@
 
 struct Constants
 {
-    float4x4 m_worldMatrix;
+    float4x4 m_matrix;
     RWStructuredBufferDescriptor<float4x4> m_instanceData;
-    float3 m_padding;
+    uint32_t m_offset;
+    float2 m_padding;
 };
 
 [[vk::push_constant]] Constants GConstants;
@@ -13,5 +14,5 @@ struct Constants
 FE_NUM_THREADS(1, 1, 1)
 void main()
 {
-    GConstants.m_instanceData.Store(0, GConstants.m_worldMatrix);
+    GConstants.m_instanceData.Store(GConstants.m_offset, GConstants.m_matrix);
 }

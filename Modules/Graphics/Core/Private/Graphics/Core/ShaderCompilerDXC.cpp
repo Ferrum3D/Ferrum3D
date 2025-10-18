@@ -19,8 +19,11 @@ namespace FE::Graphics::Core
                                                   "-fspv-extension=SPV_EXT_mesh_shader",
                                                   "-fspv-extension=SPV_GOOGLE_hlsl_functionality1",
                                                   "-fspv-extension=SPV_GOOGLE_user_type",
-                                                  "-fvk-use-dx-layout",
+                                                  "-fspv-preserve-interface",
+                                                  "-fspv-preserve-bindings",
                                                   "-fspv-reflect",
+                                                  "-fvk-use-dx-layout",
+                                                  "-fvk-use-dx-position-w",
                                                   "-Od",
                                                   "-Zi",
                                                   "-Zpr" };
@@ -184,6 +187,9 @@ namespace FE::Graphics::Core
 
         compilerArgs.push_back(L"-T");
         compilerArgs.push_back(GetShaderTargetProfile(args.m_stage));
+
+        compilerArgs.push_back(L"-HV");
+        compilerArgs.push_back(L"2021");
 
         for (const auto [m_name, m_value] : args.m_defines)
         {

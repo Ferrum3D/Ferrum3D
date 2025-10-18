@@ -283,6 +283,24 @@ namespace FE::Bit
     }
 
 
+    FE_FORCE_INLINE uint32_t FieldExtract(const uint32_t source, const uint32_t offset, const uint32_t size)
+    {
+        return (source >> offset) & ((1 << size) - 1);
+    }
+
+
+    FE_FORCE_INLINE uint32_t FieldInsert(const uint32_t mask, const uint32_t a, const uint32_t b)
+    {
+        return (a & mask) | (b & ~mask);
+    }
+
+
+    FE_FORCE_INLINE uint32_t FieldMask(const uint32_t width, const uint32_t offset)
+    {
+        return ((1 << width) - 1) << offset;
+    }
+
+
     //! @brief Traverse an unsigned integer and call a functor for each set bit.
     //!
     //! @param word    The unsigned integer to traverse.

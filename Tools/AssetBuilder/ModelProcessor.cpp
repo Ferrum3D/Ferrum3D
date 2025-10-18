@@ -34,11 +34,12 @@ namespace FE
                 const PackedVector3F packedPosition{ vertex.m_position };
                 const uint32_t packedUV = Math::Pack::RG32FloatToRG16Float(vertex.m_uv[0]);
                 const uint32_t packedColor = Math::Pack::RGBA32FloatToRGBA8Unorm(Vector4(vertex.m_color[0]));
-                const uint32_t packedNormal = Math::Pack::RGB32FloatToA2R10G10B10(vertex.m_normal * 0.5f + Vector3(0.5f));
+                const uint32_t packedNormal =
+                    Math::Pack::RGBA32FloatToA2R10G10B10Unorm(Vector4(vertex.m_normal * 0.5f + Vector3(0.5f), 0.0f));
 
-                uint32_t packedTangent = Math::Pack::RGB32FloatToA2R10G10B10(Vector3{ vertex.m_tangentWithSign.m_simdVector });
-                if (vertex.m_tangentWithSign.w < 0)
-                    packedTangent |= (1 << 30);
+                Vector4 tangentWithSign = vertex.m_tangentWithSign;
+                tangentWithSign.w = tangentWithSign.w < 0 ? 1.0f : 0.0f;
+                uint32_t packedTangent = Math::Pack::RGBA32FloatToA2R10G10B10Unorm(tangentWithSign);
 
                 uint32_t boneSortIndices[Core::Limits::Vertex::kMaxInfluenceBones];
                 festd::iota(boneSortIndices, boneSortIndices + festd::size(boneSortIndices), 0);
@@ -63,7 +64,7 @@ namespace FE
                 FE_Assert(Math::EqualEstimate(weightsSum, 1.0f, 0.001f) || weightsSum == 0.0f);
 
                 const uint32_t packedInfluenceWeights =
-                    Math::Pack::RGB32FloatToA2R10G10B10(Vector3::LoadUnaligned(sortedInfluenceWeights));
+                    Math::Pack::RGBA32FloatToA2R10G10B10Unorm(Vector4(Vector3::LoadUnaligned(sortedInfluenceWeights), 0.0f));
 
                 writer.Write(packedPosition);
                 writer.Write(packedUV);
