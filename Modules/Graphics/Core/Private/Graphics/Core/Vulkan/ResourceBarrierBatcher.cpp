@@ -17,7 +17,7 @@ namespace FE::Graphics::Vulkan
                 return VK_ACCESS_2_TRANSFER_WRITE_BIT;
 
             case Core::BufferAccessType::kUnorderedAccess:
-                return VK_ACCESS_2_MEMORY_READ_BIT;
+                return VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
 
             case Core::BufferAccessType::kTransferSource:
                 return VK_ACCESS_2_TRANSFER_READ_BIT;

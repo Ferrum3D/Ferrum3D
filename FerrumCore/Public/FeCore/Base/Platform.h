@@ -20,11 +20,12 @@ namespace FE::Platform
             bool m_sse42 : 1;
             bool m_avx : 1;
             bool m_avx2 : 1;
+            bool m_f16c : 1;
         } m_flags = {};
 
         [[nodiscard]] bool MeetsMinimalRequirements() const
         {
-            return m_flags.m_avx2;
+            return m_flags.m_avx2 && m_flags.m_f16c;
         }
     };
 

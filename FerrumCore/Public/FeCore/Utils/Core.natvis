@@ -135,4 +135,16 @@
         </Expand>
     </Type>
 
+    <Type Name="FE::Vector2Base&lt;*&gt;">
+        <DisplayString>{{ {x}, {y} }}</DisplayString>
+    </Type>
+
+    <Type Name="FE::Vector3">
+        <DisplayString>{{ {x}, {y}, {z} }}</DisplayString>
+    </Type>
+
+    <Type Name="FE::Vector4">
+        <DisplayString>{{ {x}, {y}, {z}, {w} }}</DisplayString>
+    </Type>
+
 </AutoVisualizer>

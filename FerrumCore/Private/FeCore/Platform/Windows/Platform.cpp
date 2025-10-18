@@ -46,6 +46,7 @@ namespace FE::Platform
                 cpuInfo.m_flags.m_sse41 = (cpuId1.ecx & 0x00080000) != 0;
                 cpuInfo.m_flags.m_sse42 = (cpuId1.ecx & 0x00100000) != 0;
                 cpuInfo.m_flags.m_avx = (cpuId1.ecx & 0x10000000) != 0;
+                cpuInfo.m_flags.m_f16c = (cpuId1.ecx & 0x20000000) != 0;
             }
             {
                 const CpuId cpuId7(7, 0);

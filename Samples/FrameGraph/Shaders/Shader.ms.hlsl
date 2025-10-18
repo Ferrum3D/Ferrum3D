@@ -24,7 +24,17 @@ struct VertexInput
 
     float2 UnpackUv() FE_CONST
     {
-        return float2(f16tof32(m_packedUv), f16tof32(m_packedUv >> 16));
+        return Math::Pack::RG16FloatToRG32Float(m_packedUv);
+    }
+
+    float4 UnpackColor() FE_CONST
+    {
+        return Math::Pack::RGBA8UnormToRGBA32Float(m_packedColor);
+    }
+
+    float3 UnpackNormal() FE_CONST
+    {
+        return Math::Pack::A2R10G10B10UnormToRGBA32Float(m_packedNormal).xyz * 2.0f - 1.0f;
     }
 };
 
@@ -32,7 +42,9 @@ struct VertexInput
 struct PixelAttributes
 {
     float4 m_pos : SV_Position;
+    float3 m_worldPos : POSITION;
     float2 m_uv : TEXCOORD0;
+    float3 m_normal : NORMAL;
     uint m_index : DEBUG_INDEX;
 };
 
@@ -71,11 +83,16 @@ PixelAttributes LoadAttributes(const uint32_t vertexIndex)
 {
     const VertexInput input = GConstants.m_geometry.Load<VertexInput>(vertexIndex * sizeof(VertexInput));
     const float4x4 worldTransform = GConstants.m_instanceData.Load(0);
+    const float4x4 viewProjTransform = GConstants.m_instanceData.Load(1);
+    const float4x4 invTransposedWorldTransform = GConstants.m_instanceData.Load(2);
 
     PixelAttributes output;
-    output.m_pos = mul(float4(input.m_pos, 1.0f), worldTransform);
+    output.m_pos = mul(float4(input.m_pos, 1.0f), mul(worldTransform, viewProjTransform));
+    output.m_worldPos = mul(float4(input.m_pos, 1.0f), worldTransform).xyz;
     output.m_uv = input.UnpackUv();
-    output.m_index = vertexIndex;
+    // output.m_normal = input.UnpackNormal();
+    output.m_normal = mul(float4(input.UnpackNormal(), 0.0f), invTransposedWorldTransform).xyz;
+    output.m_index = input.m_packedNormal;
     return output;
 }
 
@@ -121,7 +138,7 @@ void main(const in uint32_t groupThreadID : SV_GroupThreadID, //
         const uint32_t index =
             GConstants.m_geometry.Load((meshlet.m_vertexOffset + groupThreadID) * sizeof(uint32_t) + indicesByteOffset);
         PixelAttributes attributes = LoadAttributes(index);
-        attributes.m_index = meshletIndex;
+        // attributes.m_index = meshletIndex;
         verts[groupThreadID] = attributes;
     }
 

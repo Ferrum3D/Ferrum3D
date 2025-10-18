@@ -151,10 +151,13 @@ namespace FE::Graphics::Vulkan
         {
             auto& resource = m_resources[access->m_resourceIndex];
 
-            if (resource.m_accessState == access->m_flags)
+            if (0)
             {
-                access = access->m_next;
-                continue;
+                if (resource.m_accessState == access->m_flags)
+                {
+                    access = access->m_next;
+                    continue;
+                }
             }
 
             switch (resource.m_resourceType)
