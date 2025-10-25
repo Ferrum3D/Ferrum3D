@@ -22,6 +22,8 @@ typedef uint uint32_t;
 #    define FE_CONST
 #endif
 
+#define FE_CONSTEXPR static const
+
 typedef min16float fehalf;
 typedef min16float2 fehalf2;
 typedef min16float3 fehalf3;
@@ -30,8 +32,8 @@ typedef min16float4 fehalf4;
 #define FE_NUM_THREADS(x, y, z) [numthreads(x, y, z)]
 #define FE_OUTPUT_TOPOLOGY(topology) [outputtopology(topology)]
 
-static const uint32_t kInvalidIndex = 0xffffffff;
-static const uint kLanesPerWave = 32;
+FE_CONSTEXPR uint32_t kInvalidIndex = 0xffffffff;
+FE_CONSTEXPR uint kLanesPerWave = 32;
 
 
 namespace Bit

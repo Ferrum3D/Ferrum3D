@@ -17,6 +17,7 @@
 #    define FE_HOST_END_NAMESPACE }
 
 #    define FE_CONST const
+#    define FE_CONSTEXPR inline constexpr
 
 namespace FE
 {

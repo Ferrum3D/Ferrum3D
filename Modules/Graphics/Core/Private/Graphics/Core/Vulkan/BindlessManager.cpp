@@ -197,8 +197,8 @@ namespace FE::Graphics::Vulkan
         if (it != m_sampledImageDescriptorMap.end())
         {
             const uint32_t descriptorIndex = it->second;
-            FE_AssertDebug(m_writes[descriptorIndex].pImageInfo->imageView
-                           == ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource));
+            FE_Assert(m_writes[descriptorIndex].pImageInfo->imageView
+                      == ImplCast(texture)->GetSubresourceView(NativeCast(m_device), subresource));
             return descriptorIndex;
         }
 
@@ -224,8 +224,8 @@ namespace FE::Graphics::Vulkan
         if (it != m_sampledImageDescriptorMap.end())
         {
             const uint32_t descriptorIndex = it->second;
-            FE_AssertDebug(m_writes[descriptorIndex].pImageInfo->imageView
-                           == ImplCast(renderTarget)->GetSubresourceView(NativeCast(m_device), subresource));
+            FE_Assert(m_writes[descriptorIndex].pImageInfo->imageView
+                      == ImplCast(renderTarget)->GetSubresourceView(NativeCast(m_device), subresource));
             return descriptorIndex;
         }
 
@@ -251,8 +251,8 @@ namespace FE::Graphics::Vulkan
         if (it != m_storageImageDescriptorMap.end())
         {
             const uint32_t descriptorIndex = it->second;
-            FE_AssertDebug(m_writes[descriptorIndex].pImageInfo->imageView
-                           == ImplCast(renderTarget)->GetSubresourceView(NativeCast(m_device), subresource));
+            FE_Assert(m_writes[descriptorIndex].pImageInfo->imageView
+                      == ImplCast(renderTarget)->GetSubresourceView(NativeCast(m_device), subresource));
             return descriptorIndex;
         }
 
@@ -272,14 +272,16 @@ namespace FE::Graphics::Vulkan
 
     uint32_t BindlessManager::RegisterSRV(const Core::Buffer* buffer, const uint32_t offset, const uint32_t size)
     {
-        // TODO: take into account buffer size
+        // TODO: take buffer size into account
         const uint64_t key = static_cast<uint64_t>(buffer->GetResourceID()) << 32 | offset;
 
         const auto it = m_storageBufferDescriptorMap.find(key);
         if (it != m_storageBufferDescriptorMap.end())
         {
             const uint32_t descriptorIndex = it->second;
-            FE_AssertDebug(m_writes[descriptorIndex].pBufferInfo->buffer == NativeCast(buffer));
+            FE_Assert(m_writes[descriptorIndex].pBufferInfo->buffer == NativeCast(buffer));
+            FE_Assert(m_writes[descriptorIndex].pBufferInfo->offset == offset);
+            FE_Assert(m_writes[descriptorIndex].pBufferInfo->range == size);
             return descriptorIndex;
         }
 

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Math/Vector3Int.h>
 #include <FeCore/Memory/PoolAllocator.h>
-#include <Graphics/Core/Base/BaseTypes.h>
+#include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>

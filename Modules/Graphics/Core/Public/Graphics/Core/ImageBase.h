@@ -53,11 +53,11 @@ namespace FE::Graphics::Core
         }
 
         static ImageDesc Img1D(uint32_t width, Format format);
-        static ImageDesc Img1DArray(uint32_t width, uint16_t arraySize, Format format);
+        static ImageDesc Img1DArray(uint32_t width, uint32_t arraySize, Format format);
         static ImageDesc Img2D(uint32_t width, uint32_t height, Format format, bool useMipMaps = false, uint32_t sampleCount = 1);
-        static ImageDesc Img2DArray(uint32_t width, uint32_t height, uint16_t arraySize, Format format, bool useMipMaps = false);
+        static ImageDesc Img2DArray(uint32_t width, uint32_t height, uint32_t arraySize, Format format, bool useMipMaps = false);
         static ImageDesc ImgCubemap(uint32_t width, Format format);
-        static ImageDesc ImgCubemapArray(uint32_t width, uint16_t arraySize, Format format);
+        static ImageDesc ImgCubemapArray(uint32_t width, uint32_t arraySize, Format format);
         static ImageDesc Img3D(uint32_t width, uint32_t height, uint32_t depth, Format format);
     };
 

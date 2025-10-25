@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Strings/Format.h>
-#include <Graphics/Core/Base/BaseTypes.h>
+#include <Graphics/Core/BaseTypes.h>
 
 namespace FE::Graphics::Core
 {

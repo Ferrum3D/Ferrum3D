@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/Core/Base/BaseTypes.h>
+#include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/Resource.h>
 
 namespace FE::Graphics::Core

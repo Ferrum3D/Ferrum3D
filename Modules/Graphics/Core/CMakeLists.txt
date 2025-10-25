@@ -1,6 +1,6 @@
 ﻿set(PUBLIC_HEADERS
-    Public/Graphics/Core/Base/BaseTypes.h
-    Public/Graphics/Core/Base/Limits.h
+    Public/Graphics/Core/Base.h
+    Public/Graphics/Core/BaseTypes.h
 
     Public/Graphics/Core/FrameGraph/Base.h
     Public/Graphics/Core/FrameGraph/Blackboard.h

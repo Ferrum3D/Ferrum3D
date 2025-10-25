@@ -8,7 +8,7 @@ namespace FE::Graphics::Core
     }
 
 
-    ImageDesc ImageDesc::Img1DArray(const uint32_t width, const uint16_t arraySize, const Format format)
+    ImageDesc ImageDesc::Img1DArray(const uint32_t width, const uint32_t arraySize, const Format format)
     {
         ImageDesc desc{};
         desc.m_dimension = ImageDimension::k1D;
@@ -33,7 +33,7 @@ namespace FE::Graphics::Core
     }
 
 
-    ImageDesc ImageDesc::Img2DArray(const uint32_t width, const uint32_t height, const uint16_t arraySize, const Format format,
+    ImageDesc ImageDesc::Img2DArray(const uint32_t width, const uint32_t height, const uint32_t arraySize, const Format format,
                                     const bool useMipMaps)
     {
         ImageDesc desc{};
@@ -52,7 +52,7 @@ namespace FE::Graphics::Core
     }
 
 
-    ImageDesc ImageDesc::ImgCubemapArray(const uint32_t width, const uint16_t arraySize, const Format format)
+    ImageDesc ImageDesc::ImgCubemapArray(const uint32_t width, const uint32_t arraySize, const Format format)
     {
         ImageDesc desc{};
         desc.m_dimension = ImageDimension::kCubemap;

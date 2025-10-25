@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Math/Vector4.h>
-#include <Graphics/Core/Base/Limits.h>
+#include <FeCore/Base/BaseMath.h>
 
 namespace FE::Graphics::Core
 {

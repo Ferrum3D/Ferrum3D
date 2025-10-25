@@ -5,7 +5,6 @@
 #include <Graphics/Assets/ITextureAssetManager.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
-#include <Graphics/Core/Base/Limits.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <festd/bit_vector.h>
 #include <festd/vector.h>

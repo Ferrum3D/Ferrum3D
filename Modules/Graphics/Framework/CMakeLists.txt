@@ -1,6 +1,8 @@
 ﻿set(SHADER_SHARED_HEADERS
     Shaders/Shaders/Base/Base.h
 
+    Shaders/Shaders/Database/Base.h
+
     Shaders/Shaders/Features/Tools/Blit/Blit.h
     Shaders/Shaders/Features/Tools/Downsample/Downsample.h
 )
@@ -9,6 +11,8 @@ set(SHADER_SOURCES
     Shaders/Shaders/Base/Base.hlsli
     Shaders/Shaders/Base/BaseTypes.hlsli
     Shaders/Shaders/Base/Descriptors.hlsli
+
+    Shaders/Shaders/Database/Base.hlsli
 
     Shaders/Shaders/Features/Tools/Blit/Blit.hlsli
     Shaders/Shaders/Features/Tools/Blit/Blit.ps.hlsl
@@ -25,6 +29,9 @@ set(PUBLIC_HEADERS
     Public/Graphics/Assets/ModelAssetFormat.h
     Public/Graphics/Assets/TextureAssetFormat.h
 
+    Public/Graphics/Database/Base.h
+    Public/Graphics/Database/Database.h
+
     Public/Graphics/Features/Tools/Blit.h
     Public/Graphics/Features/Tools/Downsample.h
 
@@ -36,6 +43,8 @@ set(COMMON_SOURCES
     Private/Graphics/Assets/ModelAssetManager.h
     Private/Graphics/Assets/TextureAssetManager.cpp
     Private/Graphics/Assets/TextureAssetManager.h
+
+    Private/Graphics/Database/Database.cpp
 
     Private/Graphics/Features/Tools/Blit.cpp
     Private/Graphics/Features/Tools/Downsample.cpp

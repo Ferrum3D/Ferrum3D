@@ -6,7 +6,6 @@
 #include <FeCore/Math/Color.h>
 #include <FeCore/Memory/SegmentedBuffer.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
-#include <Graphics/Core/Base/Limits.h>
 #include <Graphics/Core/ImageBase.h>
 #include <festd/vector.h>
 

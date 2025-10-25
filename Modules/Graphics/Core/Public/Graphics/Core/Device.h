@@ -1,12 +1,9 @@
 ﻿#pragma once
 #include <FeCore/Memory/Memory.h>
+#include <Graphics/Core/Base.h>
 
 namespace FE::Graphics::Core
 {
-    struct DeviceObject;
-    struct Resource;
-
-
     struct Device : public Memory::RefCountedObjectBase
     {
         FE_RTTI_Class(Device, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");

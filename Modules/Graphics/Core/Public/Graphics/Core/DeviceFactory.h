@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <Graphics/Core/AdapterInfo.h>
-#include <Graphics/Core/Base/BaseTypes.h>
+#include <Graphics/Core/BaseTypes.h>
 
 namespace FE::Graphics::Core
 {

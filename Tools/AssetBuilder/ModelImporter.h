@@ -9,7 +9,7 @@
 #include <FeCore/Math/Vector3.h>
 #include <FeCore/Math/Vector4.h>
 #include <FeCore/Memory/PoolAllocator.h>
-#include <Graphics/Core/Base/Limits.h>
+#include <Graphics/Core/Base.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Meshlet.h>
 #include <festd/vector.h>

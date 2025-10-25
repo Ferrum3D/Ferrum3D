@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <Graphics/Core/Base/Limits.h>
 #include <Graphics/Core/ImageFormat.h>
 
 namespace FE::Graphics::Core
