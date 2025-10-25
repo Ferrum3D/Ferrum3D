@@ -15,10 +15,10 @@ namespace FE::Graphics::Vulkan
     {
         uint32_t m_familyIndex;
         uint32_t m_queueCount;
-        Core::HardwareQueueKindFlags m_class;
+        Core::DeviceQueueFlags m_class;
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
-        QueueFamilyData(const uint32_t idx, const uint32_t count, const Core::HardwareQueueKindFlags cmdListClass)
+        QueueFamilyData(const uint32_t idx, const uint32_t count, const Core::DeviceQueueFlags cmdListClass)
             : m_familyIndex(idx)
             , m_queueCount(count)
             , m_class(cmdListClass)
@@ -97,7 +97,7 @@ namespace FE::Graphics::Vulkan
             return m_samplerCache.Get(desc);
         }
 
-        VkCommandPool GetCommandPool(const Core::HardwareQueueKindFlags cmdQueueClass) const
+        VkCommandPool GetCommandPool(const Core::DeviceQueueFlags cmdQueueClass) const
         {
             for (const auto& queue : m_queueFamilyIndices)
             {
@@ -121,7 +121,7 @@ namespace FE::Graphics::Vulkan
             return m_queueFamilyIndices.front().m_commandPool;
         }
 
-        uint32_t GetQueueFamilyIndex(const Core::HardwareQueueKindFlags cmdQueueClass) const
+        uint32_t GetQueueFamilyIndex(const Core::DeviceQueueFlags cmdQueueClass) const
         {
             for (const auto& queue : m_queueFamilyIndices)
             {

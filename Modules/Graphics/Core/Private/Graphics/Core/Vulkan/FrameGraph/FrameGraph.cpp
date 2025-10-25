@@ -46,8 +46,8 @@ namespace FE::Graphics::Vulkan
                 barrier.m_subresource.m_arraySize = 1;
                 barrier.m_sourceAccess = Core::ImageAccessType::kTransferDestination;
                 barrier.m_destAccess = Core::ImageAccessType::kShaderResource;
-                barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kTransfer;
-                barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+                barrier.m_sourceQueueKind = Core::DeviceQueueFlags::kTransfer;
+                barrier.m_destQueueKind = Core::DeviceQueueFlags::kGraphics;
                 context->m_resourceBarrierBatcher.AddBarrier(barrier);
 
                 textureImpl->SetSubresourceState(mipIndex, arrayIndex, TextureSubresourceState::kShaderResource);
@@ -176,8 +176,8 @@ namespace FE::Graphics::Vulkan
                     barrier.m_buffer = buffer->GetNative();
                     barrier.m_sourceAccess = static_cast<Core::BufferAccessType>(resource.m_accessState);
                     barrier.m_destAccess = static_cast<Core::BufferAccessType>(access->m_flags);
-                    barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kGraphics;
-                    barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+                    barrier.m_sourceQueueKind = Core::DeviceQueueFlags::kGraphics;
+                    barrier.m_destQueueKind = Core::DeviceQueueFlags::kGraphics;
 
                     barriers.AddBarrier(barrier);
                 }
@@ -192,8 +192,8 @@ namespace FE::Graphics::Vulkan
                     barrier.m_subresource = Core::ImageSubresource::CreateWhole(renderTarget->GetDesc());
                     barrier.m_sourceAccess = static_cast<Core::ImageAccessType>(resource.m_accessState);
                     barrier.m_destAccess = static_cast<Core::ImageAccessType>(access->m_flags);
-                    barrier.m_sourceQueueKind = Core::HardwareQueueKindFlags::kGraphics;
-                    barrier.m_destQueueKind = Core::HardwareQueueKindFlags::kGraphics;
+                    barrier.m_sourceQueueKind = Core::DeviceQueueFlags::kGraphics;
+                    barrier.m_destQueueKind = Core::DeviceQueueFlags::kGraphics;
 
                     barriers.AddBarrier(barrier);
                 }

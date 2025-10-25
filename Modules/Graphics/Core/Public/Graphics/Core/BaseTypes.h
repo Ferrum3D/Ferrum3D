@@ -27,13 +27,23 @@ namespace FE::Graphics::Core
     };
 
 
-    enum class HardwareQueueKindFlags : uint32_t
+    enum class DeviceQueueType : uint32_t
+    {
+        kGraphics,
+        kCompute,
+        kTransfer,
+
+        kCount,
+    };
+
+
+    enum class DeviceQueueFlags : uint32_t
     {
         kNone = 0, //!< Invalid or unspecified value.
 
-        kGraphicsBit = 1 << 0, //!< Queue that supports graphics operations.
-        kComputeBit = 1 << 1,  //!< Queue that supports compute operations.
-        kTransferBit = 1 << 2, //!< Queue that supports copy operations.
+        kGraphicsBit = 1 << festd::to_underlying(DeviceQueueType::kGraphics), //!< Queue that supports graphics operations.
+        kComputeBit = 1 << festd::to_underlying(DeviceQueueType::kCompute),   //!< Queue that supports compute operations.
+        kTransferBit = 1 << festd::to_underlying(DeviceQueueType::kTransfer), //!< Queue that supports copy operations.
 
         //! @brief Queue for graphics + compute + copy operations.
         kGraphics = kGraphicsBit | kComputeBit | kTransferBit,
@@ -43,7 +53,7 @@ namespace FE::Graphics::Core
         kTransfer = kTransferBit,
     };
 
-    FE_ENUM_OPERATORS(HardwareQueueKindFlags);
+    FE_ENUM_OPERATORS(DeviceQueueFlags);
 
 
     enum class BindFlags : uint32_t
