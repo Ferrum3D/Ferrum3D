@@ -535,7 +535,7 @@ namespace FE::Graphics::Vulkan
         m_threadEvent = Threading::Event::CreateManualReset();
         m_suspendEvent = Threading::Event::CreateManualReset();
 
-        const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceUsage::kHostWriteThrough };
+        const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceMemoryUsage::kHostWriteThrough };
         m_uploadBuffer = ImplCast(m_resourcePool->CreateBuffer("AsyncUploadBuffer", uploadDesc));
 
         m_fence = Fence::Create(m_device);

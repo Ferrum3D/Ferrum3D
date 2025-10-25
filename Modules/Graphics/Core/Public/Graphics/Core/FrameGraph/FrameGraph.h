@@ -173,7 +173,7 @@ namespace FE::Graphics::Core
             BufferDesc desc;
             desc.m_size = sizeof(T) * elementCount;
             desc.m_flags = BindFlags::kUnorderedAccess | BindFlags::kShaderResource;
-            desc.m_usage = ResourceUsage::kDeviceOnly;
+            desc.m_usage = ResourceMemoryUsage::kDeviceOnly;
             return CreateBuffer(name, desc);
         }
 

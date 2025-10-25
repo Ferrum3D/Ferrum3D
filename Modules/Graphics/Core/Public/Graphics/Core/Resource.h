@@ -4,8 +4,8 @@
 
 namespace FE::Graphics::Core
 {
-    //! @brief Resource usage flags.
-    enum class ResourceUsage : uint32_t
+    //! @brief Resource memory usage flags.
+    enum class ResourceMemoryUsage : uint32_t
     {
         //! @brief Specifies that the resource is only used on the GPU.
         kDeviceOnly,

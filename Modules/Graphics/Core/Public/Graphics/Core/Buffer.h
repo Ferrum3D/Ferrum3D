@@ -15,15 +15,15 @@ namespace FE::Graphics::Core
     {
         uint32_t m_size = 0;
         BindFlags m_flags : 16;
-        ResourceUsage m_usage : 16;
+        ResourceMemoryUsage m_usage : 16;
 
         BufferDesc()
         {
             m_flags = BindFlags::kNone;
-            m_usage = ResourceUsage::kDeviceOnly;
+            m_usage = ResourceMemoryUsage::kDeviceOnly;
         }
 
-        BufferDesc(const uint32_t size, const BindFlags bindFlags, const ResourceUsage usage)
+        BufferDesc(const uint32_t size, const BindFlags bindFlags, const ResourceMemoryUsage usage)
             : m_size(size)
             , m_flags(bindFlags)
             , m_usage(usage)

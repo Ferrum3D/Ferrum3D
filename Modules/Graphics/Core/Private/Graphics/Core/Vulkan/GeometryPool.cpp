@@ -69,7 +69,7 @@ namespace FE::Graphics::Vulkan
 
             Core::BufferDesc bufferDesc;
             bufferDesc.m_size = streamView.m_byteSize;
-            bufferDesc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            bufferDesc.m_usage = Core::ResourceMemoryUsage::kDeviceOnly;
             bufferDesc.m_flags = isMeshlet ? Core::BindFlags::kUnorderedAccess : Core::BindFlags::kVertexBuffer;
 
             Core::Buffer* buffer = m_resourcePool->CreateBuffer(Fmt::FormatName("VertexBuffer_{}", desc.m_name), bufferDesc);
@@ -83,7 +83,7 @@ namespace FE::Graphics::Vulkan
         {
             Core::BufferDesc bufferDesc;
             bufferDesc.m_size = Core::GetIndexByteSize(desc.m_indexType) * desc.m_indexCount;
-            bufferDesc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            bufferDesc.m_usage = Core::ResourceMemoryUsage::kDeviceOnly;
             bufferDesc.m_flags = isMeshlet ? Core::BindFlags::kUnorderedAccess : Core::BindFlags::kIndexBuffer;
 
             Core::Buffer* buffer = m_resourcePool->CreateBuffer(Fmt::FormatName("IndexBuffer_{}", desc.m_name), bufferDesc);
@@ -129,7 +129,7 @@ namespace FE::Graphics::Vulkan
 
             Core::BufferDesc primitivesBufferDesc;
             primitivesBufferDesc.m_size = desc.m_primitiveCount * sizeof(Core::PackedTriangle);
-            primitivesBufferDesc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            primitivesBufferDesc.m_usage = Core::ResourceMemoryUsage::kDeviceOnly;
             primitivesBufferDesc.m_flags = Core::BindFlags::kUnorderedAccess;
 
             Core::Buffer* primitivesBuffer =
@@ -143,7 +143,7 @@ namespace FE::Graphics::Vulkan
 
             Core::BufferDesc meshletsBufferDesc;
             meshletsBufferDesc.m_size = desc.m_meshletCount * sizeof(Core::MeshletHeader);
-            meshletsBufferDesc.m_usage = Core::ResourceUsage::kDeviceOnly;
+            meshletsBufferDesc.m_usage = Core::ResourceMemoryUsage::kDeviceOnly;
             meshletsBufferDesc.m_flags = Core::BindFlags::kUnorderedAccess;
 
             Core::Buffer* meshletsBuffer =

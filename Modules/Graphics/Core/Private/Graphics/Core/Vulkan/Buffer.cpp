@@ -39,8 +39,8 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(m_desc.m_usage == Core::ResourceUsage::kHostRandomAccess
-                  || m_desc.m_usage == Core::ResourceUsage::kHostWriteThrough);
+        FE_Assert(m_desc.m_usage == Core::ResourceMemoryUsage::kHostRandomAccess
+                  || m_desc.m_usage == Core::ResourceMemoryUsage::kHostWriteThrough);
 
         void* result;
         VerifyVulkan(vmaMapMemory(m_vmaAllocator, m_vmaAllocation, &result));
@@ -101,15 +101,15 @@ namespace FE::Graphics::Vulkan
             FE_DebugBreak();
             [[fallthrough]];
 
-        case Core::ResourceUsage::kDeviceOnly:
+        case Core::ResourceMemoryUsage::kDeviceOnly:
             allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             break;
 
-        case Core::ResourceUsage::kHostRandomAccess:
+        case Core::ResourceMemoryUsage::kHostRandomAccess:
             allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             break;
 
-        case Core::ResourceUsage::kHostWriteThrough:
+        case Core::ResourceMemoryUsage::kHostWriteThrough:
             allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
             break;
         }
