@@ -15,8 +15,8 @@ namespace FE::Graphics::Common
         Core::RenderTargetHandle GetMainColorTarget() const override;
         Core::RenderTargetHandle GetMainDepthStencilTarget() const override;
 
-        void AddPassProducer(Core::PassProducer* passProducer) final;
-        void Execute() final;
+        void BeginFrame() final;
+        void CompileAndExecute() final;
 
         Core::RenderTarget* GetRenderTarget(Core::RenderTargetHandle image) const final;
         Core::Buffer* GetBuffer(Core::BufferHandle buffer) const final;
@@ -47,7 +47,6 @@ namespace FE::Graphics::Common
         struct PassData final : public PassDataBase
         {
             uint32_t m_refCount = 0;
-            uint32_t m_producerIndex = kInvalidIndex;
             Env::Name m_name;
             Core::PassType m_type;
             ResourceAccess* m_accessesListHead = nullptr;
@@ -102,7 +101,7 @@ namespace FE::Graphics::Common
         virtual void PreparePassExecute(uint32_t passIndex) = 0;
 
         PassDataBase& GetPassData(uint32_t passIndex) final;
-        uint32_t AddPassInternal(uint32_t producerIndex, Env::Name name) final;
+        uint32_t AddPassInternal(Env::Name name) final;
 
         Core::BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const Core::BufferDesc& desc) final;
         Core::RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::ImageDesc& desc) final;

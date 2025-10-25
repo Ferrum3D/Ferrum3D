@@ -93,5 +93,8 @@ namespace FE::Graphics::DB
     }
 
 
-    StoragePage* Database::AllocatePage() {}
+    StoragePage* Database::AllocatePage()
+    {
+        return nullptr;
+    }
 } // namespace FE::Graphics::DB

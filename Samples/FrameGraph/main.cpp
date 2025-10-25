@@ -234,6 +234,7 @@ namespace
 
         ~ExampleApplication() override
         {
+            m_geometryPool->Free(m_geometry);
             m_device->WaitIdle();
         }
 
@@ -275,6 +276,8 @@ namespace
             }
 
             m_device = serviceProvider->ResolveRequired<Core::Device>();
+            m_copyQueue = serviceProvider->ResolveRequired<Core::AsyncCopyQueue>();
+            m_geometryPool = serviceProvider->ResolveRequired<Core::GeometryPool>();
 
             const RectInt scissorRect = m_mainWindow->GetClientRect();
 
@@ -286,8 +289,7 @@ namespace
             Core::CompileGlobalPipelineSets(serviceProvider->ResolveRequired<Core::PipelineFactory>());
             Core::WaitForGlobalPipelineSets();
 
-            m_passProducer = DI::DefaultNew<PassProducer>().value();
-            m_passProducer->Init(m_viewport.Get());
+            PrepareView(m_viewport.Get());
 
             ITextureAssetManager* textureAssetManager = serviceProvider->ResolveRequired<ITextureAssetManager>();
             m_texture = textureAssetManager->Load("Textures/test2.ftx");
@@ -299,302 +301,280 @@ namespace
             // m_model = modelAssetManager->Load("Models/TheSphere.fmd");
             m_model->m_completionWaitGroup->Wait();
             FE_Assert(m_model->m_status == AssetLoadingStatus::kCompletelyLoaded);
-
-            m_passProducer->m_texture = m_texture->m_resource;
-            m_passProducer->m_model = m_model;
         }
 
     private:
-        struct PassProducer final : public Core::PassProducer
+        struct PassData final
         {
-            FE_RTTI_Class(PassProducer, "A22B22E2-2196-4439-8D70-AFB8E64379AD");
+            Core::DrawCall m_drawCall;
+            ModelAsset* m_model = nullptr;
+            const Core::ComputePipeline* m_computePipeline = nullptr;
+            const Core::GraphicsPipeline* m_meshShaderPipeline = nullptr;
+        };
 
-            struct PassData final
-            {
-                Core::DrawCall m_drawCall;
-                ModelAsset* m_model = nullptr;
-                const Core::ComputePipeline* m_computePipeline = nullptr;
-                const Core::GraphicsPipeline* m_meshShaderPipeline = nullptr;
+        struct Vertex final
+        {
+            PackedVector3F m_position;
+            Vector2 m_uv;
+        };
+
+        void PrepareView(Core::Viewport* viewport)
+        {
+            FE_PROFILER_ZONE();
+
+            m_timer.Start();
+
+            Memory::FiberTempAllocator tempAllocator;
+
+            m_colorTargetFormat = viewport->GetColorTargetFormat();
+
+            static const Vertex kVertexData[] = {
+                { { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } },
+                { { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } },
+                { { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+                { { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
             };
 
-            struct Vertex final
-            {
-                PackedVector3F m_position;
-                Vector2 m_uv;
+            static const uint32_t kIndexData[] = {
+                // 0, 1, 2, 2, 3, 0,
+                0,
+                1,
+                2,
+                3,
             };
 
-            PassProducer(Core::AsyncCopyQueue* copyQueue, Core::GeometryPool* geometryPool)
-                : m_copyQueue(copyQueue)
-                , m_geometryPool(geometryPool)
+            static const Core::PackedTriangle kMeshletPrimitives[] = {
+                Core::PackedTriangle::Pack(0, 1, 2),
+                Core::PackedTriangle::Pack(2, 3, 0),
+            };
+
+            static const Core::MeshletHeader kMeshletHeaders[] = {
+                Core::MeshletHeader::Pack(4, 0, 2, 0),
+            };
+
+            Core::InputLayoutBuilder inputLayoutBuilder;
+            inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
+                .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
+                .AddChannel(Core::VertexChannelFormat::kR32G32_SFLOAT, Core::ShaderSemantic::kTexCoord);
+
+            const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
+
+            Core::GeometryAllocationDesc geometryDesc;
+            geometryDesc.m_name = "Triangle";
+            geometryDesc.m_inputLayout = inputLayout;
+            geometryDesc.m_indexType = Core::IndexType::kUint32;
+            geometryDesc.m_indexCount = festd::size(kIndexData);
+            geometryDesc.m_vertexCount = festd::size(kVertexData);
+            m_geometry = m_geometryPool->Allocate(geometryDesc);
+
+            geometryDesc.m_meshletCount = festd::size(kMeshletHeaders);
+            geometryDesc.m_primitiveCount = festd::size(kMeshletPrimitives);
+
+            m_geometryPool->GetAvailabilityWaitGroup(m_geometry)->Wait();
+
+            const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
+
+            Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
+            copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
+            copyCommandListBuilder.UploadBuffer(geometryView.m_indexBufferView.m_buffer, kIndexData);
+
+            const Rc copyWaitGroup = WaitGroup::Create();
+            Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build(copyWaitGroup.Get());
+            m_copyQueue->ExecuteCommandList(&copyCommandList);
+
+            copyWaitGroup->Wait();
+        }
+
+        void Render(Core::FrameGraph& graph, Core::FrameGraphBuilder& builder, Core::FrameGraphBlackboard& blackboard)
+        {
+            FE_PROFILER_ZONE();
+
+            m_timer.Stop();
+
+            const float deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
+            m_timer.Start();
+
+            Memory::FiberTempAllocator temp;
+
+            const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
+
+            GraphicsPipeline::Specializer graphicsPipelineSpecializer;
+            graphicsPipelineSpecializer.Set<GraphicsPipeline::ColorTargetFormat>(m_colorTargetFormat);
+            const auto* graphicsPipeline = GraphicsPipeline::GetPipeline(graphicsPipelineSpecializer);
+
+            MeshShaderPipeline::Specializer meshShaderPipelineSpecializer;
+            meshShaderPipelineSpecializer.Set<MeshShaderPipeline::ColorTargetFormat>(m_colorTargetFormat);
+            const auto* meshShaderPipeline = MeshShaderPipeline::GetPipeline(meshShaderPipelineSpecializer);
+
+            Core::DrawCall drawCall;
+            drawCall.InitForSingleInstance(geometryView, graphicsPipeline);
+
+            PassData& passData = blackboard.Add<PassData>();
+            passData.m_drawCall = drawCall;
+            passData.m_model = m_model.Get();
+            passData.m_computePipeline = ComputePipeline::GetPipeline();
+            passData.m_meshShaderPipeline = meshShaderPipeline;
+
+            const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
+            const RectF viewport = viewportDesc.GetRect();
+
+            Core::BufferHandle instanceData;
+
+            static float rotation = 0.0f;
+            rotation += deltaTime * Constants::kPI * 0.5f;
+            rotation = Math::Fmod(rotation, Constants::kPI * 2.0f);
+
+            for (uint32_t computePassIndex = 0; computePassIndex < 3; ++computePassIndex)
             {
-            }
+                const auto computePass = builder.AddPass("TestCompute");
 
-            ~PassProducer() override
-            {
-                m_geometryPool->Free(m_geometry);
-            }
+                if (computePassIndex == 0)
+                    instanceData = computePass.CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 3);
+                instanceData = computePass.Write(instanceData);
 
-            void Init(Core::Viewport* viewport)
-            {
-                FE_PROFILER_ZONE();
+                computePass.SetFunction([instanceData, viewport, computePassIndex](Core::FrameGraphContext& context) {
+                    FE_PROFILER_ZONE();
 
-                m_timer.Start();
+                    auto& frameGraph = context.GetGraph();
+                    auto& localBlackboard = frameGraph.GetBlackboard();
+                    const auto& localPassData = localBlackboard.GetRequired<PassData>();
 
-                Memory::FiberTempAllocator tempAllocator;
+                    struct ShaderConstants final
+                    {
+                        Matrix4x4 m_matrix;
+                        BufferUAVDescriptor m_instanceData;
+                        uint32_t m_offset;
+                        Vector2 m_padding;
+                    };
 
-                m_colorTargetFormat = viewport->GetColorTargetFormat();
+                    const float aspectRatio = viewport.Width() / viewport.Height();
 
-                static const Vertex kVertexData[] = {
-                    { { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } },
-                    { { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } },
-                    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-                    { { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-                };
+                    const auto worldMatrix = Matrix4x4::RotationX(Constants::kPI * 0.5f) * Matrix4x4::RotationY(rotation);
+                    const auto invWorldMatrix = Matrix4x4::RotationY(-rotation) * Matrix4x4::RotationX(-Constants::kPI * 0.5f);
 
-                static const uint32_t kIndexData[] = {
-                    // 0, 1, 2, 2, 3, 0,
-                    0,
-                    1,
-                    2,
-                    3,
-                };
+                    const auto viewMatrix = Matrix4x4::LookAt(Vector3(0.0f, 2.5f, -2.0f), Vector3::AxisY(), Vector3::AxisY());
+                    const auto projectionMatrix = Matrix4x4::Projection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
 
-                static const Core::PackedTriangle kMeshletPrimitives[] = {
-                    Core::PackedTriangle::Pack(0, 1, 2),
-                    Core::PackedTriangle::Pack(2, 3, 0),
-                };
-
-                static const Core::MeshletHeader kMeshletHeaders[] = {
-                    Core::MeshletHeader::Pack(4, 0, 2, 0),
-                };
-
-                Core::InputLayoutBuilder inputLayoutBuilder;
-                inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
-                    .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
-                    .AddChannel(Core::VertexChannelFormat::kR32G32_SFLOAT, Core::ShaderSemantic::kTexCoord);
-
-                const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
-
-                Core::GeometryAllocationDesc geometryDesc;
-                geometryDesc.m_name = "Triangle";
-                geometryDesc.m_inputLayout = inputLayout;
-                geometryDesc.m_indexType = Core::IndexType::kUint32;
-                geometryDesc.m_indexCount = festd::size(kIndexData);
-                geometryDesc.m_vertexCount = festd::size(kVertexData);
-                m_geometry = m_geometryPool->Allocate(geometryDesc);
-
-                geometryDesc.m_meshletCount = festd::size(kMeshletHeaders);
-                geometryDesc.m_primitiveCount = festd::size(kMeshletPrimitives);
-
-                m_geometryPool->GetAvailabilityWaitGroup(m_geometry)->Wait();
-
-                const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
-
-                Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
-                copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
-                copyCommandListBuilder.UploadBuffer(geometryView.m_indexBufferView.m_buffer, kIndexData);
-
-                const Rc copyWaitGroup = WaitGroup::Create();
-                Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build(copyWaitGroup.Get());
-                m_copyQueue->ExecuteCommandList(&copyCommandList);
-
-                copyWaitGroup->Wait();
-            }
-
-            void Setup(Core::FrameGraph& graph, Core::FrameGraphBuilder& builder, Core::FrameGraphBlackboard& blackboard) override
-            {
-                FE_PROFILER_ZONE();
-
-                m_timer.Stop();
-
-                const float deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
-                m_timer.Start();
-
-                Memory::FiberTempAllocator temp;
-
-                const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
-
-                GraphicsPipeline::Specializer graphicsPipelineSpecializer;
-                graphicsPipelineSpecializer.Set<GraphicsPipeline::ColorTargetFormat>(m_colorTargetFormat);
-                const auto* graphicsPipeline = GraphicsPipeline::GetPipeline(graphicsPipelineSpecializer);
-
-                MeshShaderPipeline::Specializer meshShaderPipelineSpecializer;
-                meshShaderPipelineSpecializer.Set<MeshShaderPipeline::ColorTargetFormat>(m_colorTargetFormat);
-                const auto* meshShaderPipeline = MeshShaderPipeline::GetPipeline(meshShaderPipelineSpecializer);
-
-                Core::DrawCall drawCall;
-                drawCall.InitForSingleInstance(geometryView, graphicsPipeline);
-
-                PassData& passData = blackboard.Add<PassData>();
-                passData.m_drawCall = drawCall;
-                passData.m_model = m_model.Get();
-                passData.m_computePipeline = ComputePipeline::GetPipeline();
-                passData.m_meshShaderPipeline = meshShaderPipeline;
-
-                const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
-                const RectF viewport = viewportDesc.GetRect();
-
-                Core::BufferHandle instanceData;
-
-                static float rotation = 0.0f;
-                rotation += deltaTime * Constants::kPI * 0.5f;
-                rotation = Math::Fmod(rotation, Constants::kPI * 2.0f);
-
-                for (uint32_t computePassIndex = 0; computePassIndex < 3; ++computePassIndex)
-                {
-                    const auto computePass = builder.AddPass("TestCompute");
+                    ShaderConstants shaderConstants;
+                    shaderConstants.m_offset = computePassIndex;
 
                     if (computePassIndex == 0)
-                        instanceData = computePass.CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 3);
-                    instanceData = computePass.Write(instanceData);
+                    {
+                        shaderConstants.m_matrix = worldMatrix;
+                    }
+                    else if (computePassIndex == 1)
+                    {
+                        shaderConstants.m_matrix = viewMatrix * projectionMatrix;
+                    }
+                    else
+                    {
+                        shaderConstants.m_matrix = Math::Transpose(invWorldMatrix);
+                    }
 
-                    computePass.SetFunction([instanceData, viewport, computePassIndex](Core::FrameGraphContext& context) {
-                        FE_PROFILER_ZONE();
-
-                        auto& frameGraph = context.GetGraph();
-                        auto& localBlackboard = frameGraph.GetBlackboard();
-                        const auto& localPassData = localBlackboard.GetRequired<PassData>();
-
-                        struct ShaderConstants final
-                        {
-                            Matrix4x4 m_matrix;
-                            BufferUAVDescriptor m_instanceData;
-                            uint32_t m_offset;
-                            Vector2 m_padding;
-                        };
-
-                        const float aspectRatio = viewport.Width() / viewport.Height();
-
-                        const auto worldMatrix = Matrix4x4::RotationX(Constants::kPI * 0.5f) * Matrix4x4::RotationY(rotation);
-                        const auto invWorldMatrix =
-                            Matrix4x4::RotationY(-rotation) * Matrix4x4::RotationX(-Constants::kPI * 0.5f);
-
-                        const auto viewMatrix = Matrix4x4::LookAt(Vector3(0.0f, 2.5f, -2.0f), Vector3::AxisY(), Vector3::AxisY());
-                        const auto projectionMatrix = Matrix4x4::Projection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
-
-                        ShaderConstants shaderConstants;
-                        shaderConstants.m_offset = computePassIndex;
-
-                        if (computePassIndex == 0)
-                        {
-                            shaderConstants.m_matrix = worldMatrix;
-                        }
-                        else if (computePassIndex == 1)
-                        {
-                            shaderConstants.m_matrix = viewMatrix * projectionMatrix;
-                        }
-                        else
-                        {
-                            shaderConstants.m_matrix = Math::Transpose(invWorldMatrix);
-                        }
-
-                        shaderConstants.m_instanceData = frameGraph.GetUAV(instanceData);
-                        context.PushConstants(shaderConstants);
-                        context.Dispatch(localPassData.m_computePipeline, 1);
-                    });
-                }
-
-                const auto graphicsPass = builder.AddPass("DrawTriangle");
-
-                const Core::RenderTargetHandle intermediateColorTarget = graphicsPass.WriteRenderTarget(graphicsPass.CreateImage(
-                    "IntermediateColorTarget",
-                    Core::ImageDesc::Img2D(viewportDesc.m_width, viewportDesc.m_height, m_colorTargetFormat, false)));
-
-                const Core::RenderTargetHandle colorTarget = graphicsPass.WriteRenderTarget(intermediateColorTarget);
-                const Core::RenderTargetHandle depthTarget = graphicsPass.WriteRenderTarget(graph.GetMainDepthStencilTarget());
-
-                instanceData = graphicsPass.Read(instanceData, Core::BufferReadType::kShaderResource);
-
-                if (0)
-                {
-                    graphicsPass.SetFunction(
-                        [colorTarget, depthTarget, instanceData, viewport, t = m_texture](Core::FrameGraphContext& context) {
-                            FE_PROFILER_ZONE();
-
-                            auto& frameGraph = context.GetGraph();
-                            auto& localBlackboard = frameGraph.GetBlackboard();
-                            const auto& localPassData = localBlackboard.GetRequired<PassData>();
-
-                            struct ShaderConstants final
-                            {
-                                ImageSRVDescriptor m_textureSRV;
-                                SamplerDescriptor m_sampler;
-                                BufferSRVDescriptor m_instanceData;
-                                uint32_t m_padding;
-                            };
-
-                            ShaderConstants shaderConstants;
-                            shaderConstants.m_textureSRV = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
-                            shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
-                            shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
-                            context.PushConstants(shaderConstants);
-
-                            context.SetRenderTarget(colorTarget, depthTarget);
-                            context.SetRenderTargetLoadOperations(
-                                Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
-                            context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
-                            context.SetViewport(viewport);
-                            context.Draw(localPassData.m_drawCall);
-                        });
-                }
-                else
-                {
-                    graphicsPass.SetFunction(
-                        [colorTarget, depthTarget, instanceData, viewport, t = m_texture](Core::FrameGraphContext& context) {
-                            FE_PROFILER_ZONE();
-
-                            auto& frameGraph = context.GetGraph();
-                            auto& localBlackboard = frameGraph.GetBlackboard();
-                            const auto& localPassData = localBlackboard.GetRequired<PassData>();
-
-                            struct ShaderConstants final
-                            {
-                                ByteAddressBufferDescriptor m_geometry;
-                                Texture2DDescriptor<Vector4> m_texture;
-                                SamplerDescriptor m_sampler;
-                                StructuredBufferDescriptor<Matrix4x4> m_instanceData;
-                                Core::MeshLodInfo m_lodInfo;
-                            };
-
-                            ModelAsset* model = localPassData.m_model;
-
-                            const uint32_t lodIndex = DateTime<TZ::Local>::Now().Second() % model->m_lodCount;
-                            const Core::Buffer* geometryBuffer = model->GetGeometryBuffer(lodIndex);
-                            const Core::MeshLodInfo lodInfo = model->GetLodInfo(0, lodIndex);
-
-                            ShaderConstants shaderConstants;
-                            shaderConstants.m_lodInfo = lodInfo;
-                            shaderConstants.m_geometry = frameGraph.GetSRV(geometryBuffer);
-                            shaderConstants.m_texture = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
-                            shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
-                            shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
-                            context.PushConstants(shaderConstants);
-
-                            context.SetRenderTarget(colorTarget, depthTarget);
-                            context.SetRenderTargetLoadOperations(
-                                Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
-                            context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
-                            context.SetViewport(viewport);
-                            // context.DispatchMesh(localPassData.m_meshShaderPipeline, Math::CeilDivide(lodInfo.m_meshletCount, 32));
-                            context.DispatchMesh(localPassData.m_meshShaderPipeline, lodInfo.m_meshletCount);
-                        });
-                }
-
-                const auto colorTargetMips = Tools::Downsample::AddPass(builder, colorTarget);
-                const auto finalColorTarget = Tools::Blit::AddPass(builder, colorTargetMips[1], graph.GetMainColorTarget());
-                FE_Unused(finalColorTarget);
+                    shaderConstants.m_instanceData = frameGraph.GetUAV(instanceData);
+                    context.PushConstants(shaderConstants);
+                    context.Dispatch(localPassData.m_computePipeline, 1);
+                });
             }
 
-            HighResolutionTimer m_timer;
+            const auto graphicsPass = builder.AddPass("DrawTriangle");
 
-            Core::AsyncCopyQueue* m_copyQueue = nullptr;
-            Core::GeometryPool* m_geometryPool = nullptr;
-            Core::GeometryHandle m_geometry;
+            const Core::RenderTargetHandle intermediateColorTarget = graphicsPass.WriteRenderTarget(graphicsPass.CreateImage(
+                "IntermediateColorTarget",
+                Core::ImageDesc::Img2D(viewportDesc.m_width, viewportDesc.m_height, m_colorTargetFormat, false)));
 
-            Core::Format m_colorTargetFormat = Core::Format::kUndefined;
-            Rc<Core::Texture> m_texture;
-            Rc<ModelAsset> m_model;
-        };
+            const Core::RenderTargetHandle colorTarget = graphicsPass.WriteRenderTarget(intermediateColorTarget);
+            const Core::RenderTargetHandle depthTarget = graphicsPass.WriteRenderTarget(graph.GetMainDepthStencilTarget());
+
+            instanceData = graphicsPass.Read(instanceData, Core::BufferReadType::kShaderResource);
+
+            if (0)
+            {
+                graphicsPass.SetFunction([colorTarget, depthTarget, instanceData, viewport, t = m_texture->m_resource](
+                                             Core::FrameGraphContext& context) {
+                    FE_PROFILER_ZONE();
+
+                    auto& frameGraph = context.GetGraph();
+                    auto& localBlackboard = frameGraph.GetBlackboard();
+                    const auto& localPassData = localBlackboard.GetRequired<PassData>();
+
+                    struct ShaderConstants final
+                    {
+                        ImageSRVDescriptor m_textureSRV;
+                        SamplerDescriptor m_sampler;
+                        BufferSRVDescriptor m_instanceData;
+                        uint32_t m_padding;
+                    };
+
+                    ShaderConstants shaderConstants;
+                    shaderConstants.m_textureSRV = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                    shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
+                    shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
+                    context.PushConstants(shaderConstants);
+
+                    context.SetRenderTarget(colorTarget, depthTarget);
+                    context.SetRenderTargetLoadOperations(
+                        Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
+                    context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
+                    context.SetViewport(viewport);
+                    context.Draw(localPassData.m_drawCall);
+                });
+            }
+            else
+            {
+                graphicsPass.SetFunction([colorTarget, depthTarget, instanceData, viewport, t = m_texture->m_resource](
+                                             Core::FrameGraphContext& context) {
+                    FE_PROFILER_ZONE();
+
+                    auto& frameGraph = context.GetGraph();
+                    auto& localBlackboard = frameGraph.GetBlackboard();
+                    const auto& localPassData = localBlackboard.GetRequired<PassData>();
+
+                    struct ShaderConstants final
+                    {
+                        ByteAddressBufferDescriptor m_geometry;
+                        Texture2DDescriptor<Vector4> m_texture;
+                        SamplerDescriptor m_sampler;
+                        StructuredBufferDescriptor<Matrix4x4> m_instanceData;
+                        Core::MeshLodInfo m_lodInfo;
+                    };
+
+                    ModelAsset* model = localPassData.m_model;
+
+                    const uint32_t lodIndex = DateTime<TZ::Local>::Now().Second() % model->m_lodCount;
+                    const Core::Buffer* geometryBuffer = model->GetGeometryBuffer(lodIndex);
+                    const Core::MeshLodInfo lodInfo = model->GetLodInfo(0, lodIndex);
+
+                    ShaderConstants shaderConstants;
+                    shaderConstants.m_lodInfo = lodInfo;
+                    shaderConstants.m_geometry = frameGraph.GetSRV(geometryBuffer);
+                    shaderConstants.m_texture = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                    shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
+                    shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
+                    context.PushConstants(shaderConstants);
+
+                    context.SetRenderTarget(colorTarget, depthTarget);
+                    context.SetRenderTargetLoadOperations(
+                        Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
+                    context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
+                    context.SetViewport(viewport);
+                    // context.DispatchMesh(localPassData.m_meshShaderPipeline, Math::CeilDivide(lodInfo.m_meshletCount, 32));
+                    context.DispatchMesh(localPassData.m_meshShaderPipeline, lodInfo.m_meshletCount);
+                });
+            }
+
+            const auto colorTargetMips = Tools::Downsample::AddPass(builder, colorTarget);
+            const auto finalColorTarget = Tools::Blit::AddPass(builder, colorTargetMips[1], graph.GetMainColorTarget());
+            FE_Unused(finalColorTarget);
+        }
+
+        HighResolutionTimer m_timer;
+
+        Core::AsyncCopyQueue* m_copyQueue = nullptr;
+        Core::GeometryPool* m_geometryPool = nullptr;
+        Core::GeometryHandle m_geometry;
+
+        Core::Format m_colorTargetFormat = Core::Format::kUndefined;
 
         Rc<WaitGroup> ScheduleUpdate() override
         {
@@ -609,8 +589,12 @@ namespace
 
             m_frameGraph = serviceProvider->ResolveRequired<Core::FrameGraph>();
             m_frameGraph->RegisterViewport(m_viewport.Get());
-            m_frameGraph->AddPassProducer(m_passProducer.Get());
-            m_frameGraph->Execute();
+            m_frameGraph->BeginFrame();
+
+            Core::FrameGraphBuilder builder{ m_frameGraph.Get() };
+            Render(*m_frameGraph, builder, m_frameGraph->GetBlackboard());
+
+            m_frameGraph->CompileAndExecute();
             m_device->EndFrame();
             return nullptr;
         }
@@ -626,7 +610,6 @@ namespace
 
         Rc<Core::Viewport> m_viewport;
         Rc<Core::FrameGraph> m_frameGraph;
-        Rc<PassProducer> m_passProducer;
     };
 } // namespace
 

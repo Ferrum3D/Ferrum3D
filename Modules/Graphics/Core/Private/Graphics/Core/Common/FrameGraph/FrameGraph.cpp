@@ -22,12 +22,11 @@ namespace FE::Graphics::Common
     }
 
 
-    uint32_t FrameGraph::AddPassInternal(const uint32_t producerIndex, const Env::Name name)
+    uint32_t FrameGraph::AddPassInternal(const Env::Name name)
     {
         PassData& passData = m_passes.push_back();
         passData.m_name = name;
         passData.m_type = Core::PassType::kGraphics;
-        passData.m_producerIndex = producerIndex;
         return m_passes.size() - 1;
     }
 
@@ -53,12 +52,6 @@ namespace FE::Graphics::Common
     Core::RenderTargetHandle FrameGraph::GetMainDepthStencilTarget() const
     {
         return m_currentDepthStencilHandle;
-    }
-
-
-    void FrameGraph::AddPassProducer(Core::PassProducer* passProducer)
-    {
-        m_passProducers.push_back(passProducer);
     }
 
 
@@ -124,7 +117,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraph::Execute()
+    void FrameGraph::BeginFrame()
     {
         FE_PROFILER_ZONE();
 
@@ -148,13 +141,12 @@ namespace FE::Graphics::Common
             m_currentDepthStencilHandle = Core::RenderTargetHandle::Create(0, 0, 0);
             m_currentRenderTargetHandle = ImportRenderTarget(colorTarget, Core::ImageAccessType::kUndefined);
         }
+    }
 
-        for (uint32_t passProducerIndex = 0; passProducerIndex < m_passProducers.size(); ++passProducerIndex)
-        {
-            Core::PassProducer* passProducer = m_passProducers[passProducerIndex];
-            Core::FrameGraphBuilder builder{ this, passProducerIndex };
-            passProducer->Setup(*this, builder, m_blackboard);
-        }
+
+    void FrameGraph::CompileAndExecute()
+    {
+        FE_PROFILER_ZONE();
 
         Compile();
 

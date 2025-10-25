@@ -14,12 +14,6 @@ namespace FE::Graphics::Core
     struct Viewport;
 
 
-    struct PassProducer : public Memory::RefCountedObjectBase
-    {
-        virtual void Setup(FrameGraph& graph, FrameGraphBuilder& builder, FrameGraphBlackboard& blackboard) = 0;
-    };
-
-
     struct FrameGraph : public DeviceObject
     {
         FE_RTTI_Class(FrameGraph, "EA570124-75F4-4EFC-9C49-69EB5EB0404C");
@@ -40,8 +34,8 @@ namespace FE::Graphics::Core
         virtual RenderTargetHandle GetMainColorTarget() const = 0;
         virtual RenderTargetHandle GetMainDepthStencilTarget() const = 0;
 
-        virtual void AddPassProducer(PassProducer* passProducer) = 0;
-        virtual void Execute() = 0;
+        virtual void BeginFrame() = 0;
+        virtual void CompileAndExecute() = 0;
 
         virtual RenderTarget* GetRenderTarget(RenderTargetHandle image) const = 0;
         virtual Buffer* GetBuffer(BufferHandle buffer) const = 0;
@@ -124,7 +118,6 @@ namespace FE::Graphics::Core
         FrameGraph()
             : m_linearAllocator(UINT64_C(64 * 1024), Env::GetStaticAllocator(Memory::StaticAllocatorType::kVirtual))
             , m_blackboard(&m_linearAllocator)
-            , m_passProducers(&m_linearAllocator)
         {
         }
 
@@ -146,7 +139,7 @@ namespace FE::Graphics::Core
         };
 
         virtual PassDataBase& GetPassData(uint32_t passIndex) = 0;
-        virtual uint32_t AddPassInternal(uint32_t producerIndex, Env::Name name) = 0;
+        virtual uint32_t AddPassInternal(Env::Name name) = 0;
 
         virtual BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const BufferDesc& desc) = 0;
         virtual RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const ImageDesc& desc) = 0;
@@ -156,7 +149,6 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
-        SegmentedVector<PassProducer*> m_passProducers;
     };
 
 
@@ -259,15 +251,14 @@ namespace FE::Graphics::Core
 
     struct [[nodiscard]] FrameGraphBuilder final
     {
-        FrameGraphBuilder(FrameGraph* graph, const uint32_t passProducerIndex)
+        explicit FrameGraphBuilder(FrameGraph* graph)
             : m_graph(graph)
-            , m_passProducerIndex(passProducerIndex)
         {
         }
 
         FrameGraphPassBuilder AddPass(const Env::Name name) const
         {
-            const uint32_t passIndex = m_graph->AddPassInternal(m_passProducerIndex, name);
+            const uint32_t passIndex = m_graph->AddPassInternal(name);
             return { m_graph, passIndex };
         }
 
@@ -278,7 +269,6 @@ namespace FE::Graphics::Core
 
     private:
         FrameGraph* m_graph;
-        uint32_t m_passProducerIndex;
     };
 } // namespace FE::Graphics::Core
 

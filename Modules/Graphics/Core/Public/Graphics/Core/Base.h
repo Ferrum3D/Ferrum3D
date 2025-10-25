@@ -3,8 +3,8 @@
 
 namespace FE::Graphics::Core
 {
-    enum Format : uint32_t;
-    enum VertexChannelFormat : uint32_t;
+    enum class Format : uint32_t;
+    enum class VertexChannelFormat : uint32_t;
 
     struct Device;
     struct DeviceObject;
