@@ -508,7 +508,7 @@ namespace FE::Graphics::Vulkan
 
         CommandBufferDesc desc;
         desc.m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        desc.m_commandPool = ImplCast(m_device)->GetCommandPool(Core::DeviceQueueFlags::kTransfer);
+        desc.m_commandPool = ImplCast(m_device)->GetCommandPool(Core::DeviceQueueType::kTransfer);
         desc.m_name = Fmt::FormatName("AsyncCopyCommandBuffer_{}", m_commandBufferCounter++);
         desc.m_pageAllocator = std::pmr::get_default_resource();
         desc.m_queue = m_queue;
@@ -547,8 +547,8 @@ namespace FE::Graphics::Vulkan
         VerifyVulkan(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadRingBuffer));
 
         const auto* vkDevice = ImplCast(m_device);
-        m_transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueFlags::kTransfer);
-        m_graphicsQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueFlags::kGraphics);
+        m_transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
+        m_graphicsQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);
         vkGetDeviceQueue(vkDevice->GetNative(), m_transferQueueFamilyIndex, 0, &m_queue);
     }
 

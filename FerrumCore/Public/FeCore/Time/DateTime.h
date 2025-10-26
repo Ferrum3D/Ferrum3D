@@ -60,7 +60,7 @@ namespace FE
                 return m_data.m_second;
             }
 
-            [[nodiscard]] festd::basic_fixed_string<64> ToString(DateTimeFormatKind formatKind) const;
+            [[nodiscard]] festd::basic_fixed_string<64> ToString(DateTimeFormat format) const;
         };
     } // namespace Internal
 

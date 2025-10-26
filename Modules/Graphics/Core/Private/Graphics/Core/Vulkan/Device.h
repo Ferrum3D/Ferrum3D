@@ -15,13 +15,13 @@ namespace FE::Graphics::Vulkan
     {
         uint32_t m_familyIndex;
         uint32_t m_queueCount;
-        Core::DeviceQueueFlags m_class;
+        Core::DeviceQueueType m_queueType;
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
-        QueueFamilyData(const uint32_t idx, const uint32_t count, const Core::DeviceQueueFlags cmdListClass)
+        QueueFamilyData(const uint32_t idx, const uint32_t count, const Core::DeviceQueueType queueType)
             : m_familyIndex(idx)
             , m_queueCount(count)
-            , m_class(cmdListClass)
+            , m_queueType(queueType)
         {
         }
     };
@@ -97,11 +97,11 @@ namespace FE::Graphics::Vulkan
             return m_samplerCache.Get(desc);
         }
 
-        VkCommandPool GetCommandPool(const Core::DeviceQueueFlags cmdQueueClass) const
+        VkCommandPool GetCommandPool(const Core::DeviceQueueType queueType) const
         {
             for (const auto& queue : m_queueFamilyIndices)
             {
-                if (queue.m_class == cmdQueueClass)
+                if (queue.m_queueType == queueType)
                     return queue.m_commandPool;
             }
 
@@ -121,11 +121,11 @@ namespace FE::Graphics::Vulkan
             return m_queueFamilyIndices.front().m_commandPool;
         }
 
-        uint32_t GetQueueFamilyIndex(const Core::DeviceQueueFlags cmdQueueClass) const
+        uint32_t GetQueueFamilyIndex(const Core::DeviceQueueType queueType) const
         {
             for (const auto& queue : m_queueFamilyIndices)
             {
-                if (queue.m_class == cmdQueueClass)
+                if (queue.m_queueType == queueType)
                     return queue.m_familyIndex;
             }
 

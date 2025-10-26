@@ -62,7 +62,7 @@ namespace FE::Framework
         }
 
         {
-            const auto date = DateTime<TZ::Local>::Now().ToString(DateTimeFormatKind::kISO8601);
+            const auto date = DateTime<TZ::Local>::Now().ToString(DateTimeFormat::kISO8601);
             Console::Write(date);
         }
 

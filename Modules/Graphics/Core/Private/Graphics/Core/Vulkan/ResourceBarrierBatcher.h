@@ -13,14 +13,14 @@ namespace FE::Graphics::Vulkan
         VkBuffer m_buffer = VK_NULL_HANDLE;
         Core::BufferAccessType m_sourceAccess : 16;
         Core::BufferAccessType m_destAccess : 16;
-        Core::DeviceQueueFlags m_sourceQueueKind : 16;
-        Core::DeviceQueueFlags m_destQueueKind : 16;
+        Core::DeviceQueueType m_sourceQueueType : 16;
+        Core::DeviceQueueType m_destQueueType : 16;
 
         BufferBarrierDesc()
             : m_sourceAccess(Core::BufferAccessType::kUndefined)
             , m_destAccess(Core::BufferAccessType::kUndefined)
-            , m_sourceQueueKind(Core::DeviceQueueFlags::kNone)
-            , m_destQueueKind(Core::DeviceQueueFlags::kNone)
+            , m_sourceQueueType(Core::DeviceQueueType::kInvalid)
+            , m_destQueueType(Core::DeviceQueueType::kInvalid)
         {
         }
 
@@ -36,16 +36,16 @@ namespace FE::Graphics::Vulkan
         VkImage m_image = VK_NULL_HANDLE;
         Core::ImageAccessType m_sourceAccess : 16;
         Core::ImageAccessType m_destAccess : 16;
-        Core::DeviceQueueFlags m_sourceQueueKind : 16;
-        Core::DeviceQueueFlags m_destQueueKind : 16;
+        Core::DeviceQueueType m_sourceQueueType : 16;
+        Core::DeviceQueueType m_destQueueType : 16;
         Core::ImageSubresource m_subresource = {};
         Core::Format m_format = Core::Format::kUndefined;
 
         ImageBarrierDesc()
             : m_sourceAccess(Core::ImageAccessType::kUndefined)
             , m_destAccess(Core::ImageAccessType::kUndefined)
-            , m_sourceQueueKind(Core::DeviceQueueFlags::kNone)
-            , m_destQueueKind(Core::DeviceQueueFlags::kNone)
+            , m_sourceQueueType(Core::DeviceQueueType::kInvalid)
+            , m_destQueueType(Core::DeviceQueueType::kInvalid)
         {
         }
 

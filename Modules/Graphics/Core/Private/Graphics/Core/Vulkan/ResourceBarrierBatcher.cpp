@@ -161,10 +161,10 @@ namespace FE::Graphics::Vulkan
             barrier.offset = 0;
             barrier.size = VK_WHOLE_SIZE;
 
-            if (barrierDesc.m_sourceQueueKind != barrierDesc.m_destQueueKind)
+            if (barrierDesc.m_sourceQueueType != barrierDesc.m_destQueueType)
             {
-                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueKind);
-                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueKind);
+                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueType);
+                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueType);
             }
             else
             {
@@ -197,10 +197,10 @@ namespace FE::Graphics::Vulkan
             barrier.subresourceRange.baseArrayLayer = barrierDesc.m_subresource.m_firstArraySlice;
             barrier.subresourceRange.layerCount = barrierDesc.m_subresource.m_arraySize;
 
-            if (barrierDesc.m_sourceQueueKind != barrierDesc.m_destQueueKind)
+            if (barrierDesc.m_sourceQueueType != barrierDesc.m_destQueueType)
             {
-                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueKind);
-                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueKind);
+                barrier.srcQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_sourceQueueType);
+                barrier.dstQueueFamilyIndex = m_device->GetQueueFamilyIndex(barrierDesc.m_destQueueType);
             }
             else
             {

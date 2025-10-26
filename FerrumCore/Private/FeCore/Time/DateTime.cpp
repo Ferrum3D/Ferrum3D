@@ -43,17 +43,17 @@ namespace FE::Internal
     } // namespace
 
 
-    festd::basic_fixed_string<64> DateTimeBase::ToString(const DateTimeFormatKind formatKind) const
+    festd::basic_fixed_string<64> DateTimeBase::ToString(const DateTimeFormat format) const
     {
         char result[64];
         result[0] = 0;
 
         char* iter = result;
 
-        switch (formatKind)
+        switch (format)
         {
         default:
-        case DateTimeFormatKind::kISO8601:
+        case DateTimeFormat::kISO8601:
             iter = StrToDecimal(iter, Year(), 4);
             *iter++ = '-';
             iter = StrToDecimal(iter, Month() + 1, 2);
@@ -67,14 +67,14 @@ namespace FE::Internal
             iter = StrToDecimal(iter, Second(), 2);
             *iter++ = 'Z';
             break;
-        case DateTimeFormatKind::kShort:
+        case DateTimeFormat::kShort:
             iter = StrToDecimal(iter, Month() + 1, -1);
             *iter++ = '/';
             iter = StrToDecimal(iter, Day(), -1);
             *iter++ = '/';
             iter = StrToDecimal(iter, Year(), -1);
             break;
-        case DateTimeFormatKind::kLong:
+        case DateTimeFormat::kLong:
             iter = Str::Copy(iter,
                              static_cast<uint32_t>(sizeof(result) - (iter - result)),
                              kDayNames[DayOfWeek()].data(),

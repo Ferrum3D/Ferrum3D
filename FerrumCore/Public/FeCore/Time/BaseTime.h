@@ -3,7 +3,7 @@
 
 namespace FE
 {
-    enum class DateTimeFormatKind
+    enum class DateTimeFormat
     {
         kISO8601,
         kShort,

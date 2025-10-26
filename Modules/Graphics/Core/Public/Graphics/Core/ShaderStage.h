@@ -24,8 +24,8 @@ namespace FE::Graphics::Core
         kMesh = 1 << static_cast<uint32_t>(ShaderStage::kMesh),
         kPixel = 1 << static_cast<uint32_t>(ShaderStage::kPixel),
         kCompute = 1 << static_cast<uint32_t>(ShaderStage::kCompute),
-        kAllGraphics = kVertex | kPixel,
-        kAll = kVertex | kPixel | kCompute,
+        kAllGraphics = kVertex | kAmplification | kMesh | kPixel,
+        kAll = kAllGraphics | kCompute,
     };
 
     FE_ENUM_OPERATORS(ShaderStageFlags);

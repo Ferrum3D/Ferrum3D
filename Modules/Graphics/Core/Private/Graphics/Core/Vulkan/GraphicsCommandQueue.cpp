@@ -10,8 +10,8 @@ namespace FE::Graphics::Vulkan
         m_fence = Fence::Create(m_device);
         m_fence->Init(0);
 
-        const VkCommandPool commandPool = ImplCast(device)->GetCommandPool(Core::DeviceQueueFlags::kGraphics);
-        const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::DeviceQueueFlags::kGraphics);
+        const VkCommandPool commandPool = ImplCast(device)->GetCommandPool(Core::DeviceQueueType::kGraphics);
+        const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);
         vkGetDeviceQueue(NativeCast(device), queueFamilyIndex, 0, &m_nativeQueue);
 
         for (uint32_t i = 0; i < kMaxInFlightFrames; ++i)

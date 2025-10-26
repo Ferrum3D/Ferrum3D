@@ -21,9 +21,9 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        const auto hasQueueFamily = [this](const Core::DeviceQueueFlags cmdQueueClass) {
+        const auto hasQueueFamily = [this](const Core::DeviceQueueType queueType) {
             return std::any_of(m_queueFamilyIndices.begin(), m_queueFamilyIndices.end(), [=](const QueueFamilyData& data) {
-                return data.m_class == cmdQueueClass;
+                return data.m_queueType == queueType;
             });
         };
 
@@ -39,17 +39,17 @@ namespace FE::Graphics::Vulkan
             const uint32_t kCopy = VK_QUEUE_TRANSFER_BIT;
 
             const uint32_t idx = static_cast<uint32_t>(i);
-            if ((families[i].queueFlags & kGraphics) == kGraphics && !hasQueueFamily(Core::DeviceQueueFlags::kGraphics))
+            if ((families[i].queueFlags & kGraphics) == kGraphics && !hasQueueFamily(Core::DeviceQueueType::kGraphics))
             {
-                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueFlags::kGraphics));
+                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueType::kGraphics));
             }
-            else if ((families[i].queueFlags & kCompute) == kCompute && !hasQueueFamily(Core::DeviceQueueFlags::kCompute))
+            else if ((families[i].queueFlags & kCompute) == kCompute && !hasQueueFamily(Core::DeviceQueueType::kCompute))
             {
-                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueFlags::kCompute));
+                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueType::kCompute));
             }
-            else if ((families[i].queueFlags & kCopy) == kCopy && !hasQueueFamily(Core::DeviceQueueFlags::kTransfer))
+            else if ((families[i].queueFlags & kCopy) == kCopy && !hasQueueFamily(Core::DeviceQueueType::kTransfer))
             {
-                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueFlags::kTransfer));
+                m_queueFamilyIndices.push_back(QueueFamilyData(idx, families[i].queueCount, Core::DeviceQueueType::kTransfer));
             }
         }
     }
