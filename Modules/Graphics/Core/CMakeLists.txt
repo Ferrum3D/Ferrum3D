@@ -10,6 +10,7 @@
     Public/Graphics/Core/AdapterInfo.h
     Public/Graphics/Core/AsyncCopyQueue.h
     Public/Graphics/Core/ComputePipeline.h
+    Public/Graphics/Core/Barrier.h
     Public/Graphics/Core/Buffer.h
     Public/Graphics/Core/Device.h
     Public/Graphics/Core/DeviceFactory.h
