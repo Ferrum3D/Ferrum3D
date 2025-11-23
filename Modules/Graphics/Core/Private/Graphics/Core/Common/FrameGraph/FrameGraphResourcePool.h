@@ -16,7 +16,7 @@ namespace FE::Graphics::Common
 
         void Reset();
 
-        Core::RenderTarget* CreateRenderTarget(Env::Name name, const Core::ImageDesc& desc);
+        Core::RenderTarget* CreateRenderTarget(Env::Name name, const Core::TextureDesc& desc);
         Core::Buffer* CreateBuffer(Env::Name name, const Core::BufferDesc& desc);
 
     private:

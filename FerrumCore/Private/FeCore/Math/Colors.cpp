@@ -2,6 +2,9 @@
 
 namespace FE
 {
+    const Color4F Colors::kTransparentBlack = Color4F::FromBytes(0, 0, 0, 0);
+
+
     //=========================================================================================
     // Pink colors
     const Color4F Colors::kMediumVioletRed = Color4F::FromBytes(199, 21, 133, 255);
@@ -10,6 +13,7 @@ namespace FE
     const Color4F Colors::kHotPink = Color4F::FromBytes(255, 105, 180, 255);
     const Color4F Colors::kLightPink = Color4F::FromBytes(255, 182, 193, 255);
     const Color4F Colors::kPink = Color4F::FromBytes(255, 192, 203, 255);
+
 
     //=========================================================================================
     // Red colors
@@ -23,6 +27,7 @@ namespace FE
     const Color4F Colors::kDarkSalmon = Color4F::FromBytes(233, 150, 122, 255);
     const Color4F Colors::kLightSalmon = Color4F::FromBytes(255, 160, 122, 255);
 
+
     //=========================================================================================
     // Orange colors
     const Color4F Colors::kOrangeRed = Color4F::FromBytes(255, 69, 0, 255);
@@ -30,6 +35,7 @@ namespace FE
     const Color4F Colors::kDarkOrange = Color4F::FromBytes(255, 140, 0, 255);
     const Color4F Colors::kCoral = Color4F::FromBytes(255, 127, 80, 255);
     const Color4F Colors::kOrange = Color4F::FromBytes(255, 165, 0, 255);
+
 
     //=========================================================================================
     // Yellow colors
@@ -44,6 +50,7 @@ namespace FE
     const Color4F Colors::kLightGoldenrodYellow = Color4F::FromBytes(250, 250, 210, 255);
     const Color4F Colors::kLemonChiffon = Color4F::FromBytes(255, 250, 205, 255);
     const Color4F Colors::kLightYellow = Color4F::FromBytes(255, 255, 224, 255);
+
 
     //=========================================================================================
     // Brown colors
@@ -64,6 +71,7 @@ namespace FE
     const Color4F Colors::kBisque = Color4F::FromBytes(255, 228, 196, 255);
     const Color4F Colors::kBlanchedAlmond = Color4F::FromBytes(255, 235, 205, 255);
     const Color4F Colors::kCornsilk = Color4F::FromBytes(255, 248, 220, 255);
+
 
     //=========================================================================================
     // Green colors
@@ -88,6 +96,7 @@ namespace FE
     const Color4F Colors::kGreenYellow = Color4F::FromBytes(173, 255, 47, 255);
     const Color4F Colors::kPaleGreen = Color4F::FromBytes(152, 251, 152, 255);
 
+
     //=========================================================================================
     // Cyan colors
     const Color4F Colors::kTeal = Color4F::FromBytes(0, 128, 128, 255);
@@ -102,6 +111,7 @@ namespace FE
     const Color4F Colors::kAquamarine = Color4F::FromBytes(127, 255, 212, 255);
     const Color4F Colors::kPaleTurquoise = Color4F::FromBytes(175, 238, 238, 255);
     const Color4F Colors::kLightCyan = Color4F::FromBytes(224, 255, 255, 255);
+
 
     //=========================================================================================
     // Blue colors
@@ -120,6 +130,7 @@ namespace FE
     const Color4F Colors::kLightSteelBlue = Color4F::FromBytes(176, 196, 222, 255);
     const Color4F Colors::kLightBlue = Color4F::FromBytes(173, 216, 230, 255);
     const Color4F Colors::kPowderBlue = Color4F::FromBytes(176, 224, 230, 255);
+
 
     //=========================================================================================
     // Purple, violet, and magenta colors
@@ -142,6 +153,7 @@ namespace FE
     const Color4F Colors::kThistle = Color4F::FromBytes(216, 191, 216, 255);
     const Color4F Colors::kLavender = Color4F::FromBytes(230, 230, 250, 255);
 
+
     //=========================================================================================
     // White colors
     const Color4F Colors::kMistyRose = Color4F::FromBytes(255, 228, 225, 255);
@@ -161,6 +173,7 @@ namespace FE
     const Color4F Colors::kSnow = Color4F::FromBytes(255, 250, 250, 255);
     const Color4F Colors::kIvory = Color4F::FromBytes(255, 255, 240, 255);
     const Color4F Colors::kWhite = Color4F::FromBytes(255, 255, 255, 255);
+
 
     //=========================================================================================
     // Gray and black colors

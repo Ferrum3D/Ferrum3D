@@ -38,7 +38,7 @@ namespace FE::Graphics::Vulkan
     {
         void Shutdown(VkDevice device);
 
-        void InitInternal(VkDevice device, const Core::ImageDesc& desc, VkImage nativeImage);
+        void InitInternal(VkDevice device, const Core::TextureDesc& desc, VkImage nativeImage);
 
         [[nodiscard]] VkImage GetNative() const
         {
@@ -50,11 +50,11 @@ namespace FE::Graphics::Vulkan
             return m_view;
         }
 
-        [[nodiscard]] VkImageView GetSubresourceView(VkDevice device, const Core::ImageSubresource& subresource) const;
+        [[nodiscard]] VkImageView GetSubresourceView(VkDevice device, const Core::TextureSubresource& subresource) const;
 
     protected:
         void InitInternal(VkDevice device, const char* name, VmaAllocator allocator, VkImageUsageFlags usage,
-                          const Core::ImageDesc& desc);
+                          const Core::TextureDesc& desc);
 
         void InitView(VkDevice device);
 
@@ -69,9 +69,9 @@ namespace FE::Graphics::Vulkan
             VkImageView m_view = VK_NULL_HANDLE;
         };
 
-        Core::ImageSubresource m_wholeImageSubresource = Core::ImageSubresource::kInvalid;
+        Core::TextureSubresource m_wholeImageSubresource = Core::TextureSubresource::kInvalid;
         mutable festd::inline_vector<ViewCacheEntry, 6> m_viewCache;
 
-        Core::ImageDesc m_desc = {};
+        Core::TextureDesc m_desc = {};
     };
 } // namespace FE::Graphics::Vulkan

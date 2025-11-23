@@ -481,7 +481,7 @@ namespace
 
             const Core::RenderTargetHandle intermediateColorTarget = graphicsPass.WriteRenderTarget(graphicsPass.CreateImage(
                 "IntermediateColorTarget",
-                Core::ImageDesc::Img2D(viewportDesc.m_width, viewportDesc.m_height, m_colorTargetFormat, false)));
+                Core::TextureDesc::Img2D(viewportDesc.m_width, viewportDesc.m_height, m_colorTargetFormat, false)));
 
             const Core::RenderTargetHandle colorTarget = graphicsPass.WriteRenderTarget(intermediateColorTarget);
             const Core::RenderTargetHandle depthTarget = graphicsPass.WriteRenderTarget(graph.GetMainDepthStencilTarget());
@@ -500,14 +500,14 @@ namespace
 
                     struct ShaderConstants final
                     {
-                        ImageSRVDescriptor m_textureSRV;
+                        TextureSRVDescriptor m_textureSRV;
                         SamplerDescriptor m_sampler;
                         BufferSRVDescriptor m_instanceData;
                         uint32_t m_padding;
                     };
 
                     ShaderConstants shaderConstants;
-                    shaderConstants.m_textureSRV = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                    shaderConstants.m_textureSRV = frameGraph.GetSRV(t.Get(), Core::TextureSubresource::kInvalid);
                     shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
                     shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
                     context.PushConstants(shaderConstants);
@@ -548,7 +548,7 @@ namespace
                     ShaderConstants shaderConstants;
                     shaderConstants.m_lodInfo = lodInfo;
                     shaderConstants.m_geometry = frameGraph.GetSRV(geometryBuffer);
-                    shaderConstants.m_texture = frameGraph.GetSRV(t.Get(), Core::ImageSubresource::kInvalid);
+                    shaderConstants.m_texture = frameGraph.GetSRV(t.Get(), Core::TextureSubresource::kInvalid);
                     shaderConstants.m_sampler = frameGraph.GetSampler(Core::SamplerState::kLinearWrap);
                     shaderConstants.m_instanceData = frameGraph.GetSRV(instanceData);
                     context.PushConstants(shaderConstants);

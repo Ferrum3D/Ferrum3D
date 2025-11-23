@@ -99,7 +99,7 @@ namespace FE::Trace
         SymbolInfo symbolInfo;
         symbolInfo.m_address = reinterpret_cast<uintptr_t>(ptr);
 
-        auto* winSymbolInfo = FE_StackAlloc(SYMBOL_INFO, sizeof(SYMBOL_INFO) + sizeof(symbolInfo.m_symbolName));
+        auto* winSymbolInfo = FE_StackAllocBytes(SYMBOL_INFO, sizeof(SYMBOL_INFO) + sizeof(symbolInfo.m_symbolName));
         winSymbolInfo->MaxNameLen = sizeof(symbolInfo.m_symbolName) - 1;
         winSymbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
         if (SymFromAddr(GetCurrentProcess(), reinterpret_cast<ULONGLONG>(ptr), nullptr, winSymbolInfo))
@@ -132,10 +132,10 @@ namespace FE::Trace
 
     CallStack CallStack::Capture(const uint32_t maxFrames, const uint32_t skipFrames)
     {
-        void** tempFrames = FE_StackAlloc(void*, maxFrames);
+        const festd::span<void*> tempFrames = FE_StackAlloc(void*, maxFrames);
 
-        const WORD frameCount = RtlCaptureStackBackTrace(skipFrames, maxFrames, tempFrames, nullptr);
-        const uint64_t hash = XXH3_64bits(tempFrames, frameCount * sizeof(void*));
+        const WORD frameCount = RtlCaptureStackBackTrace(skipFrames, maxFrames, tempFrames.data(), nullptr);
+        const uint64_t hash = XXH3_64bits(tempFrames.data(), festd::size_bytes(tempFrames));
 
         {
             std::lock_guard lock{ GStorage->m_lock };
@@ -145,7 +145,7 @@ namespace FE::Trace
                 return it->second;
 
             void** frames = AllocateFrames(frameCount + 1);
-            memcpy(frames, tempFrames, frameCount * sizeof(void*));
+            festd::copy(tempFrames.begin(), tempFrames.end(), frames);
             frames[frameCount] = nullptr;
 
             CallStack callStack;

@@ -77,7 +77,7 @@ namespace FE::Platform
             BOOL result = GetLogicalProcessorInformationEx(RelationAll, nullptr, &structureLength);
             FE_Assert(result == FALSE && GetLastError() == ERROR_INSUFFICIENT_BUFFER);
 
-            std::byte* buffer = FE_StackAlloc(std::byte, structureLength);
+            auto* buffer = FE_StackAllocBytes(std::byte, structureLength);
 
             result = GetLogicalProcessorInformationEx(
                 RelationAll, reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer), &structureLength);

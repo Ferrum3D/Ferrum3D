@@ -48,7 +48,7 @@ namespace FE::Graphics::Tools
         const auto source = pass.Read(src, Core::ImageReadType::kShaderResource);
         const auto destination = pass.WriteRenderTarget(dst);
 
-        const Core::ImageDesc dstDesc = graph.GetResourceDesc(dst);
+        const Core::TextureDesc dstDesc = graph.GetResourceDesc(dst);
         const Core::Format colorTargetFormat = dstDesc.m_imageFormat;
 
         pass.SetFunction([=](Core::FrameGraphContext& context) {

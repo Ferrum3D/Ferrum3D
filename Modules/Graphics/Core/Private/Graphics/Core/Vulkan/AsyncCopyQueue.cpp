@@ -330,9 +330,9 @@ namespace FE::Graphics::Vulkan
                     FE_Verify(reader.Read(cmd));
 
                     auto* texture = const_cast<Texture*>(ImplCast(cmd.m_texture));
-                    const Core::ImageDesc imageDesc = texture->GetDesc();
+                    const Core::TextureDesc imageDesc = texture->GetDesc();
                     const Core::FormatInfo formatInfo{ imageDesc.m_imageFormat };
-                    const Core::ImageSubresource subresource = cmd.m_subresource;
+                    const Core::TextureSubresource subresource = cmd.m_subresource;
 
                     FE_Assert(subresource.m_firstArraySlice + subresource.m_arraySize <= imageDesc.m_arraySize);
                     FE_Assert(subresource.m_mostDetailedMipSlice + subresource.m_mipSliceCount <= imageDesc.m_mipSliceCount);
@@ -397,8 +397,8 @@ namespace FE::Graphics::Vulkan
                         beforeBarrierBatcher.Add(mipIndex, arrayIndex);
                         afterBarrierBatcher.Add(mipIndex, arrayIndex);
 
-                        FE_Assert(texture->GetSubresourceState(mipIndex, arrayIndex) == TextureSubresourceState::kUndefined);
-                        texture->SetSubresourceState(mipIndex, arrayIndex, TextureSubresourceState::kTransferDestination);
+                        FE_Assert(texture->GetSubresourceState(mipIndex, arrayIndex) == SubresourceState::kUndefined);
+                        texture->SetSubresourceState(mipIndex, arrayIndex, SubresourceState::kTransferDestination);
 
                         VkBufferImageCopy copy = {};
                         copy.imageSubresource.aspectMask = TranslateImageAspectFlags(imageDesc.m_imageFormat);
@@ -535,16 +535,15 @@ namespace FE::Graphics::Vulkan
         m_threadEvent = Threading::Event::CreateManualReset();
         m_suspendEvent = Threading::Event::CreateManualReset();
 
-        const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceMemoryUsage::kHostWriteThrough };
+        const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceMemory::kHostWriteThrough };
         m_uploadBuffer = ImplCast(m_resourcePool->CreateBuffer("AsyncUploadBuffer", uploadDesc));
 
-        m_fence = Fence::Create(m_device);
-        m_fence->Init();
+        m_fence = Fence::Create(m_device, 0);
 
         VmaVirtualBlockCreateInfo virtualBlockCI = {};
         virtualBlockCI.size = kUploadBufferSize;
         virtualBlockCI.flags = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT;
-        VerifyVulkan(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadRingBuffer));
+        VerifyVk(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadRingBuffer));
 
         const auto* vkDevice = ImplCast(m_device);
         m_transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
@@ -586,6 +585,6 @@ namespace FE::Graphics::Vulkan
         m_suspendEvent.Wait();
         FE_Assert(m_requestQueue.Empty());
         FE_Assert(m_requestCache.empty());
-        VerifyVulkan(vkQueueWaitIdle(m_queue));
+        VerifyVk(vkQueueWaitIdle(m_queue));
     }
 } // namespace FE::Graphics::Vulkan

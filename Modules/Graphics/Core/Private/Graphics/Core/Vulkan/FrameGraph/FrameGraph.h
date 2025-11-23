@@ -14,9 +14,9 @@ namespace FE::Graphics::Vulkan
         FrameGraph(Core::Device* device, Common::FrameGraphResourcePool* resourcePool, BindlessManager* bindlessManager,
                    GraphicsCommandQueue* commandQueue);
 
-        ImageSRVDescriptor GetSRV(const Core::Texture* texture, Core::ImageSubresource subresource) override;
-        ImageSRVDescriptor GetSRV(const Core::RenderTarget* texture, Core::ImageSubresource subresource) override;
-        ImageUAVDescriptor GetUAV(const Core::RenderTarget* renderTarget, Core::ImageSubresource subresource) override;
+        TextureSRVDescriptor GetSRV(const Core::Texture* texture, Core::TextureSubresource subresource) override;
+        TextureSRVDescriptor GetSRV(const Core::RenderTarget* texture, Core::TextureSubresource subresource) override;
+        TextureUAVDescriptor GetUAV(const Core::RenderTarget* renderTarget, Core::TextureSubresource subresource) override;
         BufferSRVDescriptor GetSRV(const Core::Buffer* buffer, uint32_t offset, uint32_t size) override;
         BufferUAVDescriptor GetUAV(const Core::Buffer* buffer, uint32_t offset, uint32_t size) override;
         SamplerDescriptor GetSampler(Core::SamplerState sampler) override;

@@ -112,7 +112,7 @@ namespace FE::Graphics::Vulkan
         samplerCI.compareOp = Translate(samplerState.m_compareOp);
 
         VkSampler sampler;
-        VerifyVulkan(vkCreateSampler(device->GetNative(), &samplerCI, nullptr, &sampler));
+        VerifyVk(vkCreateSampler(device->GetNative(), &samplerCI, nullptr, &sampler));
         return sampler;
     }
 

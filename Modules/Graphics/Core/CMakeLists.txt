@@ -6,6 +6,7 @@
     Public/Graphics/Core/FrameGraph/Blackboard.h
     Public/Graphics/Core/FrameGraph/FrameGraph.h
     Public/Graphics/Core/FrameGraph/FrameGraphContext.h
+    Public/Graphics/Core/FrameGraph/FrameGraphPass.h
 
     Public/Graphics/Core/AdapterInfo.h
     Public/Graphics/Core/AsyncCopyQueue.h
@@ -30,7 +31,6 @@
     Public/Graphics/Core/PipelineFactory.h
     Public/Graphics/Core/PipelineStates.h
     Public/Graphics/Core/PipelineVariantSet.h
-    Public/Graphics/Core/RenderTarget.h
     Public/Graphics/Core/Resource.h
     Public/Graphics/Core/ResourcePool.h
     Public/Graphics/Core/Sampler.h
@@ -48,6 +48,7 @@
 set(COMMON_SOURCES
     Private/Graphics/Core/Common/Device.cpp
     Private/Graphics/Core/Common/Device.h
+    Private/Graphics/Core/Common/ResourceInstance.h
     Private/Graphics/Core/Common/ShaderSourceCache.cpp
     Private/Graphics/Core/Common/ShaderSourceCache.h
 
@@ -59,7 +60,8 @@ set(COMMON_SOURCES
     Private/Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.h
 
     Private/Graphics/Core/AsyncCopyQueue.cpp
-    Private/Graphics/Core/ImageBase.cpp
+    Private/Graphics/Core/DescriptorManager.cpp
+    Private/Graphics/Core/DescriptorManager.h
     Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp
     Private/Graphics/Core/ShaderCompilerDXC.cpp
@@ -93,8 +95,8 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/CommandBuffer.h
     Private/Graphics/Core/Vulkan/ComputePipeline.cpp
     Private/Graphics/Core/Vulkan/ComputePipeline.h
-    Private/Graphics/Core/Vulkan/DescriptorAllocator.cpp
-    Private/Graphics/Core/Vulkan/DescriptorAllocator.h
+    Private/Graphics/Core/Vulkan/DescriptorManager.cpp
+    Private/Graphics/Core/Vulkan/DescriptorManager.h
     Private/Graphics/Core/Vulkan/Device.cpp
     Private/Graphics/Core/Vulkan/Device.h
     Private/Graphics/Core/Vulkan/DeviceFactory.cpp
@@ -113,10 +115,10 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/PipelineFactory.cpp
     Private/Graphics/Core/Vulkan/PipelineFactory.h
     Private/Graphics/Core/Vulkan/PipelineStates.h
-    Private/Graphics/Core/Vulkan/RenderTarget.cpp
-    Private/Graphics/Core/Vulkan/RenderTarget.h
     Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.cpp
     Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.h
+    Private/Graphics/Core/Vulkan/ResourceInstance.cpp
+    Private/Graphics/Core/Vulkan/ResourceInstance.h
     Private/Graphics/Core/Vulkan/ResourcePool.cpp
     Private/Graphics/Core/Vulkan/ResourcePool.h
     Private/Graphics/Core/Vulkan/Sampler.cpp

@@ -179,7 +179,7 @@ namespace FE::Graphics::Vulkan
         deviceCI.enabledExtensionCount = static_cast<uint32_t>(kRequiredDeviceExtensions.size());
         deviceCI.ppEnabledExtensionNames = kRequiredDeviceExtensions.data();
 
-        VerifyVulkan(vkCreateDevice(m_nativeAdapter, &deviceCI, VK_NULL_HANDLE, &m_nativeDevice));
+        VerifyVk(vkCreateDevice(m_nativeAdapter, &deviceCI, VK_NULL_HANDLE, &m_nativeDevice));
         volkLoadDevice(m_nativeDevice);
 
         for (auto& queueFamilyData : m_queueFamilyIndices)

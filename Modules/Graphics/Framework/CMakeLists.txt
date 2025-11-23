@@ -18,6 +18,8 @@ set(SHADER_SOURCES
     Shaders/Shaders/Features/Tools/Blit/Blit.ps.hlsl
     Shaders/Shaders/Features/Tools/Blit/Blit.vs.hlsl
     Shaders/Shaders/Features/Tools/Downsample/Downsample.cs.hlsl
+
+    Shaders/Shaders/Platform/Vulkan/Intrinsics.hlsli
 )
 
 set_source_files_properties(${SHADER_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)

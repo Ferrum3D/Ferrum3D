@@ -19,8 +19,8 @@ namespace FE::Graphics::Vulkan
         BufferBarrierDesc()
             : m_sourceAccess(Core::BufferAccessType::kUndefined)
             , m_destAccess(Core::BufferAccessType::kUndefined)
-            , m_sourceQueueType(Core::DeviceQueueType::kInvalid)
-            , m_destQueueType(Core::DeviceQueueType::kInvalid)
+            , m_sourceQueueType(Core::DeviceQueueType::kCount)
+            , m_destQueueType(Core::DeviceQueueType::kCount)
         {
         }
 
@@ -38,14 +38,14 @@ namespace FE::Graphics::Vulkan
         Core::ImageAccessType m_destAccess : 16;
         Core::DeviceQueueType m_sourceQueueType : 16;
         Core::DeviceQueueType m_destQueueType : 16;
-        Core::ImageSubresource m_subresource = {};
+        Core::TextureSubresource m_subresource = {};
         Core::Format m_format = Core::Format::kUndefined;
 
         ImageBarrierDesc()
             : m_sourceAccess(Core::ImageAccessType::kUndefined)
             , m_destAccess(Core::ImageAccessType::kUndefined)
-            , m_sourceQueueType(Core::DeviceQueueType::kInvalid)
-            , m_destQueueType(Core::DeviceQueueType::kInvalid)
+            , m_sourceQueueType(Core::DeviceQueueType::kCount)
+            , m_destQueueType(Core::DeviceQueueType::kCount)
         {
         }
 

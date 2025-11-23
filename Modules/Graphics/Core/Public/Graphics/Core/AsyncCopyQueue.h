@@ -65,7 +65,7 @@ namespace FE::Graphics::Core
         {
             AsyncCopyCommandType m_type;
             uint32_t m_sourceOffset;
-            ImageSubresource m_subresource;
+            TextureSubresource m_subresource;
             const Texture* m_texture;
             const void* m_data;
         };
@@ -134,7 +134,7 @@ namespace FE::Graphics::Core
         void UploadBuffer(const Buffer* buffer, const void* data, uint32_t sourceOffset, uint32_t destinationOffset,
                           uint32_t size);
 
-        void UploadTexture(const Texture* texture, const void* data, uint32_t sourceOffset, ImageSubresource subresource);
+        void UploadTexture(const Texture* texture, const void* data, uint32_t sourceOffset, TextureSubresource subresource);
 
         AsyncCopyCommandList Build(WaitGroup* signalWaitGroup = nullptr);
 

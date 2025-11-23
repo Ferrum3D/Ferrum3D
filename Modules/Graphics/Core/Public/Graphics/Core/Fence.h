@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/DeviceObject.h>
 
 namespace FE::Graphics::Core
@@ -7,8 +6,6 @@ namespace FE::Graphics::Core
     struct Fence : public DeviceObject
     {
         FE_RTTI_Class(Fence, "D815152F-A41F-45C8-81AB-F921F19E8AA3");
-
-        virtual ResultCode Init(uint64_t initialValue = 0) = 0;
 
         virtual uint64_t GetCompletedValue() = 0;
         virtual void Wait(uint64_t value) = 0;

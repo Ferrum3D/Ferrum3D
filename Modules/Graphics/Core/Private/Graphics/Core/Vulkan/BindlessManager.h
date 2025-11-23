@@ -22,9 +22,9 @@ namespace FE::Graphics::Vulkan
         void BeginFrame();
         Core::FenceSyncPoint CloseFrame();
 
-        uint32_t RegisterSRV(const Core::Texture* texture, Core::ImageSubresource subresource);
-        uint32_t RegisterSRV(const Core::RenderTarget* renderTarget, Core::ImageSubresource subresource);
-        uint32_t RegisterUAV(const Core::RenderTarget* renderTarget, Core::ImageSubresource subresource);
+        uint32_t RegisterSRV(const Core::Texture* texture, Core::TextureSubresource subresource);
+        uint32_t RegisterSRV(const Core::RenderTarget* renderTarget, Core::TextureSubresource subresource);
+        uint32_t RegisterUAV(const Core::RenderTarget* renderTarget, Core::TextureSubresource subresource);
         uint32_t RegisterSRV(const Core::Buffer* buffer, uint32_t offset, uint32_t size);
         uint32_t RegisterUAV(const Core::Buffer* buffer, uint32_t offset, uint32_t size);
         uint32_t RegisterSampler(Core::SamplerState sampler);

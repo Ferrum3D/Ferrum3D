@@ -4,11 +4,16 @@
 
 namespace FE::Graphics::Core
 {
-    //! @brief Resource memory usage flags.
-    enum class ResourceMemoryUsage : uint32_t
+    struct ResourcePool;
+
+    //! @brief Resource memory status.
+    enum class ResourceMemory : uint32_t
     {
+        //! @brief Specifies that the resource memory is not committed.
+        kNotCommitted,
+
         //! @brief Specifies that the resource is only used on the GPU.
-        kDeviceOnly,
+        kDeviceLocal,
 
         //! @brief Specifies that the resource can be mapped by the CPU and accessed in random order.
         kHostRandomAccess,
@@ -23,7 +28,6 @@ namespace FE::Graphics::Core
         kUnknown,
         kBuffer,
         kTexture,
-        kRenderTarget,
     };
 
 
@@ -46,6 +50,10 @@ namespace FE::Graphics::Core
             return m_resourceID;
         }
 
+        [[nodiscard]] virtual ResourceMemory GetMemoryStatus() const = 0;
+
+        virtual void DecommitMemory() = 0;
+
     protected:
         Env::Name m_name;
         uint32_t m_resourceID = kInvalidIndex;
@@ -54,6 +62,10 @@ namespace FE::Graphics::Core
         void Register()
         {
             m_resourceID = m_device->RegisterResource(this);
+
+            // Resources are never really destroyed immediately, they are only returned to the pool.
+            // So, it's the pool's responsibility to destroy them when safe.
+            SetImmediateDestroyPolicy();
         }
 
         ~Resource() override

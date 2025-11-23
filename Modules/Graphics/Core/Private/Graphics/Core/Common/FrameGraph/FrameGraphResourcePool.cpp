@@ -16,7 +16,7 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::RenderTarget* FrameGraphResourcePool::CreateRenderTarget(const Env::Name name, const Core::ImageDesc& desc)
+    Core::RenderTarget* FrameGraphResourcePool::CreateRenderTarget(const Env::Name name, const Core::TextureDesc& desc)
     {
         FE_PROFILER_ZONE();
 

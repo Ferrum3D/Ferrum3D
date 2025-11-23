@@ -1,88 +1,57 @@
 #pragma once
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Texture.h>
-#include <Graphics/Core/Vulkan/Image.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 
 namespace FE::Graphics::Vulkan
 {
-    enum class TextureSubresourceState : uint8_t
-    {
-        kUndefined,
-        kTransferDestination,
-        kShaderResource,
-        kCount,
-    };
+    struct ResourcePool;
 
-
-    struct Texture final
-        : public Core::Texture
-        , public Image
+    struct Texture final : public Core::Texture
     {
         FE_RTTI_Class(Texture, "691EA96F-E1F3-47C5-BF5B-24258DFA57A8");
 
         ~Texture() override;
 
-        static Texture* Create(Core::Device* device);
+        static Texture* Create(Core::Device* device, Env::Name name, const Core::TextureDesc& desc);
 
-        void InitInternal(VmaAllocator allocator, Env::Name name, const Core::ImageDesc& desc);
+        void CommitInternal(ResourcePool* resourcePool, Core::TextureCommitParams params);
+        void SwapInternal(TextureInstance*& instance);
 
-        const Core::ImageDesc& GetDesc() const override;
+        void DecommitMemory() override;
 
-        TextureSubresourceState GetSubresourceState(const uint32_t mipIndex, const uint32_t arrayIndex) const
+        Core::ResourceMemory GetMemoryStatus() const override;
+
+        [[nodiscard]] VkImageView GetSubresourceView(Core::TextureSubresource subresource) const;
+        void SetState(Core::TextureSubresource subresource, Common::SubresourceState state);
+        Common::SubresourceState GetState(Core::TextureSubresource subresource) const;
+
+        void AddQueueReleaseBarrier(Core::TextureSubresource subresource, Common::SubresourceState state,
+                                    Core::DeviceQueueType receiverQueue);
+        festd::pmr::vector<Core::TextureSubresource> RetrieveQueueReleaseBarriers(Core::DeviceQueueType receiverQueue,
+                                                                                std::pmr::memory_resource* allocator);
+
+        [[nodiscard]] VkImage GetNative() const
         {
-            const uint32_t subresourceIndex = mipIndex + arrayIndex * m_desc.m_mipSliceCount;
-            const uint32_t packedIndex = subresourceIndex / PackedSubresourceStates::kCount;
-
-            switch (subresourceIndex % PackedSubresourceStates::kCount)
-            {
-            default:
-                FE_DebugBreak();
-                [[fallthrough]];
-
-                // clang-format off
-                case 0: return m_subresourceUploadStates[packedIndex].m_state0;
-                case 1: return m_subresourceUploadStates[packedIndex].m_state1;
-                case 2: return m_subresourceUploadStates[packedIndex].m_state2;
-                case 3: return m_subresourceUploadStates[packedIndex].m_state3;
-                // clang-format on
-            }
-        }
-
-        void SetSubresourceState(const uint32_t mipIndex, const uint32_t arrayIndex, const TextureSubresourceState state) const
-        {
-            FE_AssertDebug(state < TextureSubresourceState::kCount);
-
-            const uint32_t subresourceIndex = mipIndex + arrayIndex * m_desc.m_mipSliceCount;
-            const uint32_t packedIndex = subresourceIndex / PackedSubresourceStates::kCount;
-
-            switch (subresourceIndex % PackedSubresourceStates::kCount)
-            {
-            default:
-                FE_DebugBreak();
-                [[fallthrough]];
-
-                // clang-format off
-                case 0: m_subresourceUploadStates[packedIndex].m_state0 = state; break;
-                case 1: m_subresourceUploadStates[packedIndex].m_state1 = state; break;
-                case 2: m_subresourceUploadStates[packedIndex].m_state2 = state; break;
-                case 3: m_subresourceUploadStates[packedIndex].m_state3 = state; break;
-                // clang-format on
-            }
+            FE_AssertDebug(m_instance);
+            return m_instance->m_image;
         }
 
     private:
-        explicit Texture(Core::Device* device);
+        explicit Texture(Core::Device* device, Env::Name name, const Core::TextureDesc& desc);
 
-        struct PackedSubresourceStates
-        {
-            TextureSubresourceState m_state0 : 2;
-            TextureSubresourceState m_state1 : 2;
-            TextureSubresourceState m_state2 : 2;
-            TextureSubresourceState m_state3 : 2;
+        void InitWholeImageView();
+        void UpdateDebugNames();
 
-            static constexpr uint32_t kCount = 4;
-        };
+        void SetStateNoLock(Core::TextureSubresource subresource, Common::SubresourceState state) const;
 
-        mutable festd::inline_vector<PackedSubresourceStates, 8> m_subresourceUploadStates;
+        Threading::SpinLock m_lock;
+
+        Core::TextureSubresource m_wholeImageSubresource = Core::TextureSubresource::kInvalid;
+        TextureInstance* m_instance = nullptr;
+
+        festd::inline_vector<Core::TextureSubresource, 1>
+            m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
     };
 
     FE_ENABLE_NATIVE_CAST(Texture);

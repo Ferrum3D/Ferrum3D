@@ -12,7 +12,7 @@ namespace FE::Graphics::Core
     };
 
 
-    struct ImageDesc final
+    struct TextureDesc final
     {
         uint32_t m_width : 14;
         uint32_t m_height : 14;
@@ -22,6 +22,11 @@ namespace FE::Graphics::Core
         uint32_t m_mipSliceCount : 4;
         ImageDimension m_dimension : 2;
         Format m_imageFormat;
+
+        TextureDesc()
+        {
+            memset(this, 0, sizeof(*this));
+        }
 
         [[nodiscard]] Vector3UInt GetSize() const
         {
@@ -52,17 +57,19 @@ namespace FE::Graphics::Core
             return DefaultHash(this, sizeof(*this));
         }
 
-        static ImageDesc Img1D(uint32_t width, Format format);
-        static ImageDesc Img1DArray(uint32_t width, uint32_t arraySize, Format format);
-        static ImageDesc Img2D(uint32_t width, uint32_t height, Format format, bool useMipMaps = false, uint32_t sampleCount = 1);
-        static ImageDesc Img2DArray(uint32_t width, uint32_t height, uint32_t arraySize, Format format, bool useMipMaps = false);
-        static ImageDesc ImgCubemap(uint32_t width, Format format);
-        static ImageDesc ImgCubemapArray(uint32_t width, uint32_t arraySize, Format format);
-        static ImageDesc Img3D(uint32_t width, uint32_t height, uint32_t depth, Format format);
+        friend bool operator==(const TextureDesc lhs, const TextureDesc rhs)
+        {
+            return memcmp(&lhs, &rhs, sizeof(TextureDesc)) == 0;
+        }
+
+        friend bool operator!=(const TextureDesc lhs, const TextureDesc rhs)
+        {
+            return !(lhs == rhs);
+        }
     };
 
 
-    struct ImageSubresource final
+    struct TextureSubresource final
     {
         uint32_t m_mostDetailedMipSlice : 4;
         uint32_t m_mipSliceCount : 4;
@@ -70,31 +77,41 @@ namespace FE::Graphics::Core
         uint32_t m_arraySize : 11;
         ImageAspect m_aspect : 2;
 
-        static ImageSubresource CreateWhole(const ImageDesc imageDesc)
+        static TextureSubresource CreateWhole(const TextureDesc desc)
         {
-            ImageSubresource subresource;
+            TextureSubresource subresource;
             subresource.m_mostDetailedMipSlice = 0;
-            subresource.m_mipSliceCount = imageDesc.m_mipSliceCount;
+            subresource.m_mipSliceCount = desc.m_mipSliceCount;
             subresource.m_firstArraySlice = 0;
-            subresource.m_arraySize = imageDesc.m_arraySize;
-            subresource.m_aspect = FormatInfo{ imageDesc.m_imageFormat }.m_aspectFlags;
+            subresource.m_arraySize = desc.m_arraySize;
+            subresource.m_aspect = FormatInfo{ desc.m_imageFormat }.m_aspectFlags;
             return subresource;
         }
 
-        static const ImageSubresource kInvalid;
+        static const TextureSubresource kInvalid;
 
-        friend bool operator==(const ImageSubresource& lhs, const ImageSubresource& rhs)
+        friend bool operator<(const TextureSubresource lhs, const TextureSubresource rhs)
+        {
+            return festd::bit_cast<uint32_t>(lhs) < festd::bit_cast<uint32_t>(rhs);
+        }
+
+        friend bool operator>(const TextureSubresource lhs, const TextureSubresource rhs)
+        {
+            return festd::bit_cast<uint32_t>(lhs) > festd::bit_cast<uint32_t>(rhs);
+        }
+
+        friend bool operator==(const TextureSubresource lhs, const TextureSubresource rhs)
         {
             return festd::bit_cast<uint32_t>(lhs) == festd::bit_cast<uint32_t>(rhs);
         }
 
-        friend bool operator!=(const ImageSubresource& lhs, const ImageSubresource& rhs)
+        friend bool operator!=(const TextureSubresource lhs, const TextureSubresource rhs)
         {
             return festd::bit_cast<uint32_t>(lhs) != festd::bit_cast<uint32_t>(rhs);
         }
     };
 
-    inline const ImageSubresource ImageSubresource::kInvalid = festd::bit_cast<ImageSubresource>(kInvalidIndex);
+    inline const TextureSubresource TextureSubresource::kInvalid = festd::bit_cast<TextureSubresource>(kInvalidIndex);
 
 
     struct ImageSubresourceIterator final
@@ -107,7 +124,7 @@ namespace FE::Graphics::Core
 
         struct Iter final
         {
-            ImageSubresource m_subresource;
+            TextureSubresource m_subresource;
             Slice m_currentSlice;
 
             Iter operator++()
@@ -147,15 +164,15 @@ namespace FE::Graphics::Core
             }
         };
 
-        ImageSubresource m_subresource;
+        TextureSubresource m_subresource;
 
-        explicit ImageSubresourceIterator(const ImageSubresource subresource)
+        explicit ImageSubresourceIterator(const TextureSubresource subresource)
             : m_subresource(subresource)
         {
         }
 
-        explicit ImageSubresourceIterator(const ImageDesc imageDesc)
-            : m_subresource(ImageSubresource::CreateWhole(imageDesc))
+        explicit ImageSubresourceIterator(const TextureDesc imageDesc)
+            : m_subresource(TextureSubresource::CreateWhole(imageDesc))
         {
         }
 
@@ -178,3 +195,13 @@ namespace FE::Graphics::Core
         }
     };
 } // namespace FE::Graphics::Core
+
+
+template<>
+struct eastl::hash<FE::Graphics::Core::TextureSubresource>
+{
+    size_t operator()(const FE::Graphics::Core::TextureSubresource& subresource) const
+    {
+        return FE::festd::bit_cast<uint32_t>(subresource);
+    }
+};

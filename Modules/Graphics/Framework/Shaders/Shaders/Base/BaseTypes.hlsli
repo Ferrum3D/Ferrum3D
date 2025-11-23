@@ -12,6 +12,8 @@ typedef uint uint32_t;
 #    define fe_mesh_indices
 
 #    define FE_CONST const
+
+#    define FE_PLATFORM_VULKAN 1
 #else
 #    define fe_globallycoherent globallycoherent
 
@@ -20,6 +22,10 @@ typedef uint uint32_t;
 #    define fe_mesh_indices indices
 
 #    define FE_CONST
+#endif
+
+#if FE_PLATFORM_VULKAN
+#    include <Shaders/Platform/Vulkan/Intrinsics.hlsli>
 #endif
 
 #define FE_CONSTEXPR static const
@@ -36,26 +42,28 @@ FE_CONSTEXPR uint32_t kInvalidIndex = 0xffffffff;
 FE_CONSTEXPR uint kLanesPerWave = 32;
 
 
+#if !FE_PLATFORM_VULKAN
 namespace Bit
 {
+    uint32_t FieldMask(const uint32_t offset, const uint32_t size)
+    {
+        return ((1u << size) - 1u) << offset;
+    }
+
+
     uint32_t FieldExtract(const uint32_t source, const uint32_t offset, const uint32_t size)
     {
-        // Gets optimized to v_bfe_u32.
         return (source >> offset) & ((1u << size) - 1u);
     }
 
 
-    uint32_t FieldInsert(const uint32_t mask, const uint32_t a, const uint32_t b)
+    uint32_t FieldInsert(const uint32_t source, const uint32_t insert, const uint32_t offset, const uint32_t size)
     {
-        return (a & mask) | (b & ~mask);
-    }
-
-
-    uint32_t FieldMask(const uint32_t width, const uint32_t offset)
-    {
-        return ((1u << width) - 1u) << offset;
+        const uint32_t mask = ((1u << size) - 1u);
+        return (source & ~(mask << offset)) | ((insert & mask) << offset);
     }
 } // namespace Bit
+#endif
 
 
 namespace Math

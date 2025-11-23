@@ -21,7 +21,7 @@ namespace FE::Graphics::Common
         Core::RenderTarget* GetRenderTarget(Core::RenderTargetHandle image) const final;
         Core::Buffer* GetBuffer(Core::BufferHandle buffer) const final;
 
-        Core::ImageDesc GetResourceDesc(Core::RenderTargetHandle image) const override;
+        Core::TextureDesc GetResourceDesc(Core::RenderTargetHandle image) const override;
         Core::BufferDesc GetResourceDesc(Core::BufferHandle buffer) const override;
 
         Env::Name GetResourceName(Core::RenderTargetHandle image) const override;
@@ -60,7 +60,7 @@ namespace FE::Graphics::Common
             union
             {
                 Core::BufferDesc m_bufferDesc;
-                Core::ImageDesc m_imageDesc;
+                Core::TextureDesc m_imageDesc;
             };
 
             Rc<Core::Resource> m_resource;
@@ -81,7 +81,7 @@ namespace FE::Graphics::Common
             {
             }
 
-            ResourceData(const uint32_t resourceIndex, const Core::ImageDesc& desc)
+            ResourceData(const uint32_t resourceIndex, const Core::TextureDesc& desc)
                 : m_imageDesc(desc)
                 , m_resourceIndex(resourceIndex)
                 , m_resourceType(Core::ResourceType::kRenderTarget)
@@ -104,7 +104,7 @@ namespace FE::Graphics::Common
         uint32_t AddPassInternal(Env::Name name) final;
 
         Core::BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const Core::BufferDesc& desc) final;
-        Core::RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::ImageDesc& desc) final;
+        Core::RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::TextureDesc& desc) final;
 
         uint32_t ReadResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;
         uint32_t WriteResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;

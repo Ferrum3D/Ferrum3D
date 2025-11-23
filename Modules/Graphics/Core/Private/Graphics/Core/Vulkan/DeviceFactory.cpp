@@ -8,7 +8,6 @@
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/BindlessManager.h>
-#include <Graphics/Core/Vulkan/DescriptorAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Fence.h>
@@ -103,7 +102,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::ResultCode DeviceFactory::CreateDevice(const Env::Name adapterName)
+    void DeviceFactory::CreateDevice(const Env::Name adapterName)
     {
         FE_PROFILER_ZONE();
 
@@ -113,11 +112,11 @@ namespace FE::Graphics::Vulkan
             {
                 Rc device = Env::GetServiceProvider()->ResolveRequired<Core::Device>();
                 ImplCast(device.Get())->Init(m_nativeAdapters[adapterIndex]);
-                return Core::ResultCode::kSuccess;
+                return;
             }
         }
 
-        return Core::ResultCode::kUnknownError;
+        FE_AssertMsg(false, "Adapter {} was not found", adapterName);
     }
 
 
@@ -137,7 +136,6 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Core::ShaderSourceCache>().ToSelf().InSingletonScope();
         builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
         builder.Bind<Common::FrameGraphResourcePool>().ToSelf().InSingletonScope();
-        builder.Bind<DescriptorAllocator>().ToSelf().InSingletonScope();
         builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
         builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
@@ -158,13 +156,13 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        VerifyVulkan(volkInitialize());
+        VerifyVk(volkInitialize());
 
         uint32_t layerCount;
-        VerifyVulkan(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+        VerifyVk(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
         festd::vector layers(layerCount, VkLayerProperties{});
-        VerifyVulkan(vkEnumerateInstanceLayerProperties(&layerCount, layers.data()));
+        VerifyVk(vkEnumerateInstanceLayerProperties(&layerCount, layers.data()));
         for (const char* layer : kRequiredInstanceLayers)
         {
             const festd::string_view layerSlice{ layer };
@@ -175,10 +173,10 @@ namespace FE::Graphics::Vulkan
         }
 
         uint32_t extensionCount;
-        VerifyVulkan(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
+        VerifyVk(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
 
         festd::vector extensions(extensionCount, VkExtensionProperties{});
-        VerifyVulkan(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()));
+        VerifyVk(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()));
         for (const char* ext : kRequiredInstanceExtensions)
         {
             const festd::string_view extSlice{ ext };
@@ -209,7 +207,7 @@ namespace FE::Graphics::Vulkan
         instanceCI.enabledExtensionCount = static_cast<uint32_t>(kRequiredInstanceExtensions.size());
         instanceCI.ppEnabledExtensionNames = kRequiredInstanceExtensions.data();
 
-        VerifyVulkan(vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_instance));
+        VerifyVk(vkCreateInstance(&instanceCI, VK_NULL_HANDLE, &m_instance));
         volkLoadInstance(m_instance);
 
 #if FE_DEVELOPMENT
@@ -223,17 +221,17 @@ namespace FE::Graphics::Vulkan
             debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
             debugCI.pfnCallback = &DebugReportCallback;
             debugCI.pUserData = m_logger.Get();
-            VerifyVulkan(vkCreateDebugReportCallbackEXT(m_instance, &debugCI, VK_NULL_HANDLE, &m_debug));
+            VerifyVk(vkCreateDebugReportCallbackEXT(m_instance, &debugCI, VK_NULL_HANDLE, &m_debug));
         }
 #endif
 
         m_logger->LogInfo("Vulkan instance created successfully");
 
         uint32_t adapterCount;
-        VerifyVulkan(vkEnumeratePhysicalDevices(m_instance, &adapterCount, nullptr));
+        VerifyVk(vkEnumeratePhysicalDevices(m_instance, &adapterCount, nullptr));
 
         m_nativeAdapters.resize(adapterCount, VkPhysicalDevice{});
-        VerifyVulkan(vkEnumeratePhysicalDevices(m_instance, &adapterCount, m_nativeAdapters.data()));
+        VerifyVk(vkEnumeratePhysicalDevices(m_instance, &adapterCount, m_nativeAdapters.data()));
         for (const VkPhysicalDevice physicalDevice : m_nativeAdapters)
         {
             VkPhysicalDeviceProperties props;

@@ -9,7 +9,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI_Class(DeviceFactory, "C6CC0410-BB89-484A-8FD7-9DF99AE3CD31");
 
-        virtual ResultCode CreateDevice(Env::Name adapterName) = 0;
+        virtual void CreateDevice(Env::Name adapterName) = 0;
 
         [[nodiscard]] virtual festd::span<const AdapterInfo> EnumerateAdapters() const = 0;
     };

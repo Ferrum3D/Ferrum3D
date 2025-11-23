@@ -54,7 +54,7 @@ namespace FE::Graphics::Vulkan
         shaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         shaderModuleCI.codeSize = result.m_byteCodeSize;
         shaderModuleCI.pCode = reinterpret_cast<const uint32_t*>(result.m_byteCode.data());
-        VerifyVulkan(vkCreateShaderModule(device, &shaderModuleCI, nullptr, &shaderInfo->m_shaderModule));
+        VerifyVk(vkCreateShaderModule(device, &shaderModuleCI, nullptr, &shaderInfo->m_shaderModule));
 
         const festd::span byteCode{ shaderModuleCI.pCode,
                                     shaderModuleCI.pCode + Math::CeilDivide(shaderModuleCI.codeSize, sizeof(uint32_t)) };

@@ -61,7 +61,7 @@ namespace FE::Graphics::Tools
     {
         const auto& graph = builder.GetGraph();
 
-        const Core::ImageDesc sourceDesc = graph.GetResourceDesc(src);
+        const Core::TextureDesc sourceDesc = graph.GetResourceDesc(src);
         const RectUInt rect = RectUInt::FromPosAndSize({ 0, 0 }, sourceDesc.GetSize2D());
 
         Vector2UInt dispatchThreadGroupCount;
@@ -84,7 +84,7 @@ namespace FE::Graphics::Tools
             const uint32_t height = Math::Max(1u, sourceDesc.m_height >> mipIndex);
 
             const Env::Name mipName = Fmt::FormatName("{}_DownsampleMip_{}", sourceName, mipIndex);
-            const Core::ImageDesc mipDesc = Core::ImageDesc::Img2D(width, height, sourceDesc.m_imageFormat, false);
+            const Core::TextureDesc mipDesc = Core::TextureDesc::Img2D(width, height, sourceDesc.m_imageFormat, false);
             dst[mipIndex - 1] = pass.WriteUAV(pass.CreateImage(mipName, mipDesc));
         }
 

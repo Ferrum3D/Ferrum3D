@@ -32,12 +32,12 @@ namespace FE::Graphics::Vulkan
     {
         if (m_wasUsed)
         {
-            VerifyVulkan(vkResetCommandBuffer(m_nativeCommandBuffer, 0));
+            VerifyVk(vkResetCommandBuffer(m_nativeCommandBuffer, 0));
         }
 
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VerifyVulkan(vkBeginCommandBuffer(m_nativeCommandBuffer, &beginInfo));
+        VerifyVk(vkBeginCommandBuffer(m_nativeCommandBuffer, &beginInfo));
     }
 
 
@@ -46,7 +46,7 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_resourceBarrierBatcher.Flush();
-        VerifyVulkan(vkEndCommandBuffer(m_nativeCommandBuffer));
+        VerifyVk(vkEndCommandBuffer(m_nativeCommandBuffer));
 
         VkSubmitInfo submitInfo;
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -119,7 +119,7 @@ namespace FE::Graphics::Vulkan
         submitInfo.pCommandBuffers = &m_nativeCommandBuffer;
         submitInfo.commandBufferCount = 1;
 
-        VerifyVulkan(vkQueueSubmit(m_nativeQueue, 1, &submitInfo, nullptr));
+        VerifyVk(vkQueueSubmit(m_nativeQueue, 1, &submitInfo, nullptr));
 
         m_waitSemaphores.clear_and_shrink();
         m_waitFences.clear_and_shrink();
@@ -148,6 +148,6 @@ namespace FE::Graphics::Vulkan
         allocateInfo.commandPool = m_nativeCommandPool;
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocateInfo.commandBufferCount = 1;
-        VerifyVulkan(vkAllocateCommandBuffers(NativeCast(device), &allocateInfo, &m_nativeCommandBuffer));
+        VerifyVk(vkAllocateCommandBuffers(NativeCast(device), &allocateInfo, &m_nativeCommandBuffer));
     }
 } // namespace FE::Graphics::Vulkan

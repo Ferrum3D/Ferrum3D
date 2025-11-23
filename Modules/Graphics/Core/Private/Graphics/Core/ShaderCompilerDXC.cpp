@@ -191,6 +191,9 @@ namespace FE::Graphics::Core
         compilerArgs.push_back(L"-HV");
         compilerArgs.push_back(L"2021");
 
+        compilerArgs.push_back(L"-D");
+        compilerArgs.push_back(L"FE_PLATFORM_VULKAN");
+
         for (const auto [m_name, m_value] : args.m_defines)
         {
             const festd::fixed_string defineString = Fmt::FixedFormat("{}={}", m_name, m_value);

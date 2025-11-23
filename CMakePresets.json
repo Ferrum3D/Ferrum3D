@@ -47,6 +47,17 @@
       }
     },
     {
+      "name": "windows-codegen",
+      "inherits": "windows-base",
+      "displayName": "Windows codegen",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "FE_CODEGEN": "1"
+      }
+    },
+    {
       "name": "windows-debug-msvc",
       "inherits": "windows-base",
       "displayName": "Windows x64 Debug with MSVC",

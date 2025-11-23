@@ -283,21 +283,22 @@ namespace FE::Bit
     }
 
 
+    FE_FORCE_INLINE uint32_t FieldMask(const uint32_t offset, const uint32_t size)
+    {
+        return ((1u << size) - 1u) << offset;
+    }
+
+
     FE_FORCE_INLINE uint32_t FieldExtract(const uint32_t source, const uint32_t offset, const uint32_t size)
     {
-        return (source >> offset) & ((1 << size) - 1);
+        return (source >> offset) & ((1u << size) - 1u);
     }
 
 
-    FE_FORCE_INLINE uint32_t FieldInsert(const uint32_t mask, const uint32_t a, const uint32_t b)
+    FE_FORCE_INLINE uint32_t FieldInsert(const uint32_t source, const uint32_t insert, const uint32_t offset, const uint32_t size)
     {
-        return (a & mask) | (b & ~mask);
-    }
-
-
-    FE_FORCE_INLINE uint32_t FieldMask(const uint32_t width, const uint32_t offset)
-    {
-        return ((1 << width) - 1) << offset;
+        const uint32_t mask = ((1u << size) - 1u);
+        return (source & ~(mask << offset)) | ((insert & mask) << offset);
     }
 
 
@@ -636,4 +637,8 @@ namespace FE::Math
     inline constexpr Name& operator^=(Name& a, const Name b)                                                                     \
     {                                                                                                                            \
         return a = a ^ b;                                                                                                        \
+    }                                                                                                                            \
+    inline constexpr Name operator~(const Name a)                                                                                \
+    {                                                                                                                            \
+        return Name(~((std::underlying_type_t<Name>)a));                                                                         \
     }

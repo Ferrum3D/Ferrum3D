@@ -52,16 +52,25 @@ namespace FE::Graphics::Core
         kIndexBuffer = 1 << 0,
         kVertexBuffer = 1 << 1,
         kConstantBuffer = 1 << 2,
-        kRenderTarget = 1 << 3,
-        kShaderRead = 1 << 4,
-        kShaderWrite = 1 << 5,
-        kDepthStencilRead = 1 << 6,
-        kDepthStencilWrite = 1 << 7,
-        kCopySource = 1 << 8,
-        kCopyDest = 1 << 9,
-        kResolveSource = 1 << 10,
-        kResolveDest = 1 << 11,
-        kShadingRateSource = 1 << 12,
+        kIndirectArgument = 1 << 3,
+        kRenderTarget = 1 << 4,
+        kShaderRead = 1 << 5,
+        kShaderWrite = 1 << 6,
+        kDepthStencilRead = 1 << 7,
+        kDepthStencilWrite = 1 << 8,
+        kCopySource = 1 << 9,
+        kCopyDest = 1 << 10,
+        kResolveSource = 1 << 11,
+        kResolveDest = 1 << 12,
+        kShadingRateSource = 1 << 13,
+        kAccelerationStructureRead = 1 << 14,
+        kAccelerationStructureWrite = 1 << 15,
+
+        kCommonResourceAccessMask = kShaderRead | kShaderWrite | kCopySource | kCopyDest,
+        kAllTextureAccessMask = kRenderTarget | kDepthStencilRead | kDepthStencilWrite | kResolveSource | kResolveDest
+            | kShadingRateSource | kCommonResourceAccessMask,
+        kAllBufferAccessMask = kIndexBuffer | kVertexBuffer | kConstantBuffer | kIndirectArgument | kAccelerationStructureRead
+            | kAccelerationStructureWrite | kCommonResourceAccessMask,
     };
 
     FE_ENUM_OPERATORS(BarrierAccessFlags);
@@ -92,7 +101,7 @@ namespace FE::Graphics::Core
         BarrierAccessFlags m_accessAfter : 16;
         BarrierLayout m_layoutBefore : 16;
         BarrierLayout m_layoutAfter : 16;
-        ImageSubresource m_subresource = ImageSubresource::kInvalid;
+        TextureSubresource m_subresource = TextureSubresource::kInvalid;
         Texture* m_texture = nullptr;
 
         TextureBarrierDesc()

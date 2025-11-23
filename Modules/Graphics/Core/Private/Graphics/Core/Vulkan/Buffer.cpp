@@ -2,36 +2,86 @@
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Device.h>
+#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/ResourcePool.h>
 
 namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        VulkanObjectPoolType GBufferPool{ "VulkanBufferPool", sizeof(Buffer) };
-    }
+        VkBufferUsageFlags GetBufferUsage(const Core::BarrierAccessFlags accessFlags, const bool isTexelBuffer)
+        {
+            FE_Assert((accessFlags & Core::BarrierAccessFlags::kAllBufferAccessMask) == accessFlags);
+
+            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+            if (Bit::AnySet(accessFlags, Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite))
+                usage |= isTexelBuffer ? VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndexBuffer))
+                usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kVertexBuffer))
+                usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kConstantBuffer))
+                usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndirectArgument))
+                usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kAccelerationStructureRead))
+                usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kAccelerationStructureWrite))
+                usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+
+            return usage;
+        }
+    } // namespace
 
 
-    Buffer* Buffer::Create(Core::Device* device)
+    FE_DECLARE_VULKAN_OBJECT_POOL(Buffer);
+
+
+    Buffer* Buffer::Create(Core::Device* device, const Env::Name name, const Core::BufferDesc desc)
     {
         FE_PROFILER_ZONE();
 
-        return Rc<Buffer>::Allocate(&GBufferPool, [device](void* memory) {
-            return new (memory) Buffer(device);
+        return Rc<Buffer>::Allocate(&GBufferPool, [device, name, desc](void* memory) {
+            return new (memory) Buffer(device, name, desc);
         });
     }
 
 
-    Buffer::Buffer(Core::Device* device)
+    Buffer::Buffer(Core::Device* device, const Env::Name name, const Core::BufferDesc desc)
     {
         m_device = device;
+        m_name = name;
+        m_desc = desc;
         m_type = Core::ResourceType::kBuffer;
         Register();
     }
 
 
-    const Core::BufferDesc& Buffer::GetDesc() const
+    void Buffer::UpdateDebugNames()
     {
-        return m_desc;
+        if (m_instance == nullptr)
+            return;
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_buffer);
+        nameInfo.pObjectName = m_name.c_str();
+        VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
+
+        if (m_instance->m_view)
+        {
+            nameInfo.objectType = VK_OBJECT_TYPE_BUFFER_VIEW;
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_view);
+            nameInfo.pObjectName = m_name.c_str();
+            VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
+        }
+
+        if (m_instance->m_vmaAllocation)
+        {
+            vmaSetAllocationName(ImplCast(m_instance->m_pool)->GetAllocator(), m_instance->m_vmaAllocation, m_name.c_str());
+        }
     }
 
 
@@ -39,100 +89,123 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(m_desc.m_usage == Core::ResourceMemoryUsage::kHostRandomAccess
-                  || m_desc.m_usage == Core::ResourceMemoryUsage::kHostWriteThrough);
+        FE_Assert(m_instance);
+        FE_Assert(m_instance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
+                  || m_instance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
+
+        const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
+        const VmaAllocation allocation = m_instance->m_vmaAllocation;
 
         void* result;
-        VerifyVulkan(vmaMapMemory(m_vmaAllocator, m_vmaAllocation, &result));
+        VerifyVk(vmaMapMemory(allocator, allocation, &result));
         return result;
     }
 
 
     void Buffer::Unmap()
     {
-        vmaUnmapMemory(m_vmaAllocator, m_vmaAllocation);
+        const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
+        const VmaAllocation allocation = m_instance->m_vmaAllocation;
+        vmaUnmapMemory(allocator, allocation);
     }
 
 
-    void Buffer::InitInternal(const VmaAllocator allocator, const Env::Name name, const Core::BufferDesc& desc)
+    void Buffer::CommitInternal(ResourcePool* resourcePool, const Core::BufferCommitParams params)
     {
         FE_PROFILER_ZONE();
 
-        m_name = name;
-        m_desc = desc;
-        m_vmaAllocator = allocator;
+        FE_Assert(m_instance == nullptr);
+
+        m_instance = BufferInstance::Create();
+        m_instance->m_pool = resourcePool;
+
+        Common::SubresourceState& initialState = m_instance->m_subresourceStates.emplace_back();
+        initialState.m_value = 0;
+
+        const bool isTexelBuffer = m_desc.m_format != Core::Format::kUndefined;
 
         VkBufferCreateInfo bufferCI{};
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferCI.size = desc.m_size;
-        bufferCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kShaderResource))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kUnorderedAccess))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-        }
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kVertexBuffer))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        }
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kIndexBuffer))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        }
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kConstantBuffer))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        }
-        if (Bit::AllSet(desc.m_flags, Core::BindFlags::kIndirectDrawArgs))
-        {
-            bufferCI.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        }
+        bufferCI.size = m_desc.m_size;
+        bufferCI.usage = GetBufferUsage(params.m_bindFlags, isTexelBuffer);
 
         VmaAllocationCreateInfo allocationCI{};
         allocationCI.usage = VMA_MEMORY_USAGE_AUTO;
 
-        switch (desc.m_usage)
+        switch (params.m_memory)
         {
         default:
+        case Core::ResourceMemory::kNotCommitted:
             FE_DebugBreak();
             [[fallthrough]];
 
-        case Core::ResourceMemoryUsage::kDeviceOnly:
+        case Core::ResourceMemory::kDeviceLocal:
             allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             break;
 
-        case Core::ResourceMemoryUsage::kHostRandomAccess:
+        case Core::ResourceMemory::kHostRandomAccess:
             allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             break;
 
-        case Core::ResourceMemoryUsage::kHostWriteThrough:
+        case Core::ResourceMemory::kHostWriteThrough:
             allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
             break;
         }
 
-        VerifyVulkan(vmaCreateBuffer(allocator, &bufferCI, &allocationCI, &m_nativeBuffer, &m_vmaAllocation, nullptr));
-        vmaSetAllocationName(allocator, m_vmaAllocation, m_name.c_str());
+        m_instance->m_memoryStatus = params.m_memory;
 
-        VkDebugUtilsObjectNameInfoEXT nameInfo{};
-        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeBuffer);
-        nameInfo.pObjectName = m_name.c_str();
-        VerifyVulkan(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
+        const VmaAllocator allocator = resourcePool->GetAllocator();
+        VerifyVk(
+            vmaCreateBuffer(allocator, &bufferCI, &allocationCI, &m_instance->m_buffer, &m_instance->m_vmaAllocation, nullptr));
+
+        if (isTexelBuffer)
+        {
+            VkBufferViewCreateInfo viewCI{};
+            viewCI.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+            viewCI.buffer = m_instance->m_buffer;
+            viewCI.format = Translate(m_desc.m_format);
+            viewCI.offset = 0;
+            viewCI.range = m_desc.m_size;
+            VerifyVk(vkCreateBufferView(NativeCast(m_device), &viewCI, nullptr, &m_instance->m_view));
+        }
+
+        UpdateDebugNames();
+    }
+
+
+    void Buffer::SwapInternal(BufferInstance*& instance)
+    {
+        if (instance != nullptr)
+        {
+            FE_Assert(m_desc == instance->m_bufferDesc);
+            FE_Assert(instance->m_memoryStatus != Core::ResourceMemory::kNotCommitted);
+        }
+
+        festd::swap(m_instance, instance);
+    }
+
+
+    void Buffer::DecommitMemory()
+    {
+        if (m_instance == nullptr)
+            return;
+
+        FE_Assert(m_instance->m_pool, "Externally created buffers not implemented");
+        m_instance->m_pool->DecommitBufferMemory(this);
+    }
+
+
+    Core::ResourceMemory Buffer::GetMemoryStatus() const
+    {
+        if (m_instance == nullptr)
+            return Core::ResourceMemory::kNotCommitted;
+
+        return m_instance->m_memoryStatus;
     }
 
 
     Buffer::~Buffer()
     {
-        if (m_vmaAllocator != nullptr)
-            vmaDestroyBuffer(m_vmaAllocator, m_nativeBuffer, m_vmaAllocation);
-
-        m_vmaAllocator = VK_NULL_HANDLE;
-        m_vmaAllocation = VK_NULL_HANDLE;
-        m_nativeBuffer = VK_NULL_HANDLE;
+        DecommitMemory();
     }
 } // namespace FE::Graphics::Vulkan

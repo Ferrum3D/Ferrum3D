@@ -1,38 +1,38 @@
 ﻿#pragma once
-#include <Graphics/Core/BaseTypes.h>
+#include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Resource.h>
 
 namespace FE::Graphics::Core
 {
     struct BufferSubresource final
     {
-        uint32_t m_offset;
-        uint32_t m_size;
+        uint32_t m_offset = 0;
+        uint32_t m_size = 0;
+
+        static const BufferSubresource kInvalid;
     };
+
+    inline const BufferSubresource BufferSubresource::kInvalid = { kInvalidIndex, kInvalidIndex };
 
 
     struct BufferDesc final
     {
         uint32_t m_size = 0;
-        BindFlags m_flags : 16;
-        ResourceMemoryUsage m_usage : 16;
-
-        BufferDesc()
-        {
-            m_flags = BindFlags::kNone;
-            m_usage = ResourceMemoryUsage::kDeviceOnly;
-        }
-
-        BufferDesc(const uint32_t size, const BindFlags bindFlags, const ResourceMemoryUsage usage)
-            : m_size(size)
-            , m_flags(bindFlags)
-            , m_usage(usage)
-        {
-        }
+        Format m_format = Format::kUndefined;
 
         [[nodiscard]] uint64_t GetHash() const
         {
             return festd::bit_cast<uint64_t>(*this);
+        }
+
+        friend bool operator==(const BufferDesc lhs, const BufferDesc rhs)
+        {
+            return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
+        }
+
+        friend bool operator!=(const BufferDesc lhs, const BufferDesc rhs)
+        {
+            return festd::bit_cast<uint64_t>(lhs) != festd::bit_cast<uint64_t>(rhs);
         }
     };
 
@@ -44,7 +44,13 @@ namespace FE::Graphics::Core
         virtual void* Map() = 0;
         virtual void Unmap() = 0;
 
-        [[nodiscard]] virtual const BufferDesc& GetDesc() const = 0;
+        [[nodiscard]] const BufferDesc& GetDesc() const
+        {
+            return m_desc;
+        }
+
+    protected:
+        BufferDesc m_desc;
     };
 } // namespace FE::Graphics::Core
 

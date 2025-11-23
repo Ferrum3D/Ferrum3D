@@ -222,7 +222,7 @@ namespace FE::Graphics
         if (loadedBlockCount + 1 < mipInfo.m_blockCount)
             return true;
 
-        Core::ImageSubresource subresource;
+        Core::TextureSubresource subresource;
         subresource.m_mostDetailedMipSlice = mipInfo.m_mostDetailedMipSlice;
         subresource.m_mipSliceCount = mipInfo.m_mipSliceCount;
         subresource.m_firstArraySlice = mipInfo.m_arraySlice;

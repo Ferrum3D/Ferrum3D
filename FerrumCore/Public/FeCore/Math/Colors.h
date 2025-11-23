@@ -4,7 +4,9 @@
 //! @brief Named colors from CSS3 specification
 namespace FE::Colors
 {
-    //=========================================================================================
+    const extern Color4F kTransparentBlack; //!< All channels are 0
+
+
     // Pink colors
     const extern Color4F kMediumVioletRed; //!< CSS spec: rgb(199, 21,  133)
     const extern Color4F kDeepPink;        //!< CSS spec: rgb(255, 20,  147)
@@ -13,7 +15,7 @@ namespace FE::Colors
     const extern Color4F kLightPink;       //!< CSS spec: rgb(255, 182, 193)
     const extern Color4F kPink;            //!< CSS spec: rgb(255, 192, 203)
 
-    //=========================================================================================
+
     // Red colors
     const extern Color4F kDarkRed;     //!< CSS spec: rgb(139, 0,   0)
     const extern Color4F kRed;         //!< CSS spec: rgb(255, 0,   0)
@@ -25,7 +27,7 @@ namespace FE::Colors
     const extern Color4F kDarkSalmon;  //!< CSS spec: rgb(233, 150, 122)
     const extern Color4F kLightSalmon; //!< CSS spec: rgb(255, 160, 122)
 
-    //=========================================================================================
+
     // Orange colors
     const extern Color4F kOrangeRed;  //!< CSS spec: rgb(255, 69,  0)
     const extern Color4F kTomato;     //!< CSS spec: rgb(255, 99,  71)
@@ -33,7 +35,7 @@ namespace FE::Colors
     const extern Color4F kCoral;      //!< CSS spec: rgb(255, 127, 80)
     const extern Color4F kOrange;     //!< CSS spec: rgb(255, 165, 0)
 
-    //=========================================================================================
+
     // Yellow colors
     const extern Color4F kDarkKhaki;            //!< CSS spec: rgb(189, 183, 107)
     const extern Color4F kGold;                 //!< CSS spec: rgb(255, 215, 0)
@@ -47,7 +49,7 @@ namespace FE::Colors
     const extern Color4F kLemonChiffon;         //!< CSS spec: rgb(255, 250, 205)
     const extern Color4F kLightYellow;          //!< CSS spec: rgb(255, 255, 224)
 
-    //=========================================================================================
+
     // Brown colors
     const extern Color4F kMaroon;         //!< CSS spec: rgb(128, 0,   0)
     const extern Color4F kBrown;          //!< CSS spec: rgb(165, 42,  42)
@@ -67,7 +69,7 @@ namespace FE::Colors
     const extern Color4F kBlanchedAlmond; //!< CSS spec: rgb(255, 235, 205)
     const extern Color4F kCornsilk;       //!< CSS spec: rgb(255, 248, 220)
 
-    //=========================================================================================
+
     // Green colors
     const extern Color4F kDarkGreen;         //!< CSS spec: rgb(0,   100, 0)
     const extern Color4F kGreen;             //!< CSS spec: rgb(0,   128, 0)
@@ -90,7 +92,7 @@ namespace FE::Colors
     const extern Color4F kGreenYellow;       //!< CSS spec: rgb(173, 255, 47)
     const extern Color4F kPaleGreen;         //!< CSS spec: rgb(152, 251, 152)
 
-    //=========================================================================================
+
     // Cyan colors
     const extern Color4F kTeal;            //!< CSS spec: rgb(0,   128, 128)
     const extern Color4F kDarkCyan;        //!< CSS spec: rgb(0,   139, 139)
@@ -105,7 +107,7 @@ namespace FE::Colors
     const extern Color4F kPaleTurquoise;   //!< CSS spec: rgb(175, 238, 238)
     const extern Color4F kLightCyan;       //!< CSS spec: rgb(224, 255, 255)
 
-    //=========================================================================================
+
     // Blue colors
     const extern Color4F kNavy;           //!< CSS spec: rgb(0,   0,   128)
     const extern Color4F kDarkBlue;       //!< CSS spec: rgb(0,   0,   139)
@@ -123,7 +125,7 @@ namespace FE::Colors
     const extern Color4F kLightBlue;      //!< CSS spec: rgb(173, 216, 230)
     const extern Color4F kPowderBlue;     //!< CSS spec: rgb(176, 224, 230)
 
-    //=========================================================================================
+
     // Purple, violet, and magenta colors
     const extern Color4F kIndigo;          //!< CSS spec: rgb(75,  0,   130)
     const extern Color4F kPurple;          //!< CSS spec: rgb(128, 0,   128)
@@ -144,7 +146,7 @@ namespace FE::Colors
     const extern Color4F kThistle;         //!< CSS spec: rgb(216, 191, 216)
     const extern Color4F kLavender;        //!< CSS spec: rgb(230, 230, 250)
 
-    //=========================================================================================
+
     // White colors
     const extern Color4F kMistyRose;     //!< CSS spec: rgb(255, 228, 225)
     const extern Color4F kAntiqueWhite;  //!< CSS spec: rgb(250, 235, 215)
@@ -164,7 +166,7 @@ namespace FE::Colors
     const extern Color4F kIvory;         //!< CSS spec: rgb(255, 255, 240)
     const extern Color4F kWhite;         //!< CSS spec: rgb(255, 255, 255)
 
-    //=========================================================================================
+
     // Gray and black colors
     const extern Color4F kBlack;          //!< CSS spec: rgb(0,   0,   0)
     const extern Color4F kDarkSlateGray;  //!< CSS spec: rgb(47,  79,  79)

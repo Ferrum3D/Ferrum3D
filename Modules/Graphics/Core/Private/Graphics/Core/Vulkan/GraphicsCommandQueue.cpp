@@ -7,8 +7,7 @@ namespace FE::Graphics::Vulkan
     {
         m_device = device;
 
-        m_fence = Fence::Create(m_device);
-        m_fence->Init(0);
+        m_fence = Fence::Create(m_device, 0);
 
         const VkCommandPool commandPool = ImplCast(device)->GetCommandPool(Core::DeviceQueueType::kGraphics);
         const uint32_t queueFamilyIndex = ImplCast(device)->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);

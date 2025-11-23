@@ -55,5 +55,7 @@ namespace FE
 
 
 //! @brief Typed alloca() wrapper.
-#define FE_StackAlloc(type, arraySize) static_cast<type*>(alloca(sizeof(type) * (arraySize)))
+#define FE_StackAlloc(type, arraySize) festd::span<type>(static_cast<type*>(alloca(sizeof(type) * (arraySize))), arraySize)
+
+#define FE_StackAllocBytes(type, byteSize) static_cast<type*>(alloca(byteSize))
 } // namespace FE

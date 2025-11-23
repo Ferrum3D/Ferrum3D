@@ -24,7 +24,7 @@ namespace FE::Graphics::Vulkan
             return m_instance;
         }
 
-        Core::ResultCode CreateDevice(Env::Name adapterName) override;
+        void CreateDevice(Env::Name adapterName) override;
 
         void RegisterServices(const DI::ServiceRegistryBuilder& builder);
 

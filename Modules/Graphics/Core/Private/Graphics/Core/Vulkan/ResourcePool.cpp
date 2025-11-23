@@ -19,7 +19,7 @@ namespace FE::Graphics::Vulkan
         createInfo.physicalDevice = ImplCast(device)->GetNativeAdapter();
         createInfo.instance = NativeCast(ImplCast(device)->GetDeviceFactory());
         createInfo.vulkanApiVersion = VK_API_VERSION_1_2;
-        VerifyVulkan(vmaCreateAllocator(&createInfo, &m_vmaAllocator));
+        VerifyVk(vmaCreateAllocator(&createInfo, &m_vmaAllocator));
     }
 
 
@@ -45,32 +45,142 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::Texture* ResourcePool::CreateTexture(const Env::Name name, const Core::ImageDesc& desc)
+    Core::Texture* ResourcePool::CreateTexture(const Env::Name name, const Core::TextureDesc desc)
     {
-        FE_PROFILER_ZONE();
-
-        Texture* texture = Texture::Create(m_device);
-        texture->InitInternal(m_vmaAllocator, name, desc);
-        return texture;
+        return Texture::Create(m_device, name, desc);
     }
 
 
-    Core::RenderTarget* ResourcePool::CreateRenderTarget(const Env::Name name, const Core::ImageDesc& desc)
+    Core::Buffer* ResourcePool::CreateBuffer(const Env::Name name, const Core::BufferDesc desc)
     {
-        FE_PROFILER_ZONE();
-
-        RenderTarget* renderTarget = RenderTarget::Create(m_device);
-        renderTarget->InitInternal(m_vmaAllocator, name, desc);
-        return renderTarget;
+        return Buffer::Create(m_device, name, desc);
     }
 
 
-    Core::Buffer* ResourcePool::CreateBuffer(const Env::Name name, const Core::BufferDesc& desc)
+    template<class TDesc, class TParams>
+    uint32_t ResourcePool::FindFreeResource(const TDesc& desc, const TParams& params)
     {
-        FE_PROFILER_ZONE();
+        uint32_t bestCompatibilityScore = 0;
+        uint32_t bestResourceIndex = kInvalidIndex;
+        Bit::Traverse(m_freedResources.view(), [&](const uint32_t resourceIndex) {
+            const ResourceInstance* resource = m_resources[resourceIndex];
+            const uint32_t compatibilityScore = resource->ScoreCompatibility(desc, params);
+            if (compatibilityScore > bestCompatibilityScore)
+            {
+                bestCompatibilityScore = compatibilityScore;
+                bestResourceIndex = resourceIndex;
+            }
+        });
 
-        Buffer* buffer = Buffer::Create(m_device);
-        buffer->InitInternal(m_vmaAllocator, name, desc);
-        return buffer;
+        return bestResourceIndex;
+    }
+
+
+    void ResourcePool::CommitBufferMemory(Core::Buffer* buffer, const Core::BufferCommitParams& params)
+    {
+        std::unique_lock lk{ m_lock };
+
+        FE_Assert(buffer->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted);
+
+        const uint32_t bestResourceIndex = FindFreeResource(buffer->GetDesc(), params);
+        if (bestResourceIndex != kInvalidIndex)
+        {
+            ResourceInstance* bestResource = m_resources[bestResourceIndex];
+            FE_Assert(bestResource);
+
+            m_resources[bestResourceIndex] = nullptr;
+            m_emptyResources.set(bestResourceIndex);
+            auto* bufferInstance = fe_assert_cast<BufferInstance*>(bestResource);
+            ImplCast(buffer)->SwapInternal(bufferInstance);
+            return;
+        }
+
+        ImplCast(buffer)->CommitInternal(this, params);
+    }
+
+
+    void ResourcePool::CommitTextureMemory(Core::Texture* texture, const Core::TextureCommitParams& params)
+    {
+        std::unique_lock lk{ m_lock };
+
+        FE_Assert(texture->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted);
+
+        const uint32_t bestResourceIndex = FindFreeResource(texture->GetDesc(), params);
+        if (bestResourceIndex != kInvalidIndex)
+        {
+            ResourceInstance* bestResource = m_resources[bestResourceIndex];
+            FE_Assert(bestResource);
+
+            m_resources[bestResourceIndex] = nullptr;
+            m_emptyResources.set(bestResourceIndex);
+
+            auto* textureInstance = fe_assert_cast<TextureInstance*>(bestResource);
+            ImplCast(texture)->SwapInternal(textureInstance);
+            FE_Assert(textureInstance == nullptr);
+            return;
+        }
+
+        ImplCast(texture)->CommitInternal(this, params);
+    }
+
+
+    void ResourcePool::DecommitBufferMemory(Core::Buffer* buffer)
+    {
+        std::unique_lock lk{ m_lock };
+
+        const uint32_t slot = AllocateResourceSlot();
+        BufferInstance* instance = nullptr;
+        ImplCast(buffer)->SwapInternal(instance);
+        m_resources[slot] = instance;
+        m_pendingResources.set(slot);
+    }
+
+
+    void ResourcePool::DecommitTextureMemory(Core::Texture* texture)
+    {
+        std::unique_lock lk{ m_lock };
+
+        const uint32_t slot = AllocateResourceSlot();
+        TextureInstance* instance = nullptr;
+        ImplCast(texture)->SwapInternal(instance);
+        m_resources[slot] = instance;
+        m_pendingResources.set(slot);
+    }
+
+
+    void ResourcePool::EndFrame()
+    {
+        std::unique_lock lk{ m_lock };
+
+        Bit::Traverse(m_pendingResources.view(), [&](const uint32_t resourceIndex) {
+            const ResourceInstance* resource = m_resources[resourceIndex];
+            FE_Assert(resource);
+
+            m_freedResources.set(resourceIndex);
+        });
+
+        m_pendingResources.reset();
+    }
+
+
+    uint32_t ResourcePool::AllocateResourceSlot()
+    {
+        uint32_t emptySlot = m_emptyResources.find_first();
+        if (emptySlot == kInvalidIndex)
+        {
+            constexpr uint32_t kGrowSize = 1024;
+
+            emptySlot = m_resources.size();
+            m_resources.resize(m_resources.size() + kGrowSize);
+            m_emptyResources.resize(m_emptyResources.size() + kGrowSize, true);
+            m_freedResources.resize(m_freedResources.size() + kGrowSize, false);
+            m_pendingResources.resize(m_pendingResources.size() + kGrowSize, false);
+        }
+
+        FE_Assert(!m_freedResources.test(emptySlot));
+        FE_Assert(!m_pendingResources.test(emptySlot));
+        FE_Assert(m_resources[emptySlot] == nullptr);
+        m_emptyResources.reset(emptySlot);
+        return emptySlot;
     }
 } // namespace FE::Graphics::Vulkan

@@ -10,9 +10,7 @@ namespace FE::Graphics::Vulkan
 
         ~Fence() override;
 
-        static Fence* Create(Core::Device* device);
-
-        Core::ResultCode Init(uint64_t initialValue) override;
+        static Fence* Create(Core::Device* device, uint64_t initialValue);
 
         void Signal(uint64_t value) override;
         void Wait(uint64_t value) override;
@@ -24,7 +22,7 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
-        explicit Fence(Core::Device* device);
+        explicit Fence(Core::Device* device, uint64_t initialValue);
 
         VkSemaphore m_timelineSemaphore = VK_NULL_HANDLE;
     };

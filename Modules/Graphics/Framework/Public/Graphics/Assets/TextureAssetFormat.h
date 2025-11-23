@@ -9,7 +9,7 @@ namespace FE::Graphics::Data
     struct TextureHeader final
     {
         uint32_t m_magic;
-        Core::ImageDesc m_desc;
+        Core::TextureDesc m_desc;
     };
 
 

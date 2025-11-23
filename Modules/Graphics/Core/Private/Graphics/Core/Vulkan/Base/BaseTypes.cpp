@@ -43,7 +43,7 @@ namespace FE::Graphics::Vulkan
         const VkDevice vkDevice = NativeCast(device);
         VkSemaphoreCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        VerifyVulkan(vkCreateSemaphore(vkDevice, &createInfo, nullptr, &m_nativeSemaphore));
+        VerifyVk(vkCreateSemaphore(vkDevice, &createInfo, nullptr, &m_nativeSemaphore));
 
         if (name.IsValid())
         {
@@ -52,7 +52,7 @@ namespace FE::Graphics::Vulkan
             nameInfo.objectType = VK_OBJECT_TYPE_SEMAPHORE;
             nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeSemaphore);
             nameInfo.pObjectName = name.c_str();
-            VerifyVulkan(vkSetDebugUtilsObjectNameEXT(vkDevice, &nameInfo));
+            VerifyVk(vkSetDebugUtilsObjectNameEXT(vkDevice, &nameInfo));
         }
     }
 } // namespace FE::Graphics::Vulkan

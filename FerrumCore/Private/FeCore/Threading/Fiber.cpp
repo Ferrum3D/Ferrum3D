@@ -26,7 +26,7 @@ namespace FE::Threading
         // located somewhere on the stack and align it down to the start of the block.
         //
 
-        auto* addressOnStack = FE_StackAlloc(std::byte, 0);
+        auto* addressOnStack = FE_StackAllocBytes(std::byte, 0);
         auto* fiberStackStart = AlignDownPtr(addressOnStack, kExtendedStackSize);
         auto* result = reinterpret_cast<FiberRuntimeInfo*>(fiberStackStart);
 

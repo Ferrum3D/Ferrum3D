@@ -16,10 +16,10 @@ namespace FE::Graphics::Vulkan
             FE_PROFILER_ZONE();
 
             uint32_t formatCount = 0;
-            VerifyVulkan(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr));
+            VerifyVk(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr));
 
             festd::inline_vector<VkSurfaceFormatKHR> formats{ formatCount };
-            VerifyVulkan(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data()));
+            VerifyVk(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data()));
             return formats;
         }
 
@@ -30,10 +30,10 @@ namespace FE::Graphics::Vulkan
             FE_PROFILER_ZONE();
 
             uint32_t modeCount = 0;
-            VerifyVulkan(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, nullptr));
+            VerifyVk(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, nullptr));
 
             festd::inline_vector<VkPresentModeKHR> modes{ modeCount };
-            VerifyVulkan(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, modes.data()));
+            VerifyVk(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, modes.data()));
             return modes;
         }
 
@@ -43,7 +43,7 @@ namespace FE::Graphics::Vulkan
             FE_PROFILER_ZONE();
 
             VkSurfaceCapabilitiesKHR capabilities;
-            VerifyVulkan(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities));
+            VerifyVk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities));
             return capabilities;
         }
 
@@ -221,7 +221,7 @@ namespace FE::Graphics::Vulkan
         }
         else if (result != VK_SUBOPTIMAL_KHR)
         {
-            VerifyVulkan(result);
+            VerifyVk(result);
         }
     }
 
@@ -238,7 +238,7 @@ namespace FE::Graphics::Vulkan
             m_surface = VK_NULL_HANDLE;
         }
 
-        VerifyVulkan(Vulkan::CreateSurface(vkInstance, m_desc.m_nativeWindowHandle, &m_surface));
+        VerifyVk(Vulkan::CreateSurface(vkInstance, m_desc.m_nativeWindowHandle, &m_surface));
     }
 
 
@@ -326,7 +326,7 @@ namespace FE::Graphics::Vulkan
         m_logger->LogTrace("Swapchain present mode: {}", ToString(swapchainCI.presentMode));
 
         const VkDevice vkDevice = device->GetNative();
-        VerifyVulkan(vkCreateSwapchainKHR(vkDevice, &swapchainCI, nullptr, &m_swapchain));
+        VerifyVk(vkCreateSwapchainKHR(vkDevice, &swapchainCI, nullptr, &m_swapchain));
 
         if (oldSwapchain)
         {
@@ -345,18 +345,18 @@ namespace FE::Graphics::Vulkan
         const uint32_t height = m_desc.m_height;
 
         uint32_t imageCount = 0;
-        VerifyVulkan(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, nullptr));
+        VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, nullptr));
 
         m_logger->LogDebug("Created Vulkan swapchain with {} images", imageCount);
 
         festd::inline_vector<VkImage> images{ imageCount };
-        VerifyVulkan(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, images.data()));
+        VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, images.data()));
 
         FE_Assert(m_imageAvailableSemaphores.size() == kMaxInFlightFrames);
         FE_Assert(m_renderFinishedSemaphores.size() == kMaxInFlightFrames);
         FE_Assert(m_renderTargets.empty());
 
-        const Core::ImageDesc colorTargetDesc = Core::ImageDesc::Img2D(width, height, m_rtvFormat);
+        const Core::TextureDesc colorTargetDesc = Core::TextureDesc::Img2D(width, height, m_rtvFormat);
 
         for (uint32_t i = 0; i < imageCount; ++i)
         {
@@ -371,7 +371,7 @@ namespace FE::Graphics::Vulkan
             nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
             nameInfo.objectHandle = reinterpret_cast<uint64_t>(image->GetNative());
             nameInfo.pObjectName = imageName.c_str();
-            VerifyVulkan(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
+            VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
             m_renderTargets.push_back(image);
         }
@@ -467,7 +467,7 @@ namespace FE::Graphics::Vulkan
         }
         else
         {
-            VerifyVulkan(presentResult);
+            VerifyVk(presentResult);
         }
     }
 } // namespace FE::Graphics::Vulkan

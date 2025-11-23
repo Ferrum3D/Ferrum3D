@@ -305,7 +305,7 @@ namespace FE::Graphics::Vulkan
 
         if (const VkResult result = vkCreatePipelineLayout(device, &layoutCI, VK_NULL_HANDLE, &m_layout); result != VK_SUCCESS)
         {
-            context.m_logger->LogError("Failed to create pipeline layout: {}", VKResultToString(result));
+            context.m_logger->LogError("Failed to create pipeline layout: {}", ResultToString(result));
             m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
             return;
         }
@@ -315,7 +315,7 @@ namespace FE::Graphics::Vulkan
                 vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
             result != VK_SUCCESS)
         {
-            context.m_logger->LogError("Failed to create graphics pipeline: {}", VKResultToString(result));
+            context.m_logger->LogError("Failed to create graphics pipeline: {}", ResultToString(result));
             m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
             return;
         }

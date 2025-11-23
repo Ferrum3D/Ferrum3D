@@ -77,6 +77,11 @@ namespace FE::Graphics::Core
             return festd::bit_cast<uint64_t>(*this);
         }
 
+        friend bool operator==(const SamplerState lhs, const SamplerState rhs)
+        {
+            return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
+        }
+
         static const SamplerState kPointWrap;
         static const SamplerState kPointMirror;
         static const SamplerState kPointClamp;
@@ -114,3 +119,13 @@ namespace FE::Graphics::Core
                                                                               SamplerFilter::kLinear,
                                                                               SamplerBorderColor::kTransparentBlack };
 } // namespace FE::Graphics::Core
+
+
+template<>
+struct eastl::hash<FE::Graphics::Core::SamplerState> final
+{
+    size_t operator()(const FE::Graphics::Core::SamplerState& samplerState) const
+    {
+        return samplerState.GetHash();
+    }
+};

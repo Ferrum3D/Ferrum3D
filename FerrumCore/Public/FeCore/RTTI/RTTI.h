@@ -89,7 +89,7 @@ namespace FE
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_dynamic_cast(TSrc* src)
     {
-        if (src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>())
+        if (src && src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>())
             return static_cast<TDstPtr>(src);
 
         return nullptr;
@@ -112,7 +112,9 @@ namespace FE
     template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
     inline TDstPtr fe_assert_cast(TSrc* src)
     {
-        FE_CoreAssert(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
+        if (Build::IsDebug() && src)
+            FE_CoreAssert(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
+
         return static_cast<TDstPtr>(src);
     }
 
@@ -188,4 +190,13 @@ namespace FE
     {
         return object.FeRTTI_GetID();
     }
+
+
+#if FE_CODEGEN
+#    define FE_CODEGEN_ATTRIBUTE(value) __attribute__((annotate(value)))
+#else
+#    define FE_CODEGEN_ATTRIBUTE(value)
+#endif
+
+#define FE_REFLECT FE_CODEGEN_ATTRIBUTE("fe_reflect")
 } // namespace FE

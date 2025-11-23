@@ -48,7 +48,7 @@ namespace FE::Graphics::Vulkan
         pipelineCacheCI.initialDataSize = 0;
         pipelineCacheCI.pInitialData = nullptr;
 
-        VerifyVulkan(vkCreatePipelineCache(NativeCast(device), &pipelineCacheCI, nullptr, &m_pipelineCache));
+        VerifyVk(vkCreatePipelineCache(NativeCast(device), &pipelineCacheCI, nullptr, &m_pipelineCache));
 
         m_shaderLibrary = DI::DefaultNew<ShaderLibrary>().value();
     }

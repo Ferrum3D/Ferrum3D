@@ -18,25 +18,25 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    ImageSRVDescriptor FrameGraph::GetSRV(const Core::Texture* texture, Core::ImageSubresource subresource)
+    TextureSRVDescriptor FrameGraph::GetSRV(const Core::Texture* texture, Core::TextureSubresource subresource)
     {
         const Texture* textureImpl = ImplCast(texture);
 
         FrameGraphContext* context = ImplCast(m_currentContext.Get());
 
-        if (subresource == Core::ImageSubresource::kInvalid)
+        if (subresource == Core::TextureSubresource::kInvalid)
         {
-            const Core::ImageDesc textureDesc = textureImpl->GetDesc();
-            subresource = Core::ImageSubresource::CreateWhole(textureDesc);
+            const Core::TextureDesc textureDesc = textureImpl->GetDesc();
+            subresource = Core::TextureSubresource::CreateWhole(textureDesc);
         }
 
         const Core::ImageSubresourceIterator subresourceIterator{ subresource };
         for (const auto [mipIndex, arrayIndex] : subresourceIterator)
         {
-            const TextureSubresourceState state = textureImpl->GetSubresourceState(mipIndex, arrayIndex);
-            FE_Assert(state != TextureSubresourceState::kUndefined);
+            const SubresourceState state = textureImpl->GetSubresourceState(mipIndex, arrayIndex);
+            FE_Assert(state != SubresourceState::kUndefined);
 
-            if (state == TextureSubresourceState::kTransferDestination)
+            if (state == SubresourceState::kTransferDestination)
             {
                 ImageBarrierDesc barrier;
                 barrier.m_image = textureImpl->GetNative();
@@ -50,32 +50,32 @@ namespace FE::Graphics::Vulkan
                 barrier.m_destQueueType = Core::DeviceQueueType::kGraphics;
                 context->m_resourceBarrierBatcher.AddBarrier(barrier);
 
-                textureImpl->SetSubresourceState(mipIndex, arrayIndex, TextureSubresourceState::kShaderResource);
+                textureImpl->SetSubresourceState(mipIndex, arrayIndex, SubresourceState::kShaderResource);
             }
         }
 
         const uint32_t descriptorIndex = m_bindlessManager->RegisterSRV(texture, subresource);
-        return ImageSRVDescriptor{ descriptorIndex };
+        return TextureSRVDescriptor{ descriptorIndex };
     }
 
 
-    ImageSRVDescriptor FrameGraph::GetSRV(const Core::RenderTarget* texture, Core::ImageSubresource subresource)
+    TextureSRVDescriptor FrameGraph::GetSRV(const Core::RenderTarget* texture, Core::TextureSubresource subresource)
     {
-        if (subresource == Core::ImageSubresource::kInvalid)
-            subresource = Core::ImageSubresource::CreateWhole(texture->GetDesc());
+        if (subresource == Core::TextureSubresource::kInvalid)
+            subresource = Core::TextureSubresource::CreateWhole(texture->GetDesc());
 
         const uint32_t descriptorIndex = m_bindlessManager->RegisterSRV(texture, subresource);
-        return ImageSRVDescriptor{ descriptorIndex };
+        return TextureSRVDescriptor{ descriptorIndex };
     }
 
 
-    ImageUAVDescriptor FrameGraph::GetUAV(const Core::RenderTarget* renderTarget, Core::ImageSubresource subresource)
+    TextureUAVDescriptor FrameGraph::GetUAV(const Core::RenderTarget* renderTarget, Core::TextureSubresource subresource)
     {
-        if (subresource == Core::ImageSubresource::kInvalid)
-            subresource = Core::ImageSubresource::CreateWhole(renderTarget->GetDesc());
+        if (subresource == Core::TextureSubresource::kInvalid)
+            subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
 
         const uint32_t descriptorIndex = m_bindlessManager->RegisterUAV(renderTarget, subresource);
-        return ImageUAVDescriptor{ descriptorIndex };
+        return TextureUAVDescriptor{ descriptorIndex };
     }
 
 
@@ -189,7 +189,7 @@ namespace FE::Graphics::Vulkan
 
                     ImageBarrierDesc barrier;
                     barrier.m_image = renderTarget->GetNative();
-                    barrier.m_subresource = Core::ImageSubresource::CreateWhole(renderTarget->GetDesc());
+                    barrier.m_subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
                     barrier.m_sourceAccess = static_cast<Core::ImageAccessType>(resource.m_accessState);
                     barrier.m_destAccess = static_cast<Core::ImageAccessType>(access->m_flags);
                     barrier.m_sourceQueueType = Core::DeviceQueueType::kGraphics;

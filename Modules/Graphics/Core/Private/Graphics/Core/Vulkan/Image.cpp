@@ -29,7 +29,7 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    VkImageView Image::GetSubresourceView(const VkDevice device, const Core::ImageSubresource& subresource) const
+    VkImageView Image::GetSubresourceView(const VkDevice device, const Core::TextureSubresource& subresource) const
     {
         FE_PROFILER_ZONE();
 
@@ -60,7 +60,7 @@ namespace FE::Graphics::Vulkan
         viewCI.image = m_nativeImage;
 
         VkImageView view = VK_NULL_HANDLE;
-        VerifyVulkan(vkCreateImageView(device, &viewCI, nullptr, &view));
+        VerifyVk(vkCreateImageView(device, &viewCI, nullptr, &view));
 
         m_viewCache.insert(it, ViewCacheEntry{ key, view });
         return view;
@@ -81,7 +81,7 @@ namespace FE::Graphics::Vulkan
         viewCI.subresourceRange.baseMipLevel = 0;
         viewCI.subresourceRange.baseArrayLayer = 0;
         viewCI.image = m_nativeImage;
-        VerifyVulkan(vkCreateImageView(device, &viewCI, nullptr, &m_view));
+        VerifyVk(vkCreateImageView(device, &viewCI, nullptr, &m_view));
 
         m_wholeImageSubresource.m_firstArraySlice = 0;
         m_wholeImageSubresource.m_mostDetailedMipSlice = 0;
@@ -90,7 +90,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Image::InitInternal(const VkDevice device, const Core::ImageDesc& desc, const VkImage nativeImage)
+    void Image::InitInternal(const VkDevice device, const Core::TextureDesc& desc, const VkImage nativeImage)
     {
         FE_PROFILER_ZONE();
 
@@ -102,7 +102,7 @@ namespace FE::Graphics::Vulkan
 
 
     void Image::InitInternal(const VkDevice device, const char* name, const VmaAllocator allocator, const VkImageUsageFlags usage,
-                             const Core::ImageDesc& desc)
+                             const Core::TextureDesc& desc)
     {
         FE_PROFILER_ZONE();
 
@@ -138,7 +138,7 @@ namespace FE::Graphics::Vulkan
             break;
         }
 
-        imageCI.extent = VKConvertExtent(desc.GetSize());
+        imageCI.extent = TranslateExtent(desc.GetSize());
         imageCI.mipLevels = desc.m_mipSliceCount;
         imageCI.arrayLayers = desc.m_arraySize;
         imageCI.format = Translate(desc.m_imageFormat);
@@ -151,7 +151,7 @@ namespace FE::Graphics::Vulkan
         allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
         // TODO: maybe handle OOM differently
-        VerifyVulkan(vmaCreateImage(allocator, &imageCI, &allocationCI, &m_nativeImage, &m_vmaAllocation, nullptr));
+        VerifyVk(vmaCreateImage(allocator, &imageCI, &allocationCI, &m_nativeImage, &m_vmaAllocation, nullptr));
         vmaSetAllocationName(allocator, m_vmaAllocation, name);
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
@@ -159,7 +159,7 @@ namespace FE::Graphics::Vulkan
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_nativeImage);
         nameInfo.pObjectName = name;
-        VerifyVulkan(vkSetDebugUtilsObjectNameEXT(device, &nameInfo));
+        VerifyVk(vkSetDebugUtilsObjectNameEXT(device, &nameInfo));
 
         InitView(device);
     }

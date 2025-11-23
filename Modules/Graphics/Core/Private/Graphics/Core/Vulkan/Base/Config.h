@@ -60,11 +60,11 @@ namespace FE::Graphics::Vulkan
         FE_VK_SURFACE_EXT,
     };
 
-    festd::string_view VKResultToString(VkResult result);
+    festd::string_view ResultToString(VkResult result);
 
 
-    FE_FORCE_INLINE void VerifyVulkan(const VkResult result)
+    FE_FORCE_INLINE void VerifyVk(const VkResult result)
     {
-        FE_AssertMsg(result == VK_SUCCESS, "Vulkan result was {}", VKResultToString(result));
+        FE_AssertMsg(result == VK_SUCCESS, "Vulkan result was {}", ResultToString(result));
     }
 } // namespace FE::Graphics::Vulkan

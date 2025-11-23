@@ -68,7 +68,7 @@ namespace FE::Graphics::Core
 
 
     void AsyncCopyCommandListBuilder::UploadTexture(const Texture* texture, const void* data, const uint32_t sourceOffset,
-                                                    const ImageSubresource subresource)
+                                                    const TextureSubresource subresource)
     {
         using namespace InternalAsyncCopyCommands;
 

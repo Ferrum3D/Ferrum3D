@@ -6,13 +6,6 @@
 
 namespace FE::Graphics::Core
 {
-    enum class ResultCode : int32_t
-    {
-        kSuccess = 0,
-        kUnknownError = kDefaultErrorCode<ResultCode>,
-    };
-
-
     enum class GraphicsAPI : uint32_t
     {
         kNone,
@@ -34,26 +27,7 @@ namespace FE::Graphics::Core
         kTransfer, //!< Queue that supports copy operations.
 
         kCount,
-        kInvalid = kCount,
     };
-
-
-    enum class BindFlags : uint32_t
-    {
-        kNone = 0,
-        kVertexBuffer = 1 << 0,
-        kIndexBuffer = 1 << 1,
-        kConstantBuffer = 1 << 2,
-        kShaderResource = 1 << 3,
-        kStreamOutput = 1 << 4,
-        kRenderTarget = 1 << 5,
-        kDepthStencil = 1 << 6,
-        kUnorderedAccess = 1 << 7,
-        kIndirectDrawArgs = 1 << 8,
-        kInputAttachment = 1 << 9,
-    };
-
-    FE_ENUM_OPERATORS(BindFlags);
 
 
     enum class ShaderSemanticName : uint32_t

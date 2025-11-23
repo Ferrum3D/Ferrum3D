@@ -58,8 +58,7 @@ namespace FE::Graphics::Vulkan
         : m_writes(&m_frameAllocator)
     {
         m_device = device;
-        m_fence = Fence::Create(m_device);
-        m_fence->Init(0);
+        m_fence = Fence::Create(m_device, 0);
 
         Memory::FiberTempAllocator temp;
 
@@ -73,7 +72,7 @@ namespace FE::Graphics::Vulkan
         poolCI.maxSets = kMaxDescriptorSets;
         poolCI.poolSizeCount = sizes.size();
         poolCI.pPoolSizes = sizes.data();
-        VerifyVulkan(vkCreateDescriptorPool(NativeCast(m_device), &poolCI, nullptr, &m_descriptorPool));
+        VerifyVk(vkCreateDescriptorPool(NativeCast(m_device), &poolCI, nullptr, &m_descriptorPool));
 
         festd::pmr::vector<VkDescriptorSetLayoutBinding> bindings{ &temp };
         bindings.push_back(CreateBinding(0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, kResourceDescriptorCount));
@@ -113,7 +112,7 @@ namespace FE::Graphics::Vulkan
         setLayoutCI.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
         setLayoutCI.bindingCount = bindings.size();
         setLayoutCI.pBindings = bindings.data();
-        VerifyVulkan(vkCreateDescriptorSetLayout(NativeCast(m_device), &setLayoutCI, nullptr, &m_descriptorSetLayout));
+        VerifyVk(vkCreateDescriptorSetLayout(NativeCast(m_device), &setLayoutCI, nullptr, &m_descriptorSetLayout));
     }
 
 
@@ -189,7 +188,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    uint32_t BindlessManager::RegisterSRV(const Core::Texture* texture, const Core::ImageSubresource subresource)
+    uint32_t BindlessManager::RegisterSRV(const Core::Texture* texture, const Core::TextureSubresource subresource)
     {
         const uint64_t key = static_cast<uint64_t>(texture->GetResourceID()) << 32 | festd::bit_cast<uint32_t>(subresource);
 
@@ -216,7 +215,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    uint32_t BindlessManager::RegisterSRV(const Core::RenderTarget* renderTarget, const Core::ImageSubresource subresource)
+    uint32_t BindlessManager::RegisterSRV(const Core::RenderTarget* renderTarget, const Core::TextureSubresource subresource)
     {
         const uint64_t key = static_cast<uint64_t>(renderTarget->GetResourceID()) << 32 | festd::bit_cast<uint32_t>(subresource);
 
@@ -243,7 +242,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    uint32_t BindlessManager::RegisterUAV(const Core::RenderTarget* renderTarget, const Core::ImageSubresource subresource)
+    uint32_t BindlessManager::RegisterUAV(const Core::RenderTarget* renderTarget, const Core::TextureSubresource subresource)
     {
         const uint64_t key = static_cast<uint64_t>(renderTarget->GetResourceID()) << 32 | festd::bit_cast<uint32_t>(subresource);
 
@@ -337,7 +336,7 @@ namespace FE::Graphics::Vulkan
         allocInfo.pSetLayouts = &m_descriptorSetLayout;
 
         VkDescriptorSet set;
-        VerifyVulkan(vkAllocateDescriptorSets(NativeCast(m_device), &allocInfo, &set));
+        VerifyVk(vkAllocateDescriptorSets(NativeCast(m_device), &allocInfo, &set));
         return set;
     }
 } // namespace FE::Graphics::Vulkan

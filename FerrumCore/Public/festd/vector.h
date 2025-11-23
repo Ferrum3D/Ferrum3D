@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <EASTL/fixed_vector.h>
 #include <EASTL/vector.h>
 #include <FeCore/Memory/Memory.h>
@@ -40,17 +40,6 @@ namespace FE::festd
     using eastl::vector;
 
 
-#if __INTELLISENSE__
-    template<class T, size_t TInlineCapacity = gch::default_buffer_size_v<Internal::TinyAllocator<T>>>
-    using inline_vector = gch::small_vector<T, TInlineCapacity, Internal::TinyAllocator<T>>;
-#else
     template<class T, size_t TInlineCapacity = gch::default_buffer_size_v<Memory::StdDefaultAllocator<T, uint32_t>>>
     using inline_vector = gch::small_vector<T, TInlineCapacity, Memory::StdDefaultAllocator<T, uint32_t>>;
-
-    static_assert(sizeof(gch::small_vector<int, gch::default_buffer_size_v<Memory::StdDefaultAllocator<int, uint32_t>>,
-                                           Memory::StdDefaultAllocator<int, uint32_t>>)
-                      == sizeof(gch::small_vector<int, gch::default_buffer_size_v<Internal::TinyAllocator<int>>,
-                                                  Internal::TinyAllocator<int>>),
-                  "Intellisense doesn't report the correct size for inline_vector");
-#endif
 } // namespace FE::festd

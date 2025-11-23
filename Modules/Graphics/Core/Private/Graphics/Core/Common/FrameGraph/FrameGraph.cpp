@@ -126,9 +126,9 @@ namespace FE::Graphics::Common
         if (m_viewport)
         {
             Core::RenderTarget* colorTarget = m_viewport->GetCurrentColorTarget();
-            const Core::ImageDesc colorTargetDesc = colorTarget->GetDesc();
-            const Core::ImageDesc depthTargetDesc =
-                Core::ImageDesc::Img2D(colorTargetDesc.m_width, colorTargetDesc.m_height, Core::Format::kD32_SFLOAT_S8_UINT);
+            const Core::TextureDesc colorTargetDesc = colorTarget->GetDesc();
+            const Core::TextureDesc depthTargetDesc =
+                Core::TextureDesc::Img2D(colorTargetDesc.m_width, colorTargetDesc.m_height, Core::Format::kD32_SFLOAT_S8_UINT);
 
             ResourceData depthTargetData{ 0, depthTargetDesc };
             depthTargetData.m_name = "MainDepthTarget";
@@ -218,7 +218,7 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::ImageDesc FrameGraph::GetResourceDesc(const Core::RenderTargetHandle image) const
+    Core::TextureDesc FrameGraph::GetResourceDesc(const Core::RenderTargetHandle image) const
     {
         const ResourceData& resourceData = m_resources[image.m_desc.m_resourceIndex];
         return resourceData.m_imageDesc;
@@ -306,7 +306,7 @@ namespace FE::Graphics::Common
     }
 
 
-    Core::RenderTargetHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const Core::ImageDesc& desc)
+    Core::RenderTargetHandle FrameGraph::CreateImage(const uint32_t passIndex, const Env::Name name, const Core::TextureDesc& desc)
     {
         FE_AssertDebug(passIndex < m_passes.size());
 

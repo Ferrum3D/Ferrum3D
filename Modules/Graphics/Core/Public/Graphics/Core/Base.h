@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Base/BaseTypes.h>
+#include <cstdint>
 
 namespace FE::Graphics::Core
 {
@@ -15,7 +15,6 @@ namespace FE::Graphics::Core
     struct Buffer;
     struct Resource;
     struct Texture;
-    struct RenderTarget;
 
     struct PipelineFactory;
     struct PipelineBase;

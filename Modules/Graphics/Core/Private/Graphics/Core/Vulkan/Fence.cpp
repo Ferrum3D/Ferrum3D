@@ -10,25 +10,21 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Fence* Fence::Create(Core::Device* device)
+    Fence* Fence::Create(Core::Device* device, uint64_t initialValue)
     {
         FE_PROFILER_ZONE();
 
-        return Rc<Fence>::Allocate(&GFencePool, [device](void* memory) {
-            return new (memory) Fence(device);
+        return Rc<Fence>::Allocate(&GFencePool, [device, initialValue](void* memory) {
+            return new (memory) Fence(device, initialValue);
         });
     }
 
 
-    Fence::Fence(Core::Device* device)
-    {
-        m_device = device;
-    }
-
-
-    Core::ResultCode Fence::Init(const uint64_t initialValue)
+    Fence::Fence(Core::Device* device, const uint64_t initialValue)
     {
         FE_PROFILER_ZONE();
+
+        m_device = device;
 
         VkSemaphoreTypeCreateInfo typeCI{};
         typeCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
@@ -39,8 +35,7 @@ namespace FE::Graphics::Vulkan
         semaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         semaphoreCI.pNext = &typeCI;
 
-        VerifyVulkan(vkCreateSemaphore(NativeCast(m_device), &semaphoreCI, nullptr, &m_timelineSemaphore));
-        return Core::ResultCode::kSuccess;
+        VerifyVk(vkCreateSemaphore(NativeCast(m_device), &semaphoreCI, nullptr, &m_timelineSemaphore));
     }
 
 
@@ -52,7 +47,7 @@ namespace FE::Graphics::Vulkan
         signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
         signalInfo.value = value;
         signalInfo.semaphore = m_timelineSemaphore;
-        VerifyVulkan(vkSignalSemaphore(NativeCast(m_device), &signalInfo));
+        VerifyVk(vkSignalSemaphore(NativeCast(m_device), &signalInfo));
     }
 
 
@@ -65,14 +60,14 @@ namespace FE::Graphics::Vulkan
         waitInfo.semaphoreCount = 1;
         waitInfo.pSemaphores = &m_timelineSemaphore;
         waitInfo.pValues = &value;
-        VerifyVulkan(vkWaitSemaphores(NativeCast(m_device), &waitInfo, Constants::kMaxU64));
+        VerifyVk(vkWaitSemaphores(NativeCast(m_device), &waitInfo, Constants::kMaxU64));
     }
 
 
     uint64_t Fence::GetCompletedValue()
     {
         uint64_t result;
-        VerifyVulkan(vkGetSemaphoreCounterValue(NativeCast(m_device), m_timelineSemaphore, &result));
+        VerifyVk(vkGetSemaphoreCounterValue(NativeCast(m_device), m_timelineSemaphore, &result));
         return result;
     }
 

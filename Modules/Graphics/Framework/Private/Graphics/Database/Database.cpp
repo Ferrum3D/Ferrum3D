@@ -29,7 +29,7 @@ namespace FE::Graphics::DB
         {
             const uint32_t bufferIndex = m_bufferIndex++;
             const Env::Name bufferName = Fmt::FormatName("PageReplicationManager_{}", bufferIndex);
-            const Core::BufferDesc desc{ kTablePageSize, Core::BindFlags::kNone, Core::ResourceMemoryUsage::kHostWriteThrough };
+            const Core::BufferDesc desc{ kTablePageSize, Core::BindFlags::kNone, Core::ResourceMemory::kHostWriteThrough };
             stagingPage = m_resourcePool->CreateBuffer(bufferName, desc);
             accessType = Core::BufferAccessType::kUndefined;
         }

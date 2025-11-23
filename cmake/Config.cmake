@@ -15,6 +15,10 @@ if (WIN32)
     set(CMAKE_USE_WIN32_THREADS_INIT ON)
 endif()
 
+if (FE_CODEGEN)
+    add_compile_definitions(FE_CODEGEN)
+endif ()
+
 add_compile_definitions(TRACY_DELAYED_INIT)
 add_compile_definitions(TRACY_MANUAL_LIFETIME)
 

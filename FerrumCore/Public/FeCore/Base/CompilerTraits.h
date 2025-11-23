@@ -99,7 +99,7 @@
 #endif
 
 
-#if FE_COMPILER_MSVC || FE_COMPILER_MS_CLANG
+#if (FE_COMPILER_MSVC || FE_COMPILER_MS_CLANG) && !FE_CODEGEN
 #    define FE_DebugBreak() __debugbreak()
 #    define FE_VECTORCALL __vectorcall
 #    define FE_NO_SECURITY_COOKIE __declspec(safebuffers)

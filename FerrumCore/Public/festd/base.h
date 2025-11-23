@@ -81,6 +81,8 @@ namespace FE::festd
 
     using eastl::iota;
 
+    using eastl::back_inserter;
+
 
     //! @brief Returns the size of a container.
     template<class TContainer>
@@ -111,6 +113,20 @@ namespace FE::festd
     constexpr std::conditional_t<TSize * sizeof(T) <= UINT32_MAX, uint32_t, size_t> size_bytes(const T (&)[TSize]) noexcept
     {
         return static_cast<std::conditional_t<TSize * sizeof(T) <= UINT32_MAX, uint32_t, size_t>>(TSize * sizeof(T));
+    }
+
+
+    template<class TContainer, class TOutputIterator>
+    void copy(TContainer& container, TOutputIterator output)
+    {
+        eastl::copy(begin(container), end(container), output);
+    }
+
+
+    template<class TContainer, class TOutputIterator, class TFunctor>
+    void copy_if(TContainer& container, TOutputIterator output, TFunctor predicate)
+    {
+        eastl::copy_if(begin(container), end(container), output, predicate);
     }
 
 

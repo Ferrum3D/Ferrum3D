@@ -243,4 +243,22 @@ namespace FE
     private:
         uint64_t m_hash;
     };
+
+
+#define FE_DECLARE_POD_HASH(className)                                                                                           \
+    struct Eq final                                                                                                              \
+    {                                                                                                                            \
+        bool operator()(const className& lhs, const className& rhs) const                                                        \
+        {                                                                                                                        \
+            return memcmp(&lhs, &rhs, sizeof(className)) == 0;                                                                   \
+        }                                                                                                                        \
+    };                                                                                                                           \
+                                                                                                                                 \
+    struct Hash final                                                                                                            \
+    {                                                                                                                            \
+        size_t operator()(const className& key) const                                                                            \
+        {                                                                                                                        \
+            return ::FE::DefaultHash(&key, sizeof(className));                                                                   \
+        }                                                                                                                        \
+    }
 } // namespace FE
