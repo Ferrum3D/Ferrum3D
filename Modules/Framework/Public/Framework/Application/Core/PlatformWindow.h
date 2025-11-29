@@ -44,7 +44,7 @@ namespace FE::Framework::Core
 
     struct PlatformWindow : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(PlatformWindow, "C1F93BE6-5FE7-4E28-A5F6-8A1E9A5F427F");
+        FE_RTTI("C1F93BE6-5FE7-4E28-A5F6-8A1E9A5F427F");
 
         virtual NativeWindowHandle GetNativeHandle() const = 0;
         virtual PlatformApplication* GetApplication() const = 0;

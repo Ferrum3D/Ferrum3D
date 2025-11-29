@@ -21,7 +21,7 @@ namespace FE::Graphics::Core
 
     struct Viewport : public DeviceObject
     {
-        FE_RTTI_Class(Viewport, "6190EF25-7202-48E9-A4E7-C5B123881D58");
+        FE_RTTI("6190EF25-7202-48E9-A4E7-C5B123881D58");
 
         virtual void Init(const ViewportDesc& desc) = 0;
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;

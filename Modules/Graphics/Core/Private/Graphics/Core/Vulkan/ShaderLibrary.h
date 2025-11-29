@@ -19,7 +19,7 @@ namespace FE::Graphics::Vulkan
 
     struct ShaderLibrary final : public Core::ShaderLibrary
     {
-        FE_RTTI_Class(ShaderLibrary, "E2254CBD-679C-4310-87CF-FA8DA780BDA1");
+        FE_RTTI("E2254CBD-679C-4310-87CF-FA8DA780BDA1");
 
         ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler, IJobSystem* jobSystem);
         ~ShaderLibrary() override;

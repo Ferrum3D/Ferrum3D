@@ -168,7 +168,7 @@ namespace FE::Graphics::Core
 
     struct AsyncCopyQueue : public DeviceObject
     {
-        FE_RTTI_Class(AsyncCopyQueue, "2C1855F0-034B-47B7-869A-F9512903212F");
+        FE_RTTI("2C1855F0-034B-47B7-869A-F9512903212F");
 
         virtual void ExecuteCommandList(AsyncCopyCommandList* commandList) = 0;
         virtual void Drain() = 0;

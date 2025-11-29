@@ -5,7 +5,7 @@ namespace FE::Graphics::Core
 {
     struct Fence : public DeviceObject
     {
-        FE_RTTI_Class(Fence, "D815152F-A41F-45C8-81AB-F921F19E8AA3");
+        FE_RTTI("D815152F-A41F-45C8-81AB-F921F19E8AA3");
 
         virtual uint64_t GetCompletedValue() = 0;
         virtual void Wait(uint64_t value) = 0;

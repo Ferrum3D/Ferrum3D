@@ -34,7 +34,7 @@ namespace FE::IO
     {
         AsyncRequestQueueEntry* m_requestEntry = nullptr;
 
-        FE_RTTI_Class(AsyncController, "4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
+        FE_RTTI("4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
 
         explicit AsyncController(AsyncRequestQueueEntry* entry)
             : m_requestEntry(entry)
@@ -75,7 +75,7 @@ namespace FE::IO
 
     struct AsyncStreamIO final : public IAsyncStreamIO
     {
-        FE_RTTI_Class(AsyncStreamIO, "1ADBD843-E841-4B14-96EA-4AA08C901084");
+        FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
 
         AsyncStreamIO(Logger* logger, IJobSystem* jobSystem, IStreamFactory* streamFactory);
         ~AsyncStreamIO() override;

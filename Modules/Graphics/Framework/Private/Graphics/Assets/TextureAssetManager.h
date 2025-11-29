@@ -15,7 +15,7 @@ namespace FE::Graphics
         : public ITextureAssetManager
         , public IO::IAsyncReadCallback
     {
-        FE_RTTI_Class(TextureAssetManager, "9BC819E7-F2CD-47D3-A84C-421CEF60FC98");
+        FE_RTTI("9BC819E7-F2CD-47D3-A84C-421CEF60FC98");
 
         TextureAssetManager(Logger* logger, IJobSystem* jobSystem, IO::IAsyncStreamIO* asyncIO, Core::ResourcePool* resourcePool,
                             Core::AsyncCopyQueue* asyncCopy);

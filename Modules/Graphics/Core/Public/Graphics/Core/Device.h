@@ -6,7 +6,7 @@ namespace FE::Graphics::Core
 {
     struct Device : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(Device, "23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
+        FE_RTTI("23D426E6-3322-4CB2-9800-DEBA7C3DEAC0");
 
         virtual void WaitIdle() = 0;
         virtual void EndFrame() = 0;

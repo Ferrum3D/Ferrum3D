@@ -21,7 +21,7 @@ namespace FE
 
     struct JobSystem final : public IJobSystem
     {
-        FE_RTTI_Class(JobSystem, "6754DA31-46FA-4661-A46E-2787E6D9FD29");
+        FE_RTTI("6754DA31-46FA-4661-A46E-2787E6D9FD29");
 
         explicit JobSystem();
         ~JobSystem() override;

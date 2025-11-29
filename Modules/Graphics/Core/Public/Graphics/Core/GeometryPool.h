@@ -25,7 +25,7 @@ namespace FE::Graphics::Core
 
     struct GeometryPool : public DeviceObject
     {
-        FE_RTTI_Class(GeometryPool, "0DF9A91D-7C49-4E7A-B028-01B66E3C8E0B");
+        FE_RTTI("0DF9A91D-7C49-4E7A-B028-01B66E3C8E0B");
 
         virtual GeometryHandle Allocate(const GeometryAllocationDesc& desc) = 0;
 

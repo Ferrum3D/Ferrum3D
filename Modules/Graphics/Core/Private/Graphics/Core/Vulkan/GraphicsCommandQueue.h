@@ -10,7 +10,7 @@ namespace FE::Graphics::Vulkan
     {
         GraphicsCommandQueue(Core::Device* device);
 
-        FE_RTTI_Class(GraphicsCommandQueue, "3830A626-8EEE-4FFE-8F17-0195DDE01262");
+        FE_RTTI("3830A626-8EEE-4FFE-8F17-0195DDE01262");
 
         CommandBuffer* GetCurrentGraphicsCommandBuffer();
 

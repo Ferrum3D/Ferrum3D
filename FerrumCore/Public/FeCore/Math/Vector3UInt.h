@@ -241,3 +241,5 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Vector3UInt, "99FAF44B-94A6-4F6F-8B9B-A47AA34F889D");

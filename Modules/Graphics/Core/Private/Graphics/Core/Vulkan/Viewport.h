@@ -13,7 +13,7 @@ namespace FE::Graphics::Vulkan
 
     struct Viewport final : public Core::Viewport
     {
-        FE_RTTI_Class(Viewport, "1182BF45-88B6-4763-A120-BC823919D74D");
+        FE_RTTI("1182BF45-88B6-4763-A120-BC823919D74D");
 
         Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsCommandQueue* commandQueue);
         ~Viewport() override;

@@ -27,7 +27,7 @@ namespace FE::Graphics::Core
 
     struct ShaderCompiler : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(ShaderCompiler, "F3D5E284-1DBF-40CC-9790-7D97FA69B18D");
+        FE_RTTI("F3D5E284-1DBF-40CC-9790-7D97FA69B18D");
 
         ~ShaderCompiler() override = default;
 

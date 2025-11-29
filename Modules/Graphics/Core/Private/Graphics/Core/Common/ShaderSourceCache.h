@@ -31,7 +31,7 @@ namespace FE::Graphics::Core
         : public Memory::RefCountedObjectBase
         , public IO::IAsyncReadCallback
     {
-        FE_RTTI_Class(ShaderSourceCache, "FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
+        FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
 
         ShaderSourceCache(IO::IAsyncStreamIO* asyncIO, Logger* logger);
 

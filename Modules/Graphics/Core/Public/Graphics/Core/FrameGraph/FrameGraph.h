@@ -32,7 +32,7 @@ namespace FE::Graphics::Core
 
     struct FrameGraph : public DeviceObject
     {
-        FE_RTTI_Class(FrameGraph, "EA570124-75F4-4EFC-9C49-69EB5EB0404C");
+        FE_RTTI("EA570124-75F4-4EFC-9C49-69EB5EB0404C");
 
         std::pmr::memory_resource* GetAllocator()
         {

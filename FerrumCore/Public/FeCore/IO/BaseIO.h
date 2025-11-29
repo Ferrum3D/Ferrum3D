@@ -205,7 +205,7 @@ namespace FE::IO
     //! @brief Asynchronous read operation callback.
     struct IAsyncReadCallback
     {
-        FE_RTTI_Class(IAsyncReadCallback, "E1E0BD22-543A-4036-B918-134DB9C99D4F");
+        FE_RTTI("E1E0BD22-543A-4036-B918-134DB9C99D4F");
 
         virtual ~IAsyncReadCallback() = default;
 

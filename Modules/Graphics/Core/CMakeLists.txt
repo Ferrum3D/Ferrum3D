@@ -138,8 +138,13 @@ set(VULKAN_WINDOWS_SOURCES
     Private/Graphics/Core/Vulkan/Platform/Windows/VulkanSurface.cpp
 )
 
+set(GENERATED_SOURCES
+    Reflection.gen.cpp
+)
 
-add_library(FeGraphicsCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${VULKAN_SOURCES} ${VULKAN_WINDOWS_SOURCES})
+
+add_library(FeGraphicsCore STATIC
+    ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${VULKAN_SOURCES} ${VULKAN_WINDOWS_SOURCES} ${GENERATED_SOURCES})
 
 fe_configure_target(FeGraphicsCore)
 

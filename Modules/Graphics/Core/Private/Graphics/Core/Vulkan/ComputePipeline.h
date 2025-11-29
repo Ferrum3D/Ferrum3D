@@ -22,7 +22,7 @@ namespace FE::Graphics::Vulkan
 
     struct ComputePipeline final : public Core::ComputePipeline
     {
-        FE_RTTI_Class(ComputePipeline, "0ED571F4-58C9-40D9-AA58-C70450FB0E6A");
+        FE_RTTI("0ED571F4-58C9-40D9-AA58-C70450FB0E6A");
 
         using InitContext = ComputePipelineInitContext;
 

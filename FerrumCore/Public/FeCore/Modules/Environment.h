@@ -222,6 +222,7 @@ namespace FE::Env
     DI::ServiceRegistry* GetRootServiceRegistry();
 } // namespace FE::Env
 
+FE_RTTI_Reflect(FE::Env::Name, "99D46840-914F-44E0-8D0E-9C6F24928015");
 
 template<>
 struct eastl::hash<FE::Env::Name>

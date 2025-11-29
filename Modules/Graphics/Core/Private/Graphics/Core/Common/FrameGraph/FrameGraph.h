@@ -7,7 +7,7 @@ namespace FE::Graphics::Common
 {
     struct FrameGraph : public Core::FrameGraph
     {
-        FE_RTTI_Class(FrameGraph, "39F873DC-8F3D-4821-BA66-92FCD380B69A");
+        FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
         void RegisterViewport(Core::Viewport* viewport) override;
         Core::Viewport* GetViewport() override;

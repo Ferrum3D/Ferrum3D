@@ -170,7 +170,7 @@ namespace FE::Graphics::Vulkan
 
             case Core::ResourceType::kBuffer:
                 {
-                    const auto* buffer = fe_assert_cast<Buffer*>(resource.m_resource.Get());
+                    const auto* buffer = RTTI::AssertCast<Buffer*>(resource.m_resource.Get());
 
                     BufferBarrierDesc barrier;
                     barrier.m_buffer = buffer->GetNative();
@@ -185,7 +185,7 @@ namespace FE::Graphics::Vulkan
 
             case Core::ResourceType::kRenderTarget:
                 {
-                    const auto* renderTarget = fe_assert_cast<RenderTarget*>(resource.m_resource.Get());
+                    const auto* renderTarget = RTTI::AssertCast<RenderTarget*>(resource.m_resource.Get());
 
                     ImageBarrierDesc barrier;
                     barrier.m_image = renderTarget->GetNative();

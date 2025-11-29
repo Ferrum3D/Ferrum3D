@@ -32,7 +32,7 @@ namespace FE::Framework
 
     struct Application : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(Application, "AF07EDCA-2D55-4E2D-A5EF-85ED53B4CDAB");
+        FE_RTTI("AF07EDCA-2D55-4E2D-A5EF-85ED53B4CDAB");
 
         Application(int32_t argc, const char** argv);
         ~Application() override;

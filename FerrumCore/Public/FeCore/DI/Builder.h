@@ -60,7 +60,7 @@ namespace FE::DI
             {
                 if constexpr (!std::is_same_v<TImpl, TInterface>)
                 {
-                    FE_Assert(fe_typeid<TImpl>() != fe_typeid<TInterface>());
+                    FE_Assert(RTTI::GetTypeID<TImpl>() != RTTI::GetTypeID<TInterface>());
                 }
 
                 *m_target.m_activator = ServiceActivator::CreateForType<TImpl>();
@@ -96,7 +96,7 @@ namespace FE::DI
         private:
             static_assert(std::is_base_of_v<Memory::RefCountedObjectBase, TInterface>);
 
-            friend struct ServiceRegistryBuilder;
+            friend ServiceRegistryBuilder;
             ServiceRegistrationSpec m_target;
 
             RegistryBindBuilder(const ServiceRegistrationSpec registrationSpec)
@@ -119,7 +119,7 @@ namespace FE::DI
         template<class TInterface>
         Internal::RegistryBindBuilder<TInterface> Bind() const
         {
-            return BindImpl(fe_typeid<TInterface>());
+            return BindImpl(RTTI::GetTypeID<TInterface>());
         }
 
     private:

@@ -16,7 +16,7 @@ namespace FE::Graphics::Vulkan
 {
     struct AsyncCopyQueue final : public Core::AsyncCopyQueue
     {
-        FE_RTTI_Class(AsyncCopyQueue, "73A6B2DA-9BD1-421E-B27F-AA09DA277F42");
+        FE_RTTI("73A6B2DA-9BD1-421E-B27F-AA09DA277F42");
 
         AsyncCopyQueue(Core::Device* device, Core::ResourcePool* resourcePool);
         ~AsyncCopyQueue() override;

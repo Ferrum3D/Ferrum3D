@@ -8,7 +8,7 @@ namespace FE::Graphics::Vulkan
 {
     struct ShaderReflection final : public Core::ShaderReflection
     {
-        FE_RTTI_Class(ShaderReflection, "686E6EBE-8038-4E26-919C-70834410BC1F");
+        FE_RTTI("686E6EBE-8038-4E26-919C-70834410BC1F");
 
         explicit ShaderReflection(festd::span<const uint32_t> byteCode);
 

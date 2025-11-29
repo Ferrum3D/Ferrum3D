@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/BaseTypes.h>
+#include <FeCore/Base/wyhash.h>
 
 #include <EASTL/array.h>
 #include <EASTL/bonus/adaptors.h>
@@ -258,3 +259,12 @@ namespace FE::festd
         festd::iota(begin(container), end(container), value);
     }
 } // namespace FE::festd
+
+template<>
+struct eastl::hash<FE::festd::ascii_view>
+{
+    size_t operator()(const FE::festd::ascii_view view) const
+    {
+        return wyhash(view.data(), view.size(), _wyp[0], _wyp);
+    }
+};

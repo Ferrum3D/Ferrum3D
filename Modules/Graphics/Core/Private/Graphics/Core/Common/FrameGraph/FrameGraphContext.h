@@ -22,7 +22,7 @@ namespace FE::Graphics::Common
 
     struct FrameGraphContext : public Core::FrameGraphContext
     {
-        FE_RTTI_Class(FrameGraphContext, "521A8CCE-6A61-4D51-962C-16ABAB20AE89");
+        FE_RTTI("521A8CCE-6A61-4D51-962C-16ABAB20AE89");
 
         void PushConstants(const void* data, uint32_t size) override;
 

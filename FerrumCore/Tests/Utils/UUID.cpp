@@ -9,11 +9,35 @@ TEST(UUID, Parse)
 
     ASSERT_EQ(uuid1.m_bytes[0], 0x62);
     ASSERT_EQ(uuid1.m_bytes[1], 0xe1);
+    ASSERT_EQ(uuid1.m_bytes[2], 0xb7);
+    ASSERT_EQ(uuid1.m_bytes[3], 0xa1);
+    ASSERT_EQ(uuid1.m_bytes[4], 0xc1);
+    ASSERT_EQ(uuid1.m_bytes[5], 0x4a);
+    ASSERT_EQ(uuid1.m_bytes[6], 0x41);
+    ASSERT_EQ(uuid1.m_bytes[7], 0x29);
+    ASSERT_EQ(uuid1.m_bytes[8], 0xac);
+    ASSERT_EQ(uuid1.m_bytes[9], 0x57);
+    ASSERT_EQ(uuid1.m_bytes[10], 0x7e);
+    ASSERT_EQ(uuid1.m_bytes[11], 0x77);
+    ASSERT_EQ(uuid1.m_bytes[12], 0x28);
+    ASSERT_EQ(uuid1.m_bytes[13], 0x91);
     ASSERT_EQ(uuid1.m_bytes[14], 0x23);
     ASSERT_EQ(uuid1.m_bytes[15], 0xe9);
 
     ASSERT_EQ(uuid2.m_bytes[0], 0x62);
     ASSERT_EQ(uuid2.m_bytes[1], 0xe1);
+    ASSERT_EQ(uuid2.m_bytes[2], 0xb7);
+    ASSERT_EQ(uuid2.m_bytes[3], 0xa1);
+    ASSERT_EQ(uuid2.m_bytes[4], 0xc1);
+    ASSERT_EQ(uuid2.m_bytes[5], 0x4a);
+    ASSERT_EQ(uuid2.m_bytes[6], 0x41);
+    ASSERT_EQ(uuid2.m_bytes[7], 0x29);
+    ASSERT_EQ(uuid2.m_bytes[8], 0xac);
+    ASSERT_EQ(uuid2.m_bytes[9], 0x57);
+    ASSERT_EQ(uuid2.m_bytes[10], 0x7e);
+    ASSERT_EQ(uuid2.m_bytes[11], 0x77);
+    ASSERT_EQ(uuid2.m_bytes[12], 0x28);
+    ASSERT_EQ(uuid2.m_bytes[13], 0x91);
     ASSERT_EQ(uuid2.m_bytes[14], 0x23);
     ASSERT_EQ(uuid2.m_bytes[15], 0xe9);
 

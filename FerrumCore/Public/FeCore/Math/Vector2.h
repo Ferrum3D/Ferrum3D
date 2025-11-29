@@ -282,3 +282,7 @@ namespace FE
         return lhs.x != rhs.x || lhs.y != rhs.y;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Vector2, "25C934E8-ED78-41D5-B3E2-E13B97AFCAC6");
+FE_RTTI_Reflect(FE::Vector2Int, "BE98048D-4F2C-400E-AD72-07B20661C396");
+FE_RTTI_Reflect(FE::Vector2UInt, "9B8943C5-643C-4F9B-9F20-F2A282355AD2");

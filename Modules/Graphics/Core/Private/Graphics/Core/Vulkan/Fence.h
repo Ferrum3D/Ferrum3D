@@ -6,7 +6,7 @@ namespace FE::Graphics::Vulkan
 {
     struct Fence final : public Core::Fence
     {
-        FE_RTTI_Class(Fence, "78363647-3381-46F2-97B1-2A1AC8AFC3C1");
+        FE_RTTI("78363647-3381-46F2-97B1-2A1AC8AFC3C1");
 
         ~Fence() override;
 

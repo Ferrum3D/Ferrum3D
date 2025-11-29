@@ -6,7 +6,7 @@ namespace FE::IO
 {
     struct StreamBase : public IStream
     {
-        FE_RTTI_Class(StreamBase, "2F74FF8D-4D81-44BE-962A-9D30669E03C8");
+        FE_RTTI("2F74FF8D-4D81-44BE-962A-9D30669E03C8");
 
         ~StreamBase() override = default;
 

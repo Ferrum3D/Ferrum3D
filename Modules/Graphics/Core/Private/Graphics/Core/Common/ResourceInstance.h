@@ -24,7 +24,7 @@ namespace FE::Graphics::Common
 
     struct ResourceInstance
     {
-        FE_RTTI_Class(ResourceInstance, "B498017D-C07F-4022-8C3D-6F4C9CCF132B");
+        FE_RTTI("B498017D-C07F-4022-8C3D-6F4C9CCF132B");
 
         ResourceInstance()
             : m_bind(Core::BarrierAccessFlags::kNone)

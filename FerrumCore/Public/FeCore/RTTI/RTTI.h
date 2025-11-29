@@ -4,193 +4,6 @@
 #include <festd/base.h>
 #include <type_traits>
 
-namespace FE
-{
-    using TypeID = UUID;
-
-    //! @brief Add basic RTTI functions to a class.
-    //!
-    //! Same as FE_RTTI_Class, but for `final` classes that don't inherit from other classes. Doesn't add any virtual functions.
-    //!
-    //! \see FE_RTTI_Class
-#define FE_RTTI_Base(name, uuid)                                                                                                 \
-    inline void FeRTTI_Checks()                                                                                                  \
-    {                                                                                                                            \
-        using ThisType = std::remove_reference_t<decltype(*this)>;                                                               \
-        static_assert(std::is_same_v<name, ThisType>);                                                                           \
-    }                                                                                                                            \
-                                                                                                                                 \
-    inline static const ::FE::TypeID& FeRTTI_GetSID()                                                                            \
-    {                                                                                                                            \
-        static ::FE::TypeID id = ::FE::TypeID(uuid);                                                                             \
-        return id;                                                                                                               \
-    }                                                                                                                            \
-                                                                                                                                 \
-    inline static ::FE::festd::ascii_view FeRTTI_GetSName()                                                                      \
-    {                                                                                                                            \
-        return ::FE::TypeName<name>;                                                                                             \
-    }                                                                                                                            \
-                                                                                                                                 \
-    struct FeRTTI_BaseDummyStruct##name                                                                                          \
-    {                                                                                                                            \
-    }
-
-    //! @brief Add RTTI functions to a class.
-    //!
-    //! This macro is a part of Ferrum3D custom RTTI implementation.
-    //! Use it to allow `fe_dynamic_cast` on a class.\n
-    //!
-    //! Example:
-    //! \code{.cpp}
-    //!     class Foo
-    //!     {
-    //!     public:
-    //!         FE_RTTI_Class(Foo, "12CED1D1-6337-443F-A854-B4624A6133AE");
-    //!         // members ...
-    //!     };
-    //! \endcode
-    //!
-    //! @note Use FE_RTTI_Base for `final` classes that don't inherit from any other class.
-#define FE_RTTI_Class(name, uuid)                                                                                                \
-    FE_RTTI_Base(name, uuid);                                                                                                    \
-    FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
-    inline virtual ::FE::festd::ascii_view FeRTTI_GetName() const                                                                \
-    {                                                                                                                            \
-        return ::FE::TypeName<name>;                                                                                             \
-    }                                                                                                                            \
-                                                                                                                                 \
-    inline virtual ::FE::TypeID FeRTTI_GetID() const                                                                             \
-    {                                                                                                                            \
-        return name ::FeRTTI_GetSID();                                                                                           \
-    }                                                                                                                            \
-                                                                                                                                 \
-    template<class FeRTTI_IS_TYPE>                                                                                               \
-    inline bool FeRTTI_Is() const                                                                                                \
-    {                                                                                                                            \
-        return FeRTTI_IS_TYPE::FeRTTI_GetSID() == FeRTTI_GetID();                                                                \
-    }                                                                                                                            \
-    FE_POP_CLANG_WARNING()                                                                                                       \
-                                                                                                                                 \
-    struct FeRTTI_DummyStruct##name                                                                                              \
-    {                                                                                                                            \
-    }
-
-    //! @brief Cast a pointer to a base class to a derived class pointer if possible.
-    //!
-    //! Works just like normal `dynamic_cast<T*>`, except it only works with the classes that provide Ferrum3D RTTI
-    //! via FE_RTTI_Class macro.
-    //!
-    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //!
-    //! @param src The source value.
-    //!
-    //! @return The result pointer if destination type was derived from source type, `nullptr` otherwise.
-    template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
-    inline TDstPtr fe_dynamic_cast(TSrc* src)
-    {
-        if (src && src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>())
-            return static_cast<TDstPtr>(src);
-
-        return nullptr;
-    }
-
-    //! @brief Assert that a variable can be dynamically cast to another type.
-    //!
-    //! Works just like fe_dynamic_cast<T*>, except it will assert that a type can be cast and won't return
-    //! a `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
-    //! in debug builds. In release builds, when assertions are disabled, this can lead to undefined behavior.
-    //!
-    //! @note The function only works with the classes that provide Ferrum3D RTTI via FE_RTTI_Class macro.
-    //!
-    //! @tparam TDstPtr  Type of return value, e.g. `DerivedClass*`, _must_ be a pointer.
-    //! @tparam TSrc     Type of source value, e.g. `BaseClass`, _must not_ be a pointer.
-    //!
-    //! @param src The source value.
-    //!
-    //! @return The result pointer if destination type was derived from source type.
-    template<class TDstPtr, class TSrc, std::enable_if_t<std::is_base_of_v<TSrc, std::remove_pointer_t<TDstPtr>>, bool> = true>
-    inline TDstPtr fe_assert_cast(TSrc* src)
-    {
-        if (Build::IsDebug() && src)
-            FE_CoreAssert(src->template FeRTTI_Is<std::remove_pointer_t<TDstPtr>>(), "Assert cast failed");
-
-        return static_cast<TDstPtr>(src);
-    }
-
-    //! @brief Get name of a type.
-    //!
-    //! This function returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
-    //! Example:
-    //! \code{.cpp}
-    //!     template<class T>
-    //!     class Foo
-    //!     {
-    //!         FE_RTTI_Class(Foo, "4BDF1868-0E22-48CF-9DBA-8DD10F2A9D0C");
-    //!         // members...
-    //!     };
-    //!
-    //!     auto fooName = fe_nameof<Foo<int>>(); // "Foo" - not "Foo<int>"!
-    //! \endcode
-    //!
-    //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
-    //!
-    //! @tparam T  Type to get name of.
-    //!
-    //! @return Short name of type T.
-    template<class T>
-    inline festd::ascii_view fe_nameof() noexcept
-    {
-        return T::FeRTTI_GetSName();
-    }
-
-    //! @brief Get name of a type.
-    //!
-    //! This function is same as fe_nameof(), but can return name of derived class if called from a base class.\n
-    //! Returns a short name provided in FE_RTTI_Class or FE_RTTI_Base.\n
-    //! Example:
-    //! \code{.cpp}
-    //!     class Base
-    //!     {
-    //!     public:
-    //!         FE_RTTI_Class(Base, "AB26B8C7-827F-4212-88B4-F71A5EFD6EEB");
-    //!     };
-    //!     class Derived : public Base
-    //!     {
-    //!     public:
-    //!         FE_RTTI_Class(Derived, "68CCD7DF-507F-4F3B-9EC3-001EEB33EB55");
-    //!     };
-    //!
-    //!     auto derivedName = fe_nameof(*static_cast<Base*>(new Derived)); // "Derived"
-    //! \endcode
-    //!
-    //! For additional information see overload of fe_nameof() without parameters.
-    //!
-    //! @note The provided type must implement Ferrum3D RTTI system through FE_RTTI_Class or FE_RTTI_Base.
-    //!
-    //! @tparam T  Type to get name of.
-    //!
-    //! @return Short name of type T.
-    //!
-    //! \see fe_nameof()
-    template<class T>
-    inline festd::ascii_view fe_nameof(const T& object)
-    {
-        return object.FeRTTI_GetName();
-    }
-
-    template<class T>
-    inline const UUID& fe_typeid() noexcept
-    {
-        return T::FeRTTI_GetSID();
-    }
-
-    template<class T>
-    inline const UUID& fe_typeid(const T& object)
-    {
-        return object.FeRTTI_GetID();
-    }
-
 
 #if FE_CODEGEN
 #    define FE_CODEGEN_ATTRIBUTE(value) __attribute__((annotate(value)))
@@ -198,5 +11,154 @@ namespace FE
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#define FE_REFLECT FE_CODEGEN_ATTRIBUTE("fe_reflect")
-} // namespace FE
+
+namespace FE::RTTI
+{
+    using TypeID = UUID;
+
+    struct Attribute;
+    struct FieldInfo;
+    struct Type;
+    struct TypeList;
+    struct ReflectionContext;
+
+
+    namespace Internal
+    {
+        template<class T>
+        struct ExternalTypeReflector
+        {
+        };
+
+
+        template<class TEnum>
+        Type* GetEnumTypeMutable() = delete;
+
+        template<class TEnum>
+        const TypeID& GetEnumTypeID() = delete;
+
+
+        template<class TDst, class TSrc>
+        inline constexpr bool kIsDynamicCastAllowed =
+            std::is_base_of_v<TSrc, TDst> || std::is_base_of_v<TDst, TSrc> || std::is_same_v<TDst, TSrc>;
+
+        template<class TDstPtr, class TSrc>
+        using EnableDynCast = std::enable_if_t<kIsDynamicCastAllowed<std::remove_pointer_t<TDstPtr>, TSrc>, bool>;
+
+
+        template<class T>
+        using RTTIDefinedType = decltype(T::TypeID);
+
+        template<class T>
+        inline constexpr bool kIsRTTIDefined = festd::detect_v<T, RTTIDefinedType>;
+    } // namespace Internal
+
+
+#define FE_RTTI_IMPL_POLYMORPHIC(uuid, codegenAttribute)                                                                         \
+private:                                                                                                                         \
+    template<class T_RTTI, std::enable_if_t<FE::RTTI::Internal::kIsRTTIDefined<T_RTTI>, bool>>                                   \
+    friend const FE::RTTI::Type& FE::RTTI::GetType();                                                                            \
+                                                                                                                                 \
+    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
+    friend TDstPtr_RTTI FE::RTTI::Cast(TSrc_RTTI* source);                                                                       \
+    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
+    friend TDstPtr_RTTI FE::RTTI::AssertCast(TSrc_RTTI* source);                                                                 \
+                                                                                                                                 \
+    FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
+    virtual void* FE_VECTORCALL RTTI_TryCast(FE::RTTI::TypeID typeID);                                                           \
+    virtual const void* FE_VECTORCALL RTTI_TryCast(FE::RTTI::TypeID typeID) const;                                               \
+    FE_POP_CLANG_WARNING()                                                                                                       \
+                                                                                                                                 \
+public:                                                                                                                          \
+    static const FE::RTTI::TypeID TypeID;                                                                                        \
+    static FE_CODEGEN_ATTRIBUTE(#codegenAttribute "=" uuid) void Reflect(FE::RTTI::ReflectionContext& context)
+
+
+#define FE_RTTI(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectBasic)
+
+#define FE_RTTI_Reflect_2(typename, uuid)                                                                                        \
+    template<>                                                                                                                   \
+    const FE::RTTI::Type& FE::RTTI::GetType<typename>();                                                                         \
+    template<>                                                                                                                   \
+    FE::RTTI::TypeID FE::RTTI::GetTypeID<typename>();                                                                            \
+    template<>                                                                                                                   \
+    struct FE_CODEGEN_ATTRIBUTE("ReflectFull=" uuid) FE::RTTI::Internal::ExternalTypeReflector<typename>                         \
+    {                                                                                                                            \
+        static void Reflect(FE::RTTI::ReflectionContext& context);                                                               \
+    }
+
+#define FE_RTTI_Reflect_1(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectFull)
+
+#define FE_RTTI_Reflect(...) FE_MACRO_SPECIALIZE(FE_RTTI_Reflect, __VA_ARGS__)
+
+
+    template<class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
+    const Type& GetType()
+    {
+        return *Internal::GetEnumTypeMutable<T>();
+    }
+
+
+    template<class T, std::enable_if_t<Internal::kIsRTTIDefined<T>, bool> = true>
+    const Type& GetType()
+    {
+        return T::RTTI_GetTypeMutable();
+    }
+
+    template<class T, std::enable_if_t<!Internal::kIsRTTIDefined<T> && !std::is_enum_v<T>, bool> = true>
+    const Type& GetType() = delete;
+
+
+    template<class T>
+    FE_FORCE_INLINE TypeID GetTypeID()
+    {
+        if constexpr (std::is_enum_v<T>)
+        {
+            return Internal::GetEnumTypeID<T>();
+        }
+        else
+        {
+            if constexpr (Internal::kIsRTTIDefined<T>)
+                return T::TypeID;
+            else
+                return TypeID::kNull;
+        }
+    }
+
+
+    //! @brief Perform a dynamic cast between pointers to classes up or down the inheritance chain.
+    template<class TDstPtr, class TSrc, Internal::EnableDynCast<TDstPtr, TSrc> = true>
+    TDstPtr Cast(TSrc* source)
+    {
+        if (source == nullptr)
+            return nullptr;
+
+        using DestinationClass = std::remove_pointer_t<TDstPtr>;
+        if (auto* dest = source->RTTI_TryCast(DestinationClass::TypeID))
+            return static_cast<TDstPtr>(dest);
+
+        return nullptr;
+    }
+
+
+    //! @brief Perform a static cast between pointers checking its safety in debug builds.
+    //!
+    //! Works just like `RTTI::Cast`, except it will assert that dynamic cast is possible and will not return `nullptr`
+    //! unless `source` is `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
+    //! in debug builds. In release builds, the behavior of invalid cast is undefined.
+    template<class TDstPtr, class TSrc, Internal::EnableDynCast<TDstPtr, TSrc> = true>
+    TDstPtr AssertCast(TSrc* source)
+    {
+        if (source == nullptr)
+            return nullptr;
+
+        if (Build::IsDebug())
+        {
+            using DestinationClass = std::remove_pointer_t<TDstPtr>;
+            auto* dest = source->RTTI_TryCast(DestinationClass::TypeID);
+            FE_CoreAssert(static_cast<TDstPtr>(dest) == static_cast<TDstPtr>(source), "AssertCast failed");
+        }
+
+        return static_cast<TDstPtr>(source);
+    }
+} // namespace FE::RTTI

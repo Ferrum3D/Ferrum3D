@@ -11,7 +11,7 @@ namespace FE::Framework::Windows
 
     struct PlatformWindow final : public Core::PlatformWindow
     {
-        FE_RTTI_Class(PlatformWindow, "74E2D079-ADE7-4348-AD82-B1094B3B5171");
+        FE_RTTI("74E2D079-ADE7-4348-AD82-B1094B3B5171");
 
         PlatformWindow(Core::PlatformApplication* application, Logger* logger);
         ~PlatformWindow() override;

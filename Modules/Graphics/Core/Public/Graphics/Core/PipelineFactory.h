@@ -62,7 +62,7 @@ namespace FE::Graphics::Core
     {
         ~PipelineFactory() override = default;
 
-        FE_RTTI_Class(PipelineFactory, "CD16508A-5F34-4700-8D23-AF217B55FFD1");
+        FE_RTTI("CD16508A-5F34-4700-8D23-AF217B55FFD1");
 
         virtual GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineRequest& request) = 0;
         virtual ComputePipeline* CreateComputePipeline(const ComputePipelineRequest& request) = 0;

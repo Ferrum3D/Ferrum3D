@@ -70,9 +70,17 @@ namespace FE
             return !IsZero();
         }
 
-        FE_FORCE_INLINE static UUID FE_VECTORCALL Invalid()
+        static const UUID kNull;
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static UUID FE_VECTORCALL LoadUnaligned(const void* values)
         {
-            return UUID{};
+            return UUID{ _mm_loadu_si128(static_cast<const __m128i*>(values)) };
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static UUID FE_VECTORCALL LoadAligned(const void* values)
+        {
+            FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
+            return UUID{ _mm_load_si128(static_cast<const __m128i*>(values)) };
         }
 
         static UUID FE_VECTORCALL Parse(festd::ascii_view string);
@@ -104,6 +112,9 @@ namespace FE
     FE_ENUM_OPERATORS(UUID::FormatFlags);
 
 
+    inline const UUID UUID::kNull = UUID{ kForceInit };
+
+
     FE_FORCE_INLINE UUID FE_VECTORCALL UUID::Parse(const festd::ascii_view string)
     {
         switch (string.length())
@@ -117,7 +128,7 @@ namespace FE
         case 38:
             return Parse<(FormatFlags::kHyphens | FormatFlags::kBraces)>(string);
         default:
-            return Invalid();
+            return kNull;
         }
     }
 
@@ -174,7 +185,7 @@ namespace FE
         if (_mm_cmpistri(kAllowedSymbols, mask1, kCompareFlags) != sizeof(__m128i)
             || _mm_cmpistri(kAllowedSymbols, mask2, kCompareFlags) != sizeof(__m128i))
         {
-            return Invalid();
+            return kNull;
         }
 
         const __m128i nine = _mm_set1_epi8('9');

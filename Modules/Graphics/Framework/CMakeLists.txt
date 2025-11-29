@@ -54,7 +54,13 @@ set(COMMON_SOURCES
     Private/Graphics/Module.cpp
 )
 
-add_library(FeGraphics STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${SHADER_SHARED_HEADERS} ${SHADER_SOURCES})
+set(GENERATED_SOURCES
+    Reflection.gen.cpp
+)
+
+
+add_library(FeGraphics STATIC
+    ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${SHADER_SHARED_HEADERS} ${SHADER_SOURCES} ${GENERATED_SOURCES})
 
 fe_configure_target(FeGraphics)
 

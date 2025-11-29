@@ -5,21 +5,19 @@
 
 #if defined(__JETBRAINS_IDE__) || defined(__INTELLISENSE__)
 typedef uint uint32_t;
-#    define fe_globallycoherent
+#    define globallycoherent
 
-#    define fe_mesh_payload
-#    define fe_mesh_vertices
-#    define fe_mesh_indices
+#    define ms_payload
+#    define ms_vertices
+#    define ms_indices
 
 #    define FE_CONST const
 
 #    define FE_PLATFORM_VULKAN 1
 #else
-#    define fe_globallycoherent globallycoherent
-
-#    define fe_mesh_payload payload
-#    define fe_mesh_vertices vertices
-#    define fe_mesh_indices indices
+#    define ms_payload payload
+#    define ms_vertices vertices
+#    define ms_indices indices
 
 #    define FE_CONST
 #endif

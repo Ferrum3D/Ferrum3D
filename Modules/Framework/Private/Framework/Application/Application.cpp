@@ -2,6 +2,7 @@
 #include <FeCore/DI/Builder.h>
 #include <FeCore/Logging/Logger.h>
 #include <FeCore/Modules/Configuration.h>
+#include <FeCore/RTTI/Reflection.h>
 #include <FeCore/Time/DateTime.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Application/Core/PlatformEvent.h>

@@ -22,7 +22,7 @@ namespace FE::Graphics::Vulkan
 
     struct GraphicsPipeline final : public Core::GraphicsPipeline
     {
-        FE_RTTI_Class(GraphicsPipeline, "4524C98F-C971-47EB-A896-6C4EA33CA549");
+        FE_RTTI("4524C98F-C971-47EB-A896-6C4EA33CA549");
 
         using InitContext = GraphicsPipelineInitContext;
 

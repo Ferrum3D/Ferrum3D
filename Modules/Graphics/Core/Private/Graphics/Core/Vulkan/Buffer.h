@@ -9,7 +9,7 @@ namespace FE::Graphics::Vulkan
 
     struct Buffer final : public Core::Buffer
     {
-        FE_RTTI_Class(Buffer, "CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");
+        FE_RTTI("CB0B65E8-B7F7-4F27-92BE-FB6E90EBD352");
 
         ~Buffer() override;
 

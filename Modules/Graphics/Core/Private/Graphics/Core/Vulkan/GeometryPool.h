@@ -9,7 +9,7 @@ namespace FE::Graphics::Vulkan
 {
     struct GeometryPool final : public Core::GeometryPool
     {
-        FE_RTTI_Class(GeometryPool, "161485C5-B425-4A6A-B65A-0B60C1C60FFE");
+        FE_RTTI("161485C5-B425-4A6A-B65A-0B60C1C60FFE");
 
         GeometryPool(Core::Device* device, Core::ResourcePool* resourcePool);
         ~GeometryPool() override;

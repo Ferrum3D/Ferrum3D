@@ -97,7 +97,7 @@ namespace FE
 
     struct Logger final : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(Logger, "B54397F4-415F-4FA6-8124-4672D2A179CE");
+        FE_RTTI("B54397F4-415F-4FA6-8124-4672D2A179CE");
 
         template<class... TArgs>
         void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)

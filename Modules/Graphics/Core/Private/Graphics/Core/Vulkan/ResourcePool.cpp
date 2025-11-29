@@ -90,7 +90,7 @@ namespace FE::Graphics::Vulkan
 
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
-            auto* bufferInstance = fe_assert_cast<BufferInstance*>(bestResource);
+            auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(bestResource);
             ImplCast(buffer)->SwapInternal(bufferInstance);
             return;
         }
@@ -114,7 +114,7 @@ namespace FE::Graphics::Vulkan
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
 
-            auto* textureInstance = fe_assert_cast<TextureInstance*>(bestResource);
+            auto* textureInstance = RTTI::AssertCast<TextureInstance*>(bestResource);
             ImplCast(texture)->SwapInternal(textureInstance);
             FE_Assert(textureInstance == nullptr);
             return;

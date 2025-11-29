@@ -10,7 +10,7 @@ namespace FE::Graphics::Vulkan
 
     struct FrameGraphContext final : public Common::FrameGraphContext
     {
-        FE_RTTI_Class(FrameGraphContext, "C27FC437-A09A-49F7-B3B6-DEE56C0CF04F");
+        FE_RTTI("C27FC437-A09A-49F7-B3B6-DEE56C0CF04F");
 
         FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph, BindlessManager* bindlessManager);
 

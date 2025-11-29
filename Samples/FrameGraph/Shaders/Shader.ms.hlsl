@@ -118,8 +118,8 @@ FE_NUM_THREADS(64, 1, 1)
 FE_OUTPUT_TOPOLOGY("triangle")
 void main(const in uint32_t groupThreadID : SV_GroupThreadID, //
           const in uint32_t groupID : SV_GroupID,             //
-          out fe_mesh_vertices PixelAttributes verts[64],     //
-          out fe_mesh_indices uint3 tris[64])
+          out ms_vertices PixelAttributes verts[64],     //
+          out ms_indices uint3 tris[64])
 {
     // const uint32_t meshletIndex = payload.m_meshletIndices[groupID];
     const uint32_t meshletIndex = groupID;

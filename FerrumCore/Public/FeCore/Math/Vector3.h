@@ -420,3 +420,6 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Vector3, "BF823B0D-6723-41C1-9A90-DA7AEEA6BD6D");
+FE_RTTI_Reflect(FE::PackedVector3F, "0C3E32A0-EFCC-45DB-8A4B-B4C4EFED2B0D");

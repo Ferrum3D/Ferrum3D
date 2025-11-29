@@ -13,7 +13,7 @@ namespace FE::Graphics::Vulkan
         ResourcePool(Core::Device* device);
         ~ResourcePool() override;
 
-        FE_RTTI_Class(ResourcePool, "32B0D24A-62EB-47D5-869D-897424FD3439");
+        FE_RTTI("32B0D24A-62EB-47D5-869D-897424FD3439");
 
         Core::Texture* CreateTexture(Env::Name name, Core::TextureDesc desc) override;
         Core::Buffer* CreateBuffer(Env::Name name, Core::BufferDesc desc) override;

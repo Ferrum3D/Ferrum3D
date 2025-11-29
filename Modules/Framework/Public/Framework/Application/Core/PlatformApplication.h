@@ -38,7 +38,7 @@ namespace FE::Framework::Core
 
     struct PlatformApplication : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(PlatformApplication, "63770294-E7A2-4CDD-866C-BBC49EC93214");
+        FE_RTTI("63770294-E7A2-4CDD-866C-BBC49EC93214");
 
         virtual AlertResponse ShowAlert(AlertKind kind, festd::string_view title, festd::string_view message,
                                         AlertButtons buttons = AlertButtons::kOkCancel) = 0;

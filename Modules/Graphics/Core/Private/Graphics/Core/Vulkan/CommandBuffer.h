@@ -19,7 +19,7 @@ namespace FE::Graphics::Vulkan
 
     struct CommandBuffer final : public Core::DeviceObject
     {
-        FE_RTTI_Class(CommandBuffer, "F14E4F22-6734-4747-BB3C-FE3BA6697E46");
+        FE_RTTI("F14E4F22-6734-4747-BB3C-FE3BA6697E46");
 
         ~CommandBuffer() override;
 

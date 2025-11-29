@@ -225,8 +225,6 @@ namespace
 
     struct ExampleApplication final : public Framework::Application
     {
-        FE_RTTI_Class(ExampleApplication, "78304A61-C92E-447F-9834-4D547B1D950F");
-
         ExampleApplication(const int32_t argc, const char** argv)
             : Application(argc, argv)
         {

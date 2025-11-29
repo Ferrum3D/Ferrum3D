@@ -10,7 +10,7 @@ namespace FE::Graphics::Core
 {
     struct DeviceObject : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(DeviceObject, "52579F06-74CD-4151-8099-4D4283E8B6B0");
+        FE_RTTI("52579F06-74CD-4151-8099-4D4283E8B6B0");
 
         [[nodiscard]] Device* GetDevice() const
         {

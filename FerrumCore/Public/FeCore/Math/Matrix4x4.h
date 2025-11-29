@@ -77,8 +77,11 @@ namespace FE
                                                                                          const Vector4 column3)
         {
             Matrix4x4 result;
-            Internal::Transpose4Impl(
-                column0.m_simdVector, column1.m_simdVector, column2.m_simdVector, column3.m_simdVector, result.m_simdVectors);
+            Internal::Transpose4Impl(column0.m_simdVector,
+                                     column1.m_simdVector,
+                                     column2.m_simdVector,
+                                     column3.m_simdVector,
+                                     result.m_simdVectors);
             return result;
         }
 
@@ -503,3 +506,5 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Matrix4x4, "E9BB71CE-A3B2-4E7D-AA6F-E1BAB71605BA");

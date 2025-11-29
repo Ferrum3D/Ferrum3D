@@ -10,6 +10,7 @@
 #include <FeCore/Memory/MemoryPrivate.h>
 #include <FeCore/Modules/Environment.h>
 #include <FeCore/Platform/Windows/Common.h>
+#include <FeCore/RTTI/ReflectionPrivate.h>
 #include <FeCore/Threading/SharedSpinLock.h>
 #include <FeCore/Threading/Thread.h>
 #include <FeCore/Threading/ThreadingPrivate.h>
@@ -170,10 +171,12 @@ namespace FE::Env
                     Trace::Internal::Init(allocator);
                     Threading::Internal::Init(allocator);
                     Compression::Internal::Init(allocator);
+                    RTTI::TypeRegistry::Internal::Init(allocator);
                 }
 
                 ~HighPriorityInitializer()
                 {
+                    RTTI::TypeRegistry::Internal::Shutdown();
                     Compression::Internal::Shutdown();
                     Threading::Internal::Shutdown();
                     Trace::Internal::Shutdown();

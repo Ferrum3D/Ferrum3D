@@ -78,7 +78,7 @@ namespace FE::Graphics::Vulkan
 
     struct Device final : public Common::Device
     {
-        FE_RTTI_Class(Device, "7AE4B802-75AF-439E-AA48-BC72761B7B72");
+        FE_RTTI("7AE4B802-75AF-439E-AA48-BC72761B7B72");
 
         Device(Logger* logger, Core::DeviceFactory* factory);
         ~Device() override;

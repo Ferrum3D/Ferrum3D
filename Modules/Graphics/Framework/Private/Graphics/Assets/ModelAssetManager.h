@@ -13,7 +13,7 @@ namespace FE::Graphics
         : public IModelAssetManager
         , public IO::IAsyncReadCallback
     {
-        FE_RTTI_Class(ModelAssetManager, "6CA86F05-71EA-45D8-9D22-D57E469F4752");
+        FE_RTTI("6CA86F05-71EA-45D8-9D22-D57E469F4752");
 
         ModelAssetManager(Logger* logger, IJobSystem* jobSystem, IO::IAsyncStreamIO* asyncIO, Core::ResourcePool* resourcePool,
                           Core::AsyncCopyQueue* asyncCopy);

@@ -426,62 +426,25 @@ namespace FE
 
 
     //! @brief Perform `static_cast` of Rc<T>.
-    //!
-    //! This function retrieves a raw pointer using Rc::Get() and does a static_cast to TDest.
-    //! The result pointer is then used to create a new Rc<T>.\n
-    //! It can be used to cast a derived class to base.
-    //!
-    //! @note To cast a base class to derived, use dynamic_pointer_cast.
-    //!
-    //! @param src Source pointer.
-    //!
-    //! @tparam TDest  The type of result pointer.
-    //! @tparam TSrc   The type of source pointer.
-    //!
-    //! @return An instance of Rc<TDest> that holds the same object but statically cast.
     template<class TDest, class TSrc>
-    [[nodiscard]] inline Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] Rc<TDest> static_pointer_cast(const Rc<TSrc>& src)
     {
         return Rc<TDest>(static_cast<TDest*>(src.Get()));
     }
 
 
-    //! @brief Perform fe_dynamic_cast of Rc<T>.
-    //!
-    //! This function retrieves a raw pointer using Rc::Get() and does a fe_dynamic_cast to TDest.
-    //! The result pointer is then used to create a new Rc<T>.\n
-    //! It can be used to cast a base class to derived.
-    //!
-    //! @note To cast a derived class to base, use `static_cast`.
-    //!
-    //! @param src Source pointer.
-    //!
-    //! @tparam TDest  The type of result pointer.
-    //! @tparam TSrc   The type of source pointer.
-    //!
-    //! @return An instance of Rc<TDest> that holds the same object but dynamically cast.
+    //! @brief Perform RTTI::Cast of Rc<T>.
     template<class TDest, class TSrc>
-    [[nodiscard]] inline Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
-        return Rc<TDest>(fe_dynamic_cast<TDest*>(src.Get()));
+        return Rc<TDest>(RTTI::Cast<TDest*>(src.Get()));
     }
 
 
-    //! @brief Perform fe_assert_cast of Rc<T>.
-    //!
-    //! This function retrieves a raw pointer using Rc::Get() and does a fe_assert_cast to TDest.
-    //! The result pointer is then used to create a new Rc<T>.\n
-    //! It can be used to cast a base class to derived.
-    //!
-    //! @param src Source pointer.
-    //!
-    //! @tparam TDest  The type of result pointer.
-    //! @tparam TSrc   The type of source pointer.
-    //!
-    //! @return An instance of Rc<TDest> that holds the same object but dynamically cast.
+    //! @brief Perform RTTI::AssertCast of Rc<T>.
     template<class TDest, class TSrc>
-    [[nodiscard]] inline Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
+    [[nodiscard]] Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {
-        return Rc<TDest>(fe_assert_cast<TDest*>(src.Get()));
+        return Rc<TDest>(RTTI::AssertCast<TDest*>(src.Get()));
     }
 } // namespace FE

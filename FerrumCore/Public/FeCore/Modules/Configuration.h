@@ -274,7 +274,7 @@ namespace FE::Env
     //! \endcode
     struct Configuration final : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(Configuration, "FE804C2B-6671-47E7-8A96-4CD59680CCE4");
+        FE_RTTI("FE804C2B-6671-47E7-8A96-4CD59680CCE4");
 
         Configuration(festd::span<const festd::string_view> commandLine);
 

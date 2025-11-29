@@ -10,7 +10,7 @@ namespace FE::Framework::Windows
 
     struct PlatformApplication final : public Core::PlatformApplication
     {
-        FE_RTTI_Class(PlatformApplication, "70A9DF12-1D5D-4D0A-8C24-C014E3963121");
+        FE_RTTI("70A9DF12-1D5D-4D0A-8C24-C014E3963121");
 
         PlatformApplication();
         ~PlatformApplication() override;

@@ -143,7 +143,7 @@ namespace FE::Graphics::Core
 
     struct GraphicsPipeline : public PipelineBase
     {
-        FE_RTTI_Class(GraphicsPipeline, "4EBE406C-C4D7-40E5-9485-91C18C8C2527");
+        FE_RTTI("4EBE406C-C4D7-40E5-9485-91C18C8C2527");
 
         ~GraphicsPipeline() override = default;
 

@@ -17,7 +17,7 @@ namespace FE::Graphics::Vulkan
         PipelineFactory(Core::Device* device, BindlessManager* bindlessManager, IJobSystem* jobSystem, Logger* logger);
         ~PipelineFactory() override;
 
-        FE_RTTI_Class(PipelineFactory, "437E4387-BDE0-42DA-8986-FA909D8BFEDE");
+        FE_RTTI("437E4387-BDE0-42DA-8986-FA909D8BFEDE");
 
         Core::GraphicsPipeline* CreateGraphicsPipeline(const Core::GraphicsPipelineRequest& request) override;
         Core::ComputePipeline* CreateComputePipeline(const Core::ComputePipelineRequest& request) override;

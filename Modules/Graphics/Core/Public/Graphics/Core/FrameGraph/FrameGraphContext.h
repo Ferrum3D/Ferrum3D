@@ -151,7 +151,7 @@ namespace FE::Graphics::Core
 
     struct FrameGraphContext : public DeviceObject
     {
-        FE_RTTI_Class(FrameGraphContext, "261C8B48-9A5F-481A-B31C-AA7D48BC0E33");
+        FE_RTTI("261C8B48-9A5F-481A-B31C-AA7D48BC0E33");
 
         FrameGraph& GetGraph() const
         {

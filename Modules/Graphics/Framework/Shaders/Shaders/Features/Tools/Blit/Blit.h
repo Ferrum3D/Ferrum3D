@@ -13,3 +13,5 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::Blit)
     };
 
 FE_HOST_END_NAMESPACE
+
+FE_RTTI_Reflect(FE::Graphics::Tools::Blit::Constants, "E713C84A-EF63-43BC-8BFD-E2AF0FE55171");

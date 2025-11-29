@@ -11,7 +11,7 @@ namespace FE::Graphics::Core
 {
     struct ShaderCompilerDXC final : public ShaderCompiler
     {
-        FE_RTTI_Class(ShaderCompilerDXC, "9DAF49F9-4E5D-4042-B123-67200DC60A14");
+        FE_RTTI("9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
         ShaderCompilerDXC(Logger* logger, IO::IStreamFactory* streamFactory);
 

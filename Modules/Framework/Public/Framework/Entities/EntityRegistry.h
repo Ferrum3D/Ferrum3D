@@ -20,7 +20,7 @@ namespace FE::Framework
             kLoadingFailed,
         };
 
-        FE_RTTI_Class(EntityRegistry, "D7D3E880-E152-4014-B598-A9A97F5E463C");
+        FE_RTTI("D7D3E880-E152-4014-B598-A9A97F5E463C");
 
         explicit EntityRegistry(EntityWorld* world);
         ~EntityRegistry();

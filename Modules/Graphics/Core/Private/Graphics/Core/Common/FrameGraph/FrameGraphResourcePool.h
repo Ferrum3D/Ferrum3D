@@ -12,7 +12,7 @@ namespace FE::Graphics::Common
         FrameGraphResourcePool(Core::ResourcePool* pool);
         ~FrameGraphResourcePool() override = default;
 
-        FE_RTTI_Class(FrameGraphResourcePool, "4D13381A-FD8A-4368-B301-2680EE48E082");
+        FE_RTTI("4D13381A-FD8A-4368-B301-2680EE48E082");
 
         void Reset();
 

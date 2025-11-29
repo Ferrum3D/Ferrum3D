@@ -11,7 +11,7 @@ namespace FE::Graphics::Core
 
     struct ShaderLibrary : public DeviceObject
     {
-        FE_RTTI_Class(ShaderLibrary, "BE44FCFD-5540-49F6-AECE-569BE88A8450");
+        FE_RTTI("BE44FCFD-5540-49F6-AECE-569BE88A8450");
 
         virtual ShaderHandle GetShader(Env::Name name, Env::Name defines) = 0;
     };

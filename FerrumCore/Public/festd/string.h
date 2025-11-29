@@ -751,6 +751,11 @@ namespace FE
     } // namespace Str
 } // namespace FE
 
+FE_RTTI_Reflect(FE::festd::string, "A9081CB4-1614-47E0-9E5D-BC667A526021");
+FE_RTTI_Reflect(FE::festd::string_view, "E72E9011-13E9-4E8B-B51A-F156E1F4A980");
+FE_RTTI_Reflect(FE::festd::pmr::string, "DA1CF83D-8C08-48D8-BD35-4F7C96657E0D");
+FE_RTTI_Reflect(FE::festd::fixed_string, "4C224BCA-8F0A-4C01-973D-D8BB85AF3411");
+
 
 template<class TBase>
 struct eastl::hash<FE::Internal::StringImpl<TBase>>

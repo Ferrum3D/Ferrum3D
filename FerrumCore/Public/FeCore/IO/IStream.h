@@ -7,7 +7,7 @@ namespace FE::IO
     //! @brief Base interface for I/O streams.
     struct IStream : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(IStream, "FD697DC5-020E-4998-ADF2-9DFAF48E2A75");
+        FE_RTTI("FD697DC5-020E-4998-ADF2-9DFAF48E2A75");
 
         ~IStream() override = default;
 

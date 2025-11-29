@@ -39,7 +39,7 @@ namespace FE::Graphics::Core
 
     struct Buffer : public Resource
     {
-        FE_RTTI_Class(Buffer, "2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
+        FE_RTTI("2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
         virtual void* Map() = 0;
         virtual void Unmap() = 0;

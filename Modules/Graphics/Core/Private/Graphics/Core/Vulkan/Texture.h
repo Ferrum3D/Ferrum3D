@@ -9,7 +9,7 @@ namespace FE::Graphics::Vulkan
 
     struct Texture final : public Core::Texture
     {
-        FE_RTTI_Class(Texture, "691EA96F-E1F3-47C5-BF5B-24258DFA57A8");
+        FE_RTTI("691EA96F-E1F3-47C5-BF5B-24258DFA57A8");
 
         ~Texture() override;
 

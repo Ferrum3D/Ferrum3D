@@ -92,3 +92,5 @@ namespace FE
         }
     };
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Transform, "27C520A6-9608-453D-BE4E-DCA551251325");

@@ -97,8 +97,9 @@ namespace FE
         auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_inputFile, IO::OpenMode::kReadOnly);
         if (!fileResult)
         {
-            settings.m_logger->LogError(
-                "Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
+            settings.m_logger->LogError("Failed to open file {}: {}",
+                                        settings.m_inputFile,
+                                        IO::GetResultDesc(fileResult.error()));
             return false;
         }
 
@@ -119,8 +120,12 @@ namespace FE
         file = nullptr;
 
         int32_t sourceWidth, sourceHeight, sourceChannels;
-        float* imageData = stbi_loadf_from_memory(
-            static_cast<stbi_uc*>(rawData), static_cast<int32_t>(rawSize), &sourceWidth, &sourceHeight, &sourceChannels, 4);
+        float* imageData = stbi_loadf_from_memory(static_cast<stbi_uc*>(rawData),
+                                                  static_cast<int32_t>(rawSize),
+                                                  &sourceWidth,
+                                                  &sourceHeight,
+                                                  &sourceChannels,
+                                                  4);
 
         Memory::DefaultFree(rawData);
 
@@ -138,8 +143,11 @@ namespace FE
 
         if (outputSize != Vector2UInt(sourceWidth, sourceHeight))
         {
-            settings.m_logger->LogInfo(
-                "Resizing image from {}x{} to {}x{}", sourceWidth, sourceHeight, outputSize.x, outputSize.y);
+            settings.m_logger->LogInfo("Resizing image from {}x{} to {}x{}",
+                                       sourceWidth,
+                                       sourceHeight,
+                                       outputSize.x,
+                                       outputSize.y);
 
             const size_t outputWidth = outputSize.x;
             const size_t outputHeight = outputSize.y;
@@ -317,8 +325,9 @@ namespace FE
         auto outFileResult = settings.m_streamFactory->OpenFileStream(settings.m_outputFile, IO::OpenMode::kCreate);
         if (!outFileResult)
         {
-            settings.m_logger->LogError(
-                "Failed to open file {}: {}", settings.m_outputFile, IO::GetResultDesc(outFileResult.error()));
+            settings.m_logger->LogError("Failed to open file {}: {}",
+                                        settings.m_outputFile,
+                                        IO::GetResultDesc(outFileResult.error()));
             return false;
         }
 

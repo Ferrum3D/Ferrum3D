@@ -85,6 +85,8 @@
     Public/FeCore/Modules/Environment.h
     Public/FeCore/Modules/LibraryLoader.h
 
+    Public/FeCore/RTTI/Reflection.h
+    Public/FeCore/RTTI/ReflectionContext.h
     Public/FeCore/RTTI/RTTI.h
 
     Public/FeCore/SIMD/Utils.h
@@ -161,6 +163,9 @@ set(COMMON_SOURCES
     Private/FeCore/Platform/Windows/Common.h
     Private/FeCore/Platform/Windows/Platform.cpp
 
+    Private/FeCore/RTTI/Reflection.cpp
+    Private/FeCore/RTTI/ReflectionPrivate.h
+
     Private/FeCore/Strings/Encoding.cpp
     Private/FeCore/Strings/Format.cpp
     Private/FeCore/Strings/Parser.cpp
@@ -189,8 +194,12 @@ set(WINDOWS_SOURCES
     Private/FeCore/Time/Platform/Windows/PlatformTime.cpp
 )
 
+set(GENERATED_SOURCES
+    Reflection.gen.cpp
+)
 
-add_library(FeCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES})
+
+add_library(FeCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES} ${GENERATED_SOURCES})
 
 fe_configure_target(FeCore)
 

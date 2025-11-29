@@ -36,7 +36,7 @@ namespace FE::DI
     //! @brief Base interface for dependency injection containers.
     struct IServiceProvider
     {
-        FE_RTTI_Class(IServiceProvider, "89A29040-31BC-411D-8522-92D7D2696C16");
+        FE_RTTI("89A29040-31BC-411D-8522-92D7D2696C16");
 
         virtual ~IServiceProvider() = default;
 
@@ -52,7 +52,7 @@ namespace FE::DI
             else
             {
                 Memory::RefCountedObjectBase* pResult = nullptr;
-                const ResultCode code = Resolve(fe_typeid<T>(), &pResult);
+                const ResultCode code = Resolve(RTTI::GetTypeID<T>(), &pResult);
                 if (code == ResultCode::kSuccess)
                     return static_cast<T*>(pResult);
 

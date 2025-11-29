@@ -34,7 +34,7 @@ namespace FE::IO
     //! @brief Asynchronous operation controller: can be used to cancel an operation or to query its status.
     struct IAsyncController : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(IAsyncController, "2427B1D9-F1A5-4A1B-A804-EB9ACA502C28");
+        FE_RTTI("2427B1D9-F1A5-4A1B-A804-EB9ACA502C28");
 
         ~IAsyncController() override = default;
 
@@ -132,7 +132,7 @@ namespace FE::IO
     //! @brief Asynchronous I/O thread interface.
     struct IAsyncStreamIO : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(IAsyncStreamIO, "A44064EC-34E0-4B99-9BC7-A2B27321F617");
+        FE_RTTI("A44064EC-34E0-4B99-9BC7-A2B27321F617");
 
         ~IAsyncStreamIO() override = default;
 

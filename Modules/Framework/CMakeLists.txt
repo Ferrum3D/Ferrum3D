@@ -40,7 +40,12 @@ set(WINDOWS_SOURCES
     Private/Framework/Application/Platform/Windows/PlatformWindow.h
 )
 
-add_library(FeFramework STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES})
+set(GENERATED_SOURCES
+    Reflection.gen.cpp
+)
+
+
+add_library(FeFramework STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES} ${GENERATED_SOURCES})
 
 fe_configure_target(FeFramework)
 

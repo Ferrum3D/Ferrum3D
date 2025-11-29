@@ -236,3 +236,7 @@ namespace FE
         return lhs.min != rhs.min || lhs.max != rhs.max;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::RectF, "F6A1B67E-7104-4E4E-BCFE-21A0A86B53D0");
+FE_RTTI_Reflect(FE::RectInt, "7C4BC48B-EBD3-4551-8F29-A88ADBED7CE8");
+FE_RTTI_Reflect(FE::RectUInt, "1E42E766-6EAE-4E7A-B674-D5EE11B6B830");

@@ -9,7 +9,7 @@ namespace FE::Graphics::Vulkan
 
     struct FrameGraph final : public Common::FrameGraph
     {
-        FE_RTTI_Class(FrameGraph, "585305A0-06EB-4B16-8EF1-26FAACEB6AB8");
+        FE_RTTI("585305A0-06EB-4B16-8EF1-26FAACEB6AB8");
 
         FrameGraph(Core::Device* device, Common::FrameGraphResourcePool* resourcePool, BindlessManager* bindlessManager,
                    GraphicsCommandQueue* commandQueue);

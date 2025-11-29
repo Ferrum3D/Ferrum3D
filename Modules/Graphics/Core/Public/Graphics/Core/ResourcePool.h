@@ -24,7 +24,7 @@ namespace FE::Graphics::Core
     {
         ~ResourcePool() override = default;
 
-        FE_RTTI_Class(ResourcePool, "389492DC-7AE2-4B58-984C-6A1529EDFB41");
+        FE_RTTI("389492DC-7AE2-4B58-984C-6A1529EDFB41");
 
         virtual Texture* CreateTexture(Env::Name name, TextureDesc desc) = 0;
         virtual Buffer* CreateBuffer(Env::Name name, BufferDesc desc) = 0;

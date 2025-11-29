@@ -14,7 +14,7 @@ namespace FE::Graphics::Core
 
     struct PipelineBase : public DeviceObject
     {
-        FE_RTTI_Class(PipelineBase, "8D4EC84B-525C-4A21-9FBD-1C304F3471D2");
+        FE_RTTI("8D4EC84B-525C-4A21-9FBD-1C304F3471D2");
 
         [[nodiscard]] PipelineStatus GetStatus() const
         {

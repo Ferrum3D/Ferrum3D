@@ -193,3 +193,5 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Color4F, "2C29543C-5DBB-4BE8-AFAA-1850CC9101BD");

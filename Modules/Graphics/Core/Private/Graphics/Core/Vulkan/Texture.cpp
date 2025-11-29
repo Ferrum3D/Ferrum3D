@@ -331,7 +331,7 @@ namespace FE::Graphics::Vulkan
 
 
     festd::pmr::vector<Core::TextureSubresource> Texture::RetrieveQueueReleaseBarriers(const Core::DeviceQueueType receiverQueue,
-                                                                                     std::pmr::memory_resource* allocator)
+                                                                                       std::pmr::memory_resource* allocator)
     {
         std::unique_lock lk{ m_lock };
 

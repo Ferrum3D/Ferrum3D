@@ -35,7 +35,7 @@ namespace FE::Graphics
 
     struct IModelAssetManager : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(IModelAssetManager, "8E721D85-B882-48E9-AD6E-2AC80A52632E");
+        FE_RTTI("8E721D85-B882-48E9-AD6E-2AC80A52632E");
 
         virtual ModelAsset* Load(Env::Name assetName) = 0;
     };

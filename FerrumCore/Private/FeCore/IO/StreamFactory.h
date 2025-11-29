@@ -7,7 +7,7 @@ namespace FE::IO
 {
     struct FileStreamFactory final : public IStreamFactory
     {
-        FE_RTTI_Class(FileStreamFactory, "3F973B26-1330-404A-BF05-CE0B63306871");
+        FE_RTTI("3F973B26-1330-404A-BF05-CE0B63306871");
 
         explicit FileStreamFactory(Env::Configuration* pConfig);
 

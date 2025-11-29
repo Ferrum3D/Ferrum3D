@@ -35,7 +35,7 @@ namespace FE::Graphics::Core
 
     struct ShaderReflection : public Memory::RefCountedObjectBase
     {
-        FE_RTTI_Class(ShaderReflection, "9ECFF14F-1D5A-4997-B6D5-735E935A9D64");
+        FE_RTTI("9ECFF14F-1D5A-4997-B6D5-735E935A9D64");
 
         ~ShaderReflection() override = default;
 

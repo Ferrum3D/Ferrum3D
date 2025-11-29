@@ -22,7 +22,7 @@ namespace FE::Graphics::Core
 
     struct ComputePipeline : public PipelineBase
     {
-        FE_RTTI_Class(ComputePipeline, "768E754C-D58B-4FDC-BC8D-893E8A7E0438");
+        FE_RTTI("768E754C-D58B-4FDC-BC8D-893E8A7E0438");
 
         ~ComputePipeline() override = default;
 

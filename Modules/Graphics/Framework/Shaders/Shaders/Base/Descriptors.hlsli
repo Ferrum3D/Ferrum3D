@@ -85,11 +85,11 @@ template<class T> struct RWTexture3DDescriptor : ImageUAVDescriptorBase<RWTextur
 template<class T> struct RWTexture1DArrayDescriptor : ImageUAVDescriptorBase<RWTexture1DArray<T>, T, 2> {};
 template<class T> struct RWTexture2DArrayDescriptor : ImageUAVDescriptorBase<RWTexture2DArray<T>, T, 3> {};
 
-template<class T> struct GloballyCoherentRWTexture1DDescriptor : ImageUAVDescriptorBase<fe_globallycoherent RWTexture1D<T>, T, 1> {};
-template<class T> struct GloballyCoherentRWTexture2DDescriptor : ImageUAVDescriptorBase<fe_globallycoherent RWTexture2D<T>, T, 2> {};
-template<class T> struct GloballyCoherentRWTexture3DDescriptor : ImageUAVDescriptorBase<fe_globallycoherent RWTexture3D<T>, T, 3> {};
-template<class T> struct GloballyCoherentRWTexture1DArrayDescriptor : ImageUAVDescriptorBase<fe_globallycoherent RWTexture1DArray<T>, T, 2> {};
-template<class T> struct GloballyCoherentRWTexture2DArrayDescriptor : ImageUAVDescriptorBase<fe_globallycoherent RWTexture2DArray<T>, T, 3> {};
+template<class T> struct GloballyCoherentRWTexture1DDescriptor : ImageUAVDescriptorBase<globallycoherent RWTexture1D<T>, T, 1> {};
+template<class T> struct GloballyCoherentRWTexture2DDescriptor : ImageUAVDescriptorBase<globallycoherent RWTexture2D<T>, T, 2> {};
+template<class T> struct GloballyCoherentRWTexture3DDescriptor : ImageUAVDescriptorBase<globallycoherent RWTexture3D<T>, T, 3> {};
+template<class T> struct GloballyCoherentRWTexture1DArrayDescriptor : ImageUAVDescriptorBase<globallycoherent RWTexture1DArray<T>, T, 2> {};
+template<class T> struct GloballyCoherentRWTexture2DArrayDescriptor : ImageUAVDescriptorBase<globallycoherent RWTexture2DArray<T>, T, 3> {};
 // clang-format on
 
 
@@ -154,7 +154,7 @@ struct BufferUAVDescriptorBase
 template<class T> struct RWBufferDescriptor : BufferUAVDescriptorBase<RWBuffer<T>, T> {};
 template<class T> struct RWStructuredBufferDescriptor : BufferUAVDescriptorBase<RWStructuredBuffer<T>, T> {};
 
-template<class T> struct GloballyCoherentRWStructuredBufferDescriptor : BufferUAVDescriptorBase<fe_globallycoherent RWStructuredBuffer<T>, T> {};
+template<class T> struct GloballyCoherentRWStructuredBufferDescriptor : BufferUAVDescriptorBase<globallycoherent RWStructuredBuffer<T>, T> {};
 // clang-format on
 
 
@@ -262,7 +262,7 @@ struct RWByteAddressBufferDescriptorBase
 
 // clang-format off
 struct RWByteAddressBufferDescriptor : RWByteAddressBufferDescriptorBase<RWByteAddressBuffer> {};
-struct GloballyCoherentRWByteAddressBufferDescriptor : RWByteAddressBufferDescriptorBase<fe_globallycoherent RWByteAddressBuffer> {};
+struct GloballyCoherentRWByteAddressBufferDescriptor : RWByteAddressBufferDescriptorBase<globallycoherent RWByteAddressBuffer> {};
 // clang-format on
 
 #undef FE_MAP_BYTE_ADDRESS_BUFFER_METHOD

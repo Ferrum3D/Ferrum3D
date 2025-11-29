@@ -234,3 +234,5 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Vector3Int, "22E32E11-EC62-450C-9F6C-CD8BB764475A");

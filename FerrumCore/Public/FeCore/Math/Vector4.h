@@ -488,3 +488,6 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
+
+FE_RTTI_Reflect(FE::Vector4, "C05EDB73-4A72-4B89-B0E4-2F4BFDC6C538");
+FE_RTTI_Reflect(FE::PackedVector4F, "E9451D19-D3FB-4845-9027-F10A2F3233AF");

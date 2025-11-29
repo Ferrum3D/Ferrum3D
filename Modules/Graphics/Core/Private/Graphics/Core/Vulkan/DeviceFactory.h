@@ -14,7 +14,7 @@ namespace FE::Graphics::Vulkan
 
     struct DeviceFactory final : public Core::DeviceFactory
     {
-        FE_RTTI_Class(DeviceFactory, "4247535C-3E97-42E7-A869-1DC542AFBF25");
+        FE_RTTI("4247535C-3E97-42E7-A869-1DC542AFBF25");
 
         DeviceFactory(Env::Configuration* config, Logger* logger);
         ~DeviceFactory() override;
