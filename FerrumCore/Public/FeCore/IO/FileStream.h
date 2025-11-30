@@ -5,6 +5,8 @@ namespace FE::IO
 {
     struct FileStream final : public BufferedStream
     {
+        FE_RTTI("25BF9144-CF17-4085-B0D4-F269D5F7CCB7");
+
         explicit FileStream(std::pmr::memory_resource* bufferAllocator = nullptr)
             : BufferedStream(bufferAllocator)
         {

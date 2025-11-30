@@ -143,7 +143,7 @@ namespace FE::festd
     template<class TContainer>
     auto single(TContainer& container) -> decltype(*begin(container))
     {
-        FE_AssertDebug(size(container) == 1);
+        FE_AssertDebug(festd::size(container) == 1);
         return *begin(container);
     }
 

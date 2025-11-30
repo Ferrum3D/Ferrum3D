@@ -39,7 +39,8 @@ def run_clang_format(file_path: str) -> None:
 class TypeKind(Enum):
     NORMAL = 0
     BUILTIN = 1
-    EXTERNAL = 2
+    EXTERNAL_CLASS = 2
+    ENUM = 3
 
 
 # Should be kept in sync with Reflection.h
@@ -57,14 +58,16 @@ class FieldFlags(Flag):
 
 
 class FieldInfo:
-    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags):
+    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, enum_value = None):
         self.name = name
         self.attributes = attributes
         self.flags = flags
+        self.enum_value = enum_value
+        self.display_name = attributes.get("DisplayName", name)
 
 
-def get_internal_type_id(qualified_name: str, location) -> uuid.UUID:
-    return uuid.uuid5(UUID_NAMESPACE, f'{qualified_name} {location.file}:{location.line}')
+def get_internal_type_id(qualified_name: str) -> uuid.UUID:
+    return uuid.uuid5(UUID_NAMESPACE, qualified_name)
 
 
 def get_module_path(type_declaration_file_path: str) -> Path:
@@ -96,18 +99,19 @@ class ReflectedType:
         self.id = id
         self.name = name
         self.namespace = namespace
-        self.qualified_name = f"{namespace}::{name}"
+        self.qualified_name = f"{namespace}::{name}" if namespace else name
         self.module_path = get_module_path(location.file.name)
         self.header_path = get_header_path(location.file.name, self.module_path)
         if self.header_path.suffix != ".h":
             raise Exception(f"Reflected types must be declared in header files, but {self.qualified_name} is declared in {location}")
 
-        self.internal_id = get_internal_type_id(self.qualified_name, location)
+        self.internal_id = get_internal_type_id(self.qualified_name)
         self.attributes = attributes
         self.bases = bases
         self.fields = fields
         self.is_builtin = kind == TypeKind.BUILTIN
-        self.is_external = kind == TypeKind.EXTERNAL
+        self.is_enum = kind == TypeKind.ENUM
+        self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS
 
 
 def get_qualified_name(cursor: cindex.Cursor | None) -> str:
@@ -158,6 +162,10 @@ def get_namespace(cursor: cindex.Cursor | None) -> str:
 
 def is_class(node_kind: cindex.CursorKind) -> bool:
     return node_kind == cindex.CursorKind.STRUCT_DECL or node_kind == cindex.CursorKind.CLASS_DECL
+
+
+def is_enum(node_kind: cindex.CursorKind) ->bool:
+    return node_kind == cindex.CursorKind.ENUM_DECL
 
 
 def get_annotation_tokens(node: cindex.Cursor) -> list[str]:
@@ -218,7 +226,7 @@ def resolve_type(t: cindex.Type, types: dict[uuid.UUID, ReflectedType]) -> Refle
     if type_qualified_name is None:
         return None
 
-    type_internal_id = get_internal_type_id(type_qualified_name, type_declaration.location)
+    type_internal_id = get_internal_type_id(type_qualified_name)
     return types.get(type_internal_id)
 
 
@@ -252,7 +260,17 @@ def parse_class(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[c
                 fields.append(FieldInfo(field_name, field_attributes, field_flags))
 
 
-def visit_external_rtti_class(node: cindex.Cursor, attributes: dict[str, str], types: dict[uuid.UUID, ReflectedType]) -> bool:
+def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
+    base_types.append(node.enum_type)
+    for child in node.get_children():
+        if child.kind == cindex.CursorKind.ENUM_CONSTANT_DECL:
+            field_name = child.spelling
+            field_value = child.enum_value
+            field_attributes = parse_attributes(child)
+            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, field_value))
+
+
+def visit_external_rtti_declaration(node: cindex.Cursor, attributes: dict[str, str], types: dict[uuid.UUID, ReflectedType]) -> bool:
     reflected_type_id, need_reflect = parse_rtti_attribute(attributes)
     if reflected_type_id is None:
         return False
@@ -264,29 +282,36 @@ def visit_external_rtti_class(node: cindex.Cursor, attributes: dict[str, str], t
     type_name = ""
     attributes = {}
     fields = []
+    base_types = []
 
     type_kind = TypeKind.NORMAL
     reflected_type = node.get_template_argument_type(0)
     reflected_type_declaration = reflected_type.get_declaration()
     if reflected_type_declaration and is_class(reflected_type_declaration.kind):
-        type_kind = TypeKind.EXTERNAL
+        type_kind = TypeKind.EXTERNAL_CLASS
         namespace_name = get_namespace(reflected_type_declaration)
         type_name = reflected_type_declaration.displayname
-        base_types = []
-        parse_class(reflected_type_declaration, fields, base_types, need_reflect, True)
-        assert not base_types
+        parse_class(reflected_type_declaration, fields, [], need_reflect, True)
+    elif reflected_type_declaration and is_enum(reflected_type_declaration.kind):
+        type_kind = TypeKind.ENUM
+        namespace_name = get_namespace(reflected_type_declaration)
+        type_name = reflected_type_declaration.displayname
+        parse_enum(reflected_type_declaration, fields, base_types)
+        assert len(base_types) == 1
     else:
         type_kind = TypeKind.BUILTIN
         type_name = get_builtin_type_name(reflected_type)
 
-    ref_type = ReflectedType(type_kind, need_reflect, reflected_type_id, namespace_name, type_name, node.location, attributes, [], fields)
+    bases = [resolve_type(t, types) for t in base_types]
+    assert all(bases)
+    ref_type = ReflectedType(type_kind, need_reflect, reflected_type_id, namespace_name, type_name, node.location, attributes, bases, fields)
     types[ref_type.internal_id] = ref_type
     return True
 
 
 def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType]):
     attributes = parse_attributes(node)
-    if visit_external_rtti_class(node, attributes, types):
+    if visit_external_rtti_declaration(node, attributes, types):
         return
 
     # Find static Reflect method declaration. It is used as a marker to generate reflection code.

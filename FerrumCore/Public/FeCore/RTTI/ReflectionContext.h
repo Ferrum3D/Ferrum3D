@@ -30,16 +30,20 @@ namespace FE::RTTI
         }
 
         template<class T>
-        void ReflectEnum(Type& type, const TypeID id, const festd::ascii_view qualifiedName,
-                         const festd::span<const Attribute> attributes, const festd::span<const festd::ascii_view> names,
-                         const festd::span<const int64_t> values)
+        void ReflectEnum(Type& type, const TypeID id, const festd::span<const uint8_t> underlyingType,
+                         const festd::ascii_view qualifiedName, const festd::span<const Attribute> attributes,
+                         const festd::span<const festd::ascii_view> names,
+                         const festd::span<const festd::ascii_view> displayNames, const festd::span<const int64_t> values)
         {
+            FE_Assert(underlyingType.size() == sizeof(TypeID));
+
             type.m_id = id;
             type.m_name = GetShortName(qualifiedName);
             type.m_qualifiedName = qualifiedName;
-            type.m_baseTypes = festd::span<const UUID>(&GetTypeID<std::underlying_type_t<T>>(), 1);
+            type.m_baseTypes = festd::span(reinterpret_cast<const TypeID*>(underlyingType.data()), 1);
             type.m_attributes = attributes;
             type.m_enumNames = names;
+            type.m_enumDisplayNames = displayNames;
             type.m_enumValues = values;
             type.m_size = sizeof(T);
             type.m_alignment = alignof(T);

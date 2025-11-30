@@ -53,6 +53,8 @@ namespace FE::IO
 
     struct BufferedStream : public StreamBase
     {
+        FE_RTTI("CCAD9E96-A9C7-4543-9414-1A0E00E8D5B6");
+
         ~BufferedStream() override
         {
             if (m_buffer)

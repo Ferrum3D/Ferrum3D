@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include <FeCore/Base/BaseMath.h>
 #include <FeCore/Base/BaseTypes.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <FeCore/Utils/Crc32.h>
-#include <festd/base.h>
 
 namespace FE::Compression
 {
@@ -28,9 +28,10 @@ namespace FE::Compression
     enum class Method : uint32_t
     {
         kNone,
-        kDeflate,
-        kGDeflate,
-        kInvalid,
+
+        kDeflate FE_DISPLAY_NAME("Deflate"),
+        kGDeflate FE_DISPLAY_NAME("GDeflate"),
+        kInvalid FE_DISPLAY_NAME("Invalid"),
     };
 
 
@@ -176,3 +177,5 @@ namespace FE::Compression
         void* m_impl = nullptr;
     };
 } // namespace FE::Compression
+
+FE_RTTI_Reflect(FE::Compression::Method, "80AD0E9B-049D-41EC-B8E5-AB32C15DDCFA");

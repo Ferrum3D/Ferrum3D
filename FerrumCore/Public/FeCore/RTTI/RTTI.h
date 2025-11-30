@@ -11,6 +11,8 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
+#define FE_DISPLAY_NAME(name) FE_CODEGEN_ATTRIBUTE("DisplayName=" name)
+
 
 namespace FE::RTTI
 {
@@ -29,13 +31,6 @@ namespace FE::RTTI
         struct ExternalTypeReflector
         {
         };
-
-
-        template<class TEnum>
-        Type* GetEnumTypeMutable() = delete;
-
-        template<class TEnum>
-        const TypeID& GetEnumTypeID() = delete;
 
 
         template<class TDst, class TSrc>
@@ -63,6 +58,8 @@ private:                                                                        
     friend TDstPtr_RTTI FE::RTTI::Cast(TSrc_RTTI* source);                                                                       \
     template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
     friend TDstPtr_RTTI FE::RTTI::AssertCast(TSrc_RTTI* source);                                                                 \
+                                                                                                                                 \
+    static const FE::RTTI::Type& RTTI_GetType();                                                                                 \
                                                                                                                                  \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
     virtual void* FE_VECTORCALL RTTI_TryCast(FE::RTTI::TypeID typeID);                                                           \
@@ -92,37 +89,23 @@ public:                                                                         
 #define FE_RTTI_Reflect(...) FE_MACRO_SPECIALIZE(FE_RTTI_Reflect, __VA_ARGS__)
 
 
-    template<class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
-    const Type& GetType()
-    {
-        return *Internal::GetEnumTypeMutable<T>();
-    }
-
-
     template<class T, std::enable_if_t<Internal::kIsRTTIDefined<T>, bool> = true>
     const Type& GetType()
     {
-        return T::RTTI_GetTypeMutable();
+        return T::RTTI_GetType();
     }
 
-    template<class T, std::enable_if_t<!Internal::kIsRTTIDefined<T> && !std::is_enum_v<T>, bool> = true>
+    template<class T, std::enable_if_t<!Internal::kIsRTTIDefined<T>, bool> = true>
     const Type& GetType() = delete;
 
 
     template<class T>
     FE_FORCE_INLINE TypeID GetTypeID()
     {
-        if constexpr (std::is_enum_v<T>)
-        {
-            return Internal::GetEnumTypeID<T>();
-        }
+        if constexpr (Internal::kIsRTTIDefined<T>)
+            return T::TypeID;
         else
-        {
-            if constexpr (Internal::kIsRTTIDefined<T>)
-                return T::TypeID;
-            else
-                return TypeID::kNull;
-        }
+            return TypeID::kNull;
     }
 
 
@@ -162,3 +145,18 @@ public:                                                                         
         return static_cast<TDstPtr>(source);
     }
 } // namespace FE::RTTI
+
+
+FE_RTTI_Reflect(uint8_t, "80E074D8-C4C0-4190-B716-701DBA47F9F7");
+FE_RTTI_Reflect(uint16_t, "DA7E1828-9EC2-408B-A93B-50F254939992");
+FE_RTTI_Reflect(uint32_t, "334F0750-1B4E-4F4C-AC6F-985382D4BD11");
+FE_RTTI_Reflect(uint64_t, "76E0D616-A646-422A-B506-07ADBE41756B");
+FE_RTTI_Reflect(int8_t, "B9AE58D6-7AA1-4179-9F4B-03A57872BBD0");
+FE_RTTI_Reflect(int16_t, "99CD9FE5-B954-41DD-BF51-1F2DB4E6D433");
+FE_RTTI_Reflect(int32_t, "174196BD-8BFE-4049-B72E-8A07AD372659");
+FE_RTTI_Reflect(int64_t, "8B225D72-D811-437E-BC70-955533A9B84E");
+FE_RTTI_Reflect(float, "66D8930B-3458-4847-B6F1-002C70DC1ED2");
+FE_RTTI_Reflect(double, "37BB8848-1962-4773-93DF-9E7DCD06668E");
+FE_RTTI_Reflect(bool, "DD3BA9BB-E7D2-4217-A797-F7C81EF351A2");
+
+FE_RTTI_Reflect(FE::UUID, "338EBFD9-5113-4193-B0F0-C89A4AC7D064");

@@ -8,6 +8,8 @@ namespace FE::DI
 {
     struct Container final : public IServiceProvider
     {
+        FE_RTTI("60933641-C6F7-4503-8FFA-AC25EDFAD83F");
+
         Container();
 
         ServiceRegistryRoot* GetRegistryRoot()

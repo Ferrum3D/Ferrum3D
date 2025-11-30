@@ -1,20 +1,4 @@
-{% if type.is_builtin %}
-namespace FE::RTTI
-{
-    void Internal::ExternalTypeReflector<{{ type.name }}>::Reflect(ReflectionContext& context)
-    {
-        static Type typeInstance;
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.name }}
-        };
-
-        context.ReflectBuiltinType<{{ type.name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), "{{ type.name }}");
-    }
-
-    static TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&Internal::ExternalTypeReflector<{{ type.name }}>::Reflect);
-}
-{% elif type.is_external %}
+{% if type.is_external %}
 namespace FE::RTTI
 {
     namespace
@@ -49,7 +33,40 @@ namespace FE::RTTI
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
             {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.qualified_name }}
         };
+{% if type.is_builtin %}
+        context.ReflectBuiltinType<{{ type.qualified_name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}");
+{%- elif type.is_enum %}
+        static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
+            {% for b in type.bases[0].id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.bases[0].qualified_name }}
+        };
 
+        static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
+            {%- for attribute in type.attributes %}
+            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- endfor %}
+        };
+
+        static constexpr festd::array<festd::ascii_view, {{ type.fields|length }}> kEnumNames = {
+            {%- for field in type.fields %}
+            "{{ field.name }}",
+            {%- endfor %}
+        };
+
+        static constexpr festd::array<festd::ascii_view, {{ type.fields|length }}> kEnumDisplayNames = {
+            {%- for field in type.fields %}
+            "{{ field.display_name }}",
+            {%- endfor %}
+        };
+
+        static constexpr festd::array<int64_t, {{ type.fields|length }}> kEnumValues = {
+            {%- for field in type.fields %}
+            static_cast<{{ type.bases[0].qualified_name }}>({{ field.enum_value }}),
+            {%- endfor %}
+        };
+
+        context.ReflectEnum<{{ type.qualified_name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), kUnderlyingTypeIDBytes,
+            "{{ type.qualified_name }}", kAttributes, kEnumNames, kEnumDisplayNames, kEnumValues);
+{%- else %}
         static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
             {%- for attribute in type.attributes %}
             RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
@@ -72,9 +89,10 @@ namespace FE::RTTI
         };
 
         context.ReflectClass<{{ type.qualified_name }}>(typeInstance, UUID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", {}, kAttributes, kFields);
+{% endif %}
     }
 
-    static RTTI::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&Internal::ExternalTypeReflector<{{ type.qualified_name }}>::Reflect);
+    static TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&Internal::ExternalTypeReflector<{{ type.qualified_name }}>::Reflect);
 }
 {% else %}
 namespace {{ type.namespace }}
@@ -106,6 +124,17 @@ namespace {{ type.namespace }}
 
             return nullptr;
         }
+
+        RTTI::Type& RTTI_GetMutableType_{{ type.id.bytes.hex() }}()
+        {
+            static RTTI::Type typeInstance;
+            return typeInstance;
+        }
+    }
+
+    const RTTI::Type& {{ type.name }}::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
     }
 
     void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const RTTI::TypeID typeID)
@@ -113,16 +142,14 @@ namespace {{ type.namespace }}
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(this, typeID);
     }
 
-
     const void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const RTTI::TypeID typeID) const
     {
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(const_cast<{{ type.name }}*>(this), typeID);
     }
 
-
     void {{ type.name }}::Reflect(RTTI::ReflectionContext& context)
     {
-        static RTTI::Type typeInstance;
+        RTTI::Type& typeInstance = RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
             {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.qualified_name }}
