@@ -11,7 +11,9 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#define FE_DISPLAY_NAME(name) FE_CODEGEN_ATTRIBUTE("DisplayName=" name)
+#define FE_ATTRIBUTE(key, value) FE_CODEGEN_ATTRIBUTE(#key "=" name)
+
+#define FE_DISPLAY_NAME(name) FE_ATTRIBUTE(DisplayName, name)
 
 
 namespace FE::RTTI
@@ -71,6 +73,9 @@ public:                                                                         
     static FE_CODEGEN_ATTRIBUTE(#codegenAttribute "=" uuid) void Reflect(FE::RTTI::ReflectionContext& context)
 
 
+//! @brief Macro to register a class to the RTTI system without reflecting it.
+//!
+//! This macro enables `RTTI::Cast` and `RTTI::AssertCast`. Use this inside a polymorphic class definition.
 #define FE_RTTI(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectBasic)
 
 #define FE_RTTI_Reflect_2(typename, uuid)                                                                                        \
@@ -81,11 +86,24 @@ public:                                                                         
     template<>                                                                                                                   \
     struct FE_CODEGEN_ATTRIBUTE("ReflectFull=" uuid) FE::RTTI::Internal::ExternalTypeReflector<typename>                         \
     {                                                                                                                            \
+        static_assert(!std::is_polymorphic_v<typename>);                                                                         \
         static void Reflect(FE::RTTI::ReflectionContext& context);                                                               \
     }
 
 #define FE_RTTI_Reflect_1(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectFull)
 
+//! @brief Macro to reflect a class to the RTTI system.
+//!
+//! Two variants are available:
+//!
+//! - `FE_RTTI_Reflect(uuid)` - version with one argument, uuid is a string literal. Use this inside a polymorphic
+//!   class definition.
+//!
+//! - `FE_RTTI_Reflect(type, uuid)` - version with two arguments, type is a fully qualified class name, uuid is a string literal.
+//!   Use this in the global scope to reflect external non-polymorphic types.
+//!
+//! @note `uuid` can either be a string literal specifying a UUID or "Random" to generate a random UUID each time
+//!       the reflection codegen is run.
 #define FE_RTTI_Reflect(...) FE_MACRO_SPECIALIZE(FE_RTTI_Reflect, __VA_ARGS__)
 
 
@@ -158,5 +176,3 @@ FE_RTTI_Reflect(int64_t, "8B225D72-D811-437E-BC70-955533A9B84E");
 FE_RTTI_Reflect(float, "66D8930B-3458-4847-B6F1-002C70DC1ED2");
 FE_RTTI_Reflect(double, "37BB8848-1962-4773-93DF-9E7DCD06668E");
 FE_RTTI_Reflect(bool, "DD3BA9BB-E7D2-4217-A797-F7C81EF351A2");
-
-FE_RTTI_Reflect(FE::UUID, "338EBFD9-5113-4193-B0F0-C89A4AC7D064");

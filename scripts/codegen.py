@@ -9,6 +9,7 @@ import uuid
 import json
 
 UUID_NAMESPACE = uuid.UUID("ba6b72ef-3286-4c71-9822-2519da4e156a")
+USE_INTERNAL_ID = uuid.UUID("9ecf45e0-cba3-4e15-b613-ed66e3c4be5d")
 
 PROJECT_DIR = Path.cwd().parent.absolute().as_posix()
 
@@ -58,10 +59,11 @@ class FieldFlags(Flag):
 
 
 class FieldInfo:
-    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, enum_value = None):
+    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type, enum_value = None):
         self.name = name
         self.attributes = attributes
         self.flags = flags
+        self.type = type
         self.enum_value = enum_value
         self.display_name = attributes.get("DisplayName", name)
 
@@ -96,16 +98,18 @@ def get_header_path(type_declaration_file_path: str, module_path: Path) -> Path:
 class ReflectedType:
     def __init__(self, kind: TypeKind, need_reflect: bool, id: uuid.UUID, namespace: str, name: str, location, attributes: dict[str, str], bases, fields: list[FieldInfo]):
         self.need_reflect = need_reflect
-        self.id = id
         self.name = name
         self.namespace = namespace
         self.qualified_name = f"{namespace}::{name}" if namespace else name
+
+        self.internal_id = get_internal_type_id(self.qualified_name)
+        self.id = self.internal_id if id == USE_INTERNAL_ID else id
+
         self.module_path = get_module_path(location.file.name)
         self.header_path = get_header_path(location.file.name, self.module_path)
         if self.header_path.suffix != ".h":
             raise Exception(f"Reflected types must be declared in header files, but {self.qualified_name} is declared in {location}")
 
-        self.internal_id = get_internal_type_id(self.qualified_name)
         self.attributes = attributes
         self.bases = bases
         self.fields = fields
@@ -121,9 +125,9 @@ def get_qualified_name(cursor: cindex.Cursor | None) -> str:
     parent_name = get_qualified_name(cursor.semantic_parent)
 
     if parent_name:
-        return parent_name + '::' + cursor.spelling
+        return parent_name + '::' + cursor.displayname
     else:
-        return cursor.spelling
+        return cursor.displayname
 
 
 def get_builtin_type_name(t: cindex.Type) -> str:
@@ -176,12 +180,19 @@ def get_annotation_tokens(node: cindex.Cursor) -> list[str]:
     return annotations
 
 
+def parse_rtti_id(id_string: str) -> uuid.UUID:
+    if id_string == 'Random':
+        return USE_INTERNAL_ID
+    else:
+        return uuid.UUID(id_string)
+
+
 def parse_rtti_attribute(annotations: dict[str, str]) -> tuple[uuid.UUID | None, bool]:
     for annotation, type_id in annotations.items():
         if annotation == "ReflectFull":
-            return uuid.UUID(type_id), True
+            return parse_rtti_id(type_id), True
         if annotation == "ReflectBasic":
-            return uuid.UUID(type_id), False
+            return parse_rtti_id(type_id), False
     return None, False
 
 
@@ -245,7 +256,7 @@ def get_all_base_types(immediate_bases: list[cindex.Type], types: dict[uuid.UUID
     return list(bases)
 
 
-def parse_class(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type], need_reflect: bool, public_only: bool):
+def parse_class(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type], types: dict[uuid.UUID, ReflectedType], need_reflect: bool, public_only: bool):
     access_spec = cindex.AccessSpecifier.PUBLIC if node.kind == cindex.CursorKind.STRUCT_DECL else cindex.AccessSpecifier.PRIVATE
     for child in node.get_children():
         if child.kind == cindex.CursorKind.CXX_ACCESS_SPEC_DECL:
@@ -254,10 +265,11 @@ def parse_class(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[c
             base_types.append(child.type)
         if child.kind == cindex.CursorKind.FIELD_DECL and need_reflect:
             field_name = child.spelling
+            field_type = resolve_type(child.type.get_canonical(), types)
             field_attributes = parse_attributes(child)
             field_flags = get_field_flags(child, access_spec)
             if not public_only or access_spec == cindex.AccessSpecifier.PUBLIC:
-                fields.append(FieldInfo(field_name, field_attributes, field_flags))
+                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type))
 
 
 def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
@@ -267,7 +279,7 @@ def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[ci
             field_name = child.spelling
             field_value = child.enum_value
             field_attributes = parse_attributes(child)
-            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, field_value))
+            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, None, field_value))
 
 
 def visit_external_rtti_declaration(node: cindex.Cursor, attributes: dict[str, str], types: dict[uuid.UUID, ReflectedType]) -> bool:
@@ -291,7 +303,11 @@ def visit_external_rtti_declaration(node: cindex.Cursor, attributes: dict[str, s
         type_kind = TypeKind.EXTERNAL_CLASS
         namespace_name = get_namespace(reflected_type_declaration)
         type_name = reflected_type_declaration.displayname
-        parse_class(reflected_type_declaration, fields, [], need_reflect, True)
+
+        if reflected_type_declaration.location.file.name != node.location.file.name:
+            raise Exception(f"FE_RTTI_Reflect macro must be declared in the same file as the reflected type {get_qualified_name(reflected_type_declaration)}")
+
+        parse_class(reflected_type_declaration, fields, [], types, need_reflect, True)
     elif reflected_type_declaration and is_enum(reflected_type_declaration.kind):
         type_kind = TypeKind.ENUM
         namespace_name = get_namespace(reflected_type_declaration)
@@ -328,7 +344,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType]):
         attributes = {}
         base_types = []
         fields = []
-        parse_class(node, fields, base_types, need_reflect, False)
+        parse_class(node, fields, base_types, types, need_reflect, False)
 
         bases = get_all_base_types(base_types, types)
         ref_type = ReflectedType(TypeKind.NORMAL, need_reflect, reflected_type_id, namespace_name, node.displayname, node.location, attributes, bases, fields)
@@ -367,7 +383,7 @@ def parse_file(file_path: str, include_dirs: list[str], defines: list[str]) -> d
 
 
 def should_parse_file(file_path: str) -> bool:
-    return "ThirdParty" not in file_path
+    return "ThirdParty" not in file_path and file_path.endswith(".cpp") and not file_path.endswith(".gen.cpp")
 
 
 if __name__ == "__main__":

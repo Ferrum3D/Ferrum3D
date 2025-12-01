@@ -9,6 +9,5 @@ namespace FE::Graphics::Tools::Blit
         RectF m_destinationRect = { 0.0f, 0.0f, 1.0f, 1.0f };
     };
 
-    Core::RenderTargetHandle AddPass(Core::FrameGraphBuilder& builder, Core::RenderTargetHandle src, Core::RenderTargetHandle dst,
-                                     Settings settings = {});
+    void AddPass(Core::FrameGraph& graph, const Core::Texture* src, const Core::Texture* dst, Settings settings = {});
 } // namespace FE::Graphics::Tools::Blit

@@ -14,148 +14,6 @@
 #include <Framework/Entities/EntityWorld.h>
 
 
-namespace FE::Framework
-{
-    const RTTI::TypeID EntityRegistry::TypeID = RTTI::TypeID{ "d7d3e880-e152-4014-b598-a9a97f5e463c" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(EntityRegistry* thisPtr,
-                                                                                              const RTTI::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(RTTI::TypeID)] = {
-                0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
-                0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry (this type)
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-
-            return nullptr;
-        }
-
-        RTTI::Type& RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c()
-        {
-            static RTTI::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const RTTI::Type& EntityRegistry::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
-    }
-
-    void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const RTTI::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(this, typeID);
-    }
-
-    const void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const RTTI::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(const_cast<EntityRegistry*>(this), typeID);
-    }
-
-    void EntityRegistry::Reflect(RTTI::ReflectionContext& context)
-    {
-        RTTI::Type& typeInstance = RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
-            0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
-            0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(RTTI::TypeID)> kBaseClassTypeIDs = {};
-
-        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
-
-        static const festd::array<RTTI::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<EntityRegistry>(typeInstance,
-                                             UUID::LoadAligned(kTypeIDBytes),
-                                             "FE::Framework::EntityRegistry",
-                                             kBaseClassTypeIDs,
-                                             kAttributes,
-                                             kFields);
-    }
-
-    static RTTI::TypeRegistrar GTypeRegistrar_d7d3e880e1524014b598a9a97f5e463c(&EntityRegistry::Reflect);
-} // namespace FE::Framework
-
-
-namespace FE::Framework
-{
-    const RTTI::TypeID EntityWorld::TypeID = RTTI::TypeID{ "069e3b9c-cc10-4989-a6db-37095dfdb990" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(EntityWorld* thisPtr,
-                                                                                              const RTTI::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(RTTI::TypeID)] = {
-                0x06, 0x9e, 0x3b, 0x9c, 0xcc, 0x10, 0x49, 0x89,
-                0xa6, 0xdb, 0x37, 0x09, 0x5d, 0xfd, 0xb9, 0x90, // FE::Framework::EntityWorld (this type)
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-
-            return nullptr;
-        }
-
-        RTTI::Type& RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990()
-        {
-            static RTTI::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const RTTI::Type& EntityWorld::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990();
-    }
-
-    void* FE_VECTORCALL EntityWorld::RTTI_TryCast(const RTTI::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(this, typeID);
-    }
-
-    const void* FE_VECTORCALL EntityWorld::RTTI_TryCast(const RTTI::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(const_cast<EntityWorld*>(this), typeID);
-    }
-
-    void EntityWorld::Reflect(RTTI::ReflectionContext& context)
-    {
-        RTTI::Type& typeInstance = RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
-            0x06, 0x9e, 0x3b, 0x9c, 0xcc, 0x10, 0x49, 0x89,
-            0xa6, 0xdb, 0x37, 0x09, 0x5d, 0xfd, 0xb9, 0x90, // FE::Framework::EntityWorld
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(RTTI::TypeID)> kBaseClassTypeIDs = {};
-
-        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
-
-        static const festd::array<RTTI::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<EntityWorld>(typeInstance,
-                                          UUID::LoadAligned(kTypeIDBytes),
-                                          "FE::Framework::EntityWorld",
-                                          kBaseClassTypeIDs,
-                                          kAttributes,
-                                          kFields);
-    }
-
-    static RTTI::TypeRegistrar GTypeRegistrar_069e3b9ccc104989a6db37095dfdb990(&EntityWorld::Reflect);
-} // namespace FE::Framework
-
-
 namespace FE::Framework::Core
 {
     const RTTI::TypeID PlatformApplication::TypeID = RTTI::TypeID{ "63770294-e7a2-4cdd-866c-bbc49ec93214" };
@@ -393,6 +251,148 @@ namespace FE::Framework
     }
 
     static RTTI::TypeRegistrar GTypeRegistrar_af07edca2d554e2da5ef85ed53b4cdab(&Application::Reflect);
+} // namespace FE::Framework
+
+
+namespace FE::Framework
+{
+    const RTTI::TypeID EntityRegistry::TypeID = RTTI::TypeID{ "d7d3e880-e152-4014-b598-a9a97f5e463c" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(EntityRegistry* thisPtr,
+                                                                                              const RTTI::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(RTTI::TypeID)] = {
+                0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
+                0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        RTTI::Type& RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c()
+        {
+            static RTTI::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const RTTI::Type& EntityRegistry::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
+    }
+
+    void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const RTTI::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(this, typeID);
+    }
+
+    const void* FE_VECTORCALL EntityRegistry::RTTI_TryCast(const RTTI::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(const_cast<EntityRegistry*>(this), typeID);
+    }
+
+    void EntityRegistry::Reflect(RTTI::ReflectionContext& context)
+    {
+        RTTI::Type& typeInstance = RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
+            0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14,
+            0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c, // FE::Framework::EntityRegistry
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(RTTI::TypeID)> kBaseClassTypeIDs = {};
+
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
+
+        static const festd::array<RTTI::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<EntityRegistry>(typeInstance,
+                                             UUID::LoadAligned(kTypeIDBytes),
+                                             "FE::Framework::EntityRegistry",
+                                             kBaseClassTypeIDs,
+                                             kAttributes,
+                                             kFields);
+    }
+
+    static RTTI::TypeRegistrar GTypeRegistrar_d7d3e880e1524014b598a9a97f5e463c(&EntityRegistry::Reflect);
+} // namespace FE::Framework
+
+
+namespace FE::Framework
+{
+    const RTTI::TypeID EntityWorld::TypeID = RTTI::TypeID{ "069e3b9c-cc10-4989-a6db-37095dfdb990" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(EntityWorld* thisPtr,
+                                                                                              const RTTI::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(RTTI::TypeID)] = {
+                0x06, 0x9e, 0x3b, 0x9c, 0xcc, 0x10, 0x49, 0x89,
+                0xa6, 0xdb, 0x37, 0x09, 0x5d, 0xfd, 0xb9, 0x90, // FE::Framework::EntityWorld (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        RTTI::Type& RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990()
+        {
+            static RTTI::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const RTTI::Type& EntityWorld::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990();
+    }
+
+    void* FE_VECTORCALL EntityWorld::RTTI_TryCast(const RTTI::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(this, typeID);
+    }
+
+    const void* FE_VECTORCALL EntityWorld::RTTI_TryCast(const RTTI::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_069e3b9ccc104989a6db37095dfdb990(const_cast<EntityWorld*>(this), typeID);
+    }
+
+    void EntityWorld::Reflect(RTTI::ReflectionContext& context)
+    {
+        RTTI::Type& typeInstance = RTTI_GetMutableType_069e3b9ccc104989a6db37095dfdb990();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
+            0x06, 0x9e, 0x3b, 0x9c, 0xcc, 0x10, 0x49, 0x89,
+            0xa6, 0xdb, 0x37, 0x09, 0x5d, 0xfd, 0xb9, 0x90, // FE::Framework::EntityWorld
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(RTTI::TypeID)> kBaseClassTypeIDs = {};
+
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
+
+        static const festd::array<RTTI::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<EntityWorld>(typeInstance,
+                                          UUID::LoadAligned(kTypeIDBytes),
+                                          "FE::Framework::EntityWorld",
+                                          kBaseClassTypeIDs,
+                                          kAttributes,
+                                          kFields);
+    }
+
+    static RTTI::TypeRegistrar GTypeRegistrar_069e3b9ccc104989a6db37095dfdb990(&EntityWorld::Reflect);
 } // namespace FE::Framework
 
 

@@ -67,6 +67,18 @@ namespace FE::RTTI
         context.ReflectEnum<{{ type.qualified_name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), kUnderlyingTypeIDBytes,
             "{{ type.qualified_name }}", kAttributes, kEnumNames, kEnumDisplayNames, kEnumValues);
 {%- else %}
+        {%- if type.fields|length > 0 %}
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.fields|length }} * sizeof(TypeID)] = {
+            {%- for field in type.fields %}
+            {%- if field.type %}
+            {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
+            {%- else %}
+            {{ '0x00, ' * 16 }} // <unknown> {{ field.name }}
+            {%- endif %}
+            {%- endfor %}
+        };
+
+        {%- endif %}
         static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
             {%- for attribute in type.attributes %}
             RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
@@ -81,7 +93,7 @@ namespace FE::RTTI
         {% endfor %}
         static const festd::array<RTTI::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
-            RTTI::ReflectionContext::CreateFieldInfo("{{ field.name }}",
+            RTTI::ReflectionContext::CreateFieldInfo("{{ field.name }}", TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.qualified_name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),

@@ -368,7 +368,7 @@ namespace FE::RTTI
 {
     namespace
     {
-        Type& GetMutableType_e713c84aef6343bc8bfde2af0fe55171()
+        Type& GetMutableType_7fe0fa6fc0425f7db4b727b0929e813a()
         {
             static Type typeInstance;
             return typeInstance;
@@ -378,15 +378,15 @@ namespace FE::RTTI
     template<>
     const Type& GetType<FE::Graphics::Tools::Blit::Constants>()
     {
-        return GetMutableType_e713c84aef6343bc8bfde2af0fe55171();
+        return GetMutableType_7fe0fa6fc0425f7db4b727b0929e813a();
     }
 
     template<>
     TypeID GetTypeID<FE::Graphics::Tools::Blit::Constants>()
     {
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            0xe7, 0x13, 0xc8, 0x4a, 0xef, 0x63, 0x43, 0xbc,
-            0x8b, 0xfd, 0xe2, 0xaf, 0x0f, 0xe5, 0x51, 0x71, // FE::Graphics::Tools::Blit::Constants
+            0x7f, 0xe0, 0xfa, 0x6f, 0xc0, 0x42, 0x5f, 0x7d,
+            0xb4, 0xb7, 0x27, 0xb0, 0x92, 0x9e, 0x81, 0x3a, // FE::Graphics::Tools::Blit::Constants
         };
 
         return TypeID::LoadAligned(kTypeIDBytes);
@@ -394,13 +394,25 @@ namespace FE::RTTI
 
     void Internal::ExternalTypeReflector<FE::Graphics::Tools::Blit::Constants>::Reflect(ReflectionContext& context)
     {
-        Type& typeInstance = GetMutableType_e713c84aef6343bc8bfde2af0fe55171();
+        Type& typeInstance = GetMutableType_7fe0fa6fc0425f7db4b727b0929e813a();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            0xe7, 0x13, 0xc8, 0x4a, 0xef, 0x63, 0x43, 0xbc,
-            0x8b, 0xfd, 0xe2, 0xaf, 0x0f, 0xe5, 0x51, 0x71, // FE::Graphics::Tools::Blit::Constants
+            0x7f, 0xe0, 0xfa, 0x6f, 0xc0, 0x42, 0x5f, 0x7d,
+            0xb4, 0xb7, 0x27, 0xb0, 0x92, 0x9e, 0x81, 0x3a, // FE::Graphics::Tools::Blit::Constants
         };
 
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(TypeID)] = {
+            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
+            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_uvOffset
+            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
+            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_uvScale
+            0x4b, 0x51, 0x72, 0xef, 0x1e, 0x7a, 0x43, 0xe2,
+            0xb5, 0x89, 0x1b, 0xac, 0x65, 0x42, 0x8e, 0x92, // FE::Graphics::TextureSRVDescriptor m_input
+            0x0a, 0xdc, 0x65, 0xde, 0x1b, 0xa6, 0x4a, 0x60,
+            0xb3, 0x20, 0x33, 0x3a, 0xd0, 0xc2, 0xf2, 0x7b, // FE::Graphics::SamplerDescriptor m_sampler
+            0x25, 0xc9, 0x34, 0xe8, 0xed, 0x78, 0x41, 0xd5,
+            0xb3, 0xe2, 0xe1, 0x3b, 0x97, 0xaf, 0xca, 0xc6, // FE::Vector2Base<float> m_padding
+        };
         static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<RTTI::Attribute, 0> kAttributes_m_uvOffset = {};
@@ -415,22 +427,27 @@ namespace FE::RTTI
 
         static const festd::array<RTTI::FieldInfo, 5> kFields = {
             RTTI::ReflectionContext::CreateFieldInfo("m_uvOffset",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                      &FE::Graphics::Tools::Blit::Constants::m_uvOffset,
                                                      kAttributes_m_uvOffset,
                                                      RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
             RTTI::ReflectionContext::CreateFieldInfo("m_uvScale",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                      &FE::Graphics::Tools::Blit::Constants::m_uvScale,
                                                      kAttributes_m_uvScale,
                                                      RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
             RTTI::ReflectionContext::CreateFieldInfo("m_input",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                      &FE::Graphics::Tools::Blit::Constants::m_input,
                                                      kAttributes_m_input,
                                                      RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
             RTTI::ReflectionContext::CreateFieldInfo("m_sampler",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                      &FE::Graphics::Tools::Blit::Constants::m_sampler,
                                                      kAttributes_m_sampler,
                                                      RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
             RTTI::ReflectionContext::CreateFieldInfo("m_padding",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                      &FE::Graphics::Tools::Blit::Constants::m_padding,
                                                      kAttributes_m_padding,
                                                      RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
@@ -444,6 +461,81 @@ namespace FE::RTTI
                                                                    kFields);
     }
 
-    static TypeRegistrar GTypeRegistrar_e713c84aef6343bc8bfde2af0fe55171(
+    static TypeRegistrar GTypeRegistrar_7fe0fa6fc0425f7db4b727b0929e813a(
         &Internal::ExternalTypeReflector<FE::Graphics::Tools::Blit::Constants>::Reflect);
+} // namespace FE::RTTI
+
+
+namespace FE::RTTI
+{
+    namespace
+    {
+        Type& GetMutableType_829614c9c21e5177a303cf87676ecf08()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::Tools::Blit::PassDesc>()
+    {
+        return GetMutableType_829614c9c21e5177a303cf87676ecf08();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::Tools::Blit::PassDesc>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x82, 0x96, 0x14, 0xc9, 0xc2, 0x1e, 0x51, 0x77,
+            0xa3, 0x03, 0xcf, 0x87, 0x67, 0x6e, 0xcf, 0x08, // FE::Graphics::Tools::Blit::PassDesc
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::Tools::Blit::PassDesc>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_829614c9c21e5177a303cf87676ecf08();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x82, 0x96, 0x14, 0xc9, 0xc2, 0x1e, 0x51, 0x77,
+            0xa3, 0x03, 0xcf, 0x87, 0x67, 0x6e, 0xcf, 0x08, // FE::Graphics::Tools::Blit::PassDesc
+        };
+
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(TypeID)] = {
+            0x7f, 0xe0, 0xfa, 0x6f, 0xc0, 0x42, 0x5f, 0x7d,
+            0xb4, 0xb7, 0x27, 0xb0, 0x92, 0x9e, 0x81, 0x3a, // FE::Graphics::Tools::Blit::Constants m_constants
+            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
+            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
+        };
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes_m_constants = {};
+
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes_m_colorTarget = {};
+
+        static const festd::array<RTTI::FieldInfo, 2> kFields = {
+            RTTI::ReflectionContext::CreateFieldInfo("m_constants",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                     &FE::Graphics::Tools::Blit::PassDesc::m_constants,
+                                                     kAttributes_m_constants,
+                                                     RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
+            RTTI::ReflectionContext::CreateFieldInfo("m_colorTarget",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                     &FE::Graphics::Tools::Blit::PassDesc::m_colorTarget,
+                                                     kAttributes_m_colorTarget,
+                                                     RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<FE::Graphics::Tools::Blit::PassDesc>(typeInstance,
+                                                                  UUID::LoadAligned(kTypeIDBytes),
+                                                                  "FE::Graphics::Tools::Blit::PassDesc",
+                                                                  {},
+                                                                  kAttributes,
+                                                                  kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_829614c9c21e5177a303cf87676ecf08(
+        &Internal::ExternalTypeReflector<FE::Graphics::Tools::Blit::PassDesc>::Reflect);
 } // namespace FE::RTTI

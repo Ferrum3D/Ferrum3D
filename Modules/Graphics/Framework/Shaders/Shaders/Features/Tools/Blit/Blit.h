@@ -12,6 +12,13 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::Blit)
         float2 m_padding;
     };
 
+    struct PassDesc final
+    {
+        Constants m_constants;
+        Core::PassColorTarget m_colorTarget;
+    };
+
 FE_HOST_END_NAMESPACE
 
-FE_RTTI_Reflect(FE::Graphics::Tools::Blit::Constants, "E713C84A-EF63-43BC-8BFD-E2AF0FE55171");
+FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Blit::Constants);
+FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Blit::PassDesc);

@@ -1,5 +1,6 @@
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/InputLayoutBuilder.h>
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Features/Tools/Blit.h>
@@ -39,41 +40,20 @@ namespace FE::Graphics::Tools
     } // namespace
 
 
-    Core::RenderTargetHandle Blit::AddPass(Core::FrameGraphBuilder& builder, const Core::RenderTargetHandle src,
-                                           const Core::RenderTargetHandle dst, const Settings settings)
+    void Blit::AddPass(Core::FrameGraph& graph, const Core::Texture* src, const Core::Texture* dst, const Settings settings)
     {
-        const auto& graph = builder.GetGraph();
+        auto* passDesc = graph.AllocatePassData<PassDesc>();
+        passDesc->m_colorTarget = dst;
+        passDesc->m_constants.m_input = graph.GetDescriptor(src);
+        passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearWrap);
+        passDesc->m_constants.m_uvScale = settings.m_destinationRect.Size();
+        passDesc->m_constants.m_uvOffset = settings.m_destinationRect.min;
 
-        const auto pass = builder.AddPass("Blit");
-        const auto source = pass.Read(src, Core::ImageReadType::kShaderResource);
-        const auto destination = pass.WriteRenderTarget(dst);
-
-        const Core::TextureDesc dstDesc = graph.GetResourceDesc(dst);
-        const Core::Format colorTargetFormat = dstDesc.m_imageFormat;
-
-        pass.SetFunction([=](Core::FrameGraphContext& context) {
-            Constants constants;
-            constants.m_input = context.GetGraph().GetSRV(source);
-            constants.m_sampler = context.GetGraph().GetSampler(Core::SamplerState::kLinearWrap);
-            constants.m_uvScale = settings.m_destinationRect.Size();
-            constants.m_uvOffset = settings.m_destinationRect.min;
-            context.PushConstants(constants);
-
-            context.SetRenderTarget(destination);
-            context.SetViewport(dstDesc.GetSize2D());
-
-            if (Math::EqualEstimate(settings.m_destinationRect, RectF{ 0.0f, 0.0f, 1.0f, 1.0f }))
-                context.SetRenderTargetLoadOperations(Core::RenderTargetLoadOperations{}.DiscardAll());
-            else
-                context.SetRenderTargetLoadOperations(Core::RenderTargetLoadOperations::kDefault);
-
-            context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
-
+        const Core::Format colorTargetFormat = dst->GetDesc().m_imageFormat;
+        graph.AddPass(passDesc, [colorTargetFormat](Core::FrameGraphContext& context) {
             Pipeline::Specializer specializer;
             specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);
             context.Draw(Pipeline::GetPipeline(specializer), 6);
         });
-
-        return destination;
     }
 } // namespace FE::Graphics::Tools

@@ -3,6 +3,9 @@
 #define FE_HOST_BEGIN_NAMESPACE(name)
 #define FE_HOST_END_NAMESPACE
 
+#define FE_RTTI(...)
+#define FE_RTTI_Reflect(...)
+
 #if defined(__JETBRAINS_IDE__) || defined(__INTELLISENSE__)
 typedef uint uint32_t;
 #    define globallycoherent

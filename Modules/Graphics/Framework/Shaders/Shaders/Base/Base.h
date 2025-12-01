@@ -10,6 +10,7 @@
 #    include <FeCore/Base/Base.h>
 #    include <FeCore/Math/Matrix4x4.h>
 #    include <Graphics/Core/FrameGraph/FrameGraph.h>
+#    include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 
 #    define FE_HOST_BEGIN_NAMESPACE(name)                                                                                        \
         namespace name                                                                                                           \

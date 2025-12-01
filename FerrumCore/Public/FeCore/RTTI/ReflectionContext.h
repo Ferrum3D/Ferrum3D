@@ -64,14 +64,14 @@ namespace FE::RTTI
         }
 
         template<class TClass, class TField>
-        static FieldInfo CreateFieldInfo(const festd::ascii_view name, TField TClass::* field,
+        static FieldInfo CreateFieldInfo(const festd::ascii_view name, const TypeID fieldTypeID, TField TClass::* field,
                                          const festd::span<const Attribute> attributes, const FieldFlags flags)
         {
             const auto fieldOffset = reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<TClass const volatile*>(0)->*field));
 
             FieldInfo fieldInfo;
             fieldInfo.m_name = name;
-            fieldInfo.m_type = GetTypeID<TField>();
+            fieldInfo.m_type = fieldTypeID;
             fieldInfo.m_attributes = attributes;
             fieldInfo.m_offset = static_cast<uint32_t>(fieldOffset);
             fieldInfo.m_size = sizeof(TField);
