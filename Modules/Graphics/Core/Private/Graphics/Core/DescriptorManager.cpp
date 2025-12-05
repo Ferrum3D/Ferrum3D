@@ -2,6 +2,20 @@
 
 namespace FE::Graphics::Core
 {
+    ResourceDescriptorInfo::ResourceDescriptorInfo(Texture* texture, const TextureSubresource subresource)
+    {
+        m_resource = texture;
+        m_textureSubresource = subresource;
+    }
+
+
+    ResourceDescriptorInfo::ResourceDescriptorInfo(Buffer* buffer, const BufferSubresource subresource)
+    {
+        m_resource = buffer;
+        m_bufferSubresource = subresource;
+    }
+
+
     DescriptorManager::DescriptorManager()
     {
         m_committedResourceDescriptors.resize(kResourceDescriptorCount, false);
@@ -20,20 +34,6 @@ namespace FE::Graphics::Core
         m_textureDescriptorMap.clear();
         m_bufferDescriptorMap.clear();
         m_samplerDescriptorMap.clear();
-    }
-
-
-    DescriptorManager::ResourceDescriptorInfo::ResourceDescriptorInfo(Texture* texture, const TextureSubresource subresource)
-    {
-        m_resource = texture;
-        m_textureSubresource = subresource;
-    }
-
-
-    DescriptorManager::ResourceDescriptorInfo::ResourceDescriptorInfo(Buffer* buffer, const BufferSubresource subresource)
-    {
-        m_resource = buffer;
-        m_bufferSubresource = subresource;
     }
 
 
@@ -96,5 +96,11 @@ namespace FE::Graphics::Core
     void DescriptorManager::CommitSamplerDescriptor(const uint32_t descriptorIndex)
     {
         m_committedSamplerDescriptors.set(descriptorIndex);
+    }
+
+
+    ResourceDescriptorInfo DescriptorManager::GetResourceInfo(const uint32_t descriptorIndex)
+    {
+        return m_resourceDescriptors[descriptorIndex];
     }
 } // namespace FE::Graphics::Core

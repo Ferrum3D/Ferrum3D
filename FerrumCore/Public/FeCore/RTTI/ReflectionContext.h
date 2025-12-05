@@ -25,6 +25,12 @@ namespace FE::RTTI
             type.m_fields = fields;
             type.m_size = sizeof(T);
             type.m_alignment = alignof(T);
+            type.m_flags = TypeFlags::kClass;
+
+            if (std::is_trivial_v<T>)
+                type.m_flags |= TypeFlags::kTrivial;
+            if (std::is_standard_layout_v<T>)
+                type.m_flags |= TypeFlags::kStandardLayout;
 
             RegisterType(type);
         }
@@ -47,6 +53,7 @@ namespace FE::RTTI
             type.m_enumValues = values;
             type.m_size = sizeof(T);
             type.m_alignment = alignof(T);
+            type.m_flags = TypeFlags::kEnum | TypeFlags::kTrivial | TypeFlags::kStandardLayout;
 
             RegisterType(type);
         }
@@ -59,6 +66,11 @@ namespace FE::RTTI
             type.m_qualifiedName = name;
             type.m_size = sizeof(T);
             type.m_alignment = alignof(T);
+
+            if (std::is_trivial_v<T>)
+                type.m_flags |= TypeFlags::kTrivial;
+            if (std::is_standard_layout_v<T>)
+                type.m_flags |= TypeFlags::kStandardLayout;
 
             RegisterType(type);
         }

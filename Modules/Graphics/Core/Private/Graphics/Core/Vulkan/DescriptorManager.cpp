@@ -150,7 +150,7 @@ namespace FE::Graphics::Vulkan
         m_vkResourceDescriptors.reserve(m_resourceDescriptors.size());
 
         Bit::Traverse(m_committedResourceDescriptors.view(), [this](const uint32_t descriptorIndex) {
-            const ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
+            const Core::ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
 
             switch (descriptor.m_resource->GetType())
             {
@@ -204,8 +204,11 @@ namespace FE::Graphics::Vulkan
 
         if (!m_vkResourceDescriptors.empty())
         {
-            vkUpdateDescriptorSets(
-                NativeCast(m_device), m_vkResourceDescriptors.size(), m_vkResourceDescriptors.data(), 0, nullptr);
+            vkUpdateDescriptorSets(NativeCast(m_device),
+                                   m_vkResourceDescriptors.size(),
+                                   m_vkResourceDescriptors.data(),
+                                   0,
+                                   nullptr);
         }
 
         m_vkResourceDescriptors.clear();
@@ -225,8 +228,12 @@ namespace FE::Graphics::Vulkan
 
         if (!m_vkSamplerDescriptors.empty())
         {
-            const auto samplerWrite = CreateWrite(
-                1, m_descriptorSet, VK_DESCRIPTOR_TYPE_SAMPLER, 0, m_vkSamplerDescriptors.size(), m_vkSamplerDescriptors.data());
+            const auto samplerWrite = CreateWrite(1,
+                                                  m_descriptorSet,
+                                                  VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                  0,
+                                                  m_vkSamplerDescriptors.size(),
+                                                  m_vkSamplerDescriptors.data());
 
             vkUpdateDescriptorSets(NativeCast(m_device), 1, &samplerWrite, 0, nullptr);
         }

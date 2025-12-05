@@ -1,124 +1,104 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
-#include <Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.h>
+#include <Graphics/Core/Barrier.h>
+#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <festd/unordered_map.h>
 
 namespace FE::Graphics::Common
 {
+    enum class PassStateFlags final
+    {
+        kNone = 0,
+        kPushConstants = 1 << 0,
+        kColorTarget = 1 << 1,
+        kDepthTarget = 1 << 2,
+        kViewport = 1 << 3,
+        kScissor = 1 << 4,
+        kGraphicsPipeline = 1 << 5,
+        kComputePipeline = 1 << 6,
+    };
+
+    FE_ENUM_OPERATORS(PassStateFlags);
+
+
     struct FrameGraph : public Core::FrameGraph
     {
         FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
-        void RegisterViewport(Core::Viewport* viewport) override;
-        Core::Viewport* GetViewport() override;
-
-        Core::RenderTargetHandle GetMainColorTarget() const override;
-        Core::RenderTargetHandle GetMainDepthStencilTarget() const override;
-
-        void BeginFrame() final;
-        void CompileAndExecute() final;
-
-        Core::RenderTarget* GetRenderTarget(Core::RenderTargetHandle image) const final;
-        Core::Buffer* GetBuffer(Core::BufferHandle buffer) const final;
-
-        Core::TextureDesc GetResourceDesc(Core::RenderTargetHandle image) const override;
-        Core::BufferDesc GetResourceDesc(Core::BufferHandle buffer) const override;
-
-        Env::Name GetResourceName(Core::RenderTargetHandle image) const override;
-        Env::Name GetResourceName(Core::BufferHandle buffer) const override;
-
-        Core::RenderTargetHandle ImportRenderTarget(Core::RenderTarget* image, Core::ImageAccessType access) override;
-        Core::BufferHandle ImportBuffer(Core::Buffer* buffer, Core::BufferAccessType access) override;
+        void CompileAndExecute() override;
 
     protected:
-        friend Core::FrameGraphBuilder;
-        friend Core::FrameGraphPassBuilder;
-
-        struct ResourceAccess final
+        struct TextureAccess final
         {
-            ResourceAccess* m_next = nullptr;
+            uint32_t m_localResourceIndex = kInvalidIndex;
+            Core::BarrierSyncFlags m_syncFlags = Core::BarrierSyncFlags::kNone;
+            Core::BarrierAccessFlags m_accessFlags = Core::BarrierAccessFlags::kNone;
+            Core::BarrierLayout m_layout = Core::BarrierLayout::kUndefined;
+            Core::TextureSubresource m_subresource = Core::TextureSubresource::kInvalid;
+        };
+
+        struct BufferAccess final
+        {
+            uint32_t m_localResourceIndex = kInvalidIndex;
+            Core::BarrierSyncFlags m_syncFlags = Core::BarrierSyncFlags::kNone;
+            Core::BarrierAccessFlags m_accessFlags = Core::BarrierAccessFlags::kNone;
+        };
+
+        struct PassNode final : public PassNodeBase
+        {
+            explicit PassNode(std::pmr::memory_resource* allocator);
+
+            festd::pmr::inline_vector<Core::TextureBarrierDesc, 4> m_textureBarriers;
+            festd::pmr::inline_vector<Core::BufferBarrierDesc, 4> m_bufferBarriers;
+
+            festd::pmr::inline_vector<TextureAccess, 4> m_accessedTextures;
+            festd::pmr::inline_vector<BufferAccess, 4> m_accessedBuffers;
+
+            PassStateFlags m_specifiedStatesMask = PassStateFlags::kNone;
+
+            const Core::PipelineBase* m_pipeline = nullptr;
+
+            festd::span<const std::byte> m_pushConstants;
+            RTTI::TypeID m_pushConstantsTypeID = RTTI::TypeID::kNull;
+
+            festd::array<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetLocalIndices;
+            uint32_t m_depthTargetLocalIndex = kInvalidIndex;
+
+            RectF m_viewport{ kForceInit };
+            RectInt m_scissor{ kForceInit };
+        };
+
+        struct PassResourceAccess final
+        {
             uint32_t m_passIndex = kInvalidIndex;
-            uint32_t m_resourceIndex : Core::Internal::kFrameGraphResourceIndexBits;
-            uint32_t m_version : Core::Internal::kFrameGraphResourceVersionBits;
-            uint32_t m_isWriteAccess : 1;
-            uint32_t m_flags : 5;
+            uint32_t m_accessIndex = kInvalidIndex;
         };
 
-        struct PassData final : public PassDataBase
+        struct ResourceNode final
         {
-            uint32_t m_refCount = 0;
-            Env::Name m_name;
-            Core::PassType m_type;
-            ResourceAccess* m_accessesListHead = nullptr;
-            ResourceAccess* m_accessesListTail = nullptr;
-
-            void AddAccess(ResourceAccess* access);
-        };
-
-        struct ResourceData final
-        {
-            union
-            {
-                Core::BufferDesc m_bufferDesc;
-                Core::TextureDesc m_imageDesc;
-            };
+            explicit ResourceNode(std::pmr::memory_resource* allocator);
 
             Rc<Core::Resource> m_resource;
-            uint32_t m_refCount = 0;
-            Env::Name m_name;
-            uint32_t m_resourceIndex : Core::Internal::kFrameGraphResourceIndexBits;
-            Core::ResourceType m_resourceType : 2;
-            uint32_t m_isImported : 1;
-            uint32_t m_accessState = 0;
-            uint32_t m_creatorPassIndex = kInvalidIndex;
-            uint32_t m_lastUserPassIndex = kInvalidIndex;
-
-            ResourceData(const uint32_t resourceIndex, const Core::BufferDesc& desc)
-                : m_bufferDesc(desc)
-                , m_resourceIndex(resourceIndex)
-                , m_resourceType(Core::ResourceType::kBuffer)
-                , m_isImported(false)
-            {
-            }
-
-            ResourceData(const uint32_t resourceIndex, const Core::TextureDesc& desc)
-                : m_imageDesc(desc)
-                , m_resourceIndex(resourceIndex)
-                , m_resourceType(Core::ResourceType::kRenderTarget)
-                , m_isImported(false)
-            {
-            }
+            festd::pmr::inline_vector<PassResourceAccess, 4> m_accesses;
         };
 
-        FrameGraph(Core::Device* device, FrameGraphResourcePool* resourcePool);
+        FrameGraph(Core::DescriptorManager* descriptorManager);
+
+        PassNodeBase& AddPassInternal() override;
+
+        void ParsePassPushConstants(PassNode& pass, const RTTI::Type& type);
+        void CompilePass(PassNode& pass);
 
         void Compile();
+        void Execute();
 
-        virtual void PrepareSetup() = 0;
-        virtual void PrepareExecute() = 0;
-        virtual void FinishExecute() = 0;
+        uint32_t RegisterResource(Core::Resource* resource, uint32_t passIndex, uint32_t accessIndex);
 
-        virtual void PreparePassExecute(uint32_t passIndex) = 0;
+        Core::DescriptorManager* m_descriptorManager = nullptr;
 
-        PassDataBase& GetPassData(uint32_t passIndex) final;
-        uint32_t AddPassInternal(Env::Name name) final;
-
-        Core::BufferHandle CreateBuffer(uint32_t passIndex, Env::Name name, const Core::BufferDesc& desc) final;
-        Core::RenderTargetHandle CreateImage(uint32_t passIndex, Env::Name name, const Core::TextureDesc& desc) final;
-
-        uint32_t ReadResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;
-        uint32_t WriteResource(uint32_t passIndex, uint32_t resourceIndex, uint32_t flags) final;
-
-        uint32_t GetResourceVersion(uint32_t resourceIndex) const;
-
-        SegmentedVector<PassData> m_passes;
-        SegmentedVector<ResourceData> m_resources;
-        FrameGraphResourcePool* m_resourcePool = nullptr;
-
-        Rc<Core::Viewport> m_viewport;
-        Core::RenderTargetHandle m_currentRenderTargetHandle;
-        Core::RenderTargetHandle m_currentDepthStencilHandle;
-
-        Rc<Core::FrameGraphContext> m_currentContext;
+        SegmentedVector<PassNode> m_passes;
+        SegmentedVector<ResourceNode> m_resources;
+        festd::segmented_unordered_dense_map<uint32_t, uint32_t> m_resourceIndexMap;
     };
 } // namespace FE::Graphics::Common

@@ -130,6 +130,13 @@ namespace FE::Graphics::Core
             return *this;
         }
 
+        GraphicsPipelineDesc& SetTopology(const PrimitiveTopology topology)
+        {
+            InputStreamLayout layout = {};
+            layout.m_topology = topology;
+            return SetInputLayout(layout);
+        }
+
         GraphicsPipelineDesc& SetInputLayout(const InputStreamLayout& inputLayout)
         {
             FE_Assert(!m_shaders[festd::to_underlying(ShaderStage::kAmplification)].IsValid()

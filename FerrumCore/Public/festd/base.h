@@ -75,6 +75,13 @@ namespace FE::festd
     using eastl::sort;
     using eastl::swap;
 
+    using eastl::find;
+    using eastl::find_end;
+    using eastl::find_first_not_of;
+    using eastl::find_first_of;
+    using eastl::find_if;
+    using eastl::find_if_not;
+
     using eastl::copy;
     using eastl::copy_if;
     using eastl::copy_n;

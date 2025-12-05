@@ -24,36 +24,30 @@ namespace FE::Graphics::Tools
             {
                 const Specializer specializer(variantIndex);
 
-                Core::InputLayoutBuilder layoutBuilder;
-                layoutBuilder.SetTopology(Core::PrimitiveTopology::kTriangleList);
-
-                request.m_desc.SetInputLayout(layoutBuilder.Build())
+                request.m_desc.SetTopology(Core::PrimitiveTopology::kTriangleList)
                     .SetPixelShader("Shaders/Features/Tools/Blit/Blit.ps.hlsl")
                     .SetVertexShader("Shaders/Features/Tools/Blit/Blit.vs.hlsl")
-                    .SetRTVFormat(specializer.Get<ColorTargetFormat>())
-                    .SetColorBlend(Core::TargetColorBlending::kDisabled)
-                    .SetDepthStencil(Core::DepthStencilState::kDisabled)
-                    .SetRasterization(Core::RasterizationState::kFillNoCull);
+                    .SetRTVFormat(specializer.Get<ColorTargetFormat>());
             }
         };
         FE_IMPLEMENT_PIPELINE_SET(Pipeline);
     } // namespace
 
 
-    void Blit::AddPass(Core::FrameGraph& graph, const Core::Texture* src, const Core::Texture* dst, const Settings settings)
+    void Blit::AddPass(Core::FrameGraph& graph, Core::Texture* src, Core::Texture* dst, const Settings settings)
     {
+        const Core::Format colorTargetFormat = dst->GetDesc().m_imageFormat;
+
+        Pipeline::Specializer specializer;
+        specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);
+
         auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_colorTarget = dst;
+        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
         passDesc->m_constants.m_input = graph.GetDescriptor(src);
         passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearWrap);
         passDesc->m_constants.m_uvScale = settings.m_destinationRect.Size();
         passDesc->m_constants.m_uvOffset = settings.m_destinationRect.min;
-
-        const Core::Format colorTargetFormat = dst->GetDesc().m_imageFormat;
-        graph.AddPass(passDesc, [colorTargetFormat](Core::FrameGraphContext& context) {
-            Pipeline::Specializer specializer;
-            specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);
-            context.Draw(Pipeline::GetPipeline(specializer), 6);
-        });
+        graph.AddDrawIndexedInstancedPass("Blit", passDesc, 6);
     }
 } // namespace FE::Graphics::Tools

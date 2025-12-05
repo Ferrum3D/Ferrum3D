@@ -9,6 +9,8 @@ namespace FE::RTTI
         kNone = 0,
         kClass = 1 << 0,
         kEnum = 1 << 1,
+        kTrivial = 1 << 2,
+        kStandardLayout = 1 << 3,
     };
 
     FE_ENUM_OPERATORS(TypeFlags);
@@ -46,11 +48,20 @@ namespace FE::RTTI
         uint32_t m_size = 0;
         FieldFlags m_flags = FieldFlags::kNone;
 
-        template<class T, class TValue>
-        void Set(T* instance, const TValue& value) const
+        template<class TValue>
+        const TValue& Get(const void* instance) const
         {
-            TValue* prev = reinterpret_cast<TValue*>(reinterpret_cast<uint8_t*>(instance) + m_offset);
-            *prev = value;
+            const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
+            const TValue* ptr = reinterpret_cast<const TValue*>(address);
+            return *ptr;
+        }
+
+        template<class TValue>
+        void Set(void* instance, const TValue& value) const
+        {
+            const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
+            TValue* ptr = reinterpret_cast<TValue*>(address);
+            *ptr = value;
         }
     };
 

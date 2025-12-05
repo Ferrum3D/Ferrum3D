@@ -5,6 +5,7 @@
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
+#include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Core/Sampler.h>
 #include <Graphics/Core/Texture.h>
@@ -50,42 +51,48 @@ namespace FE::Graphics::Core
             return Memory::New<T>(&m_linearAllocator);
         }
 
-        virtual void RegisterViewport(Viewport* viewport) = 0;
-        virtual Viewport* GetViewport() = 0;
-
-        virtual Texture* GetMainColorTarget() const = 0;
-        virtual Texture* GetMainDepthStencilTarget() const = 0;
-
         virtual void BeginFrame() = 0;
         virtual void CompileAndExecute() = 0;
 
-        virtual FrameGraphTextureDescriptorHandle GetDescriptor(const Texture* texture, TextureSubresource subresource) = 0;
-        virtual FrameGraphBufferDescriptorHandle GetDescriptor(const Buffer* buffer, BufferSubresource subresource) = 0;
+        virtual FrameGraphTextureDescriptorHandle GetDescriptor(Texture* texture, TextureSubresource subresource) = 0;
+        virtual FrameGraphBufferDescriptorHandle GetDescriptor(Buffer* buffer, BufferSubresource subresource) = 0;
         virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
-        FrameGraphTextureDescriptorHandle GetDescriptor(const Texture* texture)
+        FrameGraphTextureDescriptorHandle GetDescriptor(Texture* texture)
         {
             return GetDescriptor(texture, TextureSubresource::CreateWhole(texture->GetDesc()));
         }
 
-        FrameGraphBufferDescriptorHandle GetDescriptor(const Buffer* buffer)
+        FrameGraphBufferDescriptorHandle GetDescriptor(Buffer* buffer)
         {
             return GetDescriptor(buffer, BufferSubresource{ 0, buffer->GetDesc().m_size });
         }
 
         template<class TPassDesc, class TFunctor>
-        std::enable_if_t<std::is_invocable_v<TFunctor, FrameGraphContext&>, FrameGraphPassBuilder> AddPass(TPassDesc* passDesc,
-                                                                                                           TFunctor&& functor);
+        FrameGraphPassBuilder AddPass(Env::Name name, TPassDesc* passDesc, TFunctor&& functor);
+
+        template<class TPassDesc>
+        FrameGraphPassBuilder AddDrawIndexedInstancedPass(Env::Name name, TPassDesc* passDesc, uint32_t vertexCount,
+                                                          uint32_t instanceCount = 1, uint32_t vertexOffset = 0,
+                                                          uint32_t instanceOffset = 0);
+
+        template<class TPassDesc>
+        FrameGraphPassBuilder AddDispatchPass(Env::Name name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
 
     protected:
         friend FrameGraphTextureDescriptorHandle;
         friend FrameGraphBufferDescriptorHandle;
 
-        struct PassFunctor final
+        struct PassNodeBase
         {
-            void* m_callbackData = nullptr;
+            Env::Name m_name;
+            uint32_t m_passIndex = kInvalidIndex;
+            void* m_functor = nullptr;
             void (*m_execute)(void* functor, FrameGraphContext& context) = nullptr;
-            void (*m_destroy)(void* functor) = nullptr;
+            void (*m_destroy)(void* functor, void* userPassDesc) = nullptr;
+
+            RTTI::TypeID m_userPassDescTypeID = RTTI::TypeID::kNull;
+            void* m_userPassDescPtr = nullptr;
         };
 
         FrameGraph()
@@ -94,8 +101,7 @@ namespace FE::Graphics::Core
         {
         }
 
-        void SetDescriptorTypeByIndex(uint32_t descriptorIndex, DescriptorType type);
-        FrameGraphPassBuilder AddPassInternal(PassFunctor* functor);
+        virtual PassNodeBase& AddPassInternal() = 0;
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
@@ -103,75 +109,46 @@ namespace FE::Graphics::Core
 
 
     template<class TPassDesc, class TFunctor>
-    std::enable_if_t<std::is_invocable_v<TFunctor, FrameGraphContext&>, FrameGraphPassBuilder> FrameGraph::AddPass(
-        TPassDesc* passDesc, TFunctor&& functor)
+    FrameGraphPassBuilder FrameGraph::AddPass(const Env::Name name, TPassDesc* passDesc, TFunctor&& functor)
     {
         TFunctor* f = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
-        PassFunctor* passFunctor = Memory::New<PassFunctor>(&m_linearAllocator);
-        passFunctor->m_callbackData = f;
-        passFunctor->m_execute = [](void* callbackData, FrameGraphContext* context) {
-            (*static_cast<TFunctor*>(callbackData))(*context);
+        PassNodeBase& passNode = AddPassInternal();
+        passNode.m_name = name;
+        passNode.m_functor = f;
+        passNode.m_execute = [](void* functorPtr, FrameGraphContext& context) {
+            static_assert(std::is_invocable_v<TFunctor, FrameGraphContext&>);
+            (*static_cast<TFunctor*>(functorPtr))(context);
         };
-        passFunctor->m_destroy = [](void* callbackData) {
-            static_cast<TFunctor*>(callbackData)->~TFunctor();
+        passNode.m_destroy = [](void* functorPtr, void* descPtr) {
+            static_cast<TFunctor*>(functorPtr)->~TFunctor();
+            static_cast<TPassDesc*>(descPtr)->~TPassDesc();
         };
+        passNode.m_userPassDescTypeID = RTTI::GetTypeID<TPassDesc>();
+        passNode.m_userPassDescPtr = passDesc;
 
-        return AddPassInternal(passFunctor);
+        FE_Assert(passNode.m_userPassDescTypeID != RTTI::TypeID::kNull, "PassDesc must be registered with RTTI");
+
+        return FrameGraphPassBuilder{ this, passNode.m_passIndex };
     }
 
 
-    inline FrameGraphTextureDescriptorHandle::operator TextureSRVDescriptor() const
+    template<class TPassDesc>
+    FrameGraphPassBuilder FrameGraph::AddDrawIndexedInstancedPass(const Env::Name name, TPassDesc* passDesc,
+                                                                  const uint32_t vertexCount, const uint32_t instanceCount,
+                                                                  const uint32_t vertexOffset, const uint32_t instanceOffset)
     {
-        m_graph->SetDescriptorTypeByIndex(m_descriptorIndex, DescriptorType::kSRV);
-        return TextureSRVDescriptor{ m_descriptorIndex };
+        return AddPass(name, passDesc, [=](FrameGraphContext& context) {
+            context.DrawIndexedInstanced(vertexCount, instanceCount, vertexOffset, instanceOffset);
+        });
     }
 
 
-    inline FrameGraphTextureDescriptorHandle::operator TextureUAVDescriptor() const
+    template<class TPassDesc>
+    FrameGraphPassBuilder FrameGraph::AddDispatchPass(const Env::Name name, TPassDesc* passDesc,
+                                                      const ComputeWorkGroupCount workGroupCount)
     {
-        m_graph->SetDescriptorTypeByIndex(m_descriptorIndex, DescriptorType::kUAV);
-        return TextureUAVDescriptor{ m_descriptorIndex };
+        return AddPass(name, passDesc, [workGroupCount](FrameGraphContext& context) {
+            context.Dispatch(workGroupCount);
+        });
     }
 } // namespace FE::Graphics::Core
-
-
-namespace FE::Graphics
-{
-#define FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(name, baseDescriptor)                                                                    \
-    template<class T>                                                                                                            \
-    using name = baseDescriptor;
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture1DDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture2DDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture3DDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture1DArrayDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(Texture2DArrayDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(TextureCubeDescriptor, TextureSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(TextureCubeArrayDescriptor, TextureSRVDescriptor);
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture1DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture2DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture3DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture1DArrayDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWTexture2DArrayDescriptor, TextureUAVDescriptor);
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture1DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture2DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture3DDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture1DArrayDescriptor, TextureUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWTexture2DArrayDescriptor, TextureUAVDescriptor);
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(BufferDescriptor, BufferSRVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(StructuredBufferDescriptor, BufferSRVDescriptor);
-    using ByteAddressBufferDescriptor = BufferSRVDescriptor;
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWBufferDescriptor, BufferUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(RWStructuredBufferDescriptor, BufferUAVDescriptor);
-    using RWByteAddressBufferDescriptor = BufferUAVDescriptor;
-
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentStructuredBufferDescriptor, BufferUAVDescriptor);
-    FE_FRAME_GRAPH_ALIAS_DESCRIPTOR(GloballyCoherentRWStructuredBufferDescriptor, BufferUAVDescriptor);
-    using GloballyCoherentRWByteAddressBufferDescriptor = BufferUAVDescriptor;
-
-#undef FE_FRAME_GRAPH_ALIAS_DESCRIPTOR
-} // namespace FE::Graphics

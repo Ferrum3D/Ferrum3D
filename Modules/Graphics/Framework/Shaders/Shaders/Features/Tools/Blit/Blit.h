@@ -16,6 +16,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::Blit)
     {
         Constants m_constants;
         Core::PassColorTarget m_colorTarget;
+        Core::PassGraphicsPipeline m_pipeline;
     };
 
 FE_HOST_END_NAMESPACE

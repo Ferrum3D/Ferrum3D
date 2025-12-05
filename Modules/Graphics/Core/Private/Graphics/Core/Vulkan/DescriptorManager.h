@@ -10,6 +10,8 @@ namespace FE::Graphics::Vulkan
 
     struct DescriptorManager final : public Core::DescriptorManager
     {
+        FE_RTTI("D88B5624-A48E-4F19-9A0A-E059375241C8");
+
         DescriptorManager(Core::Device* device);
         ~DescriptorManager() override;
 

@@ -13,14 +13,35 @@ namespace FE::Graphics::Core
     struct Texture;
     struct Buffer;
 
+
+    struct ResourceDescriptorInfo final
+    {
+        Resource* m_resource = nullptr;
+        DescriptorType m_descriptorType = DescriptorType::kInvalid;
+
+        union
+        {
+            TextureSubresource m_textureSubresource;
+            BufferSubresource m_bufferSubresource;
+        };
+
+        ResourceDescriptorInfo(Texture* texture, TextureSubresource subresource);
+        ResourceDescriptorInfo(Buffer* buffer, BufferSubresource subresource);
+    };
+
+
     struct DescriptorManager : public Memory::RefCountedObjectBase
     {
+        FE_RTTI("7238722E-6241-4EB2-B140-C0545346DD57");
+
         [[nodiscard]] uint32_t ReserveDescriptor(Texture* texture, TextureSubresource subresource);
         [[nodiscard]] uint32_t ReserveDescriptor(Buffer* buffer, BufferSubresource subresource);
         [[nodiscard]] uint32_t ReserveDescriptor(SamplerState samplerState);
 
         void CommitResourceDescriptor(uint32_t descriptorIndex, DescriptorType type);
         void CommitSamplerDescriptor(uint32_t descriptorIndex);
+
+        ResourceDescriptorInfo GetResourceInfo(uint32_t descriptorIndex);
 
         virtual void BeginFrame() = 0;
         virtual FenceSyncPoint CloseFrame() = 0;
@@ -48,21 +69,6 @@ namespace FE::Graphics::Core
             BufferSubresource m_subresource = BufferSubresource::kInvalid;
 
             FE_DECLARE_POD_HASH(BufferKey);
-        };
-
-        struct ResourceDescriptorInfo final
-        {
-            Resource* m_resource = nullptr;
-            DescriptorType m_descriptorType = DescriptorType::kInvalid;
-
-            union
-            {
-                TextureSubresource m_textureSubresource;
-                BufferSubresource m_bufferSubresource;
-            };
-
-            ResourceDescriptorInfo(Texture* texture, TextureSubresource subresource);
-            ResourceDescriptorInfo(Buffer* buffer, BufferSubresource subresource);
         };
 
         festd::segmented_unordered_dense_map<TextureKey, uint32_t, TextureKey::Hash, TextureKey::Eq> m_textureDescriptorMap;

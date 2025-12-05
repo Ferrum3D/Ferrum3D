@@ -149,14 +149,32 @@ namespace FE::Graphics::Core
     inline const RenderTargetStoreOperations RenderTargetStoreOperations::kDefault = {};
 
 
+    struct ComputeWorkGroupCount final
+    {
+        ComputeWorkGroupCount() = default;
+
+        ComputeWorkGroupCount(const uint32_t x)
+            : m_workGroupCount(x, 1, 1)
+        {
+        }
+
+        ComputeWorkGroupCount(const Vector2UInt xy)
+            : m_workGroupCount(xy.x, xy.y, 1)
+        {
+        }
+
+        ComputeWorkGroupCount(const Vector3UInt xyz)
+            : m_workGroupCount(xyz)
+        {
+        }
+
+        Vector3UInt m_workGroupCount;
+    };
+
+
     struct FrameGraphContext : public DeviceObject
     {
         FE_RTTI("261C8B48-9A5F-481A-B31C-AA7D48BC0E33");
-
-        FrameGraph& GetGraph() const
-        {
-            return *m_frameGraph;
-        }
 
         virtual void EnqueueFenceToWait(const FenceSyncPoint& fence) = 0;
 
@@ -174,16 +192,16 @@ namespace FE::Graphics::Core
 
         virtual void SetRenderTargetStoreOperations(const RenderTargetStoreOperations& operations) = 0;
 
-        virtual void SetRenderTargets(festd::span<const RenderTargetHandle> renderTargets, RenderTargetHandle depthStencil) = 0;
+        virtual void SetRenderTargets(festd::span<const Texture*> renderTargets, const Texture* depthStencil) = 0;
 
-        void SetRenderTarget(const RenderTargetHandle renderTarget, const RenderTargetHandle depthStencilTarget)
+        void SetRenderTarget(const Texture* renderTarget, const Texture* depthStencilTarget)
         {
             SetRenderTargets({ &renderTarget, 1 }, depthStencilTarget);
         }
 
-        void SetRenderTarget(const RenderTargetHandle renderTarget)
+        void SetRenderTarget(const Texture* renderTarget)
         {
-            SetRenderTargets({ &renderTarget, 1 }, RenderTargetHandle::kInvalid);
+            SetRenderTargets({ &renderTarget, 1 }, nullptr);
         }
 
         virtual void SetViewportAndScissor(RectF viewport, RectInt scissor) = 0;
@@ -200,56 +218,15 @@ namespace FE::Graphics::Core
             SetViewportAndScissor(viewport, scissor);
         }
 
-        virtual void Draw(const DrawCall& drawCall) = 0;
+        virtual void SetPipeline(const GraphicsPipeline* pipeline) = 0;
+        virtual void SetPipeline(const ComputePipeline* pipeline) = 0;
 
-        void Draw(const GraphicsPipeline* pipeline, const uint32_t vertexCount, const uint32_t instanceCount = 1,
-                  const uint32_t vertexOffset = 0, const uint32_t instanceOffset = 0)
-        {
-            DrawArgumentsLinear drawArguments;
-            drawArguments.m_vertexOffset = vertexOffset;
-            drawArguments.m_vertexCount = vertexCount;
+        virtual void SetStencilRef(uint32_t stencilRef) = 0;
 
-            GeometryView geometryView = {};
-            geometryView.m_drawArguments.Init(drawArguments);
-
-            DrawCall drawCall;
-            drawCall.m_instanceOffset = instanceOffset;
-            drawCall.m_instanceCount = instanceCount;
-            drawCall.m_stencilRef = 0;
-            drawCall.m_geometryView = geometryView;
-            drawCall.m_pipeline = pipeline;
-
-            Draw(drawCall);
-        }
-
-        virtual void DispatchMesh(const GraphicsPipeline* pipeline, Vector3UInt workGroupCount, uint32_t stencilRef) = 0;
-
-        void DispatchMesh(const GraphicsPipeline* pipeline, const Vector3UInt workGroupCount)
-        {
-            DispatchMesh(pipeline, workGroupCount, 0);
-        }
-
-        void DispatchMesh(const GraphicsPipeline* pipeline, const Vector2UInt workGroupCount, const uint32_t stencilRef = 0)
-        {
-            DispatchMesh(pipeline, { workGroupCount.x, workGroupCount.y, 1 }, stencilRef);
-        }
-
-        void DispatchMesh(const GraphicsPipeline* pipeline, const uint32_t workGroupCount, const uint32_t stencilRef = 0)
-        {
-            DispatchMesh(pipeline, { workGroupCount, 1, 1 }, stencilRef);
-        }
-
-        virtual void Dispatch(const ComputePipeline* pipeline, Vector3UInt workGroupCount) = 0;
-
-        void Dispatch(const ComputePipeline* pipeline, const Vector2UInt workGroupCount)
-        {
-            Dispatch(pipeline, { workGroupCount.x, workGroupCount.y, 1 });
-        }
-
-        void Dispatch(const ComputePipeline* pipeline, const uint32_t workGroupCount)
-        {
-            Dispatch(pipeline, { workGroupCount, 1, 1 });
-        }
+        virtual void DrawIndexedInstanced(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset,
+                                          uint32_t instanceOffset) = 0;
+        virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
+        virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
 
     protected:
         FrameGraph* m_frameGraph = nullptr;

@@ -294,6 +294,13 @@ namespace FE
                 m_segments[m_size / kElementsPerSegment][m_size % kElementsPerSegment].~T();
         }
 
+        template<class... TArgs>
+        T& emplace_back(TArgs&&... args)
+        {
+            T* result = new (push_back_uninitialized()) T(std::forward<TArgs>(args)...);
+            return *result;
+        }
+
         void resize(const uint32_t newSize, const T& value = T{})
         {
             if (newSize > m_size)
