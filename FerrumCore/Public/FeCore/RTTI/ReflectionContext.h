@@ -75,7 +75,7 @@ namespace FE::RTTI
             RegisterType(type);
         }
 
-        template<class TClass, class TField>
+        template<uint32_t TArraySize, class TClass, class TField>
         static FieldInfo CreateFieldInfo(const festd::ascii_view name, const TypeID fieldTypeID, TField TClass::* field,
                                          const festd::span<const Attribute> attributes, const FieldFlags flags)
         {
@@ -87,6 +87,7 @@ namespace FE::RTTI
             fieldInfo.m_attributes = attributes;
             fieldInfo.m_offset = static_cast<uint32_t>(fieldOffset);
             fieldInfo.m_size = sizeof(TField);
+            fieldInfo.m_arraySize = TArraySize;
             fieldInfo.m_flags = flags;
 
             if (std::is_pointer_v<TField>)

@@ -1,5 +1,4 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DeviceObject.h>
@@ -12,7 +11,7 @@
 
 namespace FE::Graphics::Core
 {
-    struct Viewport;
+    struct ResourcePool;
 
 
     struct FrameGraphPassBuilder final
@@ -50,6 +49,8 @@ namespace FE::Graphics::Core
         {
             return Memory::New<T>(&m_linearAllocator);
         }
+
+        virtual ResourcePool* GetResourcePool() = 0;
 
         virtual void BeginFrame() = 0;
         virtual void CompileAndExecute() = 0;

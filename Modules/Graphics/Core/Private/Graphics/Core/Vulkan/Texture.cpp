@@ -103,6 +103,16 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void Texture::DecommitMemory()
+    {
+        if (m_instance == nullptr)
+            return;
+
+        FE_Assert(m_instance->m_pool, "Externally created textures not implemented");
+        m_instance->m_pool->DecommitTextureMemory(this);
+    }
+
+
     void Texture::CommitInternal(ResourcePool* resourcePool, const Core::TextureCommitParams params)
     {
         FE_PROFILER_ZONE();
@@ -111,6 +121,8 @@ namespace FE::Graphics::Vulkan
 
         m_instance = TextureInstance::Create();
         m_instance->m_pool = resourcePool;
+        m_instance->m_bind = params.m_bindFlags;
+        m_instance->m_type = m_type;
 
         VkImageCreateInfo imageCI{};
         imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -178,12 +190,18 @@ namespace FE::Graphics::Vulkan
         const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
 
         // TODO: maybe handle OOM differently
-        VerifyVk(vmaCreateImage(allocator, &imageCI, &allocationCI, &m_instance->m_image, &m_instance->m_vmaAllocation, nullptr));
+        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+        VerifyVk(vmaCreateImage(allocator,
+                                &imageCI,
+                                &allocationCI,
+                                &textureInstance->m_image,
+                                &textureInstance->m_vmaAllocation,
+                                nullptr));
 
         InitWholeImageView();
         UpdateDebugNames();
 
-        Common::SubresourceState& initialState = m_instance->m_subresourceStates.emplace_back();
+        Common::SubresourceState& initialState = textureInstance->m_subresourceStates.emplace_back();
         initialState.m_value = 0;
         initialState.m_layout = params.m_initialLayout;
     }
@@ -210,40 +228,25 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Texture::DecommitMemory()
-    {
-        if (m_instance == nullptr)
-            return;
-
-        FE_Assert(m_instance->m_pool, "Externally created textures not implemented");
-        m_instance->m_pool->DecommitTextureMemory(this);
-    }
-
-
-    Core::ResourceMemory Texture::GetMemoryStatus() const
-    {
-        if (m_instance == nullptr)
-            return Core::ResourceMemory::kNotCommitted;
-
-        return m_instance->m_memoryStatus;
-    }
-
-
     VkImageView Texture::GetSubresourceView(const Core::TextureSubresource subresource) const
     {
         FE_PROFILER_ZONE();
 
         std::unique_lock lk{ m_lock };
 
+        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+
         if (subresource == m_wholeImageSubresource)
-            return m_instance->m_wholeImageView;
+            return textureInstance->m_wholeImageView;
 
         FE_Assert(subresource.m_firstArraySlice + subresource.m_arraySize <= m_desc.m_arraySize);
         FE_Assert(subresource.m_mostDetailedMipSlice + subresource.m_mipSliceCount <= m_desc.m_mipSliceCount);
 
-        const auto it = m_instance->m_viewCache.find(subresource);
-        if (it != m_instance->m_viewCache.end())
-            return it->second;
+        const auto it = festd::find_if(textureInstance->m_viewCache, [subresource](const TextureInstance::ViewCacheEntry& entry) {
+            return entry.m_subresource == subresource;
+        });
+        if (it != textureInstance->m_viewCache.end())
+            return it->m_view;
 
         VkImageViewCreateInfo viewCI{};
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -254,7 +257,7 @@ namespace FE::Graphics::Vulkan
         viewCI.subresourceRange.levelCount = subresource.m_mipSliceCount;
         viewCI.subresourceRange.baseArrayLayer = subresource.m_firstArraySlice;
         viewCI.subresourceRange.layerCount = subresource.m_arraySize;
-        viewCI.image = m_instance->m_image;
+        viewCI.image = textureInstance->m_image;
 
         VkImageView view = VK_NULL_HANDLE;
         VerifyVk(vkCreateImageView(NativeCast(m_device), &viewCI, nullptr, &view));
@@ -267,80 +270,8 @@ namespace FE::Graphics::Vulkan
         nameInfo.pObjectName = viewName.c_str();
         VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
-        m_instance->m_viewCache[subresource] = view;
+        textureInstance->m_viewCache.push_back({ subresource, view });
         return view;
-    }
-
-
-    void Texture::SetState(const Core::TextureSubresource subresource, const Common::SubresourceState state)
-    {
-        std::unique_lock lk{ m_lock };
-        SetStateNoLock(subresource, state);
-    }
-
-
-    void Texture::SetStateNoLock(const Core::TextureSubresource subresource, const Common::SubresourceState state) const
-    {
-        FE_Assert(m_instance);
-
-        auto& subresourceStates = m_instance->m_subresourceStates;
-        if (subresourceStates.size() == 1)
-        {
-            if (subresource == m_wholeImageSubresource)
-            {
-                subresourceStates[0] = state;
-                return;
-            }
-
-            subresourceStates.resize(m_desc.m_mipSliceCount * m_desc.m_arraySize);
-        }
-
-        const Core::ImageSubresourceIterator subresourceIterator{ subresource };
-        for (const auto [mipIndex, arrayIndex] : subresourceIterator)
-            subresourceStates[mipIndex * m_desc.m_arraySize + arrayIndex] = state;
-    }
-
-
-    Common::SubresourceState Texture::GetState(const Core::TextureSubresource subresource) const
-    {
-        std::unique_lock lk{ m_lock };
-
-        FE_Assert(m_instance);
-
-        FE_AssertDebug(subresource.m_mipSliceCount == 1);
-        FE_AssertDebug(subresource.m_arraySize == 1);
-
-        auto& subresourceStates = m_instance->m_subresourceStates;
-        if (subresourceStates.size() == 1)
-            return subresourceStates[0];
-
-        return subresourceStates[subresource.m_mostDetailedMipSlice * m_desc.m_arraySize + subresource.m_firstArraySlice];
-    }
-
-
-    void Texture::AddQueueReleaseBarrier(const Core::TextureSubresource subresource, const Common::SubresourceState state,
-                                         const Core::DeviceQueueType receiverQueue)
-    {
-        std::unique_lock lk{ m_lock };
-
-        FE_Assert(state.m_queueType != receiverQueue);
-
-        SetStateNoLock(subresource, state);
-        m_queueReleaseBarriers[festd::to_underlying(receiverQueue)].push_back(subresource);
-    }
-
-
-    festd::pmr::vector<Core::TextureSubresource> Texture::RetrieveQueueReleaseBarriers(const Core::DeviceQueueType receiverQueue,
-                                                                                       std::pmr::memory_resource* allocator)
-    {
-        std::unique_lock lk{ m_lock };
-
-        auto& barriers = m_queueReleaseBarriers[festd::to_underlying(receiverQueue)];
-        festd::pmr::vector<Core::TextureSubresource> result{ allocator };
-        result.reserve(barriers.size());
-        festd::copy(barriers.begin(), barriers.end(), festd::back_inserter(result));
-        barriers.clear();
-        return result;
     }
 
 
@@ -358,7 +289,9 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        FE_Assert(m_instance->m_wholeImageView == nullptr);
+        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+
+        FE_Assert(textureInstance->m_wholeImageView == nullptr);
 
         VkImageViewCreateInfo viewCI{};
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -369,8 +302,8 @@ namespace FE::Graphics::Vulkan
         viewCI.subresourceRange.layerCount = m_desc.m_arraySize;
         viewCI.subresourceRange.baseMipLevel = 0;
         viewCI.subresourceRange.baseArrayLayer = 0;
-        viewCI.image = m_instance->m_image;
-        VerifyVk(vkCreateImageView(NativeCast(m_device), &viewCI, nullptr, &m_instance->m_wholeImageView));
+        viewCI.image = textureInstance->m_image;
+        VerifyVk(vkCreateImageView(NativeCast(m_device), &viewCI, nullptr, &textureInstance->m_wholeImageView));
 
         m_wholeImageSubresource.m_firstArraySlice = 0;
         m_wholeImageSubresource.m_mostDetailedMipSlice = 0;
@@ -384,32 +317,34 @@ namespace FE::Graphics::Vulkan
         if (m_instance == nullptr)
             return;
 
+        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_image);
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(textureInstance->m_image);
         nameInfo.pObjectName = m_name.c_str();
         VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
-        FE_Assert(m_instance->m_wholeImageView);
+        FE_Assert(textureInstance->m_wholeImageView);
 
         const Env::Name viewName = Fmt::FormatName("{}_View", m_name);
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE_VIEW;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_wholeImageView);
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(textureInstance->m_wholeImageView);
         nameInfo.pObjectName = viewName.c_str();
         VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
-        for (auto& [key, view] : m_instance->m_viewCache)
+        for (auto& [key, view] : textureInstance->m_viewCache)
         {
             nameInfo.objectHandle = reinterpret_cast<uint64_t>(view);
             VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
         }
 
-        if (m_instance->m_vmaAllocation)
+        if (textureInstance->m_vmaAllocation)
         {
-            const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
-            vmaSetAllocationName(allocator, m_instance->m_vmaAllocation, m_name.c_str());
+            const VmaAllocator allocator = ImplCast(textureInstance->m_pool)->GetAllocator();
+            vmaSetAllocationName(allocator, textureInstance->m_vmaAllocation, m_name.c_str());
         }
     }
 } // namespace FE::Graphics::Vulkan

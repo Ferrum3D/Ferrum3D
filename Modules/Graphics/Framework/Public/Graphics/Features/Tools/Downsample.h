@@ -23,6 +23,6 @@ namespace FE::Graphics::Tools::Downsample
 
     inline constexpr uint32_t kMaxMipCount = 12;
 
-    festd::fixed_vector<Core::RenderTargetHandle, kMaxMipCount> AddPass(const Core::FrameGraphBuilder& builder,
-                                                                        Core::RenderTargetHandle src, Settings settings = {});
+    festd::fixed_vector<Core::Texture*, kMaxMipCount> AddPass(Core::FrameGraph& graph, Core::Texture* src,
+                                                              const Settings& settings = {});
 } // namespace FE::Graphics::Tools::Downsample

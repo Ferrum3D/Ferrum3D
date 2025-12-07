@@ -24,4 +24,13 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::Downsample)
         float m_padding;
     };
 
+    struct PassDesc
+    {
+        Constants m_constants;
+        Core::PassComputePipeline m_pipeline;
+    };
+
 FE_HOST_END_NAMESPACE
+
+FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Downsample::Constants);
+FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Downsample::PassDesc);

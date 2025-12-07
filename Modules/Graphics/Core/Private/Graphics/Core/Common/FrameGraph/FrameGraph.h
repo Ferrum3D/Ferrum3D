@@ -1,13 +1,14 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
 #include <Graphics/Core/Barrier.h>
+#include <Graphics/Core/Common/ResourceBarrierBatcher.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <festd/unordered_map.h>
 
 namespace FE::Graphics::Common
 {
-    enum class PassStateFlags final
+    enum class PassStateFlags
     {
         kNone = 0,
         kPushConstants = 1 << 0,
@@ -26,6 +27,9 @@ namespace FE::Graphics::Common
     {
         FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
+        Core::ResourcePool* GetResourcePool() override;
+
+        void BeginFrame() override;
         void CompileAndExecute() override;
 
     protected:
@@ -49,8 +53,10 @@ namespace FE::Graphics::Common
         {
             explicit PassNode(std::pmr::memory_resource* allocator);
 
-            festd::pmr::inline_vector<Core::TextureBarrierDesc, 4> m_textureBarriers;
-            festd::pmr::inline_vector<Core::BufferBarrierDesc, 4> m_bufferBarriers;
+            festd::pmr::vector<Core::TextureBarrierDesc> m_textureOwnershipTransferBarriers;
+            festd::pmr::vector<Core::BufferBarrierDesc> m_bufferOwnershipTransferBarriers;
+
+            ResourceBarrierBatcher m_barrierBatcher;
 
             festd::pmr::inline_vector<TextureAccess, 4> m_accessedTextures;
             festd::pmr::inline_vector<BufferAccess, 4> m_accessedBuffers;
@@ -81,21 +87,29 @@ namespace FE::Graphics::Common
 
             Rc<Core::Resource> m_resource;
             festd::pmr::inline_vector<PassResourceAccess, 4> m_accesses;
+
+            uint32_t m_previousBarrierPassIndex = kInvalidIndex;
+            Core::BarrierAccessFlags m_bindFlags = Core::BarrierAccessFlags::kNone;
+            bool m_isOwnedByGraph = false;
         };
 
-        FrameGraph(Core::DescriptorManager* descriptorManager);
+        FrameGraph(Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
 
         PassNodeBase& AddPassInternal() override;
 
         void ParsePassPushConstants(PassNode& pass, const RTTI::Type& type);
-        void CompilePass(PassNode& pass);
+        void PreparePassCompileInfo(PassNode& pass);
+        void AccumulateBindFlags(ResourceNode& resource);
+        void CompilePassBarriers(PassNode& pass);
 
         void Compile();
         void Execute();
 
-        uint32_t RegisterResource(Core::Resource* resource, uint32_t passIndex, uint32_t accessIndex);
+        uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access);
+        uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
 
         Core::DescriptorManager* m_descriptorManager = nullptr;
+        Core::ResourcePool* m_resourcePool = nullptr;
 
         SegmentedVector<PassNode> m_passes;
         SegmentedVector<ResourceNode> m_resources;

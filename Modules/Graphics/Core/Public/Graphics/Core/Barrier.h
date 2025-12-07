@@ -71,65 +71,60 @@ namespace FE::Graphics::Core
             | kShadingRateSource | kCommonResourceAccessMask,
         kAllBufferAccessMask = kIndexBuffer | kVertexBuffer | kConstantBuffer | kIndirectArgument | kAccelerationStructureRead
             | kAccelerationStructureWrite | kCommonResourceAccessMask,
+
+        kReadAccessMask = kIndexBuffer | kVertexBuffer | kConstantBuffer | kIndirectArgument | kShaderRead | kDepthStencilRead
+            | kCopySource | kResolveSource | kShadingRateSource | kAccelerationStructureRead,
+        kWriteAccessMask =
+            kRenderTarget | kShaderWrite | kDepthStencilWrite | kCopyDest | kResolveDest | kAccelerationStructureWrite,
     };
 
     FE_ENUM_OPERATORS(BarrierAccessFlags);
 
 
+    inline bool IsReadAccess(const BarrierAccessFlags accessFlags)
+    {
+        return Bit::AllSet(BarrierAccessFlags::kReadAccessMask, accessFlags);
+    }
+
+
+    inline bool IsWriteAccess(const BarrierAccessFlags accessFlags)
+    {
+        return Bit::AllSet(BarrierAccessFlags::kWriteAccessMask, accessFlags);
+    }
+
+
     struct GlobalBarrierDesc final
     {
-        BarrierSyncFlags m_syncBefore : 16;
-        BarrierSyncFlags m_syncAfter : 16;
-        BarrierAccessFlags m_accessBefore : 16;
-        BarrierAccessFlags m_accessAfter : 16;
-
-        GlobalBarrierDesc()
-            : m_syncBefore(BarrierSyncFlags::kNone)
-            , m_syncAfter(BarrierSyncFlags::kNone)
-            , m_accessBefore(BarrierAccessFlags::kNone)
-            , m_accessAfter(BarrierAccessFlags::kNone)
-        {
-        }
+        BarrierSyncFlags m_syncBefore = BarrierSyncFlags::kNone;
+        BarrierSyncFlags m_syncAfter = BarrierSyncFlags::kNone;
+        BarrierAccessFlags m_accessBefore = BarrierAccessFlags::kNone;
+        BarrierAccessFlags m_accessAfter = BarrierAccessFlags::kNone;
     };
 
 
     struct TextureBarrierDesc final
     {
-        BarrierSyncFlags m_syncBefore : 16;
-        BarrierSyncFlags m_syncAfter : 16;
-        BarrierAccessFlags m_accessBefore : 16;
-        BarrierAccessFlags m_accessAfter : 16;
-        BarrierLayout m_layoutBefore : 16;
-        BarrierLayout m_layoutAfter : 16;
+        BarrierSyncFlags m_syncBefore = BarrierSyncFlags::kNone;
+        BarrierSyncFlags m_syncAfter = BarrierSyncFlags::kNone;
+        BarrierAccessFlags m_accessBefore = BarrierAccessFlags::kNone;
+        BarrierAccessFlags m_accessAfter = BarrierAccessFlags::kNone;
+        BarrierLayout m_layoutBefore = BarrierLayout::kUndefined;
+        BarrierLayout m_layoutAfter = BarrierLayout::kUndefined;
         TextureSubresource m_subresource = TextureSubresource::kInvalid;
+        DeviceQueueType m_queueBefore = DeviceQueueType::kGraphics;
+        DeviceQueueType m_queueAfter = DeviceQueueType::kGraphics;
         Texture* m_texture = nullptr;
-
-        TextureBarrierDesc()
-            : m_syncBefore(BarrierSyncFlags::kNone)
-            , m_syncAfter(BarrierSyncFlags::kNone)
-            , m_accessBefore(BarrierAccessFlags::kNone)
-            , m_accessAfter(BarrierAccessFlags::kNone)
-            , m_layoutBefore(BarrierLayout::kUndefined)
-            , m_layoutAfter(BarrierLayout::kUndefined)
-        {
-        }
     };
 
 
     struct BufferBarrierDesc final
     {
-        BarrierSyncFlags m_syncBefore : 16;
-        BarrierSyncFlags m_syncAfter : 16;
-        BarrierAccessFlags m_accessBefore : 16;
-        BarrierAccessFlags m_accessAfter : 16;
+        BarrierSyncFlags m_syncBefore = BarrierSyncFlags::kNone;
+        BarrierSyncFlags m_syncAfter = BarrierSyncFlags::kNone;
+        BarrierAccessFlags m_accessBefore = BarrierAccessFlags::kNone;
+        BarrierAccessFlags m_accessAfter = BarrierAccessFlags::kNone;
+        DeviceQueueType m_queueBefore = DeviceQueueType::kGraphics;
+        DeviceQueueType m_queueAfter = DeviceQueueType::kGraphics;
         Buffer* m_buffer = nullptr;
-
-        BufferBarrierDesc()
-            : m_syncBefore(BarrierSyncFlags::kNone)
-            , m_syncAfter(BarrierSyncFlags::kNone)
-            , m_accessBefore(BarrierAccessFlags::kNone)
-            , m_accessAfter(BarrierAccessFlags::kNone)
-        {
-        }
     };
 } // namespace FE::Graphics::Core

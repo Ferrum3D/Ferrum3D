@@ -90,6 +90,33 @@ namespace FE::Graphics::Core
 
         static const TextureSubresource kInvalid;
 
+        [[nodiscard]] bool Contains(const TextureSubresource other) const
+        {
+            if (m_aspect != other.m_aspect)
+                return false;
+
+            return m_mostDetailedMipSlice <= other.m_mostDetailedMipSlice
+                && m_mostDetailedMipSlice + m_mipSliceCount >= other.m_mostDetailedMipSlice + other.m_mipSliceCount
+                && m_firstArraySlice <= other.m_firstArraySlice
+                && m_firstArraySlice + m_arraySize >= other.m_firstArraySlice + other.m_arraySize;
+        }
+
+        [[nodiscard]] TextureSubresource Coalesce(const TextureSubresource other) const
+        {
+            FE_AssertDebug(m_aspect == other.m_aspect);
+
+            TextureSubresource subresource;
+            subresource.m_mostDetailedMipSlice = Math::Min(m_mostDetailedMipSlice, other.m_mostDetailedMipSlice);
+            subresource.m_mipSliceCount =
+                Math::Max(m_mostDetailedMipSlice + m_mipSliceCount, other.m_mostDetailedMipSlice + other.m_mipSliceCount)
+                - subresource.m_mostDetailedMipSlice;
+            subresource.m_firstArraySlice = Math::Min(m_firstArraySlice, other.m_firstArraySlice);
+            subresource.m_arraySize = Math::Max(m_firstArraySlice + m_arraySize, other.m_firstArraySlice + other.m_arraySize)
+                - subresource.m_firstArraySlice;
+            subresource.m_aspect = m_aspect;
+            return subresource;
+        }
+
         friend bool operator<(const TextureSubresource lhs, const TextureSubresource rhs)
         {
             return festd::bit_cast<uint32_t>(lhs) < festd::bit_cast<uint32_t>(rhs);
@@ -114,7 +141,7 @@ namespace FE::Graphics::Core
     inline const TextureSubresource TextureSubresource::kInvalid = festd::bit_cast<TextureSubresource>(kInvalidIndex);
 
 
-    struct ImageSubresourceIterator final
+    struct TextureSubresourceIterator final
     {
         struct Slice final
         {
@@ -166,12 +193,12 @@ namespace FE::Graphics::Core
 
         TextureSubresource m_subresource;
 
-        explicit ImageSubresourceIterator(const TextureSubresource subresource)
+        explicit TextureSubresourceIterator(const TextureSubresource subresource)
             : m_subresource(subresource)
         {
         }
 
-        explicit ImageSubresourceIterator(const TextureDesc imageDesc)
+        explicit TextureSubresourceIterator(const TextureDesc imageDesc)
             : m_subresource(TextureSubresource::CreateWhole(imageDesc))
         {
         }

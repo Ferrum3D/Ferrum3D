@@ -1,5 +1,6 @@
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Features/Tools/Downsample.h>
 
 #include <Shaders/Features/Tools/Downsample/Downsample.h>
@@ -56,12 +57,11 @@ namespace FE::Graphics::Tools
     } // namespace
 
 
-    festd::fixed_vector<Core::RenderTargetHandle, Downsample::kMaxMipCount> Downsample::AddPass(
-        const Core::FrameGraphBuilder& builder, const Core::RenderTargetHandle src, const Settings settings)
+    festd::fixed_vector<Core::Texture*, Downsample::kMaxMipCount> Downsample::AddPass(Core::FrameGraph& graph, Core::Texture* src,
+                                                                                      const Settings& settings)
     {
-        const auto& graph = builder.GetGraph();
-
-        const Core::TextureDesc sourceDesc = graph.GetResourceDesc(src);
+        const Core::TextureDesc sourceDesc = src->GetDesc();
+        const Env::Name sourceName = src->GetName();
         const RectUInt rect = RectUInt::FromPosAndSize({ 0, 0 }, sourceDesc.GetSize2D());
 
         Vector2UInt dispatchThreadGroupCount;
@@ -70,50 +70,43 @@ namespace FE::Graphics::Tools
         uint32_t numMips;
         SpdSetup(dispatchThreadGroupCount, workGroupOffset, numWorkGroups, numMips, rect, settings.m_mipCount);
 
-        const Core::FrameGraphPassBuilder pass = builder.AddPass("Downsample");
-        const Env::Name sourceName = graph.GetResourceName(src);
-
-        festd::fixed_vector<Core::RenderTargetHandle, kMaxMipCount> dst;
+        festd::fixed_vector<Core::Texture*, kMaxMipCount> dst;
         dst.resize(numMips);
 
-        const Core::RenderTargetHandle source = pass.Read(src, Core::ImageReadType::kShaderResource);
-
+        Core::ResourcePool* resourcePool = graph.GetResourcePool();
         for (uint32_t mipIndex = 1; mipIndex <= numMips; ++mipIndex)
         {
             const uint32_t width = Math::Max(1u, sourceDesc.m_width >> mipIndex);
             const uint32_t height = Math::Max(1u, sourceDesc.m_height >> mipIndex);
 
             const Env::Name mipName = Fmt::FormatName("{}_DownsampleMip_{}", sourceName, mipIndex);
-            const Core::TextureDesc mipDesc = Core::TextureDesc::Img2D(width, height, sourceDesc.m_imageFormat, false);
-            dst[mipIndex - 1] = pass.WriteUAV(pass.CreateImage(mipName, mipDesc));
+            dst[mipIndex - 1] = resourcePool->CreateTexture(mipName, sourceDesc.m_imageFormat, { width, height });
         }
 
-        const Core::BufferHandle globalAtomic =
-            pass.Write(pass.CreateStructuredBuffer<SpdGlobalAtomicBuffer>("SpdGlobalAtomic", 1));
+        Core::Buffer* globalAtomic = resourcePool->CreateStructuredBuffer<SpdGlobalAtomicBuffer>("SpdGlobalAtomic", 1);
 
-        pass.SetFunction([=](Core::FrameGraphContext& context) {
-            Constants constants;
-            constants.m_mips = numMips;
-            constants.m_numWorkGroups = numWorkGroups;
-            constants.m_workGroupOffset = workGroupOffset;
-            constants.m_invInputSize = Math::Reciprocal(Vector2(sourceDesc.GetSize2D()));
-            constants.m_internalGlobalAtomic = context.GetGraph().GetUAV(globalAtomic);
+        Pipeline::Specializer specializer;
+        specializer.Set<Pipeline::AllowFloat16>(settings.m_allowFloat16);
+        specializer.Set<Pipeline::DownsampleFilter>(settings.m_filter);
 
-            constants.m_input = context.GetGraph().GetSRV(source);
-            for (uint32_t mipIndex = 0; mipIndex < numMips; ++mipIndex)
-                constants.m_inputSrcMips[mipIndex] = context.GetGraph().GetUAV(dst[mipIndex]);
+        PassDesc* passDesc = graph.AllocatePassData<PassDesc>();
+        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
 
-            constants.m_inputSrcMidMip = constants.m_inputSrcMips[5];
-            constants.m_linearClamp = context.GetGraph().GetSampler(Core::SamplerState::kLinearClamp);
+        Constants& constants = passDesc->m_constants;
+        constants.m_mips = numMips;
+        constants.m_numWorkGroups = numWorkGroups;
+        constants.m_workGroupOffset = workGroupOffset;
+        constants.m_invInputSize = Math::Reciprocal(Vector2(sourceDesc.GetSize2D()));
+        constants.m_internalGlobalAtomic = graph.GetDescriptor(globalAtomic);
 
-            Pipeline::Specializer specializer;
-            specializer.Set<Pipeline::AllowFloat16>(settings.m_allowFloat16);
-            specializer.Set<Pipeline::DownsampleFilter>(settings.m_filter);
+        constants.m_input = graph.GetDescriptor(src);
+        for (uint32_t mipIndex = 0; mipIndex < numMips; ++mipIndex)
+            constants.m_inputSrcMips[mipIndex] = graph.GetDescriptor(dst[mipIndex]);
 
-            context.PushConstants(constants);
-            context.Dispatch(Pipeline::GetPipeline(specializer), dispatchThreadGroupCount);
-        });
+        constants.m_inputSrcMidMip = constants.m_inputSrcMips[5];
+        constants.m_linearClamp = graph.GetSampler(Core::SamplerState::kLinearClamp);
 
+        graph.AddDispatchPass("Downsample", passDesc, dispatchThreadGroupCount);
         return dst;
     }
 } // namespace FE::Graphics::Tools

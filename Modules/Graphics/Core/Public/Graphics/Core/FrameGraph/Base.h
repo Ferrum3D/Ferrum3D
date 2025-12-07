@@ -105,14 +105,14 @@ namespace FE::Graphics::Core
 
     struct [[nodiscard]] FrameGraphBufferDescriptorHandle final
     {
-        operator TextureSRVDescriptor() const
+        operator BufferSRVDescriptor() const
         {
-            return TextureSRVDescriptor{ m_descriptorIndex };
+            return BufferSRVDescriptor{ m_descriptorIndex };
         }
 
-        operator TextureUAVDescriptor() const
+        operator BufferUAVDescriptor() const
         {
-            return TextureUAVDescriptor{ m_descriptorIndex };
+            return BufferUAVDescriptor{ m_descriptorIndex };
         }
 
     private:

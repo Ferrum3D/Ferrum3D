@@ -19,7 +19,7 @@ namespace FE
             out[3] = _mm_shuffle_ps(t1, t3, _MM_SHUFFLE(3, 1, 3, 1));
         }
 
-        extern alignas(Memory::kCacheLineSize) const float kIdentity4Values[16];
+        extern const float kIdentity4Values[16];
     } // namespace Internal
 
     struct Matrix4x4 final

@@ -29,9 +29,9 @@ namespace FE::Compression
     {
         kNone,
 
-        kDeflate FE_DISPLAY_NAME("Deflate"),
-        kGDeflate FE_DISPLAY_NAME("GDeflate"),
-        kInvalid FE_DISPLAY_NAME("Invalid"),
+        kDeflate FE_ATTRIBUTE(DisplayName = Deflate),
+        kGDeflate FE_ATTRIBUTE(DisplayName = GDeflate),
+        kInvalid FE_ATTRIBUTE(DisplayName = Invalid),
     };
 
 

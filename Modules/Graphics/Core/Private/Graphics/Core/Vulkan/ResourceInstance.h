@@ -31,9 +31,15 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("C47D99B8-920D-49B6-A1B9-0F24143C3FEB");
 
+        struct ViewCacheEntry final
+        {
+            Core::TextureSubresource m_subresource;
+            VkImageView m_view;
+        };
+
         VkImage m_image = VK_NULL_HANDLE;
         VkImageView m_wholeImageView = VK_NULL_HANDLE;
-        festd::inline_unordered_dense_map<Core::TextureSubresource, VkImageView, 5, 8> m_viewCache;
+        festd::inline_vector<ViewCacheEntry, 4> m_viewCache;
 
         static TextureInstance* Create();
         static void Delete(TextureInstance* instance);

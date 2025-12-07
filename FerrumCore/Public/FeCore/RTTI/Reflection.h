@@ -46,22 +46,27 @@ namespace FE::RTTI
         festd::span<const Attribute> m_attributes;
         uint32_t m_offset = 0;
         uint32_t m_size = 0;
+        uint32_t m_arraySize = 0;
         FieldFlags m_flags = FieldFlags::kNone;
 
         template<class TValue>
-        const TValue& Get(const void* instance) const
+        const TValue& Get(const void* instance, const uint32_t arrayIndex = 0) const
         {
+            FE_AssertDebug(arrayIndex < m_arraySize);
+
             const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
             const TValue* ptr = reinterpret_cast<const TValue*>(address);
-            return *ptr;
+            return ptr[arrayIndex];
         }
 
         template<class TValue>
-        void Set(void* instance, const TValue& value) const
+        void Set(void* instance, const TValue& value, const uint32_t arrayIndex = 0) const
         {
+            FE_AssertDebug(arrayIndex < m_arraySize);
+
             const uintptr_t address = reinterpret_cast<uintptr_t>(instance) + m_offset;
             TValue* ptr = reinterpret_cast<TValue*>(address);
-            *ptr = value;
+            ptr[arrayIndex] = value;
         }
     };
 

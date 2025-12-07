@@ -373,7 +373,7 @@ namespace FE::Graphics::Vulkan
                     // To do this properly, we need barriers on the graphics queue to match the batched ones here.
                     afterBarrierBatcher.m_batchingEnabled = false;
 
-                    const Core::ImageSubresourceIterator subresourceIterator{ subresource };
+                    const Core::TextureSubresourceIterator subresourceIterator{ subresource };
 
                     uint32_t uploadedBytes = 0;
                     for (const auto [mipIndex, arrayIndex] : subresourceIterator)

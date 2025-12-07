@@ -58,29 +58,33 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Buffer::UpdateDebugNames()
+    void Buffer::UpdateDebugNames() const
     {
         if (m_instance == nullptr)
             return;
 
+        auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_buffer);
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(bufferInstance->m_buffer);
         nameInfo.pObjectName = m_name.c_str();
         VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
-        if (m_instance->m_view)
+        if (bufferInstance->m_view)
         {
             nameInfo.objectType = VK_OBJECT_TYPE_BUFFER_VIEW;
-            nameInfo.objectHandle = reinterpret_cast<uint64_t>(m_instance->m_view);
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(bufferInstance->m_view);
             nameInfo.pObjectName = m_name.c_str();
             VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
         }
 
-        if (m_instance->m_vmaAllocation)
+        if (bufferInstance->m_vmaAllocation)
         {
-            vmaSetAllocationName(ImplCast(m_instance->m_pool)->GetAllocator(), m_instance->m_vmaAllocation, m_name.c_str());
+            vmaSetAllocationName(ImplCast(bufferInstance->m_pool)->GetAllocator(),
+                                 bufferInstance->m_vmaAllocation,
+                                 m_name.c_str());
         }
     }
 
@@ -90,11 +94,13 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         FE_Assert(m_instance);
-        FE_Assert(m_instance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
-                  || m_instance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
 
-        const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
-        const VmaAllocation allocation = m_instance->m_vmaAllocation;
+        const auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        FE_Assert(bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
+                  || bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
+
+        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
 
         void* result;
         VerifyVk(vmaMapMemory(allocator, allocation, &result));
@@ -104,9 +110,20 @@ namespace FE::Graphics::Vulkan
 
     void Buffer::Unmap()
     {
-        const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
-        const VmaAllocation allocation = m_instance->m_vmaAllocation;
+        const auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
         vmaUnmapMemory(allocator, allocation);
+    }
+
+
+    void Buffer::DecommitMemory()
+    {
+        if (m_instance == nullptr)
+            return;
+
+        FE_Assert(m_instance->m_pool, "Externally created buffers not implemented");
+        m_instance->m_pool->DecommitBufferMemory(this);
     }
 
 
@@ -118,6 +135,8 @@ namespace FE::Graphics::Vulkan
 
         m_instance = BufferInstance::Create();
         m_instance->m_pool = resourcePool;
+        m_instance->m_bind = params.m_bindFlags;
+        m_instance->m_type = m_type;
 
         Common::SubresourceState& initialState = m_instance->m_subresourceStates.emplace_back();
         initialState.m_value = 0;
@@ -155,18 +174,23 @@ namespace FE::Graphics::Vulkan
         m_instance->m_memoryStatus = params.m_memory;
 
         const VmaAllocator allocator = resourcePool->GetAllocator();
-        VerifyVk(
-            vmaCreateBuffer(allocator, &bufferCI, &allocationCI, &m_instance->m_buffer, &m_instance->m_vmaAllocation, nullptr));
+        auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        VerifyVk(vmaCreateBuffer(allocator,
+                                 &bufferCI,
+                                 &allocationCI,
+                                 &bufferInstance->m_buffer,
+                                 &bufferInstance->m_vmaAllocation,
+                                 nullptr));
 
         if (isTexelBuffer)
         {
             VkBufferViewCreateInfo viewCI{};
             viewCI.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-            viewCI.buffer = m_instance->m_buffer;
+            viewCI.buffer = bufferInstance->m_buffer;
             viewCI.format = Translate(m_desc.m_format);
             viewCI.offset = 0;
             viewCI.range = m_desc.m_size;
-            VerifyVk(vkCreateBufferView(NativeCast(m_device), &viewCI, nullptr, &m_instance->m_view));
+            VerifyVk(vkCreateBufferView(NativeCast(m_device), &viewCI, nullptr, &bufferInstance->m_view));
         }
 
         UpdateDebugNames();
@@ -182,25 +206,6 @@ namespace FE::Graphics::Vulkan
         }
 
         festd::swap(m_instance, instance);
-    }
-
-
-    void Buffer::DecommitMemory()
-    {
-        if (m_instance == nullptr)
-            return;
-
-        FE_Assert(m_instance->m_pool, "Externally created buffers not implemented");
-        m_instance->m_pool->DecommitBufferMemory(this);
-    }
-
-
-    Core::ResourceMemory Buffer::GetMemoryStatus() const
-    {
-        if (m_instance == nullptr)
-            return Core::ResourceMemory::kNotCommitted;
-
-        return m_instance->m_memoryStatus;
     }
 
 

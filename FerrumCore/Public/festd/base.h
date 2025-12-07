@@ -146,7 +146,7 @@ namespace FE::festd
     }
 
 
-    //! @brief Returns the only element of a container. Asserts if the container is empty or has more than one element.
+    //! @brief Returns the only element of a container. Fails if the container is empty or has more than one element.
     template<class TContainer>
     auto single(TContainer& container) -> decltype(*begin(container))
     {

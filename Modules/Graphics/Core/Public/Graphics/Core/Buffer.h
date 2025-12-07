@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Resource.h>
+#include <Graphics/Core/Barrier.h>
 
 namespace FE::Graphics::Core
 {

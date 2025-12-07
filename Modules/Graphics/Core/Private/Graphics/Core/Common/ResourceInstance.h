@@ -11,10 +11,10 @@ namespace FE::Graphics::Common
     {
         struct
         {
-            Core::BarrierAccessFlags m_access : 28;
-            Core::BarrierLayout m_layout : 4;
-            Core::BarrierSyncFlags m_sync : 30;
-            Core::DeviceQueueType m_queueType : 2;
+            Core::BarrierAccessFlags m_access : 24;
+            Core::BarrierLayout m_layout : 8;
+            Core::BarrierSyncFlags m_sync : 24;
+            Core::DeviceQueueType m_queueType : 8;
         };
 
         uint64_t m_value = 0;

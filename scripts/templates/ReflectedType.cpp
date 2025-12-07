@@ -93,7 +93,8 @@ namespace FE::RTTI
         {% endfor %}
         static const festd::array<RTTI::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
-            RTTI::ReflectionContext::CreateFieldInfo("{{ field.name }}", TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
+            RTTI::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
+                                                     TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.qualified_name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),
@@ -187,7 +188,7 @@ namespace {{ type.namespace }}
         {% endfor %}
         static const festd::array<RTTI::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
-            RTTI::ReflectionContext::CreateFieldInfo("{{ field.name }}",
+            RTTI::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
                                                      &{{ type.name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),

@@ -30,7 +30,7 @@ namespace FE::Graphics::Vulkan
             subresource = Core::TextureSubresource::CreateWhole(textureDesc);
         }
 
-        const Core::ImageSubresourceIterator subresourceIterator{ subresource };
+        const Core::TextureSubresourceIterator subresourceIterator{ subresource };
         for (const auto [mipIndex, arrayIndex] : subresourceIterator)
         {
             const SubresourceState state = textureImpl->GetSubresourceState(mipIndex, arrayIndex);

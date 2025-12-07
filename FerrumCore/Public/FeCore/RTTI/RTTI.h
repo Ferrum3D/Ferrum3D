@@ -11,9 +11,7 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#define FE_ATTRIBUTE(key, value) FE_CODEGEN_ATTRIBUTE(#key "=" name)
-
-#define FE_DISPLAY_NAME(name) FE_ATTRIBUTE(DisplayName, name)
+#define FE_ATTRIBUTE(value) FE_CODEGEN_ATTRIBUTE(#value)
 
 
 namespace FE::RTTI

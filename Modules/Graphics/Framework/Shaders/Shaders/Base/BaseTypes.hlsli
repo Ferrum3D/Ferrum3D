@@ -44,6 +44,19 @@ FE_CONSTEXPR uint32_t kInvalidIndex = 0xffffffff;
 FE_CONSTEXPR uint kLanesPerWave = 32;
 
 
+namespace Core
+{
+    // clang-format off
+    struct PassGraphicsPipeline {};
+    struct PassComputePipeline {};
+    struct PassColorTarget {};
+    struct PassDepthTarget {};
+    struct PassViewport {};
+    struct PassScissor {};
+    // clang-format on
+} // namespace Core
+
+
 #if !FE_PLATFORM_VULKAN
 namespace Bit
 {

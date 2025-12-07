@@ -2,6 +2,7 @@
 #include <FeCore/Base/BaseMath.h>
 #include <FeCore/Base/BaseTypes.h>
 #include <FeCore/Base/Hash.h>
+#include <FeCore/RTTI/RTTI.h>
 #include <atomic>
 #include <cassert>
 #include <cstdint>

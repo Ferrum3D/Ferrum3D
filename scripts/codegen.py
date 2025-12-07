@@ -59,12 +59,13 @@ class FieldFlags(Flag):
 
 
 class FieldInfo:
-    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type, enum_value = None):
+    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type, enum_value = None, array_size = 1):
         self.name = name
         self.attributes = attributes
         self.flags = flags
         self.type = type
         self.enum_value = enum_value
+        self.array_size = array_size
         self.display_name = attributes.get("DisplayName", name)
 
 
@@ -130,7 +131,7 @@ def get_qualified_name(cursor: cindex.Cursor | None) -> str:
         return cursor.displayname
 
 
-def get_builtin_type_name(t: cindex.Type) -> str:
+def get_builtin_type_name(t: cindex.Type) -> str|None:
     if t.kind == cindex.TypeKind.CHAR_S or t.kind == cindex.TypeKind.SCHAR:
         return 'int8_t'
     if t.kind == cindex.TypeKind.CHAR_U or t.kind == cindex.TypeKind.UCHAR:
@@ -154,7 +155,7 @@ def get_builtin_type_name(t: cindex.Type) -> str:
     if t.kind == cindex.TypeKind.BOOL:
         return 'bool'
 
-    raise Exception(f"Unsupported builtin type: {t.spelling}")
+    return None
 
 
 def get_namespace(cursor: cindex.Cursor | None) -> str:
@@ -203,7 +204,7 @@ def parse_attributes(node: cindex.Cursor) -> dict[str, str]:
     for annotation_list in annotations:
         for annotation in annotation_list.split(";"):
             key, value = annotation.split("=", 1)
-            attributes[key] = value
+            attributes[key.strip()] = value.strip()
 
     return attributes
 
@@ -229,13 +230,17 @@ def get_field_flags(node: cindex.Cursor, access_specifier: cindex.AccessSpecifie
 
 
 def resolve_type(t: cindex.Type, types: dict[uuid.UUID, ReflectedType]) -> ReflectedType | None:
-    type_declaration = t.get_declaration()
-    if type_declaration is None:
-        return None
-
-    type_qualified_name = get_qualified_name(type_declaration)
+    type_qualified_name = get_builtin_type_name(t)
     if type_qualified_name is None:
-        return None
+        if t.kind == cindex.TypeKind.CONSTANTARRAY:
+            return resolve_type(t.get_array_element_type(), types)
+        type_declaration = t.get_declaration()
+        if type_declaration is None:
+            return None
+
+        type_qualified_name = get_qualified_name(type_declaration)
+        if type_qualified_name is None:
+            return None
 
     type_internal_id = get_internal_type_id(type_qualified_name)
     return types.get(type_internal_id)
@@ -265,11 +270,13 @@ def parse_class(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[c
             base_types.append(child.type)
         if child.kind == cindex.CursorKind.FIELD_DECL and need_reflect:
             field_name = child.spelling
-            field_type = resolve_type(child.type.get_canonical(), types)
+            canonical_type = child.type.get_canonical()
+            field_type = resolve_type(canonical_type, types)
+            array_size = canonical_type.get_array_size() if canonical_type.kind == cindex.TypeKind.CONSTANTARRAY else 1
             field_attributes = parse_attributes(child)
             field_flags = get_field_flags(child, access_spec)
             if not public_only or access_spec == cindex.AccessSpecifier.PUBLIC:
-                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type))
+                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type, array_size=array_size))
 
 
 def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
@@ -279,7 +286,7 @@ def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[ci
             field_name = child.spelling
             field_value = child.enum_value
             field_attributes = parse_attributes(child)
-            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, None, field_value))
+            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, None, enum_value=field_value))
 
 
 def visit_external_rtti_declaration(node: cindex.Cursor, attributes: dict[str, str], types: dict[uuid.UUID, ReflectedType]) -> bool:
@@ -317,6 +324,7 @@ def visit_external_rtti_declaration(node: cindex.Cursor, attributes: dict[str, s
     else:
         type_kind = TypeKind.BUILTIN
         type_name = get_builtin_type_name(reflected_type)
+        assert type_name
 
     bases = [resolve_type(t, types) for t in base_types]
     assert all(bases)
@@ -367,12 +375,17 @@ def parse_file(file_path: str, include_dirs: list[str], defines: list[str]) -> d
         print("Failed to parse:", file_path)
         return None
 
-    # if tu.diagnostics:
-    #     print("Translation unit diagnostics:")
-    #     for d in tu.diagnostics:
-    #         print(f"  {d.location}: {d}")
-    #     if any(d.severity in [cindex.Diagnostic.Error, cindex.Diagnostic.Fatal] for d in tu.diagnostics):
-    #         return False
+    if tu.diagnostics:
+        for d in tu.diagnostics:
+            if d.severity not in [cindex.Diagnostic.Error, cindex.Diagnostic.Fatal]:
+                continue
+            if d.location.file:
+                if d.location.file.name.startswith("C:\\Program Files\\"):
+                    continue
+                if "ThirdParty" in d.location.file.name:
+                    continue
+
+            print(f"  {d.location}: {d}")
 
     if tu.cursor:
         types = {}
@@ -383,8 +396,11 @@ def parse_file(file_path: str, include_dirs: list[str], defines: list[str]) -> d
 
 
 def should_parse_file(file_path: str) -> bool:
+    # return "Downsample.cpp" in file_path
     return "ThirdParty" not in file_path and file_path.endswith(".cpp") and not file_path.endswith(".gen.cpp")
 
+
+NUM_WORKERS = 16
 
 if __name__ == "__main__":
     with open("../cmake-build/windows-codegen/compile_commands.json") as f:
@@ -393,7 +409,7 @@ if __name__ == "__main__":
     total_file_count = len(files)
 
     reflected_types_dict = {}
-    with ProcessPoolExecutor(max_workers=16) as executor:
+    with ProcessPoolExecutor(max_workers=NUM_WORKERS) as executor:
         futures = []
         with tqdm(total=total_file_count, desc="Preparing") as pbar:
             for d in files:
@@ -403,15 +419,21 @@ if __name__ == "__main__":
                 include_dirs = [p[2:] for p in command_tokens if p.startswith("-I")]
                 include_dirs += [p[11:] for p in command_tokens if p.startswith("-external:I")]
                 defines = [p[2:] for p in command_tokens if p.startswith("-D") or p.startswith("/D")]
-                futures.append(executor.submit(parse_file, file_path, include_dirs, defines))
+                if NUM_WORKERS > 1:
+                    futures.append(executor.submit(parse_file, file_path, include_dirs, defines))
+                else:
+                    result = parse_file(file_path, include_dirs, defines)
+                    if result:
+                        reflected_types_dict.update(result)
                 pbar.update(1)
 
-        with tqdm(total=total_file_count, desc="Processing files") as pbar:
-            for future in as_completed(futures):
-                pbar.update(1)
-                result = future.result()
-                if result:
-                    reflected_types_dict.update(result)
+        if NUM_WORKERS > 1:
+            with tqdm(total=total_file_count, desc="Processing files") as pbar:
+                for future in as_completed(futures):
+                    pbar.update(1)
+                    result = future.result()
+                    if result:
+                        reflected_types_dict.update(result)
 
     reflected_types = reflected_types_dict.values()
     for t in reflected_types:

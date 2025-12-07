@@ -135,17 +135,10 @@ namespace FE::Graphics::Vulkan
         // private singletons
         builder.Bind<Core::ShaderSourceCache>().ToSelf().InSingletonScope();
         builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
-        builder.Bind<Common::FrameGraphResourcePool>().ToSelf().InSingletonScope();
         builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
         builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services
-        builder.Bind<Core::Fence>()
-            .ToFunc([](DI::IServiceProvider* serviceProvider, Memory::RefCountedObjectBase** result) {
-                *result = Fence::Create(serviceProvider->ResolveRequired<Core::Device>());
-                return DI::ResultCode::kSuccess;
-            })
-            .InTransientScope();
         builder.Bind<Core::FrameGraph>().To<FrameGraph>().InTransientScope();
         builder.Bind<Core::Viewport>().To<Viewport>().InTransientScope();
     }

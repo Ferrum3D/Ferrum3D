@@ -499,6 +499,85 @@ namespace FE::RTTI
 } // namespace FE::RTTI
 
 
+namespace FE::RTTI
+{
+    namespace
+    {
+        Type& GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Compression::Method>()
+    {
+        return GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Compression::Method>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
+            0xb8, 0xe5, 0xab, 0x32, 0xc1, 0x5d, 0xdc, 0xfa, // FE::Compression::Method
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Compression::Method>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
+            0xb8, 0xe5, 0xab, 0x32, 0xc1, 0x5d, 0xdc, 0xfa, // FE::Compression::Method
+        };
+
+        static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t
+        };
+
+        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<festd::ascii_view, 4> kEnumNames = {
+            "kNone",
+            "kDeflate",
+            "kGDeflate",
+            "kInvalid",
+        };
+
+        static constexpr festd::array<festd::ascii_view, 4> kEnumDisplayNames = {
+            "kNone",
+            "Deflate",
+            "GDeflate",
+            "Invalid",
+        };
+
+        static constexpr festd::array<int64_t, 4> kEnumValues = {
+            static_cast<uint32_t>(0),
+            static_cast<uint32_t>(1),
+            static_cast<uint32_t>(2),
+            static_cast<uint32_t>(3),
+        };
+
+        context.ReflectEnum<FE::Compression::Method>(typeInstance,
+                                                     TypeID::LoadAligned(kTypeIDBytes),
+                                                     kUnderlyingTypeIDBytes,
+                                                     "FE::Compression::Method",
+                                                     kAttributes,
+                                                     kEnumNames,
+                                                     kEnumDisplayNames,
+                                                     kEnumValues);
+    }
+
+    static TypeRegistrar GTypeRegistrar_80ad0e9b049d41ecb8e5ab32c15ddcfa(
+        &Internal::ExternalTypeReflector<FE::Compression::Method>::Reflect);
+} // namespace FE::RTTI
+
+
 namespace FE::Memory
 {
     const RTTI::TypeID RefCountedObjectBase::TypeID = RTTI::TypeID{ "b4fa5c63-69c0-4666-8a92-726f070d769b" };
@@ -639,85 +718,6 @@ namespace FE::DI
 
     static RTTI::TypeRegistrar GTypeRegistrar_89a2904031bc411d852292d7d2696c16(&IServiceProvider::Reflect);
 } // namespace FE::DI
-
-
-namespace FE::RTTI
-{
-    namespace
-    {
-        Type& GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa()
-        {
-            static Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    template<>
-    const Type& GetType<FE::Compression::Method>()
-    {
-        return GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa();
-    }
-
-    template<>
-    TypeID GetTypeID<FE::Compression::Method>()
-    {
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
-            0xb8, 0xe5, 0xab, 0x32, 0xc1, 0x5d, 0xdc, 0xfa, // FE::Compression::Method
-        };
-
-        return TypeID::LoadAligned(kTypeIDBytes);
-    }
-
-    void Internal::ExternalTypeReflector<FE::Compression::Method>::Reflect(ReflectionContext& context)
-    {
-        Type& typeInstance = GetMutableType_80ad0e9b049d41ecb8e5ab32c15ddcfa();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
-            0xb8, 0xe5, 0xab, 0x32, 0xc1, 0x5d, 0xdc, 0xfa, // FE::Compression::Method
-        };
-
-        static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t
-        };
-
-        static constexpr festd::array<RTTI::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<festd::ascii_view, 4> kEnumNames = {
-            "kNone",
-            "kDeflate",
-            "kGDeflate",
-            "kInvalid",
-        };
-
-        static constexpr festd::array<festd::ascii_view, 4> kEnumDisplayNames = {
-            "kNone",
-            "kDeflate",
-            "kGDeflate",
-            "kInvalid",
-        };
-
-        static constexpr festd::array<int64_t, 4> kEnumValues = {
-            static_cast<uint32_t>(0),
-            static_cast<uint32_t>(1),
-            static_cast<uint32_t>(2),
-            static_cast<uint32_t>(3),
-        };
-
-        context.ReflectEnum<FE::Compression::Method>(typeInstance,
-                                                     TypeID::LoadAligned(kTypeIDBytes),
-                                                     kUnderlyingTypeIDBytes,
-                                                     "FE::Compression::Method",
-                                                     kAttributes,
-                                                     kEnumNames,
-                                                     kEnumDisplayNames,
-                                                     kEnumValues);
-    }
-
-    static TypeRegistrar GTypeRegistrar_80ad0e9b049d41ecb8e5ab32c15ddcfa(
-        &Internal::ExternalTypeReflector<FE::Compression::Method>::Reflect);
-} // namespace FE::RTTI
 
 
 namespace FE::RTTI
@@ -2747,16 +2747,16 @@ namespace FE::RTTI
         static constexpr festd::array<RTTI::Attribute, 0> kAttributes_m_rotation = {};
 
         static const festd::array<RTTI::FieldInfo, 2> kFields = {
-            RTTI::ReflectionContext::CreateFieldInfo("m_translationScale",
-                                                     TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                     &FE::Transform::m_translationScale,
-                                                     kAttributes_m_translationScale,
-                                                     RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
-            RTTI::ReflectionContext::CreateFieldInfo("m_rotation",
-                                                     TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                     &FE::Transform::m_rotation,
-                                                     kAttributes_m_rotation,
-                                                     RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
+            RTTI::ReflectionContext::CreateFieldInfo<1>("m_translationScale",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &FE::Transform::m_translationScale,
+                                                        kAttributes_m_translationScale,
+                                                        RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
+            RTTI::ReflectionContext::CreateFieldInfo<1>("m_rotation",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &FE::Transform::m_rotation,
+                                                        kAttributes_m_rotation,
+                                                        RTTI::FieldFlags::kInstance | RTTI::FieldFlags::kPublic),
         };
 
         context.ReflectClass<FE::Transform>(typeInstance,

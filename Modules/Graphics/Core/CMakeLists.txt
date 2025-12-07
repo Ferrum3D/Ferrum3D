@@ -46,11 +46,17 @@
 )
 
 set(COMMON_SOURCES
+    Private/Graphics/Core/Common/Buffer.cpp
+    Private/Graphics/Core/Common/Buffer.h
     Private/Graphics/Core/Common/Device.cpp
     Private/Graphics/Core/Common/Device.h
+    Private/Graphics/Core/Common/ResourceBarrierBatcher.cpp
+    Private/Graphics/Core/Common/ResourceBarrierBatcher.h
     Private/Graphics/Core/Common/ResourceInstance.h
     Private/Graphics/Core/Common/ShaderSourceCache.cpp
     Private/Graphics/Core/Common/ShaderSourceCache.h
+    Private/Graphics/Core/Common/Texture.cpp
+    Private/Graphics/Core/Common/Texture.h
 
     Private/Graphics/Core/Common/FrameGraph/FrameGraph.cpp
     Private/Graphics/Core/Common/FrameGraph/FrameGraph.h
@@ -115,8 +121,6 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/PipelineFactory.cpp
     Private/Graphics/Core/Vulkan/PipelineFactory.h
     Private/Graphics/Core/Vulkan/PipelineStates.h
-    Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.cpp
-    Private/Graphics/Core/Vulkan/ResourceBarrierBatcher.h
     Private/Graphics/Core/Vulkan/ResourceInstance.cpp
     Private/Graphics/Core/Vulkan/ResourceInstance.h
     Private/Graphics/Core/Vulkan/ResourcePool.cpp
