@@ -22,7 +22,6 @@ namespace FE::Graphics::Common
         , m_accessedTextures(allocator)
         , m_accessedBuffers(allocator)
     {
-        m_colorTargetLocalIndices.fill(kInvalidIndex);
     }
 
 
@@ -39,20 +38,50 @@ namespace FE::Graphics::Common
     }
 
 
-    FrameGraph::FrameGraph(Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool)
+    Core::FrameGraphTextureDescriptorHandle FrameGraph::GetDescriptor(const Core::TextureView texture)
+    {
+        return Core::FrameGraphTextureDescriptorHandle{ m_descriptorManager->ReserveDescriptor(texture) };
+    }
+
+
+    Core::FrameGraphBufferDescriptorHandle FrameGraph::GetDescriptor(const Core::BufferView buffer)
+    {
+        return Core::FrameGraphBufferDescriptorHandle{ m_descriptorManager->ReserveDescriptor(buffer) };
+    }
+
+
+    SamplerDescriptor FrameGraph::GetSampler(const Core::SamplerState sampler)
+    {
+        return SamplerDescriptor{ m_descriptorManager->ReserveDescriptor(sampler) };
+    }
+
+
+    FrameGraph::FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool)
         : m_descriptorManager(descriptorManager)
         , m_resourcePool(resourcePool)
         , m_passes(&m_linearAllocator)
         , m_resources(&m_linearAllocator)
     {
+        m_device = device;
     }
 
 
-    FrameGraph::PassNodeBase& FrameGraph::AddPassInternal()
+    void FrameGraph::AddPassInternal(const PassNodeDesc& desc)
     {
         PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
         passNode.m_passIndex = m_passes.size() - 1;
-        return passNode;
+        passNode.m_name = desc.m_name;
+        passNode.m_functor = desc.m_functor;
+        passNode.m_execute = desc.m_execute;
+        passNode.m_destroy = desc.m_destroy;
+        passNode.m_userPassDescTypeID = desc.m_userPassDescTypeID;
+        passNode.m_userPassDescPtr = desc.m_userPassDescPtr;
+    }
+
+
+    void FrameGraph::CommitPassNode(const uint32_t passIndex)
+    {
+        PreparePassCompileInfo(m_passes[passIndex]);
     }
 
 
@@ -205,26 +234,22 @@ namespace FE::Graphics::Common
                     const Core::PassColorTarget colorTarget =
                         field.Get<Core::PassColorTarget>(pass.m_userPassDescPtr, arrayIndex);
 
-                    uint32_t colorTargetIndex;
-                    if (colorTarget.m_explicitIndex != kInvalidIndex)
-                    {
-                        colorTargetIndex = colorTarget.m_explicitIndex;
-                        FE_Assert(colorTarget.m_explicitIndex < Core::Limits::Pipeline::kMaxColorAttachments);
-                        FE_Assert(pass.m_colorTargetLocalIndices[colorTarget.m_explicitIndex] == kInvalidIndex);
-                    }
-                    else
-                    {
-                        colorTargetIndex = festd::find_index(pass.m_colorTargetLocalIndices, kInvalidIndex);
-                        FE_Assert(colorTargetIndex != kInvalidIndex, "Too many color targets");
-                    }
+                    const uint32_t colorTargetIndex = pass.m_colorTargetAccessIndices.size();
+                    FE_Assert(colorTargetIndex < Core::Limits::Pipeline::kMaxColorAttachments, "Too many color targets");
+                    FE_Assert(colorTarget.m_target.m_subresource.m_mipSliceCount == 1);
+                    FE_Assert(colorTarget.m_target.m_subresource.m_arraySize == 1);
+
+                    const uint32_t accessIndex = pass.m_accessedTextures.size();
 
                     TextureAccess access;
                     access.m_syncFlags = Core::BarrierSyncFlags::kRenderTarget;
                     access.m_accessFlags = Core::BarrierAccessFlags::kRenderTarget;
                     access.m_layout = Core::BarrierLayout::kRenderTarget;
-                    access.m_subresource = Core::TextureSubresource::CreateWhole(colorTarget.m_target->GetDesc());
+                    access.m_subresource = colorTarget.m_target.m_subresource;
+                    RegisterResource(colorTarget.m_target.m_resource, pass, access);
+                    FE_AssertDebug(pass.m_accessedTextures.size() == accessIndex + 1);
 
-                    pass.m_colorTargetLocalIndices[colorTargetIndex] = RegisterResource(colorTarget.m_target, pass, access);
+                    pass.m_colorTargetAccessIndices.push_back(accessIndex);
                     pass.m_specifiedStatesMask |= PassStateFlags::kColorTarget;
                 }
             }
@@ -235,6 +260,8 @@ namespace FE::Graphics::Common
 
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kDepthTarget));
                 const Core::PassDepthTarget depthTarget = field.Get<Core::PassDepthTarget>(pass.m_userPassDescPtr);
+                FE_Assert(depthTarget.m_target.m_subresource.m_mipSliceCount == 1);
+                FE_Assert(depthTarget.m_target.m_subresource.m_arraySize == 1);
 
                 const auto* graphicsPipeline = RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
                 const bool isDepthWriteEnabled = graphicsPipeline->GetDesc().m_depthStencil.m_depthWriteEnabled;
@@ -243,13 +270,17 @@ namespace FE::Graphics::Common
                 if (isDepthWriteEnabled)
                     accessFlags |= Core::BarrierAccessFlags::kDepthStencilWrite;
 
+                const uint32_t accessIndex = pass.m_accessedTextures.size();
+
                 TextureAccess access;
                 access.m_syncFlags = Core::BarrierSyncFlags::kDepthStencil;
                 access.m_accessFlags = accessFlags;
                 access.m_layout = Core::BarrierLayout::kDepthStencilWrite;
-                access.m_subresource = Core::TextureSubresource::CreateWhole(depthTarget.m_target->GetDesc());
+                access.m_subresource = depthTarget.m_target.m_subresource;
+                RegisterResource(depthTarget.m_target.m_resource, pass, access);
+                FE_AssertDebug(pass.m_accessedTextures.size() == accessIndex + 1);
 
-                pass.m_depthTargetLocalIndex = RegisterResource(depthTarget.m_target, pass, access);
+                pass.m_depthTargetAccessIndex = accessIndex;
                 pass.m_specifiedStatesMask |= PassStateFlags::kDepthTarget;
             }
             else if (field.m_type == RTTI::GetTypeID<Core::PassViewport>())
@@ -494,9 +525,6 @@ namespace FE::Graphics::Common
 
     void FrameGraph::Compile()
     {
-        for (PassNode& pass : m_passes)
-            PreparePassCompileInfo(pass);
-
         for (ResourceNode& resource : m_resources)
             AccumulateBindFlags(resource);
 
@@ -505,7 +533,10 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraph::Execute() {}
+    void FrameGraph::Execute()
+    {
+        PrepareExecuteInternal();
+    }
 
 
     uint32_t FrameGraph::RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access)

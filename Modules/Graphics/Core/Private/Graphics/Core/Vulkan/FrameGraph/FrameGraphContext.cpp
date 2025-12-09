@@ -1,11 +1,10 @@
 #include <Graphics/Core/Vulkan/Base/Viewport.h>
-#include <Graphics/Core/Vulkan/BindlessManager.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
+#include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
-#include <Graphics/Core/Vulkan/RenderTarget.h>
-#include <Graphics/Core/Vulkan/Viewport.h>
+#include <Graphics/Core/Vulkan/Texture.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -55,12 +54,10 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    FrameGraphContext::FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph, BindlessManager* bindlessManager)
+    FrameGraphContext::FrameGraphContext(Core::Device* device, Core::FrameGraph* frameGraph,
+                                         Core::DescriptorManager* descriptorManager)
         : Common::FrameGraphContext(frameGraph)
-        , m_bindlessManager(bindlessManager)
-        , m_resourceBarrierBatcher(device)
-        , m_signalSemaphores(frameGraph->GetAllocator())
-        , m_waitSemaphores(frameGraph->GetAllocator())
+        , m_descriptorManager(ImplCast(descriptorManager))
     {
         m_device = device;
     }
@@ -69,7 +66,6 @@ namespace FE::Graphics::Vulkan
     void FrameGraphContext::Init(CommandBuffer* graphicsCommandBuffer)
     {
         m_graphicsCommandBuffer = graphicsCommandBuffer;
-        m_resourceBarrierBatcher.Begin(m_graphicsCommandBuffer->GetNative());
     }
 
 
@@ -88,33 +84,42 @@ namespace FE::Graphics::Vulkan
 
         for (uint32_t rtIndex = 0; rtIndex < m_renderTargetState.m_renderTargetCount; ++rtIndex)
         {
-            const RenderTarget* image = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_renderTargets[rtIndex]));
+            const Core::TextureView& renderTargetView = m_renderTargetState.m_renderTargets[rtIndex];
+            const Texture* image = ImplCast(renderTargetView.m_resource);
             const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
             FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
+            FE_Assert(renderTargetView.m_subresource.m_mipSliceCount == 1);
+            FE_Assert(renderTargetView.m_subresource.m_arraySize == 1);
 
             auto& attachmentInfo = colorAttachments[rtIndex];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            attachmentInfo.imageView = image->GetWholeResourceView();
+            attachmentInfo.imageView = image->GetSubresourceView(renderTargetView.m_subresource);
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            SetRenderingAttachmentInfo(
-                attachmentInfo, rtIndex, m_renderTargetState.m_loadOperations, m_renderTargetState.m_storeOperations);
+            SetRenderingAttachmentInfo(attachmentInfo,
+                                       rtIndex,
+                                       m_renderTargetState.m_loadOperations,
+                                       m_renderTargetState.m_storeOperations);
         }
 
         VkRenderingInfo renderingInfo{};
         renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 
+        VkRenderingAttachmentInfo depthAttachment{};
         if (m_renderTargetState.m_depthStencil.IsValid())
         {
-            const RenderTarget* depthImage = ImplCast(m_frameGraph->GetRenderTarget(m_renderTargetState.m_depthStencil));
-            const Core::FormatInfo formatInfo{ depthImage->GetDesc().m_imageFormat };
+            const Core::TextureView& depthStencilView = m_renderTargetState.m_depthStencil;
+            const Texture* image = ImplCast(depthStencilView.m_resource);
+            const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
             FE_Assert(Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kDepthStencil));
+            FE_Assert(depthStencilView.m_subresource.m_mipSliceCount == 1);
+            FE_Assert(depthStencilView.m_subresource.m_arraySize == 1);
 
-            VkRenderingAttachmentInfo depthAttachment{};
             depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            depthAttachment.imageView = depthImage->GetWholeResourceView();
+            depthAttachment.imageView = image->GetSubresourceView(depthStencilView.m_subresource);
             depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            SetRenderingDepthAttachmentInfo(
-                depthAttachment, m_renderTargetState.m_loadOperations, m_renderTargetState.m_storeOperations);
+            SetRenderingDepthAttachmentInfo(depthAttachment,
+                                            m_renderTargetState.m_loadOperations,
+                                            m_renderTargetState.m_storeOperations);
 
             renderingInfo.pDepthAttachment = &depthAttachment;
             renderingInfo.pStencilAttachment = &depthAttachment;
@@ -128,35 +133,40 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraphContext::DrawImpl(const Core::DrawCall& drawCall)
+    void FrameGraphContext::DrawImpl(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t indexOffset,
+                                     const uint32_t vertexOffset, const uint32_t instanceOffset)
     {
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
         BeginRendering(vkCommandBuffer);
 
-        vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, drawCall.m_stencilRef);
+        if (m_stencilRefState.m_dirty)
+            vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
-        const GraphicsPipeline* pipeline = ImplCast(drawCall.m_pipeline);
+        const GraphicsPipeline* pipeline = ImplCast(m_pipelineState.m_graphicsPipeline);
         FE_Assert(pipeline->IsReady());
 
-        const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
+        const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipeline->GetNativeLayout();
-        if (descriptorSet)
+        if (descriptorSet && m_pipelineState.m_dirty)
         {
-            vkCmdBindDescriptorSets(
-                vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipelineLayout,
+                                    0,
+                                    1,
+                                    &descriptorSet,
+                                    0,
+                                    nullptr);
         }
 
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
-        {
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
-        }
 
-        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetNative());
+        if (m_pipelineState.m_dirty)
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetNative());
 
         const Core::GraphicsPipelineDesc& pipelineDesc = pipeline->GetDesc();
         const Core::InputStreamLayout& inputLayout = pipelineDesc.m_inputLayout;
-
-        const Core::GeometryView& geometryView = drawCall.m_geometryView;
 
         VkBuffer vertexBuffers[Core::Limits::Pipeline::kMaxVertexStreams] = {};
         VkDeviceSize vertexBufferOffsets[Core::Limits::Pipeline::kMaxVertexStreams] = {};
@@ -164,82 +174,63 @@ namespace FE::Graphics::Vulkan
         uint32_t streamViewIndex = 0;
         const uint32_t activeStreamMask = inputLayout.CalculateActiveStreamMask();
         Bit::Traverse(activeStreamMask, [&](const uint32_t streamIndex) {
-            const Core::StreamBufferView streamView = geometryView.m_streamBufferViews[streamViewIndex++];
-            vertexBuffers[streamIndex] = NativeCast(streamView.m_buffer);
-            vertexBufferOffsets[streamIndex] = streamView.m_byteOffset;
+            const Core::BufferView streamView = m_streamBufferViews[streamViewIndex++];
+            FE_Assert(streamView.IsValid());
+            vertexBuffers[streamIndex] = NativeCast(streamView.m_resource);
+            vertexBufferOffsets[streamIndex] = streamView.m_subresource.m_offset;
         });
 
         if (const uint32_t vertexBufferCount = Bit::PopCount(activeStreamMask); vertexBufferCount > 0)
             vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBufferCount, vertexBuffers, vertexBufferOffsets);
 
-        const Core::IndexBufferView indexView = geometryView.m_indexBufferView;
-        if (indexView.m_byteSize > 0)
+        if (m_indexBufferView.IsValid())
         {
-            const VkBuffer indexBuffer = NativeCast(indexView.m_buffer);
-            const VkIndexType indexType =
-                indexView.m_indexType == Core::IndexType::kUint16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-
-            vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer, indexView.m_byteOffset, indexType);
+            const VkBuffer indexBuffer = NativeCast(m_indexBufferView.m_resource);
+            const VkIndexType indexType = m_indexType == Core::IndexType::kUint16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+            vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer, m_indexBufferView.m_subresource.m_offset, indexType);
         }
 
-        const Core::DrawArguments drawArgs = geometryView.m_drawArguments;
-        switch (drawArgs.m_type)
-        {
-        case Core::DrawArgumentsType::kLinear:
-            {
-                const Core::DrawArgumentsLinear& args = drawArgs.m_linear;
-                vkCmdDraw(vkCommandBuffer,
-                          args.m_vertexCount,
-                          drawCall.m_instanceCount,
-                          args.m_vertexOffset,
-                          drawCall.m_instanceOffset);
-            }
-            break;
-        case Core::DrawArgumentsType::kIndexed:
-            {
-                const Core::DrawArgumentsIndexed& args = drawArgs.m_indexed;
-                vkCmdDrawIndexed(vkCommandBuffer,
-                                 drawArgs.m_indexed.m_indexCount,
-                                 drawCall.m_instanceCount,
-                                 args.m_indexOffset,
-                                 static_cast<int32_t>(args.m_vertexOffset),
-                                 drawCall.m_instanceOffset);
-            }
-            break;
-        default:
-            FE_DebugBreak();
-            break;
-        }
+        vkCmdDrawIndexed(vkCommandBuffer,
+                         indexCount,
+                         instanceCount,
+                         indexOffset,
+                         static_cast<int32_t>(vertexOffset),
+                         instanceOffset);
 
         vkCmdEndRendering(vkCommandBuffer);
     }
 
 
-    void FrameGraphContext::DispatchMeshImpl(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount,
-                                             uint32_t stencilRef)
+    void FrameGraphContext::DispatchMeshImpl(const Vector3UInt workGroupCount)
     {
-        const GraphicsPipeline* pipelineImpl = ImplCast(pipeline);
+        const GraphicsPipeline* pipelineImpl = ImplCast(m_pipelineState.m_graphicsPipeline);
         FE_Assert(pipelineImpl->IsReady());
 
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
         BeginRendering(vkCommandBuffer);
 
-        vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, stencilRef);
+        if (m_stencilRefState.m_dirty)
+            vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
-        const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
+        const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
-        if (descriptorSet)
+        if (descriptorSet && m_pipelineState.m_dirty)
         {
-            vkCmdBindDescriptorSets(
-                vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipelineLayout,
+                                    0,
+                                    1,
+                                    &descriptorSet,
+                                    0,
+                                    nullptr);
         }
 
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
-        {
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
-        }
 
-        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineImpl->GetNative());
+        if (m_pipelineState.m_dirty)
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineImpl->GetNative());
 
         vkCmdDrawMeshTasksEXT(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
 
@@ -247,27 +238,32 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraphContext::DispatchImpl(const Core::ComputePipeline* pipeline, const Vector3UInt workGroupCount)
+    void FrameGraphContext::DispatchImpl(const Vector3UInt workGroupCount)
     {
-        const ComputePipeline* pipelineImpl = ImplCast(pipeline);
+        const ComputePipeline* pipelineImpl = ImplCast(m_pipelineState.m_computePipeline);
         FE_Assert(pipelineImpl->IsReady());
 
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
 
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
-        const VkDescriptorSet descriptorSet = m_bindlessManager->GetDescriptorSet();
-        if (descriptorSet)
+        const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
+        if (descriptorSet && m_pipelineState.m_dirty)
         {
-            vkCmdBindDescriptorSets(
-                vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffer,
+                                    VK_PIPELINE_BIND_POINT_COMPUTE,
+                                    pipelineLayout,
+                                    0,
+                                    1,
+                                    &descriptorSet,
+                                    0,
+                                    nullptr);
         }
 
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
-        {
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
-        }
 
-        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
+        if (m_pipelineState.m_dirty)
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
 
         vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
     }

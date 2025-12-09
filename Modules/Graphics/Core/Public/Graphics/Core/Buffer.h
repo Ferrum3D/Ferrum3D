@@ -1,21 +1,10 @@
 ﻿#pragma once
+#include <Graphics/Core/Barrier.h>
 #include <Graphics/Core/ImageFormat.h>
 #include <Graphics/Core/Resource.h>
-#include <Graphics/Core/Barrier.h>
 
 namespace FE::Graphics::Core
 {
-    struct BufferSubresource final
-    {
-        uint32_t m_offset = 0;
-        uint32_t m_size = 0;
-
-        static const BufferSubresource kInvalid;
-    };
-
-    inline const BufferSubresource BufferSubresource::kInvalid = { kInvalidIndex, kInvalidIndex };
-
-
     struct BufferDesc final
     {
         uint32_t m_size = 0;
@@ -38,6 +27,22 @@ namespace FE::Graphics::Core
     };
 
 
+    struct BufferSubresource final
+    {
+        uint32_t m_offset = 0;
+        uint32_t m_size = 0;
+
+        static const BufferSubresource kInvalid;
+
+        static BufferSubresource CreateWhole(const BufferDesc desc)
+        {
+            return { 0, desc.m_size };
+        }
+    };
+
+    inline const BufferSubresource BufferSubresource::kInvalid = { kInvalidIndex, kInvalidIndex };
+
+
     struct Buffer : public Resource
     {
         FE_RTTI("2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
@@ -53,6 +58,9 @@ namespace FE::Graphics::Core
     protected:
         BufferDesc m_desc;
     };
+
+
+    using BufferView = BaseResourceView<Buffer, BufferDesc, BufferSubresource>;
 } // namespace FE::Graphics::Core
 
 

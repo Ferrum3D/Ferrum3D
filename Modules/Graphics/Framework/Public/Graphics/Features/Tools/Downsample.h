@@ -23,6 +23,6 @@ namespace FE::Graphics::Tools::Downsample
 
     inline constexpr uint32_t kMaxMipCount = 12;
 
-    festd::fixed_vector<Core::Texture*, kMaxMipCount> AddPass(Core::FrameGraph& graph, Core::Texture* src,
+    festd::fixed_vector<Core::Texture*, kMaxMipCount> AddPass(Core::FrameGraph& graph, Core::TextureView src,
                                                               const Settings& settings = {});
 } // namespace FE::Graphics::Tools::Downsample

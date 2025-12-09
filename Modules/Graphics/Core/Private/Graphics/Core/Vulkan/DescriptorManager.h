@@ -52,4 +52,6 @@ namespace FE::Graphics::Vulkan
 
         festd::fixed_vector<RetiredSet, kMaxDescriptorSets> m_retiredSets;
     };
+
+    FE_ENABLE_IMPL_CAST(DescriptorManager);
 } // namespace FE::Graphics::Vulkan

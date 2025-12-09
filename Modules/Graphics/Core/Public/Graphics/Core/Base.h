@@ -20,6 +20,7 @@ namespace FE::Graphics::Core
     struct PipelineBase;
     struct GraphicsPipeline;
     struct ComputePipeline;
+    struct DescriptorManager;
 
     struct AsyncCopyQueue;
     struct ResourcePool;

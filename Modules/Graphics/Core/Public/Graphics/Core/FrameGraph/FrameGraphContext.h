@@ -6,6 +6,7 @@
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/GeometryView.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
 {
@@ -192,16 +193,11 @@ namespace FE::Graphics::Core
 
         virtual void SetRenderTargetStoreOperations(const RenderTargetStoreOperations& operations) = 0;
 
-        virtual void SetRenderTargets(festd::span<const Texture*> renderTargets, const Texture* depthStencil) = 0;
+        virtual void SetRenderTargets(festd::span<const TextureView> renderTargets, TextureView depthStencil) = 0;
 
-        void SetRenderTarget(const Texture* renderTarget, const Texture* depthStencilTarget)
+        void SetRenderTarget(const TextureView renderTarget, const TextureView depthStencilTarget = TextureView::kInvalid)
         {
             SetRenderTargets({ &renderTarget, 1 }, depthStencilTarget);
-        }
-
-        void SetRenderTarget(const Texture* renderTarget)
-        {
-            SetRenderTargets({ &renderTarget, 1 }, nullptr);
         }
 
         virtual void SetViewportAndScissor(RectF viewport, RectInt scissor) = 0;
@@ -221,10 +217,13 @@ namespace FE::Graphics::Core
         virtual void SetPipeline(const GraphicsPipeline* pipeline) = 0;
         virtual void SetPipeline(const ComputePipeline* pipeline) = 0;
 
-        virtual void SetStencilRef(uint32_t stencilRef) = 0;
+        virtual void SetStencilRef(uint8_t stencilRef) = 0;
 
-        virtual void DrawIndexedInstanced(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset,
-                                          uint32_t instanceOffset) = 0;
+        virtual void SetStreamBuffers(festd::span<const BufferView> bufferViews) = 0;
+        virtual void SetIndexBuffer(BufferView bufferView, IndexType indexType) = 0;
+
+        virtual void DrawIndexedInstanced(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset,
+                                          uint32_t vertexOffset, uint32_t instanceOffset) = 0;
         virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
         virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
 

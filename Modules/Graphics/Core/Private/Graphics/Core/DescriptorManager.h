@@ -25,8 +25,8 @@ namespace FE::Graphics::Core
             BufferSubresource m_bufferSubresource;
         };
 
-        ResourceDescriptorInfo(Texture* texture, TextureSubresource subresource);
-        ResourceDescriptorInfo(Buffer* buffer, BufferSubresource subresource);
+        explicit ResourceDescriptorInfo(TextureView texture);
+        explicit ResourceDescriptorInfo(BufferView buffer);
     };
 
 
@@ -34,8 +34,8 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("7238722E-6241-4EB2-B140-C0545346DD57");
 
-        [[nodiscard]] uint32_t ReserveDescriptor(Texture* texture, TextureSubresource subresource);
-        [[nodiscard]] uint32_t ReserveDescriptor(Buffer* buffer, BufferSubresource subresource);
+        [[nodiscard]] uint32_t ReserveDescriptor(TextureView texture);
+        [[nodiscard]] uint32_t ReserveDescriptor(BufferView buffer);
         [[nodiscard]] uint32_t ReserveDescriptor(SamplerState samplerState);
 
         void CommitResourceDescriptor(uint32_t descriptorIndex, DescriptorType type);

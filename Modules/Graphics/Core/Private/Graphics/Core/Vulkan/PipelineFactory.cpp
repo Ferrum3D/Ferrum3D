@@ -1,7 +1,8 @@
 #include <FeCore/DI/Activator.h>
 #include <FeCore/Jobs/Job.h>
-#include <Graphics/Core/Vulkan/BindlessManager.h>
+#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
+#include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
@@ -26,13 +27,13 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    PipelineFactory::PipelineFactory(Core::Device* device, BindlessManager* bindlessManager, IJobSystem* jobSystem,
+    PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager, IJobSystem* jobSystem,
                                      Logger* logger)
         : m_graphicsPipelinePool("GraphicsPipelinePool", sizeof(GraphicsPipeline))
         , m_computePipelinePool("ComputePipelinePool", sizeof(ComputePipeline))
         , m_jobPool("PipelineAsyncCompilationJobPool",
                     Math::Max(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
-        , m_bindlessManager(bindlessManager)
+        , m_descriptorManager(ImplCast(bindlessManager))
         , m_jobSystem(jobSystem)
         , m_logger(logger)
     {
@@ -104,7 +105,7 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_pipelineCache = m_pipelineCache;
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
         job->m_context.m_logger = m_logger;
-        job->m_context.m_bindlessSetLayout = m_bindlessManager->GetDescriptorSetLayout();
+        job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
         job->ScheduleBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;
@@ -140,7 +141,7 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_pipelineCache = m_pipelineCache;
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
         job->m_context.m_logger = m_logger;
-        job->m_context.m_bindlessSetLayout = m_bindlessManager->GetDescriptorSetLayout();
+        job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
         job->ScheduleBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;

@@ -34,9 +34,9 @@ namespace FE::Graphics::Tools
     } // namespace
 
 
-    void Blit::AddPass(Core::FrameGraph& graph, Core::Texture* src, Core::Texture* dst, const Settings settings)
+    void Blit::AddPass(Core::FrameGraph& graph, const Core::TextureView src, const Core::TextureView dst, const Settings settings)
     {
-        const Core::Format colorTargetFormat = dst->GetDesc().m_imageFormat;
+        const Core::Format colorTargetFormat = dst.GetBaseDesc().m_imageFormat;
 
         Pipeline::Specializer specializer;
         specializer.Set<Pipeline::ColorTargetFormat>(colorTargetFormat);

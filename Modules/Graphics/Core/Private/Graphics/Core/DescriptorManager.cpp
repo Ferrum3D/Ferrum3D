@@ -2,17 +2,17 @@
 
 namespace FE::Graphics::Core
 {
-    ResourceDescriptorInfo::ResourceDescriptorInfo(Texture* texture, const TextureSubresource subresource)
+    ResourceDescriptorInfo::ResourceDescriptorInfo(const TextureView texture)
     {
-        m_resource = texture;
-        m_textureSubresource = subresource;
+        m_resource = texture.m_resource;
+        m_textureSubresource = texture.m_subresource;
     }
 
 
-    ResourceDescriptorInfo::ResourceDescriptorInfo(Buffer* buffer, const BufferSubresource subresource)
+    ResourceDescriptorInfo::ResourceDescriptorInfo(const BufferView buffer)
     {
-        m_resource = buffer;
-        m_bufferSubresource = subresource;
+        m_resource = buffer.m_resource;
+        m_bufferSubresource = buffer.m_subresource;
     }
 
 
@@ -37,35 +37,35 @@ namespace FE::Graphics::Core
     }
 
 
-    uint32_t DescriptorManager::ReserveDescriptor(Texture* texture, const TextureSubresource subresource)
+    uint32_t DescriptorManager::ReserveDescriptor(const TextureView texture)
     {
         TextureKey key;
-        key.m_resourceID = texture->GetResourceID();
-        key.m_subresource = subresource;
+        key.m_resourceID = texture.m_resource->GetResourceID();
+        key.m_subresource = texture.m_subresource;
 
         const auto it = m_textureDescriptorMap.find(key);
         if (it != m_textureDescriptorMap.end())
             return it->second;
 
         const uint32_t descriptorIndex = m_resourceDescriptors.size();
-        m_resourceDescriptors.push_back({ texture, subresource });
+        m_resourceDescriptors.push_back(ResourceDescriptorInfo{ texture });
         m_textureDescriptorMap[key] = descriptorIndex;
         return descriptorIndex;
     }
 
 
-    uint32_t DescriptorManager::ReserveDescriptor(Buffer* buffer, const BufferSubresource subresource)
+    uint32_t DescriptorManager::ReserveDescriptor(const BufferView buffer)
     {
         BufferKey key;
-        key.m_resourceID = buffer->GetResourceID();
-        key.m_subresource = subresource;
+        key.m_resourceID = buffer.m_resource->GetResourceID();
+        key.m_subresource = buffer.m_subresource;
 
         const auto it = m_bufferDescriptorMap.find(key);
         if (it != m_bufferDescriptorMap.end())
             return it->second;
 
         const uint32_t descriptorIndex = m_resourceDescriptors.size();
-        m_resourceDescriptors.push_back({ buffer, subresource });
+        m_resourceDescriptors.push_back(ResourceDescriptorInfo{ buffer });
         m_bufferDescriptorMap[key] = descriptorIndex;
         return descriptorIndex;
     }

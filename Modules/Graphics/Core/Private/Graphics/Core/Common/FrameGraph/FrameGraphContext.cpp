@@ -38,20 +38,11 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::SetRenderTargets(const festd::span<const Core::RenderTargetHandle> renderTargets,
-                                             const Core::RenderTargetHandle depthStencil)
+    void FrameGraphContext::SetRenderTargets(const festd::span<const Core::TextureView> renderTargets,
+                                             const Core::TextureView depthStencil)
     {
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kRenderTargets), "Render targets already set");
         m_setStateMask |= PipelineStateFlags::kRenderTargets;
-
-        for (Core::RenderTargetHandle handle : renderTargets)
-        {
-            if (handle.IsValid())
-                FE_Assert(handle.m_desc.m_accessType == festd::to_underlying(Core::ImageWriteType::kColorTarget));
-        }
-
-        if (depthStencil.IsValid())
-            FE_Assert(depthStencil.m_desc.m_accessType == festd::to_underlying(Core::ImageWriteType::kDepthStencilTarget));
 
         festd::copy(renderTargets.begin(), renderTargets.end(), m_renderTargetState.m_renderTargets);
         m_renderTargetState.m_renderTargetCount = renderTargets.size();
@@ -73,41 +64,121 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::Draw(const Core::DrawCall& drawCall)
+    void FrameGraphContext::SetPipeline(const Core::GraphicsPipeline* pipeline)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kGraphicsPipeline | PipelineStateFlags::kComputePipeline),
+                  "Pipeline already set");
+        m_setStateMask |= PipelineStateFlags::kGraphicsPipeline;
+
+        if (m_pipelineState.m_graphicsPipeline != pipeline)
+        {
+            m_pipelineState.m_graphicsPipeline = pipeline;
+            m_pipelineState.m_computePipeline = nullptr;
+            m_pipelineState.m_dirty = true;
+        }
+
+        FE_AssertDebug(m_pipelineState.m_computePipeline == nullptr);
+    }
+
+
+    void FrameGraphContext::SetPipeline(const Core::ComputePipeline* pipeline)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kGraphicsPipeline | PipelineStateFlags::kComputePipeline),
+                  "Pipeline already set");
+        m_setStateMask |= PipelineStateFlags::kComputePipeline;
+
+        if (m_pipelineState.m_computePipeline != pipeline)
+        {
+            m_pipelineState.m_computePipeline = pipeline;
+            m_pipelineState.m_graphicsPipeline = nullptr;
+            m_pipelineState.m_dirty = true;
+        }
+
+        FE_AssertDebug(m_pipelineState.m_graphicsPipeline == nullptr);
+    }
+
+
+    void FrameGraphContext::SetStencilRef(const uint8_t stencilRef)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kStencilRef), "Stencil ref already set");
+        m_setStateMask |= PipelineStateFlags::kStencilRef;
+
+        if (m_stencilRefState.m_stencilRef != stencilRef)
+        {
+            m_stencilRefState.m_stencilRef = stencilRef;
+            m_stencilRefState.m_dirty = true;
+        }
+    }
+
+
+    void FrameGraphContext::SetStreamBuffers(const festd::span<const Core::BufferView> bufferViews)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kStreamBuffers), "Stream buffers already set");
+        m_setStateMask |= PipelineStateFlags::kStreamBuffers;
+
+        festd::copy(bufferViews.begin(), bufferViews.end(), m_streamBufferViews);
+    }
+
+
+    void FrameGraphContext::SetIndexBuffer(const Core::BufferView bufferView, const Core::IndexType indexType)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kIndexBuffer), "Index buffer already set");
+        m_setStateMask |= PipelineStateFlags::kIndexBuffer;
+
+        m_indexBufferView = bufferView;
+        m_indexType = indexType;
+    }
+
+
+    void FrameGraphContext::DrawIndexedInstanced(const uint32_t indexCount, const uint32_t instanceCount,
+                                                 const uint32_t indexOffset, const uint32_t vertexOffset,
+                                                 const uint32_t instanceOffset)
     {
         FE_PROFILER_ZONE();
 
         FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
                   "All pipeline states must be set before drawing");
-        DrawImpl(drawCall);
-
-        m_setStateMask = PipelineStateFlags::kNone;
-        m_viewportScissorState.m_dirty = false;
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
+                  "Compute pipeline must not be set when drawing");
+        DrawImpl(indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+        ClearStatesInternal();
     }
 
 
-    void FrameGraphContext::DispatchMesh(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount, uint32_t stencilRef)
+    void FrameGraphContext::DispatchMesh(const Core::ComputeWorkGroupCount workGroupCount)
     {
         FE_PROFILER_ZONE();
 
         FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
-                  "All pipeline states must be set before dispatching mesh shader");
-        DispatchMeshImpl(pipeline, workGroupCount, stencilRef);
-
-        m_setStateMask = PipelineStateFlags::kNone;
-        m_viewportScissorState.m_dirty = false;
+                  "All pipeline states must be set before drawing");
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
+                  "Compute pipeline must not be set when drawing");
+        DispatchMeshImpl(workGroupCount.m_workGroupCount);
+        ClearStatesInternal();
     }
 
 
-    void FrameGraphContext::Dispatch(const Core::ComputePipeline* pipeline, const Vector3UInt workGroupCount)
+    void FrameGraphContext::Dispatch(const Core::ComputeWorkGroupCount workGroupCount)
     {
         FE_PROFILER_ZONE();
 
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline),
+                  "Compute pipeline must be set before dispatching");
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
                   "Only compute related pipeline states can be set before dispatching");
-        DispatchImpl(pipeline, workGroupCount);
+        DispatchImpl(workGroupCount.m_workGroupCount);
+        ClearStatesInternal();
+    }
 
+
+    void FrameGraphContext::ClearStatesInternal()
+    {
         m_setStateMask = PipelineStateFlags::kNone;
         m_viewportScissorState.m_dirty = false;
+        m_pipelineState.m_dirty = false;
+        m_stencilRefState.m_dirty = false;
+
+        festd::fill_n(m_streamBufferViews, festd::size(m_streamBufferViews), Core::StreamBufferView{});
+        m_indexBufferView = {};
     }
 } // namespace FE::Graphics::Common

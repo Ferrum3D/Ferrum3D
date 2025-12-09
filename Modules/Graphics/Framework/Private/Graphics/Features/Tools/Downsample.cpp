@@ -57,11 +57,12 @@ namespace FE::Graphics::Tools
     } // namespace
 
 
-    festd::fixed_vector<Core::Texture*, Downsample::kMaxMipCount> Downsample::AddPass(Core::FrameGraph& graph, Core::Texture* src,
+    festd::fixed_vector<Core::Texture*, Downsample::kMaxMipCount> Downsample::AddPass(Core::FrameGraph& graph,
+                                                                                      const Core::TextureView src,
                                                                                       const Settings& settings)
     {
-        const Core::TextureDesc sourceDesc = src->GetDesc();
-        const Env::Name sourceName = src->GetName();
+        const Core::TextureDesc sourceDesc = src.GetBaseDesc();
+        const Env::Name sourceName = src.GetName();
         const RectUInt rect = RectUInt::FromPosAndSize({ 0, 0 }, sourceDesc.GetSize2D());
 
         Vector2UInt dispatchThreadGroupCount;

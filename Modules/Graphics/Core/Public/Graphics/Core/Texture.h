@@ -8,7 +8,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("816F7FB8-A3C4-4D22-B8F0-A88D8DB78F47");
 
-        const TextureDesc& GetDesc() const
+        [[nodiscard]] const TextureDesc& GetDesc() const
         {
             return m_desc;
         }
@@ -16,4 +16,7 @@ namespace FE::Graphics::Core
     protected:
         TextureDesc m_desc = {};
     };
+
+
+    using TextureView = BaseResourceView<Texture, TextureDesc, TextureSubresource>;
 } // namespace FE::Graphics::Core

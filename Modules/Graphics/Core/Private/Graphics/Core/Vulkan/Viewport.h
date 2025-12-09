@@ -8,7 +8,6 @@ namespace FE::Graphics::Vulkan
 {
     struct DeviceFactory;
     struct FrameGraphContext;
-    struct RenderTarget;
     struct GraphicsCommandQueue;
 
     struct Viewport final : public Core::Viewport

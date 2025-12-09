@@ -76,7 +76,6 @@ FE_RTTI_Reflect(FE::Graphics::SamplerDescriptor, "0ADC65DE-1BA6-4A60-B320-333AD0
 namespace FE::Graphics::Core
 {
     struct FrameGraph;
-    struct FrameGraphPassBuilder;
     struct FrameGraphBlackboard;
     struct FrameGraphContext;
 
@@ -92,13 +91,16 @@ namespace FE::Graphics::Core
 
     struct [[nodiscard]] FrameGraphTextureDescriptorHandle final
     {
-        operator TextureSRVDescriptor() const;
-        operator TextureUAVDescriptor() const;
+        operator TextureSRVDescriptor() const
+        {
+            return TextureSRVDescriptor{ m_descriptorIndex };
+        }
 
-    private:
-        friend FrameGraph;
+        operator TextureUAVDescriptor() const
+        {
+            return TextureUAVDescriptor{ m_descriptorIndex };
+        }
 
-        FrameGraph* m_graph = nullptr;
         uint32_t m_descriptorIndex = kInvalidIndex;
     };
 
@@ -115,7 +117,6 @@ namespace FE::Graphics::Core
             return BufferUAVDescriptor{ m_descriptorIndex };
         }
 
-    private:
         uint32_t m_descriptorIndex = kInvalidIndex;
     };
 } // namespace FE::Graphics::Core

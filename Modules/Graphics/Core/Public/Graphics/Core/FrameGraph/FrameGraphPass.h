@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Math/Rect.h>
+#include <Graphics/Core/Texture.h>
 
 //! @brief Declare RTTI for a pass data type without specifying a UUID.
 //!
@@ -11,7 +12,6 @@ namespace FE::Graphics::Core
 {
     struct GraphicsPipeline;
     struct ComputePipeline;
-    struct Texture;
 
 
     struct PassGraphicsPipeline final
@@ -40,18 +40,12 @@ namespace FE::Graphics::Core
 
     struct PassColorTarget final
     {
-        Texture* m_target = nullptr;
-        uint32_t m_explicitIndex = kInvalidIndex;
+        TextureView m_target = TextureView::kInvalid;
 
         PassColorTarget() = default;
-        PassColorTarget(Texture* target)
-            : m_target(target)
-        {
-        }
 
-        PassColorTarget(Texture* target, const uint32_t index)
+        PassColorTarget(const TextureView target)
             : m_target(target)
-            , m_explicitIndex(index)
         {
         }
     };
@@ -59,10 +53,11 @@ namespace FE::Graphics::Core
 
     struct PassDepthTarget final
     {
-        Texture* m_target = nullptr;
+        TextureView m_target = TextureView::kInvalid;
 
         PassDepthTarget() = default;
-        PassDepthTarget(Texture* target)
+
+        PassDepthTarget(const TextureView target)
             : m_target(target)
         {
         }

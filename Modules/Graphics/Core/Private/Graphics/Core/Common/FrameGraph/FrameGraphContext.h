@@ -13,7 +13,12 @@ namespace FE::Graphics::Common
         kRenderTargets = 1 << 2,
         kViewportScissor = 1 << 3,
         kPushConstants = 1 << 4,
-        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor,
+        kStencilRef = 1 << 5,
+        kGraphicsPipeline = 1 << 6,
+        kComputePipeline = 1 << 7,
+        kStreamBuffers = 1 << 8,
+        kIndexBuffer = 1 << 9,
+        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor | kGraphicsPipeline,
         kAll = kAllRequiredForGraphics | kPushConstants,
     };
 
@@ -27,25 +32,33 @@ namespace FE::Graphics::Common
         void PushConstants(const void* data, uint32_t size) override;
 
         void SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations) final;
-
         void SetRenderTargetStoreOperations(const Core::RenderTargetStoreOperations& operations) final;
-
-        void SetRenderTargets(festd::span<const Core::RenderTargetHandle> renderTargets,
-                              Core::RenderTargetHandle depthStencil) final;
+        void SetRenderTargets(festd::span<const Core::TextureView> renderTargets, Core::TextureView depthStencil) final;
 
         void SetViewportAndScissor(RectF viewport, RectInt scissor) final;
 
-        void Draw(const Core::DrawCall& drawCall) final;
-        void DispatchMesh(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount, uint32_t stencilRef) override;
-        void Dispatch(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) override;
+        void SetPipeline(const Core::GraphicsPipeline* pipeline) final;
+        void SetPipeline(const Core::ComputePipeline* pipeline) final;
+
+        void SetStencilRef(uint8_t stencilRef) final;
+
+        void SetStreamBuffers(festd::span<const Core::BufferView> bufferViews) override;
+        void SetIndexBuffer(Core::BufferView bufferView, Core::IndexType indexType) override;
+
+        void DrawIndexedInstanced(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                                  uint32_t instanceOffset) final;
+        void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
+        void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
 
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
 
-        virtual void DrawImpl(const Core::DrawCall& drawCall) = 0;
-        virtual void DispatchMeshImpl(const Core::GraphicsPipeline* pipeline, Vector3UInt workGroupCount,
-                                      uint32_t stencilRef) = 0;
-        virtual void DispatchImpl(const Core::ComputePipeline* pipeline, Vector3UInt workGroupCount) = 0;
+        virtual void DrawImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                              uint32_t instanceOffset) = 0;
+        virtual void DispatchMeshImpl(Vector3UInt workGroupCount) = 0;
+        virtual void DispatchImpl(Vector3UInt workGroupCount) = 0;
+
+        void ClearStatesInternal();
 
         struct ViewportScissorState final
         {
@@ -58,10 +71,27 @@ namespace FE::Graphics::Common
         {
             Core::RenderTargetLoadOperations m_loadOperations = {};
             Core::RenderTargetStoreOperations m_storeOperations = {};
-            Core::RenderTargetHandle m_renderTargets[Core::Limits::Pipeline::kMaxColorAttachments] = {};
-            Core::RenderTargetHandle m_depthStencil;
+            Core::TextureView m_renderTargets[Core::Limits::Pipeline::kMaxColorAttachments] = {};
+            Core::TextureView m_depthStencil;
             uint32_t m_renderTargetCount = 0;
         };
+
+        struct PipelineState final
+        {
+            const Core::GraphicsPipeline* m_graphicsPipeline = nullptr;
+            const Core::ComputePipeline* m_computePipeline = nullptr;
+            bool m_dirty = true;
+        };
+
+        struct StencilRefState final
+        {
+            uint8_t m_stencilRef = 0;
+            bool m_dirty = true;
+        };
+
+        Core::BufferView m_streamBufferViews[Core::Limits::Pipeline::kMaxVertexStreams] = {};
+        Core::BufferView m_indexBufferView = Core::BufferView::kInvalid;
+        Core::IndexType m_indexType = Core::IndexType::kUint32;
 
         std::pmr::memory_resource* m_linearAllocator = nullptr;
 
@@ -69,6 +99,8 @@ namespace FE::Graphics::Common
 
         ViewportScissorState m_viewportScissorState;
         RenderTargetState m_renderTargetState;
+        PipelineState m_pipelineState;
+        StencilRefState m_stencilRefState;
 
         std::byte m_pushConstants[Core::Limits::Pipeline::kMaxPushConstantsByteSize] = {};
         uint32_t m_pushConstantsSize = 0;

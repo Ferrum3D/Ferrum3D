@@ -75,6 +75,9 @@ namespace FE::festd
     using eastl::sort;
     using eastl::swap;
 
+    using eastl::fill;
+    using eastl::fill_n;
+
     using eastl::find;
     using eastl::find_end;
     using eastl::find_first_not_of;
@@ -135,6 +138,13 @@ namespace FE::festd
     void copy_if(TContainer& container, TOutputIterator output, TFunctor predicate)
     {
         eastl::copy_if(begin(container), end(container), output, predicate);
+    }
+
+
+    template<class TContainer>
+    void fill(TContainer& container, const ContainerType<TContainer>& value)
+    {
+        eastl::fill(begin(container), end(container), value);
     }
 
 

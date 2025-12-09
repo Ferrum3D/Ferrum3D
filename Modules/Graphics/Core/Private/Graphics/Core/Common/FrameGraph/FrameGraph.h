@@ -32,6 +32,10 @@ namespace FE::Graphics::Common
         void BeginFrame() override;
         void CompileAndExecute() override;
 
+        Core::FrameGraphTextureDescriptorHandle GetDescriptor(Core::TextureView texture) override;
+        Core::FrameGraphBufferDescriptorHandle GetDescriptor(Core::BufferView buffer) override;
+        SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
+
     protected:
         struct TextureAccess final
         {
@@ -49,9 +53,19 @@ namespace FE::Graphics::Common
             Core::BarrierAccessFlags m_accessFlags = Core::BarrierAccessFlags::kNone;
         };
 
-        struct PassNode final : public PassNodeBase
+        struct PassNode final
         {
             explicit PassNode(std::pmr::memory_resource* allocator);
+
+            Env::Name m_name;
+            uint32_t m_passIndex = kInvalidIndex;
+
+            void* m_functor = nullptr;
+            void (*m_execute)(void* functor, Core::FrameGraphContext& context) = nullptr;
+            void (*m_destroy)(void* functor, void* userPassDesc) = nullptr;
+
+            RTTI::TypeID m_userPassDescTypeID = RTTI::TypeID::kNull;
+            void* m_userPassDescPtr = nullptr;
 
             festd::pmr::vector<Core::TextureBarrierDesc> m_textureOwnershipTransferBarriers;
             festd::pmr::vector<Core::BufferBarrierDesc> m_bufferOwnershipTransferBarriers;
@@ -68,8 +82,8 @@ namespace FE::Graphics::Common
             festd::span<const std::byte> m_pushConstants;
             RTTI::TypeID m_pushConstantsTypeID = RTTI::TypeID::kNull;
 
-            festd::array<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetLocalIndices;
-            uint32_t m_depthTargetLocalIndex = kInvalidIndex;
+            festd::fixed_vector<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetAccessIndices;
+            uint32_t m_depthTargetAccessIndex = kInvalidIndex;
 
             RectF m_viewport{ kForceInit };
             RectInt m_scissor{ kForceInit };
@@ -93,9 +107,13 @@ namespace FE::Graphics::Common
             bool m_isOwnedByGraph = false;
         };
 
-        FrameGraph(Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
+        FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
 
-        PassNodeBase& AddPassInternal() override;
+        void AddPassInternal(const PassNodeDesc& desc) override;
+        void CommitPassNode(uint32_t passIndex) override;
+
+        virtual void PrepareExecuteInternal() = 0;
+        virtual void FinishExecuteInternal() = 0;
 
         void ParsePassPushConstants(PassNode& pass, const RTTI::Type& type);
         void PreparePassCompileInfo(PassNode& pass);
