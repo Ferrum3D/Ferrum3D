@@ -3,7 +3,6 @@
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
-#include <Graphics/Core/Vulkan/ResourceBarrierBatcher.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -74,7 +73,6 @@ namespace FE::Graphics::Vulkan
 
         bool m_wasUsed = false;
 
-        ResourceBarrierBatcher m_resourceBarrierBatcher;
         SegmentedVector<Rc<Semaphore>, 256> m_signalSemaphores;
         SegmentedVector<WaitSemaphore, 512> m_waitSemaphores;
 

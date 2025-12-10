@@ -1,5 +1,6 @@
 #include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
+#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
 
 namespace FE::Graphics::Vulkan
@@ -45,7 +46,6 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        m_resourceBarrierBatcher.Flush();
         VerifyVk(vkEndCommandBuffer(m_nativeCommandBuffer));
 
         VkSubmitInfo submitInfo;
@@ -135,7 +135,6 @@ namespace FE::Graphics::Vulkan
         : m_linearAllocator(4096, desc.m_pageAllocator)
         , m_nativeQueue(desc.m_queue)
         , m_nativeCommandPool(desc.m_commandPool)
-        , m_resourceBarrierBatcher(device)
         , m_signalSemaphores(&m_linearAllocator)
         , m_waitSemaphores(&m_linearAllocator)
         , m_signalFences(&m_linearAllocator)

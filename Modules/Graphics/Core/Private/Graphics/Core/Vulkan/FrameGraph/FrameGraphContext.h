@@ -15,8 +15,6 @@ namespace FE::Graphics::Vulkan
 
         void Init(CommandBuffer* graphicsCommandBuffer);
 
-        void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
-
         void DrawImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                       uint32_t instanceOffset) override;
         void DispatchMeshImpl(Vector3UInt workGroupCount) override;
@@ -26,6 +24,8 @@ namespace FE::Graphics::Vulkan
         void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) override;
 
     private:
+        void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
+
         DescriptorManager* m_descriptorManager;
         Rc<CommandBuffer> m_graphicsCommandBuffer;
     };
