@@ -53,15 +53,22 @@ namespace FE::Graphics::Core
             return GetDescriptor(BufferView::Create(buffer));
         }
 
+        void BeginScope(festd::string_view name);
+        void EndScope();
+
         template<class TPassDesc, class TFunctor>
-        void AddPass(Env::Name name, TPassDesc* passDesc, TFunctor&& functor);
+        void AddPass(festd::string_view name, TPassDesc* passDesc, TFunctor&& functor);
 
         template<class TPassDesc>
-        void AddDrawIndexedInstancedPass(Env::Name name, TPassDesc* passDesc, uint32_t vertexCount, uint32_t instanceCount = 1,
-                                         uint32_t vertexOffset = 0, uint32_t instanceOffset = 0);
+        void AddDrawPass(festd::string_view name, TPassDesc* passDesc, uint32_t vertexCount, uint32_t instanceCount = 1,
+                         uint32_t vertexOffset = 0, uint32_t instanceOffset = 0);
 
         template<class TPassDesc>
-        void AddDispatchPass(Env::Name name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
+        void AddDrawIndexedPass(festd::string_view name, TPassDesc* passDesc, uint32_t indexCount, uint32_t instanceCount = 1,
+                                uint32_t indexOffset = 0, uint32_t vertexOffset = 0, uint32_t instanceOffset = 0);
+
+        template<class TPassDesc>
+        void AddDispatchPass(festd::string_view name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
 
     protected:
         friend FrameGraphTextureDescriptorHandle;
@@ -89,15 +96,49 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
+        festd::fixed_string m_currentScope;
     };
 
 
+    inline void FrameGraph::BeginScope(const festd::string_view name)
+    {
+        if (Build::IsDebug())
+        {
+            for (const int32_t codepoint : name)
+            {
+                const char c = static_cast<char>(codepoint);
+                FE_Assert(ASCII::IsValid(codepoint) && (ASCII::IsLetter(c) || ASCII::IsDigit(c)));
+            }
+        }
+
+        if (!m_currentScope.empty())
+            m_currentScope += "/";
+        m_currentScope += name;
+    }
+
+
+    inline void FrameGraph::EndScope()
+    {
+        const auto it = m_currentScope.find_last_of('/');
+        if (it == m_currentScope.end())
+        {
+            m_currentScope.clear();
+            return;
+        }
+
+        m_currentScope.resize(static_cast<uint32_t>(it.m_iter - m_currentScope.data()), 0);
+    }
+
+
     template<class TPassDesc, class TFunctor>
-    void FrameGraph::AddPass(const Env::Name name, TPassDesc* passDesc, TFunctor&& functor)
+    void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, TFunctor&& functor)
     {
         TFunctor* f = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
         PassNodeDesc desc;
-        desc.m_name = name;
+        if (m_currentScope.empty())
+            desc.m_name = Env::Name(name);
+        else
+            desc.m_name = Fmt::FormatName("{}/{}", m_currentScope, name);
         desc.m_functor = f;
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
@@ -118,21 +159,55 @@ namespace FE::Graphics::Core
 
 
     template<class TPassDesc>
-    void FrameGraph::AddDrawIndexedInstancedPass(const Env::Name name, TPassDesc* passDesc, const uint32_t vertexCount,
-                                                 const uint32_t instanceCount, const uint32_t vertexOffset,
-                                                 const uint32_t instanceOffset)
+    void FrameGraph::AddDrawPass(const festd::string_view name, TPassDesc* passDesc, const uint32_t vertexCount,
+                                 const uint32_t instanceCount, const uint32_t vertexOffset, const uint32_t instanceOffset)
     {
         AddPass(name, passDesc, [=](FrameGraphContext& context) {
-            context.DrawIndexedInstanced(vertexCount, instanceCount, vertexOffset, instanceOffset);
+            context.Draw(vertexCount, instanceCount, vertexOffset, instanceOffset);
         });
     }
 
 
     template<class TPassDesc>
-    void FrameGraph::AddDispatchPass(const Env::Name name, TPassDesc* passDesc, const ComputeWorkGroupCount workGroupCount)
+    void FrameGraph::AddDrawIndexedPass(const festd::string_view name, TPassDesc* passDesc, const uint32_t indexCount,
+                                        const uint32_t instanceCount, const uint32_t indexOffset, const uint32_t vertexOffset,
+                                        const uint32_t instanceOffset)
+    {
+        AddPass(name, passDesc, [=](FrameGraphContext& context) {
+            context.DrawIndexed(indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+        });
+    }
+
+
+    template<class TPassDesc>
+    void FrameGraph::AddDispatchPass(const festd::string_view name, TPassDesc* passDesc,
+                                     const ComputeWorkGroupCount workGroupCount)
     {
         AddPass(name, passDesc, [workGroupCount](FrameGraphContext& context) {
             context.Dispatch(workGroupCount);
         });
     }
+
+
+    struct FrameGraphScope final
+    {
+        FrameGraphScope(FrameGraph& graph, const festd::string_view name)
+            : m_graph(graph)
+        {
+            graph.BeginScope(name);
+        }
+
+        ~FrameGraphScope()
+        {
+            m_graph.EndScope();
+        }
+
+        FrameGraphScope(const FrameGraphScope&) = delete;
+        FrameGraphScope& operator=(const FrameGraphScope&) = delete;
+        FrameGraphScope(FrameGraphScope&&) = delete;
+        FrameGraphScope& operator=(FrameGraphScope&&) = delete;
+
+    private:
+        FrameGraph& m_graph;
+    };
 } // namespace FE::Graphics::Core

@@ -55,6 +55,8 @@ namespace FE::Graphics::Vulkan
 
     DescriptorManager::DescriptorManager(Core::Device* device)
     {
+        FE_PROFILER_ZONE();
+
         m_device = ImplCast(device);
         m_fence = Fence::Create(m_device, 0);
 
@@ -125,6 +127,8 @@ namespace FE::Graphics::Vulkan
 
     void DescriptorManager::BeginFrame()
     {
+        FE_PROFILER_ZONE();
+
         const uint64_t completedValue = m_fence->GetCompletedValue();
 
         for (uint32_t i = 0; i < m_retiredSets.size(); ++i)
@@ -147,6 +151,8 @@ namespace FE::Graphics::Vulkan
 
     Core::FenceSyncPoint DescriptorManager::CloseFrame()
     {
+        FE_PROFILER_ZONE();
+
         m_vkResourceDescriptors.reserve(m_resourceDescriptors.size());
 
         Bit::Traverse(m_committedResourceDescriptors.view(), [this](const uint32_t descriptorIndex) {
@@ -228,6 +234,8 @@ namespace FE::Graphics::Vulkan
 
         if (!m_vkSamplerDescriptors.empty())
         {
+            FE_PROFILER_ZONE_NAMED("vkUpdateDescriptorSets");
+
             const auto samplerWrite = CreateWrite(1,
                                                   m_descriptorSet,
                                                   VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -253,6 +261,8 @@ namespace FE::Graphics::Vulkan
 
     VkDescriptorSet DescriptorManager::AllocateDescriptorSet() const
     {
+        FE_PROFILER_ZONE();
+
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_descriptorPool;

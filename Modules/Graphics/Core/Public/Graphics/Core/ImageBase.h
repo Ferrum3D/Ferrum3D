@@ -88,6 +88,20 @@ namespace FE::Graphics::Core
             return subresource;
         }
 
+        static TextureSubresource Create(const TextureDesc desc, const uint32_t mipIndex, const uint32_t arrayIndex)
+        {
+            FE_Assert(mipIndex < desc.m_mipSliceCount);
+            FE_Assert(arrayIndex < desc.m_arraySize);
+
+            TextureSubresource subresource;
+            subresource.m_mostDetailedMipSlice = mipIndex;
+            subresource.m_mipSliceCount = 1;
+            subresource.m_firstArraySlice = arrayIndex;
+            subresource.m_arraySize = 1;
+            subresource.m_aspect = FormatInfo{ desc.m_imageFormat }.m_aspectFlags;
+            return subresource;
+        }
+
         static const TextureSubresource kInvalid;
 
         [[nodiscard]] bool Contains(const TextureSubresource other) const

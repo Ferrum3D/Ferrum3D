@@ -99,6 +99,8 @@ namespace FE::Graphics::Common
 
     void FrameGraph::ParsePassPushConstants(PassNode& pass, const RTTI::Type& type)
     {
+        FE_PROFILER_ZONE();
+
         // Push constants can contain resource descriptor indices.
         // We have to account for the corresponding resources when compiling pass barriers.
 
@@ -197,6 +199,8 @@ namespace FE::Graphics::Common
 
     void FrameGraph::PreparePassCompileInfo(PassNode& pass)
     {
+        FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
+
         const RTTI::Type* descType = RTTI::TypeRegistry::FindType(pass.m_userPassDescTypeID);
         FE_AssertDebug(descType);
 
@@ -353,6 +357,8 @@ namespace FE::Graphics::Common
 
     void FrameGraph::CompilePassBarriers(PassNode& pass)
     {
+        FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
+
         const uint32_t passIndex = pass.m_passIndex;
 
         for (const BufferAccess& access : pass.m_accessedBuffers)
@@ -525,6 +531,8 @@ namespace FE::Graphics::Common
 
     void FrameGraph::Compile()
     {
+        FE_PROFILER_ZONE();
+
         for (ResourceNode& resource : m_resources)
             AccumulateBindFlags(resource);
 
@@ -535,7 +543,19 @@ namespace FE::Graphics::Common
 
     void FrameGraph::Execute()
     {
+        FE_PROFILER_ZONE();
+
         PrepareExecuteInternal();
+
+        for (PassNode& pass : m_passes)
+        {
+            FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
+
+            pass.m_execute(pass.m_functor, *m_currentContext);
+            FE_Assert(m_currentContext->IsCleanState());
+
+            pass.m_destroy(pass.m_functor, pass.m_userPassDescPtr);
+        }
     }
 
 

@@ -71,7 +71,7 @@ namespace FE::Graphics::Vulkan
 
     void FrameGraphContext::BeginRendering(const VkCommandBuffer vkCommandBuffer) const
     {
-        if (m_viewportScissorState.m_dirty)
+        if (m_viewportScissorState.m_action == StateAction::kSet)
         {
             const VkViewport viewport = TranslateViewport(m_viewportScissorState.m_viewport);
             vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
@@ -133,13 +133,9 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void FrameGraphContext::DrawImpl(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t indexOffset,
-                                     const uint32_t vertexOffset, const uint32_t instanceOffset)
+    void FrameGraphContext::PrepareDraw(const VkCommandBuffer vkCommandBuffer)
     {
-        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
-        BeginRendering(vkCommandBuffer);
-
-        if (m_stencilRefState.m_dirty)
+        if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
         const GraphicsPipeline* pipeline = ImplCast(m_pipelineState.m_graphicsPipeline);
@@ -147,7 +143,7 @@ namespace FE::Graphics::Vulkan
 
         const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipeline->GetNativeLayout();
-        if (descriptorSet && m_pipelineState.m_dirty)
+        if (descriptorSet && m_pipelineState.m_action == StateAction::kSet)
         {
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -162,7 +158,7 @@ namespace FE::Graphics::Vulkan
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
 
-        if (m_pipelineState.m_dirty)
+        if (m_pipelineState.m_action == StateAction::kSet)
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetNative());
 
         const Core::GraphicsPipelineDesc& pipelineDesc = pipeline->GetDesc();
@@ -189,6 +185,28 @@ namespace FE::Graphics::Vulkan
             const VkIndexType indexType = m_indexType == Core::IndexType::kUint16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
             vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer, m_indexBufferView.m_subresource.m_offset, indexType);
         }
+    }
+
+
+    void FrameGraphContext::DrawImpl(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t vertexOffset,
+                                     const uint32_t instanceOffset)
+    {
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+        BeginRendering(vkCommandBuffer);
+        PrepareDraw(vkCommandBuffer);
+
+        vkCmdDraw(vkCommandBuffer, vertexCount, instanceCount, vertexOffset, instanceOffset);
+
+        vkCmdEndRendering(vkCommandBuffer);
+    }
+
+
+    void FrameGraphContext::DrawIndexedImpl(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t indexOffset,
+                                            const uint32_t vertexOffset, const uint32_t instanceOffset)
+    {
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+        BeginRendering(vkCommandBuffer);
+        PrepareDraw(vkCommandBuffer);
 
         vkCmdDrawIndexed(vkCommandBuffer,
                          indexCount,
@@ -209,12 +227,12 @@ namespace FE::Graphics::Vulkan
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
         BeginRendering(vkCommandBuffer);
 
-        if (m_stencilRefState.m_dirty)
+        if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
 
         const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
-        if (descriptorSet && m_pipelineState.m_dirty)
+        if (descriptorSet && m_pipelineState.m_action == StateAction::kSet)
         {
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -229,7 +247,7 @@ namespace FE::Graphics::Vulkan
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
 
-        if (m_pipelineState.m_dirty)
+        if (m_pipelineState.m_action == StateAction::kSet)
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineImpl->GetNative());
 
         vkCmdDrawMeshTasksEXT(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
@@ -247,7 +265,7 @@ namespace FE::Graphics::Vulkan
 
         const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
         const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
-        if (descriptorSet && m_pipelineState.m_dirty)
+        if (descriptorSet && m_pipelineState.m_action == StateAction::kSet)
         {
             vkCmdBindDescriptorSets(vkCommandBuffer,
                                     VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -262,7 +280,7 @@ namespace FE::Graphics::Vulkan
         if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
             vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
 
-        if (m_pipelineState.m_dirty)
+        if (m_pipelineState.m_action == StateAction::kSet)
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
 
         vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);

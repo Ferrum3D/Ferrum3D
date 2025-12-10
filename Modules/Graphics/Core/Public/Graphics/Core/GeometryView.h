@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DrawArguments.h>
 #include <Graphics/Core/GraphicsPipeline.h>

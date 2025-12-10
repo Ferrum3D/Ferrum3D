@@ -1,9 +1,7 @@
 #pragma once
 #include <FeCore/Math/Aabb.h>
 #include <FeCore/Math/Colors.h>
-#include <Graphics/Core/ComputePipeline.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/Fence.h>
 #include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/GeometryView.h>
 #include <Graphics/Core/Texture.h>
@@ -222,10 +220,13 @@ namespace FE::Graphics::Core
         virtual void SetStreamBuffers(festd::span<const BufferView> bufferViews) = 0;
         virtual void SetIndexBuffer(BufferView bufferView, IndexType indexType) = 0;
 
-        virtual void DrawIndexedInstanced(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset,
-                                          uint32_t vertexOffset, uint32_t instanceOffset) = 0;
+        virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) = 0;
+        virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                                 uint32_t instanceOffset) = 0;
         virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
         virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
+
+        virtual bool IsCleanState() const = 0;
 
     protected:
         FrameGraph* m_frameGraph = nullptr;

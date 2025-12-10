@@ -1,6 +1,7 @@
 ﻿#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
+#include <Graphics/Core/Vulkan/ImageFormat.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 
@@ -397,7 +398,8 @@ namespace FE::Graphics::Vulkan
                         beforeBarrierBatcher.Add(mipIndex, arrayIndex);
                         afterBarrierBatcher.Add(mipIndex, arrayIndex);
 
-                        FE_Assert(texture->GetSubresourceState(mipIndex, arrayIndex) == SubresourceState::kUndefined);
+                        FE_Assert(texture->GetState(Core::TextureSubresource::Create(imageDesc, mipIndex, arrayIndex))
+                                  == SubresourceState::kUndefined);
                         texture->SetSubresourceState(mipIndex, arrayIndex, SubresourceState::kTransferDestination);
 
                         VkBufferImageCopy copy = {};
@@ -456,8 +458,10 @@ namespace FE::Graphics::Vulkan
         VkDeviceSize allocationOffset;
         for (;;)
         {
-            const VkResult allocationResult = vmaVirtualAllocate(
-                m_uploadRingBuffer, &stagingAllocationCI, &item->m_stagingAllocations.back(), &allocationOffset);
+            const VkResult allocationResult = vmaVirtualAllocate(m_uploadRingBuffer,
+                                                                 &stagingAllocationCI,
+                                                                 &item->m_stagingAllocations.back(),
+                                                                 &allocationOffset);
 
             if (allocationResult == VK_SUCCESS)
                 break;

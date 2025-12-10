@@ -48,6 +48,6 @@ namespace FE::Graphics::Tools
         passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearWrap);
         passDesc->m_constants.m_uvScale = settings.m_destinationRect.Size();
         passDesc->m_constants.m_uvOffset = settings.m_destinationRect.min;
-        graph.AddDrawIndexedInstancedPass("Blit", passDesc, 6);
+        graph.AddDrawPass("Blit", passDesc, 6);
     }
 } // namespace FE::Graphics::Tools

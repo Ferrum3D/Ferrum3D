@@ -128,6 +128,7 @@ namespace FE::Graphics::Common
 
         Core::DescriptorManager* m_descriptorManager = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
+        Rc<Core::FrameGraphContext> m_currentContext;
 
         SegmentedVector<PassNode> m_passes;
         SegmentedVector<ResourceNode> m_resources;

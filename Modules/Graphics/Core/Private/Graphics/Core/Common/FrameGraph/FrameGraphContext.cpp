@@ -57,9 +57,13 @@ namespace FE::Graphics::Common
 
         if (!Math::EqualEstimate(m_viewportScissorState.m_viewport, viewport) || m_viewportScissorState.m_scissor != scissor)
         {
-            m_viewportScissorState.m_dirty = true;
+            m_viewportScissorState.m_action = StateAction::kSet;
             m_viewportScissorState.m_viewport = viewport;
             m_viewportScissorState.m_scissor = scissor;
+        }
+        else
+        {
+            m_viewportScissorState.m_action = StateAction::kKeep;
         }
     }
 
@@ -74,7 +78,11 @@ namespace FE::Graphics::Common
         {
             m_pipelineState.m_graphicsPipeline = pipeline;
             m_pipelineState.m_computePipeline = nullptr;
-            m_pipelineState.m_dirty = true;
+            m_pipelineState.m_action = StateAction::kSet;
+        }
+        else
+        {
+            m_pipelineState.m_action = StateAction::kKeep;
         }
 
         FE_AssertDebug(m_pipelineState.m_computePipeline == nullptr);
@@ -91,7 +99,11 @@ namespace FE::Graphics::Common
         {
             m_pipelineState.m_computePipeline = pipeline;
             m_pipelineState.m_graphicsPipeline = nullptr;
-            m_pipelineState.m_dirty = true;
+            m_pipelineState.m_action = StateAction::kSet;
+        }
+        else
+        {
+            m_pipelineState.m_action = StateAction::kKeep;
         }
 
         FE_AssertDebug(m_pipelineState.m_graphicsPipeline == nullptr);
@@ -106,7 +118,11 @@ namespace FE::Graphics::Common
         if (m_stencilRefState.m_stencilRef != stencilRef)
         {
             m_stencilRefState.m_stencilRef = stencilRef;
-            m_stencilRefState.m_dirty = true;
+            m_stencilRefState.m_action = StateAction::kSet;
+        }
+        else
+        {
+            m_pipelineState.m_action = StateAction::kKeep;
         }
     }
 
@@ -130,9 +146,8 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::DrawIndexedInstanced(const uint32_t indexCount, const uint32_t instanceCount,
-                                                 const uint32_t indexOffset, const uint32_t vertexOffset,
-                                                 const uint32_t instanceOffset)
+    void FrameGraphContext::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t vertexOffset,
+                                 const uint32_t instanceOffset)
     {
         FE_PROFILER_ZONE();
 
@@ -140,7 +155,25 @@ namespace FE::Graphics::Common
                   "All pipeline states must be set before drawing");
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
                   "Compute pipeline must not be set when drawing");
-        DrawImpl(indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+
+        PrepareStatesInternal();
+        DrawImpl(vertexCount, instanceCount, vertexOffset, instanceOffset);
+        ClearStatesInternal();
+    }
+
+
+    void FrameGraphContext::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t indexOffset,
+                                        const uint32_t vertexOffset, const uint32_t instanceOffset)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+                  "All pipeline states must be set before drawing");
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
+                  "Compute pipeline must not be set when drawing");
+
+        PrepareStatesInternal();
+        DrawIndexedImpl(indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
         ClearStatesInternal();
     }
 
@@ -153,6 +186,8 @@ namespace FE::Graphics::Common
                   "All pipeline states must be set before drawing");
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
                   "Compute pipeline must not be set when drawing");
+
+        PrepareStatesInternal();
         DispatchMeshImpl(workGroupCount.m_workGroupCount);
         ClearStatesInternal();
     }
@@ -166,19 +201,65 @@ namespace FE::Graphics::Common
                   "Compute pipeline must be set before dispatching");
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
                   "Only compute related pipeline states can be set before dispatching");
+
+        PrepareStatesInternal();
         DispatchImpl(workGroupCount.m_workGroupCount);
         ClearStatesInternal();
+    }
+
+
+    bool FrameGraphContext::IsCleanState() const
+    {
+        return m_setStateMask == PipelineStateFlags::kNone;
     }
 
 
     void FrameGraphContext::ClearStatesInternal()
     {
         m_setStateMask = PipelineStateFlags::kNone;
-        m_viewportScissorState.m_dirty = false;
-        m_pipelineState.m_dirty = false;
-        m_stencilRefState.m_dirty = false;
+        m_viewportScissorState.m_action = StateAction::kReset;
+        m_pipelineState.m_action = StateAction::kReset;
+        m_stencilRefState.m_action = StateAction::kReset;
 
-        festd::fill_n(m_streamBufferViews, festd::size(m_streamBufferViews), Core::StreamBufferView{});
+        festd::fill_n(m_streamBufferViews, festd::size(m_streamBufferViews), Core::BufferView::kInvalid);
         m_indexBufferView = {};
+    }
+
+
+    void FrameGraphContext::PrepareStatesInternal()
+    {
+        FE_AssertDebug(m_pipelineState.m_action != StateAction::kReset, "Must have been checked by the caller");
+
+        if (m_viewportScissorState.m_action == StateAction::kReset)
+        {
+            if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kRenderTargets))
+            {
+                const Vector2UInt size = m_renderTargetState.m_renderTargets[0].GetBaseDesc().GetSize2D();
+                const auto viewport = RectF::FromPosAndSize({ 0.0f, 0.0f }, Vector2(size));
+                const auto scissor = RectInt::FromPosAndSize({ 0, 0 }, Vector2Int(size));
+                SetViewportAndScissor(viewport, scissor);
+            }
+            else if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline))
+            {
+                // Compute pipeline should not care about viewport and scissor.
+                m_viewportScissorState.m_action = StateAction::kKeep;
+            }
+            else
+            {
+                FE_DebugBreak();
+            }
+        }
+
+        if (m_stencilRefState.m_action == StateAction::kReset)
+        {
+            if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kGraphicsPipeline))
+            {
+                SetStencilRef(0);
+            }
+            else
+            {
+                m_stencilRefState.m_action = StateAction::kKeep;
+            }
+        }
     }
 } // namespace FE::Graphics::Common

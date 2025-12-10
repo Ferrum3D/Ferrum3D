@@ -7,10 +7,9 @@
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
-#include <Graphics/Core/Vulkan/BindlessManager.h>
+#include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
-#include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GeometryPool.h>
 #include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
@@ -131,11 +130,11 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Core::PipelineFactory>().To<PipelineFactory>().InSingletonScope();
         builder.Bind<Core::GeometryPool>().To<GeometryPool>().InSingletonScope();
         builder.Bind<Core::ShaderLibrary>().To<ShaderLibrary>().InSingletonScope();
+        builder.Bind<Core::DescriptorManager>().To<DescriptorManager>().InSingletonScope();
 
         // private singletons
         builder.Bind<Core::ShaderSourceCache>().ToSelf().InSingletonScope();
         builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
-        builder.Bind<BindlessManager>().ToSelf().InSingletonScope();
         builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services

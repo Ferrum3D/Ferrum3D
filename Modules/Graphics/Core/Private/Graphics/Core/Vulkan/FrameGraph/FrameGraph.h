@@ -22,6 +22,5 @@ namespace FE::Graphics::Vulkan
         void FinishExecuteInternal() override;
 
         GraphicsCommandQueue* m_commandQueue = nullptr;
-        Rc<FrameGraphContext> m_currentContext = nullptr;
     };
 } // namespace FE::Graphics::Vulkan

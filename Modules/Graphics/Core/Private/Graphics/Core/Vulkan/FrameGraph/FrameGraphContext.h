@@ -15,15 +15,18 @@ namespace FE::Graphics::Vulkan
 
         void Init(CommandBuffer* graphicsCommandBuffer);
 
-        void DrawImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
-                      uint32_t instanceOffset) override;
-        void DispatchMeshImpl(Vector3UInt workGroupCount) override;
-        void DispatchImpl(Vector3UInt workGroupCount) override;
-
         void EnqueueFenceToSignal(const Core::FenceSyncPoint& fence) override;
         void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) override;
 
     private:
+        void PrepareDraw(VkCommandBuffer vkCommandBuffer);
+
+        void DrawImpl(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) override;
+        void DrawIndexedImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                             uint32_t instanceOffset) override;
+        void DispatchMeshImpl(Vector3UInt workGroupCount) override;
+        void DispatchImpl(Vector3UInt workGroupCount) override;
+
         void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
 
         DescriptorManager* m_descriptorManager;

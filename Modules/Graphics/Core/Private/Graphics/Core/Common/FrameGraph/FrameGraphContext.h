@@ -18,7 +18,7 @@ namespace FE::Graphics::Common
         kComputePipeline = 1 << 7,
         kStreamBuffers = 1 << 8,
         kIndexBuffer = 1 << 9,
-        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kViewportScissor | kGraphicsPipeline,
+        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kGraphicsPipeline,
         kAll = kAllRequiredForGraphics | kPushConstants,
     };
 
@@ -45,26 +45,38 @@ namespace FE::Graphics::Common
         void SetStreamBuffers(festd::span<const Core::BufferView> bufferViews) override;
         void SetIndexBuffer(Core::BufferView bufferView, Core::IndexType indexType) override;
 
-        void DrawIndexedInstanced(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
-                                  uint32_t instanceOffset) final;
+        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) override;
+        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                         uint32_t instanceOffset) final;
         void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
         void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
+
+        bool IsCleanState() const override;
 
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
 
-        virtual void DrawImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
-                              uint32_t instanceOffset) = 0;
+        virtual void DrawImpl(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) = 0;
+        virtual void DrawIndexedImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
+                                     uint32_t instanceOffset) = 0;
         virtual void DispatchMeshImpl(Vector3UInt workGroupCount) = 0;
         virtual void DispatchImpl(Vector3UInt workGroupCount) = 0;
 
         void ClearStatesInternal();
+        void PrepareStatesInternal();
+
+        enum class StateAction
+        {
+            kKeep,
+            kSet,
+            kReset,
+        };
 
         struct ViewportScissorState final
         {
             RectF m_viewport = RectF::Initial();
             RectInt m_scissor = RectInt::Initial();
-            bool m_dirty = true;
+            StateAction m_action = StateAction::kReset;
         };
 
         struct RenderTargetState final
@@ -80,13 +92,13 @@ namespace FE::Graphics::Common
         {
             const Core::GraphicsPipeline* m_graphicsPipeline = nullptr;
             const Core::ComputePipeline* m_computePipeline = nullptr;
-            bool m_dirty = true;
+            StateAction m_action = StateAction::kReset;
         };
 
         struct StencilRefState final
         {
             uint8_t m_stencilRef = 0;
-            bool m_dirty = true;
+            StateAction m_action = StateAction::kReset;
         };
 
         Core::BufferView m_streamBufferViews[Core::Limits::Pipeline::kMaxVertexStreams] = {};

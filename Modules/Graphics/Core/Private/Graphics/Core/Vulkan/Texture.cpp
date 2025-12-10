@@ -1,6 +1,5 @@
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/Image.h>
 #include <Graphics/Core/Vulkan/ImageFormat.h>
 #include <Graphics/Core/Vulkan/PipelineStates.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
