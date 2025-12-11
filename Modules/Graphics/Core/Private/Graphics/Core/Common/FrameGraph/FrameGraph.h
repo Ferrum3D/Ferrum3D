@@ -114,6 +114,7 @@ namespace FE::Graphics::Common
 
         virtual void PrepareExecuteInternal() = 0;
         virtual void FinishExecuteInternal() = 0;
+        virtual void ExecutePassBarriersInternal(PassNode& pass) = 0;
 
         void ParsePassPushConstants(PassNode& pass, const RTTI::Type& type);
         void PreparePassCompileInfo(PassNode& pass);

@@ -50,20 +50,36 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::SetViewportAndScissor(const RectF viewport, const RectInt scissor)
+    void FrameGraphContext::SetViewport(const RectF viewport)
     {
-        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kViewportScissor), "Viewport and scissor already set");
-        m_setStateMask |= PipelineStateFlags::kViewportScissor;
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kViewport), "Viewport already set");
+        m_setStateMask |= PipelineStateFlags::kViewport;
 
-        if (!Math::EqualEstimate(m_viewportScissorState.m_viewport, viewport) || m_viewportScissorState.m_scissor != scissor)
+        if (m_viewportState.m_viewport != viewport)
         {
-            m_viewportScissorState.m_action = StateAction::kSet;
-            m_viewportScissorState.m_viewport = viewport;
-            m_viewportScissorState.m_scissor = scissor;
+            m_viewportState.m_action = StateAction::kSet;
+            m_viewportState.m_viewport = viewport;
         }
         else
         {
-            m_viewportScissorState.m_action = StateAction::kKeep;
+            m_viewportState.m_action = StateAction::kKeep;
+        }
+    }
+
+
+    void FrameGraphContext::SetScissor(const RectInt scissor)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kScissor), "Scissor already set");
+        m_setStateMask |= PipelineStateFlags::kScissor;
+
+        if (m_scissorState.m_scissor != scissor)
+        {
+            m_scissorState.m_action = StateAction::kSet;
+            m_scissorState.m_scissor = scissor;
+        }
+        else
+        {
+            m_scissorState.m_action = StateAction::kKeep;
         }
     }
 
@@ -217,7 +233,8 @@ namespace FE::Graphics::Common
     void FrameGraphContext::ClearStatesInternal()
     {
         m_setStateMask = PipelineStateFlags::kNone;
-        m_viewportScissorState.m_action = StateAction::kReset;
+        m_viewportState.m_action = StateAction::kReset;
+        m_scissorState.m_action = StateAction::kReset;
         m_pipelineState.m_action = StateAction::kReset;
         m_stencilRefState.m_action = StateAction::kReset;
 
@@ -230,23 +247,30 @@ namespace FE::Graphics::Common
     {
         FE_AssertDebug(m_pipelineState.m_action != StateAction::kReset, "Must have been checked by the caller");
 
-        if (m_viewportScissorState.m_action == StateAction::kReset)
+        if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline))
         {
-            if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kRenderTargets))
+            // Compute pipeline should not care about viewport and scissor.
+            m_viewportState.m_action = StateAction::kKeep;
+            m_scissorState.m_action = StateAction::kKeep;
+        }
+        else
+        {
+            if (m_viewportState.m_action == StateAction::kReset)
             {
+                FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kRenderTargets));
+
                 const Vector2UInt size = m_renderTargetState.m_renderTargets[0].GetBaseDesc().GetSize2D();
                 const auto viewport = RectF::FromPosAndSize({ 0.0f, 0.0f }, Vector2(size));
-                const auto scissor = RectInt::FromPosAndSize({ 0, 0 }, Vector2Int(size));
-                SetViewportAndScissor(viewport, scissor);
+                SetViewport(viewport);
             }
-            else if (Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline))
+
+            if (m_scissorState.m_action == StateAction::kReset)
             {
-                // Compute pipeline should not care about viewport and scissor.
-                m_viewportScissorState.m_action = StateAction::kKeep;
+                SetScissor(RectInt(m_viewportState.m_viewport));
             }
             else
             {
-                FE_DebugBreak();
+                FE_Assert(Math::Union(m_viewportState.m_viewport, RectF(m_scissorState.m_scissor)) == m_viewportState.m_viewport);
             }
         }
 

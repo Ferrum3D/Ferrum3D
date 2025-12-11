@@ -20,6 +20,7 @@ namespace FE::Graphics::Vulkan
     private:
         void PrepareExecuteInternal() override;
         void FinishExecuteInternal() override;
+        void ExecutePassBarriersInternal(PassNode& pass) override;
 
         GraphicsCommandQueue* m_commandQueue = nullptr;
     };

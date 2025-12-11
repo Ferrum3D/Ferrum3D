@@ -71,12 +71,15 @@ namespace FE::Graphics::Vulkan
 
     void FrameGraphContext::BeginRendering(const VkCommandBuffer vkCommandBuffer) const
     {
-        if (m_viewportScissorState.m_action == StateAction::kSet)
+        if (m_viewportState.m_action == StateAction::kSet)
         {
-            const VkViewport viewport = TranslateViewport(m_viewportScissorState.m_viewport);
+            const VkViewport viewport = TranslateViewport(m_viewportState.m_viewport);
             vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+        }
 
-            const VkRect2D scissor = TranslateScissor(m_viewportScissorState.m_scissor);
+        if (m_scissorState.m_action == StateAction::kSet)
+        {
+            const VkRect2D scissor = TranslateScissor(m_scissorState.m_scissor);
             vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
         }
 
@@ -128,7 +131,7 @@ namespace FE::Graphics::Vulkan
         renderingInfo.layerCount = 1;
         renderingInfo.colorAttachmentCount = m_renderTargetState.m_renderTargetCount;
         renderingInfo.pColorAttachments = colorAttachments;
-        renderingInfo.renderArea = TranslateScissor(m_viewportScissorState.m_scissor);
+        renderingInfo.renderArea = TranslateScissor(m_scissorState.m_scissor);
         vkCmdBeginRendering(vkCommandBuffer, &renderingInfo);
     }
 

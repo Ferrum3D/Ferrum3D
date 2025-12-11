@@ -3,6 +3,7 @@
 #include <Graphics/Core/Common/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
+#include <Graphics/Core/Vulkan/ComputePipeline.h>
 
 namespace FE::Graphics::Common
 {
@@ -550,6 +551,46 @@ namespace FE::Graphics::Common
         for (PassNode& pass : m_passes)
         {
             FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
+
+            ExecutePassBarriersInternal(pass);
+
+            if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kPushConstants))
+                m_currentContext->PushConstants(pass.m_pushConstants.data(), pass.m_pushConstants.size_bytes());
+
+            if (Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kColorTarget | PassStateFlags::kDepthTarget))
+            {
+                festd::fixed_vector<Core::TextureView, Core::Limits::Pipeline::kMaxColorAttachments> renderTargets;
+                for (const uint32_t colorTargetIndex : pass.m_colorTargetAccessIndices)
+                {
+                    const TextureAccess& access = pass.m_accessedTextures[colorTargetIndex];
+                    const ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
+                    auto* texture = RTTI::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
+                    renderTargets.push_back(Core::TextureView::Create(texture, access.m_subresource));
+                }
+
+                Core::TextureView depthStencil = Core::TextureView::kInvalid;
+                if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kDepthTarget))
+                {
+                    const TextureAccess& access = pass.m_accessedTextures[pass.m_depthTargetAccessIndex];
+                    const ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
+                    auto* texture = RTTI::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
+                    depthStencil = Core::TextureView::Create(texture, access.m_subresource);
+                }
+
+                m_currentContext->SetRenderTargets(renderTargets, depthStencil);
+            }
+
+            if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kViewport))
+                m_currentContext->SetViewport(pass.m_viewport);
+
+            if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kScissor))
+                m_currentContext->SetScissor(pass.m_scissor);
+
+            if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline))
+                m_currentContext->SetPipeline(RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline));
+
+            if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline))
+                m_currentContext->SetPipeline(RTTI::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline));
 
             pass.m_execute(pass.m_functor, *m_currentContext);
             FE_Assert(m_currentContext->IsCleanState());

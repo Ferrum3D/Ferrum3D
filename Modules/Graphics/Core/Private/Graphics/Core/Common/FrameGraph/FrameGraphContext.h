@@ -11,13 +11,14 @@ namespace FE::Graphics::Common
         kLoadOperations = 1 << 0,
         kStoreOperations = 1 << 1,
         kRenderTargets = 1 << 2,
-        kViewportScissor = 1 << 3,
-        kPushConstants = 1 << 4,
-        kStencilRef = 1 << 5,
-        kGraphicsPipeline = 1 << 6,
-        kComputePipeline = 1 << 7,
-        kStreamBuffers = 1 << 8,
-        kIndexBuffer = 1 << 9,
+        kViewport = 1 << 3,
+        kScissor = 1 << 4,
+        kPushConstants = 1 << 5,
+        kStencilRef = 1 << 6,
+        kGraphicsPipeline = 1 << 7,
+        kComputePipeline = 1 << 8,
+        kStreamBuffers = 1 << 9,
+        kIndexBuffer = 1 << 10,
         kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kGraphicsPipeline,
         kAll = kAllRequiredForGraphics | kPushConstants,
     };
@@ -35,23 +36,24 @@ namespace FE::Graphics::Common
         void SetRenderTargetStoreOperations(const Core::RenderTargetStoreOperations& operations) final;
         void SetRenderTargets(festd::span<const Core::TextureView> renderTargets, Core::TextureView depthStencil) final;
 
-        void SetViewportAndScissor(RectF viewport, RectInt scissor) final;
+        void SetViewport(RectF viewport) final;
+        void SetScissor(RectInt scissor) final;
 
         void SetPipeline(const Core::GraphicsPipeline* pipeline) final;
         void SetPipeline(const Core::ComputePipeline* pipeline) final;
 
         void SetStencilRef(uint8_t stencilRef) final;
 
-        void SetStreamBuffers(festd::span<const Core::BufferView> bufferViews) override;
-        void SetIndexBuffer(Core::BufferView bufferView, Core::IndexType indexType) override;
+        void SetStreamBuffers(festd::span<const Core::BufferView> bufferViews) final;
+        void SetIndexBuffer(Core::BufferView bufferView, Core::IndexType indexType) final;
 
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) override;
+        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset, uint32_t instanceOffset) final;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                          uint32_t instanceOffset) final;
         void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
         void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
 
-        bool IsCleanState() const override;
+        bool IsCleanState() const final;
 
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
@@ -72,9 +74,14 @@ namespace FE::Graphics::Common
             kReset,
         };
 
-        struct ViewportScissorState final
+        struct ViewportState final
         {
             RectF m_viewport = RectF::Initial();
+            StateAction m_action = StateAction::kReset;
+        };
+
+        struct ScissorState final
+        {
             RectInt m_scissor = RectInt::Initial();
             StateAction m_action = StateAction::kReset;
         };
@@ -109,7 +116,8 @@ namespace FE::Graphics::Common
 
         PipelineStateFlags m_setStateMask = PipelineStateFlags::kNone;
 
-        ViewportScissorState m_viewportScissorState;
+        ViewportState m_viewportState;
+        ScissorState m_scissorState;
         RenderTargetState m_renderTargetState;
         PipelineState m_pipelineState;
         StencilRefState m_stencilRefState;

@@ -198,18 +198,13 @@ namespace FE::Graphics::Core
             SetRenderTargets({ &renderTarget, 1 }, depthStencilTarget);
         }
 
-        virtual void SetViewportAndScissor(RectF viewport, RectInt scissor) = 0;
-
-        void SetViewport(const RectF viewport)
-        {
-            SetViewportAndScissor(viewport, RectInt(viewport));
-        }
+        virtual void SetViewport(RectF viewport) = 0;
+        virtual void SetScissor(RectInt scissor) = 0;
 
         void SetViewport(const Vector2UInt size)
         {
             const RectF viewport = RectF::FromPosAndSize({ 0.0f, 0.0f }, Vector2(size));
-            const RectInt scissor = RectInt::FromPosAndSize({ 0, 0 }, Vector2Int(size));
-            SetViewportAndScissor(viewport, scissor);
+            SetViewport(viewport);
         }
 
         virtual void SetPipeline(const GraphicsPipeline* pipeline) = 0;
