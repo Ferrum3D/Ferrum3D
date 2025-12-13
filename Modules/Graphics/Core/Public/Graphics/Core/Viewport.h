@@ -1,8 +1,6 @@
 #pragma once
 #include <FeCore/Math/Rect.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/ImageFormat.h>
-#include <Graphics/Core/RenderTarget.h>
 
 namespace FE::Graphics::Core
 {
@@ -26,7 +24,7 @@ namespace FE::Graphics::Core
         virtual void Init(const ViewportDesc& desc) = 0;
         [[nodiscard]] virtual const ViewportDesc& GetDesc() const = 0;
 
-        virtual Format GetColorTargetFormat() = 0;
-        virtual RenderTarget* GetCurrentColorTarget() = 0;
+        virtual Texture* GetCurrentColorTarget() = 0;
+        virtual void AcquireNextImage() = 0;
     };
 } // namespace FE::Graphics::Core

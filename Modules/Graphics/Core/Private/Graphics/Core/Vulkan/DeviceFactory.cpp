@@ -12,7 +12,7 @@
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GeometryPool.h>
-#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
@@ -131,11 +131,11 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Core::GeometryPool>().To<GeometryPool>().InSingletonScope();
         builder.Bind<Core::ShaderLibrary>().To<ShaderLibrary>().InSingletonScope();
         builder.Bind<Core::DescriptorManager>().To<DescriptorManager>().InSingletonScope();
+        builder.Bind<Core::GraphicsQueue>().To<GraphicsQueue>().InSingletonScope();
 
         // private singletons
         builder.Bind<Core::ShaderSourceCache>().ToSelf().InSingletonScope();
         builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
-        builder.Bind<GraphicsCommandQueue>().ToSelf().InSingletonScope();
 
         // TODO: remove these transient services
         builder.Bind<Core::FrameGraph>().To<FrameGraph>().InTransientScope();

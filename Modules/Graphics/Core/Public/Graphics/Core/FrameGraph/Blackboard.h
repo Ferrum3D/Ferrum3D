@@ -20,7 +20,7 @@ namespace FE::Graphics::Core
         TPassData* TryGet();
 
         template<class TPassData>
-        TPassData& GetRequired();
+        TPassData& Get();
 
     private:
         struct alignas(Memory::kDefaultAlignment) PassDataNode final
@@ -85,7 +85,7 @@ namespace FE::Graphics::Core
 
 
     template<class TPassData>
-    TPassData& FrameGraphBlackboard::GetRequired()
+    TPassData& FrameGraphBlackboard::Get()
     {
         TPassData* data = TryGet<TPassData>();
         FE_Assert(data != nullptr);

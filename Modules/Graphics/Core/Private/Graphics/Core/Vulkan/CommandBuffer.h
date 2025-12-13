@@ -56,6 +56,11 @@ namespace FE::Graphics::Vulkan
         void Begin();
         void Submit();
 
+        [[nodiscard]] bool IsRecording() const
+        {
+            return m_isRecording;
+        }
+
     private:
         explicit CommandBuffer(Core::Device* device, const CommandBufferDesc& desc);
 
@@ -72,6 +77,7 @@ namespace FE::Graphics::Vulkan
         };
 
         bool m_wasUsed = false;
+        bool m_isRecording = false;
 
         SegmentedVector<Rc<Semaphore>, 256> m_signalSemaphores;
         SegmentedVector<WaitSemaphore, 512> m_waitSemaphores;

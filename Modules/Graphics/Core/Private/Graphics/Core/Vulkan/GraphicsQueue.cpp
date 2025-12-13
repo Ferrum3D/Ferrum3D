@@ -1,10 +1,12 @@
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
 
 namespace FE::Graphics::Vulkan
 {
-    GraphicsCommandQueue::GraphicsCommandQueue(Core::Device* device)
+    GraphicsQueue::GraphicsQueue(Core::Device* device)
     {
+        FE_PROFILER_ZONE();
+
         m_device = device;
 
         m_fence = Fence::Create(m_device, 0);
@@ -29,23 +31,39 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    CommandBuffer* GraphicsCommandQueue::GetCurrentGraphicsCommandBuffer()
+    CommandBuffer* GraphicsQueue::GetCurrentCommandBuffer()
     {
-        return m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
+        CommandBuffer* commandBuffer = m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
+        FE_Assert(commandBuffer->IsRecording());
+        return commandBuffer;
     }
 
 
-    void GraphicsCommandQueue::WaitForPreviousFrame()
+    void GraphicsQueue::BeginFrame()
     {
+        FE_PROFILER_ZONE();
+
         if (m_frameIndex > kMaxInFlightFrames)
-        {
             m_fence->Wait(m_frameIndex - kMaxInFlightFrames);
-        }
+
+        GetCurrentCommandBuffer()->Begin();
+        m_isActive = true;
     }
 
 
-    Core::FenceSyncPoint GraphicsCommandQueue::CloseFrame()
+    Core::FenceSyncPoint GraphicsQueue::CloseFrame()
     {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(m_isActive);
+        GetCurrentCommandBuffer()->Submit();
         return { m_fence, m_frameIndex++ };
+    }
+
+
+    void GraphicsQueue::Drain()
+    {
+        FE_PROFILER_ZONE();
+        VerifyVk(vkQueueWaitIdle(m_nativeQueue));
     }
 } // namespace FE::Graphics::Vulkan

@@ -10,35 +10,13 @@ namespace FE::Graphics::DB
     }
 
 
-    void PageReplicationManager::UploadPage(Core::FrameGraphBuilder& builder, const StoragePage* page)
+    void PageReplicationManager::UploadPage(Core::FrameGraph& graph, const StoragePage* page)
     {
         FE_Assert(page->m_replicationPolicy == PageReplicationPolicy::kCopyAllData, "Not implemented");
 
-        Rc<Core::Buffer> stagingPage;
-        if (m_freeStagingPages.empty())
-            CheckPendingPages();
+        CheckPendingPages();
 
-        if (!m_freeStagingPages.empty())
-        {
-            stagingPage = m_freeStagingPages.back();
-            m_freeStagingPages.pop_back();
-        }
-
-        auto accessType = Core::BufferAccessType::kTransferSource;
-        if (stagingPage == nullptr)
-        {
-            const uint32_t bufferIndex = m_bufferIndex++;
-            const Env::Name bufferName = Fmt::FormatName("PageReplicationManager_{}", bufferIndex);
-            const Core::BufferDesc desc{ kTablePageSize, Core::BindFlags::kNone, Core::ResourceMemory::kHostWriteThrough };
-            stagingPage = m_resourcePool->CreateBuffer(bufferName, desc);
-            accessType = Core::BufferAccessType::kUndefined;
-        }
-
-        const auto pass = builder.AddPass("UploadDatabasePage");
-        const auto stagingPageHandle = builder.GetGraph().ImportBuffer(stagingPage.Get(), accessType);
-        const auto destinationPageHandle =
-            builder.GetGraph().ImportBuffer(page->m_deviceStorage.Get(), Core::BufferAccessType::kUndefined);
-        const auto source = pass.Read(stagingPageHandle, Core::BufferReadType::kTransferSource);
+        const Rc stagingPage = m_resourcePool->CreateBuffer("PageReplicationManagerStaging", Core::BufferDesc(kTablePageSize));
     }
 
 
@@ -53,7 +31,6 @@ namespace FE::Graphics::DB
             if (page.m_fenceValue > m_fence->GetCompletedValue())
                 break;
 
-            m_freeStagingPages.push_back(page.m_buffer);
             m_pendingPagesQueue.pop_front();
         }
     }

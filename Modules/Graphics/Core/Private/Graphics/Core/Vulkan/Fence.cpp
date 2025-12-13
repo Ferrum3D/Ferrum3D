@@ -10,10 +10,8 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Fence* Fence::Create(Core::Device* device, uint64_t initialValue)
+    Fence* Fence::Create(Core::Device* device, const uint64_t initialValue)
     {
-        FE_PROFILER_ZONE();
-
         return Rc<Fence>::Allocate(&GFencePool, [device, initialValue](void* memory) {
             return new (memory) Fence(device, initialValue);
         });

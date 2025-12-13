@@ -7,27 +7,25 @@
 namespace FE::Graphics::Vulkan
 {
     struct DeviceFactory;
-    struct FrameGraphContext;
-    struct GraphicsCommandQueue;
+    struct CommandBuffer;
+    struct GraphicsQueue;
 
     struct Viewport final : public Core::Viewport
     {
         FE_RTTI("1182BF45-88B6-4763-A120-BC823919D74D");
 
-        Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsCommandQueue* commandQueue);
+        Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsQueue* commandQueue);
         ~Viewport() override;
 
         void Init(const Core::ViewportDesc& desc) override;
         [[nodiscard]] const Core::ViewportDesc& GetDesc() const override;
 
-        void Present(FrameGraphContext* frameGraphContext);
+        void Present(CommandBuffer* commandBuffer);
 
         void Resize(uint32_t width, uint32_t height);
 
-        Core::RenderTarget* GetCurrentColorTarget() override;
-        Core::Format GetColorTargetFormat() override;
-
-        void AcquireNextImage();
+        Core::Texture* GetCurrentColorTarget() override;
+        void AcquireNextImage() override;
 
     private:
         void CreateSurface();
@@ -45,7 +43,7 @@ namespace FE::Graphics::Vulkan
         Logger* m_logger = nullptr;
         DeviceFactory* m_deviceFactory = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
-        GraphicsCommandQueue* m_commandQueue = nullptr;
+        GraphicsQueue* m_commandQueue = nullptr;
 
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
@@ -54,7 +52,9 @@ namespace FE::Graphics::Vulkan
 
         festd::inline_vector<Rc<Semaphore>> m_imageAvailableSemaphores;
         festd::inline_vector<Rc<Semaphore>> m_renderFinishedSemaphores;
-        festd::inline_vector<Rc<RenderTarget>> m_renderTargets;
+
+        festd::inline_vector<Rc<Texture>> m_images;
+        festd::inline_vector<TextureInstance*> m_imageInstances;
     };
 
     FE_ENABLE_IMPL_CAST(Viewport);

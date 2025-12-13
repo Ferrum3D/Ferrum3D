@@ -1,9 +1,9 @@
 ﻿#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
-#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
-#include <Graphics/Core/Vulkan/RenderTarget.h>
+#include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
@@ -11,7 +11,7 @@ namespace FE::Graphics::Vulkan
     namespace
     {
         festd::inline_vector<VkSurfaceFormatKHR> EnumerateSurfaceFormats(const VkPhysicalDevice physicalDevice,
-                                                                        const VkSurfaceKHR surface)
+                                                                         const VkSurfaceKHR surface)
         {
             FE_PROFILER_ZONE();
 
@@ -25,7 +25,7 @@ namespace FE::Graphics::Vulkan
 
 
         festd::inline_vector<VkPresentModeKHR> EnumeratePresentModes(const VkPhysicalDevice physicalDevice,
-                                                                    const VkSurfaceKHR surface)
+                                                                     const VkSurfaceKHR surface)
         {
             FE_PROFILER_ZONE();
 
@@ -141,7 +141,7 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsCommandQueue* commandQueue)
+    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsQueue* commandQueue)
         : m_logger(logger)
         , m_resourcePool(resourcePool)
         , m_commandQueue(commandQueue)
@@ -207,13 +207,15 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        m_commandQueue->WaitForPreviousFrame();
-
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
         const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);
         const Semaphore* semaphore = m_imageAvailableSemaphores[semaphoreIndex].Get();
-        const VkResult result = vkAcquireNextImageKHR(
-            NativeCast(m_device), m_swapchain, Constants::kMaxU64, semaphore->GetNative(), VK_NULL_HANDLE, &m_imageIndex);
+        const VkResult result = vkAcquireNextImageKHR(NativeCast(m_device),
+                                                      m_swapchain,
+                                                      Constants::kMaxU64,
+                                                      semaphore->GetNative(),
+                                                      VK_NULL_HANDLE,
+                                                      &m_imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -349,22 +351,32 @@ namespace FE::Graphics::Vulkan
 
         m_logger->LogDebug("Created Vulkan swapchain with {} images", imageCount);
 
-        festd::inline_vector<VkImage> images{ imageCount };
-        VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, images.data()));
+        festd::inline_vector<VkImage> vkImages{ imageCount };
+        VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, vkImages.data()));
 
         FE_Assert(m_imageAvailableSemaphores.size() == kMaxInFlightFrames);
         FE_Assert(m_renderFinishedSemaphores.size() == kMaxInFlightFrames);
-        FE_Assert(m_renderTargets.empty());
+        FE_Assert(m_images.empty());
+        FE_Assert(m_imageInstances.empty());
 
-        const Core::TextureDesc colorTargetDesc = Core::TextureDesc::Img2D(width, height, m_rtvFormat);
+        Core::TextureDesc colorTargetDesc;
+        colorTargetDesc.m_width = width;
+        colorTargetDesc.m_height = height;
+        colorTargetDesc.m_sampleCount = 1;
+        colorTargetDesc.m_depth = 1;
+        colorTargetDesc.m_arraySize = 1;
+        colorTargetDesc.m_mipSliceCount = 1;
+        colorTargetDesc.m_dimension = Core::ImageDimension::k2D;
+        colorTargetDesc.m_imageFormat = m_rtvFormat;
+
+        m_images.reserve(imageCount);
+        m_imageInstances.reserve(imageCount);
 
         for (uint32_t i = 0; i < imageCount; ++i)
         {
             const Env::Name imageName = Fmt::FormatName("Swapchain Color Target {}", i);
 
-            const Rc image = RenderTarget::Create(m_device);
-            image->InitInternal(imageName, colorTargetDesc, images[i]);
-            image->SetImmediateDestroyPolicy();
+            const Rc image = Texture::Create(m_device, imageName, colorTargetDesc);
 
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -373,7 +385,15 @@ namespace FE::Graphics::Vulkan
             nameInfo.pObjectName = imageName.c_str();
             VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
-            m_renderTargets.push_back(image);
+            TextureInstance* imageInstance = m_imageInstances.emplace_back(TextureInstance::Create());
+            imageInstance->m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kCopyDest;
+            imageInstance->m_memoryStatus = Core::ResourceMemory::kDeviceLocal;
+            imageInstance->m_type = Core::ResourceType::kTexture;
+            imageInstance->m_image = vkImages[i];
+            image->SwapInternal(imageInstance);
+            image->InitWholeImageView();
+
+            m_images.push_back(image);
         }
     }
 
@@ -382,8 +402,16 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        m_device->WaitIdle();
-        m_renderTargets.clear();
+        m_commandQueue->Drain();
+
+        for (TextureInstance* imageInstance : m_imageInstances)
+        {
+            imageInstance->Invalidate(NativeCast(m_device));
+            TextureInstance::Delete(imageInstance);
+        }
+
+        m_imageInstances.clear();
+        m_images.clear();
     }
 
 
@@ -410,25 +438,17 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::RenderTarget* Viewport::GetCurrentColorTarget()
+    Core::Texture* Viewport::GetCurrentColorTarget()
     {
-        return m_renderTargets[m_imageIndex].Get();
+        return m_images[m_imageIndex].Get();
     }
 
 
-    Core::Format Viewport::GetColorTargetFormat()
-    {
-        return m_rtvFormat;
-    }
-
-
-    void Viewport::Present(FrameGraphContext* frameGraphContext)
+    void Viewport::Present(CommandBuffer* commandBuffer)
     {
         FE_PROFILER_ZONE();
 
-        Image* renderTarget = m_renderTargets[m_imageIndex].Get();
-
-        CommandBuffer* commandBuffer = frameGraphContext->m_graphicsCommandBuffer.Get();
+        Texture* renderTarget = m_images[m_imageIndex].Get();
 
         ImageMemoryBarrier(commandBuffer->GetNative(),
                            renderTarget->GetNative(),

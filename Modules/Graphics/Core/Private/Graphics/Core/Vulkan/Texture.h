@@ -5,6 +5,7 @@
 
 namespace FE::Graphics::Vulkan
 {
+    struct Viewport;
     struct ResourcePool;
 
     struct Texture final : public Common::Texture
@@ -28,6 +29,8 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
+        friend Viewport;
+
         explicit Texture(Core::Device* device, Env::Name name, const Core::TextureDesc& desc);
 
         void InitWholeImageView();

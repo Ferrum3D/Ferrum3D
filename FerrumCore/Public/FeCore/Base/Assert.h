@@ -60,10 +60,12 @@ namespace FE
     {                                                                                                                            \
         if (!(expression))                                                                                                       \
         {                                                                                                                        \
-            constexpr const char* FE_UNIQUE_IDENT(assertMessage__Impl__) = message;                                              \
+            constexpr const char* FE_UNIQUE_IDENT(kAssertMessage) = message;                                                     \
+            constexpr uint32_t FE_UNIQUE_IDENT(kAssertMessageLength) =                                                           \
+                static_cast<uint32_t>(__builtin_strlen(FE_UNIQUE_IDENT(kAssertMessage)));                                        \
             assertionReport(::FE::SourceLocation::Current(),                                                                     \
-                            FE_UNIQUE_IDENT(assertMessage__Impl__),                                                              \
-                            static_cast<uint32_t>(__builtin_strlen(FE_UNIQUE_IDENT(assertMessage__Impl__))),                     \
+                            FE_UNIQUE_IDENT(kAssertMessage),                                                                     \
+                            FE_UNIQUE_IDENT(kAssertMessageLength),                                                               \
                             false);                                                                                              \
             FE_DebugBreak();                                                                                                     \
         }                                                                                                                        \

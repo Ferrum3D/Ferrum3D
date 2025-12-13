@@ -19,11 +19,10 @@
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
-#include <Graphics/Core/GeometryPool.h>
-#include <Graphics/Core/InputLayoutBuilder.h>
 #include <Graphics/Core/Module.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/PipelineVariantSet.h>
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/Tools/Blit.h>
 #include <Graphics/Features/Tools/Downsample.h>
@@ -159,42 +158,6 @@ namespace
     FE_IMPLEMENT_PIPELINE_SET(ComputePipeline);
 
 
-    struct GraphicsPipeline final : public Core::GraphicsPipelineVariantSet
-    {
-        FE_SHADER_SPEC(ColorTargetFormat, Core::Format::kB8G8R8A8_SRGB, Core::Format::kR8G8B8A8_SRGB,
-                       Core::Format::kR8G8B8A8_UNORM, Core::Format::kB8G8R8A8_UNORM);
-        using Specializer = Core::ShaderSpecializer<ColorTargetFormat>;
-
-        FE_DECLARE_PIPELINE_SET(GraphicsPipeline, Specializer);
-
-    private:
-        void SetupRequest(const uint32_t variantIndex, Core::GraphicsPipelineRequest& request) override
-        {
-            const Specializer specializer(variantIndex);
-
-            Core::InputLayoutBuilder inputLayoutBuilder;
-            inputLayoutBuilder.SetTopology(Core::PrimitiveTopology::kTriangleList);
-            inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
-                .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
-                .AddChannel(Core::VertexChannelFormat::kR32G32_SFLOAT, Core::ShaderSemantic::kTexCoord);
-
-            const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
-
-            request
-                .m_desc //
-                .SetInputLayout(inputLayout)
-                .SetPixelShader("Shader.ps.hlsl")
-                .SetVertexShader("Shader.vs.hlsl")
-                .SetRTVFormat(specializer.Get<ColorTargetFormat>())
-                .SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
-                .SetColorBlend(Core::TargetColorBlending::kDisabled)
-                .SetDepthStencil(Core::DepthStencilState::kDisabled)
-                .SetRasterization(Core::RasterizationState::kFillNoCull);
-        }
-    };
-    FE_IMPLEMENT_PIPELINE_SET(GraphicsPipeline);
-
-
     struct MeshShaderPipeline final : public Core::GraphicsPipelineVariantSet
     {
         FE_SHADER_SPEC(ColorTargetFormat, Core::Format::kB8G8R8A8_SRGB, Core::Format::kR8G8B8A8_SRGB,
@@ -232,7 +195,6 @@ namespace
 
         ~ExampleApplication() override
         {
-            m_geometryPool->Free(m_geometry);
             m_device->WaitIdle();
         }
 
@@ -268,14 +230,13 @@ namespace
             {
                 if (adapterInfo.m_kind == Core::AdapterKind::kDiscrete)
                 {
-                    FE_Verify(m_factory->CreateDevice(adapterInfo.m_name) == Core::ResultCode::kSuccess);
+                    m_factory->CreateDevice(adapterInfo.m_name);
                     break;
                 }
             }
 
             m_device = serviceProvider->ResolveRequired<Core::Device>();
             m_copyQueue = serviceProvider->ResolveRequired<Core::AsyncCopyQueue>();
-            m_geometryPool = serviceProvider->ResolveRequired<Core::GeometryPool>();
 
             const RectInt scissorRect = m_mainWindow->GetClientRect();
 
@@ -287,7 +248,7 @@ namespace
             Core::CompileGlobalPipelineSets(serviceProvider->ResolveRequired<Core::PipelineFactory>());
             Core::WaitForGlobalPipelineSets();
 
-            PrepareView(m_viewport.Get());
+            m_timer.Start();
 
             ITextureAssetManager* textureAssetManager = serviceProvider->ResolveRequired<ITextureAssetManager>();
             m_texture = textureAssetManager->Load("Textures/test2.ftx");
@@ -302,88 +263,29 @@ namespace
         }
 
     private:
+        struct ViewData final
+        {
+            Core::Texture* m_mainColorTarget = nullptr;
+            Core::Texture* m_mainDepthTarget = nullptr;
+        };
+
         struct PassData final
         {
-            Core::DrawCall m_drawCall;
             ModelAsset* m_model = nullptr;
             const Core::ComputePipeline* m_computePipeline = nullptr;
             const Core::GraphicsPipeline* m_meshShaderPipeline = nullptr;
         };
 
-        struct Vertex final
-        {
-            PackedVector3F m_position;
-            Vector2 m_uv;
-        };
-
-        void PrepareView(Core::Viewport* viewport)
+        void PrepareView(Core::Viewport* viewport, Core::FrameGraphBlackboard& blackboard)
         {
             FE_PROFILER_ZONE();
 
-            m_timer.Start();
-
-            Memory::FiberTempAllocator tempAllocator;
-
-            m_colorTargetFormat = viewport->GetColorTargetFormat();
-
-            static const Vertex kVertexData[] = {
-                { { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } },
-                { { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } },
-                { { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-                { { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-            };
-
-            static const uint32_t kIndexData[] = {
-                // 0, 1, 2, 2, 3, 0,
-                0,
-                1,
-                2,
-                3,
-            };
-
-            static const Core::PackedTriangle kMeshletPrimitives[] = {
-                Core::PackedTriangle::Pack(0, 1, 2),
-                Core::PackedTriangle::Pack(2, 3, 0),
-            };
-
-            static const Core::MeshletHeader kMeshletHeaders[] = {
-                Core::MeshletHeader::Pack(4, 0, 2, 0),
-            };
-
-            Core::InputLayoutBuilder inputLayoutBuilder;
-            inputLayoutBuilder.AddStream(Core::InputStreamRate::kPerVertex)
-                .AddChannel(Core::VertexChannelFormat::kR32G32B32_SFLOAT, Core::ShaderSemantic::kPosition)
-                .AddChannel(Core::VertexChannelFormat::kR32G32_SFLOAT, Core::ShaderSemantic::kTexCoord);
-
-            const Core::InputStreamLayout inputLayout = inputLayoutBuilder.Build();
-
-            Core::GeometryAllocationDesc geometryDesc;
-            geometryDesc.m_name = "Triangle";
-            geometryDesc.m_inputLayout = inputLayout;
-            geometryDesc.m_indexType = Core::IndexType::kUint32;
-            geometryDesc.m_indexCount = festd::size(kIndexData);
-            geometryDesc.m_vertexCount = festd::size(kVertexData);
-            m_geometry = m_geometryPool->Allocate(geometryDesc);
-
-            geometryDesc.m_meshletCount = festd::size(kMeshletHeaders);
-            geometryDesc.m_primitiveCount = festd::size(kMeshletPrimitives);
-
-            m_geometryPool->GetAvailabilityWaitGroup(m_geometry)->Wait();
-
-            const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
-
-            Core::AsyncCopyCommandListBuilder copyCommandListBuilder{ &tempAllocator, 256 };
-            copyCommandListBuilder.UploadBuffer(geometryView.m_streamBufferViews[0].m_buffer, kVertexData);
-            copyCommandListBuilder.UploadBuffer(geometryView.m_indexBufferView.m_buffer, kIndexData);
-
-            const Rc copyWaitGroup = WaitGroup::Create();
-            Core::AsyncCopyCommandList copyCommandList = copyCommandListBuilder.Build(copyWaitGroup.Get());
-            m_copyQueue->ExecuteCommandList(&copyCommandList);
-
-            copyWaitGroup->Wait();
+            ViewData& viewData = blackboard.Add<ViewData>();
+            viewData.m_mainColorTarget = viewport->GetCurrentColorTarget();
+            viewData.m_mainDepthTarget = m_mainDepthTarget.Get();
         }
 
-        void Render(Core::FrameGraph& graph, Core::FrameGraphBuilder& builder, Core::FrameGraphBlackboard& blackboard)
+        void Render(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
         {
             FE_PROFILER_ZONE();
 
@@ -394,29 +296,18 @@ namespace
 
             Memory::FiberTempAllocator temp;
 
-            const Core::GeometryView geometryView = m_geometryPool->GetView(m_geometry);
-
-            GraphicsPipeline::Specializer graphicsPipelineSpecializer;
-            graphicsPipelineSpecializer.Set<GraphicsPipeline::ColorTargetFormat>(m_colorTargetFormat);
-            const auto* graphicsPipeline = GraphicsPipeline::GetPipeline(graphicsPipelineSpecializer);
+            const ViewData& viewData = blackboard.Get<ViewData>();
 
             MeshShaderPipeline::Specializer meshShaderPipelineSpecializer;
-            meshShaderPipelineSpecializer.Set<MeshShaderPipeline::ColorTargetFormat>(m_colorTargetFormat);
-            const auto* meshShaderPipeline = MeshShaderPipeline::GetPipeline(meshShaderPipelineSpecializer);
-
-            Core::DrawCall drawCall;
-            drawCall.InitForSingleInstance(geometryView, graphicsPipeline);
+            meshShaderPipelineSpecializer.Set<MeshShaderPipeline::ColorTargetFormat>(
+                viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
             PassData& passData = blackboard.Add<PassData>();
-            passData.m_drawCall = drawCall;
             passData.m_model = m_model.Get();
             passData.m_computePipeline = ComputePipeline::GetPipeline();
-            passData.m_meshShaderPipeline = meshShaderPipeline;
+            passData.m_meshShaderPipeline = MeshShaderPipeline::GetPipeline(meshShaderPipelineSpecializer);
 
-            const Core::ViewportDesc& viewportDesc = graph.GetViewport()->GetDesc();
-            const RectF viewport = viewportDesc.GetRect();
-
-            Core::BufferHandle instanceData;
+            Core::Buffer* instanceData = graph.GetResourcePool()->CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 3);
 
             static float rotation = 0.0f;
             rotation += deltaTime * Constants::kPI * 0.5f;
@@ -424,12 +315,6 @@ namespace
 
             for (uint32_t computePassIndex = 0; computePassIndex < 3; ++computePassIndex)
             {
-                const auto computePass = builder.AddPass("TestCompute");
-
-                if (computePassIndex == 0)
-                    instanceData = computePass.CreateStructuredBuffer<Matrix4x4>("InstanceDataBuffer", 3);
-                instanceData = computePass.Write(instanceData);
-
                 computePass.SetFunction([instanceData, viewport, computePassIndex](Core::FrameGraphContext& context) {
                     FE_PROFILER_ZONE();
 
@@ -569,10 +454,6 @@ namespace
         HighResolutionTimer m_timer;
 
         Core::AsyncCopyQueue* m_copyQueue = nullptr;
-        Core::GeometryPool* m_geometryPool = nullptr;
-        Core::GeometryHandle m_geometry;
-
-        Core::Format m_colorTargetFormat = Core::Format::kUndefined;
 
         Rc<WaitGroup> ScheduleUpdate() override
         {
@@ -586,10 +467,10 @@ namespace
             positionComponent->m_position = { 1.0f, 2.0f, 3.0f };
 
             m_frameGraph = serviceProvider->ResolveRequired<Core::FrameGraph>();
-            m_frameGraph->RegisterViewport(m_viewport.Get());
             m_frameGraph->BeginFrame();
 
             Core::FrameGraphBuilder builder{ m_frameGraph.Get() };
+            PrepareView(m_viewport.Get());
             Render(*m_frameGraph, builder, m_frameGraph->GetBlackboard());
 
             m_frameGraph->CompileAndExecute();
@@ -606,6 +487,7 @@ namespace
         Rc<TextureAsset> m_texture;
         Rc<ModelAsset> m_model;
 
+        Rc<Core::Texture> m_mainDepthTarget;
         Rc<Core::Viewport> m_viewport;
         Rc<Core::FrameGraph> m_frameGraph;
     };
@@ -616,8 +498,7 @@ int main(const int32_t argc, const char** argv)
     Env::ApplicationInfo applicationInfo;
     applicationInfo.m_name = kExampleName;
 
-    Core::Module::Init();
-    Module::Init();
+    Graphics::Module::Init();
     Framework::Module::Init();
     Env::Init(applicationInfo);
 

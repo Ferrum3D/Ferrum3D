@@ -176,23 +176,36 @@ namespace FE::Env
         static void Register(Module* module);
     };
 
-#define FE_DECLARE_MODULE(name)                                                                                                  \
-    static name* GInstance;                                                                                                      \
-    static void Init();                                                                                                          \
-    void Shutdown() override;                                                                                                    \
-    struct FE_UNIQUE_IDENT(Dummy_DeclareModule)                                                                                  \
-    {                                                                                                                            \
-    }
 
-#define FE_IMPLEMENT_MODULE(name)                                                                                                \
-    name* name::GInstance = nullptr;                                                                                             \
+#define FE_DECLARE_MODULE(name)                                                                                                  \
+private:                                                                                                                         \
+    static name* GInstance;                                                                                                      \
+    void Shutdown() override;                                                                                                    \
+                                                                                                                                 \
+public:                                                                                                                          \
+    static void Init()
+
+
+#define FE_IMPLEMENT_MODULE_2(name, dependencyHandler)                                                                           \
     void name::Init()                                                                                                            \
     {                                                                                                                            \
+        if (GInstance)                                                                                                           \
+            return;                                                                                                              \
+                                                                                                                                 \
+        static bool calledOnce = false;                                                                                          \
+        FE_CoreAssert_1(!calledOnce);                                                                                              \
+        calledOnce = true;                                                                                                       \
+                                                                                                                                 \
+        void (*handler)() = dependencyHandler;                                                                                   \
+        if (handler)                                                                                                             \
+            handler();                                                                                                           \
+                                                                                                                                 \
         GInstance = FE::Memory::New<name>(FE::Env::GetStaticAllocator(FE::Memory::StaticAllocatorType::kLinear));                \
         GInstance->m_serviceRegistry = FE::Env::CreateServiceRegistry();                                                         \
         GInstance->m_serviceRegistry->AddRef();                                                                                  \
         Register(GInstance);                                                                                                     \
     }                                                                                                                            \
+                                                                                                                                 \
     void name::Shutdown()                                                                                                        \
     {                                                                                                                            \
         if (GInstance)                                                                                                           \
@@ -202,9 +215,12 @@ namespace FE::Env
         }                                                                                                                        \
         GInstance = nullptr;                                                                                                     \
     }                                                                                                                            \
-    struct FE_UNIQUE_IDENT(Dummy_ImplementModule)                                                                                \
-    {                                                                                                                            \
-    }
+                                                                                                                                 \
+    name* name::GInstance = nullptr
+
+#define FE_IMPLEMENT_MODULE_1(name) FE_IMPLEMENT_MODULE_2(name, nullptr)
+
+#define FE_IMPLEMENT_MODULE(...) FE_MACRO_SPECIALIZE(FE_IMPLEMENT_MODULE, __VA_ARGS__)
 
 
     struct ApplicationInfo final

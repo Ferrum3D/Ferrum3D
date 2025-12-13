@@ -27,7 +27,7 @@ namespace FE::Graphics::Common
         FE_RTTI("B498017D-C07F-4022-8C3D-6F4C9CCF132B");
 
         ResourceInstance()
-            : m_bind(Core::BarrierAccessFlags::kNone)
+            : m_bindFlags(Core::BarrierAccessFlags::kNone)
             , m_memoryStatus(Core::ResourceMemory::kNotCommitted)
             , m_type(Core::ResourceType::kUnknown)
         {
@@ -40,7 +40,7 @@ namespace FE::Graphics::Common
         ResourceInstance& operator=(ResourceInstance&&) = delete;
 
         Core::ResourcePool* m_pool = nullptr;
-        Core::BarrierAccessFlags m_bind : 26;
+        Core::BarrierAccessFlags m_bindFlags : 26;
         Core::ResourceMemory m_memoryStatus : 4;
         Core::ResourceType m_type : 2;
 
@@ -63,10 +63,10 @@ namespace FE::Graphics::Common
             if (m_bufferDesc != desc)
                 return 0;
 
-            if (!Bit::AllSet(m_bind, params.m_bindFlags))
+            if (!Bit::AllSet(m_bindFlags, params.m_bindFlags))
                 return 0;
 
-            const Core::BarrierAccessFlags unusedBindFlags = m_bind & ~params.m_bindFlags;
+            const Core::BarrierAccessFlags unusedBindFlags = m_bindFlags & ~params.m_bindFlags;
             return 8 * sizeof(Core::BarrierAccessFlags) - Bit::PopCount(festd::to_underlying(unusedBindFlags));
         }
 
@@ -81,10 +81,10 @@ namespace FE::Graphics::Common
             if (m_textureDesc != desc)
                 return 0;
 
-            if (!Bit::AllSet(m_bind, params.m_bindFlags))
+            if (!Bit::AllSet(m_bindFlags, params.m_bindFlags))
                 return 0;
 
-            const Core::BarrierAccessFlags unusedBindFlags = m_bind & ~params.m_bindFlags;
+            const Core::BarrierAccessFlags unusedBindFlags = m_bindFlags & ~params.m_bindFlags;
             if (Bit::AllSet(unusedBindFlags, Core::BarrierAccessFlags::kShaderWrite)
                 && Bit::AllSet(params.m_bindFlags, Core::BarrierAccessFlags::kRenderTarget))
             {

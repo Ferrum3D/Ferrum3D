@@ -187,7 +187,9 @@ namespace FE::Graphics
 
         const Rc geometryBuffer = m_resourcePool->CreateBuffer(
             Fmt::FormatName("GeometryBuffer '{}' LOD{}", request->m_asset->m_name, request->m_header.m_lodCount - lodIndex - 1),
-            Core::BufferDesc(expectedDataSize, Core::BindFlags::kShaderResource, Core::ResourceMemory::kDeviceLocal));
+            Core::BufferDesc(expectedDataSize));
+        m_resourcePool->CommitBufferMemory(geometryBuffer.Get(),
+                                           { Core::BarrierAccessFlags::kShaderRead, Core::ResourceMemory::kDeviceLocal });
 
         request->m_asset->m_geometryBuffers[lodIndex] = geometryBuffer;
 

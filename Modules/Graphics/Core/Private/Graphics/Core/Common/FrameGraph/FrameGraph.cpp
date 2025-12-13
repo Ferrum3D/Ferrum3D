@@ -379,7 +379,7 @@ namespace FE::Graphics::Common
             }
 
             const ResourceInstance* bufferInstance = buffer->GetInstance();
-            FE_Assert(Bit::AllSet(bufferInstance->m_bind, resourceNode.m_bindFlags));
+            FE_Assert(Bit::AllSet(bufferInstance->m_bindFlags, resourceNode.m_bindFlags));
 
             SubresourceState state = buffer->GetState();
             const bool isReadToReadTransition = Core::IsReadAccess(state.m_access) && Core::IsReadAccess(access.m_accessFlags);
@@ -467,15 +467,12 @@ namespace FE::Graphics::Common
             }
 
             const ResourceInstance* textureInstance = texture->GetInstance();
-            FE_Assert(Bit::AllSet(textureInstance->m_bind, resourceNode.m_bindFlags));
+            FE_Assert(Bit::AllSet(textureInstance->m_bindFlags, resourceNode.m_bindFlags));
 
             SubresourceState state = texture->GetState(access.m_subresource);
-            const bool isReadToReadTransition = Core::IsReadAccess(state.m_access) && Core::IsReadAccess(access.m_accessFlags);
-            const bool isCompatibleAccess = Bit::AllSet(state.m_access, access.m_accessFlags);
-            const bool isCompatibleSync = Bit::AllSet(state.m_sync, access.m_syncFlags);
-            const bool isCompatibleLayout = state.m_layout == access.m_layout;
 
-            if (state.m_queueType != Core::DeviceQueueType::kGraphics)
+            const bool isSameQueue = state.m_queueType == Core::DeviceQueueType::kGraphics;
+            if (!isSameQueue)
             {
                 FE_Assert(state.m_queueType == Core::DeviceQueueType::kTransfer);
 
@@ -484,9 +481,17 @@ namespace FE::Graphics::Common
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
                 pass.m_textureOwnershipTransferBarriers.push_back(transferBarrier.value());
 
+                state.m_access = transferBarrier->m_accessAfter;
+                state.m_layout = transferBarrier->m_layoutAfter;
+                state.m_sync = transferBarrier->m_syncAfter;
                 state.m_queueType = Core::DeviceQueueType::kGraphics;
                 texture->SetQueueOwnership(transferBarrier->m_subresource, Core::DeviceQueueType::kGraphics);
             }
+
+            const bool isReadToReadTransition = Core::IsReadAccess(state.m_access) && Core::IsReadAccess(access.m_accessFlags);
+            const bool isCompatibleLayout = state.m_layout == access.m_layout;
+            const bool isCompatibleSync = Bit::AllSet(state.m_sync, access.m_syncFlags);
+            const bool isCompatibleAccess = Bit::AllSet(state.m_access, access.m_accessFlags);
 
             Core::TextureBarrierDesc barrier;
             barrier.m_texture = texture;
@@ -503,16 +508,19 @@ namespace FE::Graphics::Common
             if (isReadToReadTransition && isCompatibleLayout)
             {
                 if (isCompatibleSync && isCompatibleAccess)
+                {
+                    texture->SetState(access.m_subresource, state);
                     continue;
+                }
 
-                if (resourceNode.m_previousBarrierPassIndex != kInvalidIndex)
+                if (isSameQueue && resourceNode.m_previousBarrierPassIndex != kInvalidIndex)
                 {
                     PassNode& previousBarrierPass = m_passes[resourceNode.m_previousBarrierPassIndex];
                     FE_Verify(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
 
                     state.m_access |= access.m_accessFlags;
-                    state.m_sync |= access.m_syncFlags;
                     state.m_layout = access.m_layout;
+                    state.m_sync |= access.m_syncFlags;
                     texture->SetState(access.m_subresource, state);
                     continue;
                 }
@@ -522,8 +530,8 @@ namespace FE::Graphics::Common
             resourceNode.m_previousBarrierPassIndex = passIndex;
 
             state.m_access = access.m_accessFlags;
-            state.m_sync = access.m_syncFlags;
             state.m_layout = access.m_layout;
+            state.m_sync = access.m_syncFlags;
             state.m_queueType = Core::DeviceQueueType::kGraphics;
             texture->SetState(access.m_subresource, state);
         }

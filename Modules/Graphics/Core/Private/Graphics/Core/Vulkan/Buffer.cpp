@@ -135,7 +135,7 @@ namespace FE::Graphics::Vulkan
 
         m_instance = BufferInstance::Create();
         m_instance->m_pool = resourcePool;
-        m_instance->m_bind = params.m_bindFlags;
+        m_instance->m_bindFlags = params.m_bindFlags;
         m_instance->m_type = m_type;
 
         Common::SubresourceState& initialState = m_instance->m_subresourceStates.emplace_back();

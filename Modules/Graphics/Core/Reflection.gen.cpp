@@ -45,8 +45,8 @@
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GeometryPool.h>
-#include <Graphics/Core/Vulkan/GraphicsCommandQueue.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourceInstance.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
@@ -3655,11 +3655,11 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const RTTI::TypeID GraphicsCommandQueue::TypeID = RTTI::TypeID{ "3830a626-8eee-4ffe-8f17-0195dde01262" };
+    const RTTI::TypeID GraphicsQueue::TypeID = RTTI::TypeID{ "3830a626-8eee-4ffe-8f17-0195dde01262" };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3830a6268eee4ffe8f170195dde01262(GraphicsCommandQueue* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3830a6268eee4ffe8f170195dde01262(GraphicsQueue* thisPtr,
                                                                                               const RTTI::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(RTTI::TypeID)] = {
@@ -3694,22 +3694,22 @@ namespace FE::Graphics::Vulkan
         }
     } // namespace
 
-    const RTTI::Type& GraphicsCommandQueue::RTTI_GetType()
+    const RTTI::Type& GraphicsQueue::RTTI_GetType()
     {
         return RTTI_GetMutableType_3830a6268eee4ffe8f170195dde01262();
     }
 
-    void* FE_VECTORCALL GraphicsCommandQueue::RTTI_TryCast(const RTTI::TypeID typeID)
+    void* FE_VECTORCALL GraphicsQueue::RTTI_TryCast(const RTTI::TypeID typeID)
     {
         return RTTI_TryCastImpl_3830a6268eee4ffe8f170195dde01262(this, typeID);
     }
 
-    const void* FE_VECTORCALL GraphicsCommandQueue::RTTI_TryCast(const RTTI::TypeID typeID) const
+    const void* FE_VECTORCALL GraphicsQueue::RTTI_TryCast(const RTTI::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_3830a6268eee4ffe8f170195dde01262(const_cast<GraphicsCommandQueue*>(this), typeID);
+        return RTTI_TryCastImpl_3830a6268eee4ffe8f170195dde01262(const_cast<GraphicsQueue*>(this), typeID);
     }
 
-    void GraphicsCommandQueue::Reflect(RTTI::ReflectionContext& context)
+    void GraphicsQueue::Reflect(RTTI::ReflectionContext& context)
     {
         RTTI::Type& typeInstance = RTTI_GetMutableType_3830a6268eee4ffe8f170195dde01262();
 
@@ -3729,7 +3729,7 @@ namespace FE::Graphics::Vulkan
 
         static const festd::array<RTTI::FieldInfo, 0> kFields = {};
 
-        context.ReflectClass<GraphicsCommandQueue>(typeInstance,
+        context.ReflectClass<GraphicsQueue>(typeInstance,
                                                    UUID::LoadAligned(kTypeIDBytes),
                                                    "FE::Graphics::Vulkan::GraphicsCommandQueue",
                                                    kBaseClassTypeIDs,
@@ -3737,7 +3737,7 @@ namespace FE::Graphics::Vulkan
                                                    kFields);
     }
 
-    static RTTI::TypeRegistrar GTypeRegistrar_3830a6268eee4ffe8f170195dde01262(&GraphicsCommandQueue::Reflect);
+    static RTTI::TypeRegistrar GTypeRegistrar_3830a6268eee4ffe8f170195dde01262(&GraphicsQueue::Reflect);
 } // namespace FE::Graphics::Vulkan
 
 

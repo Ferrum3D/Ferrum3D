@@ -342,7 +342,8 @@ namespace FE::Env
 
     void Init(const ApplicationInfo& info)
     {
-        FE_CoreAssert(!GEnvironment.m_appInfo.m_name, "Application info already set");
+        FE_CoreAssert(GEnvironment.m_appInfo.m_name == nullptr, "Application info already set");
+        FE_CoreAssert(info.m_name != nullptr);
         GEnvironment.m_appInfo = info;
 
         DI::ServiceRegistryBuilder builder{ GetRootServiceRegistry() };

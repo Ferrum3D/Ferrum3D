@@ -1,3 +1,4 @@
+#include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/ImageFormat.h>
@@ -48,39 +49,6 @@ namespace FE::Graphics::Vulkan
 
             return usage;
         }
-
-
-        VkImageLayout Translate(const Core::BarrierLayout layout)
-        {
-            switch (layout)
-            {
-            default:
-                FE_DebugBreak();
-                [[fallthrough]];
-            case Core::BarrierLayout::kUndefined:
-                return VK_IMAGE_LAYOUT_UNDEFINED;
-            case Core::BarrierLayout::kRenderTarget:
-                return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case Core::BarrierLayout::kShaderRead:
-                return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            case Core::BarrierLayout::kShaderReadWrite:
-                return VK_IMAGE_LAYOUT_GENERAL;
-            case Core::BarrierLayout::kDepthStencilRead:
-                return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-            case Core::BarrierLayout::kDepthStencilWrite:
-                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            case Core::BarrierLayout::kCopySource:
-            case Core::BarrierLayout::kResolveSource:
-                return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            case Core::BarrierLayout::kCopyDest:
-            case Core::BarrierLayout::kResolveDest:
-                return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            case Core::BarrierLayout::kShadingRateSource:
-                return VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-            case Core::BarrierLayout::kPresentSource:
-                return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            }
-        }
     } // namespace
 
 
@@ -120,7 +88,7 @@ namespace FE::Graphics::Vulkan
 
         m_instance = TextureInstance::Create();
         m_instance->m_pool = resourcePool;
-        m_instance->m_bind = params.m_bindFlags;
+        m_instance->m_bindFlags = params.m_bindFlags;
         m_instance->m_type = m_type;
 
         VkImageCreateInfo imageCI{};
@@ -155,7 +123,7 @@ namespace FE::Graphics::Vulkan
         imageCI.arrayLayers = m_desc.m_arraySize;
         imageCI.format = Translate(m_desc.m_imageFormat);
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageCI.initialLayout = Translate(params.m_initialLayout);
+        imageCI.initialLayout = TranslateImageLayout(params.m_initialLayout);
         imageCI.samples = GetVKSampleCountFlags(m_desc.m_sampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -290,7 +258,7 @@ namespace FE::Graphics::Vulkan
 
         auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
 
-        FE_Assert(textureInstance->m_wholeImageView == nullptr);
+        FE_Assert(textureInstance->m_wholeImageView == VK_NULL_HANDLE);
 
         VkImageViewCreateInfo viewCI{};
         viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

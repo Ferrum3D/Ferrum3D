@@ -11,9 +11,7 @@ namespace FE::Graphics::Vulkan
     CommandBuffer::~CommandBuffer()
     {
         if (m_nativeCommandBuffer)
-        {
             vkFreeCommandBuffers(NativeCast(m_device), m_nativeCommandPool, 1, &m_nativeCommandBuffer);
-        }
 
         m_nativeQueue = VK_NULL_HANDLE;
         m_nativeCommandBuffer = VK_NULL_HANDLE;
@@ -31,14 +29,15 @@ namespace FE::Graphics::Vulkan
 
     void CommandBuffer::Begin()
     {
+        FE_Assert(!m_isRecording);
+
         if (m_wasUsed)
-        {
             VerifyVk(vkResetCommandBuffer(m_nativeCommandBuffer, 0));
-        }
 
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         VerifyVk(vkBeginCommandBuffer(m_nativeCommandBuffer, &beginInfo));
+        m_isRecording = true;
     }
 
 

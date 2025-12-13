@@ -21,6 +21,7 @@
     Public/Graphics/Core/GeometryPool.h
     Public/Graphics/Core/GeometryView.h
     Public/Graphics/Core/GraphicsPipeline.h
+    Public/Graphics/Core/GraphicsQueue.h
     Public/Graphics/Core/ImageBase.h
     Public/Graphics/Core/ImageFormat.h
     Public/Graphics/Core/InputLayoutBuilder.h
@@ -93,6 +94,8 @@ set(VULKAN_SOURCES
 
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.cpp
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.h
+    Private/Graphics/Core/Vulkan/Barrier.cpp
+    Private/Graphics/Core/Vulkan/Barrier.h
     Private/Graphics/Core/Vulkan/Buffer.cpp
     Private/Graphics/Core/Vulkan/Buffer.h
     Private/Graphics/Core/Vulkan/CommandBuffer.cpp
@@ -109,10 +112,10 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/Fence.h
     Private/Graphics/Core/Vulkan/GeometryPool.cpp
     Private/Graphics/Core/Vulkan/GeometryPool.h
-    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.cpp
-    Private/Graphics/Core/Vulkan/GraphicsCommandQueue.h
     Private/Graphics/Core/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/Core/Vulkan/GraphicsPipeline.h
+    Private/Graphics/Core/Vulkan/GraphicsQueue.cpp
+    Private/Graphics/Core/Vulkan/GraphicsQueue.h
     Private/Graphics/Core/Vulkan/ImageFormat.h
     Private/Graphics/Core/Vulkan/PipelineFactory.cpp
     Private/Graphics/Core/Vulkan/PipelineFactory.h

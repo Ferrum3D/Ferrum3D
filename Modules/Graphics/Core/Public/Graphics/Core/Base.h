@@ -23,6 +23,7 @@ namespace FE::Graphics::Core
     struct DescriptorManager;
 
     struct AsyncCopyQueue;
+    struct GraphicsQueue;
     struct ResourcePool;
 
 

@@ -38,7 +38,7 @@ namespace FE::Graphics::DB
     {
         PageReplicationManager(Core::ResourcePool* resourcePool);
 
-        void UploadPage(Core::FrameGraphBuilder& builder, const StoragePage* page);
+        void UploadPage(Core::FrameGraph& graph, const StoragePage* page);
 
     private:
         struct StagingPage final
@@ -49,11 +49,9 @@ namespace FE::Graphics::DB
 
         void CheckPendingPages();
 
-        uint32_t m_bufferIndex = 0;
         Core::ResourcePool* m_resourcePool;
 
         Rc<Core::Fence> m_fence;
-        SegmentedVector<Rc<Core::Buffer>> m_freeStagingPages;
         festd::inline_ring_buffer<StagingPage, 32> m_pendingPagesQueue;
     };
 
