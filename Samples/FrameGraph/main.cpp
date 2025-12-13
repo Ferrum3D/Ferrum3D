@@ -24,8 +24,8 @@
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
-#include <Graphics/Features/Tools/Blit.h>
-#include <Graphics/Features/Tools/Downsample.h>
+#include <Graphics/Passes/Tools/Blit.h>
+#include <Graphics/Passes/Tools/Downsample.h>
 #include <Graphics/Module.h>
 
 using namespace FE;

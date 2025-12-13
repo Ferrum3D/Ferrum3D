@@ -1,7 +1,7 @@
 ﻿#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/PipelineStates.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>

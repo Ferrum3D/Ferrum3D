@@ -16,14 +16,10 @@
     Public/Graphics/Core/Device.h
     Public/Graphics/Core/DeviceFactory.h
     Public/Graphics/Core/DeviceObject.h
-    Public/Graphics/Core/DrawArguments.h
     Public/Graphics/Core/Fence.h
-    Public/Graphics/Core/GeometryPool.h
-    Public/Graphics/Core/GeometryView.h
+    Public/Graphics/Core/Format.h
     Public/Graphics/Core/GraphicsPipeline.h
     Public/Graphics/Core/GraphicsQueue.h
-    Public/Graphics/Core/ImageBase.h
-    Public/Graphics/Core/ImageFormat.h
     Public/Graphics/Core/InputLayoutBuilder.h
     Public/Graphics/Core/InputStreamLayout.h
     Public/Graphics/Core/Meshlet.h
@@ -63,12 +59,11 @@ set(COMMON_SOURCES
     Private/Graphics/Core/Common/FrameGraph/FrameGraph.h
     Private/Graphics/Core/Common/FrameGraph/FrameGraphContext.cpp
     Private/Graphics/Core/Common/FrameGraph/FrameGraphContext.h
-    Private/Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.cpp
-    Private/Graphics/Core/Common/FrameGraph/FrameGraphResourcePool.h
 
     Private/Graphics/Core/AsyncCopyQueue.cpp
     Private/Graphics/Core/DescriptorManager.cpp
     Private/Graphics/Core/DescriptorManager.h
+    Private/Graphics/Core/Format.cpp
     Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp
     Private/Graphics/Core/ShaderCompilerDXC.cpp
@@ -110,13 +105,11 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/DeviceFactory.h
     Private/Graphics/Core/Vulkan/Fence.cpp
     Private/Graphics/Core/Vulkan/Fence.h
-    Private/Graphics/Core/Vulkan/GeometryPool.cpp
-    Private/Graphics/Core/Vulkan/GeometryPool.h
+    Private/Graphics/Core/Vulkan/Format.h
     Private/Graphics/Core/Vulkan/GraphicsPipeline.cpp
     Private/Graphics/Core/Vulkan/GraphicsPipeline.h
     Private/Graphics/Core/Vulkan/GraphicsQueue.cpp
     Private/Graphics/Core/Vulkan/GraphicsQueue.h
-    Private/Graphics/Core/Vulkan/ImageFormat.h
     Private/Graphics/Core/Vulkan/PipelineFactory.cpp
     Private/Graphics/Core/Vulkan/PipelineFactory.h
     Private/Graphics/Core/Vulkan/PipelineStates.h

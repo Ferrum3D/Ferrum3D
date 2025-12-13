@@ -1,4 +1,4 @@
-#include <Shaders/Features/Tools/Downsample/Downsample.h>
+#include <Shaders/Passes/Tools/Downsample/Downsample.h>
 
 [[vk::push_constant]] Constants GConstants;
 

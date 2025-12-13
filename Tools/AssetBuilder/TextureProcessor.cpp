@@ -6,7 +6,7 @@
 #include <FeCore/Math/Color.h>
 #include <FeCore/Memory/SegmentedBuffer.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
-#include <Graphics/Core/ImageBase.h>
+#include <Graphics/Core/Texture.h>
 #include <festd/vector.h>
 
 #include <cmp_core.h>
@@ -274,7 +274,7 @@ namespace FE
         header.m_desc.m_depth = 1;
         header.m_desc.m_arraySize = 1;
         header.m_desc.m_mipSliceCount = mipCount;
-        header.m_desc.m_dimension = Core::ImageDimension::k2D;
+        header.m_desc.m_dimension = Core::TextureDimension::k2D;
         header.m_desc.m_imageFormat = settings.m_format;
 
         festd::fixed_vector<Data::MipChainInfo, Core::Limits::Image::kMaxMipCount> mipChainInfo;

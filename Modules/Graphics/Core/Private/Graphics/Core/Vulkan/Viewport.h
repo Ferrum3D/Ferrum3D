@@ -2,7 +2,7 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 
 namespace FE::Graphics::Vulkan
 {

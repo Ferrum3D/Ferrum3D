@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/Core/ImageFormat.h>
+#include <Graphics/Core/Format.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan

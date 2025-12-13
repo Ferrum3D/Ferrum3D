@@ -366,7 +366,7 @@ namespace FE::Graphics::Vulkan
         colorTargetDesc.m_depth = 1;
         colorTargetDesc.m_arraySize = 1;
         colorTargetDesc.m_mipSliceCount = 1;
-        colorTargetDesc.m_dimension = Core::ImageDimension::k2D;
+        colorTargetDesc.m_dimension = Core::TextureDimension::k2D;
         colorTargetDesc.m_imageFormat = m_rtvFormat;
 
         m_images.reserve(imageCount);

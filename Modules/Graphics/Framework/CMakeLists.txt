@@ -3,8 +3,8 @@
 
     Shaders/Shaders/Database/Base.h
 
-    Shaders/Shaders/Features/Tools/Blit/Blit.h
-    Shaders/Shaders/Features/Tools/Downsample/Downsample.h
+    Shaders/Shaders/Passes/Tools/Blit/Blit.h
+    Shaders/Shaders/Passes/Tools/Downsample/Downsample.h
 )
 
 set(SHADER_SOURCES
@@ -14,10 +14,10 @@ set(SHADER_SOURCES
 
     Shaders/Shaders/Database/Base.hlsli
 
-    Shaders/Shaders/Features/Tools/Blit/Blit.hlsli
-    Shaders/Shaders/Features/Tools/Blit/Blit.ps.hlsl
-    Shaders/Shaders/Features/Tools/Blit/Blit.vs.hlsl
-    Shaders/Shaders/Features/Tools/Downsample/Downsample.cs.hlsl
+    Shaders/Shaders/Passes/Tools/Blit/Blit.hlsli
+    Shaders/Shaders/Passes/Tools/Blit/Blit.ps.hlsl
+    Shaders/Shaders/Passes/Tools/Blit/Blit.vs.hlsl
+    Shaders/Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl
 
     Shaders/Shaders/Platform/Vulkan/Intrinsics.hlsli
 )
@@ -34,8 +34,8 @@ set(PUBLIC_HEADERS
     Public/Graphics/Database/Base.h
     Public/Graphics/Database/Database.h
 
-    Public/Graphics/Features/Tools/Blit.h
-    Public/Graphics/Features/Tools/Downsample.h
+    Public/Graphics/Passes/Tools/Blit.h
+    Public/Graphics/Passes/Tools/Downsample.h
 
     Public/Graphics/Module.h
 )
@@ -48,8 +48,8 @@ set(COMMON_SOURCES
 
     Private/Graphics/Database/Database.cpp
 
-    Private/Graphics/Features/Tools/Blit.cpp
-    Private/Graphics/Features/Tools/Downsample.cpp
+    Private/Graphics/Passes/Tools/Blit.cpp
+    Private/Graphics/Passes/Tools/Downsample.cpp
 
     Private/Graphics/Module.cpp
 )

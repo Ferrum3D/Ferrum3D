@@ -1,4 +1,4 @@
-#include <Shaders/Features/Tools/Blit/Blit.hlsli>
+#include <Shaders/Passes/Tools/Blit/Blit.hlsli>
 
 PixelAttributes main(const uint32_t index : SV_VertexID)
 {

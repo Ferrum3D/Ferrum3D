@@ -1,7 +1,7 @@
 #include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/PipelineStates.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Texture.h>
@@ -10,18 +10,18 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        VkImageViewType Translate(const Core::ImageDimension dim, const bool isArray)
+        VkImageViewType Translate(const Core::TextureDimension dim, const bool isArray)
         {
             switch (dim)
             {
-            case Core::ImageDimension::k1D:
+            case Core::TextureDimension::k1D:
                 return isArray ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
-            case Core::ImageDimension::k2D:
+            case Core::TextureDimension::k2D:
                 return isArray ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
-            case Core::ImageDimension::k3D:
+            case Core::TextureDimension::k3D:
                 FE_AssertMsg(!isArray, "Array of 3D images is not allowed");
                 return VK_IMAGE_VIEW_TYPE_3D;
-            case Core::ImageDimension::kCubemap:
+            case Core::TextureDimension::kCubemap:
                 return isArray ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
             default:
                 FE_AssertMsg(false, "Invalid ImageDim");
@@ -97,20 +97,20 @@ namespace FE::Graphics::Vulkan
 
         switch (m_desc.m_dimension)
         {
-        case Core::ImageDimension::k1D:
+        case Core::TextureDimension::k1D:
             imageCI.imageType = VK_IMAGE_TYPE_1D;
             FE_Assert(m_desc.m_height == 1);
             FE_Assert(m_desc.m_depth == 1);
             break;
-        case Core::ImageDimension::kCubemap:
+        case Core::TextureDimension::kCubemap:
             FE_AssertMsg(m_desc.m_arraySize == 6, "Cubemap image must have exactly 6 slices, but got {}", m_desc.m_arraySize);
             imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             [[fallthrough]];
-        case Core::ImageDimension::k2D:
+        case Core::TextureDimension::k2D:
             imageCI.imageType = VK_IMAGE_TYPE_2D;
             FE_Assert(m_desc.m_depth == 1);
             break;
-        case Core::ImageDimension::k3D:
+        case Core::TextureDimension::k3D:
             imageCI.imageType = VK_IMAGE_TYPE_3D;
             break;
         default:

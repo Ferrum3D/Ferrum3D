@@ -2,7 +2,7 @@
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 
 namespace FE::Graphics::Vulkan

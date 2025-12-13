@@ -1,4 +1,4 @@
-#include <Shaders/Features/Tools/Blit/Blit.hlsli>
+#include <Shaders/Passes/Tools/Blit/Blit.hlsli>
 
 void main(const in PixelAttributes pixelAttributes, out float4 color : SV_Target0)
 {

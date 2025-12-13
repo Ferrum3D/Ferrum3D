@@ -146,7 +146,7 @@ private:
         header.m_desc.m_depth = 1;
         header.m_desc.m_arraySize = 1;
         header.m_desc.m_mipSliceCount = 1;
-        header.m_desc.m_dimension = Core::ImageDimension::k2D;
+        header.m_desc.m_dimension = Core::TextureDimension::k2D;
         header.m_desc.m_imageFormat = Core::Format::kBC7_UNORM;
         writer.Write(header);
 

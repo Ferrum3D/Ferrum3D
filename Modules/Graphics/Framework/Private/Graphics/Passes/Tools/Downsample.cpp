@@ -1,9 +1,9 @@
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/ResourcePool.h>
-#include <Graphics/Features/Tools/Downsample.h>
+#include <Graphics/Passes/Tools/Downsample.h>
 
-#include <Shaders/Features/Tools/Downsample/Downsample.h>
+#include <Shaders/Passes/Tools/Downsample/Downsample.h>
 
 namespace FE::Graphics::Tools
 {
@@ -20,7 +20,7 @@ namespace FE::Graphics::Tools
         private:
             void SetupRequest([[maybe_unused]] const uint32_t variantIndex, Core::ComputePipelineRequest& request) override
             {
-                request.m_desc.SetComputeShader("Shaders/Features/Tools/Downsample/Downsample.cs.hlsl");
+                request.m_desc.SetComputeShader("Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl");
             }
         };
         FE_IMPLEMENT_PIPELINE_SET(Pipeline);

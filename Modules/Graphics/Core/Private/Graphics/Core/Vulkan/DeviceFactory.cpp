@@ -11,7 +11,6 @@
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
-#include <Graphics/Core/Vulkan/GeometryPool.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
@@ -128,7 +127,6 @@ namespace FE::Graphics::Vulkan
         builder.Bind<Core::ResourcePool>().To<ResourcePool>().InSingletonScope();
         builder.Bind<Core::AsyncCopyQueue>().To<AsyncCopyQueue>().InSingletonScope();
         builder.Bind<Core::PipelineFactory>().To<PipelineFactory>().InSingletonScope();
-        builder.Bind<Core::GeometryPool>().To<GeometryPool>().InSingletonScope();
         builder.Bind<Core::ShaderLibrary>().To<ShaderLibrary>().InSingletonScope();
         builder.Bind<Core::DescriptorManager>().To<DescriptorManager>().InSingletonScope();
         builder.Bind<Core::GraphicsQueue>().To<GraphicsQueue>().InSingletonScope();

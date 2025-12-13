@@ -1,7 +1,7 @@
 ﻿#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/ImageFormat.h>
+#include <Graphics/Core/Format.h>
 #include <Graphics/Core/Resource.h>
 
 namespace FE::Graphics::Common

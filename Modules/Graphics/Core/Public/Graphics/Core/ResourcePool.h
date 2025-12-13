@@ -33,7 +33,7 @@ namespace FE::Graphics::Core
         {
             TextureDesc desc;
             desc.SetSize(size);
-            desc.m_dimension = ImageDimension::k2D;
+            desc.m_dimension = TextureDimension::k2D;
             desc.m_mipSliceCount = mipCount;
             desc.m_imageFormat = format;
             desc.m_sampleCount = 1;
@@ -45,7 +45,7 @@ namespace FE::Graphics::Core
         {
             TextureDesc desc;
             desc.SetSize(size);
-            desc.m_dimension = ImageDimension::k3D;
+            desc.m_dimension = TextureDimension::k3D;
             desc.m_mipSliceCount = mipCount;
             desc.m_imageFormat = format;
             desc.m_sampleCount = 1;

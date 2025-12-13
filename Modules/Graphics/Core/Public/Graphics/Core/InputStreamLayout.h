@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Graphics/Core/ImageFormat.h>
+#include <Graphics/Core/Format.h>
 
 namespace FE::Graphics::Core
 {

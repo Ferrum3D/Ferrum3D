@@ -1,13 +1,9 @@
 #pragma once
 #include <FeCore/Base/BaseMath.h>
-#include <Graphics/Core/ImageBase.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
 {
-    struct Buffer;
-    struct Texture;
-
-
     enum class BarrierLayout : uint32_t
     {
         kUndefined,

@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Math/Rect.h>
 #include <Graphics/Core/FrameGraph/Base.h>
+#include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Tools::Blit
 {

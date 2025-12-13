@@ -3,9 +3,9 @@
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/InputLayoutBuilder.h>
 #include <Graphics/Core/PipelineVariantSet.h>
-#include <Graphics/Features/Tools/Blit.h>
+#include <Graphics/Passes/Tools/Blit.h>
 
-#include <Shaders/Features/Tools/Blit/Blit.h>
+#include <Shaders/Passes/Tools/Blit/Blit.h>
 
 namespace FE::Graphics::Tools
 {
@@ -25,8 +25,8 @@ namespace FE::Graphics::Tools
                 const Specializer specializer(variantIndex);
 
                 request.m_desc.SetTopology(Core::PrimitiveTopology::kTriangleList)
-                    .SetPixelShader("Shaders/Features/Tools/Blit/Blit.ps.hlsl")
-                    .SetVertexShader("Shaders/Features/Tools/Blit/Blit.vs.hlsl")
+                    .SetPixelShader("Shaders/Passes/Tools/Blit/Blit.ps.hlsl")
+                    .SetVertexShader("Shaders/Passes/Tools/Blit/Blit.vs.hlsl")
                     .SetRTVFormat(specializer.Get<ColorTargetFormat>());
             }
         };

@@ -1,7 +1,7 @@
 ﻿#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 

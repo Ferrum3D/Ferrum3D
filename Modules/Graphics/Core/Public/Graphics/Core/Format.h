@@ -4,6 +4,19 @@
 
 namespace FE::Graphics::Core
 {
+    enum class IndexType : uint32_t
+    {
+        kUint16 = 0,
+        kUint32 = 1,
+    };
+
+
+    inline uint32_t GetIndexByteSize(const IndexType indexType)
+    {
+        return 2 + static_cast<uint32_t>(indexType) * 2;
+    }
+
+
     enum class ImageAspect : uint32_t
     {
         kColor,
@@ -166,8 +179,6 @@ namespace FE::Graphics::Core
 #undef FE_DECL_FORMAT_ENUM_VALUE
     };
 
-    // static_assert((festd::to_underlying(Format::kR32G32B32A32_UINT) == FE_MAKE_FORMAT(Int, 16, 4, Color, 0, 0, 0, 43)));
-
 
     // clang-format off
 #define FE_EXPAND_VERTEX_CHANNEL_FORMATS(_Func)                                                                                  \
@@ -227,49 +238,9 @@ namespace FE::Graphics::Core
     };
 
 
-    inline VertexChannelFormat TranslateFormat(const Format format)
-    {
-        switch (format)
-        {
-        case Format::kUndefined:
-            return VertexChannelFormat::kUndefined;
+    VertexChannelFormat TranslateFormat(Format format);
 
-#define FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE(name)                                                                  \
-    case Format::k##name:                                                                                                        \
-        return VertexChannelFormat::k##name;
-
-            FE_EXPAND_VERTEX_CHANNEL_FORMATS(FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE)
-
-#undef FE_TRANSLATE_FORMAT_TO_VERTEX_CHANNEL_FORMAT_CASE
-
-        default:
-            // The specified format is not supported as a vertex channel format.
-            FE_DebugBreak();
-            return VertexChannelFormat::kUndefined;
-        }
-    }
-
-
-    inline Format TranslateFormat(const VertexChannelFormat format)
-    {
-        switch (format)
-        {
-        case VertexChannelFormat::kUndefined:
-            return Format::kUndefined;
-
-#define FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE(name)                                                                  \
-    case VertexChannelFormat::k##name:                                                                                           \
-        return Format::k##name;
-
-            FE_EXPAND_VERTEX_CHANNEL_FORMATS(FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE)
-
-#undef FE_TRANSLATE_VERTEX_CHANNEL_FORMAT_TO_FORMAT_CASE
-
-        default:
-            FE_DebugBreak();
-            return Format::kUndefined;
-        }
-    }
+    Format TranslateFormat(VertexChannelFormat format);
 
 
     union FormatInfo final
@@ -322,9 +293,7 @@ namespace FE::Graphics::Core
         {
             uint32_t totalSize = 0;
             for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
-            {
                 totalSize += CalculateMipByteSize(size, mipCount);
-            }
 
             return totalSize;
         }
@@ -333,9 +302,7 @@ namespace FE::Graphics::Core
         {
             uint32_t totalSize = 0;
             for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
-            {
                 totalSize += CalculateMipByteSize(size, mipCount);
-            }
 
             return totalSize;
         }
@@ -373,23 +340,7 @@ namespace FE::Graphics::Core
     static_assert(sizeof(Format) == sizeof(FormatInfo));
 
 
-    inline festd::string_view ToString(const Format format)
-    {
-        switch (format)
-        {
-#define FE_DECL_FORMAT_NAME(name, type, byteSize, channelCount, aspectFlags, bc, sign, srgb, index)                              \
-    case Format::k##name:                                                                                                        \
-        return #name;
-
-            FE_EXPAND_FORMATS(FE_DECL_FORMAT_NAME)
-
-        case Format::kUndefined:
-            return "<undefined>";
-
-        default:
-            return "<unknown>";
-        }
-    }
+    festd::string_view ToString(Format format);
 
 
     inline uint32_t GetFormatSize(const Format format)
@@ -407,8 +358,8 @@ namespace FE::Graphics::Core
 template<class TBuffer>
 struct FE::Fmt::ValueFormatter<TBuffer, FE::Graphics::Core::Format>
 {
-    void Format(TBuffer& buffer, const FE::Graphics::Core::Format& value) const
+    void Format(TBuffer& buffer, const Graphics::Core::Format& value) const
     {
-        buffer += FE::Graphics::Core::ToString(value);
+        buffer += Graphics::Core::ToString(value);
     }
-}; // namespace FE::Fmt
+};

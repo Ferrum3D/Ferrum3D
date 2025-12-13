@@ -93,7 +93,7 @@ namespace FE::Platform
     inline void ConvertSystemTimeToDateTime(const SYSTEMTIME& systemTime, SystemTimeInfo& result)
     {
         result.m_year = systemTime.wYear - 1900;
-        result.m_month = systemTime.wMonth;
+        result.m_month = systemTime.wMonth - 1;
         result.m_day = systemTime.wDay;
         result.m_dayOfWeek = systemTime.wDayOfWeek;
         result.m_hour = systemTime.wHour;

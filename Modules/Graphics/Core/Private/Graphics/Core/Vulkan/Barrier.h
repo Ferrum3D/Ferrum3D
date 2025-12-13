@@ -1,7 +1,7 @@
 #pragma once
 #include <Graphics/Core/Barrier.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
-#include <Graphics/Core/Vulkan/ImageFormat.h>
+#include <Graphics/Core/Vulkan/Format.h>
 
 namespace FE::Graphics::Vulkan
 {

@@ -3,7 +3,7 @@
 #include <FeCore/IO/Path.h>
 #include <FeCore/Logging/Logger.h>
 #include <FeCore/Math/Vector2.h>
-#include <Graphics/Core/ImageFormat.h>
+#include <Graphics/Core/Format.h>
 
 namespace FE::AssetBuilder
 {

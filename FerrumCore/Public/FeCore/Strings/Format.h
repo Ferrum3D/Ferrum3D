@@ -27,49 +27,41 @@ namespace FE::Fmt
             return buffer;
         }
 
-        template<class TBuffer>
-        inline void FormatIntegral(TBuffer& buffer, uint64_t value)
+        template<class TBuffer, class TInt>
+        struct IntegralValueFormatter
         {
-            char buf[24];
-            auto* ptr = jeaiii::to_text_from_integer(buf, value);
-            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
-        }
-
-        template<class TBuffer>
-        inline void FormatIntegral(TBuffer& buffer, int64_t value)
-        {
-            char buf[24];
-            auto* ptr = jeaiii::to_text_from_integer(buf, value);
-            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
-        }
+            void Format(TBuffer& buffer, const TInt value) const
+            {
+                char buf[24];
+                auto* ptr = jeaiii::to_text_from_integer(buf, value);
+                buffer.append(buf, static_cast<uint32_t>(ptr - buf));
+            }
+        };
     } // namespace Internal
 
 
     template<class TBuffer, class T>
     struct ValueFormatter
     {
-        void Format(TBuffer& buffer, const T& value) const
-        {
-            if constexpr (std::is_integral_v<T> && std::is_signed_v<T>)
-            {
-                Internal::FormatIntegral(buffer, static_cast<int64_t>(value));
-            }
-            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T>)
-            {
-                Internal::FormatIntegral(buffer, static_cast<uint64_t>(value));
-            }
-            else
-            {
-                FE_Assert(false, "Not implemented");
-            }
-        }
     };
+
+
+    // clang-format off
+    template<class TBuffer> struct ValueFormatter<TBuffer, int8_t> : public Internal::IntegralValueFormatter<TBuffer, int8_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, uint8_t> : public Internal::IntegralValueFormatter<TBuffer, uint8_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, int16_t> : public Internal::IntegralValueFormatter<TBuffer, int16_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, uint16_t> : public Internal::IntegralValueFormatter<TBuffer, uint16_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, int32_t> : public Internal::IntegralValueFormatter<TBuffer, int32_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, uint32_t> : public Internal::IntegralValueFormatter<TBuffer, uint32_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, int64_t> : public Internal::IntegralValueFormatter<TBuffer, int64_t> {};
+    template<class TBuffer> struct ValueFormatter<TBuffer, uint64_t> : public Internal::IntegralValueFormatter<TBuffer, uint64_t> {};
+    // clang-format on
 
 
     template<class TBuffer>
     struct ValueFormatter<TBuffer, float>
     {
-        void Format(TBuffer& buffer, float value) const
+        void Format(TBuffer& buffer, const float value) const
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
@@ -80,7 +72,7 @@ namespace FE::Fmt
     template<class TBuffer>
     struct ValueFormatter<TBuffer, double>
     {
-        void Format(TBuffer& buffer, double value) const
+        void Format(TBuffer& buffer, const double value) const
         {
             char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary64>];
             char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
@@ -157,7 +149,7 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const UUID& value) const
         {
-            static char digits[] = "0123456789ABCDEF";
+            static constexpr char kDigits[] = "0123456789ABCDEF";
             int32_t idx = 0;
             buffer.reserve(buffer.size() + 36);
 
@@ -165,8 +157,8 @@ namespace FE::Fmt
                 for (uint32_t i = 0; i < n; ++i)
                 {
                     const uint8_t c = value.m_bytes[idx++];
-                    buffer.append(digits[(c & 0xF0) >> 4]);
-                    buffer.append(digits[(c & 0x0F) >> 0]);
+                    buffer.append(kDigits[(c & 0xF0) >> 4]);
+                    buffer.append(kDigits[(c & 0x0F) >> 0]);
                 }
             };
 
@@ -193,7 +185,7 @@ namespace FE::Fmt
             const void* pValue = nullptr;
 
             template<class T>
-            inline static FormatArg Create(T* arg) noexcept
+            static FormatArg Create(T* arg) noexcept
             {
                 const auto func = [](const void* value, TBuffer& buffer) {
                     ValueFormatter<TBuffer, std::remove_const_t<T>>{}.Format(buffer,
@@ -202,7 +194,7 @@ namespace FE::Fmt
                 return FormatArg{ func, arg };
             }
 
-            inline void FormatTo(TBuffer& buffer) const
+            void FormatTo(TBuffer& buffer) const
             {
                 pFunc(pValue, buffer);
             }
@@ -216,7 +208,7 @@ namespace FE::Fmt
         };
 
         template<class TBuffer, size_t TArgCount>
-        void FormatImpl(TBuffer& buffer, festd::string_view fmt, FormatArgs<TBuffer, TArgCount>& args)
+        void FormatImpl(TBuffer& buffer, const festd::string_view fmt, FormatArgs<TBuffer, TArgCount>& args)
         {
             size_t argIndex = 0;
             bool autoIndex = true;
@@ -282,7 +274,7 @@ namespace FE::Fmt
 
 
     template<class TBuffer, class... TArgs>
-    inline void FormatTo(TBuffer& buffer, festd::string_view fmt, TArgs&&... args)
+    void FormatTo(TBuffer& buffer, const festd::string_view fmt, TArgs&&... args)
     {
         Internal::FormatArgs<TBuffer, sizeof...(TArgs)> formatArgs{ Internal::FormatArg<TBuffer>::Create(&args)... };
         Internal::FormatImpl<TBuffer, sizeof...(TArgs)>(buffer, fmt, formatArgs);
@@ -290,7 +282,7 @@ namespace FE::Fmt
 
 
     template<class... TArgs>
-    inline festd::string Format(festd::string_view fmt, TArgs&&... args)
+    festd::string Format(festd::string_view fmt, TArgs&&... args)
     {
         festd::string buffer;
         FormatTo<festd::string, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
@@ -299,7 +291,7 @@ namespace FE::Fmt
 
 
     template<uint32_t TSize, class... TArgs>
-    inline festd::basic_fixed_string<TSize> FixedFormatSized(festd::string_view fmt, TArgs&&... args)
+    festd::basic_fixed_string<TSize> FixedFormatSized(festd::string_view fmt, TArgs&&... args)
     {
         festd::basic_fixed_string<TSize> buffer;
         FormatTo<festd::basic_fixed_string<TSize>, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
@@ -308,7 +300,7 @@ namespace FE::Fmt
 
 
     template<class... TArgs>
-    inline festd::fixed_string FixedFormat(festd::string_view fmt, TArgs&&... args)
+    festd::fixed_string FixedFormat(festd::string_view fmt, TArgs&&... args)
     {
         festd::fixed_string buffer;
         FormatTo<festd::fixed_string, TArgs...>(buffer, fmt, std::forward<TArgs>(args)...);
@@ -317,7 +309,7 @@ namespace FE::Fmt
 
 
     template<class... TArgs>
-    inline Env::Name FormatName(festd::string_view fmt, TArgs&&... args)
+    Env::Name FormatName(festd::string_view fmt, TArgs&&... args)
     {
         return Env::Name{ FixedFormat(fmt, std::forward<TArgs>(args)...) };
     }

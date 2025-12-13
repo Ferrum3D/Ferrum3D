@@ -1,5 +1,5 @@
 #pragma once
-#include <Shaders/Features/Tools/Blit/Blit.h>
+#include <Shaders/Passes/Tools/Blit/Blit.h>
 
 struct PixelAttributes
 {
