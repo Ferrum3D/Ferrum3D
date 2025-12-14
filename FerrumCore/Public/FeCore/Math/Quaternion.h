@@ -222,6 +222,38 @@ namespace FE
         }
 
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Conjugate(const Quaternion quat)
+        {
+            const __m128 vec = _mm_xor_ps(quat.m_simdVector, SIMD::SSE::Masks::kSignXYZ);
+            return Quaternion{ vec };
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Invert(const Quaternion quat)
+        {
+            return Conjugate(quat) / LengthSquared(quat);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL InvertIdentity(const Quaternion quat)
+        {
+            return Conjugate(quat);
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Rotate(const Vector3 vec, const Quaternion quat)
+        {
+            const Vector3 im = Im(quat);
+            const Vector3 qw{ _mm_shuffle_ps(quat.m_simdVector, quat.m_simdVector, _MM_SHUFFLE(3, 3, 3, 3)) };
+
+            const Vector3 t0 = Cross(im, vec);
+            const Vector3 t1 = vec * qw;
+            const Vector3 t = t0 + t1;
+
+            return Cross(im, t) * 2.0f + vec;
+        }
+
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE uint32_t FE_VECTORCALL CmpEqualMask(const Quaternion lhs, const Quaternion rhs)
         {
             return _mm_movemask_ps(_mm_cmpeq_ps(lhs.m_simdVector, rhs.m_simdVector));
@@ -262,8 +294,8 @@ namespace FE
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Quaternion lhs, const Quaternion rhs,
                                                                                const float epsilon = Constants::kEpsilon)
         {
-            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
-            const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), kSignMask);
+            using namespace SIMD::SSE;
+            const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), Masks::kSignInverseXYZW);
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
             return mask == 0;
         }

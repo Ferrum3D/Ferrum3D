@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <FeCore/Base/Base.h>
 
 namespace FE::Graphics::Core
 {
@@ -25,6 +25,11 @@ namespace FE::Graphics::Core
     struct AsyncCopyQueue;
     struct GraphicsQueue;
     struct ResourcePool;
+
+
+    struct FrameGraph;
+    struct FrameGraphBlackboard;
+    struct FrameGraphContext;
 
 
     namespace Limits

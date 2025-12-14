@@ -67,6 +67,20 @@ namespace FE
             return transform;
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL ToMatrix(const Transform& transform)
+        {
+            using namespace SIMD::SSE;
+
+            const Vector4 scale = Vector4::BroadcastW(transform.m_translationScale);
+
+            Matrix4x4 matrix = Matrix4x4::Rotation(transform.m_rotation);
+            matrix.m_rows[0] *= scale;
+            matrix.m_rows[1] *= scale;
+            matrix.m_rows[2] *= scale;
+            matrix.m_rows[3].m_simdVector = _mm_blend_ps(transform.m_translationScale.m_simdVector, Constants::kFloat1111, 0x7);
+            return matrix;
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Transform FE_VECTORCALL Translation(const Vector3 translation)
         {
             Transform transform;
@@ -91,6 +105,25 @@ namespace FE
             return transform;
         }
     };
+
+
+    namespace Math
+    {
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Transform FE_VECTORCALL Invert(const Transform& source)
+        {
+            Transform transform;
+            transform.m_rotation = Invert(source.m_rotation);
+
+            const Vector4 scaleInverse = Vector4::BroadcastW(Reciprocal(source.m_translationScale));
+
+            const Vector3 translationInverse =
+                -Rotate(Vector4::GetXYZ(source.m_translationScale * scaleInverse), transform.m_rotation);
+
+            transform.m_translationScale.m_simdVector =
+                _mm_blend_ps(translationInverse.m_simdVector, scaleInverse.m_simdVector, 0b1110);
+            return transform;
+        }
+    } // namespace Math
 } // namespace FE
 
 FE_RTTI_Reflect(FE::Transform, "27C520A6-9608-453D-BE4E-DCA551251325");

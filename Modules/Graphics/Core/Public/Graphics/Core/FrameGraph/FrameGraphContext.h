@@ -3,7 +3,6 @@
 #include <FeCore/Math/Colors.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core

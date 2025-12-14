@@ -31,13 +31,20 @@ set(PUBLIC_HEADERS
     Public/Graphics/Assets/ModelAssetFormat.h
     Public/Graphics/Assets/TextureAssetFormat.h
 
+    Public/Graphics/Base/Base.h
+    Public/Graphics/Base/BaseModuleList.h
+
     Public/Graphics/Database/Base.h
     Public/Graphics/Database/Database.h
 
     Public/Graphics/Passes/Tools/Blit.h
     Public/Graphics/Passes/Tools/Downsample.h
 
+    Public/Graphics/Scene/Scene.h
+    Public/Graphics/Scene/View.h
+
     Public/Graphics/Module.h
+    Public/Graphics/Renderer.h
 )
 
 set(COMMON_SOURCES
@@ -51,7 +58,15 @@ set(COMMON_SOURCES
     Private/Graphics/Passes/Tools/Blit.cpp
     Private/Graphics/Passes/Tools/Downsample.cpp
 
+    Private/Graphics/Scene/SceneImpl.cpp
+    Private/Graphics/Scene/SceneImpl.h
+    Private/Graphics/Scene/View.cpp
+    Private/Graphics/Scene/ViewImpl.cpp
+    Private/Graphics/Scene/ViewImpl.h
+
     Private/Graphics/Module.cpp
+    Private/Graphics/RendererImpl.cpp
+    Private/Graphics/RendererImpl.h
 )
 
 set(GENERATED_SOURCES

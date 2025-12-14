@@ -1,5 +1,5 @@
 #pragma once
-#include <Graphics/Core/FrameGraph/Base.h>
+#include <Graphics/Core/Texture.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics::Tools::Downsample

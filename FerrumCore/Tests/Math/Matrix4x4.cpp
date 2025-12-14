@@ -260,6 +260,6 @@ TEST(Matrix4x4, InverseTransform)
     m = m * Matrix4x4::RotationX(Constants::kPI / 4.0f);
     m = m * Matrix4x4::Scale(Vector3(4, 5, 6));
 
-    const Matrix4x4 identity = m * Math::InverseTransform(m);
+    const Matrix4x4 identity = m * Math::InvertTransform(m);
     EXPECT_TRUE(Math::EqualEstimate(identity, Matrix4x4::Identity()));
 }

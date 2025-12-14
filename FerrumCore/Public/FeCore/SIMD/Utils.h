@@ -62,6 +62,13 @@ namespace FE::SIMD
             inline const __m128 kFloatW = _mm_castsi128_ps(_mm_setr_epi32(0, 0, 0, UINT32_MAX));
 
             inline const __m128 kFloatXYZ = _mm_castsi128_ps(_mm_setr_epi32(UINT32_MAX, UINT32_MAX, UINT32_MAX, 0));
+
+            inline const __m128 kSignXYZW = _mm_castsi128_ps(_mm_set1_epi32(static_cast<int32_t>(0x80000000)));
+            inline const __m128 kSignXYZ = _mm_castsi128_ps(_mm_setr_epi32(
+                static_cast<int32_t>(0x80000000), static_cast<int32_t>(0x80000000), static_cast<int32_t>(0x80000000), 0));
+
+            inline const __m128 kSignInverseXYZW = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            inline const __m128 kSignInverseXYZ = _mm_castsi128_ps(_mm_setr_epi32(0x7fffffff, 0x7fffffff, 0x7fffffff, 0));
         } // namespace Masks
 
 

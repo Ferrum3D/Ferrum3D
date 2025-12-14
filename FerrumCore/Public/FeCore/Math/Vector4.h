@@ -125,6 +125,11 @@ namespace FE
             return Vector4{ 1.0f, 0.0f, 0.0f, 0.0f };
         }
 
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3 FE_VECTORCALL GetXYZ(const Vector4 vec)
+        {
+            return Vector3{ vec.m_simdVector };
+        }
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector4 FE_VECTORCALL BroadcastX(const Vector4 vec)
         {
             return Vector4{ _mm_shuffle_ps(vec.m_simdVector, vec.m_simdVector, _MM_SHUFFLE(0, 0, 0, 0)) };
@@ -211,11 +216,7 @@ namespace FE
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4 FE_VECTORCALL operator-(const Vector4 vec)
     {
-        const __m128 kSignMask = _mm_castsi128_ps(_mm_setr_epi32(static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000)));
-        return Vector4{ _mm_xor_ps(vec.m_simdVector, kSignMask) };
+        return Vector4{ _mm_xor_ps(vec.m_simdVector, SIMD::SSE::Masks::kSignXYZW) };
     }
 
 
@@ -284,8 +285,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector4 FE_VECTORCALL Abs(const Vector4 lhs)
         {
-            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
-            return Vector4{ _mm_and_ps(lhs.m_simdVector, kSignMask) };
+            return Vector4{ _mm_and_ps(lhs.m_simdVector, SIMD::SSE::Masks::kSignInverseXYZW) };
         }
 
 

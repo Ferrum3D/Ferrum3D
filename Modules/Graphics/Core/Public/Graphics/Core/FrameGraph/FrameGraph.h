@@ -2,7 +2,7 @@
 #include <FeCore/Memory/LinearAllocator.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/FrameGraph/Base.h>
+#include <Graphics/Core/Base.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/GraphicsPipeline.h>

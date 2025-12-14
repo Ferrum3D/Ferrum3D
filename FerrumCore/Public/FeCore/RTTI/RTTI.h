@@ -58,6 +58,8 @@ private:                                                                        
     friend TDstPtr_RTTI FE::RTTI::Cast(TSrc_RTTI* source);                                                                       \
     template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
     friend TDstPtr_RTTI FE::RTTI::AssertCast(TSrc_RTTI* source);                                                                 \
+    template<class T_RTTI>                                                                                                       \
+    friend bool FE::RTTI::IsDerivedFrom(T_RTTI* instance, const FE::RTTI::TypeID typeID);                                        \
                                                                                                                                  \
     static const FE::RTTI::Type& RTTI_GetType();                                                                                 \
                                                                                                                                  \
@@ -122,6 +124,14 @@ public:                                                                         
             return T::TypeID;
         else
             return TypeID::kNull;
+    }
+
+
+    //! @brief Check if source is derived from or is an instance of given type, i.e. `RTTI::Cast` would succeed.
+    template<class T>
+    bool IsDerivedFrom(T* source, const TypeID typeID)
+    {
+        return source->RTTI_TryCast(typeID) != nullptr;
     }
 
 

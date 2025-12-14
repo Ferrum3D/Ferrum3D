@@ -451,12 +451,12 @@ namespace FE
         }
 
 
-        FE_NO_SECURITY_COOKIE Matrix4x4 FE_VECTORCALL InverseTransform(const Matrix4x4& matrix);
+        FE_NO_SECURITY_COOKIE Matrix4x4 FE_VECTORCALL InvertTransform(const Matrix4x4& matrix);
 
+        FE_NO_SECURITY_COOKIE Matrix4x4 FE_VECTORCALL Invert(const Matrix4x4& matrix);
 
         FE_NO_SECURITY_COOKIE bool FE_VECTORCALL DecomposeTransform(const Matrix4x4& matrix, Vector3& translation,
                                                                     Quaternion& rotation, Vector3& scale, Vector3& shear);
-
 
         FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL ExtractRotation(const Matrix4x4& matrix);
 
@@ -487,19 +487,20 @@ namespace FE
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Matrix4x4 lhs, Matrix4x4 rhs,
                                                                                float epsilon = Constants::kEpsilon)
         {
-            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
+            using namespace SIMD::SSE;
+
             const __m128 epsilonBroadcast = _mm_set1_ps(epsilon);
 
-            __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[0], rhs.m_simdVectors[0]), kSignMask);
+            __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[0], rhs.m_simdVectors[0]), Masks::kSignInverseXYZW);
             __m128 mask = _mm_cmpgt_ps(distance, epsilonBroadcast);
 
-            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[1], rhs.m_simdVectors[1]), kSignMask);
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[1], rhs.m_simdVectors[1]), Masks::kSignInverseXYZW);
             mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
 
-            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[2], rhs.m_simdVectors[2]), kSignMask);
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[2], rhs.m_simdVectors[2]), Masks::kSignInverseXYZW);
             mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
 
-            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[3], rhs.m_simdVectors[3]), kSignMask);
+            distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVectors[3], rhs.m_simdVectors[3]), Masks::kSignInverseXYZW);
             mask = _mm_or_ps(mask, _mm_cmpgt_ps(distance, epsilonBroadcast));
 
             return _mm_movemask_ps(mask) == 0;

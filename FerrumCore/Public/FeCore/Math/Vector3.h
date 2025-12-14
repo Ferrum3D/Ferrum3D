@@ -166,11 +166,7 @@ namespace FE
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL operator-(const Vector3 vec)
     {
-        const __m128 kSignMask = _mm_castsi128_ps(_mm_setr_epi32(static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000),
-                                                                 static_cast<int32_t>(0x80000000)));
-        return Vector3{ _mm_xor_ps(vec.m_simdVector, kSignMask) };
+        return Vector3{ _mm_xor_ps(vec.m_simdVector, SIMD::SSE::Masks::kSignXYZ) };
     }
 
 
@@ -228,8 +224,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Abs(const Vector3 lhs)
         {
-            const __m128 kSignMask = _mm_castsi128_ps(_mm_set1_epi32(0x7fffffff));
-            return Vector3{ _mm_and_ps(lhs.m_simdVector, kSignMask) };
+            return Vector3{ _mm_and_ps(lhs.m_simdVector, SIMD::SSE::Masks::kSignInverseXYZ) };
         }
 
 

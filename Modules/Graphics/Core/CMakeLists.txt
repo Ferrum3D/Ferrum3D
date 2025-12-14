@@ -2,7 +2,6 @@
     Public/Graphics/Core/Base.h
     Public/Graphics/Core/BaseTypes.h
 
-    Public/Graphics/Core/FrameGraph/Base.h
     Public/Graphics/Core/FrameGraph/Blackboard.h
     Public/Graphics/Core/FrameGraph/FrameGraph.h
     Public/Graphics/Core/FrameGraph/FrameGraphContext.h

@@ -189,11 +189,12 @@ public:                                                                         
 #define FE_IMPLEMENT_MODULE_2(name, dependencyHandler)                                                                           \
     void name::Init()                                                                                                            \
     {                                                                                                                            \
+        FE_PROFILER_ZONE();                                                                                                      \
         if (GInstance)                                                                                                           \
             return;                                                                                                              \
                                                                                                                                  \
         static bool calledOnce = false;                                                                                          \
-        FE_CoreAssert_1(!calledOnce);                                                                                              \
+        FE_CoreAssert_1(!calledOnce);                                                                                            \
         calledOnce = true;                                                                                                       \
                                                                                                                                  \
         void (*handler)() = dependencyHandler;                                                                                   \
@@ -208,6 +209,7 @@ public:                                                                         
                                                                                                                                  \
     void name::Shutdown()                                                                                                        \
     {                                                                                                                            \
+        FE_PROFILER_ZONE();                                                                                                      \
         if (GInstance)                                                                                                           \
         {                                                                                                                        \
             GInstance->m_serviceRegistry->Release();                                                                             \

@@ -332,12 +332,12 @@ namespace FE::Internal
                 reset(bitIndex);
         }
 
-        void reserve(uint32_t bitCount)
+        void reserve(const uint32_t bitCount)
         {
             TStorage::ReserveImpl(bitCount, TStorage::GetAllocator());
         }
 
-        void resize(uint32_t bitCount, const bool bitValue)
+        void resize(const uint32_t bitCount, const bool bitValue)
         {
             const uint32_t prevSize = TStorage::SizeImpl();
 

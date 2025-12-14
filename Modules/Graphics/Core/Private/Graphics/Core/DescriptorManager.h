@@ -1,7 +1,7 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
+#include <Graphics/Core/Base.h>
 #include <Graphics/Core/Buffer.h>
-#include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/Sampler.h>
 #include <Graphics/Core/Texture.h>
 #include <festd/bit_vector.h>

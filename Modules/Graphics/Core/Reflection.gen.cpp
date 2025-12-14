@@ -17,7 +17,6 @@
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Fence.h>
-#include <Graphics/Core/FrameGraph/Base.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/FrameGraph/FrameGraphPass.h>
