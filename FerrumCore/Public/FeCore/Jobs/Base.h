@@ -3,12 +3,18 @@
 
 namespace FE
 {
-    //! \brief Describes the priority of a job.
+    struct Job;
+    struct IJobSystem;
+    struct JobSystem;
+    struct WaitGroup;
+
+
+    //! @brief Describes the priority of a job.
     //!
     //! Jobs with different priorities are assigned to different queues.
     //! Each worker thread has a set of queues (one for each priority)
     //! for the jobs that can only run on that thread (due to affinity).
-    //! There is also two global sets of queues: one for foreground jobs
+    //! There are also two global sets of queues: one for foreground jobs
     //! and one for background jobs.
     enum class JobPriority : uint16_t
     {
@@ -20,7 +26,7 @@ namespace FE
     };
 
 
-    //! \brief Specifies which threads a job is allowed to run on.
+    //! @brief Specifies which threads a job is allowed to run on.
     //!
     //! There are two good reasons for this to exist:
     //! Firstly, some jobs can only safely run on a certain thread, e.g. Windows
@@ -61,10 +67,4 @@ namespace FE
         kBackground,
         kCount,
     };
-
-
-    struct Job;
-    struct IJobSystem;
-    struct JobSystem;
-    struct WaitGroup;
 } // namespace FE

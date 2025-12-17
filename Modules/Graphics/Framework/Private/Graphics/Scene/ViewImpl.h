@@ -9,5 +9,7 @@ namespace FE::Graphics
 
         explicit ViewImpl(Scene* scene);
         ~ViewImpl() override;
+
+        void Update(Core::FrameGraphBlackboard& blackboard);
     };
 } // namespace FE::Graphics
