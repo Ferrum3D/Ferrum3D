@@ -10,19 +10,6 @@ namespace FE::Graphics::Core
         uint32_t m_size = 0;
         Format m_format = Format::kUndefined;
 
-        BufferDesc() = default;
-
-        explicit BufferDesc(const uint32_t size)
-            : m_size(size)
-        {
-        }
-
-        BufferDesc(const uint32_t size, const Format format)
-            : m_size(size)
-            , m_format(format)
-        {
-        }
-
         [[nodiscard]] uint64_t GetHash() const
         {
             return festd::bit_cast<uint64_t>(*this);

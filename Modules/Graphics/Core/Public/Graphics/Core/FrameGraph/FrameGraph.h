@@ -1,8 +1,8 @@
 #pragma once
 #include <FeCore/Memory/LinearAllocator.h>
+#include <Graphics/Core/Base.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/DeviceObject.h>
-#include <Graphics/Core/Base.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/GraphicsPipeline.h>
@@ -56,6 +56,8 @@ namespace FE::Graphics::Core
         void BeginScope(festd::string_view name);
         void EndScope();
 
+        virtual void AddCopyPass(const BufferView& destination, const BufferView& source) = 0;
+
         template<class TPassDesc, class TFunctor>
         void AddPass(festd::string_view name, TPassDesc* passDesc, TFunctor&& functor);
 
@@ -91,8 +93,9 @@ namespace FE::Graphics::Core
         {
         }
 
+        Env::Name FormatPassName(festd::string_view name);
+
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
-        virtual void CommitPassNode(uint32_t passIndex) = 0;
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
@@ -130,16 +133,23 @@ namespace FE::Graphics::Core
     }
 
 
+    inline Env::Name FrameGraph::FormatPassName(const festd::string_view name)
+    {
+        if (m_currentScope.empty())
+            return Env::Name(name);
+
+        return Fmt::FormatName("{}/{}", m_currentScope, name);
+    }
+
+
     template<class TPassDesc, class TFunctor>
     void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, TFunctor&& functor)
     {
-        TFunctor* f = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
+        FE_Assert(passDesc);
+
         PassNodeDesc desc;
-        if (m_currentScope.empty())
-            desc.m_name = Env::Name(name);
-        else
-            desc.m_name = Fmt::FormatName("{}/{}", m_currentScope, name);
-        desc.m_functor = f;
+        desc.m_name = FormatPassName(name);
+        desc.m_functor = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
             static_assert(std::is_invocable_v<TFunctor, FrameGraphContext&>);

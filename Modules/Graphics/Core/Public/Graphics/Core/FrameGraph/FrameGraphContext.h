@@ -220,6 +220,8 @@ namespace FE::Graphics::Core
         virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
         virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
 
+        virtual void Copy(BufferView destination, BufferView source) = 0;
+
         virtual bool IsCleanState() const = 0;
 
     protected:

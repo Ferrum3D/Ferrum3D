@@ -16,7 +16,13 @@ namespace FE::Graphics::DB
 
         CheckPendingPages();
 
-        const Rc stagingPage = m_resourcePool->CreateBuffer("PageReplicationManagerStaging", Core::BufferDesc(kTablePageSize));
+        const Rc stagingPage = m_resourcePool->CreateByteAddressBuffer("PageReplicationManagerStaging", kTablePageSize);
+
+        const Core::BufferCommitParams commitParams{ Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest,
+                                                     Core::ResourceMemory::kHostWriteThrough };
+        m_resourcePool->CommitBufferMemory(stagingPage.Get(), commitParams);
+
+        
     }
 
 

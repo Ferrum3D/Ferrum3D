@@ -2,6 +2,7 @@
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
+#include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/Texture.h>
@@ -287,6 +288,19 @@ namespace FE::Graphics::Vulkan
             vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineImpl->GetNative());
 
         vkCmdDispatch(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
+    }
+
+
+    void FrameGraphContext::Copy(const Core::BufferView destination, const Core::BufferView source)
+    {
+        VkBufferCopy region;
+        region.srcOffset = source.m_subresource.m_offset;
+        region.dstOffset = destination.m_subresource.m_offset;
+        region.size = source.m_subresource.m_size;
+        FE_Assert(source.m_subresource.m_size == destination.m_subresource.m_size);
+
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+        vkCmdCopyBuffer(vkCommandBuffer, NativeCast(source.m_resource), NativeCast(destination.m_resource), 1, &region);
     }
 
 

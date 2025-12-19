@@ -67,6 +67,39 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraph::AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source)
+    {
+        auto execute = [source, destination](Core::FrameGraphContext& context) {
+            context.Copy(destination, source);
+        };
+
+        using FunctorType = decltype(execute);
+
+        FunctorType* functorPtr = Memory::New<FunctorType>(&m_linearAllocator, std::move(execute));
+
+        PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
+        passNode.m_passIndex = m_passes.size() - 1;
+        passNode.m_name = FormatPassName(Fmt::FixedFormat("Copy {} to {}", source.GetName(), destination.GetName()));
+        passNode.m_functor = functorPtr;
+
+        passNode.m_execute = [](void* functor, Core::FrameGraphContext& context) {
+            (*static_cast<FunctorType*>(functor))(context);
+        };
+
+        passNode.m_destroy = [](void*, void*) {};
+
+        BufferAccess destinationAccess;
+        destinationAccess.m_syncFlags = Core::BarrierSyncFlags::kCopy;
+        destinationAccess.m_accessFlags = Core::BarrierAccessFlags::kCopyDest;
+        RegisterResource(destination.m_resource, passNode, destinationAccess);
+
+        BufferAccess sourceAccess;
+        sourceAccess.m_syncFlags = Core::BarrierSyncFlags::kCopy;
+        sourceAccess.m_accessFlags = Core::BarrierAccessFlags::kCopySource;
+        RegisterResource(source.m_resource, passNode, sourceAccess);
+    }
+
+
     void FrameGraph::AddPassInternal(const PassNodeDesc& desc)
     {
         PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
@@ -77,12 +110,7 @@ namespace FE::Graphics::Common
         passNode.m_destroy = desc.m_destroy;
         passNode.m_userPassDescTypeID = desc.m_userPassDescTypeID;
         passNode.m_userPassDescPtr = desc.m_userPassDescPtr;
-    }
-
-
-    void FrameGraph::CommitPassNode(const uint32_t passIndex)
-    {
-        PreparePassCompileInfo(m_passes[passIndex]);
+        PreparePassCompileInfo(passNode);
     }
 
 
@@ -112,6 +140,8 @@ namespace FE::Graphics::Common
         }
         else
         {
+            FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline));
+
             const auto* graphicsPipeline = RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
             const Core::GraphicsPipelineDesc& pipelineDesc = graphicsPipeline->GetDesc();
 

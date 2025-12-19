@@ -18,6 +18,8 @@ namespace FE::Graphics::Vulkan
         void EnqueueFenceToSignal(const Core::FenceSyncPoint& fence) override;
         void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) override;
 
+        void Copy(Core::BufferView destination, Core::BufferView source) override;
+
     private:
         void PrepareDraw(VkCommandBuffer vkCommandBuffer);
 

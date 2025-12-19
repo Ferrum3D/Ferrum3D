@@ -36,6 +36,8 @@ namespace FE::Graphics::Common
         Core::FrameGraphBufferDescriptorHandle GetDescriptor(Core::BufferView buffer) override;
         SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
 
+        void AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source) override;
+
     protected:
         struct TextureAccess final
         {
@@ -110,7 +112,6 @@ namespace FE::Graphics::Common
         FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool);
 
         void AddPassInternal(const PassNodeDesc& desc) override;
-        void CommitPassNode(uint32_t passIndex) override;
 
         virtual void PrepareExecuteInternal() = 0;
         virtual void FinishExecuteInternal() = 0;
