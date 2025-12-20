@@ -6,7 +6,7 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        VulkanObjectPoolType GFencePool{ "VulkanFencePool", sizeof(Fence) };
+        VulkanObjectPoolType GFencePool{ "Graphics/Core/FencePool", sizeof(Fence) };
     }
 
 

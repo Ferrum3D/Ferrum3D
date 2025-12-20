@@ -1,4 +1,6 @@
-﻿#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
+﻿#include <Graphics/Core/Common/ResourceBarrierBatcher.h>
+#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
+#include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/Format.h>
@@ -9,6 +11,28 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
+        void FlushResourceBarriers(std::pmr::memory_resource* allocator, const Device* device,
+                                   const VkCommandBuffer commandBuffer, const Common::ResourceBarrierBatcher& batcher)
+        {
+            festd::pmr::vector<VkImageMemoryBarrier2> imageBarriers{ allocator };
+            festd::pmr::vector<VkBufferMemoryBarrier2> bufferBarriers{ allocator };
+
+            for (const Core::TextureBarrierDesc& barrier : batcher.m_textureBarriers)
+                imageBarriers.push_back(TranslateBarrier(barrier, device));
+
+            for (const Core::BufferBarrierDesc& barrier : batcher.m_bufferBarriers)
+                bufferBarriers.push_back(TranslateBarrier(barrier, device));
+
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = imageBarriers.size();
+            dependencyInfo.pImageMemoryBarriers = imageBarriers.data();
+            dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
+            dependencyInfo.pBufferMemoryBarriers = bufferBarriers.data();
+            vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+        }
+
+
         struct CommandBatcher final
         {
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
@@ -29,57 +53,6 @@ namespace FE::Graphics::Vulkan
                 {
                     vkCmdCopyBuffer(m_commandBuffer, m_srcBuffer, m_dstBuffer, m_bufferRegions.size(), m_bufferRegions.data());
                     m_bufferRegions.clear();
-                }
-            }
-        };
-
-
-        struct ImageBarrierBatcher final
-        {
-            VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-            festd::pmr::vector<VkImageMemoryBarrier2> m_barriers;
-            VkImageMemoryBarrier2 m_prototypeBarrier = {};
-            bool m_batchingEnabled = true;
-
-            explicit ImageBarrierBatcher(std::pmr::memory_resource* allocator, const VkCommandBuffer commandBuffer)
-                : m_commandBuffer(commandBuffer)
-                , m_barriers(allocator)
-            {
-                m_barriers.reserve(256);
-                m_prototypeBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            }
-
-            void Add(const uint32_t mipIndex, const uint32_t arrayIndex)
-            {
-                if (!m_barriers.empty() && m_batchingEnabled)
-                {
-                    VkImageMemoryBarrier2& prev = m_barriers.back();
-                    if (prev.subresourceRange.baseArrayLayer == arrayIndex
-                        && prev.subresourceRange.baseMipLevel + prev.subresourceRange.levelCount == mipIndex)
-                    {
-                        ++prev.subresourceRange.levelCount;
-                        return;
-                    }
-                }
-
-                VkImageMemoryBarrier2 barrier = m_prototypeBarrier;
-                barrier.subresourceRange.baseArrayLayer = arrayIndex;
-                barrier.subresourceRange.layerCount = 1;
-                barrier.subresourceRange.baseMipLevel = mipIndex;
-                barrier.subresourceRange.levelCount = 1;
-                m_barriers.push_back(barrier);
-            }
-
-            void Flush()
-            {
-                if (!m_barriers.empty())
-                {
-                    VkDependencyInfo dependencyInfo = {};
-                    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-                    dependencyInfo.imageMemoryBarrierCount = m_barriers.size();
-                    dependencyInfo.pImageMemoryBarriers = m_barriers.data();
-                    vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
-                    m_barriers.clear();
                 }
             }
         };
@@ -341,38 +314,8 @@ namespace FE::Graphics::Vulkan
                     festd::pmr::vector<VkBufferImageCopy> bufferImageCopies{ &m_threadTempAllocator };
                     bufferImageCopies.reserve(subresource.m_arraySize * subresource.m_mipSliceCount);
 
-                    // Transition the image from undefined to transfer destination
-                    ImageBarrierBatcher beforeBarrierBatcher{ &m_threadTempAllocator, commandBuffer };
-                    beforeBarrierBatcher.m_prototypeBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-                    beforeBarrierBatcher.m_prototypeBarrier.srcAccessMask = VK_ACCESS_2_NONE;
-                    beforeBarrierBatcher.m_prototypeBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-                    beforeBarrierBatcher.m_prototypeBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT_KHR;
-                    beforeBarrierBatcher.m_prototypeBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    beforeBarrierBatcher.m_prototypeBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    beforeBarrierBatcher.m_prototypeBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    beforeBarrierBatcher.m_prototypeBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    beforeBarrierBatcher.m_prototypeBarrier.image = texture->GetNative();
-                    beforeBarrierBatcher.m_prototypeBarrier.subresourceRange.aspectMask =
-                        TranslateImageAspectFlags(imageDesc.m_imageFormat);
-
-                    // Release the image from the transfer queue
-                    ImageBarrierBatcher afterBarrierBatcher{ &m_threadTempAllocator, commandBuffer };
-                    afterBarrierBatcher.m_prototypeBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-                    afterBarrierBatcher.m_prototypeBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-                    afterBarrierBatcher.m_prototypeBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT_KHR;
-                    afterBarrierBatcher.m_prototypeBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-                    afterBarrierBatcher.m_prototypeBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT_KHR;
-                    afterBarrierBatcher.m_prototypeBarrier.srcQueueFamilyIndex = m_transferQueueFamilyIndex;
-                    afterBarrierBatcher.m_prototypeBarrier.dstQueueFamilyIndex = m_graphicsQueueFamilyIndex;
-                    afterBarrierBatcher.m_prototypeBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    afterBarrierBatcher.m_prototypeBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    afterBarrierBatcher.m_prototypeBarrier.image = texture->GetNative();
-                    afterBarrierBatcher.m_prototypeBarrier.subresourceRange.aspectMask =
-                        TranslateImageAspectFlags(imageDesc.m_imageFormat);
-
-                    // HACK: temporarily disable batching because of validation errors
-                    // To do this properly, we need barriers on the graphics queue to match the batched ones here.
-                    afterBarrierBatcher.m_batchingEnabled = false;
+                    Common::ResourceBarrierBatcher beforeBarrierBatcher{ &m_threadTempAllocator };
+                    Common::ResourceBarrierBatcher afterBarrierBatcher{ &m_threadTempAllocator };
 
                     const Core::TextureSubresourceIterator subresourceIterator{ subresource };
 
@@ -395,12 +338,37 @@ namespace FE::Graphics::Vulkan
 
                         memcpy(copyDestination, copySource, allocationSize);
 
-                        beforeBarrierBatcher.Add(mipIndex, arrayIndex);
-                        afterBarrierBatcher.Add(mipIndex, arrayIndex);
+                        const auto currentSubresource = Core::TextureSubresource::Create(imageDesc, mipIndex, arrayIndex);
+                        Common::SubresourceState subresourceState = texture->GetState(currentSubresource);
 
-                        FE_Assert(texture->GetState(Core::TextureSubresource::Create(imageDesc, mipIndex, arrayIndex))
-                                  == SubresourceState::kUndefined);
-                        texture->SetSubresourceState(mipIndex, arrayIndex, SubresourceState::kTransferDestination);
+                        // Resource must be discarded before being used as transfer destination.
+                        FE_Assert(subresourceState.m_layout == Core::BarrierLayout::kUndefined);
+
+                        // Transition the image to transfer destination
+                        Core::TextureBarrierDesc barrierDesc;
+                        barrierDesc.m_syncBefore = subresourceState.m_sync;
+                        barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kCopy;
+                        barrierDesc.m_accessBefore = subresourceState.m_access;
+                        barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kCopyDest;
+                        barrierDesc.m_layoutBefore = subresourceState.m_layout;
+                        barrierDesc.m_layoutAfter = Core::BarrierLayout::kCopyDest;
+                        barrierDesc.m_subresource = currentSubresource;
+                        barrierDesc.m_queueBefore = Core::DeviceQueueType::kCount;
+                        barrierDesc.m_queueAfter = Core::DeviceQueueType::kCount;
+                        beforeBarrierBatcher.AddBarrier(barrierDesc);
+
+                        subresourceState.m_sync = Core::BarrierSyncFlags::kCopy;
+                        subresourceState.m_access = Core::BarrierAccessFlags::kCopyDest;
+                        subresourceState.m_layout = Core::BarrierLayout::kCopyDest;
+                        subresourceState.m_queueType = Core::DeviceQueueType::kTransfer;
+                        texture->SetState(currentSubresource, subresourceState);
+
+                        // Release the image from the transfer queue
+                        barrierDesc.m_syncBefore = Core::BarrierSyncFlags::kCopy;
+                        barrierDesc.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
+                        barrierDesc.m_layoutBefore = Core::BarrierLayout::kCopyDest;
+                        barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
+                        afterBarrierBatcher.AddBarrier(barrierDesc);
 
                         VkBufferImageCopy copy = {};
                         copy.imageSubresource.aspectMask = TranslateImageAspectFlags(imageDesc.m_imageFormat);
@@ -419,7 +387,7 @@ namespace FE::Graphics::Vulkan
                         uploadedBytes += allocationSize;
                     }
 
-                    beforeBarrierBatcher.Flush();
+                    FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, beforeBarrierBatcher);
 
                     vkCmdCopyBufferToImage(commandBuffer,
                                            m_uploadBuffer->GetNative(),
@@ -428,7 +396,7 @@ namespace FE::Graphics::Vulkan
                                            bufferImageCopies.size(),
                                            bufferImageCopies.data());
 
-                    afterBarrierBatcher.Flush();
+                    FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, afterBarrierBatcher);
 
                     break;
                 }
@@ -539,8 +507,10 @@ namespace FE::Graphics::Vulkan
         m_threadEvent = Threading::Event::CreateManualReset();
         m_suspendEvent = Threading::Event::CreateManualReset();
 
-        const Core::BufferDesc uploadDesc{ kUploadBufferSize, Core::BindFlags::kNone, Core::ResourceMemory::kHostWriteThrough };
-        m_uploadBuffer = ImplCast(m_resourcePool->CreateBuffer("AsyncUploadBuffer", uploadDesc));
+        m_uploadBuffer = ImplCast(m_resourcePool->CreateByteAddressBuffer("AsyncUploadBuffer", kUploadBufferSize));
+        m_resourcePool->CommitBufferMemory(m_uploadBuffer.Get(),
+                                           { Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest,
+                                             Core::ResourceMemory::kHostWriteThrough });
 
         m_fence = Fence::Create(m_device, 0);
 

@@ -49,12 +49,13 @@ namespace FE::Graphics
         Core::AsyncCopyQueue* m_asyncCopy;
 
         Threading::SpinLock m_lock;
-        Memory::Pool<ModelAsset> m_assetPool{ "ModelAssetPool" };
-        Memory::Pool<Request> m_requestPool{ "ModelRequestPool" };
+        Memory::Pool<ModelAsset> m_assetPool{ "Graphics/ModelAssetManager/AssetPool" };
+        Memory::Pool<Request> m_requestPool{ "Graphics/ModelAssetManager/RequestPool" };
 
         static constexpr uint32_t kAsyncCopyCommandSegmentSize = 1024;
-        Memory::SpinLockedPoolAllocator m_asyncCopyCommandPagePool{ "AsyncCopyCommandPagePool", kAsyncCopyCommandSegmentSize };
-        Memory::SpinLockedPoolAllocator m_asyncCopyCommandListPool{ "AsyncCopyCommandListPool",
+        Memory::SpinLockedPoolAllocator m_asyncCopyCommandPagePool{ "Graphics/ModelAssetManager/AsyncCopyCommandPagePool",
+                                                                    kAsyncCopyCommandSegmentSize };
+        Memory::SpinLockedPoolAllocator m_asyncCopyCommandListPool{ "Graphics/ModelAssetManager/AsyncCopyCommandListPool",
                                                                     sizeof(Core::AsyncCopyCommandList) };
     };
 } // namespace FE::Graphics

@@ -19,8 +19,8 @@ namespace FE::Framework
         }
 
 
-        Memory::Pool<Archetype> GArchetypePool{ "EntityArchetypePool" };
-        Memory::Pool<ArchetypeChunk> GArchetypeChunkPool{ "EntityArchetypeChunkPool" };
+        Memory::Pool<Archetype> GArchetypePool{ "Entity/ArchetypePool" };
+        Memory::Pool<ArchetypeChunk> GArchetypeChunkPool{ "Entity/ArchetypeChunkPool" };
     } // namespace
 
 

@@ -513,11 +513,13 @@ namespace FE::IO
         , m_streamFactory(streamFactory)
     {
         m_requestPools[festd::to_underlying(AsyncReadRequestQueueEntry::Type::kRead)].Initialize(
-            "AsyncReadRequestPool", sizeof(AsyncReadRequestQueueEntry));
+            "IO/Async/ReadRequestPool",
+            sizeof(AsyncReadRequestQueueEntry));
         m_requestPools[festd::to_underlying(AsyncBlockReadRequestQueueEntry::Type::kReadBlock)].Initialize(
-            "AsyncBlockReadRequestPool", sizeof(AsyncBlockReadRequestQueueEntry));
+            "IO/Async/BlockReadRequestPool",
+            sizeof(AsyncBlockReadRequestQueueEntry));
 
-        m_blockDecompressionJobPool.Initialize("AsyncBlockDecompressionJobPool", sizeof(BlockDecompressJob));
+        m_blockDecompressionJobPool.Initialize("IO/Async/BlockDecompressionJobPool", sizeof(BlockDecompressJob));
 
         const auto threadFunc = [](const uintptr_t userData) {
             reinterpret_cast<AsyncStreamIO*>(userData)->ReaderThread();

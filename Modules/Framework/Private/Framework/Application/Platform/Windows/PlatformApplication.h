@@ -52,7 +52,7 @@ namespace FE::Framework::Windows
 
         uint32_t m_keyboardCodePage = 0;
         bool m_closeRequested = false;
-        Memory::Pool<PlatformWindow> m_windowPool{ "PlatformWindowPool" };
+        Memory::Pool<PlatformWindow> m_windowPool{ "Application/PlatformWindowPool" };
         festd::inline_vector<Core::PlatformWindow*> m_windows;
         festd::vector<Core::PlatformEvent> m_events;
         festd::vector<Core::PlatformMonitorInfo> m_monitors;

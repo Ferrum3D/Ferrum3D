@@ -38,20 +38,25 @@ namespace FE::Graphics::DB
     {
         PageReplicationManager(Core::ResourcePool* resourcePool);
 
-        void UploadPage(Core::FrameGraph& graph, const StoragePage* page);
+        Core::FenceSyncPoint CloseFrame();
 
     private:
+        friend Database;
+
         struct StagingPage final
         {
             Rc<Core::Buffer> m_buffer;
             uint64_t m_fenceValue = 0;
         };
 
+        void UploadPage(Core::FrameGraph& graph, const StoragePage* page);
+
         void CheckPendingPages();
 
         Core::ResourcePool* m_resourcePool;
 
         Rc<Core::Fence> m_fence;
+        uint64_t m_fenceValue = 0;
         festd::inline_ring_buffer<StagingPage, 32> m_pendingPagesQueue;
     };
 
@@ -79,6 +84,8 @@ namespace FE::Graphics::DB
 
         void MarkPageDirty(const StoragePage* page);
         StoragePage* AllocatePage();
+
+        void UploadDirtyPages(Core::FrameGraph& graph, PageReplicationManager& replicationManager);
 
     private:
         Core::ResourcePool* m_resourcePool;

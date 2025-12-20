@@ -6,8 +6,8 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
-        Memory::SpinLockedPoolAllocator GBufferInstancePool{ "BufferInstancePool", sizeof(BufferInstance) };
-        Memory::SpinLockedPoolAllocator GTextureInstancePool{ "TextureInstancePool", sizeof(TextureInstance) };
+        Memory::SpinLockedPoolAllocator GBufferInstancePool{ "Graphics/Core/BufferInstancePool", sizeof(BufferInstance) };
+        Memory::SpinLockedPoolAllocator GTextureInstancePool{ "Graphics/Core/TextureInstancePool", sizeof(TextureInstance) };
     } // namespace
 
 

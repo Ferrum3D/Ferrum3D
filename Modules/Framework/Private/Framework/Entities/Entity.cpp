@@ -34,7 +34,7 @@ namespace FE::Framework
         };
 
 
-        Memory::SpinLockedPoolAllocator GEntityAllocator{ "EntityAllocator", sizeof(Entity) };
+        Memory::SpinLockedPoolAllocator GEntityAllocator{ "Entity/EntityPool", sizeof(Entity) };
     } // namespace
 
 

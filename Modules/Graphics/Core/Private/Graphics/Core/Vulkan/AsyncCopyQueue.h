@@ -62,7 +62,7 @@ namespace FE::Graphics::Vulkan
         uint32_t m_commandBufferCounter = 0;
         festd::inline_vector<Rc<CommandBuffer>> m_freeCommandBuffers;
         festd::inline_ring_buffer<ProcessingItem*, 32> m_processingItems;
-        Memory::Pool<ProcessingItem> m_processingItemPool{ "AsyncCopyProcessingItemPool" };
+        Memory::Pool<ProcessingItem> m_processingItemPool{ "Graphics/Core/AsyncCopyProcessingItemPool" };
 
         ConcurrentOnceConsumedQueue m_requestQueue;
         festd::inline_vector<Core::AsyncCopyCommandList*> m_requestCache;

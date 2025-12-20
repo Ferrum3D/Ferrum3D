@@ -97,7 +97,7 @@ namespace FE::IO
 
         Memory::SpinLockedPoolAllocator m_blockDecompressionJobPool;
         Memory::SpinLockedPoolAllocator m_requestPools[festd::to_underlying(AsyncRequestQueueEntry::Type::kCount)];
-        Memory::SpinLockedPoolAllocator m_controllerPool{ "AsyncControllerPool", sizeof(AsyncController) };
+        Memory::SpinLockedPoolAllocator m_controllerPool{ "IO/Async/ControllerPool", sizeof(AsyncController) };
 
         void EnqueueImpl(Priority priority, AsyncRequestQueueEntry* entry);
 

@@ -9,7 +9,7 @@ namespace FE::Framework
 {
     namespace
     {
-        Memory::SpinLockedPoolAllocator GEntityRegistryPool{ "EntityRegistryPool", sizeof(EntityRegistry) };
+        Memory::SpinLockedPool<EntityRegistry> GEntityRegistryPool{ "Entity/RegistryPool" };
 
         Threading::SpinLock GEntityWorldListLock;
         uint32_t GFreeEntityWorldIDs = (1u << kInvalidEntityWorldID) - 1;
@@ -54,7 +54,7 @@ namespace FE::Framework
     {
         std::lock_guard lock{ m_lock };
 
-        auto* registry = Memory::New<EntityRegistry>(&GEntityRegistryPool, this);
+        auto* registry = GEntityRegistryPool.New(this);
         m_registries.push_back(registry);
 
         if (m_freeRegistryIDs.size() < m_registries.capacity())

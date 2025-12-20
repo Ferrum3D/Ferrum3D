@@ -103,6 +103,12 @@ namespace FE::Memory
     };
 
 
+    template<class TLock>
+    using LockedPoolAllocator = LockedMemoryResource<PoolAllocator, TLock>;
+
+    using SpinLockedPoolAllocator = SpinLockedMemoryResource<PoolAllocator>;
+
+
     template<class T>
     struct Pool final : private PoolAllocator
     {
@@ -143,8 +149,52 @@ namespace FE::Memory
     };
 
 
-    template<class TLock>
-    using LockedPoolAllocator = LockedMemoryResource<PoolAllocator, TLock>;
+    template<class T, class TLock>
+    struct LockedPool final
+    {
+        LockedPool() = default;
 
-    using SpinLockedPoolAllocator = SpinLockedMemoryResource<PoolAllocator>;
+        explicit LockedPool(const char* name, const uint32_t pageByteSize = 64 * 1024)
+            : m_allocator(name, sizeof(T), pageByteSize)
+        {
+        }
+
+        void Initialize(const char* name, const uint32_t pageByteSize = 64 * 1024)
+        {
+            m_allocator.Initialize(name, sizeof(T), pageByteSize);
+        }
+
+        void Deinitialize()
+        {
+            m_allocator.Deinitialize();
+        }
+
+        [[nodiscard]] PoolAllocator* GetAllocator()
+        {
+            return &m_allocator;
+        }
+
+        void Reinitialize(const uint32_t pageByteSize = 64 * 1024)
+        {
+            m_allocator.Reinitialize(sizeof(T), pageByteSize);
+        }
+
+        template<class... TArgs>
+        T* New(TArgs&&... args)
+        {
+            return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);
+        }
+
+        void Delete(const T* ptr)
+        {
+            Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
+        }
+
+    private:
+        LockedMemoryResource<PoolAllocator, TLock> m_allocator;
+    };
+
+
+    template<class T>
+    using SpinLockedPool = LockedPool<T, Threading::SpinLock>;
 } // namespace FE::Memory

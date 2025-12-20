@@ -12,7 +12,7 @@ namespace FE::Graphics::Vulkan
 
         constexpr uint32_t kSmallVulkanObjectMaxSize = sizeof(Semaphore);
 
-        VulkanObjectPoolType GSmallObjectPool{ "VulkanSmallObjectPool", kSmallVulkanObjectMaxSize };
+        VulkanObjectPoolType GSmallObjectPool{ "Graphics/Core/SmallObjectPool", kSmallVulkanObjectMaxSize };
     } // namespace
 
 

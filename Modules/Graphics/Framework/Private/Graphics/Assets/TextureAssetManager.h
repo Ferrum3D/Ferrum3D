@@ -72,13 +72,14 @@ namespace FE::Graphics
         Core::AsyncCopyQueue* m_asyncCopy;
 
         Threading::SpinLock m_lock;
-        Memory::Pool<TextureAsset> m_assetPool{ "TextureAssetPool" };
-        Memory::Pool<Request> m_requestPool{ "TextureRequestPool" };
-        Memory::Pool<MipFinalizerJob> m_mipFinalizerJobPool{ "MipFinalizerJobPool" };
+        Memory::Pool<TextureAsset> m_assetPool{ "Graphics/TextureAssetManager/AssetPool" };
+        Memory::Pool<Request> m_requestPool{ "Graphics/TextureAssetManager/RequestPool" };
+        Memory::Pool<MipFinalizerJob> m_mipFinalizerJobPool{ "Graphics/TextureAssetManager/MipFinalizerJobPool" };
 
         static constexpr uint32_t kAsyncCopyCommandSegmentSize = 1024;
-        Memory::SpinLockedPoolAllocator m_asyncCopyCommandPagePool{ "AsyncCopyCommandPagePool", kAsyncCopyCommandSegmentSize };
-        Memory::SpinLockedPoolAllocator m_asyncCopyCommandListPool{ "AsyncCopyCommandListPool",
+        Memory::SpinLockedPoolAllocator m_asyncCopyCommandPagePool{ "Graphics/TextureAssetManager/AsyncCopyCommandPagePool",
+                                                                    kAsyncCopyCommandSegmentSize };
+        Memory::SpinLockedPoolAllocator m_asyncCopyCommandListPool{ "Graphics/TextureAssetManager/AsyncCopyCommandListPool",
                                                                     sizeof(Core::AsyncCopyCommandList) };
     };
 } // namespace FE::Graphics
