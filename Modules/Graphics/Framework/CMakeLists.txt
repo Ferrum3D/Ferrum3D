@@ -33,6 +33,7 @@ set(PUBLIC_HEADERS
 
     Public/Graphics/Base/Base.h
     Public/Graphics/Base/BaseModuleList.h
+    Public/Graphics/Base/DrawTag.h
 
     Public/Graphics/Database/Base.h
     Public/Graphics/Database/Database.h
@@ -52,6 +53,8 @@ set(COMMON_SOURCES
     Private/Graphics/Assets/ModelAssetManager.h
     Private/Graphics/Assets/TextureAssetManager.cpp
     Private/Graphics/Assets/TextureAssetManager.h
+
+    Private/Graphics/Base/DrawTag.cpp
 
     Private/Graphics/Database/Database.cpp
 
