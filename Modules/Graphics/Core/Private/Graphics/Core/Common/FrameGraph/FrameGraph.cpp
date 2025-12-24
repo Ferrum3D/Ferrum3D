@@ -126,7 +126,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraph::ParsePassPushConstants(PassNode& pass, const RTTI::Type& type)
+    void FrameGraph::ParsePassPushConstants(PassNode& pass, const Rtti::Type& type)
     {
         FE_PROFILER_ZONE();
 
@@ -142,7 +142,7 @@ namespace FE::Graphics::Common
         {
             FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline));
 
-            const auto* graphicsPipeline = RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
+            const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
             const Core::GraphicsPipelineDesc& pipelineDesc = graphicsPipeline->GetDesc();
 
             const bool hasMeshShader = HasShaderStage(pipelineDesc, Core::ShaderStage::kMesh);
@@ -162,11 +162,11 @@ namespace FE::Graphics::Common
             }
         }
 
-        for (const RTTI::FieldInfo& field : type.m_fields)
+        for (const Rtti::FieldInfo& field : type.m_fields)
         {
             for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
             {
-                if (field.m_type == RTTI::GetTypeID<TextureSRVDescriptor>())
+                if (field.m_type == Rtti::GetTypeID<TextureSRVDescriptor>())
                 {
                     const TextureSRVDescriptor descriptor = field.Get<TextureSRVDescriptor>(pass.m_userPassDescPtr, arrayIndex);
                     const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
@@ -180,7 +180,7 @@ namespace FE::Graphics::Common
                     access.m_subresource = resourceInfo.m_textureSubresource;
                     RegisterResource(resourceInfo.m_resource, pass, access);
                 }
-                else if (field.m_type == RTTI::GetTypeID<TextureUAVDescriptor>())
+                else if (field.m_type == Rtti::GetTypeID<TextureUAVDescriptor>())
                 {
                     const TextureUAVDescriptor descriptor = field.Get<TextureUAVDescriptor>(pass.m_userPassDescPtr, arrayIndex);
                     const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
@@ -194,7 +194,7 @@ namespace FE::Graphics::Common
                     access.m_subresource = resourceInfo.m_textureSubresource;
                     RegisterResource(resourceInfo.m_resource, pass, access);
                 }
-                else if (field.m_type == RTTI::GetTypeID<BufferSRVDescriptor>())
+                else if (field.m_type == Rtti::GetTypeID<BufferSRVDescriptor>())
                 {
                     const BufferSRVDescriptor descriptor = field.Get<BufferSRVDescriptor>(pass.m_userPassDescPtr, arrayIndex);
                     const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
@@ -206,7 +206,7 @@ namespace FE::Graphics::Common
                     access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
                     RegisterResource(resourceInfo.m_resource, pass, access);
                 }
-                else if (field.m_type == RTTI::GetTypeID<BufferUAVDescriptor>())
+                else if (field.m_type == Rtti::GetTypeID<BufferUAVDescriptor>())
                 {
                     const BufferUAVDescriptor descriptor = field.Get<BufferUAVDescriptor>(pass.m_userPassDescPtr, arrayIndex);
                     const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
@@ -218,7 +218,7 @@ namespace FE::Graphics::Common
                     access.m_accessFlags = Core::BarrierAccessFlags::kShaderWrite;
                     RegisterResource(resourceInfo.m_resource, pass, access);
                 }
-                else if (field.m_type == RTTI::GetTypeID<SamplerDescriptor>())
+                else if (field.m_type == Rtti::GetTypeID<SamplerDescriptor>())
                 {
                     const SamplerDescriptor descriptor = field.Get<SamplerDescriptor>(pass.m_userPassDescPtr, arrayIndex);
                     m_descriptorManager->CommitSamplerDescriptor(descriptor.m_value);
@@ -232,19 +232,19 @@ namespace FE::Graphics::Common
     {
         FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
 
-        const RTTI::Type* descType = RTTI::TypeRegistry::FindType(pass.m_userPassDescTypeID);
+        const Rtti::Type* descType = Rtti::TypeRegistry::FindType(pass.m_userPassDescTypeID);
         FE_AssertDebug(descType);
 
-        for (const RTTI::FieldInfo& field : descType->m_fields)
+        for (const Rtti::FieldInfo& field : descType->m_fields)
         {
-            if (field.m_type == RTTI::GetTypeID<Core::PassGraphicsPipeline>())
+            if (field.m_type == Rtti::GetTypeID<Core::PassGraphicsPipeline>())
             {
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline));
                 const Core::PassGraphicsPipeline pipeline = field.Get<Core::PassGraphicsPipeline>(pass.m_userPassDescPtr);
                 pass.m_pipeline = pipeline.m_pipeline;
                 pass.m_specifiedStatesMask |= PassStateFlags::kGraphicsPipeline;
             }
-            else if (field.m_type == RTTI::GetTypeID<Core::PassComputePipeline>())
+            else if (field.m_type == Rtti::GetTypeID<Core::PassComputePipeline>())
             {
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline));
                 const Core::PassComputePipeline pipeline = field.Get<Core::PassComputePipeline>(pass.m_userPassDescPtr);
@@ -258,9 +258,9 @@ namespace FE::Graphics::Common
 
         const bool isGraphicsPipeline = Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline);
 
-        for (const RTTI::FieldInfo& field : descType->m_fields)
+        for (const Rtti::FieldInfo& field : descType->m_fields)
         {
-            if (field.m_type == RTTI::GetTypeID<Core::PassColorTarget>())
+            if (field.m_type == Rtti::GetTypeID<Core::PassColorTarget>())
             {
                 for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
                 {
@@ -288,7 +288,7 @@ namespace FE::Graphics::Common
                     pass.m_specifiedStatesMask |= PassStateFlags::kColorTarget;
                 }
             }
-            else if (field.m_type == RTTI::GetTypeID<Core::PassDepthTarget>())
+            else if (field.m_type == Rtti::GetTypeID<Core::PassDepthTarget>())
             {
                 FE_Assert(field.m_arraySize == 1);
                 FE_Assert(isGraphicsPipeline);
@@ -298,7 +298,7 @@ namespace FE::Graphics::Common
                 FE_Assert(depthTarget.m_target.m_subresource.m_mipSliceCount == 1);
                 FE_Assert(depthTarget.m_target.m_subresource.m_arraySize == 1);
 
-                const auto* graphicsPipeline = RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
+                const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
                 const bool isDepthWriteEnabled = graphicsPipeline->GetDesc().m_depthStencil.m_depthWriteEnabled;
 
                 auto accessFlags = Core::BarrierAccessFlags::kDepthStencilRead;
@@ -318,7 +318,7 @@ namespace FE::Graphics::Common
                 pass.m_depthTargetAccessIndex = accessIndex;
                 pass.m_specifiedStatesMask |= PassStateFlags::kDepthTarget;
             }
-            else if (field.m_type == RTTI::GetTypeID<Core::PassViewport>())
+            else if (field.m_type == Rtti::GetTypeID<Core::PassViewport>())
             {
                 FE_Assert(field.m_arraySize == 1);
                 FE_Assert(isGraphicsPipeline);
@@ -328,7 +328,7 @@ namespace FE::Graphics::Common
                 pass.m_viewport = viewport.m_rect;
                 pass.m_specifiedStatesMask |= PassStateFlags::kViewport;
             }
-            else if (field.m_type == RTTI::GetTypeID<Core::PassScissor>())
+            else if (field.m_type == Rtti::GetTypeID<Core::PassScissor>())
             {
                 FE_Assert(field.m_arraySize == 1);
                 FE_Assert(isGraphicsPipeline);
@@ -352,9 +352,9 @@ namespace FE::Graphics::Common
                 pass.m_pushConstantsTypeID = field.m_type;
                 pass.m_specifiedStatesMask |= PassStateFlags::kPushConstants;
 
-                const RTTI::Type* pushConstantsType = RTTI::TypeRegistry::FindType(field.m_type);
+                const Rtti::Type* pushConstantsType = Rtti::TypeRegistry::FindType(field.m_type);
                 FE_Assert(pushConstantsType);
-                FE_Assert(Bit::AllSet(pushConstantsType->m_flags, RTTI::TypeFlags::kTrivial | RTTI::TypeFlags::kStandardLayout));
+                FE_Assert(Bit::AllSet(pushConstantsType->m_flags, Rtti::TypeFlags::kTrivial | Rtti::TypeFlags::kStandardLayout));
                 ParsePassPushConstants(pass, *pushConstantsType);
             }
         }
@@ -397,7 +397,7 @@ namespace FE::Graphics::Common
             ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
             FE_AssertDebug(resourceNode.m_resource->GetType() == Core::ResourceType::kBuffer);
 
-            auto* buffer = RTTI::AssertCast<Buffer*>(resourceNode.m_resource.Get());
+            auto* buffer = Rtti::AssertCast<Buffer*>(resourceNode.m_resource.Get());
             if (buffer->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted)
             {
                 resourceNode.m_isOwnedByGraph = true;
@@ -485,7 +485,7 @@ namespace FE::Graphics::Common
             ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
             FE_AssertDebug(resourceNode.m_resource->GetType() == Core::ResourceType::kTexture);
 
-            auto* texture = RTTI::AssertCast<Texture*>(resourceNode.m_resource.Get());
+            auto* texture = Rtti::AssertCast<Texture*>(resourceNode.m_resource.Get());
             if (texture->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted)
             {
                 resourceNode.m_isOwnedByGraph = true;
@@ -602,7 +602,7 @@ namespace FE::Graphics::Common
                 {
                     const TextureAccess& access = pass.m_accessedTextures[colorTargetIndex];
                     const ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
-                    auto* texture = RTTI::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
+                    auto* texture = Rtti::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
                     renderTargets.push_back(Core::TextureView::Create(texture, access.m_subresource));
                 }
 
@@ -611,7 +611,7 @@ namespace FE::Graphics::Common
                 {
                     const TextureAccess& access = pass.m_accessedTextures[pass.m_depthTargetAccessIndex];
                     const ResourceNode& resourceNode = m_resources[access.m_localResourceIndex];
-                    auto* texture = RTTI::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
+                    auto* texture = Rtti::AssertCast<Core::Texture*>(resourceNode.m_resource.Get());
                     depthStencil = Core::TextureView::Create(texture, access.m_subresource);
                 }
 
@@ -625,10 +625,10 @@ namespace FE::Graphics::Common
                 m_currentContext->SetScissor(pass.m_scissor);
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline))
-                m_currentContext->SetPipeline(RTTI::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline));
+                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline));
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline))
-                m_currentContext->SetPipeline(RTTI::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline));
+                m_currentContext->SetPipeline(Rtti::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline));
 
             pass.m_execute(pass.m_functor, *m_currentContext);
             FE_Assert(m_currentContext->IsCleanState());

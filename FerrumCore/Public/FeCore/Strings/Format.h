@@ -145,9 +145,9 @@ namespace FE::Fmt
     };
 
     template<class TBuffer>
-    struct ValueFormatter<TBuffer, UUID>
+    struct ValueFormatter<TBuffer, Uuid>
     {
-        void Format(TBuffer& buffer, const UUID& value) const
+        void Format(TBuffer& buffer, const Uuid& value) const
         {
             static constexpr char kDigits[] = "0123456789ABCDEF";
             int32_t idx = 0;

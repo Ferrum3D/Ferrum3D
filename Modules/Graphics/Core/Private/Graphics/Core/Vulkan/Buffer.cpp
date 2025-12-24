@@ -63,7 +63,7 @@ namespace FE::Graphics::Vulkan
         if (m_instance == nullptr)
             return;
 
-        auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -95,7 +95,7 @@ namespace FE::Graphics::Vulkan
 
         FE_Assert(m_instance);
 
-        const auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        const auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
         FE_Assert(bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
                   || bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
 
@@ -110,7 +110,7 @@ namespace FE::Graphics::Vulkan
 
     void Buffer::Unmap()
     {
-        const auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        const auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
         const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
         const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
         vmaUnmapMemory(allocator, allocation);
@@ -174,7 +174,7 @@ namespace FE::Graphics::Vulkan
         m_instance->m_memoryStatus = params.m_memory;
 
         const VmaAllocator allocator = resourcePool->GetAllocator();
-        auto* bufferInstance = RTTI::AssertCast<BufferInstance*>(m_instance);
+        auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
         VerifyVk(vmaCreateBuffer(allocator,
                                  &bufferCI,
                                  &allocationCI,

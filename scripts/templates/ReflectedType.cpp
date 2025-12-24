@@ -1,5 +1,5 @@
 {% if type.is_external %}
-namespace FE::RTTI
+namespace FE::Rtti
 {
     namespace
     {
@@ -40,9 +40,9 @@ namespace FE::RTTI
             {% for b in type.bases[0].id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.bases[0].qualified_name }}
         };
 
-        static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
+        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
             {%- for attribute in type.attributes %}
-            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
             {%- endfor %}
         };
 
@@ -79,21 +79,21 @@ namespace FE::RTTI
         };
 
         {%- endif %}
-        static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
+        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
             {%- for attribute in type.attributes %}
-            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
             {%- endfor %}
         };
         {% for field in type.fields %}
-        static constexpr festd::array<RTTI::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
+        static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
             {%- for attribute in field.attributes %}
-            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
             {% endfor %}
         };
         {% endfor %}
-        static const festd::array<RTTI::FieldInfo, {{ type.fields|length }}> kFields = {
+        static const festd::array<Rtti::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
-            RTTI::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
+            Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
                                                      TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.qualified_name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
@@ -110,13 +110,13 @@ namespace FE::RTTI
 {% else %}
 namespace {{ type.namespace }}
 {
-    const RTTI::TypeID {{ type.name }}::TypeID = RTTI::TypeID{ "{{ type.id }}" };
+    const Rtti::TypeID {{ type.name }}::TypeID = Rtti::TypeID{ "{{ type.id }}" };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_{{ type.id.bytes.hex() }}({{ type.name }}* thisPtr, const RTTI::TypeID typeID)
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_{{ type.id.bytes.hex() }}({{ type.name }}* thisPtr, const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[{{ type.bases|length + 1 }} * sizeof(RTTI::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[{{ type.bases|length + 1 }} * sizeof(Rtti::TypeID)] = {
                 {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.qualified_name }} (this type)
                 {%- for base in type.bases %}
                 {% for b in base.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ base.qualified_name }}
@@ -128,7 +128,7 @@ namespace {{ type.namespace }}
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return thisPtr;
             {%- for base in type.bases %}
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + {{ loop.index }} * sizeof(RTTI::TypeID)));
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + {{ loop.index }} * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<{{ base.qualified_name }}*>(thisPtr);
@@ -138,57 +138,57 @@ namespace {{ type.namespace }}
             return nullptr;
         }
 
-        RTTI::Type& RTTI_GetMutableType_{{ type.id.bytes.hex() }}()
+        Rtti::Type& RTTI_GetMutableType_{{ type.id.bytes.hex() }}()
         {
-            static RTTI::Type typeInstance;
+            static Rtti::Type typeInstance;
             return typeInstance;
         }
     }
 
-    const RTTI::Type& {{ type.name }}::RTTI_GetType()
+    const Rtti::Type& {{ type.name }}::RTTI_GetType()
     {
         return RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
     }
 
-    void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const RTTI::TypeID typeID)
+    void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const Rtti::TypeID typeID)
     {
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(this, typeID);
     }
 
-    const void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const RTTI::TypeID typeID) const
+    const void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(const_cast<{{ type.name }}*>(this), typeID);
     }
 
-    void {{ type.name }}::Reflect(RTTI::ReflectionContext& context)
+    void {{ type.name }}::Reflect(Rtti::ReflectionContext& context)
     {
-        RTTI::Type& typeInstance = RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
 
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(RTTI::TypeID)] = {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
             {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.qualified_name }}
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, {{ type.bases|length }} * sizeof(RTTI::TypeID)> kBaseClassTypeIDs = {
+        static constexpr alignas(16) festd::array<uint8_t, {{ type.bases|length }} * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             {%- for base in type.bases %}
             {% for b in base.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ base.qualified_name }}
             {%- endfor %}
         };
 
-        static constexpr festd::array<RTTI::Attribute, {{ type.attributes|length }}> kAttributes = {
+        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
             {%- for attribute in type.attributes %}
-            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
             {%- endfor %}
         };
         {% for field in type.fields %}
-        static constexpr festd::array<RTTI::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
+        static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
             {%- for attribute in field.attributes %}
-            RTTI::Attribute{ {{ attribute[0], attribute[1] }} },
+            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
             {% endfor %}
         };
         {% endfor %}
-        static const festd::array<RTTI::FieldInfo, {{ type.fields|length }}> kFields = {
+        static const festd::array<Rtti::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
-            RTTI::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
+            Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
                                                      &{{ type.name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),
@@ -198,6 +198,6 @@ namespace {{ type.namespace }}
         context.ReflectClass<{{ type.name }}>(typeInstance, UUID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
     }
 
-    static RTTI::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
 }
 {% endif %}

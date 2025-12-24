@@ -23,7 +23,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        auto* commandQueue = RTTI::AssertCast<GraphicsQueue*>(m_commandQueue);
+        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
         CommandBuffer* commandBuffer = commandQueue->GetCurrentCommandBuffer();
 
         FrameGraphContext* context = Rc<FrameGraphContext>::New(&m_linearAllocator, m_device, this, m_descriptorManager);
@@ -70,7 +70,7 @@ namespace FE::Graphics::Vulkan
         dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
         dependencyInfo.pBufferMemoryBarriers = bufferBarriers.data();
 
-        auto* commandQueue = RTTI::AssertCast<GraphicsQueue*>(m_commandQueue);
+        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
         const CommandBuffer* commandBuffer = commandQueue->GetCurrentCommandBuffer();
         const VkCommandBuffer vkCommandBuffer = commandBuffer->GetNative();
         vkCmdPipelineBarrier2(vkCommandBuffer, &dependencyInfo);

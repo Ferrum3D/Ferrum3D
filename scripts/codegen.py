@@ -55,7 +55,7 @@ class FieldFlags(Flag):
     POINTER = 1 << 5
 
     def __str__(self) -> str:
-        return ' | '.join(["RTTI::FieldFlags::k" + (x.name or "None").capitalize() for x in self])
+        return ' | '.join(["Rtti::FieldFlags::k" + (x.name or "None").capitalize() for x in self])
 
 
 class FieldInfo:

@@ -43,7 +43,7 @@ namespace FE::Graphics
             }
         }
 
-        [[nodiscard]] TBaseModule* TryFind(const RTTI::TypeID typeID) const
+        [[nodiscard]] TBaseModule* TryFind(const Rtti::TypeID typeID) const
         {
             if (const auto it = m_typeMap.find(typeID); it != m_typeMap.end())
                 return m_list[it->second].Get();
@@ -55,12 +55,12 @@ namespace FE::Graphics
         [[nodiscard]] TModule* TryFind() const
         {
             if (const auto it = m_typeMap.find(TModule::TypeID); it != m_typeMap.end())
-                return RTTI::AssertCast<TModule*>(m_list[it->second].Get());
+                return Rtti::AssertCast<TModule*>(m_list[it->second].Get());
 
             return nullptr;
         }
 
-        [[nodiscard]] bool Contains(const RTTI::TypeID typeID) const
+        [[nodiscard]] bool Contains(const Rtti::TypeID typeID) const
         {
             return m_typeMap.contains(typeID);
         }
@@ -71,7 +71,7 @@ namespace FE::Graphics
             return m_typeMap.contains(TModule::TypeID);
         }
 
-        [[nodiscard]] bool IsActive(const RTTI::TypeID typeID) const
+        [[nodiscard]] bool IsActive(const Rtti::TypeID typeID) const
         {
             if (const auto it = m_typeMap.find(typeID); it != m_typeMap.end())
                 return m_active.test(it->second);
@@ -183,6 +183,6 @@ namespace FE::Graphics
         festd::vector<Rc<TBaseModule>> m_list;
         festd::bit_vector m_active;
         festd::bit_vector m_free;
-        festd::unordered_dense_map<RTTI::TypeID, uint32_t> m_typeMap;
+        festd::unordered_dense_map<Rtti::TypeID, uint32_t> m_typeMap;
     };
 } // namespace FE::Graphics

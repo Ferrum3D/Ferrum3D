@@ -42,11 +42,6 @@ namespace FE
         {
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Color4F FE_VECTORCALL Zero()
-        {
-            return Color4F{ _mm_setzero_ps() };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float* FE_VECTORCALL Data()
         {
             return m_values;
@@ -80,7 +75,11 @@ namespace FE
             const __m128 floatVector = _mm_cvtepi32_ps(intVector);
             return Color4F{ _mm_mul_ps(floatVector, _mm_set1_ps(1.0f / 255.0f)) };
         }
+
+        static const Color4F kZero;
     };
+
+    inline const Color4F Color4F::kZero{ kForceInit };
 
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Color4F FE_VECTORCALL operator+(const Color4F lhs, const Color4F rhs)
@@ -171,10 +170,10 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Color4F lhs, const Color4F rhs,
-                                                                               const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const Color4F lhs, const Color4F rhs,
+                                                                          const float epsilon = Constants::kEpsilon)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), Masks::kSignInverseXYZW);
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
             return mask == 0;

@@ -31,7 +31,7 @@ TEST(Vector3, GetXYZ)
 
 TEST(Vector3, CreateFunctions)
 {
-    EXPECT_EQ(Vector3::Zero(), Vector3(0));
+    EXPECT_EQ(Vector3::kZero, Vector3(0));
 
     EXPECT_EQ(Vector3::AxisX(), Vector3(1, 0, 0));
     EXPECT_EQ(Vector3::AxisY(), Vector3(0, 1, 0));
@@ -63,14 +63,14 @@ TEST(Vector3, Equality)
     EXPECT_NE(Vector3(1, 2, 3), Vector3(1, 0, 3));
     EXPECT_NE(Vector3(1, 2, 3), Vector3(1, 2, 0));
 
-    EXPECT_TRUE(Math::EqualEstimate(Vector3(1, 2, 3), Vector3(1.1f, 2.1f, 3.1f), 0.11f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector3(0.01f), Vector3::Zero(), 0.02f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector3::Zero(), Vector3(0.01f), 0.02f));
-    EXPECT_TRUE(Math::EqualEstimate(Vector3(0.0f), Vector3(-0.0f)));
+    EXPECT_TRUE(Math::CmpEqual(Vector3(1, 2, 3), Vector3(1.1f, 2.1f, 3.1f), 0.11f));
+    EXPECT_TRUE(Math::CmpEqual(Vector3(0.01f), Vector3::kZero, 0.02f));
+    EXPECT_TRUE(Math::CmpEqual(Vector3::kZero, Vector3(0.01f), 0.02f));
+    EXPECT_TRUE(Math::CmpEqual(Vector3(0.0f), Vector3(-0.0f)));
 
-    EXPECT_FALSE(Math::EqualEstimate(Vector3(1, 2, 3), Vector3(1.2f, 2.1f, 3.1f), 0.11f));
-    EXPECT_FALSE(Math::EqualEstimate(Vector3(1, 2, 3), Vector3(1.1f, 2.2f, 3.1f), 0.11f));
-    EXPECT_FALSE(Math::EqualEstimate(Vector3(1, 2, 3), Vector3(1.1f, 2.1f, 3.2f), 0.11f));
+    EXPECT_FALSE(Math::CmpEqual(Vector3(1, 2, 3), Vector3(1.2f, 2.1f, 3.1f), 0.11f));
+    EXPECT_FALSE(Math::CmpEqual(Vector3(1, 2, 3), Vector3(1.1f, 2.2f, 3.1f), 0.11f));
+    EXPECT_FALSE(Math::CmpEqual(Vector3(1, 2, 3), Vector3(1.1f, 2.1f, 3.2f), 0.11f));
 }
 
 TEST(Vector3, Comparison)
@@ -100,7 +100,7 @@ TEST(Vector3, Addition)
     b.m_values[3] = RandFloat();
     c.m_values[3] = RandFloat();
 
-    EXPECT_TRUE(Math::EqualEstimate(a + b, c));
+    EXPECT_TRUE(Math::CmpEqual(a + b, c));
 }
 
 TEST(Vector3, Subtraction)
@@ -114,7 +114,7 @@ TEST(Vector3, Subtraction)
     b.m_values[3] = RandFloat();
     c.m_values[3] = RandFloat();
 
-    EXPECT_TRUE(Math::EqualEstimate(a - b, c));
+    EXPECT_TRUE(Math::CmpEqual(a - b, c));
 }
 
 TEST(Vector3, Multiplication)
@@ -128,9 +128,9 @@ TEST(Vector3, Multiplication)
     b.m_values[3] = RandFloat();
     c.m_values[3] = RandFloat();
 
-    EXPECT_TRUE(Math::EqualEstimate(a * b, c));
+    EXPECT_TRUE(Math::CmpEqual(a * b, c));
 
-    EXPECT_TRUE(Math::EqualEstimate(a * 2.0f, Vector3{ 2, 4, 6 }));
+    EXPECT_TRUE(Math::CmpEqual(a * 2.0f, Vector3{ 2, 4, 6 }));
 }
 
 TEST(Vector3, Division)
@@ -144,9 +144,9 @@ TEST(Vector3, Division)
     b.m_values[3] = RandFloat();
     c.m_values[3] = RandFloat();
 
-    EXPECT_TRUE(Math::EqualEstimate(a / b, c));
+    EXPECT_TRUE(Math::CmpEqual(a / b, c));
 
-    EXPECT_TRUE(Math::EqualEstimate(b / 2.0f, Vector3{ 0.5f, 1.0f, 1.0f }));
+    EXPECT_TRUE(Math::CmpEqual(b / 2.0f, Vector3{ 0.5f, 1.0f, 1.0f }));
 }
 
 TEST(Vector3, Dot)
@@ -169,7 +169,7 @@ TEST(Vector3, Dot)
         a.m_values[3] = dist(mt);
         b.m_values[3] = dist(mt);
 
-        ASSERT_TRUE(Math::EqualEstimate(Math::Dot(a, b), dotRef(PackedVector3F{ a }, PackedVector3F{ b })));
+        ASSERT_TRUE(Math::CmpEqual(Math::Dot(a, b), dotRef(PackedVector3F{ a }, PackedVector3F{ b })));
     }
 }
 
@@ -197,7 +197,7 @@ TEST(Vector3, Cross)
         b.m_values[3] = dist(mt);
 
         const Vector3 ref{ crossRef(PackedVector3F{ a }, PackedVector3F{ b }) };
-        ASSERT_TRUE(Math::EqualEstimate(Math::Cross(a, b), ref));
+        ASSERT_TRUE(Math::CmpEqual(Math::Cross(a, b), ref));
     }
 }
 
@@ -205,7 +205,7 @@ TEST(Vector3, AbsNeg)
 {
     const Vector3 a{ -1.0f, 2.0f, -0.0f };
     EXPECT_EQ(Math::Abs(a), Vector3(1.0f, 2.0f, 0.0f));
-    EXPECT_TRUE(Math::EqualEstimate(-a, Vector3{ 1.0f, -2.0f, 0.0f }));
+    EXPECT_TRUE(Math::CmpEqual(-a, Vector3{ 1.0f, -2.0f, 0.0f }));
 }
 
 TEST(Vector3, MinMax)
@@ -248,19 +248,19 @@ TEST(Vector3, Length)
         // Put in random garbage into the w component to ensure it's excluded from the calculations.
         a.m_values[3] = dist(mt);
 
-        ASSERT_TRUE(Math::EqualEstimate(Math::LengthSquared(a), lenRef(PackedVector3F{ a })));
-        ASSERT_TRUE(Math::EqualEstimate(Math::Length(a), std::sqrt(lenRef(PackedVector3F{ a }))));
+        ASSERT_TRUE(Math::CmpEqual(Math::LengthSquared(a), lenRef(PackedVector3F{ a })));
+        ASSERT_TRUE(Math::CmpEqual(Math::Length(a), std::sqrt(lenRef(PackedVector3F{ a }))));
     }
 }
 
 TEST(Vector3, Normalize)
 {
     const Vector3 a{ 1.0f, 0.0f, 0.0f };
-    EXPECT_TRUE(Math::EqualEstimate(Math::Normalize(a), a));
-    EXPECT_TRUE(Math::EqualEstimate(Math::NormalizeEstimate(a), a, 1e-3f));
+    EXPECT_TRUE(Math::CmpEqual(Math::Normalize(a), a));
+    EXPECT_TRUE(Math::CmpEqual(Math::NormalizeEstimate(a), a, 1e-3f));
 
     const Vector3 b{ 1.0f, 2.0f, 3.0f };
     const float length = 3.7416573f;
     const Vector3 expected{ 1.0f / length, 2.0f / length, 3.0f / length };
-    EXPECT_TRUE(Math::EqualEstimate(Math::Normalize(b), expected));
+    EXPECT_TRUE(Math::CmpEqual(Math::Normalize(b), expected));
 }

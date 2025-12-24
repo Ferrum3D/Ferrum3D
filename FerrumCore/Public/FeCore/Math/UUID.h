@@ -4,7 +4,7 @@
 namespace FE
 {
     //! @brief A universally unique identifier.
-    struct UUID final
+    struct Uuid final
     {
         enum class FormatFlags : uint32_t
         {
@@ -27,20 +27,20 @@ namespace FE
             kDefault = kHyphens | kUppercase,
         };
 
-        UUID() = default;
+        Uuid() = default;
 
-        explicit UUID(ForceInitType)
+        explicit Uuid(ForceInitType)
             : m_simdVector(_mm_setzero_si128())
         {
         }
 
-        explicit UUID(const __m128i simdVector)
+        explicit Uuid(const __m128i simdVector)
             : m_simdVector(simdVector)
         {
         }
 
         //! @brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
-        explicit UUID(const festd::ascii_view string)
+        explicit Uuid(const festd::ascii_view string)
         {
             m_simdVector = Parse(string).m_simdVector;
         }
@@ -70,25 +70,25 @@ namespace FE
             return !IsZero();
         }
 
-        static const UUID kNull;
+        static const Uuid kNull;
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static UUID FE_VECTORCALL LoadUnaligned(const void* values)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Uuid FE_VECTORCALL LoadUnaligned(const void* values)
         {
-            return UUID{ _mm_loadu_si128(static_cast<const __m128i*>(values)) };
+            return Uuid{ _mm_loadu_si128(static_cast<const __m128i*>(values)) };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static UUID FE_VECTORCALL LoadAligned(const void* values)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Uuid FE_VECTORCALL LoadAligned(const void* values)
         {
             FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
-            return UUID{ _mm_load_si128(static_cast<const __m128i*>(values)) };
+            return Uuid{ _mm_load_si128(static_cast<const __m128i*>(values)) };
         }
 
-        static UUID FE_VECTORCALL Parse(festd::ascii_view string);
+        static Uuid FE_VECTORCALL Parse(festd::ascii_view string);
 
         template<FormatFlags TFormat>
-        static UUID FE_VECTORCALL Parse(festd::ascii_view string);
+        static Uuid FE_VECTORCALL Parse(festd::ascii_view string);
 
-        FE_FORCE_INLINE static int32_t FE_VECTORCALL Compare(const UUID lhs, const UUID rhs)
+        FE_FORCE_INLINE static int32_t FE_VECTORCALL Compare(const Uuid lhs, const Uuid rhs)
         {
             const __m128i kShuffle = _mm_setr_epi8(3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10);
             const __m128i kRotateSigned = _mm_set1_epi8(static_cast<int8_t>(128));
@@ -109,13 +109,13 @@ namespace FE
         };
     };
 
-    FE_ENUM_OPERATORS(UUID::FormatFlags);
+    FE_ENUM_OPERATORS(Uuid::FormatFlags);
 
 
-    inline const UUID UUID::kNull = UUID{ kForceInit };
+    inline const Uuid Uuid::kNull = Uuid{ kForceInit };
 
 
-    FE_FORCE_INLINE UUID FE_VECTORCALL UUID::Parse(const festd::ascii_view string)
+    FE_FORCE_INLINE Uuid FE_VECTORCALL Uuid::Parse(const festd::ascii_view string)
     {
         switch (string.length())
         {
@@ -133,8 +133,8 @@ namespace FE
     }
 
 
-    template<UUID::FormatFlags TFormat>
-    FE_FORCE_INLINE UUID FE_VECTORCALL UUID::Parse(festd::ascii_view string)
+    template<Uuid::FormatFlags TFormat>
+    FE_FORCE_INLINE Uuid FE_VECTORCALL Uuid::Parse(festd::ascii_view string)
     {
         if (Bit::AllSet(TFormat, FormatFlags::kBraces | FormatFlags::kHyphens))
         {
@@ -204,33 +204,33 @@ namespace FE
         const __m128i lowerResult = _mm_sub_epi8(lowerBlend, zero);
         const __m128i upperResult = _mm_slli_epi16(_mm_sub_epi8(upperBlend, zero), 4);
 
-        return UUID{ _mm_xor_si128(lowerResult, upperResult) };
+        return Uuid{ _mm_xor_si128(lowerResult, upperResult) };
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL operator<(const UUID lhs, const UUID rhs)
+    FE_FORCE_INLINE bool FE_VECTORCALL operator<(const Uuid lhs, const Uuid rhs)
     {
-        return UUID::Compare(lhs, rhs) < 0;
+        return Uuid::Compare(lhs, rhs) < 0;
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL operator==(const UUID lhs, const UUID rhs)
+    FE_FORCE_INLINE bool FE_VECTORCALL operator==(const Uuid lhs, const Uuid rhs)
     {
         const __m128i mask = _mm_cmpeq_epi8(lhs.m_simdVector, rhs.m_simdVector);
         return _mm_movemask_epi8(mask) == 0xffff;
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL operator!=(const UUID lhs, const UUID rhs)
+    FE_FORCE_INLINE bool FE_VECTORCALL operator!=(const Uuid lhs, const Uuid rhs)
     {
         return !(lhs == rhs);
     }
 } // namespace FE
 
 template<>
-struct eastl::hash<FE::UUID>
+struct eastl::hash<FE::Uuid>
 {
-    size_t operator()(const FE::UUID value) const noexcept
+    size_t operator()(const FE::Uuid value) const noexcept
     {
         return FE::DefaultHash(value.data(), sizeof(value.m_simdVector));
     }

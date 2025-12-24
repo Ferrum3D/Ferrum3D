@@ -58,8 +58,8 @@ namespace FE
             Vector3 shear;
 
             FE_Verify(Math::DecomposeTransform(matrix, translation, rotation, scale, shear));
-            FE_Assert(Math::EqualEstimate(scale.x, scale.y) && Math::EqualEstimate(scale.y, scale.z));
-            FE_Assert(Math::EqualEstimate(shear, Vector3::Zero()));
+            FE_Assert(Math::CmpEqual(scale.x, scale.y) && Math::CmpEqual(scale.y, scale.z));
+            FE_Assert(Math::CmpEqual(shear, Vector3::Zero()));
 
             Transform transform;
             transform.m_translationScale = Vector4{ translation, scale.x };
@@ -69,7 +69,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL ToMatrix(const Transform& transform)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
 
             const Vector4 scale = Vector4::BroadcastW(transform.m_translationScale);
 

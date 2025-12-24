@@ -41,6 +41,7 @@ set(PUBLIC_HEADERS
     Public/Graphics/Passes/Tools/Blit.h
     Public/Graphics/Passes/Tools/Downsample.h
 
+    Public/Graphics/Scene/Octree.h
     Public/Graphics/Scene/Scene.h
     Public/Graphics/Scene/View.h
 
@@ -61,6 +62,7 @@ set(COMMON_SOURCES
     Private/Graphics/Passes/Tools/Blit.cpp
     Private/Graphics/Passes/Tools/Downsample.cpp
 
+    Private/Graphics/Scene/Octree.cpp
     Private/Graphics/Scene/SceneImpl.cpp
     Private/Graphics/Scene/SceneImpl.h
     Private/Graphics/Scene/View.cpp

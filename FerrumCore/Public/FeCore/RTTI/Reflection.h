@@ -2,7 +2,7 @@
 #include <FeCore/RTTI/RTTI.h>
 #include <festd/intrusive_list.h>
 
-namespace FE::RTTI
+namespace FE::Rtti
 {
     enum class TypeFlags : uint32_t
     {
@@ -112,7 +112,7 @@ namespace FE::RTTI
 
     namespace TypeRegistry
     {
-        const Type* FindType(UUID id);
+        const Type* FindType(Uuid id);
         const Type* FindType(festd::ascii_view qualifiedName);
 
         TypeList GetTypes();
@@ -125,4 +125,4 @@ namespace FE::RTTI
 
         explicit TypeRegistrar(RegisterFunc func);
     };
-} // namespace FE::RTTI
+} // namespace FE::Rtti

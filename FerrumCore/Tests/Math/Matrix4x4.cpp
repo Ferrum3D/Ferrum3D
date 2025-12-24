@@ -24,7 +24,7 @@ TEST(Matrix4x4, Create)
     EXPECT_EQ(m.m_rows[2], Vector4::AxisZ());
     EXPECT_EQ(m.m_rows[3], Vector4::AxisW());
 
-    m = Matrix4x4::Zero();
+    m = Matrix4x4::kZero;
     EXPECT_EQ(m.m_rows[0], Vector4::Zero());
     EXPECT_EQ(m.m_rows[1], Vector4::Zero());
     EXPECT_EQ(m.m_rows[2], Vector4::Zero());
@@ -51,28 +51,28 @@ TEST(Matrix4x4, Rotation)
     const float angle2 = 30.0f / 360.0f * 2 * Constants::kPI;
 
     Matrix4x4 m = Math::Transpose(Matrix4x4::RotationX(angle1));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[0], Vector4(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[1], Vector4(+0.0000000f, +0.5000000f, -0.8660254f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[2], Vector4(+0.0000000f, +0.8660254f, +0.5000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[0], Vector4(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[1], Vector4(+0.0000000f, +0.5000000f, -0.8660254f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[2], Vector4(+0.0000000f, +0.8660254f, +0.5000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
     m = Math::Transpose(Matrix4x4::RotationY(angle1));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[0], Vector4(+0.5000000f, +0.0000000f, +0.8660254f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[1], Vector4(+0.0000000f, +1.0000000f, +0.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[2], Vector4(-0.8660254f, +0.0000000f, +0.5000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[0], Vector4(+0.5000000f, +0.0000000f, +0.8660254f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[1], Vector4(+0.0000000f, +1.0000000f, +0.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[2], Vector4(-0.8660254f, +0.0000000f, +0.5000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
     m = Math::Transpose(Matrix4x4::RotationZ(angle1));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[0], Vector4(+0.5000000f, -0.8660254f, +0.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[1], Vector4(+0.8660254f, +0.5000000f, +0.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[2], Vector4(-0.0000000f, +0.0000000f, +1.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[0], Vector4(+0.5000000f, -0.8660254f, +0.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[1], Vector4(+0.8660254f, +0.5000000f, +0.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[2], Vector4(-0.0000000f, +0.0000000f, +1.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 
     m = Math::Transpose(Matrix4x4::RotationX(angle2));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[0], Vector4(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[1], Vector4(+0.0000000f, +0.8660254f, -0.5000000f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[2], Vector4(+0.0000000f, +0.5000000f, +0.8660254f, +0.0000000f)));
-    EXPECT_TRUE(EqualEstimate(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[0], Vector4(+1.0000000f, +0.0000000f, +0.0000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[1], Vector4(+0.0000000f, +0.8660254f, -0.5000000f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[2], Vector4(+0.0000000f, +0.5000000f, +0.8660254f, +0.0000000f)));
+    EXPECT_TRUE(CmpEqual(m.m_rows[3], Vector4(+0.0000000f, +0.0000000f, +0.0000000f, +1.0000000f)));
 }
 
 TEST(Matrix4x4, DataAccess)
@@ -147,13 +147,13 @@ TEST(Matrix4x4, Add)
     b.m_rows[3] = Vector4(+4.270f, +3.241f, +4.594f, -9.493f);
 
     const Matrix4x4 m = a + b;
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[0], Vector4(-12.995f, -3.942f, -9.985f, +10.455f)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[1], Vector4(-06.737f, +6.392f, +5.436f, -00.480f)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[2], Vector4(+04.599f, -1.286f, -2.293f, +04.311f)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[3], Vector4(+00.412f, -0.066f, +0.561f, -18.580f)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[0], Vector4(-12.995f, -3.942f, -9.985f, +10.455f)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[1], Vector4(-06.737f, +6.392f, +5.436f, -00.480f)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[2], Vector4(+04.599f, -1.286f, -2.293f, +04.311f)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[3], Vector4(+00.412f, -0.066f, +0.561f, -18.580f)));
 
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_TRUE(Math::EqualEstimate(m.m_values[i], a.m_values[i] + b.m_values[i]));
+        EXPECT_TRUE(Math::CmpEqual(m.m_values[i], a.m_values[i] + b.m_values[i]));
 }
 
 TEST(Matrix4x4, Subtract)
@@ -171,10 +171,10 @@ TEST(Matrix4x4, Subtract)
     b.m_rows[3] = Vector4(+4.270f, +3.241f, +4.594f, -9.493f);
 
     const Matrix4x4 m = a - b;
-    EXPECT_TRUE(Math::EqualEstimate(m, a + -b));
+    EXPECT_TRUE(Math::CmpEqual(m, a + -b));
 
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_TRUE(Math::EqualEstimate(m.m_values[i], a.m_values[i] - b.m_values[i]));
+        EXPECT_TRUE(Math::CmpEqual(m.m_values[i], a.m_values[i] - b.m_values[i]));
 }
 
 TEST(Matrix4x4, MultiplyByScalar)
@@ -187,7 +187,7 @@ TEST(Matrix4x4, MultiplyByScalar)
 
     const Matrix4x4 m = a * 2.3f;
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_TRUE(Math::EqualEstimate(m.m_values[i], a.m_values[i] * 2.3f));
+        EXPECT_TRUE(Math::CmpEqual(m.m_values[i], a.m_values[i] * 2.3f));
 }
 
 TEST(Matrix4x4, DivideByScalar)
@@ -200,7 +200,7 @@ TEST(Matrix4x4, DivideByScalar)
 
     const Matrix4x4 m = a / 2.3f;
     for (uint32_t i = 0; i < 16; ++i)
-        EXPECT_TRUE(Math::EqualEstimate(m.m_values[i], a.m_values[i] / 2.3f));
+        EXPECT_TRUE(Math::CmpEqual(m.m_values[i], a.m_values[i] / 2.3f));
 }
 
 TEST(Matrix4x4, Multiply)
@@ -218,10 +218,10 @@ TEST(Matrix4x4, Multiply)
     b.m_rows[3] = Vector4(+4.270f, +3.241f, +4.594f, -9.493f);
 
     const Matrix4x4 m = a * b;
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[0], Vector4(+31.258860f, -74.504727f, +65.134651f, -190.089493f), 1e-3f));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[1], Vector4(+23.805346f, -88.740537f, +01.471982f, +070.745233f), 1e-3f));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[2], Vector4(-26.139624f, +11.819359f, +00.196816f, -012.987819f), 1e-3f));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[3], Vector4(-53.933797f, -64.806441f, -35.590801f, +035.274470f), 1e-3f));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[0], Vector4(+31.258860f, -74.504727f, +65.134651f, -190.089493f), 1e-3f));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[1], Vector4(+23.805346f, -88.740537f, +01.471982f, +070.745233f), 1e-3f));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[2], Vector4(-26.139624f, +11.819359f, +00.196816f, -012.987819f), 1e-3f));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[3], Vector4(-53.933797f, -64.806441f, -35.590801f, +035.274470f), 1e-3f));
 }
 
 TEST(Matrix4x4, TransformVector)
@@ -235,7 +235,7 @@ TEST(Matrix4x4, TransformVector)
     const Vector4 b{ 4, 6, 7, 8 };
     const Vector4 r = b * a;
 
-    EXPECT_TRUE(Math::EqualEstimate(r, Vector4(125, 169, 191, 155), 1e-5f));
+    EXPECT_TRUE(Math::CmpEqual(r, Vector4(125, 169, 191, 155), 1e-5f));
 }
 
 TEST(Matrix4x4, Transpose)
@@ -248,10 +248,10 @@ TEST(Matrix4x4, Transpose)
 
     const Matrix4x4 m = Math::Transpose(a);
 
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[0], Vector4(1, 5, -1, -5)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[1], Vector4(2, 6, -2, -6)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[2], Vector4(3, 7, -3, -7)));
-    EXPECT_TRUE(Math::EqualEstimate(m.m_rows[3], Vector4(4, 8, -4, -8)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[0], Vector4(1, 5, -1, -5)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[1], Vector4(2, 6, -2, -6)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[2], Vector4(3, 7, -3, -7)));
+    EXPECT_TRUE(Math::CmpEqual(m.m_rows[3], Vector4(4, 8, -4, -8)));
 }
 
 TEST(Matrix4x4, InverseTransform)
@@ -261,5 +261,5 @@ TEST(Matrix4x4, InverseTransform)
     m = m * Matrix4x4::Scale(Vector3(4, 5, 6));
 
     const Matrix4x4 identity = m * Math::InvertTransform(m);
-    EXPECT_TRUE(Math::EqualEstimate(identity, Matrix4x4::Identity()));
+    EXPECT_TRUE(Math::CmpEqual(identity, Matrix4x4::Identity()));
 }

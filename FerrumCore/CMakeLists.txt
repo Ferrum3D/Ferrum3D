@@ -30,6 +30,7 @@
 
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/ConcurrentQueue.h
+    Public/FeCore/Containers/Pow2Array.h
     Public/FeCore/Containers/SegmentedVector.h
 
     Public/FeCore/DI/Activator.h
@@ -89,6 +90,8 @@
     Public/FeCore/RTTI/ReflectionContext.h
     Public/FeCore/RTTI/RTTI.h
 
+    Public/FeCore/SIMD/Intersection.h
+    Public/FeCore/SIMD/Soa.h
     Public/FeCore/SIMD/Utils.h
 
     Public/FeCore/Strings/Encoding.h

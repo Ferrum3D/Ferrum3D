@@ -85,11 +85,6 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL Zero()
-        {
-            return Matrix4x4(kForceInit);
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL LoadUnaligned(const float* values)
         {
             Matrix4x4 result;
@@ -171,10 +166,10 @@ namespace FE
             __m128 q1 = _mm_mul_ps(quat.m_simdVector, q0);
 
             __m128 v0 = _mm_shuffle_ps(q1, q1, _MM_SHUFFLE(3, 0, 0, 1));
-            v0 = _mm_and_ps(v0, SIMD::SSE::Masks::kFloatXYZ);
+            v0 = _mm_and_ps(v0, Simd::SSE::Masks::kFloatXYZ);
             __m128 v1 = _mm_shuffle_ps(q1, q1, _MM_SHUFFLE(3, 1, 2, 2));
-            v1 = _mm_and_ps(v1, SIMD::SSE::Masks::kFloatXYZ);
-            __m128 r0 = _mm_sub_ps(SIMD::SSE::Constants::kFloat1110, v0);
+            v1 = _mm_and_ps(v1, Simd::SSE::Masks::kFloatXYZ);
+            __m128 r0 = _mm_sub_ps(Simd::SSE::Constants::kFloat1110, v0);
             r0 = _mm_sub_ps(r0, v1);
 
             v0 = _mm_shuffle_ps(quat.m_simdVector, quat.m_simdVector, _MM_SHUFFLE(3, 1, 0, 0));
@@ -273,7 +268,11 @@ namespace FE
             result.m_simdVectors[3] = _mm_setr_ps(0.0f, 0.0f, far * fRange, 0.0f);
             return result;
         }
+
+        static const Matrix4x4 kZero;
     };
+
+    inline const Matrix4x4 Matrix4x4::kZero{ kForceInit };
 
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4 FE_VECTORCALL operator+(const Matrix4x4& lhs, const Matrix4x4& rhs)
@@ -484,10 +483,10 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(Matrix4x4 lhs, Matrix4x4 rhs,
-                                                                               float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(Matrix4x4 lhs, Matrix4x4 rhs,
+                                                                          float epsilon = Constants::kEpsilon)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
 
             const __m128 epsilonBroadcast = _mm_set1_ps(epsilon);
 

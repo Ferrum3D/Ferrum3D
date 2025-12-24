@@ -25,13 +25,13 @@ namespace FE::Graphics::Vulkan
         [[nodiscard]] VkBuffer GetNative() const
         {
             FE_AssertDebug(m_instance);
-            return RTTI::AssertCast<BufferInstance*>(m_instance)->m_buffer;
+            return Rtti::AssertCast<BufferInstance*>(m_instance)->m_buffer;
         }
 
         [[nodiscard]] VkBufferView GetView() const
         {
             FE_AssertDebug(m_instance);
-            return RTTI::AssertCast<BufferInstance*>(m_instance)->m_view;
+            return Rtti::AssertCast<BufferInstance*>(m_instance)->m_view;
         }
 
     private:

@@ -40,9 +40,9 @@ namespace FE::Memory
             m_pageByteSize = pageByteSize;
         }
 
-        void Deinitialize()
+        void Deinitialize(const bool ignoreLeaks = false)
         {
-            FreePages();
+            FreePages(ignoreLeaks);
             m_elementByteSize = 0;
             m_pageByteSize = 0;
             m_pageList = nullptr;
@@ -80,15 +80,16 @@ namespace FE::Memory
 
         inline void* AllocateFromPage(Page* page) const;
 
-        void FreePages()
+        void FreePages(const bool ignoreLeaks = false)
         {
-            FE_CoreAssertDebug(m_allocationCount == 0, "Leak detected");
+            FE_CoreAssertDebug(m_allocationCount == 0 || ignoreLeaks, "Leak detected");
+            m_allocationCount = 0;
 
             Page* pPage = m_pageList;
             while (pPage)
             {
                 Page* pNext = pPage->m_next;
-                Memory::FreeVirtual(pPage, m_pageByteSize);
+                FreeVirtual(pPage, m_pageByteSize);
                 pPage = pNext;
             }
         }

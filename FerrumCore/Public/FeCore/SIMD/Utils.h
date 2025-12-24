@@ -3,7 +3,7 @@
 #include <smmintrin.h>
 #include <xmmintrin.h>
 
-namespace FE::SIMD
+namespace FE::Simd
 {
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m128 FE_VECTORCALL DotProduct(const __m128 lhs, const __m128 rhs)
     {
@@ -19,6 +19,30 @@ namespace FE::SIMD
     {
         inline constexpr uint32_t kByteSize = sizeof(__m256);
         inline constexpr uint32_t kLaneCount = kByteSize / sizeof(float);
+
+
+        namespace Constants
+        {
+            inline const __m256 kAllOnes = _mm256_set1_ps(1.0f);
+            inline const __m256 kAllZeros = _mm256_setzero_ps();
+
+            inline const __m256i kLaneIndices = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+        } // namespace Constants
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE __m256 FE_VECTORCALL InsertLane(const __m256 vector, const float value,
+                                                                              const int32_t index)
+        {
+            const __m256i cmpMask = _mm256_cmpeq_epi32(Constants::kLaneIndices, _mm256_set1_epi32(index));
+            const __m256 valueBroadcast = _mm256_set1_ps(value);
+            return _mm256_blendv_ps(vector, valueBroadcast, _mm256_castsi256_ps(cmpMask));
+        }
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ExtractLane(const __m256 vector, const int32_t index)
+        {
+            const __m256 shuffled = _mm256_permutevar8x32_ps(vector, _mm256_set1_epi32(index));
+            return _mm256_cvtss_f32(shuffled);
+        }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Zero(void* buffer, const uint32_t alignedSize)
@@ -74,8 +98,8 @@ namespace FE::SIMD
 
         namespace Constants
         {
-            inline const __m128 kFloat1111 = _mm_set1_ps(1.0f);
-            inline const __m128 kFloat0000 = _mm_setzero_ps();
+            inline const __m128 kAllOnes = _mm_set1_ps(1.0f);
+            inline const __m128 kAllZeros = _mm_setzero_ps();
 
             inline const __m128 kFloat1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
         } // namespace Constants
@@ -106,4 +130,4 @@ namespace FE::SIMD
             }
         }
     } // namespace SSE
-} // namespace FE::SIMD
+} // namespace FE::Simd

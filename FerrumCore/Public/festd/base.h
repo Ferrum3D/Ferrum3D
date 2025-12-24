@@ -94,6 +94,11 @@ namespace FE::festd
 
     using eastl::back_inserter;
 
+    using eastl::uninitialized_copy;
+    using eastl::uninitialized_copy_n;
+    using eastl::uninitialized_fill;
+    using eastl::uninitialized_fill_n;
+
 
     //! @brief Returns the size of a container.
     template<class TContainer>

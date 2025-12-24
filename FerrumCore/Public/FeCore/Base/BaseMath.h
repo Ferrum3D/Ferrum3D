@@ -484,7 +484,7 @@ namespace FE::Math
     }
 
 
-    FE_FORCE_INLINE bool FE_VECTORCALL EqualEstimate(const float lhs, const float rhs, const float epsilon = Constants::kEpsilon)
+    FE_FORCE_INLINE bool FE_VECTORCALL CmpEqual(const float lhs, const float rhs, const float epsilon = Constants::kEpsilon)
     {
         return abs(lhs - rhs) < epsilon;
     }

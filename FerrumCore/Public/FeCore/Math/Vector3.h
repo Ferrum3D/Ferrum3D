@@ -55,11 +55,6 @@ namespace FE
             return m_values[index];
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3 FE_VECTORCALL Zero()
-        {
-            return Vector3{ _mm_setzero_ps() };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3 FE_VECTORCALL LoadUnaligned(const float* values)
         {
             return Vector3{ _mm_loadu_ps(values) };
@@ -113,7 +108,11 @@ namespace FE
         {
             return Vector3{ 1.0f, 0.0f, 0.0f };
         }
+
+        static const Vector3 kZero;
     };
+
+    inline const Vector3 Vector3::kZero{ kForceInit };
 
 
     struct PackedVector3F final
@@ -166,7 +165,7 @@ namespace FE
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL operator-(const Vector3 vec)
     {
-        return Vector3{ _mm_xor_ps(vec.m_simdVector, SIMD::SSE::Masks::kSignXYZ) };
+        return Vector3{ _mm_xor_ps(vec.m_simdVector, Simd::SSE::Masks::kSignXYZ) };
     }
 
 
@@ -224,7 +223,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Abs(const Vector3 lhs)
         {
-            return Vector3{ _mm_and_ps(lhs.m_simdVector, SIMD::SSE::Masks::kSignInverseXYZ) };
+            return Vector3{ _mm_and_ps(lhs.m_simdVector, Simd::SSE::Masks::kSignInverseXYZ) };
         }
 
 
@@ -394,8 +393,8 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Vector3 lhs, const Vector3 rhs,
-                                                                               const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const Vector3 lhs, const Vector3 rhs,
+                                                                          const float epsilon = Constants::kEpsilon)
         {
             const __m128 distance = Abs(lhs - rhs).m_simdVector;
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));

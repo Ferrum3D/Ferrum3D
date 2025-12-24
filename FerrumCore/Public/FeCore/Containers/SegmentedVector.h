@@ -482,7 +482,7 @@ namespace FE
         template<class TOther, uint32_t TSizeOther>
         friend struct SegmentedVector;
 
-        static constexpr uint32_t kSegmentTableGranularity = SIMD::AVX::kByteSize / sizeof(T*);
+        static constexpr uint32_t kSegmentTableGranularity = Simd::AVX::kByteSize / sizeof(T*);
         static_assert(sizeof(T) <= TSegmentByteSize);
 
         std::pmr::memory_resource* m_allocator = nullptr;
@@ -496,11 +496,11 @@ namespace FE
                                                              : Math::Max(m_segmentTableSize * 2, Math::CeilPowerOfTwo(minSize));
 
             T** newTable = Memory::AllocateArray<T*>(m_allocator, newSize);
-            SIMD::AVX::Zero(static_cast<void*>(&newTable[m_segmentTableSize]), (newSize - m_segmentTableSize) * sizeof(T*));
+            Simd::AVX::Zero(static_cast<void*>(&newTable[m_segmentTableSize]), (newSize - m_segmentTableSize) * sizeof(T*));
 
             if (m_segments)
             {
-                SIMD::AVX::Copy(static_cast<void*>(newTable), static_cast<void*>(m_segments), m_segmentTableSize * sizeof(T*));
+                Simd::AVX::Copy(static_cast<void*>(newTable), static_cast<void*>(m_segments), m_segmentTableSize * sizeof(T*));
                 m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize);
             }
 

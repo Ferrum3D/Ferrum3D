@@ -4,7 +4,7 @@
 #include <FeCore/RTTI/ReflectionPrivate.h>
 #include <festd/unordered_map.h>
 
-namespace FE::RTTI
+namespace FE::Rtti
 {
     namespace
     {
@@ -19,7 +19,7 @@ namespace FE::RTTI
                 m_typeNameMap[type.m_qualifiedName] = &type;
             }
 
-            festd::unordered_dense_map<UUID, Type*> m_typeIDMap;
+            festd::unordered_dense_map<Uuid, Type*> m_typeIDMap;
             festd::unordered_dense_map<festd::ascii_view, Type*> m_typeNameMap;
             festd::intrusive_list<Type> m_typeList;
         };
@@ -43,7 +43,7 @@ namespace FE::RTTI
     }
 
 
-    const Type* TypeRegistry::FindType(const UUID id)
+    const Type* TypeRegistry::FindType(const Uuid id)
     {
         auto it = GTypeRegistry->m_typeIDMap.find(id);
         if (it == GTypeRegistry->m_typeIDMap.end())
@@ -73,4 +73,4 @@ namespace FE::RTTI
     {
         func(*GTypeRegistry);
     }
-} // namespace FE::RTTI
+} // namespace FE::Rtti

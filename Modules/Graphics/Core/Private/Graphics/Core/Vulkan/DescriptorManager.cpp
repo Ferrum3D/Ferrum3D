@@ -167,7 +167,7 @@ namespace FE::Graphics::Vulkan
 
             case Core::ResourceType::kBuffer:
                 {
-                    const Core::Buffer* buffer = RTTI::AssertCast<const Core::Buffer*>(descriptor.m_resource);
+                    const Core::Buffer* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource);
                     const Core::BufferDesc bufferDesc = buffer->GetDesc();
 
                     VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -186,7 +186,7 @@ namespace FE::Graphics::Vulkan
 
             case Core::ResourceType::kTexture:
                 {
-                    const Core::Texture* texture = RTTI::AssertCast<const Core::Texture*>(descriptor.m_resource);
+                    const Core::Texture* texture = Rtti::AssertCast<const Core::Texture*>(descriptor.m_resource);
 
                     VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

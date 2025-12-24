@@ -266,7 +266,7 @@ namespace FE
             const auto threadName = isForeground ? Fmt::FixedFormat("Foreground Worker {}", workerIndex)
                                                  : Fmt::FixedFormat("Background Worker {}", workerIndex - 32);
             const auto threadFunc = [](const uintptr_t workerIndex) {
-                RTTI::AssertCast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
+                Rtti::AssertCast<JobSystem*>(Env::GetServiceProvider()->ResolveRequired<IJobSystem>())
                     ->ThreadProc(static_cast<uint32_t>(workerIndex));
             };
 

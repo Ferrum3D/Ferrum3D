@@ -157,7 +157,7 @@ namespace FE::Graphics::Vulkan
         const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
 
         // TODO: maybe handle OOM differently
-        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+        auto* textureInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
         VerifyVk(vmaCreateImage(allocator,
                                 &imageCI,
                                 &allocationCI,
@@ -201,7 +201,7 @@ namespace FE::Graphics::Vulkan
 
         std::unique_lock lk{ m_lock };
 
-        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+        auto* textureInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
 
         if (subresource == m_wholeImageSubresource)
             return textureInstance->m_wholeImageView;
@@ -256,7 +256,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+        auto* textureInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
 
         FE_Assert(textureInstance->m_wholeImageView == VK_NULL_HANDLE);
 
@@ -284,7 +284,7 @@ namespace FE::Graphics::Vulkan
         if (m_instance == nullptr)
             return;
 
-        auto* textureInstance = RTTI::AssertCast<TextureInstance*>(m_instance);
+        auto* textureInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
 
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;

@@ -17,7 +17,7 @@ namespace FE::DI
             return &m_registryRoot;
         }
 
-        ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) override;
+        ResultCode Resolve(Uuid registrationID, Memory::RefCountedObjectBase** ppResult) override;
 
     private:
         struct CallbackImpl final : public ServiceRegistryCallback

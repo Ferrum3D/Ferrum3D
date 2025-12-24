@@ -409,6 +409,86 @@ namespace FE
             const std::byte* m_ptr = nullptr;
             const std::byte* m_end = nullptr;
         };
+
+
+        template<class T>
+        struct ShortPtr final
+        {
+            ShortPtr() = default;
+
+            FE_FORCE_INLINE ShortPtr(const T* ptr)
+            {
+                Set(ptr);
+            }
+
+            FE_FORCE_INLINE operator T*()
+            {
+                return Get();
+            }
+
+            FE_FORCE_INLINE operator const T*() const
+            {
+                return Get();
+            }
+
+            FE_FORCE_INLINE T& operator*()
+            {
+                return *Get();
+            }
+
+            FE_FORCE_INLINE const T& operator*() const
+            {
+                return *Get();
+            }
+
+            FE_FORCE_INLINE T* operator->()
+            {
+                return Get();
+            }
+
+            FE_FORCE_INLINE const T* operator->() const
+            {
+                return Get();
+            }
+
+            FE_FORCE_INLINE void Set(const T* ptr)
+            {
+                FE_CoreAssert((reinterpret_cast<uint64_t>(ptr) & 0xffff000000000000) == 0);
+                memcpy(m_ptr, &ptr, 4);
+                memcpy(m_ptr + 4, reinterpret_cast<char*>(&ptr) + 4, 2);
+            }
+
+            FE_FORCE_INLINE T* Get()
+            {
+                uint32_t lo;
+                uint16_t hi;
+                memcpy(&lo, m_ptr, 4);
+                memcpy(&hi, m_ptr + 4, 2);
+                return reinterpret_cast<T*>(static_cast<uint64_t>(lo) | ((static_cast<uint64_t>(hi) << 32)));
+            }
+
+            FE_FORCE_INLINE const T* Get() const
+            {
+                uint32_t lo;
+                uint16_t hi;
+                memcpy(&lo, m_ptr, 4);
+                memcpy(&hi, m_ptr + 4, 2);
+                return reinterpret_cast<T*>(static_cast<uint64_t>(lo) | ((static_cast<uint64_t>(hi) << 32)));
+            }
+
+            FE_FORCE_INLINE T& operator[](const size_t index)
+            {
+                return Get()[index];
+            }
+
+            FE_FORCE_INLINE const T& operator[](const size_t index) const
+            {
+                return Get()[index];
+            }
+
+        private:
+            uint8_t m_ptr[6];
+        };
     } // namespace Memory
 
 
@@ -433,18 +513,18 @@ namespace FE
     }
 
 
-    //! @brief Perform RTTI::Cast of Rc<T>.
+    //! @brief Perform Rtti::Cast of Rc<T>.
     template<class TDest, class TSrc>
     [[nodiscard]] Rc<TDest> dynamic_pointer_cast(const Rc<TSrc>& src)
     {
-        return Rc<TDest>(RTTI::Cast<TDest*>(src.Get()));
+        return Rc<TDest>(Rtti::Cast<TDest*>(src.Get()));
     }
 
 
-    //! @brief Perform RTTI::AssertCast of Rc<T>.
+    //! @brief Perform Rtti::AssertCast of Rc<T>.
     template<class TDest, class TSrc>
     [[nodiscard]] Rc<TDest> assert_pointer_cast(const Rc<TSrc>& src)
     {
-        return Rc<TDest>(RTTI::AssertCast<TDest*>(src.Get()));
+        return Rc<TDest>(Rtti::AssertCast<TDest*>(src.Get()));
     }
 } // namespace FE

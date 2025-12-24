@@ -99,7 +99,7 @@ namespace FE::Memory
     {
         explicit SegmentedBufferBuilder(std::pmr::memory_resource* allocator, const uint32_t segmentCapacity)
         {
-            FE_Assert(IsAligned(segmentCapacity, SIMD::AVX::kByteSize));
+            FE_Assert(IsAligned(segmentCapacity, Simd::AVX::kByteSize));
 
             m_buffer.m_allocator = allocator;
             m_buffer.m_segments = nullptr;

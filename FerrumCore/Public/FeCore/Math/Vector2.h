@@ -50,11 +50,6 @@ namespace FE
             return m_values[index];
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base Zero()
-        {
-            return Vector2Base{ 0, 0 };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector2Base LoadUnaligned(const T* values)
         {
             return Vector2Base{ values[0], values[1] };
@@ -80,7 +75,13 @@ namespace FE
         {
             return Vector2Base<TOther>{ static_cast<TOther>(x), static_cast<TOther>(y) };
         }
+
+        static const Vector2Base kZero;
     };
+
+    template<class T>
+    inline const Vector2Base<T> Vector2Base<T>::kZero{ kForceInit };
+
 
     using Vector2 = Vector2Base<float>;
     using Vector2Int = Vector2Base<int32_t>;
@@ -261,10 +262,10 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool EqualEstimate(const Vector2 lhs, const Vector2 rhs,
-                                                                 const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool CmpEqual(const Vector2 lhs, const Vector2 rhs,
+                                                            const float epsilon = Constants::kEpsilon)
         {
-            return EqualEstimate(lhs.x, rhs.x, epsilon) && EqualEstimate(lhs.y, rhs.y, epsilon);
+            return CmpEqual(lhs.x, rhs.x, epsilon) && CmpEqual(lhs.y, rhs.y, epsilon);
         }
     } // namespace Math
 

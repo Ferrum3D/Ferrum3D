@@ -32,7 +32,7 @@ namespace FE
         }
 
         IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        auto* jobSystem = RTTI::AssertCast<JobSystem*>(jobSystemInterface);
+        auto* jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
 
         auto entry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
         while (entry)
@@ -119,7 +119,7 @@ namespace FE
 
         auto* queueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
         IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        auto* jobSystem = RTTI::AssertCast<JobSystem*>(jobSystemInterface);
+        auto* jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
 
         const uint32_t workerIndex = jobSystem->GetWorkerIndex();
         FE_Assert(workerIndex != kInvalidIndex, "WaitGroup::Wait() can only be called from a fiber");

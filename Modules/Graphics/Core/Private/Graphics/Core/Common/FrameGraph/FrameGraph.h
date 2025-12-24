@@ -66,7 +66,7 @@ namespace FE::Graphics::Common
             void (*m_execute)(void* functor, Core::FrameGraphContext& context) = nullptr;
             void (*m_destroy)(void* functor, void* userPassDesc) = nullptr;
 
-            RTTI::TypeID m_userPassDescTypeID = RTTI::TypeID::kNull;
+            Rtti::TypeID m_userPassDescTypeID = Rtti::TypeID::kNull;
             void* m_userPassDescPtr = nullptr;
 
             festd::pmr::vector<Core::TextureBarrierDesc> m_textureOwnershipTransferBarriers;
@@ -82,7 +82,7 @@ namespace FE::Graphics::Common
             const Core::PipelineBase* m_pipeline = nullptr;
 
             festd::span<const std::byte> m_pushConstants;
-            RTTI::TypeID m_pushConstantsTypeID = RTTI::TypeID::kNull;
+            Rtti::TypeID m_pushConstantsTypeID = Rtti::TypeID::kNull;
 
             festd::fixed_vector<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetAccessIndices;
             uint32_t m_depthTargetAccessIndex = kInvalidIndex;
@@ -117,7 +117,7 @@ namespace FE::Graphics::Common
         virtual void FinishExecuteInternal() = 0;
         virtual void ExecutePassBarriersInternal(PassNode& pass) = 0;
 
-        void ParsePassPushConstants(PassNode& pass, const RTTI::Type& type);
+        void ParsePassPushConstants(PassNode& pass, const Rtti::Type& type);
         void PreparePassCompileInfo(PassNode& pass);
         void AccumulateBindFlags(ResourceNode& resource);
         void CompilePassBarriers(PassNode& pass);

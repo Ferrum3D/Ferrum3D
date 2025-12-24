@@ -60,7 +60,7 @@ namespace FE::DI
             {
                 if constexpr (!std::is_same_v<TImpl, TInterface>)
                 {
-                    FE_Assert(RTTI::GetTypeID<TImpl>() != RTTI::GetTypeID<TInterface>());
+                    FE_Assert(Rtti::GetTypeID<TImpl>() != Rtti::GetTypeID<TInterface>());
                 }
 
                 *m_target.m_activator = ServiceActivator::CreateForType<TImpl>();
@@ -119,13 +119,13 @@ namespace FE::DI
         template<class TInterface>
         Internal::RegistryBindBuilder<TInterface> Bind() const
         {
-            return BindImpl(RTTI::GetTypeID<TInterface>());
+            return BindImpl(Rtti::GetTypeID<TInterface>());
         }
 
     private:
         Rc<ServiceRegistry> m_registry;
 
-        Internal::ServiceRegistrationSpec BindImpl(const UUID& id) const;
+        Internal::ServiceRegistrationSpec BindImpl(const Uuid& id) const;
     };
 
 

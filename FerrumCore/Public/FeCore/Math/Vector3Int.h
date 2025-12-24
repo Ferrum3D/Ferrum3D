@@ -57,11 +57,6 @@ namespace FE
             return Vector3{ _mm_cvtepi32_ps(m_simdVector) };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3Int FE_VECTORCALL Zero()
-        {
-            return Vector3Int{ _mm_setzero_si128() };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Vector3Int FE_VECTORCALL LoadUnaligned(const int32_t* values)
         {
             return Vector3Int{ _mm_loadu_si128(reinterpret_cast<const __m128i*>(values)) };
@@ -72,7 +67,11 @@ namespace FE
             FE_AssertDebug((reinterpret_cast<uintptr_t>(values) & 15) == 0);
             return Vector3Int{ _mm_load_si128(reinterpret_cast<const __m128i*>(values)) };
         }
+
+        static const Vector3Int kZero;
     };
+
+    inline const Vector3Int Vector3Int::kZero{ kForceInit };
 
 
     struct PackedVector3Int final

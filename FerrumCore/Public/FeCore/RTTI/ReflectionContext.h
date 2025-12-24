@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/RTTI/Reflection.h>
 
-namespace FE::RTTI
+namespace FE::Rtti
 {
     struct ReflectionContext
     {
@@ -113,4 +113,4 @@ namespace FE::RTTI
             return qualifiedName;
         }
     };
-} // namespace FE::RTTI
+} // namespace FE::Rtti

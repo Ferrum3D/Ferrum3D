@@ -14,7 +14,7 @@ namespace FE::AssetBuilder
 
         IO::Path m_inputFile;
         IO::Path m_outputFile;
-        Vector2UInt m_outputSize = Vector2UInt::Zero();
+        Vector2UInt m_outputSize = Vector2UInt::kZero;
         Graphics::Core::Format m_format = Graphics::Core::Format::kBC7_UNORM;
         bool m_generateMips = true;
     };

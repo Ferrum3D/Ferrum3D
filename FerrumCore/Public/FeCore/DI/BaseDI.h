@@ -40,7 +40,7 @@ namespace FE::DI
 
         virtual ~IServiceProvider() = default;
 
-        virtual ResultCode Resolve(UUID registrationID, Memory::RefCountedObjectBase** ppResult) = 0;
+        virtual ResultCode Resolve(Uuid registrationID, Memory::RefCountedObjectBase** ppResult) = 0;
 
         template<class T>
         festd::expected<T*, ResultCode> Resolve()
@@ -52,7 +52,7 @@ namespace FE::DI
             else
             {
                 Memory::RefCountedObjectBase* pResult = nullptr;
-                const ResultCode code = Resolve(RTTI::GetTypeID<T>(), &pResult);
+                const ResultCode code = Resolve(Rtti::GetTypeID<T>(), &pResult);
                 if (code == ResultCode::kSuccess)
                     return static_cast<T*>(pResult);
 

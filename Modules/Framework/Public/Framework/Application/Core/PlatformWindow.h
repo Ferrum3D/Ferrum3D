@@ -35,7 +35,7 @@ namespace FE::Framework::Core
 
     struct PlatformWindowDesc final
     {
-        RectInt m_rect = RectInt::Zero();
+        RectInt m_rect = RectInt::kZero;
         festd::string_view m_title;
         PlatformWindow* m_parent = nullptr;
         PlatformWindowStyleFlags m_style = PlatformWindowStyleFlags::kNone;

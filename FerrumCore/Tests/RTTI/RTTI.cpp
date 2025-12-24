@@ -8,12 +8,12 @@ using namespace FE;
 
 TEST(RTTI, BuiltinTypes)
 {
-    const RTTI::Type& type = RTTI::GetType<uint32_t>();
+    const Rtti::Type& type = Rtti::GetType<uint32_t>();
     EXPECT_EQ(type.m_name, "uint32_t");
     EXPECT_EQ(type.m_qualifiedName, "uint32_t");
-    EXPECT_EQ(type.m_id, RTTI::GetTypeID<uint32_t>());
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType(type.m_id));
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType("uint32_t"));
+    EXPECT_EQ(type.m_id, Rtti::GetTypeID<uint32_t>());
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType(type.m_id));
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType("uint32_t"));
 
     EXPECT_EQ(type.m_size, sizeof(uint32_t));
     EXPECT_EQ(type.m_alignment, alignof(uint32_t));
@@ -28,25 +28,25 @@ TEST(RTTI, DynamicCast)
     IO::BufferedStream* base1 = &derived;
     IO::IStream* base2 = &derived;
 
-    EXPECT_EQ(RTTI::Cast<IO::StreamBase*>(base2), base0);
-    EXPECT_EQ(RTTI::Cast<IO::FileStream*>(base2), &derived);
-    EXPECT_EQ(RTTI::Cast<IO::FileStream*>(base0), base2);
-    EXPECT_EQ(RTTI::Cast<IO::BufferedStream*>(base2), base1);
+    EXPECT_EQ(Rtti::Cast<IO::StreamBase*>(base2), base0);
+    EXPECT_EQ(Rtti::Cast<IO::FileStream*>(base2), &derived);
+    EXPECT_EQ(Rtti::Cast<IO::FileStream*>(base0), base2);
+    EXPECT_EQ(Rtti::Cast<IO::BufferedStream*>(base2), base1);
 
-    EXPECT_EQ(RTTI::Cast<IO::IStream*>(&derived), base2);
-    EXPECT_EQ(RTTI::Cast<IO::StreamBase*>(&derived), base0);
-    EXPECT_EQ(RTTI::Cast<IO::IStream*>(base0), base2);
-    EXPECT_EQ(RTTI::Cast<IO::IStream*>(base2), base2);
+    EXPECT_EQ(Rtti::Cast<IO::IStream*>(&derived), base2);
+    EXPECT_EQ(Rtti::Cast<IO::StreamBase*>(&derived), base0);
+    EXPECT_EQ(Rtti::Cast<IO::IStream*>(base0), base2);
+    EXPECT_EQ(Rtti::Cast<IO::IStream*>(base2), base2);
 }
 
 TEST(RTTI, Enum)
 {
-    const RTTI::Type& type = RTTI::GetType<Compression::Method>();
+    const Rtti::Type& type = Rtti::GetType<Compression::Method>();
     EXPECT_EQ(type.m_name, "Method");
     EXPECT_EQ(type.m_qualifiedName, "FE::Compression::Method");
-    EXPECT_EQ(type.m_id, RTTI::GetTypeID<Compression::Method>());
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType(type.m_id));
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType("FE::Compression::Method"));
+    EXPECT_EQ(type.m_id, Rtti::GetTypeID<Compression::Method>());
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType(type.m_id));
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType("FE::Compression::Method"));
 
     EXPECT_EQ(type.m_size, sizeof(Compression::Method));
     EXPECT_EQ(type.m_alignment, alignof(Compression::Method));
@@ -68,29 +68,29 @@ TEST(RTTI, Enum)
 
     EXPECT_TRUE(type.m_fields.empty());
 
-    const RTTI::TypeID underlyingTypeID = festd::single(type.m_baseTypes);
-    const RTTI::Type* underlyingType = RTTI::TypeRegistry::FindType(underlyingTypeID);
+    const Rtti::TypeID underlyingTypeID = festd::single(type.m_baseTypes);
+    const Rtti::Type* underlyingType = Rtti::TypeRegistry::FindType(underlyingTypeID);
     EXPECT_NE(underlyingType, nullptr);
 
-    EXPECT_EQ(underlyingType, &RTTI::GetType<std::underlying_type_t<Compression::Method>>());
-    EXPECT_EQ(underlyingType->m_id, RTTI::GetTypeID<std::underlying_type_t<Compression::Method>>());
+    EXPECT_EQ(underlyingType, &Rtti::GetType<std::underlying_type_t<Compression::Method>>());
+    EXPECT_EQ(underlyingType->m_id, Rtti::GetTypeID<std::underlying_type_t<Compression::Method>>());
     EXPECT_EQ(underlyingType->m_size, type.m_size);
 }
 
 TEST(RTTI, Reflection)
 {
-    const RTTI::Type& type = RTTI::GetType<Transform>();
+    const Rtti::Type& type = Rtti::GetType<Transform>();
     EXPECT_EQ(type.m_name, "Transform");
     EXPECT_EQ(type.m_qualifiedName, "FE::Transform");
-    EXPECT_EQ(type.m_id, RTTI::GetTypeID<Transform>());
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType(type.m_id));
-    EXPECT_EQ(&type, RTTI::TypeRegistry::FindType("FE::Transform"));
+    EXPECT_EQ(type.m_id, Rtti::GetTypeID<Transform>());
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType(type.m_id));
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType("FE::Transform"));
 
     EXPECT_EQ(type.m_fields[0].m_name, "m_translationScale");
     EXPECT_EQ(type.m_fields[1].m_name, "m_rotation");
 
-    EXPECT_EQ(type.m_fields[0].m_type, RTTI::GetTypeID<Vector4>());
-    EXPECT_EQ(type.m_fields[1].m_type, RTTI::GetTypeID<Quaternion>());
+    EXPECT_EQ(type.m_fields[0].m_type, Rtti::GetTypeID<Vector4>());
+    EXPECT_EQ(type.m_fields[1].m_type, Rtti::GetTypeID<Quaternion>());
 
     EXPECT_EQ(type.m_fields[0].m_size, sizeof(Vector4));
     EXPECT_EQ(type.m_fields[1].m_size, sizeof(Quaternion));

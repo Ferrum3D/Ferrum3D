@@ -8,7 +8,7 @@ namespace FE::DI
     }
 
 
-    ResultCode Container::Resolve(const UUID registrationID, Memory::RefCountedObjectBase** ppResult)
+    ResultCode Container::Resolve(const Uuid registrationID, Memory::RefCountedObjectBase** ppResult)
     {
         FE_PROFILER_ZONE();
 

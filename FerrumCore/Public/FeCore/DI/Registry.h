@@ -64,7 +64,7 @@ namespace FE::DI
             return m_rootLifetimeScope;
         }
 
-        ServiceRegistration* Add(const UUID id)
+        ServiceRegistration* Add(const Uuid id)
         {
             const uint32_t index = m_registrations.size();
             m_ids.push_back(id);
@@ -81,10 +81,10 @@ namespace FE::DI
             });
         }
 
-        ServiceRegistration* FindByID(const UUID id)
+        ServiceRegistration* FindByID(const Uuid id)
         {
             ServiceRegistration* it =
-                festd::lower_bound(m_registrations, id, [this](const ServiceRegistration& lhs, const UUID& id) {
+                festd::lower_bound(m_registrations, id, [this](const ServiceRegistration& lhs, const Uuid& id) {
                     return m_ids[lhs.m_index] < id;
                 });
 
@@ -108,7 +108,7 @@ namespace FE::DI
         friend struct LifetimeScope;
         friend struct ServiceRegistryRoot;
 
-        SegmentedVector<UUID, 2048> m_ids = nullptr;
+        SegmentedVector<Uuid, 2048> m_ids = nullptr;
         SegmentedVector<ServiceActivator, 16384> m_activators = nullptr;
         festd::pmr::vector<ServiceRegistration> m_registrations;
         festd::pmr::vector<ServiceRegistryCallback*> m_callbacks;

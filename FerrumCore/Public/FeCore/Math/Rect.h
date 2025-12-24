@@ -113,18 +113,16 @@ namespace FE
             return left <= right && top <= bottom;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static RectBase FE_VECTORCALL Zero()
-        {
-            return RectBase{ 0, 0, 0, 0 };
-        }
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static RectBase FE_VECTORCALL Initial()
-        {
-            const Vector2Base<T> min{ Constants::kMaxValue<T> };
-            const Vector2Base<T> max{ Constants::kMinValue<T> };
-            return RectBase{ min, max };
-        }
+        static const RectBase kZero;
+        static const RectBase kInvalid;
     };
+
+    template<class T>
+    inline const RectBase<T> RectBase<T>::kZero{ kForceInit };
+
+    template<class T>
+    inline const RectBase<T> RectBase<T>::kInvalid = RectBase{ { Constants::kMaxValue<T> }, { Constants::kMinValue<T> } };
+
 
     using RectF = RectBase<float>;
     using RectInt = RectBase<int32_t>;
@@ -202,20 +200,20 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const RectF lhs, const RectF rhs,
-                                                                               const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const RectF lhs, const RectF rhs,
+                                                                          const float epsilon = Constants::kEpsilon)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), Masks::kSignInverseXYZW);
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
             return mask == 0;
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EmptyEstimate(const RectF rect,
-                                                                               const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL IsEmpty(const RectF rect,
+                                                                         const float epsilon = Constants::kEpsilon)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
             const __m128 absValue = _mm_and_ps(rect.m_simdVector, Masks::kSignInverseXYZW);
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(absValue, _mm_set1_ps(epsilon)));
             return mask == 0;

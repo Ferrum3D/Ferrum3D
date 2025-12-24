@@ -164,8 +164,8 @@ namespace FE
         C4 = _mm_shuffle_ps(C4, C4, _MM_SHUFFLE(3, 1, 2, 0));
         C6 = _mm_shuffle_ps(C6, C6, _MM_SHUFFLE(3, 1, 2, 0));
 
-        __m128 vTemp = SIMD::DotProduct(C0, MT.m_rows[0].m_simdVector);
-        vTemp = _mm_div_ps(SIMD::SSE::Constants::kFloat1111, vTemp);
+        __m128 vTemp = Simd::DotProduct(C0, MT.m_rows[0].m_simdVector);
+        vTemp = _mm_div_ps(Simd::SSE::Constants::kAllOnes, vTemp);
 
         Matrix4x4 m;
         m.m_rows[0].m_simdVector = _mm_mul_ps(C0, vTemp);

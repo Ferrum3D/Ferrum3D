@@ -14,9 +14,9 @@
 #define FE_ATTRIBUTE(value) FE_CODEGEN_ATTRIBUTE(#value)
 
 
-namespace FE::RTTI
+namespace FE::Rtti
 {
-    using TypeID = UUID;
+    using TypeID = Uuid;
 
     struct Attribute;
     struct FieldInfo;
@@ -51,43 +51,43 @@ namespace FE::RTTI
 
 #define FE_RTTI_IMPL_POLYMORPHIC(uuid, codegenAttribute)                                                                         \
 private:                                                                                                                         \
-    template<class T_RTTI, std::enable_if_t<FE::RTTI::Internal::kIsRTTIDefined<T_RTTI>, bool>>                                   \
-    friend const FE::RTTI::Type& FE::RTTI::GetType();                                                                            \
+    template<class T_RTTI, std::enable_if_t<FE::Rtti::Internal::kIsRTTIDefined<T_RTTI>, bool>>                                   \
+    friend const FE::Rtti::Type& FE::Rtti::GetType();                                                                            \
                                                                                                                                  \
-    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
-    friend TDstPtr_RTTI FE::RTTI::Cast(TSrc_RTTI* source);                                                                       \
-    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::RTTI::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
-    friend TDstPtr_RTTI FE::RTTI::AssertCast(TSrc_RTTI* source);                                                                 \
+    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::Rtti::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
+    friend TDstPtr_RTTI FE::Rtti::Cast(TSrc_RTTI* source);                                                                       \
+    template<class TDstPtr_RTTI, class TSrc_RTTI, FE::Rtti::Internal::EnableDynCast<TDstPtr_RTTI, TSrc_RTTI>>                    \
+    friend TDstPtr_RTTI FE::Rtti::AssertCast(TSrc_RTTI* source);                                                                 \
     template<class T_RTTI>                                                                                                       \
-    friend bool FE::RTTI::IsDerivedFrom(T_RTTI* instance, const FE::RTTI::TypeID typeID);                                        \
+    friend bool FE::Rtti::IsDerivedFrom(T_RTTI* instance, const FE::Rtti::TypeID typeID);                                        \
                                                                                                                                  \
-    static const FE::RTTI::Type& RTTI_GetType();                                                                                 \
+    static const FE::Rtti::Type& RTTI_GetType();                                                                                 \
                                                                                                                                  \
     FE_PUSH_CLANG_WARNING("-Winconsistent-missing-override")                                                                     \
-    virtual void* FE_VECTORCALL RTTI_TryCast(FE::RTTI::TypeID typeID);                                                           \
-    virtual const void* FE_VECTORCALL RTTI_TryCast(FE::RTTI::TypeID typeID) const;                                               \
+    virtual void* FE_VECTORCALL RTTI_TryCast(FE::Rtti::TypeID typeID);                                                           \
+    virtual const void* FE_VECTORCALL RTTI_TryCast(FE::Rtti::TypeID typeID) const;                                               \
     FE_POP_CLANG_WARNING()                                                                                                       \
                                                                                                                                  \
 public:                                                                                                                          \
-    static const FE::RTTI::TypeID TypeID;                                                                                        \
-    static FE_CODEGEN_ATTRIBUTE(#codegenAttribute "=" uuid) void Reflect(FE::RTTI::ReflectionContext& context)
+    static const FE::Rtti::TypeID TypeID;                                                                                        \
+    static FE_CODEGEN_ATTRIBUTE(#codegenAttribute "=" uuid) void Reflect(FE::Rtti::ReflectionContext& context)
 
 
 //! @brief Macro to register a class to the RTTI system without reflecting it.
 //!
-//! This macro enables `RTTI::Cast` and `RTTI::AssertCast`. Use this inside a polymorphic class definition.
+//! This macro enables `Rtti::Cast` and `Rtti::AssertCast`. Use this inside a polymorphic class definition.
 #define FE_RTTI(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectBasic)
 
 #define FE_RTTI_Reflect_2(typename, uuid)                                                                                        \
     template<>                                                                                                                   \
-    const FE::RTTI::Type& FE::RTTI::GetType<typename>();                                                                         \
+    const FE::Rtti::Type& FE::Rtti::GetType<typename>();                                                                         \
     template<>                                                                                                                   \
-    FE::RTTI::TypeID FE::RTTI::GetTypeID<typename>();                                                                            \
+    FE::Rtti::TypeID FE::Rtti::GetTypeID<typename>();                                                                            \
     template<>                                                                                                                   \
-    struct FE_CODEGEN_ATTRIBUTE("ReflectFull=" uuid) FE::RTTI::Internal::ExternalTypeReflector<typename>                         \
+    struct FE_CODEGEN_ATTRIBUTE("ReflectFull=" uuid) FE::Rtti::Internal::ExternalTypeReflector<typename>                         \
     {                                                                                                                            \
         static_assert(!std::is_polymorphic_v<typename>);                                                                         \
-        static void Reflect(FE::RTTI::ReflectionContext& context);                                                               \
+        static void Reflect(FE::Rtti::ReflectionContext& context);                                                               \
     }
 
 #define FE_RTTI_Reflect_1(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectFull)
@@ -127,7 +127,7 @@ public:                                                                         
     }
 
 
-    //! @brief Check if source is derived from or is an instance of given type, i.e. `RTTI::Cast` would succeed.
+    //! @brief Check if source is derived from or is an instance of given type, i.e. `Rtti::Cast` would succeed.
     template<class T>
     bool IsDerivedFrom(T* source, const TypeID typeID)
     {
@@ -152,7 +152,7 @@ public:                                                                         
 
     //! @brief Perform a static cast between pointers checking its safety in debug builds.
     //!
-    //! Works just like `RTTI::Cast`, except it will assert that dynamic cast is possible and will not return `nullptr`
+    //! Works just like `Rtti::Cast`, except it will assert that dynamic cast is possible and will not return `nullptr`
     //! unless `source` is `nullptr`. Use this when you're certainly sure that you can use `static_cast` here, but want to check it
     //! in debug builds. In release builds, the behavior of invalid cast is undefined.
     template<class TDstPtr, class TSrc, Internal::EnableDynCast<TDstPtr, TSrc> = true>
@@ -170,7 +170,7 @@ public:                                                                         
 
         return static_cast<TDstPtr>(source);
     }
-} // namespace FE::RTTI
+} // namespace FE::Rtti
 
 
 FE_RTTI_Reflect(uint8_t, "80E074D8-C4C0-4190-B716-701DBA47F9F7");

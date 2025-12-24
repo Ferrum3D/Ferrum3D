@@ -171,12 +171,12 @@ namespace FE::Env
                     Trace::Internal::Init(allocator);
                     Threading::Internal::Init(allocator);
                     Compression::Internal::Init(allocator);
-                    RTTI::TypeRegistry::Internal::Init(allocator);
+                    Rtti::TypeRegistry::Internal::Init(allocator);
                 }
 
                 ~HighPriorityInitializer()
                 {
-                    RTTI::TypeRegistry::Internal::Shutdown();
+                    Rtti::TypeRegistry::Internal::Shutdown();
                     Compression::Internal::Shutdown();
                     Threading::Internal::Shutdown();
                     Trace::Internal::Shutdown();

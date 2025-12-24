@@ -83,7 +83,7 @@ namespace FE::Graphics::Core
             void (*m_execute)(void* functor, FrameGraphContext& context) = nullptr;
             void (*m_destroy)(void* functor, void* userPassDesc) = nullptr;
 
-            RTTI::TypeID m_userPassDescTypeID = RTTI::TypeID::kNull;
+            Rtti::TypeID m_userPassDescTypeID = Rtti::TypeID::kNull;
             void* m_userPassDescPtr = nullptr;
         };
 
@@ -161,8 +161,8 @@ namespace FE::Graphics::Core
         };
 
         desc.m_userPassDescPtr = passDesc;
-        desc.m_userPassDescTypeID = RTTI::GetTypeID<TPassDesc>();
-        FE_Assert(desc.m_userPassDescTypeID != RTTI::TypeID::kNull, "PassDesc must be registered with RTTI");
+        desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
+        FE_Assert(desc.m_userPassDescTypeID != Rtti::TypeID::kNull, "PassDesc must be registered with RTTI");
 
         AddPassInternal(desc);
     }

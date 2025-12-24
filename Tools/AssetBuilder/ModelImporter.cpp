@@ -158,7 +158,7 @@ namespace FE::AssetBuilder
                 parent->m_children.push_back(intermediateNode);
             }
 
-            Vector3 translation = Vector3::Zero();
+            Vector3 translation = Vector3::kZero;
             if (node.translation.size() == 3)
             {
                 translation = Vector3::LoadUnaligned(node.translation.data());
@@ -184,7 +184,7 @@ namespace FE::AssetBuilder
 
                 Vector3 shear;
                 FE_Verify(Math::DecomposeTransform(matrix, translation, rotation, scale, shear));
-                FE_Assert(Math::EqualEstimate(shear, Vector3::Zero()));
+                FE_Assert(Math::CmpEqual(shear, Vector3::Zero()));
             }
 
             // Correct the coordinate system
@@ -192,10 +192,10 @@ namespace FE::AssetBuilder
             rotation.x = -rotation.x;
             rotation.w = -rotation.w;
 
-            if (Math::EqualEstimate(scale.x, scale.y) && Math::EqualEstimate(scale.y, scale.z))
+            if (Math::CmpEqual(scale.x, scale.y) && Math::CmpEqual(scale.y, scale.z))
             {
                 intermediateNode->m_transform = Transform::Create(translation, rotation, scale.x);
-                intermediateNode->m_nonUniformScale = Vector3::Zero();
+                intermediateNode->m_nonUniformScale = Vector3::kZero;
             }
             else
             {

@@ -72,16 +72,12 @@ namespace FE
             return RectF{ Vector2{ min.x, min.y }, Vector2{ max.x, max.y } };
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Aabb FE_VECTORCALL Zero()
-        {
-            return Aabb{ _mm_setzero_ps(), _mm_setzero_ps() };
-        }
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Aabb FE_VECTORCALL Initial()
-        {
-            return Aabb{ _mm_set1_ps(Constants::kMaxFloat), _mm_set1_ps(-Constants::kMaxFloat) };
-        }
+        static const Aabb kZero;
+        static const Aabb kInvalid;
     };
+
+    inline const Aabb Aabb::kZero{ kForceInit };
+    inline const Aabb Aabb::kInvalid{ _mm_set1_ps(Constants::kMaxFloat), _mm_set1_ps(-Constants::kMaxFloat) };
 
 
     struct PackedAabb final
@@ -164,10 +160,22 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Aabb& lhs, const Aabb& rhs,
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL Overlaps(const Aabb& lhs, const Aabb& rhs)
+        {
+            return (CmpLessEqualMask(lhs.min, rhs.max) & CmpGreaterEqualMask(lhs.max, rhs.min)) == 0;
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL Contains(const Aabb& lhs, const Aabb& rhs)
+        {
+            return (CmpGreaterEqualMask(rhs.min, lhs.min) & CmpLessEqualMask(rhs.max, lhs.min)) == 0;
+        }
+
+
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const Aabb& lhs, const Aabb& rhs,
                                                                                const float epsilon = Constants::kEpsilon)
         {
-            return EqualEstimate(lhs.min, rhs.min, epsilon) && EqualEstimate(lhs.max, rhs.max, epsilon);
+            return CmpEqual(lhs.min, rhs.min, epsilon) && CmpEqual(lhs.max, rhs.max, epsilon);
         }
     } // namespace Math
 } // namespace FE

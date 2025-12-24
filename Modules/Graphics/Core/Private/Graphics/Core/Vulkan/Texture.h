@@ -25,7 +25,7 @@ namespace FE::Graphics::Vulkan
         [[nodiscard]] VkImage GetNative() const
         {
             FE_AssertDebug(m_instance);
-            return RTTI::AssertCast<TextureInstance*>(m_instance)->m_image;
+            return Rtti::AssertCast<TextureInstance*>(m_instance)->m_image;
         }
 
     private:

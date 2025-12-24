@@ -14,7 +14,7 @@ namespace FE::DI
     }
 
 
-    Internal::ServiceRegistrationSpec ServiceRegistryBuilder::BindImpl(const UUID& id) const
+    Internal::ServiceRegistrationSpec ServiceRegistryBuilder::BindImpl(const Uuid& id) const
     {
         ServiceRegistration* pRegistration = m_registry->Add(id);
         ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->m_index);

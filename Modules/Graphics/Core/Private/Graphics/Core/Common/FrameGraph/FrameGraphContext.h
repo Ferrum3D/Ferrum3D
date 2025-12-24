@@ -76,13 +76,13 @@ namespace FE::Graphics::Common
 
         struct ViewportState final
         {
-            RectF m_viewport = RectF::Initial();
+            RectF m_viewport = RectF::kInvalid;
             StateAction m_action = StateAction::kReset;
         };
 
         struct ScissorState final
         {
-            RectInt m_scissor = RectInt::Initial();
+            RectInt m_scissor = RectInt::kInvalid;
             StateAction m_action = StateAction::kReset;
         };
 

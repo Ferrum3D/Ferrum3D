@@ -61,7 +61,7 @@ namespace FE
                 float weightsSum = 0.0f;
                 for (const float weight : sortedInfluenceWeights)
                     weightsSum += weight;
-                FE_Assert(Math::EqualEstimate(weightsSum, 1.0f, 0.001f) || weightsSum == 0.0f);
+                FE_Assert(Math::CmpEqual(weightsSum, 1.0f, 0.001f) || weightsSum == 0.0f);
 
                 const uint32_t packedInfluenceWeights =
                     Math::Pack::RGBA32FloatToA2R10G10B10Unorm(Vector4(Vector3::LoadUnaligned(sortedInfluenceWeights), 0.0f));

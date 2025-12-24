@@ -48,11 +48,6 @@ namespace FE
             return m_values;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL Zero()
-        {
-            return Quaternion{ _mm_setzero_ps() };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL Identity()
         {
             return Quaternion{ 0.0f, 0.0f, 0.0f, 1.0f };
@@ -109,7 +104,11 @@ namespace FE
             const float cos = Math::Cos(angle * 0.5f);
             return Quaternion{ axis * sin, cos };
         }
+
+        static const Quaternion kZero;
     };
+
+    inline const Quaternion Quaternion::kZero{ kForceInit };
 
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator+(const Quaternion lhs, const Quaternion rhs)
@@ -176,39 +175,39 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Dot(const Quaternion lhs, const Quaternion rhs)
         {
-            return _mm_cvtss_f32(SIMD::DotProduct(lhs.m_simdVector, rhs.m_simdVector));
+            return _mm_cvtss_f32(Simd::DotProduct(lhs.m_simdVector, rhs.m_simdVector));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL LengthSquared(const Quaternion quat)
         {
-            return _mm_cvtss_f32(SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector));
+            return _mm_cvtss_f32(Simd::DotProduct(quat.m_simdVector, quat.m_simdVector));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL Length(const Quaternion quat)
         {
-            return _mm_cvtss_f32(_mm_sqrt_ss(SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector)));
+            return _mm_cvtss_f32(_mm_sqrt_ss(Simd::DotProduct(quat.m_simdVector, quat.m_simdVector)));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLength(const Quaternion quat)
         {
-            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = Simd::DotProduct(quat.m_simdVector, quat.m_simdVector);
             return _mm_cvtss_f32(_mm_div_ss(_mm_set1_ps(1.0f), _mm_sqrt_ss(lengthSq)));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE float FE_VECTORCALL ReciprocalLengthEstimate(const Quaternion quat)
         {
-            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = Simd::DotProduct(quat.m_simdVector, quat.m_simdVector);
             return _mm_cvtss_f32(_mm_rsqrt_ss(lengthSq));
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Normalize(const Quaternion quat)
         {
-            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = Simd::DotProduct(quat.m_simdVector, quat.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Quaternion{ _mm_div_ps(quat.m_simdVector, _mm_sqrt_ps(broadcast)) };
         }
@@ -216,7 +215,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL NormalizeEstimate(const Quaternion quat)
         {
-            const __m128 lengthSq = SIMD::DotProduct(quat.m_simdVector, quat.m_simdVector);
+            const __m128 lengthSq = Simd::DotProduct(quat.m_simdVector, quat.m_simdVector);
             const __m128 broadcast = _mm_shuffle_ps(lengthSq, lengthSq, _MM_SHUFFLE(0, 0, 0, 0));
             return Quaternion{ _mm_mul_ps(quat.m_simdVector, _mm_rsqrt_ps(broadcast)) };
         }
@@ -224,7 +223,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL Conjugate(const Quaternion quat)
         {
-            const __m128 vec = _mm_xor_ps(quat.m_simdVector, SIMD::SSE::Masks::kSignXYZ);
+            const __m128 vec = _mm_xor_ps(quat.m_simdVector, Simd::SSE::Masks::kSignXYZ);
             return Quaternion{ vec };
         }
 
@@ -291,10 +290,10 @@ namespace FE
         }
 
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL EqualEstimate(const Quaternion lhs, const Quaternion rhs,
-                                                                               const float epsilon = Constants::kEpsilon)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const Quaternion lhs, const Quaternion rhs,
+                                                                          const float epsilon = Constants::kEpsilon)
         {
-            using namespace SIMD::SSE;
+            using namespace Simd::SSE;
             const __m128 distance = _mm_and_ps(_mm_sub_ps(lhs.m_simdVector, rhs.m_simdVector), Masks::kSignInverseXYZW);
             const uint32_t mask = _mm_movemask_ps(_mm_cmpgt_ps(distance, _mm_set1_ps(epsilon)));
             return mask == 0;
