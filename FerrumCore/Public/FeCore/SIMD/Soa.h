@@ -110,6 +110,17 @@ namespace FE::Simd::Soa
     }
 
 
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3X8 FE_VECTORCALL Add(const Vector3X8& lhs, const Vector3X8& rhs)
+    {
+        return { _mm256_add_ps(lhs.x, rhs.x), _mm256_add_ps(lhs.y, rhs.y), _mm256_add_ps(lhs.z, rhs.z) };
+    }
+
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3X8 FE_VECTORCALL Sub(const Vector3X8& lhs, const Vector3X8& rhs)
+    {
+        return { _mm256_sub_ps(lhs.x, rhs.x), _mm256_sub_ps(lhs.y, rhs.y), _mm256_sub_ps(lhs.z, rhs.z) };
+    }
+
+
     struct AabbX8 final
     {
         Vector3X8 min;

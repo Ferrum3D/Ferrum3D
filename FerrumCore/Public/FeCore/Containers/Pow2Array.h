@@ -6,6 +6,16 @@ namespace FE
     template<class T>
     struct Pow2Array final
     {
+        using value_type = T;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using reference = T&;
+        using const_reference = const T&;
+        using iterator = T*;
+        using const_iterator = const T*;
+        using size_type = uint32_t;
+        using difference_type = ptrdiff_t;
+
         Pow2Array(std::pmr::memory_resource* allocator = nullptr);
         ~Pow2Array();
 
@@ -36,14 +46,16 @@ namespace FE
         void shrink_to_fit();
         void reset_loose_memory();
 
+        iterator erase_unsorted(const_iterator it);
+
         void resize(uint32_t size, const T& value = T());
         void resize_uninitialized(uint32_t size);
         void reserve(uint32_t newCapacity);
 
-        [[nodiscard]] T* begin();
-        [[nodiscard]] const T* begin() const;
-        [[nodiscard]] T* end();
-        [[nodiscard]] const T* end() const;
+        [[nodiscard]] iterator begin();
+        [[nodiscard]] const_iterator begin() const;
+        [[nodiscard]] iterator end();
+        [[nodiscard]] const_iterator end() const;
 
         operator festd::span<T>();
         operator festd::span<const T>() const;
@@ -271,6 +283,23 @@ namespace FE
 
 
     template<class T>
+    typename Pow2Array<T>::iterator Pow2Array<T>::erase_unsorted(const_iterator it)
+    {
+        iterator beginIt = m_data;
+        iterator endIt = beginIt + m_size - 1;
+        FE_CoreAssertDebug(it >= beginIt && it < endIt);
+
+        iterator nonConst = const_cast<iterator>(it);
+        *nonConst = std::move(*endIt);
+
+        --m_size;
+        endIt->~T();
+
+        return nonConst;
+    }
+
+
+    template<class T>
     void Pow2Array<T>::resize(const uint32_t size, const T& value)
     {
         if (size < m_size)
@@ -321,28 +350,28 @@ namespace FE
 
 
     template<class T>
-    T* Pow2Array<T>::begin()
+    typename Pow2Array<T>::iterator Pow2Array<T>::begin()
     {
         return m_data.Get();
     }
 
 
     template<class T>
-    const T* Pow2Array<T>::begin() const
+    typename Pow2Array<T>::const_iterator Pow2Array<T>::begin() const
     {
         return m_data.Get();
     }
 
 
     template<class T>
-    T* Pow2Array<T>::end()
+    typename Pow2Array<T>::iterator Pow2Array<T>::end()
     {
         return m_data.Get() + m_size;
     }
 
 
     template<class T>
-    const T* Pow2Array<T>::end() const
+    typename Pow2Array<T>::const_iterator Pow2Array<T>::end() const
     {
         return m_data.Get() + m_size;
     }

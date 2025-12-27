@@ -5,7 +5,7 @@
 namespace FE::IO
 {
     FileStreamFactory::FileStreamFactory(Env::Configuration* pConfig)
-        : m_fileStreamPool("IO/FileStream", sizeof(FileStream), 64 * 1024)
+        : m_fileStreamPool("IO/FileStream", sizeof(FileStream), alignof(FileStream), 64 * 1024)
     {
         const Path currentDirectory = Directory::GetCurrentDirectory();
         m_parentDirectory = pConfig->GetString("AssetDirectory", currentDirectory);
@@ -28,8 +28,8 @@ namespace FE::IO
     }
 
 
-    festd::expected<Rc<IStream>, ResultCode> FileStreamFactory::OpenUnbufferedFileStream(festd::string_view filename,
-                                                                                         OpenMode openMode)
+    festd::expected<Rc<IStream>, ResultCode> FileStreamFactory::OpenUnbufferedFileStream(const festd::string_view filename,
+                                                                                         const OpenMode openMode)
     {
         FE_PROFILER_ZONE();
 

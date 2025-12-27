@@ -6,7 +6,7 @@ namespace FE::Memory
     {
         Page* result = static_cast<Page*>(AllocateVirtual(m_pageByteSize));
         result->m_next = m_pageList;
-        result->m_current = result + 1;
+        result->m_current = AlignUpPtr(result + 1, m_elementAlignment);
         m_pageList = result;
         return result;
     }
@@ -33,7 +33,7 @@ namespace FE::Memory
     {
         FE_CoreAssert(m_elementByteSize > 0, "Pool must be initialized");
         FE_CoreAssert(byteSize <= m_elementByteSize);
-        FE_CoreAssert(byteAlignment <= kDefaultAlignment);
+        FE_CoreAssert(byteAlignment <= m_elementAlignment);
 
 #if FE_DEBUG
         ++m_allocationCount;
@@ -50,12 +50,14 @@ namespace FE::Memory
             }
 
             TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
+            FE_CoreAssertDebug(IsAlignedPtr(result, m_elementAlignment));
             return result;
         }
 
         result = m_freeList;
         m_freeList = *static_cast<void**>(result);
         TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
+        FE_CoreAssertDebug(IsAlignedPtr(result, m_elementAlignment));
         return result;
     }
 

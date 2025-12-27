@@ -182,7 +182,7 @@ namespace FE
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE operator Vector4() const
         {
-            return { x, y, z, w };
+            return Vector4::LoadUnaligned(m_values);
         }
     };
 

@@ -7,9 +7,10 @@ namespace FE::Memory
     {
         PoolAllocator() = default;
 
-        PoolAllocator(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
+        PoolAllocator(const char* name, const uint32_t elementByteSize, const uint32_t elementAlignment = kDefaultAlignment,
+                      const uint32_t pageByteSize = 64 * 1024)
         {
-            Initialize(name, elementByteSize, pageByteSize);
+            Initialize(name, elementByteSize, elementAlignment, pageByteSize);
         }
 
         ~PoolAllocator() override
@@ -22,22 +23,27 @@ namespace FE::Memory
         PoolAllocator(PoolAllocator&&) = delete;
         PoolAllocator& operator=(PoolAllocator&&) = delete;
 
-        void Initialize(const char* name, const size_t elementByteSize, const uint32_t pageByteSize = 64 * 1024)
+        void Initialize(const char* name, const uint32_t elementByteSize, const uint32_t elementAlignment = kDefaultAlignment,
+                        const uint32_t pageByteSize = 64 * 1024)
         {
             FE_CoreAssert(m_elementByteSize == 0, "Pool already initialized");
             FE_CoreAssert(elementByteSize > 0);
+            FE_CoreAssert(elementAlignment > 0);
             m_name = name;
 
 #if FE_DEBUG
             const PlatformSpec platformSpec = GetPlatformSpec();
             FE_CoreAssert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
                           "Page size must be aligned to virtual allocation granularity");
+
+            FE_CoreAssert(Math::IsPowerOfTwo(elementAlignment));
 #endif
 
-            m_elementByteSize = AlignUp<kDefaultAlignment>(elementByteSize);
-            FE_CoreAssert(pageByteSize > m_elementByteSize);
-
+            m_elementByteSize = AlignUp(elementByteSize, elementAlignment);
+            m_elementAlignment = elementAlignment;
             m_pageByteSize = pageByteSize;
+
+            FE_CoreAssert(pageByteSize > m_elementByteSize);
         }
 
         void Deinitialize(const bool ignoreLeaks = false)
@@ -49,10 +55,25 @@ namespace FE::Memory
             m_freeList = nullptr;
         }
 
-        void Reinitialize(const size_t elementByteSize, const uint32_t pageByteSize)
+        void Reinitialize(const uint32_t elementByteSize, const uint32_t elementAlignment, const uint32_t pageByteSize)
         {
             Deinitialize();
-            Initialize(m_name, elementByteSize, pageByteSize);
+            Initialize(m_name, elementByteSize, elementAlignment, pageByteSize);
+        }
+
+        [[nodiscard]] uint32_t GetElementByteSize() const
+        {
+            return m_elementByteSize;
+        }
+
+        [[nodiscard]] uint32_t GetElementAlignment() const
+        {
+            return m_elementAlignment;
+        }
+
+        [[nodiscard]] uint32_t GetPageByteSize() const
+        {
+            return m_pageByteSize;
         }
 
     private:
@@ -65,16 +86,17 @@ namespace FE::Memory
         static_assert(sizeof(Page) == kDefaultAlignment);
 
         const char* m_name = nullptr;
-        size_t m_elementByteSize = 0;
-        size_t m_pageByteSize = 0;
-
-        Page* m_pageList = nullptr;
-        void* m_freeList = nullptr;
+        uint32_t m_elementByteSize = 0;
+        uint32_t m_elementAlignment = 0;
+        uint32_t m_pageByteSize = 0;
 
 #if FE_DEBUG
         // Used to ensure we don't destroy or reinitialize pools that are still in use.
         uint32_t m_allocationCount = 0;
 #endif
+
+        Page* m_pageList = nullptr;
+        void* m_freeList = nullptr;
 
         inline Page* AllocatePage();
 
@@ -95,9 +117,9 @@ namespace FE::Memory
         }
 
     protected:
-        void* do_allocate(size_t byteSize, size_t byteAlignment) override;
-        void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override;
-        [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
+        void* do_allocate(size_t byteSize, size_t byteAlignment) final;
+        void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) final;
+        [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept final
         {
             return this == &other;
         }
@@ -116,13 +138,13 @@ namespace FE::Memory
         Pool() = default;
 
         explicit Pool(const char* name, const uint32_t pageByteSize = 64 * 1024)
-            : PoolAllocator(name, sizeof(T), pageByteSize)
+            : PoolAllocator(name, sizeof(T), alignof(T), pageByteSize)
         {
         }
 
         void Initialize(const char* name, const uint32_t pageByteSize = 64 * 1024)
         {
-            PoolAllocator::Initialize(name, sizeof(T), pageByteSize);
+            PoolAllocator::Initialize(name, sizeof(T), alignof(T), pageByteSize);
         }
 
         using PoolAllocator::Deinitialize;
@@ -134,7 +156,7 @@ namespace FE::Memory
 
         void Reinitialize(const uint32_t pageByteSize = 64 * 1024)
         {
-            PoolAllocator::Reinitialize(sizeof(T), pageByteSize);
+            PoolAllocator::Reinitialize(sizeof(T), alignof(T), pageByteSize);
         }
 
         template<class... TArgs>
@@ -156,13 +178,13 @@ namespace FE::Memory
         LockedPool() = default;
 
         explicit LockedPool(const char* name, const uint32_t pageByteSize = 64 * 1024)
-            : m_allocator(name, sizeof(T), pageByteSize)
+            : m_allocator(name, sizeof(T), alignof(T), pageByteSize)
         {
         }
 
         void Initialize(const char* name, const uint32_t pageByteSize = 64 * 1024)
         {
-            m_allocator.Initialize(name, sizeof(T), pageByteSize);
+            m_allocator.Initialize(name, sizeof(T), alignof(T), pageByteSize);
         }
 
         void Deinitialize()
@@ -177,7 +199,7 @@ namespace FE::Memory
 
         void Reinitialize(const uint32_t pageByteSize = 64 * 1024)
         {
-            m_allocator.Reinitialize(sizeof(T), pageByteSize);
+            m_allocator.Reinitialize(sizeof(T), alignof(T), pageByteSize);
         }
 
         template<class... TArgs>
