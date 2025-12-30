@@ -38,6 +38,8 @@ set(PUBLIC_HEADERS
     Public/Graphics/Database/Base.h
     Public/Graphics/Database/Database.h
 
+    Public/Graphics/Features/Mesh/MeshSceneModule.h
+
     Public/Graphics/Passes/Tools/Blit.h
     Public/Graphics/Passes/Tools/Downsample.h
 
@@ -58,6 +60,8 @@ set(COMMON_SOURCES
     Private/Graphics/Base/DrawTag.cpp
 
     Private/Graphics/Database/Database.cpp
+
+    Private/Graphics/Features/Mesh/MeshSceneModule.cpp
 
     Private/Graphics/Passes/Tools/Blit.cpp
     Private/Graphics/Passes/Tools/Downsample.cpp

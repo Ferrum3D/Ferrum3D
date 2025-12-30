@@ -18,6 +18,12 @@ TEST(Vector4, GetXYZW)
     EXPECT_EQ(vector.Data()[3], 4);
 }
 
+TEST(Vector4, FromVector3)
+{
+    const Vector3 vector{ 1, 2, 3 };
+    EXPECT_EQ(Vector4(vector, 4), Vector4(1, 2, 3, 4));
+}
+
 TEST(Vector4, CreateFunctions)
 {
     EXPECT_EQ(Vector4::kZero, Vector4(0));

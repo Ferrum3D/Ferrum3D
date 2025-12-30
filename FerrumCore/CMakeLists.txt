@@ -67,6 +67,7 @@
     Public/FeCore/Math/Quaternion.h
     Public/FeCore/Math/Random.h
     Public/FeCore/Math/Rect.h
+    Public/FeCore/Math/Sphere.h
     Public/FeCore/Math/Transform.h
     Public/FeCore/Math/UUID.h
     Public/FeCore/Math/Vector2.h

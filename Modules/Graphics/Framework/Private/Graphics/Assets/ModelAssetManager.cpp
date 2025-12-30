@@ -185,11 +185,14 @@ namespace FE::Graphics
         if (loadedBlockCount + 1 < expectedBlockCount)
             return true;
 
-        const Rc geometryBuffer = m_resourcePool->CreateBuffer(
-            Fmt::FormatName("GeometryBuffer '{}' LOD{}", request->m_asset->m_name, request->m_header.m_lodCount - lodIndex - 1),
-            Core::BufferDesc(expectedDataSize));
-        m_resourcePool->CommitBufferMemory(geometryBuffer.Get(),
-                                           { Core::BarrierAccessFlags::kShaderRead, Core::ResourceMemory::kDeviceLocal });
+        const Env::Name geometryBufferName =
+            Fmt::FormatName("GeometryBuffer '{}' LOD{}", request->m_asset->m_name, request->m_header.m_lodCount - lodIndex - 1);
+        const Rc geometryBuffer = m_resourcePool->CreateByteAddressBuffer(geometryBufferName, expectedDataSize);
+
+        Core::BufferCommitParams geometryBufferCommitParams;
+        geometryBufferCommitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kCopyDest;
+        geometryBufferCommitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
+        m_resourcePool->CommitBufferMemory(geometryBuffer.Get(), geometryBufferCommitParams);
 
         request->m_asset->m_geometryBuffers[lodIndex] = geometryBuffer;
 

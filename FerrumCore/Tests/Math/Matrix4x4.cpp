@@ -25,10 +25,10 @@ TEST(Matrix4x4, Create)
     EXPECT_EQ(m.m_rows[3], Vector4::AxisW());
 
     m = Matrix4x4::kZero;
-    EXPECT_EQ(m.m_rows[0], Vector4::Zero());
-    EXPECT_EQ(m.m_rows[1], Vector4::Zero());
-    EXPECT_EQ(m.m_rows[2], Vector4::Zero());
-    EXPECT_EQ(m.m_rows[3], Vector4::Zero());
+    EXPECT_EQ(m.m_rows[0], Vector4::kZero);
+    EXPECT_EQ(m.m_rows[1], Vector4::kZero);
+    EXPECT_EQ(m.m_rows[2], Vector4::kZero);
+    EXPECT_EQ(m.m_rows[3], Vector4::kZero);
 
     m = Matrix4x4::Scale(Vector3(1, 2, 3));
     EXPECT_EQ(m.m_rows[0], Vector4(1.0f, 0.0f, 0.0f, 0.0f));

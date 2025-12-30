@@ -2,7 +2,6 @@
 #include <FeCore/Containers/Pow2Array.h>
 #include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/SIMD/Soa.h>
-#include <Graphics/Scene/Octree.h>
 #include <festd/fixed_function.h>
 #include <festd/vector.h>
 

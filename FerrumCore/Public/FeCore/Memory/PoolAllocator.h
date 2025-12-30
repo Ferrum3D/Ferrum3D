@@ -117,9 +117,9 @@ namespace FE::Memory
         }
 
     protected:
-        void* do_allocate(size_t byteSize, size_t byteAlignment) final;
-        void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) final;
-        [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept final
+        void* do_allocate(size_t byteSize, size_t byteAlignment) override;
+        void do_deallocate(void* ptr, size_t byteSize, size_t byteAlignment) override;
+        [[nodiscard]] bool do_is_equal(const memory_resource& other) const noexcept override
         {
             return this == &other;
         }

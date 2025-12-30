@@ -63,6 +63,16 @@ namespace FE::Graphics::DB
 
     struct TableBase
     {
+        FE_RTTI("B0B29217-3D30-4B35-8026-9D0EB91B8FD2");
+
+        TableBase() = default;
+        TableBase(const TableBase&) = delete;
+        TableBase(TableBase&&) = delete;
+        TableBase& operator=(const TableBase&) = delete;
+        TableBase& operator=(TableBase&&) = delete;
+
+        virtual ~TableBase() = default;
+
     protected:
         explicit TableBase(Database* database);
 
