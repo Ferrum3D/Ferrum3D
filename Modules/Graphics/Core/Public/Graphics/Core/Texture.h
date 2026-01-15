@@ -132,6 +132,40 @@ namespace FE::Graphics::Core
             return subresource;
         }
 
+        [[nodiscard]] TextureSubresource SliceMip(const uint32_t mipOffset, const uint32_t mipSliceCount = 1) const
+        {
+            FE_AssertDebug(mipOffset + mipSliceCount <= m_mipSliceCount);
+
+            TextureSubresource subresource = *this;
+            subresource.m_mostDetailedMipSlice += mipOffset;
+            subresource.m_mipSliceCount = mipSliceCount;
+            return subresource;
+        }
+
+        [[nodiscard]] TextureSubresource SliceArray(const uint32_t arrayOffset, const uint32_t arraySize = 1) const
+        {
+            FE_AssertDebug(arrayOffset + arraySize <= m_arraySize);
+
+            TextureSubresource subresource = *this;
+            subresource.m_firstArraySlice += arrayOffset;
+            subresource.m_arraySize = arraySize;
+            return subresource;
+        }
+
+        [[nodiscard]] TextureSubresource Slice(const uint32_t mipOffset, const uint32_t arrayOffset,
+                                               const uint32_t mipSliceCount = 1, const uint32_t arraySize = 1) const
+        {
+            FE_AssertDebug(mipOffset + mipSliceCount <= m_mipSliceCount);
+            FE_AssertDebug(arrayOffset + arraySize <= m_arraySize);
+
+            TextureSubresource subresource = *this;
+            subresource.m_mostDetailedMipSlice += mipOffset;
+            subresource.m_firstArraySlice += arrayOffset;
+            subresource.m_mipSliceCount = mipSliceCount;
+            subresource.m_arraySize = arraySize;
+            return subresource;
+        }
+
         friend bool operator<(const TextureSubresource lhs, const TextureSubresource rhs)
         {
             return festd::bit_cast<uint32_t>(lhs) < festd::bit_cast<uint32_t>(rhs);

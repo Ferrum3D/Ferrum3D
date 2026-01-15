@@ -22,9 +22,10 @@ namespace FE
         //
 
 
-        constexpr uint64_t HashSecret[] = {
-            UINT64_C(0x2d358dccaa6c78a5), UINT64_C(0x8bb84b93962eacc9), UINT64_C(0x4b33a62ed433d4a3), UINT64_C(0x4d5a2da51de1aa47)
-        };
+        constexpr uint64_t HashSecret[] = { UINT64_C(0x2d358dccaa6c78a5),
+                                            UINT64_C(0x8bb84b93962eacc9),
+                                            UINT64_C(0x4b33a62ed433d4a3),
+                                            UINT64_C(0x4d5a2da51de1aa47) };
 
         inline constexpr uint64_t WyRead4(const char* p)
         {
@@ -207,7 +208,8 @@ namespace FE
     struct Hasher final
     {
         explicit Hasher(const uint64_t seed = Internal::HashSecret[0])
-            : m_hash(seed)
+            : m_seed(seed)
+            , m_hash(seed)
         {
         }
 
@@ -235,12 +237,15 @@ namespace FE
             return UpdateRaw(eastl::hash<T>()(value));
         }
 
-        [[nodiscard]] uint64_t Finalize() const
+        [[nodiscard]] uint64_t Finalize()
         {
-            return m_hash;
+            const uint64_t hash = m_hash;
+            m_hash = m_seed;
+            return hash;
         }
 
     private:
+        uint64_t m_seed;
         uint64_t m_hash;
     };
 

@@ -140,7 +140,8 @@ namespace FE::Graphics::Common
         }
         else
         {
-            FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline));
+            FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline),
+                      "Push constants can only be used in passes with graphics or compute pipelines");
 
             const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
             const Core::GraphicsPipelineDesc& pipelineDesc = graphicsPipeline->GetDesc();
@@ -253,14 +254,39 @@ namespace FE::Graphics::Common
             }
         }
 
-        FE_Assert(Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline | PassStateFlags::kComputePipeline),
-                  "Either a graphics or a compute pipeline must be specified");
-
         const bool isGraphicsPipeline = Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline);
 
         for (const Rtti::FieldInfo& field : descType->m_fields)
         {
-            if (field.m_type == Rtti::GetTypeID<Core::PassColorTarget>())
+            if (field.m_type == Rtti::GetTypeID<Core::PassTextureAccess>())
+            {
+                for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
+                {
+                    const Core::PassTextureAccess textureAccess =
+                        field.Get<Core::PassTextureAccess>(pass.m_userPassDescPtr, arrayIndex);
+
+                    TextureAccess access;
+                    access.m_syncFlags = textureAccess.m_syncFlags;
+                    access.m_accessFlags = textureAccess.m_accessFlags;
+                    access.m_layout = textureAccess.m_layout;
+                    access.m_subresource = textureAccess.m_subresource;
+                    RegisterResource(textureAccess.m_texture, pass, access);
+                }
+            }
+            else if (field.m_type == Rtti::GetTypeID<Core::PassBufferAccess>())
+            {
+                for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
+                {
+                    const Core::PassBufferAccess bufferAccess =
+                        field.Get<Core::PassBufferAccess>(pass.m_userPassDescPtr, arrayIndex);
+
+                    BufferAccess access;
+                    access.m_syncFlags = bufferAccess.m_syncFlags;
+                    access.m_accessFlags = bufferAccess.m_accessFlags;
+                    RegisterResource(bufferAccess.m_buffer, pass, access);
+                }
+            }
+            else if (field.m_type == Rtti::GetTypeID<Core::PassColorTarget>())
             {
                 for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
                 {
@@ -290,7 +316,7 @@ namespace FE::Graphics::Common
             }
             else if (field.m_type == Rtti::GetTypeID<Core::PassDepthTarget>())
             {
-                FE_Assert(field.m_arraySize == 1);
+                FE_Assert(field.m_arraySize == 1, "Depth target can only be specified once");
                 FE_Assert(isGraphicsPipeline);
 
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kDepthTarget));
@@ -658,12 +684,21 @@ namespace FE::Graphics::Common
             const uint32_t passAccessIndex = pass.m_accessedTextures.size();
             resourceNode.m_accesses.push_back({ pass.m_passIndex, passAccessIndex });
 
+            const Core::TextureSubresource subresource = access.m_subresource.Slice(mipIndex, arrayIndex);
+
+            if (Build::IsDebug())
+            {
+                for (const TextureAccess& other : pass.m_accessedTextures)
+                {
+                    // TODO: we could deduplicate compatible accesses, but it would probably be too expensive.
+                    FE_Assert(other.m_subresource != subresource || other.m_localResourceIndex != localResourceIndex,
+                              "Duplicate subresource access");
+                }
+            }
+
             TextureAccess& subresourceAccess = pass.m_accessedTextures.emplace_back(access);
             subresourceAccess.m_localResourceIndex = localResourceIndex;
-            subresourceAccess.m_subresource.m_mostDetailedMipSlice = mipIndex;
-            subresourceAccess.m_subresource.m_firstArraySlice = arrayIndex;
-            subresourceAccess.m_subresource.m_mipSliceCount = 1;
-            subresourceAccess.m_subresource.m_arraySize = 1;
+            subresourceAccess.m_subresource = subresource;
         }
 
         return localResourceIndex;
@@ -686,6 +721,14 @@ namespace FE::Graphics::Common
 
         const uint32_t passAccessIndex = pass.m_accessedBuffers.size();
         resourceNode.m_accesses.push_back({ pass.m_passIndex, passAccessIndex });
+
+        if (Build::IsDebug())
+        {
+            for (const BufferAccess& other : pass.m_accessedBuffers)
+            {
+                FE_Assert(other.m_localResourceIndex != localResourceIndex, "Duplicate buffer access");
+            }
+        }
 
         BufferAccess& bufferAccess = pass.m_accessedBuffers.emplace_back(access);
         bufferAccess.m_localResourceIndex = localResourceIndex;

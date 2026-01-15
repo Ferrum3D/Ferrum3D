@@ -38,6 +38,24 @@ namespace FE::Graphics::Core
     };
 
 
+    struct PassBufferAccess final
+    {
+        Buffer* m_buffer = nullptr;
+        BarrierSyncFlags m_syncFlags = BarrierSyncFlags::kNone;
+        BarrierAccessFlags m_accessFlags = BarrierAccessFlags::kNone;
+    };
+
+
+    struct PassTextureAccess final
+    {
+        Texture* m_texture = nullptr;
+        BarrierSyncFlags m_syncFlags = BarrierSyncFlags::kNone;
+        BarrierAccessFlags m_accessFlags = BarrierAccessFlags::kNone;
+        BarrierLayout m_layout = BarrierLayout::kUndefined;
+        TextureSubresource m_subresource = TextureSubresource::kInvalid;
+    };
+
+
     struct PassColorTarget final
     {
         TextureView m_target = TextureView::kInvalid;
@@ -88,6 +106,8 @@ namespace FE::Graphics::Core
     };
 } // namespace FE::Graphics::Core
 
+FE_RTTI_Reflect(FE::Graphics::Core::PassBufferAccess, "6FF3F59E-AEBB-49E8-9B1D-13A9580808FF");
+FE_RTTI_Reflect(FE::Graphics::Core::PassTextureAccess, "9F23330E-8C01-4119-A957-0D9A808C7273");
 FE_RTTI_Reflect(FE::Graphics::Core::PassColorTarget, "1D24000B-33B4-4BAF-8825-9602CDB08CC8");
 FE_RTTI_Reflect(FE::Graphics::Core::PassDepthTarget, "D11CE881-3D3C-47AF-A050-346482677316");
 FE_RTTI_Reflect(FE::Graphics::Core::PassGraphicsPipeline, "D90ED870-C966-443F-9BFE-1D753AEEDFBF");
