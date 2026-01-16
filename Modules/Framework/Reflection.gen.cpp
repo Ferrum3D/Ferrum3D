@@ -83,7 +83,7 @@ namespace FE::Framework::Core
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<PlatformApplication>(typeInstance,
-                                                  Uuid::LoadAligned(kTypeIDBytes),
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                                   "FE::Framework::Core::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
@@ -163,7 +163,7 @@ namespace FE::Framework::Core
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<PlatformWindow>(typeInstance,
-                                             Uuid::LoadAligned(kTypeIDBytes),
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                              "FE::Framework::Core::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
@@ -243,7 +243,7 @@ namespace FE::Framework
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<Application>(typeInstance,
-                                          Uuid::LoadAligned(kTypeIDBytes),
+                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                           "FE::Framework::Application",
                                           kBaseClassTypeIDs,
                                           kAttributes,
@@ -314,7 +314,7 @@ namespace FE::Framework
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<EntityRegistry>(typeInstance,
-                                             Uuid::LoadAligned(kTypeIDBytes),
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                              "FE::Framework::EntityRegistry",
                                              kBaseClassTypeIDs,
                                              kAttributes,
@@ -385,7 +385,7 @@ namespace FE::Framework
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<EntityWorld>(typeInstance,
-                                          Uuid::LoadAligned(kTypeIDBytes),
+                                          Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                           "FE::Framework::EntityWorld",
                                           kBaseClassTypeIDs,
                                           kAttributes,
@@ -473,7 +473,7 @@ namespace FE::Framework::Windows
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<PlatformWindow>(typeInstance,
-                                             Uuid::LoadAligned(kTypeIDBytes),
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                              "FE::Framework::Windows::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
@@ -561,7 +561,7 @@ namespace FE::Framework::Windows
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
         context.ReflectClass<PlatformApplication>(typeInstance,
-                                                  Uuid::LoadAligned(kTypeIDBytes),
+                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                                   "FE::Framework::Windows::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,

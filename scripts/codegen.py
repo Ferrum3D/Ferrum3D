@@ -7,6 +7,11 @@ from enum import Flag, Enum
 import subprocess
 import uuid
 import json
+import os
+
+script_path = os.path.abspath(__file__)
+script_directory = os.path.dirname(script_path)
+os.chdir(script_directory)
 
 UUID_NAMESPACE = uuid.UUID("ba6b72ef-3286-4c71-9822-2519da4e156a")
 USE_INTERNAL_ID = uuid.UUID("9ecf45e0-cba3-4e15-b613-ed66e3c4be5d")

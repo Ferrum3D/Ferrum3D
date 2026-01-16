@@ -101,7 +101,7 @@ namespace FE::Rtti
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.qualified_name }}>(typeInstance, UUID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", {}, kAttributes, kFields);
+        context.ReflectClass<{{ type.qualified_name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", {}, kAttributes, kFields);
 {% endif %}
     }
 
@@ -195,7 +195,7 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.name }}>(typeInstance, UUID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
+        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
