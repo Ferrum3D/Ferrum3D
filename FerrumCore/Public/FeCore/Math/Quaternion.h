@@ -22,18 +22,18 @@ namespace FE
         {
         }
 
-        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(__m128 vec)
+        explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(const __m128 vec)
             : m_simdVector(vec)
         {
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(Vector3 vec, float w)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(const Vector3 vec, const float w)
         {
             const __m128 t = _mm_shuffle_ps(_mm_set_ss(w), vec.m_simdVector, _MM_SHUFFLE(3, 2, 1, 0));
             m_simdVector = _mm_shuffle_ps(vec.m_simdVector, t, _MM_SHUFFLE(0, 2, 1, 0));
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(float x, float y, float z, float w)
+        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(const float x, const float y, const float z, const float w)
             : m_simdVector(_mm_setr_ps(x, y, z, w))
         {
         }

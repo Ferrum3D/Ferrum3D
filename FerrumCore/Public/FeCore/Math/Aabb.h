@@ -173,7 +173,7 @@ namespace FE
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL CmpEqual(const Aabb& lhs, const Aabb& rhs,
-                                                                               const float epsilon = Constants::kEpsilon)
+                                                                          const float epsilon = Constants::kEpsilon)
         {
             return CmpEqual(lhs.min, rhs.min, epsilon) && CmpEqual(lhs.max, rhs.max, epsilon);
         }

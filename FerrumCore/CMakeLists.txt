@@ -63,6 +63,7 @@
     Public/FeCore/Math/Color.h
     Public/FeCore/Math/Colors.h
     Public/FeCore/Math/Matrix4x4.h
+    Public/FeCore/Math/Obb.h
     Public/FeCore/Math/Packing.h
     Public/FeCore/Math/Quaternion.h
     Public/FeCore/Math/Random.h
