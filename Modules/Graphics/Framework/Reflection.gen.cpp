@@ -877,6 +877,94 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+namespace FE::Graphics
+{
+    const Rtti::TypeID SceneImpl::TypeID = Rtti::TypeID{ "75336687-960e-4693-ae02-a6dcda770fac" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(SceneImpl* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x75, 0x33, 0x66, 0x87, 0x96, 0x0e, 0x46, 0x93,
+                0xae, 0x02, 0xa6, 0xdc, 0xda, 0x77, 0x0f, 0xac, // FE::Graphics::SceneImpl (this type)
+                0x20, 0x12, 0x1f, 0x05, 0x8d, 0x10, 0x44, 0x27,
+                0x99, 0x25, 0x2d, 0xba, 0x38, 0x83, 0x79, 0xc9, // FE::Graphics::Scene
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::Scene*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SceneImpl::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac();
+    }
+
+    void* FE_VECTORCALL SceneImpl::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(this, typeID);
+    }
+
+    const void* FE_VECTORCALL SceneImpl::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(const_cast<SceneImpl*>(this), typeID);
+    }
+
+    void SceneImpl::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x75, 0x33, 0x66, 0x87, 0x96, 0x0e, 0x46, 0x93,
+            0xae, 0x02, 0xa6, 0xdc, 0xda, 0x77, 0x0f, 0xac, // FE::Graphics::SceneImpl
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x20, 0x12, 0x1f, 0x05, 0x8d, 0x10, 0x44, 0x27,
+            0x99, 0x25, 0x2d, 0xba, 0x38, 0x83, 0x79, 0xc9, // FE::Graphics::Scene
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<SceneImpl>(typeInstance,
+                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                        "FE::Graphics::SceneImpl",
+                                        kBaseClassTypeIDs,
+                                        kAttributes,
+                                        kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_75336687960e4693ae02a6dcda770fac(&SceneImpl::Reflect);
+} // namespace FE::Graphics
+
+
 namespace FE::Rtti
 {
     namespace
@@ -1097,94 +1185,6 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_ade5a371ffc255fcb893591a7d181eb2(
         &Internal::ExternalTypeReflector<FE::Graphics::Tools::Downsample::PassDesc>::Reflect);
 } // namespace FE::Rtti
-
-
-namespace FE::Graphics
-{
-    const Rtti::TypeID SceneImpl::TypeID = Rtti::TypeID{ "75336687-960e-4693-ae02-a6dcda770fac" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(SceneImpl* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-                0x75, 0x33, 0x66, 0x87, 0x96, 0x0e, 0x46, 0x93,
-                0xae, 0x02, 0xa6, 0xdc, 0xda, 0x77, 0x0f, 0xac, // FE::Graphics::SceneImpl (this type)
-                0x20, 0x12, 0x1f, 0x05, 0x8d, 0x10, 0x44, 0x27,
-                0x99, 0x25, 0x2d, 0xba, 0x38, 0x83, 0x79, 0xc9, // FE::Graphics::Scene
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Scene*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-
-        Rtti::Type& RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& SceneImpl::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac();
-    }
-
-    void* FE_VECTORCALL SceneImpl::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(this, typeID);
-    }
-
-    const void* FE_VECTORCALL SceneImpl::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_75336687960e4693ae02a6dcda770fac(const_cast<SceneImpl*>(this), typeID);
-    }
-
-    void SceneImpl::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_75336687960e4693ae02a6dcda770fac();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x75, 0x33, 0x66, 0x87, 0x96, 0x0e, 0x46, 0x93,
-            0xae, 0x02, 0xa6, 0xdc, 0xda, 0x77, 0x0f, 0xac, // FE::Graphics::SceneImpl
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x20, 0x12, 0x1f, 0x05, 0x8d, 0x10, 0x44, 0x27,
-            0x99, 0x25, 0x2d, 0xba, 0x38, 0x83, 0x79, 0xc9, // FE::Graphics::Scene
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<SceneImpl>(typeInstance,
-                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                        "FE::Graphics::SceneImpl",
-                                        kBaseClassTypeIDs,
-                                        kAttributes,
-                                        kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_75336687960e4693ae02a6dcda770fac(&SceneImpl::Reflect);
-} // namespace FE::Graphics
 
 
 namespace FE::Graphics
