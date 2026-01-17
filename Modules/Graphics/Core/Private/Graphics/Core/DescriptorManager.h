@@ -42,6 +42,7 @@ namespace FE::Graphics::Core
         void CommitSamplerDescriptor(uint32_t descriptorIndex);
 
         ResourceDescriptorInfo GetResourceInfo(uint32_t descriptorIndex);
+        virtual uint64_t GetDeviceAddress(uint32_t descriptorIndex) = 0;
 
         virtual void BeginFrame() = 0;
         virtual FenceSyncPoint CloseFrame() = 0;

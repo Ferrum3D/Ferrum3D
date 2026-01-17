@@ -266,3 +266,9 @@ struct GloballyCoherentRWByteAddressBufferDescriptor : RWByteAddressBufferDescri
 // clang-format on
 
 #undef FE_MAP_BYTE_ADDRESS_BUFFER_METHOD
+
+template<class T>
+T RawBufferLoad(BufferPointer ptr, uint32_t byteOffset)
+{
+    return vk::RawBufferLoad<T>(ptr.m_deviceAddress + byteOffset);
+}

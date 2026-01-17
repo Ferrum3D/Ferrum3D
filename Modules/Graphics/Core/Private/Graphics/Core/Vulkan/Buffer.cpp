@@ -16,7 +16,10 @@ namespace FE::Graphics::Vulkan
             VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
             if (Bit::AnySet(accessFlags, Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite))
+            {
+                usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
                 usage |= isTexelBuffer ? VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            }
             if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndexBuffer))
                 usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kVertexBuffer))

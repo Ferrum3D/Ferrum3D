@@ -9,6 +9,7 @@
 
 #if defined(__JETBRAINS_IDE__) || defined(__INTELLISENSE__)
 typedef uint uint32_t;
+typedef uint2 uint64_t;
 #    define globallycoherent
 
 #    define ms_payload
@@ -29,6 +30,11 @@ typedef uint uint32_t;
 #if FE_PLATFORM_VULKAN
 #    include <Shaders/Platform/Vulkan/Intrinsics.hlsli>
 #endif
+
+struct BufferPointer
+{
+    uint64_t m_deviceAddress;
+};
 
 #define FE_CONSTEXPR static const
 

@@ -125,6 +125,22 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    uint64_t DescriptorManager::GetDeviceAddress(const uint32_t descriptorIndex)
+    {
+        const Core::ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
+        FE_Assert(descriptor.m_resource != nullptr && descriptor.m_resource->GetType() == Core::ResourceType::kBuffer);
+
+        const Core::Buffer* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource);
+
+        VkBufferDeviceAddressInfo addressInfo{};
+        addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        addressInfo.buffer = NativeCast(buffer);
+
+        const VkDeviceAddress address = vkGetBufferDeviceAddress(NativeCast(m_device), &addressInfo);
+        return static_cast<uint64_t>(address + descriptor.m_bufferSubresource.m_offset);
+    }
+
+
     void DescriptorManager::BeginFrame()
     {
         FE_PROFILER_ZONE();

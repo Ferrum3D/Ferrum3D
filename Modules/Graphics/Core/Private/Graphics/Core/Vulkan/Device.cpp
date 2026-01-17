@@ -153,6 +153,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageBufferUpdateAfterBind = true;
+        deviceFeatures12.bufferDeviceAddress = true;
 
         deviceFeatures12.shaderSampledImageArrayNonUniformIndexing = true;
         deviceFeatures12.shaderStorageBufferArrayNonUniformIndexing = true;
@@ -170,6 +171,7 @@ namespace FE::Graphics::Vulkan
         deviceFeatures.samplerAnisotropy = true;
         deviceFeatures.sampleRateShading = true;
         deviceFeatures.shaderImageGatherExtended = true;
+        deviceFeatures.shaderInt64 = true;
 
         VkDeviceCreateInfo deviceCI{};
         deviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

@@ -15,6 +15,7 @@ namespace FE::Graphics::Vulkan
         DescriptorManager(Core::Device* device);
         ~DescriptorManager() override;
 
+        uint64_t GetDeviceAddress(uint32_t descriptorIndex) override;
         void BeginFrame() override;
         Core::FenceSyncPoint CloseFrame() override;
 

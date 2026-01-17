@@ -14,10 +14,11 @@ namespace FE::Graphics::Vulkan
         SetImmediateDestroyPolicy();
 
         VmaAllocatorCreateInfo createInfo = {};
+        createInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         createInfo.device = NativeCast(device);
         createInfo.physicalDevice = ImplCast(device)->GetNativeAdapter();
         createInfo.instance = NativeCast(ImplCast(device)->GetDeviceFactory());
-        createInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+        createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
         VerifyVk(vmaCreateAllocator(&createInfo, &m_vmaAllocator));
     }
 

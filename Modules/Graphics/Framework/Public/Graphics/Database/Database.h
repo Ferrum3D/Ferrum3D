@@ -80,11 +80,23 @@ namespace FE::Graphics::DB
 
         friend Database;
 
+        // The first page always contains the page table (pointers to other pages).
+
         Database* m_database = nullptr;
         uint32_t m_rowByteSize = 0;
         festd::inline_vector<StoragePage*> m_pages;
         festd::bit_vector m_freeRows;
     };
+
+
+    //! @brief GPU Scene Database table instance.
+    //!
+    //! Specializations of this class are generated from host-side table declarations.
+    //!
+    //! Usage:
+    //! TODO: write usage example.
+    template<class TTableDecl>
+    struct TableInstance;
 
 
     struct Database final

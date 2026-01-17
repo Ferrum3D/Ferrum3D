@@ -38,6 +38,12 @@ namespace FE
     using uint3 = PackedVector3UInt;
 
     using float4x4 = Matrix4x4;
+
+
+    struct BufferPointer final
+    {
+        uint64_t m_deviceAddress;
+    };
 } // namespace FE
 
 #endif
