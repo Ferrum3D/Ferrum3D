@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Containers/SegmentedVector.h>
+#include <FeCore/Memory/BuddyAllocator.h>
 #include <Graphics/Core/Base.h>
 #include <Graphics/Database/Base.h>
 #include <festd/bit_vector.h>
@@ -31,6 +32,33 @@ namespace FE::Graphics::DB
 
         Rc<Core::Buffer> m_deviceStorage;
         std::byte* m_hostStorage = nullptr;
+    };
+
+
+    struct PageTableManager final
+    {
+        explicit PageTableManager(Core::Buffer* buffer);
+
+        Memory::BuddyAllocator::Handle Allocate(uint32_t pageCount);
+        void Free(Memory::BuddyAllocator::Handle handle);
+
+        Core::FenceSyncPoint CloseFrame();
+
+    private:
+        friend Database;
+
+        struct FreeRequest final
+        {
+            Memory::BuddyAllocator::Handle m_handle;
+            uint64_t m_fenceValue = 0;
+        };
+
+        Rc<Core::Buffer> m_deviceStorage;
+        Memory::BuddyAllocator m_allocator;
+
+        Rc<Core::Fence> m_fence;
+        uint64_t m_fenceValue = 0;
+        festd::inline_ring_buffer<FreeRequest, 32> m_pendingFrees;
     };
 
 
@@ -76,11 +104,10 @@ namespace FE::Graphics::DB
     protected:
         explicit TableBase(Database* database);
 
+        void AllocatePages(uint32_t pageCount);
         void Update(uint32_t pageIndex, uint32_t byteOffset, festd::span<const std::byte> data);
 
         friend Database;
-
-        // The first page always contains the page table (pointers to other pages).
 
         Database* m_database = nullptr;
         uint32_t m_rowByteSize = 0;
