@@ -11,6 +11,7 @@
     Math/Vector4.cpp
 
     Memory/BuddyAllocator.cpp
+    Memory/RingBufferAllocator.cpp
 
     Modules/Environment.cpp
 

@@ -82,6 +82,7 @@
     Public/FeCore/Memory/LinearAllocator.h
     Public/FeCore/Memory/Memory.h
     Public/FeCore/Memory/PoolAllocator.h
+    Public/FeCore/Memory/RingBufferAllocator.h
     Public/FeCore/Memory/RefCount.h
     Public/FeCore/Memory/SegmentedBuffer.h
 
@@ -160,6 +161,7 @@ set(COMMON_SOURCES
     Private/FeCore/Memory/MemoryPrivate.h
     Private/FeCore/Memory/PoolAllocator.cpp
     Private/FeCore/Memory/BuddyAllocator.cpp
+    Private/FeCore/Memory/RingBufferAllocator.cpp
     Private/FeCore/Memory/tlsf.c
     Private/FeCore/Memory/tlsf.h
 
