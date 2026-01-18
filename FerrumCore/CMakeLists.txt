@@ -77,6 +77,7 @@
     Public/FeCore/Math/Vector3UInt.h
     Public/FeCore/Math/Vector4.h
 
+    Public/FeCore/Memory/BuddyAllocator.h
     Public/FeCore/Memory/FiberTempAllocator.h
     Public/FeCore/Memory/LinearAllocator.h
     Public/FeCore/Memory/Memory.h
@@ -158,6 +159,7 @@ set(COMMON_SOURCES
     Private/FeCore/Memory/Memory.cpp
     Private/FeCore/Memory/MemoryPrivate.h
     Private/FeCore/Memory/PoolAllocator.cpp
+    Private/FeCore/Memory/BuddyAllocator.cpp
     Private/FeCore/Memory/tlsf.c
     Private/FeCore/Memory/tlsf.h
 

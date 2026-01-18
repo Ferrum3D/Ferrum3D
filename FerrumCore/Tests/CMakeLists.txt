@@ -10,6 +10,8 @@
     Math/Vector3.cpp
     Math/Vector4.cpp
 
+    Memory/BuddyAllocator.cpp
+
     Modules/Environment.cpp
 
     RTTI/RTTI.cpp
