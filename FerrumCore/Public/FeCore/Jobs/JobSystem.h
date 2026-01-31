@@ -83,6 +83,7 @@ namespace FE
             JobThreadPoolType m_threadPoolType = JobThreadPoolType::kGeneric;
             JobPriority m_priority = JobPriority::kNormal;
             FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
+            Threading::Semaphore m_workSemaphore;
 
             // Jobs in these queues can only be processed by this worker (due to affinity).
             ConcurrentQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)] = {};
@@ -109,6 +110,9 @@ namespace FE
         Threading::Semaphore m_semaphore;
         std::atomic<bool> m_shouldExit = false;
         std::atomic<bool> m_started = false;
+        std::atomic<uint32_t> m_wakeIndexAll = 0;
+        std::atomic<uint32_t> m_wakeIndexForeground = 0;
+        std::atomic<uint32_t> m_wakeIndexBackground = 0;
 
         uint32_t GetWorkerIndex() const
         {
@@ -122,6 +126,9 @@ namespace FE
             FE_Assert(0, "Thread not found");
             return kInvalidIndex;
         }
+
+        uint32_t SelectWorkerIndex(JobThreadPoolType poolType);
+        void SignalWorkForAffinity(FiberAffinityMask affinityMask);
 
         void ThreadProc(uint32_t workerIndex);
         void FiberProc(Context::TransferParams transferParams);

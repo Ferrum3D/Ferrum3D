@@ -104,6 +104,7 @@
     Public/FeCore/Strings/Utils.h
 
     Public/FeCore/Threading/Context.h
+    Public/FeCore/Threading/ConditionVariable.h
     Public/FeCore/Threading/Event.h
     Public/FeCore/Threading/Fiber.h
     Public/FeCore/Threading/Mutex.h
@@ -196,6 +197,7 @@ set(WINDOWS_SOURCES
     Private/FeCore/IO/Platform/Windows/PlatformPath.cpp
 
     Private/FeCore/Threading/Platform/Windows/Event.cpp
+    Private/FeCore/Threading/Platform/Windows/ConditionVariable.cpp
     Private/FeCore/Threading/Platform/Windows/Thread.cpp
     Private/FeCore/Threading/Platform/Windows/Mutex.cpp
     Private/FeCore/Threading/Platform/Windows/Semaphore.cpp

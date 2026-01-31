@@ -38,6 +38,67 @@ namespace FE
                 break;
             }
         }
+
+        SignalWorkForAffinity(affinityMask);
+    }
+
+
+    uint32_t JobSystem::SelectWorkerIndex(const JobThreadPoolType poolType)
+    {
+        switch (poolType)
+        {
+        case JobThreadPoolType::kForeground:
+            return m_foregroundWorkerCount == 0
+                ? 0
+                : m_wakeIndexForeground.fetch_add(1, std::memory_order_relaxed) % m_foregroundWorkerCount;
+
+        case JobThreadPoolType::kBackground:
+            return m_backgroundWorkerCount == 0
+                ? 0
+                : 32 + (m_wakeIndexBackground.fetch_add(1, std::memory_order_relaxed) % m_backgroundWorkerCount);
+
+        case JobThreadPoolType::kGeneric:
+        default:
+            {
+                const uint32_t totalWorkers = m_foregroundWorkerCount + m_backgroundWorkerCount;
+                if (totalWorkers == 0)
+                    return 0;
+
+                const uint32_t index = m_wakeIndexAll.fetch_add(1, std::memory_order_relaxed) % totalWorkers;
+                if (index < m_foregroundWorkerCount)
+                    return index;
+
+                return 32 + (index - m_foregroundWorkerCount);
+            }
+        }
+    }
+
+
+    void JobSystem::SignalWorkForAffinity(const FiberAffinityMask affinityMask)
+    {
+        switch (affinityMask)
+        {
+        case FiberAffinityMask::kAll:
+            m_workers[SelectWorkerIndex(JobThreadPoolType::kGeneric)].m_workSemaphore.Release();
+            break;
+        case FiberAffinityMask::kAllForeground:
+            m_workers[SelectWorkerIndex(JobThreadPoolType::kForeground)].m_workSemaphore.Release();
+            break;
+        case FiberAffinityMask::kAllBackground:
+            m_workers[SelectWorkerIndex(JobThreadPoolType::kBackground)].m_workSemaphore.Release();
+            break;
+        case FiberAffinityMask::kMainThread:
+            m_workers[0].m_workSemaphore.Release();
+            break;
+        case FiberAffinityMask::kNone:
+        default:
+            {
+                FE_Assert(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
+                const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
+                m_workers[threadIndex].m_workSemaphore.Release();
+                break;
+            }
+        }
     }
 
 
@@ -225,8 +286,10 @@ namespace FE
                 continue;
             }
 
-            // TODO: sleep
-            std::this_thread::yield();
+            if (m_shouldExit.load(std::memory_order_acquire))
+                continue;
+
+            worker.m_workSemaphore.Acquire();
         }
 
         TracyFiberLeave;
@@ -309,6 +372,14 @@ namespace FE
         m_shouldExit.store(true, std::memory_order_release);
         if (!m_started.load(std::memory_order_acquire))
             m_semaphore.Release(m_backgroundWorkerCount + m_foregroundWorkerCount - 1);
+
+        for (uint32_t workerIndex = 0; workerIndex < m_workers.size(); ++workerIndex)
+        {
+            if (m_workers[workerIndex].m_threadId == 0 && workerIndex != 0)
+                continue;
+
+            m_workers[workerIndex].m_workSemaphore.Release();
+        }
     }
 
 
@@ -345,6 +416,8 @@ namespace FE
                 break;
             }
         }
+
+        SignalWorkForAffinity(affinityMask);
     }
 
 

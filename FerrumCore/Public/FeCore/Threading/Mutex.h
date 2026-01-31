@@ -3,6 +3,8 @@
 
 namespace FE::Threading
 {
+    struct ConditionVariable;
+
     struct Mutex final
     {
         Mutex(const Mutex&) = delete;
@@ -21,6 +23,7 @@ namespace FE::Threading
         void unlock();
 
     private:
+        friend struct ConditionVariable;
         uint64_t m_nativeMutex[5];
     };
 } // namespace FE::Threading
