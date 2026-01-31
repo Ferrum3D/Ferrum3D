@@ -91,7 +91,7 @@ namespace FE
 
         struct alignas(Memory::kCacheLineSize) GlobalQueueSet final
         {
-            Threading::SpinLock m_consumerLocks[festd::to_underlying(JobThreadPoolType::kCount)] = {};
+            Threading::SpinLock m_consumerLock;
             ConcurrentQueue m_jobQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
             ConcurrentQueue m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
         };
@@ -107,7 +107,8 @@ namespace FE
         uint32_t m_foregroundWorkerCount = 0;
 
         Threading::Semaphore m_semaphore;
-        std::atomic<bool> m_shouldExit;
+        std::atomic<bool> m_shouldExit = false;
+        std::atomic<bool> m_started = false;
 
         uint32_t GetWorkerIndex() const
         {

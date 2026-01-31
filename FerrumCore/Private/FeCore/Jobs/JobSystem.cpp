@@ -30,7 +30,7 @@ namespace FE
         case FiberAffinityMask::kMainThread:
         default:
             {
-                FE_AssertDebug(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
+                FE_Assert(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
                 const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
 
                 Worker& worker = m_workers[threadIndex];
@@ -86,7 +86,7 @@ namespace FE
                     // Since we use single-consumer queues, and we might push a job back to the front of the queue,
                     // we need this lock here.
 
-                    std::unique_lock lock{ globalQueueSet.m_consumerLocks[queueIndex] };
+                    std::unique_lock lock{ globalQueueSet.m_consumerLock };
 
                     for (uint32_t i = 0; i < 3; ++i)
                         fibers[i] = static_cast<FiberWaitEntry*>(queues[i]->TryDequeue());
@@ -120,7 +120,7 @@ namespace FE
                         switch (fiberIndex)
                         {
                         case 0:
-                            affinityMask = static_cast<FiberAffinityMask>(1 << GetWorkerIndex());
+                            affinityMask = static_cast<FiberAffinityMask>(UINT64_C(1) << GetWorkerIndex());
                             break;
                         case 1:
                             affinityMask = FiberAffinityMask::kAll;
@@ -175,7 +175,7 @@ namespace FE
                         switch (jobIndex)
                         {
                         case 0:
-                            affinityMask = static_cast<FiberAffinityMask>(1 << GetWorkerIndex());
+                            affinityMask = static_cast<FiberAffinityMask>(UINT64_C(1) << GetWorkerIndex());
                             break;
                         case 1:
                             affinityMask = FiberAffinityMask::kAll;
@@ -283,7 +283,8 @@ namespace FE
 
     JobSystem::~JobSystem()
     {
-        m_shouldExit.store(true, std::memory_order_release);
+        Stop();
+
         for (Worker& worker : m_workers)
         {
             Threading::CloseThread(worker.m_thread);
@@ -297,6 +298,7 @@ namespace FE
         Worker& mainThread = m_workers[0];
         mainThread.m_currentFiber = initialFiber;
         FE_Assert(mainThread.m_threadId == Threading::GetCurrentThreadID());
+        m_started.store(true, std::memory_order_release);
         m_semaphore.Release(m_backgroundWorkerCount + m_foregroundWorkerCount - 1);
         m_fiberPool.Switch(initialFiber, reinterpret_cast<uintptr_t>(this), mainThread.m_name.c_str());
     }
@@ -305,6 +307,8 @@ namespace FE
     void JobSystem::Stop()
     {
         m_shouldExit.store(true, std::memory_order_release);
+        if (!m_started.load(std::memory_order_acquire))
+            m_semaphore.Release(m_backgroundWorkerCount + m_foregroundWorkerCount - 1);
     }
 
 
@@ -333,7 +337,7 @@ namespace FE
         case FiberAffinityMask::kMainThread:
         default:
             {
-                FE_AssertDebug(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
+                FE_Assert(Bit::PopCount(festd::to_underlying(affinityMask)) == 1, "Invalid affinity mask");
                 const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
 
                 Worker& worker = m_workers[threadIndex];

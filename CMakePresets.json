@@ -61,7 +61,7 @@
       "name": "windows-debug-msvc",
       "inherits": "windows-base",
       "displayName": "Windows x64 Debug with MSVC",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Visual Studio 18 2026",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "cl.exe"
@@ -71,7 +71,7 @@
       "name": "windows-release-msvc",
       "inherits": "windows-base",
       "displayName": "Windows x64 Release with MSVC",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Visual Studio 18 2026",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": "cl.exe"
