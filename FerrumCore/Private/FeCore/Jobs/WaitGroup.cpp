@@ -38,6 +38,8 @@ namespace FE
         while (entry)
         {
             auto* next = static_cast<FiberWaitEntry*>(entry->m_next);
+            while (!entry->m_switchCompleted.load(std::memory_order_acquire))
+                _mm_pause();
             jobSystem->AddReadyFiber(entry);
             entry = next;
         }
@@ -131,6 +133,7 @@ namespace FE
         waitEntry.m_priority = worker.m_priority;
         waitEntry.m_affinityMask = worker.m_affinityMask;
         waitEntry.m_fiber = worker.m_currentFiber;
+        waitEntry.m_switchCompleted.store(false, std::memory_order_relaxed);
         if (queueHead)
         {
             queueHead->m_queueTail->m_next = &waitEntry;
