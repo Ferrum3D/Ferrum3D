@@ -4,76 +4,43 @@
 
 namespace FE::Memory
 {
-    RingBufferAllocator::RingBufferAllocator(const uint32_t arenaByteSize)
-        : m_capacity(arenaByteSize)
+    void RingBufferAllocator::Setup(const uint32_t capacity)
     {
-        FE_CoreAssert(m_capacity > 0);
+        FE_Assert(m_head == 0);
+        FE_Assert(m_used == 0);
+        FE_Assert(capacity > 0);
+
+        m_capacity = capacity;
     }
 
 
-    RingBufferAllocator::Handle RingBufferAllocator::Allocate(uint32_t size, uint32_t alignment)
+    RingBufferAllocator::Handle RingBufferAllocator::Allocate(const uint32_t size, uint32_t alignment)
     {
-        Handle handle;
         if (size == 0 || m_capacity == 0)
-            return handle;
+            return kInvalidHandle;
 
         if (alignment == 0)
             alignment = 1;
 
-        FE_CoreAssert(Math::IsPowerOfTwo(alignment));
+        FE_AssertDebug(Math::IsPowerOfTwo(alignment));
 
-        uint32_t freeBytes = m_capacity - m_used;
-        if (freeBytes < size)
-            return handle;
+        const uint32_t tail = GetTail();
+        const uint32_t alignmentPadding = AlignUp(tail, alignment) - tail;
+        const uint32_t wrapPadding = CalculateWrapPadding(tail, size + alignmentPadding);
 
-        uint32_t tail = m_tail;
-        uint32_t alignedTail = AlignUp(tail, alignment);
-        uint32_t padding = alignedTail - tail;
-        uint32_t total = padding + size;
+        const uint32_t freeSize = m_capacity - m_used;
+        const uint32_t padding = wrapPadding > 0 ? wrapPadding : alignmentPadding;
+        if (freeSize < padding + size)
+            return kInvalidHandle;
 
-        if (m_tail >= m_head)
-        {
-            if (alignedTail + size <= m_capacity)
-            {
-                if (total > freeBytes)
-                    return handle;
-            }
-            else
-            {
-                if (m_wrapPadding != 0)
-                    return handle;
+        m_used += padding;
 
-                const uint32_t wrapPadding = m_capacity - m_tail;
-                if (wrapPadding > freeBytes)
-                    return handle;
+        Handle handle;
+        handle.m_offset = GetTail();
+        handle.m_size = size + padding;
 
-                const uint32_t freeAfterPadding = freeBytes - wrapPadding;
-                if (m_head == 0 || size > freeAfterPadding)
-                    return handle;
+        m_used += size;
 
-                m_wrapBoundary = m_tail;
-                m_wrapPadding = wrapPadding;
-                m_used += wrapPadding;
-
-                m_tail = 0;
-                alignedTail = 0;
-                total = size;
-            }
-        }
-        else
-        {
-            if (alignedTail + size > m_head)
-                return handle;
-
-            if (total > freeBytes)
-                return handle;
-        }
-
-        m_used += total;
-        m_tail = alignedTail + size;
-
-        handle.m_offset = alignedTail;
-        handle.m_size = total;
         return handle;
     }
 
@@ -83,29 +50,19 @@ namespace FE::Memory
         if (!handle.IsValid())
             return;
 
-        FE_CoreAssert(handle.m_size <= m_used);
+        Free(handle.m_size);
+    }
 
-        m_head += handle.m_size;
-        m_used -= handle.m_size;
 
-        if (m_wrapPadding != 0 && m_head == m_wrapBoundary)
-        {
-            m_head = 0;
-            m_used -= m_wrapPadding;
-            m_wrapPadding = 0;
-            m_wrapBoundary = 0;
-        }
+    void RingBufferAllocator::Free(const uint32_t bytes)
+    {
+        FE_Assert(bytes <= m_used);
 
-        if (m_head == m_capacity)
-            m_head = 0;
+        m_head = (m_head + bytes) % m_capacity;
+        m_used -= bytes;
 
         if (m_used == 0)
-        {
             m_head = 0;
-            m_tail = 0;
-            m_wrapPadding = 0;
-            m_wrapBoundary = 0;
-        }
     }
 
 
@@ -116,25 +73,38 @@ namespace FE::Memory
 
         if (m_used == 0)
         {
-            stats.m_freeBlocks = 1;
             stats.m_largestFreeBlock = m_capacity;
             return stats;
         }
 
-        if (m_tail >= m_head)
+        const uint32_t tail = GetTail();
+        if (tail >= m_head)
         {
-            const uint32_t freeEnd = m_capacity - m_tail;
+            const uint32_t freeEnd = m_capacity - tail;
             const uint32_t freeStart = m_head;
-            stats.m_freeBlocks = (freeEnd > 0 ? 1u : 0u) + (freeStart > 0 ? 1u : 0u);
             stats.m_largestFreeBlock = Math::Max(freeEnd, freeStart);
         }
         else
         {
-            const uint32_t freeMid = m_head - m_tail;
-            stats.m_freeBlocks = freeMid > 0 ? 1u : 0u;
+            const uint32_t freeMid = m_head - tail;
             stats.m_largestFreeBlock = freeMid;
         }
 
         return stats;
+    }
+
+
+    uint32_t RingBufferAllocator::GetTail() const
+    {
+        return (m_head + m_used) % m_capacity;
+    }
+
+
+    uint32_t RingBufferAllocator::CalculateWrapPadding(const uint32_t tail, const uint32_t size) const
+    {
+        if (m_used != m_capacity && tail + size > m_capacity)
+            return m_capacity - tail;
+
+        return 0;
     }
 } // namespace FE::Memory

@@ -5,17 +5,22 @@
 
 using namespace FE;
 
+
 TEST(RingBufferAllocator, AllocateFreeSequential)
 {
     Memory::RingBufferAllocator allocator(256);
 
-    auto a = allocator.Allocate(32, 16);
-    auto b = allocator.Allocate(48, 16);
-    auto c = allocator.Allocate(16, 8);
+    const auto a = allocator.Allocate(1, 16);
+    const auto b = allocator.Allocate(48, 16);
+    const auto c = allocator.Allocate(16, 8);
 
     ASSERT_TRUE(a.IsValid());
     ASSERT_TRUE(b.IsValid());
     ASSERT_TRUE(c.IsValid());
+
+    ASSERT_TRUE(IsAligned(a.m_offset, 16));
+    ASSERT_TRUE(IsAligned(b.m_offset, 16));
+    ASSERT_TRUE(IsAligned(c.m_offset, 8));
 
     const uint32_t used = allocator.GetUsedBytes();
     allocator.Free(a);
@@ -24,24 +29,42 @@ TEST(RingBufferAllocator, AllocateFreeSequential)
 
     EXPECT_EQ(allocator.GetUsedBytes(), 0u);
     EXPECT_EQ(allocator.GetStats().m_freeBytes, allocator.GetArenaSize());
-    EXPECT_EQ(used, a.GetSize() + b.GetSize() + c.GetSize());
+    EXPECT_EQ(used, a.m_size + b.m_size + c.m_size);
 }
+
+
+TEST(RingBufferAllocator, BulkFree)
+{
+    Memory::RingBufferAllocator allocator(256);
+
+    const auto a = allocator.Allocate(1, 16);
+    const auto b = allocator.Allocate(48, 16);
+    const auto c = allocator.Allocate(16, 8);
+
+    const uint32_t used = allocator.GetUsedBytes();
+    allocator.Free(used);
+
+    EXPECT_EQ(allocator.GetUsedBytes(), 0u);
+    EXPECT_EQ(allocator.GetStats().m_freeBytes, allocator.GetArenaSize());
+    EXPECT_EQ(used, a.m_size + b.m_size + c.m_size);
+}
+
 
 TEST(RingBufferAllocator, WrapAround)
 {
     Memory::RingBufferAllocator allocator(128);
 
-    auto first = allocator.Allocate(64, 16);
-    auto second = allocator.Allocate(32, 16);
+    const auto first = allocator.Allocate(64, 16);
+    const auto second = allocator.Allocate(32, 16);
 
     ASSERT_TRUE(first.IsValid());
     ASSERT_TRUE(second.IsValid());
 
     allocator.Free(first);
 
-    auto wrapped = allocator.Allocate(48, 16);
+    const auto wrapped = allocator.Allocate(48, 16);
     ASSERT_TRUE(wrapped.IsValid());
-    EXPECT_EQ(wrapped.GetOffset(), 0u);
+    EXPECT_EQ(wrapped.m_offset, 0u);
 
     allocator.Free(second);
     allocator.Free(wrapped);
@@ -51,13 +74,38 @@ TEST(RingBufferAllocator, WrapAround)
     EXPECT_EQ(stats.m_largestFreeBlock, allocator.GetArenaSize());
 }
 
+
+TEST(RingBufferAllocator, WrapAroundAndBulkFree)
+{
+    Memory::RingBufferAllocator allocator(128);
+
+    const auto first = allocator.Allocate(64, 16);
+    const auto second = allocator.Allocate(32, 16);
+
+    ASSERT_TRUE(first.IsValid());
+    ASSERT_TRUE(second.IsValid());
+
+    allocator.Free(first);
+
+    const auto wrapped = allocator.Allocate(48, 16);
+    ASSERT_TRUE(wrapped.IsValid());
+    EXPECT_EQ(wrapped.m_offset, 0u);
+
+    allocator.Free(second.m_size + wrapped.m_size);
+
+    const auto stats = allocator.GetStats();
+    EXPECT_EQ(stats.m_freeBytes, allocator.GetArenaSize());
+    EXPECT_EQ(stats.m_largestFreeBlock, allocator.GetArenaSize());
+}
+
+
 TEST(RingBufferAllocator, Exhaustion)
 {
     Memory::RingBufferAllocator allocator(96);
 
-    auto a = allocator.Allocate(64, 16);
-    auto b = allocator.Allocate(32, 16);
-    auto c = allocator.Allocate(1, 1);
+    const auto a = allocator.Allocate(64, 16);
+    const auto b = allocator.Allocate(32, 16);
+    const auto c = allocator.Allocate(1, 1);
 
     ASSERT_TRUE(a.IsValid());
     ASSERT_TRUE(b.IsValid());
@@ -66,6 +114,7 @@ TEST(RingBufferAllocator, Exhaustion)
     allocator.Free(a);
     allocator.Free(b);
 }
+
 
 TEST(RingBufferAllocator, RandomSequentialFree)
 {
@@ -84,7 +133,8 @@ TEST(RingBufferAllocator, RandomSequentialFree)
         if (!handle.IsValid())
             break;
 
-        allocations.push_back({ handle });
+        EXPECT_TRUE(IsAligned(handle.m_offset, alignment));
+        allocations.push_back(handle);
     }
 
     for (const auto& allocation : allocations)
@@ -98,5 +148,4 @@ TEST(RingBufferAllocator, RandomSequentialFree)
     const auto stats = allocator.GetStats();
     EXPECT_EQ(stats.m_freeBytes, allocator.GetArenaSize());
     EXPECT_EQ(stats.m_largestFreeBlock, allocator.GetArenaSize());
-    EXPECT_EQ(stats.m_freeBlocks, 1u);
 }

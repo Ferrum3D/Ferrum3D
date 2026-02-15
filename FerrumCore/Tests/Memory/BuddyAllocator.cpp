@@ -11,14 +11,14 @@ TEST(BuddyAllocator, AllocateFree)
 
     auto handle = allocator.Allocate(1, 1);
     ASSERT_TRUE(handle.IsValid());
-    EXPECT_EQ(handle.GetOffset() % 16u, 0u);
+    EXPECT_EQ(handle.m_offset % 16u, 0u);
     EXPECT_EQ(handle.GetSize(), 16u);
 
     allocator.Free(handle);
 
     auto full = allocator.Allocate(256, 16);
     ASSERT_TRUE(full.IsValid());
-    EXPECT_EQ(full.GetOffset(), 0u);
+    EXPECT_EQ(full.m_offset, 0u);
     EXPECT_EQ(full.GetSize(), 256u);
     allocator.Free(full);
 }
@@ -38,7 +38,7 @@ TEST(BuddyAllocator, SplitAndCoalesce)
 
     auto merged = allocator.Allocate(32, 16);
     ASSERT_TRUE(merged.IsValid());
-    EXPECT_EQ(merged.GetOffset(), 0u);
+    EXPECT_EQ(merged.m_offset, 0u);
     EXPECT_EQ(merged.GetSize(), 32u);
     allocator.Free(merged);
 }
@@ -49,7 +49,7 @@ TEST(BuddyAllocator, Alignment)
 
     auto handle = allocator.Allocate(24, 64);
     ASSERT_TRUE(handle.IsValid());
-    EXPECT_EQ(handle.GetOffset() % 64u, 0u);
+    EXPECT_EQ(handle.m_offset % 64u, 0u);
     EXPECT_EQ(handle.GetSize(), 64u);
     allocator.Free(handle);
 }
@@ -76,7 +76,7 @@ TEST(BuddyAllocator, ExhaustionAndReuse)
 
     auto full = allocator.Allocate(256, 16);
     ASSERT_TRUE(full.IsValid());
-    EXPECT_EQ(full.GetOffset(), 0u);
+    EXPECT_EQ(full.m_offset, 0u);
     allocator.Free(full);
 }
 
