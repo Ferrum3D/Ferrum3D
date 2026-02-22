@@ -74,6 +74,8 @@ namespace FE::Threading
             : m_handle(other.m_handle)
         {
             other.m_handle.Reset();
+            other.m_function = nullptr;
+            other.m_functionDestructor = nullptr;
         }
 
         Thread& operator=(Thread&& other) noexcept
@@ -84,6 +86,8 @@ namespace FE::Threading
             Join();
             m_handle = other.m_handle;
             other.m_handle.Reset();
+            other.m_function = nullptr;
+            other.m_functionDestructor = nullptr;
             return *this;
         }
 
@@ -104,14 +108,25 @@ namespace FE::Threading
                    const size_t stackSize = 0)
         {
             FE_Assert(!m_handle.IsValid(), "Thread already running");
-            auto* payload = new TFunc(std::forward<TFunc>(func));
-            m_handle = CreateThread(name, &Thread::Trampoline<TFunc>, reinterpret_cast<uintptr_t>(payload), priority, stackSize);
+            m_function = Memory::DefaultNew<TFunc>(std::forward<TFunc>(func));
+            m_functionDestructor = [](void* function) {
+                static_cast<TFunc*>(function)->~TFunc();
+            };
+            m_handle = CreateThread(name, &Thread::Trampoline<TFunc>, reinterpret_cast<uintptr_t>(this), priority, stackSize);
         }
 
         void Join()
         {
             if (m_handle.IsValid())
+            {
                 CloseThread(m_handle);
+                DestroyFunction();
+            }
+            else
+            {
+                FE_Assert(m_function == nullptr);
+                FE_Assert(m_functionDestructor == nullptr);
+            }
         }
 
         [[nodiscard]] bool Joinable() const
@@ -121,12 +136,27 @@ namespace FE::Threading
 
     private:
         ThreadHandle m_handle;
+        void* m_function = nullptr;
+        void (*m_functionDestructor)(void*) = nullptr;
+
+        void DestroyFunction()
+        {
+            if (m_function)
+            {
+                m_functionDestructor(m_function);
+                Memory::DefaultFree(m_function);
+            }
+
+            m_function = nullptr;
+            m_functionDestructor = nullptr;
+        }
 
         template<class TFunc>
         static void Trampoline(const uintptr_t userData)
         {
-            std::unique_ptr<TFunc> func(reinterpret_cast<TFunc*>(userData));
-            (*func)();
+            auto* thread = reinterpret_cast<Thread*>(userData);
+            (*static_cast<TFunc*>(thread->m_function))();
+            thread->DestroyFunction();
         }
     };
 } // namespace FE::Threading

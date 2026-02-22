@@ -41,7 +41,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-#if !FE_SHIPPING
+#if FE_DEVELOPMENT
     inline constexpr auto kRequiredInstanceLayers = std::array{
         "VK_LAYER_KHRONOS_validation",
     };
@@ -51,7 +51,7 @@ namespace FE::Graphics::Vulkan
 
 
     inline constexpr auto kRequiredInstanceExtensions = std::array{
-#if !FE_SHIPPING
+#if FE_DEVELOPMENT
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #endif
