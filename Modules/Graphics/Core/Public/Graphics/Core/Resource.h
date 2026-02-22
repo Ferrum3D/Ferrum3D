@@ -32,7 +32,7 @@ namespace FE::Graphics::Core
 
 
     template<class TResource, class TDesc, class TSubresource>
-    struct BaseResourceView final
+    struct BaseResourceView
     {
         TResource* m_resource = nullptr;
         TSubresource m_subresource = TSubresource::kInvalid;
@@ -67,16 +67,6 @@ namespace FE::Graphics::Core
         [[nodiscard]] bool IsValid() const
         {
             return m_resource != nullptr;
-        }
-
-        static BaseResourceView Create(TResource* resource)
-        {
-            return { resource };
-        }
-
-        static BaseResourceView Create(TResource* resource, const TSubresource subresource)
-        {
-            return { resource, subresource };
         }
     };
 

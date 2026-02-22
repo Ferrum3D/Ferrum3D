@@ -47,7 +47,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
-        virtual void* Map() = 0;
+        [[nodiscard]] virtual void* Map() = 0;
         virtual void Unmap() = 0;
 
         [[nodiscard]] const BufferDesc& GetDesc() const
@@ -60,7 +60,34 @@ namespace FE::Graphics::Core
     };
 
 
-    using BufferView = BaseResourceView<Buffer, BufferDesc, BufferSubresource>;
+    struct BufferView final : public BaseResourceView<Buffer, BufferDesc, BufferSubresource>
+    {
+        using BaseResourceView::BaseResourceView;
+
+        [[nodiscard]] BufferView Slice(const uint32_t offset, const uint32_t byteSize = Constants::kMaxU32) const
+        {
+            uint32_t realSize = byteSize;
+            if (realSize == Constants::kMaxU32)
+                realSize = m_subresource.m_size - offset;
+
+            FE_AssertDebug(realSize <= m_subresource.m_size - offset);
+
+            BufferSubresource subresource = m_subresource;
+            subresource.m_offset += offset;
+            subresource.m_size = byteSize;
+            return Create(m_resource, subresource);
+        }
+
+        static BufferView Create(Buffer* resource)
+        {
+            return { resource };
+        }
+
+        static BufferView Create(Buffer* resource, const BufferSubresource subresource)
+        {
+            return { resource, subresource };
+        }
+    };
 } // namespace FE::Graphics::Core
 
 

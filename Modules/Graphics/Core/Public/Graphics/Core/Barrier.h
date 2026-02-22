@@ -62,6 +62,8 @@ namespace FE::Graphics::Core
         kAccelerationStructureRead = 1 << 14,
         kAccelerationStructureWrite = 1 << 15,
 
+        kCopySourceAndDest = kCopySource | kCopyDest,
+
         kCommonResourceAccessMask = kShaderRead | kShaderWrite | kCopySource | kCopyDest,
         kAllTextureAccessMask = kRenderTarget | kDepthStencilRead | kDepthStencilWrite | kResolveSource | kResolveDest
             | kShadingRateSource | kCommonResourceAccessMask,

@@ -29,6 +29,7 @@
     Public/Graphics/Core/PipelineVariantSet.h
     Public/Graphics/Core/Resource.h
     Public/Graphics/Core/ResourcePool.h
+    Public/Graphics/Core/RingUploader.h
     Public/Graphics/Core/Sampler.h
     Public/Graphics/Core/ShaderCompiler.h
     Public/Graphics/Core/ShaderLibrary.h
@@ -65,6 +66,7 @@ set(COMMON_SOURCES
     Private/Graphics/Core/Format.cpp
     Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp
+    Private/Graphics/Core/RingUploader.cpp
     Private/Graphics/Core/ShaderCompilerDXC.cpp
     Private/Graphics/Core/ShaderCompilerDXC.h
     Private/Graphics/Core/ShaderSpecialization.cpp

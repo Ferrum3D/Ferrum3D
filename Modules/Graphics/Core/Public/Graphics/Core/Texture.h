@@ -286,7 +286,20 @@ namespace FE::Graphics::Core
     };
 
 
-    using TextureView = BaseResourceView<Texture, TextureDesc, TextureSubresource>;
+    struct TextureView final : public BaseResourceView<Texture, TextureDesc, TextureSubresource>
+    {
+        using BaseResourceView::BaseResourceView;
+
+        static TextureView Create(Texture* resource)
+        {
+            return { resource };
+        }
+
+        static TextureView Create(Texture* resource, const TextureSubresource subresource)
+        {
+            return { resource, subresource };
+        }
+    };
 } // namespace FE::Graphics::Core
 
 
