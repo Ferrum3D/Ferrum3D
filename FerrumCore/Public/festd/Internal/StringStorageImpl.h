@@ -25,8 +25,7 @@ namespace FE::Internal
 
         struct Short final
         {
-            char m_data[kShortModeCapacity];
-            uint8_t m_invSize;
+            char m_data[kShortModeCapacity + 1];
         };
 
         union
@@ -43,7 +42,7 @@ namespace FE::Internal
 
         [[nodiscard]] uint32_t GetShortSize() const
         {
-            return m_short.m_invSize ^ kShortModeCapacity;
+            return m_long.m_marker ^ kShortModeCapacity;
         }
 
         [[nodiscard]] uint32_t SizeImpl() const
@@ -93,7 +92,7 @@ namespace FE::Internal
             {
                 if (capacity <= kShortModeCapacity)
                 {
-                    m_short.m_invSize = static_cast<uint8_t>(length ^ kShortModeCapacity);
+                    m_long.m_marker = static_cast<uint8_t>(length ^ kShortModeCapacity);
                     return m_short.m_data;
                 }
 
@@ -148,7 +147,7 @@ namespace FE::Internal
                 {
                     char* oldData = m_long.m_data;
                     memcpy(m_short.m_data, oldData, size);
-                    m_short.m_invSize = static_cast<uint8_t>(size ^ kShortModeCapacity);
+                    m_long.m_marker = static_cast<uint8_t>(size ^ kShortModeCapacity);
                     return;
                 }
 
@@ -166,7 +165,7 @@ namespace FE::Internal
             if (IsLong())
             {
                 allocator->deallocate(m_long.m_data, m_long.m_capacity + 1);
-                m_short.m_invSize = static_cast<uint8_t>(0 ^ kShortModeCapacity);
+                m_long.m_marker = static_cast<uint8_t>(0 ^ kShortModeCapacity);
             }
         }
     };

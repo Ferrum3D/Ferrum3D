@@ -115,11 +115,6 @@ namespace FE
         {
             return lhs.m_value != rhs.m_value;
         }
-
-    private:
-        TypedHandle() = default;
-
-        friend T;
     };
 
 

@@ -64,9 +64,9 @@ namespace FE::Platform
         const uint32_t isLeap = IsYearLeap(srcYear);
 
         int64_t srcDay = (srcYear - kEpochYear) * 365;
-        srcDay += (srcYear - kEpochYear) / 4 + ((srcYear % 4) && srcYear % 4 < kEpochYear % 4);
-        srcDay -= (srcYear - kEpochYear) / 100 + ((srcYear % 100) && srcYear % 100 < kEpochYear % 100);
-        srcDay += (srcYear - kEpochYear) / 400 + ((srcYear % 400) && srcYear % 400 < kEpochYear % 400);
+        srcDay += (srcYear - kEpochYear) / 4 + ((srcYear % 4) != 0 && srcYear % 4 < kEpochYear % 4);
+        srcDay -= (srcYear - kEpochYear) / 100 + ((srcYear % 100) != 0 && srcYear % 100 < kEpochYear % 100);
+        srcDay += (srcYear - kEpochYear) / 400 + ((srcYear % 400) != 0 && srcYear % 400 < kEpochYear % 400);
 
         int64_t yearDay = 0;
         int64_t month = 0;

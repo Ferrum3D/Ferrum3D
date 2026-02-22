@@ -44,7 +44,9 @@ namespace FE::Env
 
         [[nodiscard]] static Name CreateFromHandle(const uint32_t handle)
         {
-            return festd::bit_cast<Name>(handle);
+            Name name;
+            name.m_handle = handle;
+            return name;
         }
 
         [[nodiscard]] const Record* GetRecord() const;

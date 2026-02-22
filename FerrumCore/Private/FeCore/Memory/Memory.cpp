@@ -180,6 +180,8 @@ namespace FE::Memory
 
             if (callstack.IsValid())
             {
+                Console::Write(Fmt::FixedFormat("Invalid pointer detected at {}\n", ptr));
+
                 void** frames = callstack.GetFrames();
                 for (uint32_t frameIndex = 0; frames[frameIndex] != nullptr; ++frameIndex)
                 {
@@ -264,8 +266,13 @@ namespace FE::Memory
         extendedParameter.Type = MemExtendedParameterAddressRequirements;
         extendedParameter.Pointer = &requirements;
 
-        return GetVirtualAlloc2()(
-            GetCurrentProcess(), nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE, &extendedParameter, 1);
+        return GetVirtualAlloc2()(GetCurrentProcess(),
+                                  nullptr,
+                                  byteSize,
+                                  MEM_RESERVE | MEM_COMMIT,
+                                  PAGE_READWRITE,
+                                  &extendedParameter,
+                                  1);
 #else
 #    error Not implemented :(
 #endif
@@ -315,6 +322,8 @@ namespace FE::Memory
 
     void FreeVirtual(void* ptr, [[maybe_unused]] const size_t byteSize)
     {
+        FE_CoreAssert(byteSize != 0);
+
 #if FE_PLATFORM_WINDOWS
         VirtualFree(ptr, 0, MEM_RELEASE);
 #else

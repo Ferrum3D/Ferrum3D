@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <FeCore/Base/Base.h>
 #include <utf8proc.h>
 
@@ -50,28 +50,28 @@ namespace FE::ASCII
     //! @brief Check if a character is an uppercase letter.
     [[nodiscard]] FE_FORCE_INLINE constexpr bool IsUpper(const char c)
     {
-        return static_cast<uint32_t>(c) - 'A' < 26;
+        return static_cast<uint32_t>(c) - 'A' <= 'z' - 'a';
     }
 
 
     //! @brief Check if a character is a lowercase letter.
     [[nodiscard]] FE_FORCE_INLINE constexpr bool IsLower(const char c)
     {
-        return static_cast<uint32_t>(c) - 'a' < 26;
+        return static_cast<uint32_t>(c) - 'a' <= 'z' - 'a';
     }
 
 
     //! @brief Convert a character to uppercase.
-    [[nodiscard]] FE_FORCE_INLINE constexpr bool ToUpper(const char c)
+    [[nodiscard]] FE_FORCE_INLINE constexpr char ToUpper(const char c)
     {
-        return static_cast<uint32_t>(c) - 'a' < 26 ? c & 0x5f : c;
+        return (static_cast<uint32_t>(c) - 'a' <= 'z' - 'a') ? (c & 0x5f) : c;
     }
 
 
     //! @brief Convert a character to lowercase.
-    [[nodiscard]] FE_FORCE_INLINE constexpr bool ToLower(const char c)
+    [[nodiscard]] FE_FORCE_INLINE constexpr char ToLower(const char c)
     {
-        return static_cast<uint32_t>(c) - 'A' ? c | 0x20 : c;
+        return (static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A') ? (c | 0x20) : c;
     }
 
 
@@ -85,7 +85,7 @@ namespace FE::ASCII
     //! @brief Check if a character is a letter.
     [[nodiscard]] FE_FORCE_INLINE constexpr bool IsLetter(const char c)
     {
-        return static_cast<uint32_t>(c | 0x20) - 'a' < 26;
+        return static_cast<uint32_t>(c | 0x20) - 'a' <= 'z' - 'a';
     }
 
 
@@ -222,14 +222,14 @@ namespace FE::UTF8
 
 
     //! @brief Convert a codepoint to uppercase.
-    [[nodiscard]] FE_FORCE_INLINE bool ToUpper(const int32_t codepoint)
+    [[nodiscard]] FE_FORCE_INLINE int32_t ToUpper(const int32_t codepoint)
     {
         return utf8proc_toupper(codepoint);
     }
 
 
     //! @brief Convert a codepoint to lowercase.
-    [[nodiscard]] FE_FORCE_INLINE bool ToLower(const int32_t codepoint)
+    [[nodiscard]] FE_FORCE_INLINE int32_t ToLower(const int32_t codepoint)
     {
         return utf8proc_tolower(codepoint);
     }
@@ -338,7 +338,7 @@ namespace FE::UTF16
     //! @param str    The string to read the codepoint from.
     //! @param result The decoded codepoint.
     //!
-    //! @return The negative number of bytes read from the string or 0 if the function failed.
+    //! @return The negative number of chars read from the string or 0 if the function failed.
     [[nodiscard]] FE_FORCE_INLINE int32_t DecodeBackward(const char16_t* str, int32_t* result)
     {
         for (int32_t charIndex = -1; charIndex >= -2; --charIndex)
@@ -357,7 +357,7 @@ namespace FE::UTF16
     //! @param codepoint   The codepoint to encode.
     //! @param destination The string to write the codepoint into.
     //!
-    //! @return The number of bytes written to the string or 0 if the function failed.
+    //! @return The number of chars written to the string or 0 if the function failed.
     [[nodiscard]] FE_FORCE_INLINE int32_t Encode(const int32_t codepoint, char16_t* destination)
     {
         if (codepoint <= 0xffff)

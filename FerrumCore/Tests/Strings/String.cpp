@@ -26,6 +26,14 @@ TEST(Strings, LongSizeCapacity)
     ASSERT_EQ(str.size(), strlen(cstr));
 }
 
+TEST(Strings, MoveConstruct)
+{
+    const char* cstr = "loooooooooooooooooooooooooooooooooooooooooong";
+    festd::string str1 = cstr;
+    festd::string str2 = std::move(str1);
+    ASSERT_EQ(ASCII::Compare(str2.data(), cstr), 0);
+}
+
 TEST(Strings, StringViewConversion)
 {
     const festd::string s1{ festd::string_view{ "test" } };

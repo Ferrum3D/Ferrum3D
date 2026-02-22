@@ -188,8 +188,15 @@ namespace FE::Fmt
             static FormatArg Create(T* arg) noexcept
             {
                 const auto func = [](const void* value, TBuffer& buffer) {
-                    ValueFormatter<TBuffer, std::remove_const_t<T>>{}.Format(buffer,
-                                                                             *static_cast<const std::remove_cv_t<T>*>(value));
+                    if constexpr (std::is_pointer_v<T>)
+                    {
+                        ValueFormatter<TBuffer, uintptr_t>{}.Format(buffer, *static_cast<const uintptr_t*>(value));
+                    }
+                    else
+                    {
+                        ValueFormatter<TBuffer, std::remove_const_t<T>>{}.Format(buffer,
+                                                                                 *static_cast<const std::remove_cv_t<T>*>(value));
+                    }
                 };
                 return FormatArg{ func, arg };
             }
