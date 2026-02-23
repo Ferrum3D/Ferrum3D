@@ -29,9 +29,9 @@ namespace FE::Memory
     }
 
 
-    LinearAllocator::LinearAllocator(const size_t pageByteSize, std::pmr::memory_resource* pPageAllocator)
+    LinearAllocator::LinearAllocator(const size_t pageByteSize, std::pmr::memory_resource* pageAllocator)
         : m_pageByteSize(pageByteSize)
-        , m_pageAllocator(pPageAllocator)
+        , m_pageAllocator(pageAllocator)
     {
         FE_CoreAssert(pageByteSize > 0, "Page size must be greater than zero");
         if (m_pageAllocator == nullptr)

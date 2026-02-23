@@ -111,7 +111,7 @@ namespace FE::Env
                 std::pmr::set_default_resource(this);
             }
 
-            ~DefaultMemoryResource()
+            ~DefaultMemoryResource() override
             {
                 std::pmr::set_default_resource(m_previousResource);
             }

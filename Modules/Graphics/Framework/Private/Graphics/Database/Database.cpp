@@ -7,7 +7,7 @@ namespace FE::Graphics::DB
 {
     namespace
     {
-        Memory::SpinLockedPool<StoragePage> GStoragePagePool{ "Graphics/DB/StoragePagePool" };
+        Memory::SpinLockedPool<StoragePage> GStoragePagePool{ "Graphics/DB/StoragePagePool", 2 * 1024 * 1024 };
     }
 
 
@@ -20,7 +20,6 @@ namespace FE::Graphics::DB
     StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool)
     {
         StoragePage* page = GStoragePagePool.New();
-        page->m_hostStorage = Memory::DefaultAllocateArray<std::byte>(kTablePageSize, Memory::kDefaultAlignment);
         page->m_deviceStorage = resourcePool->CreateByteAddressBuffer("StoragePage", kTablePageSize);
 
         Core::BufferCommitParams commitParams;

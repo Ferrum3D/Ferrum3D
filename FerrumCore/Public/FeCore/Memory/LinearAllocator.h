@@ -60,7 +60,7 @@ namespace FE::Memory
         }
 
     public:
-        LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pPageAllocator = nullptr);
+        LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pageAllocator = nullptr);
         ~LinearAllocator() override;
 
         void FreeUnusedMemory();

@@ -2,6 +2,7 @@
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Memory/BuddyAllocator.h>
 #include <Graphics/Core/Base.h>
+#include <Graphics/Core/RingUploader.h>
 #include <Graphics/Database/Base.h>
 #include <festd/bit_vector.h>
 #include <festd/ring_buffer.h>
@@ -31,7 +32,7 @@ namespace FE::Graphics::DB
         uint32_t m_globalID = kInvalidIndex;
 
         Rc<Core::Buffer> m_deviceStorage;
-        std::byte* m_hostStorage = nullptr;
+        std::byte m_hostStorage[kTablePageSize];
     };
 
 
