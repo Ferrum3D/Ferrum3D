@@ -22,7 +22,7 @@ namespace FE::Memory
             }
 
             uint32_t m_offset = Constants::kMaxU32;
-            uint32_t m_order = 0;
+            uint32_t m_level = 0;
         };
 
         static_assert(sizeof(Handle) <= 8);

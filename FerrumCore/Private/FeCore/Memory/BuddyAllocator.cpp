@@ -6,7 +6,7 @@ namespace FE::Memory
 {
     uint32_t BuddyAllocator::Handle::GetSize() const
     {
-        return BlockSizeForLevel(m_order);
+        return BlockSizeForLevel(m_level);
     }
 
 
@@ -83,7 +83,7 @@ namespace FE::Memory
         }
 
         handle.m_offset = blockIndex * blockSize;
-        handle.m_order = static_cast<uint8_t>(level);
+        handle.m_level = static_cast<uint8_t>(level);
         return handle;
     }
 
@@ -93,7 +93,7 @@ namespace FE::Memory
         if (!handle.IsValid())
             return;
 
-        const uint32_t level = handle.m_order;
+        const uint32_t level = handle.m_level;
         FE_Assert(level <= m_maxLevel);
 
         const uint32_t blockSize = BlockSizeForLevel(level);
