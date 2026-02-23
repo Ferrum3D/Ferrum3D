@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <csignal>
 
 #if defined _WIN32 || defined _WIN64 || defined _WINDOWS
 #    define FE_PLATFORM_WINDOWS 1

@@ -1,9 +1,9 @@
 #include <FeCore/Base/Base.h>
 #include <FeCore/Base/PlatformInclude.h>
 
-namespace FE::Platform
+namespace FE
 {
-    void AssertionReport(const SourceLocation sourceLocation, const char* message, const uint32_t messageSize, const bool crash)
+    void Platform::AssertionReport(const SourceLocation sourceLocation, const char* message, const uint32_t messageSize)
     {
         //
         // NOTE: We cannot use WideString here: it can allocate memory if its inline buffer overflows.
@@ -14,7 +14,6 @@ namespace FE::Platform
         constexpr int32_t kMaxMessageSize = 8 * 1024;
 
         const wchar_t* wideMessage = L"Unknown Error (Error message had invalid encoding)";
-        [[maybe_unused]] const wchar_t* wideFilename = L"Unknown File (Filename had invalid encoding)";
 
         const int32_t clampedMessageSize = Math::Min(static_cast<int32_t>(messageSize), kMaxMessageSize);
         const int32_t messageLength = MultiByteToWideChar(CP_UTF8, 0, message, clampedMessageSize, nullptr, 0);
@@ -32,18 +31,8 @@ namespace FE::Platform
         {
             const int32_t limitedSize = Math::Min(filenameLength, MAX_PATH + 1);
             MultiByteToWideChar(CP_UTF8, 0, sourceLocation.m_fileName, -1, buffer, limitedSize - 1);
-            wideFilename = buffer;
             buffer += limitedSize;
-
-            if (crash)
-            {
-                // Split filename and message for _wassert
-                *buffer++ = L'\0';
-            }
-            else
-            {
-                buffer += _swprintf(buffer, L"(%d): ", sourceLocation.m_lineNumber);
-            }
+            buffer += _swprintf(buffer, L"(%d): ", sourceLocation.m_lineNumber);
         }
 
         if (messageLength > 0)
@@ -55,15 +44,6 @@ namespace FE::Platform
         }
 
         OutputDebugStringW(wideMessage);
-
-        if (crash)
-        {
-#if FE_DEBUG
-            _wassert(wideMessage, wideFilename, sourceLocation.m_lineNumber);
-#endif
-            FE_DebugBreak();
-        }
-
         VirtualFree(allocation, 0, MEM_RELEASE);
     }
-} // namespace FE::Platform
+} // namespace FE

@@ -30,14 +30,14 @@ namespace FE::Rtti
 
     void TypeRegistry::Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GTypeRegistry == nullptr, "Reflection already initialized");
+        FE_Assert(GTypeRegistry == nullptr, "Reflection already initialized");
         GTypeRegistry = Memory::New<TypeRegistryImpl>(allocator);
     }
 
 
     void TypeRegistry::Internal::Shutdown()
     {
-        FE_CoreAssert(GTypeRegistry != nullptr, "Reflection not initialized");
+        FE_Assert(GTypeRegistry != nullptr, "Reflection not initialized");
         GTypeRegistry->~TypeRegistryImpl();
         GTypeRegistry = nullptr;
     }

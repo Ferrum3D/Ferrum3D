@@ -33,7 +33,7 @@ namespace FE::Memory
         : m_pageByteSize(pageByteSize)
         , m_pageAllocator(pageAllocator)
     {
-        FE_CoreAssert(pageByteSize > 0, "Page size must be greater than zero");
+        FE_Assert(pageByteSize > 0, "Page size must be greater than zero");
         if (m_pageAllocator == nullptr)
         {
             m_pageAllocator = std::pmr::get_default_resource();

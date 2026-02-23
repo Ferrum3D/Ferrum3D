@@ -205,14 +205,14 @@ namespace FE::Memory
 
     void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GMemoryState == nullptr, "Memory already initialized");
+        FE_Assert(GMemoryState == nullptr, "Memory already initialized");
         GMemoryState = Memory::New<MemoryState>(allocator);
     }
 
 
     void Internal::Shutdown()
     {
-        FE_CoreAssert(GMemoryState != nullptr, "Memory not initialized");
+        FE_Assert(GMemoryState != nullptr, "Memory not initialized");
         GMemoryState->~MemoryState();
         GMemoryState = nullptr;
     }
@@ -241,7 +241,7 @@ namespace FE::Memory
 
     void* AllocateVirtual(const size_t byteSize)
     {
-        FE_CoreAssert(IsAligned(byteSize, GetPlatformSpec().m_granularity),
+        FE_Assert(IsAligned(byteSize, GetPlatformSpec().m_granularity),
                       "Size must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
@@ -254,8 +254,8 @@ namespace FE::Memory
 
     void* AllocateVirtual(const size_t byteSize, const size_t byteAlignment)
     {
-        FE_CoreAssert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
-        FE_CoreAssert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
+        FE_Assert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
+        FE_Assert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
                       "Alignment must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
@@ -291,8 +291,8 @@ namespace FE::Memory
 
     void* ReserveVirtual(const size_t byteSize, const size_t byteAlignment)
     {
-        FE_CoreAssert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
-        FE_CoreAssert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
+        FE_Assert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
+        FE_Assert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
                       "Alignment must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
@@ -322,7 +322,7 @@ namespace FE::Memory
 
     void FreeVirtual(void* ptr, [[maybe_unused]] const size_t byteSize)
     {
-        FE_CoreAssert(byteSize != 0);
+        FE_Assert(byteSize != 0);
 
 #if FE_PLATFORM_WINDOWS
         VirtualFree(ptr, 0, MEM_RELEASE);
@@ -354,7 +354,7 @@ namespace FE::Memory
 
         DWORD oldProtect = 0;
         const BOOL result = VirtualProtect(ptr, byteSize, osProtect, &oldProtect);
-        FE_CoreAssert(result);
+        FE_Assert(result);
 #else
 #    error Not implemented :(
 #endif

@@ -30,7 +30,7 @@ namespace FE::Str
             charsWritten += UTF16::Encode(codepoint, &destination[charsWritten]);
             iter += bytesRead;
 
-            FE_CoreAssertDebug(charsWritten < destinationSize);
+            FE_AssertDebug(charsWritten < destinationSize);
         }
 
         destination[charsWritten++] = 0;
@@ -59,7 +59,7 @@ namespace FE::Str
             bytesWritten += UTF8::Encode(codepoint, &destination[bytesWritten]);
             iter += charsRead;
 
-            FE_CoreAssertDebug(bytesWritten < destinationSize);
+            FE_AssertDebug(bytesWritten < destinationSize);
         }
 
         destination[bytesWritten++] = 0;

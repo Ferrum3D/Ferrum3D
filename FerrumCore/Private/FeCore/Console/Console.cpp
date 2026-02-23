@@ -141,7 +141,7 @@ namespace FE::Console
 
     void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GConsoleState == nullptr, "Console already initialized");
+        FE_Assert(GConsoleState == nullptr, "Console already initialized");
         GConsoleState = Memory::New<ConsoleState>(allocator);
 
         GConsoleState->m_consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -168,7 +168,7 @@ namespace FE::Console
 
     void Internal::Shutdown()
     {
-        FE_CoreAssert(GConsoleState != nullptr, "Console not initialized");
+        FE_Assert(GConsoleState != nullptr, "Console not initialized");
         GConsoleState->~ConsoleState();
         GConsoleState = nullptr;
     }

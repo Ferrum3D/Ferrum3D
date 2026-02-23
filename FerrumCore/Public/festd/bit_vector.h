@@ -306,7 +306,7 @@ namespace FE::Internal
 
         void set(const uint32_t bitIndex)
         {
-            FE_CoreAssertDebug(bitIndex < TStorage::SizeImpl());
+            FE_AssertDebug(bitIndex < TStorage::SizeImpl());
 
             BitSetWord* words = TStorage::WordsDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -317,7 +317,7 @@ namespace FE::Internal
 
         void reset(const uint32_t bitIndex)
         {
-            FE_CoreAssertDebug(bitIndex < TStorage::SizeImpl());
+            FE_AssertDebug(bitIndex < TStorage::SizeImpl());
 
             BitSetWord* words = TStorage::WordsDataImpl();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);
@@ -449,7 +449,7 @@ namespace FE::Internal
 
         [[nodiscard]] bool test(const uint32_t bitIndex) const
         {
-            FE_CoreAssert(bitIndex < TBase::size());
+            FE_Assert(bitIndex < TBase::size());
 
             const BitSetWord* words = TBase::data();
             const uint32_t wordIndex = CalculateWordIndex(bitIndex);

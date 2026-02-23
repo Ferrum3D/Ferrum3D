@@ -70,7 +70,7 @@ namespace FE::Trace
 
     void Internal::InitStackTrace(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GStorage == nullptr, "Stack trace already initialized");
+        FE_Assert(GStorage == nullptr, "Stack trace already initialized");
         GStorage = Memory::New<StackTraceStorage>(allocator);
 
         SymSetOptions(SYMOPT_ALLOW_ABSOLUTE_SYMBOLS | SYMOPT_ALLOW_ZERO_ADDRESS | SYMOPT_AUTO_PUBLICS | SYMOPT_DEBUG
@@ -86,7 +86,7 @@ namespace FE::Trace
 
     void Internal::ShutdownStackTrace()
     {
-        FE_CoreAssert(GStorage != nullptr, "Stack trace not initialized");
+        FE_Assert(GStorage != nullptr, "Stack trace not initialized");
         GStorage->~StackTraceStorage();
         GStorage = nullptr;
 

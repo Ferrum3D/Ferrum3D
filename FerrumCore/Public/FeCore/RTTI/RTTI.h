@@ -165,7 +165,7 @@ public:                                                                         
         {
             using DestinationClass = std::remove_pointer_t<TDstPtr>;
             auto* dest = source->RTTI_TryCast(DestinationClass::TypeID);
-            FE_CoreAssert(static_cast<TDstPtr>(dest) == static_cast<TDstPtr>(source), "AssertCast failed");
+            FE_Assert(static_cast<TDstPtr>(dest) == static_cast<TDstPtr>(source), "AssertCast failed");
         }
 
         return static_cast<TDstPtr>(source);

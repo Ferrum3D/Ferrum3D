@@ -79,7 +79,7 @@ namespace FE
     };
 
 
-    template<class T, class TValue, TValue TInvalidValue = std::numeric_limits<TValue>::max()>
+    template<class T, class TValue, TValue TInvalidValue = Constants::kMaxValue<TValue>>
     struct TypedHandle
     {
         using BaseType = TValue;

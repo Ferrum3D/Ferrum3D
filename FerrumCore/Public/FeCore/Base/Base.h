@@ -5,7 +5,6 @@
 #include <FeCore/RTTI/RTTI.h>
 #include <atomic>
 #include <cassert>
-#include <cstdint>
 #include <festd/base.h>
 #include <festd/span.h>
 #include <intrin.h>
@@ -29,7 +28,7 @@ namespace FE
         template<class T, class = std::enable_if_t<std::is_trivially_copyable_v<T>>>
         void Copy(festd::span<T> destination, festd::span<const T> source)
         {
-            FE_CoreAssert(source.size() == destination.size(), "Size mismatch");
+            FE_Assert(source.size() == destination.size(), "Size mismatch");
             memcpy(destination.data(), source.data(), source.size_bytes());
         }
 
@@ -37,7 +36,7 @@ namespace FE
         template<class T, class = std::enable_if_t<std::is_trivially_copyable_v<T>>>
         void Copy(festd::span<T> destination, festd::span<T> source)
         {
-            FE_CoreAssert(source.size() == destination.size(), "Size mismatch");
+            FE_Assert(source.size() == destination.size(), "Size mismatch");
             memcpy(destination.data(), source.data(), source.size_bytes());
         }
 

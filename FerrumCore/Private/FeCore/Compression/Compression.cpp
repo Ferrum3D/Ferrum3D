@@ -106,7 +106,7 @@ namespace FE::Compression
 
     void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GCompressionState == nullptr, "Compression already initialized");
+        FE_Assert(GCompressionState == nullptr, "Compression already initialized");
         GCompressionState = Memory::New<CompressionState>(allocator);
 
         libdeflate_set_memory_allocator(&Memory::DefaultAllocate, &Memory::DefaultFree);

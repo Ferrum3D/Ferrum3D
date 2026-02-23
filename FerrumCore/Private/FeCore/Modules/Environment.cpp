@@ -77,7 +77,7 @@ namespace FE::Env
                 if (recordSize + m_offset > kNamePageByteSize)
                 {
                     m_pages[++m_currentPageIndex] = Memory::AllocateVirtual(kNamePageByteSize);
-                    FE_CoreAssert(m_currentPageIndex < kMaxPageCount);
+                    FE_Assert(m_currentPageIndex < kMaxPageCount);
                     m_offset = 0;
                 }
 
@@ -89,7 +89,7 @@ namespace FE::Env
 
                 void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
                 m_offset += static_cast<uint32_t>(recordSize);
-                FE_CoreAssert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
+                FE_Assert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
                 return static_cast<Name::Record*>(ptr);
             }
 
@@ -141,7 +141,7 @@ namespace FE::Env
         public:
             void* do_allocate(const size_t size, const size_t alignment) override
             {
-                FE_CoreAssert(Memory::GetPlatformSpec().m_granularity >= alignment, "Unsupported alignment");
+                FE_Assert(Memory::GetPlatformSpec().m_granularity >= alignment, "Unsupported alignment");
                 return Memory::AllocateVirtual(size);
             }
 
@@ -274,12 +274,12 @@ namespace FE::Env
         m_handle = nameAllocator.TryFind(hash);
         if (IsValid())
         {
-            FE_CoreAssert(str == GetRecord()->m_data, "Env::Name collision");
+            FE_Assert(str == GetRecord()->m_data, "Env::Name collision");
             return;
         }
 
         const size_t recordHeaderSize = offsetof(Name::Record, m_data);
-        FE_CoreAssert(str.size() < kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
+        FE_Assert(str.size() < kNamePageByteSize - recordHeaderSize, "Env::Name is too long");
 
         Record* record = nameAllocator.Allocate(hash, str.size() + 1, m_handle);
         record->m_size = static_cast<uint16_t>(str.size());
@@ -295,7 +295,7 @@ namespace FE::Env
         result.m_handle = nameAllocator.TryFind(hash);
         if (result.IsValid())
         {
-            FE_CoreAssert(str == result.GetRecord()->m_data, "Env::Name collision");
+            FE_Assert(str == result.GetRecord()->m_data, "Env::Name collision");
             return true;
         }
 
@@ -314,7 +314,7 @@ namespace FE::Env
 
     void Module::Register(Module* module)
     {
-        FE_CoreAssert(!module->m_next, "Module already registered");
+        FE_Assert(!module->m_next, "Module already registered");
         module->m_next = GModuleList;
         GModuleList = module;
     }
@@ -342,8 +342,8 @@ namespace FE::Env
 
     void Init(const ApplicationInfo& info)
     {
-        FE_CoreAssert(GEnvironment.m_appInfo.m_name == nullptr, "Application info already set");
-        FE_CoreAssert(info.m_name != nullptr);
+        FE_Assert(GEnvironment.m_appInfo.m_name == nullptr, "Application info already set");
+        FE_Assert(info.m_name != nullptr);
         GEnvironment.m_appInfo = info;
 
         DI::ServiceRegistryBuilder builder{ GetRootServiceRegistry() };

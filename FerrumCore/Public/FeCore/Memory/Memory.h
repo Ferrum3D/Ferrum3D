@@ -453,7 +453,7 @@ namespace FE
 
             FE_FORCE_INLINE void Set(const T* ptr)
             {
-                FE_CoreAssert((reinterpret_cast<uint64_t>(ptr) & 0xffff000000000000) == 0);
+                FE_Assert((reinterpret_cast<uint64_t>(ptr) & 0xffff000000000000) == 0);
                 memcpy(m_ptr, &ptr, 4);
                 memcpy(m_ptr + 4, reinterpret_cast<char*>(&ptr) + 4, 2);
             }

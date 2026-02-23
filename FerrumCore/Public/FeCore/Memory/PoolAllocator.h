@@ -26,24 +26,24 @@ namespace FE::Memory
         void Initialize(const char* name, const uint32_t elementByteSize, const uint32_t elementAlignment = kDefaultAlignment,
                         const uint32_t pageByteSize = 64 * 1024)
         {
-            FE_CoreAssert(m_elementByteSize == 0, "Pool already initialized");
-            FE_CoreAssert(elementByteSize > 0);
-            FE_CoreAssert(elementAlignment > 0);
+            FE_Assert(m_elementByteSize == 0, "Pool already initialized");
+            FE_Assert(elementByteSize > 0);
+            FE_Assert(elementAlignment > 0);
             m_name = name;
 
 #if FE_DEBUG
             const PlatformSpec platformSpec = GetPlatformSpec();
-            FE_CoreAssert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
+            FE_Assert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
                           "Page size must be aligned to virtual allocation granularity");
 
-            FE_CoreAssert(Math::IsPowerOfTwo(elementAlignment));
+            FE_Assert(Math::IsPowerOfTwo(elementAlignment));
 #endif
 
             m_elementByteSize = AlignUp(elementByteSize, elementAlignment);
             m_elementAlignment = elementAlignment;
             m_pageByteSize = pageByteSize;
 
-            FE_CoreAssert(pageByteSize > m_elementByteSize);
+            FE_Assert(pageByteSize > m_elementByteSize);
         }
 
         void Deinitialize(const bool ignoreLeaks = false)
@@ -104,7 +104,7 @@ namespace FE::Memory
 
         void FreePages(const bool ignoreLeaks = false)
         {
-            FE_CoreAssertDebug(m_allocationCount == 0 || ignoreLeaks, "Leak detected");
+            FE_AssertDebug(m_allocationCount == 0 || ignoreLeaks, "Leak detected");
             m_allocationCount = 0;
 
             Page* pPage = m_pageList;

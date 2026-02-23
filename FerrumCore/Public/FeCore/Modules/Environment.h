@@ -196,7 +196,7 @@ public:                                                                         
             return;                                                                                                              \
                                                                                                                                  \
         static bool calledOnce = false;                                                                                          \
-        FE_CoreAssert_1(!calledOnce);                                                                                            \
+        FE_Assert_1(!calledOnce);                                                                                            \
         calledOnce = true;                                                                                                       \
                                                                                                                                  \
         void (*handler)() = dependencyHandler;                                                                                   \

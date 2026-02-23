@@ -145,7 +145,7 @@ namespace FE
     template<class T>
     void Pow2Array<T>::set_allocator(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssertDebug(capacity() == 0 && m_data == nullptr);
+        FE_AssertDebug(capacity() == 0 && m_data == nullptr);
         m_allocator = allocator;
     }
 
@@ -230,7 +230,7 @@ namespace FE
     template<class T>
     void Pow2Array<T>::pop_back()
     {
-        FE_CoreAssertDebug(m_size > 0);
+        FE_AssertDebug(m_size > 0);
         m_data[--m_size].~T();
     }
 
@@ -261,7 +261,7 @@ namespace FE
             else
             {
                 const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
-                FE_CoreAssertDebug(1 << newCapacityLog2 == newCapacity);
+                FE_AssertDebug(1 << newCapacityLog2 == newCapacity);
 
                 T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
                 festd::uninitialized_copy_n(m_data.Get(), m_size, newData);
@@ -287,7 +287,7 @@ namespace FE
     {
         iterator beginIt = m_data;
         iterator endIt = beginIt + m_size - 1;
-        FE_CoreAssertDebug(it >= beginIt && it < endIt);
+        FE_AssertDebug(it >= beginIt && it < endIt);
 
         iterator nonConst = const_cast<iterator>(it);
         *nonConst = std::move(*endIt);
@@ -338,7 +338,7 @@ namespace FE
         if (newCapacity > currentCapacity)
         {
             const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
-            FE_CoreAssertDebug(1 << newCapacityLog2 == newCapacity);
+            FE_AssertDebug(1 << newCapacityLog2 == newCapacity);
 
             T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
             festd::uninitialized_copy_n(m_data.Get(), m_size, newData);

@@ -63,7 +63,7 @@ namespace FE::Simd::Soa
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void FE_VECTORCALL Insert(Vector3X8& vector, const int32_t index, const Vector3 value)
     {
-        FE_CoreAssert(static_cast<uint32_t>(index) < AVX::kLaneCount);
+        FE_Assert(static_cast<uint32_t>(index) < AVX::kLaneCount);
 
         vector.x = AVX::InsertLane(vector.x, value.x, index);
         vector.y = AVX::InsertLane(vector.y, value.y, index);
@@ -72,7 +72,7 @@ namespace FE::Simd::Soa
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3 FE_VECTORCALL Extract(const Vector3X8& vector, const int32_t index)
     {
-        FE_CoreAssert(static_cast<uint32_t>(index) < AVX::kLaneCount);
+        FE_Assert(static_cast<uint32_t>(index) < AVX::kLaneCount);
         return { AVX::ExtractLane(vector.x, index), AVX::ExtractLane(vector.y, index), AVX::ExtractLane(vector.z, index) };
     }
 

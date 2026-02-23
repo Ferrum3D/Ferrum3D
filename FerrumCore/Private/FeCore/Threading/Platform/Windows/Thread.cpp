@@ -54,7 +54,7 @@ namespace FE::Threading
 
     void Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GThreadingState == nullptr, "Threading already initialized");
+        FE_Assert(GThreadingState == nullptr, "Threading already initialized");
         GThreadingState = Memory::New<ThreadingState>(allocator);
         GThreadingState->m_mainThreadID = ::GetCurrentThreadId();
     }
@@ -62,7 +62,7 @@ namespace FE::Threading
 
     void Internal::Shutdown()
     {
-        FE_CoreAssert(GThreadingState != nullptr, "Threading not initialized");
+        FE_Assert(GThreadingState != nullptr, "Threading not initialized");
         GThreadingState->~ThreadingState();
         GThreadingState = nullptr;
     }
@@ -77,7 +77,7 @@ namespace FE::Threading
 
         DWORD threadID;
         const HANDLE hThread = ::CreateThread(nullptr, stackSize, &ThreadRoutineImpl, data, CREATE_SUSPENDED, &threadID);
-        FE_CoreAssert(hThread, "CreateThread failed");
+        FE_Assert(hThread, "CreateThread failed");
 
         data->m_id = threadID;
         data->m_priority = priority;
@@ -100,10 +100,10 @@ namespace FE::Threading
         if (priority != Priority::kNormal)
         {
             const BOOL priorityRes = SetThreadPriority(hThread, static_cast<int>(priority));
-            FE_CoreAssert(priorityRes, "SetThreadPriority failed");
+            FE_Assert(priorityRes, "SetThreadPriority failed");
         }
 
-        FE_CoreVerify(ResumeThread(hThread) != Constants::kMaxValue<DWORD>);
+        FE_Verify(ResumeThread(hThread) != Constants::kMaxValue<DWORD>);
 
         return ThreadHandle{ reinterpret_cast<uint64_t>(data) };
     }
@@ -117,10 +117,10 @@ namespace FE::Threading
             return;
 
         const NativeThreadData data = *reinterpret_cast<NativeThreadData*>(thread.m_value);
-        FE_CoreVerify(WaitForSingleObject(data.m_threadHandle, INFINITE) == WAIT_OBJECT_0);
+        FE_Verify(WaitForSingleObject(data.m_threadHandle, INFINITE) == WAIT_OBJECT_0);
 
         const BOOL closeRes = CloseHandle(data.m_threadHandle);
-        FE_CoreAssert(closeRes, "CloseHandle failed on thread");
+        FE_Assert(closeRes, "CloseHandle failed on thread");
         thread.Reset();
     }
 

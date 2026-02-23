@@ -3,36 +3,36 @@
 #include <FeCore/Threading/SpinLock.h>
 #include <festd/vector.h>
 
-namespace FE::Trace
+namespace FE
 {
     namespace
     {
         struct AssertionState final
         {
             Threading::SpinLock m_lock;
-            festd::fixed_vector<AssertionHandler, kMaxAssertionHandlers> m_assertionHandlers;
+            festd::fixed_vector<Trace::AssertionHandler, Trace::kMaxAssertionHandlers> m_assertionHandlers;
         };
 
         AssertionState* GAssertionState;
     } // namespace
 
 
-    void Internal::Init(std::pmr::memory_resource* allocator)
+    void Trace::Internal::Init(std::pmr::memory_resource* allocator)
     {
-        FE_CoreAssert(GAssertionState == nullptr, "Assertions already initialized");
+        FE_Assert(GAssertionState == nullptr, "Assertions already initialized");
         GAssertionState = Memory::New<AssertionState>(allocator);
     }
 
 
-    void Internal::Shutdown()
+    void Trace::Internal::Shutdown()
     {
-        FE_CoreAssert(GAssertionState != nullptr, "Assertions not initialized");
+        FE_Assert(GAssertionState != nullptr, "Assertions not initialized");
         GAssertionState->~AssertionState();
         GAssertionState = nullptr;
     }
 
 
-    AssertionHandlerToken RegisterAssertionHandler(const AssertionHandler handler)
+    Trace::AssertionHandlerToken Trace::RegisterAssertionHandler(const AssertionHandler handler)
     {
         const std::lock_guard lock{ GAssertionState->m_lock };
 
@@ -50,17 +50,15 @@ namespace FE::Trace
     }
 
 
-    void UnregisterAssertionHandler(const AssertionHandlerToken token)
+    void Trace::UnregisterAssertionHandler(const AssertionHandlerToken token)
     {
         const std::lock_guard lock{ GAssertionState->m_lock };
         GAssertionState->m_assertionHandlers[token.m_value] = nullptr;
     }
 
 
-    void AssertionReport(const SourceLocation sourceLocation, const char* message, const uint32_t messageSize, const bool crash)
+    void Trace::AssertionReport(const SourceLocation sourceLocation, const char* message, const uint32_t messageSize)
     {
-        Platform::AssertionReport(sourceLocation, message, messageSize, false);
-
         if (GAssertionState)
         {
             const std::lock_guard lock{ GAssertionState->m_lock };
@@ -72,7 +70,6 @@ namespace FE::Trace
             }
         }
 
-        if (crash)
-            FE_DebugBreak();
+        Platform::AssertionReport(sourceLocation, message, messageSize);
     }
-} // namespace FE::Trace
+} // namespace FE

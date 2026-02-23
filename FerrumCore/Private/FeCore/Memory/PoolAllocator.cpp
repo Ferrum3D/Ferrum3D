@@ -31,9 +31,9 @@ namespace FE::Memory
 
     void* PoolAllocator::do_allocate(const size_t byteSize, const size_t byteAlignment)
     {
-        FE_CoreAssert(m_elementByteSize > 0, "Pool must be initialized");
-        FE_CoreAssert(byteSize <= m_elementByteSize);
-        FE_CoreAssert(byteAlignment <= m_elementAlignment);
+        FE_Assert(m_elementByteSize > 0, "Pool must be initialized");
+        FE_Assert(byteSize <= m_elementByteSize);
+        FE_Assert(byteAlignment <= m_elementAlignment);
 
 #if FE_DEBUG
         ++m_allocationCount;
@@ -50,21 +50,21 @@ namespace FE::Memory
             }
 
             TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
-            FE_CoreAssertDebug(IsAlignedPtr(result, m_elementAlignment));
+            FE_AssertDebug(IsAlignedPtr(result, m_elementAlignment));
             return result;
         }
 
         result = m_freeList;
         m_freeList = *static_cast<void**>(result);
         TracySecureAllocNS(result, m_elementByteSize, 32, m_name);
-        FE_CoreAssertDebug(IsAlignedPtr(result, m_elementAlignment));
+        FE_AssertDebug(IsAlignedPtr(result, m_elementAlignment));
         return result;
     }
 
 
     void PoolAllocator::do_deallocate(void* ptr, size_t, size_t)
     {
-        FE_CoreAssertDebug(m_allocationCount > 0);
+        FE_AssertDebug(m_allocationCount > 0);
 
 #if FE_DEBUG
         --m_allocationCount;
