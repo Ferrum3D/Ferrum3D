@@ -7,7 +7,7 @@ namespace FE::Threading
     {
         FE_PROFILER_ZONE();
 
-        static_assert(sizeof(m_nativeMutex) >= sizeof(CRITICAL_SECTION));
+        static_assert(sizeof(m_nativeMutex) == sizeof(CRITICAL_SECTION));
         InitializeCriticalSectionEx(reinterpret_cast<LPCRITICAL_SECTION>(m_nativeMutex), spinCount, 0);
     }
 

@@ -37,6 +37,6 @@ namespace FE::Threading
         }
 
     private:
-        uint64_t m_nativeConditionVariable[2] = {};
+        uintptr_t m_nativeConditionVariable = 0;
     };
 } // namespace FE::Threading

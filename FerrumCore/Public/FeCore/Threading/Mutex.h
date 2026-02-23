@@ -23,7 +23,8 @@ namespace FE::Threading
         void unlock();
 
     private:
-        friend struct ConditionVariable;
+        friend ConditionVariable;
+
         uint64_t m_nativeMutex[5];
     };
 } // namespace FE::Threading
