@@ -8,7 +8,7 @@ namespace FE::Memory
     {
         struct Page final
         {
-            Page* pNext = nullptr;
+            Page* m_next = nullptr;
         };
 
     public:

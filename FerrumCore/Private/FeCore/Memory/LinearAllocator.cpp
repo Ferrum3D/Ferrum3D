@@ -4,13 +4,13 @@ namespace FE::Memory
 {
     void LinearAllocator::NewPage()
     {
-        Page* pCurrentPage = m_currentMarker.m_page;
-        if (pCurrentPage == nullptr)
+        Page* currentPage = m_currentMarker.m_page;
+        if (currentPage == nullptr)
         {
             if (m_firstPage == nullptr)
             {
                 m_firstPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
-                m_firstPage->pNext = nullptr;
+                m_firstPage->m_next = nullptr;
             }
 
             m_currentMarker.m_page = m_firstPage;
@@ -18,13 +18,13 @@ namespace FE::Memory
             return;
         }
 
-        if (pCurrentPage->pNext == nullptr)
+        if (currentPage->m_next == nullptr)
         {
-            Page* pNewPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
-            pCurrentPage->pNext = pNewPage;
+            auto* newPage = static_cast<Page*>(m_pageAllocator->allocate(m_pageByteSize));
+            currentPage->m_next = newPage;
         }
 
-        m_currentMarker.m_page = pCurrentPage->pNext;
+        m_currentMarker.m_page = currentPage->m_next;
         m_currentMarker.m_offset = sizeof(Page);
     }
 
@@ -43,32 +43,32 @@ namespace FE::Memory
 
     LinearAllocator::~LinearAllocator()
     {
-        Page* pPage = m_firstPage;
+        Page* page = m_firstPage;
         m_firstPage = nullptr;
 
-        while (pPage)
+        while (page)
         {
-            Page* pOldPage = pPage;
-            pPage = pPage->pNext;
-            m_pageAllocator->deallocate(pOldPage, m_pageByteSize);
+            Page* oldPage = page;
+            page = page->m_next;
+            m_pageAllocator->deallocate(oldPage, m_pageByteSize);
         }
     }
 
 
     void LinearAllocator::FreeUnusedMemory()
     {
-        Page* pPage = m_currentMarker.m_page;
-        if (pPage == nullptr)
+        Page* page = m_currentMarker.m_page;
+        if (page == nullptr)
             return;
 
-        pPage = pPage->pNext;
-        m_currentMarker.m_page->pNext = nullptr;
+        page = page->m_next;
+        m_currentMarker.m_page->m_next = nullptr;
 
-        while (pPage)
+        while (page)
         {
-            Page* pOldPage = pPage;
-            pPage = pPage->pNext;
-            m_pageAllocator->deallocate(pOldPage, m_pageByteSize);
+            Page* oldPage = page;
+            page = page->m_next;
+            m_pageAllocator->deallocate(oldPage, m_pageByteSize);
         }
     }
 } // namespace FE::Memory
