@@ -34,7 +34,15 @@ namespace FE::Graphics::Core
             return Memory::New<T>(&m_linearAllocator);
         }
 
-        virtual ResourcePool* GetResourcePool() = 0;
+        [[nodiscard]] ResourcePool* GetResourcePool() const
+        {
+            return m_resourcePool;
+        }
+
+        [[nodiscard]] DescriptorManager* GetDescriptorManager() const
+        {
+            return m_descriptorManager;
+        }
 
         virtual void BeginFrame() = 0;
         virtual void CompileAndExecute() = 0;
@@ -96,6 +104,9 @@ namespace FE::Graphics::Core
         Env::Name FormatPassName(festd::string_view name);
 
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
+
+        DescriptorManager* m_descriptorManager = nullptr;
+        ResourcePool* m_resourcePool = nullptr;
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;

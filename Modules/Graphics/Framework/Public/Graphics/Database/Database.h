@@ -20,13 +20,12 @@ namespace FE::Graphics::DB
 
     struct StoragePage final
     {
-        void Update(uint32_t byteOffset, festd::span<const std::byte> data);
+        void Update(uint32_t byteOffset, const void* data, uint32_t dataSize);
 
     private:
         friend Database;
-        friend PageReplicationManager;
 
-        static StoragePage* Allocate(Core::ResourcePool* resourcePool);
+        static StoragePage* Allocate(Core::ResourcePool* resourcePool, uint32_t globalID);
 
         PageReplicationPolicy m_replicationPolicy = PageReplicationPolicy::kDefault;
         uint32_t m_globalID = kInvalidIndex;
@@ -36,65 +35,10 @@ namespace FE::Graphics::DB
     };
 
 
-    struct PageTableManager final
-    {
-        explicit PageTableManager(Core::Buffer* buffer);
-
-        Memory::BuddyAllocator::Handle Allocate(uint32_t pageCount);
-        void Free(Memory::BuddyAllocator::Handle handle);
-
-        Core::FenceSyncPoint CloseFrame();
-
-    private:
-        friend Database;
-
-        struct FreeRequest final
-        {
-            Memory::BuddyAllocator::Handle m_handle;
-            uint64_t m_fenceValue = 0;
-        };
-
-        Rc<Core::Buffer> m_deviceStorage;
-        Memory::BuddyAllocator m_allocator;
-
-        Rc<Core::Fence> m_fence;
-        uint64_t m_fenceValue = 0;
-        festd::inline_ring_buffer<FreeRequest, 32> m_pendingFrees;
-    };
-
-
-    struct PageReplicationManager final
-    {
-        PageReplicationManager(Core::ResourcePool* resourcePool);
-
-        Core::FenceSyncPoint CloseFrame();
-
-    private:
-        friend Database;
-
-        struct StagingPage final
-        {
-            Rc<Core::Buffer> m_buffer;
-            uint64_t m_fenceValue = 0;
-        };
-
-        void UploadPage(Core::FrameGraph& graph, const StoragePage* page);
-
-        void CheckPendingPages();
-
-        Core::ResourcePool* m_resourcePool;
-
-        Rc<Core::Fence> m_fence;
-        uint64_t m_fenceValue = 0;
-        festd::inline_ring_buffer<StagingPage, 32> m_pendingPagesQueue;
-    };
-
-
     struct TableBase
     {
         FE_RTTI("B0B29217-3D30-4B35-8026-9D0EB91B8FD2");
 
-        TableBase() = default;
         TableBase(const TableBase&) = delete;
         TableBase(TableBase&&) = delete;
         TableBase& operator=(const TableBase&) = delete;
@@ -103,14 +47,19 @@ namespace FE::Graphics::DB
         virtual ~TableBase() = default;
 
     protected:
-        explicit TableBase(Database* database);
+        TableBase(Database* database, uint32_t globalID);
 
-        void AllocatePages(uint32_t pageCount);
-        void Update(uint32_t pageIndex, uint32_t byteOffset, festd::span<const std::byte> data);
+        void AllocatePage();
+        void Update(uint32_t pageIndex, uint32_t byteOffset, const void* data, uint32_t dataSize);
+
+        void UpdateDevicePageTable();
 
         friend Database;
 
         Database* m_database = nullptr;
+        uint32_t m_globalID = kInvalidIndex;
+        Memory::BuddyAllocator::Handle m_devicePageTableAllocation;
+
         uint32_t m_rowByteSize = 0;
         festd::inline_vector<StoragePage*> m_pages;
         festd::bit_vector m_freeRows;
@@ -132,13 +81,31 @@ namespace FE::Graphics::DB
         Database(Core::ResourcePool* resourcePool);
         ~Database();
 
-        void MarkPageDirty(const StoragePage* page);
-        StoragePage* AllocatePage();
+        void Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence);
 
-        void UploadDirtyPages(Core::FrameGraph& graph, PageReplicationManager& replicationManager);
+        template<class TTable>
+        [[nodiscard]] TTable* CreateTable()
+        {
+            TTable* table = Memory::DefaultNew<TTable>(this, m_tables.size());
+            m_tables.push_back(table);
+            return table;
+        }
 
     private:
+        friend TableBase;
+
+        void MarkPageDirty(const StoragePage* page);
+
+        StoragePage* AllocatePage();
+        void FreePage(StoragePage* page);
+
         Core::ResourcePool* m_resourcePool;
+        Core::RingUploader m_uploader;
+
+        Memory::BuddyAllocator m_pageTableAllocator;
+        Rc<Core::Buffer> m_pageTableDeviceStorage;
+        festd::vector<BufferPointer> m_pageTableHostStorage;
+        festd::vector<TableBase*> m_tables;
 
         SegmentedVector<StoragePage*> m_pages;
         festd::bit_vector m_freePages;

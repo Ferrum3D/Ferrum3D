@@ -12,6 +12,7 @@
     Public/Graphics/Core/ComputePipeline.h
     Public/Graphics/Core/Barrier.h
     Public/Graphics/Core/Buffer.h
+    Public/Graphics/Core/DescriptorManager.h
     Public/Graphics/Core/Device.h
     Public/Graphics/Core/DeviceFactory.h
     Public/Graphics/Core/DeviceObject.h
@@ -62,7 +63,6 @@ set(COMMON_SOURCES
 
     Private/Graphics/Core/AsyncCopyQueue.cpp
     Private/Graphics/Core/DescriptorManager.cpp
-    Private/Graphics/Core/DescriptorManager.h
     Private/Graphics/Core/Format.cpp
     Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp

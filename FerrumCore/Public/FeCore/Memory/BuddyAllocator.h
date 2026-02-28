@@ -16,6 +16,12 @@ namespace FE::Memory
                 return m_offset != Constants::kMaxU32;
             }
 
+            void Invalidate()
+            {
+                m_offset = Constants::kMaxU32;
+                m_level = 0;
+            }
+
             explicit operator bool() const
             {
                 return m_offset != Constants::kMaxU32;

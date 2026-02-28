@@ -27,8 +27,6 @@ namespace FE::Graphics::Common
     {
         FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
-        Core::ResourcePool* GetResourcePool() override;
-
         void BeginFrame() override;
         void CompileAndExecute() override;
 
@@ -128,10 +126,7 @@ namespace FE::Graphics::Common
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access);
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
 
-        Core::DescriptorManager* m_descriptorManager = nullptr;
-        Core::ResourcePool* m_resourcePool = nullptr;
         Rc<Core::FrameGraphContext> m_currentContext;
-
         SegmentedVector<PassNode> m_passes;
         SegmentedVector<ResourceNode> m_resources;
         festd::segmented_unordered_dense_map<uint32_t, uint32_t> m_resourceIndexMap;

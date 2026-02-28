@@ -48,8 +48,7 @@ namespace FE::Graphics::Core
             void* hostDestination = m_mappedMemory + allocation.m_offset;
             memcpy(hostDestination, source, byteSize);
 
-            const BufferView deviceDestination{ destination.m_resource,
-                                                BufferSubresource{ destination.m_subresource.m_offset, byteSize } };
+            const BufferView deviceDestination = destination.Slice(byteSize);
             const BufferView deviceSource{ m_buffer.Get(), BufferSubresource{ allocation.m_offset, byteSize } };
             graph.AddCopyPass(deviceDestination, deviceSource);
 

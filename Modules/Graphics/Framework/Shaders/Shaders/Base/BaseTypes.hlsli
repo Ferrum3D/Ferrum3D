@@ -33,7 +33,17 @@ typedef uint2 uint64_t;
 
 struct BufferPointer
 {
+#if FE_PLATFORM_VULKAN
     uint64_t m_deviceAddress;
+
+    template<typename T>
+    T Read(uint32_t byteOffset) FE_CONST
+    {
+        return vk::RawBufferLoad<T>(NonUniformResourceIndex(m_deviceAddress + byteOffset));
+    }
+#else
+#    error Not implemented
+#endif
 };
 
 #define FE_CONSTEXPR static const

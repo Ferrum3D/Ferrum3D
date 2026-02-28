@@ -129,6 +129,7 @@ namespace FE::Graphics::Vulkan
     {
         const Core::ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
         FE_Assert(descriptor.m_resource != nullptr && descriptor.m_resource->GetType() == Core::ResourceType::kBuffer);
+        FE_Assert(m_committedResourceDescriptors.test(descriptorIndex));
 
         const Core::Buffer* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource);
 
@@ -137,7 +138,7 @@ namespace FE::Graphics::Vulkan
         addressInfo.buffer = NativeCast(buffer);
 
         const VkDeviceAddress address = vkGetBufferDeviceAddress(NativeCast(m_device), &addressInfo);
-        return static_cast<uint64_t>(address + descriptor.m_bufferSubresource.m_offset);
+        return address + descriptor.m_bufferSubresource.m_offset;
     }
 
 

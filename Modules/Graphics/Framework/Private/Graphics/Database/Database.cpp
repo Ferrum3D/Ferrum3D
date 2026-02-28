@@ -1,5 +1,5 @@
 #include <FeCore/Memory/PoolAllocator.h>
-#include <Graphics/Core/Fence.h>
+#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
 
@@ -7,20 +7,24 @@ namespace FE::Graphics::DB
 {
     namespace
     {
+        constexpr uint32_t kPageTableStorageByteSize = 2 * 1024 * 1024;
+        constexpr uint32_t kPageTableSize = kPageTableStorageByteSize / sizeof(BufferPointer);
+
         Memory::SpinLockedPool<StoragePage> GStoragePagePool{ "Graphics/DB/StoragePagePool", 2 * 1024 * 1024 };
-    }
+    } // namespace
 
 
-    void StoragePage::Update(const uint32_t byteOffset, const festd::span<const std::byte> data)
+    void StoragePage::Update(const uint32_t byteOffset, const void* data, const uint32_t dataSize)
     {
-        memcpy(m_hostStorage + byteOffset, data.data(), data.size());
+        memcpy(m_hostStorage + byteOffset, data, dataSize);
     }
 
 
-    StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool)
+    StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool, const uint32_t globalID)
     {
         StoragePage* page = GStoragePagePool.New();
         page->m_deviceStorage = resourcePool->CreateByteAddressBuffer("StoragePage", kTablePageSize);
+        page->m_globalID = globalID;
 
         Core::BufferCommitParams commitParams;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
@@ -32,71 +36,41 @@ namespace FE::Graphics::DB
     }
 
 
-    PageReplicationManager::PageReplicationManager(Core::ResourcePool* resourcePool)
-        : m_resourcePool(resourcePool)
-    {
-    }
-
-
-    void PageReplicationManager::UploadPage(Core::FrameGraph& graph, const StoragePage* page)
-    {
-        FE_Assert(page->m_replicationPolicy == PageReplicationPolicy::kCopyAllData, "Not implemented");
-
-        CheckPendingPages();
-
-        const Rc stagingBuffer = m_resourcePool->CreateByteAddressBuffer("PageReplicationManagerStaging", kTablePageSize);
-        m_resourcePool->CommitBufferMemory(stagingBuffer.Get(),
-                                           { Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest,
-                                             Core::ResourceMemory::kHostWriteThrough });
-
-        void* mapped = stagingBuffer->Map();
-        memcpy(mapped, page->m_hostStorage, kTablePageSize);
-        stagingBuffer->Unmap();
-
-        graph.AddCopyPass(page->m_deviceStorage.Get(), stagingBuffer.Get());
-
-        StagingPage stagingPage;
-        stagingPage.m_buffer = stagingBuffer;
-        stagingPage.m_fenceValue = m_fenceValue + 1;
-        m_pendingPagesQueue.push_back(stagingPage);
-    }
-
-
-    Core::FenceSyncPoint PageReplicationManager::CloseFrame()
-    {
-        return Core::FenceSyncPoint{ m_fence, ++m_fenceValue };
-    }
-
-
-    void PageReplicationManager::CheckPendingPages()
-    {
-        if (m_pendingPagesQueue.empty())
-            return;
-
-        const uint64_t completedFenceValue = m_fence->GetCompletedValue();
-        while (!m_pendingPagesQueue.empty())
-        {
-            const StagingPage& page = m_pendingPagesQueue.front();
-            if (page.m_fenceValue > completedFenceValue)
-                break;
-
-            m_pendingPagesQueue.pop_front();
-        }
-    }
-
-
-    TableBase::TableBase(Database* database)
+    TableBase::TableBase(Database* database, const uint32_t globalID)
         : m_database(database)
+        , m_globalID(globalID)
     {
     }
 
 
-    void TableBase::Update(const uint32_t pageIndex, const uint32_t byteOffset, const festd::span<const std::byte> data)
+    void TableBase::AllocatePage()
+    {
+        const uint32_t pageCount = m_pages.size() + 1;
+        if (m_devicePageTableAllocation && m_devicePageTableAllocation.GetSize() < pageCount)
+        {
+            m_database->m_pageTableAllocator.Free(m_devicePageTableAllocation);
+            m_devicePageTableAllocation.Invalidate();
+        }
+
+        if (!m_devicePageTableAllocation)
+        {
+            const uint32_t reservedPageCount = Math::Max(2u, pageCount);
+            const uint32_t allocationSize = Math::CeilPowerOfTwo(reservedPageCount);
+            m_devicePageTableAllocation = m_database->m_pageTableAllocator.Allocate(allocationSize, 1);
+        }
+
+        StoragePage* page = m_database->AllocatePage();
+        m_pages.push_back(page);
+        FE_Assert(m_pages.size() == pageCount);
+    }
+
+
+    void TableBase::Update(const uint32_t pageIndex, const uint32_t byteOffset, const void* data, const uint32_t dataSize)
     {
         FE_Assert(pageIndex < m_pages.size());
 
         StoragePage* page = m_pages[pageIndex];
-        page->Update(byteOffset, data);
+        page->Update(byteOffset, data, dataSize);
         m_database->MarkPageDirty(page);
     }
 
@@ -104,10 +78,32 @@ namespace FE::Graphics::DB
     Database::Database(Core::ResourcePool* resourcePool)
         : m_resourcePool(resourcePool)
     {
+        m_uploader.Setup("GPUDatabaseUploader", resourcePool, 4 * 1024 * 1024);
+        m_pageTableDeviceStorage = resourcePool->CreateByteAddressBuffer("GPUDatabasePageTable", kPageTableStorageByteSize);
+
+        Core::BufferCommitParams commitParams;
+        commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
+        commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest | Core::BarrierAccessFlags::kShaderRead;
+        resourcePool->CommitBufferMemory(m_pageTableDeviceStorage.Get(), commitParams);
+
+        m_pageTableHostStorage.resize(kPageTableSize);
+        m_pageTableAllocator.Setup(kPageTableSize);
     }
 
 
-    Database::~Database() = default;
+    Database::~Database()
+    {
+        uint32_t freePageCount = 0;
+        Bit::Traverse(m_freePages.view(), [&](const uint32_t pageIndex) {
+            GStoragePagePool.Delete(m_pages[pageIndex]);
+            ++freePageCount;
+        });
+
+        FE_Assert(freePageCount == m_pages.size());
+
+        m_pages.clear();
+        m_resourcePool->DecommitBufferMemory(m_pageTableDeviceStorage.Get());
+    }
 
 
     void Database::MarkPageDirty(const StoragePage* page)
@@ -121,17 +117,64 @@ namespace FE::Graphics::DB
 
     StoragePage* Database::AllocatePage()
     {
-        auto* page = StoragePage::Allocate(m_resourcePool);
-        page->m_globalID = m_pages.size();
+        const uint32_t freePageIndex = m_freePages.find_first();
+        if (freePageIndex != kInvalidIndex)
+        {
+            m_freePages.reset(freePageIndex);
+            return m_pages[freePageIndex];
+        }
+
+        StoragePage* page = StoragePage::Allocate(m_resourcePool, m_pages.size());
         m_pages.push_back(page);
+
+        if (m_dirtyPages.size() < m_pages.size())
+        {
+            m_dirtyPages.resize(m_dirtyPages.size() + 512, false);
+            m_freePages.resize(m_freePages.size() + 512, false);
+        }
+
         return page;
     }
 
 
-    void Database::UploadDirtyPages(Core::FrameGraph& graph, PageReplicationManager& replicationManager)
+    void Database::FreePage(StoragePage* page)
+    {
+        FE_Assert(!m_freePages.test(page->m_globalID));
+        FE_Assert(m_pages[page->m_globalID] == page);
+        m_freePages.set(page->m_globalID);
+    }
+
+
+    void Database::Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence)
     {
         Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
-            replicationManager.UploadPage(graph, m_pages[pageIndex]);
+            const StoragePage* page = m_pages[pageIndex];
+            FE_Verify(m_uploader.Upload(graph, page->m_deviceStorage.Get(), page->m_hostStorage, kTablePageSize));
         });
+
+        Core::DescriptorManager* descriptorManager = graph.GetDescriptorManager();
+        const uint32_t pageTableDescriptorIndex = descriptorManager->ReserveDescriptor(m_pageTableDeviceStorage.Get());
+        descriptorManager->CommitResourceDescriptor(pageTableDescriptorIndex, Core::DescriptorType::kSRV);
+        const uint64_t pageTableAddress = descriptorManager->GetDeviceAddress(pageTableDescriptorIndex);
+
+        for (const TableBase* table : m_tables)
+        {
+            const uint32_t pageCount = table->m_pages.size();
+            const uint32_t offset = table->m_devicePageTableAllocation.m_offset;
+            const uint32_t byteOffset = offset * sizeof(BufferPointer);
+            for (uint32_t i = 0; i < pageCount; ++i)
+            {
+                const uint64_t address = pageTableAddress + byteOffset;
+                m_pageTableHostStorage[offset + i] = BufferPointer{ address };
+            }
+
+            const uint32_t pageTableByteSize = pageCount * sizeof(BufferPointer);
+            const Core::BufferSubresource destinationRange{ byteOffset, pageTableByteSize };
+            const Core::BufferView destination{ m_pageTableDeviceStorage.Get(), destinationRange };
+            const BufferPointer* source = m_pageTableHostStorage.data() + offset;
+            FE_Verify(m_uploader.Upload(graph, destination, source, pageTableByteSize));
+        }
+
+        m_uploader.CloseFrame(fence);
     }
 } // namespace FE::Graphics::DB

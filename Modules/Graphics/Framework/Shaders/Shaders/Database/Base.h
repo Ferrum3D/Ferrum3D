@@ -6,7 +6,6 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
     namespace DB
     {
         FE_CONSTEXPR uint32_t kTablePageSize = 64 * 1024;
-        FE_CONSTEXPR uint32_t kMaxTablePageCount = kTablePageSize / sizeof(BufferPointer);
 
 
         template<typename T>

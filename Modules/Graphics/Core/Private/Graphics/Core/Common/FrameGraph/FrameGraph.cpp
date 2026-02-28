@@ -58,12 +58,12 @@ namespace FE::Graphics::Common
 
 
     FrameGraph::FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool)
-        : m_descriptorManager(descriptorManager)
-        , m_resourcePool(resourcePool)
-        , m_passes(&m_linearAllocator)
+        : m_passes(&m_linearAllocator)
         , m_resources(&m_linearAllocator)
     {
         m_device = device;
+        m_descriptorManager = descriptorManager;
+        m_resourcePool = resourcePool;
     }
 
 
@@ -111,12 +111,6 @@ namespace FE::Graphics::Common
         passNode.m_userPassDescTypeID = desc.m_userPassDescTypeID;
         passNode.m_userPassDescPtr = desc.m_userPassDescPtr;
         PreparePassCompileInfo(passNode);
-    }
-
-
-    Core::ResourcePool* FrameGraph::GetResourcePool()
-    {
-        return m_resourcePool;
     }
 
 
