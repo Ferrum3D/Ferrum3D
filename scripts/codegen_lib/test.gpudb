@@ -1,0 +1,20 @@
+#include <FeCore/Math/Sphere.h>
+
+table MeshLodInfoTable
+{
+    MeshLodInfo m_info;
+}
+
+table MeshGroupTable
+{
+    BufferPointer m_geometry;
+	DB::Slice<MeshLodInfoTable> m_lods;
+}
+
+#include <FeCore/Math/Sphere.h>
+
+table MeshInstanceTable
+{
+	DB::Ref<MeshGroupTable> m_meshGroup;
+	float4x4 m_transform;
+}
