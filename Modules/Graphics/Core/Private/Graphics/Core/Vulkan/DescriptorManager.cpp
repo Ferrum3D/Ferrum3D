@@ -138,7 +138,7 @@ namespace FE::Graphics::Vulkan
         addressInfo.buffer = NativeCast(buffer);
 
         const VkDeviceAddress address = vkGetBufferDeviceAddress(NativeCast(m_device), &addressInfo);
-        return address + descriptor.m_bufferSubresource.m_offset;
+        return address + descriptor.m_bufferSlice.m_offset;
     }
 
 
@@ -193,8 +193,8 @@ namespace FE::Graphics::Vulkan
 
                     auto* bufferInfo = Memory::New<VkDescriptorBufferInfo>(&m_linearAllocator);
                     bufferInfo->buffer = NativeCast(buffer);
-                    bufferInfo->offset = descriptor.m_bufferSubresource.m_offset;
-                    bufferInfo->range = descriptor.m_bufferSubresource.m_size;
+                    bufferInfo->offset = descriptor.m_bufferSlice.m_offset;
+                    bufferInfo->range = descriptor.m_bufferSlice.m_size;
 
                     m_vkResourceDescriptors.push_back(
                         CreateWrite(0, m_descriptorSet, descriptorType, descriptorIndex, 1, bufferInfo));

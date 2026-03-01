@@ -12,7 +12,7 @@ namespace FE::Graphics::Core
     ResourceDescriptorInfo::ResourceDescriptorInfo(const BufferView buffer)
     {
         m_resource = buffer.m_resource;
-        m_bufferSubresource = buffer.m_subresource;
+        m_bufferSlice = buffer.m_slice;
     }
 
 
@@ -58,7 +58,7 @@ namespace FE::Graphics::Core
     {
         BufferKey key;
         key.m_resourceID = buffer.m_resource->GetResourceID();
-        key.m_subresource = buffer.m_subresource;
+        key.m_subresource = buffer.m_slice;
 
         const auto it = m_bufferDescriptorMap.find(key);
         if (it != m_bufferDescriptorMap.end())

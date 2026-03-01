@@ -286,9 +286,41 @@ namespace FE::Graphics::Core
     };
 
 
-    struct TextureView final : public BaseResourceView<Texture, TextureDesc, TextureSubresource>
+    struct TextureView final
     {
-        using BaseResourceView::BaseResourceView;
+        Texture* m_resource = nullptr;
+        TextureSubresource m_subresource = TextureSubresource::kInvalid;
+
+        static const TextureView kInvalid;
+
+        TextureView() = default;
+        TextureView(Texture* resource)
+            : m_resource(resource)
+        {
+            if (resource)
+                m_subresource = TextureSubresource::CreateWhole(resource->GetDesc());
+        }
+
+        TextureView(Texture* resource, const TextureSubresource subresource)
+            : m_resource(resource)
+            , m_subresource(subresource)
+        {
+        }
+
+        [[nodiscard]] const TextureDesc& GetBaseDesc() const
+        {
+            return m_resource->GetDesc();
+        }
+
+        [[nodiscard]] Env::Name GetName() const
+        {
+            return m_resource->GetName();
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_resource != nullptr;
+        }
 
         static TextureView Create(Texture* resource)
         {

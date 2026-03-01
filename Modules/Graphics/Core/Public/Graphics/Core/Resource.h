@@ -31,52 +31,6 @@ namespace FE::Graphics::Core
     };
 
 
-    template<class TResource, class TDesc, class TSubresource>
-    struct BaseResourceView
-    {
-        TResource* m_resource = nullptr;
-        TSubresource m_subresource = TSubresource::kInvalid;
-
-        static const BaseResourceView kInvalid;
-
-        BaseResourceView() = default;
-
-        BaseResourceView(TResource* resource)
-            : m_resource(resource)
-        {
-            if (resource)
-                m_subresource = TSubresource::CreateWhole(resource->GetDesc());
-        }
-
-        BaseResourceView(TResource* resource, const TSubresource subresource)
-            : m_resource(resource)
-            , m_subresource(subresource)
-        {
-        }
-
-        [[nodiscard]] const TDesc& GetBaseDesc() const
-        {
-            return m_resource->GetDesc();
-        }
-
-        [[nodiscard]] Env::Name GetName() const
-        {
-            return m_resource->GetName();
-        }
-
-        [[nodiscard]] bool IsValid() const
-        {
-            return m_resource != nullptr;
-        }
-    };
-
-    template<class TResource, class TDesc, class TSubresource>
-    inline const BaseResourceView<TResource, TDesc, TSubresource> BaseResourceView<TResource, TDesc, TSubresource>::kInvalid = {
-        nullptr,
-        TSubresource::kInvalid
-    };
-
-
     struct Resource
         : public DeviceObject
         , public festd::intrusive_list_node

@@ -177,7 +177,7 @@ namespace FE::Graphics::Vulkan
             const Core::BufferView streamView = m_streamBufferViews[streamViewIndex++];
             FE_Assert(streamView.IsValid());
             vertexBuffers[streamIndex] = NativeCast(streamView.m_resource);
-            vertexBufferOffsets[streamIndex] = streamView.m_subresource.m_offset;
+            vertexBufferOffsets[streamIndex] = streamView.m_slice.m_offset;
         });
 
         if (const uint32_t vertexBufferCount = Bit::PopCount(activeStreamMask); vertexBufferCount > 0)
@@ -187,7 +187,7 @@ namespace FE::Graphics::Vulkan
         {
             const VkBuffer indexBuffer = NativeCast(m_indexBufferView.m_resource);
             const VkIndexType indexType = m_indexType == Core::IndexType::kUint16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-            vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer, m_indexBufferView.m_subresource.m_offset, indexType);
+            vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer, m_indexBufferView.m_slice.m_offset, indexType);
         }
     }
 
@@ -294,10 +294,10 @@ namespace FE::Graphics::Vulkan
     void FrameGraphContext::Copy(const Core::BufferView destination, const Core::BufferView source)
     {
         VkBufferCopy region;
-        region.srcOffset = source.m_subresource.m_offset;
-        region.dstOffset = destination.m_subresource.m_offset;
-        region.size = source.m_subresource.m_size;
-        FE_Assert(source.m_subresource.m_size == destination.m_subresource.m_size);
+        region.srcOffset = source.m_slice.m_offset;
+        region.dstOffset = destination.m_slice.m_offset;
+        region.size = source.m_slice.m_size;
+        FE_Assert(source.m_slice.m_size == destination.m_slice.m_size);
 
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
         vkCmdCopyBuffer(vkCommandBuffer, NativeCast(source.m_resource), NativeCast(destination.m_resource), 1, &region);

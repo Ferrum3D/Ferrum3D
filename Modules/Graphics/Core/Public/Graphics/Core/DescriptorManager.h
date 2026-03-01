@@ -22,7 +22,7 @@ namespace FE::Graphics::Core
         union
         {
             TextureSubresource m_textureSubresource;
-            BufferSubresource m_bufferSubresource;
+            BufferSlice m_bufferSlice;
         };
 
         explicit ResourceDescriptorInfo(TextureView texture);
@@ -67,7 +67,7 @@ namespace FE::Graphics::Core
         struct BufferKey final
         {
             uint32_t m_resourceID = kInvalidIndex;
-            BufferSubresource m_subresource = BufferSubresource::kInvalid;
+            BufferSlice m_subresource = BufferSlice::kInvalid;
 
             FE_DECLARE_POD_HASH(BufferKey);
         };

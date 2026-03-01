@@ -169,7 +169,7 @@ namespace FE::Graphics::DB
             }
 
             const uint32_t pageTableByteSize = pageCount * sizeof(BufferPointer);
-            const Core::BufferSubresource destinationRange{ byteOffset, pageTableByteSize };
+            const Core::BufferSlice destinationRange{ byteOffset, pageTableByteSize };
             const Core::BufferView destination{ m_pageTableDeviceStorage.Get(), destinationRange };
             const BufferPointer* source = m_pageTableHostStorage.data() + offset;
             FE_Verify(m_uploader.Upload(graph, destination, source, pageTableByteSize));

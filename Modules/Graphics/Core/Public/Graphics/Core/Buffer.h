@@ -27,20 +27,20 @@ namespace FE::Graphics::Core
     };
 
 
-    struct BufferSubresource final
+    struct BufferSlice final
     {
         uint32_t m_offset = 0;
         uint32_t m_size = 0;
 
-        static const BufferSubresource kInvalid;
+        static const BufferSlice kInvalid;
 
-        static BufferSubresource CreateWhole(const BufferDesc desc)
+        static BufferSlice CreateWhole(const BufferDesc desc)
         {
             return { 0, desc.m_size };
         }
     };
 
-    inline const BufferSubresource BufferSubresource::kInvalid = { kInvalidIndex, kInvalidIndex };
+    inline const BufferSlice BufferSlice::kInvalid = { kInvalidIndex, kInvalidIndex };
 
 
     struct Buffer : public Resource
@@ -60,22 +60,54 @@ namespace FE::Graphics::Core
     };
 
 
-    struct BufferView final : public BaseResourceView<Buffer, BufferDesc, BufferSubresource>
+    struct BufferView final
     {
-        using BaseResourceView::BaseResourceView;
+        Buffer* m_resource = nullptr;
+        BufferSlice m_slice = BufferSlice::kInvalid;
+
+        static const BufferView kInvalid;
+
+        BufferView() = default;
+        BufferView(Buffer* resource)
+            : m_resource(resource)
+        {
+            if (resource)
+                m_slice = BufferSlice::CreateWhole(resource->GetDesc());
+        }
+
+        BufferView(Buffer* resource, const BufferSlice slice)
+            : m_resource(resource)
+            , m_slice(slice)
+        {
+        }
 
         [[nodiscard]] BufferView Slice(const uint32_t offset, const uint32_t byteSize = Constants::kMaxU32) const
         {
             uint32_t realSize = byteSize;
             if (realSize == Constants::kMaxU32)
-                realSize = m_subresource.m_size - offset;
+                realSize = m_slice.m_size - offset;
 
-            FE_AssertDebug(realSize <= m_subresource.m_size - offset);
+            FE_AssertDebug(realSize <= m_slice.m_size - offset, "BufferView out of range");
 
-            BufferSubresource subresource = m_subresource;
-            subresource.m_offset += offset;
-            subresource.m_size = byteSize;
-            return Create(m_resource, subresource);
+            BufferSlice slice = m_slice;
+            slice.m_offset += offset;
+            slice.m_size = byteSize;
+            return Create(m_resource, slice);
+        }
+
+        [[nodiscard]] const BufferDesc& GetBaseDesc() const
+        {
+            return m_resource->GetDesc();
+        }
+
+        [[nodiscard]] Env::Name GetName() const
+        {
+            return m_resource->GetName();
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_resource != nullptr;
         }
 
         static BufferView Create(Buffer* resource)
@@ -83,11 +115,13 @@ namespace FE::Graphics::Core
             return { resource };
         }
 
-        static BufferView Create(Buffer* resource, const BufferSubresource subresource)
+        static BufferView Create(Buffer* resource, const BufferSlice slice)
         {
-            return { resource, subresource };
+            return { resource, slice };
         }
     };
+
+    inline const BufferView BufferView::kInvalid = { nullptr, BufferSlice::kInvalid };
 } // namespace FE::Graphics::Core
 
 

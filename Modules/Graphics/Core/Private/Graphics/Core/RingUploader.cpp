@@ -49,7 +49,7 @@ namespace FE::Graphics::Core
             memcpy(hostDestination, source, byteSize);
 
             const BufferView deviceDestination = destination.Slice(byteSize);
-            const BufferView deviceSource{ m_buffer.Get(), BufferSubresource{ allocation.m_offset, byteSize } };
+            const BufferView deviceSource{ m_buffer.Get(), BufferSlice{ allocation.m_offset, byteSize } };
             graph.AddCopyPass(deviceDestination, deviceSource);
 
             m_currentFrameBytes += allocation.m_size;
