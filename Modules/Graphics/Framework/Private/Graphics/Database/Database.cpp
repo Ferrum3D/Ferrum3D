@@ -147,15 +147,62 @@ namespace FE::Graphics::DB
 
     void Database::Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence)
     {
+        FE_FG_SCOPE(graph, "Database::Update");
+
+        UploadDirtyPages(graph);
+        UploadPageTables(graph);
+        m_uploader.CloseFrame(fence);
+    }
+
+
+    void Database::UploadDirtyPages(Core::FrameGraph& graph)
+    {
+        FE_FG_SCOPE(graph, "UploadDirtyPages");
+
         Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
             const StoragePage* page = m_pages[pageIndex];
             FE_Verify(m_uploader.Upload(graph, page->m_deviceStorage.Get(), page->m_hostStorage, kTablePageSize));
         });
 
+        // Shader accesses to the Database pages are not known to the FrameGraph.
+        // So we have to manually transition them to a readable state in the beginning of the frame.
+        Bit::Traverse(m_dirtyPages.view(), [&](const uint32_t pageIndex) {
+            const StoragePage* page = m_pages[pageIndex];
+            auto* barrierPassDesc = graph.AllocatePassData<Core::BufferAccessPassDesc>();
+            barrierPassDesc->m_access = { page->m_deviceStorage.Get(),
+                                          Core::BarrierSyncFlags::kAllShading,
+                                          Core::BarrierAccessFlags::kShaderRead };
+            graph.AddPass("BarrierPass", barrierPassDesc);
+        });
+
+        m_dirtyPages.reset();
+    }
+
+
+    void Database::UploadPageTables(Core::FrameGraph& graph)
+    {
+        FE_FG_SCOPE(graph, "UploadPageTables");
+
+        if (m_tables.empty())
+            return;
+
+        constexpr auto kUploadOptions = Core::RingUploader::Options::kDisableBarriers;
+
         Core::DescriptorManager* descriptorManager = graph.GetDescriptorManager();
         const uint32_t pageTableDescriptorIndex = descriptorManager->ReserveDescriptor(m_pageTableDeviceStorage.Get());
         descriptorManager->CommitResourceDescriptor(pageTableDescriptorIndex, Core::DescriptorType::kSRV);
         const uint64_t pageTableAddress = descriptorManager->GetDeviceAddress(pageTableDescriptorIndex);
+
+        // We place barriers manually here as we know that the page tables do not overlap in memory.
+        // Currently, our FrameGraph cannot figure it out on its own.
+
+        {
+            auto* passData = graph.AllocatePassData<Core::BufferAccessPassDesc>();
+            passData->m_access = { m_pageTableDeviceStorage.Get(),
+                                   Core::BarrierSyncFlags::kCopy,
+                                   Core::BarrierAccessFlags::kCopyDest };
+            graph.AddPass("PrologueBarrier", passData);
+        }
 
         for (const TableBase* table : m_tables)
         {
@@ -172,9 +219,15 @@ namespace FE::Graphics::DB
             const Core::BufferSlice destinationRange{ byteOffset, pageTableByteSize };
             const Core::BufferView destination{ m_pageTableDeviceStorage.Get(), destinationRange };
             const BufferPointer* source = m_pageTableHostStorage.data() + offset;
-            FE_Verify(m_uploader.Upload(graph, destination, source, pageTableByteSize));
+            FE_Verify(m_uploader.Upload(graph, destination, source, pageTableByteSize, kUploadOptions));
         }
 
-        m_uploader.CloseFrame(fence);
+        {
+            auto* passData = graph.AllocatePassData<Core::BufferAccessPassDesc>();
+            passData->m_access = { m_pageTableDeviceStorage.Get(),
+                                   Core::BarrierSyncFlags::kAllShading,
+                                   Core::BarrierAccessFlags::kShaderRead };
+            graph.AddPass("EpilogueBarrier", passData);
+        }
     }
 } // namespace FE::Graphics::DB

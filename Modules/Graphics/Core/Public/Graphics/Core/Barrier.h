@@ -37,6 +37,8 @@ namespace FE::Graphics::Core
         kCopy = 1 << 10,
         kResolve = 1 << 11,
         kHost = 1 << 12,
+
+        kAllShading = kAmplificationShading | kMeshShading | kVertexShading | kPixelShading | kComputeShading,
     };
 
     FE_ENUM_OPERATORS(BarrierSyncFlags);

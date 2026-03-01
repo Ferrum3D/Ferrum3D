@@ -99,6 +99,9 @@ namespace FE::Graphics::DB
         StoragePage* AllocatePage();
         void FreePage(StoragePage* page);
 
+        void UploadDirtyPages(Core::FrameGraph& graph);
+        void UploadPageTables(Core::FrameGraph& graph);
+
         Core::ResourcePool* m_resourcePool;
         Core::RingUploader m_uploader;
 

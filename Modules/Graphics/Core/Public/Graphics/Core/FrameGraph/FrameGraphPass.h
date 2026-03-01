@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Math/Rect.h>
+#include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Texture.h>
 
 //! @brief Declare RTTI for a pass data type without specifying a UUID.
@@ -43,6 +44,14 @@ namespace FE::Graphics::Core
         Buffer* m_buffer = nullptr;
         BarrierSyncFlags m_syncFlags = BarrierSyncFlags::kNone;
         BarrierAccessFlags m_accessFlags = BarrierAccessFlags::kNone;
+
+        PassBufferAccess() = default;
+        PassBufferAccess(const BufferView buffer, const BarrierSyncFlags syncFlags, const BarrierAccessFlags accessFlags)
+            : m_buffer(buffer.m_resource)
+            , m_syncFlags(syncFlags)
+            , m_accessFlags(accessFlags)
+        {
+        }
     };
 
 
@@ -53,6 +62,17 @@ namespace FE::Graphics::Core
         BarrierAccessFlags m_accessFlags = BarrierAccessFlags::kNone;
         BarrierLayout m_layout = BarrierLayout::kUndefined;
         TextureSubresource m_subresource = TextureSubresource::kInvalid;
+
+        PassTextureAccess() = default;
+        PassTextureAccess(const TextureView texture, const BarrierSyncFlags syncFlags, const BarrierAccessFlags accessFlags,
+                          const BarrierLayout layout)
+            : m_texture(texture.m_resource)
+            , m_syncFlags(syncFlags)
+            , m_accessFlags(accessFlags)
+            , m_layout(layout)
+            , m_subresource(texture.m_subresource)
+        {
+        }
     };
 
 
@@ -104,6 +124,19 @@ namespace FE::Graphics::Core
         {
         }
     };
+
+
+    struct BufferAccessPassDesc final
+    {
+        PassBufferAccess m_access;
+    };
+
+
+    struct TextureAccessPassDesc final
+    {
+        PassTextureAccess m_access;
+    };
+
 } // namespace FE::Graphics::Core
 
 FE_RTTI_Reflect(FE::Graphics::Core::PassBufferAccess, "6FF3F59E-AEBB-49E8-9B1D-13A9580808FF");
@@ -114,3 +147,6 @@ FE_RTTI_Reflect(FE::Graphics::Core::PassGraphicsPipeline, "D90ED870-C966-443F-9B
 FE_RTTI_Reflect(FE::Graphics::Core::PassComputePipeline, "BDE9AB4A-D506-4B19-9612-3FB7E5133EEA");
 FE_RTTI_Reflect(FE::Graphics::Core::PassViewport, "3722E747-AABE-49D8-9D95-ADC6D080D8E7");
 FE_RTTI_Reflect(FE::Graphics::Core::PassScissor, "EE4CA91A-4D2F-455F-B9A2-F8F897463D3E");
+
+FE_DECLARE_PASS_DATA(FE::Graphics::Core::BufferAccessPassDesc);
+FE_DECLARE_PASS_DATA(FE::Graphics::Core::TextureAccessPassDesc);

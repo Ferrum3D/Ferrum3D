@@ -66,8 +66,14 @@ namespace FE::Graphics::Core
 
         virtual void AddCopyPass(const BufferView& destination, const BufferView& source) = 0;
 
+        template<class TPassDesc>
+        void AddPass(festd::string_view name, TPassDesc* passDesc);
+
         template<class TPassDesc, class TFunctor>
         void AddPass(festd::string_view name, TPassDesc* passDesc, TFunctor&& functor);
+
+        template<class TFunctor>
+        void AddPassWithoutBarriers(festd::string_view name, TFunctor&& functor);
 
         template<class TPassDesc>
         void AddDrawPass(festd::string_view name, TPassDesc* passDesc, uint32_t vertexCount, uint32_t instanceCount = 1,
@@ -153,6 +159,20 @@ namespace FE::Graphics::Core
     }
 
 
+    template<class TPassDesc>
+    void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc)
+    {
+        FE_Assert(passDesc);
+
+        PassNodeDesc desc;
+        desc.m_name = FormatPassName(name);
+        desc.m_functor = nullptr;
+        desc.m_userPassDescPtr = passDesc;
+        desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
+        AddPassInternal(desc);
+    }
+
+
     template<class TPassDesc, class TFunctor>
     void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, TFunctor&& functor)
     {
@@ -173,8 +193,27 @@ namespace FE::Graphics::Core
 
         desc.m_userPassDescPtr = passDesc;
         desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
-        FE_Assert(desc.m_userPassDescTypeID != Rtti::TypeID::kNull, "PassDesc must be registered with RTTI");
+        AddPassInternal(desc);
+    }
 
+
+    template<class TFunctor>
+    void FrameGraph::AddPassWithoutBarriers(festd::string_view name, TFunctor&& functor)
+    {
+        PassNodeDesc desc;
+        desc.m_name = FormatPassName(name);
+        desc.m_functor = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
+
+        desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
+            static_assert(std::is_invocable_v<TFunctor, FrameGraphContext&>);
+            (*static_cast<TFunctor*>(functorPtr))(context);
+        };
+        desc.m_destroy = [](void* functorPtr, [[maybe_unused]] void* descPtr) {
+            static_cast<TFunctor*>(functorPtr)->~TFunctor();
+        };
+
+        desc.m_userPassDescPtr = nullptr;
+        desc.m_userPassDescTypeID = Rtti::GetTypeID<EmptyStruct>();
         AddPassInternal(desc);
     }
 
@@ -232,3 +271,5 @@ namespace FE::Graphics::Core
         FrameGraph& m_graph;
     };
 } // namespace FE::Graphics::Core
+
+#define FE_FG_SCOPE(graph, name) ::FE::Graphics::Core::FrameGraphScope FE_UNIQUE_IDENT(frameGraphScope)(graph, name)

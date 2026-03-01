@@ -69,39 +69,25 @@ namespace FE::Graphics::Common
 
     void FrameGraph::AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source)
     {
-        auto execute = [source, destination](Core::FrameGraphContext& context) {
+        const auto execute = [source, destination](Core::FrameGraphContext& context) {
             context.Copy(destination, source);
         };
 
-        using FunctorType = decltype(execute);
-
-        FunctorType* functorPtr = Memory::New<FunctorType>(&m_linearAllocator, std::move(execute));
-
-        PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
-        passNode.m_passIndex = m_passes.size() - 1;
-        passNode.m_name = FormatPassName(Fmt::FixedFormat("Copy {} to {}", source.GetName(), destination.GetName()));
-        passNode.m_functor = functorPtr;
-
-        passNode.m_execute = [](void* functor, Core::FrameGraphContext& context) {
-            (*static_cast<FunctorType*>(functor))(context);
-        };
-
-        passNode.m_destroy = [](void*, void*) {};
-
-        BufferAccess destinationAccess;
-        destinationAccess.m_syncFlags = Core::BarrierSyncFlags::kCopy;
-        destinationAccess.m_accessFlags = Core::BarrierAccessFlags::kCopyDest;
-        RegisterResource(destination.m_resource, passNode, destinationAccess);
-
-        BufferAccess sourceAccess;
-        sourceAccess.m_syncFlags = Core::BarrierSyncFlags::kCopy;
-        sourceAccess.m_accessFlags = Core::BarrierAccessFlags::kCopySource;
-        RegisterResource(source.m_resource, passNode, sourceAccess);
+        auto* passDesc = AllocatePassData<InternalPassDesc::CopyBufferToBuffer>();
+        passDesc->m_destination = { destination, Core::BarrierSyncFlags::kCopy, Core::BarrierAccessFlags::kCopyDest };
+        passDesc->m_source = { source, Core::BarrierSyncFlags::kCopy, Core::BarrierAccessFlags::kCopySource };
+        AddPass(Fmt::FixedFormat("Copy '{}' to '{}'", source.GetName(), destination.GetName()), passDesc, execute);
     }
 
 
     void FrameGraph::AddPassInternal(const PassNodeDesc& desc)
     {
+        FE_PROFILER_ZONE();
+
+        FE_Assert((desc.m_functor == nullptr && desc.m_execute == nullptr && desc.m_destroy == nullptr)
+                  || (desc.m_functor != nullptr && desc.m_execute != nullptr && desc.m_destroy != nullptr));
+        FE_Assert(desc.m_userPassDescTypeID != Rtti::TypeID::kNull, "PassDesc must be registered with RTTI");
+
         PassNode& passNode = m_passes.emplace_back(&m_linearAllocator);
         passNode.m_passIndex = m_passes.size() - 1;
         passNode.m_name = desc.m_name;
@@ -442,8 +428,6 @@ namespace FE::Graphics::Common
                 // So, the only possible transition is from AsyncCopyQueue (transfer queue).
                 FE_Assert(state.m_queueType == Core::DeviceQueueType::kTransfer);
 
-                // As per Vulkan spec, both acquire and release queue ownership transfer barriers must have
-                // exactly the same subresource ranges which is kinda lame =P
                 const auto transferBarrier = buffer->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer buffer ownership without matching release barrier");
                 pass.m_bufferOwnershipTransferBarriers.push_back(transferBarrier.value());
@@ -526,6 +510,8 @@ namespace FE::Graphics::Common
             {
                 FE_Assert(state.m_queueType == Core::DeviceQueueType::kTransfer);
 
+                // As per Vulkan spec, both acquire and release queue ownership transfer barriers must have
+                // exactly the same subresource ranges.
                 const auto transferBarrier =
                     texture->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics, access.m_subresource);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
@@ -650,10 +636,13 @@ namespace FE::Graphics::Common
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline))
                 m_currentContext->SetPipeline(Rtti::AssertCast<const Core::ComputePipeline*>(pass.m_pipeline));
 
-            pass.m_execute(pass.m_functor, *m_currentContext);
+            if (pass.m_functor)
+                pass.m_execute(pass.m_functor, *m_currentContext);
+
             FE_Assert(m_currentContext->IsCleanState());
 
-            pass.m_destroy(pass.m_functor, pass.m_userPassDescPtr);
+            if (pass.m_functor)
+                pass.m_destroy(pass.m_functor, pass.m_userPassDescPtr);
         }
     }
 

@@ -1,4 +1,5 @@
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/RingUploader.h>
 
@@ -38,10 +39,13 @@ namespace FE::Graphics::Core
     }
 
 
-    bool RingUploader::Upload(FrameGraph& graph, const BufferView destination, const void* source, const uint32_t byteSize)
+    bool RingUploader::Upload(FrameGraph& graph, const BufferView destination, const void* source, const uint32_t byteSize,
+                              const Options options)
     {
         if (const auto allocation = m_ringBuffer.Allocate(byteSize, kAlignment))
         {
+            FE_FG_SCOPE(graph, "Upload");
+
             // TODO: We don't necessarily want a contiguous block of memory here. It is possible to save some memory by splitting
             //       copy operations in two when the ring buffer has to wrap around.
 
@@ -50,7 +54,17 @@ namespace FE::Graphics::Core
 
             const BufferView deviceDestination = destination.Slice(byteSize);
             const BufferView deviceSource{ m_buffer.Get(), BufferSlice{ allocation.m_offset, byteSize } };
-            graph.AddCopyPass(deviceDestination, deviceSource);
+
+            if (Bit::AllSet(options, Options::kDisableBarriers))
+            {
+                graph.AddPassWithoutBarriers("Copy_NoBarriers", [deviceDestination, deviceSource](FrameGraphContext& context) {
+                    context.Copy(deviceDestination, deviceSource);
+                });
+            }
+            else
+            {
+                graph.AddCopyPass(deviceDestination, deviceSource);
+            }
 
             m_currentFrameBytes += allocation.m_size;
 

@@ -9,12 +9,19 @@ namespace FE::Graphics::Core
 {
     struct RingUploader final
     {
+        enum class Options : uint32_t
+        {
+            kNone = 0,
+            kDisableBarriers = 1 << 0,
+        };
+
         ~RingUploader();
 
         void Setup(Env::Name name, ResourcePool* resourcePool, uint32_t capacity);
         void Shutdown();
 
-        [[nodiscard]] bool Upload(FrameGraph& graph, BufferView destination, const void* source, uint32_t byteSize);
+        [[nodiscard]] bool Upload(FrameGraph& graph, BufferView destination, const void* source, uint32_t byteSize,
+                                  Options options = Options::kNone);
         void CloseFrame(const FenceSyncPoint& fence);
 
     private:
@@ -36,4 +43,6 @@ namespace FE::Graphics::Core
         Memory::RingBufferAllocator m_ringBuffer;
         festd::ring_buffer<FrameData> m_pendingUploads;
     };
+
+    FE_ENUM_OPERATORS(RingUploader::Options);
 } // namespace FE::Graphics::Core

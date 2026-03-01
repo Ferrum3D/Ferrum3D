@@ -4,10 +4,21 @@
 #include <Graphics/Core/Common/ResourceBarrierBatcher.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
+#include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <festd/unordered_map.h>
 
 namespace FE::Graphics::Common
 {
+    namespace InternalPassDesc
+    {
+        struct CopyBufferToBuffer final
+        {
+            Core::PassBufferAccess m_destination;
+            Core::PassBufferAccess m_source;
+        };
+    } // namespace InternalPassDesc
+
+
     enum class PassStateFlags
     {
         kNone = 0,
@@ -132,3 +143,5 @@ namespace FE::Graphics::Common
         festd::segmented_unordered_dense_map<uint32_t, uint32_t> m_resourceIndexMap;
     };
 } // namespace FE::Graphics::Common
+
+FE_DECLARE_PASS_DATA(FE::Graphics::Common::InternalPassDesc::CopyBufferToBuffer);
