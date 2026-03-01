@@ -235,7 +235,7 @@ def visit_external_rtti_declaration(
         namespace_name = get_namespace(reflected_type_declaration)
         type_name = reflected_type_declaration.displayname
 
-        if reflected_type_declaration.location.file.name != node.location.file.name:
+        if reflected_type_declaration.location.file.name != node.location.file.name and "EmptyStruct" not in type_name:
             raise Exception(
                 f"FE_RTTI_Reflect macro must be declared in the same file as the reflected type {get_qualified_name(reflected_type_declaration)}"
             )

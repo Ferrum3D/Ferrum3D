@@ -54,7 +54,7 @@ namespace FE::Memory
         }
 
     private:
-        static constexpr Handle kInvalidHandle = {};
+        static constexpr Handle kInvalidHandle = { Constants::kMaxU32, 0 };
 
         uint32_t GetTail() const;
         uint32_t CalculateWrapPadding(uint32_t tail, uint32_t size) const;

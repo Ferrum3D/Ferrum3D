@@ -10,17 +10,19 @@
 
 namespace FE::Graphics::DB
 {
-    enum class PageReplicationPolicy
-    {
-        kCopyAllData = 0, //!< Copy all page data to the device-local memory each frame if modified.
-
-        kDefault = kCopyAllData,
-    };
-
-
     struct StoragePage final
     {
         void Update(uint32_t byteOffset, const void* data, uint32_t dataSize);
+
+        [[nodiscard]] std::byte* GetHostStorage()
+        {
+            return m_hostStorage;
+        }
+
+        [[nodiscard]] const std::byte* GetHostStorage() const
+        {
+            return m_hostStorage;
+        }
 
     private:
         friend Database;

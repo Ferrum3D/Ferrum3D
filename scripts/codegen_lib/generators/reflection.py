@@ -28,7 +28,7 @@ class ReflectionGenerator:
             headers = {t.header_path for t in types}
 
             generated_file = module_path / "Reflection.gen.cpp"
-            with open(generated_file, "w") as f:
+            with open(generated_file, "w", newline='\n') as f:
                 f.write(common_header)
                 f.write("\n")
 
@@ -36,7 +36,9 @@ class ReflectionGenerator:
                     f.write(f"#include <{h.as_posix()}>\n")
                 f.write("\n\n\n")
 
-                for t in types:
+                type_list = list(types)
+                type_list.sort(key=lambda x: x.id)
+                for t in type_list:
                     code = self._template.render(type=t)
                     f.write(code)
                     f.write("\n\n\n")

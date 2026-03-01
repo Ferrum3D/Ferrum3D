@@ -89,6 +89,7 @@ class ReflectedType:
         self.internal_id = get_internal_type_id(self.qualified_name)
         self.id = self.internal_id if id == USE_INTERNAL_ID else id
 
+        assert(location.file is not None)
         self.module_path = get_module_path(location.file.name, project_dir)
         self.header_path = get_header_path(location.file.name, self.module_path)
         if self.header_path.suffix != ".h":

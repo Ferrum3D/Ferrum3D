@@ -3,6 +3,88 @@
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
 
+namespace FE::Graphics
+{
+    struct MeshGroupTable final
+    {
+    };
+
+    struct MeshInstanceTable final
+    {
+        static constexpr uint32_t kElementCountPerPage =
+            DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float4x4));
+
+        static constexpr uint32_t kOffset_m_meshGroup = 0;
+        static constexpr uint32_t kOffset_m_transform =
+            kOffset_m_meshGroup + sizeof(DB::Ref<MeshGroupTable>) * kElementCountPerPage;
+
+        struct Row final
+        {
+            DB::ElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
+            DB::ElementHandle<float4x4, kOffset_m_transform> m_transform;
+        };
+
+        struct RWRow final
+        {
+            DB::RWElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
+            DB::RWElementHandle<float4x4, kOffset_m_transform> m_transform;
+        };
+
+        struct Instance final : public DB::TableBase
+        {
+            Instance(DB::Database* database, const uint32_t globalID)
+                : TableBase(database, globalID)
+            {
+            }
+
+            Row ReadRow(const uint32_t rowIndex)
+            {
+                const uint32_t pageIndex = rowIndex / kElementCountPerPage;
+                const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+
+                const DB::StoragePage* page = m_pages[pageIndex];
+                const std::byte* storage = page->GetHostStorage();
+
+                Row row;
+                row.m_transform.Setup(storage, localRowIndex);
+                row.m_meshGroup.Setup(storage, localRowIndex);
+                return row;
+            }
+
+            Row ReadRow(const DB::Ref<MeshInstanceTable> reference)
+            {
+                return ReadRow(reference.m_rowIndex);
+            }
+
+            RWRow WriteRow(const uint32_t rowIndex)
+            {
+                const uint32_t pageIndex = rowIndex / kElementCountPerPage;
+                const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+
+                DB::StoragePage* page = m_pages[pageIndex];
+                std::byte* storage = page->GetHostStorage();
+
+                RWRow row;
+                row.m_transform.Setup(storage, localRowIndex);
+                row.m_meshGroup.Setup(storage, localRowIndex);
+                return row;
+            }
+
+            RWRow WriteRow(const DB::Ref<MeshInstanceTable> reference)
+            {
+                return WriteRow(reference.m_rowIndex);
+            }
+        };
+    };
+
+    static void Test(MeshInstanceTable::Instance& table)
+    {
+        const MeshInstanceTable::Row row = table.ReadRow(0);
+        MeshInstanceTable::RWRow writeRow = table.WriteRow(1);
+        writeRow.m_transform.Get() = row.m_transform.Get();
+    }
+} // namespace FE::Graphics
+
 namespace FE::Graphics::DB
 {
     namespace
