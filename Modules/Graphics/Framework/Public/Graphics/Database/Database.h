@@ -48,13 +48,14 @@ namespace FE::Graphics::DB
 
         virtual ~TableBase() = default;
 
+        [[nodiscard]] uint32_t AllocateRowUninitialized();
+        void FreeRow(uint32_t rowIndex);
+
     protected:
-        TableBase(Database* database, uint32_t globalID);
+        TableBase(Database* database, uint32_t globalID, uint32_t elementCountPerPage);
 
         void AllocatePage();
         void Update(uint32_t pageIndex, uint32_t byteOffset, const void* data, uint32_t dataSize);
-
-        void UpdateDevicePageTable();
 
         friend Database;
 
@@ -62,20 +63,10 @@ namespace FE::Graphics::DB
         uint32_t m_globalID = kInvalidIndex;
         Memory::BuddyAllocator::Handle m_devicePageTableAllocation;
 
-        uint32_t m_rowByteSize = 0;
+        uint32_t m_elementCountPerPage = 0;
         festd::inline_vector<StoragePage*> m_pages;
         festd::bit_vector m_freeRows;
     };
-
-
-    //! @brief GPU Scene Database table instance.
-    //!
-    //! Specializations of this class are generated from host-side table declarations.
-    //!
-    //! Usage:
-    //! TODO: write usage example.
-    template<class TTableDecl>
-    struct TableInstance;
 
 
     struct Database final

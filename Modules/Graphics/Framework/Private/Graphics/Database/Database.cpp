@@ -36,9 +36,32 @@ namespace FE::Graphics::DB
     }
 
 
-    TableBase::TableBase(Database* database, const uint32_t globalID)
+    uint32_t TableBase::AllocateRowUninitialized()
+    {
+        uint32_t rowIndex = m_freeRows.find_first();
+        if (rowIndex == kInvalidIndex)
+        {
+            AllocatePage();
+            rowIndex = m_freeRows.find_first();
+            FE_Assert(rowIndex != kInvalidIndex);
+        }
+
+        m_freeRows.reset(rowIndex);
+        return rowIndex;
+    }
+
+
+    void TableBase::FreeRow(const uint32_t rowIndex)
+    {
+        FE_Assert(!m_freeRows.test(rowIndex));
+        m_freeRows.set(rowIndex);
+    }
+
+
+    TableBase::TableBase(Database* database, const uint32_t globalID, const uint32_t elementCountPerPage)
         : m_database(database)
         , m_globalID(globalID)
+        , m_elementCountPerPage(elementCountPerPage)
     {
     }
 
@@ -62,6 +85,9 @@ namespace FE::Graphics::DB
         StoragePage* page = m_database->AllocatePage();
         m_pages.push_back(page);
         FE_Assert(m_pages.size() == pageCount);
+
+        m_freeRows.resize(m_freeRows.size() + m_elementCountPerPage, true);
+        FE_Assert(m_freeRows.size() == m_pages.size() * m_elementCountPerPage);
     }
 
 

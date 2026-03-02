@@ -4,6 +4,7 @@
 //
 
 #pragma once
+
 #include <Graphics/Database/Database.h>
 #include <Graphics/Tables/Forwards.h>
 {% for include in table.includes %}
@@ -11,12 +12,14 @@
 {% endfor %}
 namespace FE::Graphics
 {
-    struct {{ table.name }} final
+    struct {{ table.name }} final : public DB::TableBase
     {
         static constexpr uint32_t kElementCountPerPage = {{ table.element_count_per_page }};
         {% for name, offset in table.offsets.items() %}
         static constexpr uint32_t kOffset_{{ name }} = {{ offset }};
         {%- endfor %}
+
+        static_assert(kElementCountPerPage > 0);
 
         struct Row final
         {
@@ -32,52 +35,61 @@ namespace FE::Graphics
             {%- endfor %}
         };
 
-        struct Instance final : public DB::TableBase
+        using Instance = BufferPointer;
+
+        {{ table.name }}(DB::Database* database, const uint32_t globalID)
+            : TableBase(database, globalID, kElementCountPerPage)
         {
-            Instance(DB::Database* database, const uint32_t globalID)
-                : TableBase(database, globalID)
-            {
-            }
+        }
 
-            Row ReadRow(const uint32_t rowIndex)
-            {
-                const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-                const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+        [[nodiscard]] DB::Ref<{{ table.name }}> AllocateRow()
+        {
+            const uint32_t rowIndex = AllocateRowUninitialized();
+            const RWRow row = WriteRow(rowIndex);
+            {%- for column in table.columns %}
+            row.{{ column.name }}.Construct();
+            {%- endfor %}
+            return DB::Ref<{{ table.name }}>{ rowIndex };
+        }
 
-                const DB::StoragePage* page = m_pages[pageIndex];
-                const std::byte* storage = page->GetHostStorage();
+        [[nodiscard]] Row ReadRow(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kElementCountPerPage;
+            const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
 
-                Row row;
-                {%- for column in table.columns %}
-                row.{{ column.name }}.Setup(storage, localRowIndex);
-                {%- endfor %}
-                return row;
-            }
+            const DB::StoragePage* page = m_pages[pageIndex];
+            const std::byte* storage = page->GetHostStorage();
 
-            Row ReadRow(const DB::Ref<{{ table.name }}> reference)
-            {
-                return ReadRow(reference.m_rowIndex);
-            }
+            Row row;
+            {%- for column in table.columns %}
+            row.{{ column.name }}.Setup(storage, localRowIndex);
+            {%- endfor %}
+            return row;
+        }
 
-            RWRow WriteRow(const uint32_t rowIndex)
-            {
-                const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-                const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+        [[nodiscard]] Row ReadRow(const DB::Ref<{{ table.name }}> reference)
+        {
+            return ReadRow(reference.m_rowIndex);
+        }
 
-                DB::StoragePage* page = m_pages[pageIndex];
-                std::byte* storage = page->GetHostStorage();
+        [[nodiscard]] RWRow WriteRow(const uint32_t rowIndex)
+        {
+            const uint32_t pageIndex = rowIndex / kElementCountPerPage;
+            const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
 
-                RWRow row;
-                {%- for column in table.columns %}
-                row.{{ column.name }}.Setup(storage, localRowIndex);
-                {%- endfor %}
-                return row;
-            }
+            DB::StoragePage* page = m_pages[pageIndex];
+            std::byte* storage = page->GetHostStorage();
 
-            RWRow WriteRow(const DB::Ref<{{ table.name }}> reference)
-            {
-                return WriteRow(reference.m_rowIndex);
-            }
-        };
+            RWRow row;
+            {%- for column in table.columns %}
+            row.{{ column.name }}.Setup(storage, localRowIndex);
+            {%- endfor %}
+            return row;
+        }
+
+        [[nodiscard]] RWRow WriteRow(const DB::Ref<{{ table.name }}> reference)
+        {
+            return WriteRow(reference.m_rowIndex);
+        }
     };
 }

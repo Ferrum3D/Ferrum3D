@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 from typing import NoReturn
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -25,11 +26,11 @@ class Table:
             self.offsets[columns[i].name] = f'kOffset_{columns[i - 1].name} + sizeof({columns[i - 1].typename}) * kElementCountPerPage'
 
 
-def syntax_error(line: str) -> NoReturn:
+def _syntax_error(line: str) -> NoReturn:
     raise Exception(f'Syntax error: {line}')
 
 
-def parse_file(filename: str, tables: list[Table]):
+def _parse_file(filename: str, tables: list[Table]):
     includes = []
     with open(filename) as f:
         while True:
@@ -47,14 +48,14 @@ def parse_file(filename: str, tables: list[Table]):
 
             m = re.match(r'table\s+([A-Za-z0-9_]+)', line)
             if not m:
-                syntax_error(line)
+                _syntax_error(line)
 
             table_name = m.group(1)
             columns = []
 
             line = f.readline().strip()
             if line != '{':
-                syntax_error(line)
+                _syntax_error(line)
 
             line = f.readline()
             while line.strip() != '}':
@@ -64,7 +65,7 @@ def parse_file(filename: str, tables: list[Table]):
                 line = line.strip()
                 m = re.match(r'(\S+)\s+([A-Za-z0-9_]+)', line)
                 if not m:
-                    syntax_error(line)
+                    _syntax_error(line)
 
                 column_type = m.group(1)
                 column_name = m.group(2)
@@ -75,9 +76,18 @@ def parse_file(filename: str, tables: list[Table]):
             includes = []
 
 
-def generate(env: Environment, table: Table) -> str:
-    header_template = env.get_template("GpuDatabaseTable.h")
-    return header_template.render(table=table)
+def _generate_cpp(env: Environment, table: Table) -> str:
+    template = env.get_template("GpuDatabaseTable.h")
+    return template.render(table=table)
+
+
+def _generate_hlsl(env: Environment, table: Table) -> str:
+    template = env.get_template("GpuDatabaseTable.hlsli")
+    return template.render(table=table)
+
+
+def generate_gpudb(env: Environment, project_root: Path, clang_format_path: Path, clang_format_style: Path):
+    pass
 
 
 if __name__ == "__main__":
@@ -88,8 +98,12 @@ if __name__ == "__main__":
     env = Environment(loader=FileSystemLoader('./templates'), autoescape=select_autoescape())
 
     tables = []
-    parse_file("./codegen_lib/test.gpudb", tables)
+    _parse_file("./codegen_lib/test.gpudb", tables)
     
     for table in tables:
-        s = generate(env, table)
+        s = _generate_cpp(env, table)
+        print(s)
+
+    for table in tables:
+        s = _generate_hlsl(env, table)
         print(s)

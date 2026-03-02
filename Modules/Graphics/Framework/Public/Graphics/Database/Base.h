@@ -42,6 +42,12 @@ namespace FE::Graphics::DB
             m_ptr = reinterpret_cast<T*>(page + TOffset + localRowIndex * sizeof(T));
         }
 
+        template<class... TArgs>
+        void Construct(TArgs&&... args) const
+        {
+            new (m_ptr) T(std::forward<TArgs>(args)...);
+        }
+
         [[nodiscard]] T& Get() const
         {
             return *m_ptr;

@@ -1,20 +1,17 @@
 from __future__ import annotations
-
 from pathlib import Path
+from jinja2 import Environment
 import subprocess
-
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ..model import ReflectedType
 
 
 class ReflectionGenerator:
-    def __init__(self, templates_dir: Path, clang_format_path: Path, clang_format_style: Path):
+    def __init__(self, env: Environment, templates_dir: Path, clang_format_path: Path, clang_format_style: Path):
         self._templates_dir = templates_dir
         self._clang_format_path = clang_format_path
         self._clang_format_style = clang_format_style
 
-        env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=select_autoescape())
         self._template = env.get_template("ReflectedType.cpp")
 
     def generate(self, reflected_types: list[ReflectedType]) -> None:
