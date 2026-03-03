@@ -1,3 +1,4 @@
+#include <FeCore/RTTI/ReflectionContext.h>
 {% if type.is_external %}
 namespace FE::Rtti
 {

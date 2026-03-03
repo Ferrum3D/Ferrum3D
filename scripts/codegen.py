@@ -32,6 +32,20 @@ def should_parse_file(file_path: str) -> bool:
 NUM_WORKERS = 16
 
 if __name__ == "__main__":
+    templates_dir=Path("./templates")
+    clang_format_path=LLVM_DIR / "clang-format.exe"
+    clang_format_style=Path("../.clang-format")
+
+    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=select_autoescape())
+
+    generate_gpudb(
+        env=env,
+        templates_dir=templates_dir,
+        project_root=PROJECT_DIR,
+        clang_format_path=clang_format_path,
+        clang_format_style=clang_format_style
+    )
+
     compile_commands_path = Path("../cmake-build/windows-codegen/compile_commands.json")
     with open(compile_commands_path, "r") as f:
         data = json.load(f)
@@ -73,12 +87,6 @@ if __name__ == "__main__":
         if not ok:
             raise Exception(f'These types have the same id: {', '.join(x.qualified_name for x in same_id)}')
 
-    templates_dir=Path("./templates")
-    clang_format_path=LLVM_DIR / "clang-format.exe"
-    clang_format_style=Path("../.clang-format")
-
-    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=select_autoescape())
-
     generator = ReflectionGenerator(
         env=env,
         templates_dir=templates_dir,
@@ -86,10 +94,3 @@ if __name__ == "__main__":
         clang_format_style=Path("../.clang-format"),
     )
     generator.generate(list(reflected_types))
-
-    generate_gpudb(
-        env=env,
-        project_root=PROJECT_DIR,
-        clang_format_path=clang_format_path,
-        clang_format_style=clang_format_style
-    )

@@ -3,8 +3,6 @@
 // Manual changes will be lost.
 //
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 #include <FeCore/Compression/Compression.h>
 #include <FeCore/DI/BaseDI.h>
 #include <FeCore/DI/Container.h>
@@ -37,6 +35,8 @@
 #include <FeCore/RTTI/RTTI.h>
 #include <festd/string.h>
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -90,6 +90,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -131,6 +133,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_174196bd8bfe4049b72e8a07ad372659(&Internal::ExternalTypeReflector<int32_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -220,6 +224,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -274,6 +280,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -325,6 +333,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Vector3Int>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -405,6 +415,8 @@ namespace FE::IO
     static Rtti::TypeRegistrar GTypeRegistrar_2427b1d9f1a54a1ba804eb9aca502c28(&IAsyncController::Reflect);
 } // namespace FE::IO
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -509,6 +521,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -562,6 +576,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Vector2Base<float>>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -636,6 +652,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -686,6 +704,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_2c29543c5dbb4be8afaa1850cc9101bd(&Internal::ExternalTypeReflector<FE::Color4F>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -774,6 +794,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -816,6 +838,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -857,6 +881,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_37bb88481962477393df9e7dcd06668e(&Internal::ExternalTypeReflector<double>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -946,6 +972,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::IO
 {
     const Rtti::TypeID IStreamFactory::TypeID = Rtti::TypeID{ "4bfcad35-3da3-4115-b4ad-96086ad97a8c" };
@@ -1026,6 +1054,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1086,6 +1116,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1137,6 +1169,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::EmptyStruct>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -1226,6 +1260,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1272,6 +1308,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_521e15925ff2402b9c858ede1d30798c(&Internal::ExternalTypeReflector<FE::Aabb>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::DI
 {
@@ -1352,6 +1390,8 @@ namespace FE::DI
 } // namespace FE::DI
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1403,6 +1443,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1444,6 +1486,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_66d8930b34584847b6f1002c70dc1ed2(&Internal::ExternalTypeReflector<float>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE
 {
@@ -1532,6 +1576,8 @@ namespace FE
 } // namespace FE
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1573,6 +1619,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_76e0d616a646422ab50607adbe41756b(&Internal::ExternalTypeReflector<uint64_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -1625,6 +1673,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::RectBase<int>>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -1705,6 +1755,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1746,6 +1798,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_80e074d8c4c04190b716701dba47f9f7(&Internal::ExternalTypeReflector<uint8_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::DI
 {
@@ -1818,6 +1872,8 @@ namespace FE::DI
 } // namespace FE::DI
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1859,6 +1915,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_8b225d72d811437ebc70955533a9b84e(&Internal::ExternalTypeReflector<int64_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -1912,6 +1970,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -1953,6 +2013,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_99cd9fe5b95441ddbf511f2db4e6d433(&Internal::ExternalTypeReflector<int16_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -2006,6 +2068,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2057,6 +2121,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Vector3UInt>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -2111,6 +2177,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Vector2Base<unsigned int>>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -2192,6 +2260,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2251,6 +2321,8 @@ namespace FE::Rtti
             FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>>>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Memory
 {
@@ -2322,6 +2394,8 @@ namespace FE::Memory
     static Rtti::TypeRegistrar GTypeRegistrar_b4fa5c6369c046668a92726f070d769b(&RefCountedObjectBase::Reflect);
 } // namespace FE::Memory
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE
 {
@@ -2402,6 +2476,8 @@ namespace FE
 } // namespace FE
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2443,6 +2519,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_b9ae58d67aa141799f4b03a57872bbd0(&Internal::ExternalTypeReflector<int8_t>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -2498,6 +2576,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2549,6 +2629,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2599,6 +2681,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_c05edb734a724b89b0e42f4bfdc6c538(&Internal::ExternalTypeReflector<FE::Vector4>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -2696,6 +2780,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2757,6 +2843,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2799,6 +2887,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2840,6 +2930,8 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_dd3ba9bbe7d24217a797f7c81ef351a2(&Internal::ExternalTypeReflector<bool>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::IO
 {
@@ -2912,6 +3004,8 @@ namespace FE::IO
 } // namespace FE::IO
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -2968,6 +3062,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -3019,6 +3115,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::PackedVector4F>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -3072,6 +3170,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -3124,6 +3224,8 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::Rtti
 {
     namespace
@@ -3175,6 +3277,8 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::RectBase<float>>::Reflect);
 } // namespace FE::Rtti
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE
 {
@@ -3255,6 +3359,8 @@ namespace FE
 } // namespace FE
 
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 namespace FE::IO
 {
     const Rtti::TypeID IStream::TypeID = Rtti::TypeID{ "fd697dc5-020e-4998-adf2-9dfaf48e2a75" };
@@ -3333,6 +3439,8 @@ namespace FE::IO
     static Rtti::TypeRegistrar GTypeRegistrar_fd697dc5020e4998adf29dfaf48e2a75(&IStream::Reflect);
 } // namespace FE::IO
 
+
+#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Env
 {

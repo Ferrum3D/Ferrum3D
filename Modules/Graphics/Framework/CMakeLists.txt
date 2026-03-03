@@ -1,4 +1,7 @@
-﻿set(SHADER_SHARED_HEADERS
+﻿include(Public/Graphics/Tables/TableList.cmake)
+include(Shaders/Shaders/Tables/TableList.cmake)
+
+set(SHADER_SHARED_HEADERS
     Shaders/Shaders/Base/Base.h
 
     Shaders/Shaders/Database/Base.h
@@ -8,6 +11,8 @@
 )
 
 set(SHADER_SOURCES
+    ${GPUDB_TABLE_SHADERS}
+
     Shaders/Shaders/Base/Base.hlsli
     Shaders/Shaders/Base/BaseTypes.hlsli
     Shaders/Shaders/Base/Descriptors.hlsli
@@ -25,6 +30,8 @@ set(SHADER_SOURCES
 set_source_files_properties(${SHADER_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set(PUBLIC_HEADERS
+    ${GPUDB_TABLE_SOURCES}
+
     Public/Graphics/Assets/Base.h
     Public/Graphics/Assets/IModelAssetManager.h
     Public/Graphics/Assets/ITextureAssetManager.h
