@@ -4,7 +4,6 @@
 //
 
 #pragma once
-
 #include <Shaders/Database/Base.hlsli>
 #include <Shaders/Tables/Forwards.hlsli>
 

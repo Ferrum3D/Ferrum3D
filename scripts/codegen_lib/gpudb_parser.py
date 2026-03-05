@@ -2,9 +2,13 @@ import os
 import re
 import shutil
 import subprocess
+import uuid
+from io import TextIOBase
 from pathlib import Path
 from typing import NoReturn
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from .model import UUID_NAMESPACE
 
 
 GRAPHICS_DIR = Path("Modules/Graphics/Framework")
@@ -22,10 +26,11 @@ class TableColumn:
 
 
 class Table:
-    def __init__(self, name: str, includes: list[str], columns: list[TableColumn]) -> None:
+    def __init__(self, name: str, includes: dict[str, list[str]], columns: list[TableColumn]) -> None:
         self.name = name
         self.includes = includes
         self.columns = columns
+        self.id = str(uuid.uuid5(UUID_NAMESPACE, name)).upper()
 
         self.element_count_per_page = f'DB::kTablePageSize / ({' + '.join(f'sizeof({x.typename})' for x in self.columns)})'
 
@@ -37,12 +42,104 @@ class Table:
             self.offsets[columns[i].name] = f'kOffset_{columns[i - 1].name} + sizeof({columns[i - 1].typename}) * kElementCountPerPage'
 
 
+class ImportDecl:
+    def __init__(self, name: str, includes: dict[str, list[str]]) -> None:
+        self.name = name
+        self.includes = includes
+
+
 def _syntax_error(line: str) -> NoReturn:
     raise Exception(f'Syntax error: {line}')
 
 
-def _parse_file(filename: Path, tables: list[Table]):
-    includes = []
+def _parse_import(f: TextIOBase, line: str, imports: dict[str, ImportDecl]):
+    m = re.match(r'import\s+([A-Za-z0-9_]+)', line)
+    if not m:
+        _syntax_error(line)
+    
+    name = m.group(1)
+
+    includes: dict[str, list[str]] = {}
+    line = f.readline().strip()
+    while line.startswith(':'):
+        import_name = line.removeprefix(':').strip()
+        import_decl = imports.get(import_name)
+        if import_decl is None:
+            raise Exception(f'Undeclared import {import_name}')
+        
+        for lang, lang_includes in import_decl.includes.values():
+            includes.setdefault(lang, []).extend(lang_includes)
+        line = f.readline().strip()
+
+    if line != '{':
+        _syntax_error(line)
+
+    line = f.readline()
+    while line.strip() != '}':
+        if line == '':
+            raise Exception("Unexpected EOF")
+        
+        line = line.strip()
+        m = re.match(r'([A-Za-z0-9_]+)\s+(<\S+>)', line)
+        if not m:
+            _syntax_error(line)
+
+        lang = m.group(1)
+        if lang != 'cpp' and lang != 'hlsl':
+            _syntax_error(line)
+
+        include = m.group(2)
+        includes.setdefault(lang, []).append(include)
+        line = f.readline()
+
+    if name in imports:
+        raise Exception(f'Import {name} has already been declared')
+    
+    imports[name] = ImportDecl(name, includes)
+
+
+def _parse_table(f: TextIOBase, line: str, imports: dict[str, ImportDecl]) -> Table:
+    m = re.match(r'table\s+([A-Za-z0-9_]+)', line)
+    if not m:
+        _syntax_error(line)
+
+    table_name = m.group(1)
+    columns: list[TableColumn] = []
+
+    includes: dict[str, list[str]] = {}
+    line = f.readline().strip()
+    while line.startswith(':'):
+        import_name = line.removeprefix(':').strip()
+        import_decl = imports.get(import_name)
+        if import_decl is None:
+            raise Exception(f'Undeclared import {import_name}')
+
+        for lang, lang_includes in import_decl.includes.items():
+            includes.setdefault(lang, []).extend(lang_includes)
+        line = f.readline().strip()
+
+    if line != '{':
+        _syntax_error(line)
+
+    line = f.readline()
+    while line.strip() != '}':
+        if line == '':
+            raise Exception("Unexpected EOF")
+        
+        line = line.strip()
+        m = re.match(r'(\S+)\s+([A-Za-z0-9_]+)', line)
+        if not m:
+            _syntax_error(line)
+
+        column_type = m.group(1)
+        column_name = m.group(2)
+        columns.append(TableColumn(column_name, column_type))
+        line = f.readline()
+
+    return Table(table_name, includes, columns)
+
+
+def _parse_file(filename: Path, tables: list[Table], imports: dict[str, ImportDecl]):
     with open(filename) as f:
         while True:
             line = f.readline() # do not strip because we need to keep newline characters
@@ -53,38 +150,13 @@ def _parse_file(filename: Path, tables: list[Table]):
             if line == '':
                 continue
 
-            if line.startswith('#include <') and line.endswith('>'):
-                includes.append(line)
+            if line.startswith('import'):
+                _parse_import(f, line, imports)
                 continue
 
-            m = re.match(r'table\s+([A-Za-z0-9_]+)', line)
-            if not m:
-                _syntax_error(line)
-
-            table_name = m.group(1)
-            columns = []
-
-            line = f.readline().strip()
-            if line != '{':
-                _syntax_error(line)
-
-            line = f.readline()
-            while line.strip() != '}':
-                if line == '':
-                    raise Exception("Unexpected EOF")
-                
-                line = line.strip()
-                m = re.match(r'(\S+)\s+([A-Za-z0-9_]+)', line)
-                if not m:
-                    _syntax_error(line)
-
-                column_type = m.group(1)
-                column_name = m.group(2)
-                columns.append(TableColumn(column_name, column_type))
-                line = f.readline()
-
-            tables.append(Table(table_name, includes, columns))
-            includes = []
+            if line.startswith('table'):
+                table = _parse_table(f, line, imports)
+                tables.append(table)
 
 
 def _generate_cpp(env: Environment, table: Table) -> str:
@@ -150,9 +222,10 @@ def generate_gpudb(env: Environment, templates_dir: Path, project_root: Path, cl
 
     gpudb_dir = project_root / GPUDB_DIR
     tables: list[Table] = []
+    imports: dict[str, ImportDecl] = {}
     for item in gpudb_dir.rglob('*.gpudb'):
         if item.is_file():
-            _parse_file(item, tables)
+            _parse_file(item, tables, imports)
 
     cpp_forwards = common_header + _generate_forwards_cpp(tables)
     hlsl_forwards = common_header + _generate_forwards_hlsl(tables)
@@ -185,7 +258,8 @@ if __name__ == "__main__":
     env = Environment(loader=FileSystemLoader('./templates'), autoescape=select_autoescape())
 
     tables = []
-    _parse_file(Path("./codegen_lib/test.gpudb"), tables)
+    imports = {}
+    _parse_file(Path("./codegen_lib/test.gpudb"), tables, imports)
 
     for table in tables:
         s = _generate_cpp(env, table)

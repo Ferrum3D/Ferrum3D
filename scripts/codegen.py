@@ -90,7 +90,7 @@ if __name__ == "__main__":
     generator = ReflectionGenerator(
         env=env,
         templates_dir=templates_dir,
-        clang_format_path=LLVM_DIR / "clang-format.exe",
-        clang_format_style=Path("../.clang-format"),
+        clang_format_path=clang_format_path,
+        clang_format_style=clang_format_style,
     )
     generator.generate(list(reflected_types))

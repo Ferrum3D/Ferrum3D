@@ -14,12 +14,6 @@ namespace FE::Graphics::DB
     } // namespace
 
 
-    void StoragePage::Update(const uint32_t byteOffset, const void* data, const uint32_t dataSize)
-    {
-        memcpy(m_hostStorage + byteOffset, data, dataSize);
-    }
-
-
     StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool, const uint32_t globalID)
     {
         StoragePage* page = GStoragePagePool.New();
@@ -58,11 +52,21 @@ namespace FE::Graphics::DB
     }
 
 
-    TableBase::TableBase(Database* database, const uint32_t globalID, const uint32_t elementCountPerPage)
+    TableBase::TableBase(Database* database, const uint32_t elementCountPerPage)
         : m_database(database)
-        , m_globalID(globalID)
         , m_elementCountPerPage(elementCountPerPage)
     {
+        m_id = m_database->RegisterTable(this);
+    }
+
+
+    TableBase::~TableBase()
+    {
+        for (StoragePage* page : m_pages)
+            m_database->FreePage(page);
+
+        m_database->UnregisterTable(this);
+        m_id = kInvalidIndex;
     }
 
 
@@ -88,16 +92,6 @@ namespace FE::Graphics::DB
 
         m_freeRows.resize(m_freeRows.size() + m_elementCountPerPage, true);
         FE_Assert(m_freeRows.size() == m_pages.size() * m_elementCountPerPage);
-    }
-
-
-    void TableBase::Update(const uint32_t pageIndex, const uint32_t byteOffset, const void* data, const uint32_t dataSize)
-    {
-        FE_Assert(pageIndex < m_pages.size());
-
-        StoragePage* page = m_pages[pageIndex];
-        page->Update(byteOffset, data, dataSize);
-        m_database->MarkPageDirty(page);
     }
 
 
@@ -138,6 +132,35 @@ namespace FE::Graphics::DB
         FE_Assert(!m_freePages.test(pageIndex));
         FE_Assert(m_pages[pageIndex] == page);
         m_dirtyPages.set(pageIndex);
+    }
+
+
+    uint32_t Database::RegisterTable(TableBase* table)
+    {
+        uint32_t tableIndex = m_freeTables.find_first();
+        if (tableIndex != kInvalidIndex)
+        {
+            m_freeTables.reset(tableIndex);
+            m_tables[tableIndex] = table;
+            return tableIndex;
+        }
+
+        tableIndex = m_tables.size();
+        m_tables.push_back(table);
+
+        if (m_freeTables.size() < m_tables.size())
+            m_freeTables.resize(m_freeTables.size() + 32, false);
+
+        return tableIndex;
+    }
+
+
+    void Database::UnregisterTable(const TableBase* table)
+    {
+        FE_Assert(m_tables[table->m_id] == table);
+        FE_Assert(!m_freeTables.test(table->m_id));
+        m_freeTables.set(table->m_id);
+        m_tables[table->m_id] = nullptr;
     }
 
 

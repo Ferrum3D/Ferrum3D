@@ -4,19 +4,20 @@
 //
 
 #pragma once
-
 #include <Shaders/Database/Base.hlsli>
 #include <Shaders/Tables/Forwards.hlsli>
 
+#include <Shaders/Core/Meshlet.hlsli>
+
 struct MeshLodInfoTable
 {
-    FE_CONSTEXPR uint32_t kElementCountPerPage = DB::kTablePageSize / (sizeof(MeshLodInfo));
+    FE_CONSTEXPR uint32_t kElementCountPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
 
     FE_CONSTEXPR uint32_t kOffset_m_info = 0;
 
     struct Row
     {
-        DB::ElementHandle<MeshLodInfo, kOffset_m_info> m_info;
+        DB::ElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
     };
 
     struct Instance

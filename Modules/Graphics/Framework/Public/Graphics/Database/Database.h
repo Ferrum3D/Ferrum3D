@@ -12,8 +12,6 @@ namespace FE::Graphics::DB
 {
     struct StoragePage final
     {
-        void Update(uint32_t byteOffset, const void* data, uint32_t dataSize);
-
         [[nodiscard]] std::byte* GetHostStorage()
         {
             return m_hostStorage;
@@ -37,7 +35,7 @@ namespace FE::Graphics::DB
     };
 
 
-    struct TableBase
+    struct TableBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("B0B29217-3D30-4B35-8026-9D0EB91B8FD2");
 
@@ -46,21 +44,20 @@ namespace FE::Graphics::DB
         TableBase& operator=(const TableBase&) = delete;
         TableBase& operator=(TableBase&&) = delete;
 
-        virtual ~TableBase() = default;
+        ~TableBase() override;
 
         [[nodiscard]] uint32_t AllocateRowUninitialized();
         void FreeRow(uint32_t rowIndex);
 
     protected:
-        TableBase(Database* database, uint32_t globalID, uint32_t elementCountPerPage);
+        TableBase(Database* database, uint32_t elementCountPerPage);
 
         void AllocatePage();
-        void Update(uint32_t pageIndex, uint32_t byteOffset, const void* data, uint32_t dataSize);
 
         friend Database;
 
         Database* m_database = nullptr;
-        uint32_t m_globalID = kInvalidIndex;
+        uint32_t m_id = kInvalidIndex;
         Memory::BuddyAllocator::Handle m_devicePageTableAllocation;
 
         uint32_t m_elementCountPerPage = 0;
@@ -76,18 +73,13 @@ namespace FE::Graphics::DB
 
         void Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence);
 
-        template<class TTable>
-        [[nodiscard]] TTable* CreateTable()
-        {
-            TTable* table = Memory::DefaultNew<TTable>(this, m_tables.size());
-            m_tables.push_back(table);
-            return table;
-        }
+        void MarkPageDirty(const StoragePage* page);
 
     private:
         friend TableBase;
 
-        void MarkPageDirty(const StoragePage* page);
+        uint32_t RegisterTable(TableBase* table);
+        void UnregisterTable(const TableBase* table);
 
         StoragePage* AllocatePage();
         void FreePage(StoragePage* page);
@@ -102,6 +94,7 @@ namespace FE::Graphics::DB
         Rc<Core::Buffer> m_pageTableDeviceStorage;
         festd::vector<BufferPointer> m_pageTableHostStorage;
         festd::vector<TableBase*> m_tables;
+        festd::bit_vector m_freeTables;
 
         SegmentedVector<StoragePage*> m_pages;
         festd::bit_vector m_freePages;

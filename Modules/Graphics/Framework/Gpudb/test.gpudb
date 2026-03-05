@@ -1,8 +1,13 @@
-#include <FeCore/Math/Sphere.h>
+import Meshlets
+{
+	cpp <Graphics/Core/Meshlet.h>
+	hlsl <Shaders/Core/Meshlet.hlsli>
+}
 
 table MeshLodInfoTable
+	: Meshlets
 {
-    MeshLodInfo m_info;
+    Core::MeshLodInfo m_info;
 }
 
 table MeshGroupTable
@@ -10,8 +15,6 @@ table MeshGroupTable
     BufferPointer m_geometry;
 	DB::Slice<MeshLodInfoTable> m_lods;
 }
-
-#include <FeCore/Math/Sphere.h>
 
 table MeshInstanceTable
 {

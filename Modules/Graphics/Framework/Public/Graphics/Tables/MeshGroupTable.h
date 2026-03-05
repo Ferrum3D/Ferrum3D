@@ -4,7 +4,6 @@
 //
 
 #pragma once
-
 #include <Graphics/Database/Database.h>
 #include <Graphics/Tables/Forwards.h>
 
@@ -12,6 +11,8 @@ namespace FE::Graphics
 {
     struct MeshGroupTable final : public DB::TableBase
     {
+        FE_RTTI("03321E1E-0A92-5203-B75C-027838609287");
+
         static constexpr uint32_t kElementCountPerPage =
             DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
 
@@ -34,8 +35,8 @@ namespace FE::Graphics
 
         using Instance = BufferPointer;
 
-        MeshGroupTable(DB::Database* database, const uint32_t globalID)
-            : TableBase(database, globalID, kElementCountPerPage)
+        MeshGroupTable(DB::Database* database)
+            : TableBase(database, kElementCountPerPage)
         {
         }
 
@@ -73,6 +74,7 @@ namespace FE::Graphics
             const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
 
             DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
 
             RWRow row;

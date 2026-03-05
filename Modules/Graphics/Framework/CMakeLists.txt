@@ -17,6 +17,8 @@ set(SHADER_SOURCES
     Shaders/Shaders/Base/BaseTypes.hlsli
     Shaders/Shaders/Base/Descriptors.hlsli
 
+    Shaders/Shaders/Core/Meshlet.hlsli
+
     Shaders/Shaders/Database/Base.hlsli
 
     Shaders/Shaders/Passes/Tools/Blit/Blit.hlsli

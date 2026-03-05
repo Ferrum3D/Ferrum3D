@@ -1,14 +1,15 @@
 #pragma once
-
 #include <Graphics/Database/Database.h>
 #include <Graphics/Tables/Forwards.h>
-{% for include in table.includes %}
-{{ include }}
+{% for include in table.includes['cpp'] %}
+#include {{ include }}
 {% endfor %}
 namespace FE::Graphics
 {
     struct {{ table.name }} final : public DB::TableBase
     {
+        FE_RTTI("{{ table.id }}");
+
         static constexpr uint32_t kElementCountPerPage = {{ table.element_count_per_page }};
         {% for name, offset in table.offsets.items() %}
         static constexpr uint32_t kOffset_{{ name }} = {{ offset }};
@@ -32,8 +33,8 @@ namespace FE::Graphics
 
         using Instance = BufferPointer;
 
-        {{ table.name }}(DB::Database* database, const uint32_t globalID)
-            : TableBase(database, globalID, kElementCountPerPage)
+        {{ table.name }}(DB::Database* database)
+            : TableBase(database, kElementCountPerPage)
         {
         }
 
@@ -73,6 +74,7 @@ namespace FE::Graphics
             const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
 
             DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
 
             RWRow row;

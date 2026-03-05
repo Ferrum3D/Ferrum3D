@@ -1,8 +1,9 @@
 #pragma once
-
 #include <Shaders/Database/Base.hlsli>
 #include <Shaders/Tables/Forwards.hlsli>
-
+{% for include in table.includes['hlsl'] %}
+#include {{ include }}
+{% endfor %}
 struct {{ table.name }}
 {
     FE_CONSTEXPR uint32_t kElementCountPerPage = {{ table.element_count_per_page }};

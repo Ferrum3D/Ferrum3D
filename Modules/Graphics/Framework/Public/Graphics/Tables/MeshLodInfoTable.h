@@ -4,17 +4,18 @@
 //
 
 #pragma once
-
 #include <Graphics/Database/Database.h>
 #include <Graphics/Tables/Forwards.h>
 
-#include <FeCore/Math/Sphere.h>
+#include <Graphics/Core/Meshlet.h>
 
 namespace FE::Graphics
 {
     struct MeshLodInfoTable final : public DB::TableBase
     {
-        static constexpr uint32_t kElementCountPerPage = DB::kTablePageSize / (sizeof(MeshLodInfo));
+        FE_RTTI("429A06B5-0BEB-5171-87F8-18737671FB7F");
+
+        static constexpr uint32_t kElementCountPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
 
         static constexpr uint32_t kOffset_m_info = 0;
 
@@ -22,18 +23,18 @@ namespace FE::Graphics
 
         struct Row final
         {
-            DB::ElementHandle<MeshLodInfo, kOffset_m_info> m_info;
+            DB::ElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
         };
 
         struct RWRow final
         {
-            DB::RWElementHandle<MeshLodInfo, kOffset_m_info> m_info;
+            DB::RWElementHandle<Core::MeshLodInfo, kOffset_m_info> m_info;
         };
 
         using Instance = BufferPointer;
 
-        MeshLodInfoTable(DB::Database* database, const uint32_t globalID)
-            : TableBase(database, globalID, kElementCountPerPage)
+        MeshLodInfoTable(DB::Database* database)
+            : TableBase(database, kElementCountPerPage)
         {
         }
 
@@ -69,6 +70,7 @@ namespace FE::Graphics
             const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
 
             DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
 
             RWRow row;
