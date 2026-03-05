@@ -7,14 +7,6 @@ namespace FE::Graphics::DB
     struct StoragePage;
 
 
-    enum class PageReplicationPolicy
-    {
-        kCopyAllData = 0, //!< Copy all page data to the device-local memory each frame if modified.
-
-        kDefault = kCopyAllData,
-    };
-
-
     template<class T, uint32_t TOffset>
     struct ElementHandle final
     {

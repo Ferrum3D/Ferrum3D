@@ -4,21 +4,16 @@
 
 namespace FE::Memory
 {
-    uint32_t BuddyAllocator::Handle::GetSize() const
-    {
-        return BlockSizeForLevel(m_level);
-    }
-
-
-    void BuddyAllocator::Setup(const uint32_t arenaByteSize)
+    void BuddyAllocator::Setup(const uint32_t arenaByteSize, const uint32_t minBlockSize)
     {
         FE_Assert(m_arenaSize == 0);
-        FE_Assert(arenaByteSize >= kMinBlockSize);
+        FE_Assert(arenaByteSize >= minBlockSize);
         FE_Assert(Math::IsPowerOfTwo(arenaByteSize));
-        FE_Assert(IsAligned(arenaByteSize, kMinBlockSize));
+        FE_Assert(IsAligned(arenaByteSize, minBlockSize));
 
         m_arenaSize = arenaByteSize;
-        m_minBlockLog2 = Math::FloorLog2(kMinBlockSize);
+        m_minBlockSize = minBlockSize;
+        m_minBlockLog2 = Math::FloorLog2(minBlockSize);
 
         const uint32_t arenaLog2 = Math::FloorLog2(m_arenaSize);
         m_maxLevel = arenaLog2 - m_minBlockLog2;
@@ -36,6 +31,16 @@ namespace FE::Memory
     }
 
 
+    void BuddyAllocator::Shutdown()
+    {
+        m_arenaSize = 0;
+        m_minBlockSize = 0;
+        m_minBlockLog2 = 0;
+        m_maxLevel = 0;
+        m_freeBits.clear();
+    }
+
+
     BuddyAllocator::Handle BuddyAllocator::Allocate(const uint32_t size, uint32_t alignment)
     {
         Handle handle;
@@ -43,17 +48,17 @@ namespace FE::Memory
             return handle;
 
         if (alignment == 0)
-            alignment = kMinBlockSize;
+            alignment = m_minBlockSize;
 
         FE_AssertDebug(Math::IsPowerOfTwo(alignment));
 
         uint32_t request = Math::Max(size, alignment);
-        request = Math::Max(request, kMinBlockSize);
+        request = Math::Max(request, m_minBlockSize);
         if (request > m_arenaSize)
             return handle;
 
         uint32_t blockSize = Math::CeilPowerOfTwo(request);
-        blockSize = Math::Max(blockSize, kMinBlockSize);
+        blockSize = Math::Max(blockSize, m_minBlockSize);
 
         const uint32_t level = LevelForBlockSize(blockSize);
         if (level > m_maxLevel)
@@ -118,6 +123,20 @@ namespace FE::Memory
     }
 
 
+    uint32_t BuddyAllocator::GetUsableSize(const Handle handle) const
+    {
+        return BlockSizeForLevel(handle.m_level);
+    }
+
+
+    uint32_t BuddyAllocator::QuantizeAllocationSize(const uint32_t size) const
+    {
+        const uint32_t blockSize = Math::Max(size, m_minBlockSize);
+        const uint32_t level = LevelForBlockSize(blockSize);
+        return BlockSizeForLevel(level);
+    }
+
+
     BuddyAllocator::Stats BuddyAllocator::GetStats() const
     {
         Stats stats;
@@ -137,9 +156,9 @@ namespace FE::Memory
     }
 
 
-    uint32_t BuddyAllocator::BlockSizeForLevel(const uint32_t level)
+    uint32_t BuddyAllocator::BlockSizeForLevel(const uint32_t level) const
     {
-        return kMinBlockSize << level;
+        return m_minBlockSize << level;
     }
 
 

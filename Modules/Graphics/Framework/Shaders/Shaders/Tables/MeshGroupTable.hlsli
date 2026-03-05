@@ -9,11 +9,10 @@
 
 struct MeshGroupTable
 {
-    FE_CONSTEXPR uint32_t kElementCountPerPage =
-        DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
 
     FE_CONSTEXPR uint32_t kOffset_m_geometry = 0;
-    FE_CONSTEXPR uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kElementCountPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
 
     struct Row
     {
@@ -35,8 +34,8 @@ struct MeshGroupTable
 
     Row ReadRow(const uint32_t rowIndex)
     {
-        const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-        const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+        const uint32_t pageIndex = rowIndex / kRowsPerPage;
+        const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
         const BufferPointer pageAddress = m_pageTableAddress.Read<BufferPointer>(pageIndex * sizeof(BufferPointer));
 

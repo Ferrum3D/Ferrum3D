@@ -13,13 +13,13 @@ namespace FE::Graphics
     {
         FE_RTTI("03321E1E-0A92-5203-B75C-027838609287");
 
-        static constexpr uint32_t kElementCountPerPage =
+        static constexpr uint32_t kRowsPerPage =
             DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
 
         static constexpr uint32_t kOffset_m_geometry = 0;
-        static constexpr uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kElementCountPerPage;
+        static constexpr uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
 
-        static_assert(kElementCountPerPage > 0);
+        static_assert(kRowsPerPage > 0);
 
         struct Row final
         {
@@ -36,7 +36,7 @@ namespace FE::Graphics
         using Instance = BufferPointer;
 
         MeshGroupTable(DB::Database* database)
-            : TableBase(database, kElementCountPerPage)
+            : TableBase(database, kRowsPerPage)
         {
         }
 
@@ -49,10 +49,34 @@ namespace FE::Graphics
             return DB::Ref<MeshGroupTable>{ rowIndex };
         }
 
+        [[nodiscard]] DB::Slice<MeshGroupTable> AllocateRows(const uint32_t rowCount)
+        {
+            const RowRangeHandle range = AllocateRowsUninitialized(rowCount);
+            FE_AssertDebug(range.m_size == rowCount);
+            for (uint32_t rowIndex = 0; rowIndex < rowCount; ++rowIndex)
+            {
+                const RWRow row = WriteRow(rowIndex + range.m_offset);
+                row.m_geometry.Construct();
+                row.m_lods.Construct();
+            }
+
+            return DB::Slice<MeshGroupTable>{ range.m_offset, range.m_size };
+        }
+
+        void Free(const DB::Ref<MeshGroupTable> row)
+        {
+            TableBase::Free(row.m_rowIndex);
+        }
+
+        void Free(const DB::Slice<MeshGroupTable> rows)
+        {
+            TableBase::Free(RowRangeHandle{ rows.m_rowIndex, rows.m_count });
+        }
+
         [[nodiscard]] Row ReadRow(const uint32_t rowIndex)
         {
-            const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-            const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
             const DB::StoragePage* page = m_pages[pageIndex];
             const std::byte* storage = page->GetHostStorage();
@@ -70,8 +94,8 @@ namespace FE::Graphics
 
         [[nodiscard]] RWRow WriteRow(const uint32_t rowIndex)
         {
-            const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-            const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+            const uint32_t pageIndex = rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);

@@ -7,25 +7,25 @@ using namespace FE;
 
 TEST(BuddyAllocator, AllocateFree)
 {
-    Memory::BuddyAllocator allocator(256);
+    Memory::BuddyAllocator allocator(256, 16);
 
     auto handle = allocator.Allocate(1, 1);
     ASSERT_TRUE(handle.IsValid());
     EXPECT_EQ(handle.m_offset % 16u, 0u);
-    EXPECT_EQ(handle.GetSize(), 16u);
+    EXPECT_EQ(allocator.GetUsableSize(handle), 16u);
 
     allocator.Free(handle);
 
     auto full = allocator.Allocate(256, 16);
     ASSERT_TRUE(full.IsValid());
     EXPECT_EQ(full.m_offset, 0u);
-    EXPECT_EQ(full.GetSize(), 256u);
+    EXPECT_EQ(allocator.GetUsableSize(full), 256u);
     allocator.Free(full);
 }
 
 TEST(BuddyAllocator, SplitAndCoalesce)
 {
-    Memory::BuddyAllocator allocator(256);
+    Memory::BuddyAllocator allocator(256, 16);
 
     auto first = allocator.Allocate(16, 16);
     auto second = allocator.Allocate(16, 16);
@@ -39,24 +39,24 @@ TEST(BuddyAllocator, SplitAndCoalesce)
     auto merged = allocator.Allocate(32, 16);
     ASSERT_TRUE(merged.IsValid());
     EXPECT_EQ(merged.m_offset, 0u);
-    EXPECT_EQ(merged.GetSize(), 32u);
+    EXPECT_EQ(allocator.GetUsableSize(merged), 32u);
     allocator.Free(merged);
 }
 
 TEST(BuddyAllocator, Alignment)
 {
-    Memory::BuddyAllocator allocator(1024);
+    Memory::BuddyAllocator allocator(1024, 16);
 
     auto handle = allocator.Allocate(24, 64);
     ASSERT_TRUE(handle.IsValid());
     EXPECT_EQ(handle.m_offset % 64u, 0u);
-    EXPECT_EQ(handle.GetSize(), 64u);
+    EXPECT_EQ(allocator.GetUsableSize(handle), 64u);
     allocator.Free(handle);
 }
 
 TEST(BuddyAllocator, ExhaustionAndReuse)
 {
-    Memory::BuddyAllocator allocator(256);
+    Memory::BuddyAllocator allocator(256, 16);
 
     festd::vector<Memory::BuddyAllocator::Handle> handles;
     handles.reserve(16);
@@ -82,7 +82,7 @@ TEST(BuddyAllocator, ExhaustionAndReuse)
 
 TEST(BuddyAllocator, RandomAllocations)
 {
-    Memory::BuddyAllocator allocator(64 * 1024);
+    Memory::BuddyAllocator allocator(64 * 1024, 16);
 
     struct Allocation
     {
@@ -94,7 +94,7 @@ TEST(BuddyAllocator, RandomAllocations)
     std::uniform_int_distribution<uint32_t> sizeDist(1, 256);
     std::uniform_int_distribution<uint32_t> alignmentPow(0, 6);
 
-    auto validateStats = [&](uint32_t allocatedBytes) {
+    auto validateStats = [&](const uint32_t allocatedBytes) {
         const auto stats = allocator.GetStats();
         EXPECT_EQ(stats.m_freeBytes + allocatedBytes, allocator.GetArenaSize());
         EXPECT_LE(stats.m_largestFreeBlock, allocator.GetArenaSize());
@@ -112,7 +112,7 @@ TEST(BuddyAllocator, RandomAllocations)
         if (!handle.IsValid())
             break;
 
-        const uint32_t blockSize = handle.GetSize();
+        const uint32_t blockSize = allocator.GetUsableSize(handle);
         allocatedBytes += blockSize;
         allocations.push_back({ handle, blockSize });
     }
@@ -137,7 +137,7 @@ TEST(BuddyAllocator, RandomAllocations)
         if (!handle.IsValid())
             break;
 
-        const uint32_t blockSize = handle.GetSize();
+        const uint32_t blockSize = allocator.GetUsableSize(handle);
         allocatedBytes += blockSize;
         allocations.push_back({ handle, blockSize });
     }

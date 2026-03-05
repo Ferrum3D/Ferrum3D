@@ -14,6 +14,35 @@ namespace FE::Graphics::DB
     } // namespace
 
 
+    void StoragePage::Setup(const uint32_t rowCount)
+    {
+        m_rowAllocator.Setup(rowCount);
+    }
+
+
+    void StoragePage::Shutdown()
+    {
+        m_rowAllocator.Shutdown();
+    }
+
+
+    uint32_t StoragePage::AllocateRows(const uint32_t rowCount)
+    {
+        return m_rowAllocator.Allocate(rowCount, 1).m_offset;
+    }
+
+
+    void StoragePage::FreeRows(const uint32_t offset, const uint32_t rowCount)
+    {
+        const uint32_t blockSize = m_rowAllocator.QuantizeAllocationSize(rowCount);
+
+        Memory::BuddyAllocator::Handle allocation;
+        allocation.m_offset = offset;
+        allocation.m_level = m_rowAllocator.LevelForBlockSize(blockSize);
+        m_rowAllocator.Free(allocation);
+    }
+
+
     StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool, const uint32_t globalID)
     {
         StoragePage* page = GStoragePagePool.New();
@@ -32,29 +61,46 @@ namespace FE::Graphics::DB
 
     uint32_t TableBase::AllocateRowUninitialized()
     {
-        uint32_t rowIndex = m_freeRows.find_first();
-        if (rowIndex == kInvalidIndex)
+        const auto range = AllocateRowsUninitialized(1);
+        FE_AssertDebug(range.m_size == 1);
+        return range.m_offset;
+    }
+
+
+    void TableBase::Free(const uint32_t rowIndex)
+    {
+        Free({ rowIndex, 1 });
+    }
+
+
+    TableBase::RowRangeHandle TableBase::AllocateRowsUninitialized(const uint32_t rowCount)
+    {
+        FE_Assert(rowCount <= m_rowsPerPage);
+        for (uint32_t pageIndex = 0; pageIndex < m_pages.size(); ++pageIndex)
         {
-            AllocatePage();
-            rowIndex = m_freeRows.find_first();
-            FE_Assert(rowIndex != kInvalidIndex);
+            StoragePage* page = m_pages[pageIndex];
+            if (const uint32_t offset = page->AllocateRows(rowCount))
+                return { pageIndex * m_rowsPerPage + offset, rowCount };
         }
 
-        m_freeRows.reset(rowIndex);
-        return rowIndex;
+        AllocatePage();
+        const uint32_t offset = m_pages.back()->AllocateRows(1);
+        FE_Assert(offset != kInvalidIndex);
+        return { (m_pages.size() - 1) * m_rowsPerPage + offset, rowCount };
     }
 
 
-    void TableBase::FreeRow(const uint32_t rowIndex)
+    void TableBase::Free(const RowRangeHandle rowRange)
     {
-        FE_Assert(!m_freeRows.test(rowIndex));
-        m_freeRows.set(rowIndex);
+        const uint32_t pageIndex = rowRange.m_offset / m_rowsPerPage;
+        const uint32_t offset = rowRange.m_offset % m_rowsPerPage;
+        m_pages[pageIndex]->FreeRows(offset, rowRange.m_size);
     }
 
 
-    TableBase::TableBase(Database* database, const uint32_t elementCountPerPage)
+    TableBase::TableBase(Database* database, const uint32_t rowsPerPage)
         : m_database(database)
-        , m_elementCountPerPage(elementCountPerPage)
+        , m_rowsPerPage(rowsPerPage)
     {
         m_id = m_database->RegisterTable(this);
     }
@@ -73,7 +119,8 @@ namespace FE::Graphics::DB
     void TableBase::AllocatePage()
     {
         const uint32_t pageCount = m_pages.size() + 1;
-        if (m_devicePageTableAllocation && m_devicePageTableAllocation.GetSize() < pageCount)
+        if (m_devicePageTableAllocation
+            && m_database->m_pageTableAllocator.GetUsableSize(m_devicePageTableAllocation) < pageCount)
         {
             m_database->m_pageTableAllocator.Free(m_devicePageTableAllocation);
             m_devicePageTableAllocation.Invalidate();
@@ -81,17 +128,14 @@ namespace FE::Graphics::DB
 
         if (!m_devicePageTableAllocation)
         {
-            const uint32_t reservedPageCount = Math::Max(2u, pageCount);
-            const uint32_t allocationSize = Math::CeilPowerOfTwo(reservedPageCount);
-            m_devicePageTableAllocation = m_database->m_pageTableAllocator.Allocate(allocationSize, 1);
+            m_devicePageTableAllocation = m_database->m_pageTableAllocator.Allocate(pageCount);
+            FE_Assert(m_devicePageTableAllocation.IsValid());
         }
 
         StoragePage* page = m_database->AllocatePage();
+        page->Setup(m_rowsPerPage);
         m_pages.push_back(page);
         FE_Assert(m_pages.size() == pageCount);
-
-        m_freeRows.resize(m_freeRows.size() + m_elementCountPerPage, true);
-        FE_Assert(m_freeRows.size() == m_pages.size() * m_elementCountPerPage);
     }
 
 
@@ -191,6 +235,7 @@ namespace FE::Graphics::DB
         FE_Assert(!m_freePages.test(page->m_globalID));
         FE_Assert(m_pages[page->m_globalID] == page);
         m_freePages.set(page->m_globalID);
+        page->Shutdown();
     }
 
 

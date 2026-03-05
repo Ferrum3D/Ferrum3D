@@ -12,6 +12,9 @@ namespace FE::Graphics::DB
 {
     struct StoragePage final
     {
+        void Setup(uint32_t rowCount);
+        void Shutdown();
+
         [[nodiscard]] std::byte* GetHostStorage()
         {
             return m_hostStorage;
@@ -22,22 +25,32 @@ namespace FE::Graphics::DB
             return m_hostStorage;
         }
 
+        [[nodiscard]] uint32_t AllocateRows(uint32_t rowCount);
+        void FreeRows(uint32_t offset, uint32_t rowCount);
+
     private:
         friend Database;
 
         static StoragePage* Allocate(Core::ResourcePool* resourcePool, uint32_t globalID);
 
-        PageReplicationPolicy m_replicationPolicy = PageReplicationPolicy::kDefault;
         uint32_t m_globalID = kInvalidIndex;
 
         Rc<Core::Buffer> m_deviceStorage;
         std::byte m_hostStorage[kTablePageSize];
+
+        Memory::BuddyAllocator m_rowAllocator;
     };
 
 
     struct TableBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("B0B29217-3D30-4B35-8026-9D0EB91B8FD2");
+
+        struct RowRangeHandle final
+        {
+            uint32_t m_offset = kInvalidIndex;
+            uint32_t m_size = 0;
+        };
 
         TableBase(const TableBase&) = delete;
         TableBase(TableBase&&) = delete;
@@ -47,10 +60,13 @@ namespace FE::Graphics::DB
         ~TableBase() override;
 
         [[nodiscard]] uint32_t AllocateRowUninitialized();
-        void FreeRow(uint32_t rowIndex);
+        void Free(uint32_t rowIndex);
+
+        [[nodiscard]] RowRangeHandle AllocateRowsUninitialized(uint32_t rowCount);
+        void Free(RowRangeHandle rowRange);
 
     protected:
-        TableBase(Database* database, uint32_t elementCountPerPage);
+        TableBase(Database* database, uint32_t rowsPerPage);
 
         void AllocatePage();
 
@@ -60,9 +76,8 @@ namespace FE::Graphics::DB
         uint32_t m_id = kInvalidIndex;
         Memory::BuddyAllocator::Handle m_devicePageTableAllocation;
 
-        uint32_t m_elementCountPerPage = 0;
+        uint32_t m_rowsPerPage = 0;
         festd::inline_vector<StoragePage*> m_pages;
-        festd::bit_vector m_freeRows;
     };
 
 

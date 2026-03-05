@@ -39,7 +39,7 @@ class Table:
             self.offsets[columns[0].name] = '0'
 
         for i in range(1, len(columns)):
-            self.offsets[columns[i].name] = f'kOffset_{columns[i - 1].name} + sizeof({columns[i - 1].typename}) * kElementCountPerPage'
+            self.offsets[columns[i].name] = f'kOffset_{columns[i - 1].name} + sizeof({columns[i - 1].typename}) * kRowsPerPage'
 
 
 class ImportDecl:

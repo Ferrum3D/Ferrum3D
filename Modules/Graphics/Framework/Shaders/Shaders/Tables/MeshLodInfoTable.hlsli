@@ -11,7 +11,7 @@
 
 struct MeshLodInfoTable
 {
-    FE_CONSTEXPR uint32_t kElementCountPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(Core::MeshLodInfo));
 
     FE_CONSTEXPR uint32_t kOffset_m_info = 0;
 
@@ -34,8 +34,8 @@ struct MeshLodInfoTable
 
     Row ReadRow(const uint32_t rowIndex)
     {
-        const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-        const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+        const uint32_t pageIndex = rowIndex / kRowsPerPage;
+        const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
         const BufferPointer pageAddress = m_pageTableAddress.Read<BufferPointer>(pageIndex * sizeof(BufferPointer));
 

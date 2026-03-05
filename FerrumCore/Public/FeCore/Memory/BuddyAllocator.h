@@ -9,8 +9,6 @@ namespace FE::Memory
     {
         struct Handle final
         {
-            [[nodiscard]] uint32_t GetSize() const;
-
             [[nodiscard]] bool IsValid() const
             {
                 return m_offset != Constants::kMaxU32;
@@ -41,15 +39,20 @@ namespace FE::Memory
         };
 
         BuddyAllocator() = default;
-        explicit BuddyAllocator(const uint32_t arenaByteSize)
+        explicit BuddyAllocator(const uint32_t arenaByteSize, const uint32_t minBlockSize = 1)
         {
-            Setup(arenaByteSize);
+            Setup(arenaByteSize, minBlockSize);
         }
 
-        void Setup(uint32_t arenaByteSize);
+        void Setup(uint32_t arenaByteSize, uint32_t minBlockSize = 1);
+        void Shutdown();
 
-        [[nodiscard]] Handle Allocate(uint32_t size, uint32_t alignment);
+        [[nodiscard]] Handle Allocate(uint32_t size, uint32_t alignment = 0);
         void Free(Handle handle);
+
+        [[nodiscard]] uint32_t GetUsableSize(Handle handle) const;
+        [[nodiscard]] uint32_t QuantizeAllocationSize(uint32_t size) const;
+
         [[nodiscard]] Stats GetStats() const;
 
         [[nodiscard]] uint32_t GetArenaSize() const
@@ -57,15 +60,14 @@ namespace FE::Memory
             return m_arenaSize;
         }
 
-    private:
-        static constexpr uint32_t kMinBlockSize = 16;
+        [[nodiscard]] uint32_t BlockSizeForLevel(uint32_t level) const;
+        [[nodiscard]] uint32_t LevelForBlockSize(uint32_t blockSize) const;
 
+    private:
         uint32_t m_arenaSize = 0;
+        uint32_t m_minBlockSize = 0;
         uint32_t m_minBlockLog2 = 0;
         uint32_t m_maxLevel = 0;
         festd::vector<festd::bit_vector> m_freeBits;
-
-        [[nodiscard]] static uint32_t BlockSizeForLevel(uint32_t level);
-        [[nodiscard]] uint32_t LevelForBlockSize(uint32_t blockSize) const;
     };
 } // namespace FE::Memory

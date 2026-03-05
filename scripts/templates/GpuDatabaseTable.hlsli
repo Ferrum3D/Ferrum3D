@@ -6,7 +6,7 @@
 {% endfor %}
 struct {{ table.name }}
 {
-    FE_CONSTEXPR uint32_t kElementCountPerPage = {{ table.element_count_per_page }};
+    FE_CONSTEXPR uint32_t kRowsPerPage = {{ table.element_count_per_page }};
     {% for name, offset in table.offsets.items() %}
     FE_CONSTEXPR uint32_t kOffset_{{ name }} = {{ offset }};
     {%- endfor %}
@@ -32,8 +32,8 @@ struct {{ table.name }}
 
     Row ReadRow(const uint32_t rowIndex)
     {
-        const uint32_t pageIndex = rowIndex / kElementCountPerPage;
-        const uint32_t localRowIndex = rowIndex % kElementCountPerPage;
+        const uint32_t pageIndex = rowIndex / kRowsPerPage;
+        const uint32_t localRowIndex = rowIndex % kRowsPerPage;
 
         const BufferPointer pageAddress = m_pageTableAddress.Read<BufferPointer>(pageIndex * sizeof(BufferPointer));
 
