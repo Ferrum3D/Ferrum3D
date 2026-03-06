@@ -2,17 +2,14 @@
 
 namespace FE
 {
-    namespace Internal
-    {
-        // We align this array to the CPU cache line size since the entire matrix fits there.
-        // This helps to reduce cache misses when loading identity matrices (supposedly).
-        alignas(Memory::kCacheLineSize) const float kIdentity4Values[16] = {
-            1.0f, 0.0f, 0.0f, 0.0f, //
-            0.0f, 1.0f, 0.0f, 0.0f, //
-            0.0f, 0.0f, 1.0f, 0.0f, //
-            0.0f, 0.0f, 0.0f, 1.0f, //
-        };
-    } // namespace Internal
+    alignas(Matrix4x4) const float Internal::kIdentity4Values[16] = {
+        1.0f, 0.0f, 0.0f, 0.0f, //
+        0.0f, 1.0f, 0.0f, 0.0f, //
+        0.0f, 0.0f, 1.0f, 0.0f, //
+        0.0f, 0.0f, 0.0f, 1.0f, //
+    };
+
+    const Matrix4x4 Matrix4x4::kIdentity = LoadAligned(&Internal::kIdentity4Values[0]);
 
 
     Matrix4x4 FE_VECTORCALL Math::InvertTransform(const Matrix4x4& matrix)

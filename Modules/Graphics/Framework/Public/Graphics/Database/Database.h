@@ -65,6 +65,8 @@ namespace FE::Graphics::DB
         [[nodiscard]] RowRangeHandle AllocateRowsUninitialized(uint32_t rowCount);
         void Free(RowRangeHandle rowRange);
 
+        [[nodiscard]] uint32_t GetReservedRowCount() const;
+
     protected:
         TableBase(Database* database, uint32_t rowsPerPage);
 

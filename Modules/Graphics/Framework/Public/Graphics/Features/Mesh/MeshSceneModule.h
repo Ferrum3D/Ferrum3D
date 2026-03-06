@@ -2,31 +2,72 @@
 #include <FeCore/Math/Sphere.h>
 #include <Graphics/Assets/IModelAssetManager.h>
 #include <Graphics/Database/Base.h>
+#include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
+#include <Graphics/Tables/Forwards.h>
+#include <festd/unordered_map.h>
 
 namespace FE::Graphics
 {
-    struct MeshInstanceTableDecl final
-    {
-        Sphere m_boundingSphere;
-    };
-
-
     struct MeshSceneModule;
 
-    struct MeshInstanceGroup final
+    struct MeshBatch final
     {
-    private:
-        friend MeshSceneModule;
-
-        Rc<ModelAsset> m_asset;
+        OctreeEntry m_octreeEntry;
+        MeshSceneModule* m_parent = nullptr;
+        festd::vector<DB::Ref<MeshInstanceTable>> m_meshInstances;
     };
 
 
-    struct MeshSceneModule final : public ISceneModule
+    struct MeshGroup final
+    {
+        uint32_t m_instanceCount = 0;
+        DB::Ref<MeshGroupTable> m_tableRef = DB::Ref<MeshGroupTable>::CreateInvalid();
+        ModelAsset* m_asset = nullptr;
+    };
+
+
+    struct MeshInstanceDesc final
+    {
+        ModelAsset* m_asset = nullptr;
+        MeshBatch* m_batch = nullptr;
+        Matrix4x4 m_transform;
+    };
+
+
+    struct MeshHandle final : public TypedHandle<MeshHandle, uint32_t>
+    {
+    };
+
+
+    struct MeshSceneModule final : public SceneModuleBase
     {
         FE_RTTI("1784843C-5085-4289-AA82-04C480E423EE");
 
+        explicit MeshSceneModule(Scene* scene);
+        ~MeshSceneModule() override;
+
+        [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
+        void DestroyInstance(MeshHandle instance);
+
     private:
+        MeshHandle AllocateHandle(DB::Ref<MeshInstanceTable> sourceIndex);
+        void FreeHandle(MeshHandle handle);
+        void EnsureCapacity();
+
+        MeshGroup* FindMeshGroup(ModelAsset* modelAsset);
+
+        DB::Ref<MeshInstanceTable> TranslateHandle(MeshHandle handle) const;
+
+        festd::bit_vector m_freeHandles;
+        festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
+
+        festd::unordered_dense_map<ModelAsset*, MeshGroup*> m_meshGroups;
+
+        festd::bit_vector m_meshesToDestroy;
+
+        Rc<MeshLodInfoTable> m_meshLodInfoTable;
+        Rc<MeshGroupTable> m_meshGroupTable;
+        Rc<MeshInstanceTable> m_meshInstanceTable;
     };
 } // namespace FE::Graphics

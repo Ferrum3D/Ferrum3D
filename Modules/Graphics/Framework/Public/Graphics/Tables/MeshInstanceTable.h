@@ -110,5 +110,39 @@ namespace FE::Graphics
         {
             return WriteRow(reference.m_rowIndex);
         }
+
+        void CopyColumn(const DB::Slice<MeshInstanceTable> destination, const festd::span<const DB::Ref<MeshGroupTable>> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
+                      "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+
+            auto* destinationData = reinterpret_cast<DB::Ref<MeshGroupTable>*>(storage + kOffset_m_meshGroup) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn(const DB::Slice<MeshInstanceTable> destination, const festd::span<const float4x4> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
+                      "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+
+            auto* destinationData = reinterpret_cast<float4x4*>(storage + kOffset_m_transform) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
     };
 } // namespace FE::Graphics

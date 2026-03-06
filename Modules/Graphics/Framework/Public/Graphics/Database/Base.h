@@ -29,18 +29,18 @@ namespace FE::Graphics::DB
     {
         T* m_ptr = nullptr;
 
-        void Setup(std::byte* page, const uint32_t localRowIndex)
+        FE_FORCE_INLINE void Setup(std::byte* page, const uint32_t localRowIndex)
         {
             m_ptr = reinterpret_cast<T*>(page + TOffset + localRowIndex * sizeof(T));
         }
 
         template<class... TArgs>
-        void Construct(TArgs&&... args) const
+        FE_FORCE_INLINE void Construct(TArgs&&... args) const
         {
             new (m_ptr) T(std::forward<TArgs>(args)...);
         }
 
-        [[nodiscard]] T& Get() const
+        [[nodiscard]] FE_FORCE_INLINE T& Get() const
         {
             return *m_ptr;
         }

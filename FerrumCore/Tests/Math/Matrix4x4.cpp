@@ -18,7 +18,7 @@ TEST(Matrix4x4, Create)
     EXPECT_EQ(m.m_rows[2], Vector4(+3.0f, +7.0f, -3.0f, -7.0f));
     EXPECT_EQ(m.m_rows[3], Vector4(+4.0f, +8.0f, -4.0f, -8.0f));
 
-    m = Matrix4x4::Identity();
+    m = Matrix4x4::kIdentity;
     EXPECT_EQ(m.m_rows[0], Vector4::AxisX());
     EXPECT_EQ(m.m_rows[1], Vector4::AxisY());
     EXPECT_EQ(m.m_rows[2], Vector4::AxisZ());
@@ -98,7 +98,7 @@ TEST(Matrix4x4, RowAccess)
     m.m_rows[3] = Vector4(1, 2, 3, 4);
     EXPECT_EQ(m.m_rows[3], Vector4(1, 2, 3, 4));
 
-    m = Matrix4x4::Identity();
+    m = Matrix4x4::kIdentity;
     EXPECT_EQ(m.m_rows[0], Vector4::AxisX());
     EXPECT_EQ(m.m_rows[1], Vector4::AxisY());
     EXPECT_EQ(m.m_rows[2], Vector4::AxisZ());

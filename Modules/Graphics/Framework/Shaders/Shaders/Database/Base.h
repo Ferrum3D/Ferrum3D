@@ -12,6 +12,18 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         struct Ref
         {
             uint32_t m_rowIndex;
+
+            void Invalidate()
+            {
+                m_rowIndex = kInvalidIndex;
+            }
+
+            static Ref CreateInvalid()
+            {
+                Ref value;
+                value.Invalidate();
+                return value;
+            }
         };
 
 
@@ -20,6 +32,19 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics)
         {
             uint32_t m_rowIndex;
             uint32_t m_count;
+
+            void Invalidate()
+            {
+                m_rowIndex = kInvalidIndex;
+                m_count = 0;
+            }
+
+            static Slice CreateInvalid()
+            {
+                Slice value;
+                value.Invalidate();
+                return value;
+            }
         };
     } // namespace DB
 

@@ -14,7 +14,7 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE explicit Transform(ForceInitType)
             : m_translationScale(Vector4::AxisW())
-            , m_rotation(Quaternion::Identity())
+            , m_rotation(Quaternion::kIdentity)
         {
         }
 
@@ -37,7 +37,7 @@ namespace FE
         {
             Transform transform;
             transform.m_translationScale = Vector4::AxisW();
-            transform.m_rotation = Quaternion::Identity();
+            transform.m_rotation = Quaternion::kIdentity;
             return transform;
         }
 
@@ -84,7 +84,7 @@ namespace FE
         {
             Transform transform;
             transform.m_translationScale = Vector4{ translation, 1.0f };
-            transform.m_rotation = Quaternion::Identity();
+            transform.m_rotation = Quaternion::kIdentity;
             return transform;
         }
 
@@ -100,7 +100,7 @@ namespace FE
         {
             Transform transform;
             transform.m_translationScale = Vector4{ 0.0f, 0.0f, 0.0f, scale };
-            transform.m_rotation = Quaternion::Identity();
+            transform.m_rotation = Quaternion::kIdentity;
             return transform;
         }
     };

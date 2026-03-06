@@ -113,5 +113,23 @@ namespace FE::Graphics
         {
             return WriteRow(reference.m_rowIndex);
         }
+        {% for column in table.columns %}
+        void CopyColumn(const DB::Slice<{{ table.name }}> destination, const festd::span<const {{ column.typename }}> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
+                      "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+
+            auto* destinationData = reinterpret_cast<{{ column.typename }}*>(storage + kOffset_{{ column.name }}) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+        {% endfor -%}
     };
 }

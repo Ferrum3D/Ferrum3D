@@ -4,14 +4,22 @@
 
 namespace FE::Graphics
 {
-    struct ISceneModule : public Memory::RefCountedObjectBase
+    struct SceneModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("7729E683-8638-4712-81D3-B1C78B16BFE3");
 
-        ~ISceneModule() override = default;
+        ~SceneModuleBase() override = default;
+
+    protected:
+        explicit SceneModuleBase(Scene* scene)
+            : m_scene(scene)
+        {
+        }
+
+        Scene* m_scene = nullptr;
     };
 
-    using SceneModuleList = BaseModuleList<Scene, ISceneModule>;
+    using SceneModuleList = BaseModuleList<Scene, SceneModuleBase>;
 
 
     struct Scene : public Memory::RefCountedObjectBase
@@ -38,7 +46,7 @@ namespace FE::Graphics
         [[nodiscard]] virtual View* CreateView() = 0;
 
     protected:
-        Scene(Renderer* renderer)
+        explicit Scene(Renderer* renderer)
             : m_renderer(renderer)
             , m_moduleList(this)
         {

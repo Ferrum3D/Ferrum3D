@@ -421,7 +421,7 @@ namespace FE::Math
 
     FE_FORCE_INLINE float ReciprocalEstimate(const float x)
     {
-        return _mm_cvtss_f32(_mm_rcp_ss(_mm_set1_ps(x)));
+        return _mm_cvtss_f32(_mm_rcp_ss(_mm_set_ss(x)));
     }
 
 
@@ -439,7 +439,7 @@ namespace FE::Math
 
     FE_FORCE_INLINE float ReciprocalSqrtEstimate(const float x)
     {
-        return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set1_ps(x)));
+        return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
     }
 
 

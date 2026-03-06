@@ -3,10 +3,10 @@
 namespace FE::Graphics
 {
     struct Renderer;
-    struct IRendererModule;
+    struct RendererModuleBase;
 
     struct Scene;
-    struct ISceneModule;
+    struct SceneModuleBase;
     struct View;
-    struct IViewModule;
+    struct ViewModuleBase;
 } // namespace FE::Graphics

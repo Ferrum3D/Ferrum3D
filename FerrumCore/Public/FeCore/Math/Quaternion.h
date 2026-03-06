@@ -48,11 +48,6 @@ namespace FE
             return m_values;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL Identity()
-        {
-            return Quaternion{ 0.0f, 0.0f, 0.0f, 1.0f };
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Quaternion FE_VECTORCALL LoadUnaligned(const float* values)
         {
             return Quaternion{ _mm_loadu_ps(values) };
@@ -106,9 +101,11 @@ namespace FE
         }
 
         static const Quaternion kZero;
+        static const Quaternion kIdentity;
     };
 
     inline const Quaternion Quaternion::kZero{ kForceInit };
+    inline const Quaternion Quaternion::kIdentity{ 0.0f, 0.0f, 0.0f, 1.0f };
 
 
     FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion FE_VECTORCALL operator+(const Quaternion lhs, const Quaternion rhs)

@@ -4,14 +4,22 @@
 
 namespace FE::Graphics
 {
-    struct IRendererModule : public Memory::RefCountedObjectBase
+    struct RendererModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("273B0F50-B991-4323-A516-6C87BBCD83A1");
 
-        ~IRendererModule() override = default;
+        ~RendererModuleBase() override = default;
+
+    protected:
+        explicit RendererModuleBase(Renderer* renderer)
+            : m_renderer(renderer)
+        {
+        }
+
+        Renderer* m_renderer = nullptr;
     };
 
-    using RendererModuleList = BaseModuleList<Renderer, IRendererModule>;
+    using RendererModuleList = BaseModuleList<Renderer, RendererModuleBase>;
 
 
     struct Renderer : public Memory::RefCountedObjectBase

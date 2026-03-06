@@ -107,16 +107,6 @@ namespace FE
             return result;
         }
 
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL Identity()
-        {
-            Matrix4x4 result;
-            result.m_simdVectors[0] = _mm_load_ps(&Internal::kIdentity4Values[0]);
-            result.m_simdVectors[1] = _mm_load_ps(&Internal::kIdentity4Values[4]);
-            result.m_simdVectors[2] = _mm_load_ps(&Internal::kIdentity4Values[8]);
-            result.m_simdVectors[3] = _mm_load_ps(&Internal::kIdentity4Values[12]);
-            return result;
-        }
-
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE static Matrix4x4 FE_VECTORCALL RotationX(const float angle)
         {
             const float sin = Math::Sin(angle);
@@ -270,6 +260,7 @@ namespace FE
         }
 
         static const Matrix4x4 kZero;
+        static const Matrix4x4 kIdentity;
     };
 
     inline const Matrix4x4 Matrix4x4::kZero{ kForceInit };

@@ -98,6 +98,12 @@ namespace FE::Graphics::DB
     }
 
 
+    uint32_t TableBase::GetReservedRowCount() const
+    {
+        return m_rowsPerPage * m_pages.size();
+    }
+
+
     TableBase::TableBase(Database* database, const uint32_t rowsPerPage)
         : m_database(database)
         , m_rowsPerPage(rowsPerPage)
@@ -173,8 +179,8 @@ namespace FE::Graphics::DB
     void Database::MarkPageDirty(const StoragePage* page)
     {
         const uint32_t pageIndex = page->m_globalID;
-        FE_Assert(!m_freePages.test(pageIndex));
-        FE_Assert(m_pages[pageIndex] == page);
+        FE_AssertDebug(!m_freePages.test(pageIndex));
+        FE_AssertDebug(m_pages[pageIndex] == page);
         m_dirtyPages.set(pageIndex);
     }
 

@@ -164,7 +164,7 @@ namespace FE::AssetBuilder
                 translation = Vector3::LoadUnaligned(node.translation.data());
             }
 
-            Quaternion rotation = Quaternion::Identity();
+            Quaternion rotation = Quaternion::kIdentity;
             if (node.rotation.size() == 4)
             {
                 rotation = Quaternion::LoadUnaligned(node.rotation.data());
@@ -184,7 +184,7 @@ namespace FE::AssetBuilder
 
                 Vector3 shear;
                 FE_Verify(Math::DecomposeTransform(matrix, translation, rotation, scale, shear));
-                FE_Assert(Math::CmpEqual(shear, Vector3::Zero()));
+                FE_Assert(Math::CmpEqual(shear, Vector3::kZero));
             }
 
             // Correct the coordinate system

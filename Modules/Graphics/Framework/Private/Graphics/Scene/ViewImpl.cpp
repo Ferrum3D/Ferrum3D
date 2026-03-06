@@ -13,7 +13,7 @@ namespace FE::Graphics
 
     void ViewImpl::Update(Core::FrameGraphBlackboard& blackboard)
     {
-        m_moduleList.ForEachActive([&blackboard](IViewModule& module) {
+        m_moduleList.ForEachActive([&blackboard](ViewModuleBase& module) {
             module.Update(blackboard);
         });
     }

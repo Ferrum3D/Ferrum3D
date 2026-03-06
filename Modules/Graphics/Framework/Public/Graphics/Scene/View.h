@@ -6,16 +6,24 @@
 
 namespace FE::Graphics
 {
-    struct IViewModule : public Memory::RefCountedObjectBase
+    struct ViewModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("77BC4DE9-A792-4A65-BCB8-F23556551774");
 
-        ~IViewModule() override = default;
+        ~ViewModuleBase() override = default;
 
         virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
+
+    protected:
+        explicit ViewModuleBase(View* view)
+            : m_view(view)
+        {
+        }
+
+        View* m_view = nullptr;
     };
 
-    using ViewModuleList = BaseModuleList<View, IViewModule>;
+    using ViewModuleList = BaseModuleList<View, ViewModuleBase>;
 
 
     struct View : public Memory::RefCountedObjectBase
@@ -60,9 +68,9 @@ namespace FE::Graphics
         float m_nearPlane = 1.0f;
         float m_farPlane = 100.0f;
 
-        Matrix4x4 m_viewMatrix = Matrix4x4::Identity();
-        Matrix4x4 m_projectionMatrix = Matrix4x4::Identity();
-        Matrix4x4 m_viewProjectionMatrix = Matrix4x4::Identity();
-        Matrix4x4 m_inverseViewProjectionMatrix = Matrix4x4::Identity();
+        Matrix4x4 m_viewMatrix = Matrix4x4::kIdentity;
+        Matrix4x4 m_projectionMatrix = Matrix4x4::kIdentity;
+        Matrix4x4 m_viewProjectionMatrix = Matrix4x4::kIdentity;
+        Matrix4x4 m_inverseViewProjectionMatrix = Matrix4x4::kIdentity;
     };
 } // namespace FE::Graphics
