@@ -68,4 +68,7 @@ namespace FE::DI
                 return Resolve<T>().value();
         }
     };
+
+
+    using ActivatorFunctionType = ResultCode(IServiceProvider*, Memory::RefCountedObjectBase**);
 } // namespace FE::DI

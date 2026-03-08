@@ -261,5 +261,5 @@ TEST(Matrix4x4, InverseTransform)
     m = m * Matrix4x4::Scale(Vector3(4, 5, 6));
 
     const Matrix4x4 identity = m * Math::InvertTransform(m);
-    EXPECT_TRUE(Math::CmpEqual(identity, Matrix4x4::Identity()));
+    EXPECT_TRUE(Math::CmpEqual(identity, Matrix4x4::kIdentity));
 }

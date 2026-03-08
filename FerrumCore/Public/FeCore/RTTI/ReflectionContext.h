@@ -15,11 +15,12 @@ namespace FE::Rtti
         template<class T>
         void ReflectClass(Type& type, const TypeID id, const festd::ascii_view qualifiedName,
                           const festd::span<const uint8_t> baseTypes, const festd::span<const Attribute> attributes,
-                          const festd::span<const FieldInfo> fields)
+                          const festd::span<const FieldInfo> fields, DI::ActivatorFunctionType* activator = nullptr)
         {
             type.m_id = id;
             type.m_name = GetShortName(qualifiedName);
             type.m_qualifiedName = qualifiedName;
+            type.m_activator = activator;
             type.m_baseTypes = festd::span(reinterpret_cast<const TypeID*>(baseTypes.data()), baseTypes.size() / sizeof(TypeID));
             type.m_attributes = attributes;
             type.m_fields = fields;

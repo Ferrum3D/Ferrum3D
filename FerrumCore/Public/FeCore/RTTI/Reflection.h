@@ -1,4 +1,5 @@
 #pragma once
+#include <FeCore/DI/BaseDI.h>
 #include <FeCore/RTTI/RTTI.h>
 #include <festd/intrusive_list.h>
 
@@ -76,6 +77,7 @@ namespace FE::Rtti
         TypeID m_id = TypeID::kNull;
         festd::ascii_view m_name;
         festd::ascii_view m_qualifiedName;
+        DI::ActivatorFunctionType* m_activator = nullptr;
         festd::span<const TypeID> m_baseTypes;
         festd::span<const Attribute> m_attributes;
         festd::span<const FieldInfo> m_fields;

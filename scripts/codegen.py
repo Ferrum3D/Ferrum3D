@@ -80,7 +80,6 @@ def main():
 
     if total_file_count == 0 and cache.is_valid():
         print("Nothing to do. All headers are up to date.")
-        return
 
     # When the CCF cache is invalid (a file was deleted), regenerate the model
     # from scratch; otherwise load the existing per-file model and update only

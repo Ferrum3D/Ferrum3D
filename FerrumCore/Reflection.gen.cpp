@@ -175,6 +175,40 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_1adbd843e8414b1496ea4aa08c901084([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<AsyncStreamIO>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                Rc<Logger> arg0;
+                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
+                    arg0 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<IJobSystem> arg1;
+                if (const auto resolveResult = serviceProvider->Resolve<IJobSystem>())
+                    arg1 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<IStreamFactory> arg2;
+                if (const auto resolveResult = serviceProvider->Resolve<IStreamFactory>())
+                    arg2 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+                *result = Rc<AsyncStreamIO>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get());
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& AsyncStreamIO::RTTI_GetType()
@@ -217,7 +251,8 @@ namespace FE::IO
                                             "FE::IO::AsyncStreamIO",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields);
+                                            kFields,
+                                            &RTTI_Activator_1adbd843e8414b1496ea4aa08c901084);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1adbd843e8414b1496ea4aa08c901084(&AsyncStreamIO::Reflect);
@@ -369,6 +404,20 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_2427b1d9f1a54a1ba804eb9aca502c28([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<IAsyncController>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<IAsyncController>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& IAsyncController::RTTI_GetType()
@@ -409,7 +458,8 @@ namespace FE::IO
                                                "FE::IO::IAsyncController",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields);
+                                               kFields,
+                                               &RTTI_Activator_2427b1d9f1a54a1ba804eb9aca502c28);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2427b1d9f1a54a1ba804eb9aca502c28(&IAsyncController::Reflect);
@@ -746,6 +796,20 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_2f74ff8d4d8144be962a9d30669e03c8([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<StreamBase>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<StreamBase>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& StreamBase::RTTI_GetType()
@@ -787,7 +851,8 @@ namespace FE::IO
                                          "FE::IO::StreamBase",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         &RTTI_Activator_2f74ff8d4d8144be962a9d30669e03c8);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_2f74ff8d4d8144be962a9d30669e03c8(&StreamBase::Reflect);
@@ -923,6 +988,26 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_3f973b261330404abf05ce0b63306871([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<FileStreamFactory>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                Rc<Env::Configuration> arg0;
+                if (const auto resolveResult = serviceProvider->Resolve<Env::Configuration>())
+                    arg0 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+                *result = Rc<FileStreamFactory>::DefaultNew(arg0.Get());
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& FileStreamFactory::RTTI_GetType()
@@ -965,7 +1050,8 @@ namespace FE::IO
                                                 "FE::IO::FileStreamFactory",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields);
+                                                kFields,
+                                                &RTTI_Activator_3f973b261330404abf05ce0b63306871);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_3f973b261330404abf05ce0b63306871(&FileStreamFactory::Reflect);
@@ -1007,6 +1093,20 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_4bfcad353da34115b4ad96086ad97a8c([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<IStreamFactory>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<IStreamFactory>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& IStreamFactory::RTTI_GetType()
@@ -1047,7 +1147,8 @@ namespace FE::IO
                                              "FE::IO::IStreamFactory",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             &RTTI_Activator_4bfcad353da34115b4ad96086ad97a8c);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4bfcad353da34115b4ad96086ad97a8c(&IStreamFactory::Reflect);
@@ -1528,6 +1629,20 @@ namespace FE
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_6754da3146fa4661a46e2787e6d9fd29([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<JobSystem>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<JobSystem>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& JobSystem::RTTI_GetType()
@@ -1569,7 +1684,8 @@ namespace FE
                                         "FE::JobSystem",
                                         kBaseClassTypeIDs,
                                         kAttributes,
-                                        kFields);
+                                        kFields,
+                                        &RTTI_Activator_6754da3146fa4661a46e2787e6d9fd29);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6754da3146fa4661a46e2787e6d9fd29(&JobSystem::Reflect);
@@ -2213,6 +2329,20 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_a44064ec34e04b999bc7a2b27321f617([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<IAsyncStreamIO>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<IAsyncStreamIO>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& IAsyncStreamIO::RTTI_GetType()
@@ -2253,7 +2383,8 @@ namespace FE::IO
                                              "FE::IO::IAsyncStreamIO",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             &RTTI_Activator_a44064ec34e04b999bc7a2b27321f617);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_a44064ec34e04b999bc7a2b27321f617(&IAsyncStreamIO::Reflect);
@@ -2430,6 +2561,20 @@ namespace FE
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_b54397f4415f4fa681244672d2a179ce([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<Logger>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<Logger>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& Logger::RTTI_GetType()
@@ -2469,7 +2614,8 @@ namespace FE
                                      "FE::Logger",
                                      kBaseClassTypeIDs,
                                      kAttributes,
-                                     kFields);
+                                     kFields,
+                                     &RTTI_Activator_b54397f4415f4fa681244672d2a179ce);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_b54397f4415f4fa681244672d2a179ce(&Logger::Reflect);
@@ -3313,6 +3459,20 @@ namespace FE
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_f9fb743ab5434b64a36bb055434de90b([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<IJobSystem>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<IJobSystem>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& IJobSystem::RTTI_GetType()
@@ -3352,7 +3512,8 @@ namespace FE
                                          "FE::IJobSystem",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         &RTTI_Activator_f9fb743ab5434b64a36bb055434de90b);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_f9fb743ab5434b64a36bb055434de90b(&IJobSystem::Reflect);
@@ -3394,6 +3555,20 @@ namespace FE::IO
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_fd697dc5020e4998adf29dfaf48e2a75([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<IStream>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<IStream>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& IStream::RTTI_GetType()
@@ -3433,7 +3608,8 @@ namespace FE::IO
                                       "FE::IO::IStream",
                                       kBaseClassTypeIDs,
                                       kAttributes,
-                                      kFields);
+                                      kFields,
+                                      &RTTI_Activator_fd697dc5020e4998adf29dfaf48e2a75);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_fd697dc5020e4998adf29dfaf48e2a75(&IStream::Reflect);

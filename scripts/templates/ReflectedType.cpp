@@ -144,6 +144,34 @@ namespace {{ type.namespace }}
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+{% if type.is_di_compatible %}
+        DI::ResultCode RTTI_Activator_{{ type.id.bytes.hex() }}([[maybe_unused]] DI::IServiceProvider* serviceProvider, Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<{{ type.name }}>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+            {% if type.constructors|length > 0 %}
+                {% for arg in type.constructors[0].args %}
+                    {% set qualified_name = arg.qualified_name.removeprefix(type.namespace+"::").removeprefix("FE::") %}
+                    Rc<{{ qualified_name }}> arg{{ loop.index0 }};
+                    if (const auto resolveResult = serviceProvider->Resolve<{{ qualified_name }}>())
+                        arg{{ loop.index0 }} = resolveResult.value();
+                    else
+                        return resolveResult.error();
+                {% endfor %}
+            {% endif -%}
+                *result = Rc<{{ type.name }}>::DefaultNew(
+                {%- if type.constructors|length > 0 -%}
+                    {% for arg in type.constructors[0].args %}arg{{loop.index0}}.Get() {% if not loop.last %},{% endif %} {% endfor %}
+                {%- endif -%}
+                );
+                return DI::ResultCode::kSuccess;
+            }
+        }
+{% endif -%}
     }
 
     const Rtti::Type& {{ type.name }}::RTTI_GetType()
@@ -196,7 +224,9 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
+        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields
+            {%- if type.is_di_compatible %}, &RTTI_Activator_{{ type.id.bytes.hex() }} {% endif -%}
+        );
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);

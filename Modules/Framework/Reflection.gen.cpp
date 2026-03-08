@@ -120,6 +120,20 @@ namespace FE::Framework::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_63770294e7a24cdd866cbbc49ec93214([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<PlatformApplication>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<PlatformApplication>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& PlatformApplication::RTTI_GetType()
@@ -160,7 +174,8 @@ namespace FE::Framework::Core
                                                   "FE::Framework::Core::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields);
+                                                  kFields,
+                                                  &RTTI_Activator_63770294e7a24cdd866cbbc49ec93214);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_63770294e7a24cdd866cbbc49ec93214(&PlatformApplication::Reflect);
@@ -208,6 +223,20 @@ namespace FE::Framework::Windows
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_70a9df121d5d4d0a8c24c014e3963121([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<PlatformApplication>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<PlatformApplication>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& PlatformApplication::RTTI_GetType()
@@ -250,7 +279,8 @@ namespace FE::Framework::Windows
                                                   "FE::Framework::Windows::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields);
+                                                  kFields,
+                                                  &RTTI_Activator_70a9df121d5d4d0a8c24c014e3963121);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_70a9df121d5d4d0a8c24c014e3963121(&PlatformApplication::Reflect);
@@ -298,6 +328,33 @@ namespace FE::Framework::Windows
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_74e2d079ade74348ad82b1094b3b5171([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<PlatformWindow>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                Rc<Framework::Core::PlatformApplication> arg0;
+                if (const auto resolveResult = serviceProvider->Resolve<Framework::Core::PlatformApplication>())
+                    arg0 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<Logger> arg1;
+                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
+                    arg1 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+                *result = Rc<PlatformWindow>::DefaultNew(arg0.Get(), arg1.Get());
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& PlatformWindow::RTTI_GetType()
@@ -340,7 +397,8 @@ namespace FE::Framework::Windows
                                              "FE::Framework::Windows::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             &RTTI_Activator_74e2d079ade74348ad82b1094b3b5171);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_74e2d079ade74348ad82b1094b3b5171(&PlatformWindow::Reflect);
@@ -464,6 +522,20 @@ namespace FE::Framework::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_c1f93be65fe74e28a5f68a1e9a5f427f([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<PlatformWindow>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                *result = Rc<PlatformWindow>::DefaultNew();
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& PlatformWindow::RTTI_GetType()
@@ -504,7 +576,8 @@ namespace FE::Framework::Core
                                              "FE::Framework::Core::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields);
+                                             kFields,
+                                             &RTTI_Activator_c1f93be65fe74e28a5f68a1e9a5f427f);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c1f93be65fe74e28a5f68a1e9a5f427f(&PlatformWindow::Reflect);

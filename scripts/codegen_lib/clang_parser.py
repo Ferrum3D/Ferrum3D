@@ -4,10 +4,12 @@ from clang import cindex
 from dataclasses import dataclass
 from pathlib import Path
 import uuid
+import copy
 
 from .model import (
     FieldFlags,
     FieldInfo,
+    ConstructorInfo,
     ReflectedType,
     TypeKind,
     USE_INTERNAL_ID,
@@ -141,11 +143,20 @@ def get_field_flags(node: cindex.Cursor, access_specifier: cindex.AccessSpecifie
     return flags
 
 
+def get_pointer_type(pointee: ReflectedType) -> ReflectedType:
+    result = copy.copy(pointee)
+    result.pointer_level += 1
+    return result
+
+
 def resolve_type(t: cindex.Type, types: dict[uuid.UUID, ReflectedType]) -> ReflectedType | None:
     type_qualified_name = get_builtin_type_name(t)
     if type_qualified_name is None:
         if t.kind == cindex.TypeKind.CONSTANTARRAY:
             return resolve_type(t.get_array_element_type(), types)
+        if t.kind == cindex.TypeKind.POINTER:
+            pointee = resolve_type(t.get_pointee(), types)
+            return get_pointer_type(pointee) if pointee else None
         type_declaration = t.get_declaration()
         if type_declaration is None:
             return None
@@ -177,6 +188,7 @@ def parse_class(
     node: cindex.Cursor,
     fields: list[FieldInfo],
     base_types: list[cindex.Type],
+    constructors: list[ConstructorInfo],
     types: dict[uuid.UUID, ReflectedType],
     need_reflect: bool,
     public_only: bool,
@@ -187,6 +199,14 @@ def parse_class(
             access_spec = child.access_specifier
         if child.kind == cindex.CursorKind.CXX_BASE_SPECIFIER:
             base_types.append(child.type)
+        if child.kind == cindex.CursorKind.CONSTRUCTOR:
+            args = list(child.get_arguments())
+            arg_types = [resolve_type(x.type, types) if x is not None else None for x in args]
+            resolved_arg_types = list(filter(None, arg_types))
+            if len(resolved_arg_types) == len(args):
+                constructors.append(ConstructorInfo(resolved_arg_types))
+            else:
+                constructors.append(ConstructorInfo.create_invalid())
         if child.kind == cindex.CursorKind.FIELD_DECL and need_reflect:
             field_name = child.spelling
             canonical_type = child.type.get_canonical()
@@ -240,7 +260,7 @@ def visit_external_rtti_declaration(
                 f"FE_RTTI_Reflect macro must be declared in the same file as the reflected type {get_qualified_name(reflected_type_declaration)}"
             )
 
-        parse_class(reflected_type_declaration, fields, [], types, need_reflect, True)
+        parse_class(reflected_type_declaration, fields, [], [], types, need_reflect, True)
     elif reflected_type_declaration and is_enum(reflected_type_declaration.kind):
         type_kind = TypeKind.ENUM
         namespace_name = get_namespace(reflected_type_declaration)
@@ -262,8 +282,9 @@ def visit_external_rtti_declaration(
         type_name,
         node.location,
         attributes,
-        bases,
+        list(filter(None, bases)),
         fields,
+        [],
         project_dir,
     )
     types[ref_type.internal_id] = ref_type
@@ -288,7 +309,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
         attributes = {}
         base_types = []
         fields = []
-        parse_class(node, fields, base_types, types, need_reflect, False)
+        constructors = []
+        parse_class(node, fields, base_types, constructors, types, need_reflect, False)
 
         bases = get_all_base_types(base_types, types)
         ref_type = ReflectedType(
@@ -301,6 +323,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             attributes,
             bases,
             fields,
+            constructors,
             project_dir,
         )
         types[ref_type.internal_id] = ref_type
