@@ -9,7 +9,7 @@
 
 namespace FE::Framework
 {
-    struct EntityRegistry final
+    struct EntityRegistry final : public Memory::RefCountedObjectBase
     {
         enum class State : uint32_t
         {
@@ -23,7 +23,7 @@ namespace FE::Framework
         FE_RTTI("D7D3E880-E152-4014-B598-A9A97F5E463C");
 
         explicit EntityRegistry(EntityWorld* world);
-        ~EntityRegistry();
+        ~EntityRegistry() override;
 
         [[nodiscard]] State GetState() const
         {

@@ -124,5 +124,9 @@ class ReflectedType:
         if not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID):
             self.is_di_compatible = False
 
+        # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:
+        #     print(f'Warning: {self.qualified_name} is not derived from RefCountedObjectBase')
+
+
     def is_derived_from(self, base_id: uuid.UUID) -> bool:
         return any(t.id == base_id for t in self.bases)

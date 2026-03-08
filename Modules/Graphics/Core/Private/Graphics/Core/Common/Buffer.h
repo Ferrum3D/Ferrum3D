@@ -6,6 +6,8 @@ namespace FE::Graphics::Common
 {
     struct Buffer : public Core::Buffer
     {
+        FE_RTTI("6E88784E-1918-41AC-9343-0E93CF07C3B4");
+
         Core::ResourceMemory GetMemoryStatus() const override;
 
         void SetState(SubresourceState state);

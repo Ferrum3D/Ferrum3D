@@ -6,6 +6,8 @@ namespace FE::Graphics::Common
 {
     struct Texture : public Core::Texture
     {
+        FE_RTTI("99F7A913-61EF-4C87-9B27-D06CA99F0D00");
+
         Core::ResourceMemory GetMemoryStatus() const override;
 
         void SetState(Core::TextureSubresource subresource, SubresourceState state);

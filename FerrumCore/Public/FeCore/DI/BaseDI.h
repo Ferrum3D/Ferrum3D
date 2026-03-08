@@ -33,11 +33,11 @@ namespace FE::DI
 
 
     //! @brief Base interface for dependency injection containers.
-    struct IServiceProvider
+    struct IServiceProvider : public Memory::RefCountedObjectBase
     {
         FE_RTTI("89A29040-31BC-411D-8522-92D7D2696C16");
 
-        virtual ~IServiceProvider() = default;
+        ~IServiceProvider() override = default;
 
         virtual ResultCode Resolve(Uuid registrationID, Memory::RefCountedObjectBase** ppResult) = 0;
 

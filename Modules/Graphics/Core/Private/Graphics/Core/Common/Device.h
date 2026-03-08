@@ -8,6 +8,8 @@ namespace FE::Graphics::Common
 {
     struct Device : public Core::Device
     {
+        FE_RTTI("830776B9-20AC-4D55-B7DC-685EA6D20CC2");
+
         const festd::intrusive_list<Core::Resource>& GetResources() const
         {
             return m_resourceList;

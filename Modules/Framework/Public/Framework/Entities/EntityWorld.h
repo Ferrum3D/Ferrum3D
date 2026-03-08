@@ -36,8 +36,6 @@ namespace FE::Framework
             festd::intrusive_list<EntityWorld>* m_list;
         };
 
-        FE_RTTI("069E3B9C-CC10-4989-A6DB-37095DFDB990");
-
         EntityWorld();
         ~EntityWorld();
 

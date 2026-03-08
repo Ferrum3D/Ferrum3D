@@ -791,13 +791,11 @@ namespace FE::Graphics
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_6ca86f0571ea45d89d22d57e469f4752(ModelAssetManager* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
                 0x6c, 0xa8, 0x6f, 0x05, 0x71, 0xea, 0x45, 0xd8,
                 0x9d, 0x22, 0xd5, 0x7e, 0x46, 0x9f, 0x47, 0x52, // FE::Graphics::ModelAssetManager (this type)
                 0x8e, 0x72, 0x1d, 0x85, 0xb8, 0x82, 0x48, 0xe9,
                 0xad, 0x6e, 0x2a, 0xc8, 0x0a, 0x52, 0x63, 0x2e, // FE::Graphics::IModelAssetManager
-                0xe1, 0xe0, 0xbd, 0x22, 0x54, 0x3a, 0x40, 0x36,
-                0xb9, 0x18, 0x13, 0x4d, 0xb9, 0xc9, 0x9d, 0x4f, // FE::IO::IAsyncReadCallback
                 0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
                 0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
             };
@@ -811,10 +809,6 @@ namespace FE::Graphics
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Graphics::IModelAssetManager*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncReadCallback*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
@@ -901,11 +895,9 @@ namespace FE::Graphics
             0x9d, 0x22, 0xd5, 0x7e, 0x46, 0x9f, 0x47, 0x52, // FE::Graphics::ModelAssetManager
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 3 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0x8e, 0x72, 0x1d, 0x85, 0xb8, 0x82, 0x48, 0xe9,
             0xad, 0x6e, 0x2a, 0xc8, 0x0a, 0x52, 0x63, 0x2e, // FE::Graphics::IModelAssetManager
-            0xe1, 0xe0, 0xbd, 0x22, 0x54, 0x3a, 0x40, 0x36,
-            0xb9, 0x18, 0x13, 0x4d, 0xb9, 0xc9, 0x9d, 0x4f, // FE::IO::IAsyncReadCallback
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
@@ -1648,13 +1640,11 @@ namespace FE::Graphics
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_9bc819e7f2cd47d3a84c421cef60fc98(TextureAssetManager* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
                 0x9b, 0xc8, 0x19, 0xe7, 0xf2, 0xcd, 0x47, 0xd3,
                 0xa8, 0x4c, 0x42, 0x1c, 0xef, 0x60, 0xfc, 0x98, // FE::Graphics::TextureAssetManager (this type)
                 0xde, 0x91, 0x93, 0x40, 0x61, 0xe9, 0x46, 0x7e,
                 0x96, 0xcb, 0xca, 0xf0, 0x37, 0xa2, 0x0a, 0x3a, // FE::Graphics::ITextureAssetManager
-                0xe1, 0xe0, 0xbd, 0x22, 0x54, 0x3a, 0x40, 0x36,
-                0xb9, 0x18, 0x13, 0x4d, 0xb9, 0xc9, 0x9d, 0x4f, // FE::IO::IAsyncReadCallback
                 0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
                 0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
             };
@@ -1668,10 +1658,6 @@ namespace FE::Graphics
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Graphics::ITextureAssetManager*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncReadCallback*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
@@ -1758,11 +1744,9 @@ namespace FE::Graphics
             0xa8, 0x4c, 0x42, 0x1c, 0xef, 0x60, 0xfc, 0x98, // FE::Graphics::TextureAssetManager
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 3 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0xde, 0x91, 0x93, 0x40, 0x61, 0xe9, 0x46, 0x7e,
             0x96, 0xcb, 0xca, 0xf0, 0x37, 0xa2, 0x0a, 0x3a, // FE::Graphics::ITextureAssetManager
-            0xe1, 0xe0, 0xbd, 0x22, 0x54, 0x3a, 0x40, 0x36,
-            0xb9, 0x18, 0x13, 0x4d, 0xb9, 0xc9, 0x9d, 0x4f, // FE::IO::IAsyncReadCallback
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };

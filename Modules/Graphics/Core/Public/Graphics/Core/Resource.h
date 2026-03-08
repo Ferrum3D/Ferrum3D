@@ -35,6 +35,8 @@ namespace FE::Graphics::Core
         : public DeviceObject
         , public festd::intrusive_list_node
     {
+        FE_RTTI("490B70FF-2CE3-4B16-8466-B64997AC87F5");
+
         [[nodiscard]] Env::Name GetName() const
         {
             return m_name;
