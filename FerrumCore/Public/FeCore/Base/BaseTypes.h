@@ -48,7 +48,7 @@ namespace FE
 
 
     template<class TEnum>
-    inline constexpr std::underlying_type_t<TEnum> kDefaultErrorCode = std::numeric_limits<std::underlying_type_t<TEnum>>::min();
+    inline constexpr std::underlying_type_t<TEnum> kDefaultErrorCode = Constants::kMinValue<std::underlying_type_t<TEnum>>;
 
 
     //! @brief Empty structure with no members.

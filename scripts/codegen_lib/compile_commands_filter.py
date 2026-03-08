@@ -25,7 +25,15 @@ _INCLUDE_RE = re.compile(
 _HEADER_SUFFIXES = {".h", ".hpp", ".hxx", ".h++", ".hh"}
 
 
-def _extract_include_dirs(compiler_args: list[str]) -> list[Path]:
+def _is_relative_to(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _extract_include_dirs(compiler_args: list[str], excluded: frozenset[Path]) -> list[Path]:
     """Return all -I / /I directories present in *compiler_args* as resolved Paths."""
     dirs: list[Path] = []
     i = 0
@@ -44,8 +52,8 @@ def _extract_include_dirs(compiler_args: list[str]) -> list[Path]:
 
         if path_str is not None:
             p = Path(path_str)
-            if p.is_dir():
-                dirs.append(p.resolve())
+            if p.is_dir() and not any(_is_relative_to(p, x) for x in excluded):
+                dirs.append(p)
         i += 1
     return dirs
 
@@ -70,14 +78,6 @@ def _resolve_include(
         except OSError:
             pass
     return None
-
-
-def _is_relative_to(child: Path, parent: Path) -> bool:
-    try:
-        child.relative_to(parent)
-        return True
-    except ValueError:
-        return False
 
 
 def _transitive_headers(
@@ -165,7 +165,7 @@ def _parse_args(entry: dict) -> tuple[Path, list[str]]:
             continue
         if any(tok.startswith(p) for p in _SKIP_PREFIX):
             continue
-        if Path(tok).resolve() == source:   # drop the source file itself
+        if Path(tok) == source:   # drop the source file itself
             continue
         args.append(tok)
 
@@ -249,8 +249,7 @@ class Cache:
 
     def _key(self, p: Path) -> str:
         """Stable, case-normalised string key for *p*."""
-        resolved = p.resolve()
-        return resolved.as_posix().lower() if os.name == "nt" else resolved.as_posix()
+        return p.as_posix().lower() if os.name == "nt" else p.as_posix()
 
     def _compute_digests(self, paths: list[Path]) -> dict[str, str]:
         """
@@ -329,7 +328,7 @@ def filter_changed(
 
     for entry in commands:
         source, args = _parse_args(entry)
-        include_dirs = _extract_include_dirs(args)
+        include_dirs = _extract_include_dirs(args, excluded)
         headers = _transitive_headers(
             source, include_dirs, root, excluded, resolve_cache, closure_cache
         )
