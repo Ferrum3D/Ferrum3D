@@ -1,3 +1,4 @@
+#include <FeCore/DI/Activator.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
@@ -8,6 +9,9 @@ namespace FE::Graphics
     MeshSceneModule::MeshSceneModule(Scene* scene)
         : SceneModuleBase(scene)
     {
+        m_meshLodInfoTable = DI::DefaultNew<MeshLodInfoTable>().value();
+        m_meshGroupTable = DI::DefaultNew<MeshGroupTable>().value();
+        m_meshInstanceTable = DI::DefaultNew<MeshInstanceTable>().value();
     }
 
 

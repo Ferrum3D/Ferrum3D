@@ -3,6 +3,8 @@
 // Manual changes will be lost.
 //
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 #include <Graphics/Assets/IModelAssetManager.h>
 #include <Graphics/Assets/ITextureAssetManager.h>
 #include <Graphics/Assets/ModelAssetManager.h>
@@ -21,8 +23,6 @@
 #include <Shaders/Passes/Tools/Blit/Blit.h>
 #include <Shaders/Passes/Tools/Downsample/Downsample.h>
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -112,8 +112,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID ViewImpl::TypeID = Rtti::TypeID{ "113ac827-90ac-48f7-9a7a-4c7ae0695ad8" };
@@ -201,8 +199,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_113ac82790ac48f79a7a4c7ae0695ad8(&ViewImpl::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -312,8 +308,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_1784843c50854289aa8204c480e423ee(&MeshSceneModule::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -462,8 +456,6 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID Scene::TypeID = Rtti::TypeID{ "20121f05-8d10-4427-9925-2dba388379c9" };
@@ -542,8 +534,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_20121f058d10442799252dba388379c9(&Scene::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -624,8 +614,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_273b0f50b9914323a5166c87bbcd83a1(&RendererModuleBase::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -715,8 +703,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID View::TypeID = Rtti::TypeID{ "4b83afa4-70b9-4af9-8ab8-1082c6b49849" };
@@ -795,8 +781,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_4b83afa470b94af98ab81082c6b49849(&View::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -943,8 +927,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID SceneImpl::TypeID = Rtti::TypeID{ "75336687-960e-4693-ae02-a6dcda770fac" };
@@ -1033,8 +1015,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID SceneModuleBase::TypeID = Rtti::TypeID{ "7729e683-8638-4712-81d3-b1c78b16bfe3" };
@@ -1115,8 +1095,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID ViewModuleBase::TypeID = Rtti::TypeID{ "77bc4de9-a792-4a65-bcb8-f23556551774" };
@@ -1196,8 +1174,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_77bc4de9a7924a65bcb8f23556551774(&ViewModuleBase::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -1301,8 +1277,6 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -1386,8 +1360,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Tools::Blit::PassDesc>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -1484,8 +1456,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics
 {
     const Rtti::TypeID MeshInstanceTable::TypeID = Rtti::TypeID{ "8a836070-a798-50fb-a93b-6fe5848b70b9" };
@@ -1573,8 +1543,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_8a836070a79850fba93b6fe5848b70b9(&MeshInstanceTable::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -1670,8 +1638,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_8e721d85b88248e9ad6e2ac80a52632e(&IModelAssetManager::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -1818,8 +1784,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -1894,8 +1858,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Tools::Downsample::PassDesc>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::DB
 {
@@ -1976,8 +1938,6 @@ namespace FE::Graphics::DB
     static Rtti::TypeRegistrar GTypeRegistrar_b0b292173d304b3580269d0eb91b8fd2(&TableBase::Reflect);
 } // namespace FE::Graphics::DB
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {
@@ -2081,8 +2041,6 @@ namespace FE::Graphics
     static Rtti::TypeRegistrar GTypeRegistrar_cfd1e397fc2e4f9b99f34cf67f695b1e(&RendererImpl::Reflect);
 } // namespace FE::Graphics
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics
 {

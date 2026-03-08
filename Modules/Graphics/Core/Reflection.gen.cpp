@@ -3,6 +3,8 @@
 // Manual changes will be lost.
 //
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/Buffer.h>
@@ -50,8 +52,6 @@
 #include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -106,8 +106,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::SamplerDescriptor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -233,8 +231,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_0ed571f458c940d9aa58c70450fb0e6a(&ComputePipeline::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -374,8 +370,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -440,8 +434,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassColorTarget>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -513,8 +505,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_2249e0297abd4eee9d1dc59570fd27ef(&Buffer::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -610,8 +600,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_23d426e633224cb29800deba7c3deac0(&Device::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -716,8 +704,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{ "2c1855f0-034b-47b7-869a-f9512903212f" };
@@ -820,8 +806,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_2c1855f0034b47b7869af9512903212f(&AsyncCopyQueue::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -940,8 +924,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -1007,8 +989,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassViewport>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -1127,8 +1107,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID ResourcePool::TypeID = Rtti::TypeID{ "389492dc-7ae2-4b58-984c-6a1529edfb41" };
@@ -1232,8 +1210,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -1287,8 +1263,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::TextureUAVDescriptor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Common
 {
@@ -1421,8 +1395,6 @@ namespace FE::Graphics::Common
 } // namespace FE::Graphics::Common
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID DeviceFactory::TypeID = Rtti::TypeID{ "4247535c-3e97-42e7-a869-1dc542afbf25" };
@@ -1538,8 +1510,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_4247535c3e9742e7a8691dc542afbf25(&DeviceFactory::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -1679,8 +1649,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID GraphicsPipeline::TypeID = Rtti::TypeID{ "4524c98f-c971-47eb-a896-6c4ea33ca549" };
@@ -1806,8 +1774,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -1861,8 +1827,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::TextureSRVDescriptor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -1974,8 +1938,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_4ebe406cc4d740e5948591c18c8c2527(&GraphicsPipeline::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Common
 {
@@ -2094,8 +2056,6 @@ namespace FE::Graphics::Common
 } // namespace FE::Graphics::Common
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID DeviceObject::TypeID = Rtti::TypeID{ "52579f06-74cd-4151-8099-4d4283e8b6b0" };
@@ -2190,8 +2150,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_52579f0674cd415180994d4283e8b6b0(&DeviceObject::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -2297,8 +2255,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID Viewport::TypeID = Rtti::TypeID{ "6190ef25-7202-48e9-a4e7-c5b123881d58" };
@@ -2402,8 +2358,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{ "686e6ebe-8038-4e26-919c-70834410bc1f" };
@@ -2492,8 +2446,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID Texture::TypeID = Rtti::TypeID{ "691ea96f-e1f3-47c5-bf5b-24258dfa57a8" };
@@ -2564,8 +2516,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_691ea96fe1f347c5bf5b24258dfa57a8(&Texture::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -2650,8 +2600,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassBufferAccess>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -2747,8 +2695,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_7238722e62414eb2b140c0545346dd57(&DescriptorManager::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -2874,8 +2820,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID ComputePipeline::TypeID = Rtti::TypeID{ "768e754c-d58b-4fdc-bc8d-893e8a7e0438" };
@@ -2987,8 +2931,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{ "7748916a-053b-447d-82d1-c417599323d7" };
@@ -3068,8 +3010,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_7748916a053b447d82d1c417599323d7(&ResourceInstance::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -3167,8 +3107,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID Device::TypeID = Rtti::TypeID{ "7ae4b802-75af-439e-aa48-bc72761b7b72" };
@@ -3240,8 +3178,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID Texture::TypeID = Rtti::TypeID{ "816f7fb8-a3c4-4d22-b8f0-a88d8db78f47" };
@@ -3312,8 +3248,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_816f7fb8a3c44d22b8f0a88d8db78f47(&Texture::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -3402,8 +3336,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_82bd426fa6c045bd9f678223ca9b70cc(&BufferInstance::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -3507,8 +3439,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_8d4ec84b525c4a219fbd1c304f3471d2(&PipelineBase::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -3626,8 +3556,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{ "9ecff14f-1d5a-4997-b6d5-735e935a9d64" };
@@ -3722,8 +3650,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_9ecff14f1d5a4997b6d5735e935a9d64(&ShaderReflection::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -3827,8 +3753,6 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -3882,8 +3806,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::BufferSRVDescriptor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -3951,8 +3873,6 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -4006,8 +3926,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::BufferUAVDescriptor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Common
 {
@@ -4080,8 +3998,6 @@ namespace FE::Graphics::Common
 } // namespace FE::Graphics::Common
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -4147,8 +4063,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassComputePipeline>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -4253,8 +4167,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID GraphicsQueue::TypeID = Rtti::TypeID{ "bfa35db4-e1aa-4914-87fb-d392b0308b34" };
@@ -4357,8 +4269,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_bfa35db4e1aa491487fbd392b0308b34(&GraphicsQueue::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -4464,8 +4374,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID TextureInstance::TypeID = Rtti::TypeID{ "c47d99b8-920d-49b6-a1b9-0f24143c3feb" };
@@ -4553,8 +4461,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_c47d99b8920d49b6a1b90f24143c3feb(&TextureInstance::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -4651,8 +4557,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{ "cb0b65e8-b7f7-4f27-92be-fb6e90ebd352" };
@@ -4723,8 +4627,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_cb0b65e8b7f74f2792befb6e90ebd352(&Buffer::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -4829,8 +4731,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -4897,8 +4797,6 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -4963,8 +4861,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassDepthTarget>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -5068,8 +4964,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_d815152fa41f45c881abf921f19e8aa3(&Fence::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -5180,8 +5074,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -5247,8 +5139,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassGraphicsPipeline>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -5381,8 +5271,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Graphics::Core
 {
     const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{ "ea570124-75f4-4efc-9c49-69eb5eb0404c" };
@@ -5486,8 +5374,6 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Rtti
 {
     namespace
@@ -5553,8 +5439,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Core::PassScissor>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Rtti
 {
@@ -5633,8 +5517,6 @@ namespace FE::Rtti
         &Internal::ExternalTypeReflector<FE::Graphics::Common::InternalPassDesc::CopyBufferToBuffer>::Reflect);
 } // namespace FE::Rtti
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -5723,8 +5605,6 @@ namespace FE::Graphics::Vulkan
     static Rtti::TypeRegistrar GTypeRegistrar_f14e4f2267344747bb3cfe3ba6697e46(&CommandBuffer::Reflect);
 } // namespace FE::Graphics::Vulkan
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {
@@ -5820,8 +5700,6 @@ namespace FE::Graphics::Core
     static Rtti::TypeRegistrar GTypeRegistrar_f3d5e2841dbf40cc97907d97fa69b18d(&ShaderCompiler::Reflect);
 } // namespace FE::Graphics::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Graphics::Core
 {

@@ -27,7 +27,7 @@ class ReflectionGenerator:
             generated_file = module_path / "Reflection.gen.cpp"
             with open(generated_file, "w", newline='\n') as f:
                 f.write(common_header)
-                f.write("\n")
+                f.write("\n#include <FeCore/RTTI/ReflectionContext.h>\n\n")
 
                 for h in headers:
                     f.write(f"#include <{h.as_posix()}>\n")

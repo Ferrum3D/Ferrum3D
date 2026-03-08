@@ -3,6 +3,8 @@
 // Manual changes will be lost.
 //
 
+#include <FeCore/RTTI/ReflectionContext.h>
+
 #include <Framework/Application/Application.h>
 #include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Application/Core/PlatformWindow.h>
@@ -11,8 +13,6 @@
 #include <Framework/Entities/EntityRegistry.h>
 #include <Framework/Entities/EntityWorld.h>
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework
 {
@@ -84,8 +84,6 @@ namespace FE::Framework
     static Rtti::TypeRegistrar GTypeRegistrar_069e3b9ccc104989a6db37095dfdb990(&EntityWorld::Reflect);
 } // namespace FE::Framework
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework::Core
 {
@@ -181,8 +179,6 @@ namespace FE::Framework::Core
     static Rtti::TypeRegistrar GTypeRegistrar_63770294e7a24cdd866cbbc49ec93214(&PlatformApplication::Reflect);
 } // namespace FE::Framework::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework::Windows
 {
@@ -286,8 +282,6 @@ namespace FE::Framework::Windows
     static Rtti::TypeRegistrar GTypeRegistrar_70a9df121d5d4d0a8c24c014e3963121(&PlatformApplication::Reflect);
 } // namespace FE::Framework::Windows
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework::Windows
 {
@@ -405,8 +399,6 @@ namespace FE::Framework::Windows
 } // namespace FE::Framework::Windows
 
 
-#include <FeCore/RTTI/ReflectionContext.h>
-
 namespace FE::Framework
 {
     const Rtti::TypeID Application::TypeID = Rtti::TypeID{ "af07edca-2d55-4e2d-a5ef-85ed53b4cdab" };
@@ -486,8 +478,6 @@ namespace FE::Framework
     static Rtti::TypeRegistrar GTypeRegistrar_af07edca2d554e2da5ef85ed53b4cdab(&Application::Reflect);
 } // namespace FE::Framework
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework::Core
 {
@@ -583,8 +573,6 @@ namespace FE::Framework::Core
     static Rtti::TypeRegistrar GTypeRegistrar_c1f93be65fe74e28a5f68a1e9a5f427f(&PlatformWindow::Reflect);
 } // namespace FE::Framework::Core
 
-
-#include <FeCore/RTTI/ReflectionContext.h>
 
 namespace FE::Framework
 {
