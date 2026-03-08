@@ -63,9 +63,10 @@ namespace FE::DI
         {
         case Lifetime::kTransient:
             return ActivateImpl(registration, result);
+
         case Lifetime::kSingleton:
             return ResolveImpl(registration, result);
-        case Lifetime::kThread:
+
         case Lifetime::kCount:
         default:
             *result = nullptr;

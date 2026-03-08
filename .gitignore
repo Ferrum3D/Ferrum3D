@@ -31,3 +31,6 @@ cmake-build/
 
 # python
 **/*/__pycache__
+
+.reflection_cache
+.reflection_model

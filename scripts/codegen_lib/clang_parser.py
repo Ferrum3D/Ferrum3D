@@ -322,7 +322,11 @@ def parse_file(
 ) -> dict[uuid.UUID, ReflectedType] | None:
     compiler_args = config.base_compiler_args + [f"-I{x}" for x in include_dirs] + [f"-D{x}" for x in defines]
     index = _get_index(config.llvm_dir)
-    tu = index.parse(file_path, args=compiler_args, options=cindex.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+    tu = index.parse(
+        file_path,
+        args=compiler_args,
+        options=cindex.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES | cindex.TranslationUnit.PARSE_INCOMPLETE
+    )
 
     if not tu:
         print("Failed to parse:", file_path)

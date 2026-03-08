@@ -26,7 +26,6 @@ namespace FE::DI
     enum class Lifetime : uint32_t
     {
         kSingleton, //!< Specifies that only a single instance of the service will be created.
-        kThread,    //!< Specifies that an instance of the service will be created for each thread.
         kTransient, //!< Specifies that an instance of the service will be created for each call to IServiceProvider::Resolve.
 
         kCount,

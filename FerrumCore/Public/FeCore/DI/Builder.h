@@ -29,11 +29,6 @@ namespace FE::DI
                 InScope(Lifetime::kSingleton);
             }
 
-            void InThreadScope()
-            {
-                InScope(Lifetime::kThread);
-            }
-
             void InTransientScope()
             {
                 InScope(Lifetime::kTransient);
