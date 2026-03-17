@@ -30,6 +30,7 @@ namespace FE::DI
         {
             ServiceActivator activator;
             activator.m_function = Rtti::GetType<T>().m_activator;
+            FE_Assert(activator.m_function, "Specified type does not support DI");
             return activator;
         }
 
