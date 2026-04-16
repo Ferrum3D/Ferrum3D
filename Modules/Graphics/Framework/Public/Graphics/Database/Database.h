@@ -2,6 +2,8 @@
 #include <FeCore/Containers/SegmentedVector.h>
 #include <FeCore/Memory/BuddyAllocator.h>
 #include <Graphics/Core/Base.h>
+#include <Graphics/Core/DescriptorManager.h>
+#include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/RingUploader.h>
 #include <Graphics/Database/Base.h>
 #include <festd/bit_vector.h>
@@ -91,6 +93,18 @@ namespace FE::Graphics::DB
         void Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence);
 
         void MarkPageDirty(const StoragePage* page);
+
+        template<class TTable>
+        [[nodiscard]] BufferPointer GetTableBufferPointer(Core::FrameGraph& graph, const TTable& table) const
+        {
+            const uint32_t descriptorIndex = graph.GetDescriptorManager()->ReserveDescriptor(m_pageTableDeviceStorage.Get());
+            graph.GetDescriptorManager()->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
+
+            BufferPointer result;
+            result.m_deviceAddress = graph.GetDescriptorManager()->GetDeviceAddress(descriptorIndex)
+                + table.m_devicePageTableAllocation.m_offset * sizeof(BufferPointer);
+            return result;
+        }
 
     private:
         friend TableBase;

@@ -11,6 +11,12 @@ namespace FE::Graphics
 
     struct DrawTag final : public TypedHandle<DrawTag, uint32_t>
     {
+        DrawTag() = default;
+
+        constexpr DrawTag(const uint32_t value)
+        {
+            m_value = value;
+        }
     };
 
 
@@ -31,6 +37,11 @@ namespace FE::Graphics
         [[nodiscard]] bool Contains(const DrawTag tag) const
         {
             return (m_value & (UINT64_C(1) << tag.m_value)) != 0;
+        }
+
+        [[nodiscard]] bool Intersects(const DrawTagMask other) const
+        {
+            return (m_value & other.m_value) != 0;
         }
 
         DrawTagMask& operator|=(const DrawTagMask other)

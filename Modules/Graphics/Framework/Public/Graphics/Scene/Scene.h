@@ -44,6 +44,8 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] virtual View* CreateView() = 0;
+        [[nodiscard]] virtual uint32_t GetViewCount() const = 0;
+        [[nodiscard]] virtual View* GetView(uint32_t index) const = 0;
 
     protected:
         explicit Scene(Renderer* renderer)

@@ -6,6 +6,9 @@ set(SHADER_SHARED_HEADERS
 
     Shaders/Shaders/Database/Base.h
 
+    Shaders/Shaders/Passes/DepthPrepass/DepthPrepass.h
+    Shaders/Shaders/Passes/MeshPass/MeshPass.h
+    Shaders/Shaders/Passes/OpaquePass/OpaquePass.h
     Shaders/Shaders/Passes/Tools/Blit/Blit.h
     Shaders/Shaders/Passes/Tools/Downsample/Downsample.h
 )
@@ -21,6 +24,9 @@ set(SHADER_SOURCES
 
     Shaders/Shaders/Database/Base.hlsli
 
+    Shaders/Shaders/Passes/MeshPass/Common.hlsli
+    Shaders/Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl
+    Shaders/Shaders/Passes/OpaquePass/OpaquePass.ps.hlsl
     Shaders/Shaders/Passes/Tools/Blit/Blit.hlsli
     Shaders/Shaders/Passes/Tools/Blit/Blit.ps.hlsl
     Shaders/Shaders/Passes/Tools/Blit/Blit.vs.hlsl
@@ -49,6 +55,9 @@ set(PUBLIC_HEADERS
 
     Public/Graphics/Features/Mesh/MeshSceneModule.h
 
+    Public/Graphics/Passes/DepthPrepass.h
+    Public/Graphics/Passes/DrawTags.h
+    Public/Graphics/Passes/OpaquePass.h
     Public/Graphics/Passes/Tools/Blit.h
     Public/Graphics/Passes/Tools/Downsample.h
 
@@ -72,6 +81,10 @@ set(COMMON_SOURCES
 
     Private/Graphics/Features/Mesh/MeshSceneModule.cpp
 
+    Private/Graphics/Passes/DepthPrepass.cpp
+    Private/Graphics/Passes/DrawTags.cpp
+    Private/Graphics/Passes/OpaquePass.cpp
+    Private/Graphics/Passes/RendererPassCommon.h
     Private/Graphics/Passes/Tools/Blit.cpp
     Private/Graphics/Passes/Tools/Downsample.cpp
 

@@ -261,7 +261,7 @@ namespace FE
             else
             {
                 const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
-                FE_AssertDebug(1 << newCapacityLog2 == newCapacity);
+                FE_AssertDebug((uint32_t{ 1 } << newCapacityLog2) == newCapacity);
 
                 T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
                 festd::uninitialized_copy_n(m_data.Get(), m_size, newData);
@@ -338,7 +338,7 @@ namespace FE
         if (newCapacity > currentCapacity)
         {
             const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
-            FE_AssertDebug(1 << newCapacityLog2 == newCapacity);
+            FE_AssertDebug((uint32_t{ 1 } << newCapacityLog2) == newCapacity);
 
             T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
             festd::uninitialized_copy_n(m_data.Get(), m_size, newData);

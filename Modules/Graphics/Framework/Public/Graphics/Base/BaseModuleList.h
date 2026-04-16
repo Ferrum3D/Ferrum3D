@@ -169,7 +169,7 @@ namespace FE::Graphics
             if (const auto [it, inserted] = m_typeMap.insert({ TModule::TypeID, index }); inserted)
             {
                 TModule* module = Memory::DefaultNew<TModule>(m_parent);
-                m_list.push_back(module);
+                m_list[index] = module;
                 m_free.reset(index);
                 m_active.set(index, active);
             }

@@ -79,12 +79,13 @@ namespace FE::Graphics::DB
         for (uint32_t pageIndex = 0; pageIndex < m_pages.size(); ++pageIndex)
         {
             StoragePage* page = m_pages[pageIndex];
-            if (const uint32_t offset = page->AllocateRows(rowCount))
+            const uint32_t offset = page->AllocateRows(rowCount);
+            if (offset != kInvalidIndex)
                 return { pageIndex * m_rowsPerPage + offset, rowCount };
         }
 
         AllocatePage();
-        const uint32_t offset = m_pages.back()->AllocateRows(1);
+        const uint32_t offset = m_pages.back()->AllocateRows(rowCount);
         FE_Assert(offset != kInvalidIndex);
         return { (m_pages.size() - 1) * m_rowsPerPage + offset, rowCount };
     }
@@ -251,7 +252,8 @@ namespace FE::Graphics::DB
 
         UploadDirtyPages(graph);
         UploadPageTables(graph);
-        m_uploader.CloseFrame(fence);
+        if (fence.m_fence != nullptr)
+            m_uploader.CloseFrame(fence);
     }
 
 

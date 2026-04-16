@@ -105,7 +105,7 @@ namespace FE::Framework
             switch (registry->GetState())
             {
             case EntityRegistry::State::kUnloaded:
-                Memory::Delete(&GEntityRegistryPool, registry, sizeof(EntityRegistry));
+                GEntityRegistryPool.Delete(registry);
                 festd::swap(m_registries[registryIndex], m_registries.back());
                 m_registries.pop_back();
                 break;
@@ -157,7 +157,7 @@ namespace FE::Framework
         FE_Assert(m_registries.size() == 1);
 
         EntityRegistry* persistentRegistry = m_registries[0];
-        Memory::Delete(&GEntityRegistryPool, persistentRegistry, sizeof(EntityRegistry));
+        GEntityRegistryPool.Delete(persistentRegistry);
         m_registries.clear();
 
         for (EntityWorldSystem* system : m_worldSystems)

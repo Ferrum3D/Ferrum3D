@@ -1,1 +1,1 @@
-add_subdirectory(FrameGraph)
+add_subdirectory(Renderer)

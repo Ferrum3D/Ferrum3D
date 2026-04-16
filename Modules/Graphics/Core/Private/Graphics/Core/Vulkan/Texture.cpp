@@ -103,9 +103,12 @@ namespace FE::Graphics::Vulkan
             FE_Assert(m_desc.m_depth == 1);
             break;
         case Core::TextureDimension::kCubemap:
-            FE_AssertMsg(m_desc.m_arraySize == 6, "Cubemap image must have exactly 6 slices, but got {}", m_desc.m_arraySize);
-            imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-            [[fallthrough]];
+            {
+                const uint32_t arraySize = m_desc.m_arraySize;
+                FE_AssertMsg(arraySize == 6, "Cubemap image must have exactly 6 slices, but got {}", arraySize);
+                imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+                [[fallthrough]];
+            }
         case Core::TextureDimension::k2D:
             imageCI.imageType = VK_IMAGE_TYPE_2D;
             FE_Assert(m_desc.m_depth == 1);
@@ -178,6 +181,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
+        auto* newInstance = instance;
         if (instance != nullptr)
         {
             FE_Assert(m_desc == instance->m_textureDesc);
@@ -189,7 +193,12 @@ namespace FE::Graphics::Vulkan
         for (auto& barriers : m_queueReleaseBarriers)
             FE_Assert(barriers.empty());
 
-        festd::swap(m_instance, instance);
+        auto* oldInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
+        m_instance = instance;
+        instance = oldInstance;
+
+        if (newInstance->m_wholeImageView == VK_NULL_HANDLE)
+            InitWholeImageView();
 
         UpdateDebugNames();
     }

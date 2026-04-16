@@ -33,7 +33,9 @@ namespace FE::Graphics::Vulkan
         if (m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kVertex)])
             FE_Assert(!isMeshShadingPipeline);
 
-        FE_Assert(m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kPixel)]);
+        const bool hasPixelShader = m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kPixel)].IsValid();
+        FE_Assert(m_desc.m_shaders[festd::to_underlying(Core::ShaderStage::kVertex)].IsValid() || isMeshShadingPipeline);
+        FE_Assert(hasPixelShader || m_desc.m_renderTargetCount == 0);
 
         VkFormat rtvFormats[Core::Limits::Pipeline::kMaxColorAttachments];
         for (int32_t rtIndex = 0; rtIndex < m_desc.m_renderTargetCount; ++rtIndex)

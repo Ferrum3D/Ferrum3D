@@ -1,5 +1,6 @@
 #pragma once
 #include <FeCore/Math/Vector2.h>
+#include <FeCore/SIMD/Utils.h>
 
 namespace FE
 {
@@ -121,7 +122,8 @@ namespace FE
     inline const RectBase<T> RectBase<T>::kZero{ kForceInit };
 
     template<class T>
-    inline const RectBase<T> RectBase<T>::kInvalid = RectBase{ { Constants::kMaxValue<T> }, { Constants::kMinValue<T> } };
+    inline const RectBase<T> RectBase<T>::kInvalid =
+        RectBase{ Vector2Base<T>{ Constants::kMaxValue<T> }, Vector2Base<T>{ Constants::kMinValue<T> } };
 
 
     using RectF = RectBase<float>;

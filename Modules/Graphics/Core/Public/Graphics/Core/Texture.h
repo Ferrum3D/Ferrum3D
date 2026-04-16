@@ -332,6 +332,8 @@ namespace FE::Graphics::Core
             return { resource, subresource };
         }
     };
+
+    inline const TextureView TextureView::kInvalid = { nullptr, TextureSubresource::kInvalid };
 } // namespace FE::Graphics::Core
 
 

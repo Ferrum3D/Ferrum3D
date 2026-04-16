@@ -127,6 +127,7 @@ namespace FE::Graphics::Vulkan
         m_linearAllocator.FreeMemory();
 
         m_wasUsed = true;
+        m_isRecording = false;
     }
 
 

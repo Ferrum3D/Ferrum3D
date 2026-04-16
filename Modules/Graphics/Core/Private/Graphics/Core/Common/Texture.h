@@ -25,7 +25,7 @@ namespace FE::Graphics::Common
         }
 
     protected:
-        Threading::SpinLock m_lock;
+        mutable Threading::SpinLock m_lock;
         Core::TextureSubresource m_wholeImageSubresource = Core::TextureSubresource::kInvalid;
         festd::inline_vector<Core::TextureBarrierDesc, 1>
             m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];

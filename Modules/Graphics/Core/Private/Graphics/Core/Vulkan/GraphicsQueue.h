@@ -40,4 +40,6 @@ namespace FE::Graphics::Vulkan
         Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/Core/GraphicsCommandBufferPagePool", 8096 };
         festd::inline_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
     };
+
+    FE_ENABLE_IMPL_CAST(GraphicsQueue);
 } // namespace FE::Graphics::Vulkan

@@ -1,6 +1,7 @@
 #pragma once
 #include <FeCore/Math/Sphere.h>
 #include <Graphics/Assets/IModelAssetManager.h>
+#include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
@@ -15,6 +16,7 @@ namespace FE::Graphics
     {
         OctreeEntry m_octreeEntry;
         MeshSceneModule* m_parent = nullptr;
+        DrawTagMask m_drawTagMask;
         festd::vector<DB::Ref<MeshInstanceTable>> m_meshInstances;
     };
 
@@ -35,6 +37,13 @@ namespace FE::Graphics
     };
 
 
+    struct MeshBatchDesc final
+    {
+        Aabb m_bounds = Aabb::kInvalid;
+        DrawTagMask m_drawTagMask;
+    };
+
+
     struct MeshHandle final : public TypedHandle<MeshHandle, uint32_t>
     {
     };
@@ -47,8 +56,33 @@ namespace FE::Graphics
         explicit MeshSceneModule(Scene* scene);
         ~MeshSceneModule() override;
 
+        [[nodiscard]] MeshBatch* CreateBatch(const MeshBatchDesc& desc);
+        void DestroyBatch(MeshBatch* batch);
+
         [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
         void DestroyInstance(MeshHandle instance);
+
+        [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
+        {
+            return m_batches;
+        }
+
+        [[nodiscard]] MeshBatch* FindBatch(DB::Ref<MeshInstanceTable> instance) const;
+
+        [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
+        {
+            return m_meshInstanceTable.Get();
+        }
+
+        [[nodiscard]] MeshGroupTable* GetMeshGroupTable() const
+        {
+            return m_meshGroupTable.Get();
+        }
+
+        [[nodiscard]] MeshLodInfoTable* GetMeshLodInfoTable() const
+        {
+            return m_meshLodInfoTable.Get();
+        }
 
     private:
         MeshHandle AllocateHandle(DB::Ref<MeshInstanceTable> sourceIndex);
@@ -63,11 +97,13 @@ namespace FE::Graphics
         festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
 
         festd::unordered_dense_map<ModelAsset*, MeshGroup*> m_meshGroups;
+        festd::vector<MeshBatch*> m_batches;
 
         festd::bit_vector m_meshesToDestroy;
 
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;
         Rc<MeshInstanceTable> m_meshInstanceTable;
+        Octree m_octree;
     };
 } // namespace FE::Graphics

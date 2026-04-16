@@ -47,8 +47,34 @@ namespace FE::Graphics
             return m_moduleList;
         }
 
+        [[nodiscard]] const Transform& GetCameraTransform() const
+        {
+            return m_cameraTransform;
+        }
+
+        [[nodiscard]] const Matrix4x4& GetViewMatrix() const
+        {
+            return m_viewMatrix;
+        }
+
+        [[nodiscard]] const Matrix4x4& GetProjectionMatrix() const
+        {
+            return m_projectionMatrix;
+        }
+
+        [[nodiscard]] const Matrix4x4& GetViewProjectionMatrix() const
+        {
+            return m_viewProjectionMatrix;
+        }
+
+        [[nodiscard]] const Matrix4x4& GetInverseViewProjectionMatrix() const
+        {
+            return m_inverseViewProjectionMatrix;
+        }
+
         void SetCameraTransform(const Transform& transform);
         void SetProjection(float fovY, float aspectRatio, float near, float far);
+        virtual void Update(Core::FrameGraphBlackboard& blackboard) = 0;
 
     protected:
         View(Scene* scene)

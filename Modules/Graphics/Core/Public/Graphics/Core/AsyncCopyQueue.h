@@ -113,7 +113,7 @@ namespace FE::Graphics::Core
                 {
                     const auto message =
                         Fmt::FixedFormat("AsyncCopyCommandListBuilder::Invoke functor took too long to execute ({} ms)", ms);
-                    Trace::AssertionReport(SourceLocation::Current(), message.data(), message.size(), false);
+                    Trace::AssertionReport(SourceLocation::Current(), message.data(), message.size());
                 }
 #endif
             };

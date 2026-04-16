@@ -141,10 +141,10 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, GraphicsQueue* commandQueue)
+    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, Core::GraphicsQueue* commandQueue)
         : m_logger(logger)
         , m_resourcePool(resourcePool)
-        , m_commandQueue(commandQueue)
+        , m_commandQueue(ImplCast(commandQueue))
     {
         FE_PROFILER_ZONE();
 
@@ -378,20 +378,20 @@ namespace FE::Graphics::Vulkan
 
             const Rc image = Texture::Create(m_device, imageName, colorTargetDesc);
 
+            TextureInstance* imageInstance = m_imageInstances.emplace_back(TextureInstance::Create());
+            imageInstance->m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kCopyDest;
+            imageInstance->m_memoryStatus = Core::ResourceMemory::kDeviceLocal;
+            imageInstance->m_type = Core::ResourceType::kTexture;
+            imageInstance->m_image = vkImages[i];
+            imageInstance->m_textureDesc = colorTargetDesc;
+            image->SwapInternal(imageInstance);
+
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
             nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
             nameInfo.objectHandle = reinterpret_cast<uint64_t>(image->GetNative());
             nameInfo.pObjectName = imageName.c_str();
             VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
-
-            TextureInstance* imageInstance = m_imageInstances.emplace_back(TextureInstance::Create());
-            imageInstance->m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kCopyDest;
-            imageInstance->m_memoryStatus = Core::ResourceMemory::kDeviceLocal;
-            imageInstance->m_type = Core::ResourceType::kTexture;
-            imageInstance->m_image = vkImages[i];
-            image->SwapInternal(imageInstance);
-            image->InitWholeImageView();
 
             m_images.push_back(image);
         }

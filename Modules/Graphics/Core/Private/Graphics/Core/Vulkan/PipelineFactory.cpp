@@ -31,8 +31,9 @@ namespace FE::Graphics::Vulkan
                                      Logger* logger)
         : m_graphicsPipelinePool("Graphics/Core/PipelineFactory/GraphicsPipelinePool", sizeof(GraphicsPipeline))
         , m_computePipelinePool("Graphics/Core/PipelineFactory/ComputePipelinePool", sizeof(ComputePipeline))
-        , m_jobPool("Graphics/Core/PipelineFactory/PipelineAsyncCompilationJobPool",
-                    Math::Max(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
+        , m_jobPool(
+              "Graphics/Core/PipelineFactory/PipelineAsyncCompilationJobPool",
+              Math::Max<uint32_t>(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
         , m_descriptorManager(ImplCast(bindlessManager))
         , m_jobSystem(jobSystem)
         , m_logger(logger)

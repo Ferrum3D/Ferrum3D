@@ -208,7 +208,9 @@ namespace FE::Graphics::Vulkan
             FE_Assert(instance->m_memoryStatus != Core::ResourceMemory::kNotCommitted);
         }
 
-        festd::swap(m_instance, instance);
+        BufferInstance* oldInstance = static_cast<BufferInstance*>(m_instance);
+        m_instance = instance;
+        instance = oldInstance;
     }
 
 

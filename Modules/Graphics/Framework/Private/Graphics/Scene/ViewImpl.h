@@ -10,6 +10,6 @@ namespace FE::Graphics
         explicit ViewImpl(Scene* scene);
         ~ViewImpl() override;
 
-        void Update(Core::FrameGraphBlackboard& blackboard);
+        void Update(Core::FrameGraphBlackboard& blackboard) override;
     };
 } // namespace FE::Graphics

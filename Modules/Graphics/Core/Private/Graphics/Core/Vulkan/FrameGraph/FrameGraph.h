@@ -1,5 +1,7 @@
 #pragma once
 #include <Graphics/Core/Common/FrameGraph/FrameGraph.h>
+#include <Graphics/Core/GraphicsQueue.h>
+#include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 
 namespace FE::Graphics::Vulkan

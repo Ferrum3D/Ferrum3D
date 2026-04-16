@@ -203,7 +203,7 @@ def parse_class(
             args = list(child.get_arguments())
             arg_types = [resolve_type(x.type, types) if x is not None else None for x in args]
             resolved_arg_types = list(filter(None, arg_types))
-            if len(resolved_arg_types) == len(args):
+            if len(resolved_arg_types) == len(args) and access_spec == cindex.AccessSpecifier.PUBLIC:
                 constructors.append(ConstructorInfo(resolved_arg_types))
             else:
                 constructors.append(ConstructorInfo.create_invalid())

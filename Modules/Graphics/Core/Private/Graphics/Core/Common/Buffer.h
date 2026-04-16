@@ -22,7 +22,7 @@ namespace FE::Graphics::Common
         }
 
     protected:
-        Threading::SpinLock m_lock;
+        mutable Threading::SpinLock m_lock;
         festd::optional<Core::BufferBarrierDesc> m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
 
         ResourceInstance* m_instance = nullptr;

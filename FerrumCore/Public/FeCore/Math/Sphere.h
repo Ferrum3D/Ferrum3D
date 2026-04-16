@@ -37,7 +37,7 @@ namespace FE
         static const Sphere kZero;
     };
 
-    const Sphere Sphere::kZero{ kForceInit };
+    inline const Sphere Sphere::kZero{ kForceInit };
 
 
     namespace Math

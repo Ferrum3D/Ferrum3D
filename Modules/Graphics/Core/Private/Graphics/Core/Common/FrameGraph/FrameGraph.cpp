@@ -465,8 +465,8 @@ namespace FE::Graphics::Common
                     PassNode& previousBarrierPass = m_passes[resourceNode.m_previousBarrierPassIndex];
                     FE_Verify(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
 
-                    state.m_access |= access.m_accessFlags;
-                    state.m_sync |= access.m_syncFlags;
+                    state.m_access = state.m_access | access.m_accessFlags;
+                    state.m_sync = state.m_sync | access.m_syncFlags;
                     buffer->SetState(state);
                     continue;
                 }
@@ -554,9 +554,9 @@ namespace FE::Graphics::Common
                     PassNode& previousBarrierPass = m_passes[resourceNode.m_previousBarrierPassIndex];
                     FE_Verify(previousBarrierPass.m_barrierBatcher.AddBarrier(barrier));
 
-                    state.m_access |= access.m_accessFlags;
+                    state.m_access = state.m_access | access.m_accessFlags;
                     state.m_layout = access.m_layout;
-                    state.m_sync |= access.m_syncFlags;
+                    state.m_sync = state.m_sync | access.m_syncFlags;
                     texture->SetState(access.m_subresource, state);
                     continue;
                 }
@@ -649,13 +649,13 @@ namespace FE::Graphics::Common
 
     uint32_t FrameGraph::RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access)
     {
-        const uint32_t resourceID = resource->GetResourceID();
-        const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
-        if (inserted)
-        {
-            ResourceNode& newResourceNode = m_resources.push_back();
-            newResourceNode.m_resource = resource;
-        }
+    const uint32_t resourceID = resource->GetResourceID();
+    const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
+    if (inserted)
+    {
+        ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
+        newResourceNode.m_resource = resource;
+    }
 
         const uint32_t localResourceIndex = it->second;
         ResourceNode& resourceNode = m_resources[localResourceIndex];
@@ -690,13 +690,13 @@ namespace FE::Graphics::Common
 
     uint32_t FrameGraph::RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access)
     {
-        const uint32_t resourceID = resource->GetResourceID();
-        const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
-        if (inserted)
-        {
-            ResourceNode& newResourceNode = m_resources.push_back();
-            newResourceNode.m_resource = resource;
-        }
+    const uint32_t resourceID = resource->GetResourceID();
+    const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
+    if (inserted)
+    {
+        ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
+        newResourceNode.m_resource = resource;
+    }
 
         const uint32_t localResourceIndex = it->second;
         ResourceNode& resourceNode = m_resources[localResourceIndex];

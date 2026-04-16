@@ -177,17 +177,18 @@ namespace FE::Graphics::Core
     void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, TFunctor&& functor)
     {
         FE_Assert(passDesc);
+        using FunctorType = std::decay_t<TFunctor>;
 
         PassNodeDesc desc;
         desc.m_name = FormatPassName(name);
-        desc.m_functor = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
+        desc.m_functor = Memory::New<FunctorType>(&m_linearAllocator, std::forward<TFunctor>(functor));
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
-            static_assert(std::is_invocable_v<TFunctor, FrameGraphContext&>);
-            (*static_cast<TFunctor*>(functorPtr))(context);
+            static_assert(std::is_invocable_v<FunctorType, FrameGraphContext&>);
+            (*static_cast<FunctorType*>(functorPtr))(context);
         };
         desc.m_destroy = [](void* functorPtr, void* descPtr) {
-            static_cast<TFunctor*>(functorPtr)->~TFunctor();
+            static_cast<FunctorType*>(functorPtr)->~FunctorType();
             static_cast<TPassDesc*>(descPtr)->~TPassDesc();
         };
 
@@ -200,16 +201,18 @@ namespace FE::Graphics::Core
     template<class TFunctor>
     void FrameGraph::AddPassWithoutBarriers(festd::string_view name, TFunctor&& functor)
     {
+        using FunctorType = std::decay_t<TFunctor>;
+
         PassNodeDesc desc;
         desc.m_name = FormatPassName(name);
-        desc.m_functor = Memory::New<TFunctor>(&m_linearAllocator, std::forward<TFunctor>(functor));
+        desc.m_functor = Memory::New<FunctorType>(&m_linearAllocator, std::forward<TFunctor>(functor));
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
-            static_assert(std::is_invocable_v<TFunctor, FrameGraphContext&>);
-            (*static_cast<TFunctor*>(functorPtr))(context);
+            static_assert(std::is_invocable_v<FunctorType, FrameGraphContext&>);
+            (*static_cast<FunctorType*>(functorPtr))(context);
         };
         desc.m_destroy = [](void* functorPtr, [[maybe_unused]] void* descPtr) {
-            static_cast<TFunctor*>(functorPtr)->~TFunctor();
+            static_cast<FunctorType*>(functorPtr)->~FunctorType();
         };
 
         desc.m_userPassDescPtr = nullptr;

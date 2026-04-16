@@ -34,32 +34,27 @@ namespace FE::Graphics::Core
 
     void ShaderSourceCache::ReadDirectory(const IO::Path& path)
     {
-        const IO::ResultCode iterationResult =
-            IO::Directory::TraverseRecursively(path, "*.hlsl;*.hlsli;*.h", [&](const IO::DirectoryEntry& entry) {
-                if (!Bit::AnySet(entry.m_attributes, IO::FileAttributeFlags::kDirectory))
-                {
-                    const festd::string_view pathStrView{ entry.m_path };
-                    FE_Assert(pathStrView.starts_with(path));
+        // Ignore if directory was not found.
+        IO::Directory::TraverseRecursively(path, "*.hlsl;*.hlsli;*.h", [&](const IO::DirectoryEntry& entry) {
+            if (!Bit::AnySet(entry.m_attributes, IO::FileAttributeFlags::kDirectory))
+            {
+                const festd::string_view pathStrView{ entry.m_path };
+                FE_Assert(pathStrView.starts_with(path));
 
-                    const festd::string_view shaderNameView = pathStrView.substr_ascii(path.size() + 1);
-                    const Env::Name shaderName{ shaderNameView };
-                    m_loadingTasksCount.fetch_add(1, std::memory_order_release);
+                const festd::string_view shaderNameView = pathStrView.substr_ascii(path.size() + 1);
+                const Env::Name shaderName{ shaderNameView };
+                m_loadingTasksCount.fetch_add(1, std::memory_order_release);
 
-                    IO::AsyncReadRequest request;
-                    request.m_callback = this;
-                    request.m_path = entry.m_path;
-                    request.m_userData0 = shaderName.GetHandle();
-                    request.m_overallocateBytes = 1;
-                    m_asyncIO->ReadAsync(request);
-                }
+                IO::AsyncReadRequest request;
+                request.m_callback = this;
+                request.m_path = entry.m_path;
+                request.m_userData0 = shaderName.GetHandle();
+                request.m_overallocateBytes = 1;
+                m_asyncIO->ReadAsync(request);
+            }
 
-                return true;
-            });
-
-        FE_AssertMsg(iterationResult == IO::ResultCode::kSuccess,
-                     "Failed to traverse directory {}: {}",
-                     path,
-                     IO::GetResultDesc(iterationResult));
+            return true;
+        });
     }
 
 

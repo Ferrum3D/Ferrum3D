@@ -31,7 +31,7 @@ def should_parse_file(file_path: str) -> bool:
     return "ThirdParty" not in file_path and file_path.endswith(".cpp") and not file_path.endswith(".gen.cpp")
 
 
-NUM_WORKERS = 8
+NUM_WORKERS = 10
 MODEL_CACHE_PATH = ".reflection_model"
 
 

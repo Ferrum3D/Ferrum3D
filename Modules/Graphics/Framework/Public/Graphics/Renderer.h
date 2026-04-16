@@ -1,6 +1,7 @@
 #pragma once
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
+#include <Graphics/Core/Viewport.h>
 
 namespace FE::Graphics
 {
@@ -39,6 +40,7 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] virtual Scene* CreateScene() = 0;
+        virtual void Render(Scene* scene, Core::Viewport* viewport) = 0;
 
     protected:
         Renderer()

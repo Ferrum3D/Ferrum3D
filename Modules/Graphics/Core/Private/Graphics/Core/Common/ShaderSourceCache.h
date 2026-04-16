@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/IO/BaseIO.h>
+#include <FeCore/IO/IAsyncStreamIO.h>
 #include <FeCore/Memory/PoolAllocator.h>
 #include <FeCore/Threading/SharedSpinLock.h>
 #include <Graphics/Core/ShaderStage.h>

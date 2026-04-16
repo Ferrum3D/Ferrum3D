@@ -43,7 +43,7 @@ namespace FE::Graphics
             if (!m_root.IsLeaf())
             {
                 const auto boundsBroadcast = Simd::Soa::Broadcast(bounds);
-                m_root.Traverse<TBounds>(boundsBroadcast, callback);
+                m_root.Traverse(boundsBroadcast, callback);
             }
         }
     }

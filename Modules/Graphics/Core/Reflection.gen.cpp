@@ -312,8 +312,8 @@ namespace FE::Graphics::Vulkan
                     return resolveResult.error();
 
 
-                Rc<GraphicsQueue> arg3;
-                if (const auto resolveResult = serviceProvider->Resolve<GraphicsQueue>())
+                Rc<Graphics::Core::GraphicsQueue> arg3;
+                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::GraphicsQueue>())
                     arg3 = resolveResult.value();
                 else
                     return resolveResult.error();
@@ -1353,40 +1353,6 @@ namespace FE::Graphics::Common
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        DI::ResultCode RTTI_Activator_39f873dc8f3d4821ba6692fcd380b69a([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<FrameGraph>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                Rc<Graphics::Core::Device> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::Device>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
-                Rc<Graphics::Core::DescriptorManager> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::DescriptorManager>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
-                Rc<Graphics::Core::ResourcePool> arg2;
-                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::ResourcePool>())
-                    arg2 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Rc<FrameGraph>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get());
-                return DI::ResultCode::kSuccess;
-            }
-        }
     } // namespace
 
     const Rtti::Type& FrameGraph::RTTI_GetType()
@@ -1431,8 +1397,7 @@ namespace FE::Graphics::Common
                                          "FE::Graphics::Common::FrameGraph",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_Activator_39f873dc8f3d4821ba6692fcd380b69a);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_39f873dc8f3d4821ba6692fcd380b69a(&FrameGraph::Reflect);
@@ -2131,26 +2096,6 @@ namespace FE::Graphics::Common
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        DI::ResultCode RTTI_Activator_521a8cce6a614d51962c16abab20ae89([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<FrameGraphContext>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                Rc<Graphics::Core::FrameGraph> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::FrameGraph>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Rc<FrameGraphContext>::DefaultNew(arg0.Get());
-                return DI::ResultCode::kSuccess;
-            }
-        }
     } // namespace
 
     const Rtti::Type& FrameGraphContext::RTTI_GetType()
@@ -2195,8 +2140,7 @@ namespace FE::Graphics::Common
                                                 "FE::Graphics::Common::FrameGraphContext",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields,
-                                                &RTTI_Activator_521a8cce6a614d51962c16abab20ae89);
+                                                kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_521a8cce6a614d51962c16abab20ae89(&FrameGraphContext::Reflect);
@@ -2235,20 +2179,6 @@ namespace FE::Graphics::Core
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_52579f0674cd415180994d4283e8b6b0([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<DeviceObject>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Rc<DeviceObject>::DefaultNew();
-                return DI::ResultCode::kSuccess;
-            }
         }
     } // namespace
 
@@ -2290,8 +2220,7 @@ namespace FE::Graphics::Core
                                            "FE::Graphics::Core::DeviceObject",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields,
-                                           &RTTI_Activator_52579f0674cd415180994d4283e8b6b0);
+                                           kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_52579f0674cd415180994d4283e8b6b0(&DeviceObject::Reflect);
@@ -2349,6 +2278,47 @@ namespace FE::Graphics::Vulkan
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+
+        DI::ResultCode RTTI_Activator_585305a006eb4b168ef126faaceb6ab8([[maybe_unused]] DI::IServiceProvider* serviceProvider,
+                                                                       Memory::RefCountedObjectBase** result)
+        {
+            if constexpr (std::is_abstract_v<FrameGraph>)
+            {
+                return DI::ResultCode::kInvalidOperation;
+            }
+            else
+            {
+                Rc<Graphics::Core::Device> arg0;
+                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::Device>())
+                    arg0 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<Graphics::Core::DescriptorManager> arg1;
+                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::DescriptorManager>())
+                    arg1 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<Graphics::Core::ResourcePool> arg2;
+                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::ResourcePool>())
+                    arg2 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+
+                Rc<Graphics::Core::GraphicsQueue> arg3;
+                if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::GraphicsQueue>())
+                    arg3 = resolveResult.value();
+                else
+                    return resolveResult.error();
+
+                *result = Rc<FrameGraph>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                return DI::ResultCode::kSuccess;
+            }
+        }
     } // namespace
 
     const Rtti::Type& FrameGraph::RTTI_GetType()
@@ -2395,7 +2365,8 @@ namespace FE::Graphics::Vulkan
                                          "FE::Graphics::Vulkan::FrameGraph",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         &RTTI_Activator_585305a006eb4b168ef126faaceb6ab8);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_585305a006eb4b168ef126faaceb6ab8(&FrameGraph::Reflect);
@@ -2941,20 +2912,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        DI::ResultCode RTTI_Activator_7238722e62414eb2b140c0545346dd57([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<DescriptorManager>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Rc<DescriptorManager>::DefaultNew();
-                return DI::ResultCode::kSuccess;
-            }
-        }
     } // namespace
 
     const Rtti::Type& DescriptorManager::RTTI_GetType()
@@ -2995,8 +2952,7 @@ namespace FE::Graphics::Core
                                                 "FE::Graphics::Core::DescriptorManager",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields,
-                                                &RTTI_Activator_7238722e62414eb2b140c0545346dd57);
+                                                kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_7238722e62414eb2b140c0545346dd57(&DescriptorManager::Reflect);
@@ -3776,26 +3732,6 @@ namespace FE::Graphics::Common
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        DI::ResultCode RTTI_Activator_830776b920ac4d55b7dc685ea6d20cc2([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<Device>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                Rc<Logger> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Rc<Device>::DefaultNew(arg0.Get());
-                return DI::ResultCode::kSuccess;
-            }
-        }
     } // namespace
 
     const Rtti::Type& Device::RTTI_GetType()
@@ -3838,8 +3774,7 @@ namespace FE::Graphics::Common
                                      "FE::Graphics::Common::Device",
                                      kBaseClassTypeIDs,
                                      kAttributes,
-                                     kFields,
-                                     &RTTI_Activator_830776b920ac4d55b7dc685ea6d20cc2);
+                                     kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_830776b920ac4d55b7dc685ea6d20cc2(&Device::Reflect);
@@ -5979,20 +5914,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        DI::ResultCode RTTI_Activator_ea57012475f44efc9c4969eb5eb0404c([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<FrameGraph>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Rc<FrameGraph>::DefaultNew();
-                return DI::ResultCode::kSuccess;
-            }
-        }
     } // namespace
 
     const Rtti::Type& FrameGraph::RTTI_GetType()
@@ -6035,8 +5956,7 @@ namespace FE::Graphics::Core
                                          "FE::Graphics::Core::FrameGraph",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_Activator_ea57012475f44efc9c4969eb5eb0404c);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ea57012475f44efc9c4969eb5eb0404c(&FrameGraph::Reflect);
