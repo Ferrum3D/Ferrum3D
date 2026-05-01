@@ -649,13 +649,13 @@ namespace FE::Graphics::Common
 
     uint32_t FrameGraph::RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access)
     {
-    const uint32_t resourceID = resource->GetResourceID();
-    const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
-    if (inserted)
-    {
-        ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
-        newResourceNode.m_resource = resource;
-    }
+        const uint32_t resourceID = resource->GetResourceID();
+        const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
+        if (inserted)
+        {
+            ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
+            newResourceNode.m_resource = resource;
+        }
 
         const uint32_t localResourceIndex = it->second;
         ResourceNode& resourceNode = m_resources[localResourceIndex];
@@ -690,13 +690,13 @@ namespace FE::Graphics::Common
 
     uint32_t FrameGraph::RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access)
     {
-    const uint32_t resourceID = resource->GetResourceID();
-    const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
-    if (inserted)
-    {
-        ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
-        newResourceNode.m_resource = resource;
-    }
+        const uint32_t resourceID = resource->GetResourceID();
+        const auto [it, inserted] = m_resourceIndexMap.insert({ resourceID, m_resources.size() });
+        if (inserted)
+        {
+            ResourceNode& newResourceNode = m_resources.emplace_back(GetAllocator());
+            newResourceNode.m_resource = resource;
+        }
 
         const uint32_t localResourceIndex = it->second;
         ResourceNode& resourceNode = m_resources[localResourceIndex];
