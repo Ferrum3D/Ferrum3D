@@ -54,6 +54,15 @@ TEST(BuddyAllocator, Alignment)
     allocator.Free(handle);
 }
 
+TEST(BuddyAllocator, QuantizeAllocationSize)
+{
+    Memory::BuddyAllocator allocator(96, 16);
+
+    EXPECT_EQ(allocator.QuantizeAllocationSize(0), 16u);
+    EXPECT_EQ(allocator.QuantizeAllocationSize(1), 16u);
+    EXPECT_EQ(allocator.QuantizeAllocationSize(17), 32u);
+}
+
 TEST(BuddyAllocator, ExhaustionAndReuse)
 {
     Memory::BuddyAllocator allocator(256, 16);
@@ -78,6 +87,80 @@ TEST(BuddyAllocator, ExhaustionAndReuse)
     ASSERT_TRUE(full.IsValid());
     EXPECT_EQ(full.m_offset, 0u);
     allocator.Free(full);
+}
+
+TEST(BuddyAllocator, NonPowerOfTwoArenaExhaustion)
+{
+    Memory::BuddyAllocator allocator(48, 16);
+
+    const auto initialStats = allocator.GetStats();
+    EXPECT_EQ(initialStats.m_freeBytes, 48u);
+    EXPECT_EQ(initialStats.m_largestFreeBlock, 32u);
+    EXPECT_EQ(initialStats.m_freeBlocks, 2u);
+
+    auto first = allocator.Allocate(24, 16);
+    ASSERT_TRUE(first.IsValid());
+    EXPECT_EQ(first.m_offset, 0u);
+    EXPECT_EQ(allocator.GetUsableSize(first), 32u);
+
+    auto second = allocator.Allocate(16, 16);
+    ASSERT_TRUE(second.IsValid());
+    EXPECT_EQ(second.m_offset, 32u);
+    EXPECT_EQ(allocator.GetUsableSize(second), 16u);
+
+    auto failed = allocator.Allocate(1, 1);
+    EXPECT_FALSE(failed.IsValid());
+
+    const auto exhaustedStats = allocator.GetStats();
+    EXPECT_EQ(exhaustedStats.m_freeBytes, 0u);
+    EXPECT_EQ(exhaustedStats.m_largestFreeBlock, 0u);
+    EXPECT_EQ(exhaustedStats.m_freeBlocks, 0u);
+
+    allocator.Free(first);
+    allocator.Free(second);
+
+    const auto restoredStats = allocator.GetStats();
+    EXPECT_EQ(restoredStats.m_freeBytes, allocator.GetArenaSize());
+    EXPECT_EQ(restoredStats.m_largestFreeBlock, 32u);
+    EXPECT_EQ(restoredStats.m_freeBlocks, 2u);
+}
+
+TEST(BuddyAllocator, NonPowerOfTwoArenaCoalescesWithinValidRange)
+{
+    Memory::BuddyAllocator allocator(96, 16);
+
+    auto first = allocator.Allocate(16, 16);
+    auto second = allocator.Allocate(16, 16);
+
+    ASSERT_TRUE(first.IsValid());
+    ASSERT_TRUE(second.IsValid());
+
+    allocator.Free(first);
+    allocator.Free(second);
+
+    auto merged = allocator.Allocate(64, 16);
+    ASSERT_TRUE(merged.IsValid());
+    EXPECT_EQ(merged.m_offset, 0u);
+    EXPECT_EQ(allocator.GetUsableSize(merged), 64u);
+
+    auto tailFirst = allocator.Allocate(16, 16);
+    auto tailSecond = allocator.Allocate(16, 16);
+    ASSERT_TRUE(tailFirst.IsValid());
+    ASSERT_TRUE(tailSecond.IsValid());
+    EXPECT_EQ(tailFirst.m_offset, 64u);
+    EXPECT_EQ(tailSecond.m_offset, 80u);
+
+    auto failed = allocator.Allocate(16, 16);
+    EXPECT_FALSE(failed.IsValid());
+
+    allocator.Free(merged);
+    allocator.Free(tailFirst);
+    allocator.Free(tailSecond);
+
+    const auto stats = allocator.GetStats();
+    EXPECT_EQ(stats.m_freeBytes, allocator.GetArenaSize());
+    EXPECT_EQ(stats.m_largestFreeBlock, 64u);
+    EXPECT_EQ(stats.m_freeBlocks, 2u);
 }
 
 TEST(BuddyAllocator, RandomAllocations)

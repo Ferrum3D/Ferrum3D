@@ -130,7 +130,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Buffer::CommitInternal(ResourcePool* resourcePool, const Core::BufferCommitParams params)
+    void Buffer::CommitInternal(ResourcePool* resourcePool, const Core::ResourceCommitParams params)
     {
         FE_PROFILER_ZONE();
 

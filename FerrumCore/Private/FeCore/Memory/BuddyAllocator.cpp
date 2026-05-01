@@ -8,14 +8,15 @@ namespace FE::Memory
     {
         FE_Assert(m_arenaSize == 0);
         FE_Assert(arenaByteSize >= minBlockSize);
-        FE_Assert(Math::IsPowerOfTwo(arenaByteSize));
+        FE_Assert(Math::IsPowerOfTwo(minBlockSize));
         FE_Assert(IsAligned(arenaByteSize, minBlockSize));
 
         m_arenaSize = arenaByteSize;
         m_minBlockSize = minBlockSize;
         m_minBlockLog2 = Math::FloorLog2(minBlockSize);
 
-        const uint32_t arenaLog2 = Math::FloorLog2(m_arenaSize);
+        const uint32_t internalArenaSize = Math::CeilPowerOfTwo(m_arenaSize);
+        const uint32_t arenaLog2 = Math::FloorLog2(internalArenaSize);
         m_maxLevel = arenaLog2 - m_minBlockLog2;
 
         m_freeBits.resize(m_maxLevel + 1);
@@ -23,11 +24,25 @@ namespace FE::Memory
         for (uint32_t level = 0; level <= m_maxLevel; ++level)
         {
             const uint32_t blockSize = BlockSizeForLevel(level);
-            const uint32_t blockCount = m_arenaSize / blockSize;
+            const uint32_t blockCount = internalArenaSize / blockSize;
             m_freeBits[level].resize(blockCount, false);
         }
 
-        m_freeBits[m_maxLevel].set(0);
+        uint32_t remainingBytes = m_arenaSize;
+        uint32_t offset = 0;
+        while (remainingBytes > 0)
+        {
+            uint32_t blockSize = m_minBlockSize;
+            while (blockSize <= remainingBytes / 2u && IsAligned(offset, blockSize * 2u))
+                blockSize *= 2u;
+
+            const uint32_t level = LevelForBlockSize(blockSize);
+            const uint32_t blockIndex = offset / blockSize;
+            m_freeBits[level].set(blockIndex);
+
+            offset += blockSize;
+            remainingBytes -= blockSize;
+        }
     }
 
 
@@ -105,13 +120,14 @@ namespace FE::Memory
         FE_Assert(IsAligned(handle.m_offset, blockSize));
 
         uint32_t blockIndex = handle.m_offset / blockSize;
+        FE_Assert(blockIndex < m_freeBits[level].size());
         FE_Assert(!m_freeBits[level].test(blockIndex), "Double free detected");
 
         uint32_t currentLevel = level;
         while (currentLevel < m_maxLevel)
         {
             const uint32_t buddyIndex = blockIndex ^ 1u;
-            if (!m_freeBits[currentLevel].test(buddyIndex))
+            if (buddyIndex >= m_freeBits[currentLevel].size() || !m_freeBits[currentLevel].test(buddyIndex))
                 break;
 
             m_freeBits[currentLevel].reset(buddyIndex);
@@ -131,7 +147,10 @@ namespace FE::Memory
 
     uint32_t BuddyAllocator::QuantizeAllocationSize(const uint32_t size) const
     {
-        const uint32_t blockSize = Math::Max(size, m_minBlockSize);
+        if (size == 0)
+            return m_minBlockSize;
+
+        const uint32_t blockSize = Math::Max(Math::CeilPowerOfTwo(size), m_minBlockSize);
         const uint32_t level = LevelForBlockSize(blockSize);
         return BlockSizeForLevel(level);
     }

@@ -49,7 +49,7 @@ namespace FE::Graphics::DB
         page->m_deviceStorage = resourcePool->CreateByteAddressBuffer("StoragePage", kTablePageSize);
         page->m_globalID = globalID;
 
-        Core::BufferCommitParams commitParams;
+        Core::ResourceCommitParams commitParams;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest
             | Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
@@ -152,7 +152,7 @@ namespace FE::Graphics::DB
         m_uploader.Setup("GPUDatabaseUploader", resourcePool, 4 * 1024 * 1024);
         m_pageTableDeviceStorage = resourcePool->CreateByteAddressBuffer("GPUDatabasePageTable", kPageTableStorageByteSize);
 
-        Core::BufferCommitParams commitParams;
+        Core::ResourceCommitParams commitParams;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest | Core::BarrierAccessFlags::kShaderRead;
         resourcePool->CommitBufferMemory(m_pageTableDeviceStorage.Get(), commitParams);

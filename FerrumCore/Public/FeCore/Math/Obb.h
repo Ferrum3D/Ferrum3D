@@ -21,7 +21,7 @@ namespace FE
         }
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Obb(const Vector3 center, const Vector3 extents,
-                                                  const Quaternion rotation = Quaternion::Identity())
+                                                  const Quaternion rotation = Quaternion::kIdentity)
             : center(center)
             , extents(extents)
             , rotation(rotation)
@@ -31,7 +31,7 @@ namespace FE
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Obb(const Aabb& aabb)
             : center((aabb.min + aabb.max) * 0.5f)
             , extents((aabb.max - aabb.min) * 0.5f)
-            , rotation(Quaternion::Identity())
+            , rotation(Quaternion::kIdentity)
         {
         }
 

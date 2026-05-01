@@ -16,11 +16,13 @@ namespace FE::Graphics::Core
         FE_Assert(m_buffer == nullptr);
         m_buffer = resourcePool->CreateByteAddressBuffer(name, capacity);
 
-        BufferCommitParams commitParams;
+        ResourceCommitParams commitParams;
         commitParams.m_bindFlags = BarrierAccessFlags::kCopySourceAndDest;
         commitParams.m_memory = ResourceMemory::kHostWriteThrough;
         resourcePool->CommitBufferMemory(m_buffer.Get(), commitParams);
         m_mappedMemory = static_cast<std::byte*>(m_buffer->Map());
+
+        m_ringBuffer.Setup(capacity);
     }
 
 
@@ -52,7 +54,7 @@ namespace FE::Graphics::Core
             void* hostDestination = m_mappedMemory + allocation.m_offset;
             memcpy(hostDestination, source, byteSize);
 
-            const BufferView deviceDestination = destination.Slice(byteSize);
+            const BufferView deviceDestination = destination.Slice(0, byteSize);
             const BufferView deviceSource{ m_buffer.Get(), BufferSlice{ allocation.m_offset, byteSize } };
 
             if (Bit::AllSet(options, Options::kDisableBarriers))

@@ -189,7 +189,7 @@ namespace FE::Graphics
             Fmt::FormatName("GeometryBuffer '{}' LOD{}", request->m_asset->m_name, request->m_header.m_lodCount - lodIndex - 1);
         const Rc geometryBuffer = m_resourcePool->CreateByteAddressBuffer(geometryBufferName, expectedDataSize);
 
-        Core::BufferCommitParams geometryBufferCommitParams;
+        Core::ResourceCommitParams geometryBufferCommitParams;
         geometryBufferCommitParams.m_bindFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kCopyDest;
         geometryBufferCommitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
         m_resourcePool->CommitBufferMemory(geometryBuffer.Get(), geometryBufferCommitParams);

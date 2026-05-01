@@ -408,7 +408,7 @@ namespace FE::Graphics::Common
             {
                 resourceNode.m_isOwnedByGraph = true;
 
-                Core::BufferCommitParams commitParams;
+                Core::ResourceCommitParams commitParams;
                 commitParams.m_bindFlags = resourceNode.m_bindFlags;
                 commitParams.m_memory = Core::ResourceMemory::kDeviceLocal; // TODO: host visible resources
                 m_resourcePool->CommitBufferMemory(buffer, commitParams);
@@ -494,7 +494,7 @@ namespace FE::Graphics::Common
             {
                 resourceNode.m_isOwnedByGraph = true;
 
-                Core::TextureCommitParams commitParams;
+                Core::ResourceCommitParams commitParams;
                 commitParams.m_bindFlags = resourceNode.m_bindFlags;
                 commitParams.m_memory = Core::ResourceMemory::kDeviceLocal; // TODO: host visible resources
                 m_resourcePool->CommitTextureMemory(texture, commitParams);

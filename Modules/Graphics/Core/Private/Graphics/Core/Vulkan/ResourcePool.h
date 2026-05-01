@@ -18,8 +18,8 @@ namespace FE::Graphics::Vulkan
         Core::Texture* CreateTexture(Env::Name name, Core::TextureDesc desc) override;
         Core::Buffer* CreateBuffer(Env::Name name, Core::BufferDesc desc) override;
 
-        void CommitBufferMemory(Core::Buffer* buffer, const Core::BufferCommitParams& params) override;
-        void CommitTextureMemory(Core::Texture* texture, const Core::TextureCommitParams& params) override;
+        void CommitBufferMemory(Core::Buffer* buffer, const Core::ResourceCommitParams& params) override;
+        void CommitTextureMemory(Core::Texture* texture, const Core::ResourceCommitParams& params) override;
 
         void DecommitBufferMemory(Core::Buffer* buffer) override;
         void DecommitTextureMemory(Core::Texture* texture) override;

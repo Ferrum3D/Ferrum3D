@@ -91,7 +91,7 @@ namespace FE::Graphics::Core
 
             BufferSlice slice = m_slice;
             slice.m_offset += offset;
-            slice.m_size = byteSize;
+            slice.m_size = realSize;
             return Create(m_resource, slice);
         }
 

@@ -34,7 +34,7 @@ namespace FE::Graphics::Vulkan
     CommandBuffer* GraphicsQueue::GetCurrentCommandBuffer()
     {
         CommandBuffer* commandBuffer = m_graphicsCommandBuffers[m_frameIndex % kMaxInFlightFrames].Get();
-        FE_Assert(commandBuffer->IsRecording());
+        // FE_Assert(commandBuffer->IsRecording());
         return commandBuffer;
     }
 

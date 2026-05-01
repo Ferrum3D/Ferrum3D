@@ -52,7 +52,7 @@ namespace FE::Graphics::Common
 
         festd::inline_vector<SubresourceState, 1> m_subresourceStates;
 
-        [[nodiscard]] uint32_t ScoreCompatibility(const Core::BufferDesc desc, const Core::BufferCommitParams& params) const
+        [[nodiscard]] uint32_t ScoreCompatibility(const Core::BufferDesc desc, const Core::ResourceCommitParams& params) const
         {
             if (m_type != Core::ResourceType::kBuffer)
                 return 0;
@@ -70,7 +70,7 @@ namespace FE::Graphics::Common
             return 8 * sizeof(Core::BarrierAccessFlags) - Bit::PopCount(festd::to_underlying(unusedBindFlags));
         }
 
-        [[nodiscard]] uint32_t ScoreCompatibility(const Core::TextureDesc desc, const Core::TextureCommitParams& params) const
+        [[nodiscard]] uint32_t ScoreCompatibility(const Core::TextureDesc desc, const Core::ResourceCommitParams& params) const
         {
             if (m_type != Core::ResourceType::kTexture)
                 return 0;

@@ -80,7 +80,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void Texture::CommitInternal(ResourcePool* resourcePool, const Core::TextureCommitParams params)
+    void Texture::CommitInternal(ResourcePool* resourcePool, const Core::ResourceCommitParams params)
     {
         FE_PROFILER_ZONE();
 
@@ -126,7 +126,7 @@ namespace FE::Graphics::Vulkan
         imageCI.arrayLayers = m_desc.m_arraySize;
         imageCI.format = Translate(m_desc.m_imageFormat);
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageCI.initialLayout = TranslateImageLayout(params.m_initialLayout);
+        imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageCI.samples = GetVKSampleCountFlags(m_desc.m_sampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -173,7 +173,7 @@ namespace FE::Graphics::Vulkan
 
         Common::SubresourceState& initialState = textureInstance->m_subresourceStates.emplace_back();
         initialState.m_value = 0;
-        initialState.m_layout = params.m_initialLayout;
+        initialState.m_layout = Core::BarrierLayout::kUndefined;
     }
 
 

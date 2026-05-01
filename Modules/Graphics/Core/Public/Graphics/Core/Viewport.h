@@ -26,5 +26,6 @@ namespace FE::Graphics::Core
 
         virtual Texture* GetCurrentColorTarget() = 0;
         virtual void AcquireNextImage() = 0;
+        virtual void Present() = 0;
     };
 } // namespace FE::Graphics::Core

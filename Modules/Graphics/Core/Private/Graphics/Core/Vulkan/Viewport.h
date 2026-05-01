@@ -20,7 +20,7 @@ namespace FE::Graphics::Vulkan
         void Init(const Core::ViewportDesc& desc) override;
         [[nodiscard]] const Core::ViewportDesc& GetDesc() const override;
 
-        void Present(CommandBuffer* commandBuffer);
+        void Present() override;
 
         void Resize(uint32_t width, uint32_t height);
 
@@ -28,6 +28,8 @@ namespace FE::Graphics::Vulkan
         void AcquireNextImage() override;
 
     private:
+        void Present(CommandBuffer* commandBuffer);
+
         void CreateSurface();
         void CreateSwapChain();
         void CreateResources();

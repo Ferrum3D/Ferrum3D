@@ -444,6 +444,12 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void Viewport::Present()
+    {
+        Present(m_commandQueue->GetCurrentCommandBuffer());
+    }
+
+
     void Viewport::Present(CommandBuffer* commandBuffer)
     {
         FE_PROFILER_ZONE();

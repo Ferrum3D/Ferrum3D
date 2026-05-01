@@ -16,7 +16,7 @@ namespace FE::Graphics::Vulkan
         static Buffer* Create(Core::Device* device, Env::Name name, Core::BufferDesc desc);
 
         void DecommitMemory() override;
-        void CommitInternal(ResourcePool* resourcePool, Core::BufferCommitParams params);
+        void CommitInternal(ResourcePool* resourcePool, Core::ResourceCommitParams params);
         void SwapInternal(BufferInstance*& instance);
 
         void* Map() override;

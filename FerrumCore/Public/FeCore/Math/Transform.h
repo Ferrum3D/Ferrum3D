@@ -76,7 +76,7 @@ namespace FE
             matrix.m_rows[1] *= scale;
             matrix.m_rows[2] *= scale;
             matrix.m_rows[3].m_simdVector =
-                _mm_blend_ps(transform.m_translationScale.m_simdVector, Simd::SSE::Constants::kAllOnes, 0x7);
+                _mm_blend_ps(transform.m_translationScale.m_simdVector, Simd::SSE::Constants::kAllOnes, 0x8);
             return matrix;
         }
 

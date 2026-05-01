@@ -17,7 +17,7 @@ namespace FE::Graphics::Vulkan
         static Texture* Create(Core::Device* device, Env::Name name, const Core::TextureDesc& desc);
 
         void DecommitMemory() override;
-        void CommitInternal(ResourcePool* resourcePool, Core::TextureCommitParams params);
+        void CommitInternal(ResourcePool* resourcePool, Core::ResourceCommitParams params);
         void SwapInternal(TextureInstance*& instance);
 
         [[nodiscard]] VkImageView GetSubresourceView(Core::TextureSubresource subresource) const;

@@ -1,10 +1,10 @@
 #pragma once
-#include <memory>
-#include <Graphics/Database/Database.h>
-#include <Graphics/Core/Viewport.h>
-#include <Graphics/Renderer.h>
 #include <Graphics/Core/Texture.h>
+#include <Graphics/Core/Viewport.h>
+#include <Graphics/Database/Database.h>
+#include <Graphics/Renderer.h>
 #include <festd/vector.h>
+#include <memory>
 
 namespace FE::Graphics
 {
@@ -30,7 +30,7 @@ namespace FE::Graphics
                              Core::Viewport& viewport);
 
         festd::vector<Rc<Scene>> m_scenes;
-        std::unique_ptr<DB::Database> m_database;
+        festd::unique_ptr<DB::Database> m_database;
         Rc<Core::Device> m_device;
         Rc<Core::Texture> m_mainDepthTarget;
     };

@@ -5,15 +5,7 @@
 
 namespace FE::Graphics::Core
 {
-    struct TextureCommitParams final
-    {
-        BarrierAccessFlags m_bindFlags = BarrierAccessFlags::kNone;
-        ResourceMemory m_memory = ResourceMemory::kNotCommitted;
-        BarrierLayout m_initialLayout = BarrierLayout::kUndefined;
-    };
-
-
-    struct BufferCommitParams final
+    struct ResourceCommitParams final
     {
         BarrierAccessFlags m_bindFlags = BarrierAccessFlags::kNone;
         ResourceMemory m_memory = ResourceMemory::kNotCommitted;
@@ -70,8 +62,8 @@ namespace FE::Graphics::Core
             return CreateBuffer(name, desc);
         }
 
-        virtual void CommitTextureMemory(Texture* texture, const TextureCommitParams& params) = 0;
-        virtual void CommitBufferMemory(Buffer* buffer, const BufferCommitParams& params) = 0;
+        virtual void CommitTextureMemory(Texture* texture, const ResourceCommitParams& params) = 0;
+        virtual void CommitBufferMemory(Buffer* buffer, const ResourceCommitParams& params) = 0;
 
         virtual void DecommitTextureMemory(Texture* texture) = 0;
         virtual void DecommitBufferMemory(Buffer* buffer) = 0;

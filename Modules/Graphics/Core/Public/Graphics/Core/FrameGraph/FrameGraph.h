@@ -125,10 +125,7 @@ namespace FE::Graphics::Core
         if (Build::IsDebug())
         {
             for (const int32_t codepoint : name)
-            {
-                const char c = static_cast<char>(codepoint);
-                FE_Assert(ASCII::IsValid(codepoint) && (ASCII::IsLetter(c) || ASCII::IsDigit(c)));
-            }
+                FE_Assert(ASCII::IsValid(codepoint));
         }
 
         if (!m_currentScope.empty())

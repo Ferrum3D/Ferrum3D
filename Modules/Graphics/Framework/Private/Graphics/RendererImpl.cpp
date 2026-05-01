@@ -57,7 +57,7 @@ namespace FE::Graphics
         }
 
         frameGraph->CompileAndExecute();
-        graphicsQueue->CloseFrame();
+        viewport->Present();
         m_device->EndFrame();
     }
 
@@ -68,7 +68,7 @@ namespace FE::Graphics
             return;
 
         Core::ResourcePool* resourcePool = Env::GetServiceProvider()->ResolveRequired<Core::ResourcePool>();
-        m_database = std::make_unique<DB::Database>(resourcePool);
+        m_database = festd::make_unique<DB::Database>(resourcePool);
     }
 
 
@@ -87,18 +87,14 @@ namespace FE::Graphics
                                                         Core::Format::kD32_SFLOAT_S8_UINT,
                                                         { viewportDesc.m_width, viewportDesc.m_height });
 
-        Core::TextureCommitParams commitParams;
+        Core::ResourceCommitParams commitParams;
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kDepthStencilRead | Core::BarrierAccessFlags::kDepthStencilWrite;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
-        commitParams.m_initialLayout = Core::BarrierLayout::kDepthStencilWrite;
         resourcePool->CommitTextureMemory(m_mainDepthTarget.Get(), commitParams);
     }
 
 
-    void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph,
-                                       Core::FrameGraphBlackboard& blackboard,
-                                       Scene& scene,
-                                       View& view,
+    void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                                        Core::Viewport& viewport)
     {
         Internal::RendererViewData& viewData = blackboard.Add<Internal::RendererViewData>();

@@ -76,7 +76,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void ResourcePool::CommitBufferMemory(Core::Buffer* buffer, const Core::BufferCommitParams& params)
+    void ResourcePool::CommitBufferMemory(Core::Buffer* buffer, const Core::ResourceCommitParams& params)
     {
         std::unique_lock lk{ m_lock };
 
@@ -99,7 +99,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void ResourcePool::CommitTextureMemory(Core::Texture* texture, const Core::TextureCommitParams& params)
+    void ResourcePool::CommitTextureMemory(Core::Texture* texture, const Core::ResourceCommitParams& params)
     {
         std::unique_lock lk{ m_lock };
 
