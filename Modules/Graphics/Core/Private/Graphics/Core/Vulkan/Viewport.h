@@ -26,6 +26,7 @@ namespace FE::Graphics::Vulkan
 
         Core::Texture* GetCurrentColorTarget() override;
         void AcquireNextImage() override;
+        void PrepareBlit() override;
 
     private:
         void Present(CommandBuffer* commandBuffer);

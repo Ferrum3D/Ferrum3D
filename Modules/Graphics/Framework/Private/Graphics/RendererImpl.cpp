@@ -7,6 +7,7 @@
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Passes/Tools/Blit.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/SceneImpl.h>
 
@@ -38,11 +39,12 @@ namespace FE::Graphics
             m_device = serviceProvider->ResolveRequired<Core::Device>();
 
         EnsureDatabase();
-        EnsureMainDepthTarget(viewport->GetDesc());
 
         Core::GraphicsQueue* graphicsQueue = serviceProvider->ResolveRequired<Core::GraphicsQueue>();
         graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
+        EnsureMainColorTarget(viewport->GetCurrentColorTarget()->GetDesc());
+        EnsureMainDepthTarget(viewport->GetDesc());
 
         Rc<Core::FrameGraph> frameGraph = serviceProvider->ResolveRequired<Core::FrameGraph>();
         frameGraph->BeginFrame();
@@ -55,6 +57,11 @@ namespace FE::Graphics
             View* view = scene->GetView(viewIndex);
             SetupFrameGraph(*frameGraph, frameGraph->GetBlackboard(), *scene, *view, *viewport);
         }
+
+        viewport->PrepareBlit();
+        Tools::Blit::AddPass(*frameGraph,
+                             Core::TextureView::Create(m_mainColorTarget.Get()),
+                             Core::TextureView::Create(viewport->GetCurrentColorTarget()));
 
         frameGraph->CompileAndExecute();
         viewport->Present();
@@ -69,6 +76,23 @@ namespace FE::Graphics
 
         Core::ResourcePool* resourcePool = Env::GetServiceProvider()->ResolveRequired<Core::ResourcePool>();
         m_database = festd::make_unique<DB::Database>(resourcePool);
+    }
+
+
+    void RendererImpl::EnsureMainColorTarget(const Core::TextureDesc& swapchainColorTargetDesc)
+    {
+        const bool sizeMismatch = m_mainColorTarget != nullptr
+            && (m_mainColorTarget->GetDesc().m_width != swapchainColorTargetDesc.m_width
+                || m_mainColorTarget->GetDesc().m_height != swapchainColorTargetDesc.m_height);
+        const bool formatMismatch =
+            m_mainColorTarget != nullptr && m_mainColorTarget->GetDesc().m_imageFormat != swapchainColorTargetDesc.m_imageFormat;
+        if (m_mainColorTarget != nullptr && !sizeMismatch && !formatMismatch)
+            return;
+
+        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
+        Core::ResourcePool* resourcePool = serviceProvider->ResolveRequired<Core::ResourcePool>();
+
+        m_mainColorTarget = resourcePool->CreateTexture("RendererMainColor", swapchainColorTargetDesc);
     }
 
 
@@ -101,7 +125,7 @@ namespace FE::Graphics
         viewData.m_scene = &scene;
         viewData.m_view = &view;
         viewData.m_viewport = &viewport;
-        viewData.m_mainColorTarget = viewport.GetCurrentColorTarget();
+        viewData.m_mainColorTarget = m_mainColorTarget.Get();
         viewData.m_mainDepthTarget = m_mainDepthTarget.Get();
         viewData.m_viewportRect = viewport.GetDesc().GetRect();
         viewData.m_database = m_database.get();

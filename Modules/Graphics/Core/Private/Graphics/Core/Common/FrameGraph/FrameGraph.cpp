@@ -365,7 +365,7 @@ namespace FE::Graphics::Common
 
                 const Rtti::Type* pushConstantsType = Rtti::TypeRegistry::FindType(field.m_type);
                 FE_Assert(pushConstantsType);
-                FE_Assert(Bit::AllSet(pushConstantsType->m_flags, Rtti::TypeFlags::kTrivial | Rtti::TypeFlags::kStandardLayout));
+                FE_Assert(Bit::AllSet(pushConstantsType->m_flags, Rtti::TypeFlags::kStandardLayout));
                 ParsePassPushConstants(pass, *pushConstantsType);
             }
         }

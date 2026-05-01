@@ -88,8 +88,8 @@ namespace FE::Graphics::Common
 
         struct RenderTargetState final
         {
-            Core::RenderTargetLoadOperations m_loadOperations = {};
-            Core::RenderTargetStoreOperations m_storeOperations = {};
+            Core::RenderTargetLoadOperations m_loadOperations = Core::RenderTargetLoadOperations::kDefault;
+            Core::RenderTargetStoreOperations m_storeOperations = Core::RenderTargetStoreOperations::kDefault;
             Core::TextureView m_renderTargets[Core::Limits::Pipeline::kMaxColorAttachments] = {};
             Core::TextureView m_depthStencil;
             uint32_t m_renderTargetCount = 0;

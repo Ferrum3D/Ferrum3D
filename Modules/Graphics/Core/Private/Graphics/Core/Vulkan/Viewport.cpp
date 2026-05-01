@@ -1,4 +1,6 @@
 ﻿#include <Graphics/Core/Vulkan/Device.h>
+#include <Graphics/Core/Vulkan/Barrier.h>
+#include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
@@ -108,30 +110,16 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        void ImageMemoryBarrier(const VkCommandBuffer cmdbuffer, const VkImage image, const VkAccessFlags2 srcAccessMask,
-                                const VkAccessFlags2 dstAccessMask, const VkImageLayout oldImageLayout,
-                                const VkImageLayout newImageLayout, const VkPipelineStageFlags srcStageMask,
-                                const VkPipelineStageFlags dstStageMask, const VkImageAspectFlags aspect)
+        void ImageMemoryBarrier(CommandBuffer* commandBuffer, const Device* device, const Core::TextureBarrierDesc& barrier)
         {
-            VkImageMemoryBarrier2 imageMemoryBarrier = {};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.srcAccessMask = srcAccessMask;
-            imageMemoryBarrier.srcStageMask = srcStageMask;
-            imageMemoryBarrier.dstAccessMask = dstAccessMask;
-            imageMemoryBarrier.dstStageMask = dstStageMask;
-            imageMemoryBarrier.oldLayout = oldImageLayout;
-            imageMemoryBarrier.newLayout = newImageLayout;
-            imageMemoryBarrier.image = image;
-            imageMemoryBarrier.subresourceRange = { aspect, 0, 1, 0, 1 };
+            const VkImageMemoryBarrier2 imageMemoryBarrier = TranslateBarrier(barrier, device);
 
             VkDependencyInfo dependencyInfo = {};
             dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
             dependencyInfo.imageMemoryBarrierCount = 1;
             dependencyInfo.pImageMemoryBarriers = &imageMemoryBarrier;
 
-            vkCmdPipelineBarrier2(cmdbuffer, &dependencyInfo);
+            vkCmdPipelineBarrier2(commandBuffer->GetNative(), &dependencyInfo);
         }
 
 
@@ -384,6 +372,13 @@ namespace FE::Graphics::Vulkan
             imageInstance->m_type = Core::ResourceType::kTexture;
             imageInstance->m_image = vkImages[i];
             imageInstance->m_textureDesc = colorTargetDesc;
+
+            Common::SubresourceState initialState;
+            initialState.m_value = 0;
+            initialState.m_layout = Core::BarrierLayout::kUndefined;
+            initialState.m_queueType = Core::DeviceQueueType::kGraphics;
+            imageInstance->m_subresourceStates.push_back(initialState);
+
             image->SwapInternal(imageInstance);
 
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
@@ -444,6 +439,43 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void Viewport::PrepareBlit()
+    {
+        FE_PROFILER_ZONE();
+
+        Texture* renderTarget = m_images[m_imageIndex].Get();
+        const Core::TextureSubresource subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
+
+        Common::SubresourceState state = renderTarget->GetState(subresource);
+        if (state.m_layout == Core::BarrierLayout::kRenderTarget
+            && Bit::AllSet(state.m_access, Core::BarrierAccessFlags::kRenderTarget)
+            && Bit::AllSet(state.m_sync, Core::BarrierSyncFlags::kRenderTarget))
+        {
+            return;
+        }
+
+        Core::TextureBarrierDesc barrier;
+        barrier.m_texture = renderTarget;
+        barrier.m_subresource = subresource;
+        barrier.m_layoutBefore = state.m_layout;
+        barrier.m_layoutAfter = Core::BarrierLayout::kRenderTarget;
+        barrier.m_accessBefore = state.m_access;
+        barrier.m_accessAfter = Core::BarrierAccessFlags::kRenderTarget;
+        barrier.m_syncBefore = state.m_sync;
+        barrier.m_syncAfter = Core::BarrierSyncFlags::kRenderTarget;
+        barrier.m_queueBefore = Core::DeviceQueueType::kGraphics;
+        barrier.m_queueAfter = Core::DeviceQueueType::kGraphics;
+
+        ImageMemoryBarrier(m_commandQueue->GetCurrentCommandBuffer(), ImplCast(m_device), barrier);
+
+        state.m_layout = barrier.m_layoutAfter;
+        state.m_access = barrier.m_accessAfter;
+        state.m_sync = barrier.m_syncAfter;
+        state.m_queueType = Core::DeviceQueueType::kGraphics;
+        renderTarget->SetState(subresource, state);
+    }
+
+
     void Viewport::Present()
     {
         Present(m_commandQueue->GetCurrentCommandBuffer());
@@ -455,16 +487,28 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         Texture* renderTarget = m_images[m_imageIndex].Get();
+        const Core::TextureSubresource subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
+        Common::SubresourceState state = renderTarget->GetState(subresource);
 
-        ImageMemoryBarrier(commandBuffer->GetNative(),
-                           renderTarget->GetNative(),
-                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                           0,
-                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                           VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           0,
-                           VK_IMAGE_ASPECT_COLOR_BIT);
+        Core::TextureBarrierDesc barrier;
+        barrier.m_texture = renderTarget;
+        barrier.m_subresource = subresource;
+        barrier.m_layoutBefore = state.m_layout;
+        barrier.m_layoutAfter = Core::BarrierLayout::kPresentSource;
+        barrier.m_accessBefore = state.m_access;
+        barrier.m_accessAfter = Core::BarrierAccessFlags::kNone;
+        barrier.m_syncBefore = state.m_sync;
+        barrier.m_syncAfter = Core::BarrierSyncFlags::kNone;
+        barrier.m_queueBefore = Core::DeviceQueueType::kGraphics;
+        barrier.m_queueAfter = Core::DeviceQueueType::kGraphics;
+
+        ImageMemoryBarrier(commandBuffer, ImplCast(m_device), barrier);
+
+        state.m_layout = barrier.m_layoutAfter;
+        state.m_access = barrier.m_accessAfter;
+        state.m_sync = barrier.m_syncAfter;
+        state.m_queueType = Core::DeviceQueueType::kGraphics;
+        renderTarget->SetState(subresource, state);
 
         const uint64_t frameIndex = m_commandQueue->GetFrameIndex();
         const uint32_t semaphoreIndex = static_cast<uint32_t>(frameIndex % kMaxInFlightFrames);

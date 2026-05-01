@@ -25,6 +25,7 @@ namespace FE::Graphics
 
     private:
         void EnsureDatabase();
+        void EnsureMainColorTarget(const Core::TextureDesc& swapchainColorTargetDesc);
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
@@ -32,6 +33,7 @@ namespace FE::Graphics
         festd::vector<Rc<Scene>> m_scenes;
         festd::unique_ptr<DB::Database> m_database;
         Rc<Core::Device> m_device;
+        Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;
     };
 } // namespace FE::Graphics
