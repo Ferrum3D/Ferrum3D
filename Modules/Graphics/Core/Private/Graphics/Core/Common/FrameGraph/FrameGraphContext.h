@@ -19,8 +19,9 @@ namespace FE::Graphics::Common
         kComputePipeline = 1 << 8,
         kStreamBuffers = 1 << 9,
         kIndexBuffer = 1 << 10,
-        kAllRequiredForGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kGraphicsPipeline,
-        kAll = kAllRequiredForGraphics | kPushConstants,
+        kAllGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kGraphicsPipeline,
+        kAllRequiredForGraphics = kRenderTargets | kGraphicsPipeline,
+        kAll = kAllGraphics | kPushConstants,
     };
 
     FE_ENUM_OPERATORS(PipelineStateFlags);
@@ -34,6 +35,12 @@ namespace FE::Graphics::Common
 
         void SetRenderTargetLoadOperations(const Core::RenderTargetLoadOperations& operations) final;
         void SetRenderTargetStoreOperations(const Core::RenderTargetStoreOperations& operations) final;
+
+        void ClearColorTarget(uint32_t renderTargetIndex, Color4F color) final;
+        void ClearDepthStencilTarget(float depth, uint8_t stencil) final;
+        void DiscardColorTarget(uint32_t renderTargetIndex) final;
+        void DiscardDepthStencilTarget() final;
+
         void SetRenderTargets(festd::span<const Core::TextureView> renderTargets, Core::TextureView depthStencil) final;
 
         void SetViewport(RectF viewport) final;

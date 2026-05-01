@@ -187,8 +187,12 @@ namespace FE::Graphics::Core
         }
 
         virtual void SetRenderTargetLoadOperations(const RenderTargetLoadOperations& operations) = 0;
-
         virtual void SetRenderTargetStoreOperations(const RenderTargetStoreOperations& operations) = 0;
+
+        virtual void ClearColorTarget(uint32_t renderTargetIndex, Color4F color) = 0;
+        virtual void ClearDepthStencilTarget(float depth, uint8_t stencil) = 0;
+        virtual void DiscardColorTarget(uint32_t renderTargetIndex) = 0;
+        virtual void DiscardDepthStencilTarget() = 0;
 
         virtual void SetRenderTargets(festd::span<const TextureView> renderTargets, TextureView depthStencil) = 0;
 

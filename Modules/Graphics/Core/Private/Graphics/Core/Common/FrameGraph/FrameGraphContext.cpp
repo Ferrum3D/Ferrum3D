@@ -38,6 +38,34 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraphContext::ClearColorTarget(const uint32_t renderTargetIndex, const Color4F color)
+    {
+        m_setStateMask |= PipelineStateFlags::kLoadOperations;
+        m_renderTargetState.m_loadOperations.ClearColor(renderTargetIndex, color);
+    }
+
+
+    void FrameGraphContext::ClearDepthStencilTarget(const float depth, const uint8_t stencil)
+    {
+        m_setStateMask |= PipelineStateFlags::kLoadOperations;
+        m_renderTargetState.m_loadOperations.ClearDepthStencil(depth, stencil);
+    }
+
+
+    void FrameGraphContext::DiscardColorTarget(const uint32_t renderTargetIndex)
+    {
+        m_setStateMask |= PipelineStateFlags::kLoadOperations;
+        m_renderTargetState.m_loadOperations.DiscardColor(renderTargetIndex);
+    }
+
+
+    void FrameGraphContext::DiscardDepthStencilTarget()
+    {
+        m_setStateMask |= PipelineStateFlags::kLoadOperations;
+        m_renderTargetState.m_loadOperations.DiscardDepthStencil();
+    }
+
+
     void FrameGraphContext::SetRenderTargets(const festd::span<const Core::TextureView> renderTargets,
                                              const Core::TextureView depthStencil)
     {
@@ -215,7 +243,7 @@ namespace FE::Graphics::Common
 
         FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kComputePipeline),
                   "Compute pipeline must be set before dispatching");
-        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kAllGraphics),
                   "Only compute related pipeline states can be set before dispatching");
 
         PrepareStatesInternal();
@@ -237,6 +265,8 @@ namespace FE::Graphics::Common
         m_scissorState.m_action = StateAction::kReset;
         m_pipelineState.m_action = StateAction::kReset;
         m_stencilRefState.m_action = StateAction::kReset;
+        m_renderTargetState.m_loadOperations = Core::RenderTargetLoadOperations::kDefault;
+        m_renderTargetState.m_storeOperations = Core::RenderTargetStoreOperations::kDefault;
 
         festd::fill_n(m_streamBufferViews, festd::size(m_streamBufferViews), Core::BufferView::kInvalid);
         m_indexBufferView = {};

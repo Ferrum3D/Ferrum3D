@@ -98,18 +98,10 @@ namespace FE::Graphics::OpaquePass
         graph.AddPass("OpaquePass",
                       passDesc,
                       [meshletCount = lodInfo.m_meshletCount, hasDepthPrepass](Core::FrameGraphContext& context) {
-                          if (hasDepthPrepass)
-                          {
-                              context.SetRenderTargetLoadOperations(
-                                  Core::RenderTargetLoadOperations{}.ClearColor(0, Colors::kDarkSlateBlue));
-                          }
-                          else
-                          {
-                              context.SetRenderTargetLoadOperations(
-                                  Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
-                          }
+                          context.ClearColorTarget(0, Colors::kDarkSlateBlue);
+                          if (!hasDepthPrepass)
+                              context.ClearDepthStencilTarget(0.0f, 0);
 
-                          context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
                           context.DispatchMesh(meshletCount);
                       });
     }

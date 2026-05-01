@@ -649,6 +649,8 @@ namespace FE::Graphics::Common
             if (pass.m_functor)
                 pass.m_destroy(pass.m_functor, pass.m_userPassDescPtr);
         }
+
+        FinishExecuteInternal();
     }
 
 

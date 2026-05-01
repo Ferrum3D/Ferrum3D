@@ -197,7 +197,7 @@ namespace FE::Graphics::Vulkan
         m_instance = instance;
         instance = oldInstance;
 
-        if (newInstance->m_wholeImageView == VK_NULL_HANDLE)
+        if (newInstance && newInstance->m_wholeImageView == VK_NULL_HANDLE)
             InitWholeImageView();
 
         UpdateDebugNames();

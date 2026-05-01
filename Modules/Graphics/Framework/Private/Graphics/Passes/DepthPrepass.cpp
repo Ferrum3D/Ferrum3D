@@ -80,8 +80,7 @@ namespace FE::Graphics::DepthPrepass
         passDesc->m_pipeline = Pipeline::GetPipeline();
 
         graph.AddPass("DepthPrepass", passDesc, [meshletCount = lodInfo.m_meshletCount](Core::FrameGraphContext& context) {
-            context.SetRenderTargetLoadOperations(Core::RenderTargetLoadOperations{}.ClearDepthStencil(0.0f, 0));
-            context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
+            context.ClearDepthStencilTarget(0.0f, 0);
             context.DispatchMesh(meshletCount);
         });
     }
