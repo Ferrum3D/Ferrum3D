@@ -1,9 +1,10 @@
 #pragma once
 #include <Shaders/Core/Meshlet.hlsli>
-#include <Shaders/Passes/MeshPass/MeshPass.h>
 #include <Shaders/Tables/MeshGroupTable.hlsli>
 #include <Shaders/Tables/MeshInstanceTable.hlsli>
 #include <Shaders/Tables/MeshLodInfoTable.hlsli>
+
+#include <Shaders/Passes/MeshPass/MeshPass.h>
 
 struct VertexInput
 {
@@ -45,9 +46,9 @@ struct MeshDrawData
 
 MeshDrawData LoadMeshDrawData()
 {
-    MeshInstanceTable instanceTable = MeshInstanceTable::Create({ GConstants.m_meshInstanceTable });
-    MeshGroupTable groupTable = MeshGroupTable::Create({ GConstants.m_meshGroupTable });
-    MeshLodInfoTable lodTable = MeshLodInfoTable::Create({ GConstants.m_meshLodInfoTable });
+    MeshInstanceTable instanceTable = MeshInstanceTable::Create(GConstants.m_meshInstanceTable);
+    MeshGroupTable groupTable = MeshGroupTable::Create(GConstants.m_meshGroupTable);
+    MeshLodInfoTable lodTable = MeshLodInfoTable::Create(GConstants.m_meshLodInfoTable);
 
     const MeshInstanceTable::Row instance = instanceTable.ReadRow(GConstants.m_instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());
@@ -65,7 +66,7 @@ PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t verte
 {
     const VertexInput input = drawData.m_geometry.Read<VertexInput>(vertexIndex * sizeof(VertexInput));
     const float4 worldPosition = mul(float4(input.m_pos, 1.0f), drawData.m_worldTransform);
-    const float3x3 normalMatrix = transpose(inverse((float3x3)drawData.m_worldTransform));
+    const float3x3 normalMatrix = (float3x3)drawData.m_worldTransform;
 
     PixelAttributes output;
     output.m_pos = mul(worldPosition, GConstants.m_viewProjection);

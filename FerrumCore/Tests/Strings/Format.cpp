@@ -44,9 +44,22 @@ TEST(Format, UUID)
 
 TEST(Format, Strings)
 {
+    const char* constString = "const char pointer";
+    char mutableString[] = "mutable char array";
+
     EXPECT_EQ(Fmt::Format("{}", "literal"), "literal");
+    EXPECT_EQ(Fmt::Format("{}", constString), "const char pointer");
+    EXPECT_EQ(Fmt::Format("{}", mutableString), "mutable char array");
+    EXPECT_EQ(Fmt::Format("{}", static_cast<char*>(mutableString)), "mutable char array");
     EXPECT_EQ(Fmt::Format("{}", festd::string_view("slice")), "slice");
     EXPECT_EQ(Fmt::Format("{}", festd::string("str")), festd::string("str"));
     EXPECT_EQ(Fmt::Format("{}", festd::string("loooooooooooooooooooooooooooooong str")),
               festd::string("loooooooooooooooooooooooooooooong str"));
+}
+
+TEST(Format, Pointers)
+{
+    int value = 0;
+    const void* pointer = &value;
+    EXPECT_EQ(Fmt::Format("{}", pointer), Fmt::Format("{}", reinterpret_cast<uintptr_t>(pointer)));
 }

@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <EASTL/tuple.h>
 #include <FeCore/Base/Base.h>
 #include <festd/string.h>
 #include <itoa/jeaiii_to_text.h>
@@ -12,6 +11,9 @@ namespace FE::Fmt
 {
     namespace Internal
     {
+        template<class>
+        inline constexpr bool kAlwaysFalse = false;
+
         inline char* TrimEmptyExp(char* buffer, const char* begin)
         {
             if (buffer - begin < 2)
@@ -43,6 +45,11 @@ namespace FE::Fmt
     template<class TBuffer, class T>
     struct ValueFormatter
     {
+        void Format(TBuffer&, const T&) const
+        {
+            static_assert(Internal::kAlwaysFalse<T>,
+                          "No FE::Fmt::ValueFormatter specialization exists for this argument type");
+        }
     };
 
 
@@ -85,7 +92,29 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const char* value) const
         {
+            FE_Assert(value != nullptr, "Can't format a null C string");
+            if (value == nullptr)
+                return;
+
             buffer.append(value, ASCII::Length(value));
+        }
+    };
+
+    template<class TBuffer>
+    struct ValueFormatter<TBuffer, char*>
+    {
+        void Format(TBuffer& buffer, const char* value) const
+        {
+            ValueFormatter<TBuffer, const char*>{}.Format(buffer, value);
+        }
+    };
+
+    template<class TBuffer, class T>
+    struct ValueFormatter<TBuffer, T*>
+    {
+        void Format(TBuffer& buffer, T* value) const
+        {
+            ValueFormatter<TBuffer, uintptr_t>{}.Format(buffer, reinterpret_cast<uintptr_t>(value));
         }
     };
 
@@ -176,6 +205,13 @@ namespace FE::Fmt
 
     namespace Internal
     {
+        enum class ArgIndexingMode
+        {
+            kUndetermined,
+            kAutomatic,
+            kManual,
+        };
+
         template<class TBuffer>
         struct FormatArg
         {
@@ -188,15 +224,8 @@ namespace FE::Fmt
             static FormatArg Create(T* arg) noexcept
             {
                 const auto func = [](const void* value, TBuffer& buffer) {
-                    if constexpr (std::is_pointer_v<T>)
-                    {
-                        ValueFormatter<TBuffer, uintptr_t>{}.Format(buffer, *static_cast<const uintptr_t*>(value));
-                    }
-                    else
-                    {
-                        ValueFormatter<TBuffer, std::remove_const_t<T>>{}.Format(buffer,
-                                                                                 *static_cast<const std::remove_cv_t<T>*>(value));
-                    }
+                    using ValueType = std::remove_cv_t<T>;
+                    ValueFormatter<TBuffer, ValueType>{}.Format(buffer, *static_cast<const T*>(value));
                 };
                 return FormatArg{ func, arg };
             }
@@ -217,31 +246,46 @@ namespace FE::Fmt
         template<class TBuffer, size_t TArgCount>
         void FormatImpl(TBuffer& buffer, const festd::string_view fmt, FormatArgs<TBuffer, TArgCount>& args)
         {
-            size_t argIndex = 0;
-            bool autoIndex = true;
+            size_t nextArgIndex = 0;
+            ArgIndexingMode indexingMode = ArgIndexingMode::kUndetermined;
             auto begin = fmt.begin();
-            for (auto it = fmt.begin(); it != fmt.end(); ++it)
+            const auto end = fmt.end();
+            for (auto it = fmt.begin(); it != end; ++it)
             {
                 if (*it == '{')
                 {
                     auto braceIt = it;
-                    if (*++it == '{')
+                    ++it;
+                    if (it == end)
+                    {
+                        FE_Assert(false, "Invalid format string: unmatched '{'");
+                        buffer.append(begin, end);
+                        return;
+                    }
+
+                    if (*it == '{')
                     {
                         buffer.append(begin, it);
                         begin = it;
                         begin++;
                         continue;
                     }
+
+                    size_t argIndex = 0;
                     if (*it != '}')
                     {
-                        FE_Assert(!autoIndex || argIndex == 0, "Can't switch from automatic to manual indexing");
-                        argIndex = 0;
-                        autoIndex = false;
-                        while (true)
+                        FE_Assert(indexingMode != ArgIndexingMode::kAutomatic,
+                                  "Can't switch from automatic to manual indexing");
+                        if (indexingMode == ArgIndexingMode::kAutomatic)
+                            return;
+
+                        indexingMode = ArgIndexingMode::kManual;
+                        bool hasDigits = false;
+                        while (it != end)
                         {
-                            FE_Assert(it != fmt.end(), "Invalid arg index");
                             if (*it <= '9' && *it >= '0')
                             {
+                                hasDigits = true;
                                 argIndex *= 10;
                                 argIndex += static_cast<size_t>(*it) - '0';
                             }
@@ -253,21 +297,44 @@ namespace FE::Fmt
                             ++it;
                         }
 
-                        FE_Assert(*it == '}', "Invalid arg index");
+                        FE_Assert(hasDigits && it != end && *it == '}', "Invalid arg index");
+                        if (!hasDigits || it == end || *it != '}')
+                        {
+                            buffer.append(begin, end);
+                            return;
+                        }
                     }
+                    else
+                    {
+                        FE_Assert(indexingMode != ArgIndexingMode::kManual,
+                                  "Can't switch from manual to automatic indexing");
+                        if (indexingMode == ArgIndexingMode::kManual)
+                            return;
+
+                        indexingMode = ArgIndexingMode::kAutomatic;
+                        argIndex = nextArgIndex++;
+                    }
+
+                    FE_Assert(argIndex < TArgCount, "Format argument index out of range");
+                    if (argIndex >= TArgCount)
+                        return;
+
                     buffer.append(begin, braceIt);
                     begin = it;
                     begin++;
 
                     auto& arg = args.Data[argIndex];
                     arg.FormatTo(buffer);
-                    if (autoIndex)
-                        ++argIndex;
                 }
                 else if (*it == '}')
                 {
                     ++it;
-                    FE_Assert(*it == '}', "must be escaped");
+                    FE_Assert(it != end && *it == '}', "Invalid format string: '}' must be escaped");
+                    if (it == end || *it != '}')
+                    {
+                        buffer.append(begin, end);
+                        return;
+                    }
 
                     buffer.append(begin, it);
                     begin = it;

@@ -20,6 +20,8 @@
 #    define FE_CONST const
 #    define FE_CONSTEXPR inline constexpr
 
+#    define FE_INIT(...) = __VA_ARGS__
+
 namespace FE
 {
     using float2 = Vector2;

@@ -7,6 +7,9 @@
 #define FE_RTTI_Reflect(...)
 #define FE_DECLARE_PASS_DATA(...)
 
+#define final
+#define FE_INIT(...)
+
 #if defined(__JETBRAINS_IDE__) || defined(__INTELLISENSE__)
 typedef uint uint32_t;
 typedef uint2 uint64_t;
