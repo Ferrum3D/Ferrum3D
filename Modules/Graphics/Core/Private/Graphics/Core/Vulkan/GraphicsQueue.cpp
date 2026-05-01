@@ -56,7 +56,6 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         FE_Assert(m_isActive);
-        GetCurrentCommandBuffer()->Submit();
         return { m_fence, m_frameIndex++ };
     }
 

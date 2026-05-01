@@ -344,6 +344,11 @@ namespace FE::Graphics::Common
                 pass.m_scissor = scissor.m_rect;
                 pass.m_specifiedStatesMask |= PassStateFlags::kScissor;
             }
+            else if (field.m_type == Rtti::GetTypeID<Core::PassGraphicsPipeline>()
+                     || field.m_type == Rtti::GetTypeID<Core::PassComputePipeline>())
+            {
+                // Already processed.
+            }
             else
             {
                 // Other arbitrary types are interpreted as push constants.

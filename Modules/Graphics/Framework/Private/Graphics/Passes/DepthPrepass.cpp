@@ -1,4 +1,5 @@
 #include <FeCore/Math/Colors.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
@@ -6,7 +7,6 @@
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
-#include <Graphics/Core/PipelineVariantSet.h>
 
 #include <Shaders/Passes/DepthPrepass/DepthPrepass.h>
 
@@ -56,17 +56,17 @@ namespace FE::Graphics::DepthPrepass
         if (meshModule == nullptr)
             return;
 
-        const DB::Ref<MeshInstanceTable> instanceRef{ 0 };
-        MeshBatch* batch = meshModule->FindBatch(instanceRef);
-        if (batch == nullptr || !batch->m_drawTagMask.Intersects(DrawTagMask(DrawTags::DepthPrepass)))
-            return;
+        MeshBatch* batch = festd::single(meshModule->GetBatches());
+        FE_Assert(batch != nullptr);
+
+        const DB::Ref<MeshInstanceTable> instanceRef = festd::single(batch->m_meshInstances);
 
         const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
         const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
         const DB::Slice<MeshLodInfoTable> lods = groupRow.m_lods.Get();
         const Core::MeshLodInfo lodInfo = meshModule->GetMeshLodInfoTable()->ReadRow(lods.m_rowIndex).m_info.Get();
 
-        auto* passDesc = graph.AllocatePassData<::FE::Graphics::DepthPrepass::PassDesc>();
+        auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_constants.m_meshInstanceTable =
             viewData.m_database->GetTableBufferPointer(graph, *meshModule->GetMeshInstanceTable());
         passDesc->m_constants.m_meshGroupTable =

@@ -45,6 +45,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
+        FE_Assert(m_isRecording);
         VerifyVk(vkEndCommandBuffer(m_nativeCommandBuffer));
 
         VkSubmitInfo submitInfo;

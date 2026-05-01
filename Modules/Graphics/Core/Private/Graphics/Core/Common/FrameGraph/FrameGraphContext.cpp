@@ -138,7 +138,7 @@ namespace FE::Graphics::Common
         }
         else
         {
-            m_pipelineState.m_action = StateAction::kKeep;
+            m_stencilRefState.m_action = StateAction::kKeep;
         }
     }
 

@@ -1,4 +1,5 @@
 #include <FeCore/Math/Colors.h>
+#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
@@ -7,7 +8,6 @@
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
-#include <Graphics/Core/PipelineVariantSet.h>
 
 #include <Shaders/Passes/OpaquePass/OpaquePass.h>
 
@@ -66,10 +66,10 @@ namespace FE::Graphics::OpaquePass
         if (meshModule == nullptr)
             return;
 
-        const DB::Ref<MeshInstanceTable> instanceRef{ 0 };
-        MeshBatch* batch = meshModule->FindBatch(instanceRef);
-        if (batch == nullptr || !batch->m_drawTagMask.Intersects(DrawTagMask(DrawTags::Opaque)))
-            return;
+        MeshBatch* batch = festd::single(meshModule->GetBatches());
+        FE_Assert(batch != nullptr);
+
+        const DB::Ref<MeshInstanceTable> instanceRef = festd::single(batch->m_meshInstances);
 
         const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
         const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
@@ -79,7 +79,7 @@ namespace FE::Graphics::OpaquePass
         Pipeline::Specializer specializer;
         specializer.Set<Pipeline::ColorTargetFormat>(viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
-        auto* passDesc = graph.AllocatePassData<::FE::Graphics::OpaquePass::PassDesc>();
+        auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_constants.m_meshInstanceTable =
             viewData.m_database->GetTableBufferPointer(graph, *meshModule->GetMeshInstanceTable());
         passDesc->m_constants.m_meshGroupTable =
@@ -95,19 +95,22 @@ namespace FE::Graphics::OpaquePass
         passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
 
         const bool hasDepthPrepass = blackboard.TryGet<DepthPrepass::PassData>() != nullptr;
-        graph.AddPass("OpaquePass", passDesc, [meshletCount = lodInfo.m_meshletCount, hasDepthPrepass](Core::FrameGraphContext& context) {
-            if (hasDepthPrepass)
-            {
-                context.SetRenderTargetLoadOperations(Core::RenderTargetLoadOperations{}.ClearColor(0, Colors::kDarkSlateBlue));
-            }
-            else
-            {
-                context.SetRenderTargetLoadOperations(
-                    Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
-            }
+        graph.AddPass("OpaquePass",
+                      passDesc,
+                      [meshletCount = lodInfo.m_meshletCount, hasDepthPrepass](Core::FrameGraphContext& context) {
+                          if (hasDepthPrepass)
+                          {
+                              context.SetRenderTargetLoadOperations(
+                                  Core::RenderTargetLoadOperations{}.ClearColor(0, Colors::kDarkSlateBlue));
+                          }
+                          else
+                          {
+                              context.SetRenderTargetLoadOperations(
+                                  Core::RenderTargetLoadOperations{}.ClearAll(Colors::kDarkSlateBlue, 0.0f, 0));
+                          }
 
-            context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
-            context.DispatchMesh(meshletCount);
-        });
+                          context.SetRenderTargetStoreOperations(Core::RenderTargetStoreOperations::kDefault);
+                          context.DispatchMesh(meshletCount);
+                      });
     }
 } // namespace FE::Graphics::OpaquePass
