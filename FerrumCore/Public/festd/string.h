@@ -702,6 +702,12 @@ namespace FE::Internal
 
     template<uint32_t TCapacity>
     using DefaultFixedStringStorage = DefaultAllocatorStringStorage<FixedStringStorage<TCapacity>>;
+
+    template<uint32_t TCapacity>
+    using DefaultInlineStringStorage = DefaultAllocatorStringStorage<InlineStringStorage<TCapacity>>;
+
+    template<uint32_t TCapacity>
+    using PolymorphicInlineStringStorage = PolymorphicAllocatorStringStorage<InlineStringStorage<TCapacity>>;
 } // namespace FE::Internal
 
 
@@ -710,6 +716,11 @@ namespace FE::festd
     namespace pmr
     {
         using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicStringStorage>>;
+
+        template<uint32_t TCapacity>
+        using basic_inline_string =
+            FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicInlineStringStorage<TCapacity>>>;
+        using inline_string = basic_inline_string<256>;
     }
 
     using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultDynamicStringStorage>>;
@@ -719,6 +730,11 @@ namespace FE::festd
     using basic_fixed_string =
         FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultFixedStringStorage<TCapacity>>>;
     using fixed_string = basic_fixed_string<256>;
+
+    template<uint32_t TCapacity>
+    using basic_inline_string =
+        FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultInlineStringStorage<TCapacity>>>;
+    using inline_string = basic_inline_string<256>;
 
     static_assert(sizeof(string) == sizeof(uintptr_t) * 3);
     static_assert(sizeof(pmr::string) == sizeof(string) + sizeof(uintptr_t));
@@ -755,6 +771,8 @@ FE_RTTI_Reflect(FE::festd::string, "A9081CB4-1614-47E0-9E5D-BC667A526021");
 FE_RTTI_Reflect(FE::festd::string_view, "E72E9011-13E9-4E8B-B51A-F156E1F4A980");
 FE_RTTI_Reflect(FE::festd::pmr::string, "DA1CF83D-8C08-48D8-BD35-4F7C96657E0D");
 FE_RTTI_Reflect(FE::festd::fixed_string, "4C224BCA-8F0A-4C01-973D-D8BB85AF3411");
+FE_RTTI_Reflect(FE::festd::inline_string, "44A6DCE9-DF70-4A80-8258-2FF71D336989");
+FE_RTTI_Reflect(FE::festd::pmr::inline_string, "28F0C62D-B326-4E5B-9267-D55812B06217");
 
 
 template<class TBase>

@@ -153,6 +153,52 @@ TEST(Strings, ShrinkReserve)
     EXPECT_GE(str.capacity(), sizeof(l) + 3 - 1);
 }
 
+TEST(Strings, InlineStringUsesInlineStorage)
+{
+    festd::basic_inline_string<4> str = "1234";
+    EXPECT_EQ(str.capacity(), 4);
+    EXPECT_EQ(str.size(), 4);
+    EXPECT_EQ(str, "1234");
+}
+
+TEST(Strings, InlineStringGrowsPastInlineStorage)
+{
+    festd::basic_inline_string<4> str = "1234";
+    const char* inlineData = str.data();
+
+    str.push_back('5');
+
+    EXPECT_GT(str.capacity(), 4);
+    EXPECT_NE(str.data(), inlineData);
+    EXPECT_EQ(str, "12345");
+}
+
+TEST(Strings, InlineStringShrinkReturnsToInlineStorage)
+{
+    festd::basic_inline_string<4> str = "12345";
+    const char* heapData = str.data();
+
+    str.assign("123", 3);
+    str.shrink_to_fit();
+
+    EXPECT_EQ(str.capacity(), 4);
+    EXPECT_NE(str.data(), heapData);
+    EXPECT_EQ(str, "123");
+}
+
+TEST(Strings, InlineStringMoveKeepsOverflowStorage)
+{
+    festd::basic_inline_string<4> str = "12345";
+    const char* heapData = str.data();
+
+    festd::basic_inline_string<4> moved = std::move(str);
+
+    EXPECT_EQ(moved.data(), heapData);
+    EXPECT_EQ(moved, "12345");
+    EXPECT_EQ(str.capacity(), 4);
+    EXPECT_EQ(str.size(), 0);
+}
+
 TEST(Strings, Compare)
 {
     EXPECT_EQ(festd::string{}.compare(festd::string{}), 0);
