@@ -100,14 +100,27 @@ namespace FE::Internal
     };
 
 
+    //! @brief Non-owning view over a UTF-8 encoded string.
+    //!
+    //! The view stores a byte pointer and a byte count. It does not own the referenced memory and does not require the
+    //! referenced range to be null-terminated. Public aliases expose this type as `festd::string_view`.
+    //!
+    //! The range must contain valid UTF-8 and must not contain embedded zero bytes. These preconditions are checked by debug
+    //! assertions for runtime construction. Unlike `std::string_view`, iteration is over decoded Unicode codepoints rather
+    //! than raw bytes, and substring helpers that do not contain `ascii` in their name use codepoint positions.
     struct BasicStringViewImpl
     {
+        //! @brief Create an empty view.
         constexpr BasicStringViewImpl()
             : m_data(nullptr)
             , m_size(0)
         {
         }
 
+        //! @brief Create a view over a UTF-8 byte range.
+        //!
+        //! @param str      The first byte of the string, or `nullptr` when `byteSize` is zero.
+        //! @param byteSize The number of bytes in the viewed range, excluding any null terminator.
         constexpr BasicStringViewImpl(const char* str, const uint32_t byteSize)
             : m_data(str)
             , m_size(byteSize)
@@ -116,6 +129,7 @@ namespace FE::Internal
                 ValidateStringBytes(str, byteSize);
         }
 
+        //! @brief Create a view over a null-terminated UTF-8 string.
         constexpr BasicStringViewImpl(const char* str)
             : m_data(str)
             , m_size(ASCII::Length(str))
@@ -124,21 +138,25 @@ namespace FE::Internal
                 ValidateStringBytes(str, m_size);
         }
 
+        //! @brief Create a view from a pair of codepoint iterators.
         BasicStringViewImpl(const StrIterator begin, const StrIterator end)
             : BasicStringViewImpl(reinterpret_cast<const char*>(begin.m_iter), static_cast<uint32_t>(end.m_iter - begin.m_iter))
         {
         }
 
+        //! @brief Create a view from a pair of byte pointers.
         BasicStringViewImpl(const char* begin, const char* end)
             : BasicStringViewImpl(begin, static_cast<uint32_t>(end - begin))
         {
         }
 
+        //! @brief Get the size of the string in bytes.
         [[nodiscard]] constexpr uint32_t size() const
         {
             return m_size;
         }
 
+        //! @brief Get the first byte of the viewed string.
         [[nodiscard]] constexpr const char* data() const
         {
             return m_data;
@@ -150,6 +168,19 @@ namespace FE::Internal
     };
 
 
+    //! @brief Owning UTF-8 string implementation used by public string aliases.
+    //!
+    //! Public aliases such as `festd::string`, `festd::fixed_string`, `festd::inline_string`, and their pmr variants expose
+    //! this API. `size()`, `capacity()`, `reserve()`, and raw range overloads are measured in bytes. `length()`, `substr()`,
+    //! and `StrIterator` traversal are measured in Unicode codepoints.
+    //!
+    //! Safe constructors and mutating functions expect valid UTF-8 and no embedded zero bytes; debug builds assert these
+    //! preconditions. `reinitialize()` and `resize_uninitialized()` are raw APIs and leave it to the caller to write valid,
+    //! null-terminated UTF-8 before the string is observed again.
+    //!
+    //! This is intentionally not a drop-in `std::string` replacement. It has no `operator[]`, `at`, `front`, `back`, standard
+    //! byte iterators, or `resize(count)` overload. Use `byte_at()` for byte access and `codepoint_at()` or iterators for
+    //! decoded codepoints.
     template<class TStorage>
     struct BasicStringImpl : private TStorage
     {
@@ -158,12 +189,14 @@ namespace FE::Internal
         using value_type = char;
         using Iter = StrIterator;
 
+        //! @brief Create an empty string.
         BasicStringImpl()
         {
             if (char* data = TStorage::InitializeImpl(0, TStorage::GetAllocator()))
                 data[0] = '\0';
         }
 
+        //! @brief Create an empty string using a polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(std::pmr::memory_resource* allocator)
             : TStorage(allocator)
@@ -172,6 +205,7 @@ namespace FE::Internal
                 data[0] = '\0';
         }
 
+        //! @brief Create a string containing `length` copies of an ASCII byte using a polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(const uint32_t length, const char value, std::pmr::memory_resource* allocator)
             : TStorage(allocator)
@@ -183,6 +217,7 @@ namespace FE::Internal
             data[length] = '\0';
         }
 
+        //! @brief Create a string from a UTF-8 byte range using a polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(const char* str, const uint32_t byteSize, std::pmr::memory_resource* allocator)
             : TStorage(allocator)
@@ -193,12 +228,14 @@ namespace FE::Internal
             data[byteSize] = '\0';
         }
 
+        //! @brief Create a string from a null-terminated UTF-8 string using a polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(const char* str, std::pmr::memory_resource* allocator)
             : BasicStringImpl(str, ASCII::Length(str), allocator)
         {
         }
 
+        //! @brief Create a string from UTF-8 bytes using a polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         BasicStringImpl(std::initializer_list<char> chars, std::pmr::memory_resource* allocator)
             : BasicStringImpl(chars.begin(), static_cast<uint32_t>(chars.size()), allocator)
@@ -210,6 +247,7 @@ namespace FE::Internal
             TStorage::DestroyImpl(TStorage::GetAllocator());
         }
 
+        //! @brief Copy another string.
         BasicStringImpl(const BasicStringImpl& other)
         {
             if constexpr (TStorage::kHasAllocator)
@@ -221,11 +259,13 @@ namespace FE::Internal
             data[size] = '\0';
         }
 
+        //! @brief Move another string.
         BasicStringImpl(BasicStringImpl&& other)
         {
             MoveStorageFrom(other);
         }
 
+        //! @brief Copy-assign another string.
         BasicStringImpl& operator=(const BasicStringImpl& other)
         {
             if (this == &other)
@@ -250,6 +290,7 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Move-assign another string.
         BasicStringImpl& operator=(BasicStringImpl&& other)
         {
             if (this == &other)
@@ -260,24 +301,28 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Assign from a null-terminated UTF-8 string.
         BasicStringImpl& operator=(const char* str)
         {
             assign(str);
             return *this;
         }
 
+        //! @brief Assign a single ASCII byte.
         BasicStringImpl& operator=(const char value)
         {
             assign(1, value);
             return *this;
         }
 
+        //! @brief Assign from UTF-8 bytes.
         BasicStringImpl& operator=(const std::initializer_list<char> chars)
         {
             assign(chars);
             return *this;
         }
 
+        //! @brief Create a string containing `length` copies of an ASCII byte.
         BasicStringImpl(const uint32_t length, const char value)
         {
             if (length != 0)
@@ -287,6 +332,7 @@ namespace FE::Internal
             data[length] = '\0';
         }
 
+        //! @brief Create a string from a UTF-8 byte range.
         BasicStringImpl(const char* str, uint32_t byteSize)
         {
             ValidateStringBytes(str, byteSize);
@@ -295,42 +341,57 @@ namespace FE::Internal
             data[byteSize] = '\0';
         }
 
+        //! @brief Create a string from a null-terminated UTF-8 string.
         BasicStringImpl(const char* str)
             : BasicStringImpl(str, ASCII::Length(str))
         {
         }
 
+        //! @brief Create a string from a pair of codepoint iterators.
         BasicStringImpl(const StrIterator begin, const StrIterator end)
             : BasicStringImpl(begin.m_iter, static_cast<uint32_t>(end.m_iter - begin.m_iter))
         {
         }
 
+        //! @brief Create a string from a pair of byte pointers.
         BasicStringImpl(const char* begin, const char* end)
             : BasicStringImpl(begin, static_cast<uint32_t>(end - begin))
         {
         }
 
+        //! @brief Create a string from UTF-8 bytes.
         BasicStringImpl(std::initializer_list<char> chars)
             : BasicStringImpl(chars.begin(), static_cast<uint32_t>(chars.size()))
         {
         }
 
+        //! @brief Recreate the string storage for a raw byte size and return writable storage.
+        //!
+        //! This is an unsafe low-level API. The caller must write valid UTF-8 bytes followed by a null terminator before any
+        //! normal string operation observes the object.
         char* reinitialize(const uint32_t byteSize)
         {
             return TStorage::Reinitialize(byteSize, TStorage::GetAllocator());
         }
 
+        //! @brief Reserve storage for at least `byteSize` UTF-8 bytes, excluding the null terminator.
         void reserve(const uint32_t byteSize)
         {
             TStorage::ReserveImpl(byteSize, TStorage::GetAllocator());
         }
 
+        //! @brief Resize to `byteSize` bytes without initializing newly exposed bytes.
+        //!
+        //! This is an unsafe low-level API. The caller must fill the bytes with valid UTF-8 and no embedded zero bytes.
         void resize_uninitialized(const uint32_t byteSize)
         {
             char* bytes = TStorage::ResizeImpl(byteSize, TStorage::GetAllocator());
             bytes[byteSize] = '\0';
         }
 
+        //! @brief Resize to `byteSize` bytes, filling new bytes with an ASCII value.
+        //!
+        //! There is intentionally no `resize(count)` overload because this string disallows embedded zero bytes.
         void resize(const uint32_t byteSize, const char value)
         {
             if (byteSize > size())
@@ -344,16 +405,19 @@ namespace FE::Internal
             data[byteSize] = '\0';
         }
 
+        //! @brief Remove all bytes from the string.
         void clear()
         {
             resize_uninitialized(0);
         }
 
+        //! @brief Reduce capacity to the current byte size where supported by the storage policy.
         void shrink_to_fit()
         {
             TStorage::ShrinkImpl(TStorage::GetAllocator());
         }
 
+        //! @brief Replace the contents with a UTF-8 byte range.
         void assign(const char* str, const uint32_t byteSize)
         {
             ValidateStringBytes(str, byteSize);
@@ -381,21 +445,25 @@ namespace FE::Internal
             bytes[byteSize] = '\0';
         }
 
+        //! @brief Replace the contents with a codepoint iterator range.
         void assign(const Iter begin, const Iter end)
         {
             assign(begin.m_iter, static_cast<uint32_t>(end.m_iter - begin.m_iter));
         }
 
+        //! @brief Replace the contents with a null-terminated UTF-8 string.
         void assign(const char* str)
         {
             assign(str, ASCII::Length(str));
         }
 
+        //! @brief Replace the contents with a UTF-8 string view.
         void assign(const BasicStringViewImpl& str)
         {
             assign(str.data(), str.size());
         }
 
+        //! @brief Replace the contents with `length` copies of an ASCII byte.
         void assign(const uint32_t length, const char value)
         {
             if (length != 0)
@@ -406,11 +474,13 @@ namespace FE::Internal
             bytes[length] = '\0';
         }
 
+        //! @brief Replace the contents with UTF-8 bytes.
         void assign(const std::initializer_list<char> chars)
         {
             assign(chars.begin(), static_cast<uint32_t>(chars.size()));
         }
 
+        //! @brief Append a UTF-8 byte range.
         void append(const char* str, const uint32_t byteSize)
         {
             ValidateStringBytes(str, byteSize);
@@ -430,21 +500,25 @@ namespace FE::Internal
             bytes[oldSize + byteSize] = '\0';
         }
 
+        //! @brief Append a null-terminated UTF-8 string.
         void append(const char* str)
         {
             append(str, ASCII::Length(str));
         }
 
+        //! @brief Append a UTF-8 string view.
         void append(const BasicStringViewImpl& str)
         {
             append(str.data(), str.size());
         }
 
+        //! @brief Append a codepoint iterator range.
         void append(const Iter begin, const Iter end)
         {
             append(begin.m_iter, static_cast<uint32_t>(end.m_iter - begin.m_iter));
         }
 
+        //! @brief Append `length` copies of an ASCII byte.
         void append(const uint32_t length, const char value)
         {
             if (length != 0)
@@ -456,11 +530,15 @@ namespace FE::Internal
             bytes[oldSize + length] = '\0';
         }
 
+        //! @brief Append UTF-8 bytes.
         void append(const std::initializer_list<char> chars)
         {
             append(chars.begin(), static_cast<uint32_t>(chars.size()));
         }
 
+        //! @brief Append a Unicode codepoint encoded as UTF-8.
+        //!
+        //! The zero codepoint is rejected because embedded zero bytes are not supported.
         void append(const int32_t codepoint)
         {
             ValidateStringCodepoint(codepoint);
@@ -470,6 +548,7 @@ namespace FE::Internal
             append(bytes, bytesWritten);
         }
 
+        //! @brief Append a single ASCII byte.
         void push_back(const char byte)
         {
             ValidateStringByte(byte);
@@ -480,6 +559,9 @@ namespace FE::Internal
             bytes[oldSize + 1] = '\0';
         }
 
+        //! @brief Copy bytes into a caller-provided buffer.
+        //!
+        //! Unlike `std::string::copy`, `byteOffset` is always a byte offset and no null terminator is written.
         uint32_t copy(char* destination, const uint32_t byteSize, const uint32_t byteOffset = 0) const
         {
             FE_AssertDebug(destination != nullptr || byteSize == 0, "Copy destination must not be null");
@@ -495,6 +577,7 @@ namespace FE::Internal
             return bytesToCopy;
         }
 
+        //! @brief Insert a UTF-8 byte range at a codepoint iterator position.
         void insert(const Iter position, const char* str, const uint32_t byteSize)
         {
             ValidateStringBytes(str, byteSize);
@@ -531,11 +614,13 @@ namespace FE::Internal
                 allocator->deallocate(temporary, byteSize, alignof(char));
         }
 
+        //! @brief Insert a UTF-8 string view at a codepoint iterator position.
         void insert(const Iter position, const BasicStringViewImpl& str)
         {
             insert(position, str.data(), str.size());
         }
 
+        //! @brief Insert a single ASCII byte at a codepoint iterator position.
         Iter insert(const Iter position, const char byte)
         {
             const uintptr_t dataAddress = reinterpret_cast<uintptr_t>(data());
@@ -545,6 +630,7 @@ namespace FE::Internal
             return Iter{ data() + positionOffset };
         }
 
+        //! @brief Insert `length` copies of an ASCII byte at a codepoint iterator position.
         void insert(const Iter position, const uint32_t length, const char value)
         {
             if (length == 0)
@@ -568,11 +654,13 @@ namespace FE::Internal
             bytes[oldSize + length] = '\0';
         }
 
+        //! @brief Insert UTF-8 bytes at a codepoint iterator position.
         void insert(const Iter position, const std::initializer_list<char> chars)
         {
             insert(position, chars.begin(), static_cast<uint32_t>(chars.size()));
         }
 
+        //! @brief Erase a codepoint iterator range and return the iterator at the erased position.
         Iter erase(const Iter first, const Iter last)
         {
             const uint32_t oldSize = size();
@@ -592,6 +680,7 @@ namespace FE::Internal
             return Iter{ data() + firstOffset };
         }
 
+        //! @brief Erase one codepoint and return the iterator at the erased position.
         Iter erase(const Iter position)
         {
             Iter next = position;
@@ -599,6 +688,7 @@ namespace FE::Internal
             return erase(position, next);
         }
 
+        //! @brief Replace a codepoint iterator range with a UTF-8 byte range.
         void replace(const Iter first, const Iter last, const char* str, const uint32_t byteSize)
         {
             ValidateStringBytes(str, byteSize);
@@ -624,22 +714,26 @@ namespace FE::Internal
                 allocator->deallocate(temporary, byteSize, alignof(char));
         }
 
+        //! @brief Replace a codepoint iterator range with a UTF-8 string view.
         void replace(const Iter first, const Iter last, const BasicStringViewImpl& str)
         {
             replace(first, last, str.data(), str.size());
         }
 
+        //! @brief Replace a codepoint iterator range with `length` copies of an ASCII byte.
         void replace(const Iter first, const Iter last, const uint32_t length, const char value)
         {
             const Iter insertionPosition = erase(first, last);
             insert(insertionPosition, length, value);
         }
 
+        //! @brief Replace a codepoint iterator range with UTF-8 bytes.
         void replace(const Iter first, const Iter last, const std::initializer_list<char> chars)
         {
             replace(first, last, chars.begin(), static_cast<uint32_t>(chars.size()));
         }
 
+        //! @brief Remove the final Unicode codepoint.
         void pop_back()
         {
             FE_AssertDebug(size() != 0, "Cannot pop from an empty string");
@@ -649,6 +743,7 @@ namespace FE::Internal
             erase(last, Iter{ data() + size() });
         }
 
+        //! @brief Swap contents with another string of the same storage type.
         void swap(BasicStringImpl& other) noexcept
         {
             if (this == &other)
@@ -659,11 +754,13 @@ namespace FE::Internal
             *this = std::move(temporary);
         }
 
+        //! @brief Get the allocator used by this string.
         [[nodiscard]] std::pmr::memory_resource* get_allocator() const
         {
             return TStorage::GetAllocator();
         }
 
+        //! @brief Move the string contents to a different polymorphic allocator.
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         void set_allocator(std::pmr::memory_resource* allocator)
         {
@@ -678,36 +775,45 @@ namespace FE::Internal
             *this = std::move(temporary);
         }
 
+        //! @brief Get the size of the string in bytes.
         [[nodiscard]] uint32_t size() const
         {
             return TStorage::SizeImpl();
         }
 
+        //! @brief Get the number of Unicode codepoints in the string.
         [[nodiscard]] uint32_t length() const
         {
             return UTF8::Length(data(), size());
         }
 
+        //! @brief Get the byte capacity of the string, excluding the null terminator.
         [[nodiscard]] uint32_t capacity() const
         {
             return TStorage::CapacityImpl();
         }
 
+        //! @brief Get the maximum representable byte size.
         [[nodiscard]] uint32_t max_size() const
         {
             return Constants::kMaxU32 - 1;
         }
 
+        //! @brief Get writable access to the string bytes.
+        //!
+        //! The caller must preserve valid UTF-8, no embedded zero bytes, and the final null terminator.
         [[nodiscard]] char* data()
         {
             return TStorage::DataImpl();
         }
 
+        //! @brief Get read-only access to the string bytes.
         [[nodiscard]] const char* data() const
         {
             return TStorage::DataImpl();
         }
 
+        //! @brief Get a null-terminated UTF-8 string.
         [[nodiscard]] const char* c_str() const
         {
             return TStorage::DataImpl();
@@ -723,6 +829,14 @@ namespace FE::Internal
     };
 
 
+    //! @brief Public UTF-8 string facade shared by owning strings and string views.
+    //!
+    //! This type adds Unicode-aware operations on top of either owning storage or view storage. `begin()`, `end()`,
+    //! `rbegin()`, and `rend()` iterate decoded Unicode codepoints, not raw bytes. Functions that accept or return `Iter`
+    //! use codepoint positions. Functions whose names contain `byte` or `ascii` operate on byte offsets.
+    //!
+    //! Compared to `std::string`, substring and search APIs deliberately prefer codepoint iterators or codepoint indices.
+    //! `substr()` returns a string view rather than an owning string.
     template<class TBase>
     struct StringImpl : public TBase
     {
@@ -737,22 +851,26 @@ namespace FE::Internal
         using value_type = char;
         static constexpr size_type npos = kInvalidIndex;
 
+        //! @brief Create from an ASCII byte view.
         StringImpl(festd::ascii_view str)
             : TBase(str.data(), static_cast<uint32_t>(str.length()))
         {
         }
 
+        //! @brief Create from another string or string view.
         template<class TOtherBase>
         StringImpl(const StringImpl<TOtherBase>& other)
             : TBase(other.data(), other.size())
         {
         }
 
+        //! @brief Create from an environment name.
         explicit StringImpl(const Env::Name name)
             : StringImpl(festd::ascii_view{ name })
         {
         }
 
+        //! @brief Assign from another string or string view.
         template<class TOtherBase, class T = TBase,
                  class = decltype(std::declval<T&>().assign(std::declval<const char*>(), uint32_t{}))>
         StringImpl& operator=(const StringImpl<TOtherBase>& other)
@@ -761,6 +879,7 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Append a null-terminated UTF-8 string.
         template<class T = TBase, class = decltype(std::declval<T&>().append(std::declval<const char*>()))>
         StringImpl& operator+=(const char* str)
         {
@@ -768,6 +887,7 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Append a single ASCII byte.
         template<class T = TBase, class = decltype(std::declval<T&>().push_back(char{}))>
         StringImpl& operator+=(const char byte)
         {
@@ -775,6 +895,7 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Append UTF-8 bytes.
         template<class T = TBase, class = decltype(std::declval<T&>().append(std::initializer_list<char>{}))>
         StringImpl& operator+=(std::initializer_list<char> chars)
         {
@@ -782,16 +903,21 @@ namespace FE::Internal
             return *this;
         }
 
+        //! @brief Read a raw byte by byte index.
         [[nodiscard]] char byte_at(uint32_t byteIndex) const
         {
             return TBase::data()[byteIndex];
         }
 
+        //! @brief Decode and return a Unicode codepoint by codepoint index.
         [[nodiscard]] int32_t codepoint_at(const uint32_t codepointIndex) const
         {
             return *(begin() + codepointIndex);
         }
 
+        //! @brief Get a byte-indexed ASCII view of a substring.
+        //!
+        //! This is byte-indexed and is the closest equivalent to `std::string_view::substr`.
         [[nodiscard]] festd::ascii_view substr_ascii(const uint32_t startIndex, uint32_t length = kInvalidIndex) const
         {
             const char* str = TBase::data();
@@ -801,6 +927,9 @@ namespace FE::Internal
             return festd::ascii_view{ str + startIndex, Math::Min(length, TBase::size() - startIndex) };
         }
 
+        //! @brief Get a codepoint-indexed UTF-8 substring view.
+        //!
+        //! Unlike `std::string::substr`, this function uses codepoint positions and returns a non-owning view.
         [[nodiscard]] StringImpl<BasicStringViewImpl> substr(const uint32_t startIndex, uint32_t length = kInvalidIndex) const
         {
             const Iter currentBegin = begin();
@@ -817,27 +946,32 @@ namespace FE::Internal
             return StringImpl<BasicStringViewImpl>{ startIt, endIt };
         }
 
+        //! @brief Get a UTF-8 substring view from a codepoint iterator range.
         [[nodiscard]] StringImpl<BasicStringViewImpl> substr(const Iter startIter, const Iter endIter) const
         {
             return StringImpl<BasicStringViewImpl>{ startIter, endIter };
         }
 
+        //! @brief Get a UTF-8 substring view from a codepoint iterator to the end.
         [[nodiscard]] StringImpl<BasicStringViewImpl> substr(const Iter startIter) const
         {
             return StringImpl<BasicStringViewImpl>{ startIter, end() };
         }
 
+        //! @brief Compare with a null-terminated UTF-8 string by Unicode codepoint values.
         [[nodiscard]] int32_t compare(const char* other) const
         {
             return UTF8::Compare(TBase::data(), other, TBase::size(), ASCII::Length(other));
         }
 
+        //! @brief Compare with another string or string view by Unicode codepoint values.
         template<class TOtherStorage>
         [[nodiscard]] int32_t compare(const StringImpl<TOtherStorage>& other) const
         {
             return UTF8::Compare(TBase::data(), other.data(), TBase::size(), other.size());
         }
 
+        //! @brief Find the first matching codepoint at or after a codepoint iterator.
         [[nodiscard]] Iter find_first_of(Iter position, const int32_t codepoint) const
         {
             while (position != end())
@@ -850,11 +984,13 @@ namespace FE::Internal
             return position;
         }
 
+        //! @brief Find the first matching codepoint.
         [[nodiscard]] Iter find_first_of(const int32_t codepoint) const
         {
             return find_first_of(begin(), codepoint);
         }
 
+        //! @brief Find the last matching codepoint before a codepoint iterator.
         [[nodiscard]] Iter find_last_of(Iter position, const int32_t codepoint) const
         {
             const Iter first = begin();
@@ -868,11 +1004,13 @@ namespace FE::Internal
             return end();
         }
 
+        //! @brief Find the last matching codepoint.
         [[nodiscard]] Iter find_last_of(const int32_t codepoint) const
         {
             return find_last_of(end(), codepoint);
         }
 
+        //! @brief Return a view with leading Unicode space codepoints removed.
         [[nodiscard]] StringImpl<BasicStringViewImpl> strip_left() const
         {
             const Iter nonSpace = eastl::find_if(begin(), end(), [](const int32_t codepoint) {
@@ -882,6 +1020,7 @@ namespace FE::Internal
             return StringImpl<BasicStringViewImpl>{ nonSpace, end() };
         }
 
+        //! @brief Return a view with trailing Unicode space codepoints removed.
         [[nodiscard]] StringImpl<BasicStringViewImpl> strip_right() const
         {
             const eastl::reverse_iterator<Iter> nonSpace = eastl::find_if(rbegin(), rend(), [](const int32_t codepoint) {
@@ -891,21 +1030,25 @@ namespace FE::Internal
             return StringImpl<BasicStringViewImpl>{ begin(), nonSpace.base() };
         }
 
+        //! @brief Return a view with leading and trailing Unicode space codepoints removed.
         [[nodiscard]] StringImpl<BasicStringViewImpl> strip() const
         {
             return strip_left().strip_right();
         }
 
+        //! @brief Check if the string has zero bytes.
         [[nodiscard]] bool empty() const
         {
             return TBase::size() == 0;
         }
 
+        //! @brief Get the number of Unicode codepoints in the string.
         [[nodiscard]] uint32_t length() const
         {
             return UTF8::Length(TBase::data(), TBase::size());
         }
 
+        //! @brief Check if the string starts with a UTF-8 byte sequence.
         [[nodiscard]] bool starts_with(const StringImpl<BasicStringViewImpl> str) const
         {
             if (str.size() == 0)
@@ -916,6 +1059,7 @@ namespace FE::Internal
             return str.size() <= size && memcmp(data, str.data(), str.size()) == 0;
         }
 
+        //! @brief Check if the string ends with a UTF-8 byte sequence.
         [[nodiscard]] bool ends_with(const StringImpl<BasicStringViewImpl> str) const
         {
             if (str.size() == 0)
@@ -926,11 +1070,13 @@ namespace FE::Internal
             return str.size() <= size && memcmp(data + size - str.size(), str.data(), str.size()) == 0;
         }
 
+        //! @brief Find the first occurrence of a UTF-8 byte sequence.
         [[nodiscard]] Iter find(const StringImpl<BasicStringViewImpl> str) const
         {
             return find(begin(), str);
         }
 
+        //! @brief Find the first occurrence of a UTF-8 byte sequence at or after a codepoint iterator.
         [[nodiscard]] Iter find(const Iter position, const StringImpl<BasicStringViewImpl> str) const
         {
             const uint32_t byteSize = TBase::size();
@@ -963,11 +1109,13 @@ namespace FE::Internal
             return end();
         }
 
+        //! @brief Find the last occurrence of a UTF-8 byte sequence.
         [[nodiscard]] Iter rfind(const StringImpl<BasicStringViewImpl> str) const
         {
             return rfind(end(), str);
         }
 
+        //! @brief Find the last occurrence of a UTF-8 byte sequence at or before a codepoint iterator.
         [[nodiscard]] Iter rfind(const Iter position, const StringImpl<BasicStringViewImpl> str) const
         {
             const uint32_t byteSize = TBase::size();
@@ -1002,6 +1150,7 @@ namespace FE::Internal
             return end();
         }
 
+        //! @brief Find the first codepoint that does not match `codepoint` at or after a codepoint iterator.
         [[nodiscard]] Iter find_first_not_of(Iter position, const int32_t codepoint) const
         {
             while (position != end())
@@ -1014,11 +1163,13 @@ namespace FE::Internal
             return position;
         }
 
+        //! @brief Find the first codepoint that does not match `codepoint`.
         [[nodiscard]] Iter find_first_not_of(const int32_t codepoint) const
         {
             return find_first_not_of(begin(), codepoint);
         }
 
+        //! @brief Find the last codepoint that does not match `codepoint` before a codepoint iterator.
         [[nodiscard]] Iter find_last_not_of(Iter position, const int32_t codepoint) const
         {
             const Iter first = begin();
@@ -1032,31 +1183,37 @@ namespace FE::Internal
             return end();
         }
 
+        //! @brief Find the last codepoint that does not match `codepoint`.
         [[nodiscard]] Iter find_last_not_of(const int32_t codepoint) const
         {
             return find_last_not_of(end(), codepoint);
         }
 
+        //! @brief Convert to an environment name.
         [[nodiscard]] explicit operator Env::Name() const noexcept
         {
             return Env::Name{ TBase::data(), TBase::size() };
         }
 
+        //! @brief Get a codepoint iterator to the first codepoint.
         [[nodiscard]] Iter begin() const
         {
             return Iter{ TBase::data() };
         }
 
+        //! @brief Get a codepoint iterator to the end.
         [[nodiscard]] Iter end() const
         {
             return Iter{ TBase::data() + TBase::size() };
         }
 
+        //! @brief Get a reverse codepoint iterator to the final codepoint.
         [[nodiscard]] eastl::reverse_iterator<Iter> rbegin() const
         {
             return eastl::reverse_iterator<Iter>(end());
         }
 
+        //! @brief Get a reverse codepoint iterator to the beginning.
         [[nodiscard]] eastl::reverse_iterator<Iter> rend() const
         {
             return eastl::reverse_iterator<Iter>(begin());
@@ -1064,6 +1221,7 @@ namespace FE::Internal
     };
 
 
+    //! @brief Append a UTF-8 string view to an owning string.
     template<class TStorage>
     StringImpl<BasicStringImpl<TStorage>>& operator+=(StringImpl<BasicStringImpl<TStorage>>& lhs,
                                                       const StringImpl<BasicStringViewImpl> rhs)
@@ -1073,6 +1231,7 @@ namespace FE::Internal
     }
 
 
+    //! @brief Concatenate an owning string and a UTF-8 string view.
     template<class TStorage>
     StringImpl<BasicStringImpl<TStorage>> operator+(const StringImpl<BasicStringImpl<TStorage>>& lhs,
                                                     const StringImpl<BasicStringViewImpl> rhs)
@@ -1085,16 +1244,19 @@ namespace FE::Internal
     }
 
 
+    //! @brief Check two UTF-8 strings for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.data(), lhs.size()) == 0);
     }
 
+    //! @brief Check two UTF-8 strings for byte inequality.
     inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return !(lhs == rhs);
     }
 
+    //! @brief Compare two UTF-8 strings by Unicode codepoint values.
     inline bool operator<(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return lhs.compare(rhs) < 0;
@@ -1116,6 +1278,7 @@ namespace FE::Internal
     }
 
 
+    //! @brief Check a UTF-8 string and a null-terminated UTF-8 string for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
     {
         return lhs.size() == ASCII::Length(rhs) && (lhs.size() == 0 || memcmp(lhs.data(), rhs, lhs.size()) == 0);
@@ -1147,6 +1310,7 @@ namespace FE::Internal
     }
 
 
+    //! @brief Check a null-terminated UTF-8 string and a UTF-8 string for byte equality.
     inline bool operator==(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return ASCII::Length(lhs) == rhs.size() && (rhs.size() == 0 || memcmp(lhs, rhs.data(), rhs.size()) == 0);
@@ -1178,6 +1342,7 @@ namespace FE::Internal
     }
 
 
+    //! @brief Check an environment name and a UTF-8 string for byte equality.
     inline bool operator==(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.c_str(), rhs.data(), lhs.size()) == 0);
@@ -1209,6 +1374,7 @@ namespace FE::Internal
     }
 
 
+    //! @brief Check a UTF-8 string and an environment name for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.c_str(), lhs.size()) == 0);
@@ -1258,25 +1424,42 @@ namespace FE::festd
 {
     namespace pmr
     {
+        //! @brief Dynamically allocated UTF-8 string that stores a polymorphic allocator.
         using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicStringStorage>>;
 
+        //! @brief UTF-8 string with inline storage and polymorphic heap fallback.
         template<uint32_t TCapacity>
         using basic_inline_string =
             FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicInlineStringStorage<TCapacity>>>;
+
+        //! @brief UTF-8 string with 256 bytes of inline storage and polymorphic heap fallback.
         using inline_string = basic_inline_string<256>;
     } // namespace pmr
 
+    //! @brief Dynamically allocated UTF-8 string using the default memory resource.
     using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultDynamicStringStorage>>;
+
+    //! @brief Non-owning UTF-8 string view.
     using string_view = FE::Internal::StringImpl<FE::Internal::BasicStringViewImpl>;
 
+    //! @brief Fixed-capacity owning UTF-8 string.
+    //!
+    //! The string can store at most `TCapacity` bytes, excluding the null terminator.
     template<uint32_t TCapacity>
     using basic_fixed_string =
         FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultFixedStringStorage<TCapacity>>>;
+
+    //! @brief Fixed-capacity owning UTF-8 string with 256 bytes of storage.
     using fixed_string = basic_fixed_string<256>;
 
+    //! @brief Owning UTF-8 string with inline storage and dynamic heap fallback.
+    //!
+    //! The string stores up to `TCapacity` bytes inline before allocating heap storage.
     template<uint32_t TCapacity>
     using basic_inline_string =
         FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultInlineStringStorage<TCapacity>>>;
+
+    //! @brief Owning UTF-8 string with 256 bytes of inline storage and dynamic heap fallback.
     using inline_string = basic_inline_string<256>;
 
     static_assert(sizeof(string) == sizeof(uintptr_t) * 3);
@@ -1287,12 +1470,14 @@ namespace FE::festd
 
 namespace FE
 {
+    //! @brief Compute a compile-time hash for a UTF-8 string view.
     constexpr uint64_t CompileTimeHash(const festd::string_view str)
     {
         return CompileTimeHash(str.data(), str.size());
     }
 
 
+    //! @brief Compute a runtime hash for a UTF-8 string view.
     inline uint64_t DefaultHash(const festd::string_view str)
     {
         return DefaultHash(str.data(), str.size());
@@ -1301,6 +1486,7 @@ namespace FE
 
     namespace Str
     {
+        //! @brief Duplicate a UTF-8 string view into memory allocated by `allocator`.
         inline festd::string_view Duplicate(const festd::string_view str, std::pmr::memory_resource* allocator)
         {
             void* memory = allocator->allocate(str.size() + 1);
