@@ -585,3 +585,68 @@ TEST(Strings, NameConversion)
     EXPECT_EQ(festd::ascii_view{ name }, festd::string_view{ "test name" });
     EXPECT_EQ(festd::ascii_view{ name }, festd::string{ "test name" });
 }
+
+TEST(Strings, BoundedStringViewDoesNotRequireTerminator)
+{
+    const char bytes[] = { 'a', static_cast<char>(0xd0), static_cast<char>(0xaf), 'b', 'x' };
+    const festd::string_view view{ bytes, 4 };
+
+    EXPECT_EQ(view.size(), 4);
+    EXPECT_EQ(view.length(), 3);
+    EXPECT_EQ(view.substr(1, 1), (festd::string_view{ bytes + 1, 2 }));
+}
+
+TEST(Strings, StdLikeAssignmentAndAppend)
+{
+    festd::string str;
+
+    str = "a";
+    str += 'b';
+    str += { 'c', 'd' };
+    str.append(2, 'e');
+    str.assign({ 'x', 'y' });
+
+    EXPECT_EQ(str, "xy");
+    str.append("z");
+    EXPECT_EQ(str, "xyz");
+}
+
+TEST(Strings, InsertEraseReplacePopAndCopy)
+{
+    festd::string str = "aЯc";
+    const auto cyrillic = str.find_first_of(L'Я');
+
+    str.replace(cyrillic, cyrillic + 1, "B", 1);
+    EXPECT_EQ(str, "aBc");
+
+    str.insert(str.begin() + 1, "12", 2);
+    EXPECT_EQ(str, "a12Bc");
+
+    str.insert(str.begin() + 3, 2, 'x');
+    EXPECT_EQ(str, "a12xxBc");
+
+    str.replace(str.begin() + 3, str.begin() + 5, { 'y', 'z' });
+    EXPECT_EQ(str, "a12yzBc");
+
+    str.erase(str.begin() + 1, str.begin() + 3);
+    EXPECT_EQ(str, "ayzBc");
+
+    str.replace(str.begin() + 1, str.begin() + 3, 1, 'B');
+    EXPECT_EQ(str, "aBBc");
+
+    str.pop_back();
+    EXPECT_EQ(str, "aBB");
+
+    char buffer[2];
+    EXPECT_EQ(str.copy(buffer, 2), 2);
+    EXPECT_EQ(memcmp(buffer, "aB", 2), 0);
+}
+
+TEST(Strings, RFindAndFindNotOf)
+{
+    const festd::string str = "aaabaa";
+
+    EXPECT_EQ(str.rfind("aa"), str.begin() + 4);
+    EXPECT_EQ(str.find_first_not_of('a'), str.begin() + 3);
+    EXPECT_EQ(str.find_last_not_of('a'), str.begin() + 3);
+}

@@ -79,8 +79,14 @@ namespace FE::PathParser
         while (index1 < length1 && index2 < length2)
         {
             int32_t lcp, rcp;
-            index1 += UTF8::DecodeForward(lhs + index1, length1 - index1 + 1, &lcp);
-            index2 += UTF8::DecodeForward(rhs + index2, length2 - index2 + 1, &rcp);
+            const int32_t lhsBytesRead = UTF8::DecodeForward(lhs + index1, static_cast<int32_t>(length1 - index1), &lcp);
+            const int32_t rhsBytesRead = UTF8::DecodeForward(rhs + index2, static_cast<int32_t>(length2 - index2), &rcp);
+            FE_AssertDebug(lhsBytesRead > 0 && rhsBytesRead > 0, "Invalid UTF-8 path");
+            if (lhsBytesRead <= 0 || rhsBytesRead <= 0)
+                return 0;
+
+            index1 += static_cast<uint32_t>(lhsBytesRead);
+            index2 += static_cast<uint32_t>(rhsBytesRead);
 
             if (lcp != rcp && (!IsPathSeparator(lcp) || !IsPathSeparator(rcp)))
                 return lcp < rcp ? -1 : 1;

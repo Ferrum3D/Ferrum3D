@@ -1,10 +1,57 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <festd/Internal/StringStorageImpl.h>
+#include <initializer_list>
 #include <type_traits>
 
 namespace FE::Internal
 {
+    [[nodiscard]] constexpr bool IsConstantEvaluated()
+    {
+#if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
+        return __builtin_is_constant_evaluated();
+#else
+        return false;
+#endif
+    }
+
+
+    FE_FORCE_INLINE void ValidateStringBytes(const char* str, const uint32_t byteSize)
+    {
+#if FE_DEBUG
+        FE_AssertDebug(str != nullptr || byteSize == 0, "String data must not be null");
+        FE_AssertDebug(UTF8::IsValid(str, byteSize), "String data must be valid UTF-8");
+        FE_AssertDebug(byteSize == 0 || memchr(str, '\0', byteSize) == nullptr, "String data must not contain embedded zeros");
+#else
+        (void)str;
+        (void)byteSize;
+#endif
+    }
+
+
+    FE_FORCE_INLINE void ValidateStringByte(const char byte)
+    {
+#if FE_DEBUG
+        FE_AssertDebug(byte != '\0', "String data must not contain embedded zeros");
+        FE_AssertDebug(static_cast<uint8_t>(byte) < 0x80, "Single-byte string input must be ASCII");
+#else
+        (void)byte;
+#endif
+    }
+
+
+    FE_FORCE_INLINE void ValidateStringCodepoint(const int32_t codepoint)
+    {
+#if FE_DEBUG
+        char bytes[4];
+        FE_AssertDebug(codepoint != 0, "String data must not contain embedded zeros");
+        FE_AssertDebug(UTF8::Encode(codepoint, bytes) > 0, "String codepoint must be valid UTF-8");
+#else
+        (void)codepoint;
+#endif
+    }
+
+
     template<class TStorage>
     struct DefaultAllocatorStringStorage : public TStorage
     {
@@ -65,12 +112,16 @@ namespace FE::Internal
             : m_data(str)
             , m_size(byteSize)
         {
+            if (!IsConstantEvaluated())
+                ValidateStringBytes(str, byteSize);
         }
 
         constexpr BasicStringViewImpl(const char* str)
             : m_data(str)
             , m_size(ASCII::Length(str))
         {
+            if (!IsConstantEvaluated())
+                ValidateStringBytes(str, m_size);
         }
 
         BasicStringViewImpl(const StrIterator begin, const StrIterator end)
@@ -102,6 +153,9 @@ namespace FE::Internal
     template<class TStorage>
     struct BasicStringImpl : private TStorage
     {
+        using size_type = uint32_t;
+        using difference_type = std::ptrdiff_t;
+        using value_type = char;
         using Iter = StrIterator;
 
         BasicStringImpl()
@@ -116,6 +170,39 @@ namespace FE::Internal
         {
             if (char* data = TStorage::InitializeImpl(0, TStorage::GetAllocator()))
                 data[0] = '\0';
+        }
+
+        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        BasicStringImpl(const uint32_t length, const char value, std::pmr::memory_resource* allocator)
+            : TStorage(allocator)
+        {
+            if (length != 0)
+                ValidateStringByte(value);
+            char* data = TStorage::InitializeImpl(length, TStorage::GetAllocator());
+            memset(data, value, length);
+            data[length] = '\0';
+        }
+
+        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        BasicStringImpl(const char* str, const uint32_t byteSize, std::pmr::memory_resource* allocator)
+            : TStorage(allocator)
+        {
+            ValidateStringBytes(str, byteSize);
+            char* data = TStorage::InitializeImpl(byteSize, TStorage::GetAllocator());
+            memcpy(data, str, byteSize);
+            data[byteSize] = '\0';
+        }
+
+        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        BasicStringImpl(const char* str, std::pmr::memory_resource* allocator)
+            : BasicStringImpl(str, ASCII::Length(str), allocator)
+        {
+        }
+
+        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        BasicStringImpl(std::initializer_list<char> chars, std::pmr::memory_resource* allocator)
+            : BasicStringImpl(chars.begin(), static_cast<uint32_t>(chars.size()), allocator)
+        {
         }
 
         ~BasicStringImpl()
@@ -173,8 +260,28 @@ namespace FE::Internal
             return *this;
         }
 
+        BasicStringImpl& operator=(const char* str)
+        {
+            assign(str);
+            return *this;
+        }
+
+        BasicStringImpl& operator=(const char value)
+        {
+            assign(1, value);
+            return *this;
+        }
+
+        BasicStringImpl& operator=(const std::initializer_list<char> chars)
+        {
+            assign(chars);
+            return *this;
+        }
+
         BasicStringImpl(const uint32_t length, const char value)
         {
+            if (length != 0)
+                ValidateStringByte(value);
             char* data = TStorage::InitializeImpl(length, TStorage::GetAllocator());
             memset(data, value, length);
             data[length] = '\0';
@@ -182,6 +289,7 @@ namespace FE::Internal
 
         BasicStringImpl(const char* str, uint32_t byteSize)
         {
+            ValidateStringBytes(str, byteSize);
             char* data = TStorage::InitializeImpl(byteSize, TStorage::GetAllocator());
             memcpy(data, str, byteSize);
             data[byteSize] = '\0';
@@ -199,6 +307,11 @@ namespace FE::Internal
 
         BasicStringImpl(const char* begin, const char* end)
             : BasicStringImpl(begin, static_cast<uint32_t>(end - begin))
+        {
+        }
+
+        BasicStringImpl(std::initializer_list<char> chars)
+            : BasicStringImpl(chars.begin(), static_cast<uint32_t>(chars.size()))
         {
         }
 
@@ -220,6 +333,8 @@ namespace FE::Internal
 
         void resize(const uint32_t byteSize, const char value)
         {
+            if (byteSize > size())
+                ValidateStringByte(value);
             const uint32_t initialSize = size();
             char* data = TStorage::ResizeImpl(byteSize, TStorage::GetAllocator());
 
@@ -241,6 +356,7 @@ namespace FE::Internal
 
         void assign(const char* str, const uint32_t byteSize)
         {
+            ValidateStringBytes(str, byteSize);
             const char* oldData = data();
             const uint32_t oldSize = size();
             const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
@@ -270,8 +386,34 @@ namespace FE::Internal
             assign(begin.m_iter, static_cast<uint32_t>(end.m_iter - begin.m_iter));
         }
 
+        void assign(const char* str)
+        {
+            assign(str, ASCII::Length(str));
+        }
+
+        void assign(const BasicStringViewImpl& str)
+        {
+            assign(str.data(), str.size());
+        }
+
+        void assign(const uint32_t length, const char value)
+        {
+            if (length != 0)
+                ValidateStringByte(value);
+            resize_uninitialized(length);
+            char* bytes = data();
+            memset(bytes, value, length);
+            bytes[length] = '\0';
+        }
+
+        void assign(const std::initializer_list<char> chars)
+        {
+            assign(chars.begin(), static_cast<uint32_t>(chars.size()));
+        }
+
         void append(const char* str, const uint32_t byteSize)
         {
+            ValidateStringBytes(str, byteSize);
             const uint32_t oldSize = size();
             const char* oldData = data();
             const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
@@ -293,25 +435,228 @@ namespace FE::Internal
             append(str, ASCII::Length(str));
         }
 
+        void append(const BasicStringViewImpl& str)
+        {
+            append(str.data(), str.size());
+        }
+
         void append(const Iter begin, const Iter end)
         {
             append(begin.m_iter, static_cast<uint32_t>(end.m_iter - begin.m_iter));
         }
 
+        void append(const uint32_t length, const char value)
+        {
+            if (length != 0)
+                ValidateStringByte(value);
+            const uint32_t oldSize = size();
+            resize_uninitialized(oldSize + length);
+            char* bytes = data();
+            memset(bytes + oldSize, value, length);
+            bytes[oldSize + length] = '\0';
+        }
+
+        void append(const std::initializer_list<char> chars)
+        {
+            append(chars.begin(), static_cast<uint32_t>(chars.size()));
+        }
+
         void append(const int32_t codepoint)
         {
+            ValidateStringCodepoint(codepoint);
             char bytes[4];
             const int32_t bytesWritten = UTF8::Encode(codepoint, bytes);
+            FE_AssertDebug(bytesWritten > 0, "String codepoint must be valid UTF-8");
             append(bytes, bytesWritten);
         }
 
         void push_back(const char byte)
         {
+            ValidateStringByte(byte);
             const uint32_t oldSize = size();
             resize_uninitialized(oldSize + 1);
             char* bytes = data();
             bytes[oldSize] = byte;
             bytes[oldSize + 1] = '\0';
+        }
+
+        uint32_t copy(char* destination, const uint32_t byteSize, const uint32_t byteOffset = 0) const
+        {
+            FE_AssertDebug(destination != nullptr || byteSize == 0, "Copy destination must not be null");
+            const uint32_t currentSize = size();
+            FE_AssertDebug(byteOffset <= currentSize, "String copy offset is out of range");
+            if (byteOffset > currentSize)
+                return 0;
+
+            const uint32_t bytesToCopy = Math::Min(byteSize, currentSize - byteOffset);
+            if (bytesToCopy != 0)
+                memcpy(destination, data() + byteOffset, bytesToCopy);
+
+            return bytesToCopy;
+        }
+
+        void insert(const Iter position, const char* str, const uint32_t byteSize)
+        {
+            ValidateStringBytes(str, byteSize);
+            const uint32_t oldSize = size();
+            const char* oldData = data();
+            const uintptr_t oldDataAddress = reinterpret_cast<uintptr_t>(oldData);
+            const uintptr_t positionAddress = reinterpret_cast<uintptr_t>(position.m_iter);
+            FE_AssertDebug(positionAddress >= oldDataAddress && positionAddress <= oldDataAddress + oldSize,
+                           "String insert position is out of range");
+            if (positionAddress < oldDataAddress || positionAddress > oldDataAddress + oldSize)
+                return;
+
+            const uint32_t positionOffset = static_cast<uint32_t>(positionAddress - oldDataAddress);
+            const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
+            const bool overlaps = byteSize != 0 && sourceAddress >= oldDataAddress && sourceAddress < oldDataAddress + oldSize;
+
+            std::pmr::memory_resource* allocator = TStorage::GetAllocator();
+            char* temporary = nullptr;
+            if (overlaps)
+            {
+                temporary = Memory::AllocateArray<char>(allocator, byteSize);
+                memcpy(temporary, str, byteSize);
+                str = temporary;
+            }
+
+            resize_uninitialized(oldSize + byteSize);
+            char* bytes = data();
+            memmove(bytes + positionOffset + byteSize, bytes + positionOffset, oldSize - positionOffset);
+            if (byteSize != 0)
+                memcpy(bytes + positionOffset, str, byteSize);
+            bytes[oldSize + byteSize] = '\0';
+
+            if (temporary != nullptr)
+                allocator->deallocate(temporary, byteSize, alignof(char));
+        }
+
+        void insert(const Iter position, const BasicStringViewImpl& str)
+        {
+            insert(position, str.data(), str.size());
+        }
+
+        Iter insert(const Iter position, const char byte)
+        {
+            const uintptr_t dataAddress = reinterpret_cast<uintptr_t>(data());
+            const uintptr_t positionAddress = reinterpret_cast<uintptr_t>(position.m_iter);
+            const uint32_t positionOffset = static_cast<uint32_t>(positionAddress - dataAddress);
+            insert(position, &byte, 1);
+            return Iter{ data() + positionOffset };
+        }
+
+        void insert(const Iter position, const uint32_t length, const char value)
+        {
+            if (length == 0)
+                return;
+
+            ValidateStringByte(value);
+            const uint32_t oldSize = size();
+            const char* oldData = data();
+            const uintptr_t oldDataAddress = reinterpret_cast<uintptr_t>(oldData);
+            const uintptr_t positionAddress = reinterpret_cast<uintptr_t>(position.m_iter);
+            FE_AssertDebug(positionAddress >= oldDataAddress && positionAddress <= oldDataAddress + oldSize,
+                           "String insert position is out of range");
+            if (positionAddress < oldDataAddress || positionAddress > oldDataAddress + oldSize)
+                return;
+
+            const uint32_t positionOffset = static_cast<uint32_t>(positionAddress - oldDataAddress);
+            resize_uninitialized(oldSize + length);
+            char* bytes = data();
+            memmove(bytes + positionOffset + length, bytes + positionOffset, oldSize - positionOffset);
+            memset(bytes + positionOffset, value, length);
+            bytes[oldSize + length] = '\0';
+        }
+
+        void insert(const Iter position, const std::initializer_list<char> chars)
+        {
+            insert(position, chars.begin(), static_cast<uint32_t>(chars.size()));
+        }
+
+        Iter erase(const Iter first, const Iter last)
+        {
+            const uint32_t oldSize = size();
+            char* bytes = data();
+            const uintptr_t dataAddress = reinterpret_cast<uintptr_t>(bytes);
+            const uintptr_t firstAddress = reinterpret_cast<uintptr_t>(first.m_iter);
+            const uintptr_t lastAddress = reinterpret_cast<uintptr_t>(last.m_iter);
+            FE_AssertDebug(firstAddress >= dataAddress && firstAddress <= lastAddress && lastAddress <= dataAddress + oldSize,
+                           "String erase range is out of range");
+            if (firstAddress < dataAddress || firstAddress > lastAddress || lastAddress > dataAddress + oldSize)
+                return Iter{ bytes + oldSize };
+
+            const uint32_t firstOffset = static_cast<uint32_t>(firstAddress - dataAddress);
+            const uint32_t lastOffset = static_cast<uint32_t>(lastAddress - dataAddress);
+            memmove(bytes + firstOffset, bytes + lastOffset, oldSize - lastOffset);
+            resize_uninitialized(oldSize - (lastOffset - firstOffset));
+            return Iter{ data() + firstOffset };
+        }
+
+        Iter erase(const Iter position)
+        {
+            Iter next = position;
+            ++next;
+            return erase(position, next);
+        }
+
+        void replace(const Iter first, const Iter last, const char* str, const uint32_t byteSize)
+        {
+            ValidateStringBytes(str, byteSize);
+            const char* oldData = data();
+            const uint32_t oldSize = size();
+            const uintptr_t oldDataAddress = reinterpret_cast<uintptr_t>(oldData);
+            const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
+            const bool overlaps = byteSize != 0 && sourceAddress >= oldDataAddress && sourceAddress < oldDataAddress + oldSize;
+
+            std::pmr::memory_resource* allocator = TStorage::GetAllocator();
+            char* temporary = nullptr;
+            if (overlaps)
+            {
+                temporary = Memory::AllocateArray<char>(allocator, byteSize);
+                memcpy(temporary, str, byteSize);
+                str = temporary;
+            }
+
+            const Iter insertionPosition = erase(first, last);
+            insert(insertionPosition, str, byteSize);
+
+            if (temporary != nullptr)
+                allocator->deallocate(temporary, byteSize, alignof(char));
+        }
+
+        void replace(const Iter first, const Iter last, const BasicStringViewImpl& str)
+        {
+            replace(first, last, str.data(), str.size());
+        }
+
+        void replace(const Iter first, const Iter last, const uint32_t length, const char value)
+        {
+            const Iter insertionPosition = erase(first, last);
+            insert(insertionPosition, length, value);
+        }
+
+        void replace(const Iter first, const Iter last, const std::initializer_list<char> chars)
+        {
+            replace(first, last, chars.begin(), static_cast<uint32_t>(chars.size()));
+        }
+
+        void pop_back()
+        {
+            FE_AssertDebug(size() != 0, "Cannot pop from an empty string");
+
+            Iter last{ data() + size() };
+            --last;
+            erase(last, Iter{ data() + size() });
+        }
+
+        void swap(BasicStringImpl& other) noexcept
+        {
+            if (this == &other)
+                return;
+
+            BasicStringImpl temporary = std::move(other);
+            other = std::move(*this);
+            *this = std::move(temporary);
         }
 
         [[nodiscard]] std::pmr::memory_resource* get_allocator() const
@@ -348,6 +693,11 @@ namespace FE::Internal
             return TStorage::CapacityImpl();
         }
 
+        [[nodiscard]] uint32_t max_size() const
+        {
+            return Constants::kMaxU32 - 1;
+        }
+
         [[nodiscard]] char* data()
         {
             return TStorage::DataImpl();
@@ -380,8 +730,12 @@ namespace FE::Internal
         using Base = TBase;
 
         using TBase::TBase;
+        using TBase::operator=;
 
+        using size_type = uint32_t;
+        using difference_type = std::ptrdiff_t;
         using value_type = char;
+        static constexpr size_type npos = kInvalidIndex;
 
         StringImpl(festd::ascii_view str)
             : TBase(str.data(), static_cast<uint32_t>(str.length()))
@@ -397,6 +751,35 @@ namespace FE::Internal
         explicit StringImpl(const Env::Name name)
             : StringImpl(festd::ascii_view{ name })
         {
+        }
+
+        template<class TOtherBase, class T = TBase,
+                 class = decltype(std::declval<T&>().assign(std::declval<const char*>(), uint32_t{}))>
+        StringImpl& operator=(const StringImpl<TOtherBase>& other)
+        {
+            TBase::assign(other.data(), other.size());
+            return *this;
+        }
+
+        template<class T = TBase, class = decltype(std::declval<T&>().append(std::declval<const char*>()))>
+        StringImpl& operator+=(const char* str)
+        {
+            TBase::append(str);
+            return *this;
+        }
+
+        template<class T = TBase, class = decltype(std::declval<T&>().push_back(char{}))>
+        StringImpl& operator+=(const char byte)
+        {
+            TBase::push_back(byte);
+            return *this;
+        }
+
+        template<class T = TBase, class = decltype(std::declval<T&>().append(std::initializer_list<char>{}))>
+        StringImpl& operator+=(std::initializer_list<char> chars)
+        {
+            TBase::append(chars);
+            return *this;
         }
 
         [[nodiscard]] char byte_at(uint32_t byteIndex) const
@@ -518,6 +901,11 @@ namespace FE::Internal
             return TBase::size() == 0;
         }
 
+        [[nodiscard]] uint32_t length() const
+        {
+            return UTF8::Length(TBase::data(), TBase::size());
+        }
+
         [[nodiscard]] bool starts_with(const StringImpl<BasicStringViewImpl> str) const
         {
             if (str.size() == 0)
@@ -540,23 +928,113 @@ namespace FE::Internal
 
         [[nodiscard]] Iter find(const StringImpl<BasicStringViewImpl> str) const
         {
+            return find(begin(), str);
+        }
+
+        [[nodiscard]] Iter find(const Iter position, const StringImpl<BasicStringViewImpl> str) const
+        {
             const uint32_t byteSize = TBase::size();
             const uint32_t otherByteSize = str.size();
             if (otherByteSize == 0)
-                return begin();
+                return position;
 
             if (otherByteSize > byteSize)
                 return end();
 
             const char* data = TBase::data();
+            const uintptr_t dataAddress = reinterpret_cast<uintptr_t>(data);
+            const uintptr_t positionAddress = reinterpret_cast<uintptr_t>(position.m_iter);
+            FE_AssertDebug(positionAddress >= dataAddress && positionAddress <= dataAddress + byteSize,
+                           "String find position is out of range");
+            if (positionAddress < dataAddress || positionAddress > dataAddress + byteSize)
+                return end();
+
+            const uint32_t startOffset = static_cast<uint32_t>(positionAddress - dataAddress);
+            if (otherByteSize > byteSize - startOffset)
+                return end();
+
             const char* otherData = str.data();
-            for (uint32_t i = 0; i < byteSize - otherByteSize + 1; ++i)
+            for (uint32_t i = startOffset; i < byteSize - otherByteSize + 1; ++i)
             {
                 if (memcmp(data + i, otherData, otherByteSize) == 0)
                     return Iter{ data + i };
             }
 
             return end();
+        }
+
+        [[nodiscard]] Iter rfind(const StringImpl<BasicStringViewImpl> str) const
+        {
+            return rfind(end(), str);
+        }
+
+        [[nodiscard]] Iter rfind(const Iter position, const StringImpl<BasicStringViewImpl> str) const
+        {
+            const uint32_t byteSize = TBase::size();
+            const uint32_t otherByteSize = str.size();
+            if (otherByteSize == 0)
+                return position;
+
+            if (otherByteSize > byteSize)
+                return end();
+
+            const char* data = TBase::data();
+            const uintptr_t dataAddress = reinterpret_cast<uintptr_t>(data);
+            const uintptr_t positionAddress = reinterpret_cast<uintptr_t>(position.m_iter);
+            FE_AssertDebug(positionAddress >= dataAddress && positionAddress <= dataAddress + byteSize,
+                           "String rfind position is out of range");
+            if (positionAddress < dataAddress || positionAddress > dataAddress + byteSize)
+                return end();
+
+            uint32_t offset = Math::Min(static_cast<uint32_t>(positionAddress - dataAddress), byteSize - otherByteSize);
+            const char* otherData = str.data();
+            for (;;)
+            {
+                if (memcmp(data + offset, otherData, otherByteSize) == 0)
+                    return Iter{ data + offset };
+
+                if (offset == 0)
+                    break;
+
+                --offset;
+            }
+
+            return end();
+        }
+
+        [[nodiscard]] Iter find_first_not_of(Iter position, const int32_t codepoint) const
+        {
+            while (position != end())
+            {
+                if (*position != codepoint)
+                    break;
+                ++position;
+            }
+
+            return position;
+        }
+
+        [[nodiscard]] Iter find_first_not_of(const int32_t codepoint) const
+        {
+            return find_first_not_of(begin(), codepoint);
+        }
+
+        [[nodiscard]] Iter find_last_not_of(Iter position, const int32_t codepoint) const
+        {
+            const Iter first = begin();
+            while (position != first)
+            {
+                --position;
+                if (*position != codepoint)
+                    return position;
+            }
+
+            return end();
+        }
+
+        [[nodiscard]] Iter find_last_not_of(const int32_t codepoint) const
+        {
+            return find_last_not_of(end(), codepoint);
         }
 
         [[nodiscard]] explicit operator Env::Name() const noexcept
@@ -786,7 +1264,7 @@ namespace FE::festd
         using basic_inline_string =
             FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicInlineStringStorage<TCapacity>>>;
         using inline_string = basic_inline_string<256>;
-    }
+    } // namespace pmr
 
     using string = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultDynamicStringStorage>>;
     using string_view = FE::Internal::StringImpl<FE::Internal::BasicStringViewImpl>;

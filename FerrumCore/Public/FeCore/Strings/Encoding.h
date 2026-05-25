@@ -156,14 +156,18 @@ namespace FE::UTF8
             return 0;
 
         uint32_t length = 0;
-        while (*str)
+        int32_t bytesRemaining = byteSize;
+        while (bytesRemaining != 0 && *str)
         {
             int32_t codepoint;
-            const int32_t bytesRead = DecodeForward(str, byteSize, &codepoint);
-            if (bytesRead < 0)
+            const int32_t bytesRead = DecodeForward(str, bytesRemaining, &codepoint);
+            FE_AssertDebug(bytesRead > 0, "Invalid UTF-8 string");
+            if (bytesRead <= 0)
                 return length;
 
             str += bytesRead;
+            if (bytesRemaining > 0)
+                bytesRemaining -= bytesRead;
             ++length;
         }
 
@@ -194,8 +198,14 @@ namespace FE::UTF8
         while (index1 < length1 && index2 < length2)
         {
             int32_t lcp, rcp;
-            index1 += DecodeForward(lhs + index1, static_cast<int32_t>(length1 - index1 + 1), &lcp);
-            index2 += DecodeForward(rhs + index2, static_cast<int32_t>(length2 - index2 + 1), &rcp);
+            const int32_t lhsBytesRead = DecodeForward(lhs + index1, static_cast<int32_t>(length1 - index1), &lcp);
+            const int32_t rhsBytesRead = DecodeForward(rhs + index2, static_cast<int32_t>(length2 - index2), &rcp);
+            FE_AssertDebug(lhsBytesRead > 0 && rhsBytesRead > 0, "Invalid UTF-8 string");
+            if (lhsBytesRead <= 0 || rhsBytesRead <= 0)
+                return 0;
+
+            index1 += lhsBytesRead;
+            index2 += rhsBytesRead;
             if (lcp != rcp)
                 return lcp < rcp ? -1 : 1;
         }
@@ -286,6 +296,27 @@ namespace FE::UTF8
                 return false;
 
             str += bytesRead;
+        }
+
+        return true;
+    }
+
+
+    //! @brief Check if a byte range is valid UTF-8.
+    [[nodiscard]] inline bool IsValid(const char* str, const uint32_t byteSize)
+    {
+        if (str == nullptr)
+            return byteSize == 0;
+
+        uint32_t index = 0;
+        while (index < byteSize)
+        {
+            int32_t codepoint;
+            const int32_t bytesRead = DecodeForward(str + index, static_cast<int32_t>(byteSize - index), &codepoint);
+            if (bytesRead <= 0)
+                return false;
+
+            index += static_cast<uint32_t>(bytesRead);
         }
 
         return true;
