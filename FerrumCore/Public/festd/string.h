@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <festd/Internal/StringStorageImpl.h>
+#include <type_traits>
 
 namespace FE::Internal
 {
@@ -39,6 +40,9 @@ namespace FE::Internal
 
         void SetAllocator(std::pmr::memory_resource* allocator)
         {
+            if (allocator == nullptr)
+                allocator = std::pmr::get_default_resource();
+
             m_allocator = allocator;
         }
 
@@ -121,19 +125,21 @@ namespace FE::Internal
 
         BasicStringImpl(const BasicStringImpl& other)
         {
+            if constexpr (TStorage::kHasAllocator)
+                TStorage::SetAllocator(other.GetAllocator());
+
             const uint32_t size = other.size();
             char* data = TStorage::InitializeImpl(size, TStorage::GetAllocator());
             memcpy(data, other.data(), size);
             data[size] = '\0';
         }
 
-        BasicStringImpl(BasicStringImpl&& other) noexcept
+        BasicStringImpl(BasicStringImpl&& other)
         {
-            memcpy(this, &other, sizeof(*this));
-            other.InitializeImpl(0, other.GetAllocator());
+            MoveStorageFrom(other);
         }
 
-        BasicStringImpl& operator=(const BasicStringImpl& other) noexcept
+        BasicStringImpl& operator=(const BasicStringImpl& other)
         {
             if (this == &other)
                 return *this;
@@ -144,7 +150,8 @@ namespace FE::Internal
             if (TStorage::kHasAllocator && other.GetAllocator() != TStorage::GetAllocator())
             {
                 TStorage::DestroyImpl(TStorage::GetAllocator());
-                data = TStorage::InitializeImpl(size, other.GetAllocator());
+                TStorage::SetAllocator(other.GetAllocator());
+                data = TStorage::InitializeImpl(size, TStorage::GetAllocator());
             }
             else
             {
@@ -156,14 +163,13 @@ namespace FE::Internal
             return *this;
         }
 
-        BasicStringImpl& operator=(BasicStringImpl&& other) noexcept
+        BasicStringImpl& operator=(BasicStringImpl&& other)
         {
             if (this == &other)
                 return *this;
 
             TStorage::DestroyImpl(TStorage::GetAllocator());
-            memcpy(this, &other, sizeof(*this));
-            other.InitializeImpl(0, other.GetAllocator());
+            MoveStorageFrom(other);
             return *this;
         }
 
@@ -208,7 +214,8 @@ namespace FE::Internal
 
         void resize_uninitialized(const uint32_t byteSize)
         {
-            TStorage::ResizeImpl(byteSize, TStorage::GetAllocator());
+            char* bytes = TStorage::ResizeImpl(byteSize, TStorage::GetAllocator());
+            bytes[byteSize] = '\0';
         }
 
         void resize(const uint32_t byteSize, const char value)
@@ -219,7 +226,7 @@ namespace FE::Internal
             if (byteSize > initialSize)
                 memset(data + initialSize, value, byteSize - initialSize);
 
-            data[initialSize + byteSize] = '\0';
+            data[byteSize] = '\0';
         }
 
         void clear()
@@ -234,6 +241,22 @@ namespace FE::Internal
 
         void assign(const char* str, const uint32_t byteSize)
         {
+            const char* oldData = data();
+            const uint32_t oldSize = size();
+            const bool overlaps = byteSize != 0 && str >= oldData && str <= oldData + oldSize;
+            if (overlaps)
+            {
+                std::pmr::memory_resource* allocator = TStorage::GetAllocator();
+                char* temporary = Memory::AllocateArray<char>(allocator, byteSize + 1);
+                memcpy(temporary, str, byteSize);
+                temporary[byteSize] = '\0';
+
+                resize_uninitialized(byteSize);
+                memcpy(data(), temporary, byteSize + 1);
+                allocator->deallocate(temporary, byteSize + 1, alignof(char));
+                return;
+            }
+
             resize_uninitialized(byteSize);
             char* bytes = data();
             memcpy(bytes, str, byteSize);
@@ -248,9 +271,16 @@ namespace FE::Internal
         void append(const char* str, const uint32_t byteSize)
         {
             const uint32_t oldSize = size();
+            const char* oldData = data();
+            const bool overlaps = byteSize != 0 && str >= oldData && str < oldData + oldSize;
+            const uint32_t sourceOffset = overlaps ? static_cast<uint32_t>(str - oldData) : 0;
+
             resize_uninitialized(oldSize + byteSize);
             char* bytes = data();
-            memcpy(bytes + oldSize, str, byteSize);
+            if (overlaps)
+                str = bytes + sourceOffset;
+
+            memmove(bytes + oldSize, str, byteSize);
             bytes[oldSize + byteSize] = '\0';
         }
 
@@ -288,7 +318,15 @@ namespace FE::Internal
         template<class = std::enable_if_t<TStorage::kHasAllocator>>
         void set_allocator(std::pmr::memory_resource* allocator)
         {
-            TStorage::SetAllocator(allocator);
+            if (allocator == nullptr)
+                allocator = std::pmr::get_default_resource();
+
+            if (allocator == TStorage::GetAllocator())
+                return;
+
+            BasicStringImpl temporary{ allocator };
+            temporary.assign(data(), size());
+            *this = std::move(temporary);
         }
 
         [[nodiscard]] uint32_t size() const
@@ -319,6 +357,14 @@ namespace FE::Internal
         [[nodiscard]] const char* c_str() const
         {
             return TStorage::DataImpl();
+        }
+
+    private:
+        void MoveStorageFrom(BasicStringImpl& other) noexcept
+        {
+            static_assert(std::is_trivially_copyable_v<TStorage>);
+            memcpy(static_cast<TStorage*>(this), static_cast<TStorage*>(&other), sizeof(TStorage));
+            other.ResetMovedFromImpl();
         }
     };
 
@@ -362,6 +408,9 @@ namespace FE::Internal
         [[nodiscard]] festd::ascii_view substr_ascii(const uint32_t startIndex, uint32_t length = kInvalidIndex) const
         {
             const char* str = TBase::data();
+            if (startIndex > TBase::size())
+                return {};
+
             return festd::ascii_view{ str + startIndex, Math::Min(length, TBase::size() - startIndex) };
         }
 
@@ -369,7 +418,11 @@ namespace FE::Internal
         {
             const Iter currentBegin = begin();
             const Iter currentEnd = end();
-            const Iter startIt = currentBegin + startIndex;
+            Iter startIt = currentBegin;
+            uint32_t remainingStart = startIndex;
+            while (remainingStart-- && startIt != currentEnd)
+                ++startIt;
+
             Iter endIt = startIt;
             while (length-- && endIt != currentEnd)
                 ++endIt;
@@ -417,18 +470,15 @@ namespace FE::Internal
 
         [[nodiscard]] Iter find_last_of(Iter position, const int32_t codepoint) const
         {
-            --position;
-            while (position != begin())
+            const Iter first = begin();
+            while (position != first)
             {
-                if (*position == codepoint)
-                    break;
                 --position;
+                if (*position == codepoint)
+                    return position;
             }
 
-            if (*position != codepoint)
-                position = end();
-
-            return position;
+            return end();
         }
 
         [[nodiscard]] Iter find_last_of(const int32_t codepoint) const
@@ -466,6 +516,9 @@ namespace FE::Internal
 
         [[nodiscard]] bool starts_with(const StringImpl<BasicStringViewImpl> str) const
         {
+            if (str.size() == 0)
+                return true;
+
             const uint32_t size = TBase::size();
             const char* data = TBase::data();
             return str.size() <= size && memcmp(data, str.data(), str.size()) == 0;
@@ -473,6 +526,9 @@ namespace FE::Internal
 
         [[nodiscard]] bool ends_with(const StringImpl<BasicStringViewImpl> str) const
         {
+            if (str.size() == 0)
+                return true;
+
             const uint32_t size = TBase::size();
             const char* data = TBase::data();
             return str.size() <= size && memcmp(data + size - str.size(), str.data(), str.size()) == 0;
@@ -482,6 +538,12 @@ namespace FE::Internal
         {
             const uint32_t byteSize = TBase::size();
             const uint32_t otherByteSize = str.size();
+            if (otherByteSize == 0)
+                return begin();
+
+            if (otherByteSize > byteSize)
+                return end();
+
             const char* data = TBase::data();
             const char* otherData = str.data();
             for (uint32_t i = 0; i < byteSize - otherByteSize + 1; ++i)
@@ -524,7 +586,6 @@ namespace FE::Internal
     StringImpl<BasicStringImpl<TStorage>>& operator+=(StringImpl<BasicStringImpl<TStorage>>& lhs,
                                                       const StringImpl<BasicStringViewImpl> rhs)
     {
-        lhs.reserve(lhs.size() + rhs.size());
         lhs.append(rhs.data(), rhs.size());
         return lhs;
     }
@@ -544,7 +605,7 @@ namespace FE::Internal
 
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
+        return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.data(), lhs.size()) == 0);
     }
 
     inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
@@ -575,7 +636,7 @@ namespace FE::Internal
 
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
     {
-        return lhs.size() == ASCII::Length(rhs) && memcmp(lhs.data(), rhs, lhs.size()) == 0;
+        return lhs.size() == ASCII::Length(rhs) && (lhs.size() == 0 || memcmp(lhs.data(), rhs, lhs.size()) == 0);
     }
 
     inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
@@ -606,7 +667,7 @@ namespace FE::Internal
 
     inline bool operator==(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return ASCII::Length(lhs) == rhs.size() && memcmp(lhs, rhs.data(), rhs.size()) == 0;
+        return ASCII::Length(lhs) == rhs.size() && (rhs.size() == 0 || memcmp(lhs, rhs.data(), rhs.size()) == 0);
     }
 
     inline bool operator!=(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
@@ -637,7 +698,7 @@ namespace FE::Internal
 
     inline bool operator==(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return lhs.size() == rhs.size() && memcmp(lhs.c_str(), rhs.data(), lhs.size()) == 0;
+        return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.c_str(), rhs.data(), lhs.size()) == 0);
     }
 
     inline bool operator!=(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
@@ -668,7 +729,7 @@ namespace FE::Internal
 
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
     {
-        return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.c_str(), lhs.size()) == 0;
+        return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.c_str(), lhs.size()) == 0);
     }
 
     inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
@@ -762,6 +823,7 @@ namespace FE
         {
             void* memory = allocator->allocate(str.size() + 1);
             memcpy(memory, str.data(), str.size());
+            static_cast<char*>(memory)[str.size()] = '\0';
             return { static_cast<char*>(memory), str.size() };
         }
     } // namespace Str

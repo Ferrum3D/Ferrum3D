@@ -62,7 +62,7 @@ namespace FE::Internal
             }
             else
             {
-                while (rhs--)
+                while (rhs++)
                     --lhs;
             }
 

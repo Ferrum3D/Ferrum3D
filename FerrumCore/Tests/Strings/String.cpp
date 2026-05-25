@@ -4,6 +4,38 @@
 
 using namespace FE;
 
+namespace
+{
+    class TrackingMemoryResource final : public std::pmr::memory_resource
+    {
+    public:
+        uint32_t m_allocations = 0;
+        uint32_t m_deallocations = 0;
+        size_t m_allocatedBytes = 0;
+        size_t m_deallocatedBytes = 0;
+
+    private:
+        void* do_allocate(size_t bytes, size_t alignment) override
+        {
+            ++m_allocations;
+            m_allocatedBytes += bytes;
+            return std::pmr::new_delete_resource()->allocate(bytes, alignment);
+        }
+
+        void do_deallocate(void* pointer, size_t bytes, size_t alignment) override
+        {
+            ++m_deallocations;
+            m_deallocatedBytes += bytes;
+            std::pmr::new_delete_resource()->deallocate(pointer, bytes, alignment);
+        }
+
+        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+        {
+            return this == &other;
+        }
+    };
+} // namespace
+
 TEST(Strings, EmptySizeCapacity)
 {
     festd::string str;
@@ -30,8 +62,25 @@ TEST(Strings, MoveConstruct)
 {
     const char* cstr = "loooooooooooooooooooooooooooooooooooooooooong";
     festd::string str1 = cstr;
+    const char* data = str1.data();
     festd::string str2 = std::move(str1);
     ASSERT_EQ(ASCII::Compare(str2.data(), cstr), 0);
+    ASSERT_EQ(str2.data(), data);
+}
+
+TEST(Strings, MoveAssign)
+{
+    const char* cstr = "loooooooooooooooooooooooooooooooooooooooooong";
+    festd::string str1 = cstr;
+    festd::string str2 = "other string that already owns overflow memory";
+    const char* data = str1.data();
+
+    str2 = std::move(str1);
+
+    ASSERT_EQ(ASCII::Compare(str2.data(), cstr), 0);
+    ASSERT_EQ(str2.data(), data);
+    EXPECT_EQ(str1.size(), 0);
+    EXPECT_STREQ(str1.c_str(), "");
 }
 
 TEST(Strings, StringViewConversion)
@@ -46,6 +95,29 @@ TEST(Strings, StringViewConversion)
     const festd::string s3 = s1;
     EXPECT_EQ(s3, "test");
     EXPECT_NE(s3.data(), s1.data());
+}
+
+TEST(Strings, EmptyStringViewHasNullData)
+{
+    const festd::string_view view;
+
+    EXPECT_EQ(view.data(), nullptr);
+    EXPECT_EQ(view.size(), 0);
+}
+
+TEST(Strings, EmptyStringViewOperationsTolerateNullData)
+{
+    const festd::string_view empty;
+    const festd::string str = "abc";
+
+    EXPECT_EQ(empty, festd::string_view{});
+    EXPECT_EQ(empty, "");
+    EXPECT_EQ("", empty);
+    EXPECT_EQ(empty.compare(festd::string_view{}), 0);
+    EXPECT_TRUE(str.starts_with(empty));
+    EXPECT_TRUE(str.ends_with(empty));
+    EXPECT_EQ(str.find(empty), str.begin());
+    EXPECT_EQ(DefaultHash(empty), DefaultHash(nullptr, 0));
 }
 
 TEST(Strings, SmallByteAt)
@@ -153,12 +225,104 @@ TEST(Strings, ShrinkReserve)
     EXPECT_GE(str.capacity(), sizeof(l) + 3 - 1);
 }
 
+TEST(Strings, ResizeUpdatesCStringTerminator)
+{
+    festd::string str = "abcdef";
+
+    str.resize(2, 'x');
+    EXPECT_EQ(str.size(), 2);
+    EXPECT_STREQ(str.c_str(), "ab");
+
+    str.resize(5, 'x');
+    EXPECT_EQ(str.size(), 5);
+    EXPECT_STREQ(str.c_str(), "abxxx");
+}
+
+TEST(Strings, ClearUpdatesCStringTerminator)
+{
+    festd::string str = "abcdef";
+
+    str.clear();
+
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_STREQ(str.c_str(), "");
+
+    festd::string longStr(32, 'a');
+    longStr.clear();
+
+    EXPECT_EQ(longStr.size(), 0);
+    EXPECT_STREQ(longStr.c_str(), "");
+}
+
+TEST(Strings, DynamicReservePreservesCStringTerminator)
+{
+    festd::string str = "abc";
+
+    str.reserve(128);
+
+    EXPECT_EQ(str.size(), 3);
+    EXPECT_STREQ(str.c_str(), "abc");
+}
+
+TEST(Strings, DynamicShrinkToShortFreesOverflowStorage)
+{
+    TrackingMemoryResource allocator;
+
+    {
+        festd::pmr::string str{ &allocator };
+        str.reserve(128);
+        ASSERT_EQ(allocator.m_allocations, 1);
+
+        str.assign("abc", 3);
+        str.shrink_to_fit();
+
+        EXPECT_EQ(str.capacity(), 23);
+        EXPECT_EQ(allocator.m_deallocations, 1);
+        EXPECT_EQ(allocator.m_allocatedBytes, allocator.m_deallocatedBytes);
+        EXPECT_STREQ(str.c_str(), "abc");
+    }
+
+    EXPECT_EQ(allocator.m_allocations, allocator.m_deallocations);
+}
+
+TEST(Strings, DynamicShrinkToLongUsesOriginalAllocationSize)
+{
+    TrackingMemoryResource allocator;
+
+    {
+        festd::pmr::string str{ &allocator };
+        str.reserve(128);
+        const char* value = "loooooooooooooooooooooooooooooooooooooooooong";
+        str.assign(value, static_cast<uint32_t>(strlen(value)));
+
+        str.shrink_to_fit();
+
+        EXPECT_EQ(str, value);
+        EXPECT_EQ(allocator.m_allocations, 2);
+        EXPECT_EQ(allocator.m_deallocations, 1);
+        EXPECT_LT(allocator.m_deallocatedBytes, allocator.m_allocatedBytes);
+    }
+
+    EXPECT_EQ(allocator.m_allocations, allocator.m_deallocations);
+    EXPECT_EQ(allocator.m_allocatedBytes, allocator.m_deallocatedBytes);
+}
+
+TEST(Strings, FixedStringExactCapacityHasTerminator)
+{
+    festd::basic_fixed_string<4> str = "1234";
+
+    EXPECT_EQ(str.size(), 4);
+    EXPECT_EQ(str.capacity(), 4);
+    EXPECT_STREQ(str.c_str(), "1234");
+}
+
 TEST(Strings, InlineStringUsesInlineStorage)
 {
     festd::basic_inline_string<4> str = "1234";
     EXPECT_EQ(str.capacity(), 4);
     EXPECT_EQ(str.size(), 4);
     EXPECT_EQ(str, "1234");
+    EXPECT_STREQ(str.c_str(), "1234");
 }
 
 TEST(Strings, InlineStringGrowsPastInlineStorage)
@@ -186,17 +350,177 @@ TEST(Strings, InlineStringShrinkReturnsToInlineStorage)
     EXPECT_EQ(str, "123");
 }
 
-TEST(Strings, InlineStringMoveKeepsOverflowStorage)
+TEST(Strings, InlineStringMovePreservesValue)
 {
     festd::basic_inline_string<4> str = "12345";
-    const char* heapData = str.data();
 
     festd::basic_inline_string<4> moved = std::move(str);
 
-    EXPECT_EQ(moved.data(), heapData);
     EXPECT_EQ(moved, "12345");
-    EXPECT_EQ(str.capacity(), 4);
     EXPECT_EQ(str.size(), 0);
+    EXPECT_STREQ(str.c_str(), "");
+}
+
+TEST(Strings, InlineStringSelfAppendCanGrow)
+{
+    festd::basic_inline_string<4> str = "1234";
+    str += festd::string_view{ str };
+
+    EXPECT_EQ(str, "12341234");
+    EXPECT_STREQ(str.c_str(), "12341234");
+}
+
+TEST(Strings, AssignFromOwnRange)
+{
+    festd::string str = "abcdef";
+
+    str.assign(str.data() + 1, 3);
+
+    EXPECT_EQ(str, "bcd");
+    EXPECT_STREQ(str.c_str(), "bcd");
+}
+
+TEST(Strings, DynamicSelfAppendCanGrow)
+{
+    festd::string str(32, 'a');
+    str += festd::string_view{ str };
+
+    ASSERT_EQ(str.size(), 64);
+    EXPECT_EQ(str.substr(0, 32), festd::string(32, 'a'));
+    EXPECT_EQ(str.substr(32, 32), festd::string(32, 'a'));
+}
+
+TEST(Strings, FindLongerNeedleReturnsEnd)
+{
+    const festd::string str = "abc";
+
+    EXPECT_EQ(str.find("abcd"), str.end());
+}
+
+TEST(Strings, FindLastOfEmptyStringReturnsEnd)
+{
+    const festd::string str;
+
+    EXPECT_EQ(str.find_last_of('x'), str.end());
+}
+
+TEST(Strings, IteratorNegativeOffset)
+{
+    const festd::string str = "abc";
+
+    EXPECT_EQ(*(str.end() - 1), 'c');
+}
+
+TEST(Strings, SubstrPastEndReturnsEmpty)
+{
+    const festd::string str = "abc";
+
+    EXPECT_EQ(str.substr(8), festd::string_view{});
+    EXPECT_EQ(str.substr_ascii(8), festd::ascii_view{});
+}
+
+TEST(Strings, PmrCopyAssignmentUsesSourceAllocator)
+{
+    TrackingMemoryResource allocatorA;
+    TrackingMemoryResource allocatorB;
+
+    {
+        festd::pmr::string a{ &allocatorA };
+        const char* valueA = "loooooooooooooooooooooooooooooooooooooooooong";
+        a.assign(valueA, static_cast<uint32_t>(strlen(valueA)));
+
+        festd::pmr::string b{ &allocatorB };
+        const char* valueB = "boooooooooooooooooooooooooooooooooooooooooong";
+        b.assign(valueB, static_cast<uint32_t>(strlen(valueB)));
+
+        a = b;
+
+        EXPECT_EQ(a.get_allocator(), &allocatorB);
+        EXPECT_EQ(a, b);
+        EXPECT_EQ(allocatorA.m_deallocations, 1);
+    }
+
+    EXPECT_EQ(allocatorA.m_allocations, allocatorA.m_deallocations);
+    EXPECT_EQ(allocatorB.m_allocations, allocatorB.m_deallocations);
+}
+
+TEST(Strings, PmrSetAllocatorRehomesStorage)
+{
+    TrackingMemoryResource allocatorA;
+    TrackingMemoryResource allocatorB;
+
+    {
+        festd::pmr::string str{ &allocatorA };
+        const char* value = "loooooooooooooooooooooooooooooooooooooooooong";
+        str.assign(value, static_cast<uint32_t>(strlen(value)));
+
+        str.set_allocator(&allocatorB);
+
+        EXPECT_EQ(str.get_allocator(), &allocatorB);
+        EXPECT_EQ(str, value);
+        EXPECT_EQ(allocatorA.m_deallocations, 1);
+    }
+
+    EXPECT_EQ(allocatorA.m_allocations, allocatorA.m_deallocations);
+    EXPECT_EQ(allocatorB.m_allocations, allocatorB.m_deallocations);
+}
+
+TEST(Strings, PmrMoveConstructStealsStorageWithoutAllocation)
+{
+    TrackingMemoryResource allocator;
+    const char* value = "loooooooooooooooooooooooooooooooooooooooooong";
+
+    {
+        festd::pmr::string source{ &allocator };
+        source.assign(value, static_cast<uint32_t>(strlen(value)));
+        const uint32_t allocations = allocator.m_allocations;
+        const char* data = source.data();
+
+        festd::pmr::string moved{ std::move(source) };
+
+        EXPECT_EQ(allocator.m_allocations, allocations);
+        EXPECT_EQ(moved.get_allocator(), &allocator);
+        EXPECT_EQ(moved.data(), data);
+        EXPECT_EQ(moved, value);
+        EXPECT_EQ(source.size(), 0);
+        EXPECT_STREQ(source.c_str(), "");
+    }
+
+    EXPECT_EQ(allocator.m_allocations, allocator.m_deallocations);
+}
+
+TEST(Strings, PmrMoveAssignStealsStorageWithoutAllocation)
+{
+    TrackingMemoryResource allocatorA;
+    TrackingMemoryResource allocatorB;
+    const char* value = "loooooooooooooooooooooooooooooooooooooooooong";
+
+    {
+        festd::pmr::string source{ &allocatorA };
+        source.assign(value, static_cast<uint32_t>(strlen(value)));
+
+        festd::pmr::string destination{ &allocatorB };
+        const char* otherValue = "other string that already owns overflow memory";
+        destination.assign(otherValue, static_cast<uint32_t>(strlen(otherValue)));
+
+        const uint32_t allocationsA = allocatorA.m_allocations;
+        const uint32_t allocationsB = allocatorB.m_allocations;
+        const char* data = source.data();
+
+        destination = std::move(source);
+
+        EXPECT_EQ(allocatorA.m_allocations, allocationsA);
+        EXPECT_EQ(allocatorB.m_allocations, allocationsB);
+        EXPECT_EQ(allocatorB.m_deallocations, 1);
+        EXPECT_EQ(destination.get_allocator(), &allocatorA);
+        EXPECT_EQ(destination.data(), data);
+        EXPECT_EQ(destination, value);
+        EXPECT_EQ(source.size(), 0);
+        EXPECT_STREQ(source.c_str(), "");
+    }
+
+    EXPECT_EQ(allocatorA.m_allocations, allocatorA.m_deallocations);
+    EXPECT_EQ(allocatorB.m_allocations, allocatorB.m_deallocations);
 }
 
 TEST(Strings, Compare)

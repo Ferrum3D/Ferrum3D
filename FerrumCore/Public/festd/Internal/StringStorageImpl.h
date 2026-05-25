@@ -35,14 +35,24 @@ namespace FE::Internal
             uint64_t m_words[3];
         };
 
+        [[nodiscard]] uint8_t GetMarker() const
+        {
+            return reinterpret_cast<const uint8_t*>(this)[sizeof(DynamicStringStorage) - 1];
+        }
+
+        void SetMarker(const uint8_t marker)
+        {
+            reinterpret_cast<uint8_t*>(this)[sizeof(DynamicStringStorage) - 1] = marker;
+        }
+
         [[nodiscard]] bool IsLong() const
         {
-            return m_long.m_marker == 0xff;
+            return GetMarker() == 0xff;
         }
 
         [[nodiscard]] uint32_t GetShortSize() const
         {
-            return m_long.m_marker ^ kShortModeCapacity;
+            return GetMarker() ^ kShortModeCapacity;
         }
 
         [[nodiscard]] uint32_t SizeImpl() const
@@ -74,36 +84,40 @@ namespace FE::Internal
                 if (m_long.m_capacity >= length)
                 {
                     m_long.m_size = length;
+                    m_long.m_data[length] = '\0';
                     return m_long.m_data;
                 }
 
                 char* newData = Memory::AllocateArray<char>(allocator, capacity);
                 if (TKeepData)
-                    memcpy(newData, m_long.m_data, m_long.m_size);
+                    memcpy(newData, m_long.m_data, m_long.m_size + 1);
 
-                allocator->deallocate(m_long.m_data, m_long.m_capacity + 1);
+                allocator->deallocate(m_long.m_data, m_long.m_capacity + 1, alignof(char));
 
                 m_long.m_capacity = capacity - 1;
                 m_long.m_data = newData;
                 m_long.m_size = length;
+                m_long.m_data[length] = '\0';
                 return m_long.m_data;
             }
             else
             {
-                if (capacity <= kShortModeCapacity)
+                if (capacity <= kShortModeCapacity + 1)
                 {
-                    m_long.m_marker = static_cast<uint8_t>(length ^ kShortModeCapacity);
+                    SetMarker(static_cast<uint8_t>(length ^ kShortModeCapacity));
+                    m_short.m_data[length] = '\0';
                     return m_short.m_data;
                 }
 
                 char* newData = Memory::AllocateArray<char>(allocator, capacity);
                 if (TKeepData)
-                    memcpy(newData, m_short.m_data, GetShortSize());
+                    memcpy(newData, m_short.m_data, GetShortSize() + 1);
 
-                m_long.m_marker = 0xff;
                 m_long.m_data = newData;
                 m_long.m_capacity = capacity - 1;
                 m_long.m_size = length;
+                m_long.m_marker = 0xff;
+                m_long.m_data[length] = '\0';
                 return m_long.m_data;
             }
         }
@@ -123,6 +137,9 @@ namespace FE::Internal
             const bool isLong = IsLong();
             const uint32_t size = isLong ? m_long.m_size : GetShortSize();
             const uint32_t oldCapacity = isLong ? m_long.m_capacity : kShortModeCapacity;
+            if (oldCapacity >= length)
+                return DataImpl();
+
             const uint32_t capacity = GetNewStringCapacity(oldCapacity, length + 1);
             return GrowImpl<true>(size, capacity, isLong, allocator);
         }
@@ -131,6 +148,9 @@ namespace FE::Internal
         {
             const bool isLong = IsLong();
             const uint32_t oldCapacity = isLong ? m_long.m_capacity : kShortModeCapacity;
+            if (oldCapacity >= length)
+                return GrowImpl<true>(length, oldCapacity + 1, isLong, allocator);
+
             const uint32_t capacity = GetNewStringCapacity(oldCapacity, length + 1);
             return GrowImpl<true>(length, capacity, isLong, allocator);
         }
@@ -146,14 +166,16 @@ namespace FE::Internal
                 if (size <= kShortModeCapacity)
                 {
                     char* oldData = m_long.m_data;
-                    memcpy(m_short.m_data, oldData, size);
-                    m_long.m_marker = static_cast<uint8_t>(size ^ kShortModeCapacity);
+                    const uint32_t oldCapacity = m_long.m_capacity;
+                    memcpy(m_short.m_data, oldData, size + 1);
+                    SetMarker(static_cast<uint8_t>(size ^ kShortModeCapacity));
+                    allocator->deallocate(oldData, oldCapacity + 1, alignof(char));
                     return;
                 }
 
                 char* newData = Memory::AllocateArray<char>(allocator, size + 1);
-                memcpy(newData, m_long.m_data, size);
-                allocator->deallocate(m_long.m_data, size);
+                memcpy(newData, m_long.m_data, size + 1);
+                allocator->deallocate(m_long.m_data, m_long.m_capacity + 1, alignof(char));
 
                 m_long.m_data = newData;
                 m_long.m_capacity = size;
@@ -164,9 +186,15 @@ namespace FE::Internal
         {
             if (IsLong())
             {
-                allocator->deallocate(m_long.m_data, m_long.m_capacity + 1);
-                m_long.m_marker = static_cast<uint8_t>(0 ^ kShortModeCapacity);
+                allocator->deallocate(m_long.m_data, m_long.m_capacity + 1, alignof(char));
+                SetMarker(0 ^ kShortModeCapacity);
             }
+        }
+
+        void ResetMovedFromImpl()
+        {
+            m_short.m_data[0] = '\0';
+            SetMarker(0 ^ kShortModeCapacity);
         }
     };
 
@@ -176,13 +204,11 @@ namespace FE::Internal
     {
         static constexpr uint32_t kCapacity = TCapacity;
 
-        static_assert(TCapacity <= (1 << 24));
+        using SizeBaseType = std::conditional_t<TCapacity <= UINT8_MAX, uint8_t,
+                                                std::conditional_t<TCapacity <= UINT16_MAX, uint16_t, uint32_t>>;
 
-        using SizeBaseType = std::conditional_t<TCapacity <= 255, uint16_t, uint32_t>;
-
-        char m_data[TCapacity];
-        SizeBaseType m_zero : 8;
-        SizeBaseType m_size : (sizeof(SizeBaseType) - 1) * 8;
+        char m_data[TCapacity + 1];
+        SizeBaseType m_size;
 
         [[nodiscard]] uint32_t SizeImpl() const
         {
@@ -208,6 +234,7 @@ namespace FE::Internal
         {
             FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
+            m_data[length] = '\0';
             return m_data;
         }
 
@@ -215,12 +242,13 @@ namespace FE::Internal
         {
             FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
+            m_data[length] = '\0';
             return m_data;
         }
 
         char* ReserveImpl(const uint32_t length, std::pmr::memory_resource*)
         {
-            FE_Unused(length);
+            FE_Assert(length <= kCapacity, "Fixed string overflow");
             return m_data;
         }
 
@@ -228,12 +256,19 @@ namespace FE::Internal
         {
             FE_Assert(length <= kCapacity, "Fixed string overflow");
             m_size = static_cast<SizeBaseType>(length);
+            m_data[length] = '\0';
             return m_data;
         }
 
         void ShrinkImpl(std::pmr::memory_resource*) {}
 
         void DestroyImpl(std::pmr::memory_resource*) {}
+
+        void ResetMovedFromImpl()
+        {
+            m_size = 0;
+            m_data[0] = '\0';
+        }
     };
 
 
@@ -243,9 +278,9 @@ namespace FE::Internal
         static constexpr uint32_t kInlineCapacity = TCapacity;
 
         static_assert(TCapacity > 0);
-        static_assert(TCapacity <= (1 << 24));
 
-        using SizeBaseType = std::conditional_t<TCapacity <= 255, uint16_t, uint32_t>;
+        using SizeBaseType = std::conditional_t<TCapacity <= UINT8_MAX, uint8_t,
+                                                std::conditional_t<TCapacity <= UINT16_MAX, uint16_t, uint32_t>>;
 
         struct Long final
         {
@@ -256,9 +291,8 @@ namespace FE::Internal
 
         struct Short final
         {
-            char m_data[TCapacity];
-            SizeBaseType m_zero : 8;
-            SizeBaseType m_size : (sizeof(SizeBaseType) - 1) * 8;
+            char m_data[TCapacity + 1];
+            SizeBaseType m_size;
         };
 
         union
@@ -281,8 +315,8 @@ namespace FE::Internal
 
         void SetShortSize(const uint32_t size)
         {
-            m_short.m_zero = 0;
             m_short.m_size = static_cast<SizeBaseType>(size);
+            m_short.m_data[size] = '\0';
             m_isLong = false;
         }
 
@@ -315,21 +349,20 @@ namespace FE::Internal
                 if (m_long.m_capacity >= length)
                 {
                     m_long.m_size = length;
+                    m_long.m_data[length] = '\0';
                     return m_long.m_data;
                 }
 
                 char* newData = Memory::AllocateArray<char>(allocator, capacity);
                 if (TKeepData)
-                {
-                    memcpy(newData, m_long.m_data, m_long.m_size);
-                    newData[m_long.m_size] = '\0';
-                }
+                    memcpy(newData, m_long.m_data, m_long.m_size + 1);
 
                 allocator->deallocate(m_long.m_data, m_long.m_capacity + 1, alignof(char));
 
                 m_long.m_capacity = capacity - 1;
                 m_long.m_data = newData;
                 m_long.m_size = length;
+                m_long.m_data[length] = '\0';
                 return m_long.m_data;
             }
 
@@ -343,14 +376,14 @@ namespace FE::Internal
             if (TKeepData)
             {
                 const uint32_t shortSize = GetShortSize();
-                memcpy(newData, m_short.m_data, shortSize);
-                newData[shortSize] = '\0';
+                memcpy(newData, m_short.m_data, shortSize + 1);
             }
 
             m_long.m_data = newData;
             m_long.m_capacity = capacity - 1;
             m_long.m_size = length;
             m_isLong = true;
+            m_long.m_data[length] = '\0';
             return m_long.m_data;
         }
 
@@ -383,9 +416,14 @@ namespace FE::Internal
             if (oldCapacity >= length)
             {
                 if (isLong)
+                {
                     m_long.m_size = length;
+                    m_long.m_data[length] = '\0';
+                }
                 else
+                {
                     SetShortSize(length);
+                }
 
                 return DataImpl();
             }
@@ -407,18 +445,15 @@ namespace FE::Internal
             const uint32_t oldCapacity = m_long.m_capacity;
             if (size <= kInlineCapacity)
             {
-                memcpy(m_short.m_data, oldData, size);
+                memcpy(m_short.m_data, oldData, size + 1);
                 SetShortSize(size);
-                if (size < kInlineCapacity)
-                    m_short.m_data[size] = '\0';
 
                 allocator->deallocate(oldData, oldCapacity + 1, alignof(char));
                 return;
             }
 
             char* newData = Memory::AllocateArray<char>(allocator, size + 1);
-            memcpy(newData, oldData, size);
-            newData[size] = '\0';
+            memcpy(newData, oldData, size + 1);
             allocator->deallocate(oldData, oldCapacity + 1, alignof(char));
 
             m_long.m_data = newData;
@@ -432,6 +467,11 @@ namespace FE::Internal
                 allocator->deallocate(m_long.m_data, m_long.m_capacity + 1, alignof(char));
                 SetShortSize(0);
             }
+        }
+
+        void ResetMovedFromImpl()
+        {
+            SetShortSize(0);
         }
     };
 } // namespace FE::Internal
