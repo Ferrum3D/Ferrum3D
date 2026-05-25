@@ -289,6 +289,8 @@ namespace FE::Internal
             uint32_t m_capacity;
         };
 
+        static_assert(TCapacity >= sizeof(Long), "Inline string capacity is too small for long-mode marker storage");
+
         struct Short final
         {
             char m_data[TCapacity + 1];
@@ -301,11 +303,19 @@ namespace FE::Internal
             Short m_short;
         };
 
-        bool m_isLong;
+        [[nodiscard]] uint8_t GetMarker() const
+        {
+            return reinterpret_cast<const uint8_t*>(this)[TCapacity];
+        }
+
+        void SetMarker(const uint8_t marker)
+        {
+            reinterpret_cast<uint8_t*>(this)[TCapacity] = marker;
+        }
 
         [[nodiscard]] bool IsLong() const
         {
-            return m_isLong;
+            return GetMarker() != 0;
         }
 
         [[nodiscard]] uint32_t GetShortSize() const
@@ -317,7 +327,7 @@ namespace FE::Internal
         {
             m_short.m_size = static_cast<SizeBaseType>(size);
             m_short.m_data[size] = '\0';
-            m_isLong = false;
+            SetMarker(0);
         }
 
         [[nodiscard]] uint32_t SizeImpl() const
@@ -382,7 +392,7 @@ namespace FE::Internal
             m_long.m_data = newData;
             m_long.m_capacity = capacity - 1;
             m_long.m_size = length;
-            m_isLong = true;
+            SetMarker(0xff);
             m_long.m_data[length] = '\0';
             return m_long.m_data;
         }

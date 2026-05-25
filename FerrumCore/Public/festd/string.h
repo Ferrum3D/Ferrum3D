@@ -243,7 +243,9 @@ namespace FE::Internal
         {
             const char* oldData = data();
             const uint32_t oldSize = size();
-            const bool overlaps = byteSize != 0 && str >= oldData && str <= oldData + oldSize;
+            const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
+            const uintptr_t oldDataAddress = reinterpret_cast<uintptr_t>(oldData);
+            const bool overlaps = byteSize != 0 && sourceAddress >= oldDataAddress && sourceAddress <= oldDataAddress + oldSize;
             if (overlaps)
             {
                 std::pmr::memory_resource* allocator = TStorage::GetAllocator();
@@ -272,8 +274,10 @@ namespace FE::Internal
         {
             const uint32_t oldSize = size();
             const char* oldData = data();
-            const bool overlaps = byteSize != 0 && str >= oldData && str < oldData + oldSize;
-            const uint32_t sourceOffset = overlaps ? static_cast<uint32_t>(str - oldData) : 0;
+            const uintptr_t sourceAddress = reinterpret_cast<uintptr_t>(str);
+            const uintptr_t oldDataAddress = reinterpret_cast<uintptr_t>(oldData);
+            const bool overlaps = byteSize != 0 && sourceAddress >= oldDataAddress && sourceAddress < oldDataAddress + oldSize;
+            const uint32_t sourceOffset = overlaps ? static_cast<uint32_t>(sourceAddress - oldDataAddress) : 0;
 
             resize_uninitialized(oldSize + byteSize);
             char* bytes = data();

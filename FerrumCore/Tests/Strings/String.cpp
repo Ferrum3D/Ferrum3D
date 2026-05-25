@@ -318,56 +318,56 @@ TEST(Strings, FixedStringExactCapacityHasTerminator)
 
 TEST(Strings, InlineStringUsesInlineStorage)
 {
-    festd::basic_inline_string<4> str = "1234";
-    EXPECT_EQ(str.capacity(), 4);
-    EXPECT_EQ(str.size(), 4);
-    EXPECT_EQ(str, "1234");
-    EXPECT_STREQ(str.c_str(), "1234");
+    festd::basic_inline_string<16> str = "1234567890123456";
+    EXPECT_EQ(str.capacity(), 16);
+    EXPECT_EQ(str.size(), 16);
+    EXPECT_EQ(str, "1234567890123456");
+    EXPECT_STREQ(str.c_str(), "1234567890123456");
 }
 
 TEST(Strings, InlineStringGrowsPastInlineStorage)
 {
-    festd::basic_inline_string<4> str = "1234";
+    festd::basic_inline_string<16> str = "1234567890123456";
     const char* inlineData = str.data();
 
-    str.push_back('5');
+    str.push_back('7');
 
-    EXPECT_GT(str.capacity(), 4);
+    EXPECT_GT(str.capacity(), 16);
     EXPECT_NE(str.data(), inlineData);
-    EXPECT_EQ(str, "12345");
+    EXPECT_EQ(str, "12345678901234567");
 }
 
 TEST(Strings, InlineStringShrinkReturnsToInlineStorage)
 {
-    festd::basic_inline_string<4> str = "12345";
+    festd::basic_inline_string<16> str = "12345678901234567";
     const char* heapData = str.data();
 
     str.assign("123", 3);
     str.shrink_to_fit();
 
-    EXPECT_EQ(str.capacity(), 4);
+    EXPECT_EQ(str.capacity(), 16);
     EXPECT_NE(str.data(), heapData);
     EXPECT_EQ(str, "123");
 }
 
 TEST(Strings, InlineStringMovePreservesValue)
 {
-    festd::basic_inline_string<4> str = "12345";
+    festd::basic_inline_string<16> str = "12345678901234567";
 
-    festd::basic_inline_string<4> moved = std::move(str);
+    festd::basic_inline_string<16> moved = std::move(str);
 
-    EXPECT_EQ(moved, "12345");
+    EXPECT_EQ(moved, "12345678901234567");
     EXPECT_EQ(str.size(), 0);
     EXPECT_STREQ(str.c_str(), "");
 }
 
 TEST(Strings, InlineStringSelfAppendCanGrow)
 {
-    festd::basic_inline_string<4> str = "1234";
+    festd::basic_inline_string<16> str = "1234567890123456";
     str += festd::string_view{ str };
 
-    EXPECT_EQ(str, "12341234");
-    EXPECT_STREQ(str.c_str(), "12341234");
+    EXPECT_EQ(str, "12345678901234561234567890123456");
+    EXPECT_STREQ(str.c_str(), "12345678901234561234567890123456");
 }
 
 TEST(Strings, AssignFromOwnRange)
