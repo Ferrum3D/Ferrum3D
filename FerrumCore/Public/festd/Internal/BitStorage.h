@@ -158,6 +158,19 @@ namespace FE::Internal
                 GrowImpl<true>(m_size, minCapacity, allocator);
         }
 
+        void MoveImpl(DynamicBitSetStorage& other) noexcept
+        {
+            m_size = other.m_size;
+            m_capacity = other.m_capacity;
+            m_words = other.m_words;
+            m_topLevel = other.m_topLevel;
+
+            other.m_size = 0;
+            other.m_capacity = 0;
+            other.m_words = nullptr;
+            other.m_topLevel = nullptr;
+        }
+
         void DestroyImpl(std::pmr::memory_resource* allocator)
         {
             if (m_words != nullptr)
@@ -239,6 +252,14 @@ namespace FE::Internal
         }
 
         void ShrinkImpl(std::pmr::memory_resource*) {}
+
+        void MoveImpl(FixedBitSetStorage& other) noexcept
+        {
+            m_size = other.m_size;
+            memcpy(m_words, other.m_words, sizeof(m_words));
+            memcpy(m_topLevel, other.m_topLevel, sizeof(m_topLevel));
+            other.InitializeImpl(0, nullptr);
+        }
 
         void DestroyImpl(std::pmr::memory_resource*) {}
     };

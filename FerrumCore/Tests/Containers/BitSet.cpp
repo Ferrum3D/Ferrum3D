@@ -2,6 +2,7 @@
 #include <festd/bit_vector.h>
 #include <festd/vector.h>
 #include <random>
+#include <utility>
 
 using namespace FE;
 
@@ -573,6 +574,115 @@ TEST(DynamicBitSet, Resize)
     }
 }
 
+TEST(DynamicBitSet, ResizeShrink)
+{
+    festd::bit_vector bits;
+    bits.resize(130, true);
+    bits.resize(1, false);
+
+    EXPECT_EQ(bits.size(), 1);
+    EXPECT_TRUE(bits.test(0));
+    EXPECT_EQ(bits.find_first(), 0);
+    EXPECT_EQ(Bit::PopCount(bits.view()), 1);
+
+    uint32_t traversalCount = 0;
+    Bit::Traverse(bits.view(), [&](const uint32_t bitIndex) {
+        EXPECT_EQ(bitIndex, 0);
+        ++traversalCount;
+    });
+    EXPECT_EQ(traversalCount, 1);
+
+    bits.reset(0);
+    EXPECT_EQ(bits.find_first(), kInvalidIndex);
+
+    bits.resize(0, false);
+    EXPECT_TRUE(bits.empty());
+    EXPECT_EQ(bits.find_first(), kInvalidIndex);
+}
+
+
+TEST(DynamicBitSet, CopySelfAssignment)
+{
+    festd::bit_vector bits;
+    bits.resize(130, false);
+    bits.set(0);
+    bits.set(129);
+
+    bits = bits;
+
+    EXPECT_EQ(bits.size(), 130);
+    EXPECT_TRUE(bits.test(0));
+    EXPECT_TRUE(bits.test(129));
+    EXPECT_EQ(Bit::PopCount(bits.view()), 2);
+}
+
+
+TEST(DynamicBitSet, PmrCopyUsesSourceAllocator)
+{
+    TestAllocator allocatorA;
+    TestAllocator allocatorB;
+
+    auto memLeakGuard = festd::defer([&allocatorA, &allocatorB] {
+        ASSERT_EQ(allocatorA.m_allocationCount, allocatorA.m_deallocationCount);
+        ASSERT_EQ(allocatorA.m_totalSize, 0);
+        ASSERT_EQ(allocatorB.m_allocationCount, allocatorB.m_deallocationCount);
+        ASSERT_EQ(allocatorB.m_totalSize, 0);
+    });
+
+    {
+        festd::pmr::bit_vector source{ &allocatorB };
+        source.resize(130, false);
+        source.set(129);
+
+        festd::pmr::bit_vector copy = source;
+        EXPECT_EQ(copy.get_allocator(), &allocatorB);
+        EXPECT_EQ(copy.size(), 130);
+        EXPECT_TRUE(copy.test(129));
+
+        festd::pmr::bit_vector assigned{ &allocatorA };
+        assigned.resize(64, true);
+        assigned = source;
+        EXPECT_EQ(assigned.get_allocator(), &allocatorB);
+        EXPECT_EQ(assigned.size(), 130);
+        EXPECT_FALSE(assigned.test(0));
+        EXPECT_TRUE(assigned.test(129));
+    }
+}
+
+
+TEST(DynamicBitSet, NullAllocatorFallsBackToDefault)
+{
+    festd::pmr::bit_vector bits;
+    bits.set_allocator(nullptr);
+    EXPECT_EQ(bits.get_allocator(), std::pmr::get_default_resource());
+
+    bits.resize(1, true);
+    EXPECT_TRUE(bits.test(0));
+}
+
+
+TEST(DynamicBitSet, Move)
+{
+    festd::bit_vector bits;
+    bits.resize(130, false);
+    bits.set(0);
+    bits.set(129);
+
+    festd::bit_vector moved{ std::move(bits) };
+    EXPECT_TRUE(bits.empty());
+    EXPECT_EQ(moved.size(), 130);
+    EXPECT_TRUE(moved.test(0));
+    EXPECT_TRUE(moved.test(129));
+
+    festd::bit_vector assigned;
+    assigned = std::move(moved);
+    EXPECT_TRUE(moved.empty());
+    EXPECT_EQ(assigned.size(), 130);
+    EXPECT_TRUE(assigned.test(0));
+    EXPECT_TRUE(assigned.test(129));
+}
+
+
 TEST(DynamicBitSet, FindFirst)
 {
     TestAllocator allocator;
@@ -675,6 +785,48 @@ TEST(FixedBitSet, Traverse)
     }
 }
 
+TEST(FixedBitSet, ResizeShrink)
+{
+    festd::fixed_bit_vector<130> bits;
+    bits.resize(130, true);
+    bits.resize(1, false);
+
+    EXPECT_EQ(bits.size(), 1);
+    EXPECT_TRUE(bits.test(0));
+    EXPECT_EQ(bits.find_first(), 0);
+    EXPECT_EQ(Bit::PopCount(bits.view()), 1);
+
+    uint32_t traversalCount = 0;
+    Bit::Traverse(bits.view(), [&](const uint32_t bitIndex) {
+        EXPECT_EQ(bitIndex, 0);
+        ++traversalCount;
+    });
+    EXPECT_EQ(traversalCount, 1);
+}
+
+
+TEST(FixedBitSet, Move)
+{
+    festd::fixed_bit_vector<130> bits;
+    bits.resize(130, false);
+    bits.set(0);
+    bits.set(129);
+
+    festd::fixed_bit_vector<130> moved{ std::move(bits) };
+    EXPECT_TRUE(bits.empty());
+    EXPECT_EQ(moved.size(), 130);
+    EXPECT_TRUE(moved.test(0));
+    EXPECT_TRUE(moved.test(129));
+
+    festd::fixed_bit_vector<130> assigned;
+    assigned = std::move(moved);
+    EXPECT_TRUE(moved.empty());
+    EXPECT_EQ(assigned.size(), 130);
+    EXPECT_TRUE(assigned.test(0));
+    EXPECT_TRUE(assigned.test(129));
+}
+
+
 TEST(BitSet, OperatorAnd)
 {
     using namespace Internal;
@@ -714,7 +866,8 @@ TEST(BitSet, OperatorOr)
     b.set(kBitSetBitsPerWord + 1);
 
     uint32_t currentTraversalIndex = 0;
-    Bit::Traverse(a.view() & b.view(), [&](uint32_t bitIndex) {
+    Bit::Traverse(a.view() | b.view(), [&](uint32_t bitIndex) {
         ASSERT_EQ(bitIndex, kBitSetBitsPerWord - 1 + currentTraversalIndex++);
     });
+    EXPECT_EQ(currentTraversalIndex, 3);
 }

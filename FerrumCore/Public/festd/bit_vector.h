@@ -72,6 +72,11 @@ namespace FE::Internal
         }
 
         void SetAllocator(std::pmr::memory_resource*) {}
+
+        void MoveImpl(DefaultAllocatorBitSetStorage& other) noexcept
+        {
+            TStorage::MoveImpl(other);
+        }
     };
 
 
@@ -97,11 +102,19 @@ namespace FE::Internal
         void SetAllocator(std::pmr::memory_resource* allocator)
         {
             m_allocator = allocator;
+            if (allocator == nullptr)
+                m_allocator = std::pmr::get_default_resource();
         }
 
         [[nodiscard]] std::pmr::memory_resource* GetAllocator() const
         {
             return m_allocator;
+        }
+
+        void MoveImpl(PolymorphicAllocatorBitSetStorage& other) noexcept
+        {
+            TStorage::MoveImpl(other);
+            m_allocator = other.m_allocator;
         }
     };
 
@@ -230,7 +243,9 @@ namespace FE::Internal
         BasicBitSetImpl(const BasicBitSetImpl& other)
         {
             const uint32_t size = other.SizeImpl();
-            TStorage::InitializeImpl(size, other.GetAllocator());
+            if constexpr (TStorage::kHasAllocator)
+                TStorage::SetAllocator(other.GetAllocator());
+            TStorage::InitializeImpl(size, TStorage::GetAllocator());
             const BitSetWord* words = other.WordsDataImpl();
             const BitSetWord* topLevelWords = other.TopLevelDataImpl();
 
@@ -243,18 +258,28 @@ namespace FE::Internal
 
         BasicBitSetImpl(BasicBitSetImpl&& other) noexcept
         {
-            memcpy(this, &other, sizeof(*this)); // NOLINT
-            other.InitializeImpl(0, other.GetAllocator());
+            TStorage::MoveImpl(other);
         }
 
         BasicBitSetImpl& operator=(const BasicBitSetImpl& other) noexcept
         {
+            if (this == &other)
+                return *this;
+
             const uint32_t size = other.SizeImpl();
 
-            if (TStorage::kHasAllocator && other.GetAllocator() != TStorage::GetAllocator())
+            if constexpr (TStorage::kHasAllocator)
             {
-                DestroyImpl(TStorage::GetAllocator());
-                TStorage::InitializeImpl(size, other.GetAllocator());
+                if (other.GetAllocator() != TStorage::GetAllocator())
+                {
+                    TStorage::DestroyImpl(TStorage::GetAllocator());
+                    TStorage::SetAllocator(other.GetAllocator());
+                    TStorage::InitializeImpl(size, TStorage::GetAllocator());
+                }
+                else
+                {
+                    TStorage::ReinitializeImpl(size, TStorage::GetAllocator());
+                }
             }
             else
             {
@@ -274,9 +299,11 @@ namespace FE::Internal
 
         BasicBitSetImpl& operator=(BasicBitSetImpl&& other) noexcept
         {
+            if (this == &other)
+                return *this;
+
             TStorage::DestroyImpl(TStorage::GetAllocator());
-            memcpy(this, &other, sizeof(*this)); // NOLINT
-            other.InitializeImpl(0, other.GetAllocator());
+            TStorage::MoveImpl(other);
             return *this;
         }
 
@@ -344,12 +371,30 @@ namespace FE::Internal
         void resize(const uint32_t bitCount, const bool bitValue)
         {
             const uint32_t prevSize = TStorage::SizeImpl();
+            if (bitCount == prevSize)
+                return;
 
             TStorage::ResizeImpl(bitCount, TStorage::GetAllocator());
 
             const uint32_t wordCount = CalculateNextLevelWordCount(TStorage::SizeImpl());
+            const uint32_t prevWordCount = CalculateNextLevelWordCount(prevSize);
 
             BitSetWord* words = TStorage::WordsDataImpl();
+
+            if (bitCount < prevSize)
+            {
+                ResetAllBitsInRange({ words, CalculateNextLevelWordCount(TStorage::CapacityImpl()) }, bitCount, prevSize - bitCount);
+
+                for (uint32_t wordIndex = CalculateWordIndex(bitCount); wordIndex < prevWordCount; ++wordIndex)
+                {
+                    if (wordIndex < wordCount && words[wordIndex] != 0)
+                        SetTopLevel(wordIndex);
+                    else
+                        ResetTopLevel(wordIndex);
+                }
+
+                return;
+            }
 
             if (bitValue)
             {
@@ -493,12 +538,14 @@ namespace FE::Internal
     template<class TLeftView, class TRightView>
     auto operator&(const BasicBitSetView<TLeftView>& lhs, const BasicBitSetView<TRightView>& rhs)
     {
+        FE_AssertDebug(lhs.size() == rhs.size());
         return BitSetImpl<BasicBitSetView<BitSetOperatorAnd<TLeftView, TRightView>>>{ lhs, rhs };
     }
 
     template<class TLeftView, class TRightView>
     auto operator|(const BasicBitSetView<TLeftView>& lhs, const BasicBitSetView<TRightView>& rhs)
     {
+        FE_AssertDebug(lhs.size() == rhs.size());
         return BitSetImpl<BasicBitSetView<BitSetOperatorOr<TLeftView, TRightView>>>{ lhs, rhs };
     }
 } // namespace FE::Internal
