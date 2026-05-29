@@ -2,6 +2,8 @@
 #include <FeCore/Base/Assert.h>
 #include <FeCore/Base/BaseTypes.h>
 #include <FeCore/Base/CompilerTraits.h>
+#include <bit>
+#include <concepts>
 #include <festd/base.h>
 
 namespace FE
@@ -122,164 +124,70 @@ namespace FE
 namespace FE::Bit
 {
     //! @brief Set a bit specified by bitIndex to one and return the modified value.
-    template<class T>
-    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Set(const T value, const T bitIndex)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE T Set(const T value, const T bitIndex)
     {
         return value | (T(1u) << bitIndex);
     }
 
 
     //! @brief Reset a bit specified by bitIndex to zero and return the modified value.
-    template<class T>
-    FE_FORCE_INLINE std::enable_if_t<std::is_unsigned_v<T>, T> Clear(const T value, const T bitIndex)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE T Clear(const T value, const T bitIndex)
     {
         return value & ~(T(1u) << bitIndex);
     }
 
 
     //! @brief Count the number of trailing zeros in the given value.
-    FE_FORCE_INLINE int32_t CountTrailingZeros(const uint32_t value)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE int32_t CountTrailingZeros(const T value)
     {
-#if FE_COMPILER_MSVC
-        unsigned long result = 0;
-        if (_BitScanForward(&result, value))
-            return result;
-        return 32;
-#else
-        return __builtin_ctz(value);
-#endif
-    }
-
-
-    //! @brief Count the number of trailing zeros in the given value.
-    FE_FORCE_INLINE int32_t CountTrailingZeros(const uint64_t value)
-    {
-#if FE_COMPILER_MSVC
-        unsigned long result = 0;
-        if (_BitScanForward64(&result, value))
-            return result;
-        return 64;
-#else
-        return __builtin_ctzll(value);
-#endif
+        return std::countr_zero(value);
     }
 
 
     //! @brief Count the number of leading zeros in the given value.
-    FE_FORCE_INLINE int32_t CountLeadingZeros(const uint32_t value)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE int32_t CountLeadingZeros(const T value)
     {
-#if FE_COMPILER_MSVC
-        unsigned long result = 0;
-        if (_BitScanReverse(&result, value))
-            return 31 - result;
-        return 32;
-#else
-        return __builtin_clz(value);
-#endif
-    }
-
-
-    //! @brief Count the number of leading zeros in the given value.
-    FE_FORCE_INLINE int32_t CountLeadingZeros(const uint64_t value)
-    {
-#if FE_COMPILER_MSVC
-        unsigned long result = 0;
-        if (_BitScanReverse64(&result, value))
-            return 63 - result;
-        return 64;
-#else
-        return __builtin_clzll(value);
-#endif
+        return std::countl_zero(value);
     }
 
 
     //! @brief Count the number of set bits in the given value.
-    FE_FORCE_INLINE uint32_t PopCount(const uint32_t value)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE uint32_t PopCount(const T value)
     {
-#if FE_COMPILER_MSVC
-        return __popcnt(value);
-#else
-        return __builtin_popcount(value);
-#endif
-    }
-
-
-    //! @brief Count the number of set bits in the given value.
-    FE_FORCE_INLINE uint32_t PopCount(const uint64_t value)
-    {
-#if FE_COMPILER_MSVC
-        return static_cast<uint32_t>(__popcnt64(value));
-#else
-        return __builtin_popcountll(value);
-#endif
+        return static_cast<uint32_t>(std::popcount(value));
     }
 
 
     //! @brief Search for the first set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const uint32_t value)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const T value)
     {
-#if FE_COMPILER_MSVC
-        return _BitScanForward(reinterpret_cast<unsigned long*>(&result), value);
-#else
         if (value == 0)
             return false;
 
-        result = __builtin_ctz(value);
+        result = static_cast<uint32_t>(std::countr_zero(value));
         return true;
-#endif
-    }
-
-
-    //! @brief Search for the first set bit in the given value and store its index in result.
-    //!
-    //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const uint64_t value)
-    {
-#if FE_COMPILER_MSVC
-        return _BitScanForward64(reinterpret_cast<unsigned long*>(&result), value);
-#else
-        if (value == 0)
-            return false;
-
-        result = __builtin_ctzll(value);
-        return true;
-#endif
     }
 
 
     //! @brief Search for the last set bit in the given value and store its index in result.
     //!
     //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const uint32_t value)
+    template<std::unsigned_integral T>
+    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const T value)
     {
-#if FE_COMPILER_MSVC
-        return _BitScanReverse(reinterpret_cast<unsigned long*>(&result), value);
-#else
         if (value == 0)
             return false;
 
-        result = 31 - __builtin_clz(value);
+        result = std::numeric_limits<T>::digits - 1 - static_cast<uint32_t>(std::countl_zero(value));
         return true;
-#endif
-    }
-
-
-    //! @brief Search for the last set bit in the given value and store its index in result.
-    //!
-    //! @return true if a bit was found, false if the value is zero.
-    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const uint64_t value)
-    {
-#if FE_COMPILER_MSVC
-        return _BitScanReverse64(reinterpret_cast<unsigned long*>(&result), value);
-#else
-        if (value == 0)
-            return false;
-
-        result = 63 - __builtin_clzll(value);
-        return true;
-#endif
     }
 
 
@@ -306,30 +214,14 @@ namespace FE::Bit
     //!
     //! @param word    The unsigned integer to traverse.
     //! @param functor The functor to call for each set bit.
-    template<class TFunctor>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint32_t word, TFunctor functor)
+    template<std::unsigned_integral T, class TFunctor>
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(T word, TFunctor functor)
     {
         uint32_t currentIndex;
         while (ScanForward(currentIndex, word))
         {
             functor(currentIndex);
-            word &= ~(1 << currentIndex);
-        }
-    }
-
-
-    //! @brief Traverse an unsigned integer and call a functor for each set bit.
-    //!
-    //! @param word    The unsigned integer to traverse.
-    //! @param functor The functor to call for each set bit.
-    template<class TFunctor>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(uint64_t word, TFunctor functor)
-    {
-        uint32_t currentIndex;
-        while (ScanForward(currentIndex, word))
-        {
-            functor(currentIndex);
-            word &= ~(UINT64_C(1) << currentIndex);
+            word &= ~(T(1) << currentIndex);
         }
     }
 
@@ -353,18 +245,9 @@ namespace FE::Bit
 
 namespace FE::Math
 {
-    //
-    // The CompileTime namespace contains some functions that should only be used in
-    // compile-time calculations. Using these in run-time may be inefficient.
-    // The purpose is to emulate some non-constexpr intrinsics.
-    //
-    // TODO: this can be solved easily using c++20 is_constant_evaluated.
-    //
-
-    namespace CompileTime
+    namespace Internal
     {
-        //! @brief Multiply two 64-bit values with carry at compile time.
-        FE_FORCE_INLINE constexpr uint64_t Multiply128(const uint64_t x, const uint64_t y, uint64_t* carry)
+        FE_FORCE_INLINE constexpr uint64_t Multiply128Portable(const uint64_t x, const uint64_t y, uint64_t* carry)
         {
             const uint64_t x0 = static_cast<uint32_t>(x), x1 = x >> 32;
             const uint64_t y0 = static_cast<uint32_t>(y), y1 = y >> 32;
@@ -374,7 +257,23 @@ namespace FE::Math
             *carry = p11 + (middle >> 32) + (p01 >> 32);
             return (middle << 32) | static_cast<uint32_t>(p00);
         }
-    } // namespace CompileTime
+    } // namespace Internal
+
+
+    //! @brief Multiply two 64-bit values and return the low half, storing the high half in carry.
+    FE_FORCE_INLINE constexpr uint64_t Multiply128(const uint64_t x, const uint64_t y, uint64_t* carry)
+    {
+        if (std::is_constant_evaluated())
+            return Internal::Multiply128Portable(x, y, carry);
+
+#if FE_COMPILER_MSVC
+        return _umul128(x, y, carry);
+#else
+        const __uint128_t result = static_cast<__uint128_t>(x) * static_cast<__uint128_t>(y);
+        *carry = static_cast<uint64_t>(result >> 64);
+        return static_cast<uint64_t>(result);
+#endif
+    }
 
 
     FE_FORCE_INLINE float Sin(const float x)
@@ -546,9 +445,8 @@ namespace FE::Math
     }
 
 
-    template<class T1, class T2>
-    FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y)
-        -> std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>, decltype(x / y)>
+    template<std::integral T1, std::integral T2>
+    FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y) -> decltype(x / y)
     {
         return (x + y - 1) / y;
     }

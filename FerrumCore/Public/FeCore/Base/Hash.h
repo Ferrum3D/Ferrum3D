@@ -4,11 +4,6 @@
 #include <cstdint>
 #include <string_view>
 
-#if FE_COMPILER_MSVC
-#    include <intrin.h>
-#    pragma intrinsic(_umul128)
-#endif
-
 namespace FE
 {
     namespace Internal
@@ -47,22 +42,14 @@ namespace FE
 
         inline constexpr uint64_t WyMix(uint64_t A, uint64_t B)
         {
-#if FE_COMPILER_MSVC
-            return Math::CompileTime::Multiply128(A, B, &B) ^ B;
-#else
-            __uint128_t r = A;
-            r *= B;
-            A = static_cast<uint64_t>(r);
-            B = static_cast<uint64_t>(r >> 64);
-            return A ^ B;
-#endif
+            return Math::Multiply128(A, B, &B) ^ B;
         }
 
         inline constexpr uint64_t WyHash64(uint64_t A, uint64_t B)
         {
             A ^= UINT64_C(0x2d358dccaa6c78a5);
             B ^= UINT64_C(0x8bb84b93962eacc9);
-            A = Math::CompileTime::Multiply128(A, B, &B);
+            A = Math::Multiply128(A, B, &B);
 
             return WyMix(A ^ UINT64_C(0x2d358dccaa6c78a5), B ^ UINT64_C(0x8bb84b93962eacc9));
         }
