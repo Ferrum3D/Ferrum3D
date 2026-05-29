@@ -84,7 +84,7 @@ namespace FE::Env
                 NameHandle result;
                 result.m_pageIndex = m_currentPageIndex;
                 result.m_blockIndex = m_offset >> kNameBlockShift;
-                handle = festd::bit_cast<uint32_t>(result);
+                handle = std::bit_cast<uint32_t>(result);
                 m_map.insert(std::make_pair(hash, handle));
 
                 void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
@@ -95,7 +95,7 @@ namespace FE::Env
 
             Name::Record* ResolvePointer(const uint32_t handleValue) const
             {
-                const NameHandle handle = festd::bit_cast<NameHandle>(handleValue);
+                const NameHandle handle = std::bit_cast<NameHandle>(handleValue);
                 const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_pages[handle.m_pageIndex]);
                 const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.m_blockIndex) << kNameBlockShift);
                 return reinterpret_cast<Name::Record*>(recordAddress);

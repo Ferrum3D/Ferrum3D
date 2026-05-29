@@ -11,13 +11,13 @@ namespace FE::Framework::Windows
     {
         RectInt ConvertRect(const RECT rect)
         {
-            return festd::bit_cast<RectInt>(rect);
+            return std::bit_cast<RectInt>(rect);
         }
 
 
         RECT ConvertRect(const RectInt rect)
         {
-            return festd::bit_cast<RECT>(rect);
+            return std::bit_cast<RECT>(rect);
         }
 
 

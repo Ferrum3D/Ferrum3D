@@ -229,7 +229,8 @@ namespace FE::Internal
             TStorage::InitializeImpl(0, TStorage::GetAllocator());
         }
 
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         explicit BasicBitSetImpl(std::pmr::memory_resource* allocator)
             : TStorage(allocator)
         {
@@ -426,8 +427,8 @@ namespace FE::Internal
             return TStorage::GetAllocator();
         }
 
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
         void set_allocator(std::pmr::memory_resource* allocator)
+            requires TStorage::kHasAllocator
         {
             FE_AssertDebug(TStorage::SizeImpl() == 0);
             TStorage::SetAllocator(allocator);

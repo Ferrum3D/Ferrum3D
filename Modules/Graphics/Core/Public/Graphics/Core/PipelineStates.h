@@ -96,7 +96,7 @@ namespace FE::Graphics::Core
 
         [[nodiscard]] uint64_t GetHash() const
         {
-            return festd::bit_cast<uint32_t>(*this);
+            return std::bit_cast<uint32_t>(*this);
         }
 
         static const RasterizationState kFillNoCull;
@@ -119,7 +119,7 @@ namespace FE::Graphics::Core
             if (!m_depthTestEnabled && !m_stencilTestEnabled)
                 return 0;
 
-            return festd::bit_cast<uint32_t>(*this);
+            return std::bit_cast<uint32_t>(*this);
         }
 
         static const DepthStencilState kDisabled;
@@ -143,7 +143,7 @@ namespace FE::Graphics::Core
 
         [[nodiscard]] uint64_t GetHash() const
         {
-            return festd::bit_cast<uint32_t>(*this);
+            return std::bit_cast<uint32_t>(*this);
         }
 
         static const TargetColorBlending kDisabled;

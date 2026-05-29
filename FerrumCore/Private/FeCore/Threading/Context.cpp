@@ -17,6 +17,6 @@ namespace FE::Context
         FE_AssertDebug((contextHandle.m_value & ((UINT64_C(1) << 48) - 1)) == contextHandle.m_value);
         const fcontext_t fcontext = reinterpret_cast<const fcontext_t>(contextHandle.m_value);
         const fcontext_transfer_t result = jump_fcontext(fcontext, reinterpret_cast<void*>(userData));
-        return festd::bit_cast<TransferParams>(result);
+        return std::bit_cast<TransferParams>(result);
     }
 } // namespace FE::Context

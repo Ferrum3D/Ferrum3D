@@ -74,12 +74,12 @@ namespace FE::Graphics::Core
 
         [[nodiscard]] uint64_t GetHash() const
         {
-            return festd::bit_cast<uint64_t>(*this);
+            return std::bit_cast<uint64_t>(*this);
         }
 
         friend bool operator==(const SamplerState lhs, const SamplerState rhs)
         {
-            return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
+            return std::bit_cast<uint64_t>(lhs) == std::bit_cast<uint64_t>(rhs);
         }
 
         static const SamplerState kPointWrap;

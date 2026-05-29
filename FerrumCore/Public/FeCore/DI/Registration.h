@@ -21,12 +21,12 @@ namespace FE::DI
 
         friend bool operator==(const ServiceRegistration& lhs, const ServiceRegistration& rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) == festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) == std::bit_cast<uint32_t>(rhs);
         }
 
         friend bool operator!=(const ServiceRegistration& lhs, const ServiceRegistration& rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) != festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) != std::bit_cast<uint32_t>(rhs);
         }
 
     private:

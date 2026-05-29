@@ -168,26 +168,26 @@ namespace FE::Graphics::Core
 
         friend bool operator<(const TextureSubresource lhs, const TextureSubresource rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) < festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) < std::bit_cast<uint32_t>(rhs);
         }
 
         friend bool operator>(const TextureSubresource lhs, const TextureSubresource rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) > festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) > std::bit_cast<uint32_t>(rhs);
         }
 
         friend bool operator==(const TextureSubresource lhs, const TextureSubresource rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) == festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) == std::bit_cast<uint32_t>(rhs);
         }
 
         friend bool operator!=(const TextureSubresource lhs, const TextureSubresource rhs)
         {
-            return festd::bit_cast<uint32_t>(lhs) != festd::bit_cast<uint32_t>(rhs);
+            return std::bit_cast<uint32_t>(lhs) != std::bit_cast<uint32_t>(rhs);
         }
     };
 
-    inline const TextureSubresource TextureSubresource::kInvalid = festd::bit_cast<TextureSubresource>(kInvalidIndex);
+    inline const TextureSubresource TextureSubresource::kInvalid = std::bit_cast<TextureSubresource>(kInvalidIndex);
 
 
     struct TextureSubresourceIterator final
@@ -231,12 +231,12 @@ namespace FE::Graphics::Core
 
             [[nodiscard]] bool operator==(const Iter other) const
             {
-                return festd::bit_cast<uint32_t>(m_currentSlice) == festd::bit_cast<uint32_t>(other.m_currentSlice);
+                return std::bit_cast<uint32_t>(m_currentSlice) == std::bit_cast<uint32_t>(other.m_currentSlice);
             }
 
             [[nodiscard]] bool operator!=(const Iter other) const
             {
-                return festd::bit_cast<uint32_t>(m_currentSlice) != festd::bit_cast<uint32_t>(other.m_currentSlice);
+                return std::bit_cast<uint32_t>(m_currentSlice) != std::bit_cast<uint32_t>(other.m_currentSlice);
             }
         };
 
@@ -342,6 +342,6 @@ struct eastl::hash<FE::Graphics::Core::TextureSubresource>
 {
     size_t operator()(const FE::Graphics::Core::TextureSubresource& subresource) const
     {
-        return FE::festd::bit_cast<uint32_t>(subresource);
+        return std::bit_cast<uint32_t>(subresource);
     }
 };

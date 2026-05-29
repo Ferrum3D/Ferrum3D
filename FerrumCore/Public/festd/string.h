@@ -1,21 +1,12 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
 #include <festd/Internal/StringStorageImpl.h>
+#include <concepts>
 #include <initializer_list>
 #include <type_traits>
 
 namespace FE::Internal
 {
-    [[nodiscard]] constexpr bool IsConstantEvaluated()
-    {
-#if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
-        return __builtin_is_constant_evaluated();
-#else
-        return false;
-#endif
-    }
-
-
     FE_FORCE_INLINE void ValidateStringBytes(const char* str, const uint32_t byteSize)
     {
 #if FE_DEBUG
@@ -125,7 +116,7 @@ namespace FE::Internal
             : m_data(str)
             , m_size(byteSize)
         {
-            if (!IsConstantEvaluated())
+            if (!std::is_constant_evaluated())
                 ValidateStringBytes(str, byteSize);
         }
 
@@ -134,7 +125,7 @@ namespace FE::Internal
             : m_data(str)
             , m_size(ASCII::Length(str))
         {
-            if (!IsConstantEvaluated())
+            if (!std::is_constant_evaluated())
                 ValidateStringBytes(str, m_size);
         }
 
@@ -197,7 +188,8 @@ namespace FE::Internal
         }
 
         //! @brief Create an empty string using a polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         BasicStringImpl(std::pmr::memory_resource* allocator)
             : TStorage(allocator)
         {
@@ -206,7 +198,8 @@ namespace FE::Internal
         }
 
         //! @brief Create a string containing `length` copies of an ASCII byte using a polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         BasicStringImpl(const uint32_t length, const char value, std::pmr::memory_resource* allocator)
             : TStorage(allocator)
         {
@@ -218,7 +211,8 @@ namespace FE::Internal
         }
 
         //! @brief Create a string from a UTF-8 byte range using a polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         BasicStringImpl(const char* str, const uint32_t byteSize, std::pmr::memory_resource* allocator)
             : TStorage(allocator)
         {
@@ -229,14 +223,16 @@ namespace FE::Internal
         }
 
         //! @brief Create a string from a null-terminated UTF-8 string using a polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         BasicStringImpl(const char* str, std::pmr::memory_resource* allocator)
             : BasicStringImpl(str, ASCII::Length(str), allocator)
         {
         }
 
         //! @brief Create a string from UTF-8 bytes using a polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
+        template<class T = TStorage>
+            requires T::kHasAllocator
         BasicStringImpl(std::initializer_list<char> chars, std::pmr::memory_resource* allocator)
             : BasicStringImpl(chars.begin(), static_cast<uint32_t>(chars.size()), allocator)
         {
@@ -759,8 +755,8 @@ namespace FE::Internal
         }
 
         //! @brief Move the string contents to a different polymorphic allocator.
-        template<class = std::enable_if_t<TStorage::kHasAllocator>>
         void set_allocator(std::pmr::memory_resource* allocator)
+            requires TStorage::kHasAllocator
         {
             if (allocator == nullptr)
                 allocator = std::pmr::get_default_resource();
@@ -869,8 +865,8 @@ namespace FE::Internal
         }
 
         //! @brief Assign from another string or string view.
-        template<class TOtherBase, class T = TBase,
-                 class = decltype(std::declval<T&>().assign(std::declval<const char*>(), uint32_t{}))>
+        template<class TOtherBase>
+            requires requires(TBase& base, const char* data) { base.assign(data, uint32_t{}); }
         StringImpl& operator=(const StringImpl<TOtherBase>& other)
         {
             TBase::assign(other.data(), other.size());
@@ -878,32 +874,32 @@ namespace FE::Internal
         }
 
         //! @brief Point a string view at a null-terminated UTF-8 string.
-        template<class T = TBase, class = std::enable_if_t<std::is_same_v<T, BasicStringViewImpl>>>
         StringImpl& operator=(const char* str)
+            requires std::same_as<TBase, BasicStringViewImpl>
         {
             TBase::operator=(BasicStringViewImpl{ str });
             return *this;
         }
 
         //! @brief Append a null-terminated UTF-8 string.
-        template<class T = TBase, class = decltype(std::declval<T&>().append(std::declval<const char*>()))>
         StringImpl& operator+=(const char* str)
+            requires requires(TBase& base, const char* data) { base.append(data); }
         {
             TBase::append(str);
             return *this;
         }
 
         //! @brief Append a single ASCII byte.
-        template<class T = TBase, class = decltype(std::declval<T&>().push_back(char{}))>
         StringImpl& operator+=(const char byte)
+            requires requires(TBase& base) { base.push_back(char{}); }
         {
             TBase::push_back(byte);
             return *this;
         }
 
         //! @brief Append UTF-8 bytes.
-        template<class T = TBase, class = decltype(std::declval<T&>().append(std::initializer_list<char>{}))>
         StringImpl& operator+=(std::initializer_list<char> chars)
+            requires requires(TBase& base) { base.append(std::initializer_list<char>{}); }
         {
             TBase::append(chars);
             return *this;

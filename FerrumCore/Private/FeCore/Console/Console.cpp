@@ -63,7 +63,7 @@ namespace FE::Console
             {
                 FlushIfNecessary(sizeof(BufferRecordHeader));
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextColor, color };
-                *m_state->m_bufferPointer = festd::bit_cast<std::byte>(header);
+                *m_state->m_bufferPointer = std::bit_cast<std::byte>(header);
                 m_state->m_bufferPointer += sizeof(BufferRecordHeader);
                 m_state->m_lastPayloadSizePointer = nullptr;
             }
@@ -80,7 +80,7 @@ namespace FE::Console
 
                 FlushIfNecessary(sizeof(BufferRecordHeader) + sizeof(uint32_t) + text.size());
                 const BufferRecordHeader header{ BufferRecordHeaderType::kTextPayload, Color::kDefault };
-                *m_state->m_bufferPointer = festd::bit_cast<std::byte>(header);
+                *m_state->m_bufferPointer = std::bit_cast<std::byte>(header);
                 m_state->m_bufferPointer += sizeof(BufferRecordHeader);
 
                 m_state->m_lastPayloadSizePointer = reinterpret_cast<uint32_t*>(m_state->m_bufferPointer);
@@ -102,7 +102,7 @@ namespace FE::Console
                 std::byte* pointer = m_state->m_buffer;
                 while (pointer < m_state->m_bufferPointer)
                 {
-                    const BufferRecordHeader header = festd::bit_cast<BufferRecordHeader>(*pointer);
+                    const BufferRecordHeader header = std::bit_cast<BufferRecordHeader>(*pointer);
                     ++pointer;
                     if (header.m_headerType == BufferRecordHeaderType::kTextColor)
                     {

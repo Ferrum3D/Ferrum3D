@@ -15,7 +15,7 @@ namespace FE::Framework::Windows
     {
         RectInt ConvertRect(const RECT rect)
         {
-            return festd::bit_cast<RectInt>(rect);
+            return std::bit_cast<RectInt>(rect);
         }
 
 

@@ -8,6 +8,7 @@
 #include <EASTL/numeric.h>
 #include <EASTL/optional.h>
 #include <EASTL/sort.h>
+#include <bit>
 #include <string_view>
 #include <tl/expected.hpp>
 
@@ -60,13 +61,6 @@ namespace FE::festd
     constexpr std::underlying_type_t<T> to_underlying(T value)
     {
         return static_cast<std::underlying_type_t<T>>(value);
-    }
-
-
-    template<class TTo, class TFrom>
-    constexpr TTo bit_cast(const TFrom& value)
-    {
-        return __builtin_bit_cast(TTo, value);
     }
 
 

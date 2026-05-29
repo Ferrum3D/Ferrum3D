@@ -9,7 +9,7 @@ namespace FE
         {
             const uint32_t one = 0x3f800000;
             const uint32_t two = 0x3fffffff;
-            return festd::bit_cast<float>((x | one) & two) - 1.0f;
+            return std::bit_cast<float>((x | one) & two) - 1.0f;
         }
     } // namespace Math
 

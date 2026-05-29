@@ -12,17 +12,17 @@ namespace FE::Graphics::Core
 
         [[nodiscard]] uint64_t GetHash() const
         {
-            return festd::bit_cast<uint64_t>(*this);
+            return std::bit_cast<uint64_t>(*this);
         }
 
         friend bool operator==(const BufferDesc lhs, const BufferDesc rhs)
         {
-            return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
+            return std::bit_cast<uint64_t>(lhs) == std::bit_cast<uint64_t>(rhs);
         }
 
         friend bool operator!=(const BufferDesc lhs, const BufferDesc rhs)
         {
-            return festd::bit_cast<uint64_t>(lhs) != festd::bit_cast<uint64_t>(rhs);
+            return std::bit_cast<uint64_t>(lhs) != std::bit_cast<uint64_t>(rhs);
         }
     };
 

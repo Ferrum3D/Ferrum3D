@@ -104,8 +104,8 @@ namespace FE
         if constexpr (std::is_same_v<TTimeZone1, TTimeZone2>)
         {
             // Avoid conversion when we know the time zones are the same.
-            const auto a = festd::bit_cast<SystemTimeInfo>(lhs);
-            const auto b = festd::bit_cast<SystemTimeInfo>(rhs);
+            const auto a = std::bit_cast<SystemTimeInfo>(lhs);
+            const auto b = std::bit_cast<SystemTimeInfo>(rhs);
             return TimeSpan::FromSeconds(Platform::ConstructTime(a) - Platform::ConstructTime(b));
         }
 
@@ -118,7 +118,7 @@ namespace FE
     {
         if constexpr (std::is_same_v<TTimeZone1, TTimeZone2>)
         {
-            return festd::bit_cast<uint64_t>(lhs) == festd::bit_cast<uint64_t>(rhs);
+            return std::bit_cast<uint64_t>(lhs) == std::bit_cast<uint64_t>(rhs);
         }
         else
         {

@@ -82,7 +82,7 @@ SpacesInCStyleCastParentheses: false
 SpacesInConditionalStatement: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: c++17
+Standard: c++20
 UseTab: Never
 
 MacroBlockBegin: "^FE_HOST_BEGIN_NAMESPACE$"

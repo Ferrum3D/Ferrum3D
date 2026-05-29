@@ -20,6 +20,11 @@ namespace FE::festd
         {
             using size_type = uint32_t;
             using std::pmr::polymorphic_allocator<T>::polymorphic_allocator;
+
+            [[nodiscard]] TinyPolymorphicAllocator select_on_container_copy_construction() const noexcept
+            {
+                return { this->resource() };
+            }
         };
     } // namespace Internal
 
