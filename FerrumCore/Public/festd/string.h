@@ -394,8 +394,6 @@ namespace FE::Internal
         //! There is intentionally no `resize(count)` overload because this string disallows embedded zero bytes.
         void resize(const uint32_t byteSize, const char value)
         {
-            if (byteSize > size())
-                ValidateStringByte(value);
             const uint32_t initialSize = size();
             char* data = TStorage::ResizeImpl(byteSize, TStorage::GetAllocator());
 
@@ -876,6 +874,14 @@ namespace FE::Internal
         StringImpl& operator=(const StringImpl<TOtherBase>& other)
         {
             TBase::assign(other.data(), other.size());
+            return *this;
+        }
+
+        //! @brief Point a string view at a null-terminated UTF-8 string.
+        template<class T = TBase, class = std::enable_if_t<std::is_same_v<T, BasicStringViewImpl>>>
+        StringImpl& operator=(const char* str)
+        {
+            TBase::operator=(BasicStringViewImpl{ str });
             return *this;
         }
 
