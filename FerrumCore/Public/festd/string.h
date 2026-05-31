@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <FeCore/Modules/Environment.h>
-#include <festd/Internal/StringStorageImpl.h>
 #include <concepts>
+#include <festd/Internal/StringStorageImpl.h>
 #include <initializer_list>
 #include <type_traits>
 

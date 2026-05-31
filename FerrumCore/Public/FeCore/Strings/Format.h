@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <FeCore/Base/Base.h>
+#include <concepts>
 #include <festd/string.h>
 #include <itoa/jeaiii_to_text.h>
 
@@ -13,6 +14,17 @@ namespace FE::Fmt
     {
         template<class>
         inline constexpr bool kAlwaysFalse = false;
+
+        template<class T>
+        concept FormattableInteger = std::integral<T> && !std::same_as<T, bool> && !std::same_as<T, char>
+            && !std::same_as<T, wchar_t> && !std::same_as<T, char8_t> && !std::same_as<T, char16_t> && !std::same_as<T, char32_t>;
+
+        template<class T>
+        concept FormattableFloat = std::same_as<T, float> || std::same_as<T, double>;
+
+        template<class TBuffer, class T>
+        concept BufferAppendableValue = !std::is_pointer_v<T> && !std::is_array_v<T> && !std::integral<T>
+            && !std::floating_point<T> && requires(TBuffer& buffer, const T& value) { buffer += value; };
 
         inline char* TrimEmptyExp(char* buffer, const char* begin)
         {
@@ -28,18 +40,48 @@ namespace FE::Fmt
 
             return buffer;
         }
-
-        template<class TBuffer, class TInt>
-        struct IntegralValueFormatter
-        {
-            void Format(TBuffer& buffer, const TInt value) const
-            {
-                char buf[24];
-                auto* ptr = jeaiii::to_text_from_integer(buf, value);
-                buffer.append(buf, static_cast<uint32_t>(ptr - buf));
-            }
-        };
     } // namespace Internal
+
+
+    template<class TInt>
+    struct IntFormatter final
+    {
+        explicit IntFormatter(const TInt value)
+        {
+            auto* ptr = jeaiii::to_text_from_integer(m_buffer, value);
+            m_size = static_cast<uint8_t>(ptr - m_buffer);
+        }
+
+        [[nodiscard]] festd::string_view View() const
+        {
+            return { m_buffer, m_size };
+        }
+
+        char m_buffer[23];
+        uint8_t m_size;
+    };
+
+
+    template<class TFloat>
+    struct FloatFormatter final
+    {
+        using Traits = jkj::dragonbox::default_float_traits<TFloat>;
+        using Format = Traits::format;
+
+        explicit FloatFormatter(const TFloat value)
+        {
+            char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, m_buffer), m_buffer);
+            m_size = static_cast<uint8_t>(ptr - m_buffer);
+        }
+
+        [[nodiscard]] festd::string_view View() const
+        {
+            return { m_buffer, m_size };
+        }
+
+        char m_buffer[jkj::dragonbox::max_output_string_length<Format> + 1];
+        uint8_t m_size;
+    };
 
 
     template<class TBuffer, class T>
@@ -47,43 +89,29 @@ namespace FE::Fmt
     {
         void Format(TBuffer&, const T&) const
         {
-            static_assert(Internal::kAlwaysFalse<T>,
-                          "No FE::Fmt::ValueFormatter specialization exists for this argument type");
+            static_assert(Internal::kAlwaysFalse<T>, "No Fmt::ValueFormatter specialization exists for this argument type");
         }
     };
 
 
-    // clang-format off
-    template<class TBuffer> struct ValueFormatter<TBuffer, int8_t> : public Internal::IntegralValueFormatter<TBuffer, int8_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, uint8_t> : public Internal::IntegralValueFormatter<TBuffer, uint8_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, int16_t> : public Internal::IntegralValueFormatter<TBuffer, int16_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, uint16_t> : public Internal::IntegralValueFormatter<TBuffer, uint16_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, int32_t> : public Internal::IntegralValueFormatter<TBuffer, int32_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, uint32_t> : public Internal::IntegralValueFormatter<TBuffer, uint32_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, int64_t> : public Internal::IntegralValueFormatter<TBuffer, int64_t> {};
-    template<class TBuffer> struct ValueFormatter<TBuffer, uint64_t> : public Internal::IntegralValueFormatter<TBuffer, uint64_t> {};
-    // clang-format on
-
-
-    template<class TBuffer>
-    struct ValueFormatter<TBuffer, float>
+    template<class TBuffer, Internal::FormattableInteger TInt>
+    struct ValueFormatter<TBuffer, TInt>
     {
-        void Format(TBuffer& buffer, const float value) const
+        void Format(TBuffer& buffer, const TInt value) const
         {
-            char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32>];
-            char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
+            const IntFormatter fmt{ value };
+            buffer.append(fmt.View());
         }
     };
 
-    template<class TBuffer>
-    struct ValueFormatter<TBuffer, double>
+
+    template<class TBuffer, Internal::FormattableFloat TFloat>
+    struct ValueFormatter<TBuffer, TFloat>
     {
-        void Format(TBuffer& buffer, const double value) const
+        void Format(TBuffer& buffer, const TFloat value) const
         {
-            char buf[jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary64>];
-            char* ptr = Internal::TrimEmptyExp(jkj::dragonbox::to_chars_n(value, buf), buf);
-            buffer.append(buf, static_cast<uint32_t>(ptr - buf));
+            const FloatFormatter fmt{ value };
+            buffer.append(fmt.View());
         }
     };
 
@@ -118,28 +146,11 @@ namespace FE::Fmt
         }
     };
 
-    template<class TBuffer>
-    struct ValueFormatter<TBuffer, festd::string>
+    template<class TBuffer, class T>
+        requires Internal::BufferAppendableValue<TBuffer, T>
+    struct ValueFormatter<TBuffer, T>
     {
-        void Format(TBuffer& buffer, const festd::string& value) const
-        {
-            buffer += value;
-        }
-    };
-
-    template<class TBuffer>
-    struct ValueFormatter<TBuffer, festd::string_view>
-    {
-        void Format(TBuffer& buffer, festd::string_view value) const
-        {
-            buffer += value;
-        }
-    };
-
-    template<class TBuffer, uint32_t TSize>
-    struct ValueFormatter<TBuffer, festd::basic_fixed_string<TSize>>
-    {
-        void Format(TBuffer& buffer, const festd::basic_fixed_string<TSize>& value) const
+        void Format(TBuffer& buffer, const T& value) const
         {
             buffer += value;
         }
@@ -240,14 +251,14 @@ namespace FE::Fmt
         template<class TBuffer, size_t TArgCount>
         struct FormatArgs
         {
-            std::array<FormatArg<TBuffer>, TArgCount> Data;
+            festd::array<FormatArg<TBuffer>, TArgCount> m_data;
         };
 
         template<class TBuffer, size_t TArgCount>
         void FormatImpl(TBuffer& buffer, const festd::string_view fmt, FormatArgs<TBuffer, TArgCount>& args)
         {
-            size_t nextArgIndex = 0;
-            ArgIndexingMode indexingMode = ArgIndexingMode::kUndetermined;
+            uint32_t nextArgIndex = 0;
+            auto indexingMode = ArgIndexingMode::kUndetermined;
             auto begin = fmt.begin();
             const auto end = fmt.end();
             for (auto it = fmt.begin(); it != end; ++it)
@@ -271,11 +282,10 @@ namespace FE::Fmt
                         continue;
                     }
 
-                    size_t argIndex = 0;
+                    uint32_t argIndex = 0;
                     if (*it != '}')
                     {
-                        FE_Assert(indexingMode != ArgIndexingMode::kAutomatic,
-                                  "Can't switch from automatic to manual indexing");
+                        FE_Assert(indexingMode != ArgIndexingMode::kAutomatic, "Can't switch from automatic to manual indexing");
                         if (indexingMode == ArgIndexingMode::kAutomatic)
                             return;
 
@@ -306,8 +316,7 @@ namespace FE::Fmt
                     }
                     else
                     {
-                        FE_Assert(indexingMode != ArgIndexingMode::kManual,
-                                  "Can't switch from manual to automatic indexing");
+                        FE_Assert(indexingMode != ArgIndexingMode::kManual, "Can't switch from manual to automatic indexing");
                         if (indexingMode == ArgIndexingMode::kManual)
                             return;
 
@@ -323,7 +332,7 @@ namespace FE::Fmt
                     begin = it;
                     begin++;
 
-                    auto& arg = args.Data[argIndex];
+                    auto& arg = args.m_data[argIndex];
                     arg.FormatTo(buffer);
                 }
                 else if (*it == '}')
