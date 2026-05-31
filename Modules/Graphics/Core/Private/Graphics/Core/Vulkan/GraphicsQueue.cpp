@@ -51,12 +51,20 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    Core::FenceSyncPoint GraphicsQueue::GetCurrentFence()
+    {
+        FE_Assert(m_isActive);
+        return { .m_fence = m_fence, .m_value = m_frameIndex };
+    }
+
+
     Core::FenceSyncPoint GraphicsQueue::CloseFrame()
     {
-        FE_PROFILER_ZONE();
-
         FE_Assert(m_isActive);
-        return { m_fence, m_frameIndex++ };
+        Core::FenceSyncPoint syncPoint{ .m_fence = m_fence, .m_value = m_frameIndex };
+        ++m_frameIndex;
+        m_isActive = false;
+        return syncPoint;
     }
 
 

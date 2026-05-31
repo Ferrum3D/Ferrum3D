@@ -87,6 +87,7 @@ namespace FE::Graphics::Core
         FrameData& frameData = m_pendingUploads.push_back();
         frameData.m_fence = fence;
         frameData.m_bytesAllocated = m_currentFrameBytes;
+        m_currentFrameBytes = 0;
     }
 
 

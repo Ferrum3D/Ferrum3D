@@ -18,10 +18,7 @@ namespace FE::Graphics
     }
 
 
-    static void ModuleDependencyHandler()
-    {
+    FE_IMPLEMENT_MODULE(Module, [] {
         Core::Module::Init();
-    }
-
-    FE_IMPLEMENT_MODULE(Module, ModuleDependencyHandler);
+    });
 } // namespace FE::Graphics

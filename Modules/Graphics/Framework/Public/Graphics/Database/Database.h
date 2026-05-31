@@ -69,6 +69,8 @@ namespace FE::Graphics::DB
 
         [[nodiscard]] uint32_t GetReservedRowCount() const;
 
+        [[nodiscard]] BufferPointer GetDeviceAddress() const;
+
     protected:
         TableBase(Database* database, uint32_t rowsPerPage);
 
@@ -94,18 +96,6 @@ namespace FE::Graphics::DB
 
         void MarkPageDirty(const StoragePage* page);
 
-        template<class TTable>
-        [[nodiscard]] BufferPointer GetTableBufferPointer(Core::FrameGraph& graph, const TTable& table) const
-        {
-            const uint32_t descriptorIndex = graph.GetDescriptorManager()->ReserveDescriptor(m_pageTableDeviceStorage.Get());
-            graph.GetDescriptorManager()->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
-
-            BufferPointer result;
-            result.m_deviceAddress = graph.GetDescriptorManager()->GetDeviceAddress(descriptorIndex)
-                + table.m_devicePageTableAllocation.m_offset * sizeof(BufferPointer);
-            return result;
-        }
-
     private:
         friend TableBase;
 
@@ -121,6 +111,7 @@ namespace FE::Graphics::DB
         Core::ResourcePool* m_resourcePool;
         Core::RingUploader m_uploader;
 
+        uint64_t m_pageTableDeviceAddress = 0;
         Memory::BuddyAllocator m_pageTableAllocator;
         Rc<Core::Buffer> m_pageTableDeviceStorage;
         festd::vector<BufferPointer> m_pageTableHostStorage;

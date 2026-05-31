@@ -80,12 +80,9 @@ namespace FE::Graphics::OpaquePass
         specializer.Set<Pipeline::ColorTargetFormat>(viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
         auto* passDesc = graph.AllocatePassData<PassDesc>();
-        passDesc->m_constants.m_meshInstanceTable =
-            viewData.m_database->GetTableBufferPointer(graph, *meshModule->GetMeshInstanceTable());
-        passDesc->m_constants.m_meshGroupTable =
-            viewData.m_database->GetTableBufferPointer(graph, *meshModule->GetMeshGroupTable());
-        passDesc->m_constants.m_meshLodInfoTable =
-            viewData.m_database->GetTableBufferPointer(graph, *meshModule->GetMeshLodInfoTable());
+        passDesc->m_constants.m_meshInstanceTable = meshModule->GetMeshInstanceTable()->GetDeviceAddress();
+        passDesc->m_constants.m_meshGroupTable = meshModule->GetMeshGroupTable()->GetDeviceAddress();
+        passDesc->m_constants.m_meshLodInfoTable = meshModule->GetMeshLodInfoTable()->GetDeviceAddress();
         passDesc->m_constants.m_instanceIndex = instanceRef.m_rowIndex;
         passDesc->m_constants.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
         passDesc->m_constants.m_baseColor = float4(0.78f, 0.74f, 0.68f, 1.0f);

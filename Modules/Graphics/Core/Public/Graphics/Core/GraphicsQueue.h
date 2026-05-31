@@ -10,6 +10,7 @@ namespace FE::Graphics::Core
         ~GraphicsQueue() override = default;
 
         virtual void BeginFrame() = 0;
+        virtual FenceSyncPoint GetCurrentFence() = 0;
         virtual FenceSyncPoint CloseFrame() = 0;
         virtual void Drain() = 0;
     };

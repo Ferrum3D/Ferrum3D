@@ -30,8 +30,8 @@ namespace FE::Graphics
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
 
-        festd::vector<Rc<Scene>> m_scenes;
         festd::unique_ptr<DB::Database> m_database;
+        festd::vector<Rc<Scene>> m_scenes;
         Rc<Core::Device> m_device;
         Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;

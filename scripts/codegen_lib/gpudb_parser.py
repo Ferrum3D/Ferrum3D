@@ -66,8 +66,8 @@ def _parse_import(f: TextIOBase, line: str, imports: dict[str, ImportDecl]):
         import_decl = imports.get(import_name)
         if import_decl is None:
             raise Exception(f'Undeclared import {import_name}')
-        
-        for lang, lang_includes in import_decl.includes.values():
+
+        for lang, lang_includes in import_decl.includes.items():
             includes.setdefault(lang, []).extend(lang_includes)
         line = f.readline().strip()
 

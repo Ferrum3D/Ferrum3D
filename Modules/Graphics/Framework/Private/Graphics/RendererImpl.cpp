@@ -49,7 +49,7 @@ namespace FE::Graphics
         Rc<Core::FrameGraph> frameGraph = serviceProvider->ResolveRequired<Core::FrameGraph>();
         frameGraph->BeginFrame();
 
-        m_database->Update(*frameGraph, {});
+        m_database->Update(*frameGraph, graphicsQueue->GetCurrentFence());
 
         for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
         {

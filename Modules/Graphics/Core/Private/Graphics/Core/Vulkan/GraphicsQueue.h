@@ -26,6 +26,7 @@ namespace FE::Graphics::Vulkan
         }
 
         void BeginFrame() override;
+        Core::FenceSyncPoint GetCurrentFence() override;
         Core::FenceSyncPoint CloseFrame() override;
         void Drain() override;
 

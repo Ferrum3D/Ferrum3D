@@ -45,8 +45,10 @@ namespace FE::Graphics::DB
 
     StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool, const uint32_t globalID)
     {
+        const Env::Name pageName = Fmt::FormatName("StoragePage_{}", globalID);
+
         StoragePage* page = GStoragePagePool.New();
-        page->m_deviceStorage = resourcePool->CreateByteAddressBuffer("StoragePage", kTablePageSize);
+        page->m_deviceStorage = resourcePool->CreateByteAddressBuffer(pageName, kTablePageSize);
         page->m_globalID = globalID;
 
         Core::ResourceCommitParams commitParams;
@@ -69,7 +71,7 @@ namespace FE::Graphics::DB
 
     void TableBase::Free(const uint32_t rowIndex)
     {
-        Free({ rowIndex, 1 });
+        Free({ .m_offset = rowIndex, .m_size = 1 });
     }
 
 
@@ -87,7 +89,7 @@ namespace FE::Graphics::DB
         AllocatePage();
         const uint32_t offset = m_pages.back()->AllocateRows(rowCount);
         FE_Assert(offset != kInvalidIndex);
-        return { (m_pages.size() - 1) * m_rowsPerPage + offset, rowCount };
+        return { .m_offset = (m_pages.size() - 1) * m_rowsPerPage + offset, .m_size = rowCount };
     }
 
 
@@ -105,6 +107,15 @@ namespace FE::Graphics::DB
     }
 
 
+    BufferPointer TableBase::GetDeviceAddress() const
+    {
+        const uint64_t pageTableDeviceAddress = m_database->m_pageTableDeviceAddress;
+        const uint32_t offset = m_devicePageTableAllocation.m_offset;
+        const uint32_t byteOffset = offset * sizeof(BufferPointer);
+        return BufferPointer{ pageTableDeviceAddress + byteOffset };
+    }
+
+
     TableBase::TableBase(Database* database, const uint32_t rowsPerPage)
         : m_database(database)
         , m_rowsPerPage(rowsPerPage)
@@ -117,6 +128,9 @@ namespace FE::Graphics::DB
     {
         for (StoragePage* page : m_pages)
             m_database->FreePage(page);
+
+        if (m_devicePageTableAllocation)
+            m_database->m_pageTableAllocator.Free(m_devicePageTableAllocation);
 
         m_database->UnregisterTable(this);
         m_id = kInvalidIndex;
@@ -252,8 +266,7 @@ namespace FE::Graphics::DB
 
         UploadDirtyPages(graph);
         UploadPageTables(graph);
-        if (fence.m_fence != nullptr)
-            m_uploader.CloseFrame(fence);
+        m_uploader.CloseFrame(fence);
     }
 
 
@@ -293,7 +306,7 @@ namespace FE::Graphics::DB
         Core::DescriptorManager* descriptorManager = graph.GetDescriptorManager();
         const uint32_t pageTableDescriptorIndex = descriptorManager->ReserveDescriptor(m_pageTableDeviceStorage.Get());
         descriptorManager->CommitResourceDescriptor(pageTableDescriptorIndex, Core::DescriptorType::kSRV);
-        const uint64_t pageTableAddress = descriptorManager->GetDeviceAddress(pageTableDescriptorIndex);
+        m_pageTableDeviceAddress = descriptorManager->GetDeviceAddress(pageTableDescriptorIndex);
 
         // We place barriers manually here as we know that the page tables do not overlap in memory.
         // Currently, our FrameGraph cannot figure it out on its own.
@@ -308,12 +321,22 @@ namespace FE::Graphics::DB
 
         for (const TableBase* table : m_tables)
         {
+            if (table == nullptr)
+                continue;
+
             const uint32_t pageCount = table->m_pages.size();
+            if (pageCount == 0)
+                continue;
+
             const uint32_t offset = table->m_devicePageTableAllocation.m_offset;
             const uint32_t byteOffset = offset * sizeof(BufferPointer);
             for (uint32_t i = 0; i < pageCount; ++i)
             {
-                const uint64_t address = pageTableAddress + byteOffset;
+                StoragePage* page = table->m_pages[i];
+                const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(page->m_deviceStorage.Get());
+                descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
+
+                const uint64_t address = descriptorManager->GetDeviceAddress(descriptorIndex);
                 m_pageTableHostStorage[offset + i] = BufferPointer{ address };
             }
 
