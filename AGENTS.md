@@ -15,9 +15,15 @@ Scope: this file applies to the whole repository.
 
 When adding C++ files, add them to the nearest `CMakeLists.txt` source list, usually `PUBLIC_HEADERS`, `COMMON_SOURCES`, backend-specific source groups such as `VULKAN_SOURCES`, or platform-specific groups such as `WINDOWS_SOURCES`.
 
+After adding or removing files, run `configure.bat` from the repository root to regenerate the project files.
+
+When changing classes that use `FE_RTTI`, run `scripts/codegen.py` to regenerate the RTTI output.
+
 ## Code Style
 
-- Use C++17. The root `CMakeLists.txt` sets `CMAKE_CXX_STANDARD 17`, and `.clang-format` uses `Standard: c++17`.
+- Use C++20. The root `CMakeLists.txt` sets `CMAKE_CXX_STANDARD 20`, and `.clang-format` uses `Standard: c++20`.
+- Prefer C++20 standard utilities and constraints where they simplify existing code, such as `<bit>`, `std::bit_cast`, `std::is_constant_evaluated`, and concepts/requires clauses instead of SFINAE.
+- Format modified C++ sources with `ThirdParty/llvm/clang-format.exe`.
 - Follow `.clang-format` for C++ formatting:
   - 4-space indentation, no tabs.
   - 130-column limit.

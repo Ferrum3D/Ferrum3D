@@ -689,6 +689,67 @@ namespace FE::Rtti
 {
     namespace
     {
+        Type& GetMutableType_28f0c62db3264e5b9267d55812b06217()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Internal::StringImpl<
+        FE::Internal::BasicStringImpl<FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>()
+    {
+        return GetMutableType_28f0c62db3264e5b9267d55812b06217();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Internal::StringImpl<
+        FE::Internal::BasicStringImpl<FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x28, 0xf0, 0xc6, 0x2d, 0xb3, 0x26, 0x4e, 0x5b, 0x92,
+            0x67, 0xd5, 0x58, 0x12, 0xb0, 0x62, 0x17, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Internal::StringImpl<FE::Internal::BasicStringImpl<
+        FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>::Reflect(ReflectionContext&
+                                                                                                                context)
+    {
+        Type& typeInstance = GetMutableType_28f0c62db3264e5b9267d55812b06217();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x28, 0xf0, 0xc6, 0x2d, 0xb3, 0x26, 0x4e, 0x5b, 0x92,
+            0x67, 0xd5, 0x58, 0x12, 0xb0, 0x62, 0x17, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Internal::StringImpl<FE::Internal::BasicStringImpl<
+            FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>(
+            typeInstance,
+            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+            "FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>",
+            {},
+            kAttributes,
+            kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_28f0c62db3264e5b9267d55812b06217(
+        &Internal::ExternalTypeReflector<FE::Internal::StringImpl<FE::Internal::BasicStringImpl<
+            FE::Internal::PolymorphicAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>::Reflect);
+} // namespace FE::Rtti
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
         Type& GetMutableType_2c29543c5dbb4be8afaa1850cc9101bd()
         {
             static Type typeInstance;
@@ -1029,6 +1090,67 @@ namespace FE::IO
 
     static Rtti::TypeRegistrar GTypeRegistrar_3f973b261330404abf05ce0b63306871(&FileStreamFactory::Reflect);
 } // namespace FE::IO
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_44a6dce9df704a8082582ff71d336989()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Internal::StringImpl<
+        FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>()
+    {
+        return GetMutableType_44a6dce9df704a8082582ff71d336989();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Internal::StringImpl<
+        FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x44, 0xa6, 0xdc, 0xe9, 0xdf, 0x70, 0x4a, 0x80, 0x82,
+            0x58, 0x2f, 0xf7, 0x1d, 0x33, 0x69, 0x89, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Internal::StringImpl<FE::Internal::BasicStringImpl<
+        FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>::Reflect(ReflectionContext&
+                                                                                                            context)
+    {
+        Type& typeInstance = GetMutableType_44a6dce9df704a8082582ff71d336989();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x44, 0xa6, 0xdc, 0xe9, 0xdf, 0x70, 0x4a, 0x80, 0x82,
+            0x58, 0x2f, 0xf7, 0x1d, 0x33, 0x69, 0x89, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Internal::StringImpl<
+            FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>(
+            typeInstance,
+            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+            "FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>",
+            {},
+            kAttributes,
+            kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_44a6dce9df704a8082582ff71d336989(
+        &Internal::ExternalTypeReflector<FE::Internal::StringImpl<FE::Internal::BasicStringImpl<
+            FE::Internal::DefaultAllocatorStringStorage<FE::Internal::InlineStringStorage<256>>>>>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::IO

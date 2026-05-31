@@ -21,7 +21,7 @@ LLVM_DIR = PROJECT_DIR / "ThirdParty/llvm"
 
 base_compiler_args = [
     '-x', 'c++-header',
-    '-std=c++17',
+    '-std=c++20',
 ]
 
 base_compiler_args.append(f"-DEASTL_USER_CONFIG_HEADER=\"{Path("../FerrumCore/Private/FeCore/Base/EASTLConfig.h").absolute().as_posix()}\"")

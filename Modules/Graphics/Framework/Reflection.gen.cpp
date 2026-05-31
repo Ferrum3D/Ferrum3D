@@ -854,7 +854,11 @@ namespace FE::Rtti
             0x95, 0x98, 0x7e, 0xb0, 0xa2, 0xce, 0xb3, 0xa7, // FE::Graphics::MeshPass::Constants
         };
 
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[7 * sizeof(TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[8 * sizeof(TypeID)] = {
+            0xe9, 0xbb, 0x71, 0xce, 0xa3, 0xb2, 0x4e, 0x7d,
+            0xaa, 0x6f, 0xe1, 0xba, 0xb7, 0x16, 0x05, 0xba, // FE::Matrix4x4 m_viewProjection
+            0xe9, 0x45, 0x1d, 0x19, 0xd3, 0xfb, 0x48, 0x45,
+            0x90, 0x27, 0xf1, 0x0a, 0x2f, 0x32, 0x33, 0xaf, // FE::PackedVector4F m_baseColor
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshInstanceTable
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -865,12 +869,14 @@ namespace FE::Rtti
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_instanceIndex
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_padding
-            0xe9, 0xbb, 0x71, 0xce, 0xa3, 0xb2, 0x4e, 0x7d,
-            0xaa, 0x6f, 0xe1, 0xba, 0xb7, 0x16, 0x05, 0xba, // FE::Matrix4x4 m_viewProjection
-            0xe9, 0x45, 0x1d, 0x19, 0xd3, 0xfb, 0x48, 0x45,
-            0x90, 0x27, 0xf1, 0x0a, 0x2f, 0x32, 0x33, 0xaf, // FE::PackedVector4F m_baseColor
+            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
+            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_padding2
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewProjection = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_baseColor = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshInstanceTable = {};
 
@@ -882,45 +888,48 @@ namespace FE::Rtti
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewProjection = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding2 = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_baseColor = {};
-
-        static const festd::array<Rtti::FieldInfo, 7> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshInstanceTable",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &FE::Graphics::MeshPass::Constants::m_meshInstanceTable,
-                                                        kAttributes_m_meshInstanceTable,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshGroupTable",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &FE::Graphics::MeshPass::Constants::m_meshGroupTable,
-                                                        kAttributes_m_meshGroupTable,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshLodInfoTable",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &FE::Graphics::MeshPass::Constants::m_meshLodInfoTable,
-                                                        kAttributes_m_meshLodInfoTable,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndex",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &FE::Graphics::MeshPass::Constants::m_instanceIndex,
-                                                        kAttributes_m_instanceIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &FE::Graphics::MeshPass::Constants::m_padding,
-                                                        kAttributes_m_padding,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        static const festd::array<Rtti::FieldInfo, 8> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewProjection",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &FE::Graphics::MeshPass::Constants::m_viewProjection,
                                                         kAttributes_m_viewProjection,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_baseColor",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &FE::Graphics::MeshPass::Constants::m_baseColor,
                                                         kAttributes_m_baseColor,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshInstanceTable",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_meshInstanceTable,
+                                                        kAttributes_m_meshInstanceTable,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshGroupTable",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_meshGroupTable,
+                                                        kAttributes_m_meshGroupTable,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshLodInfoTable",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_meshLodInfoTable,
+                                                        kAttributes_m_meshLodInfoTable,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndex",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_instanceIndex,
+                                                        kAttributes_m_instanceIndex,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_padding,
+                                                        kAttributes_m_padding,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding2",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &FE::Graphics::MeshPass::Constants::m_padding2,
+                                                        kAttributes_m_padding2,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
