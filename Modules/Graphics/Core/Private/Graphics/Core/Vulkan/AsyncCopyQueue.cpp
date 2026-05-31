@@ -33,6 +33,39 @@ namespace FE::Graphics::Vulkan
         }
 
 
+        void FlushBufferBarrier(const Device* device, const VkCommandBuffer commandBuffer, const Core::BufferBarrierDesc& barrier)
+        {
+            const VkBufferMemoryBarrier2 bufferBarrier = TranslateBarrier(barrier, device);
+
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.bufferMemoryBarrierCount = 1;
+            dependencyInfo.pBufferMemoryBarriers = &bufferBarrier;
+            vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+        }
+
+
+        void FlushTextureBarriers(std::pmr::memory_resource* allocator, const Device* device,
+                                  const VkCommandBuffer commandBuffer,
+                                  const festd::pmr::vector<Core::TextureBarrierDesc>& barriers)
+        {
+            if (barriers.empty())
+                return;
+
+            festd::pmr::vector<VkImageMemoryBarrier2> imageBarriers{ allocator };
+            imageBarriers.reserve(barriers.size());
+
+            for (const Core::TextureBarrierDesc& barrier : barriers)
+                imageBarriers.push_back(TranslateBarrier(barrier, device));
+
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = imageBarriers.size();
+            dependencyInfo.pImageMemoryBarriers = imageBarriers.data();
+            vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+        }
+
+
         struct CommandBatcher final
         {
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
@@ -156,9 +189,13 @@ namespace FE::Graphics::Vulkan
 
                 FE_Assert(item->m_fenceValue != 0);
 
+                for (const Core::InternalAsyncCopyCommands::AsyncInvokeFunctorCommand& command : item->m_completionCallbacks)
+                    command.m_functor(command.m_context);
+
                 if (item->m_queueItem.m_signalWaitGroup)
                     item->m_queueItem.m_signalWaitGroup->Signal();
 
+                item->m_queueItem.m_buffer.Free();
                 m_freeCommandBuffers.push_back(item->m_commandBuffer);
                 for (const VmaVirtualAllocation stagingAllocation : item->m_stagingAllocations)
                     vmaVirtualFree(m_uploadRingBuffer, stagingAllocation);
@@ -221,7 +258,7 @@ namespace FE::Graphics::Vulkan
                     AsyncInvokeFunctorCommand cmd;
                     FE_Verify(reader.Read(cmd));
 
-                    cmd.m_functor(cmd.m_context);
+                    item->m_completionCallbacks.push_back(cmd);
                     FE_Verify(reader.SkipBytes(cmd.m_functorSize));
                     break;
                 }
@@ -269,6 +306,23 @@ namespace FE::Graphics::Vulkan
                     AsyncUploadBufferCommand cmd;
                     FE_Verify(reader.Read(cmd));
 
+                    auto* buffer = const_cast<Buffer*>(ImplCast(cmd.m_buffer));
+
+                    Common::SubresourceState subresourceState = buffer->GetState();
+
+                    Core::BufferBarrierDesc barrierDesc;
+                    barrierDesc.m_buffer = buffer;
+                    barrierDesc.m_syncBefore = subresourceState.m_sync;
+                    barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kCopy;
+                    barrierDesc.m_accessBefore = subresourceState.m_access;
+                    barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kCopyDest;
+                    barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
+                    barrierDesc.m_queueAfter = Core::DeviceQueueType::kTransfer;
+
+                    Common::ResourceBarrierBatcher beforeBarrierBatcher{ &m_threadTempAllocator };
+                    beforeBarrierBatcher.AddBarrier(barrierDesc);
+                    FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, beforeBarrierBatcher);
+
                     uint32_t uploadedBytes = 0;
                     while (uploadedBytes < cmd.m_size)
                     {
@@ -279,17 +333,34 @@ namespace FE::Graphics::Vulkan
 
                         auto* data = mapper.Map();
                         auto* copyDestination = data + allocationOffset;
-                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + uploadedBytes;
+                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + cmd.m_sourceOffset + uploadedBytes;
                         memcpy(copyDestination, copySource, allocationSize);
+                        m_uploadBuffer->FlushMappedRange(static_cast<uint32_t>(allocationOffset), allocationSize);
 
                         VkBufferCopy copy;
                         copy.srcOffset = allocationOffset;
-                        copy.dstOffset = cmd.m_destinationOffset;
-                        copy.size = cmd.m_size;
+                        copy.dstOffset = cmd.m_destinationOffset + uploadedBytes;
+                        copy.size = allocationSize;
                         vkCmdCopyBuffer(commandBuffer, m_uploadBuffer->GetNative(), NativeCast(cmd.m_buffer), 1, &copy);
 
                         uploadedBytes += allocationSize;
                     }
+
+                    barrierDesc.m_syncBefore = Core::BarrierSyncFlags::kCopy;
+                    barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kNone;
+                    barrierDesc.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
+                    barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kNone;
+                    barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
+                    barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
+
+                    FlushBufferBarrier(ImplCast(m_device), commandBuffer, barrierDesc);
+
+                    buffer->AddQueueReleaseBarrier(barrierDesc);
+
+                    subresourceState.m_sync = Core::BarrierSyncFlags::kCopy;
+                    subresourceState.m_access = Core::BarrierAccessFlags::kCopyDest;
+                    subresourceState.m_queueType = Core::DeviceQueueType::kTransfer;
+                    buffer->SetState(subresourceState);
 
                     break;
                 }
@@ -315,7 +386,7 @@ namespace FE::Graphics::Vulkan
                     bufferImageCopies.reserve(subresource.m_arraySize * subresource.m_mipSliceCount);
 
                     Common::ResourceBarrierBatcher beforeBarrierBatcher{ &m_threadTempAllocator };
-                    Common::ResourceBarrierBatcher afterBarrierBatcher{ &m_threadTempAllocator };
+                    festd::pmr::vector<Core::TextureBarrierDesc> releaseBarriers{ &m_threadTempAllocator };
 
                     const Core::TextureSubresourceIterator subresourceIterator{ subresource };
 
@@ -332,11 +403,12 @@ namespace FE::Graphics::Vulkan
 
                         auto* data = mapper.Map();
                         auto* copyDestination = data + allocationOffset;
-                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + uploadedBytes;
+                        const auto* copySource = static_cast<const std::byte*>(cmd.m_data) + cmd.m_sourceOffset + uploadedBytes;
 
                         Memory::AssertPointerIsValid(cmd.m_data);
 
                         memcpy(copyDestination, copySource, allocationSize);
+                        m_uploadBuffer->FlushMappedRange(static_cast<uint32_t>(allocationOffset), allocationSize);
 
                         const auto currentSubresource = Core::TextureSubresource::Create(imageDesc, mipIndex, arrayIndex);
                         Common::SubresourceState subresourceState = texture->GetState(currentSubresource);
@@ -365,10 +437,15 @@ namespace FE::Graphics::Vulkan
 
                         // Release the image from the transfer queue
                         barrierDesc.m_syncBefore = Core::BarrierSyncFlags::kCopy;
+                        barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kNone;
                         barrierDesc.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
+                        barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kNone;
                         barrierDesc.m_layoutBefore = Core::BarrierLayout::kCopyDest;
+                        barrierDesc.m_layoutAfter = Core::BarrierLayout::kCopyDest;
+                        barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
                         barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
-                        afterBarrierBatcher.AddBarrier(barrierDesc);
+                        releaseBarriers.push_back(barrierDesc);
+                        texture->AddQueueReleaseBarrier(barrierDesc);
 
                         VkBufferImageCopy copy = {};
                         copy.imageSubresource.aspectMask = TranslateImageAspectFlags(imageDesc.m_imageFormat);
@@ -396,7 +473,7 @@ namespace FE::Graphics::Vulkan
                                            bufferImageCopies.size(),
                                            bufferImageCopies.data());
 
-                    FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, afterBarrierBatcher);
+                    FlushTextureBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, releaseBarriers);
 
                     break;
                 }
@@ -411,7 +488,6 @@ namespace FE::Graphics::Vulkan
         batcher.Flush();
         item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
         item->m_commandBuffer->Submit();
-        item->m_queueItem.m_buffer.Free();
     }
 
 

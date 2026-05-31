@@ -53,6 +53,7 @@ namespace FE::Graphics::Core
 
             void* hostDestination = m_mappedMemory + allocation.m_offset;
             memcpy(hostDestination, source, byteSize);
+            m_buffer->FlushMappedRange(allocation.m_offset, byteSize);
 
             const BufferView deviceDestination = destination.Slice(0, byteSize);
             const BufferView deviceSource{ m_buffer.Get(), BufferSlice{ allocation.m_offset, byteSize } };

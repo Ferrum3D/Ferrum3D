@@ -435,10 +435,21 @@ namespace FE::Graphics::Common
 
                 const auto transferBarrier = buffer->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer buffer ownership without matching release barrier");
-                pass.m_bufferOwnershipTransferBarriers.push_back(transferBarrier.value());
+
+                Core::BufferBarrierDesc acquireBarrier = transferBarrier.value();
+                acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
+                acquireBarrier.m_accessBefore = Core::BarrierAccessFlags::kNone;
+                acquireBarrier.m_syncAfter = access.m_syncFlags;
+                acquireBarrier.m_accessAfter = access.m_accessFlags;
+                pass.m_bufferOwnershipTransferBarriers.push_back(acquireBarrier);
 
                 state.m_queueType = Core::DeviceQueueType::kGraphics;
+                state.m_sync = access.m_syncFlags;
+                state.m_access = access.m_accessFlags;
                 buffer->SetState(state);
+
+                resourceNode.m_previousBarrierPassIndex = passIndex;
+                continue;
             }
 
             Core::BufferBarrierDesc barrier;
@@ -520,13 +531,24 @@ namespace FE::Graphics::Common
                 const auto transferBarrier =
                     texture->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics, access.m_subresource);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
-                pass.m_textureOwnershipTransferBarriers.push_back(transferBarrier.value());
 
-                state.m_access = transferBarrier->m_accessAfter;
-                state.m_layout = transferBarrier->m_layoutAfter;
-                state.m_sync = transferBarrier->m_syncAfter;
+                Core::TextureBarrierDesc acquireBarrier = transferBarrier.value();
+                acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
+                acquireBarrier.m_accessBefore = Core::BarrierAccessFlags::kNone;
+                acquireBarrier.m_syncAfter = access.m_syncFlags;
+                acquireBarrier.m_accessAfter = access.m_accessFlags;
+                acquireBarrier.m_layoutBefore = state.m_layout;
+                acquireBarrier.m_layoutAfter = access.m_layout;
+                pass.m_textureOwnershipTransferBarriers.push_back(acquireBarrier);
+
+                state.m_access = access.m_accessFlags;
+                state.m_layout = access.m_layout;
+                state.m_sync = access.m_syncFlags;
                 state.m_queueType = Core::DeviceQueueType::kGraphics;
-                texture->SetQueueOwnership(transferBarrier->m_subresource, Core::DeviceQueueType::kGraphics);
+                texture->SetState(access.m_subresource, state);
+
+                resourceNode.m_previousBarrierPassIndex = passIndex;
+                continue;
             }
 
             const bool isReadToReadTransition = Core::IsReadAccess(state.m_access) && Core::IsReadAccess(access.m_accessFlags);

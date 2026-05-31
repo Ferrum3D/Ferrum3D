@@ -68,6 +68,7 @@ namespace FE::Graphics
         }
 
         [[nodiscard]] MeshBatch* FindBatch(DB::Ref<MeshInstanceTable> instance) const;
+        [[nodiscard]] ModelAsset* FindAsset(DB::Ref<MeshGroupTable> group) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
         {

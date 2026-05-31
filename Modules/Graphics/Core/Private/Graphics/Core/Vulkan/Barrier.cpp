@@ -65,7 +65,7 @@ namespace FE::Graphics::Vulkan
             vkFlags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         if (Bit::AnySet(flags, Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kResolveSource))
             vkFlags |= VK_ACCESS_2_TRANSFER_READ_BIT;
-        if (Bit::AllSet(flags, Core::BarrierAccessFlags::kCopyDest | Core::BarrierAccessFlags::kResolveDest))
+        if (Bit::AnySet(flags, Core::BarrierAccessFlags::kCopyDest | Core::BarrierAccessFlags::kResolveDest))
             vkFlags |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
         if (Bit::AllSet(flags, Core::BarrierAccessFlags::kShadingRateSource))
             vkFlags |= VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
@@ -100,7 +100,7 @@ namespace FE::Graphics::Vulkan
         case Core::BarrierLayout::kCopySource:
             return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         case Core::BarrierLayout::kCopyDest:
-            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         case Core::BarrierLayout::kResolveSource:
             return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         case Core::BarrierLayout::kResolveDest:

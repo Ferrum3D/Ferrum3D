@@ -39,6 +39,12 @@ namespace FE::Graphics::Common
     {
         std::unique_lock lk{ m_lock };
 
-        return m_queueReleaseBarriers[festd::to_underlying(receiverQueue)];
+        auto& releaseBarrier = m_queueReleaseBarriers[festd::to_underlying(receiverQueue)];
+        if (!releaseBarrier.has_value())
+            return festd::nullopt;
+
+        auto result = releaseBarrier;
+        releaseBarrier.reset();
+        return result;
     }
 } // namespace FE::Graphics::Common

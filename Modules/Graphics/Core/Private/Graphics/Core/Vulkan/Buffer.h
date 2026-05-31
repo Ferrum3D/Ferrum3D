@@ -21,6 +21,7 @@ namespace FE::Graphics::Vulkan
 
         void* Map() override;
         void Unmap() override;
+        void FlushMappedRange(uint32_t offset, uint32_t byteSize) override;
 
         [[nodiscard]] VkBuffer GetNative() const
         {

@@ -2363,9 +2363,11 @@ namespace FE::Rtti
             0x97, 0x30, 0xe0, 0x0c, 0xdc, 0x62, 0x01, 0x76, // FE::Graphics::OpaquePass::PassDesc
         };
 
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(TypeID)] = {
             0x4b, 0x40, 0xa6, 0x6e, 0x34, 0xbc, 0x58, 0x52,
             0x95, 0x98, 0x7e, 0xb0, 0xa2, 0xce, 0xb3, 0xa7, // FE::Graphics::MeshPass::Constants m_constants
+            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
+            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_geometryBuffer
             0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
             0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
             0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
@@ -2379,6 +2381,8 @@ namespace FE::Rtti
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_geometryBuffer = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorTarget = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthTarget = {};
@@ -2387,29 +2391,34 @@ namespace FE::Rtti
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
-        static const festd::array<Rtti::FieldInfo, 5> kFields = {
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
                                                         TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &FE::Graphics::OpaquePass::PassDesc::m_constants,
                                                         kAttributes_m_constants,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_geometryBuffer",
                                                         TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &FE::Graphics::OpaquePass::PassDesc::m_geometryBuffer,
+                                                        kAttributes_m_geometryBuffer,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &FE::Graphics::OpaquePass::PassDesc::m_colorTarget,
                                                         kAttributes_m_colorTarget,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &FE::Graphics::OpaquePass::PassDesc::m_depthTarget,
                                                         kAttributes_m_depthTarget,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &FE::Graphics::OpaquePass::PassDesc::m_viewport,
                                                         kAttributes_m_viewport,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &FE::Graphics::OpaquePass::PassDesc::m_pipeline,
                                                         kAttributes_m_pipeline,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
@@ -2568,9 +2577,11 @@ namespace FE::Rtti
             0xbd, 0x29, 0x67, 0x73, 0xfa, 0x8e, 0xad, 0xe0, // FE::Graphics::DepthPrepass::PassDesc
         };
 
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(TypeID)] = {
             0x4b, 0x40, 0xa6, 0x6e, 0x34, 0xbc, 0x58, 0x52,
             0x95, 0x98, 0x7e, 0xb0, 0xa2, 0xce, 0xb3, 0xa7, // FE::Graphics::MeshPass::Constants m_constants
+            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
+            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_geometryBuffer
             0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
             0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depthTarget
             0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
@@ -2582,30 +2593,37 @@ namespace FE::Rtti
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_constants = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_geometryBuffer = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthTarget = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pipeline = {};
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_constants",
                                                         TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &FE::Graphics::DepthPrepass::PassDesc::m_constants,
                                                         kAttributes_m_constants,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_geometryBuffer",
                                                         TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &FE::Graphics::DepthPrepass::PassDesc::m_geometryBuffer,
+                                                        kAttributes_m_geometryBuffer,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &FE::Graphics::DepthPrepass::PassDesc::m_depthTarget,
                                                         kAttributes_m_depthTarget,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &FE::Graphics::DepthPrepass::PassDesc::m_viewport,
                                                         kAttributes_m_viewport,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_pipeline",
-                                                        TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &FE::Graphics::DepthPrepass::PassDesc::m_pipeline,
                                                         kAttributes_m_pipeline,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),

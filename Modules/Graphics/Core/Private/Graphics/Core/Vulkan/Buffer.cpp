@@ -120,6 +120,20 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void Buffer::FlushMappedRange(const uint32_t offset, const uint32_t byteSize)
+    {
+        FE_Assert(m_instance);
+
+        const auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
+        FE_Assert(bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
+                  || bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
+
+        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
+        VerifyVk(vmaFlushAllocation(allocator, allocation, offset, byteSize));
+    }
+
+
     void Buffer::DecommitMemory()
     {
         if (m_instance == nullptr)

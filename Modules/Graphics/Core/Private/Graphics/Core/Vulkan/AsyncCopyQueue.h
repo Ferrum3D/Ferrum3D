@@ -34,6 +34,7 @@ namespace FE::Graphics::Vulkan
             Rc<CommandBuffer> m_commandBuffer;
             uint64_t m_fenceValue = 0;
 
+            festd::inline_vector<Core::InternalAsyncCopyCommands::AsyncInvokeFunctorCommand, 4> m_completionCallbacks;
             festd::inline_vector<VmaVirtualAllocation> m_stagingAllocations;
         };
 

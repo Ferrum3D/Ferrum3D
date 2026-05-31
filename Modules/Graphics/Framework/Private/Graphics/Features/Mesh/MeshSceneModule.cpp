@@ -148,6 +148,19 @@ namespace FE::Graphics
     }
 
 
+    ModelAsset* MeshSceneModule::FindAsset(const DB::Ref<MeshGroupTable> group) const
+    {
+        for (const auto& [asset, meshGroup] : m_meshGroups)
+        {
+            FE_Unused(asset);
+            if (meshGroup->m_tableRef.m_rowIndex == group.m_rowIndex)
+                return meshGroup->m_asset;
+        }
+
+        return nullptr;
+    }
+
+
     DB::Ref<MeshInstanceTable> MeshSceneModule::TranslateHandle(const MeshHandle handle) const
     {
         if (handle.IsValid())

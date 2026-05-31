@@ -7,6 +7,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DepthPrepass)
     struct PassDesc final
     {
         MeshPass::Constants m_constants;
+        Core::PassBufferAccess m_geometryBuffer;
         Core::PassDepthTarget m_depthTarget;
         Core::PassViewport m_viewport;
         Core::PassGraphicsPipeline m_pipeline;
