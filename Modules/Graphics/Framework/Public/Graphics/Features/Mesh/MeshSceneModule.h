@@ -90,7 +90,7 @@ namespace FE::Graphics
         void FreeHandle(MeshHandle handle);
         void EnsureCapacity();
 
-        MeshGroup* FindMeshGroup(ModelAsset* modelAsset);
+        MeshGroup* FindOrCreateMeshGroup(ModelAsset* modelAsset);
 
         DB::Ref<MeshInstanceTable> TranslateHandle(MeshHandle handle) const;
 

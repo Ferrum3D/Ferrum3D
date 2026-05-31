@@ -124,10 +124,12 @@ namespace FE::Graphics::Core
 
         static const DepthStencilState kDisabled;
         static const DepthStencilState kWriteIfGreater;
+        static const DepthStencilState kWriteIfEqual;
     };
 
     inline const DepthStencilState DepthStencilState::kDisabled = { CompareOp::kGreater, false, false, false };
     inline const DepthStencilState DepthStencilState::kWriteIfGreater = { CompareOp::kGreater, true, true, false };
+    inline const DepthStencilState DepthStencilState::kWriteIfEqual = { CompareOp::kEqual, true, true, false };
 
 
     struct TargetColorBlending final

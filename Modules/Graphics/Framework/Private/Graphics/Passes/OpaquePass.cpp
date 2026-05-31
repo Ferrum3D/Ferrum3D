@@ -32,7 +32,7 @@ namespace FE::Graphics::OpaquePass
                     .SetPixelShader("Shaders/Passes/OpaquePass/OpaquePass.ps.hlsl")
                     .SetRTVFormat(specializer.Get<ColorTargetFormat>())
                     .SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
-                    .SetDepthStencil(Core::DepthStencilState::kWriteIfGreater)
+                    .SetDepthStencil(Core::DepthStencilState::kWriteIfEqual)
                     .SetColorBlend(Core::TargetColorBlending::kDisabled)
                     .SetRasterization(Core::RasterizationState::kFillBackCull);
             }

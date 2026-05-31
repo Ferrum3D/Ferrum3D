@@ -1,6 +1,7 @@
 #include <FeCore/DI/Activator.h>
-#include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <FeCore/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/DescriptorManager.h>
+#include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
@@ -67,7 +68,7 @@ namespace FE::Graphics
         const DB::Ref<MeshInstanceTable> instanceRef = m_meshInstanceTable->AllocateRow();
         const MeshHandle handle = AllocateHandle(instanceRef);
 
-        MeshGroup* meshGroup = FindMeshGroup(desc.m_asset);
+        MeshGroup* meshGroup = FindOrCreateMeshGroup(desc.m_asset);
         meshGroup->m_instanceCount++;
 
         const MeshInstanceTable::RWRow instance = m_meshInstanceTable->WriteRow(instanceRef);
@@ -121,7 +122,7 @@ namespace FE::Graphics
     }
 
 
-    MeshGroup* MeshSceneModule::FindMeshGroup(ModelAsset* modelAsset)
+    MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(ModelAsset* modelAsset)
     {
         const auto it = m_meshGroups.find(modelAsset);
         if (it != m_meshGroups.end())
@@ -131,7 +132,14 @@ namespace FE::Graphics
         const MeshGroupTable::RWRow tableRow = m_meshGroupTable->WriteRow(tableRef);
 
         const DB::Slice<MeshLodInfoTable> lodsRef = m_meshLodInfoTable->AllocateRows(modelAsset->m_lodCount);
-        m_meshLodInfoTable->CopyColumn(lodsRef, modelAsset->m_lods);
+
+        Memory::FiberTempAllocator temp;
+        festd::pmr::inline_vector<Core::MeshLodInfo> lodInfos{ &temp };
+        lodInfos.reserve(modelAsset->m_lodCount);
+        for (uint32_t lodIndex = 0; lodIndex < modelAsset->m_lodCount; ++lodIndex)
+            lodInfos.push_back(modelAsset->GetLodInfo(0, lodIndex));
+
+        m_meshLodInfoTable->CopyColumn(lodsRef, lodInfos);
 
         Core::DescriptorManager* descriptorManager = Env::GetServiceProvider()->ResolveRequired<Core::DescriptorManager>();
         const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(modelAsset->GetGeometryBuffer(0));

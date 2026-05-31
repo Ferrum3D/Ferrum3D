@@ -94,7 +94,7 @@ namespace
             MeshInstanceDesc instanceDesc;
             instanceDesc.m_asset = m_model.Get();
             instanceDesc.m_batch = m_batch;
-            instanceDesc.m_transform = Matrix4x4::RotationX(Constants::kPI * 0.5f);
+            instanceDesc.m_transform = Matrix4x4::Translation(Vector3(0.0f, -2.0f, 0.0f));
             m_mesh = meshSceneModule.CreateInstance(instanceDesc);
         }
 
