@@ -5,7 +5,7 @@
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Scene/View.h>
 
-namespace FE::Graphics::Internal
+namespace FE::Graphics
 {
     struct RendererViewData final
     {
@@ -17,4 +17,4 @@ namespace FE::Graphics::Internal
         RectF m_viewportRect{ kForceInit };
         DB::Database* m_database = nullptr;
     };
-} // namespace FE::Graphics::Internal
+} // namespace FE::Graphics

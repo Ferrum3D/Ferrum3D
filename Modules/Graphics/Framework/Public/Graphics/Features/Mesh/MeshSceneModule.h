@@ -67,7 +67,6 @@ namespace FE::Graphics
             return m_batches;
         }
 
-        [[nodiscard]] MeshBatch* FindBatch(DB::Ref<MeshInstanceTable> instance) const;
         [[nodiscard]] ModelAsset* FindAsset(DB::Ref<MeshGroupTable> group) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
@@ -97,7 +96,8 @@ namespace FE::Graphics
         festd::bit_vector m_freeHandles;
         festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
 
-        festd::unordered_dense_map<ModelAsset*, MeshGroup*> m_meshGroups;
+        festd::unordered_dense_map<ModelAsset*, MeshGroup*> m_meshGroupsMap;
+        festd::vector<MeshGroup*> m_meshGroups;
         festd::vector<MeshBatch*> m_batches;
 
         festd::bit_vector m_meshesToDestroy;

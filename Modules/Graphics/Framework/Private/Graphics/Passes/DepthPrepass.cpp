@@ -48,10 +48,10 @@ namespace FE::Graphics::DepthPrepass
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene)
     {
-        if (blackboard.TryGet<PassData>() == nullptr)
+        if (!blackboard.Contains<PassData>())
             return;
 
-        const Internal::RendererViewData& viewData = blackboard.Get<Internal::RendererViewData>();
+        const RendererViewData& viewData = blackboard.Get<RendererViewData>();
         auto* meshModule = scene.GetModules().TryFind<MeshSceneModule>();
         if (meshModule == nullptr)
             return;

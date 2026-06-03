@@ -121,7 +121,7 @@ namespace FE::Graphics
     void RendererImpl::SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                                        Core::Viewport& viewport)
     {
-        Internal::RendererViewData& viewData = blackboard.Add<Internal::RendererViewData>();
+        RendererViewData& viewData = blackboard.Add<RendererViewData>();
         viewData.m_scene = &scene;
         viewData.m_view = &view;
         viewData.m_viewport = &viewport;

@@ -28,7 +28,7 @@ namespace FE::Graphics
         for (MeshBatch* batch : m_batches)
             Memory::DefaultDelete(batch);
 
-        for (const auto& [asset, group] : m_meshGroups)
+        for (const auto& [asset, group] : m_meshGroupsMap)
         {
             FE_Unused(asset);
             Memory::DefaultDelete(group);
@@ -124,8 +124,8 @@ namespace FE::Graphics
 
     MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(ModelAsset* modelAsset)
     {
-        const auto it = m_meshGroups.find(modelAsset);
-        if (it != m_meshGroups.end())
+        const auto it = m_meshGroupsMap.find(modelAsset);
+        if (it != m_meshGroupsMap.end())
             return it->second;
 
         const DB::Ref<MeshGroupTable> tableRef = m_meshGroupTable->AllocateRow();
@@ -151,21 +151,21 @@ namespace FE::Graphics
         auto* meshGroup = Memory::DefaultNew<MeshGroup>();
         meshGroup->m_asset = modelAsset;
         meshGroup->m_tableRef = tableRef;
-        m_meshGroups.emplace(modelAsset, meshGroup);
+        m_meshGroupsMap.emplace(modelAsset, meshGroup);
+
+        m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
+        m_meshGroups[tableRef.m_rowIndex] = meshGroup;
+
         return meshGroup;
     }
 
 
     ModelAsset* MeshSceneModule::FindAsset(const DB::Ref<MeshGroupTable> group) const
     {
-        for (const auto& [asset, meshGroup] : m_meshGroups)
-        {
-            FE_Unused(asset);
-            if (meshGroup->m_tableRef.m_rowIndex == group.m_rowIndex)
-                return meshGroup->m_asset;
-        }
+        if (group.m_rowIndex >= m_meshGroups.size())
+            return nullptr;
 
-        return nullptr;
+        return m_meshGroups[group.m_rowIndex]->m_asset;
     }
 
 
@@ -175,20 +175,5 @@ namespace FE::Graphics
             return m_handleTranslationTable[handle.m_value];
 
         return DB::Ref<MeshInstanceTable>::CreateInvalid();
-    }
-
-
-    MeshBatch* MeshSceneModule::FindBatch(const DB::Ref<MeshInstanceTable> instance) const
-    {
-        for (MeshBatch* batch : m_batches)
-        {
-            for (const DB::Ref<MeshInstanceTable> currentInstance : batch->m_meshInstances)
-            {
-                if (currentInstance.m_rowIndex == instance.m_rowIndex)
-                    return batch;
-            }
-        }
-
-        return nullptr;
     }
 } // namespace FE::Graphics

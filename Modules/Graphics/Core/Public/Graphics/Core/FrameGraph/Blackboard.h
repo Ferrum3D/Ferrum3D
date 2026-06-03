@@ -16,10 +16,13 @@ namespace FE::Graphics::Core
         TPassData& Add(TArgs&&... args);
 
         template<class TPassData>
-        TPassData* TryGet();
+        [[nodiscard]] TPassData* TryGet();
 
         template<class TPassData>
-        TPassData& Get();
+        [[nodiscard]] TPassData& Get();
+
+        template<class TPassData>
+        [[nodiscard]] bool Contains();
 
     private:
         struct alignas(Memory::kDefaultAlignment) PassDataNode final
@@ -89,5 +92,12 @@ namespace FE::Graphics::Core
         TPassData* data = TryGet<TPassData>();
         FE_Assert(data != nullptr);
         return *data;
+    }
+
+
+    template<class TPassData>
+    bool FrameGraphBlackboard::Contains()
+    {
+        return TryGet<TPassData>() != nullptr;
     }
 } // namespace FE::Graphics::Core
