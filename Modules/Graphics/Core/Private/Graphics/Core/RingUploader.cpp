@@ -23,6 +23,7 @@ namespace FE::Graphics::Core
         m_mappedMemory = static_cast<std::byte*>(m_buffer->Map());
 
         m_ringBuffer.Setup(capacity);
+        m_pendingUploads.reserve(2);
     }
 
 
@@ -84,6 +85,9 @@ namespace FE::Graphics::Core
 
         if (m_currentFrameBytes == 0)
             return;
+
+        if (m_pendingUploads.full())
+            m_pendingUploads.reserve(m_pendingUploads.capacity() * 2);
 
         FrameData& frameData = m_pendingUploads.push_back();
         frameData.m_fence = fence;
