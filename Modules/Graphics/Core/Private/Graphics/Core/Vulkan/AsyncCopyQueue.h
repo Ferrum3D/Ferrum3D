@@ -53,8 +53,6 @@ namespace FE::Graphics::Vulkan
         Threading::SharedSpinLock m_suspendLock;
 
         VkQueue m_queue = VK_NULL_HANDLE;
-        uint32_t m_transferQueueFamilyIndex = kInvalidIndex;
-        uint32_t m_graphicsQueueFamilyIndex = kInvalidIndex;
         Rc<Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
         uint64_t m_fenceValue = 0;

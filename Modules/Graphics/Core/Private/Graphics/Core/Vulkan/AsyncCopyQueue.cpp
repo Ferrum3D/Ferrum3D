@@ -45,8 +45,7 @@ namespace FE::Graphics::Vulkan
         }
 
 
-        void FlushTextureBarriers(std::pmr::memory_resource* allocator, const Device* device,
-                                  const VkCommandBuffer commandBuffer,
+        void FlushTextureBarriers(std::pmr::memory_resource* allocator, const Device* device, const VkCommandBuffer commandBuffer,
                                   const festd::pmr::vector<Core::TextureBarrierDesc>& barriers)
         {
             if (barriers.empty())
@@ -584,9 +583,9 @@ namespace FE::Graphics::Vulkan
         m_suspendEvent = Threading::Event::CreateManualReset();
 
         m_uploadBuffer = ImplCast(m_resourcePool->CreateByteAddressBuffer("AsyncUploadBuffer", kUploadBufferSize));
-        m_resourcePool->CommitBufferMemory(m_uploadBuffer.Get(),
-                                           { Core::BarrierAccessFlags::kCopySource | Core::BarrierAccessFlags::kCopyDest,
-                                             Core::ResourceMemory::kHostWriteThrough });
+        m_resourcePool->CommitBufferMemory(
+            m_uploadBuffer.Get(),
+            { .m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest, .m_memory = Core::ResourceMemory::kHostWriteThrough });
 
         m_fence = Fence::Create(m_device, 0);
 
@@ -595,10 +594,9 @@ namespace FE::Graphics::Vulkan
         virtualBlockCI.flags = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT;
         VerifyVk(vmaCreateVirtualBlock(&virtualBlockCI, &m_uploadRingBuffer));
 
-        const auto* vkDevice = ImplCast(m_device);
-        m_transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
-        m_graphicsQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kGraphics);
-        vkGetDeviceQueue(vkDevice->GetNative(), m_transferQueueFamilyIndex, 0, &m_queue);
+        const Device* vkDevice = ImplCast(m_device);
+        const uint32_t transferQueueFamilyIndex = vkDevice->GetQueueFamilyIndex(Core::DeviceQueueType::kTransfer);
+        vkGetDeviceQueue(vkDevice->GetNative(), transferQueueFamilyIndex, 0, &m_queue);
     }
 
 
