@@ -73,7 +73,7 @@ namespace
             m_view->GetModules().Add<OpaquePass::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
-            const Vector3 cameraPosition(0.0f, 2.5f, -2.0f);
+            const Vector3 cameraPosition(0.0f, 2.0f, -2.5f);
             const Vector3 cameraTarget(0.0f, 0.75f, 0.0f);
             const Matrix4x4 cameraMatrix = Math::Invert(Matrix4x4::LookAt(cameraPosition, cameraTarget, Vector3::AxisY()));
             m_view->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
@@ -94,7 +94,9 @@ namespace
             MeshInstanceDesc instanceDesc;
             instanceDesc.m_asset = m_model.Get();
             instanceDesc.m_batch = m_batch;
-            instanceDesc.m_transform = Matrix4x4::Translation(Vector3(0.0f, -2.0f, 0.0f));
+            instanceDesc.m_transform = Matrix4x4::RotationX(Constants::kPI * 0.5f);
+            instanceDesc.m_transform *= Matrix4x4::RotationY(Constants::kPI);
+
             m_mesh = meshSceneModule.CreateInstance(instanceDesc);
         }
 

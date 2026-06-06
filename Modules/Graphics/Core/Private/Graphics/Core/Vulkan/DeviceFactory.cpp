@@ -52,10 +52,10 @@ namespace FE::Graphics::Vulkan
                             "VUID-vkQueueSubmit-pSignalSemaphores-00067",
                             "VkShaderModuleCreateInfo-pCode-08742" };
 
-            const std::string_view message = pMessage;
+            const festd::string_view message = pMessage;
             for (auto& msg : ignoredMessages)
             {
-                if (message.find(msg) != std::string_view::npos)
+                if (message.find(msg) != message.end())
                     return VK_FALSE;
             }
 

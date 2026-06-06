@@ -119,7 +119,7 @@ namespace FE
                 -Rotate(Vector4::GetXYZ(source.m_translationScale * scaleInverse), transform.m_rotation);
 
             transform.m_translationScale.m_simdVector =
-                _mm_blend_ps(translationInverse.m_simdVector, scaleInverse.m_simdVector, 0b1110);
+                _mm_blend_ps(translationInverse.m_simdVector, scaleInverse.m_simdVector, 0x8);
             return transform;
         }
     } // namespace Math

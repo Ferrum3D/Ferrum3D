@@ -72,6 +72,21 @@ TEST(Transform, RoundTripMatrixTransformMatrix)
 }
 
 
+TEST(Transform, Invert)
+{
+    const Vector3 translation{ 2.0f, -3.0f, 4.5f };
+    const Quaternion rotation = MakeTestRotation();
+    constexpr float scaleValue = 1.75f;
+
+    const Transform transform = Transform::Create(translation, rotation, scaleValue);
+    const Transform inverse = Math::Invert(transform);
+
+    const Matrix4x4 identity = Transform::ToMatrix(transform) * Transform::ToMatrix(inverse);
+    EXPECT_TRUE(Math::CmpEqual(identity, Matrix4x4::kIdentity, 1e-5f));
+    EXPECT_TRUE(Math::CmpEqual(inverse.Scale(), 1.0f / scaleValue));
+}
+
+
 TEST(Transform, DecomposeTransform)
 {
     const Vector3 translation{ -1.0f, 2.5f, -3.75f };

@@ -1,6 +1,6 @@
-﻿#include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/Barrier.h>
+﻿#include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
+#include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
@@ -365,6 +365,7 @@ namespace FE::Graphics::Vulkan
             const Env::Name imageName = Fmt::FormatName("Swapchain Color Target {}", i);
 
             const Rc image = Texture::Create(m_device, imageName, colorTargetDesc);
+            image->SetImmediateDestroyPolicy();
 
             TextureInstance* imageInstance = m_imageInstances.emplace_back(TextureInstance::Create());
             imageInstance->m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kCopyDest;
@@ -380,6 +381,7 @@ namespace FE::Graphics::Vulkan
             imageInstance->m_subresourceStates.push_back(initialState);
 
             image->SwapInternal(imageInstance);
+            FE_Assert(imageInstance == nullptr);
 
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -398,6 +400,12 @@ namespace FE::Graphics::Vulkan
         FE_PROFILER_ZONE();
 
         m_commandQueue->Drain();
+
+        for (const Rc<Texture>& image : m_images)
+        {
+            TextureInstance* instance = nullptr;
+            image->SwapInternal(instance);
+        }
 
         for (TextureInstance* imageInstance : m_imageInstances)
         {
