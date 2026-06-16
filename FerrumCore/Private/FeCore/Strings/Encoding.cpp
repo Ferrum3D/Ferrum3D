@@ -1,11 +1,14 @@
-#include <FeCore/Strings/Encoding.h>
+﻿#include <FeCore/Strings/Encoding.h>
 
 namespace FE::Str
 {
     uint32_t ConvertUtf8ToUtf16(const char* source, const uint32_t sourceSize, char16_t* destination,
                                 const uint32_t destinationSize)
     {
-        uint32_t charsWritten = 0;
+        if (destinationSize == 0)
+            return Constants::kMaxU32;
+
+        uint32_t written = 0;
         for (const char* iter = source; iter < source + sourceSize;)
         {
             if (const char firstByte = *iter; static_cast<uint8_t>(firstByte) < 0x80)
@@ -13,56 +16,61 @@ namespace FE::Str
                 if (firstByte == 0)
                     break;
 
-                if (charsWritten >= destinationSize)
-                    return Constants::kMaxU32;
+                if (written + 1 >= destinationSize)
+                    break;
 
-                destination[charsWritten++] = static_cast<char16_t>(firstByte);
+                destination[written++] = static_cast<char16_t>(firstByte);
                 ++iter;
                 continue;
             }
 
             int32_t codepoint;
             const int32_t remainingSize = static_cast<int32_t>(sourceSize - (iter - source));
-            const int32_t bytesRead = UTF8::DecodeForward(iter, remainingSize, &codepoint);
-            if (bytesRead < 0)
+            const int32_t read = UTF8::DecodeForward(iter, remainingSize, &codepoint);
+            if (read < 0)
                 return Constants::kMaxU32;
 
-            charsWritten += UTF16::Encode(codepoint, &destination[charsWritten]);
-            iter += bytesRead;
+            char16_t temp[2];
+            const int32_t needToWrite = UTF16::Encode(codepoint, temp);
+            if (written + needToWrite + 1 > destinationSize)
+                break;
 
-            FE_AssertDebug(charsWritten < destinationSize);
+            memcpy(&destination[written], temp, sizeof(char16_t) * needToWrite);
+            written += needToWrite;
+            iter += read;
         }
 
-        destination[charsWritten++] = 0;
-        return charsWritten;
+        destination[written++] = 0;
+        return written;
     }
 
 
     uint32_t ConvertUtf16ToUtf8(const char16_t* source, const uint32_t sourceSize, char* destination,
                                 const uint32_t destinationSize)
     {
-        uint32_t bytesWritten = 0;
+        uint32_t written = 0;
         for (const char16_t* iter = source; iter < source + sourceSize;)
         {
             if (*iter == 0)
                 break;
 
-            if (bytesWritten >= destinationSize)
-                return Constants::kMaxU32;
-
             int32_t codepoint;
             const int32_t remainingSize = static_cast<int32_t>(sourceSize - (iter - source));
-            const int32_t charsRead = UTF16::DecodeForward(iter, remainingSize, &codepoint);
-            if (charsRead < 0)
+            const int32_t read = UTF16::DecodeForward(iter, remainingSize, &codepoint);
+            if (read < 0)
                 return Constants::kMaxU32;
 
-            bytesWritten += UTF8::Encode(codepoint, &destination[bytesWritten]);
-            iter += charsRead;
+            char temp[4];
+            const int32_t needToWrite = UTF8::Encode(codepoint, temp);
+            if (written + needToWrite + 1 > destinationSize)
+                break;
 
-            FE_AssertDebug(bytesWritten < destinationSize);
+            memcpy(&destination[written], temp, sizeof(char) * needToWrite);
+            written += UTF8::Encode(codepoint, &destination[written]);
+            iter += read;
         }
 
-        destination[bytesWritten++] = 0;
-        return bytesWritten;
+        destination[written++] = 0;
+        return written;
     }
 } // namespace FE::Str
