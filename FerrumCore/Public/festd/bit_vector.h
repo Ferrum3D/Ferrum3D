@@ -3,6 +3,18 @@
 
 namespace FE::Internal
 {
+    template<class TFunctor>
+    concept BitSetTraverseFunctor = requires(TFunctor functor, uint32_t bitIndex) {
+        { functor(bitIndex) } -> std::same_as<void>;
+    };
+
+
+    template<class TFunctor>
+    concept BitSetTransformFunctor = requires(TFunctor functor, uint32_t bitIndex) {
+        { functor(bitIndex) } -> std::same_as<bool>;
+    };
+
+
     inline void SetAllBitsInRange(const festd::span<BitSetWord> words, const uint32_t startBitIndex, const uint32_t bitCount)
     {
         if (bitCount == 0)
@@ -384,7 +396,9 @@ namespace FE::Internal
 
             if (bitCount < prevSize)
             {
-                ResetAllBitsInRange({ words, CalculateNextLevelWordCount(TStorage::CapacityImpl()) }, bitCount, prevSize - bitCount);
+                ResetAllBitsInRange({ words, CalculateNextLevelWordCount(TStorage::CapacityImpl()) },
+                                    bitCount,
+                                    prevSize - bitCount);
 
                 for (uint32_t wordIndex = CalculateWordIndex(bitCount); wordIndex < prevWordCount; ++wordIndex)
                 {
@@ -583,7 +597,7 @@ namespace FE
         //!
         //! @param bits    The bit vector to traverse.
         //! @param functor The functor to call for each set bit.
-        template<class TBase, class TFunctor>
+        template<class TBase, Internal::BitSetTraverseFunctor TFunctor>
         void Traverse(const Internal::BitSetImpl<Internal::BasicBitSetView<TBase>>& bits, TFunctor functor)
         {
             const uint32_t bitCount = bits.size();
@@ -606,6 +620,53 @@ namespace FE
                     }
 
                     currentLookupWord &= ~(UINT64_C(1) << nonEmptyWordIndex);
+                }
+            }
+        }
+
+
+        //! @brief Traverses a bit vector and assigns each processed bit to the value returned by a functor.
+        //!
+        //! @param bits    The bit vector to transform.
+        //! @param functor The functor to call for each set bit.
+        template<class TBase, Internal::BitSetTransformFunctor TFunctor>
+        void Transform(Internal::BitSetImpl<Internal::BasicBitSetImpl<TBase>>& bits, TFunctor functor)
+        {
+            const uint32_t bitCount = bits.size();
+            const uint32_t wordCount = Internal::CalculateNextLevelWordCount(bitCount);
+            const uint32_t topLevelWordCount = Internal::CalculateNextLevelWordCount(wordCount);
+
+            BitSetWord* words = bits.data();
+            BitSetWord* topLevelWords = bits.data_lookup();
+
+            for (uint32_t topLevelIndex = 0; topLevelIndex < topLevelWordCount; ++topLevelIndex)
+            {
+                uint32_t nonEmptyWordIndex;
+                uint64_t currentLookupWord = topLevelWords[topLevelIndex];
+                while (ScanForward(nonEmptyWordIndex, currentLookupWord))
+                {
+                    const uint32_t wordIndex = topLevelIndex * Internal::kBitSetBitsPerWord + nonEmptyWordIndex;
+
+                    uint32_t currentIndex;
+                    BitSetWord currentWord = words[wordIndex];
+                    BitSetWord transformedWord = 0;
+                    while (ScanForward(currentIndex, currentWord))
+                    {
+                        const BitSetWord mask = UINT64_C(1) << currentIndex;
+                        if (functor(currentIndex + wordIndex * Internal::kBitSetBitsPerWord))
+                            transformedWord |= mask;
+                        currentWord &= ~mask;
+                    }
+
+                    words[wordIndex] = transformedWord;
+
+                    const BitSetWord topLevelMask = UINT64_C(1) << nonEmptyWordIndex;
+                    if (transformedWord == 0)
+                        topLevelWords[topLevelIndex] &= ~topLevelMask;
+                    else
+                        topLevelWords[topLevelIndex] |= topLevelMask;
+
+                    currentLookupWord &= ~topLevelMask;
                 }
             }
         }

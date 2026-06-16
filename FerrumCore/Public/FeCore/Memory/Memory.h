@@ -476,6 +476,11 @@ namespace FE
                 return reinterpret_cast<T*>(static_cast<uint64_t>(lo) | ((static_cast<uint64_t>(hi) << 32)));
             }
 
+            FE_FORCE_INLINE void Reset()
+            {
+                memset(m_ptr, 0, sizeof(m_ptr));
+            }
+
             FE_FORCE_INLINE T& operator[](const size_t index)
             {
                 return Get()[index];

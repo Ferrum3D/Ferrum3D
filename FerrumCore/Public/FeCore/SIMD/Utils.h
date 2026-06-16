@@ -43,32 +43,6 @@ namespace FE::Simd
             const __m256 shuffled = _mm256_permutevar8x32_ps(vector, _mm256_set1_epi32(index));
             return _mm256_cvtss_f32(shuffled);
         }
-
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Zero(void* buffer, const uint32_t alignedSize)
-        {
-            FE_AssertDebug(IsAligned(alignedSize, sizeof(__m256)));
-
-            auto* byteBuffer = static_cast<std::byte*>(buffer);
-            for (uint32_t i = 0; i < alignedSize; i += sizeof(__m256))
-            {
-                _mm256_storeu_ps(reinterpret_cast<float*>(byteBuffer + i), _mm256_setzero_ps());
-            }
-        }
-
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Copy(void* dst, const void* src, const uint32_t alignedSize)
-        {
-            FE_AssertDebug(IsAligned(alignedSize, sizeof(__m256)));
-
-            auto* dstBuffer = static_cast<std::byte*>(dst);
-            auto* srcBuffer = static_cast<const std::byte*>(src);
-            for (uint32_t i = 0; i < alignedSize; i += sizeof(__m256))
-            {
-                const __m256 srcVec = _mm256_loadu_ps(reinterpret_cast<const float*>(srcBuffer + i));
-                _mm256_storeu_ps(reinterpret_cast<float*>(dstBuffer + i), srcVec);
-            }
-        }
     } // namespace AVX
 
 
@@ -103,31 +77,5 @@ namespace FE::Simd
 
             inline const __m128 kFloat1110 = _mm_setr_ps(1.0f, 1.0f, 1.0f, 0.0f);
         } // namespace Constants
-
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Zero(void* buffer, const uint32_t alignedSize)
-        {
-            FE_AssertDebug(IsAligned(alignedSize, sizeof(__m128)));
-
-            auto* byteBuffer = static_cast<std::byte*>(buffer);
-            for (uint32_t i = 0; i < alignedSize; i += sizeof(__m128))
-            {
-                _mm_storeu_ps(reinterpret_cast<float*>(byteBuffer + i), _mm_setzero_ps());
-            }
-        }
-
-
-        FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Copy(void* dst, const void* src, const uint32_t alignedSize)
-        {
-            FE_AssertDebug(IsAligned(alignedSize, sizeof(__m128)));
-
-            auto* dstBuffer = static_cast<std::byte*>(dst);
-            auto* srcBuffer = static_cast<const std::byte*>(src);
-            for (uint32_t i = 0; i < alignedSize; i += sizeof(__m128))
-            {
-                const __m128 srcVec = _mm_loadu_ps(reinterpret_cast<const float*>(srcBuffer + i));
-                _mm_storeu_ps(reinterpret_cast<float*>(dstBuffer + i), srcVec);
-            }
-        }
     } // namespace SSE
 } // namespace FE::Simd

@@ -65,6 +65,22 @@ namespace FE
         Memory::ShortPtr<std::pmr::memory_resource> m_allocator;
         uint32_t m_size : 24;
         uint32_t m_capacityLog2 : 8;
+
+        static void Zero(Pow2Array& array)
+        {
+            array.m_data.Reset();
+            array.m_allocator.Reset();
+            array.m_size = 0;
+            array.m_capacityLog2 = 0;
+        }
+
+        static void Copy(Pow2Array& dest, Pow2Array& source)
+        {
+            dest.m_data = source.m_data;
+            dest.m_allocator = source.m_allocator;
+            dest.m_size = source.m_size;
+            dest.m_capacityLog2 = source.m_capacityLog2;
+        }
     };
 
 
@@ -102,8 +118,8 @@ namespace FE
     template<class T>
     Pow2Array<T>::Pow2Array(Pow2Array&& other) noexcept
     {
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
+        Copy(*this, other);
+        Zero(other);
     }
 
 
@@ -134,8 +150,8 @@ namespace FE
             clear();
             shrink_to_fit();
 
-            memcpy(this, &other, sizeof(*this));
-            memset(&other, 0, sizeof(*this));
+            Copy(*this, other);
+            Zero(other);
         }
 
         return *this;
@@ -277,13 +293,13 @@ namespace FE
     void Pow2Array<T>::reset_loose_memory()
     {
         std::pmr::memory_resource* allocator = m_allocator.Get();
-        memset(this, 0, sizeof(*this));
+        Zero(*this);
         m_allocator = allocator;
     }
 
 
     template<class T>
-    typename Pow2Array<T>::iterator Pow2Array<T>::erase_unsorted(const_iterator it)
+    Pow2Array<T>::iterator Pow2Array<T>::erase_unsorted(const_iterator it)
     {
         iterator beginIt = m_data;
         iterator endIt = beginIt + m_size - 1;
@@ -350,28 +366,28 @@ namespace FE
 
 
     template<class T>
-    typename Pow2Array<T>::iterator Pow2Array<T>::begin()
+    Pow2Array<T>::iterator Pow2Array<T>::begin()
     {
         return m_data.Get();
     }
 
 
     template<class T>
-    typename Pow2Array<T>::const_iterator Pow2Array<T>::begin() const
+    Pow2Array<T>::const_iterator Pow2Array<T>::begin() const
     {
         return m_data.Get();
     }
 
 
     template<class T>
-    typename Pow2Array<T>::iterator Pow2Array<T>::end()
+    Pow2Array<T>::iterator Pow2Array<T>::end()
     {
         return m_data.Get() + m_size;
     }
 
 
     template<class T>
-    typename Pow2Array<T>::const_iterator Pow2Array<T>::end() const
+    Pow2Array<T>::const_iterator Pow2Array<T>::end() const
     {
         return m_data.Get() + m_size;
     }

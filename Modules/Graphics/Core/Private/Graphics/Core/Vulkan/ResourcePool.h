@@ -1,8 +1,10 @@
 #pragma once
 #include <FeCore/Memory/PoolAllocator.h>
 #include <Graphics/Core/ResourcePool.h>
+#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/Texture.h>
 #include <festd/bit_vector.h>
 
@@ -32,13 +34,19 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
-        Threading::SpinLock m_lock;
-        VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
-
         uint32_t AllocateResourceSlot();
 
         template<class TDesc, class TParams>
         uint32_t FindFreeResource(const TDesc& desc, const TParams& params);
+
+        void FinalizeDecommit(ResourceInstance* resourceInstance);
+        void EnsureQueues();
+
+        Threading::SpinLock m_lock;
+        VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
+
+        GraphicsQueue* m_graphicsQueue = nullptr;
+        AsyncCopyQueue* m_asyncCopyQueue = nullptr;
 
         festd::vector<ResourceInstance*> m_resources;
         festd::bit_vector m_freedResources;

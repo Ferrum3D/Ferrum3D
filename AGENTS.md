@@ -19,6 +19,33 @@ After adding or removing files, run `configure.bat` from the repository root to 
 
 When changing classes that use `FE_RTTI`, run `scripts/codegen.py` to regenerate the RTTI output.
 
+## Build Troubleshooting
+
+### PowerShell `Path`/`PATH` duplication
+
+On Windows, a Codex or shell process may inherit both `Path` and `PATH` environment entries. PowerShell treats environment variable names case-insensitively, so this duplicate can break environment enumeration and MSBuild tool launches.
+
+Symptoms include:
+
+- `Get-ChildItem Env:` failing with `An item with the same key has already been added.`
+- MSBuild failing before compiling with `error MSB6001: Invalid command line switch for "CL.exe"` and an inner exception like `An item with the same key has already been added. Key in dictionary: "Path" Key being added: "PATH"`.
+
+If this happens, clear the duplicate all-caps process variable before invoking CMake or the test binary:
+
+```powershell
+[Environment]::SetEnvironmentVariable('PATH', $null, 'Process')
+cmake --build cmake-build/windows-debug-msvc --config Debug --target FeCoreTests
+```
+
+Use the same one-shot prefix when running tests from that shell:
+
+```powershell
+[Environment]::SetEnvironmentVariable('PATH', $null, 'Process')
+cmake-build/windows-debug-msvc/Debug/FeCoreTests.exe --gtest_filter=Transform.*
+```
+
+This only changes the current process environment. It leaves the normal Windows `Path` entry intact for child tools and does not modify the user's persistent environment.
+
 ## Code Style
 
 - Use C++20. The root `CMakeLists.txt` sets `CMAKE_CXX_STANDARD 20`, and `.clang-format` uses `Standard: c++20`.

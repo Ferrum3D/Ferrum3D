@@ -747,6 +747,47 @@ TEST(DynamicBitSet, Traverse)
     }
 }
 
+TEST(DynamicBitSet, Transform)
+{
+    festd::bit_vector bits;
+    bits.resize(130, false);
+    bits.set(0);
+    bits.set(1);
+    bits.set(64);
+    bits.set(129);
+
+    festd::vector<uint32_t> visitedIndices;
+    Bit::Transform(bits, [&visitedIndices](const uint32_t bitIndex) {
+        visitedIndices.push_back(bitIndex);
+        return bitIndex % 2 == 0;
+    });
+
+    ASSERT_EQ(visitedIndices.size(), 4);
+    EXPECT_EQ(visitedIndices[0], 0);
+    EXPECT_EQ(visitedIndices[1], 1);
+    EXPECT_EQ(visitedIndices[2], 64);
+    EXPECT_EQ(visitedIndices[3], 129);
+
+    EXPECT_TRUE(bits.test(0));
+    EXPECT_FALSE(bits.test(1));
+    EXPECT_TRUE(bits.test(64));
+    EXPECT_FALSE(bits.test(129));
+    EXPECT_EQ(Bit::PopCount(bits.view()), 2);
+
+    EXPECT_EQ(bits.data()[0], 1);
+    EXPECT_EQ(bits.data()[1], 1);
+    EXPECT_EQ(bits.data()[2], 0);
+    EXPECT_EQ(bits.data_lookup()[0], 3);
+
+    Bit::Transform(bits, [](const uint32_t) {
+        return false;
+    });
+
+    EXPECT_EQ(bits.find_first(), kInvalidIndex);
+    EXPECT_EQ(Bit::PopCount(bits.view()), 0);
+    EXPECT_EQ(bits.data_lookup()[0], 0);
+}
+
 TEST(FixedBitSet, Traverse)
 {
     constexpr uint32_t iterationCount = 10000;
@@ -783,6 +824,39 @@ TEST(FixedBitSet, Traverse)
             ASSERT_EQ(setIndices[currentTraversalIndex++], bitIndex);
         });
     }
+}
+
+TEST(FixedBitSet, Transform)
+{
+    festd::fixed_bit_vector<130> bits;
+    bits.resize(130, false);
+    bits.set(0);
+    bits.set(63);
+    bits.set(64);
+    bits.set(129);
+
+    festd::vector<uint32_t> visitedIndices;
+    Bit::Transform(bits, [&visitedIndices](const uint32_t bitIndex) {
+        visitedIndices.push_back(bitIndex);
+        return bitIndex >= 64;
+    });
+
+    ASSERT_EQ(visitedIndices.size(), 4);
+    EXPECT_EQ(visitedIndices[0], 0);
+    EXPECT_EQ(visitedIndices[1], 63);
+    EXPECT_EQ(visitedIndices[2], 64);
+    EXPECT_EQ(visitedIndices[3], 129);
+
+    EXPECT_FALSE(bits.test(0));
+    EXPECT_FALSE(bits.test(63));
+    EXPECT_TRUE(bits.test(64));
+    EXPECT_TRUE(bits.test(129));
+    EXPECT_EQ(Bit::PopCount(bits.view()), 2);
+
+    EXPECT_EQ(bits.data()[0], 0);
+    EXPECT_EQ(bits.data()[1], 1);
+    EXPECT_EQ(bits.data()[2], 2);
+    EXPECT_EQ(bits.data_lookup()[0], 6);
 }
 
 TEST(FixedBitSet, ResizeShrink)

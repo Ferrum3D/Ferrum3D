@@ -170,6 +170,8 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("2C1855F0-034B-47B7-869A-F9512903212F");
 
+        virtual FenceSyncPoint GetCurrentFence() const = 0;
+
         virtual void ExecuteCommandList(AsyncCopyCommandList* commandList) = 0;
         virtual void Drain() = 0;
     };

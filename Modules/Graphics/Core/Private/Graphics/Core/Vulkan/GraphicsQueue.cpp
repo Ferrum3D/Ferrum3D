@@ -51,7 +51,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::FenceSyncPoint GraphicsQueue::GetCurrentFence()
+    Core::FenceSyncPoint GraphicsQueue::GetCurrentFence() const
     {
         FE_Assert(m_isActive);
         return { .m_fence = m_fence, .m_value = m_frameIndex };
@@ -61,7 +61,7 @@ namespace FE::Graphics::Vulkan
     Core::FenceSyncPoint GraphicsQueue::CloseFrame()
     {
         FE_Assert(m_isActive);
-        Core::FenceSyncPoint syncPoint{ .m_fence = m_fence, .m_value = m_frameIndex };
+        const Core::FenceSyncPoint syncPoint{ .m_fence = m_fence, .m_value = m_frameIndex };
         ++m_frameIndex;
         m_isActive = false;
         return syncPoint;

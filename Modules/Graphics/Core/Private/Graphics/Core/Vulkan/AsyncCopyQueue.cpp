@@ -613,6 +613,12 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    Core::FenceSyncPoint AsyncCopyQueue::GetCurrentFence() const
+    {
+        return { .m_fence = m_fence, .m_value = m_fenceValue };
+    }
+
+
     void AsyncCopyQueue::ExecuteCommandList(Core::AsyncCopyCommandList* commandList)
     {
         std::shared_lock lock{ m_suspendLock };

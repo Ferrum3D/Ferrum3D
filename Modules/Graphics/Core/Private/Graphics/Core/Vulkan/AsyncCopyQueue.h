@@ -21,6 +21,8 @@ namespace FE::Graphics::Vulkan
         AsyncCopyQueue(Core::Device* device, Core::ResourcePool* resourcePool);
         ~AsyncCopyQueue() override;
 
+        Core::FenceSyncPoint GetCurrentFence() const override;
+
         void ExecuteCommandList(Core::AsyncCopyCommandList* commandList) override;
         void Drain() override;
 
@@ -55,7 +57,7 @@ namespace FE::Graphics::Vulkan
         VkQueue m_queue = VK_NULL_HANDLE;
         Rc<Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
-        uint64_t m_fenceValue = 0;
+        std::atomic<uint64_t> m_fenceValue = 0;
         Rc<Core::Fence> m_fence;
 
         uint32_t m_commandBufferCounter = 0;
@@ -67,4 +69,6 @@ namespace FE::Graphics::Vulkan
         festd::inline_vector<Core::AsyncCopyCommandList*> m_requestCache;
         Memory::LinearAllocator m_threadTempAllocator;
     };
+
+    FE_ENABLE_IMPL_CAST(AsyncCopyQueue);
 } // namespace FE::Graphics::Vulkan

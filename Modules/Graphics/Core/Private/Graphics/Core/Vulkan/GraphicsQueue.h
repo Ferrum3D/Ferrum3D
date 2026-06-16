@@ -25,13 +25,14 @@ namespace FE::Graphics::Vulkan
             return m_nativeQueue;
         }
 
+        Core::FenceSyncPoint GetCurrentFence() const override;
+
         void BeginFrame() override;
-        Core::FenceSyncPoint GetCurrentFence() override;
         Core::FenceSyncPoint CloseFrame() override;
         void Drain() override;
 
     private:
-        uint64_t m_frameIndex = 1;
+        std::atomic<uint64_t> m_frameIndex = 1;
         Rc<Fence> m_fence;
 
         bool m_isActive = false;

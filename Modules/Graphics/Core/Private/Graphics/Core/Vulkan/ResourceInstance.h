@@ -9,6 +9,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("7748916A-053B-447D-82D1-C417599323D7");
 
+        festd::array<uint64_t, festd::to_underlying(Core::DeviceQueueType::kCount)> m_lastFenceValues = {};
         VmaAllocation m_vmaAllocation = nullptr;
     };
 
