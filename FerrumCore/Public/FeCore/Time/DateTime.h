@@ -179,7 +179,10 @@ namespace FE
             template<class TDestTimeZone, class TSourceTimeZone>
             [[nodiscard]] static DateTime<TDestTimeZone> To(DateTime<TSourceTimeZone> dateTime)
             {
-                return DateTime<TDestTimeZone>::FromUnixTime(dateTime.ToUnixTime());
+                if constexpr (std::is_same_v<TDestTimeZone, TSourceTimeZone>)
+                    return dateTime;
+                else
+                    return DateTime<TDestTimeZone>::FromUnixTime(dateTime.ToUnixTime());
             }
         };
     } // namespace TZ

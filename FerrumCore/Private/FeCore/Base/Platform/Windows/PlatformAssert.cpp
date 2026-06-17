@@ -1,49 +1,82 @@
-#include <FeCore/Base/Base.h>
+﻿#include <FeCore/Base/Base.h>
 #include <FeCore/Base/PlatformInclude.h>
+#include <FeCore/Strings/Encoding.h>
+#include <FeCore/Strings/Format.h>
 
 namespace FE
 {
+    namespace
+    {
+        struct AssertionReportWriter final
+        {
+            AssertionReportWriter()
+            {
+                m_buffer[0] = 0;
+            }
+
+            void WriteStr(const char* str, const uint32_t length = Constants::kMaxU32)
+            {
+                //
+                // NOTE: We cannot use WideString here: it can allocate memory if its inline buffer overflows.
+                // But the Platform::AssertionReport function might have been called from the memory management code,
+                // which means that an allocation here can lead to infinite recursion or memory corruption.
+                //
+
+                const uint32_t bufferSize = festd::size(m_buffer);
+                const uint32_t destinationSize = bufferSize - m_writePos;
+                if (destinationSize <= 1)
+                    return;
+
+                char16_t* destination = m_buffer + m_writePos;
+                const uint32_t written = Str::ConvertUtf8ToUtf16(str, length, destination, destinationSize);
+                if (written != Constants::kMaxU32)
+                {
+                    // Exclude the null terminator.
+                    m_writePos += written - 1;
+                }
+                else
+                {
+                    destination[0] = L'?';
+                    destination[1] = 0;
+                    ++m_writePos;
+                }
+            }
+
+            void WriteInt(const uint32_t value)
+            {
+                const Fmt::IntFormatter<uint32_t> fmt{ value };
+                WriteStr(fmt.m_buffer, fmt.m_size);
+            }
+
+            void WriteLn()
+            {
+                const uint32_t bufferSize = festd::size(m_buffer);
+                const uint32_t destinationSize = bufferSize - m_writePos;
+                if (destinationSize <= 1)
+                    m_writePos--;
+
+                char16_t* destination = m_buffer + m_writePos;
+                destination[0] = L'\n';
+                destination[1] = 0;
+                ++m_writePos;
+            }
+
+            char16_t m_buffer[1024];
+            uint32_t m_writePos = 0;
+        };
+    } // namespace
+
+
     void Platform::AssertionReport(const SourceLocation sourceLocation, const char* message, const uint32_t messageSize)
     {
-        //
-        // NOTE: We cannot use WideString here: it can allocate memory if its inline buffer overflows.
-        // But the Platform::AssertionReport function might have been called from the memory management code,
-        // which means that an allocation here can lead to infinite recursion or memory corruption.
-        //
+        AssertionReportWriter writer;
+        writer.WriteStr(sourceLocation.m_fileName);
+        writer.WriteStr("(");
+        writer.WriteInt(sourceLocation.m_lineNumber);
+        writer.WriteStr("): ");
+        writer.WriteStr(message, messageSize);
+        writer.WriteLn();
 
-        constexpr int32_t kMaxMessageSize = 8 * 1024;
-
-        const wchar_t* wideMessage = L"Unknown Error (Error message had invalid encoding)";
-
-        const int32_t clampedMessageSize = Math::Min(static_cast<int32_t>(messageSize), kMaxMessageSize);
-        const int32_t messageLength = MultiByteToWideChar(CP_UTF8, 0, message, clampedMessageSize, nullptr, 0);
-        const int32_t filenameLength = MultiByteToWideChar(CP_UTF8, 0, sourceLocation.m_fileName, -1, nullptr, 0);
-
-        SYSTEM_INFO systemInfo;
-        GetSystemInfo(&systemInfo);
-
-        const size_t requiredBufferSize = filenameLength + messageLength + 4 + std::numeric_limits<uint32_t>::digits10;
-        const size_t allocationSize = AlignUp(requiredBufferSize, systemInfo.dwAllocationGranularity);
-        void* allocation = VirtualAlloc(nullptr, allocationSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-        wchar_t* buffer = static_cast<wchar_t*>(allocation);
-
-        if (filenameLength > 0)
-        {
-            const int32_t limitedSize = Math::Min(filenameLength, MAX_PATH + 1);
-            MultiByteToWideChar(CP_UTF8, 0, sourceLocation.m_fileName, -1, buffer, limitedSize - 1);
-            buffer += limitedSize;
-            buffer += _swprintf(buffer, L"(%d): ", sourceLocation.m_lineNumber);
-        }
-
-        if (messageLength > 0)
-        {
-            const int32_t limitedSize = Math::Min(messageLength, kMaxMessageSize);
-            MultiByteToWideChar(CP_UTF8, 0, message, clampedMessageSize, buffer, limitedSize - 1);
-            buffer[limitedSize] = L'\0';
-            wideMessage = buffer;
-        }
-
-        OutputDebugStringW(wideMessage);
-        VirtualFree(allocation, 0, MEM_RELEASE);
+        OutputDebugStringW(reinterpret_cast<LPWSTR>(writer.m_buffer));
     }
 } // namespace FE

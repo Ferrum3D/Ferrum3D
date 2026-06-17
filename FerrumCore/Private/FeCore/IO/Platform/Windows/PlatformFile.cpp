@@ -109,15 +109,12 @@ namespace FE::Platform
     {
         FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
 
-        const WideString widePath{ filePath };
-        if (widePath.m_value.empty())
-            return IO::ResultCode::kInvalidArgument;
-
+        const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
         const DWORD desiredFileAccessFlags = GetFileAccessFlags(openMode);
         const DWORD fileShareMode = GetFileShareMode(openMode);
         const DWORD fileCreationDisposition = GetFileCreationDisposition(openMode);
 
-        const HANDLE nativeFileHandle = CreateFileW(widePath.m_value.data(),
+        const HANDLE nativeFileHandle = CreateFileW(widePath.ToWideString(),
                                                     desiredFileAccessFlags,
                                                     fileShareMode,
                                                     nullptr,
@@ -158,11 +155,8 @@ namespace FE::Platform
     {
         FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
 
-        const WideString widePath{ filePath };
-        if (widePath.m_value.empty())
-            return IO::FileAttributeFlags::kInvalid;
-
-        const DWORD attributes = GetFileAttributesW(widePath.m_value.data());
+        const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
+        const DWORD attributes = GetFileAttributesW(widePath.ToWideString());
         return ConvertFileAttributeFlags(attributes);
     }
 

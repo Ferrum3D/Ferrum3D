@@ -1,9 +1,10 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/IO/Platform/PlatformPath.h>
 #include <FeCore/Platform/Windows/Common.h>
+#include <FeCore/Strings/Encoding.h>
 #include <FeCore/Strings/Utils.h>
 
-namespace FE::Platform
+namespace FE
 {
     namespace
     {
@@ -21,26 +22,27 @@ namespace FE::Platform
     } // namespace
 
 
-    IO::Path GetCurrentDirectory()
+    IO::Path Platform::GetCurrentDirectory()
     {
         FE_PROFILER_ZONE();
 
-        WCHAR buffer[IO::kMaxPathLength + 1];
-        const DWORD pathLength = ::GetCurrentDirectoryW(IO::kMaxPathLength, buffer);
-        return ConvertWideString<IO::Path>({ buffer, pathLength });
+        const DWORD pathLength = ::GetCurrentDirectoryW(0, nullptr);
+        festd::inline_vector<WCHAR, MAX_PATH> buffer(pathLength);
+        FE_Verify(pathLength == GetCurrentDirectoryW(buffer.size(), buffer.data()) + 1);
+        return ConvertWideString<IO::Path>({ buffer.data(), buffer.size() - 1 });
     }
 
 
-    void SetCurrentDirectory(const festd::string_view path)
+    void Platform::SetCurrentDirectory(const festd::string_view path)
     {
         FE_PROFILER_ZONE();
 
-        const WideString widePath{ path };
-        ::SetCurrentDirectoryW(widePath.data());
+        const Str::Utf8ToUtf16 widePath{ path.data(), path.size() };
+        ::SetCurrentDirectoryW(widePath.ToWideString());
     }
 
 
-    IO::Path GetExecutablePath()
+    IO::Path Platform::GetExecutablePath()
     {
         FE_PROFILER_ZONE();
 
@@ -51,7 +53,7 @@ namespace FE::Platform
     }
 
 
-    IO::ResultCode IterateDirectoryRecursively(const DirectoryIterationParams& params)
+    IO::ResultCode Platform::IterateDirectoryRecursively(const DirectoryIterationParams& params)
     {
         festd::inline_vector<IO::Path, 4> directoryStack;
         directoryStack.push_back(params.m_path);
@@ -64,10 +66,10 @@ namespace FE::Platform
             directoryStack.pop_back();
 
             const IO::Path fullPattern = MakePlatformPreferred(currentDirectory / "*");
-            const WideString widePattern{ fullPattern };
+            const Str::Utf8ToUtf16 widePattern{ fullPattern.data(), fullPattern.size() };
 
             WIN32_FIND_DATAW findFileData;
-            const HANDLE hFile = FindFirstFileW(widePattern.data(), &findFileData);
+            const HANDLE hFile = FindFirstFileW(widePattern.ToWideString(), &findFileData);
             if (hFile == INVALID_HANDLE_VALUE)
                 return ConvertWin32IOError(GetLastError());
 
@@ -97,9 +99,9 @@ namespace FE::Platform
                 entry.m_path = IO::PathView{ fullFilename };
                 entry.m_attributes = attributeFlags;
                 entry.m_stats.m_byteSize = static_cast<uint64_t>(findFileData.nFileSizeHigh) << 32 | findFileData.nFileSizeLow;
-                entry.m_stats.m_creationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(creationFT));
-                entry.m_stats.m_accessTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(accessFT));
-                entry.m_stats.m_modificationTime = DateTime<TZ::UTC>::FromUnixTime(ConvertFiletimeToUnixSeconds(writeFT));
+                entry.m_stats.m_creationTime = ConvertFiletimeToDateTime<TZ::UTC>(creationFT);
+                entry.m_stats.m_accessTime = ConvertFiletimeToDateTime<TZ::UTC>(accessFT);
+                entry.m_stats.m_modificationTime = ConvertFiletimeToDateTime<TZ::UTC>(writeFT);
                 if (!params.m_callback(params.m_callbackData, entry))
                     return IO::ResultCode::kCanceled;
 
@@ -114,4 +116,4 @@ namespace FE::Platform
 
         return IO::ResultCode::kSuccess;
     }
-} // namespace FE::Platform
+} // namespace FE

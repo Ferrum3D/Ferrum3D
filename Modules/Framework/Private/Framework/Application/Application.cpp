@@ -15,7 +15,6 @@ namespace FE::Framework
         {
             explicit LogColorScope(const LogSeverity severity)
             {
-                Console::Color color;
                 switch (severity)
                 {
                 default:
@@ -23,30 +22,31 @@ namespace FE::Framework
                     [[fallthrough]];
 
                 case LogSeverity::kWarning:
-                    color = Console::Color::kYellow;
+                    Console::Write("\033[33m");
                     break;
 
                 case LogSeverity::kError:
                 case LogSeverity::kCritical:
-                    color = Console::Color::kRed;
+                    Console::Write("\033[31m");
                     break;
 
                 case LogSeverity::kTrace:
+                    Console::Write("\033[35m");
+                    break;
+
                 case LogSeverity::kDebug:
-                    color = Console::Color::kAqua;
+                    Console::Write("\033[34m");
                     break;
 
                 case LogSeverity::kInfo:
-                    color = Console::Color::kLime;
+                    Console::Write("\033[36m");
                     break;
                 }
-
-                Console::SetTextColor(color);
             }
 
             ~LogColorScope()
             {
-                Console::SetTextColor(Console::Color::kDefault);
+                Console::Write("\033[0m");
             }
         };
 
@@ -59,7 +59,7 @@ namespace FE::Framework
     {
         {
             const auto location = Fmt::FixedFormatSized<512>("{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
-            Console::Write(festd::string_view(location.data(), location.size()));
+            Console::Write(location);
         }
 
         {

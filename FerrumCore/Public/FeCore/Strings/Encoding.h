@@ -328,12 +328,12 @@ namespace FE::UTF16
 {
     //! @brief Decode a UTF-16 codepoint from a string.
     //!
-    //! @param str      The string to read the codepoint from.
-    //! @param byteSize The number of bytes to read from the string.
-    //! @param result   The decoded codepoint.
+    //! @param str     The string to read the codepoint from.
+    //! @param strSize The number of `char16_t`s to read from the string.
+    //! @param result  The decoded codepoint.
     //!
     //! @return The number of bytes read from the string or -1 if the function failed.
-    [[nodiscard]] FE_FORCE_INLINE int32_t DecodeForward(const char16_t* str, const int32_t byteSize, int32_t* result)
+    [[nodiscard]] FE_FORCE_INLINE int32_t DecodeForward(const char16_t* str, const int32_t strSize, int32_t* result)
     {
         constexpr char16_t kHighSurrogateStart = 0xd800;
         constexpr char16_t kLowSurrogateStart = 0xdc00;
@@ -341,12 +341,12 @@ namespace FE::UTF16
         constexpr char16_t kLowSurrogateEnd = 0xdfff;
 
         // Use unsigned comparison, so that -1 is always considered enough
-        if (static_cast<uint32_t>(byteSize) == 0)
+        if (static_cast<uint32_t>(strSize) == 0)
             return 0;
 
         if (str[0] >= kHighSurrogateStart && str[0] <= kHighSurrogateEnd)
         {
-            if (static_cast<uint32_t>(byteSize) <= 1)
+            if (static_cast<uint32_t>(strSize) <= 1)
                 return -1;
 
             if (str[1] < kLowSurrogateStart || str[1] > kLowSurrogateEnd)
@@ -389,15 +389,22 @@ namespace FE::UTF16
     //! @param destination The string to write the codepoint into.
     //!
     //! @return The number of chars written to the string or 0 if the function failed.
-    [[nodiscard]] FE_FORCE_INLINE int32_t Encode(const int32_t codepoint, char16_t* destination)
+    [[nodiscard]] FE_FORCE_INLINE int32_t Encode(int32_t codepoint, char16_t* destination)
     {
+        if (codepoint < 0 || codepoint > 0x10ffff)
+            return -1;
+
+        if (codepoint >= 0xd800 && codepoint <= 0xdfff)
+            return -1;
+
         if (codepoint <= 0xffff)
         {
             destination[0] = static_cast<char16_t>(codepoint);
             return 1;
         }
 
-        destination[0] = static_cast<char16_t>(0xd800 + ((codepoint - 0x10000) >> 10));
+        codepoint -= 0x10000;
+        destination[0] = static_cast<char16_t>(0xd800 + (codepoint >> 10));
         destination[1] = static_cast<char16_t>(0xdc00 + (codepoint & 0x3ff));
         return 2;
     }
@@ -464,7 +471,7 @@ namespace FE::Str
             ~ConversionHelperBase()
             {
                 if (m_capacity > TSize)
-                    m_allocator->deallocate(m_data, m_capacity);
+                    m_allocator->deallocate(m_data, m_capacity * sizeof(TDestinationChar));
                 m_capacity = 0;
                 m_data = nullptr;
             }
@@ -472,7 +479,7 @@ namespace FE::Str
             void Initialize(const uint32_t capacity)
             {
                 if (m_capacity > TSize)
-                    m_allocator->deallocate(m_data, m_capacity);
+                    m_allocator->deallocate(m_data, m_capacity * sizeof(TDestinationChar));
 
                 if (capacity == 0)
                 {
@@ -488,7 +495,7 @@ namespace FE::Str
                     return;
                 }
 
-                m_data = static_cast<TDestinationChar*>(m_allocator->allocate(capacity));
+                m_data = static_cast<TDestinationChar*>(m_allocator->allocate(capacity * sizeof(TDestinationChar)));
                 m_capacity = capacity;
             }
 
@@ -503,6 +510,9 @@ namespace FE::Str
 
     //! @brief Convert a UTF-8 encoded string to a UTF-16 encoded string
     //!
+    //! This function writes as many characters as possible to the destination,
+    //! and trims the string if there is not enough space to encode the entire source.
+    //!
     //! @param source          The UTF-8 encoded string to convert.
     //! @param sourceSize      The size of the UTF-8 encoded string in bytes or kMaxU32 to indicate a null-terminated string.
     //! @param destination     The buffer to write the UTF-16 encoded string to, must be large enough.
@@ -514,6 +524,9 @@ namespace FE::Str
 
 
     //! @brief Convert a UTF-16 encoded string to a UTF-8 encoded string
+    //!
+    //! This function writes as many characters as possible to the destination,
+    //! and trims the string if there is not enough space to encode the entire source.
     //!
     //! @param source          The UTF-16 encoded string to convert.
     //! @param sourceSize      The size of the UTF-16 encoded string in characters or kMaxU32 to indicate a null-terminated string.
@@ -547,6 +560,11 @@ namespace FE::Str
         [[nodiscard]] const char16_t* data() const
         {
             return m_data;
+        }
+
+        [[nodiscard]] bool empty() const
+        {
+            return m_length <= 1;
         }
 
         [[nodiscard]] const wchar_t* ToWideString() const
@@ -604,6 +622,11 @@ namespace FE::Str
         [[nodiscard]] const char* data() const
         {
             return m_data;
+        }
+
+        [[nodiscard]] bool empty() const
+        {
+            return m_length <= 1;
         }
 
     private:

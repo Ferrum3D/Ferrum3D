@@ -73,7 +73,16 @@ namespace FE::Platform
         LARGE_INTEGER ftInt;
         ftInt.HighPart = fileTime.dwHighDateTime;
         ftInt.LowPart = fileTime.dwLowDateTime;
-        return ConvertWindowsTickToUnixSeconds(static_cast<int64_t>(ftInt.QuadPart));
+        return ConvertWindowsTickToUnixSeconds(ftInt.QuadPart);
+    }
+
+
+    template<class TTimeZone>
+    DateTime<TTimeZone> ConvertFiletimeToDateTime(const FILETIME fileTime)
+    {
+        const TimeValue unixTime = ConvertFiletimeToUnixSeconds(fileTime);
+        const DateTime utc = DateTime<TZ::UTC>::FromUnixTime(unixTime);
+        return TZ::Convert::To<TTimeZone>(utc);
     }
 
 
