@@ -22,4 +22,6 @@ namespace FE::Platform
     IO::ResultCode SeekFile(FileHandle fileHandle, intptr_t offset, IO::SeekMode seekMode);
 
     IO::ResultCode TellFile(FileHandle fileHandle, uintptr_t& position);
+
+    IO::ResultCode FlushFile(FileHandle fileHandle);
 } // namespace FE::Platform

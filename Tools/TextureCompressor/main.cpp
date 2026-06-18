@@ -1,5 +1,4 @@
 ﻿#include <FeCore/Compression/Compression.h>
-#include <FeCore/Console/Console.h>
 #include <FeCore/IO/IStreamFactory.h>
 #include <FeCore/IO/Path.h>
 #include <FeCore/Modules/Configuration.h>

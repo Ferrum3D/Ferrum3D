@@ -259,4 +259,13 @@ namespace FE::Platform
 
         return IO::ResultCode::kSuccess;
     }
+
+
+    IO::ResultCode FlushFile(const FileHandle fileHandle)
+    {
+        if (FlushFileBuffers(HandleCast(fileHandle)))
+            return IO::ResultCode::kSuccess;
+
+        return ConvertWin32IOError(GetLastError());
+    }
 } // namespace FE::Platform

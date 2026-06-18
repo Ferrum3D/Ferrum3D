@@ -98,7 +98,90 @@ namespace FE::IO
         kStdin,
         kStdout,
         kStderr,
+
+        kCount,
     };
+
+
+    namespace Internal
+    {
+        struct FormatBufferFileAdapter final
+        {
+            void append(const char* str, uint32_t length);
+
+            void append(const festd::string_view str)
+            {
+                append(str.data(), str.size());
+            }
+
+            void append(const char c)
+            {
+                append(&c, 1);
+            }
+
+            void* m_data = nullptr;
+            size_t m_bytesWritten = 0;
+
+            static FormatBufferFileAdapter Create(StandardDescriptor descriptor);
+        };
+    } // namespace Internal
+
+
+    template<class... TArgs>
+    size_t PrintTo(const StandardDescriptor descriptor, festd::string_view fmt, TArgs&&... args)
+    {
+        auto adapter = Internal::FormatBufferFileAdapter::Create(descriptor);
+        Fmt::FormatTo<Internal::FormatBufferFileAdapter, TArgs...>(adapter, fmt, std::forward<TArgs>(args)...);
+        return adapter.m_bytesWritten;
+    }
+
+
+    template<class... TArgs>
+    size_t PrintLnTo(const StandardDescriptor descriptor, festd::string_view fmt, TArgs&&... args)
+    {
+        auto adapter = Internal::FormatBufferFileAdapter::Create(descriptor);
+        Fmt::FormatTo<Internal::FormatBufferFileAdapter, TArgs...>(adapter, fmt, std::forward<TArgs>(args)...);
+        adapter.append('\n');
+        return adapter.m_bytesWritten;
+    }
+
+
+    template<class... TArgs>
+    size_t Print(festd::string_view fmt, TArgs&&... args)
+    {
+        return PrintTo<TArgs...>(StandardDescriptor::kStdout, fmt, std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    size_t EPrint(festd::string_view fmt, TArgs&&... args)
+    {
+        return PrintTo<TArgs...>(StandardDescriptor::kStderr, fmt, std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    size_t PrintLn(festd::string_view fmt, TArgs&&... args)
+    {
+        return PrintLnTo<TArgs...>(StandardDescriptor::kStdout, fmt, std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    size_t EPrintLn(festd::string_view fmt, TArgs&&... args)
+    {
+        return PrintLnTo<TArgs...>(StandardDescriptor::kStderr, fmt, std::forward<TArgs>(args)...);
+    }
+
+    inline size_t PrintLn()
+    {
+        return PrintTo(StandardDescriptor::kStdout, "\n");
+    }
+
+    inline size_t EPrintLn()
+    {
+        return PrintTo(StandardDescriptor::kStderr, "\n");
+    }
+
+
+    void Flush(StandardDescriptor descriptor);
 
 
     struct FileStats final

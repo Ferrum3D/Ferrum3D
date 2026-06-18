@@ -26,8 +26,6 @@
 
     Public/FeCore/Compression/Compression.h
 
-    Public/FeCore/Console/Console.h
-
     Public/FeCore/Containers/ByteBuffer.h
     Public/FeCore/Containers/ConcurrentQueue.h
     Public/FeCore/Containers/Pow2Array.h
@@ -130,9 +128,6 @@ set(COMMON_SOURCES
     Private/FeCore/Compression/Compression.cpp
     Private/FeCore/Compression/CompressionPrivate.h
 
-    Private/FeCore/Console/Console.cpp
-    Private/FeCore/Console/ConsolePrivate.h
-
     Private/FeCore/DI/BaseDI.cpp
     Private/FeCore/DI/Builder.cpp
     Private/FeCore/DI/Container.cpp
@@ -143,6 +138,7 @@ set(COMMON_SOURCES
     Private/FeCore/IO/AsyncStreamIO.h
     Private/FeCore/IO/AsyncStreamIO.cpp
     Private/FeCore/IO/BaseIO.cpp
+    Private/FeCore/IO/BaseIOPrivate.h
     Private/FeCore/IO/FileStream.cpp
     Private/FeCore/IO/Path.cpp
     Private/FeCore/IO/StreamFactory.h

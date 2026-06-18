@@ -73,9 +73,16 @@ namespace FE::IO
     {
         if (m_handle)
         {
-            FlushWrites();
+            BufferedStream::FlushWrites();
             Platform::CloseFile(m_handle);
         }
+    }
+
+
+    void FileStream::FlushWrites()
+    {
+        BufferedStream::FlushWrites();
+        Platform::FlushFile(m_handle);
     }
 
 

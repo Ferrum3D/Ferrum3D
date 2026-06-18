@@ -24,6 +24,10 @@ namespace FE::Fmt
 
         template<class TBuffer, class T>
         concept BufferAppendableValue = !std::is_pointer_v<T> && !std::is_array_v<T> && !std::integral<T>
+            && !std::floating_point<T> && requires(TBuffer& buffer, const T& value) { buffer.append(value); };
+
+        template<class TBuffer, class T>
+        concept BufferPlusAppendableValue = !std::is_pointer_v<T> && !std::is_array_v<T> && !std::integral<T>
             && !std::floating_point<T> && requires(TBuffer& buffer, const T& value) { buffer += value; };
 
         inline char* TrimEmptyExp(char* buffer, const char* begin)
@@ -89,7 +93,8 @@ namespace FE::Fmt
     {
         void Format(TBuffer&, const T&) const
         {
-            static_assert(Internal::kAlwaysFalse<T>, "No Fmt::ValueFormatter specialization exists for this argument type");
+            // static_assert(Internal::kAlwaysFalse<T>, "No Fmt::ValueFormatter specialization exists for this argument type");
+            FE_DebugBreak();
         }
     };
 
@@ -152,6 +157,17 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const T& value) const
         {
+            buffer.append(value);
+        }
+    };
+
+    template<class TBuffer, class T>
+        requires Internal::BufferPlusAppendableValue<TBuffer, T>
+        && !Internal::BufferAppendableValue<TBuffer, T>
+    struct ValueFormatter<TBuffer, T>
+    {
+        void Format(TBuffer& buffer, const T& value) const
+        {
             buffer += value;
         }
     };
@@ -161,7 +177,7 @@ namespace FE::Fmt
     {
         void Format(TBuffer& buffer, const char (&value)[TSize]) const
         {
-            buffer += value;
+            buffer.append(value);
         }
     };
 
@@ -270,13 +286,13 @@ namespace FE::Fmt
                     if (it == end)
                     {
                         FE_Assert(false, "Invalid format string: unmatched '{'");
-                        buffer.append(begin, end);
+                        buffer.append(festd::string_view(begin, end));
                         return;
                     }
 
                     if (*it == '{')
                     {
-                        buffer.append(begin, it);
+                        buffer.append(festd::string_view(begin, it));
                         begin = it;
                         begin++;
                         continue;
@@ -310,7 +326,7 @@ namespace FE::Fmt
                         FE_Assert(hasDigits && it != end && *it == '}', "Invalid arg index");
                         if (!hasDigits || it == end || *it != '}')
                         {
-                            buffer.append(begin, end);
+                            buffer.append(festd::string_view(begin, end));
                             return;
                         }
                     }
@@ -328,7 +344,7 @@ namespace FE::Fmt
                     if (argIndex >= TArgCount)
                         return;
 
-                    buffer.append(begin, braceIt);
+                    buffer.append(festd::string_view(begin, braceIt));
                     begin = it;
                     begin++;
 
@@ -341,17 +357,17 @@ namespace FE::Fmt
                     FE_Assert(it != end && *it == '}', "Invalid format string: '}' must be escaped");
                     if (it == end || *it != '}')
                     {
-                        buffer.append(begin, end);
+                        buffer.append(festd::string_view(begin, end));
                         return;
                     }
 
-                    buffer.append(begin, it);
+                    buffer.append(festd::string_view(begin, it));
                     begin = it;
                     begin++;
-                    continue;
                 }
             }
-            buffer.append(begin, fmt.end());
+
+            buffer.append(festd::string_view(begin, fmt.end()));
         }
     } // namespace Internal
 

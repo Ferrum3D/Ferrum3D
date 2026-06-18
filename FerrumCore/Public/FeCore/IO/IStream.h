@@ -39,7 +39,7 @@ namespace FE::IO
         //! @brief Get length of the stream.
         //!
         //! This will return length of streams when size is known, e.g. file streams.
-        //! Otherwise return value is always zero.
+        //! Otherwise, return value is always zero.
         [[nodiscard]] virtual size_t Length() const = 0;
 
         //! @brief Read contents of stream to a pre-allocated buffer.

@@ -1,8 +1,45 @@
 ﻿#include <FeCore/IO/BaseIO.h>
+#include <FeCore/IO/BaseIOPrivate.h>
+#include <FeCore/IO/FileStream.h>
 #include <FeCore/IO/Platform/PlatformPath.h>
 
 namespace FE::IO
 {
+    namespace
+    {
+        struct StandardFiles final
+        {
+            FileStream m_files[festd::to_underlying(StandardDescriptor::kCount)];
+
+            StandardFiles()
+            {
+                for (uint32_t i = 0; i < festd::size(m_files); ++i)
+                {
+                    m_files[i].SetBufferAllocator(Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear));
+                    m_files[i].Open(static_cast<StandardDescriptor>(i));
+                }
+            }
+        };
+
+        StandardFiles* GStandardFiles;
+    } // namespace
+
+
+    void Internal::Init(std::pmr::memory_resource* allocator)
+    {
+        FE_Assert(GStandardFiles == nullptr, "Standard files already initialized");
+        GStandardFiles = Memory::New<StandardFiles>(allocator);
+    }
+
+
+    void Internal::Shutdown()
+    {
+        FE_Assert(GStandardFiles != nullptr, "Standard files not initialized");
+        GStandardFiles->~StandardFiles();
+        GStandardFiles = nullptr;
+    }
+
+
     festd::string_view GetResultDesc(const ResultCode code)
     {
         switch (code)
@@ -47,6 +84,33 @@ namespace FE::IO
         default:
             return "Unknown error";
         }
+    }
+
+
+    size_t PrintTo(const StandardDescriptor destination, const festd::string_view message)
+    {
+        FileStream& stream = GStandardFiles->m_files[festd::to_underlying(destination)];
+        return stream.WriteFromBuffer(message.data(), message.size());
+    }
+
+
+    void Flush(const StandardDescriptor descriptor)
+    {
+        FileStream& stream = GStandardFiles->m_files[festd::to_underlying(descriptor)];
+        stream.FlushWrites();
+    }
+
+
+    void Internal::FormatBufferFileAdapter::append(const char* str, const uint32_t length)
+    {
+        auto* stream = static_cast<FileStream*>(m_data);
+        m_bytesWritten += stream->WriteFromBuffer(str, length);
+    }
+
+
+    Internal::FormatBufferFileAdapter Internal::FormatBufferFileAdapter::Create(const StandardDescriptor descriptor)
+    {
+        return FormatBufferFileAdapter{ .m_data = &GStandardFiles->m_files[festd::to_underlying(descriptor)] };
     }
 
 

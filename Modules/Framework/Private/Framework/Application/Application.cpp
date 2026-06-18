@@ -1,5 +1,5 @@
-#include <FeCore/Console/Console.h>
 #include <FeCore/DI/Builder.h>
+#include <FeCore/IO/BaseIO.h>
 #include <FeCore/Logging/Logger.h>
 #include <FeCore/Modules/Configuration.h>
 #include <FeCore/RTTI/Reflection.h>
@@ -11,45 +11,31 @@ namespace FE::Framework
 {
     namespace
     {
-        struct LogColorScope final
+        festd::string_view GetSeverityColor(const LogSeverity severity)
         {
-            explicit LogColorScope(const LogSeverity severity)
+            switch (severity)
             {
-                switch (severity)
-                {
-                default:
-                    FE_DebugBreak();
-                    [[fallthrough]];
+            default:
+                FE_DebugBreak();
+                [[fallthrough]];
 
-                case LogSeverity::kWarning:
-                    Console::Write("\033[33m");
-                    break;
+            case LogSeverity::kWarning:
+                return "\033[33m";
 
-                case LogSeverity::kError:
-                case LogSeverity::kCritical:
-                    Console::Write("\033[31m");
-                    break;
+            case LogSeverity::kError:
+            case LogSeverity::kCritical:
+                return "\033[31m";
 
-                case LogSeverity::kTrace:
-                    Console::Write("\033[35m");
-                    break;
+            case LogSeverity::kTrace:
+                return "\033[35m";
 
-                case LogSeverity::kDebug:
-                    Console::Write("\033[34m");
-                    break;
+            case LogSeverity::kDebug:
+                return "\033[34m";
 
-                case LogSeverity::kInfo:
-                    Console::Write("\033[36m");
-                    break;
-                }
+            case LogSeverity::kInfo:
+                return "\033[36m";
             }
-
-            ~LogColorScope()
-            {
-                Console::Write("\033[0m");
-            }
-        };
-
+        }
 
         Application* GInstance = nullptr;
     } // namespace
@@ -57,28 +43,18 @@ namespace FE::Framework
 
     void StdoutLogSink::Log(const LogSeverity severity, const SourceLocation sourceLocation, const festd::string_view message)
     {
-        {
-            const auto location = Fmt::FixedFormatSized<512>("{}({}): ", sourceLocation.m_fileName, sourceLocation.m_lineNumber);
-            Console::Write(location);
-        }
+        const auto dateStr = DateTime<TZ::Local>::Now().ToString(DateTimeFormat::kISO8601);
+        const auto colorStr = GetSeverityColor(severity);
+        const auto severityStr = LogSeverityToString(severity);
 
-        {
-            const auto date = DateTime<TZ::Local>::Now().ToString(DateTimeFormat::kISO8601);
-            Console::Write(date);
-        }
-
-        Console::Write(" [");
-
-        {
-            LogColorScope colorScope{ severity };
-            Console::Write(LogSeverityToString(severity));
-        }
-
-        Console::Write("] ");
-
-        Console::Write(festd::string_view(message.data(), message.size()));
-        Console::Write("\n");
-        Console::Flush();
+        IO::PrintLn("{}({}): {} [{}{}\033[0m] {}",
+                    sourceLocation.m_fileName,
+                    sourceLocation.m_lineNumber,
+                    dateStr,
+                    colorStr,
+                    severityStr,
+                    message);
+        IO::Flush(IO::StandardDescriptor::kStdout);
     }
 
 
@@ -171,7 +147,8 @@ namespace FE::Framework
             if (const Rc<WaitGroup> waitGroup = m_application->ScheduleUpdate())
                 waitGroup->Wait();
 
-            Console::Flush();
+            IO::Flush(IO::StandardDescriptor::kStdout);
+            IO::Flush(IO::StandardDescriptor::kStderr);
             return;
         }
 
@@ -184,15 +161,15 @@ namespace FE::Framework
             if (app->IsCloseRequested())
                 break;
 
-            auto waitGroup = m_application->ScheduleUpdate();
-
-            if (waitGroup)
+            if (const auto waitGroup = m_application->ScheduleUpdate())
                 waitGroup->Wait();
 
-            Console::Flush();
+            IO::Flush(IO::StandardDescriptor::kStdout);
+            IO::Flush(IO::StandardDescriptor::kStderr);
         }
 
-        Console::Flush();
+        IO::Flush(IO::StandardDescriptor::kStdout);
+        IO::Flush(IO::StandardDescriptor::kStderr);
         m_application->m_jobSystem->Stop();
         m_application->m_exitCode = 0;
     }

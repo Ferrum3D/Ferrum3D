@@ -1,6 +1,6 @@
 ﻿#include <FeCore/Base/PlatformInclude.h>
 #include <FeCore/Base/StackTrace.h>
-#include <FeCore/Console/Console.h>
+#include <FeCore/IO/BaseIO.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/MemoryPrivate.h>
 #include <FeCore/Memory/tlsf.h>
@@ -35,23 +35,21 @@ namespace FE::Memory
                         [](void* ptr, const size_t size, const uint32_t callstackHandle, void*) {
                             const Trace::CallStack callstack{ callstackHandle };
 
-                            Console::SetTextColor(Console::Color::kRed);
-                            Console::Write(
-                                Fmt::FixedFormat("Memory leak detected: {}; {} bytes\n", reinterpret_cast<uintptr_t>(ptr), size));
+                            IO::PrintLn("\033[31mMemory leak detected: {}; {} bytes\033[0m",
+                                        reinterpret_cast<uintptr_t>(ptr),
+                                        size);
 
                             void** frames = callstack.GetFrames();
                             for (uint32_t frameIndex = 0; frames[frameIndex] != nullptr; ++frameIndex)
                             {
                                 const Trace::SymbolInfo symbolInfo = Trace::SymbolInfo::Resolve(frames[frameIndex]);
-                                Console::Write(Fmt::FixedFormatSized<512>("{}\t[{}]\t{}:{}: {}\n",
-                                                                          symbolInfo.m_moduleName,
-                                                                          symbolInfo.m_address,
-                                                                          symbolInfo.m_fileName,
-                                                                          symbolInfo.m_lineNumber,
-                                                                          symbolInfo.m_symbolName));
+                                IO::PrintLn("{}\t[{}]\t{}:{}: {}",
+                                            symbolInfo.m_moduleName,
+                                            symbolInfo.m_address,
+                                            symbolInfo.m_fileName,
+                                            symbolInfo.m_lineNumber,
+                                            symbolInfo.m_symbolName);
                             }
-
-                            Console::SetTextColor(Console::Color::kDefault);
                         },
                         nullptr);
                     DebugHeapDestroy(m_debugHeap);
@@ -180,23 +178,22 @@ namespace FE::Memory
 
             if (callstack.IsValid())
             {
-                Console::Write(Fmt::FixedFormat("Invalid pointer detected at {}\n", ptr));
+                IO::PrintLn("Invalid pointer detected at {}", ptr);
 
                 void** frames = callstack.GetFrames();
                 for (uint32_t frameIndex = 0; frames[frameIndex] != nullptr; ++frameIndex)
                 {
                     const Trace::SymbolInfo symbolInfo = Trace::SymbolInfo::Resolve(frames[frameIndex]);
-                    Console::Write(Fmt::FixedFormatSized<512>("{}\t[{}]\t{}:{}: {}\n",
-                                                              symbolInfo.m_moduleName,
-                                                              symbolInfo.m_address,
-                                                              symbolInfo.m_fileName,
-                                                              symbolInfo.m_lineNumber,
-                                                              symbolInfo.m_symbolName));
+                    IO::PrintLn("{}\t[{}]\t{}:{}: {}",
+                                symbolInfo.m_moduleName,
+                                symbolInfo.m_address,
+                                symbolInfo.m_fileName,
+                                symbolInfo.m_lineNumber,
+                                symbolInfo.m_symbolName);
                 }
 
-                // Flush might allocate memory, so we need to unlock the heap lock.
                 lock.unlock();
-                Console::Flush();
+                IO::Flush(IO::StandardDescriptor::kStdout);
                 FE_DebugBreak();
             }
         }
@@ -242,7 +239,7 @@ namespace FE::Memory
     void* AllocateVirtual(const size_t byteSize)
     {
         FE_Assert(IsAligned(byteSize, GetPlatformSpec().m_granularity),
-                      "Size must be a multiple of virtual allocation granularity");
+                  "Size must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         return VirtualAlloc(nullptr, byteSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -256,7 +253,7 @@ namespace FE::Memory
     {
         FE_Assert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
         FE_Assert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
-                      "Alignment must be a multiple of virtual allocation granularity");
+                  "Alignment must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         MEM_ADDRESS_REQUIREMENTS requirements = {};
@@ -293,7 +290,7 @@ namespace FE::Memory
     {
         FE_Assert(IsAligned(byteSize, byteAlignment), "Size must be a multiple of alignment");
         FE_Assert(IsAligned(byteAlignment, GetPlatformSpec().m_granularity),
-                      "Alignment must be a multiple of virtual allocation granularity");
+                  "Alignment must be a multiple of virtual allocation granularity");
 
 #if FE_PLATFORM_WINDOWS
         MEM_ADDRESS_REQUIREMENTS requirements = {};

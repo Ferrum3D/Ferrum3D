@@ -2,9 +2,9 @@
 #include <FeCore/Base/Platform.h>
 #include <FeCore/Base/StackTracePrivate.h>
 #include <FeCore/Compression/CompressionPrivate.h>
-#include <FeCore/Console/ConsolePrivate.h>
 #include <FeCore/DI/Builder.h>
 #include <FeCore/DI/Container.h>
+#include <FeCore/IO/BaseIOPrivate.h>
 #include <FeCore/Memory/LinearAllocator.h>
 #include <FeCore/Memory/Memory.h>
 #include <FeCore/Memory/MemoryPrivate.h>
@@ -165,7 +165,7 @@ namespace FE::Env
                 {
                     tracy::StartupProfiler();
 
-                    Console::Internal::Init(allocator);
+                    IO::Internal::Init(allocator);
                     Trace::Internal::InitStackTrace(allocator);
                     Memory::Internal::Init(allocator);
                     Trace::Internal::Init(allocator);
@@ -182,7 +182,7 @@ namespace FE::Env
                     Trace::Internal::Shutdown();
                     Memory::Internal::Shutdown();
                     Trace::Internal::ShutdownStackTrace();
-                    Console::Internal::Shutdown();
+                    IO::Internal::Shutdown();
 
                     tracy::ShutdownProfiler();
                 }

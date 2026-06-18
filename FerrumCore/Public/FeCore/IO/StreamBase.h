@@ -107,7 +107,7 @@ namespace FE::IO
             return byteSize;
         }
 
-        void FlushWrites() final
+        void FlushWrites() override
         {
             if (m_bufferPosition > 0)
             {

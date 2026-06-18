@@ -30,6 +30,7 @@ namespace FE::IO
         [[nodiscard]] OpenMode GetOpenMode() const override;
         [[nodiscard]] FileStats GetStats() const override;
         void Close() override;
+        void FlushWrites() override;
 
     private:
         Path m_name;
