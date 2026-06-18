@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Base/Assert.h>
+#include <Core/Base/Assert.h>
 
 namespace FE::Graphics::Core
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
+#include <Core/Containers/SegmentedVector.h>
 #include <Graphics/Core/Barrier.h>
 #include <Graphics/Core/Common/ResourceBarrierBatcher.h>
 #include <Graphics/Core/DescriptorManager.h>

@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Memory/PoolAllocator.h>
-#include <FeCore/Threading/SharedSpinLock.h>
+#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Memory/PoolAllocator.h>
+#include <Core/Threading/SharedSpinLock.h>
 #include <Graphics/Core/ShaderStage.h>
 #include <festd/unordered_map.h>
 

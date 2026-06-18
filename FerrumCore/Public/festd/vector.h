@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <EASTL/fixed_vector.h>
 #include <EASTL/vector.h>
-#include <FeCore/Memory/Memory.h>
+#include <Core/Memory/Memory.h>
 #include <gch/small_vector.hpp>
 
 namespace FE::festd

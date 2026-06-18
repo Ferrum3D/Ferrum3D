@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/Base/Base.h>
-#include <FeCore/Logging/Trace.h>
-#include <FeCore/Memory/Memory.h>
+#include <Core/Base/Base.h>
+#include <Core/Logging/Trace.h>
+#include <Core/Memory/Memory.h>
 
 namespace FE
 {

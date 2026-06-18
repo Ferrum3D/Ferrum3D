@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/Logging/Logger.h>
-#include <FeCore/Threading/SharedSpinLock.h>
+#include <Core/Base/PlatformInclude.h>
+#include <Core/Logging/Logger.h>
+#include <Core/Threading/SharedSpinLock.h>
 #include <Framework/Application/Core/PlatformWindow.h>
 #include <festd/vector.h>
 

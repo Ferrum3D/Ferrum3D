@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Base/BaseMath.h>
+#include <Core/Base/BaseMath.h>
 
 namespace FE::Graphics::Core
 {

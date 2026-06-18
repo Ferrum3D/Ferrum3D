@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <FeCore/Containers/ByteBuffer.h>
-#include <FeCore/Memory/Memory.h>
+#include <Core/Containers/ByteBuffer.h>
+#include <Core/Memory/Memory.h>
 #include <Graphics/Core/ShaderLibrary.h>
 #include <Graphics/Core/ShaderStage.h>
 

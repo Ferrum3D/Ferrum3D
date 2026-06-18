@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Memory/Memory.h>
+#include <Core/Memory/Memory.h>
 #include <Graphics/Core/Format.h>
 #include <Graphics/Core/ShaderResourceType.h>
 #include <Graphics/Core/ShaderSpecialization.h>

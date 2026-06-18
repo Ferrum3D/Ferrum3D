@@ -2,7 +2,7 @@
 #include "ModelProcessor.h"
 #include "TextureProcessor.h"
 
-#include <FeCore/IO/IStreamFactory.h>
+#include <Core/IO/IStreamFactory.h>
 
 namespace FE::AssetBuilder
 {

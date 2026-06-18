@@ -1,5 +1,5 @@
-#include <FeCore/DI/Activator.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Core/DI/Activator.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>

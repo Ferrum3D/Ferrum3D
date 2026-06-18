@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Memory/Memory.h>
+#include <Core/Memory/Memory.h>
 #include <Graphics/Core/Base.h>
 
 namespace FE::Graphics::Core

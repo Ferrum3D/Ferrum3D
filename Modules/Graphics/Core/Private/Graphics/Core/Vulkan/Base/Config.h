@@ -1,14 +1,14 @@
 ﻿#pragma once
-#include <FeCore/Base/Base.h>
-#include <FeCore/Base/PlatformInclude.h>
+#include <Core/Base/Base.h>
+#include <Core/Base/PlatformInclude.h>
 
 #include <volk.h>
 
 // Must be included after volk.h
 #include <vk_mem_alloc.h>
 
-#include <FeCore/Logging/Trace.h>
-#include <FeCore/Memory/Memory.h>
+#include <Core/Logging/Trace.h>
+#include <Core/Memory/Memory.h>
 #include <array>
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)

@@ -1,6 +1,6 @@
-#include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
-#include <FeCore/Memory/PoolAllocator.h>
+#include <Core/Jobs/IJobSystem.h>
+#include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Memory/PoolAllocator.h>
 #include <Framework/Entities/EntityRegistry.h>
 #include <Framework/Entities/EntityWorld.h>
 #include <Framework/Entities/EntityWorldSystem.h>

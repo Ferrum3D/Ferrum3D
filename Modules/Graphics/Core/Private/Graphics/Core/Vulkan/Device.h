@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Logging/Trace.h>
+#include <Core/Logging/Trace.h>
 #include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>

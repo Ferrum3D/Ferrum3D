@@ -1,7 +1,7 @@
-#include <FeCore/Compression/Compression.h>
-#include <FeCore/IO/FileStream.h>
-#include <FeCore/Math/Transform.h>
-#include <FeCore/RTTI/Reflection.h>
+#include <Core/Compression/Compression.h>
+#include <Core/IO/FileStream.h>
+#include <Core/Math/Transform.h>
+#include <Core/RTTI/Reflection.h>
 #include <gtest/gtest.h>
 
 using namespace FE;

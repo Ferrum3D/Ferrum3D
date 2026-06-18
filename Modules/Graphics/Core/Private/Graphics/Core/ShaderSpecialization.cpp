@@ -1,4 +1,4 @@
-#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/ShaderSpecialization.h>
 
 namespace FE::Graphics::Core

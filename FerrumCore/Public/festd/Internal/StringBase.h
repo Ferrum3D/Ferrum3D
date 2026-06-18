@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/Encoding.h>
+#include <Core/Strings/Encoding.h>
 
 namespace FE::Internal
 {

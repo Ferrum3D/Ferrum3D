@@ -1,7 +1,7 @@
-﻿#include <FeCore/Base/Platform.h>
-#include <FeCore/DI/Builder.h>
-#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Logging/Trace.h>
+﻿#include <Core/Base/Platform.h>
+#include <Core/DI/Builder.h>
+#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Logging/Trace.h>
 #include <festd/vector.h>
 
 #include <Graphics/Core/Common/ShaderSourceCache.h>

@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Base/PlatformInclude.h>
-#include <FeCore/IO/IStreamFactory.h>
-#include <FeCore/Modules/LibraryLoader.h>
+#include <Core/Base/PlatformInclude.h>
+#include <Core/IO/IStreamFactory.h>
+#include <Core/Modules/LibraryLoader.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompiler.h>
 

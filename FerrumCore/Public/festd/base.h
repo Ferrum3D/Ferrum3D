@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <FeCore/Base/BaseTypes.h>
-#include <FeCore/Base/wyhash.h>
+#include <Core/Base/BaseTypes.h>
+#include <Core/Base/wyhash.h>
 
 #include <EASTL/array.h>
 #include <EASTL/bonus/adaptors.h>

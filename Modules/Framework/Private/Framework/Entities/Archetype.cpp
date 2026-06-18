@@ -1,6 +1,6 @@
-#include <FeCore/Memory/FiberTempAllocator.h>
-#include <FeCore/Memory/PoolAllocator.h>
-#include <FeCore/Modules/Environment.h>
+#include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Memory/PoolAllocator.h>
+#include <Core/Modules/Environment.h>
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/EntityComponentRegistry.h>
 #include <festd/bit_vector.h>

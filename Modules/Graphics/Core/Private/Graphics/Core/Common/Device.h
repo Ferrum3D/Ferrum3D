@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Logging/Trace.h>
-#include <FeCore/Threading/SpinLock.h>
+#include <Core/Logging/Trace.h>
+#include <Core/Threading/SpinLock.h>
 #include <Graphics/Core/Device.h>
 #include <festd/vector.h>
 

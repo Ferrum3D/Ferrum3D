@@ -1,8 +1,8 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
-#include <FeCore/Memory/LinearAllocator.h>
-#include <FeCore/Memory/Memory.h>
-#include <FeCore/Modules/Environment.h>
+#include <Core/Containers/SegmentedVector.h>
+#include <Core/Memory/LinearAllocator.h>
+#include <Core/Memory/Memory.h>
+#include <Core/Modules/Environment.h>
 #include <Framework/Entities/Base.h>
 #include <festd/bit_vector.h>
 #include <festd/unordered_map.h>

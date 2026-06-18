@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Memory/RefCount.h>
-#include <FeCore/Memory/RingBufferAllocator.h>
+#include <Core/Memory/RefCount.h>
+#include <Core/Memory/RingBufferAllocator.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Fence.h>
 #include <festd/ring_buffer.h>

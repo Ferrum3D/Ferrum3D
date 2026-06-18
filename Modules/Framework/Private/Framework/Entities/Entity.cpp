@@ -1,6 +1,6 @@
 #include <EASTL/bitset.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
-#include <FeCore/Memory/PoolAllocator.h>
+#include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Memory/PoolAllocator.h>
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/Entity.h>
 #include <Framework/Entities/EntityComponentRegistry.h>

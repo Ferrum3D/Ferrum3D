@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Math/Sphere.h>
+#include <Core/Math/Sphere.h>
 #include <Graphics/Assets/IModelAssetManager.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>

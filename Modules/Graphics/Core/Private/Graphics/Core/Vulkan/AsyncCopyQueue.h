@@ -1,9 +1,9 @@
 #pragma once
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Memory/LinearAllocator.h>
-#include <FeCore/Threading/Event.h>
-#include <FeCore/Threading/SharedSpinLock.h>
-#include <FeCore/Threading/Thread.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Memory/LinearAllocator.h>
+#include <Core/Threading/Event.h>
+#include <Core/Threading/SharedSpinLock.h>
+#include <Core/Threading/Thread.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/ResourcePool.h>

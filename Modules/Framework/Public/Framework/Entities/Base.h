@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Base/BaseTypes.h>
-#include <FeCore/Base/Hash.h>
+#include <Core/Base/BaseTypes.h>
+#include <Core/Base/Hash.h>
 
 namespace FE::Framework
 {

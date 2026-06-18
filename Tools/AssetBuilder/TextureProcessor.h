@@ -1,8 +1,8 @@
 #pragma once
-#include <FeCore/IO/BaseIO.h>
-#include <FeCore/IO/Path.h>
-#include <FeCore/Logging/Logger.h>
-#include <FeCore/Math/Vector2.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/IO/Path.h>
+#include <Core/Logging/Logger.h>
+#include <Core/Math/Vector2.h>
 #include <Graphics/Core/Format.h>
 
 namespace FE::AssetBuilder

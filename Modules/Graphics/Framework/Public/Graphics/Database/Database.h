@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
-#include <FeCore/Memory/BuddyAllocator.h>
+#include <Core/Containers/SegmentedVector.h>
+#include <Core/Memory/BuddyAllocator.h>
 #include <Graphics/Core/Base.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>

@@ -3,37 +3,37 @@
 // Manual changes will be lost.
 //
 
-#include <FeCore/RTTI/ReflectionContext.h>
+#include <Core/RTTI/ReflectionContext.h>
 
-#include <FeCore/Compression/Compression.h>
-#include <FeCore/DI/BaseDI.h>
-#include <FeCore/DI/Container.h>
-#include <FeCore/IO/AsyncStreamIO.h>
-#include <FeCore/IO/FileStream.h>
-#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/IO/IStream.h>
-#include <FeCore/IO/IStreamFactory.h>
-#include <FeCore/IO/StreamBase.h>
-#include <FeCore/IO/StreamFactory.h>
-#include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Jobs/JobSystem.h>
-#include <FeCore/Logging/Logger.h>
-#include <FeCore/Math/Aabb.h>
-#include <FeCore/Math/Color.h>
-#include <FeCore/Math/Matrix4x4.h>
-#include <FeCore/Math/Quaternion.h>
-#include <FeCore/Math/Rect.h>
-#include <FeCore/Math/Sphere.h>
-#include <FeCore/Math/Transform.h>
-#include <FeCore/Math/Vector2.h>
-#include <FeCore/Math/Vector3.h>
-#include <FeCore/Math/Vector3Int.h>
-#include <FeCore/Math/Vector3UInt.h>
-#include <FeCore/Math/Vector4.h>
-#include <FeCore/Memory/RefCount.h>
-#include <FeCore/Modules/Configuration.h>
-#include <FeCore/Modules/Environment.h>
-#include <FeCore/RTTI/RTTI.h>
+#include <Core/Compression/Compression.h>
+#include <Core/DI/BaseDI.h>
+#include <Core/DI/Container.h>
+#include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/FileStream.h>
+#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/IStream.h>
+#include <Core/IO/IStreamFactory.h>
+#include <Core/IO/StreamBase.h>
+#include <Core/IO/StreamFactory.h>
+#include <Core/Jobs/IJobSystem.h>
+#include <Core/Jobs/JobSystem.h>
+#include <Core/Logging/Logger.h>
+#include <Core/Math/Aabb.h>
+#include <Core/Math/Color.h>
+#include <Core/Math/Matrix4x4.h>
+#include <Core/Math/Quaternion.h>
+#include <Core/Math/Rect.h>
+#include <Core/Math/Sphere.h>
+#include <Core/Math/Transform.h>
+#include <Core/Math/Vector2.h>
+#include <Core/Math/Vector3.h>
+#include <Core/Math/Vector3Int.h>
+#include <Core/Math/Vector3UInt.h>
+#include <Core/Math/Vector4.h>
+#include <Core/Memory/RefCount.h>
+#include <Core/Modules/Configuration.h>
+#include <Core/Modules/Environment.h>
+#include <Core/RTTI/RTTI.h>
 #include <festd/string.h>
 
 

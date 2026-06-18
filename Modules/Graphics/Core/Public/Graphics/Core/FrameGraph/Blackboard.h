@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Memory/LinearAllocator.h>
+#include <Core/Memory/LinearAllocator.h>
 
 namespace FE::Graphics::Core
 {

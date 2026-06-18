@@ -1,10 +1,10 @@
 #include "TextureProcessor.h"
 #include "Utils.h"
 
-#include <FeCore/Compression/Compression.h>
-#include <FeCore/IO/IStreamFactory.h>
-#include <FeCore/Math/Color.h>
-#include <FeCore/Memory/SegmentedBuffer.h>
+#include <Core/Compression/Compression.h>
+#include <Core/IO/IStreamFactory.h>
+#include <Core/Math/Color.h>
+#include <Core/Memory/SegmentedBuffer.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
 #include <Graphics/Core/Texture.h>
 #include <festd/vector.h>

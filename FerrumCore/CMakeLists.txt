@@ -13,192 +13,192 @@
     Public/festd/unordered_map.h
     Public/festd/vector.h
 
-    Public/FeCore/Base/Assert.h
-    Public/FeCore/Base/Base.h
-    Public/FeCore/Base/BaseMath.h
-    Public/FeCore/Base/BaseTypes.h
-    Public/FeCore/Base/CompilerTraits.h
-    Public/FeCore/Base/Hash.h
-    Public/FeCore/Base/Platform.h
-    Public/FeCore/Base/PlatformInclude.h
-    Public/FeCore/Base/PlatformTraits.h
-    Public/FeCore/Base/StackTrace.h
+    Public/Core/Base/Assert.h
+    Public/Core/Base/Base.h
+    Public/Core/Base/BaseMath.h
+    Public/Core/Base/BaseTypes.h
+    Public/Core/Base/CompilerTraits.h
+    Public/Core/Base/Hash.h
+    Public/Core/Base/Platform.h
+    Public/Core/Base/PlatformInclude.h
+    Public/Core/Base/PlatformTraits.h
+    Public/Core/Base/StackTrace.h
 
-    Public/FeCore/Compression/Compression.h
+    Public/Core/Compression/Compression.h
 
-    Public/FeCore/Containers/ByteBuffer.h
-    Public/FeCore/Containers/ConcurrentQueue.h
-    Public/FeCore/Containers/Pow2Array.h
-    Public/FeCore/Containers/SegmentedVector.h
+    Public/Core/Containers/ByteBuffer.h
+    Public/Core/Containers/ConcurrentQueue.h
+    Public/Core/Containers/Pow2Array.h
+    Public/Core/Containers/SegmentedVector.h
 
-    Public/FeCore/DI/Activator.h
-    Public/FeCore/DI/BaseDI.h
-    Public/FeCore/DI/Builder.h
-    Public/FeCore/DI/Container.h
-    Public/FeCore/DI/LifetimeScope.h
-    Public/FeCore/DI/Registration.h
-    Public/FeCore/DI/Registry.h
+    Public/Core/DI/Activator.h
+    Public/Core/DI/BaseDI.h
+    Public/Core/DI/Builder.h
+    Public/Core/DI/Container.h
+    Public/Core/DI/LifetimeScope.h
+    Public/Core/DI/Registration.h
+    Public/Core/DI/Registry.h
 
-    Public/FeCore/IO/IAsyncStreamIO.h
-    Public/FeCore/IO/BaseIO.h
-    Public/FeCore/IO/FileStream.h
-    Public/FeCore/IO/IStream.h
-    Public/FeCore/IO/IStreamFactory.h
-    Public/FeCore/IO/Path.h
-    Public/FeCore/IO/PathParser.h
-    Public/FeCore/IO/StreamBase.h
+    Public/Core/IO/IAsyncStreamIO.h
+    Public/Core/IO/BaseIO.h
+    Public/Core/IO/FileStream.h
+    Public/Core/IO/IStream.h
+    Public/Core/IO/IStreamFactory.h
+    Public/Core/IO/Path.h
+    Public/Core/IO/PathParser.h
+    Public/Core/IO/StreamBase.h
 
-    Public/FeCore/Jobs/Base.h
-    Public/FeCore/Jobs/IJobSystem.h
-    Public/FeCore/Jobs/Job.h
-    Public/FeCore/Jobs/JobSystem.h
-    Public/FeCore/Jobs/WaitGroup.h
+    Public/Core/Jobs/Base.h
+    Public/Core/Jobs/IJobSystem.h
+    Public/Core/Jobs/Job.h
+    Public/Core/Jobs/JobSystem.h
+    Public/Core/Jobs/WaitGroup.h
 
-    Public/FeCore/Logging/Logger.h
-    Public/FeCore/Logging/Trace.h
+    Public/Core/Logging/Logger.h
+    Public/Core/Logging/Trace.h
 
-    Public/FeCore/Math/Aabb.h
-    Public/FeCore/Math/Color.h
-    Public/FeCore/Math/Colors.h
-    Public/FeCore/Math/Matrix4x4.h
-    Public/FeCore/Math/Obb.h
-    Public/FeCore/Math/Packing.h
-    Public/FeCore/Math/Quaternion.h
-    Public/FeCore/Math/Random.h
-    Public/FeCore/Math/Rect.h
-    Public/FeCore/Math/Sphere.h
-    Public/FeCore/Math/Transform.h
-    Public/FeCore/Math/UUID.h
-    Public/FeCore/Math/Vector2.h
-    Public/FeCore/Math/Vector3.h
-    Public/FeCore/Math/Vector3Int.h
-    Public/FeCore/Math/Vector3UInt.h
-    Public/FeCore/Math/Vector4.h
+    Public/Core/Math/Aabb.h
+    Public/Core/Math/Color.h
+    Public/Core/Math/Colors.h
+    Public/Core/Math/Matrix4x4.h
+    Public/Core/Math/Obb.h
+    Public/Core/Math/Packing.h
+    Public/Core/Math/Quaternion.h
+    Public/Core/Math/Random.h
+    Public/Core/Math/Rect.h
+    Public/Core/Math/Sphere.h
+    Public/Core/Math/Transform.h
+    Public/Core/Math/UUID.h
+    Public/Core/Math/Vector2.h
+    Public/Core/Math/Vector3.h
+    Public/Core/Math/Vector3Int.h
+    Public/Core/Math/Vector3UInt.h
+    Public/Core/Math/Vector4.h
 
-    Public/FeCore/Memory/BuddyAllocator.h
-    Public/FeCore/Memory/FiberTempAllocator.h
-    Public/FeCore/Memory/LinearAllocator.h
-    Public/FeCore/Memory/Memory.h
-    Public/FeCore/Memory/PoolAllocator.h
-    Public/FeCore/Memory/RingBufferAllocator.h
-    Public/FeCore/Memory/RefCount.h
-    Public/FeCore/Memory/SegmentedBuffer.h
+    Public/Core/Memory/BuddyAllocator.h
+    Public/Core/Memory/FiberTempAllocator.h
+    Public/Core/Memory/LinearAllocator.h
+    Public/Core/Memory/Memory.h
+    Public/Core/Memory/PoolAllocator.h
+    Public/Core/Memory/RingBufferAllocator.h
+    Public/Core/Memory/RefCount.h
+    Public/Core/Memory/SegmentedBuffer.h
 
-    Public/FeCore/Modules/Configuration.h
-    Public/FeCore/Modules/Environment.h
-    Public/FeCore/Modules/LibraryLoader.h
+    Public/Core/Modules/Configuration.h
+    Public/Core/Modules/Environment.h
+    Public/Core/Modules/LibraryLoader.h
 
-    Public/FeCore/RTTI/Reflection.h
-    Public/FeCore/RTTI/ReflectionContext.h
-    Public/FeCore/RTTI/RTTI.h
+    Public/Core/RTTI/Reflection.h
+    Public/Core/RTTI/ReflectionContext.h
+    Public/Core/RTTI/RTTI.h
 
-    Public/FeCore/SIMD/Intersection.h
-    Public/FeCore/SIMD/Soa.h
-    Public/FeCore/SIMD/Utils.h
+    Public/Core/SIMD/Intersection.h
+    Public/Core/SIMD/Soa.h
+    Public/Core/SIMD/Utils.h
 
-    Public/FeCore/Strings/Encoding.h
-    Public/FeCore/Strings/Format.h
-    Public/FeCore/Strings/Parser.h
-    Public/FeCore/Strings/Utils.h
+    Public/Core/Strings/Encoding.h
+    Public/Core/Strings/Format.h
+    Public/Core/Strings/Parser.h
+    Public/Core/Strings/Utils.h
 
-    Public/FeCore/Threading/Context.h
-    Public/FeCore/Threading/ConditionVariable.h
-    Public/FeCore/Threading/Event.h
-    Public/FeCore/Threading/Fiber.h
-    Public/FeCore/Threading/Mutex.h
-    Public/FeCore/Threading/Semaphore.h
-    Public/FeCore/Threading/SharedSpinLock.h
-    Public/FeCore/Threading/SpinLock.h
-    Public/FeCore/Threading/Thread.h
+    Public/Core/Threading/Context.h
+    Public/Core/Threading/ConditionVariable.h
+    Public/Core/Threading/Event.h
+    Public/Core/Threading/Fiber.h
+    Public/Core/Threading/Mutex.h
+    Public/Core/Threading/Semaphore.h
+    Public/Core/Threading/SharedSpinLock.h
+    Public/Core/Threading/SpinLock.h
+    Public/Core/Threading/Thread.h
 
-    Public/FeCore/Time/BaseTime.h
-    Public/FeCore/Time/DateTime.h
-    Public/FeCore/Time/TimeSpan.h
+    Public/Core/Time/BaseTime.h
+    Public/Core/Time/DateTime.h
+    Public/Core/Time/TimeSpan.h
 
-    Public/FeCore/Utils/Core.natvis
-    Public/FeCore/Utils/Crc32.h
+    Public/Core/Utils/Core.natvis
+    Public/Core/Utils/Crc32.h
 )
 
 set(COMMON_SOURCES
-    Private/FeCore/Base/Assert.cpp
-    Private/FeCore/Base/AssertPrivate.h
-    Private/FeCore/Base/StackTrace.cpp
-    Private/FeCore/Base/StackTracePrivate.h
+    Private/Core/Base/Assert.cpp
+    Private/Core/Base/AssertPrivate.h
+    Private/Core/Base/StackTrace.cpp
+    Private/Core/Base/StackTracePrivate.h
 
-    Private/FeCore/Compression/Compression.cpp
-    Private/FeCore/Compression/CompressionPrivate.h
+    Private/Core/Compression/Compression.cpp
+    Private/Core/Compression/CompressionPrivate.h
 
-    Private/FeCore/DI/BaseDI.cpp
-    Private/FeCore/DI/Builder.cpp
-    Private/FeCore/DI/Container.cpp
-    Private/FeCore/DI/LifetimeScope.cpp
+    Private/Core/DI/BaseDI.cpp
+    Private/Core/DI/Builder.cpp
+    Private/Core/DI/Container.cpp
+    Private/Core/DI/LifetimeScope.cpp
 
-    Private/FeCore/IO/Platform/PlatformFile.h
-    Private/FeCore/IO/Platform/PlatformPath.h
-    Private/FeCore/IO/AsyncStreamIO.h
-    Private/FeCore/IO/AsyncStreamIO.cpp
-    Private/FeCore/IO/BaseIO.cpp
-    Private/FeCore/IO/BaseIOPrivate.h
-    Private/FeCore/IO/FileStream.cpp
-    Private/FeCore/IO/Path.cpp
-    Private/FeCore/IO/StreamFactory.h
-    Private/FeCore/IO/StreamFactory.cpp
+    Private/Core/IO/Platform/PlatformFile.h
+    Private/Core/IO/Platform/PlatformPath.h
+    Private/Core/IO/AsyncStreamIO.h
+    Private/Core/IO/AsyncStreamIO.cpp
+    Private/Core/IO/BaseIO.cpp
+    Private/Core/IO/BaseIOPrivate.h
+    Private/Core/IO/FileStream.cpp
+    Private/Core/IO/Path.cpp
+    Private/Core/IO/StreamFactory.h
+    Private/Core/IO/StreamFactory.cpp
 
-    Private/FeCore/Jobs/JobSystem.cpp
-    Private/FeCore/Jobs/WaitGroup.cpp
+    Private/Core/Jobs/JobSystem.cpp
+    Private/Core/Jobs/WaitGroup.cpp
 
-    Private/FeCore/Logging/Logger.cpp
+    Private/Core/Logging/Logger.cpp
 
-    Private/FeCore/Math/Colors.cpp
-    Private/FeCore/Math/Matrix4x4.cpp
+    Private/Core/Math/Colors.cpp
+    Private/Core/Math/Matrix4x4.cpp
 
-    Private/FeCore/Memory/FiberTempAllocator.cpp
-    Private/FeCore/Memory/LinearAllocator.cpp
-    Private/FeCore/Memory/Memory.cpp
-    Private/FeCore/Memory/MemoryPrivate.h
-    Private/FeCore/Memory/PoolAllocator.cpp
-    Private/FeCore/Memory/BuddyAllocator.cpp
-    Private/FeCore/Memory/RingBufferAllocator.cpp
-    Private/FeCore/Memory/tlsf.c
-    Private/FeCore/Memory/tlsf.h
+    Private/Core/Memory/FiberTempAllocator.cpp
+    Private/Core/Memory/LinearAllocator.cpp
+    Private/Core/Memory/Memory.cpp
+    Private/Core/Memory/MemoryPrivate.h
+    Private/Core/Memory/PoolAllocator.cpp
+    Private/Core/Memory/BuddyAllocator.cpp
+    Private/Core/Memory/RingBufferAllocator.cpp
+    Private/Core/Memory/tlsf.c
+    Private/Core/Memory/tlsf.h
 
-    Private/FeCore/Modules/Configuration.cpp
-    Private/FeCore/Modules/Environment.cpp
-    Private/FeCore/Modules/LibraryLoader.cpp
+    Private/Core/Modules/Configuration.cpp
+    Private/Core/Modules/Environment.cpp
+    Private/Core/Modules/LibraryLoader.cpp
 
-    Private/FeCore/Platform/Windows/Common.h
-    Private/FeCore/Platform/Windows/Platform.cpp
+    Private/Core/Platform/Windows/Common.h
+    Private/Core/Platform/Windows/Platform.cpp
 
-    Private/FeCore/RTTI/Reflection.cpp
-    Private/FeCore/RTTI/ReflectionPrivate.h
+    Private/Core/RTTI/Reflection.cpp
+    Private/Core/RTTI/ReflectionPrivate.h
 
-    Private/FeCore/Strings/Encoding.cpp
-    Private/FeCore/Strings/Format.cpp
-    Private/FeCore/Strings/Parser.cpp
+    Private/Core/Strings/Encoding.cpp
+    Private/Core/Strings/Format.cpp
+    Private/Core/Strings/Parser.cpp
 
-    Private/FeCore/Threading/Context.cpp
-    Private/FeCore/Threading/Fiber.cpp
-    Private/FeCore/Threading/ThreadingPrivate.h
+    Private/Core/Threading/Context.cpp
+    Private/Core/Threading/Fiber.cpp
+    Private/Core/Threading/ThreadingPrivate.h
 
-    Private/FeCore/Time/Platform/PlatformTime.cpp
-    Private/FeCore/Time/DateTime.cpp
+    Private/Core/Time/Platform/PlatformTime.cpp
+    Private/Core/Time/DateTime.cpp
 
-    Private/FeCore/Utils/Crc32.cpp
+    Private/Core/Utils/Crc32.cpp
 )
 
 set(WINDOWS_SOURCES
-    Private/FeCore/Base/Platform/Windows/PlatformAssert.cpp
+    Private/Core/Base/Platform/Windows/PlatformAssert.cpp
 
-    Private/FeCore/IO/Platform/Windows/PlatformFile.cpp
-    Private/FeCore/IO/Platform/Windows/PlatformPath.cpp
+    Private/Core/IO/Platform/Windows/PlatformFile.cpp
+    Private/Core/IO/Platform/Windows/PlatformPath.cpp
 
-    Private/FeCore/Threading/Platform/Windows/Event.cpp
-    Private/FeCore/Threading/Platform/Windows/ConditionVariable.cpp
-    Private/FeCore/Threading/Platform/Windows/Thread.cpp
-    Private/FeCore/Threading/Platform/Windows/Mutex.cpp
-    Private/FeCore/Threading/Platform/Windows/Semaphore.cpp
+    Private/Core/Threading/Platform/Windows/Event.cpp
+    Private/Core/Threading/Platform/Windows/ConditionVariable.cpp
+    Private/Core/Threading/Platform/Windows/Thread.cpp
+    Private/Core/Threading/Platform/Windows/Mutex.cpp
+    Private/Core/Threading/Platform/Windows/Semaphore.cpp
 
-    Private/FeCore/Time/Platform/Windows/PlatformTime.cpp
+    Private/Core/Time/Platform/Windows/PlatformTime.cpp
 )
 
 set(GENERATED_SOURCES

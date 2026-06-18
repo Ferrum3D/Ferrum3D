@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Logging/Logger.h>
+#include <Core/Logging/Logger.h>
 #include <Framework/Application/Application.h>
 
 namespace FE::AssetBuilder

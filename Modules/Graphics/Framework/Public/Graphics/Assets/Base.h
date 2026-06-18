@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Base/BaseTypes.h>
-#include <FeCore/Jobs/WaitGroup.h>
+#include <Core/Base/BaseTypes.h>
+#include <Core/Jobs/WaitGroup.h>
 
 namespace FE::Graphics
 {

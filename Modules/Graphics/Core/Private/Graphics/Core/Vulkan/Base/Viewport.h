@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Math/Aabb.h>
+#include <Core/Math/Aabb.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 
 namespace FE::Graphics::Vulkan

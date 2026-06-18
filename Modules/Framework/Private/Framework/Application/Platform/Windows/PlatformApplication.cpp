@@ -1,5 +1,5 @@
-#include <FeCore/DI/Activator.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Core/DI/Activator.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>

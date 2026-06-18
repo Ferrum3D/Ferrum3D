@@ -1,5 +1,5 @@
-#include <FeCore/IO/Path.h>
-#include <FeCore/Logging/Trace.h>
+#include <Core/IO/Path.h>
+#include <Core/Logging/Trace.h>
 #include <festd/vector.h>
 #include <gtest/gtest.h>
 

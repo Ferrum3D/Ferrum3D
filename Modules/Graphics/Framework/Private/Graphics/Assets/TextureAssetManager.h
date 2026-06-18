@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Memory/PoolAllocator.h>
+#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Assets/ITextureAssetManager.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
 #include <Graphics/Core/AsyncCopyQueue.h>

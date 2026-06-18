@@ -1,5 +1,5 @@
-﻿#include <FeCore/Modules/Environment.h>
-#include <FeCore/Strings/Format.h>
+﻿#include <Core/Modules/Environment.h>
+#include <Core/Strings/Format.h>
 #include <Tests/Common/TestCommon.h>
 #include <festd/vector.h>
 

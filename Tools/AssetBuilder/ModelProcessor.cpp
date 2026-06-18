@@ -3,9 +3,9 @@
 #include "ModelImporter.h"
 #include "Utils.h"
 
-#include <FeCore/Compression/Compression.h>
-#include <FeCore/IO/IStreamFactory.h>
-#include <FeCore/Math/Packing.h>
+#include <Core/Compression/Compression.h>
+#include <Core/IO/IStreamFactory.h>
+#include <Core/Math/Packing.h>
 #include <Graphics/Assets/ModelAssetFormat.h>
 #include <Graphics/Core/InputLayoutBuilder.h>
 

@@ -1,4 +1,4 @@
-﻿#include <FeCore/Logging/Trace.h>
+﻿#include <Core/Logging/Trace.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>

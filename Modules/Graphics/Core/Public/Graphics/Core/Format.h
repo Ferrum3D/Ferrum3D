@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Strings/Format.h>
+#include <Core/Strings/Format.h>
 #include <Graphics/Core/BaseTypes.h>
 
 namespace FE::Graphics::Core

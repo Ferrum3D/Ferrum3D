@@ -1,9 +1,9 @@
-﻿#include <FeCore/Containers/ByteBuffer.h>
-#include <FeCore/DI/Activator.h>
-#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Logging/Trace.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
-#include <FeCore/Memory/LinearAllocator.h>
+﻿#include <Core/Containers/ByteBuffer.h>
+#include <Core/DI/Activator.h>
+#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Logging/Trace.h>
+#include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 
 #include <d3d12shader.h>

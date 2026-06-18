@@ -1,5 +1,5 @@
-﻿#include <FeCore/Base/Platform.h>
-#include <FeCore/Modules/Environment.h>
+﻿#include <Core/Base/Platform.h>
+#include <Core/Modules/Environment.h>
 #include <gtest/gtest.h>
 
 using namespace FE;

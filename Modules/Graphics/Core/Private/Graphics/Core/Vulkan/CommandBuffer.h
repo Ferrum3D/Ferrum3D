@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Containers/SegmentedVector.h>
-#include <FeCore/Memory/LinearAllocator.h>
+#include <Core/Containers/SegmentedVector.h>
+#include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 

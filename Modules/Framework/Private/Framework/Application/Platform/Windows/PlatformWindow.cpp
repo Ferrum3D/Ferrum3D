@@ -1,6 +1,6 @@
-#include <FeCore/Memory/FiberTempAllocator.h>
-#include <FeCore/Strings/Encoding.h>
-#include <FeCore/Threading/Thread.h>
+#include <Core/Memory/FiberTempAllocator.h>
+#include <Core/Strings/Encoding.h>
+#include <Core/Threading/Thread.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
 #include <Framework/Application/Platform/Windows/PlatformApplication.h>
 #include <Framework/Application/Platform/Windows/PlatformWindow.h>

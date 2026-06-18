@@ -1,5 +1,5 @@
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/Entity.h>
 #include <Framework/Entities/EntityRegistry.h>

@@ -1,6 +1,6 @@
-#include <FeCore/Math/Random.h>
-#include <FeCore/Math/Vector3.h>
-#include <FeCore/Threading/Thread.h>
+#include <Core/Math/Random.h>
+#include <Core/Math/Vector3.h>
+#include <Core/Threading/Thread.h>
 #include <gtest/gtest.h>
 #include <random>
 

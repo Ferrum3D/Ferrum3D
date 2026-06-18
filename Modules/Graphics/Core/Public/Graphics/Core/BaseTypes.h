@@ -1,8 +1,8 @@
 ﻿#pragma once
-#include <FeCore/Math/Vector2.h>
-#include <FeCore/Math/Vector3UInt.h>
-#include <FeCore/Modules/Environment.h>
-#include <FeCore/Strings/Format.h>
+#include <Core/Math/Vector2.h>
+#include <Core/Math/Vector3UInt.h>
+#include <Core/Modules/Environment.h>
+#include <Core/Strings/Format.h>
 
 namespace FE::Graphics
 {

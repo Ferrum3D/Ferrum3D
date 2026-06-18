@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/IO/BaseIO.h>
-#include <FeCore/IO/Path.h>
-#include <FeCore/Logging/Logger.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/IO/Path.h>
+#include <Core/Logging/Logger.h>
 
 namespace FE::AssetBuilder
 {

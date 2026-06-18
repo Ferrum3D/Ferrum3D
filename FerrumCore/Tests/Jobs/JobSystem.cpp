@@ -1,9 +1,9 @@
-#include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Modules/Environment.h>
-#include <FeCore/Threading/ConditionVariable.h>
-#include <FeCore/Threading/Mutex.h>
-#include <FeCore/Threading/Thread.h>
+#include <Core/Jobs/IJobSystem.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Modules/Environment.h>
+#include <Core/Threading/ConditionVariable.h>
+#include <Core/Threading/Mutex.h>
+#include <Core/Threading/Thread.h>
 #include <gtest/gtest.h>
 
 namespace FE::Tests

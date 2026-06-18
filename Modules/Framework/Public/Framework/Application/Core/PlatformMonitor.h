@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Math/Rect.h>
+#include <Core/Math/Rect.h>
 
 namespace FE::Framework::Core
 {

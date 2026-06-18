@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Containers/SegmentedVector.h>
-#include <FeCore/IO/BaseIO.h>
-#include <FeCore/Memory/PoolAllocator.h>
+#include <Core/Containers/SegmentedVector.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/ShaderCompiler.h>
 #include <Graphics/Core/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>

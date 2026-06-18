@@ -1,6 +1,6 @@
 #include "Utils.h"
 
-#include <FeCore/IO/IStream.h>
+#include <Core/IO/IStream.h>
 
 namespace FE
 {

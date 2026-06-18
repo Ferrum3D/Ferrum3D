@@ -1,7 +1,7 @@
 #pragma once
-#include <FeCore/DI/BaseDI.h>
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Logging/Logger.h>
+#include <Core/DI/BaseDI.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Logging/Logger.h>
 #include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Application/Core/PlatformWindow.h>
 #include <festd/unordered_map.h>

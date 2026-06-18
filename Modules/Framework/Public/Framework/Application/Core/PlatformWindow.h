@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Math/Rect.h>
-#include <FeCore/Memory/Memory.h>
+#include <Core/Math/Rect.h>
+#include <Core/Memory/Memory.h>
 #include <festd/string.h>
 
 namespace FE::Framework::Core

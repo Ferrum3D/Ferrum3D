@@ -1,5 +1,5 @@
-﻿#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Logging/Trace.h>
+﻿#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Logging/Trace.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 
 namespace FE::Graphics::Core

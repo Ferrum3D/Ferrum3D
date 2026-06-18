@@ -1,8 +1,8 @@
 #pragma once
-#include <FeCore/Containers/ConcurrentQueue.h>
-#include <FeCore/Jobs/WaitGroup.h>
-#include <FeCore/Memory/SegmentedBuffer.h>
-#include <FeCore/Time/BaseTime.h>
+#include <Core/Containers/ConcurrentQueue.h>
+#include <Core/Jobs/WaitGroup.h>
+#include <Core/Memory/SegmentedBuffer.h>
+#include <Core/Time/BaseTime.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Texture.h>
 

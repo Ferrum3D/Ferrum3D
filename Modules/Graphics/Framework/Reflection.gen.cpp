@@ -3,7 +3,7 @@
 // Manual changes will be lost.
 //
 
-#include <FeCore/RTTI/ReflectionContext.h>
+#include <Core/RTTI/ReflectionContext.h>
 
 #include <Graphics/Assets/IModelAssetManager.h>
 #include <Graphics/Assets/ITextureAssetManager.h>

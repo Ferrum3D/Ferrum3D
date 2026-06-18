@@ -3,7 +3,7 @@
 // Manual changes will be lost.
 //
 
-#include <FeCore/RTTI/ReflectionContext.h>
+#include <Core/RTTI/ReflectionContext.h>
 
 #include <Framework/Application/Application.h>
 #include <Framework/Application/Core/PlatformApplication.h>

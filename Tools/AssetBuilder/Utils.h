@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Compression/Compression.h>
-#include <FeCore/IO/IStream.h>
+#include <Core/Compression/Compression.h>
+#include <Core/IO/IStream.h>
 #include <festd/span.h>
 #include <festd/vector.h>
 

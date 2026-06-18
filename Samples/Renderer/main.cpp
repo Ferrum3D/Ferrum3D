@@ -1,6 +1,6 @@
-#include <FeCore/DI/Activator.h>
-#include <FeCore/Math/Matrix4x4.h>
-#include <FeCore/Modules/Configuration.h>
+#include <Core/DI/Activator.h>
+#include <Core/Math/Matrix4x4.h>
+#include <Core/Modules/Configuration.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Module.h>
 #include <Graphics/Assets/IModelAssetManager.h>

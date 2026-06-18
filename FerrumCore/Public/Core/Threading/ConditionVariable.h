@@ -1,0 +1,42 @@
+#pragma once
+#include <Core/Base/Base.h>
+#include <Core/Threading/Mutex.h>
+
+namespace FE::Threading
+{
+    struct ConditionVariable final
+    {
+        ConditionVariable() noexcept;
+        ~ConditionVariable() = default;
+
+        ConditionVariable(const ConditionVariable&) = delete;
+        ConditionVariable& operator=(const ConditionVariable&) = delete;
+
+        void NotifyOne() noexcept;
+        void NotifyAll() noexcept;
+
+        void Wait(std::unique_lock<Mutex>& lock);
+        bool WaitFor(std::unique_lock<Mutex>& lock, uint32_t milliseconds);
+
+        template<class TPredicate>
+        void Wait(std::unique_lock<Mutex>& lock, TPredicate&& predicate)
+        {
+            while (!predicate())
+                Wait(lock);
+        }
+
+        template<class TPredicate>
+        bool WaitFor(std::unique_lock<Mutex>& lock, const uint32_t milliseconds, TPredicate&& predicate)
+        {
+            while (!predicate())
+            {
+                if (!WaitFor(lock, milliseconds))
+                    return predicate();
+            }
+            return true;
+        }
+
+    private:
+        uintptr_t m_nativeConditionVariable = 0;
+    };
+} // namespace FE::Threading

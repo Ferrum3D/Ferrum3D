@@ -1,5 +1,5 @@
 #pragma once
-#include <FeCore/Jobs/WaitGroup.h>
+#include <Core/Jobs/WaitGroup.h>
 #include <Graphics/Core/DeviceObject.h>
 
 namespace FE::Graphics::Core

@@ -1,5 +1,5 @@
-﻿#include <FeCore/Strings/Format.h>
-#include <FeCore/Math/UUID.h>
+﻿#include <Core/Strings/Format.h>
+#include <Core/Math/UUID.h>
 #include <gtest/gtest.h>
 
 using namespace FE;

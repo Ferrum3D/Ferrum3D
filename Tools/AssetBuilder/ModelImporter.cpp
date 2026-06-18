@@ -1,7 +1,7 @@
 #include "ModelImporter.h"
 
-#include <FeCore/IO/Path.h>
-#include <FeCore/Strings/Parser.h>
+#include <Core/IO/Path.h>
+#include <Core/Strings/Parser.h>
 
 #define STBIW_MALLOC(size) FE::Memory::DefaultAllocate(size)
 #define STBIW_REALLOC(p, newSize) FE::Memory::DefaultReallocate(p, newSize)

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Base/BaseTypes.h>
+#include <Core/Base/BaseTypes.h>
 
 namespace FE::Input::Core
 {

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <FeCore/Modules/Configuration.h>
+#include <Core/Modules/Configuration.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 

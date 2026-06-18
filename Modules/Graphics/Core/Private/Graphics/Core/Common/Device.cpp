@@ -1,4 +1,4 @@
-﻿#include <FeCore/Memory/FiberTempAllocator.h>
+﻿#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Common/Device.h>
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/Format.h>

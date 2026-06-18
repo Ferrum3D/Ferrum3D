@@ -1,4 +1,4 @@
-﻿#include <FeCore/SIMD/Intersection.h>
+﻿#include <Core/SIMD/Intersection.h>
 #include <Graphics/Scene/Octree.h>
 
 namespace FE::Graphics

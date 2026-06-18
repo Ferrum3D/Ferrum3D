@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <FeCore/Containers/Pow2Array.h>
-#include <FeCore/Memory/PoolAllocator.h>
-#include <FeCore/SIMD/Soa.h>
+#include <Core/Containers/Pow2Array.h>
+#include <Core/Memory/PoolAllocator.h>
+#include <Core/SIMD/Soa.h>
 #include <festd/fixed_function.h>
 #include <festd/vector.h>
 

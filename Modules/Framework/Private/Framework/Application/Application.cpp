@@ -1,9 +1,9 @@
-#include <FeCore/DI/Builder.h>
-#include <FeCore/IO/BaseIO.h>
-#include <FeCore/Logging/Logger.h>
-#include <FeCore/Modules/Configuration.h>
-#include <FeCore/RTTI/Reflection.h>
-#include <FeCore/Time/DateTime.h>
+#include <Core/DI/Builder.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/Logging/Logger.h>
+#include <Core/Modules/Configuration.h>
+#include <Core/RTTI/Reflection.h>
+#include <Core/Time/DateTime.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 

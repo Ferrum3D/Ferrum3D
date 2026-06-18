@@ -1,6 +1,6 @@
 #pragma once
-#include <FeCore/Jobs/IJobSystem.h>
-#include <FeCore/Memory/PoolAllocator.h>
+#include <Core/Jobs/IJobSystem.h>
+#include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <festd/unordered_map.h>

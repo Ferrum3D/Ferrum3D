@@ -1,6 +1,6 @@
-﻿#include <FeCore/IO/IAsyncStreamIO.h>
-#include <FeCore/Jobs/Job.h>
-#include <FeCore/Memory/FiberTempAllocator.h>
+﻿#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Jobs/Job.h>
+#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
