@@ -144,6 +144,7 @@ set(COMMON_SOURCES
     Private/Core/IO/StreamFactory.h
     Private/Core/IO/StreamFactory.cpp
 
+    Private/Core/Jobs/Job.cpp
     Private/Core/Jobs/JobSystem.cpp
     Private/Core/Jobs/WaitGroup.cpp
 

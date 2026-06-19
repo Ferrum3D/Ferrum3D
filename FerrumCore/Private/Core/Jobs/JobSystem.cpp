@@ -383,25 +383,25 @@ namespace FE
     }
 
 
-    void JobSystem::Schedule(const JobScheduleInfo& info)
+    void JobSystem::AddReadyJob(Job* job)
     {
-        info.m_job->m_orderHint = m_jobCounter.fetch_add(1, std::memory_order_relaxed);
+        job->m_orderHint = m_jobCounter.fetch_add(1, std::memory_order_relaxed);
 
-        const FiberAffinityMask affinityMask = info.m_affinityMask;
-        const JobPriority priority = info.m_priority;
+        const FiberAffinityMask affinityMask = job->m_affinityMask;
+        const JobPriority priority = job->m_priority;
         GlobalQueueSet& globalQueueSet = m_globalQueues[festd::to_underlying(priority)];
         switch (affinityMask)
         {
         case FiberAffinityMask::kAll:
-            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kGeneric)].Enqueue(info.m_job);
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kGeneric)].Enqueue(job);
             break;
 
         case FiberAffinityMask::kAllForeground:
-            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kForeground)].Enqueue(info.m_job);
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kForeground)].Enqueue(job);
             break;
 
         case FiberAffinityMask::kAllBackground:
-            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kBackground)].Enqueue(info.m_job);
+            globalQueueSet.m_jobQueues[festd::to_underlying(JobThreadPoolType::kBackground)].Enqueue(job);
             break;
 
         case FiberAffinityMask::kNone:
@@ -412,12 +412,29 @@ namespace FE
                 const uint32_t threadIndex = Bit::CountTrailingZeros(festd::to_underlying(affinityMask));
 
                 Worker& worker = m_workers[threadIndex];
-                worker.m_jobQueues[festd::to_underlying(priority)].Enqueue(info.m_job);
+                worker.m_jobQueues[festd::to_underlying(priority)].Enqueue(job);
                 break;
             }
         }
 
         SignalWorkForAffinity(affinityMask);
+    }
+
+
+    void JobSystem::Schedule(const JobScheduleInfo& info)
+    {
+        FE_Assert(info.m_job != nullptr, "Cannot schedule a null job");
+
+        Job* job = info.m_job;
+        const bool scheduleRequested = job->m_scheduleRequested.exchange(true, std::memory_order_acq_rel);
+        FE_Assert(!scheduleRequested, "Jobs can only be scheduled once");
+
+        job->m_jobSystem = this;
+        job->m_affinityMask = info.m_affinityMask;
+        job->m_priority = info.m_priority;
+
+        if (job->DependencySatisfied())
+            AddReadyJob(job);
     }
 
 

@@ -4,8 +4,12 @@
 
 namespace FE
 {
+    struct WaitGroupWaitEntry;
+
     struct WaitGroup final
     {
+        WaitGroup() = default;
+
         [[nodiscard]] uint32_t GetRefCount() const
         {
             return m_refCount.load(std::memory_order_relaxed);
@@ -27,17 +31,8 @@ namespace FE
 
         static WaitGroup* Create(uint32_t counter = 1);
 
-        static void WaitAll(const festd::span<WaitGroup* const> waitGroups)
-        {
-            for (WaitGroup* waitGroup : waitGroups)
-                waitGroup->Wait();
-        }
-
-        static void WaitAll(const festd::span<const Rc<WaitGroup>> waitGroups)
-        {
-            for (const Rc<WaitGroup>& waitGroup : waitGroups)
-                waitGroup->Wait();
-        }
+        static void WaitAll(festd::span<WaitGroup* const> waitGroups);
+        static void WaitAll(festd::span<const Rc<WaitGroup>> waitGroups);
 
         static void WaitAll(const std::initializer_list<WaitGroup*> waitGroups)
         {
@@ -56,15 +51,19 @@ namespace FE
         void Wait();
 
     private:
+        friend struct Job;
+
         std::atomic<uint32_t> m_refCount = 0;
         std::atomic<int32_t> m_counter = 0;
         std::atomic<uint64_t> m_lockAndQueue = 0;
 
         void SignalImpl();
+        bool AddWaitEntry(WaitGroupWaitEntry* entry);
+        void AddJobPrerequisite(Job* job);
         bool SignalSlowImpl();
+        static void SignalJobWaitEntry(WaitGroupWaitEntry* entry);
+        static void SignalFiberWaitEntry(WaitGroupWaitEntry* entry);
         void DestroyImpl();
-
-        WaitGroup() = default;
     };
 
 

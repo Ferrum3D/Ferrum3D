@@ -1,13 +1,130 @@
 ﻿#include <Core/Jobs/JobSystem.h>
 #include <Core/Jobs/WaitGroup.h>
 #include <Core/Memory/PoolAllocator.h>
+#include <festd/vector.h>
 
 namespace FE
 {
+    struct WaitGroupWaitEntry
+    {
+        WaitGroupWaitEntry* m_next = nullptr;
+        void (*m_signal)(WaitGroupWaitEntry*) = nullptr;
+    };
+
+
     namespace
     {
-        Memory::SpinLockedPoolAllocator GWaitGroupAllocator{ "WaitGroupAllocator", sizeof(WaitGroup) };
+        enum class FiberWaitStateValue : uint32_t
+        {
+            kRegistering,
+            kWaiting,
+            kCompleted,
+        };
+
+
+        struct JobWaitEntry final : public WaitGroupWaitEntry
+        {
+            Job* m_job = nullptr;
+        };
+
+
+        struct FiberWaitState final
+        {
+            std::atomic<uint32_t> m_dependencyCounter = 1;
+            std::atomic<FiberWaitStateValue> m_state = FiberWaitStateValue::kRegistering;
+            JobSystem* m_jobSystem = nullptr;
+            FiberWaitEntry m_waitEntry;
+        };
+
+
+        struct FiberWaitGroupEntry final : public WaitGroupWaitEntry
+        {
+            FiberWaitState* m_state = nullptr;
+        };
+
+
+        Memory::SpinLockedPool<WaitGroup> GWaitGroupAllocator{ "WaitGroupAllocator" };
+        Memory::SpinLockedPool<JobWaitEntry> GJobWaitEntryAllocator{ "JobWaitEntryAllocator" };
     } // namespace
+
+
+    bool WaitGroup::AddWaitEntry(WaitGroupWaitEntry* entry)
+    {
+        FE_Assert((reinterpret_cast<uintptr_t>(entry) & 1) == 0, "Wait entry must be aligned");
+
+        uint32_t spinCount = 1;
+        while (true)
+        {
+            uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
+            if ((lockAndQueue & 1)
+                || !m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire))
+            {
+                for (uint32_t spin = 0; spin < spinCount; ++spin)
+                    _mm_pause();
+
+                spinCount = Math::Min(spinCount << 1, 32u);
+                continue;
+            }
+
+            auto* queueHead = reinterpret_cast<WaitGroupWaitEntry*>(lockAndQueue & ~UINT64_C(1));
+            if (m_counter.load(std::memory_order_relaxed) == 0)
+            {
+                m_lockAndQueue.store(reinterpret_cast<uint64_t>(queueHead), std::memory_order_release);
+                return false;
+            }
+
+            entry->m_next = queueHead;
+            m_lockAndQueue.store(reinterpret_cast<uint64_t>(entry), std::memory_order_release);
+            return true;
+        }
+    }
+
+
+    void WaitGroup::AddJobPrerequisite(Job* job)
+    {
+        auto* entry = GJobWaitEntryAllocator.New();
+        entry->m_signal = &SignalJobWaitEntry;
+        entry->m_job = job;
+
+        if (!AddWaitEntry(entry))
+            SignalJobWaitEntry(entry);
+    }
+
+
+    void WaitGroup::SignalJobWaitEntry(WaitGroupWaitEntry* baseEntry)
+    {
+        auto* entry = static_cast<JobWaitEntry*>(baseEntry);
+        Job* job = entry->m_job;
+        GJobWaitEntryAllocator.Delete(entry);
+
+        if (!job->DependencySatisfied())
+            return;
+
+        FE_Assert(job->m_scheduleRequested.load(std::memory_order_acquire), "Unscheduled job reached zero dependencies");
+        auto* jobSystem = Rtti::AssertCast<JobSystem*>(job->m_jobSystem);
+        jobSystem->AddReadyJob(job);
+    }
+
+
+    void WaitGroup::SignalFiberWaitEntry(WaitGroupWaitEntry* baseEntry)
+    {
+        auto* entry = static_cast<FiberWaitGroupEntry*>(baseEntry);
+        FiberWaitState* state = entry->m_state;
+        const uint32_t previousValue = state->m_dependencyCounter.fetch_sub(1, std::memory_order_acq_rel);
+        FE_Assert(previousValue > 0, "Fiber dependency counter underflow");
+        if (previousValue > 1)
+            return;
+
+        const FiberWaitStateValue previousState =
+            state->m_state.exchange(FiberWaitStateValue::kCompleted, std::memory_order_acq_rel);
+        FE_Assert(previousState != FiberWaitStateValue::kCompleted, "Fiber wait completed twice");
+        if (previousState == FiberWaitStateValue::kRegistering)
+            return;
+
+        while (!state->m_waitEntry.m_switchCompleted.load(std::memory_order_acquire))
+            _mm_pause();
+        state->m_jobSystem->AddReadyFiber(&state->m_waitEntry);
+    }
 
 
     void WaitGroup::SignalImpl()
@@ -25,26 +142,15 @@ namespace FE
         }
 
         const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
-        if (lockAndQueue == 1)
-        {
-            m_lockAndQueue.store(0, std::memory_order_release);
-            return;
-        }
+        auto* entry = reinterpret_cast<WaitGroupWaitEntry*>(lockAndQueue & ~UINT64_C(1));
+        m_lockAndQueue.store(0, std::memory_order_release);
 
-        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        auto* jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
-
-        auto entry = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
         while (entry)
         {
-            auto* next = static_cast<FiberWaitEntry*>(entry->m_next);
-            while (!entry->m_switchCompleted.load(std::memory_order_acquire))
-                _mm_pause();
-            jobSystem->AddReadyFiber(entry);
+            WaitGroupWaitEntry* next = entry->m_next;
+            entry->m_signal(entry);
             entry = next;
         }
-
-        m_lockAndQueue.store(0, std::memory_order_release);
     }
 
 
@@ -54,10 +160,7 @@ namespace FE
         if (lockAndQueue == 0)
         {
             if (m_lockAndQueue.compare_exchange_weak(lockAndQueue, 1, std::memory_order_acquire))
-            {
-                // The queue is empty
                 return true;
-            }
 
             return false;
         }
@@ -71,7 +174,8 @@ namespace FE
 
     void WaitGroup::DestroyImpl()
     {
-        GWaitGroupAllocator.deallocate(this, sizeof(WaitGroup), alignof(WaitGroup));
+        FE_AssertDebug(m_lockAndQueue.load(std::memory_order_relaxed) == 0, "Destroying a wait group with pending waiters");
+        GWaitGroupAllocator.Delete(this);
     }
 
 
@@ -79,7 +183,7 @@ namespace FE
     {
         FE_AssertDebug(counter <= Constants::kMaxI32);
 
-        auto* group = new (GWaitGroupAllocator.allocate(sizeof(WaitGroup), alignof(WaitGroup))) WaitGroup;
+        auto* group = GWaitGroupAllocator.New();
         if (counter)
             group->Add(static_cast<int32_t>(counter));
 
@@ -87,65 +191,72 @@ namespace FE
     }
 
 
-    void WaitGroup::Wait()
+    void WaitGroup::WaitAll(const festd::span<WaitGroup* const> waitGroups)
     {
         FE_PROFILER_ZONE();
 
-        uint32_t spinCount = 1;
-        while (true)
+        if (waitGroups.empty())
+            return;
+
+        FiberWaitState state;
+        festd::inline_vector<FiberWaitGroupEntry, 8> entries;
+        entries.resize(waitGroups.size());
+
+        for (uint32_t index = 0; index < waitGroups.size(); ++index)
         {
-            if (m_counter.load(std::memory_order_relaxed) == 0)
-                return;
+            WaitGroup* waitGroup = waitGroups[index];
+            FE_Assert(waitGroup != nullptr, "Wait group cannot be null");
 
-            uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_acquire);
-            if ((lockAndQueue & 1)
-                || !m_lockAndQueue.compare_exchange_weak(lockAndQueue, lockAndQueue | 1, std::memory_order_acquire))
-            {
-                for (uint32_t spin = 0; spin < spinCount; ++spin)
-                    _mm_pause();
-
-                spinCount = Math::Min(spinCount << 1, 32u);
-                continue;
-            }
-
-            break;
+            state.m_dependencyCounter.fetch_add(1, std::memory_order_relaxed);
+            FiberWaitGroupEntry& entry = entries[index];
+            entry.m_signal = &SignalFiberWaitEntry;
+            entry.m_state = &state;
+            if (!waitGroup->AddWaitEntry(&entry))
+                SignalFiberWaitEntry(&entry);
         }
 
-        const uint64_t lockAndQueue = m_lockAndQueue.load(std::memory_order_relaxed);
+        const uint32_t previousValue = state.m_dependencyCounter.fetch_sub(1, std::memory_order_acq_rel);
+        FE_Assert(previousValue > 0, "Fiber dependency counter underflow");
+        if (previousValue == 1)
+            return;
 
-        if (IsSignaled())
+        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
+        state.m_jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
+
+        const uint32_t workerIndex = state.m_jobSystem->GetWorkerIndex();
+        FE_Assert(workerIndex != kInvalidIndex, "WaitGroup::WaitAll() can only wait from a fiber");
+
+        const JobSystem::Worker& worker = state.m_jobSystem->m_workers[workerIndex];
+        state.m_waitEntry.m_priority = worker.m_priority;
+        state.m_waitEntry.m_affinityMask = worker.m_affinityMask;
+        state.m_waitEntry.m_fiber = worker.m_currentFiber;
+        state.m_waitEntry.m_switchCompleted.store(false, std::memory_order_relaxed);
+
+        auto expectedState = FiberWaitStateValue::kRegistering;
+        if (!state.m_state.compare_exchange_strong(expectedState, FiberWaitStateValue::kWaiting, std::memory_order_acq_rel))
         {
-            m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
+            FE_Assert(expectedState == FiberWaitStateValue::kCompleted, "Invalid fiber wait state");
             return;
         }
 
-        auto* queueHead = reinterpret_cast<FiberWaitEntry*>(lockAndQueue & ~1);
-        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        auto* jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
+        state.m_jobSystem->SwitchFromWaitingFiber(workerIndex, state.m_waitEntry);
+    }
 
-        const uint32_t workerIndex = jobSystem->GetWorkerIndex();
-        FE_Assert(workerIndex != kInvalidIndex, "WaitGroup::Wait() can only be called from a fiber");
 
-        const JobSystem::Worker& worker = jobSystem->m_workers[workerIndex];
+    void WaitGroup::WaitAll(const festd::span<const Rc<WaitGroup>> waitGroups)
+    {
+        festd::inline_vector<WaitGroup*, 8> rawWaitGroups;
+        rawWaitGroups.reserve(waitGroups.size());
+        for (const Rc<WaitGroup>& waitGroup : waitGroups)
+            rawWaitGroups.push_back(waitGroup.Get());
 
-        FiberWaitEntry waitEntry;
-        waitEntry.m_next = nullptr;
-        waitEntry.m_priority = worker.m_priority;
-        waitEntry.m_affinityMask = worker.m_affinityMask;
-        waitEntry.m_fiber = worker.m_currentFiber;
-        waitEntry.m_switchCompleted.store(false, std::memory_order_relaxed);
-        if (queueHead)
-        {
-            queueHead->m_queueTail->m_next = &waitEntry;
-            queueHead->m_queueTail = &waitEntry;
-            m_lockAndQueue.store(lockAndQueue & ~1, std::memory_order_release);
-        }
-        else
-        {
-            waitEntry.m_queueTail = &waitEntry;
-            m_lockAndQueue.store(reinterpret_cast<uint64_t>(&waitEntry), std::memory_order_release);
-        }
+        WaitAll(rawWaitGroups);
+    }
 
-        jobSystem->SwitchFromWaitingFiber(workerIndex, waitEntry);
+
+    void WaitGroup::Wait()
+    {
+        WaitGroup* waitGroups[] = { this };
+        WaitAll(waitGroups);
     }
 } // namespace FE

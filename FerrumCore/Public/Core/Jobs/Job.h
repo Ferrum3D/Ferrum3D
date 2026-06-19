@@ -1,15 +1,14 @@
 ﻿#pragma once
 #include <Core/Containers/ConcurrentQueue.h>
-#include <Core/Jobs/IJobSystem.h>
 #include <Core/Jobs/WaitGroup.h>
-#include <Core/Memory/Memory.h>
+#include <Core/Memory/RefCount.h>
 
 namespace FE
 {
     struct Job : public ConcurrentQueue::Node
     {
         Job() = default;
-        virtual ~Job() = default;
+        virtual ~Job();
 
         Job(const Job&) = delete;
         Job& operator=(const Job&) = delete;
@@ -18,18 +17,27 @@ namespace FE
 
         virtual void Execute() = 0;
 
-        void Schedule(IJobSystem* jobSystem, const FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
-                      const JobPriority priority = JobPriority::kNormal)
+        void AddPrerequisite(WaitGroup* waitGroup);
+        void AddPrerequisite(const Rc<WaitGroup>& waitGroup)
         {
-            if (completionWaitGroup)
-                m_completionWaitGroup = completionWaitGroup;
-
-            JobScheduleInfo info;
-            info.m_job = this;
-            info.m_priority = priority;
-            info.m_affinityMask = affinityMask;
-            jobSystem->Schedule(info);
+            AddPrerequisite(waitGroup.Get());
         }
+
+        void AddPrerequisites(festd::span<WaitGroup* const> waitGroups);
+        void AddPrerequisites(festd::span<const Rc<WaitGroup>> waitGroups);
+
+        void AddPrerequisites(const std::initializer_list<WaitGroup*> waitGroups)
+        {
+            AddPrerequisites(festd::span(waitGroups));
+        }
+
+        void AddPrerequisites(const std::initializer_list<const Rc<WaitGroup>> waitGroups)
+        {
+            AddPrerequisites(festd::span(waitGroups));
+        }
+
+        void Schedule(IJobSystem* jobSystem, FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
+                      JobPriority priority = JobPriority::kNormal);
 
         void ScheduleForeground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
                                 const JobPriority priority = JobPriority::kNormal)
@@ -45,7 +53,21 @@ namespace FE
 
     private:
         friend struct JobSystem;
+        friend struct WaitGroup;
+
+        bool DependencySatisfied()
+        {
+            const uint32_t previousValue = m_dependencyCounter.fetch_sub(1, std::memory_order_acq_rel);
+            FE_Assert(previousValue > 0, "Job dependency counter underflow");
+            return previousValue == 1;
+        }
+
         Rc<WaitGroup> m_completionWaitGroup;
+        IJobSystem* m_jobSystem = nullptr;
+        std::atomic<uint32_t> m_dependencyCounter = 1;
+        std::atomic<bool> m_scheduleRequested = false;
+        JobPriority m_priority = JobPriority::kNormal;
+        FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         uint64_t m_orderHint = 0;
     };
 

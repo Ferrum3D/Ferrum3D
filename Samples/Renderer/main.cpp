@@ -1,4 +1,5 @@
 #include <Core/DI/Activator.h>
+#include <Core/Jobs/IJobSystem.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Modules/Configuration.h>
 #include <Framework/Application/Application.h>

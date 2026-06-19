@@ -10,7 +10,6 @@ namespace FE
 {
     struct FiberWaitEntry final : public ConcurrentQueue::Node
     {
-        FiberWaitEntry* m_queueTail = nullptr;
         std::atomic<uint64_t> m_orderHint = 0;
         FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         Threading::FiberHandle m_fiber;
@@ -49,6 +48,7 @@ namespace FE
 
         void AddReadyFiber(FiberWaitEntry* entry);
 
+        void AddReadyJob(Job* job);
         void CleanUpAfterSwitch(const Context::TransferParams transferParams)
         {
             const uint32_t workerIndex = GetWorkerIndex();

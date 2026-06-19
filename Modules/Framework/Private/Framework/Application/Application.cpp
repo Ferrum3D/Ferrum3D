@@ -1,5 +1,6 @@
 #include <Core/DI/Builder.h>
 #include <Core/IO/BaseIO.h>
+#include <Core/Jobs/IJobSystem.h>
 #include <Core/Logging/Logger.h>
 #include <Core/Modules/Configuration.h>
 #include <Core/RTTI/Reflection.h>
