@@ -2,6 +2,51 @@
 
 namespace FE::Memory
 {
+    LinearAllocator::LinearAllocator(LinearAllocator&& other) noexcept
+    {
+        swap(*this, other);
+    }
+
+
+    LinearAllocator& LinearAllocator::operator=(LinearAllocator&& other) noexcept
+    {
+        swap(*this, other);
+        return *this;
+    }
+
+
+    void LinearAllocator::Invalidate()
+    {
+        m_pageByteSize = 0;
+        m_pageAllocator = nullptr;
+        m_currentMarker = {};
+        m_firstPage = nullptr;
+    }
+
+
+    void LinearAllocator::Destroy()
+    {
+        Page* page = m_firstPage;
+        m_firstPage = nullptr;
+
+        while (page)
+        {
+            Page* oldPage = page;
+            page = page->m_next;
+            m_pageAllocator->deallocate(oldPage, m_pageByteSize);
+        }
+    }
+
+
+    void swap(LinearAllocator& lhs, LinearAllocator& rhs) noexcept
+    {
+        festd::swap(lhs.m_pageByteSize, rhs.m_pageByteSize);
+        festd::swap(lhs.m_pageAllocator, rhs.m_pageAllocator);
+        festd::swap(lhs.m_currentMarker, rhs.m_currentMarker);
+        festd::swap(lhs.m_firstPage, rhs.m_firstPage);
+    }
+
+
     void LinearAllocator::NewPage()
     {
         Page* currentPage = m_currentMarker.m_page;
@@ -43,15 +88,8 @@ namespace FE::Memory
 
     LinearAllocator::~LinearAllocator()
     {
-        Page* page = m_firstPage;
-        m_firstPage = nullptr;
-
-        while (page)
-        {
-            Page* oldPage = page;
-            page = page->m_next;
-            m_pageAllocator->deallocate(oldPage, m_pageByteSize);
-        }
+        Destroy();
+        Invalidate();
     }
 
 

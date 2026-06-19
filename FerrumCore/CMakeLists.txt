@@ -52,6 +52,7 @@
     Public/Core/Jobs/IJobSystem.h
     Public/Core/Jobs/Job.h
     Public/Core/Jobs/JobSystem.h
+    Public/Core/Jobs/TaskGraph.h
     Public/Core/Jobs/WaitGroup.h
 
     Public/Core/Logging/Logger.h
@@ -146,6 +147,7 @@ set(COMMON_SOURCES
 
     Private/Core/Jobs/Job.cpp
     Private/Core/Jobs/JobSystem.cpp
+    Private/Core/Jobs/TaskGraph.cpp
     Private/Core/Jobs/WaitGroup.cpp
 
     Private/Core/Logging/Logger.cpp

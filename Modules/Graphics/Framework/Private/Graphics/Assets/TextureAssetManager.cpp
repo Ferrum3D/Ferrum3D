@@ -73,11 +73,11 @@ namespace FE::Graphics
             FE_AssertDebug(m_request->m_asset->m_status.load(std::memory_order_relaxed) == AssetLoadingStatus::kHasLoadedLods);
         }
 
-        m_manager->m_mipFinalizerJobPool.Delete(this);
-
         const uint32_t allocSize = m_request->m_mipChains[m_mipChainIndex].m_loadedBlockCount * Compression::kBlockSize;
         if (m_bufferAllocator)
             m_bufferAllocator->deallocate(const_cast<std::byte*>(m_data), allocSize);
+
+        m_manager->m_mipFinalizerJobPool.Delete(this);
     }
 
 

@@ -115,6 +115,7 @@ namespace FE
         }
 
         template<class TOther>
+            requires std::assignable_from<T*, TOther*>
         Rc(const Rc<TOther>& other)
             : m_object(other.Get())
         {
@@ -127,6 +128,7 @@ namespace FE
         }
 
         template<class TOther>
+            requires std::assignable_from<T*, TOther*>
         Rc(Rc<TOther>&& other)
             : m_object(other.Detach())
         {
@@ -143,6 +145,7 @@ namespace FE
         }
 
         template<class TOther>
+            requires std::assignable_from<T*, TOther*>
         Rc& operator=(const Rc<TOther>& other)
         {
             if (static_cast<Internal::RcBase*>(this) == static_cast<const Internal::RcBase*>(&other))
@@ -160,6 +163,7 @@ namespace FE
         }
 
         template<class TOther>
+            requires std::assignable_from<T*, TOther*>
         Rc& operator=(Rc<TOther>&& other)
         {
             Attach(other.Detach());

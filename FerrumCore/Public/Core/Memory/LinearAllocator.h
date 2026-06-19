@@ -51,6 +51,8 @@ namespace FE::Memory
         Marker m_currentMarker;
 
         void NewPage();
+        void Invalidate();
+        void Destroy();
 
     protected:
         void do_deallocate(void*, size_t, size_t) override {}
@@ -62,6 +64,12 @@ namespace FE::Memory
     public:
         LinearAllocator(size_t pageByteSize = 64 * 1024, std::pmr::memory_resource* pageAllocator = nullptr);
         ~LinearAllocator() override;
+
+        LinearAllocator(const LinearAllocator&) = delete;
+        LinearAllocator& operator=(const LinearAllocator&) = delete;
+
+        LinearAllocator(LinearAllocator&& other) noexcept;
+        LinearAllocator& operator=(LinearAllocator&& other) noexcept;
 
         void FreeUnusedMemory();
 
@@ -93,6 +101,8 @@ namespace FE::Memory
             Clear();
             FreeUnusedMemory();
         }
+
+        friend void swap(LinearAllocator& lhs, LinearAllocator& rhs) noexcept;
     };
 
 
