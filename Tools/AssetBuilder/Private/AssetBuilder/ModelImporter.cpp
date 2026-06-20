@@ -1,4 +1,4 @@
-#include "ModelImporter.h"
+#include <AssetBuilder/ModelImporter.h>
 
 #include <Core/IO/Path.h>
 #include <Core/Strings/Parser.h>

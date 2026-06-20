@@ -291,6 +291,7 @@ def visit_external_rtti_declaration(
         list(filter(None, bases)),
         fields,
         [],
+        False,
         project_dir,
     )
     types[ref_type.internal_id] = ref_type
@@ -329,6 +330,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             bases,
             fields,
             constructors,
+            node.is_abstract_record(),
             project_dir,
         )
         types[ref_type.internal_id] = ref_type

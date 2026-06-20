@@ -5,6 +5,7 @@
 
 #include <Core/RTTI/ReflectionContext.h>
 
+#include <Core/Cli/CommandLine.h>
 #include <Core/Compression/Compression.h>
 #include <Core/DI/BaseDI.h>
 #include <Core/DI/Container.h>
@@ -35,6 +36,96 @@
 #include <Core/Modules/Environment.h>
 #include <Core/RTTI/RTTI.h>
 #include <festd/string.h>
+
+
+namespace FE::Cli
+{
+    const Rtti::TypeID Command::TypeID = Rtti::TypeID{ "01ddd116-d090-49e4-98b9-4100cfb50509" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_01ddd116d09049e498b94100cfb50509(Command* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_01ddd116d09049e498b94100cfb50509()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Command::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_01ddd116d09049e498b94100cfb50509();
+    }
+
+    void* FE_VECTORCALL Command::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_01ddd116d09049e498b94100cfb50509(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Command::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_01ddd116d09049e498b94100cfb50509(const_cast<Command*>(this), typeID);
+    }
+
+    void Command::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_01ddd116d09049e498b94100cfb50509();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_subcommand
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_cliType
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_subcommand = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_cliType = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_subcommand",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &Command::m_subcommand,
+                                                        kAttributes_m_subcommand,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_cliType",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &Command::m_cliType,
+                                                        kAttributes_m_cliType,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPrivate),
+        };
+
+        context.ReflectClass<Command>(typeInstance,
+                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                      "FE::Cli::Command",
+                                      kBaseClassTypeIDs,
+                                      kAttributes,
+                                      kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_01ddd116d09049e498b94100cfb50509(&Command::Reflect);
+} // namespace FE::Cli
 
 
 namespace FE::Rtti
@@ -87,6 +178,83 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_0c3e32a0efcc45db8a4bb4c4efed2b0d(
         &Internal::ExternalTypeReflector<FE::PackedVector3F>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE::Cli
+{
+    const Rtti::TypeID Subcommand::TypeID = Rtti::TypeID{ "0f01e827-c9d9-43f0-8969-47bf6d035b82" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_0f01e827c9d943f0896947bf6d035b82(Subcommand* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0,
+                0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand (this type)
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_0f01e827c9d943f0896947bf6d035b82()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Subcommand::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_0f01e827c9d943f0896947bf6d035b82();
+    }
+
+    void* FE_VECTORCALL Subcommand::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_0f01e827c9d943f0896947bf6d035b82(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Subcommand::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_0f01e827c9d943f0896947bf6d035b82(const_cast<Subcommand*>(this), typeID);
+    }
+
+    void Subcommand::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_0f01e827c9d943f0896947bf6d035b82();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<Subcommand>(typeInstance,
+                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                         "FE::Cli::Subcommand",
+                                         kBaseClassTypeIDs,
+                                         kAttributes,
+                                         kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_0f01e827c9d943f0896947bf6d035b82(&Subcommand::Reflect);
+} // namespace FE::Cli
 
 
 namespace FE::Rtti
@@ -893,6 +1061,58 @@ namespace FE::IO
 
     static Rtti::TypeRegistrar GTypeRegistrar_2f74ff8d4d8144be962a9d30669e03c8(&StreamBase::Reflect);
 } // namespace FE::IO
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_301bc248ff3143dbb285926623b3326f()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Cli::Option>()
+    {
+        return GetMutableType_301bc248ff3143dbb285926623b3326f();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Cli::Option>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb, 0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Cli::Option>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_301bc248ff3143dbb285926623b3326f();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb, 0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Cli::Option>(typeInstance,
+                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                              "FE::Cli::Option",
+                                              {},
+                                              kAttributes,
+                                              kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_301bc248ff3143dbb285926623b3326f(
+        &Internal::ExternalTypeReflector<FE::Cli::Option>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Rtti
@@ -2386,6 +2606,58 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_9ff56e68875743e28826acf3419f16fd()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Cli::Flag>()
+    {
+        return GetMutableType_9ff56e68875743e28826acf3419f16fd();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Cli::Flag>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2, 0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Cli::Flag>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_9ff56e68875743e28826acf3419f16fd();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2, 0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Cli::Flag>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::Cli::Flag",
+                                            {},
+                                            kAttributes,
+                                            kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_9ff56e68875743e28826acf3419f16fd(
+        &Internal::ExternalTypeReflector<FE::Cli::Flag>::Reflect);
+} // namespace FE::Rtti
+
+
 namespace FE::IO
 {
     const Rtti::TypeID IAsyncStreamIO::TypeID = Rtti::TypeID{ "a44064ec-34e0-4b99-9bc7-a2b27321f617" };
@@ -2899,6 +3171,95 @@ namespace FE::Rtti
 
     static TypeRegistrar GTypeRegistrar_c05edb734a724b89b0e42f4bfdc6c538(&Internal::ExternalTypeReflector<FE::Vector4>::Reflect);
 } // namespace FE::Rtti
+
+
+namespace FE::Cli
+{
+    const Rtti::TypeID Parser::TypeID = Rtti::TypeID{ "c3c49654-fe98-4ce6-b759-06d7ef4eaa0f" };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c3c49654fe984ce6b75906d7ef4eaa0f(Parser* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+                0xc3, 0xc4, 0x96, 0x54, 0xfe, 0x98, 0x4c, 0xe6,
+                0xb7, 0x59, 0x06, 0xd7, 0xef, 0x4e, 0xaa, 0x0f, // FE::Cli::Parser (this type)
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+
+        Rtti::Type& RTTI_GetMutableType_c3c49654fe984ce6b75906d7ef4eaa0f()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Parser::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_c3c49654fe984ce6b75906d7ef4eaa0f();
+    }
+
+    void* FE_VECTORCALL Parser::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_c3c49654fe984ce6b75906d7ef4eaa0f(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Parser::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_c3c49654fe984ce6b75906d7ef4eaa0f(const_cast<Parser*>(this), typeID);
+    }
+
+    void Parser::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_c3c49654fe984ce6b75906d7ef4eaa0f();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xc3, 0xc4, 0x96, 0x54, 0xfe, 0x98, 0x4c, 0xe6, 0xb7, 0x59, 0x06, 0xd7, 0xef, 0x4e, 0xaa, 0x0f, // FE::Cli::Parser
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0xe7, 0x2e, 0x90, 0x11, 0x13, 0xe9, 0x4e, 0x8b,
+            0xb5, 0x1a, 0xf1, 0x56, 0xe1, 0xf4, 0xa9, 0x80, // FE::Internal::StringImpl<FE::Internal::BasicStringViewImpl> m_error
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_error = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_error",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &Parser::m_error,
+                                                        kAttributes_m_error,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPrivate),
+        };
+
+        context.ReflectClass<Parser>(typeInstance,
+                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                     "FE::Cli::Parser",
+                                     kBaseClassTypeIDs,
+                                     kAttributes,
+                                     kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_c3c49654fe984ce6b75906d7ef4eaa0f(&Parser::Reflect);
+} // namespace FE::Cli
 
 
 namespace FE::IO

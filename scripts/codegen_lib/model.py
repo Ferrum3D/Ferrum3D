@@ -9,6 +9,7 @@ UUID_NAMESPACE = uuid.UUID("ba6b72ef-3286-4c71-9822-2519da4e156a")
 USE_INTERNAL_ID = uuid.UUID("9ecf45e0-cba3-4e15-b613-ed66e3c4be5d")
 
 REF_COUNTED_OBJECT_BASE_ID = uuid.UUID("b4fa5c63-69c0-4666-8a92-726f070d769b")
+CLI_SUBCOMMAND_ID = uuid.UUID("0f01e827-c9d9-43f0-8969-47bf6d035b82")
 
 
 class TypeKind(Enum):
@@ -45,13 +46,14 @@ class FieldInfo:
 
 
 class ConstructorInfo:
-    def __init__(self, args: list["ReflectedType"]) -> None:
+    def __init__(self, args: list["ReflectedType"], is_valid: bool = True) -> None:
         self.args = args
+        self.is_valid = is_valid
         self.is_di_compatible = all(t.pointer_level == 1 and t.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) for t in args)
 
     @staticmethod
     def create_invalid() -> ConstructorInfo:
-        info = ConstructorInfo([])
+        info = ConstructorInfo([], False)
         info.is_di_compatible = False
         return info
 
@@ -68,6 +70,9 @@ def get_module_path(type_declaration_file_path: str, project_dir: Path) -> Path:
 
         if part.name == "Shaders":
             return project_dir / "Modules/Graphics/Framework"
+
+        if part.name == "Tests" and part.parent.name == "FerrumCore":
+            return project_dir / part
 
         if part.name == "Public" or part.name == "Private":
             return project_dir / part.parent
@@ -95,6 +100,7 @@ class ReflectedType:
         bases: list[ReflectedType],
         fields: list[FieldInfo],
         constructors: list[ConstructorInfo],
+        is_abstract: bool,
         project_dir: Path,
     ):
         self.need_reflect = need_reflect
@@ -118,6 +124,9 @@ class ReflectedType:
         self.bases = bases
         self.fields = fields
         self.constructors = constructors
+        self.is_default_constructible = self.is_derived_from(CLI_SUBCOMMAND_ID) and not is_abstract and (
+            len(constructors) == 0 or any(c.is_valid and len(c.args) == 0 for c in constructors)
+        )
         self.is_builtin = kind == TypeKind.BUILTIN
         self.is_enum = kind == TypeKind.ENUM
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS

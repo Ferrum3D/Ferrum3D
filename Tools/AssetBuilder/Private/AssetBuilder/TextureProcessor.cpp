@@ -1,5 +1,5 @@
-#include "TextureProcessor.h"
-#include "Utils.h"
+#include <AssetBuilder/TextureProcessor.h>
+#include <AssetBuilder/Utils.h>
 
 #include <Core/Compression/Compression.h>
 #include <Core/IO/IStreamFactory.h>
@@ -136,7 +136,7 @@ namespace FE
         }
 
         Vector2UInt outputSize = settings.m_outputSize;
-        if (outputSize == Vector2UInt::Zero())
+        if (outputSize == Vector2UInt::kZero)
         {
             outputSize = Vector2UInt(sourceWidth, sourceHeight);
         }

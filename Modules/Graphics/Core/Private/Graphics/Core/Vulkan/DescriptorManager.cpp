@@ -1,4 +1,4 @@
-#include <Core/Memory/FiberTempAllocator.h>
+﻿#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Device.h>

@@ -23,6 +23,7 @@
     Public/Core/Base/PlatformInclude.h
     Public/Core/Base/PlatformTraits.h
     Public/Core/Base/StackTrace.h
+    Public/Core/Cli/CommandLine.h
 
     Public/Core/Compression/Compression.h
 
@@ -122,6 +123,7 @@
 
 set(COMMON_SOURCES
     Private/Core/Base/Assert.cpp
+    Private/Core/Cli/CommandLine.cpp
     Private/Core/Base/AssertPrivate.h
     Private/Core/Base/StackTrace.cpp
     Private/Core/Base/StackTracePrivate.h

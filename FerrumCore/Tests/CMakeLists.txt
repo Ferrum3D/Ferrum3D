@@ -1,5 +1,8 @@
-﻿set(SRC
+set(SRC
     Common/TestCommon.h
+
+    Cli/CommandLine.cpp
+    Cli/CommandLineTypes.h
 
     Containers/BitSet.cpp
     Containers/SegmentedVector.cpp
@@ -20,6 +23,8 @@
 
     RTTI/RTTI.cpp
 
+    Reflection.gen.cpp
+
     Strings/Format.cpp
     Strings/String.cpp
 
@@ -34,7 +39,9 @@ add_executable(FeCoreTests ${SRC})
 
 fe_configure_target(FeCoreTests)
 
-target_include_directories(FeCoreTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_include_directories(FeCoreTests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 set_target_properties(FeCoreTests PROPERTIES FOLDER "Core")
 target_link_libraries(FeCoreTests gtest gmock FeCore)

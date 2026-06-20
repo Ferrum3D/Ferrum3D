@@ -1,2 +1,3 @@
 add_subdirectory(AssetBuilder)
+add_subdirectory(FerrumCli)
 add_subdirectory(TextureCompressor)

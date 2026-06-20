@@ -143,6 +143,12 @@ namespace {{ type.namespace }}
             static Rtti::Type typeInstance;
             return typeInstance;
         }
+{% if type.is_default_constructible %}
+        void RTTI_DefaultConstruct_{{ type.id.bytes.hex() }}(void* storage)
+        {
+            ::new (storage) {{ type.name }}();
+        }
+{% endif -%}
 {% if type.is_di_compatible %}
         DI::ResultCode RTTI_Activator_{{ type.id.bytes.hex() }}([[maybe_unused]] DI::IServiceProvider* serviceProvider, Memory::RefCountedObjectBase** result)
         {
@@ -237,7 +243,10 @@ namespace {{ type.namespace }}
         };
 
         context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields
-            {%- if type.is_di_compatible %}, &RTTI_Activator_{{ type.id.bytes.hex() }} {% endif -%}
+            {%- if type.is_di_compatible %}, &RTTI_Activator_{{ type.id.bytes.hex() }}
+                {%- if type.is_default_constructible %}, &RTTI_DefaultConstruct_{{ type.id.bytes.hex() }}{% endif -%}
+            {%- elif type.is_default_constructible %}, nullptr, &RTTI_DefaultConstruct_{{ type.id.bytes.hex() }}
+            {%- endif -%}
         );
     }
 

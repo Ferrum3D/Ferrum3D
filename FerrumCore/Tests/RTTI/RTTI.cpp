@@ -1,3 +1,4 @@
+#include <Cli/CommandLineTypes.h>
 #include <Core/Compression/Compression.h>
 #include <Core/IO/FileStream.h>
 #include <Core/Math/Transform.h>
@@ -107,4 +108,30 @@ TEST(RTTI, Reflection)
 
     EXPECT_EQ(transform.m_translationScale, Vector4(1.0f, 2.0f, 3.0f, 4.0f));
     EXPECT_EQ(transform.m_rotation, Quaternion::RotationX(1.0f));
+}
+
+TEST(RTTI, TypeEnumeration)
+{
+    const Rtti::Type* transformType = nullptr;
+    for (const Rtti::Type& type : Rtti::TypeRegistry::GetTypes())
+    {
+        if (type.m_id == Rtti::GetTypeID<Transform>())
+            transformType = &type;
+    }
+
+    EXPECT_EQ(transformType, &Rtti::GetType<Transform>());
+}
+
+TEST(RTTI, DefaultConstruction)
+{
+    const Rtti::Type& type = Rtti::GetType<Cli::Tests::Build>();
+    ASSERT_NE(type.m_defaultConstructor, nullptr);
+
+    alignas(Cli::Tests::Build) std::byte storage[sizeof(Cli::Tests::Build)];
+    type.m_defaultConstructor(storage);
+
+    auto* command = reinterpret_cast<Cli::Tests::Build*>(storage);
+    EXPECT_FALSE(command->m_help);
+    EXPECT_FALSE(command->m_asset);
+    command->~Build();
 }

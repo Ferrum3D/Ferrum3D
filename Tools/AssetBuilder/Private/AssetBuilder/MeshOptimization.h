@@ -1,5 +1,5 @@
 #pragma once
-#include "ModelImporter.h"
+#include <AssetBuilder/ModelImporter.h>
 
 namespace FE::AssetBuilder
 {

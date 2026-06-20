@@ -1,5 +1,5 @@
-#include "MeshOptimization.h"
-#include "ModelImporter.h"
+#include <AssetBuilder/MeshOptimization.h>
+#include <AssetBuilder/ModelImporter.h>
 
 #include <meshoptimizer.h>
 
@@ -41,8 +41,11 @@ namespace FE::AssetBuilder
         lod.m_indices = std::move(newIndices);
 
         festd::vector<IntermediateVertex> newVertices(newVertexCount);
-        meshopt_remapVertexBuffer(
-            newVertices.data(), lod.m_vertices.data(), lod.m_vertices.size(), sizeof(IntermediateVertex), remap.data());
+        meshopt_remapVertexBuffer(newVertices.data(),
+                                  lod.m_vertices.data(),
+                                  lod.m_vertices.size(),
+                                  sizeof(IntermediateVertex),
+                                  remap.data());
         lod.m_vertices = std::move(newVertices);
     }
 
@@ -172,8 +175,11 @@ namespace FE::AssetBuilder
                 meshopt_remapIndexBuffer(newIndices.data(), meshLodIndices.data(), meshLodIndices.size(), remap.data());
 
                 festd::vector<IntermediateVertex> newVertices(newVertexCount);
-                meshopt_remapVertexBuffer(
-                    newVertices.data(), lod0Vertices.data(), lod0Vertices.size(), sizeof(IntermediateVertex), remap.data());
+                meshopt_remapVertexBuffer(newVertices.data(),
+                                          lod0Vertices.data(),
+                                          lod0Vertices.size(),
+                                          sizeof(IntermediateVertex),
+                                          remap.data());
 
                 IntermediateMeshLod& lod = mesh->m_lods.push_back();
                 lod.m_indices = std::move(newIndices);
@@ -223,8 +229,10 @@ namespace FE::AssetBuilder
             meshlets.reserve(tempMeshlets.size());
             for (const meshopt_Meshlet& meshlet : tempMeshlets)
             {
-                const Core::MeshletHeader meshletHeader = Core::MeshletHeader::Pack(
-                    meshlet.vertex_count, meshlet.vertex_offset, meshlet.triangle_count, meshlet.triangle_offset / 3);
+                const Core::MeshletHeader meshletHeader = Core::MeshletHeader::Pack(meshlet.vertex_count,
+                                                                                    meshlet.vertex_offset,
+                                                                                    meshlet.triangle_count,
+                                                                                    meshlet.triangle_offset / 3);
                 meshlets.push_back(meshletHeader);
             }
 

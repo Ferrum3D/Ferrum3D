@@ -1,7 +1,7 @@
-#include "ModelProcessor.h"
-#include "MeshOptimization.h"
-#include "ModelImporter.h"
-#include "Utils.h"
+#include <AssetBuilder/MeshOptimization.h>
+#include <AssetBuilder/ModelImporter.h>
+#include <AssetBuilder/ModelProcessor.h>
+#include <AssetBuilder/Utils.h>
 
 #include <Core/Compression/Compression.h>
 #include <Core/IO/IStreamFactory.h>
@@ -89,8 +89,9 @@ namespace FE
             auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_outputFile, IO::OpenMode::kCreate);
             if (!fileResult)
             {
-                settings.m_logger->LogError(
-                    "Failed to open file '{}' for writing: {}", settings.m_outputFile, IO::GetResultDesc(fileResult.error()));
+                settings.m_logger->LogError("Failed to open file '{}' for writing: {}",
+                                            settings.m_outputFile,
+                                            IO::GetResultDesc(fileResult.error()));
                 return false;
             }
 
@@ -181,8 +182,9 @@ namespace FE
         auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_inputFile, IO::OpenMode::kReadOnly);
         if (!fileResult)
         {
-            settings.m_logger->LogError(
-                "Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
+            settings.m_logger->LogError("Failed to open file {}: {}",
+                                        settings.m_inputFile,
+                                        IO::GetResultDesc(fileResult.error()));
             return false;
         }
 

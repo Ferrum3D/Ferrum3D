@@ -17,6 +17,7 @@ namespace FE::Rtti
 
                 m_typeIDMap[type.m_id] = &type;
                 m_typeNameMap[type.m_qualifiedName] = &type;
+                m_typeList.push_back(type);
             }
 
             festd::unordered_dense_map<Uuid, Type*> m_typeIDMap;
