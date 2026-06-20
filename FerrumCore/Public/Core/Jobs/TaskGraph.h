@@ -82,7 +82,7 @@ namespace FE
         FiberAffinityMask m_affinity = FiberAffinityMask::kNone;
         JobPriority m_priority = JobPriority::kNormal;
 
-        bool m_isValid = false;
+        bool m_isValid = true;
         uint32_t m_jobCount = 0;
         JobRecord* m_jobRecords = nullptr;
         Memory::LinearAllocator m_allocator;

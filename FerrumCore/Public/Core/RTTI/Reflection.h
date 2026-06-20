@@ -125,6 +125,6 @@ namespace FE::Rtti
     {
         using RegisterFunc = void (*)(ReflectionContext&);
 
-        explicit TypeRegistrar(RegisterFunc func);
+        explicit TypeRegistrar(RegisterFunc func) noexcept;
     };
 } // namespace FE::Rtti

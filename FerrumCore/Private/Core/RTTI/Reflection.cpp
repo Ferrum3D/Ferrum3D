@@ -69,7 +69,7 @@ namespace FE::Rtti
     }
 
 
-    TypeRegistrar::TypeRegistrar(const RegisterFunc func)
+    TypeRegistrar::TypeRegistrar(const RegisterFunc func) noexcept
     {
         func(*GTypeRegistry);
     }

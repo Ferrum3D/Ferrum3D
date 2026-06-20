@@ -163,7 +163,7 @@ namespace FE::Fmt
 
     template<class TBuffer, class T>
         requires Internal::BufferPlusAppendableValue<TBuffer, T>
-        && !Internal::BufferAppendableValue<TBuffer, T>
+        && (!Internal::BufferAppendableValue<TBuffer, T>)
     struct ValueFormatter<TBuffer, T>
     {
         void Format(TBuffer& buffer, const T& value) const

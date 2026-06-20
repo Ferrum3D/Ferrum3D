@@ -27,20 +27,20 @@ namespace FE
             kDefault = kHyphens | kUppercase,
         };
 
-        Uuid() = default;
+        Uuid() noexcept = default;
 
-        explicit Uuid(ForceInitType)
+        explicit Uuid(ForceInitType) noexcept
             : m_simdVector(_mm_setzero_si128())
         {
         }
 
-        explicit Uuid(const __m128i simdVector)
+        explicit Uuid(const __m128i simdVector) noexcept
             : m_simdVector(simdVector)
         {
         }
 
         //! @brief Parse a UUID from a string in form `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"`.
-        explicit Uuid(const festd::ascii_view string)
+        explicit Uuid(const festd::ascii_view string) noexcept
         {
             m_simdVector = Parse(string).m_simdVector;
         }

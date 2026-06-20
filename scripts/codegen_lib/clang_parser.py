@@ -117,8 +117,14 @@ def parse_attributes(node: cindex.Cursor) -> dict[str, str]:
     attributes = {}
     for annotation_list in annotations:
         for annotation in annotation_list.split(";"):
-            key, value = annotation.split("=", 1)
-            attributes[key.strip()] = value.strip()
+            split_annotation = annotation.split("=", 1)
+            if len(split_annotation) == 2:
+                key, value = split_annotation
+                attributes[key.strip()] = value.strip()
+            elif len(split_annotation) == 1:
+                attributes[annotation.strip()] = "1"
+            else:
+                raise Exception(f"Invalid annotation: {annotation}")
 
     return attributes
 
@@ -306,7 +312,6 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
 
     if reflected_type_id:
         namespace_name = get_namespace(node)
-        attributes = {}
         base_types = []
         fields = []
         constructors = []

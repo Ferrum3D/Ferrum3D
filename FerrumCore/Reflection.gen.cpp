@@ -236,7 +236,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -437,7 +436,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -541,7 +539,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -881,7 +878,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -1074,7 +1070,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -1230,7 +1225,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -1431,7 +1425,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -1579,7 +1572,6 @@ namespace FE::DI
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -1774,7 +1766,6 @@ namespace FE
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -2084,7 +2075,6 @@ namespace FE::DI
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -2473,7 +2463,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -2605,7 +2594,6 @@ namespace FE::Memory
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -2698,7 +2686,6 @@ namespace FE
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -2993,7 +2980,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -3495,7 +3481,6 @@ namespace FE
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -3589,7 +3574,6 @@ namespace FE::IO
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
@@ -3670,7 +3654,6 @@ namespace FE::Env
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
