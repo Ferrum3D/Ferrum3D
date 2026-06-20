@@ -36,6 +36,7 @@ class FieldInfo:
     def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type: "ReflectedType|None", enum_value=None, array_size=1) -> None:
         self.name = name
         self.attributes = attributes
+        self.display_attributes = list(attributes.items())
         self.flags = flags
         self.type = type
         self.enum_value = enum_value
@@ -113,6 +114,7 @@ class ReflectedType:
             )
 
         self.attributes = attributes
+        self.display_attributes = list(attributes.items())
         self.bases = bases
         self.fields = fields
         self.constructors = constructors

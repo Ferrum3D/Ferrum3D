@@ -41,8 +41,8 @@ namespace FE::Rtti
         };
 
         static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.attributes %}
-            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- for attribute in type.display_attributes %}
+            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {%- endfor %}
         };
 
@@ -80,14 +80,14 @@ namespace FE::Rtti
 
         {%- endif %}
         static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.attributes %}
-            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- for attribute in type.display_attributes %}
+            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {%- endfor %}
         };
         {% for field in type.fields %}
         static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
-            {%- for attribute in field.attributes %}
-            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- for attribute in field.display_attributes %}
+            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {% endfor %}
         };
         {% endfor %}
@@ -202,21 +202,34 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
+        {%- if type.fields|length > 0 %}
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.fields|length }} * sizeof(Rtti::TypeID)] = {
+            {%- for field in type.fields %}
+            {%- if field.type %}
+            {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
+            {%- else %}
+            {{ '0x00, ' * 16 }} // <unknown> {{ field.name }}
+            {%- endif %}
+            {%- endfor %}
+        };
+
+        {%- endif %}
         static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.attributes %}
-            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- for attribute in type.display_attributes %}
+            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {%- endfor %}
         };
         {% for field in type.fields %}
         static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
-            {%- for attribute in field.attributes %}
-            Rtti::Attribute{ {{ attribute[0], attribute[1] }} },
+            {%- for attribute in field.display_attributes %}
+            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {% endfor %}
         };
         {% endfor %}
         static const festd::array<Rtti::FieldInfo, {{ type.fields|length }}> kFields = {
             {%- for field in type.fields %}
             Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
+                                                     Rtti::TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.name }}::{{ field.name }},
                                                      kAttributes_{{ field.name }},
                                                      {{ field.flags }}),

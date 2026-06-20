@@ -24,7 +24,7 @@ base_compiler_args = [
     '-std=c++20',
 ]
 
-base_compiler_args.append(f"-DEASTL_USER_CONFIG_HEADER=\"{Path("../FerrumCore/Private/FeCore/Base/EASTLConfig.h").absolute().as_posix()}\"")
+base_compiler_args.append(f"-DEASTL_USER_CONFIG_HEADER=\"{Path("../FerrumCore/Private/Core/Base/EASTLConfig.h").absolute().as_posix()}\"")
 
 def should_parse_file(file_path: str) -> bool:
     # return "Downsample.cpp" in file_path
