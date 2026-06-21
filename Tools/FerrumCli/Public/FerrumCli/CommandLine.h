@@ -5,13 +5,13 @@ namespace FE::FerrumCli
 {
     struct CommandLineParser;
 
-    struct FE_ATTRIBUTE(Cli::Parent = FE::FerrumCli::CommandLineParser, Cli::Description = Build an asset) Build final
+    struct FE_ATTRIBUTE(Cli::Parent = FE::FerrumCli::CommandLineParser; Cli::Description = Build an asset) Build final
         : public Cli::Subcommand
     {
         FE_RTTI_Reflect("4D105B8D-0E84-460B-98BC-8A4C3710A193");
 
         Cli::Flag m_help FE_ATTRIBUTE(Cli::Description = Print this help message);
-        Cli::Option m_asset FE_ATTRIBUTE(Cli::Description = Asset to build, Cli::ValueName = path);
+        Cli::Option m_asset FE_ATTRIBUTE(Cli::Description = Asset to build; Cli::ValueName = path);
     };
 
     struct CommandLineParser final : public Cli::Parser

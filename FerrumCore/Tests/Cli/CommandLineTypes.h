@@ -5,13 +5,13 @@ namespace FE::Cli::Tests
 {
     struct TestParser;
 
-    struct FE_ATTRIBUTE(Cli::Parent = FE::Cli::Tests::TestParser) FE_ATTRIBUTE(Cli::Description = Build an asset) Build final
+    struct FE_ATTRIBUTE(Cli::Parent = FE::Cli::Tests::TestParser; Cli::Description = Build an asset) Build final
         : public Subcommand
     {
         FE_RTTI_Reflect("D5DD1441-E7EC-48E5-9706-15434AA507D5");
 
         Flag m_help FE_ATTRIBUTE(Cli::Description = Print this help message);
-        Option m_asset FE_ATTRIBUTE(Cli::Description = Asset to build) FE_ATTRIBUTE(Cli::ValueName = path);
+        Option m_asset FE_ATTRIBUTE(Cli::Description = Asset to build; Cli::ValueName = path);
     };
 
     struct FE_ATTRIBUTE(Cli::Description = Test command line) TestParser final : public Parser

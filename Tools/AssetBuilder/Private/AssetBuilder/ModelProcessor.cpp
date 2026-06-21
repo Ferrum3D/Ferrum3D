@@ -212,6 +212,9 @@ namespace FE
             return false;
 
         IntermediateScene* scene = importer.ParseScene();
+        auto deferDelete = festd::defer([scene] {
+            Memory::DefaultDelete(scene);
+        });
 
         settings.m_logger->LogInfo("Optimizing meshes");
         scene->ForEachMesh(MeshOptimizationPasses::Remap);

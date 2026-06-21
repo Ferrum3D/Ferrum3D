@@ -11,7 +11,7 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#define FE_ATTRIBUTE(value) FE_CODEGEN_ATTRIBUTE(#value)
+#define FE_ATTRIBUTE(...) FE_CODEGEN_ATTRIBUTE(#__VA_ARGS__)
 
 
 namespace FE::Rtti
