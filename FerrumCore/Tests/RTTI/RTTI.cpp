@@ -54,17 +54,17 @@ TEST(RTTI, Enum)
 
     EXPECT_EQ(type.m_enumNames[0], "kNone");
     EXPECT_EQ(type.m_enumNames[1], "kDeflate");
-    EXPECT_EQ(type.m_enumNames[2], "kGDeflate");
+    EXPECT_EQ(type.m_enumNames[2], "kZstd");
     EXPECT_EQ(type.m_enumNames[3], "kInvalid");
 
     EXPECT_EQ(type.m_enumDisplayNames[0], "kNone");
     EXPECT_EQ(type.m_enumDisplayNames[1], "Deflate");
-    EXPECT_EQ(type.m_enumDisplayNames[2], "GDeflate");
+    EXPECT_EQ(type.m_enumDisplayNames[2], "Zstd");
     EXPECT_EQ(type.m_enumDisplayNames[3], "Invalid");
 
     EXPECT_EQ(type.m_enumValues[0], festd::to_underlying(Compression::Method::kNone));
     EXPECT_EQ(type.m_enumValues[1], festd::to_underlying(Compression::Method::kDeflate));
-    EXPECT_EQ(type.m_enumValues[2], festd::to_underlying(Compression::Method::kGDeflate));
+    EXPECT_EQ(type.m_enumValues[2], festd::to_underlying(Compression::Method::kZstd));
     EXPECT_EQ(type.m_enumValues[3], festd::to_underlying(Compression::Method::kInvalid));
 
     EXPECT_TRUE(type.m_fields.empty());

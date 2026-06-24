@@ -11,22 +11,14 @@ namespace FE::IO
     struct AsyncController;
 
 
-    struct AsyncRequestQueueEntry
+    struct AsyncRequestQueueEntry final
     {
-        enum class Type : uint32_t
-        {
-            kRead,
-            kReadBlock,
-            kCount,
-        };
-
-        Type m_type;
         Priority m_priority;
         std::atomic<bool> m_cancellationRequested = false;
         Rc<AsyncController> m_controller;
         std::atomic<AsyncOperationStatus> m_status = AsyncOperationStatus::kQueued;
         std::atomic<ResultCode> m_lastResult = ResultCode::kSuccess;
-        AsyncOperationRequest* m_requestPtr = nullptr;
+        AsyncReadRequest m_request;
     };
 
 
@@ -60,19 +52,6 @@ namespace FE::IO
     };
 
 
-    struct AsyncReadRequestQueueEntry : public AsyncRequestQueueEntry
-    {
-        AsyncReadRequest m_request;
-    };
-
-
-    struct AsyncBlockReadRequestQueueEntry : public AsyncRequestQueueEntry
-    {
-        AsyncBlockReadRequest m_request;
-        std::atomic<uint32_t> m_remainingBlockCount = 0;
-    };
-
-
     struct AsyncStreamIO final : public IAsyncStreamIO
     {
         FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
@@ -81,13 +60,12 @@ namespace FE::IO
         ~AsyncStreamIO() override;
 
         void ReadAsync(const AsyncReadRequest& request, Priority priority, IAsyncController** ppController) override;
-        void ReadAsync(const AsyncBlockReadRequest& request, Priority priority, IAsyncController** ppController) override;
 
     private:
         Threading::ThreadHandle m_thread;
         Threading::Event m_queueEvent;
         Logger* m_logger = nullptr;
-        std::atomic<bool> m_exitRequested;
+        std::atomic<bool> m_exitRequested = false;
 
         IJobSystem* m_jobSystem = nullptr;
         IStreamFactory* m_streamFactory = nullptr;
@@ -95,17 +73,14 @@ namespace FE::IO
         TracyLockable(Threading::SpinLock, m_queueLock);
         festd::vector<AsyncRequestQueueEntry*> m_queue;
 
-        Memory::SpinLockedPoolAllocator m_blockDecompressionJobPool;
-        Memory::SpinLockedPoolAllocator m_requestPools[festd::to_underlying(AsyncRequestQueueEntry::Type::kCount)];
+        Memory::SpinLockedPoolAllocator m_decompressionJobPool;
+        Memory::SpinLockedPoolAllocator m_requestPool{ "IO/Async/ReadRequestPool", sizeof(AsyncRequestQueueEntry) };
         Memory::SpinLockedPoolAllocator m_controllerPool{ "IO/Async/ControllerPool", sizeof(AsyncController) };
 
         void EnqueueImpl(Priority priority, AsyncRequestQueueEntry* entry);
 
         AsyncRequestQueueEntry* TryDequeue();
-        void ProcessGenericRequest(AsyncRequestQueueEntry* entry);
-
-        void ProcessRequest(AsyncReadRequestQueueEntry* entry, AsyncOperationStatus status);
-        void ProcessRequest(AsyncBlockReadRequestQueueEntry* entry, AsyncOperationStatus status);
+        void ProcessRequest(AsyncRequestQueueEntry* entry, AsyncOperationStatus status);
 
         void ReaderThread();
     };

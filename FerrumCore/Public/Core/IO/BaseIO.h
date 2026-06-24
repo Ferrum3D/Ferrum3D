@@ -23,7 +23,6 @@ namespace FE::IO
     struct IAsyncController;
     struct IAsyncStreamIO;
     struct AsyncReadResult;
-    struct AsyncBlockReadResult;
 
 
     //! @brief Represents an I/O result code.
@@ -292,9 +291,6 @@ namespace FE::IO
 
         //! @brief Called when an operation associated with this callback completes.
         virtual void AsyncIOCallback([[maybe_unused]] const AsyncReadResult& result) {}
-
-        //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback([[maybe_unused]] const AsyncBlockReadResult& result) {}
     };
 
 

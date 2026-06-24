@@ -75,6 +75,7 @@ namespace FE::IO
         {
             BufferedStream::FlushWrites();
             Platform::CloseFile(m_handle);
+            m_handle.Reset();
         }
     }
 

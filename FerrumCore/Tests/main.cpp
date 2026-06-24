@@ -1,4 +1,6 @@
 ﻿#include <Core/Base/Platform.h>
+#include <Core/DI/Builder.h>
+#include <Core/Modules/Configuration.h>
 #include <Core/Modules/Environment.h>
 #include <gtest/gtest.h>
 
@@ -6,11 +8,21 @@ using namespace FE;
 
 int main(int argc, char** argv)
 {
+    testing::FLAGS_gtest_print_utf8 = true;
+
     Env::ApplicationInfo appInfo;
     appInfo.m_name = "FerrumCoreTests";
     Env::Init(appInfo);
 
-    testing::FLAGS_gtest_print_utf8 = true;
+    DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
+    builder.Bind<Env::Configuration>()
+        .ToFunc([](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
+            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
+            *result = Rc<Env::Configuration>::New(allocator, festd::span<const festd::string_view>{});
+            return DI::ResultCode::kSuccess;
+        })
+        .InSingletonScope();
+    builder.Build();
 
     if (Platform::IsDebuggerPresent())
     {

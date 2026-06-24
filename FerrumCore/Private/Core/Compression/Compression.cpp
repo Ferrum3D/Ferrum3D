@@ -5,32 +5,48 @@
 
 #include <libdeflate.h>
 
+#define ZSTD_STATIC_LINKING_ONLY 1
+#include <zstd.h>
+#include <zstd_errors.h>
+
 namespace FE::Compression
 {
     namespace
     {
+        constexpr int32_t kDeflateMaxLevel = 12;
+        constexpr int32_t kZstdMaxLevel = 22;
+
+        constexpr ZSTD_customMem kZstdCustomMem = {
+            .customAlloc =
+                [](void*, const size_t size) {
+                    return Memory::DefaultAllocate(size);
+                },
+            .customFree =
+                [](void*, void* ptr) {
+                    Memory::DefaultFree(ptr);
+                },
+            .opaque = nullptr,
+        };
+
+
         struct CompressionState final
         {
             Threading::SpinLock m_lock;
-            festd::array<festd::vector<void*>, 12> m_compressorCache;
-            festd::array<festd::vector<void*>, 12> m_gDeflateCompressorCache;
-            festd::vector<void*> m_decompressorCache;
-            festd::vector<void*> m_gDeflateDecompressorCache;
+            festd::array<festd::vector<void*>, kDeflateMaxLevel> m_deflateCompressorCache;
+            festd::array<festd::vector<void*>, kZstdMaxLevel> m_zstdCompressorCache;
+            festd::vector<void*> m_deflateDecompressorCache;
+            festd::vector<void*> m_zstdDecompressorCache;
         };
 
         CompressionState* GCompressionState;
 
 
-        uint32_t EncodeBlockMagic(const Method method)
+        void* AllocateDeflateCompressor(const int32_t level)
         {
-            return Math::MakeFourCC('F', 'C', 'B', festd::to_underlying(method));
-        }
+            FE_Assert(level >= 1 && level <= kDeflateMaxLevel);
 
-
-        void* AllocateCompressorImpl(const int32_t level)
-        {
             std::unique_lock lock{ GCompressionState->m_lock };
-            auto& cache = GCompressionState->m_compressorCache[level - 1];
+            auto& cache = GCompressionState->m_deflateCompressorCache[level - 1];
             if (cache.empty())
                 return libdeflate_alloc_compressor(level);
 
@@ -40,12 +56,14 @@ namespace FE::Compression
         }
 
 
-        void* AllocateGDeflateCompressorImpl(const int32_t level)
+        void* AllocateZstdCompressor(const int32_t level)
         {
+            FE_Assert(level >= 1 && level <= kZstdMaxLevel);
+
             std::unique_lock lock{ GCompressionState->m_lock };
-            auto& cache = GCompressionState->m_gDeflateCompressorCache[level - 1];
+            auto& cache = GCompressionState->m_zstdCompressorCache[level - 1];
             if (cache.empty())
-                return libdeflate_alloc_gdeflate_compressor(level);
+                return ZSTD_createCCtx_advanced(kZstdCustomMem);
 
             void* impl = cache.back();
             cache.pop_back();
@@ -53,10 +71,10 @@ namespace FE::Compression
         }
 
 
-        void* AllocateDecompressorImpl()
+        void* AllocateDeflateDecompressor()
         {
             std::unique_lock lock{ GCompressionState->m_lock };
-            auto& cache = GCompressionState->m_decompressorCache;
+            auto& cache = GCompressionState->m_deflateDecompressorCache;
             if (cache.empty())
                 return libdeflate_alloc_decompressor();
 
@@ -66,12 +84,12 @@ namespace FE::Compression
         }
 
 
-        void* AllocateGDeflateDecompressorImpl()
+        void* AllocateZstdDecompressor()
         {
             std::unique_lock lock{ GCompressionState->m_lock };
-            auto& cache = GCompressionState->m_gDeflateDecompressorCache;
+            auto& cache = GCompressionState->m_zstdDecompressorCache;
             if (cache.empty())
-                return libdeflate_alloc_gdeflate_decompressor();
+                return ZSTD_createDCtx_advanced(kZstdCustomMem);
 
             void* impl = cache.back();
             cache.pop_back();
@@ -79,27 +97,27 @@ namespace FE::Compression
         }
 
 
-        libdeflate_compressor* CastCompressor(void* impl)
+        libdeflate_compressor* CastDeflateCompressor(void* impl)
         {
             return static_cast<libdeflate_compressor*>(impl);
         }
 
 
-        libdeflate_gdeflate_compressor* CastGCompressor(void* impl)
+        ZSTD_CCtx* CastZstdCompressor(void* impl)
         {
-            return static_cast<libdeflate_gdeflate_compressor*>(impl);
+            return static_cast<ZSTD_CCtx*>(impl);
         }
 
 
-        libdeflate_decompressor* CastDecompressor(void* impl)
+        libdeflate_decompressor* CastDeflateDecompressor(void* impl)
         {
             return static_cast<libdeflate_decompressor*>(impl);
         }
 
 
-        libdeflate_gdeflate_decompressor* CastGDecompressor(void* impl)
+        ZSTD_DCtx* CastZstdDecompressor(void* impl)
         {
-            return static_cast<libdeflate_gdeflate_decompressor*>(impl);
+            return static_cast<ZSTD_DCtx*>(impl);
         }
     } // namespace
 
@@ -115,29 +133,23 @@ namespace FE::Compression
 
     void Internal::Shutdown()
     {
-        for (auto& cache : GCompressionState->m_compressorCache)
+        for (auto& cache : GCompressionState->m_deflateCompressorCache)
         {
             for (void* impl : cache)
                 libdeflate_free_compressor(static_cast<libdeflate_compressor*>(impl));
-
-            cache.clear();
         }
 
-        for (auto& cache : GCompressionState->m_gDeflateCompressorCache)
+        for (auto& cache : GCompressionState->m_zstdCompressorCache)
         {
             for (void* impl : cache)
-                libdeflate_free_gdeflate_compressor(static_cast<libdeflate_gdeflate_compressor*>(impl));
-
-            cache.clear();
+                ZSTD_freeCCtx(static_cast<ZSTD_CCtx*>(impl));
         }
 
-        for (void* impl : GCompressionState->m_decompressorCache)
+        for (void* impl : GCompressionState->m_deflateDecompressorCache)
             libdeflate_free_decompressor(static_cast<libdeflate_decompressor*>(impl));
-        GCompressionState->m_decompressorCache.clear();
 
-        for (void* impl : GCompressionState->m_gDeflateDecompressorCache)
-            libdeflate_free_gdeflate_decompressor(static_cast<libdeflate_gdeflate_decompressor*>(impl));
-        GCompressionState->m_gDeflateDecompressorCache.clear();
+        for (void* impl : GCompressionState->m_zstdDecompressorCache)
+            ZSTD_freeDCtx(static_cast<ZSTD_DCtx*>(impl));
 
         GCompressionState->~CompressionState();
         GCompressionState = nullptr;
@@ -151,10 +163,18 @@ namespace FE::Compression
 
         std::unique_lock lock{ GCompressionState->m_lock };
 
-        if (m_method == Method::kGDeflate)
-            GCompressionState->m_gDeflateCompressorCache[m_level - 1].push_back(m_impl);
-        else
-            GCompressionState->m_compressorCache[m_level - 1].push_back(m_impl);
+        switch (m_method)
+        {
+        case Method::kDeflate:
+            GCompressionState->m_deflateCompressorCache[m_level - 1].push_back(m_impl);
+            break;
+        case Method::kZstd:
+            GCompressionState->m_zstdCompressorCache[m_level - 1].push_back(m_impl);
+            break;
+        default:
+            FE_DebugBreak();
+            break;
+        }
 
         m_impl = nullptr;
     }
@@ -169,151 +189,59 @@ namespace FE::Compression
 
     size_t Compressor::GetBounds(const size_t uncompressedSize) const
     {
-        constexpr uint32_t perBlockMetadataSize = sizeof(BlockHeader) + sizeof(BlockFooter);
-
         switch (m_method)
         {
-        default:
-        case Method::kInvalid:
-            FE_DebugBreak();
-            [[fallthrough]];
-
         case Method::kNone:
-            return uncompressedSize + perBlockMetadataSize + sizeof(PageHeader);
-
+            return uncompressedSize;
         case Method::kDeflate:
-            return libdeflate_deflate_compress_bound(CastCompressor(m_impl), uncompressedSize) + perBlockMetadataSize
-                + sizeof(PageHeader);
-
-        case Method::kGDeflate:
-            {
-                size_t pageCount;
-                const size_t bound = libdeflate_gdeflate_compress_bound(CastGCompressor(m_impl), uncompressedSize, &pageCount);
-                return bound + perBlockMetadataSize + sizeof(PageHeader) * pageCount;
-            }
+            return libdeflate_deflate_compress_bound(CastDeflateCompressor(m_impl), uncompressedSize);
+        case Method::kZstd:
+            return ZSTD_compressBound(uncompressedSize);
+        default:
+            FE_DebugBreak();
+            return 0;
         }
     }
 
 
-    bool Compressor::Compress(Crc32& crc, const void* src, const size_t srcSize, void* dst, const size_t dstSize) const
+    CompressionResult Compressor::Compress(const void* src, const size_t srcSize, void* dst, const size_t dstSize) const
     {
-        FE_Assert(srcSize <= kBlockSize);
-
-        if (sizeof(BlockHeader) > dstSize)
-            return false;
-
         switch (m_method)
         {
         default:
         case Method::kInvalid:
             FE_DebugBreak();
-            [[fallthrough]];
+            return { ResultCode::kUnknownError, 0 };
 
         case Method::kNone:
-            {
-                Memory::BlockWriter writer{ dst, dstSize };
-                writer.Write(BlockHeader{ EncodeBlockMagic(m_method), static_cast<uint32_t>(srcSize) });
+            if (dstSize < srcSize)
+                return { ResultCode::kInsufficientSpace, 0 };
 
-                if (sizeof(PageHeader) > writer.AvailableSpace())
-                    return false;
-
-                PageHeader& pageHeader = writer.Write<PageHeader>();
-                pageHeader.m_compressedSize = static_cast<uint32_t>(srcSize);
-                pageHeader.m_nextPageOffset = kInvalidIndex;
-
-                if (!writer.WriteBytes(src, srcSize))
-                    return false;
-
-                if (sizeof(BlockFooter) > writer.AvailableSpace())
-                    return false;
-
-                writer.Write(BlockFooter{ static_cast<uint32_t>(srcSize), crc.Update(src, srcSize) });
-                return true;
-            }
+            memcpy(dst, src, srcSize);
+            return { ResultCode::kSuccess, srcSize };
 
         case Method::kDeflate:
             {
-                Memory::BlockWriter writer{ dst, dstSize };
-                writer.Write(BlockHeader{ EncodeBlockMagic(m_method), static_cast<uint32_t>(srcSize) });
+                const size_t compressedSize =
+                    libdeflate_deflate_compress(CastDeflateCompressor(m_impl), src, srcSize, dst, dstSize);
+                if (compressedSize == 0)
+                    return { ResultCode::kInsufficientSpace, 0 };
 
-                if (sizeof(PageHeader) > writer.AvailableSpace())
-                    return false;
-
-                PageHeader& pageHeader = writer.Write<PageHeader>();
-
-                const size_t compressedBytes =
-                    libdeflate_deflate_compress(CastCompressor(m_impl), src, srcSize, writer.m_ptr, writer.AvailableSpace());
-                if (compressedBytes == 0)
-                    return false;
-
-                writer.m_ptr += compressedBytes;
-                pageHeader.m_compressedSize = static_cast<uint32_t>(compressedBytes);
-                pageHeader.m_nextPageOffset = kInvalidIndex;
-
-                if (sizeof(BlockFooter) > writer.AvailableSpace())
-                    return false;
-
-                writer.Write(BlockFooter{ static_cast<uint32_t>(srcSize), crc.Update(src, srcSize) });
-                return true;
+                return { ResultCode::kSuccess, compressedSize };
             }
 
-        case Method::kGDeflate:
+        case Method::kZstd:
             {
-                Memory::BlockWriter writer{ dst, dstSize };
-                writer.Write(BlockHeader{ EncodeBlockMagic(m_method), kGDeflatePageSize });
-
-                size_t pageCount;
-                const size_t bound = libdeflate_gdeflate_compress_bound(CastGCompressor(m_impl), srcSize, &pageCount);
-                const size_t pageBound = bound / pageCount;
-
-                festd::inline_vector<libdeflate_gdeflate_out_page, 16> outPages;
-                outPages.resize(static_cast<uint32_t>(pageCount));
-                for (libdeflate_gdeflate_out_page& outPage : outPages)
+                const size_t compressedSize = ZSTD_compressCCtx(CastZstdCompressor(m_impl), dst, dstSize, src, srcSize, m_level);
+                if (ZSTD_isError(compressedSize))
                 {
-                    if (sizeof(PageHeader) > writer.AvailableSpace())
-                        return false;
+                    if (ZSTD_getErrorCode(compressedSize) == ZSTD_error_dstSize_tooSmall)
+                        return { ResultCode::kInsufficientSpace, 0 };
 
-                    PageHeader& pageHeader = writer.Write<PageHeader>();
-                    pageHeader.m_nextPageOffset = static_cast<uint32_t>(pageBound);
-
-                    outPage.data = writer.m_ptr;
-                    outPage.nbytes = pageBound;
-
-                    if (pageBound > writer.AvailableSpace())
-                        return false;
-
-                    writer.m_ptr += pageBound;
+                    return { ResultCode::kUnknownError, 0 };
                 }
 
-                const size_t compressedBytes =
-                    libdeflate_gdeflate_compress(CastGCompressor(m_impl), src, srcSize, outPages.data(), outPages.size());
-
-                if (compressedBytes == 0)
-                    return false;
-
-                if (sizeof(BlockFooter) > writer.AvailableSpace())
-                    return false;
-
-                for (libdeflate_gdeflate_out_page& outPage : outPages)
-                {
-                    PageHeader* pageHeader = static_cast<PageHeader*>(outPage.data) - 1;
-                    FE_AssertDebug(pageHeader->m_nextPageOffset == pageBound);
-                    FE_AssertDebug(pageHeader->m_compressedSize == 0);
-                    pageHeader->m_compressedSize = static_cast<uint32_t>(outPage.nbytes);
-
-                    if (&outPage == &outPages.back())
-                    {
-                        pageHeader->m_nextPageOffset = kInvalidIndex;
-                        writer.m_ptr = reinterpret_cast<std::byte*>(pageHeader + 1) + pageHeader->m_compressedSize;
-
-                        BlockFooter& footer = writer.Write<BlockFooter>();
-                        footer.m_crc32 = crc.Update(src, srcSize);
-                        footer.m_tailPageUncompressedSize =
-                            srcSize % kGDeflatePageSize > 0 ? srcSize % kGDeflatePageSize : kGDeflatePageSize;
-                    }
-                }
-
-                return true;
+                return { ResultCode::kSuccess, compressedSize };
             }
         }
     }
@@ -326,16 +254,13 @@ namespace FE::Compression
         default:
         case Method::kInvalid:
             FE_DebugBreak();
-            [[fallthrough]];
-
+            return Compressor{ Method::kInvalid, level, nullptr };
         case Method::kNone:
             return Compressor{ method, level, nullptr };
-
         case Method::kDeflate:
-            return Compressor{ method, level, AllocateCompressorImpl(level) };
-
-        case Method::kGDeflate:
-            return Compressor{ method, level, AllocateGDeflateCompressorImpl(level) };
+            return Compressor{ method, level, AllocateDeflateCompressor(level) };
+        case Method::kZstd:
+            return Compressor{ method, level, AllocateZstdCompressor(level) };
         }
     }
 
@@ -347,10 +272,20 @@ namespace FE::Compression
 
         std::unique_lock lock{ GCompressionState->m_lock };
 
-        if (m_method == Method::kGDeflate)
-            GCompressionState->m_gDeflateDecompressorCache.push_back(m_impl);
-        else
-            GCompressionState->m_decompressorCache.push_back(m_impl);
+        switch (m_method)
+        {
+        default:
+        case Method::kNone: // Should not have gotten past if (!m_impl).
+        case Method::kInvalid:
+            FE_DebugBreak();
+            break;
+        case Method::kDeflate:
+            GCompressionState->m_deflateDecompressorCache.push_back(m_impl);
+            break;
+        case Method::kZstd:
+            GCompressionState->m_zstdDecompressorCache.push_back(m_impl);
+            break;
+        }
 
         m_impl = nullptr;
     }
@@ -370,59 +305,45 @@ namespace FE::Compression
         default:
         case Method::kInvalid:
             FE_DebugBreak();
-            [[fallthrough]];
+            return { ResultCode::kUnknownError, 0 };
 
         case Method::kNone:
-            {
-                if (dstSize < srcSize)
-                    return DecompressionResult{ ResultCode::kInsufficientSpace, 0 };
+            if (dstSize < srcSize)
+                return { ResultCode::kInsufficientSpace, 0 };
 
-                memcpy(dst, src, srcSize);
-
-                return DecompressionResult{ ResultCode::kSuccess, srcSize };
-            }
+            memcpy(dst, src, srcSize);
+            return { ResultCode::kSuccess, srcSize };
 
         case Method::kDeflate:
             {
                 size_t decompressedSize;
-                const libdeflate_result decompressionResult =
-                    libdeflate_deflate_decompress(CastDecompressor(m_impl), src, srcSize, dst, dstSize, &decompressedSize);
+                const libdeflate_result result =
+                    libdeflate_deflate_decompress(CastDeflateDecompressor(m_impl), src, srcSize, dst, dstSize, &decompressedSize);
 
-                if (decompressedSize > dstSize)
-                    return DecompressionResult{ ResultCode::kInsufficientSpace, 0 };
+                if (result == LIBDEFLATE_BAD_DATA)
+                    return { ResultCode::kInvalidFormat, 0 };
 
-                if (decompressionResult == LIBDEFLATE_BAD_DATA)
-                    return DecompressionResult{ ResultCode::kInvalidFormat, 0 };
+                if (result == LIBDEFLATE_INSUFFICIENT_SPACE)
+                    return { ResultCode::kInsufficientSpace, 0 };
 
-                if (decompressionResult == LIBDEFLATE_INSUFFICIENT_SPACE)
-                    return DecompressionResult{ ResultCode::kInsufficientSpace, 0 };
+                if (result != LIBDEFLATE_SUCCESS)
+                    return { ResultCode::kUnknownError, 0 };
 
-                if (decompressionResult != LIBDEFLATE_SUCCESS)
-                    return DecompressionResult{ ResultCode::kUnknownError, 0 };
-
-                return DecompressionResult{ ResultCode::kSuccess, decompressedSize };
+                return { ResultCode::kSuccess, decompressedSize };
             }
 
-        case Method::kGDeflate:
+        case Method::kZstd:
             {
-                size_t decompressedSize;
-                libdeflate_gdeflate_in_page inPage;
-                inPage.nbytes = srcSize;
-                inPage.data = src;
+                const size_t decompressedSize = ZSTD_decompressDCtx(CastZstdDecompressor(m_impl), dst, dstSize, src, srcSize);
+                if (ZSTD_isError(decompressedSize))
+                {
+                    if (ZSTD_getErrorCode(decompressedSize) == ZSTD_error_dstSize_tooSmall)
+                        return { ResultCode::kInsufficientSpace, 0 };
 
-                const libdeflate_result decompressionResult =
-                    libdeflate_gdeflate_decompress(CastGDecompressor(m_impl), &inPage, 1, dst, dstSize, &decompressedSize);
+                    return { ResultCode::kInvalidFormat, 0 };
+                }
 
-                if (decompressionResult == LIBDEFLATE_BAD_DATA)
-                    return DecompressionResult{ ResultCode::kInvalidFormat, 0 };
-
-                if (decompressionResult == LIBDEFLATE_INSUFFICIENT_SPACE)
-                    return DecompressionResult{ ResultCode::kInsufficientSpace, 0 };
-
-                if (decompressionResult != LIBDEFLATE_SUCCESS)
-                    return DecompressionResult{ ResultCode::kUnknownError, 0 };
-
-                return DecompressionResult{ ResultCode::kSuccess, dstSize };
+                return { ResultCode::kSuccess, decompressedSize };
             }
         }
     }
@@ -435,16 +356,13 @@ namespace FE::Compression
         default:
         case Method::kInvalid:
             FE_DebugBreak();
-            [[fallthrough]];
-
+            return Decompressor{ Method::kInvalid, nullptr };
         case Method::kNone:
             return Decompressor{ method, nullptr };
-
         case Method::kDeflate:
-            return Decompressor{ method, AllocateDecompressorImpl() };
-
-        case Method::kGDeflate:
-            return Decompressor{ method, AllocateGDeflateDecompressorImpl() };
+            return Decompressor{ method, AllocateDeflateDecompressor() };
+        case Method::kZstd:
+            return Decompressor{ method, AllocateZstdDecompressor() };
         }
     }
 } // namespace FE::Compression

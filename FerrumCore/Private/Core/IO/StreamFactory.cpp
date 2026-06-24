@@ -4,11 +4,11 @@
 
 namespace FE::IO
 {
-    FileStreamFactory::FileStreamFactory(Env::Configuration* pConfig)
+    FileStreamFactory::FileStreamFactory(Env::Configuration* config)
         : m_fileStreamPool("IO/FileStream", sizeof(FileStream), alignof(FileStream), 64 * 1024)
     {
         const Path currentDirectory = Directory::GetCurrentDirectory();
-        m_parentDirectory = pConfig->GetString("AssetDirectory", currentDirectory);
+        m_parentDirectory = config->GetString("AssetDirectory", currentDirectory);
         Directory::SetCurrentDirectory(m_parentDirectory);
     }
 

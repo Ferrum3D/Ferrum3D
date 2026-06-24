@@ -4,10 +4,6 @@
 		<Intrinsic Name="element_at" Expression="m_segments[i / kElementsPerSegment][i % kElementsPerSegment]">
 			<Parameter Name="i" Type="unsigned int"/>
 		</Intrinsic>
-		<DisplayString Condition="m_size == 0">[{m_size}] {{}}</DisplayString>
-		<DisplayString Condition="m_size == 1">[{m_size}] {{ {element_at(0)} }}</DisplayString>
-		<DisplayString Condition="m_size == 2">[{m_size}] {{ {element_at(0)}, {element_at(1))} }}</DisplayString>
-		<DisplayString Condition="m_size &gt; 2">[{m_size}] {{ {element_at(0)}, {element_at(1)}, ... }}</DisplayString>
 		<Expand>
 			<Item Name="[size]">m_size</Item>
 			<IndexListItems>
@@ -22,6 +18,12 @@
 			{this->c_str()}
 		</DisplayString>
 	</Type>
+
+    <Type Name="FE::Uuid">
+        <DisplayString>
+            {m_bytes[0],nvoXb}{m_bytes[1],nvoXb}{m_bytes[2],nvoXb}{m_bytes[3],nvoXb}-{m_bytes[4],nvoXb}{m_bytes[5],nvoXb}-{m_bytes[6],nvoXb}{m_bytes[7],nvoXb}-{m_bytes[8],nvoXb}{m_bytes[9],nvoXb}-{m_bytes[10],nvoXb}{m_bytes[11],nvoXb}{m_bytes[12],nvoXb}{m_bytes[13],nvoXb}{m_bytes[14],nvoXb}{m_bytes[15],nvoXb}
+        </DisplayString>
+    </Type>
 
 	<Type Name="FE::Internal::StringImpl&lt;FE::Internal::BasicStringViewImpl&gt;">
 		<DisplayString>{m_data,[m_size]}</DisplayString>

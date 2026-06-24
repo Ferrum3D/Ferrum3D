@@ -1,6 +1,8 @@
 set(SRC
     Common/TestCommon.h
 
+    Compression.cpp
+
     Cli/CommandLine.cpp
     Cli/CommandLineTypes.h
 
@@ -8,6 +10,7 @@ set(SRC
     Containers/SegmentedVector.cpp
 
     IO/Path.cpp
+    IO/AsyncStreamIO.cpp
 
     Jobs/JobSystem.cpp
 
@@ -41,7 +44,8 @@ fe_configure_target(FeCoreTests)
 
 target_include_directories(FeCoreTests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/..")
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Private")
 
 set_target_properties(FeCoreTests PROPERTIES FOLDER "Core")
 target_link_libraries(FeCoreTests gtest gmock FeCore)

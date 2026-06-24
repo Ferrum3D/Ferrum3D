@@ -225,6 +225,7 @@ target_link_libraries(FeCore
     fcontext
     mimalloc-static
     libdeflate
+    libzstd_static
     TracyClient
     utf8proc
     EASTL

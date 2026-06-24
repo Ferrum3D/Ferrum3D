@@ -34,3 +34,4 @@ cmake-build/
 
 .reflection_cache
 .reflection_model
+*.ferrum-test-file.bin

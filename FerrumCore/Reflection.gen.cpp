@@ -2143,14 +2143,14 @@ namespace FE::Rtti
         static constexpr festd::array<festd::ascii_view, 4> kEnumNames = {
             "kNone",
             "kDeflate",
-            "kGDeflate",
+            "kZstd",
             "kInvalid",
         };
 
         static constexpr festd::array<festd::ascii_view, 4> kEnumDisplayNames = {
             "kNone",
             "Deflate",
-            "GDeflate",
+            "Zstd",
             "Invalid",
         };
 
