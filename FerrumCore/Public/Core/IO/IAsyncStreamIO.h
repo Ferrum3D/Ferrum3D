@@ -1,22 +1,156 @@
-﻿#pragma once
+#pragma once
 #include <Core/Compression/Compression.h>
-#include <Core/IO/IStreamFactory.h>
+#include <Core/IO/BaseIO.h>
+#include <Core/IO/Path.h>
 #include <Core/Jobs/IJobSystem.h>
+#include <Core/Jobs/WaitGroup.h>
+#include <Core/Memory/SegmentedBuffer.h>
+#include <Core/Time/BaseTime.h>
 
 namespace FE::IO
 {
-    //! @brief Asynchronous I/O operation status.
-    enum class AsyncOperationStatus
+    struct ResolvedDataSource final
     {
-        kQueued,    //!< The operation has been queued, the processing hasn't yet started.
-        kRunning,   //!< The operation is currently being processed by the I/O thread.
-        kCanceled,  //!< The operation has been canceled.
-        kSucceeded, //!< The operation has completed successfully.
-        kFailed,    //!< The operation has failed.
+        Path m_filePath;
+        size_t m_byteOffset = 0;
+        size_t m_byteSize = 0;
     };
 
 
-    //! @brief Returns true if the specified status indicates that an operation is in a final state.
+    namespace InternalAsyncReadCommands
+    {
+        enum class AsyncReadCommandType : uint32_t
+        {
+            kInvalid,
+            kSetSource,
+            kInvokeFunctor,
+            kRead,
+            kReadCompressed,
+        };
+
+
+        struct AsyncSetSourceCommand final
+        {
+            AsyncReadCommandType m_type = AsyncReadCommandType::kSetSource;
+            ResolvedDataSource m_source;
+        };
+
+
+        struct AsyncInvokeFunctorCommand final
+        {
+            AsyncReadCommandType m_type = AsyncReadCommandType::kInvokeFunctor;
+            uint32_t m_functorSize = 0;
+            void (*m_functor)(void* context) = nullptr;
+            void* m_context = nullptr;
+        };
+
+
+        struct AsyncReadCommand final
+        {
+            AsyncReadCommandType m_type = AsyncReadCommandType::kRead;
+            std::byte* m_destination = nullptr;
+            size_t m_destinationSize = 0;
+            size_t m_sourceOffset = 0;
+        };
+
+
+        struct AsyncReadCompressedCommand final
+        {
+            AsyncReadCommandType m_type = AsyncReadCommandType::kReadCompressed;
+            std::byte* m_destination = nullptr;
+            size_t m_destinationSize = 0;
+            size_t m_sourceOffset = 0;
+            size_t m_compressedSize = 0;
+            Compression::Method m_compressionMethod = Compression::Method::kNone;
+            JobPriority m_decompressionPriority = JobPriority::kNormal;
+        };
+    } // namespace InternalAsyncReadCommands
+
+
+    struct AsyncReadCommandList final
+    {
+        Memory::SegmentedBuffer m_buffer;
+        WaitGroup* m_signalWaitGroup = nullptr;
+        std::pmr::memory_resource* m_allocator = nullptr;
+    };
+
+
+    struct AsyncReadCommandListBuilder final
+    {
+        explicit AsyncReadCommandListBuilder(std::pmr::memory_resource* allocator, uint32_t pageSize = 2048)
+            : m_bufferBuilder(allocator ? allocator : std::pmr::get_default_resource(), pageSize)
+        {
+        }
+
+        void* Allocate(size_t bytes, size_t alignment = Memory::kDefaultAlignment);
+        void SetSource(const ResolvedDataSource& source);
+        void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset = 0);
+        void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset, size_t compressedSize,
+                  Compression::Method compressionMethod, JobPriority decompressionPriority = JobPriority::kNormal);
+
+        template<class TFunctor>
+        void InvokeOnCompletion(TFunctor&& functor)
+        {
+            using namespace InternalAsyncReadCommands;
+
+            const uint32_t functorSize = AlignUp<uint32_t>(sizeof(TFunctor), alignof(uintptr_t));
+
+            AsyncInvokeFunctorCommand command;
+            command.m_type = AsyncReadCommandType::kInvokeFunctor;
+            command.m_functorSize = functorSize;
+            command.m_functor = [](void* context) {
+#if FE_DEVELOPMENT
+                HighResolutionTimer timer;
+                timer.Start();
+#endif
+
+                (*static_cast<TFunctor*>(context))();
+                static_cast<TFunctor*>(context)->~TFunctor();
+
+#if FE_DEVELOPMENT
+                timer.Stop();
+
+                if (const double ms = timer.GetElapsedMilliseconds(); ms > 1.0)
+                {
+                    const auto message = Fmt::FixedFormat(
+                        "AsyncReadCommandListBuilder::InvokeOnCompletion functor took too long to execute ({} ms)",
+                        ms);
+                    Trace::AssertionReport(SourceLocation::Current(), message.data(), message.size());
+                }
+#endif
+            };
+
+            void* commandPtr = m_bufferBuilder.WriteBytes(&command, sizeof(command));
+            void* functorPtr = m_bufferBuilder.Allocate(functorSize);
+            new (functorPtr) TFunctor(std::forward<TFunctor>(functor));
+
+            static_cast<AsyncInvokeFunctorCommand*>(commandPtr)->m_context = functorPtr;
+        }
+
+        AsyncReadCommandList Build(WaitGroup* signalWaitGroup = nullptr);
+
+        AsyncReadCommandList* Build(std::pmr::memory_resource* allocator, WaitGroup* signalWaitGroup = nullptr)
+        {
+            AsyncReadCommandList commandList = Build(signalWaitGroup);
+            commandList.m_allocator = allocator ? allocator : std::pmr::get_default_resource();
+            return Memory::New<AsyncReadCommandList>(commandList.m_allocator, commandList);
+        }
+
+    private:
+        Memory::SegmentedBufferBuilder m_bufferBuilder;
+    };
+
+
+    enum class AsyncOperationStatus
+    {
+        kQueued,
+        kRunning,
+        kCanceled,
+        kSucceeded,
+        kFailed,
+    };
+
+
     constexpr bool IsFinalStatus(const AsyncOperationStatus status)
     {
         switch (status)
@@ -31,7 +165,6 @@ namespace FE::IO
     }
 
 
-    //! @brief Asynchronous operation controller: can be used to cancel an operation or to query its status.
     struct IAsyncController : public Memory::RefCountedObjectBase
     {
         FE_RTTI("2427B1D9-F1A5-4A1B-A804-EB9ACA502C28");
@@ -44,62 +177,13 @@ namespace FE::IO
     };
 
 
-    //! @brief Asynchronous read operation request.
-    struct AsyncReadRequest final
-    {
-        Rc<IStream> m_stream;  //!< The stream that the operation will be performed on, optional.
-        Path m_path;           //!< The path to the file to open the stream for, must be provided if m_stream is null.
-        intptr_t m_offset = 0; //!< The starting offset in the source file.
-
-        uintptr_t m_userData0 = 0; //!< Optional user data, ignored by the I/O thread.
-        uintptr_t m_userData1 = 0; //!< Optional user data, ignored by the I/O thread.
-
-        IAsyncReadCallback* m_callback = nullptr;         //!< The callback to call when the read is completed.
-        std::pmr::memory_resource* m_allocator = nullptr; //!< The allocator used for read and temporary buffers.
-                                                          //!< Optional: the default allocator will be used when null.
-
-        std::byte* m_readBuffer = nullptr; //!< The destination buffer. Optional: allocated by the I/O thread when null.
-        uint32_t m_readBufferSize = 0;     //!< Raw byte count for kNone, destination capacity for compressed methods.
-        uint32_t m_compressedSize = 0;     //!< Compressed data size, ignored if m_compressionMethod is kNone.
-        uint32_t m_overallocateBytes = 0;  //!< Extra bytes allocated after an automatically allocated destination buffer.
-
-        Compression::Method m_compressionMethod = Compression::Method::kNone;
-        JobPriority m_decompressionPriority = JobPriority::kNormal;
-    };
-
-
-    struct AsyncReadResult final
-    {
-        AsyncReadRequest* m_request = nullptr;
-        IAsyncController* m_controller = nullptr;
-        size_t m_bytesRead = 0;
-
-        void FreeData() const
-        {
-            m_request->m_allocator->deallocate(m_request->m_readBuffer, m_request->m_readBufferSize);
-            m_request->m_readBuffer = nullptr;
-        }
-    };
-
-
-    //! @brief Asynchronous I/O thread interface.
     struct IAsyncStreamIO : public Memory::RefCountedObjectBase
     {
         FE_RTTI("A44064EC-34E0-4B99-9BC7-A2B27321F617");
 
         ~IAsyncStreamIO() override = default;
 
-        //! @brief Enqueue an asynchronous read operation.
-        //!
-        //! This function can be used to read files asynchronously from the file system or from archives.
-        //! It uses the registered IStreamFactory to open streams and performs reads on a dedicated I/O thread.
-        //! If compression method specified in the request is not kNone, reads are decompressed
-        //! by one background job before the callback is invoked.
-        //!
-        //! @param request      Read operation request specification.
-        //! @param priority     The priority of the operation.
-        //! @param ppController A pointer to the variable that receives a pointer to IAsyncController.
-        virtual void ReadAsync(const AsyncReadRequest& request, Priority priority = Priority::kNormal,
-                               IAsyncController** ppController = nullptr) = 0;
+        virtual void ExecuteCommandList(AsyncReadCommandList* commandList, Priority priority = Priority::kNormal,
+                                        IAsyncController** ppController = nullptr) = 0;
     };
 } // namespace FE::IO

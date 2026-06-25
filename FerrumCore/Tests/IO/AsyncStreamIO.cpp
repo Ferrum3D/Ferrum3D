@@ -1,6 +1,5 @@
 #include <Core/IO/AsyncStreamIO.h>
-#include <Core/IO/FileStream.h>
-#include <Core/IO/Path.h>
+#include <Core/IO/Platform/PlatformFile.h>
 #include <Core/Jobs/Job.h>
 #include <Core/Math/Random.h>
 #include <Core/Threading/ConditionVariable.h>
@@ -31,29 +30,19 @@ namespace
     };
 
 
-    struct ReadCallback final : public IO::IAsyncReadCallback
+    struct CompletionLatch final
     {
-        void AsyncIOCallback(const IO::AsyncReadResult& result) override
+        void Signal()
         {
             std::lock_guard lock{ m_mutex };
-            m_status = result.m_controller->GetStatus();
-            m_result = result.m_controller->GetLastOperationResult();
-            m_bytesRead = result.m_bytesRead;
-
-            if (result.m_request->m_readBuffer != nullptr)
-            {
-                m_data.assign(result.m_request->m_readBuffer, result.m_request->m_readBuffer + result.m_bytesRead);
-                result.FreeData();
-            }
-
             m_called = true;
-            m_condition.NotifyOne();
+            m_condition.NotifyAll();
         }
 
-        void Wait()
+        bool Wait()
         {
             std::unique_lock lock{ m_mutex };
-            m_condition.Wait(lock, [this] {
+            return m_condition.WaitFor(lock, 5000, [this] {
                 return m_called;
             });
         }
@@ -61,10 +50,6 @@ namespace
         Threading::Mutex m_mutex;
         Threading::ConditionVariable m_condition;
         bool m_called = false;
-        IO::AsyncOperationStatus m_status = IO::AsyncOperationStatus::kQueued;
-        IO::ResultCode m_result = IO::ResultCode::kUnknownError;
-        size_t m_bytesRead = 0;
-        festd::vector<std::byte> m_data;
     };
 
 
@@ -80,22 +65,36 @@ namespace
     }
 
 
-    Rc<IO::IStream> OpenTestStream(const festd::span<const std::byte> data)
+    IO::Path MakeTestPath(const char* suffix)
     {
-        const IO::Path path = "async-stream-io-compression.ferrum-test-file.bin";
+        const Env::Name name = Fmt::FormatName("async-stream-io-{}.ferrum-test-file.bin", suffix);
+        return IO::Path{ festd::string_view(name) };
+    }
 
-        auto* streamFactory = Env::GetServiceProvider()->ResolveRequired<IO::IStreamFactory>();
 
-        auto streamResult = streamFactory->OpenFileStream(path, IO::OpenMode::kCreate);
-        EXPECT_TRUE(streamResult);
+    void WriteTestFile(const IO::Path& path, const festd::span<const std::byte> data)
+    {
+        Platform::FileHandle file;
+        ASSERT_EQ(Platform::OpenFile(path, IO::OpenMode::kCreate, file), IO::ResultCode::kSuccess);
 
-        Rc<IO::IStream> stream = streamResult.value();
-        EXPECT_EQ(stream->WriteFromBuffer(data.data(), data.size()), data.size());
-        stream->Close();
+        size_t bytesWritten = 0;
+        EXPECT_EQ(Platform::WriteFile(file, data.data(), data.size(), bytesWritten), IO::ResultCode::kSuccess);
+        EXPECT_EQ(bytesWritten, data.size());
+        Platform::CloseFile(file);
+    }
 
-        streamResult = streamFactory->OpenFileStream(path, IO::OpenMode::kReadOnly);
-        EXPECT_TRUE(streamResult);
-        return streamResult.value();
+
+    Rc<IO::DefaultAsyncIOBackend> CreateBackend()
+    {
+        return Rc<IO::DefaultAsyncIOBackend>::DefaultNew();
+    }
+
+
+    void SubmitAndWait(IO::AsyncStreamIO& asyncIO, IO::AsyncReadCommandList* commandList, CompletionLatch& latch,
+                       IO::IAsyncController** controller = nullptr, IO::Priority priority = IO::Priority::kNormal)
+    {
+        asyncIO.ExecuteCommandList(commandList, priority, controller);
+        ASSERT_TRUE(latch.Wait());
     }
 
 
@@ -110,77 +109,130 @@ namespace
         ASSERT_EQ(compressionResult.m_result, Compression::ResultCode::kSuccess);
         compressed.resize(static_cast<uint32_t>(compressionResult.m_compressedSize));
 
-        Rc<IO::IStream> stream = OpenTestStream(compressed);
+        const IO::Path path = MakeTestPath(method == Compression::Method::kDeflate ? "deflate" : "zstd");
+        WriteTestFile(path, compressed);
 
         ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, nullptr };
+        Rc backend = CreateBackend();
+        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, backend.Get() };
 
-        ReadCallback callback;
-        IO::AsyncReadRequest request;
-        request.m_stream = stream;
-        request.m_callback = &callback;
-        request.m_readBufferSize = source.size();
-        request.m_compressedSize = compressed.size();
-        request.m_compressionMethod = method;
+        festd::vector<std::byte> destination(source.size());
+        CompletionLatch latch;
+        IO::IAsyncController* controller = nullptr;
 
-        asyncIO.ReadAsync(request, IO::Priority::kNormal, nullptr);
-        callback.Wait();
+        IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
+        builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressed.size() });
+        builder.Read(destination.data(), destination.size(), 0, compressed.size(), method);
+        builder.InvokeOnCompletion([&] {
+            latch.Signal();
+        });
+        IO::AsyncReadCommandList* commandList = builder.Build(std::pmr::get_default_resource());
+
+        SubmitAndWait(asyncIO, commandList, latch, &controller);
 
         EXPECT_EQ(jobSystem.m_scheduledJobCount, 1);
-        EXPECT_EQ(callback.m_status, IO::AsyncOperationStatus::kSucceeded);
-        EXPECT_EQ(callback.m_result, IO::ResultCode::kSuccess);
-        EXPECT_EQ(callback.m_bytesRead, source.size());
-        EXPECT_EQ(callback.m_data, source);
+        EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
+        EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
+        EXPECT_EQ(destination, source);
+        controller->Release();
     }
 
 
-    void RunFailedRead(const uint32_t compressedSize, const Compression::Method method, const IO::ResultCode expectedResult,
-                       const uint32_t expectedJobs)
+    void RunFailedCompressedRead(const uint32_t compressedSize, const Compression::Method method,
+                                 const IO::ResultCode expectedResult, const uint32_t expectedJobs)
     {
         const festd::vector<std::byte> source = MakeAsyncTestData(32);
-        Rc<IO::IStream> stream = OpenTestStream(source);
+        const IO::Path path = MakeTestPath(expectedResult == IO::ResultCode::kIOError ? "truncated" : "bad-compression");
+        WriteTestFile(path, source);
+
         ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, nullptr };
-        ReadCallback callback;
+        Rc backend = CreateBackend();
+        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, backend.Get() };
 
-        IO::AsyncReadRequest request;
-        request.m_stream = stream;
-        request.m_callback = &callback;
-        request.m_readBufferSize = 128;
-        request.m_compressedSize = compressedSize;
-        request.m_compressionMethod = method;
+        festd::vector<std::byte> destination(128);
+        CompletionLatch latch;
+        IO::IAsyncController* controller = nullptr;
 
-        asyncIO.ReadAsync(request, IO::Priority::kNormal, nullptr);
-        callback.Wait();
+        IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
+        builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressedSize });
+        builder.Read(destination.data(), destination.size(), 0, compressedSize, method);
+        builder.InvokeOnCompletion([&] {
+            latch.Signal();
+        });
+        IO::AsyncReadCommandList* commandList = builder.Build(std::pmr::get_default_resource());
+
+        SubmitAndWait(asyncIO, commandList, latch, &controller);
 
         EXPECT_EQ(jobSystem.m_scheduledJobCount, expectedJobs);
-        EXPECT_EQ(callback.m_status, IO::AsyncOperationStatus::kFailed);
-        EXPECT_EQ(callback.m_result, expectedResult);
+        EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kFailed);
+        EXPECT_EQ(controller->GetLastOperationResult(), expectedResult);
+        controller->Release();
     }
 } // namespace
 
 
-TEST(AsyncStreamIO, RawReadByDefault)
+TEST(AsyncStreamIO, RawPathRead)
 {
     const festd::vector<std::byte> source = MakeAsyncTestData(4096);
-    Rc<IO::IStream> stream = OpenTestStream(source);
+    const IO::Path path = MakeTestPath("raw");
+    WriteTestFile(path, source);
 
     ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, nullptr };
+    Rc backend = CreateBackend();
+    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, backend.Get() };
 
-    ReadCallback callback;
-    IO::AsyncReadRequest request;
-    request.m_stream = stream;
-    request.m_callback = &callback;
-    request.m_readBufferSize = source.size();
+    festd::vector<std::byte> destination(source.size());
+    CompletionLatch latch;
+    IO::IAsyncController* controller = nullptr;
 
-    asyncIO.ReadAsync(request, IO::Priority::kNormal, nullptr);
-    callback.Wait();
+    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
+    builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
+    builder.Read(destination.data(), destination.size());
+    builder.InvokeOnCompletion([&] {
+        latch.Signal();
+    });
+    IO::AsyncReadCommandList* commandList = builder.Build(std::pmr::get_default_resource());
+
+    SubmitAndWait(asyncIO, commandList, latch, &controller);
 
     EXPECT_EQ(jobSystem.m_scheduledJobCount, 0);
-    EXPECT_EQ(callback.m_status, IO::AsyncOperationStatus::kSucceeded);
-    EXPECT_EQ(callback.m_result, IO::ResultCode::kSuccess);
-    EXPECT_EQ(callback.m_data, source);
+    EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
+    EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
+    EXPECT_EQ(destination, source);
+    controller->Release();
+}
+
+
+TEST(AsyncStreamIO, MultipleReadsAndSourceOffset)
+{
+    const festd::vector<std::byte> source = MakeAsyncTestData(512);
+    const IO::Path path = MakeTestPath("multiple");
+    WriteTestFile(path, source);
+
+    ImmediateJobSystem jobSystem;
+    Rc backend = CreateBackend();
+    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, backend.Get() };
+
+    festd::vector<std::byte> first(64);
+    festd::vector<std::byte> second(96);
+    CompletionLatch latch;
+    IO::IAsyncController* controller = nullptr;
+
+    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
+    builder.SetSource({ .m_filePath = path, .m_byteOffset = 32, .m_byteSize = source.size() - 32 });
+    builder.Read(first.data(), first.size(), 0);
+    builder.Read(second.data(), second.size(), 128);
+    builder.InvokeOnCompletion([&] {
+        latch.Signal();
+    });
+    IO::AsyncReadCommandList* commandList = builder.Build(std::pmr::get_default_resource());
+
+    SubmitAndWait(asyncIO, commandList, latch, &controller);
+
+    EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
+    EXPECT_TRUE(std::equal(first.begin(), first.end(), source.begin() + 32));
+    EXPECT_TRUE(std::equal(second.begin(), second.end(), source.begin() + 160));
+    controller->Release();
 }
 
 
@@ -198,11 +250,43 @@ TEST(AsyncStreamIO, ZstdRead)
 
 TEST(AsyncStreamIO, TruncatedCompressedRead)
 {
-    RunFailedRead(64, Compression::Method::kZstd, IO::ResultCode::kIOError, 0);
+    RunFailedCompressedRead(64, Compression::Method::kZstd, IO::ResultCode::kIOError, 0);
 }
 
 
 TEST(AsyncStreamIO, DecompressionFailure)
 {
-    RunFailedRead(32, Compression::Method::kZstd, IO::ResultCode::kDecompressionError, 1);
+    RunFailedCompressedRead(32, Compression::Method::kZstd, IO::ResultCode::kDecompressionError, 1);
+}
+
+
+TEST(AsyncStreamIO, QueuedCancellation)
+{
+    const festd::vector<std::byte> source = MakeAsyncTestData(128);
+    const IO::Path path = MakeTestPath("cancel");
+    WriteTestFile(path, source);
+
+    ImmediateJobSystem jobSystem;
+    Rc backend = CreateBackend();
+    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem, backend.Get() };
+
+    festd::vector<std::byte> destination(source.size());
+    CompletionLatch latch;
+    IO::IAsyncController* controller = nullptr;
+
+    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
+    builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
+    builder.Read(destination.data(), destination.size());
+    builder.InvokeOnCompletion([&] {
+        latch.Signal();
+    });
+    IO::AsyncReadCommandList* commandList = builder.Build(std::pmr::get_default_resource());
+
+    asyncIO.ExecuteCommandList(commandList, IO::Priority::kNormal, &controller);
+    controller->Cancel();
+    ASSERT_TRUE(latch.Wait());
+
+    EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kCanceled);
+    EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kCanceled);
+    controller->Release();
 }

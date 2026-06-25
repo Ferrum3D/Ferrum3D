@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Core/IO/Path.h>
 #include <Core/RTTI/RTTI.h>
 #include <Core/Time/DateTime.h>
@@ -22,7 +22,6 @@ namespace FE::IO
 
     struct IAsyncController;
     struct IAsyncStreamIO;
-    struct AsyncReadResult;
 
 
     //! @brief Represents an I/O result code.
@@ -282,16 +281,6 @@ namespace FE::IO
             return OpenMode::kAppend;
         }
     }
-
-
-    //! @brief Asynchronous read operation callback.
-    struct IAsyncReadCallback
-    {
-        virtual ~IAsyncReadCallback() = default;
-
-        //! @brief Called when an operation associated with this callback completes.
-        virtual void AsyncIOCallback([[maybe_unused]] const AsyncReadResult& result) {}
-    };
 
 
     namespace Directory
