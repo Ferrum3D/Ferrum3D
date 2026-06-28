@@ -10,10 +10,12 @@
 #include <Core/DI/BaseDI.h>
 #include <Core/DI/Container.h>
 #include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/FileStream.h>
 #include <Core/IO/IAsyncStreamIO.h>
 #include <Core/IO/IStream.h>
 #include <Core/IO/IStreamFactory.h>
+#include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/IO/StreamFactory.h>
 #include <Core/Jobs/IJobSystem.h>
@@ -419,8 +421,6 @@ namespace FE::IO
 
     static Rtti::TypeRegistrar GTypeRegistrar_1adbd843e8414b1496ea4aa08c901084(&AsyncStreamIO::Reflect);
 } // namespace FE::IO
-
-
 
 
 namespace FE::IO
@@ -1872,11 +1872,11 @@ namespace FE::Rtti
 
 namespace FE::IO
 {
-    const Rtti::TypeID AsyncController::TypeID = Rtti::TypeID{ "4f28d2d7-1ab4-4279-a3bd-a1d15b2f5ba9" };
+    const Rtti::TypeID AsyncIOController::TypeID = Rtti::TypeID{ "4f28d2d7-1ab4-4279-a3bd-a1d15b2f5ba9" };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(AsyncController* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(AsyncIOController* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
@@ -1911,22 +1911,22 @@ namespace FE::IO
         }
     } // namespace
 
-    const Rtti::Type& AsyncController::RTTI_GetType()
+    const Rtti::Type& AsyncIOController::RTTI_GetType()
     {
         return RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9();
     }
 
-    void* FE_VECTORCALL AsyncController::RTTI_TryCast(const Rtti::TypeID typeID)
+    void* FE_VECTORCALL AsyncIOController::RTTI_TryCast(const Rtti::TypeID typeID)
     {
         return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(this, typeID);
     }
 
-    const void* FE_VECTORCALL AsyncController::RTTI_TryCast(const Rtti::TypeID typeID) const
+    const void* FE_VECTORCALL AsyncIOController::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(const_cast<AsyncController*>(this), typeID);
+        return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(const_cast<AsyncIOController*>(this), typeID);
     }
 
-    void AsyncController::Reflect(Rtti::ReflectionContext& context)
+    void AsyncIOController::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9();
 
@@ -1945,15 +1945,15 @@ namespace FE::IO
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
-        context.ReflectClass<AsyncController>(typeInstance,
-                                              Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                              "FE::IO::AsyncController",
-                                              kBaseClassTypeIDs,
-                                              kAttributes,
-                                              kFields);
+        context.ReflectClass<AsyncIOController>(typeInstance,
+                                                Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                "FE::IO::AsyncController",
+                                                kBaseClassTypeIDs,
+                                                kAttributes,
+                                                kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_4f28d2d71ab44279a3bda1d15b2f5ba9(&AsyncController::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_4f28d2d71ab44279a3bda1d15b2f5ba9(&AsyncIOController::Reflect);
 } // namespace FE::IO
 
 

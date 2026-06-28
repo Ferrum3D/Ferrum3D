@@ -123,7 +123,10 @@ namespace FE::Platform
                                                     nullptr);
 
         if (nativeFileHandle == INVALID_HANDLE_VALUE)
+        {
+            handle.Reset();
             return ConvertWin32IOError(GetLastError());
+        }
 
         handle = FileHandle::FromPointer(nativeFileHandle);
         return IO::ResultCode::kSuccess;

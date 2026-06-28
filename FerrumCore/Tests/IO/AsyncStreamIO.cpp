@@ -1,4 +1,5 @@
 #include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/Platform/PlatformFile.h>
 #include <Core/Jobs/Job.h>
 #include <Core/Math/Random.h>

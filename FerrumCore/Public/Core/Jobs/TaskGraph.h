@@ -7,7 +7,7 @@ namespace FE
 {
     struct TaskGraph final
     {
-        explicit TaskGraph(Env::Name name, IJobSystem* jobSystem, FiberAffinityMask affinity = FiberAffinityMask::kAllForeground,
+        explicit TaskGraph(Env::Name name, IJobSystem* jobSystem, FiberAffinityMask affinity = FiberAffinityMask::kAll,
                            JobPriority priority = JobPriority::kNormal);
         ~TaskGraph();
 
@@ -47,6 +47,24 @@ namespace FE
             return ScheduleTaskImpl(name, prerequisites, taskFunction, funcPtr);
         }
 
+        template<class TFunctor>
+        void InvokeOnCompletion(TFunctor&& functor)
+        {
+            using FunctorType = std::decay_t<TFunctor>;
+
+            FE_Assert(m_completionCallback == nullptr);
+            FE_Assert(m_completionCallbackData == nullptr);
+
+            FunctorType* funcPtr = Memory::New<FunctorType>(&m_allocator, std::forward<FunctorType>(functor));
+            const TaskFunction taskFunction = [](void* data) {
+                (*static_cast<FunctorType*>(data))();
+                static_cast<FunctorType*>(data)->~FunctorType();
+            };
+
+            m_completionCallback = taskFunction;
+            m_completionCallbackData = funcPtr;
+        }
+
         //! @brief Invalidate the TaskGraph and schedule a cleanup task to free all memory upon completion.
         //!
         //! @return WaitGroup that will be signaled when all tasks are completed and graph memory is freed.
@@ -81,6 +99,9 @@ namespace FE
         IJobSystem* m_jobSystem = nullptr;
         FiberAffinityMask m_affinity = FiberAffinityMask::kNone;
         JobPriority m_priority = JobPriority::kNormal;
+
+        TaskFunction m_completionCallback = nullptr;
+        void* m_completionCallbackData = nullptr;
 
         bool m_isValid = true;
         uint32_t m_jobCount = 0;

@@ -65,6 +65,9 @@ namespace FE
         {
             void Execute() override
             {
+                if (m_graph.m_completionCallback)
+                    m_graph.m_completionCallback(m_graph.m_completionCallbackData);
+
                 m_graph.CleanUp();
                 Memory::DefaultDelete(this);
             }
@@ -98,6 +101,10 @@ namespace FE
     {
         const auto prerequisites = MakeAllWaitGroupsArray();
         WaitGroup::WaitAll(prerequisites);
+
+        if (m_completionCallback)
+            m_completionCallback(m_completionCallbackData);
+
         m_isValid = false;
     }
 
@@ -171,6 +178,8 @@ namespace FE
         swap(lhs.m_jobSystem, rhs.m_jobSystem);
         swap(lhs.m_affinity, rhs.m_affinity);
         swap(lhs.m_priority, rhs.m_priority);
+        swap(lhs.m_completionCallback, rhs.m_completionCallback);
+        swap(lhs.m_completionCallbackData, rhs.m_completionCallbackData);
         swap(lhs.m_jobRecords, rhs.m_jobRecords);
         swap(lhs.m_allocator, rhs.m_allocator);
     }

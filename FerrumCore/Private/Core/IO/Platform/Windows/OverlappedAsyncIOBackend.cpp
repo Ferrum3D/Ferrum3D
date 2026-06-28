@@ -1,27 +1,13 @@
-#include <Core/Base/PlatformInclude.h>
 #include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
 #include <Core/Memory/Memory.h>
+#include <Core/Platform/Windows/Common.h>
 #include <Core/Strings/Encoding.h>
 
 namespace FE::IO
 {
     namespace
     {
-        constexpr uint32_t kMaxOutstandingReads = 32;
-
-
-        HANDLE HandleCast(void* handle)
-        {
-            return reinterpret_cast<HANDLE>(handle);
-        }
-
-
-        void* PointerCast(HANDLE handle)
-        {
-            return reinterpret_cast<void*>(handle);
-        }
-
-
         ResultCode ConvertWin32OverlappedIOError(const DWORD error)
         {
             switch (error)
@@ -53,22 +39,14 @@ namespace FE::IO
     } // namespace
 
 
-    struct OverlappedAsyncIOBackend::PendingRead final
-    {
-        OVERLAPPED m_overlapped = {};
-        HANDLE m_file = INVALID_HANDLE_VALUE;
-        AsyncReadHandle m_handle;
-        Path m_filePath;
-        void* m_destination = nullptr;
-        size_t m_size = 0;
-        ReadGroup* m_group = nullptr;
-        bool m_started = false;
-    };
-
-
     OverlappedAsyncIOBackend::OverlappedAsyncIOBackend()
     {
-        m_completionPort = PointerCast(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1));
+        m_completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1);
+        m_iocpWaitThread.Start("IOCP Wait Thread", [this] {
+            for (;;)
+            {
+            }
+        });
     }
 
 
@@ -81,14 +59,36 @@ namespace FE::IO
             CloseRead(read);
 
         if (m_completionPort)
-            CloseHandle(HandleCast(m_completionPort));
+            CloseHandle(m_completionPort);
+    }
+
+
+    festd::expected<Platform::FileHandle, ResultCode> OverlappedAsyncIOBackend::OpenFile(const festd::string_view filePath)
+    {
+        FE_PROFILER_ZONE_TEXT("%.*s", filePath.size(), filePath.data());
+
+        const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
+        const HANDLE nativeFileHandle = CreateFileW(widePath.ToWideString(),
+                                                    GENERIC_READ,
+                                                    FILE_SHARE_READ,
+                                                    nullptr,
+                                                    OPEN_EXISTING,
+                                                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                                                    nullptr);
+
+        if (nativeFileHandle == INVALID_HANDLE_VALUE)
+            return festd::unexpected(Platform::ConvertWin32IOError(GetLastError()));
+
+        return Platform::FileHandle::FromPointer(nativeFileHandle);
     }
 
 
     AsyncReadHandle OverlappedAsyncIOBackend::DispatchRead(const AsyncIOPhysicalRead& read)
     {
+        const Platform::FileHandle fileHandle = read.m_file->Get();
+
         auto* pendingRead = Memory::DefaultNew<PendingRead>();
-        pendingRead->m_filePath = read.m_filePath;
+        pendingRead->m_file = reinterpret_cast<HANDLE>(fileHandle.m_value);
         pendingRead->m_destination = read.m_destination;
         pendingRead->m_size = read.m_size;
         pendingRead->m_group = read.m_group;
@@ -108,29 +108,17 @@ namespace FE::IO
 
     AsyncReadHandle OverlappedAsyncIOBackend::StartRead(PendingRead* read)
     {
-        const Str::Utf8ToUtf16 widePath{ read->m_filePath.data(), read->m_filePath.size() };
-        read->m_file = CreateFileW(widePath.ToWideString(),
-                                   GENERIC_READ,
-                                   FILE_SHARE_READ,
-                                   nullptr,
-                                   OPEN_EXISTING,
-                                   FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                                   nullptr);
-
         m_reads.push_back(read);
         read->m_started = true;
         ++m_outstandingReadCount;
 
         if (read->m_file == INVALID_HANDLE_VALUE)
         {
-            PostQueuedCompletionStatus(HandleCast(m_completionPort),
-                                       0,
-                                       static_cast<ULONG_PTR>(read->m_handle.m_value),
-                                       &read->m_overlapped);
+            PostQueuedCompletionStatus(m_completionPort, 0, static_cast<ULONG_PTR>(read->m_handle.m_value), &read->m_overlapped);
             return read->m_handle;
         }
 
-        CreateIoCompletionPort(read->m_file, HandleCast(m_completionPort), static_cast<ULONG_PTR>(read->m_handle.m_value), 0);
+        CreateIoCompletionPort(read->m_file, m_completionPort, static_cast<ULONG_PTR>(read->m_handle.m_value), 0);
 
         const size_t bytesToRead = Math::Min<size_t>(read->m_size, Constants::kMaxValue<DWORD>);
         DWORD bytesRead = 0;
@@ -139,7 +127,7 @@ namespace FE::IO
             const DWORD error = GetLastError();
             if (error != ERROR_IO_PENDING)
             {
-                PostQueuedCompletionStatus(HandleCast(m_completionPort),
+                PostQueuedCompletionStatus(m_completionPort,
                                            0,
                                            static_cast<ULONG_PTR>(read->m_handle.m_value),
                                            &read->m_overlapped);
@@ -155,7 +143,7 @@ namespace FE::IO
         DWORD bytesTransferred = 0;
         ULONG_PTR completionKey = 0;
         LPOVERLAPPED overlapped = nullptr;
-        if (!GetQueuedCompletionStatus(HandleCast(m_completionPort), &bytesTransferred, &completionKey, &overlapped, 0))
+        if (!GetQueuedCompletionStatus(m_completionPort, &bytesTransferred, &completionKey, &overlapped, 0))
         {
             const DWORD error = GetLastError();
             if (overlapped == nullptr)
@@ -208,7 +196,7 @@ namespace FE::IO
             {
                 PendingRead* queuedRead = m_queuedReads[index];
                 m_queuedReads.erase(m_queuedReads.begin() + index);
-                PostQueuedCompletionStatus(HandleCast(m_completionPort),
+                PostQueuedCompletionStatus(m_completionPort,
                                            0,
                                            static_cast<ULONG_PTR>(queuedRead->m_handle.m_value),
                                            &queuedRead->m_overlapped);
@@ -228,9 +216,6 @@ namespace FE::IO
 
     void OverlappedAsyncIOBackend::CloseRead(PendingRead* read)
     {
-        if (read->m_file != INVALID_HANDLE_VALUE)
-            CloseHandle(read->m_file);
-
         Memory::DefaultDelete(read);
     }
 

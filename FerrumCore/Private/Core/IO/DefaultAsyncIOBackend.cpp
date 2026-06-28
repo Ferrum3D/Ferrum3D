@@ -1,26 +1,26 @@
 #include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/Platform/PlatformFile.h>
 
 namespace FE::IO
 {
+    ResultCode DefaultAsyncIOBackend::OpenFile(const festd::string_view filePath, Platform::FileHandle& fileHandle)
+    {
+        return Platform::OpenFile(filePath, OpenMode::kReadOnly, fileHandle);
+    }
+
+
     AsyncReadHandle DefaultAsyncIOBackend::DispatchRead(const AsyncIOPhysicalRead& read)
     {
-        AsyncReadHandle handle{ m_nextHandle++ };
+        const AsyncReadHandle handle{ m_completions.size() };
 
-        CompletedRead completion;
+        AsyncIOCompletion completion;
         completion.m_handle = handle;
         completion.m_group = read.m_group;
 
-        Platform::FileHandle file;
-        ResultCode result = Platform::OpenFile(read.m_filePath, OpenMode::kReadOnly, file);
+        ResultCode result = Platform::SeekFile(read.m_fileHandle, static_cast<intptr_t>(read.m_offset), SeekMode::kBegin);
         if (result == ResultCode::kSuccess)
-        {
-            result = Platform::SeekFile(file, static_cast<intptr_t>(read.m_offset), SeekMode::kBegin);
-            if (result == ResultCode::kSuccess)
-                result = Platform::ReadFile(file, read.m_destination, read.m_size, completion.m_bytesRead);
-
-            Platform::CloseFile(file);
-        }
+            result = Platform::ReadFile(read.m_fileHandle, read.m_destination, read.m_size, completion.m_bytesRead);
 
         completion.m_result = result;
         m_completions.push_back(completion);
@@ -33,15 +33,8 @@ namespace FE::IO
         if (m_completions.empty())
             return false;
 
-        CompletedRead completed = m_completions.back();
+        completion = m_completions.back();
         m_completions.pop_back();
-        completion.m_handle = completed.m_handle;
-        completion.m_group = completed.m_group;
-        completion.m_result = completed.m_result;
-        completion.m_bytesRead = completed.m_bytesRead;
         return true;
     }
-
-
-    void DefaultAsyncIOBackend::Cancel(AsyncReadHandle) {}
 } // namespace FE::IO

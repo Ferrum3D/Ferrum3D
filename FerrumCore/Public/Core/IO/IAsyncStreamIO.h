@@ -62,7 +62,6 @@ namespace FE::IO
             size_t m_sourceOffset = 0;
             size_t m_compressedSize = 0;
             Compression::Method m_compressionMethod = Compression::Method::kNone;
-            JobPriority m_decompressionPriority = JobPriority::kNormal;
         };
     } // namespace InternalAsyncReadCommands
 
@@ -71,13 +70,12 @@ namespace FE::IO
     {
         Memory::SegmentedBuffer m_buffer;
         WaitGroup* m_signalWaitGroup = nullptr;
-        std::pmr::memory_resource* m_allocator = nullptr;
     };
 
 
     struct AsyncReadCommandListBuilder final
     {
-        explicit AsyncReadCommandListBuilder(std::pmr::memory_resource* allocator, uint32_t pageSize = 2048)
+        explicit AsyncReadCommandListBuilder(std::pmr::memory_resource* allocator, const uint32_t pageSize = 2048)
             : m_bufferBuilder(allocator ? allocator : std::pmr::get_default_resource(), pageSize)
         {
         }
@@ -86,7 +84,7 @@ namespace FE::IO
         void SetSource(const ResolvedDataSource& source);
         void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset = 0);
         void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset, size_t compressedSize,
-                  Compression::Method compressionMethod, JobPriority decompressionPriority = JobPriority::kNormal);
+                  Compression::Method compressionMethod);
 
         template<class TFunctor>
         void InvokeOnCompletion(TFunctor&& functor)
@@ -94,6 +92,9 @@ namespace FE::IO
             using namespace InternalAsyncReadCommands;
 
             const uint32_t functorSize = AlignUp<uint32_t>(sizeof(TFunctor), alignof(uintptr_t));
+
+            FE_Assert(!m_completionCallbackSet);
+            m_completionCallbackSet = true;
 
             AsyncInvokeFunctorCommand command;
             command.m_type = AsyncReadCommandType::kInvokeFunctor;
@@ -112,9 +113,8 @@ namespace FE::IO
 
                 if (const double ms = timer.GetElapsedMilliseconds(); ms > 1.0)
                 {
-                    const auto message = Fmt::FixedFormat(
-                        "AsyncReadCommandListBuilder::InvokeOnCompletion functor took too long to execute ({} ms)",
-                        ms);
+                    const auto message =
+                        Fmt::FixedFormat("AsyncReadCommandList completion callback took too long to execute ({} ms)", ms);
                     Trace::AssertionReport(SourceLocation::Current(), message.data(), message.size());
                 }
 #endif
@@ -129,14 +129,8 @@ namespace FE::IO
 
         AsyncReadCommandList Build(WaitGroup* signalWaitGroup = nullptr);
 
-        AsyncReadCommandList* Build(std::pmr::memory_resource* allocator, WaitGroup* signalWaitGroup = nullptr)
-        {
-            AsyncReadCommandList commandList = Build(signalWaitGroup);
-            commandList.m_allocator = allocator ? allocator : std::pmr::get_default_resource();
-            return Memory::New<AsyncReadCommandList>(commandList.m_allocator, commandList);
-        }
-
     private:
+        bool m_completionCallbackSet = false;
         Memory::SegmentedBufferBuilder m_bufferBuilder;
     };
 
@@ -183,7 +177,7 @@ namespace FE::IO
 
         ~IAsyncStreamIO() override = default;
 
-        virtual void ExecuteCommandList(AsyncReadCommandList* commandList, Priority priority = Priority::kNormal,
-                                        IAsyncController** ppController = nullptr) = 0;
+        virtual Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList,
+                                                        Priority priority = Priority::kNormal) = 0;
     };
 } // namespace FE::IO

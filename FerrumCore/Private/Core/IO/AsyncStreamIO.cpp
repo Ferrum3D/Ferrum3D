@@ -1,24 +1,12 @@
 #include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/Platform/PlatformFile.h>
 #include <Core/Jobs/Job.h>
+#include <Core/Jobs/TaskGraph.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/Memory.h>
 
 namespace FE::IO
 {
-    struct ReadGroup final
-    {
-        AsyncOperation* m_operation = nullptr;
-        AsyncReadHandle m_handle;
-        void* m_stagingMemory = nullptr;
-        size_t m_stagingMemorySize = 0;
-        std::byte* m_destination = nullptr;
-        size_t m_destinationSize = 0;
-        size_t m_readSize = 0;
-        Compression::Method m_compressionMethod = Compression::Method::kNone;
-        JobPriority m_decompressionPriority = JobPriority::kNormal;
-    };
-
-
     namespace
     {
         constexpr uint32_t kSuccessColor = 0x4b4e6d;
@@ -26,76 +14,30 @@ namespace FE::IO
         constexpr size_t kStagingHeapSize = 256 * 1024 * 1024;
 
 
-        void SetOperationResult(AsyncOperation* operation, const ResultCode result)
+        void SetOperationResult(AsyncIOOperation* operation, const ResultCode result)
         {
             if (result == ResultCode::kSuccess)
                 return;
 
-            ResultCode expected = ResultCode::kSuccess;
+            auto expected = ResultCode::kSuccess;
             operation->m_controller->m_lastResult.compare_exchange_strong(expected, result, std::memory_order_acq_rel);
         }
 
 
-        void CompleteOperationWork(AsyncOperation* operation)
+        void CompleteOperationWork(AsyncIOOperation* operation)
         {
             const uint32_t previousValue = operation->m_pendingWork.fetch_sub(1, std::memory_order_acq_rel);
             FE_Assert(previousValue > 0, "Async operation pending work underflow");
         }
 
 
-        void FreeReadGroup(ReadGroup* group)
+        void FreeReadGroup(Memory::SpinLockedPool<ReadGroup>& pool, ReadGroup* group)
         {
-            AsyncOperation* operation = group->m_operation;
             if (group->m_stagingMemory)
                 group->m_stagingMemory = nullptr;
 
-            Memory::Delete(operation->m_groupPool, group);
+            pool.Delete(group);
         }
-
-
-        struct DecompressionJob final : public Job
-        {
-            void Execute() override
-            {
-                FE_PROFILER_ZONE();
-
-                AsyncOperation* operation = m_group->m_operation;
-                ResultCode result = ResultCode::kSuccess;
-
-                if (operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire))
-                {
-                    result = ResultCode::kCanceled;
-                }
-                else
-                {
-                    const auto decompressor = Compression::Decompressor::Create(m_group->m_compressionMethod);
-                    const Compression::DecompressionResult decompressionResult =
-                        decompressor.Decompress(m_group->m_stagingMemory,
-                                                m_group->m_stagingMemorySize,
-                                                m_group->m_destination,
-                                                m_group->m_destinationSize);
-
-                    if (decompressionResult.m_result != Compression::ResultCode::kSuccess
-                        || decompressionResult.m_decompressedSize != m_group->m_destinationSize)
-                    {
-                        result = ResultCode::kDecompressionError;
-                    }
-                }
-
-                SetOperationResult(operation, result);
-                m_stagingAllocator->deallocate(m_group->m_stagingMemory, m_group->m_stagingMemorySize, Memory::kDefaultAlignment);
-                m_group->m_stagingMemory = nullptr;
-                CompleteOperationWork(operation);
-                operation->m_completionRequested.store(true, std::memory_order_release);
-                FreeReadGroup(m_group);
-                m_wakeEvent->Send();
-                Memory::Delete(operation->m_decompressionJobPool, this);
-            }
-
-            ReadGroup* m_group = nullptr;
-            std::pmr::memory_resource* m_stagingAllocator = nullptr;
-            Threading::Event* m_wakeEvent = nullptr;
-        };
 
 
         bool IsReadInsideSource(const ResolvedDataSource& source, const size_t sourceOffset, const size_t byteSize)
@@ -138,8 +80,7 @@ namespace FE::IO
 
 
     void AsyncReadCommandListBuilder::Read(std::byte* destination, const size_t destinationSize, const size_t sourceOffset,
-                                           const size_t compressedSize, const Compression::Method compressionMethod,
-                                           const JobPriority decompressionPriority)
+                                           const size_t compressedSize, const Compression::Method compressionMethod)
     {
         InternalAsyncReadCommands::AsyncReadCompressedCommand command;
         command.m_destination = destination;
@@ -147,7 +88,6 @@ namespace FE::IO
         command.m_sourceOffset = sourceOffset;
         command.m_compressedSize = compressedSize;
         command.m_compressionMethod = compressionMethod;
-        command.m_decompressionPriority = decompressionPriority;
         m_bufferBuilder.WriteBytes(&command, sizeof(command));
     }
 
@@ -157,32 +97,114 @@ namespace FE::IO
         AsyncReadCommandList commandList;
         commandList.m_buffer = m_bufferBuilder.Build();
         commandList.m_signalWaitGroup = signalWaitGroup;
-        commandList.m_allocator = nullptr;
         return commandList;
     }
 
 
-    void AsyncController::Cancel()
+    void AsyncIOController::Cancel()
     {
         m_cancellationRequested.store(true, std::memory_order_release);
     }
 
 
-    AsyncOperationStatus AsyncController::GetStatus() const
+    AsyncOperationStatus AsyncIOController::GetStatus() const
     {
         return m_status.load(std::memory_order_acquire);
     }
 
 
-    ResultCode AsyncController::GetLastOperationResult() const
+    ResultCode AsyncIOController::GetLastOperationResult() const
     {
         return m_lastResult.load(std::memory_order_acquire);
     }
 
 
-    void AsyncStreamIO::EnqueueImpl(AsyncOperation* operation)
+    void AsyncIOOpenFileCache::Init(const uint32_t cacheSize, IAsyncIOBackend* backend)
     {
-        const auto iter = festd::upper_bound(m_queue, operation->m_priority, [](const Priority lhs, const AsyncOperation* rhs) {
+        m_backend = backend;
+        m_cacheSize = cacheSize;
+        m_entries.reserve(cacheSize);
+    }
+
+
+    festd::expected<Rc<AsyncIOCachedFile>, ResultCode> AsyncIOOpenFileCache::CreateFile(const festd::string_view path)
+    {
+        std::unique_lock lk{ m_lock };
+
+        FE_AssertDebug(m_cacheSize > 0 && m_backend != nullptr);
+
+        const uint64_t hash = DefaultHash(path);
+        for (uint32_t entryIndex = 0; entryIndex < m_entries.size(); ++entryIndex)
+        {
+            auto entry = m_entries[entryIndex];
+            if (entry->m_nameHash == hash && entry->m_path == path)
+            {
+                m_entries.erase(m_entries.begin() + entryIndex);
+                m_entries.push_back(entry);
+                return entry;
+            }
+        }
+
+        const festd::expected openFileResult = m_backend->OpenFile(path);
+        if (!openFileResult.has_value())
+            return festd::unexpected(openFileResult.error());
+
+        if (m_entries.size() >= m_cacheSize)
+        {
+            for (uint32_t entryIndex = 0; entryIndex < m_entries.size(); ++entryIndex)
+            {
+                if (m_entries[entryIndex]->GetRefCount() == 1) // cache is the only owner
+                {
+                    DeleteEntry(entryIndex);
+                    --entryIndex;
+
+                    if (m_entries.size() < m_cacheSize)
+                        break;
+                }
+            }
+        }
+
+        auto newEntry = Rc<AsyncIOCachedFile>::New(&m_entryPool);
+        newEntry->m_nameHash = hash;
+        newEntry->m_path = path;
+        newEntry->m_fileHandle = openFileResult.value();
+        m_entries.push_back(newEntry);
+        return newEntry;
+    }
+
+
+    void AsyncIOOpenFileCache::CollectGarbage()
+    {
+        const uint64_t timestamp = Platform::GetTicks();
+        const double ticksPerSecond = Platform::GetSecondsPerTick();
+        for (uint32_t entryIndex = 0; entryIndex < m_entries.size(); ++entryIndex)
+        {
+            if (m_entries[entryIndex]->GetRefCount() == 1) // cache is the only owner
+            {
+                const Rc<AsyncIOCachedFile> entry = m_entries[entryIndex];
+                const double elapsedSeconds = static_cast<double>(timestamp - entry->m_lastUseTime) * ticksPerSecond;
+                if (elapsedSeconds > 20)
+                {
+                    DeleteEntry(entryIndex);
+                    --entryIndex;
+                }
+            }
+        }
+    }
+
+
+    void AsyncIOOpenFileCache::DeleteEntry(const uint32_t entryIndex)
+    {
+        Rc<AsyncIOCachedFile> entry = m_entries[entryIndex];
+        m_entries.erase(m_entries.begin() + entryIndex);
+        Platform::CloseFile(entry->m_fileHandle);
+        entry->m_fileHandle.Reset();
+    }
+
+
+    void AsyncStreamIO::EnqueueImpl(AsyncIOOperation* operation)
+    {
+        const auto iter = festd::upper_bound(m_queue, operation->m_priority, [](const Priority lhs, const AsyncIOOperation* rhs) {
             return lhs < rhs->m_priority;
         });
 
@@ -190,18 +212,19 @@ namespace FE::IO
     }
 
 
-    AsyncOperation* AsyncStreamIO::TryDequeue()
+    AsyncIOOperation* AsyncStreamIO::TryDequeue()
     {
+        std::unique_lock lk{ m_queueLock };
         if (m_queue.empty())
             return nullptr;
 
-        AsyncOperation* operation = m_queue.front();
+        AsyncIOOperation* operation = m_queue.front();
         m_queue.erase(m_queue.begin());
         return operation;
     }
 
 
-    void AsyncStreamIO::ProcessCommandList(AsyncOperation* operation)
+    void AsyncStreamIO::ProcessCommandList(AsyncIOOperation* operation)
     {
         FE_PROFILER_ZONE_NAMED("AsyncReadCommandList");
 
@@ -235,7 +258,7 @@ namespace FE::IO
                 {
                     AsyncInvokeFunctorCommand command;
                     FE_Verify(reader.Read(command));
-                    operation->m_completionCallbacks.push_back(command);
+                    operation->m_completionCallback = command;
                     FE_Verify(reader.SkipBytes(command.m_functorSize));
                     break;
                 }
@@ -246,22 +269,31 @@ namespace FE::IO
                     FE_Verify(reader.Read(command));
                     if (canceledOnStart)
                         break;
+
                     if (!IsReadInsideSource(currentSource, command.m_sourceOffset, command.m_destinationSize)
                         || command.m_destination == nullptr)
                     {
                         RequestOperationCompletion(operation, ResultCode::kInvalidArgument);
+                        FE_DebugBreak();
                         break;
                     }
 
-                    auto* group = Memory::New<ReadGroup>(operation->m_groupPool);
+                    const festd::expected fileOpenResult = m_fileCache.CreateFile(currentSource.m_filePath);
+                    if (!fileOpenResult.has_value())
+                    {
+                        RequestOperationCompletion(operation, fileOpenResult.error());
+                        break;
+                    }
+
+                    auto* group = m_groupPool.New();
                     group->m_operation = operation;
                     group->m_destination = command.m_destination;
                     group->m_destinationSize = command.m_destinationSize;
                     group->m_readSize = command.m_destinationSize;
-
                     operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
+
                     AsyncIOPhysicalRead read;
-                    read.m_filePath = currentSource.m_filePath;
+                    read.m_file = fileOpenResult.value();
                     read.m_offset = currentSource.m_byteOffset + command.m_sourceOffset;
                     read.m_destination = command.m_destination;
                     read.m_size = command.m_destinationSize;
@@ -276,16 +308,25 @@ namespace FE::IO
                     FE_Verify(reader.Read(command));
                     if (canceledOnStart)
                         break;
+
                     if (!IsReadInsideSource(currentSource, command.m_sourceOffset, command.m_compressedSize)
                         || command.m_destination == nullptr || command.m_compressedSize == 0 || command.m_destinationSize == 0
                         || command.m_compressionMethod == Compression::Method::kNone
                         || command.m_compressionMethod >= Compression::Method::kInvalid)
                     {
                         RequestOperationCompletion(operation, ResultCode::kInvalidArgument);
+                        FE_DebugBreak();
                         break;
                     }
 
-                    auto* group = Memory::New<ReadGroup>(operation->m_groupPool);
+                    const festd::expected fileOpenResult = m_fileCache.CreateFile(currentSource.m_filePath);
+                    if (!fileOpenResult.has_value())
+                    {
+                        RequestOperationCompletion(operation, fileOpenResult.error());
+                        break;
+                    }
+
+                    auto* group = m_groupPool.New();
                     group->m_operation = operation;
                     group->m_destination = command.m_destination;
                     group->m_destinationSize = command.m_destinationSize;
@@ -293,11 +334,10 @@ namespace FE::IO
                     group->m_stagingMemorySize = command.m_compressedSize;
                     group->m_stagingMemory = m_stagingAllocator.allocate(command.m_compressedSize, Memory::kDefaultAlignment);
                     group->m_compressionMethod = command.m_compressionMethod;
-                    group->m_decompressionPriority = command.m_decompressionPriority;
-
                     operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
+
                     AsyncIOPhysicalRead read;
-                    read.m_filePath = currentSource.m_filePath;
+                    read.m_file = fileOpenResult.value();
                     read.m_offset = currentSource.m_byteOffset + command.m_sourceOffset;
                     read.m_destination = group->m_stagingMemory;
                     read.m_size = command.m_compressedSize;
@@ -320,6 +360,8 @@ namespace FE::IO
 
     void AsyncStreamIO::ProcessBackendCompletions()
     {
+        TaskGraph tg{ "IO/Async/RequestGraph", m_jobSystem, FiberAffinityMask::kAllBackground };
+
         AsyncIOCompletion completion;
         while (m_backend->PollRequestCompletion(completion))
         {
@@ -327,10 +369,10 @@ namespace FE::IO
             if (group == nullptr)
                 continue;
 
-            AsyncOperation* operation = group->m_operation;
+            AsyncIOOperation* operation = group->m_operation;
             ResultCode result = completion.m_result;
             if (result == ResultCode::kSuccess && completion.m_bytesRead != group->m_readSize)
-                result = ResultCode::kIOError;
+                FE_DebugBreak();
 
             if (operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire))
                 result = ResultCode::kCanceled;
@@ -338,41 +380,74 @@ namespace FE::IO
             if (result != ResultCode::kSuccess)
             {
                 SetOperationResult(operation, result);
-                if (group->m_stagingMemory)
-                {
-                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
-                    group->m_stagingMemory = nullptr;
-                }
+                FE_Assert(group->m_stagingMemory == nullptr);
 
                 CompleteOperationWork(operation);
-                FreeReadGroup(group);
+                FreeReadGroup(m_groupPool, group);
                 continue;
             }
 
-            if (group->m_compressionMethod != Compression::Method::kNone)
+            if (group->m_compressionMethod == Compression::Method::kNone)
             {
-                auto* job = Memory::New<DecompressionJob>(operation->m_decompressionJobPool);
-                job->m_group = group;
-                job->m_stagingAllocator = &m_stagingAllocator;
-                job->m_wakeEvent = &m_queueEvent;
-                job->ScheduleBackground(m_jobSystem, nullptr, group->m_decompressionPriority);
-                continue;
+                CompleteOperationWork(operation);
+                FreeReadGroup(m_groupPool, group);
             }
+            else
+            {
+                tg.Schedule("Block", [this, operation, group] {
+                    auto blockResult = ResultCode::kSuccess;
+                    if (operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire))
+                    {
+                        blockResult = ResultCode::kCanceled;
+                    }
+                    else
+                    {
+                        const auto decompressor = Compression::Decompressor::Create(group->m_compressionMethod);
+                        const Compression::DecompressionResult decompressionResult =
+                            decompressor.Decompress(group->m_stagingMemory,
+                                                    group->m_stagingMemorySize,
+                                                    group->m_destination,
+                                                    group->m_destinationSize);
 
-            CompleteOperationWork(operation);
-            FreeReadGroup(group);
+                        if (decompressionResult.m_result != Compression::ResultCode::kSuccess)
+                        {
+                            m_logger->LogError("Compression error");
+                            blockResult = ResultCode::kDecompressionError;
+                        }
+                        else
+                        {
+                            FE_Assert(decompressionResult.m_decompressedSize == group->m_destinationSize);
+                        }
+                    }
+
+                    SetOperationResult(operation, blockResult);
+
+                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
+                    group->m_stagingMemory = nullptr;
+
+                    CompleteOperationWork(operation);
+                    operation->m_completionRequested.store(true, std::memory_order_release);
+
+                    FreeReadGroup(m_groupPool, group);
+
+                    // Notify the scheduler of freed memory.
+                    m_queueEvent.Send();
+                });
+            }
         }
+
+        tg.Detach();
     }
 
 
-    void AsyncStreamIO::RequestOperationCompletion(AsyncOperation* operation, const ResultCode result)
+    void AsyncStreamIO::RequestOperationCompletion(AsyncIOOperation* operation, const ResultCode result)
     {
         SetOperationResult(operation, result);
         operation->m_completionRequested.store(true, std::memory_order_release);
     }
 
 
-    bool AsyncStreamIO::TryFinalizeOperation(AsyncOperation* operation)
+    bool AsyncStreamIO::TryFinalizeOperation(AsyncIOOperation* operation)
     {
         if (!operation->m_completionRequested.load(std::memory_order_acquire)
             || operation->m_pendingWork.load(std::memory_order_acquire) != 0
@@ -390,84 +465,58 @@ namespace FE::IO
 
         operation->m_controller->m_status.store(status, std::memory_order_release);
 
-        for (const InternalAsyncReadCommands::AsyncInvokeFunctorCommand& command : operation->m_completionCallbacks)
+        if (const auto& command = operation->m_completionCallback; command.m_functor)
+        {
+            FE_AssertDebug(command.m_type == InternalAsyncReadCommands::AsyncReadCommandType::kInvokeFunctor);
+            FE_AssertDebug(command.m_context != nullptr);
             command.m_functor(command.m_context);
+        }
 
         if (operation->m_commandList.m_signalWaitGroup)
             operation->m_commandList.m_signalWaitGroup->Signal();
 
         operation->m_commandList.m_buffer.Free();
 
-        Memory::Delete(operation->m_operationPool, operation);
+        Memory::Delete(&m_operationPool, operation);
         return true;
     }
 
 
-    void AsyncStreamIO::ReaderThread()
+    void AsyncStreamIO::SchedulerThread()
     {
         for (;;)
         {
             m_queueEvent.Wait();
 
-            if (m_exitRequested)
-                break;
-
-            bool anyProgress = false;
-
             for (;;)
             {
-                m_backend->Tick();
                 ProcessBackendCompletions();
 
-                AsyncOperation* operation = nullptr;
-                {
-                    std::lock_guard lk{ m_queueLock };
-                    operation = TryDequeue();
-                }
-
+                AsyncIOOperation* operation = TryDequeue();
                 if (operation)
                 {
                     m_runningOperations.push_back(operation);
                     ProcessCommandList(operation);
-                    anyProgress = true;
                 }
 
-                for (uint32_t index = 0; index < m_runningOperations.size();)
+                for (uint32_t operationIndex = 0; operationIndex < m_runningOperations.size();)
                 {
-                    AsyncOperation* runningOperation = m_runningOperations[index];
-                    const bool finalized = TryFinalizeOperation(runningOperation);
-                    if (finalized)
+                    if (TryFinalizeOperation(m_runningOperations[operationIndex]))
                     {
-                        m_runningOperations.erase(m_runningOperations.begin() + index);
-                        anyProgress = true;
+                        m_runningOperations.erase(m_runningOperations.begin() + operationIndex);
                     }
                     else
                     {
-                        ++index;
+                        ++operationIndex;
                     }
                 }
 
-                if (m_exitRequested)
-                    return;
-
-                bool queueEmpty;
-                {
-                    std::lock_guard lk{ m_queueLock };
-                    queueEmpty = m_queue.empty();
-                    if (queueEmpty && m_runningOperations.empty())
-                    {
-                        m_queueEvent.Reset();
-                        if (!m_queue.empty())
-                            m_queueEvent.Send();
-                        break;
-                    }
-                }
-
-                if (!anyProgress)
-                    Threading::Sleep(1);
-
-                anyProgress = false;
+                if (operation == nullptr)
+                    break;
             }
+
+            if (m_exitRequested)
+                break;
         }
     }
 
@@ -478,15 +527,12 @@ namespace FE::IO
         , m_backend(backend)
         , m_stagingAllocator(Memory::AllocateVirtual(kStagingHeapSize), kStagingHeapSize)
     {
-        m_groupPool.Initialize("IO/Async/ReadGroupPool", sizeof(ReadGroup));
-        m_decompressionJobPool.Initialize("IO/Async/DecompressionJobPool", sizeof(DecompressionJob));
+        m_fileCache.Init(64, backend);
 
-        const auto threadFunc = [](const uintptr_t userData) {
-            reinterpret_cast<AsyncStreamIO*>(userData)->ReaderThread();
-        };
-
-        m_thread = Threading::CreateThread("Async IO Thread", threadFunc, reinterpret_cast<uintptr_t>(this));
-        m_queueEvent = Threading::Event::CreateManualReset();
+        m_queueEvent = Threading::Event::CreateAutoReset();
+        m_thread.Start("Async IO Scheduler", [this] {
+            SchedulerThread();
+        });
     }
 
 
@@ -494,40 +540,24 @@ namespace FE::IO
     {
         m_exitRequested = true;
         m_queueEvent.Send();
-        Threading::CloseThread(m_thread);
     }
 
 
-    void AsyncStreamIO::ExecuteCommandList(AsyncReadCommandList* commandList, const Priority priority,
-                                           IAsyncController** ppController)
+    Rc<IAsyncController> AsyncStreamIO::ExecuteCommandList(const AsyncReadCommandList& commandList, const Priority priority)
     {
-        auto* operation = Memory::New<AsyncOperation>(&m_operationPool);
-        auto* controller = Rc<AsyncController>::New(&m_controllerPool);
+        Rc controller = Rc<AsyncIOController>::New(&m_controllerPool);
+
+        auto* operation = m_operationPool.New();
         operation->m_priority = priority;
-        operation->m_commandList = *commandList;
+        operation->m_commandList = commandList;
         operation->m_controller = controller;
-        operation->m_operationPool = &m_operationPool;
-        operation->m_controllerPool = &m_controllerPool;
-        operation->m_groupPool = &m_groupPool;
-        operation->m_decompressionJobPool = &m_decompressionJobPool;
-
-        if (commandList->m_allocator)
-        {
-            Memory::Delete(commandList->m_allocator, commandList);
-            operation->m_commandList.m_allocator = nullptr;
-        }
 
         {
-            std::lock_guard lk{ m_queueLock };
+            std::unique_lock lk{ m_queueLock };
             EnqueueImpl(operation);
         }
 
-        if (ppController)
-        {
-            controller->AddRef();
-            *ppController = controller;
-        }
-
         m_queueEvent.Send();
+        return controller;
     }
 } // namespace FE::IO

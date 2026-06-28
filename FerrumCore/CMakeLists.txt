@@ -140,6 +140,7 @@ set(COMMON_SOURCES
     Private/Core/IO/Platform/PlatformPath.h
     Private/Core/IO/AsyncStreamIO.h
     Private/Core/IO/AsyncStreamIO.cpp
+    Private/Core/IO/DefaultAsyncIOBackend.h
     Private/Core/IO/DefaultAsyncIOBackend.cpp
     Private/Core/IO/BaseIO.cpp
     Private/Core/IO/BaseIOPrivate.h
@@ -197,6 +198,7 @@ set(WINDOWS_SOURCES
 
     Private/Core/IO/Platform/Windows/PlatformFile.cpp
     Private/Core/IO/Platform/Windows/PlatformPath.cpp
+    Private/Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h
     Private/Core/IO/Platform/Windows/OverlappedAsyncIOBackend.cpp
 
     Private/Core/Threading/Platform/Windows/Event.cpp

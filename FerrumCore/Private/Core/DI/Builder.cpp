@@ -1,6 +1,9 @@
 #include <Core/DI/Builder.h>
 #include <Core/DI/Registry.h>
 
+#include <Core/IO/DefaultAsyncIOBackend.h>
+#include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
+
 #include <Core/IO/AsyncStreamIO.h>
 #include <Core/IO/StreamFactory.h>
 #include <Core/Jobs/JobSystem.h>
