@@ -33,6 +33,11 @@ namespace FE
     private:
         friend struct WaitGroup;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
         {
             Worker& worker = m_workers[workerIndex];

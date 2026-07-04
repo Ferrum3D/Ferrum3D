@@ -6,12 +6,6 @@
 
 namespace FE
 {
-    namespace Internal
-    {
-        class RcBase;
-    }
-
-
     namespace Memory
     {
         struct RefCountedObjectBase
@@ -46,52 +40,17 @@ namespace FE
                 return refCount;
             }
 
-        private:
-            friend class ::FE::Internal::RcBase;
-
-            std::atomic<uint32_t> m_refCount = 0;
-            uint32_t m_allocationSize = 0;
-            std::pmr::memory_resource* m_allocator = nullptr;
-
         protected:
-            FE_FORCE_INLINE std::pmr::memory_resource* GetObjectAllocator() const
-            {
-                return m_allocator;
-            }
+            virtual void DoRelease() = 0;
 
-            FE_FORCE_INLINE uint32_t GetObjectAllocationSize() const
-            {
-                return m_allocationSize;
-            }
-
-            virtual void DoRelease()
-            {
-                std::pmr::memory_resource* pAllocator = m_allocator;
-                const size_t allocationSize = m_allocationSize;
-                this->~RefCountedObjectBase();
-                pAllocator->deallocate(this, allocationSize);
-            }
+        private:
+            std::atomic<uint32_t> m_refCount = 0;
         };
     } // namespace Memory
 
 
-    namespace Internal
-    {
-        class RcBase
-        {
-        protected:
-            static void SetupRefCounter(Memory::RefCountedObjectBase* object, std::pmr::memory_resource* allocator,
-                                        const uint32_t allocationSize)
-            {
-                object->m_allocationSize = allocationSize;
-                object->m_allocator = allocator;
-            }
-        };
-    } // namespace Internal
-
-
     template<class T>
-    struct Rc final : public Internal::RcBase
+    struct Rc final
     {
         using ValueType = T;
 
@@ -148,7 +107,7 @@ namespace FE
             requires std::assignable_from<T*&, TOther*>
         Rc& operator=(const Rc<TOther>& other)
         {
-            if (static_cast<Internal::RcBase*>(this) == static_cast<const Internal::RcBase*>(&other))
+            if (reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&other))
                 return *this;
 
             Attach(other.Get());
@@ -231,35 +190,6 @@ namespace FE
             return Get();
         }
 
-        template<class... TArgs>
-        FE_FORCE_INLINE static T* New(std::pmr::memory_resource* allocator, TArgs&&... args)
-        {
-            T* ptr = new (allocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
-            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
-                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
-            return ptr;
-        }
-
-        template<class... TArgs>
-        FE_FORCE_INLINE static T* DefaultNew(TArgs&&... args)
-        {
-            std::pmr::memory_resource* allocator = std::pmr::get_default_resource();
-            T* ptr = new (allocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
-            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
-                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
-            return ptr;
-        }
-
-        template<class TFactoryFunctor>
-        FE_FORCE_INLINE static T* Allocate(std::pmr::memory_resource* allocator, const TFactoryFunctor& factory)
-        {
-            void* memory = allocator->allocate(sizeof(T), alignof(T));
-            T* ptr = factory(memory);
-            if constexpr (std::is_base_of_v<Memory::RefCountedObjectBase, T>)
-                SetupRefCounter(ptr, allocator, static_cast<uint32_t>(sizeof(T)));
-            return ptr;
-        }
-
     private:
         T* m_object = nullptr;
 
@@ -284,70 +214,70 @@ namespace FE
 
 
     template<class T>
-    inline bool operator==(const Rc<T>& lhs, std::nullptr_t)
+    bool operator==(const Rc<T>& lhs, std::nullptr_t)
     {
         return lhs.Get() == nullptr;
     }
 
 
     template<class T>
-    inline bool operator!=(const Rc<T>& lhs, std::nullptr_t)
+    bool operator!=(const Rc<T>& lhs, std::nullptr_t)
     {
         return lhs.Get() != nullptr;
     }
 
 
     template<class T>
-    inline bool operator==(std::nullptr_t, const Rc<T>& rhs)
+    bool operator==(std::nullptr_t, const Rc<T>& rhs)
     {
         return rhs.Get() == nullptr;
     }
 
 
     template<class T>
-    inline bool operator!=(std::nullptr_t, const Rc<T>& rhs)
+    bool operator!=(std::nullptr_t, const Rc<T>& rhs)
     {
         return rhs.Get() != nullptr;
     }
 
 
     template<class T1, class T2>
-    inline bool operator==(const Rc<T1>& lhs, T2* rhs)
+    bool operator==(const Rc<T1>& lhs, T2* rhs)
     {
         return lhs.Get() == rhs;
     }
 
 
     template<class T1, class T2>
-    inline bool operator!=(const Rc<T1>& lhs, T2* rhs)
+    bool operator!=(const Rc<T1>& lhs, T2* rhs)
     {
         return lhs.Get() != rhs;
     }
 
 
     template<class T1, class T2>
-    inline bool operator==(T1* lhs, const Rc<T2>& rhs)
+    bool operator==(T1* lhs, const Rc<T2>& rhs)
     {
         return rhs == lhs.Get();
     }
 
 
     template<class T1, class T2>
-    inline bool operator!=(T1* lhs, const Rc<T2>& rhs)
+    bool operator!=(T1* lhs, const Rc<T2>& rhs)
     {
         return lhs != rhs.Get();
     }
 
 
     template<class T1, class T2>
-    inline bool operator==(const Rc<T1>& lhs, const Rc<T2>& rhs)
+    bool operator==(const Rc<T1>& lhs, const Rc<T2>& rhs)
     {
         return lhs.Get() == rhs.Get();
     }
 
 
     template<class T1, class T2>
-    inline bool operator!=(const Rc<T1>& lhs, const Rc<T2>& rhs)
+    bool operator!=(const Rc<T1>& lhs, const Rc<T2>& rhs)
     {
         return lhs.Get() != rhs.Get();
     }

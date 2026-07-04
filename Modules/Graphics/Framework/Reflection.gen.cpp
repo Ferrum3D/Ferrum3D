@@ -258,7 +258,7 @@ namespace FE::Graphics
                 else
                     return resolveResult.error();
 
-                *result = Rc<MeshSceneModule>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<MeshSceneModule>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -670,7 +670,7 @@ namespace FE::Graphics::OpaquePass
                 else
                     return resolveResult.error();
 
-                *result = Rc<ViewModule>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<ViewModule>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1072,7 +1072,7 @@ namespace FE::Graphics::DepthPrepass
                 else
                     return resolveResult.error();
 
-                *result = Rc<ViewModule>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<ViewModule>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1208,7 +1208,7 @@ namespace FE::Graphics
                 else
                     return resolveResult.error();
 
-                *result = Rc<ModelAssetManager>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get(), arg4.Get());
+                *result = Memory::DefaultNew<ModelAssetManager>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get(), arg4.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1370,7 +1370,7 @@ namespace FE::Graphics
                 else
                     return resolveResult.error();
 
-                *result = Rc<SceneImpl>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<SceneImpl>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1976,7 +1976,7 @@ namespace FE::Graphics
             }
             else
             {
-                *result = Rc<IModelAssetManager>::DefaultNew();
+                *result = Memory::DefaultNew<IModelAssetManager>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2110,7 +2110,7 @@ namespace FE::Graphics
                 else
                     return resolveResult.error();
 
-                *result = Rc<TextureAssetManager>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get(), arg4.Get());
+                *result = Memory::DefaultNew<TextureAssetManager>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get(), arg4.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2477,7 +2477,7 @@ namespace FE::Graphics
             }
             else
             {
-                *result = Rc<RendererImpl>::DefaultNew();
+                *result = Memory::DefaultNew<RendererImpl>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2675,7 +2675,7 @@ namespace FE::Graphics
             }
             else
             {
-                *result = Rc<ITextureAssetManager>::DefaultNew();
+                *result = Memory::DefaultNew<ITextureAssetManager>();
                 return DI::ResultCode::kSuccess;
             }
         }

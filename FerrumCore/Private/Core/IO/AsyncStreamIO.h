@@ -82,13 +82,20 @@ namespace FE::IO
     {
         FE_RTTI("4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
 
-        AsyncIOController() = default;
+        AsyncIOController(Memory::SpinLockedPool<AsyncIOController>& pool)
+            : m_pool(pool)
+        {
+        }
+
         ~AsyncIOController() override = default;
+
+        void DoRelease() override;
 
         void Cancel() override;
         AsyncOperationStatus GetStatus() const override;
         ResultCode GetLastOperationResult() const override;
 
+        Memory::SpinLockedPool<AsyncIOController>& m_pool;
         std::atomic<bool> m_cancellationRequested = false;
         std::atomic<AsyncOperationStatus> m_status = AsyncOperationStatus::kQueued;
         std::atomic<ResultCode> m_lastResult = ResultCode::kSuccess;
@@ -97,6 +104,11 @@ namespace FE::IO
 
     struct AsyncIOCachedFile final : public Memory::RefCountedObjectBase
     {
+        AsyncIOCachedFile(Memory::SpinLockedPool<AsyncIOCachedFile>& pool)
+            : m_pool(pool)
+        {
+        }
+
         [[nodiscard]] Platform::FileHandle GetFileHandle()
         {
             m_lastUseTime = Platform::GetTicks();
@@ -106,6 +118,9 @@ namespace FE::IO
     private:
         friend AsyncIOOpenFileCache;
 
+        void DoRelease() override;
+
+        Memory::SpinLockedPool<AsyncIOCachedFile>& m_pool;
         uint64_t m_lastUseTime = 0;
         uint64_t m_nameHash = 0;
         Path m_path;
@@ -128,7 +143,7 @@ namespace FE::IO
         IAsyncIOBackend* m_backend = nullptr;
         uint32_t m_cacheSize = 0;
         festd::vector<Rc<AsyncIOCachedFile>> m_entries;
-        Memory::SpinLockedPoolAllocator m_entryPool{ "IO/Async/OpenFileCacheEntryPool", sizeof(AsyncIOCachedFile) };
+        Memory::SpinLockedPool<AsyncIOCachedFile> m_entryPool{ "IO/Async/OpenFileCacheEntryPool" };
     };
 
 
@@ -158,10 +173,15 @@ namespace FE::IO
 
         Memory::SpinLockedPool<AsyncIOOperation> m_operationPool{ "IO/Async/OperationPool" };
         Memory::SpinLockedPool<ReadGroup> m_groupPool{ "IO/Async/ReadGroupPool" };
-        Memory::SpinLockedPoolAllocator m_controllerPool{ "IO/Async/ControllerPool", sizeof(AsyncIOController) };
+        Memory::SpinLockedPool<AsyncIOController> m_controllerPool{ "IO/Async/ControllerPool" };
 
         void* m_stagingMemory = nullptr;
         Memory::TLSFAllocator m_stagingAllocator;
+
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
 
         void EnqueueImpl(AsyncIOOperation* operation);
         AsyncIOOperation* TryDequeue();

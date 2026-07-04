@@ -38,6 +38,11 @@ namespace FE::IO
         FileStats m_stats{};
         OpenMode m_openMode = OpenMode::kNone;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         size_t WriteImpl(const void* buffer, size_t byteSize) override;
     };
 } // namespace FE::IO

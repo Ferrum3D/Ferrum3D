@@ -32,6 +32,11 @@ namespace FE::DI
             Container* m_parent = nullptr;
         } m_registryCallback;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Threading::Mutex m_lock;
         ServiceRegistryRoot m_registryRoot;
     };

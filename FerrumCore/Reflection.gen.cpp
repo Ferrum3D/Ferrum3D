@@ -342,7 +342,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_1adbd843e8414b1496ea4aa08c901084([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<AsyncStreamIO>)
             {
@@ -364,7 +364,7 @@ namespace FE::IO
                     return resolveResult.error();
 
 
-                *result = Rc<AsyncStreamIO>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<AsyncStreamIO>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -458,7 +458,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_70064b01c4644ad78169c61c9d37419a([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             FE_DebugBreak();
             *result = nullptr;
@@ -547,7 +547,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_780d7b1990844d599a45a913994efed6([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IAsyncIOBackend>)
             {
@@ -555,7 +555,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<IAsyncIOBackend>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -646,7 +645,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_c1752d59034346d0b95a127eb2321cc7([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<DefaultAsyncIOBackend>)
             {
@@ -654,7 +653,7 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<DefaultAsyncIOBackend>::DefaultNew();
+                *result = Memory::DefaultNew<DefaultAsyncIOBackend>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -846,7 +845,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_2427b1d9f1a54a1ba804eb9aca502c28([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IAsyncController>)
             {
@@ -854,7 +853,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<IAsyncController>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1287,7 +1285,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_2f74ff8d4d8144be962a9d30669e03c8([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<StreamBase>)
             {
@@ -1295,7 +1293,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<StreamBase>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1524,7 +1521,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_3f973b261330404abf05ce0b63306871([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<FileStreamFactory>)
             {
@@ -1538,7 +1535,7 @@ namespace FE::IO
                 else
                     return resolveResult.error();
 
-                *result = Rc<FileStreamFactory>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<FileStreamFactory>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1687,7 +1684,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_4bfcad353da34115b4ad96086ad97a8c([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IStreamFactory>)
             {
@@ -1695,7 +1692,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<IStreamFactory>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2033,7 +2029,7 @@ namespace FE::DI
         }
 
         DI::ResultCode RTTI_Activator_60933641c6f745038ffaac25edfad83f([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<Container>)
             {
@@ -2041,7 +2037,7 @@ namespace FE::DI
             }
             else
             {
-                *result = Rc<Container>::DefaultNew();
+                *result = Memory::DefaultNew<Container>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2227,7 +2223,7 @@ namespace FE
         }
 
         DI::ResultCode RTTI_Activator_6754da3146fa4661a46e2787e6d9fd29([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<JobSystem>)
             {
@@ -2235,7 +2231,7 @@ namespace FE
             }
             else
             {
-                *result = Rc<JobSystem>::DefaultNew();
+                *result = Memory::DefaultNew<JobSystem>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2537,7 +2533,7 @@ namespace FE::DI
         }
 
         DI::ResultCode RTTI_Activator_89a2904031bc411d852292d7d2696c16([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IServiceProvider>)
             {
@@ -2545,7 +2541,6 @@ namespace FE::DI
             }
             else
             {
-                *result = Rc<IServiceProvider>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2977,7 +2972,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_a44064ec34e04b999bc7a2b27321f617([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IAsyncStreamIO>)
             {
@@ -2985,7 +2980,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<IAsyncStreamIO>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3201,7 +3195,7 @@ namespace FE
         }
 
         DI::ResultCode RTTI_Activator_b54397f4415f4fa681244672d2a179ce([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<Logger>)
             {
@@ -3209,7 +3203,7 @@ namespace FE
             }
             else
             {
-                *result = Rc<Logger>::DefaultNew();
+                *result = Memory::DefaultNew<Logger>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4085,7 +4079,7 @@ namespace FE
         }
 
         DI::ResultCode RTTI_Activator_f9fb743ab5434b64a36bb055434de90b([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IJobSystem>)
             {
@@ -4093,7 +4087,6 @@ namespace FE
             }
             else
             {
-                *result = Rc<IJobSystem>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4178,7 +4171,7 @@ namespace FE::IO
         }
 
         DI::ResultCode RTTI_Activator_fd697dc5020e4998adf29dfaf48e2a75([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<IStream>)
             {
@@ -4186,7 +4179,6 @@ namespace FE::IO
             }
             else
             {
-                *result = Rc<IStream>::DefaultNew();
                 return DI::ResultCode::kSuccess;
             }
         }

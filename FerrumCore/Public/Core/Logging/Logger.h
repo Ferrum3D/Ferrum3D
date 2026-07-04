@@ -151,6 +151,11 @@ namespace FE
     private:
         friend struct LogSinkBase;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Threading::SpinLock m_lock;
         festd::intrusive_list<LogSinkBase> m_sinks;
     };

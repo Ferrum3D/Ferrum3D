@@ -5,7 +5,6 @@
 namespace FE::IO
 {
     FileStreamFactory::FileStreamFactory(Env::Configuration* config)
-        : m_fileStreamPool("IO/FileStream", sizeof(FileStream), alignof(FileStream), 64 * 1024)
     {
         const Path currentDirectory = Directory::GetCurrentDirectory();
         m_parentDirectory = config->GetString("AssetDirectory", currentDirectory);
@@ -18,7 +17,7 @@ namespace FE::IO
     {
         FE_PROFILER_ZONE();
 
-        const Rc fileStream = Rc<FileStream>::New(&m_fileStreamPool);
+        const Rc fileStream = Memory::DefaultNew<FileStream>();
         const Path fullPath = m_parentDirectory / filename;
         const ResultCode result = fileStream->Open(fullPath, openMode);
         if (result != ResultCode::kSuccess)
@@ -33,7 +32,7 @@ namespace FE::IO
     {
         FE_PROFILER_ZONE();
 
-        const Rc fileStream = Rc<FileStream>::New(&m_fileStreamPool);
+        const Rc fileStream = Memory::DefaultNew<FileStream>();
         fileStream->SetBufferSize(0);
 
         const Path fullPath = m_parentDirectory / filename;

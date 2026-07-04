@@ -18,7 +18,11 @@ namespace FE::IO
         FileAttributeFlags GetFileAttributeFlags(festd::string_view filename) override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Path m_parentDirectory;
-        Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock> m_fileStreamPool;
     };
 } // namespace FE::IO

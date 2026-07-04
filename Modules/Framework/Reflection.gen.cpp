@@ -56,7 +56,7 @@ namespace FE::Framework::Core
             }
             else
             {
-                *result = Rc<PlatformApplication>::DefaultNew();
+                *result = Memory::DefaultNew<PlatformApplication>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -156,7 +156,7 @@ namespace FE::Framework::Windows
             }
             else
             {
-                *result = Rc<PlatformApplication>::DefaultNew();
+                *result = Memory::DefaultNew<PlatformApplication>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -271,7 +271,7 @@ namespace FE::Framework::Windows
                 else
                     return resolveResult.error();
 
-                *result = Rc<PlatformWindow>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<PlatformWindow>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -446,7 +446,7 @@ namespace FE::Framework::Core
             }
             else
             {
-                *result = Rc<PlatformWindow>::DefaultNew();
+                *result = Memory::DefaultNew<PlatformWindow>();
                 return DI::ResultCode::kSuccess;
             }
         }

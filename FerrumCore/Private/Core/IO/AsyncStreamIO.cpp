@@ -17,7 +17,7 @@ namespace FE::IO
         constexpr size_t kStagingHeapSize = 256 * 1024 * 1024;
 
 
-        void SetOperationResult(AsyncIOOperation* operation, const ResultCode result)
+        void SetOperationResult(const AsyncIOOperation* operation, const ResultCode result)
         {
             if (result == ResultCode::kSuccess)
                 return;
@@ -31,15 +31,6 @@ namespace FE::IO
         {
             const uint32_t previousValue = operation->m_pendingWork.fetch_sub(1, std::memory_order_acq_rel);
             FE_Assert(previousValue > 0, "Async operation pending work underflow");
-        }
-
-
-        void FreeReadGroup(Memory::SpinLockedPool<ReadGroup>& pool, ReadGroup* group)
-        {
-            if (group->m_stagingMemory)
-                group->m_stagingMemory = nullptr;
-
-            pool.Delete(group);
         }
 
 
@@ -107,6 +98,12 @@ namespace FE::IO
     }
 
 
+    void AsyncIOController::DoRelease()
+    {
+        m_pool.Delete(this);
+    }
+
+
     void AsyncIOController::Cancel()
     {
         m_cancellationRequested.store(true, std::memory_order_release);
@@ -122,6 +119,12 @@ namespace FE::IO
     ResultCode AsyncIOController::GetLastOperationResult() const
     {
         return m_lastResult.load(std::memory_order_acquire);
+    }
+
+
+    void AsyncIOCachedFile::DoRelease()
+    {
+        m_pool.Delete(this);
     }
 
 
@@ -178,7 +181,7 @@ namespace FE::IO
             }
         }
 
-        auto newEntry = Rc<AsyncIOCachedFile>::New(&m_entryPool);
+        Rc newEntry = m_entryPool.New(m_entryPool);
         newEntry->m_nameHash = hash;
         newEntry->m_path = path;
         newEntry->m_fileHandle = openFileResult.value();
@@ -413,14 +416,14 @@ namespace FE::IO
                     m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize);
 
                 CompleteOperationWork(operation);
-                FreeReadGroup(m_groupPool, group);
+                m_groupPool.Delete(group);
                 continue;
             }
 
             if (group->m_compressionMethod == Compression::Method::kNone)
             {
                 CompleteOperationWork(operation);
-                FreeReadGroup(m_groupPool, group);
+                m_groupPool.Delete(group);
             }
             else
             {
@@ -456,7 +459,7 @@ namespace FE::IO
                     group->m_stagingMemory = nullptr;
 
                     CompleteOperationWork(operation);
-                    FreeReadGroup(m_groupPool, group);
+                    m_groupPool.Delete(group);
 
                     // Notify the scheduler of freed memory.
                     m_queueEvent.Send();
@@ -550,9 +553,9 @@ namespace FE::IO
         m_queueEvent = Threading::Event::CreateAutoReset();
 
 #if FE_PLATFORM_WINDOWS
-        m_backend = Rc<OverlappedAsyncIOBackend>::DefaultNew(m_queueEvent);
+        m_backend = Memory::DefaultNew<OverlappedAsyncIOBackend>(m_queueEvent);
 #else
-        m_backend = Rc<DefaultAsyncIOBackend>::DefaultNew();
+        m_backend = Memory::DefaultNew<DefaultAsyncIOBackend>();
 #endif
         m_fileCache.Init(64, m_backend.Get());
 
@@ -576,7 +579,7 @@ namespace FE::IO
 
     Rc<IAsyncController> AsyncStreamIO::ExecuteCommandList(const AsyncReadCommandList& commandList, const Priority priority)
     {
-        Rc controller = Rc<AsyncIOController>::New(&m_controllerPool);
+        Rc controller = m_controllerPool.New(m_controllerPool);
 
         auto* operation = m_operationPool.New();
         operation->m_priority = priority;

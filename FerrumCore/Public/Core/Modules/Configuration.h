@@ -341,6 +341,11 @@ namespace FE::Env
     private:
         static constexpr uint32_t kSectionCount = 2;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         festd::fixed_vector<ConfigurationSection, kSectionCount> m_rootSections;
         mutable Threading::SpinLock m_lock;
     };

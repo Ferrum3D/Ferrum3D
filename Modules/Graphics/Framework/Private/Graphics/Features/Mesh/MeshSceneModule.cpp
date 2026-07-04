@@ -17,9 +17,9 @@ namespace FE::Graphics
         DB::Database* database = renderer->GetDatabase();
         FE_Assert(database != nullptr);
 
-        m_meshLodInfoTable = Rc<MeshLodInfoTable>::DefaultNew(database);
-        m_meshGroupTable = Rc<MeshGroupTable>::DefaultNew(database);
-        m_meshInstanceTable = Rc<MeshInstanceTable>::DefaultNew(database);
+        m_meshLodInfoTable = Memory::DefaultNew<MeshLodInfoTable>(database);
+        m_meshGroupTable = Memory::DefaultNew<MeshGroupTable>(database);
+        m_meshInstanceTable = Memory::DefaultNew<MeshInstanceTable>(database);
     }
 
 

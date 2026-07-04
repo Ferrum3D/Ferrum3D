@@ -34,7 +34,7 @@ namespace FE::Memory
 #if FE_DEBUG
             const PlatformSpec platformSpec = GetPlatformSpec();
             FE_Assert(AlignUp(pageByteSize, platformSpec.m_granularity) == pageByteSize,
-                          "Page size must be aligned to virtual allocation granularity");
+                      "Page size must be aligned to virtual allocation granularity");
 
             FE_Assert(Math::IsPowerOfTwo(elementAlignment));
 #endif
@@ -203,6 +203,7 @@ namespace FE::Memory
         }
 
         template<class... TArgs>
+            requires std::constructible_from<T, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);

@@ -108,6 +108,11 @@ namespace FE::DI
         friend struct LifetimeScope;
         friend struct ServiceRegistryRoot;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         SegmentedVector<Uuid, 2048> m_ids = nullptr;
         SegmentedVector<ServiceActivator, 16384> m_activators = nullptr;
         festd::pmr::vector<ServiceRegistration> m_registrations;
@@ -155,7 +160,7 @@ namespace FE::DI
         {
             FE_PROFILER_ZONE();
             std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-            m_root = Rc<ServiceRegistry>::DefaultNew(allocator);
+            m_root = Memory::DefaultNew<ServiceRegistry>(allocator);
             m_registries.push_back(*m_root);
             m_root->RegisterCallback(&m_registryCallback);
         }
@@ -188,7 +193,7 @@ namespace FE::DI
             FE_PROFILER_ZONE();
             std::unique_lock lk{ m_lock };
             std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-            ServiceRegistry* pResult = Rc<ServiceRegistry>::DefaultNew(allocator);
+            ServiceRegistry* pResult = Memory::DefaultNew<ServiceRegistry>(allocator);
             m_registries.push_back(*pResult);
             pResult->RegisterCallback(&m_registryCallback);
             return pResult;

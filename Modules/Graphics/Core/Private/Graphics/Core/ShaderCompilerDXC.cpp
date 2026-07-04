@@ -146,7 +146,7 @@ namespace FE::Graphics::Core
         FE_Assert(SUCCEEDED(hrCompiler), "Failed to create DXC compiler");
 
         m_shaderSourceCache = DI::DefaultNew<ShaderSourceCache>().value();
-        m_dxcIncludeHandler = Rc<DxcIncludeHandler>::DefaultNew(m_dxcUtils.Get(), m_shaderSourceCache.Get(), logger);
+        m_dxcIncludeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get(), logger);
     }
 
 

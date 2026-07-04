@@ -27,6 +27,11 @@ namespace FE::IO
     private:
         static constexpr uint32_t kMaxOutstandingReads = 32;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         enum class IocpThreadCommand : uint32_t
         {
             kExit,

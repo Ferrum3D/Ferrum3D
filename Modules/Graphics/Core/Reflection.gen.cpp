@@ -178,7 +178,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<ComputePipeline>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<ComputePipeline>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -317,7 +317,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<Viewport>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                *result = Memory::DefaultNew<Viewport>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -492,7 +492,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Buffer>::DefaultNew();
+                *result = Memory::DefaultNew<Buffer>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -590,7 +590,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Device>::DefaultNew();
+                *result = Memory::DefaultNew<Device>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -690,7 +690,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<FrameGraphContext>::DefaultNew();
+                *result = Memory::DefaultNew<FrameGraphContext>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -792,7 +792,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<AsyncCopyQueue>::DefaultNew();
+                *result = Memory::DefaultNew<AsyncCopyQueue>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -906,7 +906,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<ResourcePool>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<ResourcePool>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1088,7 +1088,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<GraphicsQueue>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<GraphicsQueue>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1192,7 +1192,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<ResourcePool>::DefaultNew();
+                *result = Memory::DefaultNew<ResourcePool>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1456,7 +1456,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<DeviceFactory>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<DeviceFactory>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1591,7 +1591,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<PipelineFactory>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                *result = Memory::DefaultNew<PipelineFactory>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1713,7 +1713,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<GraphicsPipeline>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<GraphicsPipeline>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1819,7 +1819,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Resource>::DefaultNew();
+                *result = Memory::DefaultNew<Resource>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1981,7 +1981,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<GraphicsPipeline>::DefaultNew();
+                *result = Memory::DefaultNew<GraphicsPipeline>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2298,7 +2298,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<FrameGraph>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                *result = Memory::DefaultNew<FrameGraph>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2404,7 +2404,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Viewport>::DefaultNew();
+                *result = Memory::DefaultNew<Viewport>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -2716,7 +2716,7 @@ namespace FE::Graphics::Common
             }
             else
             {
-                *result = Rc<Buffer>::DefaultNew();
+                *result = Memory::DefaultNew<Buffer>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3004,7 +3004,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<AsyncCopyQueue>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<AsyncCopyQueue>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3114,7 +3114,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<ComputePipeline>::DefaultNew();
+                *result = Memory::DefaultNew<ComputePipeline>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3411,7 +3411,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<Device>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<Device>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3521,7 +3521,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Texture>::DefaultNew();
+                *result = Memory::DefaultNew<Texture>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3799,7 +3799,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<PipelineBase>::DefaultNew();
+                *result = Memory::DefaultNew<PipelineBase>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3913,7 +3913,7 @@ namespace FE::Graphics::Common
             }
             else
             {
-                *result = Rc<Texture>::DefaultNew();
+                *result = Memory::DefaultNew<Texture>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4032,7 +4032,7 @@ namespace FE::Graphics::Core
                 else
                     return resolveResult.error();
 
-                *result = Rc<ShaderCompilerDXC>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<ShaderCompilerDXC>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4128,7 +4128,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<ShaderReflection>::DefaultNew();
+                *result = Memory::DefaultNew<ShaderReflection>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4640,7 +4640,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<ShaderLibrary>::DefaultNew();
+                *result = Memory::DefaultNew<ShaderLibrary>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -4742,7 +4742,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<GraphicsQueue>::DefaultNew();
+                *result = Memory::DefaultNew<GraphicsQueue>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5028,7 +5028,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<DeviceFactory>::DefaultNew();
+                *result = Memory::DefaultNew<DeviceFactory>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5239,7 +5239,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<PipelineFactory>::DefaultNew();
+                *result = Memory::DefaultNew<PipelineFactory>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5472,7 +5472,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<Fence>::DefaultNew();
+                *result = Memory::DefaultNew<Fence>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5580,7 +5580,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<DescriptorManager>::DefaultNew(arg0.Get());
+                *result = Memory::DefaultNew<DescriptorManager>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5774,7 +5774,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Rc<ShaderLibrary>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get());
+                *result = Memory::DefaultNew<ShaderLibrary>(arg0.Get(), arg1.Get(), arg2.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -6190,7 +6190,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                *result = Rc<ShaderCompiler>::DefaultNew();
+                *result = Memory::DefaultNew<ShaderCompiler>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -6297,7 +6297,7 @@ namespace FE::Graphics::Core
                 else
                     return resolveResult.error();
 
-                *result = Rc<ShaderSourceCache>::DefaultNew(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<ShaderSourceCache>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }

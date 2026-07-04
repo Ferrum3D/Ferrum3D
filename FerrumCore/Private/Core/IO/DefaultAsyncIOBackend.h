@@ -12,6 +12,11 @@ namespace FE::IO
         bool PollRequestCompletion(AsyncIOCompletion& completion) override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         festd::vector<AsyncIOCompletion> m_completions;
     };
 } // namespace FE::IO

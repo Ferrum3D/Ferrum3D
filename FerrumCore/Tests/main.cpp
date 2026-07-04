@@ -17,8 +17,7 @@ int main(int argc, char** argv)
     DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
     builder.Bind<Env::Configuration>()
         .ToFunc([](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-            std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-            *result = Rc<Env::Configuration>::New(allocator, festd::span<const festd::string_view>{});
+            *result = Memory::DefaultNew<Env::Configuration>(festd::span<const festd::string_view>{});
             return DI::ResultCode::kSuccess;
         })
         .InSingletonScope();

@@ -26,6 +26,11 @@ namespace
         void Start() override {}
         void Stop() override {}
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         FiberAffinityMask GetAffinityMaskForCurrentThread() const override
         {
             return FiberAffinityMask::kMainThread;

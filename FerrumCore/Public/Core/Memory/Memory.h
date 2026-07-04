@@ -46,7 +46,7 @@ namespace FE
 
         //! @brief Allocate an uninitialized array using the provided allocator.
         template<class T, class TAllocator>
-        [[nodiscard]] inline T* AllocateArray(TAllocator* allocator, size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] T* AllocateArray(TAllocator* allocator, size_t elementCount, size_t byteAlignment = alignof(T))
         {
             return static_cast<T*>(allocator->allocate(elementCount * sizeof(T), byteAlignment));
         }
@@ -54,7 +54,7 @@ namespace FE
 
         //! @brief Allocate an uninitialized array using the default allocator.
         template<class T>
-        [[nodiscard]] inline T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
+        [[nodiscard]] T* DefaultAllocateArray(size_t elementCount, size_t byteAlignment = alignof(T))
         {
             return static_cast<T*>(DefaultAllocate(elementCount * sizeof(T), byteAlignment));
         }
@@ -70,7 +70,8 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
-        [[nodiscard]] inline T* New(TAllocator* allocator, TArgs&&... args)
+            requires std::constructible_from<T, TArgs...>
+        [[nodiscard]] T* New(TAllocator* allocator, TArgs&&... args)
         {
             return new (allocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
@@ -84,7 +85,8 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class... TArgs>
-        [[nodiscard]] inline T* DefaultNew(TArgs&&... args)
+            requires std::constructible_from<T, TArgs...>
+        [[nodiscard]] T* DefaultNew(TArgs&&... args)
         {
             return new (DefaultAllocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
         }
@@ -100,7 +102,7 @@ namespace FE
         //! @tparam T           The type of the object to delete.
         //! @tparam TAllocator  The type of the provided allocator.
         template<class T, class TAllocator>
-        inline void Delete(TAllocator* allocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
+        void Delete(TAllocator* allocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {
             pointer->~T();
             allocator->deallocate(pointer, byteSize, byteAlignment);
