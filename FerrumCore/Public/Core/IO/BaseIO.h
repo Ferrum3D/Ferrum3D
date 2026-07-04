@@ -44,7 +44,7 @@ namespace FE::IO
         kNotSupported = -13,       //!< Operation is not supported.
         kInvalidArgument = -14,    //!< Argument value has not been accepted.
         kInvalidFormat = -15,      //!< Invalid file format.
-        kDecompressionError = -16, //!< Block file decompression failed.
+        kDecompressionError = -16, //!< Decompression failed.
         kUnknownError = kDefaultErrorCode<ResultCode>,
     };
 

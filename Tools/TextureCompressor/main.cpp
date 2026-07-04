@@ -222,7 +222,7 @@ int main(const int32_t argc, const char** argv)
         jobSystem->Stop();
     });
 
-    mainJob.Schedule(jobSystem, FiberAffinityMask::kMainThread);
+    mainJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread);
     jobSystem->Start();
 
     Memory::Delete(allocator, application);

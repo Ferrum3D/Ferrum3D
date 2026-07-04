@@ -61,8 +61,8 @@ namespace FE
         bool AddWaitEntry(WaitGroupWaitEntry* entry);
         void AddJobPrerequisite(Job* job);
         bool SignalSlowImpl();
-        static void SignalJobWaitEntry(WaitGroupWaitEntry* entry);
-        static void SignalFiberWaitEntry(WaitGroupWaitEntry* entry);
+        static void SignalJobWaitEntry(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry);
+        static void SignalFiberWaitEntry(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry);
         void DestroyImpl();
     };
 

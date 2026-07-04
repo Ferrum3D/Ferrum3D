@@ -125,7 +125,7 @@ namespace FE::Bit
 {
     //! @brief Set a bit specified by bitIndex to one and return the modified value.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE T Set(const T value, const T bitIndex)
+    FE_FORCE_INLINE constexpr T Set(const T value, const T bitIndex)
     {
         return value | (T(1u) << bitIndex);
     }
@@ -133,7 +133,7 @@ namespace FE::Bit
 
     //! @brief Reset a bit specified by bitIndex to zero and return the modified value.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE T Clear(const T value, const T bitIndex)
+    FE_FORCE_INLINE constexpr T Clear(const T value, const T bitIndex)
     {
         return value & ~(T(1u) << bitIndex);
     }
@@ -141,7 +141,7 @@ namespace FE::Bit
 
     //! @brief Count the number of trailing zeros in the given value.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE int32_t CountTrailingZeros(const T value)
+    FE_FORCE_INLINE constexpr int32_t CountTrailingZeros(const T value)
     {
         return std::countr_zero(value);
     }
@@ -149,7 +149,7 @@ namespace FE::Bit
 
     //! @brief Count the number of leading zeros in the given value.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE int32_t CountLeadingZeros(const T value)
+    FE_FORCE_INLINE constexpr int32_t CountLeadingZeros(const T value)
     {
         return std::countl_zero(value);
     }
@@ -157,7 +157,7 @@ namespace FE::Bit
 
     //! @brief Count the number of set bits in the given value.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE uint32_t PopCount(const T value)
+    FE_FORCE_INLINE constexpr uint32_t PopCount(const T value)
     {
         return static_cast<uint32_t>(std::popcount(value));
     }
@@ -167,7 +167,7 @@ namespace FE::Bit
     //!
     //! @return true if a bit was found, false if the value is zero.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE bool ScanForward(uint32_t& result, const T value)
+    FE_FORCE_INLINE constexpr bool ScanForward(uint32_t& result, const T value)
     {
         if (value == 0)
             return false;
@@ -181,7 +181,7 @@ namespace FE::Bit
     //!
     //! @return true if a bit was found, false if the value is zero.
     template<std::unsigned_integral T>
-    FE_FORCE_INLINE bool ScanReverse(uint32_t& result, const T value)
+    FE_FORCE_INLINE constexpr bool ScanReverse(uint32_t& result, const T value)
     {
         if (value == 0)
             return false;
@@ -191,19 +191,20 @@ namespace FE::Bit
     }
 
 
-    FE_FORCE_INLINE uint32_t FieldMask(const uint32_t offset, const uint32_t size)
+    FE_FORCE_INLINE constexpr uint32_t FieldMask(const uint32_t offset, const uint32_t size)
     {
         return ((1u << size) - 1u) << offset;
     }
 
 
-    FE_FORCE_INLINE uint32_t FieldExtract(const uint32_t source, const uint32_t offset, const uint32_t size)
+    FE_FORCE_INLINE constexpr uint32_t FieldExtract(const uint32_t source, const uint32_t offset, const uint32_t size)
     {
         return (source >> offset) & ((1u << size) - 1u);
     }
 
 
-    FE_FORCE_INLINE uint32_t FieldInsert(const uint32_t source, const uint32_t insert, const uint32_t offset, const uint32_t size)
+    FE_FORCE_INLINE constexpr uint32_t FieldInsert(const uint32_t source, const uint32_t insert, const uint32_t offset,
+                                                   const uint32_t size)
     {
         const uint32_t mask = ((1u << size) - 1u);
         return (source & ~(mask << offset)) | ((insert & mask) << offset);
@@ -215,7 +216,7 @@ namespace FE::Bit
     //! @param word    The unsigned integer to traverse.
     //! @param functor The functor to call for each set bit.
     template<std::unsigned_integral T, class TFunctor>
-    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE void Traverse(T word, TFunctor functor)
+    FE_FORCE_INLINE FE_NO_SECURITY_COOKIE constexpr void Traverse(T word, TFunctor functor)
     {
         uint32_t currentIndex;
         while (ScanForward(currentIndex, word))
@@ -429,7 +430,7 @@ namespace FE::Math
 
 
     //! @brief Calculate the smallest power of two that is greater than or equal to `x`.
-    FE_FORCE_INLINE uint32_t CeilPowerOfTwo(const uint32_t x)
+    FE_FORCE_INLINE constexpr uint32_t CeilPowerOfTwo(const uint32_t x)
     {
         const uint64_t x64 = 2 * static_cast<uint64_t>(x) - 1;
         uint32_t result;
@@ -439,20 +440,20 @@ namespace FE::Math
 
 
     //! @brief Calculate the largest power of two that is less than or equal to `x`.
-    FE_FORCE_INLINE uint32_t FloorPowerOfTwo(const uint32_t x)
+    FE_FORCE_INLINE constexpr uint32_t FloorPowerOfTwo(const uint32_t x)
     {
         return 1 << (31 - Bit::CountLeadingZeros(x));
     }
 
 
     template<std::integral T1, std::integral T2>
-    FE_FORCE_INLINE auto CeilDivide(const T1 x, const T2 y) -> decltype(x / y)
+    FE_FORCE_INLINE constexpr auto CeilDivide(const T1 x, const T2 y) -> decltype(x / y)
     {
         return (x + y - 1) / y;
     }
 
 
-    FE_FORCE_INLINE uint32_t FloorLog2(const uint32_t x)
+    FE_FORCE_INLINE constexpr uint32_t FloorLog2(const uint32_t x)
     {
         uint32_t result;
         if (Bit::ScanReverse(result, x))

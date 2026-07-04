@@ -27,7 +27,7 @@ namespace FE
 
         void Start() override;
         void Stop() override;
-        void Schedule(const JobScheduleInfo& info) override;
+        void Dispatch(const JobDispatchInfo& info) override;
         FiberAffinityMask GetAffinityMaskForCurrentThread() const override;
 
     private:

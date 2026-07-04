@@ -14,6 +14,11 @@ namespace FE::IO
         Path m_filePath;
         size_t m_byteOffset = 0;
         size_t m_byteSize = 0;
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return !m_filePath.empty();
+        }
     };
 
 
@@ -22,10 +27,19 @@ namespace FE::IO
         enum class AsyncReadCommandType : uint32_t
         {
             kInvalid,
+            kSkipBytes,
             kSetSource,
             kInvokeFunctor,
             kRead,
             kReadCompressed,
+        };
+
+
+        struct AsyncSkipBytesCommand final
+        {
+            AsyncReadCommandType m_type = AsyncReadCommandType::kSkipBytes;
+            uint32_t m_size = 0;
+            uint32_t m_alignment = 0;
         };
 
 
@@ -40,6 +54,7 @@ namespace FE::IO
         {
             AsyncReadCommandType m_type = AsyncReadCommandType::kInvokeFunctor;
             uint32_t m_functorSize = 0;
+            uint32_t m_functorAlignment = 0;
             void (*m_functor)(void* context) = nullptr;
             void* m_context = nullptr;
         };
@@ -91,14 +106,13 @@ namespace FE::IO
         {
             using namespace InternalAsyncReadCommands;
 
-            const uint32_t functorSize = AlignUp<uint32_t>(sizeof(TFunctor), alignof(uintptr_t));
-
             FE_Assert(!m_completionCallbackSet);
             m_completionCallbackSet = true;
 
             AsyncInvokeFunctorCommand command;
             command.m_type = AsyncReadCommandType::kInvokeFunctor;
-            command.m_functorSize = functorSize;
+            command.m_functorSize = sizeof(TFunctor);
+            command.m_functorAlignment = alignof(TFunctor);
             command.m_functor = [](void* context) {
 #if FE_DEVELOPMENT
                 HighResolutionTimer timer;
@@ -121,7 +135,7 @@ namespace FE::IO
             };
 
             void* commandPtr = m_bufferBuilder.WriteBytes(&command, sizeof(command));
-            void* functorPtr = m_bufferBuilder.Allocate(functorSize);
+            void* functorPtr = m_bufferBuilder.Allocate(sizeof(TFunctor), alignof(TFunctor));
             new (functorPtr) TFunctor(std::forward<TFunctor>(functor));
 
             static_cast<AsyncInvokeFunctorCommand*>(commandPtr)->m_context = functorPtr;

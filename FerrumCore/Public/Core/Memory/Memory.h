@@ -170,8 +170,12 @@ namespace FE
 
         struct TLSFAllocator final : public std::pmr::memory_resource
         {
+            TLSFAllocator() = default;
             TLSFAllocator(void* memory, size_t size);
             ~TLSFAllocator() override;
+
+            void Initialize(void* memory, size_t size);
+            void Shutdown();
 
         private:
             void* do_allocate(size_t byteSize, size_t byteAlignment) override;
@@ -184,7 +188,6 @@ namespace FE
 
             void* m_impl = nullptr;
             size_t m_size = 0;
-            void* m_ownedMemory = nullptr;
         };
 
 

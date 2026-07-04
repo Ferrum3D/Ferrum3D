@@ -159,6 +159,7 @@ namespace FE::Trace
 
     void** CallStack::GetFrames() const
     {
+        std::lock_guard lock{ GStorage->m_lock };
         FE_Assert(m_value < GStorage->m_callstacks.size());
         return GStorage->m_callstacks[m_value];
     }

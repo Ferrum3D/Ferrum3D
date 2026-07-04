@@ -3,10 +3,23 @@
 
 namespace FE
 {
-    template<class T, uint32_t TSegmentByteSize = 4096>
+    namespace Internal
+    {
+        constexpr uint32_t CalculateDefaultSegmentByteSize(const uint32_t elementSize)
+        {
+            const uint32_t initialGuess = Math::Max(4096u, elementSize * 16);
+            const uint32_t estimate = initialGuess / elementSize;
+            const uint32_t elementCount = Math::CeilPowerOfTwo(estimate);
+            return elementCount * elementSize;
+        }
+    } // namespace Internal
+
+
+    template<class T, uint32_t TSegmentByteSize = Internal::CalculateDefaultSegmentByteSize(sizeof(T))>
     struct SegmentedVector final
     {
-        static constexpr uint32_t kElementsPerSegment = TSegmentByteSize / sizeof(T);
+        static constexpr uint32_t kSegmentByteSize = TSegmentByteSize;
+        static constexpr uint32_t kElementsPerSegment = kSegmentByteSize / sizeof(T);
 
         template<bool TConst>
         struct Iterator final
@@ -257,7 +270,7 @@ namespace FE
             if (elementIndex == 0)
             {
                 if (m_segments[segmentIndex] == nullptr)
-                    m_segments[segmentIndex] = static_cast<T*>(m_allocator->allocate(TSegmentByteSize, alignof(T)));
+                    m_segments[segmentIndex] = static_cast<T*>(m_allocator->allocate(kSegmentByteSize, alignof(T)));
             }
             else
             {
@@ -311,7 +324,7 @@ namespace FE
                 for (uint32_t segmentIndex = 0; segmentIndex < newSegmentCount; ++segmentIndex)
                 {
                     if (m_segments[segmentIndex] == nullptr)
-                        m_segments[segmentIndex] = static_cast<T*>(m_allocator->allocate(TSegmentByteSize, alignof(T)));
+                        m_segments[segmentIndex] = static_cast<T*>(m_allocator->allocate(kSegmentByteSize, alignof(T)));
                 }
 
                 const uint32_t oldSize = m_size;
@@ -482,7 +495,7 @@ namespace FE
         friend struct SegmentedVector;
 
         static constexpr uint32_t kSegmentTableGranularity = 4;
-        static_assert(sizeof(T) <= TSegmentByteSize);
+        static_assert(sizeof(T) <= kSegmentByteSize);
 
         std::pmr::memory_resource* m_allocator = nullptr;
         T** m_segments = nullptr;
@@ -519,7 +532,7 @@ namespace FE
                 if (m_segments[segmentIndex] == nullptr)
                     break;
 
-                m_allocator->deallocate(static_cast<void*>(m_segments[segmentIndex]), TSegmentByteSize, alignof(T));
+                m_allocator->deallocate(static_cast<void*>(m_segments[segmentIndex]), kSegmentByteSize, alignof(T));
             }
 
             m_allocator->deallocate(static_cast<void*>(m_segments), sizeof(T*) * m_segmentTableSize, alignof(T*));

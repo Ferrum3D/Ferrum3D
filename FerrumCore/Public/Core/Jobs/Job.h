@@ -36,19 +36,24 @@ namespace FE
             AddPrerequisites(festd::span(waitGroups));
         }
 
-        void Schedule(IJobSystem* jobSystem, FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
+        void Dispatch(IJobSystem* jobSystem, FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
                       JobPriority priority = JobPriority::kNormal);
 
-        void ScheduleForeground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
+        void DispatchForeground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
                                 const JobPriority priority = JobPriority::kNormal)
         {
-            Schedule(jobSystem, FiberAffinityMask::kAll, completionWaitGroup, priority);
+            Dispatch(jobSystem, FiberAffinityMask::kAll, completionWaitGroup, priority);
         }
 
-        void ScheduleBackground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
+        void DispatchBackground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
                                 const JobPriority priority = JobPriority::kNormal)
         {
-            Schedule(jobSystem, FiberAffinityMask::kAllBackground, completionWaitGroup, priority);
+            Dispatch(jobSystem, FiberAffinityMask::kAllBackground, completionWaitGroup, priority);
+        }
+
+        [[nodiscard]] WaitGroup* GetCompletionWaitGroup() const
+        {
+            return m_completionWaitGroup.Get();
         }
 
     private:
@@ -65,7 +70,7 @@ namespace FE
         Rc<WaitGroup> m_completionWaitGroup;
         IJobSystem* m_jobSystem = nullptr;
         std::atomic<uint32_t> m_dependencyCounter = 1;
-        std::atomic<bool> m_scheduleRequested = false;
+        std::atomic<bool> m_dispatchRequested = false;
         JobPriority m_priority = JobPriority::kNormal;
         FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         uint64_t m_orderHint = 0;

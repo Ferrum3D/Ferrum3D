@@ -8,11 +8,11 @@ namespace FE
 
     void Job::AddPrerequisite(WaitGroup* waitGroup)
     {
-        FE_Assert(waitGroup != nullptr, "Job prerequisite cannot be null");
-        FE_Assert(!m_scheduleRequested.load(std::memory_order_acquire), "Prerequisites must be added before scheduling");
+        FE_AssertDebug(waitGroup != nullptr, "Job prerequisite cannot be null");
+        FE_AssertDebug(!m_dispatchRequested.load(std::memory_order_acquire), "Prerequisites must be added before dispatching");
 
         const uint32_t previousValue = m_dependencyCounter.fetch_add(1, std::memory_order_relaxed);
-        FE_Assert(previousValue < Constants::kMaxU32, "Too many job prerequisites");
+        FE_AssertDebug(previousValue < Constants::kMaxU32, "Too many job prerequisites");
         waitGroup->AddJobPrerequisite(this);
     }
 
@@ -31,16 +31,16 @@ namespace FE
     }
 
 
-    void Job::Schedule(IJobSystem* jobSystem, const FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup,
+    void Job::Dispatch(IJobSystem* jobSystem, const FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup,
                        const JobPriority priority)
     {
         if (completionWaitGroup)
             m_completionWaitGroup = completionWaitGroup;
 
-        JobScheduleInfo info;
+        JobDispatchInfo info;
         info.m_job = this;
         info.m_priority = priority;
         info.m_affinityMask = affinityMask;
-        jobSystem->Schedule(info);
+        jobSystem->Dispatch(info);
     }
 } // namespace FE

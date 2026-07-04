@@ -128,7 +128,7 @@ namespace FE::Framework
     {
         m_exitWaitGroup = WaitGroup::Create();
         m_frameJob.m_application = this;
-        m_frameJob.Schedule(m_jobSystem.Get(), FiberAffinityMask::kMainThread, m_exitWaitGroup.Get(), JobPriority::kHigh);
+        m_frameJob.Dispatch(m_jobSystem.Get(), FiberAffinityMask::kMainThread, m_exitWaitGroup.Get(), JobPriority::kHigh);
         m_exitWaitGroup->Wait();
         return m_exitCode;
     }

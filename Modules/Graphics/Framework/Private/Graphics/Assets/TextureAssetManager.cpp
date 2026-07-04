@@ -245,7 +245,7 @@ namespace FE::Graphics
         mipJob->m_data = dataToDelete;
         mipJob->m_bufferAllocator = bufferAllocator;
         mipJob->m_commandList = copyCommandList;
-        mipJob->ScheduleBackground(m_jobSystem);
+        mipJob->DispatchBackground(m_jobSystem);
 
         return true;
     }

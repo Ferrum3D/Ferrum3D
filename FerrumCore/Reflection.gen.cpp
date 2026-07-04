@@ -364,13 +364,7 @@ namespace FE::IO
                     return resolveResult.error();
 
 
-                Rc<IAsyncIOBackend> arg2;
-                if (const auto resolveResult = serviceProvider->Resolve<IAsyncIOBackend>())
-                    arg2 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Rc<AsyncStreamIO>::DefaultNew(arg0.Get(), arg1.Get(), arg2.Get());
+                *result = Rc<AsyncStreamIO>::DefaultNew(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -466,15 +460,9 @@ namespace FE::IO
         DI::ResultCode RTTI_Activator_70064b01c4644ad78169c61c9d37419a([[maybe_unused]] DI::IServiceProvider* serviceProvider,
                                                                        Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<OverlappedAsyncIOBackend>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Rc<OverlappedAsyncIOBackend>::DefaultNew();
-                return DI::ResultCode::kSuccess;
-            }
+            FE_DebugBreak();
+            *result = nullptr;
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 

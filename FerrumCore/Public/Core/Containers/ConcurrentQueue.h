@@ -31,7 +31,7 @@ namespace FE
             m_head = node;
         }
 
-        Node* TryDequeue()
+        [[nodiscard]] Node* TryDequeue()
         {
             std::unique_lock lock{ m_lock };
             if (m_head)
@@ -47,10 +47,17 @@ namespace FE
             return nullptr;
         }
 
+        [[nodiscard]] bool Empty() const
+        {
+            std::unique_lock lock{ m_lock };
+            return m_head == nullptr;
+        }
+
     private:
         Node* m_head = nullptr;
         Node* m_tail = nullptr;
-        Threading::SpinLock m_lock;
+
+        mutable Threading::SpinLock m_lock;
     };
 
 
@@ -63,23 +70,23 @@ namespace FE
 
         void Enqueue(Node* node)
         {
-            Node* currentTop = m_top.load(std::memory_order_relaxed);
+            Node* currentTop = m_top.load(std::memory_order_acquire);
             for (;;)
             {
                 node->m_next = currentTop;
-                if (m_top.compare_exchange_weak(currentTop, node, std::memory_order_release, std::memory_order_relaxed))
+                if (m_top.compare_exchange_weak(currentTop, node, std::memory_order_acq_rel, std::memory_order_acquire))
                     break;
             }
         }
 
         [[nodiscard]] Node* DequeueAll()
         {
-            return m_top.exchange(nullptr, std::memory_order_relaxed);
+            return m_top.exchange(nullptr, std::memory_order_acquire);
         }
 
         [[nodiscard]] bool Empty() const
         {
-            return !m_top.load(std::memory_order_relaxed);
+            return !m_top.load(std::memory_order_acquire);
         }
 
     private:

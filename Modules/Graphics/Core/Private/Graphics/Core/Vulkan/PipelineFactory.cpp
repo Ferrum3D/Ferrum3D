@@ -107,7 +107,7 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
         job->m_context.m_logger = m_logger;
         job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
-        job->ScheduleBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
+        job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;
     }
@@ -143,7 +143,7 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
         job->m_context.m_logger = m_logger;
         job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
-        job->ScheduleBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
+        job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;
     }

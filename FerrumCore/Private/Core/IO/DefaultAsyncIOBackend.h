@@ -7,7 +7,7 @@ namespace FE::IO
     {
         FE_RTTI("C1752D59-0343-46D0-B95A-127EB2321CC7");
 
-        ResultCode OpenFile(festd::string_view filePath, Platform::FileHandle& fileHandle) override;
+        festd::expected<Platform::FileHandle, ResultCode> OpenFile(festd::string_view filePath) override;
         AsyncReadHandle DispatchRead(const AsyncIOPhysicalRead& read) override;
         bool PollRequestCompletion(AsyncIOCompletion& completion) override;
 

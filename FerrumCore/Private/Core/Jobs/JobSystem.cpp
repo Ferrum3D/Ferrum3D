@@ -421,12 +421,12 @@ namespace FE
     }
 
 
-    void JobSystem::Schedule(const JobScheduleInfo& info)
+    void JobSystem::Dispatch(const JobDispatchInfo& info)
     {
-        FE_Assert(info.m_job != nullptr, "Cannot schedule a null job");
+        FE_Assert(info.m_job != nullptr);
 
         Job* job = info.m_job;
-        const bool scheduleRequested = job->m_scheduleRequested.exchange(true, std::memory_order_acq_rel);
+        const bool scheduleRequested = job->m_dispatchRequested.exchange(true, std::memory_order_acq_rel);
         FE_Assert(!scheduleRequested, "Jobs can only be scheduled once");
 
         job->m_jobSystem = this;

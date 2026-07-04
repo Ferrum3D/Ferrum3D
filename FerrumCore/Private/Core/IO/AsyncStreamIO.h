@@ -22,6 +22,7 @@ namespace FE::IO
 
     struct ReadGroup final
     {
+        Path m_sourcePath;
         AsyncIOOperation* m_operation = nullptr;
         AsyncReadHandle m_handle;
         void* m_stagingMemory = nullptr;
@@ -72,8 +73,6 @@ namespace FE::IO
         std::atomic<uint32_t> m_pendingWork = 0;
         Rc<AsyncIOController> m_controller;
         AsyncReadCommandList m_commandList;
-        std::atomic<bool> m_completionRequested = false;
-        std::atomic<bool> m_completed = false;
         Threading::SpinLock m_completionLock;
         InternalAsyncReadCommands::AsyncInvokeFunctorCommand m_completionCallback;
     };
@@ -98,7 +97,7 @@ namespace FE::IO
 
     struct AsyncIOCachedFile final : public Memory::RefCountedObjectBase
     {
-        [[nodiscard]] Platform::FileHandle Get()
+        [[nodiscard]] Platform::FileHandle GetFileHandle()
         {
             m_lastUseTime = Platform::GetTicks();
             return m_fileHandle;
@@ -117,6 +116,7 @@ namespace FE::IO
     struct AsyncIOOpenFileCache final
     {
         void Init(uint32_t cacheSize, IAsyncIOBackend* backend);
+        void Shutdown();
 
         [[nodiscard]] festd::expected<Rc<AsyncIOCachedFile>, ResultCode> CreateFile(festd::string_view path);
 
@@ -125,7 +125,6 @@ namespace FE::IO
     private:
         void DeleteEntry(uint32_t entryIndex);
 
-        Threading::SpinLock m_lock;
         IAsyncIOBackend* m_backend = nullptr;
         uint32_t m_cacheSize = 0;
         festd::vector<Rc<AsyncIOCachedFile>> m_entries;
@@ -137,7 +136,7 @@ namespace FE::IO
     {
         FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
 
-        AsyncStreamIO(Logger* logger, IJobSystem* jobSystem, IAsyncIOBackend* backend);
+        AsyncStreamIO(Logger* logger, IJobSystem* jobSystem);
         ~AsyncStreamIO() override;
 
         Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList, Priority priority) override;
@@ -161,13 +160,13 @@ namespace FE::IO
         Memory::SpinLockedPool<ReadGroup> m_groupPool{ "IO/Async/ReadGroupPool" };
         Memory::SpinLockedPoolAllocator m_controllerPool{ "IO/Async/ControllerPool", sizeof(AsyncIOController) };
 
+        void* m_stagingMemory = nullptr;
         Memory::TLSFAllocator m_stagingAllocator;
 
         void EnqueueImpl(AsyncIOOperation* operation);
         AsyncIOOperation* TryDequeue();
         void ProcessCommandList(AsyncIOOperation* operation);
         void ProcessBackendCompletions();
-        void RequestOperationCompletion(AsyncIOOperation* operation, ResultCode result);
         bool TryFinalizeOperation(AsyncIOOperation* operation);
         void SchedulerThread();
     };

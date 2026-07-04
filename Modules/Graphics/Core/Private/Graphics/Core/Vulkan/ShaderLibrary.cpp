@@ -116,7 +116,7 @@ namespace FE::Graphics::Vulkan
         auto* task = Memory::New<CompilationTask>(&m_taskPool);
         task->m_parent = this;
         task->m_shaderIndex = shaderIndex;
-        task->ScheduleBackground(m_jobSystem, shaderInfo->m_completionWaitGroup.Get(), JobPriority::kNormal);
+        task->DispatchBackground(m_jobSystem, shaderInfo->m_completionWaitGroup.Get(), JobPriority::kNormal);
 
         return Core::ShaderHandle{ shaderIndex };
     }

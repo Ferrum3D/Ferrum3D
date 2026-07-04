@@ -8,7 +8,7 @@ namespace FE
     struct WaitGroupWaitEntry
     {
         WaitGroupWaitEntry* m_next = nullptr;
-        void (*m_signal)(WaitGroupWaitEntry*) = nullptr;
+        void (*m_signal)(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry) = nullptr;
     };
 
 
@@ -87,11 +87,11 @@ namespace FE
         entry->m_job = job;
 
         if (!AddWaitEntry(entry))
-            SignalJobWaitEntry(entry);
+            SignalJobWaitEntry(this, entry);
     }
 
 
-    void WaitGroup::SignalJobWaitEntry(WaitGroupWaitEntry* baseEntry)
+    void WaitGroup::SignalJobWaitEntry([[maybe_unused]]WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry)
     {
         auto* entry = static_cast<JobWaitEntry*>(baseEntry);
         Job* job = entry->m_job;
@@ -100,13 +100,13 @@ namespace FE
         if (!job->DependencySatisfied())
             return;
 
-        FE_Assert(job->m_scheduleRequested.load(std::memory_order_acquire), "Unscheduled job reached zero dependencies");
+        FE_Assert(job->m_dispatchRequested.load(std::memory_order_acquire), "Unscheduled job reached zero dependencies");
         auto* jobSystem = Rtti::AssertCast<JobSystem*>(job->m_jobSystem);
         jobSystem->AddReadyJob(job);
     }
 
 
-    void WaitGroup::SignalFiberWaitEntry(WaitGroupWaitEntry* baseEntry)
+    void WaitGroup::SignalFiberWaitEntry([[maybe_unused]] WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry)
     {
         auto* entry = static_cast<FiberWaitGroupEntry*>(baseEntry);
         FiberWaitState* state = entry->m_state;
@@ -145,10 +145,11 @@ namespace FE
         auto* entry = reinterpret_cast<WaitGroupWaitEntry*>(lockAndQueue & ~UINT64_C(1));
         m_lockAndQueue.store(0, std::memory_order_release);
 
+        Rc keepAlive(this);
         while (entry)
         {
             WaitGroupWaitEntry* next = entry->m_next;
-            entry->m_signal(entry);
+            entry->m_signal(this, entry);
             entry = next;
         }
     }
@@ -212,7 +213,7 @@ namespace FE
             entry.m_signal = &SignalFiberWaitEntry;
             entry.m_state = &state;
             if (!waitGroup->AddWaitEntry(&entry))
-                SignalFiberWaitEntry(&entry);
+                SignalFiberWaitEntry(waitGroup, &entry);
         }
 
         const uint32_t previousValue = state.m_dependencyCounter.fetch_sub(1, std::memory_order_acq_rel);

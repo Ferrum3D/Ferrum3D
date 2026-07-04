@@ -4,7 +4,7 @@
 
 namespace FE
 {
-    struct JobScheduleInfo final
+    struct JobDispatchInfo final
     {
         Job* m_job = nullptr;
         JobPriority m_priority = JobPriority::kNormal;
@@ -16,7 +16,7 @@ namespace FE
     {
         FE_RTTI("F9FB743A-B543-4B64-A36B-B055434DE90B");
 
-        virtual void Schedule(const JobScheduleInfo& info) = 0;
+        virtual void Dispatch(const JobDispatchInfo& info) = 0;
         virtual void Start() = 0;
         virtual void Stop() = 0;
 

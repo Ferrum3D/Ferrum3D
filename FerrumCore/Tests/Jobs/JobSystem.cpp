@@ -140,13 +140,13 @@ namespace FE::Tests
         Threading::Thread schedulerThread("JobSystemTestScheduler", [&] {
             Threading::Sleep(50);
 
-            immediateJob.ScheduleForeground(jobSystem, immediateCompletion.Get());
+            immediateJob.DispatchForeground(jobSystem, immediateCompletion.Get());
             EXPECT_TRUE(waitFor([&] {
                 return immediateCompletion->IsSignaled();
             }));
             EXPECT_EQ(immediateExecutionCount.load(std::memory_order_acquire), 1);
 
-            deferredJob.ScheduleForeground(jobSystem);
+            deferredJob.DispatchForeground(jobSystem);
             Threading::Sleep(20);
             EXPECT_EQ(deferredExecutionCount.load(std::memory_order_acquire), 0);
             deferredPrerequisiteA->Signal();
@@ -158,13 +158,13 @@ namespace FE::Tests
             }));
 
             EXPECT_EQ(presignaledExecutionCount.load(std::memory_order_acquire), 0);
-            presignaledJob.ScheduleForeground(jobSystem);
+            presignaledJob.DispatchForeground(jobSystem);
             EXPECT_TRUE(waitFor([&] {
                 return presignaledExecutionCount.load(std::memory_order_acquire) == 1;
             }));
 
-            lowPriorityJob.Schedule(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kLow);
-            highPriorityJob.Schedule(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kHigh);
+            lowPriorityJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kLow);
+            highPriorityJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kHigh);
             priorityPrerequisite->Signal();
             EXPECT_TRUE(waitFor([&] {
                 return priorityExecutionCount.load(std::memory_order_acquire) == 2;
@@ -174,7 +174,7 @@ namespace FE::Tests
             EXPECT_EQ(highAffinity.load(std::memory_order_relaxed), festd::to_underlying(FiberAffinityMask::kMainThread));
             EXPECT_EQ(lowAffinity.load(std::memory_order_relaxed), festd::to_underlying(FiberAffinityMask::kMainThread));
 
-            waitAllJob.ScheduleForeground(jobSystem);
+            waitAllJob.DispatchForeground(jobSystem);
             EXPECT_TRUE(waitFor([&] {
                 return waitAllEntered.load(std::memory_order_acquire);
             }));
@@ -197,7 +197,7 @@ namespace FE::Tests
                     prerequisite->Signal();
             });
             for (NotifyJob& job : raceJobs)
-                job.ScheduleForeground(jobSystem);
+                job.DispatchForeground(jobSystem);
             signalThread.Join();
             EXPECT_TRUE(waitFor([&] {
                 return raceExecutionCount.load(std::memory_order_acquire) == kRaceJobCount;

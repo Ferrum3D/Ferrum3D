@@ -4,9 +4,14 @@
 
 namespace FE::IO
 {
-    ResultCode DefaultAsyncIOBackend::OpenFile(const festd::string_view filePath, Platform::FileHandle& fileHandle)
+    festd::expected<Platform::FileHandle, ResultCode> DefaultAsyncIOBackend::OpenFile(const festd::string_view filePath)
     {
-        return Platform::OpenFile(filePath, OpenMode::kReadOnly, fileHandle);
+        Platform::FileHandle fileHandle;
+        const ResultCode resultCode = Platform::OpenFile(filePath, OpenMode::kReadOnly, fileHandle);
+        if (resultCode != ResultCode::kSuccess)
+            return festd::unexpected(resultCode);
+
+        return fileHandle;
     }
 
 
@@ -18,9 +23,11 @@ namespace FE::IO
         completion.m_handle = handle;
         completion.m_group = read.m_group;
 
-        ResultCode result = Platform::SeekFile(read.m_fileHandle, static_cast<intptr_t>(read.m_offset), SeekMode::kBegin);
+        const Platform::FileHandle fileHandle = read.m_file->GetFileHandle();
+
+        ResultCode result = Platform::SeekFile(fileHandle, static_cast<intptr_t>(read.m_offset), SeekMode::kBegin);
         if (result == ResultCode::kSuccess)
-            result = Platform::ReadFile(read.m_fileHandle, read.m_destination, read.m_size, completion.m_bytesRead);
+            result = Platform::ReadFile(fileHandle, read.m_destination, read.m_size, completion.m_bytesRead);
 
         completion.m_result = result;
         m_completions.push_back(completion);

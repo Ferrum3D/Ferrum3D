@@ -41,7 +41,7 @@ namespace FE
 
     TaskGraph::~TaskGraph()
     {
-        FE_Assert(!m_isValid, "TaskGraph must be either detached or waited to completion before destroying");
+        FE_Assert(!m_isValid || m_jobCount == 0, "TaskGraph must be either detached or waited to completion before destroying");
         CleanUp();
     }
 
@@ -81,6 +81,8 @@ namespace FE
         };
 
         m_isValid = false;
+        if (m_jobCount == 0)
+            return WaitGroup::Create(0);
 
         const auto prerequisites = MakeAllWaitGroupsArray();
         if (prerequisites.empty())
@@ -89,10 +91,11 @@ namespace FE
             return WaitGroup::Create(0);
         }
 
+        IJobSystem* jobSystem = m_jobSystem;
         const Rc<WaitGroup> waitGroup = WaitGroup::Create();
         auto* job = Memory::DefaultNew<DetachJob>(std::move(*this));
         job->AddPrerequisites(prerequisites);
-        job->Schedule(m_jobSystem, FiberAffinityMask::kAll, waitGroup.Get(), JobPriority::kHigh);
+        job->Dispatch(jobSystem, FiberAffinityMask::kAll, waitGroup.Get(), JobPriority::kHigh);
         return waitGroup;
     }
 
@@ -143,7 +146,7 @@ namespace FE
     }
 
 
-    Rc<WaitGroup> TaskGraph::ScheduleTaskImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
+    Rc<WaitGroup> TaskGraph::DispatchTaskImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
                                               const TaskFunction taskFunction, void* data)
     {
         FE_Assert(m_isValid);
@@ -164,7 +167,7 @@ namespace FE
         record->m_completionWaitGroup = waitGroup;
         m_jobRecords = record;
 
-        job->Schedule(m_jobSystem, m_affinity, waitGroup.Get(), m_priority);
+        job->Dispatch(m_jobSystem, m_affinity, waitGroup.Get(), m_priority);
         return waitGroup;
     }
 

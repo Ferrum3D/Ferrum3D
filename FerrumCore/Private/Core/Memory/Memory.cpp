@@ -404,23 +404,30 @@ namespace FE::Memory
 
     TLSFAllocator::TLSFAllocator(void* memory, const size_t size)
     {
-        if (memory == nullptr)
-        {
-            memory = AllocateVirtual(size);
-            m_ownedMemory = memory;
-        }
-
-        m_size = size;
-        m_impl = tlsf_create_with_pool(memory, size);
+        Initialize(memory, size);
     }
 
 
     TLSFAllocator::~TLSFAllocator()
     {
-        tlsf_destroy(m_impl);
+        Shutdown();
+    }
 
-        if (m_ownedMemory != nullptr)
-            FreeVirtual(m_ownedMemory, m_size);
+
+    void TLSFAllocator::Initialize(void* memory, const size_t size)
+    {
+        m_size = size;
+        m_impl = tlsf_create_with_pool(memory, size);
+    }
+
+
+    void TLSFAllocator::Shutdown()
+    {
+        if (m_impl != nullptr)
+        {
+            tlsf_destroy(m_impl);
+            m_impl = nullptr;
+        }
     }
 
 

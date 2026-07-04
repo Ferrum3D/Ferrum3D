@@ -23,19 +23,19 @@ namespace FE
         }
 
         template<class TFunctor>
-        Rc<WaitGroup> Schedule(const Env::Name name, TFunctor&& functor)
+        Rc<WaitGroup> Dispatch(const Env::Name name, TFunctor&& functor)
         {
-            return Schedule<TFunctor>(name, festd::span<WaitGroup* const>{}, std::forward<TFunctor>(functor));
+            return Dispatch<TFunctor>(name, festd::span<WaitGroup* const>{}, std::forward<TFunctor>(functor));
         }
 
         template<class TFunctor>
-        Rc<WaitGroup> Schedule(const Env::Name name, const std::initializer_list<WaitGroup*> prerequisites, TFunctor&& functor)
+        Rc<WaitGroup> Dispatch(const Env::Name name, const std::initializer_list<WaitGroup*> prerequisites, TFunctor&& functor)
         {
-            return Schedule<TFunctor>(name, festd::span(prerequisites), std::forward<TFunctor>(functor));
+            return Dispatch<TFunctor>(name, festd::span(prerequisites), std::forward<TFunctor>(functor));
         }
 
         template<class TFunctor>
-        Rc<WaitGroup> Schedule(const Env::Name name, const festd::span<WaitGroup* const> prerequisites, TFunctor&& functor)
+        Rc<WaitGroup> Dispatch(const Env::Name name, const festd::span<WaitGroup* const> prerequisites, TFunctor&& functor)
         {
             using FunctorType = std::decay_t<TFunctor>;
             FunctorType* funcPtr = Memory::New<FunctorType>(&m_allocator, std::forward<FunctorType>(functor));
@@ -44,7 +44,7 @@ namespace FE
                 static_cast<FunctorType*>(data)->~FunctorType();
             };
 
-            return ScheduleTaskImpl(name, prerequisites, taskFunction, funcPtr);
+            return DispatchTaskImpl(name, prerequisites, taskFunction, funcPtr);
         }
 
         template<class TFunctor>
@@ -65,7 +65,7 @@ namespace FE
             m_completionCallbackData = funcPtr;
         }
 
-        //! @brief Invalidate the TaskGraph and schedule a cleanup task to free all memory upon completion.
+        //! @brief Invalidate the TaskGraph and dispatch a cleanup task to free all memory upon completion.
         //!
         //! @return WaitGroup that will be signaled when all tasks are completed and graph memory is freed.
         Rc<WaitGroup> Detach();
@@ -91,7 +91,7 @@ namespace FE
         festd::span<WaitGroup* const> MakeAllWaitGroupsArray();
         void CleanUp();
 
-        Rc<WaitGroup> ScheduleTaskImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,
+        Rc<WaitGroup> DispatchTaskImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,
                                        void* data);
 
         Env::Name m_name;

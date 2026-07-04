@@ -1,9 +1,5 @@
 #include <Core/DI/Builder.h>
 #include <Core/DI/Registry.h>
-
-#include <Core/IO/DefaultAsyncIOBackend.h>
-#include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
-
 #include <Core/IO/AsyncStreamIO.h>
 #include <Core/IO/StreamFactory.h>
 #include <Core/Jobs/JobSystem.h>
@@ -30,11 +26,6 @@ namespace FE::DI
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
         builder.Bind<Logger>().ToSelf().InSingletonScope();
         builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();
-#if FE_PLATFORM_WINDOWS
-        builder.Bind<IO::IAsyncIOBackend>().To<IO::OverlappedAsyncIOBackend>().InSingletonScope();
-#else
-        builder.Bind<IO::IAsyncIOBackend>().To<IO::DefaultAsyncIOBackend>().InSingletonScope();
-#endif
         builder.Bind<IO::IAsyncStreamIO>().To<IO::AsyncStreamIO>().InSingletonScope();
     }
 

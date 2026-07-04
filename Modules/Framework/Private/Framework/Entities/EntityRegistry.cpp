@@ -203,14 +203,14 @@ namespace FE::Framework
 
         Rc waitGroup = WaitGroup::Create(deferredActionJobs.size());
         for (DeferredActionJob& job : deferredActionJobs)
-            job.ScheduleForeground(context.m_jobSystem, waitGroup.Get());
+            job.DispatchForeground(context.m_jobSystem, waitGroup.Get());
         waitGroup->Wait();
 
         m_deferredActionsAllocator.Clear();
 
         waitGroup = WaitGroup::Create(localSystemUpdateJobs.size());
         for (LocalSystemUpdateJob& job : localSystemUpdateJobs)
-            job.ScheduleForeground(context.m_jobSystem, waitGroup.Get());
+            job.DispatchForeground(context.m_jobSystem, waitGroup.Get());
         waitGroup->Wait();
     }
 } // namespace FE::Framework

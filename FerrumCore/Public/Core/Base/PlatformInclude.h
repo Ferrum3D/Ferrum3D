@@ -10,9 +10,13 @@
 #    include <atlcom.h>
 #    include <guiddef.h>
 
+#    undef near
+#    undef far
+
 #    undef CopyMemory
-#    undef GetObject
 #    undef CreateWindow
+#    undef CreateFile
+#    undef GetObject
 #    undef MemoryBarrier
 #    undef GetCurrentDirectory
 #    undef SetCurrentDirectory

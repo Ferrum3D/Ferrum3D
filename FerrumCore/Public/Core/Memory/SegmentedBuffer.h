@@ -116,36 +116,37 @@ namespace FE::Memory
 
         void* WriteBytes(const void* data, const uint32_t size)
         {
-            void* ptr = Allocate(size);
+            void* ptr = Allocate(size, 1);
             memcpy(ptr, data, size);
             return ptr;
         }
 
-        void* Allocate(const uint32_t size)
+        void* Allocate(const size_t byteSize, const size_t byteAlignment)
         {
-            SegmentedBuffer::Segment* segment;
-            if (!m_segments.empty() && m_segments.back()->m_size + size + sizeof(SegmentedBuffer::Segment) <= m_segmentCapacity)
+            const uint32_t size = static_cast<uint32_t>(byteSize);
+            const uint32_t alignment = Math::Max(static_cast<uint32_t>(byteAlignment), 1u);
+
+            if (!m_segments.empty())
             {
-                segment = m_segments.back();
-            }
-            else
-            {
-                segment = static_cast<SegmentedBuffer::Segment*>(m_buffer.m_allocator->allocate(m_segmentCapacity));
-                Zero(segment, sizeof(SegmentedBuffer::Segment));
-                segment->m_size = 0;
-                segment->m_capacity = m_segmentCapacity;
-                m_segments.push_back(segment);
+                if (void* ptr = TryAllocateFromSegment(m_segments.back(), size, alignment))
+                    return ptr;
             }
 
-            void* result = reinterpret_cast<std::byte*>(segment + 1) + segment->m_size;
-            segment->m_size += size;
-            return result;
+            auto* segment = new (m_buffer.m_allocator->allocate(m_segmentCapacity)) SegmentedBuffer::Segment;
+            segment->m_size = 0;
+            segment->m_capacity = m_segmentCapacity;
+            m_segments.push_back(segment);
+
+            if (void* ptr = TryAllocateFromSegment(segment, size, alignment))
+                return ptr;
+
+            FE_DebugBreak();
+            return nullptr;
         }
 
         SegmentedBuffer Build()
         {
-            auto** segments = static_cast<SegmentedBuffer::Segment**>(
-                m_buffer.m_allocator->allocate(m_segments.size() * sizeof(SegmentedBuffer::Segment*)));
+            auto** segments = Memory::AllocateArray<SegmentedBuffer::Segment*>(m_buffer.m_allocator, m_segments.size());
             memcpy(static_cast<void*>(segments),
                    static_cast<const void*>(m_segments.data()),
                    m_segments.size() * sizeof(SegmentedBuffer::Segment*));
@@ -160,6 +161,20 @@ namespace FE::Memory
         }
 
     private:
+        void* TryAllocateFromSegment(SegmentedBuffer::Segment* segment, const uint32_t size, const uint32_t alignment) const
+        {
+            auto* segmentDataPtr = reinterpret_cast<std::byte*>(segment + 1);
+            auto* ptr = AlignUpPtr(segmentDataPtr + segment->m_size, alignment);
+            const uint32_t newSegmentSize = static_cast<uint32_t>(ptr - segmentDataPtr) + size;
+            if (newSegmentSize + sizeof(SegmentedBuffer::Segment) <= m_segmentCapacity)
+            {
+                segment->m_size = newSegmentSize;
+                return ptr;
+            }
+
+            return nullptr;
+        }
+
         festd::inline_vector<SegmentedBuffer::Segment*> m_segments;
         SegmentedBuffer m_buffer;
         uint32_t m_segmentCapacity = 0;
@@ -173,45 +188,36 @@ namespace FE::Memory
         {
         }
 
-        [[nodiscard]] bool ReadBytes(void* data, const uint32_t size)
+        [[nodiscard]] bool ReadBytes(void* data, const uint32_t size, const uint32_t alignment = 1)
         {
-            if (m_segmentIndex >= m_buffer.m_segmentCount)
+            if (!FindNextPosition(size, alignment, m_segmentIndex, m_segmentOffset))
                 return false;
 
-            const SegmentedBuffer::Segment* segment = m_buffer.m_segments[m_segmentIndex];
-            if (m_segmentOffset + size > segment->m_size)
-            {
-                m_segmentIndex++;
-                m_segmentOffset = 0;
-                return ReadBytes(data, size);
-            }
-
+            SegmentedBuffer::Segment* segment = m_buffer.m_segments[m_segmentIndex];
             memcpy(data, reinterpret_cast<const std::byte*>(segment + 1) + m_segmentOffset, size);
             m_segmentOffset += size;
             return true;
         }
 
-        [[nodiscard]] bool SkipBytes(const uint32_t size)
+        [[nodiscard]] bool SkipBytes(const uint32_t size, const uint32_t alignment = 1)
         {
-            if (m_segmentIndex >= m_buffer.m_segmentCount)
+            if (!FindNextPosition(size, alignment, m_segmentIndex, m_segmentOffset))
                 return false;
-
-            const SegmentedBuffer::Segment* segment = m_buffer.m_segments[m_segmentIndex];
-            if (m_segmentOffset + size > segment->m_size)
-            {
-                m_segmentIndex++;
-                m_segmentOffset = 0;
-                return SkipBytes(size);
-            }
 
             m_segmentOffset += size;
             return true;
         }
 
-        [[nodiscard]] bool ReadBytesNoConsume(void* data, const uint32_t size) const
+        [[nodiscard]] bool ReadBytesNoConsume(void* data, const uint32_t size, const uint32_t alignment = 1) const
         {
-            auto tempReader = *this;
-            return tempReader.ReadBytes(data, size);
+            uint32_t segmentIndex = m_segmentIndex;
+            uint32_t segmentOffset = m_segmentOffset;
+            if (!FindNextPosition(size, alignment, segmentIndex, segmentOffset))
+                return false;
+
+            SegmentedBuffer::Segment* segment = m_buffer.m_segments[segmentIndex];
+            memcpy(data, reinterpret_cast<const std::byte*>(segment + 1) + segmentOffset, size);
+            return true;
         }
 
         template<class T>
@@ -224,6 +230,36 @@ namespace FE::Memory
         [[nodiscard]] bool ReadNoConsume(T& value) const
         {
             return ReadBytesNoConsume(&value, sizeof(T));
+        }
+
+    private:
+        static bool FindOffsetInSegment(const SegmentedBuffer::Segment* segment, const uint32_t size, const uint32_t alignment,
+                                        uint32_t& segmentOffset)
+        {
+            const auto* segmentDataPtr = reinterpret_cast<const std::byte*>(segment + 1);
+            const auto* ptr = AlignUpPtr(segmentDataPtr + segmentOffset, alignment);
+            const uint32_t newSegmentOffset = static_cast<uint32_t>(ptr - segmentDataPtr) + size;
+            if (newSegmentOffset <= segment->m_size)
+            {
+                segmentOffset = static_cast<uint32_t>(ptr - segmentDataPtr);
+                return true;
+            }
+
+            return false;
+        }
+
+        bool FindNextPosition(const uint32_t size, const uint32_t alignment, uint32_t& segmentIndex,
+                              uint32_t& segmentOffset) const
+        {
+            if (FindOffsetInSegment(m_buffer.m_segments[segmentIndex], size, alignment, segmentOffset))
+                return true;
+
+            if (segmentIndex + 1 >= m_buffer.m_segmentCount)
+                return false;
+
+            ++segmentIndex;
+            segmentOffset = 0;
+            return FindOffsetInSegment(m_buffer.m_segments[segmentIndex], size, alignment, segmentOffset);
         }
 
         uint32_t m_segmentIndex = 0;
