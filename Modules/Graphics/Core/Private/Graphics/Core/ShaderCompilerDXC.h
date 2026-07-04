@@ -18,6 +18,11 @@ namespace FE::Graphics::Core
         ShaderCompilerResult CompileShader(const ShaderCompilerArgs& args) override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         LibraryLoader m_module;
         Logger* m_logger;
         IO::IStreamFactory* m_streamFactory;

@@ -61,12 +61,10 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Texture* Texture::Create(Core::Device* device, Env::Name name, const Core::TextureDesc& desc)
+    Texture* Texture::Create(Core::Device* device, const Env::Name name, const Core::TextureDesc& desc)
     {
         FE_PROFILER_ZONE();
-        return Rc<Texture>::Allocate(&GTexturePool, [device, name, &desc](void* memory) {
-            return new (memory) Texture(device, name, desc);
-        });
+        return new (GTexturePool.AllocateMemory()) Texture(device, name, desc);
     }
 
 
@@ -258,6 +256,12 @@ namespace FE::Graphics::Vulkan
         m_desc = desc;
         m_type = Core::ResourceType::kTexture;
         Register();
+    }
+
+
+    void Texture::DestroyObject()
+    {
+        GTexturePool.Delete(this);
     }
 
 

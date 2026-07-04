@@ -31,6 +31,11 @@ namespace FE::Graphics::Vulkan
         [[nodiscard]] festd::span<const Core::AdapterInfo> EnumerateAdapters() const override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         VkInstance m_instance = VK_NULL_HANDLE;
         VkDebugReportCallbackEXT m_debug = VK_NULL_HANDLE;
 

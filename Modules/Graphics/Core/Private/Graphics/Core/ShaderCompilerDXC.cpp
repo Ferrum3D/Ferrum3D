@@ -6,7 +6,11 @@
 #include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 
+#define near
+#define far
 #include <d3d12shader.h>
+#undef near
+#undef far
 
 namespace FE::Graphics::Core
 {

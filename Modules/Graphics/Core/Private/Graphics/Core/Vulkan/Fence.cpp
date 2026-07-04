@@ -4,17 +4,12 @@
 
 namespace FE::Graphics::Vulkan
 {
-    namespace
-    {
-        VulkanObjectPoolType GFencePool{ "Graphics/Core/FencePool", sizeof(Fence) };
-    }
+    FE_DECLARE_VULKAN_OBJECT_POOL(Fence);
 
 
     Fence* Fence::Create(Core::Device* device, const uint64_t initialValue)
     {
-        return Rc<Fence>::Allocate(&GFencePool, [device, initialValue](void* memory) {
-            return new (memory) Fence(device, initialValue);
-        });
+        return new (GFencePool.AllocateMemory()) Fence(device, initialValue);
     }
 
 
@@ -34,6 +29,12 @@ namespace FE::Graphics::Vulkan
         semaphoreCI.pNext = &typeCI;
 
         VerifyVk(vkCreateSemaphore(NativeCast(m_device), &semaphoreCI, nullptr, &m_timelineSemaphore));
+    }
+
+
+    void Fence::DestroyObject()
+    {
+        GFencePool.Delete(this);
     }
 
 

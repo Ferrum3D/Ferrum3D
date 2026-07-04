@@ -66,21 +66,21 @@ namespace FE::IO
     }
 
 
-    void AsyncReadCommandListBuilder::Read(std::byte* destination, const size_t destinationSize, const size_t sourceOffset)
+    void AsyncReadCommandListBuilder::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
     {
         InternalAsyncReadCommands::AsyncReadCommand command;
-        command.m_destination = destination;
+        command.m_destination = static_cast<std::byte*>(destination);
         command.m_destinationSize = destinationSize;
         command.m_sourceOffset = sourceOffset;
         m_bufferBuilder.WriteBytes(&command, sizeof(command));
     }
 
 
-    void AsyncReadCommandListBuilder::Read(std::byte* destination, const size_t destinationSize, const size_t sourceOffset,
+    void AsyncReadCommandListBuilder::Read(void* destination, const size_t destinationSize, const size_t sourceOffset,
                                            const size_t compressedSize, const Compression::Method compressionMethod)
     {
         InternalAsyncReadCommands::AsyncReadCompressedCommand command;
-        command.m_destination = destination;
+        command.m_destination = static_cast<std::byte*>(destination);
         command.m_destinationSize = destinationSize;
         command.m_sourceOffset = sourceOffset;
         command.m_compressedSize = compressedSize;
@@ -93,6 +93,16 @@ namespace FE::IO
     {
         AsyncReadCommandList commandList;
         commandList.m_buffer = m_bufferBuilder.Build();
+        commandList.m_signalWaitGroup = signalWaitGroup;
+        return commandList;
+    }
+
+
+    AsyncReadCommandList AsyncReadCommandListBuilder::ShrinkAndBuild(std::pmr::memory_resource* allocator,
+                                                                     WaitGroup* signalWaitGroup)
+    {
+        AsyncReadCommandList commandList;
+        commandList.m_buffer = m_bufferBuilder.ShrinkAndBuild(allocator);
         commandList.m_signalWaitGroup = signalWaitGroup;
         return commandList;
     }
@@ -491,7 +501,7 @@ namespace FE::IO
         {
             FE_AssertDebug(command.m_type == InternalAsyncReadCommands::AsyncReadCommandType::kInvokeFunctor);
             FE_AssertDebug(command.m_context != nullptr);
-            command.m_functor(command.m_context);
+            command.m_functor(command.m_context, operation->m_controller.Get());
         }
 
         if (operation->m_commandList.m_signalWaitGroup)

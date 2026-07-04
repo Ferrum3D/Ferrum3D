@@ -20,6 +20,11 @@ namespace FE::Graphics::Vulkan
         void FinishExecuteInternal() override;
         void ExecutePassBarriersInternal(PassNode& pass) override;
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Core::GraphicsQueue* m_commandQueue = nullptr;
     };
 } // namespace FE::Graphics::Vulkan

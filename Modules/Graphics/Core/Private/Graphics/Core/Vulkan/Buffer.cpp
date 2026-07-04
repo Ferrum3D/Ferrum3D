@@ -44,10 +44,7 @@ namespace FE::Graphics::Vulkan
     Buffer* Buffer::Create(Core::Device* device, const Env::Name name, const Core::BufferDesc desc)
     {
         FE_PROFILER_ZONE();
-
-        return Rc<Buffer>::Allocate(&GBufferPool, [device, name, desc](void* memory) {
-            return new (memory) Buffer(device, name, desc);
-        });
+        return new (GBufferPool.AllocateMemory()) Buffer(device, name, desc);
     }
 
 
@@ -58,6 +55,12 @@ namespace FE::Graphics::Vulkan
         m_desc = desc;
         m_type = Core::ResourceType::kBuffer;
         Register();
+    }
+
+
+    void Buffer::DestroyObject()
+    {
+        GBufferPool.Delete(this);
     }
 
 

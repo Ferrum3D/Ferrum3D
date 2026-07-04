@@ -42,6 +42,11 @@ namespace FE::Graphics::Vulkan
         void FinalizeDecommit(ResourceInstance* resourceInstance);
         void EnsureQueues();
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Threading::SpinLock m_lock;
         VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
 

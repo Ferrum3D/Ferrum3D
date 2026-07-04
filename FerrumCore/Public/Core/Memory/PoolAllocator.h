@@ -160,6 +160,7 @@ namespace FE::Memory
         }
 
         template<class... TArgs>
+            requires std::constructible_from<T, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);
@@ -168,6 +169,11 @@ namespace FE::Memory
         void Delete(const T* ptr)
         {
             Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
+        }
+
+        void* AllocateMemory()
+        {
+            return GetAllocator()->allocate(sizeof(T), alignof(T));
         }
     };
 
@@ -212,6 +218,11 @@ namespace FE::Memory
         void Delete(const T* ptr)
         {
             Memory::Delete<T>(GetAllocator(), const_cast<T*>(ptr), sizeof(T));
+        }
+
+        void* AllocateMemory()
+        {
+            return GetAllocator()->allocate(sizeof(T), alignof(T));
         }
 
     private:

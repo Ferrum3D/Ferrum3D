@@ -51,6 +51,11 @@ namespace FE::Graphics::Vulkan
     private:
         struct CompilationTask;
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         struct ShaderInfo final
         {
             Env::Name m_name;
@@ -64,7 +69,6 @@ namespace FE::Graphics::Vulkan
         Threading::SpinLock m_lock;
         Memory::SpinLockedPoolAllocator m_taskPool;
         Memory::SpinLockedPoolAllocator m_shaderPool;
-        Memory::SpinLockedPoolAllocator m_reflectionPool;
         festd::unordered_dense_map<uint64_t, uint32_t> m_shadersMap;
         SegmentedVector<ShaderInfo*> m_shaders;
         Core::ShaderCompiler* m_shaderCompiler = nullptr;

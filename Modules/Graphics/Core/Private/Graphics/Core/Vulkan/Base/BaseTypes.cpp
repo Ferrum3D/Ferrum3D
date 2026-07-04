@@ -3,17 +3,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    namespace
-    {
-        //
-        // Should be safe to use global pools here since these objects will only
-        // be created from within this module.
-        //
-
-        constexpr uint32_t kSmallVulkanObjectMaxSize = sizeof(Semaphore);
-
-        VulkanObjectPoolType GSmallObjectPool{ "Graphics/Core/SmallObjectPool", kSmallVulkanObjectMaxSize };
-    } // namespace
+    FE_DECLARE_VULKAN_OBJECT_POOL(Semaphore);
 
 
     Semaphore::~Semaphore()
@@ -29,10 +19,7 @@ namespace FE::Graphics::Vulkan
     Semaphore* Semaphore::Create(Core::Device* device, const Env::Name name)
     {
         FE_PROFILER_ZONE();
-
-        return Rc<Semaphore>::Allocate(&GSmallObjectPool, [=](void* memory) {
-            return new (memory) Semaphore(device, name);
-        });
+        return new (GSemaphorePool.AllocateMemory()) Semaphore(device, name);
     }
 
 
@@ -54,5 +41,11 @@ namespace FE::Graphics::Vulkan
             nameInfo.pObjectName = name.c_str();
             VerifyVk(vkSetDebugUtilsObjectNameEXT(vkDevice, &nameInfo));
         }
+    }
+
+
+    void Semaphore::DestroyObject()
+    {
+        GSemaphorePool.Delete(this);
     }
 } // namespace FE::Graphics::Vulkan

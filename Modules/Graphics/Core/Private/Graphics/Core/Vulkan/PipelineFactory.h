@@ -26,10 +26,13 @@ namespace FE::Graphics::Vulkan
         template<class TPipeline>
         struct AsyncCompilationJob;
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         FE_PROFILER_LOCK(Threading::SpinLock, m_lock);
         Rc<ShaderLibrary> m_shaderLibrary;
-        Memory::PoolAllocator m_graphicsPipelinePool;
-        Memory::PoolAllocator m_computePipelinePool;
         Memory::SpinLockedPoolAllocator m_jobPool;
         DescriptorManager* m_descriptorManager = nullptr;
         IJobSystem* m_jobSystem = nullptr;

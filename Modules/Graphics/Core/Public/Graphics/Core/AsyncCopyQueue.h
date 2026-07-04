@@ -25,6 +25,7 @@ namespace FE::Graphics::Core
         {
             AsyncCopyCommandType m_type;
             uint32_t m_functorSize;
+            uint32_t m_functorAlignment;
             void (*m_functor)(void* context);
             void* m_context;
         };
@@ -92,11 +93,10 @@ namespace FE::Graphics::Core
         {
             using namespace InternalAsyncCopyCommands;
 
-            const uint32_t functorSize = AlignUp<uint32_t>(sizeof(TFunctor), alignof(uintptr_t));
-
             AsyncInvokeFunctorCommand command;
             command.m_type = AsyncCopyCommandType::kInvokeFunctor;
-            command.m_functorSize = functorSize;
+            command.m_functorSize = sizeof(TFunctor);
+            command.m_functorAlignment = alignof(TFunctor);
             command.m_functor = [](void* context) {
 #if FE_DEVELOPMENT
                 HighResolutionTimer timer;
@@ -119,7 +119,7 @@ namespace FE::Graphics::Core
             };
 
             void* commandPtr = m_bufferBuilder.WriteBytes(&command, sizeof(command));
-            void* functorPtr = m_bufferBuilder.Allocate(functorSize);
+            void* functorPtr = m_bufferBuilder.Allocate(sizeof(TFunctor), alignof(TFunctor));
             new (functorPtr) TFunctor(std::forward<TFunctor>(functor));
 
             static_cast<AsyncInvokeFunctorCommand*>(commandPtr)->m_context = functorPtr;

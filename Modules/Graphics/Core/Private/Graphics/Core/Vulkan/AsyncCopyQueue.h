@@ -40,6 +40,11 @@ namespace FE::Graphics::Vulkan
             festd::inline_vector<VmaVirtualAllocation> m_stagingAllocations;
         };
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         void ThreadProc();
         bool FinalizeFinishedProcessors(bool wait = false);
         void ProcessCommandList(ProcessingItem* item);

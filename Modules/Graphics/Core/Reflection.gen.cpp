@@ -164,7 +164,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_0ed571f458c940d9aa58c70450fb0e6a([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<ComputePipeline>)
             {
@@ -282,7 +282,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_1182bf4588b64763a120bc823919d74d([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<Viewport>)
             {
@@ -484,17 +484,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_2249e0297abd4eee9d1dc59570fd27ef([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Buffer>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Buffer>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -582,17 +574,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_23d426e633224cb29800deba7c3deac0([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Device>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Device>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -682,17 +666,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_261c8b489a5f481ab31caa7d48bc0e33([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<FrameGraphContext>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<FrameGraphContext>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -784,17 +760,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_2c1855f0034b47b7869af9512903212f([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<AsyncCopyQueue>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<AsyncCopyQueue>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -892,7 +860,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_32b0d24a62eb47d5869d897424fd3439([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<ResourcePool>)
             {
@@ -1074,7 +1042,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_3830a6268eee4ffe8f170195dde01262([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<GraphicsQueue>)
             {
@@ -1184,17 +1152,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_389492dc7ae24b58984c6a1529edfb41([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<ResourcePool>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<ResourcePool>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -1435,7 +1395,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_4247535c3e9742e7a8691dc542afbf25([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<DeviceFactory>)
             {
@@ -1556,7 +1516,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_437e4387bde042da8986fa909d8bfede([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<PipelineFactory>)
             {
@@ -1699,7 +1659,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_4524c98fc97147eba8966c4ea33ca549([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<GraphicsPipeline>)
             {
@@ -1811,17 +1771,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_490b70ff2ce34b168466b64997ac87f5([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Resource>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Resource>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -1973,17 +1925,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_4ebe406cc4d740e5948591c18c8c2527([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<GraphicsPipeline>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<GraphicsPipeline>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -2263,7 +2207,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_585305a006eb4b168ef126faaceb6ab8([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<FrameGraph>)
             {
@@ -2396,17 +2340,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_6190ef25720248e9a4e7c5b123881d58([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Viewport>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Viewport>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -2708,17 +2644,9 @@ namespace FE::Graphics::Common
         }
 
         DI::ResultCode RTTI_Activator_6e88784e191841ac93430e93cf07c3b4([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Buffer>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Buffer>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -2983,7 +2911,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_73a6b2da9bd1421eb27faa09da277f42([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<AsyncCopyQueue>)
             {
@@ -3106,17 +3034,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_768e754cd58b4fdcbc8d893e8a7e0438([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<ComputePipeline>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<ComputePipeline>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -3390,7 +3310,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_7ae4b80275af439eaa48bc72761b7b72([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<Device>)
             {
@@ -3513,17 +3433,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_816f7fb8a3c44d22b8f0a88d8db78f47([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Texture>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Texture>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -3791,17 +3703,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_8d4ec84b525c4a219fbd1c304f3471d2([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<PipelineBase>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<PipelineBase>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -3905,17 +3809,9 @@ namespace FE::Graphics::Common
         }
 
         DI::ResultCode RTTI_Activator_99f7a91361ef4c879b27d06ca99f0d00([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Texture>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Texture>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -4011,7 +3907,7 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_9daf49f94e5d4042b12367200dc60a14([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<ShaderCompilerDXC>)
             {
@@ -4120,17 +4016,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_9ecff14f1d5a4997b6d5735e935a9d64([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<ShaderReflection>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<ShaderReflection>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -4632,17 +4520,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_be44fcfd554049f6aece569be88a8450([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<ShaderLibrary>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<ShaderLibrary>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -4734,17 +4614,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_bfa35db4e1aa491487fbd392b0308b34([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<GraphicsQueue>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<GraphicsQueue>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -5020,17 +4892,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_c6cc0410bb89484a8fd79df99ae3cd31([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<DeviceFactory>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<DeviceFactory>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -5231,17 +5095,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_cd16508a5f3447008d23af217b55ffd1([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<PipelineFactory>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<PipelineFactory>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -5464,17 +5320,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_d815152fa41f45c881abf921f19e8aa3([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<Fence>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Fence>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -5566,7 +5414,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_d88b5624a48e4f199a0ae059375241c8([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<DescriptorManager>)
             {
@@ -5746,7 +5594,7 @@ namespace FE::Graphics::Vulkan
         }
 
         DI::ResultCode RTTI_Activator_e2254cbd679c431087cffa8da780bda1([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<ShaderLibrary>)
             {
@@ -6182,17 +6030,9 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_f3d5e2841dbf40cc97907d97fa69b18d([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<ShaderCompiler>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<ShaderCompiler>();
-                return DI::ResultCode::kSuccess;
-            }
+            return DI::ResultCode::kInvalidOperation;
         }
     } // namespace
 
@@ -6276,7 +6116,7 @@ namespace FE::Graphics::Core
         }
 
         DI::ResultCode RTTI_Activator_fe08f0a840b44c17b1528220dc1bf5f6([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
+                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
             if constexpr (std::is_abstract_v<ShaderSourceCache>)
             {

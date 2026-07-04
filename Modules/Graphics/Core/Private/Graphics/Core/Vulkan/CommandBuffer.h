@@ -64,6 +64,8 @@ namespace FE::Graphics::Vulkan
     private:
         explicit CommandBuffer(Core::Device* device, const CommandBufferDesc& desc);
 
+        void DestroyObject() override;
+
         Memory::LinearAllocator m_linearAllocator;
 
         VkQueue m_nativeQueue = VK_NULL_HANDLE;

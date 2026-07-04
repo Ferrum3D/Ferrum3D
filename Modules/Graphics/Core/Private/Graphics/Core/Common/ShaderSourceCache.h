@@ -11,6 +11,11 @@ namespace FE::Graphics::Core
 
     struct ShaderSourceFile final : public Memory::RefCountedObjectBase
     {
+        ShaderSourceFile(Memory::Pool<ShaderSourceFile>& pool)
+            : m_pool(pool)
+        {
+        }
+
         ~ShaderSourceFile() override;
 
         [[nodiscard]] ShaderStage GetStage() const;
@@ -19,17 +24,17 @@ namespace FE::Graphics::Core
     private:
         friend ShaderSourceCache;
 
+        void DoRelease() override;
+
+        Memory::Pool<ShaderSourceFile>& m_pool;
         ShaderSourceCache* m_sourceCache = nullptr;
-        std::pmr::memory_resource* m_sourceAllocator = nullptr;
         char* m_source = nullptr;
         uint32_t m_sourceSize = 0;
         ShaderStage m_stage = ShaderStage::kUndefined;
     };
 
 
-    struct ShaderSourceCache final
-        : public Memory::RefCountedObjectBase
-        , public IO::IAsyncReadCallback
+    struct ShaderSourceCache final : public Memory::RefCountedObjectBase
     {
         FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
 
@@ -41,8 +46,10 @@ namespace FE::Graphics::Core
 
     private:
         void ReadDirectory(const IO::Path& path);
+        void OnFileLoaded(IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName, char* source,
+                          uint32_t sourceSize);
 
-        void AsyncIOCallback(const IO::AsyncReadResult& result) override;
+        void DoRelease() override;
 
         Memory::Pool<ShaderSourceFile> m_filePool;
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;

@@ -32,6 +32,11 @@ namespace FE::Graphics::Vulkan
         void Drain() override;
 
     private:
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         std::atomic<uint64_t> m_frameIndex = 1;
         Rc<Fence> m_fence;
 

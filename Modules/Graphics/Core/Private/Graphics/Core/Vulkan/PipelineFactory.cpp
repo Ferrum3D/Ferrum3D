@@ -29,9 +29,7 @@ namespace FE::Graphics::Vulkan
 
     PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager, IJobSystem* jobSystem,
                                      Logger* logger)
-        : m_graphicsPipelinePool("Graphics/Core/PipelineFactory/GraphicsPipelinePool", sizeof(GraphicsPipeline))
-        , m_computePipelinePool("Graphics/Core/PipelineFactory/ComputePipelinePool", sizeof(ComputePipeline))
-        , m_jobPool(
+        : m_jobPool(
               "Graphics/Core/PipelineFactory/PipelineAsyncCompilationJobPool",
               Math::Max<uint32_t>(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
         , m_descriptorManager(ImplCast(bindlessManager))
@@ -88,7 +86,7 @@ namespace FE::Graphics::Vulkan
         if (it != m_graphicsPipelinesMap.end())
             return it->second;
 
-        auto* pipeline = DI::New<GraphicsPipeline>(&m_graphicsPipelinePool).value();
+        auto* pipeline = DI::DefaultNew<GraphicsPipeline>().value();
         pipeline->AddRef();
         m_graphicsPipelinesMap[hash] = pipeline;
         lock.unlock();
@@ -124,7 +122,7 @@ namespace FE::Graphics::Vulkan
         if (it != m_computePipelinesMap.end())
             return it->second;
 
-        auto* pipeline = DI::New<ComputePipeline>(&m_computePipelinePool).value();
+        auto* pipeline = DI::DefaultNew<ComputePipeline>().value();
         pipeline->AddRef();
         m_computePipelinesMap[hash] = pipeline;
         lock.unlock();

@@ -9,10 +9,8 @@ namespace FE::Graphics::Vulkan
 {
     inline constexpr uint32_t kMaxInFlightFrames = 2;
 
-    using VulkanObjectPoolType = Memory::LockedMemoryResource<Memory::PoolAllocator, Threading::SpinLock>;
-
 #define FE_DECLARE_VULKAN_OBJECT_POOL(Type)                                                                                      \
-    static ::FE::Graphics::Vulkan::VulkanObjectPoolType G##Type##Pool{ FE_MAKE_STRING(Vulkan##Type##ObjectPool), sizeof(Type) };
+    static ::FE::Memory::SpinLockedPool<Type> G##Type##Pool{ FE_MAKE_STRING(Vulkan##Type##ObjectPool) };
 
     inline VkExtent3D TranslateExtent(const PackedVector3UInt size)
     {
@@ -33,6 +31,7 @@ namespace FE::Graphics::Vulkan
 
     private:
         explicit Semaphore(Core::Device* device, Env::Name name);
+        void DestroyObject() override;
 
         VkSemaphore m_nativeSemaphore = VK_NULL_HANDLE;
     };

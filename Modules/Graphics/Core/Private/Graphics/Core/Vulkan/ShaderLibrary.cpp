@@ -1,6 +1,7 @@
 ﻿#include <Core/IO/IAsyncStreamIO.h>
 #include <Core/Jobs/Job.h>
 #include <Core/Memory/FiberTempAllocator.h>
+#include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
@@ -58,14 +59,13 @@ namespace FE::Graphics::Vulkan
 
         const festd::span byteCode{ shaderModuleCI.pCode,
                                     shaderModuleCI.pCode + Math::CeilDivide(shaderModuleCI.codeSize, sizeof(uint32_t)) };
-        shaderInfo->m_reflection = Rc<ShaderReflection>::New(&m_parent->m_reflectionPool, byteCode);
+        shaderInfo->m_reflection = Memory::DefaultNew<ShaderReflection>(byteCode);
     }
 
 
     ShaderLibrary::ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler, IJobSystem* jobSystem)
         : m_taskPool("Graphics/Core/ShaderLibrary/TaskPool", sizeof(CompilationTask))
         , m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool", sizeof(ShaderInfo))
-        , m_reflectionPool("Graphics/Core/ShaderLibrary/ShaderReflectionPool", sizeof(ShaderReflection))
         , m_shaderCompiler(shaderCompiler)
         , m_jobSystem(jobSystem)
     {

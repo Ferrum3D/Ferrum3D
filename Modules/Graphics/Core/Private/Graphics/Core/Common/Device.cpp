@@ -38,7 +38,7 @@ namespace FE::Graphics::Common
         for (const PendingDisposer& disposer : m_disposeQueue)
         {
             // Don't use a range-based for loop here, since more objects can be added while we are iterating
-            disposer.m_object->DoDispose();
+            disposer.m_object->DestroyObject();
             m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.m_object));
         }
         for (festd::intrusive_list_node& resourceNode : m_resourceList)
@@ -105,7 +105,7 @@ namespace FE::Graphics::Common
         }
 
         for (Core::DeviceObject* object : objectsToDispose)
-            object->DoDispose();
+            object->DestroyObject();
     }
 
 
@@ -129,7 +129,7 @@ namespace FE::Graphics::Common
                 break;
 
             for (Core::DeviceObject* object : objectsToDispose)
-                object->DoDispose();
+                object->DestroyObject();
         }
     }
 

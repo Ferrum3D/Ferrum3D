@@ -79,8 +79,9 @@ namespace FE::Platform
 
             auto* buffer = FE_StackAllocBytes(std::byte, structureLength);
 
-            result = GetLogicalProcessorInformationEx(
-                RelationAll, reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer), &structureLength);
+            result = GetLogicalProcessorInformationEx(RelationAll,
+                                                      reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer),
+                                                      &structureLength);
             FE_Assert(result);
 
             for (const std::byte* ptr = buffer; ptr < buffer + structureLength;)
@@ -114,9 +115,6 @@ namespace FE::Platform
                 ptr += info->Size;
             }
         }
-
-
-        char GMessageTempMemory[1024];
     } // namespace
 
 
@@ -142,7 +140,7 @@ namespace FE::Platform
 
     void FatalInitError(const char* message)
     {
-        Memory::FixedBlockAllocator allocator{ GMessageTempMemory, sizeof(GMessageTempMemory) };
+        Memory::StackTempAllocator<1024> allocator;
         const Str::Utf8ToUtf16 messageUtf16{ message, &allocator };
         MessageBoxW(nullptr, messageUtf16.ToWideString(), L"App initialization error", MB_OK | MB_ICONERROR);
         FE_DebugBreak();

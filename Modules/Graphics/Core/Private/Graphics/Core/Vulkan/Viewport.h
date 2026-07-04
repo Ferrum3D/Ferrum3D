@@ -38,6 +38,11 @@ namespace FE::Graphics::Vulkan
         void ReleaseResources();
         void RecreateSwapchain();
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         Core::ViewportDesc m_desc;
         Core::Format m_rtvFormat = Core::Format::kUndefined;
 

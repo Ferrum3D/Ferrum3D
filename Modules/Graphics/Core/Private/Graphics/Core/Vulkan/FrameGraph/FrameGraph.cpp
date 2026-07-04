@@ -27,7 +27,7 @@ namespace FE::Graphics::Vulkan
         auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
         CommandBuffer* commandBuffer = commandQueue->GetCurrentCommandBuffer();
 
-        FrameGraphContext* context = Rc<FrameGraphContext>::New(&m_linearAllocator, m_device, this, m_descriptorManager);
+        auto* context = Memory::DefaultNew<FrameGraphContext>(m_device, this, m_descriptorManager);
         context->Init(commandBuffer);
         m_currentContext = context;
     }

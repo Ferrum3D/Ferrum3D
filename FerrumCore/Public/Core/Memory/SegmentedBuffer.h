@@ -20,20 +20,54 @@ namespace FE::Memory
 
         void Free()
         {
-            for (uint32_t i = 0; i < m_segmentCount; ++i)
-                m_allocator->deallocate(m_segments[i], m_segments[i]->m_capacity);
-            m_allocator->deallocate(static_cast<void*>(m_segments), m_segmentCount * sizeof(Segment*));
+            if (m_segments != nullptr)
+            {
+                const bool isSmallTable = m_segments == &m_segments[0]->m_smallTable;
+                for (uint32_t i = 0; i < m_segmentCount; ++i)
+                    m_allocator->deallocate(m_segments[i], m_segments[i]->m_capacity);
+
+                if (!isSmallTable)
+                    m_allocator->deallocate(static_cast<void*>(m_segments), m_segmentCount * sizeof(Segment*));
+            }
 
             Init();
         }
 
         struct alignas(kDefaultAlignment) Segment final
         {
-            uint32_t m_size = 0;     //!< The number of bytes written to this segment.
-            uint32_t m_capacity = 0; //!< The number of bytes allocated for this segment including the header.
+            uint32_t m_size = 0;             //!< The number of bytes written to this segment.
+            uint32_t m_capacity = 0;         //!< The number of bytes allocated for this segment including the header.
+            Segment* m_smallTable = nullptr; //!< Segment table for single-segment buffers.
         };
 
         static_assert(sizeof(Segment) == kDefaultAlignment);
+
+        static SegmentedBuffer Create(std::pmr::memory_resource* allocator, const festd::span<Segment*> segments)
+        {
+            SegmentedBuffer buffer;
+            buffer.m_allocator = allocator;
+            buffer.m_segmentCount = segments.size();
+            if (segments.empty())
+            {
+                buffer.m_segments = nullptr;
+            }
+            else if (segments.size() == 1)
+            {
+                auto** segmentTable = &segments[0]->m_smallTable;
+                segmentTable[0] = segments[0];
+                buffer.m_segments = segmentTable;
+            }
+            else
+            {
+                auto** segmentTable = Memory::AllocateArray<Segment*>(allocator, segments.size());
+                memcpy(static_cast<void*>(segmentTable),
+                       static_cast<const void*>(segments.data()),
+                       segments.size() * sizeof(Segment*));
+                buffer.m_segments = segmentTable;
+            }
+
+            return buffer;
+        }
 
         std::pmr::memory_resource* m_allocator;
         Segment** m_segments;
@@ -75,18 +109,10 @@ namespace FE::Memory
 
         SegmentedBuffer Build()
         {
-            auto** segments = static_cast<SegmentedBuffer::Segment**>(
-                m_buffer.m_allocator->allocate(m_segments.size() * sizeof(SegmentedBuffer::Segment*)));
-            memcpy(static_cast<void*>(segments),
-                   static_cast<const void*>(m_segments.data()),
-                   m_segments.size() * sizeof(SegmentedBuffer::Segment*));
-            m_buffer.m_segments = segments;
-            m_buffer.m_segmentCount = m_segments.size();
-
-            const SegmentedBuffer result = m_buffer;
-            m_buffer.Init();
+            const SegmentedBuffer buffer = SegmentedBuffer::Create(m_buffer.m_allocator, m_segments);
             m_segments.clear();
-            return result;
+            m_buffer.Init();
+            return buffer;
         }
 
     private:
@@ -144,20 +170,34 @@ namespace FE::Memory
             return nullptr;
         }
 
+        SegmentedBuffer ShrinkAndBuild(std::pmr::memory_resource* allocator = nullptr)
+        {
+            if (!m_segments.empty())
+                return Build();
+
+            if (allocator == nullptr)
+                allocator = m_buffer.m_allocator;
+
+            FE_Assert(m_segments.size() == 1);
+            auto* oldSegment = m_segments.front();
+            const uint32_t newCapacity = oldSegment->m_size + sizeof(SegmentedBuffer::Segment);
+            auto* newSegment = new (allocator->allocate(newCapacity)) SegmentedBuffer::Segment;
+            memcpy(newSegment, oldSegment, newCapacity);
+            newSegment->m_capacity = newCapacity;
+            m_buffer.m_allocator->deallocate(oldSegment, oldSegment->m_capacity);
+
+            m_segments[0] = newSegment;
+            m_buffer.m_allocator = allocator;
+            return Build();
+        }
+
         SegmentedBuffer Build()
         {
-            auto** segments = Memory::AllocateArray<SegmentedBuffer::Segment*>(m_buffer.m_allocator, m_segments.size());
-            memcpy(static_cast<void*>(segments),
-                   static_cast<const void*>(m_segments.data()),
-                   m_segments.size() * sizeof(SegmentedBuffer::Segment*));
-            m_buffer.m_segments = segments;
-            m_buffer.m_segmentCount = m_segments.size();
-
-            const SegmentedBuffer result = m_buffer;
-            m_buffer.Init();
+            const SegmentedBuffer buffer = SegmentedBuffer::Create(m_buffer.m_allocator, m_segments);
             m_segments.clear();
+            m_buffer.Init();
             m_segmentCapacity = 0;
-            return result;
+            return buffer;
         }
 
     private:

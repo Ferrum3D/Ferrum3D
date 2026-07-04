@@ -25,13 +25,7 @@ namespace FE::Graphics::Core
     private:
         friend Common::Device;
 
-        void DoDispose()
-        {
-            std::pmr::memory_resource* pAllocator = GetObjectAllocator();
-            const size_t allocationSize = GetObjectAllocationSize();
-            this->~DeviceObject();
-            pAllocator->deallocate(this, allocationSize);
-        }
+        virtual void DestroyObject() = 0;
 
     protected:
         Device* m_device = nullptr;
@@ -43,7 +37,7 @@ namespace FE::Graphics::Core
         {
             if (m_destroyedImmediately)
             {
-                DoDispose();
+                DestroyObject();
                 return;
             }
 

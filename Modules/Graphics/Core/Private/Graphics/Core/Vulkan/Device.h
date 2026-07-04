@@ -151,6 +151,11 @@ namespace FE::Graphics::Vulkan
         void WaitIdle() override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         VkDevice m_nativeDevice = VK_NULL_HANDLE;
         VkPhysicalDevice m_nativeAdapter = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties m_adapterProperties{};

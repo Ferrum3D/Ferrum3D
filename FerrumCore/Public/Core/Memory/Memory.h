@@ -138,7 +138,7 @@ namespace FE
         using SpinLockedMemoryResource = LockedMemoryResource<TBase, Threading::SpinLock>;
 
 
-        struct FixedBlockAllocator final : public std::pmr::memory_resource
+        struct FixedBlockAllocator : public std::pmr::memory_resource
         {
             FixedBlockAllocator(void* memory, const size_t size)
                 : m_begin(static_cast<std::byte*>(memory))
@@ -167,6 +167,25 @@ namespace FE
             {
                 return this == &other;
             }
+        };
+
+
+        template<uint32_t TBufferSize>
+        struct StackTempAllocator : public FixedBlockAllocator
+        {
+            StackTempAllocator()
+                : FixedBlockAllocator(m_buffer, TBufferSize)
+            {
+                memset(m_buffer, 0xdf, TBufferSize);
+            }
+
+            [[nodiscard]] constexpr uint32_t Size() const
+            {
+                return TBufferSize;
+            }
+
+        private:
+            std::byte m_buffer[TBufferSize];
         };
 
 

@@ -31,6 +31,11 @@ namespace FE::Graphics::Vulkan
 
         void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
 
+        void DestroyObject() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         DescriptorManager* m_descriptorManager;
         Rc<CommandBuffer> m_graphicsCommandBuffer;
     };

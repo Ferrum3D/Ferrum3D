@@ -55,7 +55,7 @@ namespace FE::IO
             AsyncReadCommandType m_type = AsyncReadCommandType::kInvokeFunctor;
             uint32_t m_functorSize = 0;
             uint32_t m_functorAlignment = 0;
-            void (*m_functor)(void* context) = nullptr;
+            void (*m_functor)(void* context, IAsyncController* controller) = nullptr;
             void* m_context = nullptr;
         };
 
@@ -97,8 +97,8 @@ namespace FE::IO
 
         void* Allocate(size_t bytes, size_t alignment = Memory::kDefaultAlignment);
         void SetSource(const ResolvedDataSource& source);
-        void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset = 0);
-        void Read(std::byte* destination, size_t destinationSize, size_t sourceOffset, size_t compressedSize,
+        void Read(void* destination, size_t destinationSize, size_t sourceOffset = 0);
+        void Read(void* destination, size_t destinationSize, size_t sourceOffset, size_t compressedSize,
                   Compression::Method compressionMethod);
 
         template<class TFunctor>
@@ -113,13 +113,17 @@ namespace FE::IO
             command.m_type = AsyncReadCommandType::kInvokeFunctor;
             command.m_functorSize = sizeof(TFunctor);
             command.m_functorAlignment = alignof(TFunctor);
-            command.m_functor = [](void* context) {
+            command.m_functor = [](void* context, [[maybe_unused]] IAsyncController* controller) {
 #if FE_DEVELOPMENT
                 HighResolutionTimer timer;
                 timer.Start();
 #endif
 
-                (*static_cast<TFunctor*>(context))();
+                if constexpr (std::is_invocable_v<TFunctor, IAsyncController*>)
+                    (*static_cast<TFunctor*>(context))(controller);
+                else
+                    (*static_cast<TFunctor*>(context))();
+
                 static_cast<TFunctor*>(context)->~TFunctor();
 
 #if FE_DEVELOPMENT
@@ -142,6 +146,7 @@ namespace FE::IO
         }
 
         AsyncReadCommandList Build(WaitGroup* signalWaitGroup = nullptr);
+        AsyncReadCommandList ShrinkAndBuild(std::pmr::memory_resource* allocator = nullptr, WaitGroup* signalWaitGroup = nullptr);
 
     private:
         bool m_completionCallbackSet = false;

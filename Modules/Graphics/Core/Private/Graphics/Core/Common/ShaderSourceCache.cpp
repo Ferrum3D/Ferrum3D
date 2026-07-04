@@ -6,10 +6,14 @@ namespace FE::Graphics::Core
 {
     ShaderSourceFile::~ShaderSourceFile()
     {
-        if (m_source)
-            m_sourceAllocator->deallocate(m_source, m_sourceSize);
-
+        Memory::DefaultFree(m_source);
         m_source = nullptr;
+    }
+
+
+    void ShaderSourceFile::DoRelease()
+    {
+        m_pool.Delete(this);
     }
 
 
@@ -45,16 +49,29 @@ namespace FE::Graphics::Core
                 const Env::Name shaderName{ shaderNameView };
                 m_loadingTasksCount.fetch_add(1, std::memory_order_release);
 
-                IO::AsyncReadRequest request;
-                request.m_callback = this;
-                request.m_path = entry.m_path;
-                request.m_userData0 = shaderName.GetHandle();
-                request.m_overallocateBytes = 1;
-                m_asyncIO->ReadAsync(request);
+                const auto sourceSize = static_cast<uint32_t>(entry.m_stats.m_byteSize);
+                char* source = Memory::DefaultAllocateArray<char>(sourceSize + 1);
+                source[sourceSize] = 0;
+
+                Memory::StackTempAllocator<256> temp;
+                IO::AsyncReadCommandListBuilder builder{ &temp, temp.Size() };
+                builder.SetSource({ .m_filePath = entry.m_path, .m_byteOffset = 0, .m_byteSize = sourceSize });
+                builder.Read(source, sourceSize);
+                builder.InvokeOnCompletion(
+                    [this, shaderName, source, sourceSize, fullPath = IO::Path(entry.m_path)](IO::IAsyncController* controller) {
+                        OnFileLoaded(controller, fullPath, shaderName, source, sourceSize);
+                    });
+                m_asyncIO->ExecuteCommandList(builder.ShrinkAndBuild(std::pmr::get_default_resource()));
             }
 
             return true;
         });
+    }
+
+
+    void ShaderSourceCache::DoRelease()
+    {
+        Memory::DefaultDelete(this);
     }
 
 
@@ -74,19 +91,20 @@ namespace FE::Graphics::Core
     }
 
 
-    void ShaderSourceCache::AsyncIOCallback(const IO::AsyncReadResult& result)
+    void ShaderSourceCache::OnFileLoaded(IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName,
+                                         char* source, uint32_t sourceSize)
     {
         FE_PROFILER_ZONE();
 
-        auto deferFree = festd::defer([&result, this] {
-            result.FreeData();
+        auto deferFree = festd::defer([source, this] {
+            Memory::DefaultFree(source);
             m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
         });
 
-        switch (result.m_controller->GetStatus())
+        switch (controller->GetStatus())
         {
         case IO::AsyncOperationStatus::kFailed:
-            m_logger->LogError("Failed to read shader file: {}", result.m_request->m_path);
+            m_logger->LogError("Failed to read shader file: {}", fullPath);
             [[fallthrough]];
 
         case IO::AsyncOperationStatus::kCanceled:
@@ -100,29 +118,26 @@ namespace FE::Graphics::Core
             break;
         }
 
-        const IO::PathView pathView{ result.m_request->m_path };
+        const IO::PathView pathView{ fullPath };
         const ShaderStage stage = GetShaderStageFromName(pathView.stem());
 
         if (pathView.extension() != ".hlsli" && pathView.extension() != ".h")
         {
             if (stage == ShaderStage::kUndefined)
             {
-                m_logger->LogError("Couldn't determine shader stage: {}", result.m_request->m_path);
+                m_logger->LogError("Couldn't determine shader stage: {}", fullPath);
                 return;
             }
         }
 
         deferFree.dismiss();
 
-        const Rc file = Rc<ShaderSourceFile>::New(m_filePool.GetAllocator());
+        const Rc file = m_filePool.New(m_filePool);
         file->m_sourceCache = this;
-        file->m_source = reinterpret_cast<char*>(result.m_request->m_readBuffer);
-        file->m_sourceSize = result.m_request->m_readBufferSize;
-        file->m_sourceAllocator = result.m_request->m_allocator;
+        file->m_source = source;
+        file->m_sourceSize = sourceSize;
         file->m_stage = stage;
         file->m_source[file->m_sourceSize] = '\0';
-
-        const auto shaderName = Env::Name::CreateFromHandle(static_cast<uint32_t>(result.m_request->m_userData0));
 
         const festd::string_view shaderNameStrView{ shaderName };
 

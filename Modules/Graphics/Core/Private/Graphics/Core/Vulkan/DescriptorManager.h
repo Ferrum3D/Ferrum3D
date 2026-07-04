@@ -36,6 +36,11 @@ namespace FE::Graphics::Vulkan
             uint64_t m_fenceValue = 0;
         };
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         VkDescriptorSet AllocateDescriptorSet() const;
 
         Device* m_device = nullptr;

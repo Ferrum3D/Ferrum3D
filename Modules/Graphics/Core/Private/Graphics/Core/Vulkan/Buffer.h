@@ -37,6 +37,7 @@ namespace FE::Graphics::Vulkan
 
     private:
         explicit Buffer(Core::Device* device, Env::Name name, Core::BufferDesc desc);
+        void DestroyObject() override;
 
         void UpdateDebugNames() const;
     };

@@ -32,6 +32,7 @@ namespace FE::Graphics::Vulkan
         friend Viewport;
 
         explicit Texture(Core::Device* device, Env::Name name, const Core::TextureDesc& desc);
+        void DestroyObject() override;
 
         void InitWholeImageView();
         void UpdateDebugNames();

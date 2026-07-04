@@ -26,8 +26,12 @@ namespace FE::Graphics::Vulkan
         festd::inline_vector<Core::ShaderRootConstant> m_rootConstants;
         festd::inline_vector<Env::Name> m_specializationConstantNames;
 
-        void ParseInputAttributes(const spirv_cross::CompilerHLSL* compiler,
-                                  const spirv_cross::ShaderResources& shaderResources);
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
+        void ParseInputAttributes(const spirv_cross::CompilerHLSL* compiler, const spirv_cross::ShaderResources& shaderResources);
         void ParseResourceBindings(const spirv_cross::CompilerHLSL* compiler,
                                    const spirv_cross::ShaderResources& shaderResources);
         void ParseSpecializationConstants(const spirv_cross::CompilerHLSL* compiler);

@@ -21,9 +21,8 @@ namespace FE::Graphics::Vulkan
 
     CommandBuffer* CommandBuffer::Create(Core::Device* device, const CommandBufferDesc& desc)
     {
-        return Rc<CommandBuffer>::Allocate(&GCommandBufferPool, [device, &desc](void* memory) {
-            return new (memory) CommandBuffer(device, desc);
-        });
+        FE_PROFILER_ZONE();
+        return new (GCommandBufferPool.AllocateMemory()) CommandBuffer(device, desc);
     }
 
 
@@ -149,5 +148,11 @@ namespace FE::Graphics::Vulkan
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocateInfo.commandBufferCount = 1;
         VerifyVk(vkAllocateCommandBuffers(NativeCast(device), &allocateInfo, &m_nativeCommandBuffer));
+    }
+
+
+    void CommandBuffer::DestroyObject()
+    {
+        GCommandBufferPool.Delete(this);
     }
 } // namespace FE::Graphics::Vulkan

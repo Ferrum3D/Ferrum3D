@@ -23,6 +23,7 @@ namespace FE::Graphics::Vulkan
 
     private:
         explicit Fence(Core::Device* device, uint64_t initialValue);
+        void DestroyObject() override;
 
         VkSemaphore m_timelineSemaphore = VK_NULL_HANDLE;
     };
