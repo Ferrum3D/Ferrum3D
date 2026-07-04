@@ -55,7 +55,12 @@ namespace FE::IO
                 if (overlapped)
                 {
                     auto* read = CONTAINING_RECORD(overlapped, NativeReadRequest, m_overlapped);
-                    if (!success)
+                    if (success)
+                    {
+                        read->m_completion.m_result = ResultCode::kSuccess;
+                        read->m_completion.m_bytesRead = bytes;
+                    }
+                    else
                     {
                         const DWORD error = GetLastError();
                         read->m_completion.m_result = ConvertWin32OverlappedIOError(error);
@@ -119,6 +124,7 @@ namespace FE::IO
             FE_AssertDebug(m_readRequests.size() == m_freeRequests.size());
 
             requestIndex = m_freeRequests.find_first();
+            m_freeRequests.reset(requestIndex);
         }
 
         auto& readRequest = m_readRequests[requestIndex];
@@ -181,6 +187,7 @@ namespace FE::IO
             while (requestList)
             {
                 m_finishedReads.push_back(requestList);
+                FE_AssertDebug(requestList != static_cast<NativeReadRequest*>(requestList->m_next));
                 requestList = static_cast<NativeReadRequest*>(requestList->m_next);
             }
         }
@@ -201,8 +208,6 @@ namespace FE::IO
         NativeReadRequest& read = m_readRequests[handle.m_value];
         if (read.m_file != INVALID_HANDLE_VALUE)
             CancelIoEx(read.m_file, &read.m_overlapped);
-
-        m_finishedReadsQueue.Enqueue(&read);
     }
 
 

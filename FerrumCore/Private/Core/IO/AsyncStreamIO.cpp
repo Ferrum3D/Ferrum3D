@@ -549,7 +549,7 @@ namespace FE::IO
 
         m_queueEvent = Threading::Event::CreateAutoReset();
 
-#if FE_PLATFORM_WINDOWS && 0
+#if FE_PLATFORM_WINDOWS
         m_backend = Rc<OverlappedAsyncIOBackend>::DefaultNew(m_queueEvent);
 #else
         m_backend = Rc<DefaultAsyncIOBackend>::DefaultNew();
