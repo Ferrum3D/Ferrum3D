@@ -43,6 +43,8 @@ namespace FE::Compression
 
         void* AllocateDeflateCompressor(const int32_t level)
         {
+            FE_PROFILER_ZONE();
+
             FE_Assert(level >= 1 && level <= kDeflateMaxLevel);
 
             std::unique_lock lock{ GCompressionState->m_lock };
@@ -58,6 +60,8 @@ namespace FE::Compression
 
         void* AllocateZstdCompressor(const int32_t level)
         {
+            FE_PROFILER_ZONE();
+
             FE_Assert(level >= 1 && level <= kZstdMaxLevel);
 
             std::unique_lock lock{ GCompressionState->m_lock };
@@ -73,6 +77,8 @@ namespace FE::Compression
 
         void* AllocateDeflateDecompressor()
         {
+            FE_PROFILER_ZONE();
+
             std::unique_lock lock{ GCompressionState->m_lock };
             auto& cache = GCompressionState->m_deflateDecompressorCache;
             if (cache.empty())
@@ -86,6 +92,8 @@ namespace FE::Compression
 
         void* AllocateZstdDecompressor()
         {
+            FE_PROFILER_ZONE();
+
             std::unique_lock lock{ GCompressionState->m_lock };
             auto& cache = GCompressionState->m_zstdDecompressorCache;
             if (cache.empty())
@@ -214,14 +222,20 @@ namespace FE::Compression
             return { ResultCode::kUnknownError, 0 };
 
         case Method::kNone:
-            if (dstSize < srcSize)
-                return { ResultCode::kInsufficientSpace, 0 };
+            {
+                FE_PROFILER_ZONE_NAMED("Compress None (memcpy)");
 
-            memcpy(dst, src, srcSize);
-            return { ResultCode::kSuccess, srcSize };
+                if (dstSize < srcSize)
+                    return { ResultCode::kInsufficientSpace, 0 };
+
+                memcpy(dst, src, srcSize);
+                return { ResultCode::kSuccess, srcSize };
+            }
 
         case Method::kDeflate:
             {
+                FE_PROFILER_ZONE_NAMED("Compress Deflate");
+
                 const size_t compressedSize =
                     libdeflate_deflate_compress(CastDeflateCompressor(m_impl), src, srcSize, dst, dstSize);
                 if (compressedSize == 0)
@@ -232,6 +246,8 @@ namespace FE::Compression
 
         case Method::kZstd:
             {
+                FE_PROFILER_ZONE_NAMED("Compress Zstd");
+
                 const size_t compressedSize = ZSTD_compressCCtx(CastZstdCompressor(m_impl), dst, dstSize, src, srcSize, m_level);
                 if (ZSTD_isError(compressedSize))
                 {
@@ -308,14 +324,20 @@ namespace FE::Compression
             return { ResultCode::kUnknownError, 0 };
 
         case Method::kNone:
-            if (dstSize < srcSize)
-                return { ResultCode::kInsufficientSpace, 0 };
+            {
+                FE_PROFILER_ZONE_NAMED("Decompress None (memcpy)");
 
-            memcpy(dst, src, srcSize);
-            return { ResultCode::kSuccess, srcSize };
+                if (dstSize < srcSize)
+                    return { ResultCode::kInsufficientSpace, 0 };
+
+                memcpy(dst, src, srcSize);
+                return { ResultCode::kSuccess, srcSize };
+            }
 
         case Method::kDeflate:
             {
+                FE_PROFILER_ZONE_NAMED("Decompress Deflate");
+
                 size_t decompressedSize;
                 const libdeflate_result result =
                     libdeflate_deflate_decompress(CastDeflateDecompressor(m_impl), src, srcSize, dst, dstSize, &decompressedSize);
@@ -334,6 +356,8 @@ namespace FE::Compression
 
         case Method::kZstd:
             {
+                FE_PROFILER_ZONE_NAMED("Decompress Zstd");
+
                 const size_t decompressedSize = ZSTD_decompressDCtx(CastZstdDecompressor(m_impl), dst, dstSize, src, srcSize);
                 if (ZSTD_isError(decompressedSize))
                 {

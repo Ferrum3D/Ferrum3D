@@ -1,5 +1,4 @@
 #include <Core/Cli/CommandLine.h>
-
 #include <Core/Strings/Encoding.h>
 #include <Core/Strings/Format.h>
 
@@ -13,8 +12,9 @@ namespace FE::Cli
             for (const Rtti::Attribute& attribute : attributes)
             {
                 if (attribute.m_key == key)
-                    return festd::string_view{ attribute.m_value };
+                    return attribute.m_value;
             }
+
             return {};
         }
 
@@ -29,6 +29,7 @@ namespace FE::Cli
                 if (typeID == baseType)
                     return true;
             }
+
             return false;
         }
 
@@ -60,7 +61,7 @@ namespace FE::Cli
             if (!explicitName.empty())
                 result.append(explicitName);
             else
-                AppendInferredName(result, festd::string_view{ type.m_name }, false);
+                AppendInferredName(result, type.m_name, false);
         }
 
 
@@ -70,7 +71,7 @@ namespace FE::Cli
             if (!explicitName.empty())
                 result.append(explicitName);
             else
-                AppendInferredName(result, festd::string_view{ field.m_name }, true);
+                AppendInferredName(result, field.m_name, true);
         }
 
 
@@ -88,7 +89,8 @@ namespace FE::Cli
                     inferred += '-';
                 inferred += ASCII::ToLower(value);
             }
-            return festd::string_view{ inferred } == name;
+
+            return inferred == name;
         }
 
 
@@ -115,15 +117,15 @@ namespace FE::Cli
                     inferred += ASCII::ToLower(value);
                 }
             }
-            return festd::string_view{ inferred } == name;
+
+            return inferred == name;
         }
 
 
         [[nodiscard]] bool HasParent(const Rtti::Type& type, const Rtti::Type& parent)
         {
             const festd::string_view parentName = GetAttribute(type.m_attributes, "Cli::Parent");
-            return parentName == festd::string_view{ parent.m_name }
-            || parentName == festd::string_view{ parent.m_qualifiedName };
+            return parentName == parent.m_name || parentName == parent.m_qualifiedName;
         }
 
 
@@ -140,11 +142,13 @@ namespace FE::Cli
             const Rtti::Type* result = nullptr;
             for (const Rtti::Type& candidate : Rtti::TypeRegistry::GetTypes())
             {
-                if (festd::string_view{ candidate.m_name } != parentName)
+                if (candidate.m_name != parentName)
                     continue;
+
                 FE_Assert(result == nullptr, "Ambiguous Cli::Parent type name");
                 result = &candidate;
             }
+
             return result;
         }
 
@@ -160,6 +164,7 @@ namespace FE::Cli
                 FE_Assert(result == nullptr, "Duplicate CLI subcommand name");
                 result = &type;
             }
+
             return result;
         }
     } // namespace
@@ -188,15 +193,13 @@ namespace FE::Cli
                 if (!m_parser->m_error.empty())
                     return;
 
-                char* storage = Memory::AllocateArray<char>(m_allocator, error.size());
-                memcpy(storage, error.data(), error.size());
-                m_parser->m_error = festd::string_view{ storage, error.size() };
+                m_parser->m_error = Str::Duplicate(error, m_allocator);
             }
 
             void SetUnexpectedArgumentError(const festd::string_view argument)
             {
                 const festd::fixed_string error = Fmt::FixedFormat("Unexpected argument '{}'", argument);
-                SetError(festd::string_view{ error });
+                SetError(error);
             }
 
             [[nodiscard]] const Rtti::FieldInfo* FindOption(const festd::string_view name) const
@@ -213,6 +216,7 @@ namespace FE::Cli
                     FE_Assert(result == nullptr, "Duplicate CLI option name");
                     result = &field;
                 }
+
                 return result;
             }
 
@@ -236,7 +240,7 @@ namespace FE::Cli
                 if (field == nullptr)
                 {
                     const festd::fixed_string error = Fmt::FixedFormat("Unknown option '--{}'", name);
-                    SetError(festd::string_view{ error });
+                    SetError(error);
                     return false;
                 }
 
@@ -249,19 +253,20 @@ namespace FE::Cli
                         return false;
                     }
 
-                    Flag value = field->Get<Flag>(m_currentCommand);
+                    auto value = field->Get<Flag>(m_currentCommand);
                     if (value.m_value)
                     {
                         const festd::fixed_string error = Fmt::FixedFormat("Option '--{}' was specified more than once", name);
                         SetError(festd::string_view{ error });
                         return false;
                     }
+
                     value.m_value = true;
                     field->Set(m_currentCommand, value);
                     return true;
                 }
 
-                Option value = field->Get<Option>(m_currentCommand);
+                auto value = field->Get<Option>(m_currentCommand);
                 if (value.m_hasValue)
                 {
                     const festd::fixed_string error = Fmt::FixedFormat("Option '--{}' was specified more than once", name);
@@ -281,6 +286,7 @@ namespace FE::Cli
                         SetError(festd::string_view{ error });
                         return false;
                     }
+
                     value.m_value = m_commandLine[++m_argumentIndex];
                 }
 
@@ -425,6 +431,7 @@ namespace FE::Cli
                     result.append(valueName.empty() ? festd::string_view{ "value" } : valueName);
                     result += '>';
                 }
+
                 const uint32_t nameSize = result.size() - nameBegin;
                 result.append(nameSize < 18 ? 18 - nameSize : 1, ' ');
                 result.append(GetAttribute(field.m_attributes, "Cli::Description"));

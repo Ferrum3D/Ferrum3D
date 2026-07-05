@@ -97,33 +97,6 @@ namespace FE
             }
         }
 
-        template<class T>
-        [[nodiscard]] static ByteBuffer MoveFromVector(festd::vector<T>&& data) noexcept
-        {
-            festd::vector<T> temp = std::move(data);
-
-            ByteBuffer result;
-            result.m_begin = reinterpret_cast<std::byte*>(temp.begin());
-            result.m_end = reinterpret_cast<std::byte*>(temp.end());
-            temp.reset_lose_memory();
-            return result;
-        }
-
-        template<class T>
-        [[nodiscard]] static ByteBuffer CopyFromSpan(festd::span<T> data) noexcept
-        {
-            ByteBuffer result(data.size_bytes());
-            memcpy(result.m_begin, data.data(), data.size_bytes());
-            return result;
-        }
-
-        [[nodiscard]] static ByteBuffer CopyFromString(const festd::string_view data) noexcept
-        {
-            ByteBuffer result(data.size());
-            memcpy(result.m_begin, data.data(), data.size());
-            return result;
-        }
-
         [[nodiscard]] std::byte* data()
         {
             return m_begin;

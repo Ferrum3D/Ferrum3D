@@ -108,6 +108,11 @@ namespace
             return nullptr;
         }
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
 
         Core::DeviceFactory* m_factory = nullptr;
