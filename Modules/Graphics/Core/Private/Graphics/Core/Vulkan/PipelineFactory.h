@@ -14,7 +14,7 @@ namespace FE::Graphics::Vulkan
 
     struct PipelineFactory final : Core::PipelineFactory
     {
-        PipelineFactory(Core::Device* device, Core::DescriptorManager* descriptorManager, IJobSystem* jobSystem, Logger* logger);
+        PipelineFactory(Core::Device* device, Core::DescriptorManager* descriptorManager, IJobSystem* jobSystem);
         ~PipelineFactory() override;
 
         FE_RTTI("437E4387-BDE0-42DA-8986-FA909D8BFEDE");
@@ -36,7 +36,6 @@ namespace FE::Graphics::Vulkan
         Memory::SpinLockedPoolAllocator m_jobPool;
         DescriptorManager* m_descriptorManager = nullptr;
         IJobSystem* m_jobSystem = nullptr;
-        Logger* m_logger = nullptr;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
         festd::unordered_dense_map<uint64_t, GraphicsPipeline*> m_graphicsPipelinesMap;
         festd::unordered_dense_map<uint64_t, ComputePipeline*> m_computePipelinesMap;

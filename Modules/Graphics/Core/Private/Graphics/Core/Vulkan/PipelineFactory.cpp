@@ -27,14 +27,12 @@ namespace FE::Graphics::Vulkan
     };
 
 
-    PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager, IJobSystem* jobSystem,
-                                     Logger* logger)
+    PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager, IJobSystem* jobSystem)
         : m_jobPool(
               "Graphics/Core/PipelineFactory/PipelineAsyncCompilationJobPool",
               Math::Max<uint32_t>(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
         , m_descriptorManager(ImplCast(bindlessManager))
         , m_jobSystem(jobSystem)
-        , m_logger(logger)
     {
         FE_PROFILER_ZONE();
 
@@ -103,7 +101,6 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_desc = request.m_desc;
         job->m_context.m_pipelineCache = m_pipelineCache;
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
-        job->m_context.m_logger = m_logger;
         job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
         job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
@@ -139,7 +136,6 @@ namespace FE::Graphics::Vulkan
         job->m_context.m_desc = request.m_desc;
         job->m_context.m_pipelineCache = m_pipelineCache;
         job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
-        job->m_context.m_logger = m_logger;
         job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
         job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());

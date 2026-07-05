@@ -16,7 +16,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("4247535C-3E97-42E7-A869-1DC542AFBF25");
 
-        DeviceFactory(Env::Configuration* config, Logger* logger);
+        DeviceFactory(Env::Configuration* config);
         ~DeviceFactory() override;
 
         [[nodiscard]] VkInstance GetNative() const
@@ -41,7 +41,6 @@ namespace FE::Graphics::Vulkan
 
         festd::inline_vector<Core::AdapterInfo> m_adapters;
         festd::inline_vector<VkPhysicalDevice> m_nativeAdapters;
-        Rc<Logger> m_logger;
     };
 
     FE_ENABLE_NATIVE_CAST(DeviceFactory);

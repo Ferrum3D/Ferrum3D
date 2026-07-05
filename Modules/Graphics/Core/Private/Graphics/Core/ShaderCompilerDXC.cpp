@@ -69,9 +69,8 @@ namespace FE::Graphics::Core
 
         struct DxcIncludeHandler final : public IDxcIncludeHandler
         {
-            explicit DxcIncludeHandler(IDxcUtils* dxcUtils, ShaderSourceCache* shaderSourceCache, Logger* logger)
+            explicit DxcIncludeHandler(IDxcUtils* dxcUtils, ShaderSourceCache* shaderSourceCache)
                 : m_dxcUtils(dxcUtils)
-                , m_logger(logger)
                 , m_shaderSourceCache(shaderSourceCache)
             {
             }
@@ -125,16 +124,14 @@ namespace FE::Graphics::Core
 
         private:
             IDxcUtils* m_dxcUtils = nullptr;
-            Logger* m_logger = nullptr;
             ShaderSourceCache* m_shaderSourceCache = nullptr;
             std::atomic<ULONG> m_refCount = 0;
         };
     } // namespace
 
 
-    ShaderCompilerDXC::ShaderCompilerDXC(Logger* logger, IO::IStreamFactory* streamFactory)
-        : m_logger(logger)
-        , m_streamFactory(streamFactory)
+    ShaderCompilerDXC::ShaderCompilerDXC(IO::IStreamFactory* streamFactory)
+        : m_streamFactory(streamFactory)
     {
         FE_PROFILER_ZONE();
 
@@ -150,7 +147,7 @@ namespace FE::Graphics::Core
         FE_Assert(SUCCEEDED(hrCompiler), "Failed to create DXC compiler");
 
         m_shaderSourceCache = DI::DefaultNew<ShaderSourceCache>().value();
-        m_dxcIncludeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get(), logger);
+        m_dxcIncludeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get());
     }
 
 
@@ -162,7 +159,7 @@ namespace FE::Graphics::Core
         if (!sourceResult)
         {
             const festd::string_view resultDesc = IO::GetResultDesc(sourceResult.error());
-            m_logger->LogError("Failed to load shader source file {}: {}", args.m_shaderName, resultDesc);
+            Logger::LogError("Failed to load shader source file {}: {}", args.m_shaderName, resultDesc);
             return {};
         }
 
@@ -219,7 +216,7 @@ namespace FE::Graphics::Core
 
         if (FAILED(hr))
         {
-            m_logger->LogError("Failed to compile shader: {}", args.m_shaderName);
+            Logger::LogError("Failed to compile shader: {}", args.m_shaderName);
             return {};
         }
 
@@ -227,12 +224,12 @@ namespace FE::Graphics::Core
             Rc<IDxcBlobUtf8> errors;
             result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.GetAddressOf()), nullptr);
             if (errors.Get() != nullptr && errors->GetStringLength() > 0)
-                m_logger->LogError("{}: {}", args.m_shaderName, errors->GetStringPointer());
+                Logger::LogError("{}: {}", args.m_shaderName, errors->GetStringPointer());
         }
 
         if (FAILED(result->GetStatus(&hr)) || FAILED(hr))
         {
-            m_logger->LogError("Failed to compile shader: {}", args.m_shaderName);
+            Logger::LogError("Failed to compile shader: {}", args.m_shaderName);
             return {};
         }
 
@@ -268,7 +265,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                m_logger->LogError("Failed to get shader hash: {}", args.m_shaderName);
+                Logger::LogError("Failed to get shader hash: {}", args.m_shaderName);
             }
         }
 

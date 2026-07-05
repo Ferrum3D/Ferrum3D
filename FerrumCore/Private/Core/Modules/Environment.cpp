@@ -5,6 +5,7 @@
 #include <Core/DI/Builder.h>
 #include <Core/DI/Container.h>
 #include <Core/IO/BaseIOPrivate.h>
+#include <Core/Logging/LoggerPrivate.h>
 #include <Core/Memory/LinearAllocator.h>
 #include <Core/Memory/Memory.h>
 #include <Core/Memory/MemoryPrivate.h>
@@ -169,6 +170,7 @@ namespace FE::Env
                     Trace::Internal::InitStackTrace(allocator);
                     Memory::Internal::Init(allocator);
                     Trace::Internal::Init(allocator);
+                    Logger::Internal::Init(allocator);
                     Threading::Internal::Init(allocator);
                     Compression::Internal::Init(allocator);
                     Rtti::TypeRegistry::Internal::Init(allocator);
@@ -179,6 +181,7 @@ namespace FE::Env
                     Rtti::TypeRegistry::Internal::Shutdown();
                     Compression::Internal::Shutdown();
                     Threading::Internal::Shutdown();
+                    Logger::Internal::Shutdown();
                     Trace::Internal::Shutdown();
                     Memory::Internal::Shutdown();
                     Trace::Internal::ShutdownStackTrace();

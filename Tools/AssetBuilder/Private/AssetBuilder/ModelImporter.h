@@ -130,7 +130,7 @@ namespace FE::AssetBuilder
         ModelImporter(ModelImporter&& other) noexcept;
         ModelImporter& operator=(ModelImporter&& other) noexcept;
 
-        [[nodiscard]] static ModelImporter Create(Logger* logger, const void* data, uint32_t byteSize);
+        [[nodiscard]] static ModelImporter Create(const void* data, uint32_t byteSize);
 
         [[nodiscard]] IntermediateScene* ParseScene();
 

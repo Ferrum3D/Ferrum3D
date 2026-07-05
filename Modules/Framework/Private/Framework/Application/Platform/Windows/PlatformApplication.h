@@ -30,6 +30,11 @@ namespace FE::Framework::Windows
     private:
         friend PlatformWindow;
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         void UnregisterWindow(PlatformWindow* window)
         {
             m_windows.erase(eastl::remove(m_windows.begin(), m_windows.end(), window), m_windows.end());
@@ -52,7 +57,6 @@ namespace FE::Framework::Windows
 
         uint32_t m_keyboardCodePage = 0;
         bool m_closeRequested = false;
-        Memory::Pool<PlatformWindow> m_windowPool{ "Application/PlatformWindowPool" };
         festd::inline_vector<Core::PlatformWindow*> m_windows;
         festd::vector<Core::PlatformEvent> m_events;
         festd::vector<Core::PlatformMonitorInfo> m_monitors;

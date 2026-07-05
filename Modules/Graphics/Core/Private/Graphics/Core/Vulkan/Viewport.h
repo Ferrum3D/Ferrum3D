@@ -14,7 +14,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("1182BF45-88B6-4763-A120-BC823919D74D");
 
-        Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, Core::GraphicsQueue* commandQueue);
+        Viewport(Core::Device* device, Core::ResourcePool* resourcePool, Core::GraphicsQueue* commandQueue);
         ~Viewport() override;
 
         void Init(const Core::ViewportDesc& desc) override;
@@ -48,7 +48,6 @@ namespace FE::Graphics::Vulkan
 
         uint32_t m_imageIndex = 0;
 
-        Logger* m_logger = nullptr;
         DeviceFactory* m_deviceFactory = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
         GraphicsQueue* m_commandQueue = nullptr;

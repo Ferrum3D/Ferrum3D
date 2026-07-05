@@ -13,7 +13,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
-        ShaderCompilerDXC(Logger* logger, IO::IStreamFactory* streamFactory);
+        ShaderCompilerDXC(IO::IStreamFactory* streamFactory);
 
         ShaderCompilerResult CompileShader(const ShaderCompilerArgs& args) override;
 
@@ -24,7 +24,6 @@ namespace FE::Graphics::Core
         }
 
         LibraryLoader m_module;
-        Logger* m_logger;
         IO::IStreamFactory* m_streamFactory;
         Rc<ShaderSourceCache> m_shaderSourceCache;
 

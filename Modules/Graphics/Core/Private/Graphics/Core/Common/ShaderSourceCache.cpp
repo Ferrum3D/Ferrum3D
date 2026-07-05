@@ -17,10 +17,9 @@ namespace FE::Graphics::Core
     }
 
 
-    ShaderSourceCache::ShaderSourceCache(IO::IAsyncStreamIO* asyncIO, Logger* logger)
+    ShaderSourceCache::ShaderSourceCache(IO::IAsyncStreamIO* asyncIO)
         : m_filePool("Graphics/Core/ShaderSourceCache/FilePool")
         , m_asyncIO(asyncIO)
-        , m_logger(logger)
     {
         FE_PROFILER_ZONE();
 
@@ -104,7 +103,7 @@ namespace FE::Graphics::Core
         switch (controller->GetStatus())
         {
         case IO::AsyncOperationStatus::kFailed:
-            m_logger->LogError("Failed to read shader file: {}", fullPath);
+            Logger::LogError("Failed to read shader file: {}", fullPath);
             [[fallthrough]];
 
         case IO::AsyncOperationStatus::kCanceled:
@@ -125,7 +124,7 @@ namespace FE::Graphics::Core
         {
             if (stage == ShaderStage::kUndefined)
             {
-                m_logger->LogError("Couldn't determine shader stage: {}", fullPath);
+                Logger::LogError("Couldn't determine shader stage: {}", fullPath);
                 return;
             }
         }

@@ -13,7 +13,7 @@ namespace FE::Framework::Windows
     {
         FE_RTTI("74E2D079-ADE7-4348-AD82-B1094B3B5171");
 
-        PlatformWindow(Core::PlatformApplication* application, Logger* logger);
+        PlatformWindow(Core::PlatformApplication* application);
         ~PlatformWindow() override;
 
         void Init(const Core::PlatformWindowDesc& desc);
@@ -36,10 +36,14 @@ namespace FE::Framework::Windows
         RectInt GetClientRect() const override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         HWND m_hwnd = nullptr;
         PlatformWindow* m_parent = nullptr;
         PlatformApplication* m_application = nullptr;
-        Logger* m_logger = nullptr;
         festd::inline_vector<PlatformWindow*> m_children;
         Core::PlatformWindowDesc m_desc;
     };

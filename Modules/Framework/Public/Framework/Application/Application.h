@@ -20,17 +20,6 @@ namespace FE
 
 namespace FE::Framework
 {
-    struct StdoutLogSink final : public LogSinkBase
-    {
-        StdoutLogSink(Logger* logger)
-            : LogSinkBase(logger)
-        {
-        }
-
-        void Log(LogSeverity severity, SourceLocation sourceLocation, festd::string_view message) override;
-    };
-
-
     struct Application : public Memory::RefCountedObjectBase
     {
         FE_RTTI("AF07EDCA-2D55-4E2D-A5EF-85ED53B4CDAB");

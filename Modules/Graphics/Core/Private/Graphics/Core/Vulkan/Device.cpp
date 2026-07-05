@@ -75,9 +75,8 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Device::Device(Logger* logger, Core::DeviceFactory* factory)
-        : Common::Device(logger)
-        , m_deviceFactory(ImplCast(factory))
+    Device::Device(Core::DeviceFactory* factory)
+        : m_deviceFactory(ImplCast(factory))
     {
     }
 
@@ -92,7 +91,7 @@ namespace FE::Graphics::Vulkan
         m_nativeAdapter = nativeAdapter;
 
         vkGetPhysicalDeviceProperties(nativeAdapter, &m_adapterProperties);
-        m_logger->LogInfo("Creating Vulkan Device on GPU: {}...", m_adapterProperties.deviceName);
+        Logger::LogInfo("Creating Vulkan Device on GPU: {}...", m_adapterProperties.deviceName);
 
         FindQueueFamilies();
 

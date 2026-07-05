@@ -151,7 +151,7 @@ namespace FE::IO
     {
         FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
 
-        AsyncStreamIO(Logger* logger, IJobSystem* jobSystem);
+        AsyncStreamIO(IJobSystem* jobSystem);
         ~AsyncStreamIO() override;
 
         Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList, Priority priority) override;
@@ -159,7 +159,6 @@ namespace FE::IO
     private:
         Threading::Thread m_thread;
         Threading::Event m_queueEvent;
-        Logger* m_logger = nullptr;
         std::atomic<bool> m_exitRequested = false;
 
         IJobSystem* m_jobSystem = nullptr;

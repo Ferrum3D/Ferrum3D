@@ -574,7 +574,7 @@ namespace FE::Framework::Windows
 
     Core::PlatformWindow* PlatformApplication::CreateWindow(const Core::PlatformWindowDesc& desc)
     {
-        PlatformWindow* window = DI::New<PlatformWindow>(m_windowPool.GetAllocator()).value();
+        auto* window = Memory::DefaultNew<PlatformWindow>(this);
         window->Init(desc);
         m_windows.push_back(window);
         return window;

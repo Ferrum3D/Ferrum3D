@@ -155,6 +155,7 @@ set(COMMON_SOURCES
     Private/Core/Jobs/WaitGroup.cpp
 
     Private/Core/Logging/Logger.cpp
+    Private/Core/Logging/LoggerPrivate.h
 
     Private/Core/Math/Colors.cpp
     Private/Core/Math/Matrix4x4.cpp
@@ -180,7 +181,6 @@ set(COMMON_SOURCES
     Private/Core/RTTI/ReflectionPrivate.h
 
     Private/Core/Strings/Encoding.cpp
-    Private/Core/Strings/Format.cpp
     Private/Core/Strings/Parser.cpp
 
     Private/Core/Threading/Context.cpp

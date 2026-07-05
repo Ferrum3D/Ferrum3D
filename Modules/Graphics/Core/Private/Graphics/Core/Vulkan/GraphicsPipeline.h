@@ -16,7 +16,6 @@ namespace FE::Graphics::Vulkan
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_bindlessSetLayout = VK_NULL_HANDLE;
         ShaderLibrary* m_shaderLibrary = nullptr;
-        Logger* m_logger = nullptr;
     };
 
 

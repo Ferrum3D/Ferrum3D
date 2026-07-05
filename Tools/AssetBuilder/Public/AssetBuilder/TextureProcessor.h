@@ -10,7 +10,6 @@ namespace FE::AssetBuilder
     struct TextureProcessSettings final
     {
         IO::IStreamFactory* m_streamFactory = nullptr;
-        Logger* m_logger = nullptr;
 
         IO::Path m_inputFile;
         IO::Path m_outputFile;

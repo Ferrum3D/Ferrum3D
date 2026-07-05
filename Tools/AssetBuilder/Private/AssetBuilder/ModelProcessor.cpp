@@ -81,21 +81,20 @@ namespace FE
             return compressedData;
         }
 
-        bool SaveModel(Logger* logger, const AssetBuilder::IntermediateModel& model,
-                       const AssetBuilder::ModelProcessSettings& settings)
+        bool SaveModel(const AssetBuilder::IntermediateModel& model, const AssetBuilder::ModelProcessSettings& settings)
         {
             using namespace AssetBuilder;
 
             auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_outputFile, IO::OpenMode::kCreate);
             if (!fileResult)
             {
-                settings.m_logger->LogError("Failed to open file '{}' for writing: {}",
-                                            settings.m_outputFile,
-                                            IO::GetResultDesc(fileResult.error()));
+                Logger::LogError("Failed to open file '{}' for writing: {}",
+                                 settings.m_outputFile,
+                                 IO::GetResultDesc(fileResult.error()));
                 return false;
             }
 
-            const auto compressor = Compression::Compressor::Create(Compression::Method::kGDeflate);
+            const auto compressor = Compression::Compressor::Create(Compression::Method::kZstd);
 
             IO::IStream* out = fileResult->Get();
 
@@ -124,7 +123,7 @@ namespace FE
             const Core::InputStreamLayout layout = inputLayoutBuilder.Build();
             FE_Assert(layout.CalculateTotalStride() % sizeof(uint32_t) == 0);
 
-            logger->LogInfo("Compressing model '{}'", model.m_name);
+            Logger::LogInfo("Compressing model '{}'", model.m_name);
 
             for (const IntermediateMesh* mesh : model.m_meshes)
             {
@@ -151,12 +150,12 @@ namespace FE
 
             for (uint32_t lodIndex = 0; lodIndex < lodCount; ++lodIndex)
             {
-                logger->LogInfo("Compressing data for LOD {}", lodCount - lodIndex - 1);
+                Logger::LogInfo("Compressing data for LOD {}", lodCount - lodIndex - 1);
 
                 for (uint32_t meshIndex = 0; meshIndex < model.m_meshes.size(); ++meshIndex)
                 {
                     IntermediateMesh* mesh = model.m_meshes[meshIndex];
-                    logger->LogInfo("  Mesh [{}/{}]", meshIndex + 1, model.m_meshes.size());
+                    Logger::LogInfo("  Mesh [{}/{}]", meshIndex + 1, model.m_meshes.size());
 
                     IntermediateMeshLod& lod = mesh->m_lods[lodIndex];
 
@@ -171,7 +170,7 @@ namespace FE
                 writer.Flush();
             }
 
-            logger->LogInfo("Finished compressing '{}'", model.m_name);
+            Logger::LogInfo("Finished compressing '{}'", model.m_name);
             return true;
         }
     } // namespace
@@ -182,13 +181,11 @@ namespace FE
         auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_inputFile, IO::OpenMode::kReadOnly);
         if (!fileResult)
         {
-            settings.m_logger->LogError("Failed to open file {}: {}",
-                                        settings.m_inputFile,
-                                        IO::GetResultDesc(fileResult.error()));
+            Logger::LogError("Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
             return false;
         }
 
-        settings.m_logger->LogInfo("Processing model '{}'", settings.m_inputFile);
+        Logger::LogInfo("Processing model '{}'", settings.m_inputFile);
 
         IO::IStream* file = fileResult->Get();
 
@@ -197,14 +194,14 @@ namespace FE
         if (file->ReadToBuffer(rawData, rawSize) != rawSize)
         {
             Memory::DefaultFree(rawData);
-            settings.m_logger->LogError("Failed to read file '{}'", settings.m_inputFile);
+            Logger::LogError("Failed to read file '{}'", settings.m_inputFile);
             return false;
         }
 
         fileResult->Reset();
         file = nullptr;
 
-        settings.m_logger->LogInfo("Importing model '{}'", settings.m_inputFile);
+        Logger::LogInfo("Importing model '{}'", settings.m_inputFile);
 
         auto importer = ModelImporter::Create(settings.m_logger, rawData, static_cast<uint32_t>(rawSize));
         Memory::DefaultFree(rawData);
@@ -216,13 +213,13 @@ namespace FE
             Memory::DefaultDelete(scene);
         });
 
-        settings.m_logger->LogInfo("Optimizing meshes");
+        Logger::LogInfo("Optimizing meshes");
         scene->ForEachMesh(MeshOptimizationPasses::Remap);
         scene->ForEachMesh(MeshOptimizationPasses::OptimizeVertexCache);
         scene->ForEachMesh(MeshOptimizationPasses::OptimizeOverdraw);
         //scene->ForEachMesh(MeshOptimizationPasses::OptimizeVertexFetch);
 
-        settings.m_logger->LogInfo("Generating LODs");
+        Logger::LogInfo("Generating LODs");
         scene->ForEachModel(MeshOptimizationPasses::GenerateLods);
         scene->ForEachMesh(MeshOptimizationPasses::GenerateMeshlets);
 

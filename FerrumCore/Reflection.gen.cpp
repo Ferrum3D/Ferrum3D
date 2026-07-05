@@ -350,13 +350,6 @@ namespace FE::IO
             }
             else
             {
-                Rc<Logger> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
                 Rc<IJobSystem> arg1;
                 if (const auto resolveResult = serviceProvider->Resolve<IJobSystem>())
                     arg1 = resolveResult.value();
@@ -364,7 +357,7 @@ namespace FE::IO
                     return resolveResult.error();
 
 
-                *result = Memory::DefaultNew<AsyncStreamIO>(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<AsyncStreamIO>(arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3158,99 +3151,6 @@ namespace FE::Memory
 
     static Rtti::TypeRegistrar GTypeRegistrar_b4fa5c6369c046668a92726f070d769b(&RefCountedObjectBase::Reflect);
 } // namespace FE::Memory
-
-
-namespace FE
-{
-    const Rtti::TypeID Logger::TypeID = Rtti::TypeID{ "b54397f4-415f-4fa6-8124-4672d2a179ce" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_b54397f4415f4fa681244672d2a179ce(Logger* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xb5, 0x43, 0x97, 0xf4, 0x41, 0x5f, 0x4f, 0xa6,
-                0x81, 0x24, 0x46, 0x72, 0xd2, 0xa1, 0x79, 0xce, // FE::Logger (this type)
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-
-        Rtti::Type& RTTI_GetMutableType_b54397f4415f4fa681244672d2a179ce()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_b54397f4415f4fa681244672d2a179ce([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<Logger>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<Logger>();
-                return DI::ResultCode::kSuccess;
-            }
-        }
-    } // namespace
-
-    const Rtti::Type& Logger::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_b54397f4415f4fa681244672d2a179ce();
-    }
-
-    void* FE_VECTORCALL Logger::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_b54397f4415f4fa681244672d2a179ce(this, typeID);
-    }
-
-    const void* FE_VECTORCALL Logger::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_b54397f4415f4fa681244672d2a179ce(const_cast<Logger*>(this), typeID);
-    }
-
-    void Logger::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_b54397f4415f4fa681244672d2a179ce();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xb5, 0x43, 0x97, 0xf4, 0x41, 0x5f, 0x4f, 0xa6, 0x81, 0x24, 0x46, 0x72, 0xd2, 0xa1, 0x79, 0xce, // FE::Logger
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<Logger>(typeInstance,
-                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                     "FE::Logger",
-                                     kBaseClassTypeIDs,
-                                     kAttributes,
-                                     kFields,
-                                     &RTTI_Activator_b54397f4415f4fa681244672d2a179ce);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_b54397f4415f4fa681244672d2a179ce(&Logger::Reflect);
-} // namespace FE
 
 
 namespace FE::Rtti

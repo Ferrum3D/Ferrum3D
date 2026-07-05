@@ -454,7 +454,7 @@ namespace FE::IO
 
                         if (decompressionResult.m_result != Compression::ResultCode::kSuccess)
                         {
-                            // m_logger->LogError("Compression error");
+                            Logger::LogError("Compression error");
                             blockResult = ResultCode::kDecompressionError;
                         }
                         else
@@ -553,9 +553,8 @@ namespace FE::IO
     }
 
 
-    AsyncStreamIO::AsyncStreamIO(Logger* logger, IJobSystem* jobSystem)
-        : m_logger(logger)
-        , m_jobSystem(jobSystem)
+    AsyncStreamIO::AsyncStreamIO(IJobSystem* jobSystem)
+        : m_jobSystem(jobSystem)
     {
         m_stagingMemory = Memory::AllocateVirtual(kStagingHeapSize);
         m_stagingAllocator.Initialize(m_stagingMemory, kStagingHeapSize);

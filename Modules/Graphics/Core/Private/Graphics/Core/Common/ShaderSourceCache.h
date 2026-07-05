@@ -38,7 +38,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
 
-        ShaderSourceCache(IO::IAsyncStreamIO* asyncIO, Logger* logger);
+        ShaderSourceCache(IO::IAsyncStreamIO* asyncIO);
 
         [[nodiscard]] bool IsLoading() const;
 
@@ -54,7 +54,6 @@ namespace FE::Graphics::Core
         Memory::Pool<ShaderSourceFile> m_filePool;
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
         IO::IAsyncStreamIO* m_asyncIO;
-        Logger* m_logger;
         Threading::SharedSpinLock m_lock;
         std::atomic<uint32_t> m_loadingTasksCount;
     };

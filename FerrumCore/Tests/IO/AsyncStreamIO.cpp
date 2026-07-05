@@ -119,7 +119,7 @@ namespace
         WriteTestFile(path, compressed);
 
         ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem };
+        IO::AsyncStreamIO asyncIO{ &jobSystem };
 
         festd::vector<std::byte> destination(source.size());
         CompletionLatch latch;
@@ -148,7 +148,7 @@ namespace
         WriteTestFile(path, source);
 
         ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem };
+        IO::AsyncStreamIO asyncIO{ &jobSystem };
 
         festd::vector<std::byte> destination(128);
         CompletionLatch latch;
@@ -177,7 +177,7 @@ TEST(AsyncStreamIO, RawPathRead)
     WriteTestFile(path, source);
 
     ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem };
+    IO::AsyncStreamIO asyncIO{ &jobSystem };
 
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;
@@ -206,7 +206,7 @@ TEST(AsyncStreamIO, MultipleReadsAndSourceOffset)
     WriteTestFile(path, source);
 
     ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem };
+    IO::AsyncStreamIO asyncIO{ &jobSystem };
 
     festd::vector<std::byte> first(64);
     festd::vector<std::byte> second(96);
@@ -259,7 +259,7 @@ TEST(AsyncStreamIO, QueuedCancellation)
     WriteTestFile(path, source);
 
     ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ nullptr, &jobSystem };
+    IO::AsyncStreamIO asyncIO{ &jobSystem };
 
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;

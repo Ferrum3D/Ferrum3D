@@ -24,7 +24,6 @@ namespace FE::DI
     void RegisterCoreServices(const ServiceRegistryBuilder& builder)
     {
         builder.Bind<IJobSystem>().To<JobSystem>().InSingletonScope();
-        builder.Bind<Logger>().ToSelf().InSingletonScope();
         builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();
         builder.Bind<IO::IAsyncStreamIO>().To<IO::AsyncStreamIO>().InSingletonScope();
     }

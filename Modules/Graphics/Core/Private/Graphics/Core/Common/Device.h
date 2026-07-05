@@ -16,9 +16,7 @@ namespace FE::Graphics::Common
         }
 
     protected:
-        Logger* m_logger;
-
-        explicit Device(Logger* pLogger);
+        explicit Device();
 
         void DisposePending();
         void ForceReleasePendingDisposers();

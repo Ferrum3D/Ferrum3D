@@ -4,10 +4,10 @@
 #include <Core/Threading/SpinLock.h>
 #include <festd/intrusive_list.h>
 
-namespace FE
+namespace FE::Logger
 {
     //! @brief Log message severity.
-    enum class LogSeverity
+    enum class Severity
     {
         kTrace = 0,    //!< The most verbose messages disabled by default.
         kDebug = 1,    //!< Messages used for debugging in development builds.
@@ -18,38 +18,37 @@ namespace FE
     };
 
 
-    inline const char* LogSeverityToString(const LogSeverity severity)
+    constexpr const char* LogSeverityToString(const Severity severity)
     {
         switch (severity)
         {
         default:
-            FE_DebugBreak();
             return "<unknown>";
 
-        case LogSeverity::kTrace:
+        case Severity::kTrace:
             return "trace";
-        case LogSeverity::kDebug:
+        case Severity::kDebug:
             return "debug";
-        case LogSeverity::kInfo:
+        case Severity::kInfo:
             return "info";
-        case LogSeverity::kWarning:
+        case Severity::kWarning:
             return "warning";
-        case LogSeverity::kError:
+        case Severity::kError:
             return "error";
-        case LogSeverity::kCritical:
+        case Severity::kCritical:
             return "critical";
         }
     }
 
 
-    enum class LogSeverityFlags
+    enum class SeverityFlags
     {
-        kTrace = 1 << festd::to_underlying(LogSeverity::kTrace),       //!< See LogSeverity::kTrace.
-        kDebug = 1 << festd::to_underlying(LogSeverity::kDebug),       //!< See LogSeverity::kDebug.
-        kInfo = 1 << festd::to_underlying(LogSeverity::kInfo),         //!< See LogSeverity::kInfo.
-        kWarning = 1 << festd::to_underlying(LogSeverity::kWarning),   //!< See LogSeverity::kWarning.
-        kError = 1 << festd::to_underlying(LogSeverity::kError),       //!< See LogSeverity::kError.
-        kCritical = 1 << festd::to_underlying(LogSeverity::kCritical), //!< See LogSeverity::kCritical.
+        kTrace = 1 << festd::to_underlying(Severity::kTrace),       //!< See Severity::kTrace.
+        kDebug = 1 << festd::to_underlying(Severity::kDebug),       //!< See Severity::kDebug.
+        kInfo = 1 << festd::to_underlying(Severity::kInfo),         //!< See Severity::kInfo.
+        kWarning = 1 << festd::to_underlying(Severity::kWarning),   //!< See Severity::kWarning.
+        kError = 1 << festd::to_underlying(Severity::kError),       //!< See Severity::kError.
+        kCritical = 1 << festd::to_underlying(Severity::kCritical), //!< See Severity::kCritical.
 
         kNone = 0,                                   //!< Value used to specify that nothing should be logged.
         kErrorsOnly = kError | kCritical,            //!< Value used to specify that only errors should be logged.
@@ -58,22 +57,20 @@ namespace FE
         kAll = kTrace | kDevelopment,                //!< Value used to specify that all messages should be logged.
     };
 
-    FE_ENUM_OPERATORS(LogSeverityFlags);
+    FE_ENUM_OPERATORS(SeverityFlags);
 
 
-    struct Logger;
-
-    struct LogSinkBase : public festd::intrusive_list_node
+    struct SinkBase : public festd::intrusive_list_node
     {
-        virtual ~LogSinkBase();
-
-        virtual void Log(LogSeverity severity, SourceLocation sourceLocation, festd::string_view message) = 0;
+        virtual ~SinkBase();
+        virtual void Log(Severity severity, SourceLocation sourceLocation, festd::string_view message) = 0;
 
     protected:
-        Logger* m_pLogger;
-
-        LogSinkBase(Logger* logger);
+        SinkBase();
     };
+
+
+    void LogImpl(Severity severity, SourceLocation sourceLocation, festd::string_view message);
 
 
     struct LogFormatString final
@@ -95,68 +92,48 @@ namespace FE
     };
 
 
-    struct Logger final : public Memory::RefCountedObjectBase
+    template<class... TArgs>
+    void Log(const Severity severity, LogFormatString fmt, TArgs&&... args)
     {
-        FE_RTTI("B54397F4-415F-4FA6-8124-4672D2A179CE");
+        festd::inline_string message;
+        Fmt::FormatTo(message, fmt.m_value, std::forward<TArgs>(args)...);
+        LogImpl(severity, fmt.m_location, message);
+    }
 
-        template<class... TArgs>
-        void Log(LogSeverity severity, LogFormatString fmt, TArgs&&... args)
-        {
-            festd::string message;
-            Fmt::FormatTo(message, fmt.m_value, std::forward<TArgs>(args)...);
 
-            std::lock_guard lock{ m_lock };
-            for (LogSinkBase& sink : m_sinks)
-            {
-                sink.Log(severity, fmt.m_location, message);
-            }
-        }
+    template<class... TArgs>
+    void LogTrace(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kTrace, fmt, std::forward<TArgs>(args)...);
+    }
 
-        template<class... TArgs>
-        void LogTrace(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kTrace, fmt, std::forward<TArgs>(args)...);
-        }
+    template<class... TArgs>
+    void LogDebug(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kDebug, fmt, std::forward<TArgs>(args)...);
+    }
 
-        template<class... TArgs>
-        void LogDebug(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kDebug, fmt, std::forward<TArgs>(args)...);
-        }
+    template<class... TArgs>
+    void LogInfo(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kInfo, fmt, std::forward<TArgs>(args)...);
+    }
 
-        template<class... TArgs>
-        void LogInfo(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kInfo, fmt, std::forward<TArgs>(args)...);
-        }
+    template<class... TArgs>
+    void LogWarning(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kWarning, fmt, std::forward<TArgs>(args)...);
+    }
 
-        template<class... TArgs>
-        void LogWarning(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kWarning, fmt, std::forward<TArgs>(args)...);
-        }
+    template<class... TArgs>
+    void LogError(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kError, fmt, std::forward<TArgs>(args)...);
+    }
 
-        template<class... TArgs>
-        void LogError(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kError, fmt, std::forward<TArgs>(args)...);
-        }
-
-        template<class... TArgs>
-        void LogCritical(LogFormatString fmt, TArgs&&... args)
-        {
-            Log(LogSeverity::kCritical, fmt, std::forward<TArgs>(args)...);
-        }
-
-    private:
-        friend struct LogSinkBase;
-
-        void DoRelease() override
-        {
-            Memory::DefaultDelete(this);
-        }
-
-        Threading::SpinLock m_lock;
-        festd::intrusive_list<LogSinkBase> m_sinks;
-    };
-} // namespace FE
+    template<class... TArgs>
+    void LogCritical(const LogFormatString fmt, TArgs&&... args)
+    {
+        Log(Severity::kCritical, fmt, std::forward<TArgs>(args)...);
+    }
+} // namespace FE::Logger

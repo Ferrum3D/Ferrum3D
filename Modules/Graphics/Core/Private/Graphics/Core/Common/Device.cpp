@@ -6,8 +6,7 @@
 
 namespace FE::Graphics::Common
 {
-    Device::Device(Logger* pLogger)
-        : m_logger(pLogger)
+    Device::Device()
     {
 #if FE_DEVELOPMENT
 #    define FE_FORMAT_FUNC(name, type, byteSize, channelCount, aspectFlags, bc, sign, srgb, index) Core::Format::k##name,
@@ -39,11 +38,11 @@ namespace FE::Graphics::Common
         {
             // Don't use a range-based for loop here, since more objects can be added while we are iterating
             disposer.m_object->DestroyObject();
-            m_logger->LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.m_object));
+            Logger::LogInfo("Deleted object at {}", reinterpret_cast<uintptr_t>(disposer.m_object));
         }
         for (festd::intrusive_list_node& resourceNode : m_resourceList)
         {
-            m_logger->LogError("Resource leak: {}", static_cast<Core::Resource&>(resourceNode).GetName());
+            Logger::LogError("Resource leak: {}", static_cast<Core::Resource&>(resourceNode).GetName());
             FE_DebugBreak();
         }
 

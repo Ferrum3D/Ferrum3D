@@ -129,9 +129,8 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    Viewport::Viewport(Core::Device* device, Logger* logger, Core::ResourcePool* resourcePool, Core::GraphicsQueue* commandQueue)
-        : m_logger(logger)
-        , m_resourcePool(resourcePool)
+    Viewport::Viewport(Core::Device* device, Core::ResourcePool* resourcePool, Core::GraphicsQueue* commandQueue)
+        : m_resourcePool(resourcePool)
         , m_commandQueue(ImplCast(commandQueue))
     {
         FE_PROFILER_ZONE();
@@ -171,7 +170,7 @@ namespace FE::Graphics::Vulkan
 
         m_desc = desc;
 
-        m_logger->LogDebug("Creating Vulkan swapchain");
+        Logger::LogDebug("Creating Vulkan swapchain");
 
         for (uint32_t i = 0; i < kMaxInFlightFrames; ++i)
         {
@@ -270,7 +269,7 @@ namespace FE::Graphics::Vulkan
         FE_Assert(capabilities.minImageCount <= kMaxInFlightFrames);
         swapchainCI.minImageCount = kMaxInFlightFrames;
 
-        m_logger->LogTrace("Swapchain image count: {}", swapchainCI.minImageCount);
+        Logger::LogTrace("Swapchain image count: {}", swapchainCI.minImageCount);
 
         bool formatSelected = false;
         for (const VkFormat requestedFormat : kPreferredSwapchainColorFormats)
@@ -292,13 +291,13 @@ namespace FE::Graphics::Vulkan
 
         if (swapchainCI.imageFormat == VK_FORMAT_UNDEFINED)
         {
-            m_logger->LogCritical("Failed to find suitable Vulkan swapchain color format");
+            Logger::LogCritical("Failed to find suitable Vulkan swapchain color format");
             FE_DebugBreak();
         }
 
         m_rtvFormat = Translate(swapchainCI.imageFormat);
-        m_logger->LogTrace("Swapchain color format: {}", ToString(m_rtvFormat));
-        m_logger->LogTrace("Swapchain pre-transform: {}", ToString(swapchainCI.preTransform));
+        Logger::LogTrace("Swapchain color format: {}", ToString(m_rtvFormat));
+        Logger::LogTrace("Swapchain pre-transform: {}", ToString(swapchainCI.preTransform));
 
         const auto presentModes = EnumeratePresentModes(physicalDevice, m_surface);
         for (const auto presentMode : kPreferredSwapchainPresentModes)
@@ -313,7 +312,7 @@ namespace FE::Graphics::Vulkan
             }
         }
 
-        m_logger->LogTrace("Swapchain present mode: {}", ToString(swapchainCI.presentMode));
+        Logger::LogTrace("Swapchain present mode: {}", ToString(swapchainCI.presentMode));
 
         const VkDevice vkDevice = device->GetNative();
         VerifyVk(vkCreateSwapchainKHR(vkDevice, &swapchainCI, nullptr, &m_swapchain));
@@ -337,7 +336,7 @@ namespace FE::Graphics::Vulkan
         uint32_t imageCount = 0;
         VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, nullptr));
 
-        m_logger->LogDebug("Created Vulkan swapchain with {} images", imageCount);
+        Logger::LogDebug("Created Vulkan swapchain with {} images", imageCount);
 
         festd::inline_vector<VkImage> vkImages{ imageCount };
         VerifyVk(vkGetSwapchainImagesKHR(vkDevice, m_swapchain, &imageCount, vkImages.data()));

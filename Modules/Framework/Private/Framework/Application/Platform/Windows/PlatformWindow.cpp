@@ -32,9 +32,8 @@ namespace FE::Framework::Windows
     } // namespace
 
 
-    PlatformWindow::PlatformWindow(Core::PlatformApplication* application, Logger* logger)
+    PlatformWindow::PlatformWindow(Core::PlatformApplication* application)
         : m_application(ImplCast(application))
-        , m_logger(logger)
     {
         FE_Assert(Threading::IsMainThread());
     }

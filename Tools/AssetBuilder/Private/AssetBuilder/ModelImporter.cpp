@@ -305,7 +305,7 @@ namespace FE::AssetBuilder
     }
 
 
-    ModelImporter ModelImporter::Create(Logger* logger, const void* data, const uint32_t byteSize)
+    ModelImporter ModelImporter::Create(const void* data, const uint32_t byteSize)
     {
         ModelImporter importer;
         importer.m_impl = Memory::DefaultNew<Implementation>();
@@ -313,10 +313,10 @@ namespace FE::AssetBuilder
         const bool success = importer.m_impl->Load(data, byteSize);
 
         if (!importer.m_impl->m_error.empty())
-            logger->LogError("GLTF Error: {}", festd::string_view(importer.m_impl->m_error));
+            Logger::LogError("GLTF Error: {}", festd::string_view(importer.m_impl->m_error));
 
         if (!importer.m_impl->m_warn.empty())
-            logger->LogWarning("GLTF Warning: {}", festd::string_view(importer.m_impl->m_warn));
+            Logger::LogWarning("GLTF Warning: {}", festd::string_view(importer.m_impl->m_warn));
 
         if (!success)
         {

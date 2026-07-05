@@ -22,20 +22,20 @@ namespace FE::Graphics::Vulkan
     namespace
     {
 #if FE_DEVELOPMENT
-        LogSeverity GetLogMessageType(const VkDebugReportFlagsEXT flags)
+        Logger::Severity GetLogMessageType(const VkDebugReportFlagsEXT flags)
         {
             switch (static_cast<VkDebugReportFlagBitsEXT>(flags))
             {
             case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
             case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-                return LogSeverity::kInfo;
+                return Logger::Severity::kInfo;
             case VK_DEBUG_REPORT_WARNING_BIT_EXT:
             case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-                return LogSeverity::kWarning;
+                return Logger::Severity::kWarning;
             case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-                return LogSeverity::kError;
+                return Logger::Severity::kError;
             default:
-                return LogSeverity::kInfo;
+                return Logger::Severity::kInfo;
             }
         }
 
@@ -59,10 +59,10 @@ namespace FE::Graphics::Vulkan
                     return VK_FALSE;
             }
 
-            const LogSeverity type = GetLogMessageType(flags);
-            static_cast<Logger*>(pUserData)->Log(type, "{}", message);
+            const Logger::Severity type = GetLogMessageType(flags);
+            Logger::Log(type, "{}", message);
 
-            if (Platform::IsDebuggerPresent() && type == LogSeverity::kError)
+            if (Platform::IsDebuggerPresent() && type == Logger::Severity::kError)
                 FE_DebugBreak();
 
             return VK_FALSE;
@@ -96,7 +96,7 @@ namespace FE::Graphics::Vulkan
     {
         vkDestroyDebugReportCallbackEXT(m_instance, m_debug, VK_NULL_HANDLE);
         vkDestroyInstance(m_instance, VK_NULL_HANDLE);
-        m_logger->LogInfo("Vulkan instance was destroyed");
+        Logger::LogInfo("Vulkan instance was destroyed");
     }
 
 
@@ -141,8 +141,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    DeviceFactory::DeviceFactory(Env::Configuration* config, Logger* logger)
-        : m_logger(logger)
+    DeviceFactory::DeviceFactory(Env::Configuration* config)
     {
         FE_PROFILER_ZONE();
 
@@ -210,12 +209,11 @@ namespace FE::Graphics::Vulkan
             debugCI.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
             debugCI.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
             debugCI.pfnCallback = &DebugReportCallback;
-            debugCI.pUserData = m_logger.Get();
             VerifyVk(vkCreateDebugReportCallbackEXT(m_instance, &debugCI, VK_NULL_HANDLE, &m_debug));
         }
 #endif
 
-        m_logger->LogInfo("Vulkan instance created successfully");
+        Logger::LogInfo("Vulkan instance created successfully");
 
         uint32_t adapterCount;
         VerifyVk(vkEnumeratePhysicalDevices(m_instance, &adapterCount, nullptr));
@@ -226,7 +224,7 @@ namespace FE::Graphics::Vulkan
         {
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(physicalDevice, &props);
-            m_logger->LogInfo("Found Vulkan-compatible GPU: {}", festd::string_view(props.deviceName));
+            Logger::LogInfo("Found Vulkan-compatible GPU: {}", festd::string_view(props.deviceName));
 
             Core::AdapterInfo& info = m_adapters.emplace_back();
             info.m_kind = Translate(props.deviceType);

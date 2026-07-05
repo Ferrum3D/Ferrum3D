@@ -12,51 +12,8 @@ namespace FE::Framework
 {
     namespace
     {
-        festd::string_view GetSeverityColor(const LogSeverity severity)
-        {
-            switch (severity)
-            {
-            default:
-                FE_DebugBreak();
-                [[fallthrough]];
-
-            case LogSeverity::kWarning:
-                return "\033[33m";
-
-            case LogSeverity::kError:
-            case LogSeverity::kCritical:
-                return "\033[31m";
-
-            case LogSeverity::kTrace:
-                return "\033[35m";
-
-            case LogSeverity::kDebug:
-                return "\033[34m";
-
-            case LogSeverity::kInfo:
-                return "\033[36m";
-            }
-        }
-
         Application* GInstance = nullptr;
     } // namespace
-
-
-    void StdoutLogSink::Log(const LogSeverity severity, const SourceLocation sourceLocation, const festd::string_view message)
-    {
-        const auto dateStr = DateTime<TZ::Local>::Now().ToString(DateTimeFormat::kISO8601);
-        const auto colorStr = GetSeverityColor(severity);
-        const auto severityStr = LogSeverityToString(severity);
-
-        IO::PrintLn("{}({}): {} [{}{}\033[0m] {}",
-                    sourceLocation.m_fileName,
-                    sourceLocation.m_lineNumber,
-                    dateStr,
-                    colorStr,
-                    severityStr,
-                    message);
-        IO::Flush(IO::StandardDescriptor::kStdout);
-    }
 
 
     Application::Application(const int32_t argc, const char** argv)
