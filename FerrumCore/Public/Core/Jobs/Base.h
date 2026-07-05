@@ -3,10 +3,12 @@
 
 namespace FE
 {
-    struct Job;
-    struct IJobSystem;
-    struct JobSystem;
     struct WaitGroup;
+}
+
+namespace FE::Jobs
+{
+    struct JobNode;
 
 
     //! @brief Describes the priority of a job.
@@ -16,7 +18,7 @@ namespace FE
     //! for the jobs that can only run on that thread (due to affinity).
     //! There are also two global sets of queues: one for foreground jobs
     //! and one for background jobs.
-    enum class JobPriority : uint16_t
+    enum class Priority : uint16_t
     {
         kLow = 0,
         kNormal = 1,
@@ -60,11 +62,11 @@ namespace FE
     };
 
 
-    enum class JobThreadPoolType : uint32_t
+    enum class ThreadPoolType : uint32_t
     {
         kGeneric,
         kForeground,
         kBackground,
         kCount,
     };
-} // namespace FE
+} // namespace FE::Jobs

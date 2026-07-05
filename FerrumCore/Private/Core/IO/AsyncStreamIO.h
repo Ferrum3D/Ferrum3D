@@ -151,7 +151,7 @@ namespace FE::IO
     {
         FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
 
-        AsyncStreamIO(IJobSystem* jobSystem);
+        AsyncStreamIO();
         ~AsyncStreamIO() override;
 
         Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList, Priority priority) override;
@@ -161,9 +161,7 @@ namespace FE::IO
         Threading::Event m_queueEvent;
         std::atomic<bool> m_exitRequested = false;
 
-        IJobSystem* m_jobSystem = nullptr;
         Rc<IAsyncIOBackend> m_backend;
-
         AsyncIOOpenFileCache m_fileCache;
 
         TracyLockable(Threading::SpinLock, m_queueLock);

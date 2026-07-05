@@ -1,4 +1,4 @@
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Framework/Entities/Archetype.h>
 #include <Framework/Entities/Entity.h>
@@ -9,7 +9,7 @@ namespace FE::Framework
 {
     namespace
     {
-        struct DeferredActionJob final : public Job
+        struct DeferredActionJob final : public JobNode
         {
             void Execute() override
             {
@@ -21,7 +21,7 @@ namespace FE::Framework
         };
 
 
-        struct LocalSystemUpdateJob final : public Job
+        struct LocalSystemUpdateJob final : public JobNode
         {
             void Execute() override
             {

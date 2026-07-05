@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Memory/LinearAllocator.h>
 #include <Core/Threading/Event.h>
 #include <Core/Threading/SharedSpinLock.h>

@@ -3,17 +3,17 @@
 #include <Core/Jobs/WaitGroup.h>
 #include <Core/Memory/RefCount.h>
 
-namespace FE
+namespace FE::Jobs
 {
-    struct Job : public ConcurrentQueue::Node
+    struct JobNode : public ConcurrentQueue::Node
     {
-        Job() = default;
-        virtual ~Job();
+        JobNode() = default;
+        virtual ~JobNode();
 
-        Job(const Job&) = delete;
-        Job& operator=(const Job&) = delete;
-        Job(Job&&) = delete;
-        Job& operator=(Job&&) = delete;
+        JobNode(const JobNode&) = delete;
+        JobNode& operator=(const JobNode&) = delete;
+        JobNode(JobNode&&) = delete;
+        JobNode& operator=(JobNode&&) = delete;
 
         virtual void Execute() = 0;
 
@@ -36,19 +36,17 @@ namespace FE
             AddPrerequisites(festd::span(waitGroups));
         }
 
-        void Dispatch(IJobSystem* jobSystem, FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
-                      JobPriority priority = JobPriority::kNormal);
+        void Dispatch(FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup = nullptr,
+                      Priority priority = Priority::kNormal);
 
-        void DispatchForeground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
-                                const JobPriority priority = JobPriority::kNormal)
+        void DispatchForeground(WaitGroup* completionWaitGroup = nullptr, const Priority priority = Priority::kNormal)
         {
-            Dispatch(jobSystem, FiberAffinityMask::kAll, completionWaitGroup, priority);
+            Dispatch(FiberAffinityMask::kAll, completionWaitGroup, priority);
         }
 
-        void DispatchBackground(IJobSystem* jobSystem, WaitGroup* completionWaitGroup = nullptr,
-                                const JobPriority priority = JobPriority::kNormal)
+        void DispatchBackground(WaitGroup* completionWaitGroup = nullptr, const Priority priority = Priority::kNormal)
         {
-            Dispatch(jobSystem, FiberAffinityMask::kAllBackground, completionWaitGroup, priority);
+            Dispatch(FiberAffinityMask::kAllBackground, completionWaitGroup, priority);
         }
 
         [[nodiscard]] WaitGroup* GetCompletionWaitGroup() const
@@ -58,7 +56,7 @@ namespace FE
 
     private:
         friend struct JobSystem;
-        friend struct WaitGroup;
+        friend struct FE::WaitGroup;
 
         bool DependencySatisfied()
         {
@@ -68,28 +66,10 @@ namespace FE
         }
 
         Rc<WaitGroup> m_completionWaitGroup;
-        IJobSystem* m_jobSystem = nullptr;
         std::atomic<uint32_t> m_dependencyCounter = 1;
         std::atomic<bool> m_dispatchRequested = false;
-        JobPriority m_priority = JobPriority::kNormal;
+        Priority m_priority = Priority::kNormal;
         FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         uint64_t m_orderHint = 0;
     };
-
-
-    template<class TFunc>
-    struct FunctorJob final : public Job
-    {
-        explicit FunctorJob(TFunc&& func)
-            : m_func(std::move(func))
-        {
-        }
-
-        void Execute() override
-        {
-            m_func();
-        }
-
-        TFunc m_func;
-    };
-} // namespace FE
+} // namespace FE::Jobs

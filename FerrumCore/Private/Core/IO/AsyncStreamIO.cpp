@@ -1,7 +1,7 @@
 #include <Core/IO/AsyncStreamIO.h>
 #include <Core/IO/Platform/PlatformFile.h>
-#include <Core/Jobs/Job.h>
-#include <Core/Jobs/TaskGraph.h>
+#include <Core/Jobs/JobGraph.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/Memory.h>
 
@@ -399,7 +399,7 @@ namespace FE::IO
 
     void AsyncStreamIO::ProcessBackendCompletions()
     {
-        TaskGraph tg{ "IO/Async/RequestGraph", m_jobSystem, FiberAffinityMask::kAllBackground };
+        Jobs::Graph tg{ "IO/Async/RequestGraph", Jobs::FiberAffinityMask::kAllBackground };
 
         AsyncIOCompletion completion;
         while (m_backend->PollRequestCompletion(completion))
@@ -553,8 +553,7 @@ namespace FE::IO
     }
 
 
-    AsyncStreamIO::AsyncStreamIO(IJobSystem* jobSystem)
-        : m_jobSystem(jobSystem)
+    AsyncStreamIO::AsyncStreamIO()
     {
         m_stagingMemory = Memory::AllocateVirtual(kStagingHeapSize);
         m_stagingAllocator.Initialize(m_stagingMemory, kStagingHeapSize);

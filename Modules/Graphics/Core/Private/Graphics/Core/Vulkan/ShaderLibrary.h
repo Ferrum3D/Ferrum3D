@@ -21,7 +21,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("E2254CBD-679C-4310-87CF-FA8DA780BDA1");
 
-        ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler, IJobSystem* jobSystem);
+        ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler);
         ~ShaderLibrary() override;
 
         Core::ShaderHandle GetShader(Env::Name name, Env::Name defines) override;
@@ -49,7 +49,7 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
-        struct CompilationTask;
+        void CompileShader(uint32_t shaderIndex);
 
         void DestroyObject() override
         {
@@ -67,11 +67,9 @@ namespace FE::Graphics::Vulkan
         };
 
         Threading::SpinLock m_lock;
-        Memory::SpinLockedPoolAllocator m_taskPool;
         Memory::SpinLockedPoolAllocator m_shaderPool;
         festd::unordered_dense_map<uint64_t, uint32_t> m_shadersMap;
         SegmentedVector<ShaderInfo*> m_shaders;
         Core::ShaderCompiler* m_shaderCompiler = nullptr;
-        IJobSystem* m_jobSystem = nullptr;
     };
 } // namespace FE::Graphics::Vulkan

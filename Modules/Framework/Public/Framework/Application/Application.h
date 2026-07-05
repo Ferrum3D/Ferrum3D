@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/DI/BaseDI.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Logging/Logger.h>
 #include <Framework/Application/Core/PlatformApplication.h>
 #include <Framework/Application/Core/PlatformWindow.h>
@@ -42,7 +42,7 @@ namespace FE::Framework
     protected:
         friend CommandLine;
 
-        struct FrameJob final : public Job
+        struct FrameJob final : public Jobs::JobNode
         {
             void Execute() override;
 
@@ -58,7 +58,6 @@ namespace FE::Framework
 
         Rc<Core::PlatformApplication> m_platformApplication;
         Rc<Core::PlatformWindow> m_mainWindow;
-        Rc<IJobSystem> m_jobSystem;
         Rc<WaitGroup> m_exitWaitGroup;
         FrameJob m_frameJob;
         int32_t m_exitCode = 0;

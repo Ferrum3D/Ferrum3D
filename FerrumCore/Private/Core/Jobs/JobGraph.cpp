@@ -1,10 +1,11 @@
-#include <Core/Jobs/Job.h>
-#include <Core/Jobs/TaskGraph.h>
+#include <Core/Jobs/JobGraph.h>
+#include <Core/Jobs/JobNode.h>
+#include <Core/Jobs/WaitGroup.h>
 #include <festd/vector.h>
 
-namespace FE
+namespace FE::Jobs
 {
-    struct TaskGraph::JobImpl final : public Job
+    struct Graph::JobImpl final : public JobNode
     {
         void Execute() override
         {
@@ -20,7 +21,7 @@ namespace FE
     };
 
 
-    struct TaskGraph::JobRecord final
+    struct Graph::JobRecord final
     {
         JobRecord* m_next = nullptr;
         JobImpl* m_job = nullptr;
@@ -28,10 +29,8 @@ namespace FE
     };
 
 
-    TaskGraph::TaskGraph(const Env::Name name, IJobSystem* jobSystem, const FiberAffinityMask affinity,
-                         const JobPriority priority)
+    Graph::Graph(const Env::Name name, const FiberAffinityMask affinity, const Priority priority)
         : m_name(name)
-        , m_jobSystem(jobSystem)
         , m_affinity(affinity)
         , m_priority(priority)
         , m_allocator(1024)
@@ -39,29 +38,29 @@ namespace FE
     }
 
 
-    TaskGraph::~TaskGraph()
+    Graph::~Graph()
     {
-        FE_Assert(!m_isValid || m_jobCount == 0, "TaskGraph must be either detached or waited to completion before destroying");
+        FE_Assert(!m_isValid || m_jobCount == 0, "Job graph must be either detached or waited to completion before destroying");
         CleanUp();
     }
 
 
-    TaskGraph::TaskGraph(TaskGraph&& other) noexcept
+    Graph::Graph(Graph&& other) noexcept
     {
         swap(*this, other);
     }
 
 
-    TaskGraph& TaskGraph::operator=(TaskGraph&& other) noexcept
+    Graph& Graph::operator=(Graph&& other) noexcept
     {
         swap(*this, other);
         return *this;
     }
 
 
-    Rc<WaitGroup> TaskGraph::Detach()
+    Rc<WaitGroup> Graph::Detach()
     {
-        struct DetachJob final : public Job
+        struct DetachJob final : public JobNode
         {
             void Execute() override
             {
@@ -72,12 +71,12 @@ namespace FE
                 Memory::DefaultDelete(this);
             }
 
-            DetachJob(TaskGraph&& graph)
+            DetachJob(Graph&& graph)
                 : m_graph(std::move(graph))
             {
             }
 
-            TaskGraph m_graph;
+            Graph m_graph;
         };
 
         m_isValid = false;
@@ -91,16 +90,15 @@ namespace FE
             return WaitGroup::Create(0);
         }
 
-        IJobSystem* jobSystem = m_jobSystem;
         const Rc<WaitGroup> waitGroup = WaitGroup::Create();
         auto* job = Memory::DefaultNew<DetachJob>(std::move(*this));
         job->AddPrerequisites(prerequisites);
-        job->Dispatch(jobSystem, FiberAffinityMask::kAll, waitGroup.Get(), JobPriority::kHigh);
+        job->Dispatch(FiberAffinityMask::kAll, waitGroup.Get(), Priority::kHigh);
         return waitGroup;
     }
 
 
-    void TaskGraph::Wait()
+    void Graph::Wait()
     {
         const auto prerequisites = MakeAllWaitGroupsArray();
         WaitGroup::WaitAll(prerequisites);
@@ -112,7 +110,7 @@ namespace FE
     }
 
 
-    festd::span<WaitGroup* const> TaskGraph::MakeAllWaitGroupsArray()
+    festd::span<WaitGroup* const> Graph::MakeAllWaitGroupsArray()
     {
         if (m_jobCount == 0)
             return {};
@@ -131,7 +129,7 @@ namespace FE
     }
 
 
-    void TaskGraph::CleanUp()
+    void Graph::CleanUp()
     {
         JobRecord* record = m_jobRecords;
         while (record)
@@ -146,8 +144,8 @@ namespace FE
     }
 
 
-    Rc<WaitGroup> TaskGraph::DispatchTaskImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
-                                              const TaskFunction taskFunction, void* data)
+    Rc<WaitGroup> Graph::DispatchTaskImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
+                                          const TaskFunction taskFunction, void* data)
     {
         FE_Assert(m_isValid);
         ++m_jobCount;
@@ -167,18 +165,17 @@ namespace FE
         record->m_completionWaitGroup = waitGroup;
         m_jobRecords = record;
 
-        job->Dispatch(m_jobSystem, m_affinity, waitGroup.Get(), m_priority);
+        job->Dispatch(m_affinity, waitGroup.Get(), m_priority);
         return waitGroup;
     }
 
 
-    void swap(TaskGraph& lhs, TaskGraph& rhs) noexcept
+    void swap(Graph& lhs, Graph& rhs) noexcept
     {
         using festd::swap;
         swap(lhs.m_name, rhs.m_name);
         swap(lhs.m_jobCount, rhs.m_jobCount);
         swap(lhs.m_isValid, rhs.m_isValid);
-        swap(lhs.m_jobSystem, rhs.m_jobSystem);
         swap(lhs.m_affinity, rhs.m_affinity);
         swap(lhs.m_priority, rhs.m_priority);
         swap(lhs.m_completionCallback, rhs.m_completionCallback);
@@ -186,4 +183,4 @@ namespace FE
         swap(lhs.m_jobRecords, rhs.m_jobRecords);
         swap(lhs.m_allocator, rhs.m_allocator);
     }
-} // namespace FE
+} // namespace FE::Jobs

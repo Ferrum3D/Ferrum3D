@@ -1,5 +1,5 @@
 #include <Core/DI/Activator.h>
-#include <Core/Jobs/IJobSystem.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Modules/Configuration.h>
 #include <Framework/Application/Application.h>
@@ -42,8 +42,6 @@ namespace
             FE_PROFILER_ZONE();
 
             DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-
-            m_logSink = festd::make_unique<Framework::StdoutLogSink>(serviceProvider->ResolveRequired<Logger>());
 
             m_factory = serviceProvider->ResolveRequired<Core::DeviceFactory>();
             for (const Core::AdapterInfo& adapterInfo : m_factory->EnumerateAdapters())
@@ -110,10 +108,8 @@ namespace
 
         void DoRelease() override
         {
-            Memory::DefaultDelete(this);
+            this->~ExampleApplication();
         }
-
-        festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
 
         Core::DeviceFactory* m_factory = nullptr;
         Core::Device* m_device = nullptr;
@@ -139,21 +135,17 @@ int main(const int32_t argc, const char** argv)
     Env::Init(applicationInfo);
 
     std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-
     auto* application = Memory::New<ExampleApplication>(allocator, argc, argv);
     application->InitializeCore();
 
-    IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-
     int32_t exitCode = 0;
-    FunctorJob mainJob([application, &exitCode] {
+    Jobs::DispatchMainThread([application, &exitCode] {
         application->InitializeWindow();
         application->InitializeApp();
         exitCode = application->Run();
     });
 
-    mainJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread);
-    jobSystem->Start();
+    Jobs::StartJobSystem();
 
     Memory::Delete(allocator, application);
     Env::Module::ShutdownModules();

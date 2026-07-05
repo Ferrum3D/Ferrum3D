@@ -1,42 +1,46 @@
 ﻿#pragma once
-#include <Core/Jobs/IJobSystem.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Core/Threading/Fiber.h>
 #include <Core/Threading/Semaphore.h>
 #include <Core/Threading/Thread.h>
 
-namespace FE
+namespace FE::Jobs
 {
+    namespace Internal
+    {
+        void Init(std::pmr::memory_resource* allocator);
+        void Shutdown();
+    } // namespace Internal
+
+
     struct FiberWaitEntry final : public ConcurrentQueue::Node
     {
         std::atomic<uint64_t> m_orderHint = 0;
         FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
         Threading::FiberHandle m_fiber;
-        JobPriority m_priority = JobPriority::kNormal;
+        Priority m_priority = Priority::kNormal;
         std::atomic<bool> m_switchCompleted = false;
     };
 
 
-    struct JobSystem final : public IJobSystem
+    struct JobSystem final
     {
-        FE_RTTI("6754DA31-46FA-4661-A46E-2787E6D9FD29");
-
         explicit JobSystem();
-        ~JobSystem() override;
+        ~JobSystem();
 
-        void Start() override;
-        void Stop() override;
-        void Dispatch(const JobDispatchInfo& info) override;
-        FiberAffinityMask GetAffinityMaskForCurrentThread() const override;
+        void Init();
+
+        void Start();
+        void Stop();
+
+        void Dispatch(JobNode* jobNode);
+        FiberAffinityMask GetAffinityMaskForCurrentThread() const;
+
+        static JobSystem& Get();
 
     private:
         friend struct WaitGroup;
-
-        void DoRelease() override
-        {
-            Memory::DefaultDelete(this);
-        }
 
         void SwitchFromWaitingFiber(const uint32_t workerIndex, FiberWaitEntry& entry)
         {
@@ -53,7 +57,7 @@ namespace FE
 
         void AddReadyFiber(FiberWaitEntry* entry);
 
-        void AddReadyJob(Job* job);
+        void AddReadyJob(JobNode* job);
         void CleanUpAfterSwitch(const Context::TransferParams transferParams)
         {
             const uint32_t workerIndex = GetWorkerIndex();
@@ -85,25 +89,25 @@ namespace FE
             Threading::FiberHandle m_currentFiber;
             FiberWaitEntry* m_lastWaitEntry = nullptr;
 
-            JobThreadPoolType m_threadPoolType = JobThreadPoolType::kGeneric;
-            JobPriority m_priority = JobPriority::kNormal;
+            ThreadPoolType m_threadPoolType = ThreadPoolType::kGeneric;
+            Priority m_priority = Priority::kNormal;
             FiberAffinityMask m_affinityMask = FiberAffinityMask::kNone;
             Threading::Semaphore m_workSemaphore;
 
             // Jobs in these queues can only be processed by this worker (due to affinity).
-            ConcurrentQueue m_jobQueues[festd::to_underlying(JobPriority::kCount)] = {};
-            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(JobPriority::kCount)] = {};
+            ConcurrentQueue m_jobQueues[festd::to_underlying(Priority::kCount)] = {};
+            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(Priority::kCount)] = {};
         };
 
         struct alignas(Memory::kCacheLineSize) GlobalQueueSet final
         {
             Threading::SpinLock m_consumerLock;
-            ConcurrentQueue m_jobQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
-            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(JobThreadPoolType::kCount)] = {};
+            ConcurrentQueue m_jobQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
+            ConcurrentQueue m_readyFiberQueues[festd::to_underlying(ThreadPoolType::kCount)] = {};
         };
 
         std::atomic<uint64_t> m_jobCounter = 0;
-        GlobalQueueSet m_globalQueues[festd::to_underlying(JobPriority::kCount)];
+        GlobalQueueSet m_globalQueues[festd::to_underlying(Priority::kCount)];
 
         static constexpr uint32_t kMaxWorkerCount = 64;
         festd::array<Worker, kMaxWorkerCount> m_workers;
@@ -132,7 +136,7 @@ namespace FE
             return kInvalidIndex;
         }
 
-        uint32_t SelectWorkerIndex(JobThreadPoolType poolType);
+        uint32_t SelectWorkerIndex(ThreadPoolType poolType);
         void SignalWorkForAffinity(FiberAffinityMask affinityMask);
 
         void ThreadProc(uint32_t workerIndex);
@@ -140,4 +144,4 @@ namespace FE
 
         static void FiberProcImpl(Context::TransferParams transferParams);
     };
-} // namespace FE
+} // namespace FE::Jobs

@@ -2,20 +2,21 @@
 #include <Core/Base/BaseTypes.h>
 #include <Core/Jobs/Base.h>
 #include <Core/Memory/LinearAllocator.h>
+#include <Core/Modules/Environment.h>
 
-namespace FE
+namespace FE::Jobs
 {
-    struct TaskGraph final
+    struct Graph final
     {
-        explicit TaskGraph(Env::Name name, IJobSystem* jobSystem, FiberAffinityMask affinity = FiberAffinityMask::kAll,
-                           JobPriority priority = JobPriority::kNormal);
-        ~TaskGraph();
+        explicit Graph(Env::Name name, FiberAffinityMask affinity = FiberAffinityMask::kAll,
+                       Priority priority = Priority::kNormal);
+        ~Graph();
 
-        TaskGraph(const TaskGraph&) = delete;
-        TaskGraph& operator=(const TaskGraph&) = delete;
+        Graph(const Graph&) = delete;
+        Graph& operator=(const Graph&) = delete;
 
-        TaskGraph(TaskGraph&& other) noexcept;
-        TaskGraph& operator=(TaskGraph&& other) noexcept;
+        Graph(Graph&& other) noexcept;
+        Graph& operator=(Graph&& other) noexcept;
 
         void* Allocate(const size_t byteSize, const size_t byteAlignment)
         {
@@ -65,7 +66,7 @@ namespace FE
             m_completionCallbackData = funcPtr;
         }
 
-        //! @brief Invalidate the TaskGraph and dispatch a cleanup task to free all memory upon completion.
+        //! @brief Invalidate the job graph and dispatch a cleanup task to free all memory upon completion.
         //!
         //! @return WaitGroup that will be signaled when all tasks are completed and graph memory is freed.
         Rc<WaitGroup> Detach();
@@ -80,7 +81,7 @@ namespace FE
             return m_jobCount == 0;
         }
 
-        friend void swap(TaskGraph& lhs, TaskGraph& rhs) noexcept;
+        friend void swap(Graph& lhs, Graph& rhs) noexcept;
 
     private:
         struct JobImpl;
@@ -95,10 +96,8 @@ namespace FE
                                        void* data);
 
         Env::Name m_name;
-
-        IJobSystem* m_jobSystem = nullptr;
         FiberAffinityMask m_affinity = FiberAffinityMask::kNone;
-        JobPriority m_priority = JobPriority::kNormal;
+        Priority m_priority = Priority::kNormal;
 
         TaskFunction m_completionCallback = nullptr;
         void* m_completionCallbackData = nullptr;
@@ -108,4 +107,4 @@ namespace FE
         JobRecord* m_jobRecords = nullptr;
         Memory::LinearAllocator m_allocator;
     };
-} // namespace FE
+} // namespace FE::Jobs

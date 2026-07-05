@@ -1,6 +1,6 @@
 #include <Core/IO/AsyncStreamIO.h>
 #include <Core/IO/Platform/PlatformFile.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Math/Random.h>
 #include <Core/Threading/ConditionVariable.h>
 #include <Core/Threading/Mutex.h>
@@ -10,36 +10,6 @@ using namespace FE;
 
 namespace
 {
-    struct ImmediateJobSystem final : public IJobSystem
-    {
-        void Dispatch(const JobDispatchInfo& info) override
-        {
-            ++m_scheduledJobCount;
-
-            Job* job = info.m_job;
-            Rc completionWaitGroup = job->GetCompletionWaitGroup();
-            job->Execute();
-            if (completionWaitGroup)
-                completionWaitGroup->Signal();
-        }
-
-        void Start() override {}
-        void Stop() override {}
-
-        void DoRelease() override
-        {
-            Memory::DefaultDelete(this);
-        }
-
-        FiberAffinityMask GetAffinityMaskForCurrentThread() const override
-        {
-            return FiberAffinityMask::kMainThread;
-        }
-
-        std::atomic<uint32_t> m_scheduledJobCount = 0;
-    };
-
-
     struct CompletionLatch final
     {
         void Signal()
@@ -118,8 +88,7 @@ namespace
         const IO::Path path = MakeTestPath(method == Compression::Method::kDeflate ? "deflate" : "zstd");
         WriteTestFile(path, compressed);
 
-        ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ &jobSystem };
+        IO::AsyncStreamIO asyncIO;
 
         festd::vector<std::byte> destination(source.size());
         CompletionLatch latch;
@@ -133,7 +102,6 @@ namespace
 
         IO::AsyncReadCommandList commandList = builder.Build();
         auto controller = SubmitAndWait(asyncIO, commandList, latch);
-        EXPECT_EQ(jobSystem.m_scheduledJobCount, 2);
         EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
         EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
         EXPECT_EQ(destination, source);
@@ -141,14 +109,13 @@ namespace
 
 
     void RunFailedCompressedRead(const uint32_t compressedSize, const Compression::Method method,
-                                 const IO::ResultCode expectedResult, const uint32_t expectedJobs)
+                                 const IO::ResultCode expectedResult)
     {
         const festd::vector<std::byte> source = MakeAsyncTestData(32);
         const IO::Path path = MakeTestPath(expectedResult == IO::ResultCode::kIOError ? "truncated" : "bad-compression");
         WriteTestFile(path, source);
 
-        ImmediateJobSystem jobSystem;
-        IO::AsyncStreamIO asyncIO{ &jobSystem };
+        IO::AsyncStreamIO asyncIO;
 
         festd::vector<std::byte> destination(128);
         CompletionLatch latch;
@@ -163,7 +130,6 @@ namespace
         IO::AsyncReadCommandList commandList = builder.Build();
         auto controller = SubmitAndWait(asyncIO, commandList, latch);
 
-        EXPECT_EQ(jobSystem.m_scheduledJobCount, expectedJobs);
         EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kFailed);
         EXPECT_EQ(controller->GetLastOperationResult(), expectedResult);
     }
@@ -176,8 +142,7 @@ TEST(AsyncStreamIO, RawPathRead)
     const IO::Path path = MakeTestPath("raw");
     WriteTestFile(path, source);
 
-    ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ &jobSystem };
+    IO::AsyncStreamIO asyncIO;
 
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;
@@ -192,7 +157,6 @@ TEST(AsyncStreamIO, RawPathRead)
     IO::AsyncReadCommandList commandList = builder.Build();
 
     auto controller = SubmitAndWait(asyncIO, commandList, latch);
-    EXPECT_EQ(jobSystem.m_scheduledJobCount, 0);
     EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
     EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
     EXPECT_EQ(destination, source);
@@ -205,8 +169,7 @@ TEST(AsyncStreamIO, MultipleReadsAndSourceOffset)
     const IO::Path path = MakeTestPath("multiple");
     WriteTestFile(path, source);
 
-    ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ &jobSystem };
+    IO::AsyncStreamIO asyncIO;
 
     festd::vector<std::byte> first(64);
     festd::vector<std::byte> second(96);
@@ -242,13 +205,13 @@ TEST(AsyncStreamIO, ZstdRead)
 
 TEST(AsyncStreamIO, TruncatedCompressedRead)
 {
-    RunFailedCompressedRead(64, Compression::Method::kZstd, IO::ResultCode::kDecompressionError, 0);
+    RunFailedCompressedRead(64, Compression::Method::kZstd, IO::ResultCode::kDecompressionError);
 }
 
 
 TEST(AsyncStreamIO, DecompressionFailure)
 {
-    RunFailedCompressedRead(32, Compression::Method::kZstd, IO::ResultCode::kDecompressionError, 2);
+    RunFailedCompressedRead(32, Compression::Method::kZstd, IO::ResultCode::kDecompressionError);
 }
 
 
@@ -258,8 +221,7 @@ TEST(AsyncStreamIO, QueuedCancellation)
     const IO::Path path = MakeTestPath("cancel");
     WriteTestFile(path, source);
 
-    ImmediateJobSystem jobSystem;
-    IO::AsyncStreamIO asyncIO{ &jobSystem };
+    IO::AsyncStreamIO asyncIO;
 
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;

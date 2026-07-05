@@ -1,5 +1,4 @@
-#include <Core/Jobs/IJobSystem.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Modules/Environment.h>
 #include <Core/Threading/ConditionVariable.h>
 #include <Core/Threading/Mutex.h>
@@ -8,20 +7,25 @@
 
 namespace FE::Tests
 {
-    struct NotifyJob final : public Job
+    struct NotifyJob final : public Jobs::JobNode
     {
-        IJobSystem* m_jobSystem = nullptr;
+        SourceLocation m_location;
         Threading::ConditionVariable* m_cv = nullptr;
         std::atomic<uint32_t>* m_executionCount = nullptr;
         std::atomic<uint32_t>* m_orderCounter = nullptr;
         std::atomic<uint32_t>* m_executionOrder = nullptr;
         std::atomic<uint64_t>* m_observedAffinity = nullptr;
 
+        NotifyJob(const SourceLocation location = SourceLocation::Current())
+            : m_location(location)
+        {
+        }
+
         void Execute() override
         {
             if (m_observedAffinity)
             {
-                const FiberAffinityMask affinity = m_jobSystem->GetAffinityMaskForCurrentThread();
+                const Jobs::FiberAffinityMask affinity = Jobs::GetAffinityMaskForCurrentThread();
                 m_observedAffinity->store(festd::to_underlying(affinity), std::memory_order_relaxed);
             }
 
@@ -34,18 +38,24 @@ namespace FE::Tests
     };
 
 
-    struct WaitAllJob final : public Job
+    struct WaitAllJob final : public Jobs::JobNode
     {
+        SourceLocation m_location;
         WaitGroup* m_waitGroups[2] = {};
         Threading::ConditionVariable* m_cv = nullptr;
         std::atomic<bool>* m_entered = nullptr;
         std::atomic<bool>* m_resumed = nullptr;
 
+        WaitAllJob(const SourceLocation location = SourceLocation::Current())
+            : m_location(location)
+        {
+        }
+
         void Execute() override
         {
             m_entered->store(true, std::memory_order_release);
             m_cv->NotifyAll();
-            WaitGroup::WaitAll(festd::span<WaitGroup* const>{ m_waitGroups });
+            WaitGroup::WaitAll(m_waitGroups);
             m_resumed->store(true, std::memory_order_release);
             m_cv->NotifyAll();
         }
@@ -56,20 +66,17 @@ namespace FE::Tests
     {
         constexpr uint32_t kRaceJobCount = 64;
 
-        IJobSystem* jobSystem = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
         Threading::Mutex mutex;
         Threading::ConditionVariable cv;
 
         std::atomic<uint32_t> immediateExecutionCount = 0;
         NotifyJob immediateJob;
-        immediateJob.m_jobSystem = jobSystem;
         immediateJob.m_cv = &cv;
         immediateJob.m_executionCount = &immediateExecutionCount;
         const Rc immediateCompletion = WaitGroup::Create();
 
         std::atomic<uint32_t> deferredExecutionCount = 0;
         NotifyJob deferredJob;
-        deferredJob.m_jobSystem = jobSystem;
         deferredJob.m_cv = &cv;
         deferredJob.m_executionCount = &deferredExecutionCount;
         const Rc deferredPrerequisiteA = WaitGroup::Create();
@@ -78,7 +85,6 @@ namespace FE::Tests
 
         std::atomic<uint32_t> presignaledExecutionCount = 0;
         NotifyJob presignaledJob;
-        presignaledJob.m_jobSystem = jobSystem;
         presignaledJob.m_cv = &cv;
         presignaledJob.m_executionCount = &presignaledExecutionCount;
         const Rc presignaledPrerequisite = WaitGroup::Create();
@@ -91,20 +97,21 @@ namespace FE::Tests
         std::atomic<uint32_t> highExecutionOrder = Constants::kMaxU32;
         std::atomic<uint64_t> lowAffinity = 0;
         std::atomic<uint64_t> highAffinity = 0;
+
         NotifyJob lowPriorityJob;
-        lowPriorityJob.m_jobSystem = jobSystem;
         lowPriorityJob.m_cv = &cv;
         lowPriorityJob.m_executionCount = &priorityExecutionCount;
         lowPriorityJob.m_orderCounter = &orderCounter;
         lowPriorityJob.m_executionOrder = &lowExecutionOrder;
         lowPriorityJob.m_observedAffinity = &lowAffinity;
+
         NotifyJob highPriorityJob;
-        highPriorityJob.m_jobSystem = jobSystem;
         highPriorityJob.m_cv = &cv;
         highPriorityJob.m_executionCount = &priorityExecutionCount;
         highPriorityJob.m_orderCounter = &orderCounter;
         highPriorityJob.m_executionOrder = &highExecutionOrder;
         highPriorityJob.m_observedAffinity = &highAffinity;
+
         const Rc priorityPrerequisite = WaitGroup::Create();
         lowPriorityJob.AddPrerequisite(priorityPrerequisite);
         highPriorityJob.AddPrerequisite(priorityPrerequisite);
@@ -113,6 +120,7 @@ namespace FE::Tests
         std::atomic<bool> waitAllResumed = false;
         const Rc waitAllGroupA = WaitGroup::Create();
         const Rc waitAllGroupB = WaitGroup::Create();
+
         WaitAllJob waitAllJob;
         waitAllJob.m_waitGroups[0] = waitAllGroupA.Get();
         waitAllJob.m_waitGroups[1] = waitAllGroupB.Get();
@@ -123,9 +131,9 @@ namespace FE::Tests
         std::atomic<uint32_t> raceExecutionCount = 0;
         NotifyJob raceJobs[kRaceJobCount];
         Rc<WaitGroup> racePrerequisites[kRaceJobCount];
+
         for (uint32_t index = 0; index < kRaceJobCount; ++index)
         {
-            raceJobs[index].m_jobSystem = jobSystem;
             raceJobs[index].m_cv = &cv;
             raceJobs[index].m_executionCount = &raceExecutionCount;
             racePrerequisites[index] = WaitGroup::Create();
@@ -137,16 +145,17 @@ namespace FE::Tests
             return cv.WaitFor(lock, 2000, predicate);
         };
 
+        Rc<WaitGroup> schedulerWaitGroup = WaitGroup::Create();
         Threading::Thread schedulerThread("JobSystemTestScheduler", [&] {
             Threading::Sleep(50);
 
-            immediateJob.DispatchForeground(jobSystem, immediateCompletion.Get());
+            immediateJob.DispatchForeground(immediateCompletion.Get());
             EXPECT_TRUE(waitFor([&] {
                 return immediateCompletion->IsSignaled();
             }));
             EXPECT_EQ(immediateExecutionCount.load(std::memory_order_acquire), 1);
 
-            deferredJob.DispatchForeground(jobSystem);
+            deferredJob.DispatchForeground();
             Threading::Sleep(20);
             EXPECT_EQ(deferredExecutionCount.load(std::memory_order_acquire), 0);
             deferredPrerequisiteA->Signal();
@@ -158,26 +167,27 @@ namespace FE::Tests
             }));
 
             EXPECT_EQ(presignaledExecutionCount.load(std::memory_order_acquire), 0);
-            presignaledJob.DispatchForeground(jobSystem);
+            presignaledJob.DispatchForeground();
             EXPECT_TRUE(waitFor([&] {
                 return presignaledExecutionCount.load(std::memory_order_acquire) == 1;
             }));
 
-            lowPriorityJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kLow);
-            highPriorityJob.Dispatch(jobSystem, FiberAffinityMask::kMainThread, nullptr, JobPriority::kHigh);
+            lowPriorityJob.Dispatch(Jobs::FiberAffinityMask::kMainThread, nullptr, Jobs::Priority::kLow);
+            highPriorityJob.Dispatch(Jobs::FiberAffinityMask::kMainThread, nullptr, Jobs::Priority::kHigh);
             priorityPrerequisite->Signal();
             EXPECT_TRUE(waitFor([&] {
                 return priorityExecutionCount.load(std::memory_order_acquire) == 2;
             }));
             EXPECT_EQ(highExecutionOrder.load(std::memory_order_relaxed), 0);
             EXPECT_EQ(lowExecutionOrder.load(std::memory_order_relaxed), 1);
-            EXPECT_EQ(highAffinity.load(std::memory_order_relaxed), festd::to_underlying(FiberAffinityMask::kMainThread));
-            EXPECT_EQ(lowAffinity.load(std::memory_order_relaxed), festd::to_underlying(FiberAffinityMask::kMainThread));
+            EXPECT_EQ(highAffinity.load(std::memory_order_relaxed), festd::to_underlying(Jobs::FiberAffinityMask::kMainThread));
+            EXPECT_EQ(lowAffinity.load(std::memory_order_relaxed), festd::to_underlying(Jobs::FiberAffinityMask::kMainThread));
 
-            waitAllJob.DispatchForeground(jobSystem);
+            waitAllJob.DispatchForeground();
             EXPECT_TRUE(waitFor([&] {
                 return waitAllEntered.load(std::memory_order_acquire);
             }));
+
             waitAllGroupA->Signal();
             Threading::Sleep(20);
             EXPECT_FALSE(waitAllResumed.load(std::memory_order_acquire));
@@ -196,17 +206,19 @@ namespace FE::Tests
                 for (const Rc<WaitGroup>& prerequisite : racePrerequisites)
                     prerequisite->Signal();
             });
+
             for (NotifyJob& job : raceJobs)
-                job.DispatchForeground(jobSystem);
+                job.DispatchForeground();
+
             signalThread.Join();
             EXPECT_TRUE(waitFor([&] {
                 return raceExecutionCount.load(std::memory_order_acquire) == kRaceJobCount;
             }));
 
-            jobSystem->Stop();
+            schedulerWaitGroup->Signal();
         });
 
-        jobSystem->Start();
+        schedulerWaitGroup->Wait();
         schedulerThread.Join();
     }
 } // namespace FE::Tests

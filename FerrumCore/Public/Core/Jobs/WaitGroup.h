@@ -51,7 +51,7 @@ namespace FE
         void Wait();
 
     private:
-        friend struct Job;
+        friend struct Jobs::JobNode;
 
         std::atomic<uint32_t> m_refCount = 0;
         std::atomic<int32_t> m_counter = 0;
@@ -59,10 +59,10 @@ namespace FE
 
         void SignalImpl();
         bool AddWaitEntry(WaitGroupWaitEntry* entry);
-        void AddJobPrerequisite(Job* job);
+        void AddJobPrerequisite(Jobs::JobNode* job);
         bool SignalSlowImpl();
-        static void SignalJobWaitEntry(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry);
-        static void SignalFiberWaitEntry(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry);
+        static void SignalJobWaitEntry(WaitGroupWaitEntry* baseEntry);
+        static void SignalFiberWaitEntry(WaitGroupWaitEntry* baseEntry);
         void DestroyImpl();
     };
 

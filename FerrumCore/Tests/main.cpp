@@ -1,5 +1,6 @@
 ﻿#include <Core/Base/Platform.h>
 #include <Core/DI/Builder.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Modules/Configuration.h>
 #include <Core/Modules/Environment.h>
 #include <gtest/gtest.h>
@@ -30,5 +31,13 @@ int main(int argc, char** argv)
     }
 
     testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+    int32_t exitCode = 0;
+    Jobs::DispatchMainThread([&exitCode] {
+        exitCode = RUN_ALL_TESTS();
+        Jobs::StopJobSystem();
+    });
+    Jobs::StartJobSystem();
+
+    return exitCode;
 }

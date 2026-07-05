@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/IO/IAsyncStreamIO.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Assets/ITextureAssetManager.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
@@ -45,7 +45,7 @@ namespace FE::Graphics
             LoadingStage m_stage;
         };
 
-        struct MipFinalizerJob final : public Job
+        struct MipFinalizerJob final : public JobNode
         {
             void Execute() override;
 

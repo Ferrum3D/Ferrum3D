@@ -1,5 +1,5 @@
 #include <Core/DI/Activator.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/Jobs.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
@@ -10,29 +10,8 @@
 
 namespace FE::Graphics::Vulkan
 {
-    template<class TPipeline>
-    struct PipelineFactory::AsyncCompilationJob final : public Job
-    {
-        void Execute() override
-        {
-            FE_PROFILER_ZONE();
-
-            m_pipeline->InitInternal(m_context);
-            Memory::Delete(&m_factory->m_jobPool, this);
-        }
-
-        PipelineFactory* m_factory = nullptr;
-        TPipeline* m_pipeline = nullptr;
-        typename TPipeline::InitContext m_context;
-    };
-
-
-    PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager, IJobSystem* jobSystem)
-        : m_jobPool(
-              "Graphics/Core/PipelineFactory/PipelineAsyncCompilationJobPool",
-              Math::Max<uint32_t>(sizeof(AsyncCompilationJob<GraphicsPipeline>), sizeof(AsyncCompilationJob<ComputePipeline>)))
-        , m_descriptorManager(ImplCast(bindlessManager))
-        , m_jobSystem(jobSystem)
+    PipelineFactory::PipelineFactory(Core::Device* device, Core::DescriptorManager* bindlessManager)
+        : m_descriptorManager(ImplCast(bindlessManager))
     {
         FE_PROFILER_ZONE();
 
@@ -89,20 +68,22 @@ namespace FE::Graphics::Vulkan
         m_graphicsPipelinesMap[hash] = pipeline;
         lock.unlock();
 
+        GraphicsPipeline::InitContext context;
+        context.m_defines = request.m_defines;
+        context.m_desc = request.m_desc;
+        context.m_pipelineCache = m_pipelineCache;
+        context.m_shaderLibrary = m_shaderLibrary.Get();
+        context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
+        context.m_specializationConstants.resize(request.m_specializationConstants.size());
+        Memory::Copy(festd::span(context.m_specializationConstants), request.m_specializationConstants);
+
         const Rc waitGroup = WaitGroup::Create();
+        Jobs::DispatchBackground(
+            [this, pipeline, context = std::move(context)] {
+                pipeline->InitInternal(context);
+            },
+            waitGroup.Get());
 
-        auto* job = Memory::New<AsyncCompilationJob<GraphicsPipeline>>(&m_jobPool);
-        job->m_context.m_specializationConstants.resize(request.m_specializationConstants.size());
-        Memory::Copy(festd::span(job->m_context.m_specializationConstants), request.m_specializationConstants);
-
-        job->m_factory = this;
-        job->m_pipeline = pipeline;
-        job->m_context.m_defines = request.m_defines;
-        job->m_context.m_desc = request.m_desc;
-        job->m_context.m_pipelineCache = m_pipelineCache;
-        job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
-        job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
-        job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;
     }
@@ -124,20 +105,22 @@ namespace FE::Graphics::Vulkan
         m_computePipelinesMap[hash] = pipeline;
         lock.unlock();
 
+        ComputePipeline::InitContext context;
+        context.m_defines = request.m_defines;
+        context.m_desc = request.m_desc;
+        context.m_pipelineCache = m_pipelineCache;
+        context.m_shaderLibrary = m_shaderLibrary.Get();
+        context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
+        context.m_specializationConstants.resize(request.m_specializationConstants.size());
+        Memory::Copy(festd::span(context.m_specializationConstants), request.m_specializationConstants);
+
         const Rc waitGroup = WaitGroup::Create();
+        Jobs::DispatchBackground(
+            [this, pipeline, context = std::move(context)] {
+                pipeline->InitInternal(context);
+            },
+            waitGroup.Get());
 
-        auto* job = Memory::New<AsyncCompilationJob<ComputePipeline>>(&m_jobPool);
-        job->m_context.m_specializationConstants.resize(request.m_specializationConstants.size());
-        Memory::Copy(festd::span(job->m_context.m_specializationConstants), request.m_specializationConstants);
-
-        job->m_factory = this;
-        job->m_pipeline = pipeline;
-        job->m_context.m_defines = request.m_defines;
-        job->m_context.m_desc = request.m_desc;
-        job->m_context.m_pipelineCache = m_pipelineCache;
-        job->m_context.m_shaderLibrary = m_shaderLibrary.Get();
-        job->m_context.m_bindlessSetLayout = m_descriptorManager->GetDescriptorSetLayout();
-        job->DispatchBackground(m_jobSystem, waitGroup.Get(), JobPriority::kNormal);
         pipeline->SetCompletionWaitGroup(waitGroup.Get());
         return pipeline;
     }

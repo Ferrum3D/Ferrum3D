@@ -1,6 +1,6 @@
 #include <Core/DI/Builder.h>
 #include <Core/IO/BaseIO.h>
-#include <Core/Jobs/IJobSystem.h>
+#include <Core/Jobs/Jobs.h>
 #include <Core/Logging/Logger.h>
 #include <Core/Modules/Configuration.h>
 #include <Core/RTTI/Reflection.h>
@@ -45,8 +45,7 @@ namespace FE::Framework
 
         builder.Bind<Env::Configuration>()
             .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-                *result = Rc<Env::Configuration>::New(allocator, m_commandLine);
+                *result = Memory::DefaultNew<Env::Configuration>(m_commandLine);
                 return DI::ResultCode::kSuccess;
             })
             .InSingletonScope();
@@ -62,9 +61,6 @@ namespace FE::Framework
             module = module->m_next;
             moduleBuilder.Build();
         }
-
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        m_jobSystem = serviceProvider->ResolveRequired<IJobSystem>();
     }
 
 
@@ -85,7 +81,7 @@ namespace FE::Framework
     {
         m_exitWaitGroup = WaitGroup::Create();
         m_frameJob.m_application = this;
-        m_frameJob.Dispatch(m_jobSystem.Get(), FiberAffinityMask::kMainThread, m_exitWaitGroup.Get(), JobPriority::kHigh);
+        m_frameJob.Dispatch(Jobs::FiberAffinityMask::kMainThread, m_exitWaitGroup.Get(), Jobs::Priority::kHigh);
         m_exitWaitGroup->Wait();
         return m_exitCode;
     }
@@ -128,7 +124,7 @@ namespace FE::Framework
 
         IO::Flush(IO::StandardDescriptor::kStdout);
         IO::Flush(IO::StandardDescriptor::kStderr);
-        m_application->m_jobSystem->Stop();
+        Jobs::StopJobSystem();
         m_application->m_exitCode = 0;
     }
 

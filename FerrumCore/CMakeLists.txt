@@ -50,10 +50,9 @@
     Public/Core/IO/StreamBase.h
 
     Public/Core/Jobs/Base.h
-    Public/Core/Jobs/IJobSystem.h
-    Public/Core/Jobs/Job.h
-    Public/Core/Jobs/JobSystem.h
-    Public/Core/Jobs/TaskGraph.h
+    Public/Core/Jobs/JobGraph.h
+    Public/Core/Jobs/JobNode.h
+    Public/Core/Jobs/Jobs.h
     Public/Core/Jobs/WaitGroup.h
 
     Public/Core/Logging/Logger.h
@@ -149,9 +148,10 @@ set(COMMON_SOURCES
     Private/Core/IO/StreamFactory.h
     Private/Core/IO/StreamFactory.cpp
 
-    Private/Core/Jobs/Job.cpp
+    Private/Core/Jobs/JobGraph.cpp
+    Private/Core/Jobs/JobNode.cpp
+    Private/Core/Jobs/JobSystem.h
     Private/Core/Jobs/JobSystem.cpp
-    Private/Core/Jobs/TaskGraph.cpp
     Private/Core/Jobs/WaitGroup.cpp
 
     Private/Core/Logging/Logger.cpp

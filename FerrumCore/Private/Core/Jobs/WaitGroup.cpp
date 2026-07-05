@@ -8,7 +8,7 @@ namespace FE
     struct WaitGroupWaitEntry
     {
         WaitGroupWaitEntry* m_next = nullptr;
-        void (*m_signal)(WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry) = nullptr;
+        void (*m_signal)(WaitGroupWaitEntry* baseEntry) = nullptr;
     };
 
 
@@ -24,7 +24,7 @@ namespace FE
 
         struct JobWaitEntry final : public WaitGroupWaitEntry
         {
-            Job* m_job = nullptr;
+            Jobs::JobNode* m_job = nullptr;
         };
 
 
@@ -32,8 +32,7 @@ namespace FE
         {
             std::atomic<uint32_t> m_dependencyCounter = 1;
             std::atomic<FiberWaitStateValue> m_state = FiberWaitStateValue::kRegistering;
-            JobSystem* m_jobSystem = nullptr;
-            FiberWaitEntry m_waitEntry;
+            Jobs::FiberWaitEntry m_waitEntry;
         };
 
 
@@ -80,33 +79,32 @@ namespace FE
     }
 
 
-    void WaitGroup::AddJobPrerequisite(Job* job)
+    void WaitGroup::AddJobPrerequisite(Jobs::JobNode* job)
     {
         auto* entry = GJobWaitEntryAllocator.New();
         entry->m_signal = &SignalJobWaitEntry;
         entry->m_job = job;
 
         if (!AddWaitEntry(entry))
-            SignalJobWaitEntry(this, entry);
+            SignalJobWaitEntry(entry);
     }
 
 
-    void WaitGroup::SignalJobWaitEntry([[maybe_unused]]WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry)
+    void WaitGroup::SignalJobWaitEntry(WaitGroupWaitEntry* baseEntry)
     {
         auto* entry = static_cast<JobWaitEntry*>(baseEntry);
-        Job* job = entry->m_job;
+        Jobs::JobNode* job = entry->m_job;
         GJobWaitEntryAllocator.Delete(entry);
 
         if (!job->DependencySatisfied())
             return;
 
         FE_Assert(job->m_dispatchRequested.load(std::memory_order_acquire), "Unscheduled job reached zero dependencies");
-        auto* jobSystem = Rtti::AssertCast<JobSystem*>(job->m_jobSystem);
-        jobSystem->AddReadyJob(job);
+        Jobs::JobSystem::Get().AddReadyJob(job);
     }
 
 
-    void WaitGroup::SignalFiberWaitEntry([[maybe_unused]] WaitGroup* waitGroup, WaitGroupWaitEntry* baseEntry)
+    void WaitGroup::SignalFiberWaitEntry(WaitGroupWaitEntry* baseEntry)
     {
         auto* entry = static_cast<FiberWaitGroupEntry*>(baseEntry);
         FiberWaitState* state = entry->m_state;
@@ -123,7 +121,8 @@ namespace FE
 
         while (!state->m_waitEntry.m_switchCompleted.load(std::memory_order_acquire))
             _mm_pause();
-        state->m_jobSystem->AddReadyFiber(&state->m_waitEntry);
+
+        Jobs::JobSystem::Get().AddReadyFiber(&state->m_waitEntry);
     }
 
 
@@ -149,7 +148,7 @@ namespace FE
         while (entry)
         {
             WaitGroupWaitEntry* next = entry->m_next;
-            entry->m_signal(this, entry);
+            entry->m_signal(entry);
             entry = next;
         }
     }
@@ -213,7 +212,7 @@ namespace FE
             entry.m_signal = &SignalFiberWaitEntry;
             entry.m_state = &state;
             if (!waitGroup->AddWaitEntry(&entry))
-                SignalFiberWaitEntry(waitGroup, &entry);
+                SignalFiberWaitEntry(&entry);
         }
 
         const uint32_t previousValue = state.m_dependencyCounter.fetch_sub(1, std::memory_order_acq_rel);
@@ -221,13 +220,11 @@ namespace FE
         if (previousValue == 1)
             return;
 
-        IJobSystem* jobSystemInterface = Env::GetServiceProvider()->ResolveRequired<IJobSystem>();
-        state.m_jobSystem = Rtti::AssertCast<JobSystem*>(jobSystemInterface);
-
-        const uint32_t workerIndex = state.m_jobSystem->GetWorkerIndex();
+        Jobs::JobSystem& jobSystem = Jobs::JobSystem::Get();
+        const uint32_t workerIndex = jobSystem.GetWorkerIndex();
         FE_Assert(workerIndex != kInvalidIndex, "WaitGroup::WaitAll() can only wait from a fiber");
 
-        const JobSystem::Worker& worker = state.m_jobSystem->m_workers[workerIndex];
+        const Jobs::JobSystem::Worker& worker = jobSystem.m_workers[workerIndex];
         state.m_waitEntry.m_priority = worker.m_priority;
         state.m_waitEntry.m_affinityMask = worker.m_affinityMask;
         state.m_waitEntry.m_fiber = worker.m_currentFiber;
@@ -240,7 +237,7 @@ namespace FE
             return;
         }
 
-        state.m_jobSystem->SwitchFromWaitingFiber(workerIndex, state.m_waitEntry);
+        jobSystem.SwitchFromWaitingFiber(workerIndex, state.m_waitEntry);
     }
 
 

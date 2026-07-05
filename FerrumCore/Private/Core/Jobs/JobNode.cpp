@@ -1,12 +1,12 @@
-#include <Core/Jobs/IJobSystem.h>
-#include <Core/Jobs/Job.h>
+#include <Core/Jobs/JobNode.h>
+#include <Core/Jobs/JobSystem.h>
 
-namespace FE
+namespace FE::Jobs
 {
-    Job::~Job() = default;
+    JobNode::~JobNode() = default;
 
 
-    void Job::AddPrerequisite(WaitGroup* waitGroup)
+    void JobNode::AddPrerequisite(WaitGroup* waitGroup)
     {
         FE_AssertDebug(waitGroup != nullptr, "Job prerequisite cannot be null");
         FE_AssertDebug(!m_dispatchRequested.load(std::memory_order_acquire), "Prerequisites must be added before dispatching");
@@ -17,30 +17,27 @@ namespace FE
     }
 
 
-    void Job::AddPrerequisites(const festd::span<WaitGroup* const> waitGroups)
+    void JobNode::AddPrerequisites(const festd::span<WaitGroup* const> waitGroups)
     {
         for (WaitGroup* waitGroup : waitGroups)
             AddPrerequisite(waitGroup);
     }
 
 
-    void Job::AddPrerequisites(const festd::span<const Rc<WaitGroup>> waitGroups)
+    void JobNode::AddPrerequisites(const festd::span<const Rc<WaitGroup>> waitGroups)
     {
         for (const Rc<WaitGroup>& waitGroup : waitGroups)
             AddPrerequisite(waitGroup);
     }
 
 
-    void Job::Dispatch(IJobSystem* jobSystem, const FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup,
-                       const JobPriority priority)
+    void JobNode::Dispatch(const FiberAffinityMask affinityMask, WaitGroup* completionWaitGroup, const Priority priority)
     {
         if (completionWaitGroup)
             m_completionWaitGroup = completionWaitGroup;
 
-        JobDispatchInfo info;
-        info.m_job = this;
-        info.m_priority = priority;
-        info.m_affinityMask = affinityMask;
-        jobSystem->Dispatch(info);
+        m_priority = priority;
+        m_affinityMask = affinityMask;
+        JobSystem::Get().Dispatch(this);
     }
-} // namespace FE
+} // namespace FE::Jobs

@@ -2,7 +2,6 @@
 #include <Core/Compression/Compression.h>
 #include <Core/IO/BaseIO.h>
 #include <Core/IO/Path.h>
-#include <Core/Jobs/IJobSystem.h>
 #include <Core/Jobs/WaitGroup.h>
 #include <Core/Memory/SegmentedBuffer.h>
 #include <Core/Time/BaseTime.h>

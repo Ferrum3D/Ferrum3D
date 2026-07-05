@@ -1525,14 +1525,7 @@ namespace FE::Graphics::Vulkan
                     return resolveResult.error();
 
 
-                Rc<IJobSystem> arg2;
-                if (const auto resolveResult = serviceProvider->Resolve<IJobSystem>())
-                    arg2 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
-                *result = Memory::DefaultNew<PipelineFactory>(arg0.Get(), arg1.Get(), arg2.Get());
+                *result = Memory::DefaultNew<PipelineFactory>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -5582,14 +5575,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-
-                Rc<IJobSystem> arg2;
-                if (const auto resolveResult = serviceProvider->Resolve<IJobSystem>())
-                    arg2 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<ShaderLibrary>(arg0.Get(), arg1.Get(), arg2.Get());
+                *result = Memory::DefaultNew<ShaderLibrary>(arg0.Get(), arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
