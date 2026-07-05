@@ -297,13 +297,6 @@ namespace FE::Graphics::Vulkan
                     return resolveResult.error();
 
 
-                Rc<Logger> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
                 Rc<Graphics::Core::ResourcePool> arg2;
                 if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::ResourcePool>())
                     arg2 = resolveResult.value();
@@ -317,7 +310,7 @@ namespace FE::Graphics::Vulkan
                 else
                     return resolveResult.error();
 
-                *result = Memory::DefaultNew<Viewport>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                *result = Memory::DefaultNew<Viewport>(arg0.Get(), arg2.Get(), arg3.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1410,13 +1403,7 @@ namespace FE::Graphics::Vulkan
                     return resolveResult.error();
 
 
-                Rc<Logger> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<DeviceFactory>(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<DeviceFactory>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -1545,13 +1532,7 @@ namespace FE::Graphics::Vulkan
                     return resolveResult.error();
 
 
-                Rc<Logger> arg3;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg3 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<PipelineFactory>(arg0.Get(), arg1.Get(), arg2.Get(), arg3.Get());
+                *result = Memory::DefaultNew<PipelineFactory>(arg0.Get(), arg1.Get(), arg2.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3318,20 +3299,13 @@ namespace FE::Graphics::Vulkan
             }
             else
             {
-                Rc<Logger> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
                 Rc<Graphics::Core::DeviceFactory> arg1;
                 if (const auto resolveResult = serviceProvider->Resolve<Graphics::Core::DeviceFactory>())
                     arg1 = resolveResult.value();
                 else
                     return resolveResult.error();
 
-                *result = Memory::DefaultNew<Device>(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<Device>(arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3915,20 +3889,13 @@ namespace FE::Graphics::Core
             }
             else
             {
-                Rc<Logger> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
                 Rc<IO::IStreamFactory> arg1;
                 if (const auto resolveResult = serviceProvider->Resolve<IO::IStreamFactory>())
                     arg1 = resolveResult.value();
                 else
                     return resolveResult.error();
 
-                *result = Memory::DefaultNew<ShaderCompilerDXC>(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<ShaderCompilerDXC>(arg1.Get());
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -6130,14 +6097,7 @@ namespace FE::Graphics::Core
                 else
                     return resolveResult.error();
 
-
-                Rc<Logger> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<ShaderSourceCache>(arg0.Get(), arg1.Get());
+                *result = Memory::DefaultNew<ShaderSourceCache>(arg0.Get());
                 return DI::ResultCode::kSuccess;
             }
         }

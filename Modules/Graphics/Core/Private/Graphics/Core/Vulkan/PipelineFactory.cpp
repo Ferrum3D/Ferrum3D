@@ -39,7 +39,7 @@ namespace FE::Graphics::Vulkan
         m_device = device;
         SetImmediateDestroyPolicy();
 
-        m_logger->LogTrace("Creating Pipeline Factory");
+        Logger::LogTrace("Creating Pipeline Factory");
 
         VkPipelineCacheCreateInfo pipelineCacheCI{};
         pipelineCacheCI.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;

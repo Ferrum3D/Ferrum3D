@@ -1,7 +1,7 @@
 ﻿#include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/Format.h>
+#include <Graphics/Core/Vulkan/GraphicsPipeline.h>
 #include <Graphics/Core/Vulkan/PipelineStates.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
@@ -90,7 +90,7 @@ namespace FE::Graphics::Vulkan
             const ShaderModuleInfo shaderModuleInfo = context.m_shaderLibrary->GetShaderModule(shaderHandle);
             if (shaderModuleInfo.m_shaderModule == VK_NULL_HANDLE)
             {
-                context.m_logger->LogError("Failed to create graphics pipeline: shader {} was not valid", shaderName);
+                Logger::LogError("Failed to create graphics pipeline: shader {} was not valid", shaderName);
                 m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
                 return;
             }
@@ -307,7 +307,7 @@ namespace FE::Graphics::Vulkan
 
         if (const VkResult result = vkCreatePipelineLayout(device, &layoutCI, VK_NULL_HANDLE, &m_layout); result != VK_SUCCESS)
         {
-            context.m_logger->LogError("Failed to create pipeline layout: {}", ResultToString(result));
+            Logger::LogError("Failed to create pipeline layout: {}", ResultToString(result));
             m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
             return;
         }
@@ -317,7 +317,7 @@ namespace FE::Graphics::Vulkan
                 vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCI, VK_NULL_HANDLE, &m_nativePipeline);
             result != VK_SUCCESS)
         {
-            context.m_logger->LogError("Failed to create graphics pipeline: {}", ResultToString(result));
+            Logger::LogError("Failed to create graphics pipeline: {}", ResultToString(result));
             m_status.store(Core::PipelineStatus::kError, std::memory_order_release);
             return;
         }

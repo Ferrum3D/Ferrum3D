@@ -45,7 +45,7 @@ namespace FE::Graphics::Vulkan
                                                            [[maybe_unused]] uint64_t object, [[maybe_unused]] size_t location,
                                                            [[maybe_unused]] int32_t messageCode,
                                                            [[maybe_unused]] const char* pLayerPrefix, const char* pMessage,
-                                                           void* pUserData)
+                                                           [[maybe_unused]] void* pUserData)
         {
             constexpr static auto ignoredMessages =
                 std::array{ "vkCreateShaderModule(): SPIR-V Extension SPV_GOOGLE_hlsl_functionality1",
