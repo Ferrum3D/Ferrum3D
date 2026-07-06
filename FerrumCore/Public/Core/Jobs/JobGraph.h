@@ -45,7 +45,7 @@ namespace FE::Jobs
                 static_cast<FunctorType*>(data)->~FunctorType();
             };
 
-            return DispatchTaskImpl(name, prerequisites, taskFunction, funcPtr);
+            return DispatchJobImpl(name, prerequisites, taskFunction, funcPtr);
         }
 
         template<class TFunctor>
@@ -92,8 +92,8 @@ namespace FE::Jobs
         festd::span<WaitGroup* const> MakeAllWaitGroupsArray();
         void CleanUp();
 
-        Rc<WaitGroup> DispatchTaskImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,
-                                       void* data);
+        Rc<WaitGroup> DispatchJobImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,
+                                      void* data);
 
         Env::Name m_name;
         FiberAffinityMask m_affinity = FiberAffinityMask::kNone;

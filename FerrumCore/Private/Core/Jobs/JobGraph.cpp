@@ -144,7 +144,7 @@ namespace FE::Jobs
     }
 
 
-    Rc<WaitGroup> Graph::DispatchTaskImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
+    Rc<WaitGroup> Graph::DispatchJobImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
                                           const TaskFunction taskFunction, void* data)
     {
         FE_Assert(m_isValid);

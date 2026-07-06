@@ -1,6 +1,5 @@
 #include <Core/IO/AsyncStreamIO.h>
 #include <Core/IO/Platform/PlatformFile.h>
-#include <Core/Jobs/JobNode.h>
 #include <Core/Math/Random.h>
 #include <Core/Threading/ConditionVariable.h>
 #include <Core/Threading/Mutex.h>
