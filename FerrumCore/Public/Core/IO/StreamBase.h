@@ -55,6 +55,20 @@ namespace FE::IO
     {
         FE_RTTI("CCAD9E96-A9C7-4543-9414-1A0E00E8D5B6");
 
+        BufferedStream(const BufferedStream&) = delete;
+        BufferedStream& operator=(const BufferedStream&) = delete;
+
+        BufferedStream(BufferedStream&& other) noexcept
+        {
+            swap(*this, other);
+        }
+
+        BufferedStream& operator=(BufferedStream&& other) noexcept
+        {
+            swap(*this, other);
+            return *this;
+        }
+
         ~BufferedStream() override
         {
             if (m_buffer)
@@ -115,6 +129,14 @@ namespace FE::IO
                 FE_Assert(bytesWritten == m_bufferPosition);
                 m_bufferPosition = 0;
             }
+        }
+
+        friend void swap(BufferedStream& lhs, BufferedStream& rhs) noexcept
+        {
+            festd::swap(lhs.m_bufferAllocator, rhs.m_bufferAllocator);
+            festd::swap(lhs.m_buffer, rhs.m_buffer);
+            festd::swap(lhs.m_bufferCapacity, rhs.m_bufferCapacity);
+            festd::swap(lhs.m_bufferPosition, rhs.m_bufferPosition);
         }
 
     protected:

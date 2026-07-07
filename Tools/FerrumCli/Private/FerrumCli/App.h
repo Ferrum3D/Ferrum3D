@@ -7,7 +7,7 @@ namespace FE::FerrumCli
 {
     struct App final
     {
-        explicit App(festd::span<const festd::string_view> commandLine);
+        explicit App();
 
         int32_t Run();
 
@@ -15,7 +15,5 @@ namespace FE::FerrumCli
         void PrintHelp(const Cli::Command& command);
 
         CommandLineParser m_cli;
-        festd::unique_ptr<Framework::StdoutLogSink> m_logSink;
-        Rc<Logger> m_logger;
     };
 } // namespace FE::FerrumCli

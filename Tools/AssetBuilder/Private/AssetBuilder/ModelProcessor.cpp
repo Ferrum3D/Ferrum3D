@@ -4,6 +4,7 @@
 #include <AssetBuilder/Utils.h>
 
 #include <Core/Compression/Compression.h>
+#include <Core/IO/FileStream.h>
 #include <Core/IO/IStreamFactory.h>
 #include <Core/Math/Packing.h>
 #include <Graphics/Assets/ModelAssetFormat.h>
@@ -85,7 +86,7 @@ namespace FE
         {
             using namespace AssetBuilder;
 
-            auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_outputFile, IO::OpenMode::kCreate);
+            auto fileResult = IO::FileStream::Open(settings.m_outputFile, IO::OpenMode::kCreate);
             if (!fileResult)
             {
                 Logger::LogError("Failed to open file '{}' for writing: {}",
@@ -96,7 +97,7 @@ namespace FE
 
             const auto compressor = Compression::Compressor::Create(Compression::Method::kZstd);
 
-            IO::IStream* out = fileResult->Get();
+            IO::FileStream* out = fileResult->Get();
 
             CompressedBlockWriter writer{ out, &compressor };
 
@@ -178,7 +179,7 @@ namespace FE
 
     bool AssetBuilder::ProcessModel(const ModelProcessSettings& settings)
     {
-        auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_inputFile, IO::OpenMode::kReadOnly);
+        auto fileResult = IO::FileStream::Open(settings.m_inputFile, IO::OpenMode::kReadOnly);
         if (!fileResult)
         {
             Logger::LogError("Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
@@ -187,7 +188,7 @@ namespace FE
 
         Logger::LogInfo("Processing model '{}'", settings.m_inputFile);
 
-        IO::IStream* file = fileResult->Get();
+        IO::FileStream* file = fileResult->Get();
 
         const size_t rawSize = file->Length();
         void* rawData = Memory::DefaultAllocate(rawSize);
@@ -203,7 +204,7 @@ namespace FE
 
         Logger::LogInfo("Importing model '{}'", settings.m_inputFile);
 
-        auto importer = ModelImporter::Create(settings.m_logger, rawData, static_cast<uint32_t>(rawSize));
+        auto importer = ModelImporter::Create(rawData, static_cast<uint32_t>(rawSize));
         Memory::DefaultFree(rawData);
         if (!importer)
             return false;
@@ -223,6 +224,6 @@ namespace FE
         scene->ForEachModel(MeshOptimizationPasses::GenerateLods);
         scene->ForEachMesh(MeshOptimizationPasses::GenerateMeshlets);
 
-        return SaveModel(settings.m_logger, scene->m_models[0], settings);
+        return SaveModel(scene->m_models[0], settings);
     }
 } // namespace FE

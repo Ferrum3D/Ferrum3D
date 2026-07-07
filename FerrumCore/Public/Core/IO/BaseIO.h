@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Core/IO/Path.h>
 #include <Core/RTTI/RTTI.h>
 #include <Core/Time/DateTime.h>
@@ -18,7 +18,7 @@ namespace FE::Platform
 namespace FE::IO
 {
     struct IStream;
-    struct IStreamFactory;
+    struct FileStream;
 
     struct IAsyncController;
     struct IAsyncStreamIO;
@@ -91,7 +91,7 @@ namespace FE::IO
     }
 
 
-    enum class StandardDescriptor
+    enum class StandardDescriptor : uint32_t
     {
         kStdin,
         kStdout,
@@ -117,7 +117,7 @@ namespace FE::IO
                 append(&c, 1);
             }
 
-            void* m_data = nullptr;
+            uint32_t m_streamIndex = 0;
             size_t m_bytesWritten = 0;
 
             static FormatBufferFileAdapter Create(StandardDescriptor descriptor);

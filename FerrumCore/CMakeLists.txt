@@ -23,7 +23,8 @@
     Public/Core/Base/PlatformInclude.h
     Public/Core/Base/PlatformTraits.h
     Public/Core/Base/StackTrace.h
-    Public/Core/Cli/CommandLine.h
+
+    Public/Core/CLI/CommandLine.h
 
     Public/Core/Compression/Compression.h
 
@@ -44,7 +45,6 @@
     Public/Core/IO/BaseIO.h
     Public/Core/IO/FileStream.h
     Public/Core/IO/IStream.h
-    Public/Core/IO/IStreamFactory.h
     Public/Core/IO/Path.h
     Public/Core/IO/PathParser.h
     Public/Core/IO/StreamBase.h
@@ -85,9 +85,8 @@
     Public/Core/Memory/RefCount.h
     Public/Core/Memory/SegmentedBuffer.h
 
-    Public/Core/Modules/Configuration.h
-    Public/Core/Modules/Environment.h
-    Public/Core/Modules/LibraryLoader.h
+    Public/Core/Env/Environment.h
+    Public/Core/Env/LibraryLoader.h
 
     Public/Core/RTTI/Reflection.h
     Public/Core/RTTI/ReflectionContext.h
@@ -122,10 +121,11 @@
 
 set(COMMON_SOURCES
     Private/Core/Base/Assert.cpp
-    Private/Core/Cli/CommandLine.cpp
     Private/Core/Base/AssertPrivate.h
     Private/Core/Base/StackTrace.cpp
     Private/Core/Base/StackTracePrivate.h
+
+    Private/Core/CLI/CommandLine.cpp
 
     Private/Core/Compression/Compression.cpp
     Private/Core/Compression/CompressionPrivate.h
@@ -145,8 +145,6 @@ set(COMMON_SOURCES
     Private/Core/IO/BaseIOPrivate.h
     Private/Core/IO/FileStream.cpp
     Private/Core/IO/Path.cpp
-    Private/Core/IO/StreamFactory.h
-    Private/Core/IO/StreamFactory.cpp
 
     Private/Core/Jobs/JobGraph.cpp
     Private/Core/Jobs/JobNode.cpp
@@ -170,9 +168,8 @@ set(COMMON_SOURCES
     Private/Core/Memory/tlsf.c
     Private/Core/Memory/tlsf.h
 
-    Private/Core/Modules/Configuration.cpp
-    Private/Core/Modules/Environment.cpp
-    Private/Core/Modules/LibraryLoader.cpp
+    Private/Core/Env/Environment.cpp
+    Private/Core/Env/LibraryLoader.cpp
 
     Private/Core/Platform/Windows/Common.h
     Private/Core/Platform/Windows/Platform.cpp

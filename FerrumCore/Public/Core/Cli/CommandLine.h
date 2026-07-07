@@ -14,6 +14,12 @@ namespace FE::Cli
     } // namespace Internal
 
 
+    festd::span<const festd::string_view> GetArgs();
+
+    bool Check(festd::string_view argument);
+    festd::optional<festd::string_view> GetValue(festd::string_view argument);
+
+
     struct Flag final
     {
         explicit operator bool() const

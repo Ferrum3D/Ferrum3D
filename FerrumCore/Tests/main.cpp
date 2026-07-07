@@ -1,8 +1,7 @@
 ﻿#include <Core/Base/Platform.h>
 #include <Core/DI/Builder.h>
 #include <Core/Jobs/Jobs.h>
-#include <Core/Modules/Configuration.h>
-#include <Core/Modules/Environment.h>
+#include <Core/Env/Environment.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -13,16 +12,7 @@ int main(int argc, char** argv)
 
     Env::ApplicationInfo appInfo;
     appInfo.m_name = "FerrumCoreTests";
-    Env::Init(appInfo);
-
-    DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
-    builder.Bind<Env::Configuration>()
-        .ToFunc([](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-            *result = Memory::DefaultNew<Env::Configuration>(festd::span<const festd::string_view>{});
-            return DI::ResultCode::kSuccess;
-        })
-        .InSingletonScope();
-    builder.Build();
+    Env::Init(appInfo, argc, const_cast<const char**>(argv));
 
     if (Platform::IsDebuggerPresent())
     {

@@ -11,10 +11,7 @@ namespace FE::Framework
         virtual void Init() {}
         virtual void Shutdown() {}
 
-        virtual void Destroy()
-        {
-            Memory::DefaultDelete(this);
-        }
+        virtual void Destroy() = 0;
 
         virtual void Update(const EntityUpdateContext& context) = 0;
 

@@ -8,20 +8,10 @@ namespace FE::Graphics::Core
     {
         FE_PROFILER_ZONE();
 
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        const Env::Configuration* config = serviceProvider->ResolveRequired<Env::Configuration>();
-        const festd::string_view apiName = config->GetString("Graphics/Api", "Vulkan");
-        if (apiName == "Vulkan")
-        {
-            const Rc deviceFactory = DI::DefaultNew<Vulkan::DeviceFactory>().value();
-            deviceFactory->RegisterServices(builder);
+        const Rc deviceFactory = DI::DefaultNew<Vulkan::DeviceFactory>().value();
+        deviceFactory->RegisterServices(builder);
 
-            builder.Bind<DeviceFactory>().ToConst(deviceFactory.Get());
-        }
-        else
-        {
-            FE_AssertMsg(false, "Unknown graphics API:\"{}\"", apiName);
-        }
+        builder.Bind<DeviceFactory>().ToConst(deviceFactory.Get());
     }
 
     FE_IMPLEMENT_MODULE(Module);

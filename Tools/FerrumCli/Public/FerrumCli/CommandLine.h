@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Cli/CommandLine.h>
+#include <Core/CLI/CommandLine.h>
 
 namespace FE::FerrumCli
 {

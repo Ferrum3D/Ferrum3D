@@ -1,7 +1,6 @@
 #include <Core/DI/Activator.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Math/Matrix4x4.h>
-#include <Core/Modules/Configuration.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Module.h>
 #include <Graphics/Assets/IModelAssetManager.h>
@@ -26,11 +25,6 @@ namespace
 {
     struct ExampleApplication final : public Framework::Application
     {
-        ExampleApplication(const int32_t argc, const char** argv)
-            : Application(argc, argv)
-        {
-        }
-
         ~ExampleApplication() override
         {
             if (m_device != nullptr)
@@ -132,10 +126,10 @@ int main(const int32_t argc, const char** argv)
 
     Graphics::Module::Init();
     Framework::Module::Init();
-    Env::Init(applicationInfo);
+    Env::Init(applicationInfo, argc, argv);
 
     std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-    auto* application = Memory::New<ExampleApplication>(allocator, argc, argv);
+    auto* application = Memory::New<ExampleApplication>(allocator);
     application->InitializeCore();
 
     int32_t exitCode = 0;

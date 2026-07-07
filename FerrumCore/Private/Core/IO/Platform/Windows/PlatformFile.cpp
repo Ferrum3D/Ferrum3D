@@ -266,6 +266,8 @@ namespace FE::Platform
 
     IO::ResultCode FlushFile(const FileHandle fileHandle)
     {
+        FE_PROFILER_ZONE();
+
         if (FlushFileBuffers(HandleCast(fileHandle)))
             return IO::ResultCode::kSuccess;
 

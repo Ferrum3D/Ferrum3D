@@ -1,16 +1,17 @@
 ﻿#include <Core/Base/AssertPrivate.h>
 #include <Core/Base/Platform.h>
 #include <Core/Base/StackTracePrivate.h>
+#include <Core/CLI/CommandLine.h>
 #include <Core/Compression/CompressionPrivate.h>
 #include <Core/DI/Builder.h>
 #include <Core/DI/Container.h>
+#include <Core/Env/Environment.h>
 #include <Core/IO/BaseIOPrivate.h>
 #include <Core/Jobs/JobSystem.h>
 #include <Core/Logging/LoggerPrivate.h>
 #include <Core/Memory/LinearAllocator.h>
 #include <Core/Memory/Memory.h>
 #include <Core/Memory/MemoryPrivate.h>
-#include <Core/Modules/Environment.h>
 #include <Core/Platform/Windows/Common.h>
 #include <Core/RTTI/ReflectionPrivate.h>
 #include <Core/Threading/SharedSpinLock.h>
@@ -18,14 +19,14 @@
 #include <Core/Threading/ThreadingPrivate.h>
 #include <festd/unordered_map.h>
 
-namespace FE::Env
+namespace FE
 {
     namespace
     {
         inline constexpr uint32_t kNamePageShift = 16;
         inline constexpr uint32_t kNamePageByteSize = 1 << kNamePageShift;
         inline constexpr uint32_t kNameBlockShift = 3;
-        static_assert(1 << kNameBlockShift == alignof(Name::Record));
+        static_assert(1 << kNameBlockShift == alignof(Env::Name::Record));
 
 
         class NameDataAllocator final
@@ -71,10 +72,10 @@ namespace FE::Env
                 return kInvalidIndex;
             }
 
-            Name::Record* Allocate(uint64_t hash, const size_t stringByteSize, uint32_t& handle)
+            Env::Name::Record* Allocate(uint64_t hash, const size_t stringByteSize, uint32_t& handle)
             {
                 std::lock_guard lk{ m_lock };
-                const size_t recordHeaderSize = offsetof(Name::Record, m_data);
+                const size_t recordHeaderSize = offsetof(Env::Name::Record, m_data);
                 const size_t recordSize = AlignUp<1 << kNameBlockShift>(recordHeaderSize + stringByteSize);
                 if (recordSize + m_offset > kNamePageByteSize)
                 {
@@ -92,15 +93,15 @@ namespace FE::Env
                 void* ptr = static_cast<uint8_t*>(m_pages[m_currentPageIndex]) + m_offset;
                 m_offset += static_cast<uint32_t>(recordSize);
                 FE_Assert((m_offset >> kNameBlockShift) << kNameBlockShift == m_offset);
-                return static_cast<Name::Record*>(ptr);
+                return static_cast<Env::Name::Record*>(ptr);
             }
 
-            Name::Record* ResolvePointer(const uint32_t handleValue) const
+            Env::Name::Record* ResolvePointer(const uint32_t handleValue) const
             {
                 const NameHandle handle = std::bit_cast<NameHandle>(handleValue);
                 const uintptr_t pageAddress = reinterpret_cast<uintptr_t>(m_pages[handle.m_pageIndex]);
                 const uintptr_t recordAddress = pageAddress + (static_cast<size_t>(handle.m_blockIndex) << kNameBlockShift);
-                return reinterpret_cast<Name::Record*>(recordAddress);
+                return reinterpret_cast<Env::Name::Record*>(recordAddress);
             }
         };
 
@@ -203,7 +204,8 @@ namespace FE::Env
             NameDataAllocator m_nameDataAllocator;
             DI::Container m_diContainer;
 
-            ApplicationInfo m_appInfo;
+            Env::ApplicationInfo m_appInfo;
+            festd::span<const festd::string_view> m_commandLineArgs;
 
             Environment()
                 : m_linearMemoryResource(UINT64_C(2) * 1024 * 1024, &m_virtualMemoryResource)
@@ -239,7 +241,7 @@ namespace FE::Env
         };
 
 
-        Module* GModuleList = nullptr;
+        Env::Module* GModuleList = nullptr;
 
 
 #pragma warning(disable : 4075)
@@ -249,31 +251,31 @@ namespace FE::Env
     } // namespace
 
 
-    DI::ServiceRegistry* CreateServiceRegistry()
+    DI::ServiceRegistry* Env::CreateServiceRegistry()
     {
         return GEnvironment.m_diContainer.GetRegistryRoot()->CreateRegistry();
     }
 
 
-    DI::ServiceRegistry* GetRootServiceRegistry()
+    DI::ServiceRegistry* Env::GetRootServiceRegistry()
     {
         return GEnvironment.m_diContainer.GetRegistryRoot()->GetRootRegistry();
     }
 
 
-    std::pmr::memory_resource* GetStaticAllocator(const Memory::StaticAllocatorType type)
+    std::pmr::memory_resource* Env::GetStaticAllocator(const Memory::StaticAllocatorType type)
     {
         return GEnvironment.GetStaticAllocator(type);
     }
 
 
-    DI::IServiceProvider* GetServiceProvider()
+    DI::IServiceProvider* Env::GetServiceProvider()
     {
         return &GEnvironment.m_diContainer;
     }
 
 
-    Name::Name(const std::string_view str)
+    Env::Name::Name(const std::string_view str)
     {
         auto& nameAllocator = GEnvironment.m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
@@ -294,7 +296,7 @@ namespace FE::Env
     }
 
 
-    bool Name::TryGetExisting(const std::string_view str, Name& result)
+    bool Env::Name::TryGetExisting(const std::string_view str, Name& result)
     {
         auto& nameAllocator = GEnvironment.m_nameDataAllocator;
         const uint64_t hash = DefaultHash(str);
@@ -309,7 +311,7 @@ namespace FE::Env
     }
 
 
-    const Name::Record* Name::GetRecord() const
+    const Env::Name::Record* Env::Name::GetRecord() const
     {
         if (!IsValid())
             return nullptr;
@@ -318,7 +320,7 @@ namespace FE::Env
     }
 
 
-    void Module::Register(Module* module)
+    void Env::Module::Register(Module* module)
     {
         FE_Assert(!module->m_next, "Module already registered");
         module->m_next = GModuleList;
@@ -326,13 +328,13 @@ namespace FE::Env
     }
 
 
-    Module* Module::GetModuleList()
+    Env::Module* Env::Module::GetModuleList()
     {
         return GModuleList;
     }
 
 
-    void Module::ShutdownModules()
+    void Env::Module::ShutdownModules()
     {
         Module* module = GetModuleList();
         while (module)
@@ -346,11 +348,18 @@ namespace FE::Env
     }
 
 
-    void Init(const ApplicationInfo& info)
+    void Env::Init(const ApplicationInfo& info, const int32_t argc, const char** argv)
     {
         FE_Assert(GEnvironment.m_appInfo.m_name == nullptr, "Application info already set");
         FE_Assert(info.m_name != nullptr);
         GEnvironment.m_appInfo = info;
+
+        const uint32_t argCount = argc - 1;
+        auto* args = Memory::AllocateArray<festd::string_view>(&GEnvironment.m_linearMemoryResource, argCount);
+        for (uint32_t argIndex = 0; argIndex < argCount; ++argIndex)
+            args[argIndex] = argv[argIndex + 1];
+
+        GEnvironment.m_commandLineArgs = festd::span(args, argCount);
 
         DI::ServiceRegistryBuilder builder{ GetRootServiceRegistry() };
         DI::RegisterCoreServices(builder);
@@ -358,8 +367,14 @@ namespace FE::Env
     }
 
 
-    const ApplicationInfo& GetApplicationInfo()
+    const Env::ApplicationInfo& Env::GetApplicationInfo()
     {
         return GEnvironment.m_appInfo;
     }
-} // namespace FE::Env
+
+
+    festd::span<const festd::string_view> Cli::GetArgs()
+    {
+        return GEnvironment.m_commandLineArgs;
+    }
+} // namespace FE

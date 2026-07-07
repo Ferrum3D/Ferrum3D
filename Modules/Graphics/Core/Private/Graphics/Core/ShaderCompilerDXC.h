@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <Core/Base/PlatformInclude.h>
-#include <Core/IO/IStreamFactory.h>
-#include <Core/Modules/LibraryLoader.h>
+#include <Core/Env/LibraryLoader.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 #include <Graphics/Core/ShaderCompiler.h>
 
@@ -13,7 +12,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("9DAF49F9-4E5D-4042-B123-67200DC60A14");
 
-        ShaderCompilerDXC(IO::IStreamFactory* streamFactory);
+        ShaderCompilerDXC();
 
         ShaderCompilerResult CompileShader(const ShaderCompilerArgs& args) override;
 
@@ -24,7 +23,6 @@ namespace FE::Graphics::Core
         }
 
         LibraryLoader m_module;
-        IO::IStreamFactory* m_streamFactory;
         Rc<ShaderSourceCache> m_shaderSourceCache;
 
         Rc<IDxcUtils> m_dxcUtils;

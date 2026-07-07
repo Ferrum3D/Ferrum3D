@@ -2,9 +2,6 @@
 #include <Core/IO/BaseIO.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Logging/Logger.h>
-#include <Core/Modules/Configuration.h>
-#include <Core/RTTI/Reflection.h>
-#include <Core/Time/DateTime.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 
@@ -16,19 +13,10 @@ namespace FE::Framework
     } // namespace
 
 
-    Application::Application(const int32_t argc, const char** argv)
+    Application::Application()
     {
         FE_Assert(GInstance == nullptr, "Application already initialized");
         GInstance = this;
-
-        for (int32_t i = 1; i < argc; ++i)
-        {
-            const festd::string_view arg{ argv[i] };
-            m_commandLine.push_back(arg);
-
-            if (arg.starts_with("-"))
-                m_commandLineArguments[arg] = i;
-        }
     }
 
 
@@ -42,14 +30,6 @@ namespace FE::Framework
     void Application::InitializeCore()
     {
         DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
-
-        builder.Bind<Env::Configuration>()
-            .ToFunc([this](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                *result = Memory::DefaultNew<Env::Configuration>(m_commandLine);
-                return DI::ResultCode::kSuccess;
-            })
-            .InSingletonScope();
-
         RegisterServices(builder);
         builder.Build();
 
@@ -131,35 +111,3 @@ namespace FE::Framework
 
     void Application::RegisterServices([[maybe_unused]] const DI::ServiceRegistryBuilder& builder) {}
 } // namespace FE::Framework
-
-namespace FE
-{
-    festd::span<const festd::string_view> CommandLine::Get()
-    {
-        auto& app = Framework::Application::Get();
-        return app.m_commandLine;
-    }
-
-
-    bool CommandLine::Check(const festd::string_view argument)
-    {
-        auto& app = Framework::Application::Get();
-        const auto it = app.m_commandLineArguments.find(argument);
-        return it != app.m_commandLineArguments.end();
-    }
-
-
-    festd::optional<festd::string_view> CommandLine::GetValue(const festd::string_view argument)
-    {
-        auto& app = Framework::Application::Get();
-        const auto it = app.m_commandLineArguments.find(argument);
-        if (it != app.m_commandLineArguments.end())
-        {
-            const uint32_t index = it->second + 1;
-            if (index < app.m_commandLine.size())
-                return app.m_commandLine[index];
-        }
-
-        return festd::nullopt;
-    }
-} // namespace FE

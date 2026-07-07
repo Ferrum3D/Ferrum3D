@@ -12,13 +12,23 @@ namespace FE::IO
         {
         }
 
+        FileStream(const FileStream&) = delete;
+        FileStream& operator=(const FileStream&) = delete;
+
+        FileStream(FileStream&& other) noexcept;
+        FileStream& operator=(FileStream&& other) noexcept;
+
         ~FileStream() override
         {
             Close();
         }
 
-        ResultCode Open(festd::string_view fileName, OpenMode openMode);
-        void Open(StandardDescriptor standardDescriptor);
+        [[nodiscard]] static Rc<FileStream> Open(StandardDescriptor standardDescriptor,
+                                                 std::pmr::memory_resource* bufferAllocator = nullptr);
+        [[nodiscard]] static festd::expected<Rc<FileStream>, ResultCode> Open(
+            festd::string_view fileName, OpenMode openMode, std::pmr::memory_resource* bufferAllocator = nullptr);
+
+        void OpenInPlace(StandardDescriptor standardDescriptor);
 
         [[nodiscard]] bool SeekAllowed() const override;
         [[nodiscard]] bool IsOpen() const override;
@@ -31,6 +41,8 @@ namespace FE::IO
         [[nodiscard]] FileStats GetStats() const override;
         void Close() override;
         void FlushWrites() override;
+
+        friend void swap(FileStream& lhs, FileStream& rhs) noexcept;
 
     private:
         Path m_name;

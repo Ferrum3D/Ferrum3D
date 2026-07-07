@@ -1,7 +1,7 @@
 ﻿#include <Core/Compression/Compression.h>
 #include <Core/IO/IStreamFactory.h>
 #include <Core/IO/Path.h>
-#include <Core/Modules/Configuration.h>
+#include <Core/Env/Configuration.h>
 #include <Framework/Application/Application.h>
 #include <Framework/Module.h>
 #include <Graphics/Assets/TextureAssetFormat.h>

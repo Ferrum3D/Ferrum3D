@@ -1,4 +1,5 @@
 ﻿#include <Core/Base/Platform.h>
+#include <Core/CLI/CommandLine.h>
 #include <Core/DI/Builder.h>
 #include <Core/IO/IAsyncStreamIO.h>
 #include <Core/Logging/Trace.h>
@@ -141,7 +142,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    DeviceFactory::DeviceFactory(Env::Configuration* config)
+    DeviceFactory::DeviceFactory()
     {
         FE_PROFILER_ZONE();
 
@@ -179,7 +180,7 @@ namespace FE::Graphics::Vulkan
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.apiVersion = VK_API_VERSION_1_3;
         appInfo.pEngineName = "Ferrum3D";
-        appInfo.pApplicationName = config->GetName("ApplicationName", Env::Name::kEmpty).c_str();
+        appInfo.pApplicationName = Env::GetApplicationInfo().m_name;
 
         constexpr VkValidationFeatureEnableEXT enabledValidationFeatures[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
         VkValidationFeaturesEXT validationFeatures = {};
@@ -200,7 +201,7 @@ namespace FE::Graphics::Vulkan
         volkLoadInstance(m_instance);
 
 #if FE_DEVELOPMENT
-        if (config->GetInt("Graphics/DebugRuntime", 1) != 0)
+        if (!Cli::Check("--no-api-validation"))
         {
             VkDebugReportCallbackCreateInfoEXT debugCI{};
             debugCI.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;

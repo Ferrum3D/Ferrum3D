@@ -1396,14 +1396,7 @@ namespace FE::Graphics::Vulkan
             }
             else
             {
-                Rc<Env::Configuration> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Env::Configuration>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
-                *result = Memory::DefaultNew<DeviceFactory>(arg0.Get());
+                *result = Memory::DefaultNew<DeviceFactory>();
                 return DI::ResultCode::kSuccess;
             }
         }
@@ -3882,13 +3875,7 @@ namespace FE::Graphics::Core
             }
             else
             {
-                Rc<IO::IStreamFactory> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<IO::IStreamFactory>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<ShaderCompilerDXC>(arg1.Get());
+                *result = Memory::DefaultNew<ShaderCompilerDXC>();
                 return DI::ResultCode::kSuccess;
             }
         }

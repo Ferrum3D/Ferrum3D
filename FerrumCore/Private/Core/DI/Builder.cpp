@@ -1,9 +1,6 @@
 #include <Core/DI/Builder.h>
 #include <Core/DI/Registry.h>
 #include <Core/IO/AsyncStreamIO.h>
-#include <Core/IO/StreamFactory.h>
-#include <Core/Jobs/JobSystem.h>
-#include <Core/Logging/Logger.h>
 
 namespace FE::DI
 {
@@ -23,7 +20,6 @@ namespace FE::DI
 
     void RegisterCoreServices(const ServiceRegistryBuilder& builder)
     {
-        builder.Bind<IO::IStreamFactory>().To<IO::FileStreamFactory>().InSingletonScope();
         builder.Bind<IO::IAsyncStreamIO>().To<IO::AsyncStreamIO>().InSingletonScope();
     }
 

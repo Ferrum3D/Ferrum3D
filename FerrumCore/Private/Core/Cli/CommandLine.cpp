@@ -1,4 +1,4 @@
-#include <Core/Cli/CommandLine.h>
+#include <Core/CLI/CommandLine.h>
 #include <Core/Strings/Encoding.h>
 #include <Core/Strings/Format.h>
 
@@ -354,6 +354,42 @@ namespace FE::Cli
             state.Run();
         }
     } // namespace Internal
+
+
+    bool Check(const festd::string_view argument)
+    {
+        const festd::span<const festd::string_view> args = GetArgs();
+        for (const festd::string_view arg : args)
+        {
+            if (arg == argument)
+                return true;
+        }
+
+        return false;
+    }
+
+
+    festd::optional<festd::string_view> GetValue(const festd::string_view argument)
+    {
+        const festd::span<const festd::string_view> args = GetArgs();
+        for (uint32_t argIndex = 0; argIndex < args.size(); ++argIndex)
+        {
+            if (args[argIndex] == argument)
+            {
+                const uint32_t valueIndex = argIndex + 1;
+                if (valueIndex < args.size())
+                {
+                    const festd::string_view value = args[valueIndex];
+                    if (!value.starts_with("-"))
+                        return value;
+                }
+
+                break;
+            }
+        }
+
+        return festd::nullopt;
+    }
 
 
     festd::pmr::string BuildHelp(std::pmr::memory_resource* allocator, const festd::string_view executableName,

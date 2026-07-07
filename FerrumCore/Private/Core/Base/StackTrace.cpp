@@ -4,7 +4,7 @@
 #include <Core/Containers/SegmentedVector.h>
 #include <Core/Memory/LinearAllocator.h>
 #include <Core/Memory/Memory.h>
-#include <Core/Modules/Environment.h>
+#include <Core/Env/Environment.h>
 #include <festd/unordered_map.h>
 
 #if FE_DEVELOPMENT

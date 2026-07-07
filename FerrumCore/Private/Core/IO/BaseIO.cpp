@@ -9,6 +9,7 @@ namespace FE::IO
     {
         struct StandardFiles final
         {
+            Threading::SpinLock m_locks[festd::to_underlying(StandardDescriptor::kCount)];
             FileStream m_files[festd::to_underlying(StandardDescriptor::kCount)];
 
             StandardFiles()
@@ -16,7 +17,7 @@ namespace FE::IO
                 for (uint32_t i = 0; i < festd::size(m_files); ++i)
                 {
                     m_files[i].SetBufferAllocator(Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear));
-                    m_files[i].Open(static_cast<StandardDescriptor>(i));
+                    m_files[i].OpenInPlace(static_cast<StandardDescriptor>(i));
                 }
             }
         };
@@ -89,28 +90,33 @@ namespace FE::IO
 
     size_t PrintTo(const StandardDescriptor destination, const festd::string_view message)
     {
-        FileStream& stream = GStandardFiles->m_files[festd::to_underlying(destination)];
+        const uint32_t streamIndex = festd::to_underlying(destination);
+        std::lock_guard lock{ GStandardFiles->m_locks[streamIndex] };
+        FileStream& stream = GStandardFiles->m_files[streamIndex];
         return stream.WriteFromBuffer(message.data(), message.size());
     }
 
 
     void Flush(const StandardDescriptor descriptor)
     {
-        FileStream& stream = GStandardFiles->m_files[festd::to_underlying(descriptor)];
+        const uint32_t streamIndex = festd::to_underlying(descriptor);
+        std::lock_guard lock{ GStandardFiles->m_locks[streamIndex] };
+        FileStream& stream = GStandardFiles->m_files[streamIndex];
         stream.FlushWrites();
     }
 
 
     void Internal::FormatBufferFileAdapter::append(const char* str, const uint32_t length)
     {
-        auto* stream = static_cast<FileStream*>(m_data);
-        m_bytesWritten += stream->WriteFromBuffer(str, length);
+        std::lock_guard lock{ GStandardFiles->m_locks[m_streamIndex] };
+        FileStream& stream = GStandardFiles->m_files[m_streamIndex];
+        m_bytesWritten += stream.WriteFromBuffer(str, length);
     }
 
 
     Internal::FormatBufferFileAdapter Internal::FormatBufferFileAdapter::Create(const StandardDescriptor descriptor)
     {
-        return FormatBufferFileAdapter{ .m_data = &GStandardFiles->m_files[festd::to_underlying(descriptor)] };
+        return FormatBufferFileAdapter{ .m_streamIndex = festd::to_underlying(descriptor) };
     }
 
 

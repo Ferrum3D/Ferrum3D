@@ -7,24 +7,13 @@
 #include <festd/unordered_map.h>
 #include <festd/vector.h>
 
-namespace FE
-{
-    struct CommandLine final
-    {
-        static festd::span<const festd::string_view> Get();
-        static bool Check(festd::string_view argument);
-        static festd::optional<festd::string_view> GetValue(festd::string_view argument);
-    };
-} // namespace FE
-
-
 namespace FE::Framework
 {
     struct Application : public Memory::RefCountedObjectBase
     {
         FE_RTTI("AF07EDCA-2D55-4E2D-A5EF-85ED53B4CDAB");
 
-        Application(int32_t argc, const char** argv);
+        Application();
         ~Application() override;
 
         Application(const Application&) = delete;
@@ -40,8 +29,6 @@ namespace FE::Framework
         static Application& Get();
 
     protected:
-        friend CommandLine;
-
         struct FrameJob final : public Jobs::JobNode
         {
             void Execute() override;
@@ -53,7 +40,6 @@ namespace FE::Framework
 
         virtual Rc<WaitGroup> ScheduleUpdate() = 0;
 
-        festd::vector<festd::string_view> m_commandLine;
         festd::unordered_dense_map<festd::string_view, uint32_t> m_commandLineArguments;
 
         Rc<Core::PlatformApplication> m_platformApplication;

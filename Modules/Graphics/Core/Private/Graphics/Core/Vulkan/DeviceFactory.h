@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <Core/Modules/Configuration.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 
@@ -16,7 +15,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("4247535C-3E97-42E7-A869-1DC542AFBF25");
 
-        DeviceFactory(Env::Configuration* config);
+        DeviceFactory();
         ~DeviceFactory() override;
 
         [[nodiscard]] VkInstance GetNative() const

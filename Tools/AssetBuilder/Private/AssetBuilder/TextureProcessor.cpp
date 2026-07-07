@@ -2,7 +2,7 @@
 #include <AssetBuilder/Utils.h>
 
 #include <Core/Compression/Compression.h>
-#include <Core/IO/IStreamFactory.h>
+#include <Core/IO/FileStream.h>
 #include <Core/Math/Color.h>
 #include <Core/Memory/SegmentedBuffer.h>
 #include <Graphics/Assets/TextureAssetFormat.h>
@@ -94,25 +94,23 @@ namespace FE
 
     bool AssetBuilder::ProcessTexture(const TextureProcessSettings& settings)
     {
-        auto fileResult = settings.m_streamFactory->OpenFileStream(settings.m_inputFile, IO::OpenMode::kReadOnly);
+        auto fileResult = IO::FileStream::Open(settings.m_inputFile, IO::OpenMode::kReadOnly);
         if (!fileResult)
         {
-            settings.m_logger->LogError("Failed to open file {}: {}",
-                                        settings.m_inputFile,
-                                        IO::GetResultDesc(fileResult.error()));
+            Logger::LogError("Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
             return false;
         }
 
-        settings.m_logger->LogInfo("Processing texture {}", settings.m_inputFile);
+        Logger::LogInfo("Processing texture {}", settings.m_inputFile);
 
-        IO::IStream* file = fileResult->Get();
+        IO::FileStream* file = fileResult->Get();
 
         const size_t rawSize = file->Length();
         void* rawData = Memory::DefaultAllocate(rawSize);
         if (file->ReadToBuffer(rawData, rawSize) != rawSize)
         {
             Memory::DefaultFree(rawData);
-            settings.m_logger->LogError("Failed to read file {}", settings.m_inputFile);
+            Logger::LogError("Failed to read file {}", settings.m_inputFile);
             return false;
         }
 
@@ -131,7 +129,7 @@ namespace FE
 
         if (imageData == nullptr)
         {
-            settings.m_logger->LogError("Failed to load image {}: {}", settings.m_inputFile, stbi_failure_reason());
+            Logger::LogError("Failed to load image {}: {}", settings.m_inputFile, stbi_failure_reason());
             return false;
         }
 
@@ -143,11 +141,7 @@ namespace FE
 
         if (outputSize != Vector2UInt(sourceWidth, sourceHeight))
         {
-            settings.m_logger->LogInfo("Resizing image from {}x{} to {}x{}",
-                                       sourceWidth,
-                                       sourceHeight,
-                                       outputSize.x,
-                                       outputSize.y);
+            Logger::LogInfo("Resizing image from {}x{} to {}x{}", sourceWidth, sourceHeight, outputSize.x, outputSize.y);
 
             const size_t outputWidth = outputSize.x;
             const size_t outputHeight = outputSize.y;
@@ -176,11 +170,11 @@ namespace FE
         const Core::FormatInfo formatInfo{ settings.m_format };
         if (formatInfo.GetChannelCount() < static_cast<uint32_t>(sourceChannels))
         {
-            settings.m_logger->LogError("Image {} has {} channels, but requested format {} has {} channels",
-                                        settings.m_inputFile,
-                                        sourceChannels,
-                                        settings.m_format,
-                                        formatInfo.GetChannelCount());
+            Logger::LogError("Image {} has {} channels, but requested format {} has {} channels",
+                             settings.m_inputFile,
+                             sourceChannels,
+                             settings.m_format,
+                             formatInfo.GetChannelCount());
             return false;
         }
 
@@ -190,7 +184,7 @@ namespace FE
         const uint32_t mipCount = settings.m_generateMips ? Core::CalculateMipCount(outputSize) : 1;
         if (mipCount > 1)
         {
-            settings.m_logger->LogInfo("Generating {} mipmaps", mipCount - 1);
+            Logger::LogInfo("Generating {} mipmaps", mipCount - 1);
         }
 
         for (uint32_t mipIndex = 1; mipIndex < mipCount; ++mipIndex)
@@ -221,10 +215,10 @@ namespace FE
                                        nullptr);
             mipData.push_back(mipDataPtr);
 
-            settings.m_logger->LogInfo("Generated mips [{}/{}]", mipIndex + 1, mipCount);
+            Logger::LogInfo("Generated mips [{}/{}]", mipIndex + 1, mipCount);
         }
 
-        settings.m_logger->LogInfo("Compressing texture to format {}", settings.m_format);
+        Logger::LogInfo("Compressing texture to format {}", settings.m_format);
 
         festd::fixed_vector<std::byte*, Core::Limits::Image::kMaxMipCount> blockCompressedMipData;
         auto deferDeleteData = festd::defer([&blockCompressedMipData] {
@@ -252,14 +246,14 @@ namespace FE
                 }
             }
 
-            settings.m_logger->LogInfo("Compressed mips [{}/{}]", mipIndex + 1, mipCount);
+            Logger::LogInfo("Compressed mips [{}/{}]", mipIndex + 1, mipCount);
         }
 
         for (float* data : mipData)
             Memory::DefaultFree(data);
         mipData.clear();
 
-        const auto compressor = Compression::Compressor::Create(Compression::Method::kGDeflate);
+        const auto compressor = Compression::Compressor::Create(Compression::Method::kZstd);
 
         //
         // The first block of the texture file contains the header, followed by an array of MipChainInfo structs.
@@ -322,23 +316,19 @@ namespace FE
             }
         }
 
-        auto outFileResult = settings.m_streamFactory->OpenFileStream(settings.m_outputFile, IO::OpenMode::kCreate);
+        auto outFileResult = IO::FileStream::Open(settings.m_outputFile, IO::OpenMode::kCreate);
         if (!outFileResult)
         {
-            settings.m_logger->LogError("Failed to open file {}: {}",
-                                        settings.m_outputFile,
-                                        IO::GetResultDesc(outFileResult.error()));
+            Logger::LogError("Failed to open file {}: {}", settings.m_outputFile, IO::GetResultDesc(outFileResult.error()));
             return false;
         }
 
-        IO::IStream* out = outFileResult->Get();
-
-        Crc32 crc32;
+        IO::FileStream* out = outFileResult->Get();
 
         festd::vector<std::byte> tempCompressedBuffer{ static_cast<uint32_t>(compressor.GetBounds(Compression::kBlockSize)) };
 
         {
-            settings.m_logger->LogInfo("Compressing final data using GDeflate");
+            Logger::LogInfo("Compressing final data using GDeflate");
 
             festd::vector<std::byte> tempUncompressedBuffer{ Compression::kBlockSize };
             Memory::BlockWriter writer{ tempUncompressedBuffer };
@@ -360,8 +350,7 @@ namespace FE
                 FE_Assert(firstBlockBytes <= Compression::kBlockSize);
             }
 
-            FE_Verify(compressor.Compress(crc32,
-                                          tempUncompressedBuffer.data(),
+            FE_Verify(compressor.Compress(tempUncompressedBuffer.data(),
                                           writer.m_ptr - tempUncompressedBuffer.data(),
                                           tempCompressedBuffer.data(),
                                           tempCompressedBuffer.size()));
@@ -369,10 +358,10 @@ namespace FE
             WriteCompactedPages(tempCompressedBuffer, out);
 
             if (hasMipsInFirstBlock)
-                settings.m_logger->LogInfo("Compressed mip chains [1/{}]", mipChainInfo.size());
+                Logger::LogInfo("Compressed mip chains [1/{}]", mipChainInfo.size());
         }
 
-        CompressedBlockWriter compressedBlockWriter{ out, &compressor, crc32 };
+        CompressedBlockWriter compressedBlockWriter{ out, &compressor };
         for (uint32_t mipChainIndex = 0; mipChainIndex < mipChainInfo.size(); ++mipChainIndex)
         {
             if (mipChainIndex == 0 && hasMipsInFirstBlock)
@@ -385,14 +374,14 @@ namespace FE
                                              formatInfo.CalculateMipByteSize(outputSize, mipInfo.m_mostDetailedMipSlice));
             compressedBlockWriter.Flush();
 
-            settings.m_logger->LogInfo("Compressed mip chains [{}/{}]", mipChainIndex + 1, mipChainInfo.size());
+            Logger::LogInfo("Compressed mip chains [{}/{}]", mipChainIndex + 1, mipChainInfo.size());
         }
 
         compressedBlockWriter.Flush();
         outFileResult->Reset();
         out = nullptr;
 
-        settings.m_logger->LogInfo("Done writing to file {}", settings.m_outputFile);
+        Logger::LogInfo("Done writing to file {}", settings.m_outputFile);
 
         return true;
     }

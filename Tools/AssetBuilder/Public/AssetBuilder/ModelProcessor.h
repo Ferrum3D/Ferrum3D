@@ -7,8 +7,6 @@ namespace FE::AssetBuilder
 {
     struct ModelProcessSettings final
     {
-        IO::IStreamFactory* m_streamFactory = nullptr;
-
         IO::Path m_inputFile;
         IO::Path m_outputFile;
     };

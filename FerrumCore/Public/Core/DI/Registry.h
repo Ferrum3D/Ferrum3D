@@ -3,7 +3,7 @@
 #include <Core/DI/Activator.h>
 #include <Core/DI/Registration.h>
 #include <Core/Memory/Memory.h>
-#include <Core/Modules/Environment.h>
+#include <Core/Env/Environment.h>
 #include <Core/Threading/SpinLock.h>
 #include <festd/intrusive_list.h>
 #include <festd/vector.h>

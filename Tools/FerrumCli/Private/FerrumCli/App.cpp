@@ -3,29 +3,13 @@
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/TextureProcessor.h>
 #include <Core/DI/Builder.h>
-#include <Core/IO/IStreamFactory.h>
-#include <Core/Modules/Configuration.h>
 
 namespace FE::FerrumCli
 {
-    App::App(const festd::span<const festd::string_view> commandLine)
+    App::App()
     {
-        DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
-        builder.Bind<Env::Configuration>()
-            .ToFunc([commandLine](DI::IServiceProvider*, Memory::RefCountedObjectBase** result) {
-                std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-                *result = Rc<Env::Configuration>::New(allocator, commandLine);
-                return DI::ResultCode::kSuccess;
-            })
-            .InSingletonScope();
-        builder.Build();
-
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        m_logger = serviceProvider->ResolveRequired<Logger>();
-        m_logSink = festd::make_unique<Framework::StdoutLogSink>(m_logger.Get());
-
         std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
-        m_cli = Cli::Parse<CommandLineParser>(allocator, commandLine);
+        m_cli = Cli::Parse<CommandLineParser>(allocator, Cli::GetArgs());
     }
 
 
@@ -78,9 +62,6 @@ namespace FE::FerrumCli
             return 1;
         }
 
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        IO::IStreamFactory* streamFactory = serviceProvider->ResolveRequired<IO::IStreamFactory>();
-
         const festd::string_view assetPath = build->m_asset.Get();
         const IO::PathView pathView{ assetPath };
         const IO::Path fullInputPath = IO::GetAbsolutePath(assetPath);
@@ -92,8 +73,6 @@ namespace FE::FerrumCli
         if (pathView.extension() == ".glb")
         {
             AssetBuilder::ModelProcessSettings settings;
-            settings.m_logger = m_logger.Get();
-            settings.m_streamFactory = streamFactory;
             settings.m_inputFile = fullInputPath;
             settings.m_outputFile = outputPath;
             settings.m_outputFile.append(".fmd");
@@ -102,8 +81,6 @@ namespace FE::FerrumCli
         else
         {
             AssetBuilder::TextureProcessSettings settings;
-            settings.m_logger = m_logger.Get();
-            settings.m_streamFactory = streamFactory;
             settings.m_inputFile = fullInputPath;
             settings.m_outputFile = outputPath;
             settings.m_outputFile.append(".ftx");

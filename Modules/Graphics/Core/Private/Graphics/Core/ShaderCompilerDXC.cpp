@@ -1,5 +1,6 @@
 ﻿#include <Core/Containers/ByteBuffer.h>
 #include <Core/DI/Activator.h>
+#include <Core/IO/FileStream.h>
 #include <Core/IO/IAsyncStreamIO.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/FiberTempAllocator.h>
@@ -130,8 +131,7 @@ namespace FE::Graphics::Core
     } // namespace
 
 
-    ShaderCompilerDXC::ShaderCompilerDXC(IO::IStreamFactory* streamFactory)
-        : m_streamFactory(streamFactory)
+    ShaderCompilerDXC::ShaderCompilerDXC()
     {
         FE_PROFILER_ZONE();
 
@@ -246,7 +246,7 @@ namespace FE::Graphics::Core
             IO::Path pdbPath{ "ShaderDebugInfo" };
             pdbPath /= festd::string_view{ pdbFilenameUtf8.data(), pdbFilenameUtf8.size() };
 
-            const Rc pdbStream = m_streamFactory->OpenFileStream(pdbPath, IO::OpenMode::kTruncate).value();
+            const Rc pdbStream = IO::FileStream::Open(pdbPath, IO::OpenMode::kTruncate).value();
             pdbStream->WriteFromBuffer(pdb->GetBufferPointer(), pdb->GetBufferSize());
         }
 

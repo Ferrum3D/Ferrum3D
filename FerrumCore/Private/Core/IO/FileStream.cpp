@@ -87,28 +87,66 @@ namespace FE::IO
     }
 
 
-    ResultCode FileStream::Open(const festd::string_view fileName, const OpenMode openMode)
+    festd::expected<Rc<FileStream>, ResultCode> FileStream::Open(const festd::string_view fileName, const OpenMode openMode,
+                                                                 std::pmr::memory_resource* bufferAllocator)
     {
         FE_PROFILER_ZONE_TEXT("%.*s", fileName.size(), fileName.data());
 
-        ResultCode result = Platform::OpenFile(fileName, openMode, m_handle);
+        Platform::FileHandle handle;
+        ResultCode result = Platform::OpenFile(fileName, openMode, handle);
         if (result != ResultCode::kSuccess)
-            return result;
+            return festd::unexpected(result);
 
-        result = Platform::GetFileStats(m_handle, m_stats);
+        FileStats stats;
+        result = Platform::GetFileStats(handle, stats);
         if (result != ResultCode::kSuccess)
-            return result;
+            return festd::unexpected(result);
 
-        m_name = fileName;
-        m_openMode = openMode;
-        return ResultCode::kSuccess;
+        Rc<FileStream> stream = Memory::DefaultNew<FileStream>(bufferAllocator);
+        stream->m_name = fileName;
+        stream->m_handle = handle;
+        stream->m_stats = stats;
+        stream->m_openMode = openMode;
+        return stream;
     }
 
 
-    void FileStream::Open(const StandardDescriptor standardDescriptor)
+    void FileStream::OpenInPlace(StandardDescriptor standardDescriptor)
     {
         m_name = GetStandardDescriptorName(standardDescriptor);
         m_openMode = GetStandardDescriptorOpenMode(standardDescriptor);
         m_handle = Platform::GetStandardFile(standardDescriptor);
+    }
+
+
+    FileStream::FileStream(FileStream&& other) noexcept
+        : BufferedStream(nullptr)
+    {
+        swap(*this, other);
+    }
+
+
+    FileStream& FileStream::operator=(FileStream&& other) noexcept
+    {
+        swap(*this, other);
+        return *this;
+    }
+
+
+    Rc<FileStream> FileStream::Open(const StandardDescriptor standardDescriptor, std::pmr::memory_resource* bufferAllocator)
+    {
+        Rc<FileStream> stream = Memory::DefaultNew<FileStream>(bufferAllocator);
+        stream->OpenInPlace(standardDescriptor);
+        return stream;
+    }
+
+
+    void swap(FileStream& lhs, FileStream& rhs) noexcept
+    {
+        swap(static_cast<BufferedStream&>(lhs), static_cast<BufferedStream&>(rhs));
+        festd::swap(lhs.m_name, rhs.m_name);
+        festd::swap(lhs.m_handle, rhs.m_handle);
+        festd::swap(lhs.m_stats, rhs.m_stats);
+        festd::swap(lhs.m_openMode, rhs.m_openMode);
     }
 } // namespace FE::IO

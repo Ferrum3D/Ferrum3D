@@ -196,7 +196,7 @@ public:                                                                         
             return;                                                                                                              \
                                                                                                                                  \
         static bool calledOnce = false;                                                                                          \
-        FE_Assert_1(!calledOnce);                                                                                            \
+        FE_Assert_1(!calledOnce);                                                                                                \
         calledOnce = true;                                                                                                       \
                                                                                                                                  \
         void (*handler)() = dependencyHandler;                                                                                   \
@@ -232,7 +232,7 @@ public:                                                                         
         const char* m_name = nullptr;
     };
 
-    void Init(const ApplicationInfo& info);
+    void Init(const ApplicationInfo& info, int32_t argc, const char** argv);
     const ApplicationInfo& GetApplicationInfo();
 
     std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);
