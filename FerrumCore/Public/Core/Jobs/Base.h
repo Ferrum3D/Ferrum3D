@@ -9,6 +9,7 @@ namespace FE
 namespace FE::Jobs
 {
     struct JobNode;
+    struct Graph;
 
 
     //! @brief Describes the priority of a job.

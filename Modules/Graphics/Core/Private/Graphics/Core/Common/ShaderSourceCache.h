@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Jobs/Base.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Core/Threading/SharedSpinLock.h>
 #include <Graphics/Core/ShaderStage.h>
@@ -45,8 +46,8 @@ namespace FE::Graphics::Core
         festd::expected<Rc<ShaderSourceFile>, IO::ResultCode> GetSource(Env::Name path);
 
     private:
-        void ReadDirectory(const IO::Path& path);
-        void OnFileLoaded(IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName, char* source,
+        void ReadDirectory(Jobs::Graph& jobGraph, const IO::Path& path);
+        void OnFileLoaded(const IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName, char* source,
                           uint32_t sourceSize);
 
         void DoRelease() override;
@@ -55,7 +56,7 @@ namespace FE::Graphics::Core
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
         IO::IAsyncStreamIO* m_asyncIO;
         Threading::SharedSpinLock m_lock;
-        std::atomic<uint32_t> m_loadingTasksCount;
+        std::atomic<uint32_t> m_loadingJobCount;
     };
 
 
@@ -75,6 +76,6 @@ namespace FE::Graphics::Core
 
     inline bool ShaderSourceCache::IsLoading() const
     {
-        return m_loadingTasksCount.load(std::memory_order_acquire) > 0;
+        return m_loadingJobCount.load(std::memory_order_acquire) > 0;
     }
 } // namespace FE::Graphics::Core

@@ -47,7 +47,7 @@ namespace FE
         FE_PROFILER_ZONE();
 
         DWORD pathLength = 0;
-        WCHAR buffer[IO::kMaxPathLength + 1];
+        WCHAR buffer[MAX_PATH + 1];
         FE_Verify(::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, buffer, &pathLength));
         return ConvertWideString<IO::Path>({ buffer, pathLength });
     }

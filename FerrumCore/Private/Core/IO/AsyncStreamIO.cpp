@@ -33,78 +33,87 @@ namespace FE::IO
             FE_Assert(previousValue > 0, "Async operation pending work underflow");
         }
 
-
-        bool IsReadInsideSource(const ResolvedDataSource& source, const size_t sourceOffset, const size_t byteSize)
-        {
-            if (source.m_filePath.empty() || byteSize == 0)
-                return false;
-
-            if (source.m_byteSize == 0)
-                return true;
-
-            return sourceOffset <= source.m_byteSize && byteSize <= source.m_byteSize - sourceOffset;
-        }
-
     } // namespace
 
 
-    void* AsyncReadCommandListBuilder::Allocate(const size_t bytes, const size_t alignment)
+    void AsyncReadBatch::SetSource(const ResolvedDataSource& resolvedDataSource)
     {
-        InternalAsyncReadCommands::AsyncSkipBytesCommand command;
-        command.m_size = static_cast<uint32_t>(bytes);
-        command.m_alignment = static_cast<uint32_t>(alignment);
-        m_bufferBuilder.WriteBytes(&command, sizeof(command));
-        return m_bufferBuilder.Allocate(bytes, alignment);
+        m_resolvedDataSource = resolvedDataSource;
     }
 
 
-    void AsyncReadCommandListBuilder::SetSource(const ResolvedDataSource& source)
+    void AsyncReadBatch::SetCompletionWaitGroup(WaitGroup* waitGroup)
     {
-        InternalAsyncReadCommands::AsyncSetSourceCommand command;
-        command.m_source = source;
-        m_bufferBuilder.WriteBytes(&command, sizeof(command));
+        FE_Assert(waitGroup);
+        m_completionWaitGroup = waitGroup;
     }
 
 
-    void AsyncReadCommandListBuilder::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
+    void AsyncReadBatch::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
     {
-        InternalAsyncReadCommands::AsyncReadCommand command;
-        command.m_destination = static_cast<std::byte*>(destination);
-        command.m_destinationSize = destinationSize;
+        Command command;
+        command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
         command.m_sourceOffset = sourceOffset;
-        m_bufferBuilder.WriteBytes(&command, sizeof(command));
+        command.m_compressedSize = destinationSize;
+        command.m_uncompressedSize = destinationSize;
+        command.m_compressionMethod = Compression::Method::kNone;
+        command.m_vectorDestination = false;
+        m_commands.push_back(command);
     }
 
 
-    void AsyncReadCommandListBuilder::Read(void* destination, const size_t destinationSize, const size_t sourceOffset,
-                                           const size_t compressedSize, const Compression::Method compressionMethod)
+    void AsyncReadBatch::Read(void* destination, const size_t destinationSize, const size_t compressedSize,
+                              const Compression::Method compressionMethod, const size_t sourceOffset)
     {
-        InternalAsyncReadCommands::AsyncReadCompressedCommand command;
-        command.m_destination = static_cast<std::byte*>(destination);
-        command.m_destinationSize = destinationSize;
+        Command command;
+        command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
         command.m_sourceOffset = sourceOffset;
         command.m_compressedSize = compressedSize;
+        command.m_uncompressedSize = destinationSize;
         command.m_compressionMethod = compressionMethod;
-        m_bufferBuilder.WriteBytes(&command, sizeof(command));
+        command.m_vectorDestination = false;
+        m_commands.push_back(command);
     }
 
 
-    AsyncReadCommandList AsyncReadCommandListBuilder::Build(WaitGroup* signalWaitGroup)
+    void AsyncReadBatch::Read(const festd::span<std::byte> destination, const size_t sourceOffset)
     {
-        AsyncReadCommandList commandList;
-        commandList.m_buffer = m_bufferBuilder.Build();
-        commandList.m_signalWaitGroup = signalWaitGroup;
-        return commandList;
+        Read(destination.data(), destination.size_bytes(), sourceOffset);
     }
 
 
-    AsyncReadCommandList AsyncReadCommandListBuilder::ShrinkAndBuild(std::pmr::memory_resource* allocator,
-                                                                     WaitGroup* signalWaitGroup)
+    void AsyncReadBatch::Read(const festd::span<std::byte> destination, const size_t compressedSize,
+                              const Compression::Method compressionMethod, const size_t sourceOffset)
     {
-        AsyncReadCommandList commandList;
-        commandList.m_buffer = m_bufferBuilder.ShrinkAndBuild(allocator);
-        commandList.m_signalWaitGroup = signalWaitGroup;
-        return commandList;
+        Read(destination.data(), destination.size_bytes(), compressedSize, compressionMethod, sourceOffset);
+    }
+
+
+    void AsyncReadBatch::ReadAppend(festd::pmr::vector<std::byte>& destination, const size_t bytesToRead,
+                                    const size_t sourceOffset)
+    {
+        Command command;
+        command.m_destination.m_vector = &destination;
+        command.m_sourceOffset = sourceOffset;
+        command.m_compressedSize = bytesToRead;
+        command.m_uncompressedSize = bytesToRead;
+        command.m_compressionMethod = Compression::Method::kNone;
+        command.m_vectorDestination = true;
+        m_commands.push_back(command);
+    }
+
+
+    void AsyncReadBatch::ReadAppend(festd::pmr::vector<std::byte>& destination, const Compression::Method compressionMethod,
+                                    const size_t compressedSize, const size_t uncompressedSize, const size_t sourceOffset)
+    {
+        Command command;
+        command.m_destination.m_vector = &destination;
+        command.m_sourceOffset = sourceOffset;
+        command.m_compressedSize = compressedSize;
+        command.m_uncompressedSize = uncompressedSize;
+        command.m_compressionMethod = compressionMethod;
+        command.m_vectorDestination = true;
+        m_commands.push_back(command);
     }
 
 
@@ -191,7 +200,7 @@ namespace FE::IO
             }
         }
 
-        Rc newEntry = m_entryPool.New(m_entryPool);
+        Rc newEntry = m_entryPool.New();
         newEntry->m_nameHash = hash;
         newEntry->m_path = path;
         newEntry->m_fileHandle = openFileResult.value();
@@ -253,7 +262,7 @@ namespace FE::IO
     }
 
 
-    void AsyncStreamIO::ProcessCommandList(AsyncIOOperation* operation)
+    void AsyncStreamIO::ProcessOperation(AsyncIOOperation* operation)
     {
         FE_PROFILER_ZONE();
 
@@ -261,138 +270,66 @@ namespace FE::IO
 
         const bool canceledOnStart = operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire);
         if (canceledOnStart)
-            SetOperationResult(operation, ResultCode::kCanceled);
-
-        ResolvedDataSource currentSource;
-        Memory::SegmentedBufferReader reader{ operation->m_commandList.m_buffer };
-        for (;;)
         {
-            using namespace InternalAsyncReadCommands;
+            SetOperationResult(operation, ResultCode::kCanceled);
+            operation->m_batch.m_completionCallback(operation->m_controller.Get());
+            return;
+        }
 
-            AsyncReadCommandType commandType;
-            if (!reader.ReadNoConsume(commandType))
-                break;
-
-            switch (commandType)
+        const ResolvedDataSource dataSource = operation->m_batch.m_resolvedDataSource;
+        for (const AsyncReadBatch::Command& command : operation->m_batch.m_commands)
+        {
+            const festd::expected fileOpenResult = m_fileCache.CreateFile(dataSource.m_filePath);
+            if (!fileOpenResult.has_value())
             {
-                using enum AsyncReadCommandType;
-
-            case kSkipBytes:
-                {
-                    AsyncSkipBytesCommand command;
-                    FE_Verify(reader.Read(command));
-                    FE_Verify(reader.SkipBytes(command.m_size, command.m_alignment));
-                    break;
-                }
-
-            case kSetSource:
-                {
-                    AsyncSetSourceCommand command;
-                    FE_Verify(reader.Read(command));
-                    currentSource = command.m_source;
-                    break;
-                }
-
-            case kInvokeFunctor:
-                {
-                    AsyncInvokeFunctorCommand command;
-                    FE_Verify(reader.Read(command));
-                    FE_Verify(reader.SkipBytes(command.m_functorSize, command.m_functorAlignment));
-                    operation->m_completionCallback = command;
-                    break;
-                }
-
-            case kRead:
-                {
-                    AsyncReadCommand command;
-                    FE_Verify(reader.Read(command));
-                    if (canceledOnStart)
-                        break;
-
-                    if (!IsReadInsideSource(currentSource, command.m_sourceOffset, command.m_destinationSize)
-                        || command.m_destination == nullptr)
-                    {
-                        SetOperationResult(operation, ResultCode::kInvalidArgument);
-                        FE_DebugBreak();
-                        break;
-                    }
-
-                    const festd::expected fileOpenResult = m_fileCache.CreateFile(currentSource.m_filePath);
-                    if (!fileOpenResult.has_value())
-                    {
-                        SetOperationResult(operation, fileOpenResult.error());
-                        break;
-                    }
-
-                    auto* group = m_groupPool.New();
-                    group->m_sourcePath = currentSource.m_filePath;
-                    group->m_operation = operation;
-                    group->m_destination = command.m_destination;
-                    group->m_destinationSize = command.m_destinationSize;
-                    group->m_readSize = command.m_destinationSize;
-                    operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
-
-                    AsyncIOPhysicalRead read;
-                    read.m_file = fileOpenResult.value();
-                    read.m_offset = currentSource.m_byteOffset + command.m_sourceOffset;
-                    read.m_destination = command.m_destination;
-                    read.m_size = command.m_destinationSize;
-                    read.m_group = group;
-                    group->m_handle = m_backend->DispatchRead(read);
-                    break;
-                }
-
-            case kReadCompressed:
-                {
-                    AsyncReadCompressedCommand command;
-                    FE_Verify(reader.Read(command));
-                    if (canceledOnStart)
-                        break;
-
-                    if (!IsReadInsideSource(currentSource, command.m_sourceOffset, command.m_compressedSize)
-                        || command.m_destination == nullptr || command.m_compressedSize == 0 || command.m_destinationSize == 0
-                        || command.m_compressionMethod == Compression::Method::kNone
-                        || command.m_compressionMethod >= Compression::Method::kInvalid)
-                    {
-                        SetOperationResult(operation, ResultCode::kInvalidArgument);
-                        FE_DebugBreak();
-                        break;
-                    }
-
-                    const festd::expected fileOpenResult = m_fileCache.CreateFile(currentSource.m_filePath);
-                    if (!fileOpenResult.has_value())
-                    {
-                        SetOperationResult(operation, fileOpenResult.error());
-                        break;
-                    }
-
-                    auto* group = m_groupPool.New();
-                    group->m_sourcePath = currentSource.m_filePath;
-                    group->m_operation = operation;
-                    group->m_destination = command.m_destination;
-                    group->m_destinationSize = command.m_destinationSize;
-                    group->m_readSize = command.m_compressedSize;
-                    group->m_stagingMemorySize = command.m_compressedSize;
-                    group->m_stagingMemory = m_stagingAllocator.allocate(command.m_compressedSize, Memory::kDefaultAlignment);
-                    group->m_compressionMethod = command.m_compressionMethod;
-                    operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
-
-                    AsyncIOPhysicalRead read;
-                    read.m_file = fileOpenResult.value();
-                    read.m_offset = currentSource.m_byteOffset + command.m_sourceOffset;
-                    read.m_destination = group->m_stagingMemory;
-                    read.m_size = command.m_compressedSize;
-                    read.m_group = group;
-                    group->m_handle = m_backend->DispatchRead(read);
-                    break;
-                }
-
-            default:
-            case kInvalid:
-                SetOperationResult(operation, ResultCode::kInvalidArgument);
-                FE_DebugBreak();
+                SetOperationResult(operation, fileOpenResult.error());
                 break;
             }
+
+            Rc file = fileOpenResult.value();
+
+            std::byte* destination;
+            if (command.m_vectorDestination)
+            {
+                FileStats fileStats;
+                FE_Verify(Platform::GetFileStats(file->GetFileHandle(), fileStats) == ResultCode::kSuccess);
+
+                auto& v = *command.m_destination.m_vector;
+                const uint32_t initialSize = v.size();
+                v.resize(static_cast<uint32_t>(initialSize + fileStats.m_byteSize - command.m_sourceOffset));
+                destination = v.data() + initialSize;
+            }
+            else
+            {
+                destination = command.m_destination.m_byteBuffer;
+            }
+
+            auto* group = m_groupPool.New();
+            group->m_sourcePath = dataSource.m_filePath;
+            group->m_operation = operation;
+            group->m_destination = destination;
+            group->m_destinationSize = command.m_uncompressedSize;
+            group->m_readSize = command.m_compressedSize;
+            group->m_compressionMethod = command.m_compressionMethod;
+
+            void* readDestination = destination;
+            if (command.m_compressionMethod != Compression::Method::kNone)
+            {
+                group->m_stagingMemorySize = command.m_compressedSize;
+                group->m_stagingMemory = m_stagingAllocator.allocate(command.m_compressedSize, Memory::kDefaultAlignment);
+
+                readDestination = group->m_stagingMemory;
+            }
+
+            operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
+
+            AsyncIOPhysicalRead read;
+            read.m_file = std::move(file);
+            read.m_offset = dataSource.m_byteOffset + command.m_sourceOffset;
+            read.m_destination = readDestination;
+            read.m_size = command.m_compressedSize;
+            read.m_group = group;
+            group->m_handle = m_backend->DispatchRead(read);
         }
     }
 
@@ -482,7 +419,7 @@ namespace FE::IO
     }
 
 
-    bool AsyncStreamIO::TryFinalizeOperation(AsyncIOOperation* operation)
+    bool AsyncStreamIO::TryFinalizeOperation(const AsyncIOOperation* operation)
     {
         if (operation->m_pendingWork.load(std::memory_order_acquire) > 0)
             return false;
@@ -497,17 +434,12 @@ namespace FE::IO
 
         operation->m_controller->m_status.store(status, std::memory_order_release);
 
-        if (const auto& command = operation->m_completionCallback; command.m_functor)
-        {
-            FE_AssertDebug(command.m_type == InternalAsyncReadCommands::AsyncReadCommandType::kInvokeFunctor);
-            FE_AssertDebug(command.m_context != nullptr);
-            command.m_functor(command.m_context, operation->m_controller.Get());
-        }
+        if (const auto& callback = operation->m_batch.m_completionCallback)
+            callback(operation->m_controller.Get());
 
-        if (operation->m_commandList.m_signalWaitGroup)
-            operation->m_commandList.m_signalWaitGroup->Signal();
+        if (operation->m_batch.m_completionWaitGroup)
+            operation->m_batch.m_completionWaitGroup->Signal();
 
-        operation->m_commandList.m_buffer.Free();
         m_operationPool.Delete(operation);
         return true;
     }
@@ -527,7 +459,7 @@ namespace FE::IO
                 if (operation)
                 {
                     m_runningOperations.push_back(operation);
-                    ProcessCommandList(operation);
+                    ProcessOperation(operation);
                 }
 
                 for (uint32_t operationIndex = 0; operationIndex < m_runningOperations.size();)
@@ -585,13 +517,20 @@ namespace FE::IO
     }
 
 
-    Rc<IAsyncController> AsyncStreamIO::ExecuteCommandList(const AsyncReadCommandList& commandList, const Priority priority)
+    Rc<IAsyncController> AsyncStreamIO::ReadBatch(const AsyncReadBatch& batch, const Priority priority)
     {
-        Rc controller = m_controllerPool.New(m_controllerPool);
+        AsyncReadBatch batchCopy(batch);
+        return ReadBatch(std::move(batchCopy), priority);
+    }
+
+
+    Rc<IAsyncController> AsyncStreamIO::ReadBatch(AsyncReadBatch&& batch, const Priority priority)
+    {
+        Rc controller = m_controllerPool.New();
 
         auto* operation = m_operationPool.New();
         operation->m_priority = priority;
-        operation->m_commandList = commandList;
+        operation->m_batch = std::move(batch);
         operation->m_controller = controller;
         EnqueueImpl(operation);
 

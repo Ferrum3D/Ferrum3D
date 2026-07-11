@@ -72,9 +72,8 @@ namespace FE::IO
         Priority m_priority = Priority::kNormal;
         std::atomic<uint32_t> m_pendingWork = 0;
         Rc<AsyncIOController> m_controller;
-        AsyncReadCommandList m_commandList;
+        AsyncReadBatch m_batch;
         Threading::SpinLock m_completionLock;
-        InternalAsyncReadCommands::AsyncInvokeFunctorCommand m_completionCallback;
     };
 
 
@@ -154,7 +153,8 @@ namespace FE::IO
         AsyncStreamIO();
         ~AsyncStreamIO() override;
 
-        Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList, Priority priority) override;
+        Rc<IAsyncController> ReadBatch(const AsyncReadBatch& batch, Priority priority) override;
+        Rc<IAsyncController> ReadBatch(AsyncReadBatch&& batch, Priority priority) override;
 
     private:
         Threading::Thread m_thread;
@@ -182,9 +182,9 @@ namespace FE::IO
 
         void EnqueueImpl(AsyncIOOperation* operation);
         AsyncIOOperation* TryDequeue();
-        void ProcessCommandList(AsyncIOOperation* operation);
+        void ProcessOperation(AsyncIOOperation* operation);
         void ProcessBackendCompletions();
-        bool TryFinalizeOperation(AsyncIOOperation* operation);
+        bool TryFinalizeOperation(const AsyncIOOperation* operation);
         void SchedulerThread();
     };
 } // namespace FE::IO

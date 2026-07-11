@@ -145,7 +145,33 @@ namespace FE::Jobs
 
 
     Rc<WaitGroup> Graph::DispatchJobImpl(const Env::Name name, const festd::span<WaitGroup* const> prerequisites,
-                                          const TaskFunction taskFunction, void* data)
+                                         const TaskFunction taskFunction, void* data)
+    {
+        FE_Assert(m_isValid);
+        ++m_jobCount;
+
+        const Rc<WaitGroup> waitGroup = WaitGroup::Create();
+
+        auto* job = Memory::New<JobImpl>(&m_allocator);
+        job->m_data = data;
+        job->m_function = taskFunction;
+        job->m_graphName = m_name;
+        job->m_taskName = name;
+        job->AddPrerequisites(prerequisites);
+
+        auto* record = Memory::New<JobRecord>(&m_allocator);
+        record->m_next = m_jobRecords;
+        record->m_job = job;
+        record->m_completionWaitGroup = waitGroup;
+        m_jobRecords = record;
+
+        job->Dispatch(m_affinity, waitGroup.Get(), m_priority);
+        return waitGroup;
+    }
+
+
+    Rc<WaitGroup> Graph::DispatchJobImpl(const Env::Name name, const festd::span<const Rc<WaitGroup>> prerequisites,
+                                         const TaskFunction taskFunction, void* data)
     {
         FE_Assert(m_isValid);
         ++m_jobCount;

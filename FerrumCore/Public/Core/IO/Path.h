@@ -6,8 +6,6 @@
 
 namespace FE::IO
 {
-    inline constexpr uint32_t kMaxPathLength = 260;
-
     namespace Internal
     {
         using PathBase = FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultInlineStringStorage<126>>>;

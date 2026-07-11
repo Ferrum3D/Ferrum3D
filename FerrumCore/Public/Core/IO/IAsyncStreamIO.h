@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Base/StackTrace.h>
 #include <Core/Compression/Compression.h>
 #include <Core/IO/BaseIO.h>
 #include <Core/IO/Path.h>
@@ -21,135 +22,75 @@ namespace FE::IO
     };
 
 
-    namespace InternalAsyncReadCommands
+    struct AsyncReadBatch final
     {
-        enum class AsyncReadCommandType : uint32_t
+        explicit AsyncReadBatch(WaitGroup* completionWaitGroup = nullptr)
         {
-            kInvalid,
-            kSkipBytes,
-            kSetSource,
-            kInvokeFunctor,
-            kRead,
-            kReadCompressed,
-        };
+            m_callStack = Trace::CallStack::Capture();
 
-
-        struct AsyncSkipBytesCommand final
-        {
-            AsyncReadCommandType m_type = AsyncReadCommandType::kSkipBytes;
-            uint32_t m_size = 0;
-            uint32_t m_alignment = 0;
-        };
-
-
-        struct AsyncSetSourceCommand final
-        {
-            AsyncReadCommandType m_type = AsyncReadCommandType::kSetSource;
-            ResolvedDataSource m_source;
-        };
-
-
-        struct AsyncInvokeFunctorCommand final
-        {
-            AsyncReadCommandType m_type = AsyncReadCommandType::kInvokeFunctor;
-            uint32_t m_functorSize = 0;
-            uint32_t m_functorAlignment = 0;
-            void (*m_functor)(void* context, IAsyncController* controller) = nullptr;
-            void* m_context = nullptr;
-        };
-
-
-        struct AsyncReadCommand final
-        {
-            AsyncReadCommandType m_type = AsyncReadCommandType::kRead;
-            std::byte* m_destination = nullptr;
-            size_t m_destinationSize = 0;
-            size_t m_sourceOffset = 0;
-        };
-
-
-        struct AsyncReadCompressedCommand final
-        {
-            AsyncReadCommandType m_type = AsyncReadCommandType::kReadCompressed;
-            std::byte* m_destination = nullptr;
-            size_t m_destinationSize = 0;
-            size_t m_sourceOffset = 0;
-            size_t m_compressedSize = 0;
-            Compression::Method m_compressionMethod = Compression::Method::kNone;
-        };
-    } // namespace InternalAsyncReadCommands
-
-
-    struct AsyncReadCommandList final
-    {
-        Memory::SegmentedBuffer m_buffer;
-        WaitGroup* m_signalWaitGroup = nullptr;
-    };
-
-
-    struct AsyncReadCommandListBuilder final
-    {
-        explicit AsyncReadCommandListBuilder(std::pmr::memory_resource* allocator, const uint32_t pageSize = 2048)
-            : m_bufferBuilder(allocator ? allocator : std::pmr::get_default_resource(), pageSize)
-        {
+            if (completionWaitGroup)
+                SetCompletionWaitGroup(completionWaitGroup);
         }
 
-        void* Allocate(size_t bytes, size_t alignment = Memory::kDefaultAlignment);
-        void SetSource(const ResolvedDataSource& source);
+        explicit AsyncReadBatch(const ResolvedDataSource& resolvedDataSource, WaitGroup* completionWaitGroup = nullptr)
+            : AsyncReadBatch(completionWaitGroup)
+        {
+            SetSource(resolvedDataSource);
+        }
+
+        void SetSource(const ResolvedDataSource& resolvedDataSource);
+        void SetCompletionWaitGroup(WaitGroup* waitGroup);
+
         void Read(void* destination, size_t destinationSize, size_t sourceOffset = 0);
-        void Read(void* destination, size_t destinationSize, size_t sourceOffset, size_t compressedSize,
-                  Compression::Method compressionMethod);
+        void Read(void* destination, size_t destinationSize, size_t compressedSize, Compression::Method compressionMethod,
+                  size_t sourceOffset = 0);
+
+        void Read(festd::span<std::byte> destination, size_t sourceOffset = 0);
+        void Read(festd::span<std::byte> destination, size_t compressedSize, Compression::Method compressionMethod,
+                  size_t sourceOffset = 0);
+
+        // The data read from the file will be appended to the destination.
+        // If bytesToRead is greater than sourceOffset + size of source file in bytes, the source file will be read until EOF.
+        void ReadAppend(festd::pmr::vector<std::byte>& destination, size_t bytesToRead, size_t sourceOffset = 0);
+        void ReadAppend(festd::pmr::vector<std::byte>& destination, Compression::Method compressionMethod, size_t compressedSize,
+                        size_t uncompressedSize, size_t sourceOffset = 0);
 
         template<class TFunctor>
+            requires(sizeof(TFunctor) <= 48)
         void InvokeOnCompletion(TFunctor&& functor)
         {
-            using namespace InternalAsyncReadCommands;
-
-            FE_Assert(!m_completionCallbackSet);
-            m_completionCallbackSet = true;
-
-            AsyncInvokeFunctorCommand command;
-            command.m_type = AsyncReadCommandType::kInvokeFunctor;
-            command.m_functorSize = sizeof(TFunctor);
-            command.m_functorAlignment = alignof(TFunctor);
-            command.m_functor = [](void* context, [[maybe_unused]] IAsyncController* controller) {
-#if FE_DEVELOPMENT
-                HighResolutionTimer timer;
-                timer.Start();
-#endif
-
-                if constexpr (std::is_invocable_v<TFunctor, IAsyncController*>)
-                    (*static_cast<TFunctor*>(context))(controller);
-                else
-                    (*static_cast<TFunctor*>(context))();
-
-                static_cast<TFunctor*>(context)->~TFunctor();
-
-#if FE_DEVELOPMENT
-                timer.Stop();
-
-                if (const double ms = timer.GetElapsedMilliseconds(); ms > 1.0)
-                {
-                    const auto message =
-                        Fmt::FixedFormat("AsyncReadCommandList completion callback took too long to execute ({} ms)", ms);
-                    Trace::AssertionReport(SourceLocation::Current(), message.data(), message.size());
-                }
-#endif
-            };
-
-            void* commandPtr = m_bufferBuilder.WriteBytes(&command, sizeof(command));
-            void* functorPtr = m_bufferBuilder.Allocate(sizeof(TFunctor), alignof(TFunctor));
-            new (functorPtr) TFunctor(std::forward<TFunctor>(functor));
-
-            static_cast<AsyncInvokeFunctorCommand*>(commandPtr)->m_context = functorPtr;
+            if constexpr (std::is_invocable_v<TFunctor, IAsyncController*>)
+            {
+                m_completionCallback = std::forward<TFunctor>(functor);
+            }
+            else
+            {
+                m_completionCallback = [functor = std::forward<TFunctor>(functor)](IAsyncController*) {
+                    functor();
+                };
+            }
         }
 
-        AsyncReadCommandList Build(WaitGroup* signalWaitGroup = nullptr);
-        AsyncReadCommandList ShrinkAndBuild(std::pmr::memory_resource* allocator = nullptr, WaitGroup* signalWaitGroup = nullptr);
+        struct Command final
+        {
+            union
+            {
+                std::byte* m_byteBuffer;
+                festd::pmr::vector<std::byte>* m_vector;
+            } m_destination = {};
 
-    private:
-        bool m_completionCallbackSet = false;
-        Memory::SegmentedBufferBuilder m_bufferBuilder;
+            size_t m_sourceOffset = 0;
+            size_t m_compressedSize = 0;
+            size_t m_uncompressedSize = 0;
+            Compression::Method m_compressionMethod = Compression::Method::kNone;
+            bool m_vectorDestination = false;
+        };
+
+        Trace::CallStack m_callStack;
+        ResolvedDataSource m_resolvedDataSource;
+        festd::inline_vector<Command, 1> m_commands;
+        festd::fixed_function<48, void(IAsyncController* controller)> m_completionCallback;
+        Rc<WaitGroup> m_completionWaitGroup;
     };
 
 
@@ -195,7 +136,7 @@ namespace FE::IO
 
         ~IAsyncStreamIO() override = default;
 
-        virtual Rc<IAsyncController> ExecuteCommandList(const AsyncReadCommandList& commandList,
-                                                        Priority priority = Priority::kNormal) = 0;
+        virtual Rc<IAsyncController> ReadBatch(AsyncReadBatch&& batch, Priority priority = Priority::kNormal) = 0;
+        virtual Rc<IAsyncController> ReadBatch(const AsyncReadBatch& batch, Priority priority = Priority::kNormal) = 0;
     };
 } // namespace FE::IO

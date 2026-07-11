@@ -1,8 +1,8 @@
 #pragma once
 #include <Core/Base/BaseTypes.h>
+#include <Core/Env/Environment.h>
 #include <Core/Jobs/Base.h>
 #include <Core/Memory/LinearAllocator.h>
-#include <Core/Env/Environment.h>
 
 namespace FE::Jobs
 {
@@ -37,6 +37,25 @@ namespace FE::Jobs
 
         template<class TFunctor>
         Rc<WaitGroup> Dispatch(const Env::Name name, const festd::span<WaitGroup* const> prerequisites, TFunctor&& functor)
+        {
+            using FunctorType = std::decay_t<TFunctor>;
+            FunctorType* funcPtr = Memory::New<FunctorType>(&m_allocator, std::forward<FunctorType>(functor));
+            const TaskFunction taskFunction = [](void* data) {
+                (*static_cast<FunctorType*>(data))();
+                static_cast<FunctorType*>(data)->~FunctorType();
+            };
+
+            return DispatchJobImpl(name, prerequisites, taskFunction, funcPtr);
+        }
+
+        template<class TFunctor>
+        Rc<WaitGroup> Dispatch(const Env::Name name, const std::initializer_list<Rc<WaitGroup>> prerequisites, TFunctor&& functor)
+        {
+            return Dispatch<TFunctor>(name, festd::span(prerequisites), std::forward<TFunctor>(functor));
+        }
+
+        template<class TFunctor>
+        Rc<WaitGroup> Dispatch(const Env::Name name, const festd::span<const Rc<WaitGroup>> prerequisites, TFunctor&& functor)
         {
             using FunctorType = std::decay_t<TFunctor>;
             FunctorType* funcPtr = Memory::New<FunctorType>(&m_allocator, std::forward<FunctorType>(functor));
@@ -93,6 +112,9 @@ namespace FE::Jobs
         void CleanUp();
 
         Rc<WaitGroup> DispatchJobImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,
+                                      void* data);
+
+        Rc<WaitGroup> DispatchJobImpl(Env::Name name, festd::span<const Rc<WaitGroup>> prerequisites, TaskFunction taskFunction,
                                       void* data);
 
         Env::Name m_name;

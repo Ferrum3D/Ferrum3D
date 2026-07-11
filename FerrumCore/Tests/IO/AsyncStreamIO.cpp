@@ -64,10 +64,10 @@ namespace
     }
 
 
-    Rc<IO::IAsyncController> SubmitAndWait(IO::AsyncStreamIO& asyncIO, const IO::AsyncReadCommandList& commandList,
-                                           CompletionLatch& latch, IO::Priority priority = IO::Priority::kNormal)
+    Rc<IO::IAsyncController> SubmitAndWait(IO::AsyncStreamIO& asyncIO, const IO::AsyncReadBatch& batch, CompletionLatch& latch,
+                                           IO::Priority priority = IO::Priority::kNormal)
     {
-        Rc<IO::IAsyncController> controller = asyncIO.ExecuteCommandList(commandList, priority);
+        Rc<IO::IAsyncController> controller = asyncIO.ReadBatch(batch, priority);
         latch.Wait();
         return controller;
     }
@@ -92,15 +92,14 @@ namespace
         festd::vector<std::byte> destination(source.size());
         CompletionLatch latch;
 
-        IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
-        builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressed.size() });
-        builder.Read(destination.data(), destination.size(), 0, compressed.size(), method);
-        builder.InvokeOnCompletion([&] {
+        IO::AsyncReadBatch batch;
+        batch.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressed.size() });
+        batch.Read(destination, compressed.size(), method);
+        batch.InvokeOnCompletion([&] {
             latch.Signal();
         });
 
-        IO::AsyncReadCommandList commandList = builder.Build();
-        auto controller = SubmitAndWait(asyncIO, commandList, latch);
+        auto controller = SubmitAndWait(asyncIO, batch, latch);
         EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
         EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
         EXPECT_EQ(destination, source);
@@ -119,16 +118,14 @@ namespace
         festd::vector<std::byte> destination(128);
         CompletionLatch latch;
 
-        IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
-        builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressedSize });
-        builder.Read(destination.data(), destination.size(), 0, compressedSize, method);
-        builder.InvokeOnCompletion([&] {
+        IO::AsyncReadBatch batch;
+        batch.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = compressedSize });
+        batch.Read(destination, compressedSize, method);
+        batch.InvokeOnCompletion([&] {
             latch.Signal();
         });
 
-        IO::AsyncReadCommandList commandList = builder.Build();
-        auto controller = SubmitAndWait(asyncIO, commandList, latch);
-
+        auto controller = SubmitAndWait(asyncIO, batch, latch);
         EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kFailed);
         EXPECT_EQ(controller->GetLastOperationResult(), expectedResult);
     }
@@ -146,19 +143,42 @@ TEST(AsyncStreamIO, RawPathRead)
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;
 
-    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
-    builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
-    builder.Read(destination.data(), destination.size());
-    builder.InvokeOnCompletion([&] {
+    IO::AsyncReadBatch batch;
+    batch.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
+    batch.Read(destination.data(), destination.size());
+    batch.InvokeOnCompletion([&] {
         latch.Signal();
     });
 
-    IO::AsyncReadCommandList commandList = builder.Build();
-
-    auto controller = SubmitAndWait(asyncIO, commandList, latch);
+    auto controller = SubmitAndWait(asyncIO, batch, latch);
     EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
     EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
     EXPECT_EQ(destination, source);
+}
+
+
+TEST(AsyncStreamIO, RawPathReadAppend)
+{
+    const festd::vector<std::byte> source = MakeAsyncTestData(4096);
+    const IO::Path path = MakeTestPath("raw");
+    WriteTestFile(path, source);
+
+    IO::AsyncStreamIO asyncIO;
+
+    festd::pmr::vector<std::byte> destination;
+    CompletionLatch latch;
+
+    IO::AsyncReadBatch batch;
+    batch.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
+    batch.ReadAppend(destination, source.size());
+    batch.InvokeOnCompletion([&] {
+        latch.Signal();
+    });
+
+    auto controller = SubmitAndWait(asyncIO, batch, latch);
+    EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
+    EXPECT_EQ(controller->GetLastOperationResult(), IO::ResultCode::kSuccess);
+    EXPECT_EQ(festd::span(destination), festd::span(source));
 }
 
 
@@ -174,16 +194,14 @@ TEST(AsyncStreamIO, MultipleReadsAndSourceOffset)
     festd::vector<std::byte> second(96);
     CompletionLatch latch;
 
-    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
-    builder.SetSource({ .m_filePath = path, .m_byteOffset = 32, .m_byteSize = source.size() - 32 });
-    builder.Read(first.data(), first.size(), 0);
-    builder.Read(second.data(), second.size(), 128);
-    builder.InvokeOnCompletion([&] {
+    IO::AsyncReadBatch batch({ .m_filePath = path, .m_byteOffset = 32, .m_byteSize = source.size() - 32 });
+    batch.Read(first, 0);
+    batch.Read(second.data(), second.size(), 128);
+    batch.InvokeOnCompletion([&] {
         latch.Signal();
     });
 
-    IO::AsyncReadCommandList commandList = builder.Build();
-    auto controller = SubmitAndWait(asyncIO, commandList, latch);
+    auto controller = SubmitAndWait(asyncIO, batch, latch);
     EXPECT_EQ(controller->GetStatus(), IO::AsyncOperationStatus::kSucceeded);
     EXPECT_TRUE(std::equal(first.begin(), first.end(), source.begin() + 32));
     EXPECT_TRUE(std::equal(second.begin(), second.end(), source.begin() + 160));
@@ -225,15 +243,13 @@ TEST(AsyncStreamIO, QueuedCancellation)
     festd::vector<std::byte> destination(source.size());
     CompletionLatch latch;
 
-    IO::AsyncReadCommandListBuilder builder{ std::pmr::get_default_resource(), 2048 };
-    builder.SetSource({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
-    builder.Read(destination.data(), destination.size());
-    builder.InvokeOnCompletion([&] {
+    IO::AsyncReadBatch batch({ .m_filePath = path, .m_byteOffset = 0, .m_byteSize = source.size() });
+    batch.Read(destination.data(), destination.size());
+    batch.InvokeOnCompletion([&] {
         latch.Signal();
     });
 
-    IO::AsyncReadCommandList commandList = builder.Build();
-    auto controller = asyncIO.ExecuteCommandList(commandList, IO::Priority::kNormal);
+    auto controller = asyncIO.ReadBatch(batch, IO::Priority::kNormal);
     controller->Cancel();
     ASSERT_TRUE(latch.Wait());
 

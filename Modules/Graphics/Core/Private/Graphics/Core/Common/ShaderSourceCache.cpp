@@ -1,4 +1,5 @@
 ﻿#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/Jobs/JobGraph.h>
 #include <Core/Logging/Trace.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
 
@@ -23,21 +24,18 @@ namespace FE::Graphics::Core
     {
         FE_PROFILER_ZONE();
 
-        ReadDirectory(IO::GetAbsolutePath("Shaders"));
-        ReadDirectory(IO::GetAbsolutePath("../../Modules/Graphics/Framework/Shaders"));
+        Jobs::Graph jobGraph("Graphics/Core/ShaderSourceCache/Load", Jobs::FiberAffinityMask::kAllBackground);
+        ReadDirectory(jobGraph, IO::GetAbsolutePath("Shaders"));
+        ReadDirectory(jobGraph, IO::GetAbsolutePath("../../Modules/Graphics/Framework/Shaders"));
 
         // TODO: probably we can wait later...
-        while (m_loadingTasksCount.load(std::memory_order_acquire) > 0)
-        {
-            for (uint32_t i = 0; i < 32; ++i)
-                _mm_pause();
-        }
+        jobGraph.Wait();
     }
 
 
-    void ShaderSourceCache::ReadDirectory(const IO::Path& path)
+    void ShaderSourceCache::ReadDirectory(Jobs::Graph& jobGraph, const IO::Path& path)
     {
-        // Ignore if directory was not found.
+        // Ignore non-existent directories.
         IO::Directory::TraverseRecursively(path, "*.hlsl;*.hlsli;*.h", [&](const IO::DirectoryEntry& entry) {
             if (!Bit::AnySet(entry.m_attributes, IO::FileAttributeFlags::kDirectory))
             {
@@ -46,21 +44,23 @@ namespace FE::Graphics::Core
 
                 const festd::string_view shaderNameView = pathStrView.substr_ascii(path.size() + 1);
                 const Env::Name shaderName{ shaderNameView };
-                m_loadingTasksCount.fetch_add(1, std::memory_order_release);
+                m_loadingJobCount.fetch_add(1, std::memory_order_release);
 
                 const auto sourceSize = static_cast<uint32_t>(entry.m_stats.m_byteSize);
                 char* source = Memory::DefaultAllocateArray<char>(sourceSize + 1);
                 source[sourceSize] = 0;
 
-                Memory::StackTempAllocator<256> temp;
-                IO::AsyncReadCommandListBuilder builder{ &temp, temp.Size() };
-                builder.SetSource({ .m_filePath = entry.m_path, .m_byteOffset = 0, .m_byteSize = sourceSize });
-                builder.Read(source, sourceSize);
-                builder.InvokeOnCompletion(
-                    [this, shaderName, source, sourceSize, fullPath = IO::Path(entry.m_path)](IO::IAsyncController* controller) {
-                        OnFileLoaded(controller, fullPath, shaderName, source, sourceSize);
-                    });
-                m_asyncIO->ExecuteCommandList(builder.ShrinkAndBuild(std::pmr::get_default_resource()));
+                Rc completionWaitGroup = WaitGroup::Create();
+                IO::AsyncReadBatch batch{ completionWaitGroup.Get() };
+                batch.SetSource({ .m_filePath = entry.m_path, .m_byteOffset = 0, .m_byteSize = sourceSize });
+                batch.Read(source, sourceSize);
+
+                Rc controller = m_asyncIO->ReadBatch(std::move(batch));
+                jobGraph.Dispatch(shaderName,
+                                  { completionWaitGroup },
+                                  [this, shaderName, source, sourceSize, controller, fullPath = IO::Path(entry.m_path)] {
+                                      OnFileLoaded(controller.Get(), fullPath, shaderName, source, sourceSize);
+                                  });
             }
 
             return true;
@@ -90,14 +90,12 @@ namespace FE::Graphics::Core
     }
 
 
-    void ShaderSourceCache::OnFileLoaded(IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName,
-                                         char* source, uint32_t sourceSize)
+    void ShaderSourceCache::OnFileLoaded(const IO::IAsyncController* controller, const festd::string_view fullPath,
+                                         const Env::Name shaderName, char* source, const uint32_t sourceSize)
     {
-        FE_PROFILER_ZONE();
-
         auto deferFree = festd::defer([source, this] {
             Memory::DefaultFree(source);
-            m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
+            m_loadingJobCount.fetch_sub(1, std::memory_order_release);
         });
 
         switch (controller->GetStatus())
@@ -131,7 +129,7 @@ namespace FE::Graphics::Core
 
         deferFree.dismiss();
 
-        const Rc file = m_filePool.New(m_filePool);
+        const Rc file = m_filePool.New();
         file->m_sourceCache = this;
         file->m_source = source;
         file->m_sourceSize = sourceSize;
@@ -150,6 +148,6 @@ namespace FE::Graphics::Core
             m_filesMap[Env::Name{ alias }] = file;
         }
 
-        m_loadingTasksCount.fetch_sub(1, std::memory_order_release);
+        m_loadingJobCount.fetch_sub(1, std::memory_order_release);
     }
 } // namespace FE::Graphics::Core
