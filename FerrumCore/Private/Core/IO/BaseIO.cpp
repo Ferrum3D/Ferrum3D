@@ -88,15 +88,6 @@ namespace FE::IO
     }
 
 
-    size_t PrintTo(const StandardDescriptor destination, const festd::string_view message)
-    {
-        const uint32_t streamIndex = festd::to_underlying(destination);
-        std::lock_guard lock{ GStandardFiles->m_locks[streamIndex] };
-        FileStream& stream = GStandardFiles->m_files[streamIndex];
-        return stream.WriteFromBuffer(message.data(), message.size());
-    }
-
-
     void Flush(const StandardDescriptor descriptor)
     {
         const uint32_t streamIndex = festd::to_underlying(descriptor);

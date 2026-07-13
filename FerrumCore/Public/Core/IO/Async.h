@@ -7,24 +7,11 @@
 #include <Core/Memory/SegmentedBuffer.h>
 #include <Core/Time/BaseTime.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
-    struct ResolvedDataSource final
+    struct Batch final
     {
-        Path m_filePath;
-        size_t m_byteOffset = 0;
-        size_t m_byteSize = 0;
-
-        [[nodiscard]] bool IsValid() const
-        {
-            return !m_filePath.empty();
-        }
-    };
-
-
-    struct AsyncReadBatch final
-    {
-        explicit AsyncReadBatch(WaitGroup* completionWaitGroup = nullptr)
+        explicit Batch(WaitGroup* completionWaitGroup = nullptr)
         {
             m_callStack = Trace::CallStack::Capture();
 
@@ -32,14 +19,15 @@ namespace FE::IO
                 SetCompletionWaitGroup(completionWaitGroup);
         }
 
-        explicit AsyncReadBatch(const ResolvedDataSource& resolvedDataSource, WaitGroup* completionWaitGroup = nullptr)
-            : AsyncReadBatch(completionWaitGroup)
+        explicit Batch(const ResolvedDataSource& resolvedDataSource, WaitGroup* completionWaitGroup = nullptr)
+            : Batch(completionWaitGroup)
         {
             SetSource(resolvedDataSource);
         }
 
         void SetSource(const ResolvedDataSource& resolvedDataSource);
-        void SetCompletionWaitGroup(WaitGroup* waitGroup);
+        void SetSource(festd::string_view filePath, size_t fileSize = 0);
+        void SetSource(const PathView& filePath, size_t fileSize = 0);
 
         void Read(void* destination, size_t destinationSize, size_t sourceOffset = 0);
         void Read(void* destination, size_t destinationSize, size_t compressedSize, Compression::Method compressionMethod,
@@ -55,21 +43,28 @@ namespace FE::IO
         void ReadAppend(festd::pmr::vector<std::byte>& destination, Compression::Method compressionMethod, size_t compressedSize,
                         size_t uncompressedSize, size_t sourceOffset = 0);
 
+        void SetCompletionWaitGroup(WaitGroup* waitGroup);
+
         template<class TFunctor>
             requires(sizeof(TFunctor) <= 48)
         void InvokeOnCompletion(TFunctor&& functor)
         {
-            if constexpr (std::is_invocable_v<TFunctor, IAsyncController*>)
+            FE_Assert(!m_completionCallback);
+
+            if constexpr (std::is_invocable_v<TFunctor, IController*>)
             {
                 m_completionCallback = std::forward<TFunctor>(functor);
             }
             else
             {
-                m_completionCallback = [functor = std::forward<TFunctor>(functor)](IAsyncController*) {
+                m_completionCallback = [functor = std::forward<TFunctor>(functor)](IController*) {
                     functor();
                 };
             }
         }
+
+    private:
+        friend struct SchedulerImpl;
 
         struct Command final
         {
@@ -86,57 +81,28 @@ namespace FE::IO
             bool m_vectorDestination = false;
         };
 
+        void ValidateRead(size_t offset, size_t byteSize) const;
+
         Trace::CallStack m_callStack;
         ResolvedDataSource m_resolvedDataSource;
         festd::inline_vector<Command, 1> m_commands;
-        festd::fixed_function<48, void(IAsyncController* controller)> m_completionCallback;
+        festd::fixed_function<48, void(IController* controller)> m_completionCallback;
         Rc<WaitGroup> m_completionWaitGroup;
     };
 
 
-    enum class AsyncOperationStatus
-    {
-        kQueued,
-        kRunning,
-        kCanceled,
-        kSucceeded,
-        kFailed,
-    };
-
-
-    constexpr bool IsFinalStatus(const AsyncOperationStatus status)
-    {
-        switch (status)
-        {
-        case AsyncOperationStatus::kCanceled:
-        case AsyncOperationStatus::kSucceeded:
-        case AsyncOperationStatus::kFailed:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-
-    struct IAsyncController : public Memory::RefCountedObjectBase
+    struct IController : public Memory::RefCountedObjectBase
     {
         FE_RTTI("2427B1D9-F1A5-4A1B-A804-EB9ACA502C28");
 
-        ~IAsyncController() override = default;
+        ~IController() override = default;
 
         virtual void Cancel() = 0;
-        virtual AsyncOperationStatus GetStatus() const = 0;
+        virtual Status GetStatus() const = 0;
         virtual ResultCode GetLastOperationResult() const = 0;
     };
 
 
-    struct IAsyncStreamIO : public Memory::RefCountedObjectBase
-    {
-        FE_RTTI("A44064EC-34E0-4B99-9BC7-A2B27321F617");
-
-        ~IAsyncStreamIO() override = default;
-
-        virtual Rc<IAsyncController> ReadBatch(AsyncReadBatch&& batch, Priority priority = Priority::kNormal) = 0;
-        virtual Rc<IAsyncController> ReadBatch(const AsyncReadBatch& batch, Priority priority = Priority::kNormal) = 0;
-    };
-} // namespace FE::IO
+    Rc<IController> Read(Batch&& batch, Priority priority = Priority::kNormal);
+    Rc<IController> Read(const Batch& batch, Priority priority = Priority::kNormal);
+} // namespace FE::IO::Async

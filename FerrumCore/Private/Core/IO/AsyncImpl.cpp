@@ -1,4 +1,4 @@
-#include <Core/IO/AsyncStreamIO.h>
+﻿#include <Core/IO/AsyncImpl.h>
 #include <Core/IO/Platform/PlatformFile.h>
 #include <Core/Jobs/JobGraph.h>
 #include <Core/Jobs/JobNode.h>
@@ -10,14 +10,14 @@
 #endif
 #include <Core/IO/DefaultAsyncIOBackend.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     namespace
     {
         constexpr size_t kStagingHeapSize = 256 * 1024 * 1024;
 
 
-        void SetOperationResult(const AsyncIOOperation* operation, const ResultCode result)
+        void SetOperationResult(const Operation* operation, const ResultCode result)
         {
             if (result == ResultCode::kSuccess)
                 return;
@@ -27,30 +27,90 @@ namespace FE::IO
         }
 
 
-        void CompleteOperationWork(AsyncIOOperation* operation)
+        void CompleteOperationWork(Operation* operation)
         {
             const uint32_t previousValue = operation->m_pendingWork.fetch_sub(1, std::memory_order_acq_rel);
             FE_Assert(previousValue > 0, "Async operation pending work underflow");
         }
 
+        SchedulerImpl* GScheduler;
     } // namespace
 
 
-    void AsyncReadBatch::SetSource(const ResolvedDataSource& resolvedDataSource)
+    void Internal::Init(std::pmr::memory_resource* allocator)
     {
+        FE_Assert(GScheduler == nullptr, "AsyncIO already initialized");
+        GScheduler = Memory::New<SchedulerImpl>(allocator);
+    }
+
+
+    void Internal::Shutdown()
+    {
+        FE_Assert(GScheduler != nullptr, "AsyncIO not initialized");
+        GScheduler->~SchedulerImpl();
+        GScheduler = nullptr;
+    }
+
+
+    SchedulerImpl& SchedulerImpl::Get()
+    {
+        return *GScheduler;
+    }
+
+
+    Rc<IController> Read(Batch&& batch, const Priority priority)
+    {
+        return GScheduler->Read(std::move(batch), priority);
+    }
+
+
+    Rc<IController> Read(const Batch& batch, const Priority priority)
+    {
+        return GScheduler->Read(batch, priority);
+    }
+
+
+    void Batch::SetSource(const ResolvedDataSource& resolvedDataSource)
+    {
+        FE_Assert(!m_resolvedDataSource.IsValid());
         m_resolvedDataSource = resolvedDataSource;
     }
 
 
-    void AsyncReadBatch::SetCompletionWaitGroup(WaitGroup* waitGroup)
+    void Batch::SetSource(const festd::string_view filePath, const size_t fileSize)
+    {
+        FE_Assert(!m_resolvedDataSource.IsValid());
+        m_resolvedDataSource = ResolvedDataSource{
+            .m_filePath = filePath,
+            .m_byteOffset = 0,
+            .m_byteSize = fileSize,
+        };
+    }
+
+
+    void Batch::SetSource(const PathView& filePath, const size_t fileSize)
+    {
+        FE_Assert(!m_resolvedDataSource.IsValid());
+        m_resolvedDataSource = ResolvedDataSource{
+            .m_filePath = filePath,
+            .m_byteOffset = 0,
+            .m_byteSize = fileSize,
+        };
+    }
+
+
+    void Batch::SetCompletionWaitGroup(WaitGroup* waitGroup)
     {
         FE_Assert(waitGroup);
+        FE_Assert(!m_completionWaitGroup);
         m_completionWaitGroup = waitGroup;
     }
 
 
-    void AsyncReadBatch::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
+    void Batch::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
     {
+        ValidateRead(sourceOffset, destinationSize);
+
         Command command;
         command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
         command.m_sourceOffset = sourceOffset;
@@ -62,9 +122,11 @@ namespace FE::IO
     }
 
 
-    void AsyncReadBatch::Read(void* destination, const size_t destinationSize, const size_t compressedSize,
-                              const Compression::Method compressionMethod, const size_t sourceOffset)
+    void Batch::Read(void* destination, const size_t destinationSize, const size_t compressedSize,
+                     const Compression::Method compressionMethod, const size_t sourceOffset)
     {
+        ValidateRead(sourceOffset, compressedSize);
+
         Command command;
         command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
         command.m_sourceOffset = sourceOffset;
@@ -76,21 +138,20 @@ namespace FE::IO
     }
 
 
-    void AsyncReadBatch::Read(const festd::span<std::byte> destination, const size_t sourceOffset)
+    void Batch::Read(const festd::span<std::byte> destination, const size_t sourceOffset)
     {
         Read(destination.data(), destination.size_bytes(), sourceOffset);
     }
 
 
-    void AsyncReadBatch::Read(const festd::span<std::byte> destination, const size_t compressedSize,
-                              const Compression::Method compressionMethod, const size_t sourceOffset)
+    void Batch::Read(const festd::span<std::byte> destination, const size_t compressedSize,
+                     const Compression::Method compressionMethod, const size_t sourceOffset)
     {
         Read(destination.data(), destination.size_bytes(), compressedSize, compressionMethod, sourceOffset);
     }
 
 
-    void AsyncReadBatch::ReadAppend(festd::pmr::vector<std::byte>& destination, const size_t bytesToRead,
-                                    const size_t sourceOffset)
+    void Batch::ReadAppend(festd::pmr::vector<std::byte>& destination, const size_t bytesToRead, const size_t sourceOffset)
     {
         Command command;
         command.m_destination.m_vector = &destination;
@@ -103,9 +164,11 @@ namespace FE::IO
     }
 
 
-    void AsyncReadBatch::ReadAppend(festd::pmr::vector<std::byte>& destination, const Compression::Method compressionMethod,
-                                    const size_t compressedSize, const size_t uncompressedSize, const size_t sourceOffset)
+    void Batch::ReadAppend(festd::pmr::vector<std::byte>& destination, const Compression::Method compressionMethod,
+                           const size_t compressedSize, const size_t uncompressedSize, const size_t sourceOffset)
     {
+        ValidateRead(sourceOffset, compressedSize);
+
         Command command;
         command.m_destination.m_vector = &destination;
         command.m_sourceOffset = sourceOffset;
@@ -117,37 +180,46 @@ namespace FE::IO
     }
 
 
-    void AsyncIOController::DoRelease()
+    void Batch::ValidateRead(const size_t offset, const size_t byteSize) const
+    {
+        FE_Assert(m_resolvedDataSource.IsValid());
+
+        if (m_resolvedDataSource.m_byteSize != 0)
+            FE_Assert(offset + byteSize <= m_resolvedDataSource.m_byteSize);
+    }
+
+
+    void Controller::DoRelease()
     {
         m_pool.Delete(this);
     }
 
 
-    void AsyncIOController::Cancel()
+    void Controller::Cancel()
     {
         m_cancellationRequested.store(true, std::memory_order_release);
     }
 
 
-    AsyncOperationStatus AsyncIOController::GetStatus() const
+    Status Controller::GetStatus() const
     {
         return m_status.load(std::memory_order_acquire);
     }
 
 
-    ResultCode AsyncIOController::GetLastOperationResult() const
+    ResultCode Controller::GetLastOperationResult() const
     {
         return m_lastResult.load(std::memory_order_acquire);
     }
 
 
-    void AsyncIOCachedFile::DoRelease()
+    void CachedFile::DoRelease()
     {
         m_pool.Delete(this);
     }
 
 
-    void AsyncIOOpenFileCache::Init(const uint32_t cacheSize, IAsyncIOBackend* backend)
+    void OpenFileCache::Init(const uint32_t cacheSize, IAsyncIOBackend* backend)
     {
         m_backend = backend;
         m_cacheSize = cacheSize;
@@ -155,9 +227,9 @@ namespace FE::IO
     }
 
 
-    void AsyncIOOpenFileCache::Shutdown()
+    void OpenFileCache::Shutdown()
     {
-        for (Rc<AsyncIOCachedFile> entry : m_entries)
+        for (const Rc<CachedFile>& entry : m_entries)
             Platform::CloseFile(entry->m_fileHandle);
 
         m_cacheSize = 0;
@@ -165,7 +237,7 @@ namespace FE::IO
     }
 
 
-    festd::expected<Rc<AsyncIOCachedFile>, ResultCode> AsyncIOOpenFileCache::CreateFile(const festd::string_view path)
+    festd::expected<Rc<CachedFile>, ResultCode> OpenFileCache::CreateFile(const festd::string_view path)
     {
         FE_AssertDebug(m_cacheSize > 0 && m_backend != nullptr);
 
@@ -209,7 +281,7 @@ namespace FE::IO
     }
 
 
-    void AsyncIOOpenFileCache::CollectGarbage()
+    void OpenFileCache::CollectGarbage()
     {
         const uint64_t timestamp = Platform::GetTicks();
         const double ticksPerSecond = Platform::GetSecondsPerTick();
@@ -217,7 +289,7 @@ namespace FE::IO
         {
             if (m_entries[entryIndex]->GetRefCount() == 1) // cache is the only owner
             {
-                const Rc<AsyncIOCachedFile> entry = m_entries[entryIndex];
+                const Rc<CachedFile> entry = m_entries[entryIndex];
                 const double elapsedSeconds = static_cast<double>(timestamp - entry->m_lastUseTime) * ticksPerSecond;
                 if (elapsedSeconds > 20)
                 {
@@ -229,20 +301,20 @@ namespace FE::IO
     }
 
 
-    void AsyncIOOpenFileCache::DeleteEntry(const uint32_t entryIndex)
+    void OpenFileCache::DeleteEntry(const uint32_t entryIndex)
     {
-        Rc<AsyncIOCachedFile> entry = m_entries[entryIndex];
+        Rc<CachedFile> entry = m_entries[entryIndex];
         m_entries.erase(m_entries.begin() + entryIndex);
         Platform::CloseFile(entry->m_fileHandle);
         entry->m_fileHandle.Reset();
     }
 
 
-    void AsyncStreamIO::EnqueueImpl(AsyncIOOperation* operation)
+    void SchedulerImpl::EnqueueImpl(Operation* operation)
     {
         std::unique_lock lk{ m_queueLock };
 
-        const auto iter = festd::upper_bound(m_queue, operation->m_priority, [](const Priority lhs, const AsyncIOOperation* rhs) {
+        const auto iter = festd::upper_bound(m_queue, operation->m_priority, [](const Priority lhs, const Operation* rhs) {
             return lhs < rhs->m_priority;
         });
 
@@ -250,23 +322,23 @@ namespace FE::IO
     }
 
 
-    AsyncIOOperation* AsyncStreamIO::TryDequeue()
+    Operation* SchedulerImpl::TryDequeue()
     {
         std::unique_lock lk{ m_queueLock };
         if (m_queue.empty())
             return nullptr;
 
-        AsyncIOOperation* operation = m_queue.front();
+        Operation* operation = m_queue.front();
         m_queue.erase(m_queue.begin());
         return operation;
     }
 
 
-    void AsyncStreamIO::ProcessOperation(AsyncIOOperation* operation)
+    void SchedulerImpl::ProcessOperation(Operation* operation)
     {
         FE_PROFILER_ZONE();
 
-        operation->m_controller->m_status.store(AsyncOperationStatus::kRunning, std::memory_order_release);
+        operation->m_controller->m_status.store(Status::kRunning, std::memory_order_release);
 
         const bool canceledOnStart = operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire);
         if (canceledOnStart)
@@ -277,7 +349,7 @@ namespace FE::IO
         }
 
         const ResolvedDataSource dataSource = operation->m_batch.m_resolvedDataSource;
-        for (const AsyncReadBatch::Command& command : operation->m_batch.m_commands)
+        for (const Batch::Command& command : operation->m_batch.m_commands)
         {
             const festd::expected fileOpenResult = m_fileCache.CreateFile(dataSource.m_filePath);
             if (!fileOpenResult.has_value())
@@ -334,7 +406,7 @@ namespace FE::IO
     }
 
 
-    void AsyncStreamIO::ProcessBackendCompletions()
+    void SchedulerImpl::ProcessBackendCompletions()
     {
         Jobs::Graph tg{ "IO/Async/RequestGraph", Jobs::FiberAffinityMask::kAllBackground };
 
@@ -345,7 +417,7 @@ namespace FE::IO
             if (group == nullptr)
                 continue;
 
-            AsyncIOOperation* operation = group->m_operation;
+            Operation* operation = group->m_operation;
             ResultCode result = completion.m_result;
             if (result == ResultCode::kSuccess && completion.m_bytesRead != group->m_readSize)
             {
@@ -419,18 +491,18 @@ namespace FE::IO
     }
 
 
-    bool AsyncStreamIO::TryFinalizeOperation(const AsyncIOOperation* operation)
+    bool SchedulerImpl::TryFinalizeOperation(const Operation* operation)
     {
         if (operation->m_pendingWork.load(std::memory_order_acquire) > 0)
             return false;
 
         const ResultCode result = operation->m_controller->m_lastResult.load(std::memory_order_acquire);
 
-        auto status = AsyncOperationStatus::kSucceeded;
+        auto status = Status::kSucceeded;
         if (result == ResultCode::kCanceled)
-            status = AsyncOperationStatus::kCanceled;
+            status = Status::kCanceled;
         else if (result != ResultCode::kSuccess)
-            status = AsyncOperationStatus::kFailed;
+            status = Status::kFailed;
 
         operation->m_controller->m_status.store(status, std::memory_order_release);
 
@@ -445,7 +517,7 @@ namespace FE::IO
     }
 
 
-    void AsyncStreamIO::SchedulerThread()
+    void SchedulerImpl::SchedulerThread()
     {
         for (;;)
         {
@@ -455,7 +527,7 @@ namespace FE::IO
             {
                 ProcessBackendCompletions();
 
-                AsyncIOOperation* operation = TryDequeue();
+                Operation* operation = TryDequeue();
                 if (operation)
                 {
                     m_runningOperations.push_back(operation);
@@ -485,7 +557,7 @@ namespace FE::IO
     }
 
 
-    AsyncStreamIO::AsyncStreamIO()
+    SchedulerImpl::SchedulerImpl()
     {
         m_stagingMemory = Memory::AllocateVirtual(kStagingHeapSize);
         m_stagingAllocator.Initialize(m_stagingMemory, kStagingHeapSize);
@@ -505,7 +577,7 @@ namespace FE::IO
     }
 
 
-    AsyncStreamIO::~AsyncStreamIO()
+    SchedulerImpl::~SchedulerImpl()
     {
         m_exitRequested = true;
         m_queueEvent.Send();
@@ -517,14 +589,14 @@ namespace FE::IO
     }
 
 
-    Rc<IAsyncController> AsyncStreamIO::ReadBatch(const AsyncReadBatch& batch, const Priority priority)
+    Rc<IController> SchedulerImpl::Read(const Batch& batch, const Priority priority)
     {
-        AsyncReadBatch batchCopy(batch);
-        return ReadBatch(std::move(batchCopy), priority);
+        Batch batchCopy(batch);
+        return Read(std::move(batchCopy), priority);
     }
 
 
-    Rc<IAsyncController> AsyncStreamIO::ReadBatch(AsyncReadBatch&& batch, const Priority priority)
+    Rc<IController> SchedulerImpl::Read(Batch&& batch, const Priority priority)
     {
         Rc controller = m_controllerPool.New();
 
@@ -537,4 +609,4 @@ namespace FE::IO
         m_queueEvent.Send();
         return controller;
     }
-} // namespace FE::IO
+} // namespace FE::IO::Async

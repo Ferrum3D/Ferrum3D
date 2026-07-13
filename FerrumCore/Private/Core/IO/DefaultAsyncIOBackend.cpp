@@ -1,8 +1,8 @@
-#include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/AsyncImpl.h>
 #include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/Platform/PlatformFile.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     festd::expected<Platform::FileHandle, ResultCode> DefaultAsyncIOBackend::OpenFile(const festd::string_view filePath)
     {
@@ -44,4 +44,4 @@ namespace FE::IO
         m_completions.pop_back();
         return true;
     }
-} // namespace FE::IO
+} // namespace FE::IO::Async

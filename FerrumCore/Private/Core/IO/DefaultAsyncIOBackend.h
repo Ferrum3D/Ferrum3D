@@ -1,7 +1,7 @@
 #pragma once
-#include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/AsyncImpl.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     struct DefaultAsyncIOBackend final : public IAsyncIOBackend
     {
@@ -19,4 +19,4 @@ namespace FE::IO
 
         festd::vector<AsyncIOCompletion> m_completions;
     };
-} // namespace FE::IO
+} // namespace FE::IO::Async

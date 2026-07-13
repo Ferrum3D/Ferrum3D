@@ -20,9 +20,35 @@ namespace FE::IO
     struct IStream;
     struct FileStream;
 
-    struct IAsyncController;
-    struct IAsyncStreamIO;
+    namespace Async
+    {
+        struct IController;
+        struct Batch;
 
+
+        enum class Status
+        {
+            kQueued,
+            kRunning,
+            kCanceled,
+            kSucceeded,
+            kFailed,
+        };
+
+
+        constexpr bool IsFinalStatus(const Status status)
+        {
+            switch (status)
+            {
+            case Status::kCanceled:
+            case Status::kSucceeded:
+            case Status::kFailed:
+                return true;
+            default:
+                return false;
+            }
+        }
+    } // namespace Async
 
     //! @brief Represents an I/O result code.
     enum class ResultCode : int32_t
@@ -89,6 +115,19 @@ namespace FE::IO
     {
         return static_cast<Priority>(festd::to_underlying(lhs) + rhs);
     }
+
+
+    struct ResolvedDataSource final
+    {
+        Path m_filePath;
+        size_t m_byteOffset = 0;
+        size_t m_byteSize = 0;
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return !m_filePath.empty();
+        }
+    };
 
 
     enum class StandardDescriptor : uint32_t

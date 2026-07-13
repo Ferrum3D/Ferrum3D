@@ -2,9 +2,9 @@
 #include <Core/Base/StackTrace.h>
 #include <Core/Base/StackTracePrivate.h>
 #include <Core/Containers/SegmentedVector.h>
+#include <Core/Env/Environment.h>
 #include <Core/Memory/LinearAllocator.h>
 #include <Core/Memory/Memory.h>
-#include <Core/Env/Environment.h>
 #include <festd/unordered_map.h>
 
 #if FE_DEVELOPMENT
@@ -68,7 +68,7 @@ namespace FE::Trace
     } // namespace
 
 
-    void Internal::InitStackTrace(std::pmr::memory_resource* allocator)
+    void StackTrace::Internal::Init(std::pmr::memory_resource* allocator)
     {
         FE_Assert(GStorage == nullptr, "Stack trace already initialized");
         GStorage = Memory::New<StackTraceStorage>(allocator);
@@ -84,7 +84,7 @@ namespace FE::Trace
     }
 
 
-    void Internal::ShutdownStackTrace()
+    void StackTrace::Internal::Shutdown()
     {
         FE_Assert(GStorage != nullptr, "Stack trace not initialized");
         GStorage->~StackTraceStorage();
@@ -169,8 +169,8 @@ namespace FE::Trace
 
 namespace FE::Trace
 {
-    void Internal::InitStackTrace(std::pmr::memory_resource*) {}
-    void Internal::ShutdownStackTrace() {}
+    void StackTrace::Internal::Init(std::pmr::memory_resource*) {}
+    void StackTrace::Internal::Shutdown() {}
 
     CallStack CallStack::Capture(const uint32_t, const uint32_t)
     {

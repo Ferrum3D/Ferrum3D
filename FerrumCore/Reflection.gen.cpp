@@ -9,10 +9,10 @@
 #include <Core/Compression/Compression.h>
 #include <Core/DI/BaseDI.h>
 #include <Core/DI/Container.h>
-#include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/AsyncImpl.h>
 #include <Core/IO/DefaultAsyncIOBackend.h>
 #include <Core/IO/FileStream.h>
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/IO/IStream.h>
 #include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
 #include <Core/IO/StreamBase.h>
@@ -295,109 +295,7 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-namespace FE::IO
-{
-    const Rtti::TypeID AsyncStreamIO::TypeID = Rtti::TypeID{ "1adbd843-e841-4b14-96ea-4aa08c901084" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_1adbd843e8414b1496ea4aa08c901084(AsyncStreamIO* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
-                0x1a, 0xdb, 0xd8, 0x43, 0xe8, 0x41, 0x4b, 0x14,
-                0x96, 0xea, 0x4a, 0xa0, 0x8c, 0x90, 0x10, 0x84, // FE::IO::AsyncStreamIO (this type)
-                0xa4, 0x40, 0x64, 0xec, 0x34, 0xe0, 0x4b, 0x99,
-                0x9b, 0xc7, 0xa2, 0xb2, 0x73, 0x21, 0xf6, 0x17, // FE::IO::IAsyncStreamIO
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncStreamIO*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-
-        Rtti::Type& RTTI_GetMutableType_1adbd843e8414b1496ea4aa08c901084()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_1adbd843e8414b1496ea4aa08c901084([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<AsyncStreamIO>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<AsyncStreamIO>();
-                return DI::ResultCode::kSuccess;
-            }
-        }
-    } // namespace
-
-    const Rtti::Type& AsyncStreamIO::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_1adbd843e8414b1496ea4aa08c901084();
-    }
-
-    void* FE_VECTORCALL AsyncStreamIO::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_1adbd843e8414b1496ea4aa08c901084(this, typeID);
-    }
-
-    const void* FE_VECTORCALL AsyncStreamIO::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_1adbd843e8414b1496ea4aa08c901084(const_cast<AsyncStreamIO*>(this), typeID);
-    }
-
-    void AsyncStreamIO::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_1adbd843e8414b1496ea4aa08c901084();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x1a, 0xdb, 0xd8, 0x43, 0xe8, 0x41, 0x4b, 0x14,
-            0x96, 0xea, 0x4a, 0xa0, 0x8c, 0x90, 0x10, 0x84, // FE::IO::AsyncStreamIO
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xa4, 0x40, 0x64, 0xec, 0x34, 0xe0, 0x4b, 0x99,
-            0x9b, 0xc7, 0xa2, 0xb2, 0x73, 0x21, 0xf6, 0x17, // FE::IO::IAsyncStreamIO
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<AsyncStreamIO>(typeInstance,
-                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                            "FE::IO::AsyncStreamIO",
-                                            kBaseClassTypeIDs,
-                                            kAttributes,
-                                            kFields,
-                                            &RTTI_Activator_1adbd843e8414b1496ea4aa08c901084);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_1adbd843e8414b1496ea4aa08c901084(&AsyncStreamIO::Reflect);
-} // namespace FE::IO
-
-
-namespace FE::IO
+namespace FE::IO::Async
 {
     const Rtti::TypeID OverlappedAsyncIOBackend::TypeID = Rtti::TypeID{ "70064b01-c464-4ad7-8169-c61c9d37419a" };
 
@@ -422,7 +320,7 @@ namespace FE::IO
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncIOBackend*>(thisPtr);
+                return static_cast<FE::IO::Async::IAsyncIOBackend*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
@@ -492,7 +390,7 @@ namespace FE::IO
     static Rtti::TypeRegistrar GTypeRegistrar_70064b01c4644ad78169c61c9d37419a(&OverlappedAsyncIOBackend::Reflect);
 } // namespace FE::IO
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     const Rtti::TypeID IAsyncIOBackend::TypeID = Rtti::TypeID{ "780d7b19-9084-4d59-9a45-a913994efed6" };
 
@@ -584,7 +482,7 @@ namespace FE::IO
     static Rtti::TypeRegistrar GTypeRegistrar_780d7b1990844d599a45a913994efed6(&IAsyncIOBackend::Reflect);
 } // namespace FE::IO
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     const Rtti::TypeID DefaultAsyncIOBackend::TypeID = Rtti::TypeID{ "c1752d59-0343-46d0-b95a-127eb2321cc7" };
 
@@ -609,7 +507,7 @@ namespace FE::IO
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncIOBackend*>(thisPtr);
+                return static_cast<FE::IO::Async::IAsyncIOBackend*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
@@ -790,18 +688,18 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-namespace FE::IO
+namespace FE::IO::Async
 {
-    const Rtti::TypeID IAsyncController::TypeID = Rtti::TypeID{ "2427b1d9-f1a5-4a1b-a804-eb9aca502c28" };
+    const Rtti::TypeID IController::TypeID = Rtti::TypeID{ "2427b1d9-f1a5-4a1b-a804-eb9aca502c28" };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(IAsyncController* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(IController* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
                 0x24, 0x27, 0xb1, 0xd9, 0xf1, 0xa5, 0x4a, 0x1b,
-                0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::IAsyncController (this type)
+                0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::Async::IController (this type)
                 0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
                 0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
             };
@@ -827,7 +725,7 @@ namespace FE::IO
         DI::ResultCode RTTI_Activator_2427b1d9f1a54a1ba804eb9aca502c28([[maybe_unused]] DI::IServiceProvider* serviceProvider,
                                                                        [[maybe_unused]] Memory::RefCountedObjectBase** result)
         {
-            if constexpr (std::is_abstract_v<IAsyncController>)
+            if constexpr (std::is_abstract_v<IController>)
             {
                 return DI::ResultCode::kInvalidOperation;
             }
@@ -838,28 +736,28 @@ namespace FE::IO
         }
     } // namespace
 
-    const Rtti::Type& IAsyncController::RTTI_GetType()
+    const Rtti::Type& IController::RTTI_GetType()
     {
         return RTTI_GetMutableType_2427b1d9f1a54a1ba804eb9aca502c28();
     }
 
-    void* FE_VECTORCALL IAsyncController::RTTI_TryCast(const Rtti::TypeID typeID)
+    void* FE_VECTORCALL IController::RTTI_TryCast(const Rtti::TypeID typeID)
     {
         return RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(this, typeID);
     }
 
-    const void* FE_VECTORCALL IAsyncController::RTTI_TryCast(const Rtti::TypeID typeID) const
+    const void* FE_VECTORCALL IController::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(const_cast<IAsyncController*>(this), typeID);
+        return RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(const_cast<IController*>(this), typeID);
     }
 
-    void IAsyncController::Reflect(Rtti::ReflectionContext& context)
+    void IController::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_2427b1d9f1a54a1ba804eb9aca502c28();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
             0x24, 0x27, 0xb1, 0xd9, 0xf1, 0xa5, 0x4a, 0x1b,
-            0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::IAsyncController
+            0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::Async::IController
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
@@ -870,16 +768,16 @@ namespace FE::IO
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
-        context.ReflectClass<IAsyncController>(typeInstance,
+        context.ReflectClass<IController>(typeInstance,
                                                Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                               "FE::IO::IAsyncController",
+                                               "FE::IO::Async::IController",
                                                kBaseClassTypeIDs,
                                                kAttributes,
                                                kFields,
                                                &RTTI_Activator_2427b1d9f1a54a1ba804eb9aca502c28);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_2427b1d9f1a54a1ba804eb9aca502c28(&IAsyncController::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_2427b1d9f1a54a1ba804eb9aca502c28(&IController::Reflect);
 } // namespace FE::IO
 
 
@@ -1633,20 +1531,20 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
-namespace FE::IO
+namespace FE::IO::Async
 {
-    const Rtti::TypeID AsyncIOController::TypeID = Rtti::TypeID{ "4f28d2d7-1ab4-4279-a3bd-a1d15b2f5ba9" };
+    const Rtti::TypeID Controller::TypeID = Rtti::TypeID{ "4f28d2d7-1ab4-4279-a3bd-a1d15b2f5ba9" };
 
     namespace
     {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(AsyncIOController* thisPtr,
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(Controller* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
                 0x4f, 0x28, 0xd2, 0xd7, 0x1a, 0xb4, 0x42, 0x79,
                 0xa3, 0xbd, 0xa1, 0xd1, 0x5b, 0x2f, 0x5b, 0xa9, // FE::IO::AsyncController (this type)
                 0x24, 0x27, 0xb1, 0xd9, 0xf1, 0xa5, 0x4a, 0x1b,
-                0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::IAsyncController
+                0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::Async::IController
                 0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
                 0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
             };
@@ -1658,7 +1556,7 @@ namespace FE::IO
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::IO::IAsyncController*>(thisPtr);
+                return static_cast<FE::IO::Async::IController*>(thisPtr);
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
@@ -1674,22 +1572,22 @@ namespace FE::IO
         }
     } // namespace
 
-    const Rtti::Type& AsyncIOController::RTTI_GetType()
+    const Rtti::Type& Controller::RTTI_GetType()
     {
         return RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9();
     }
 
-    void* FE_VECTORCALL AsyncIOController::RTTI_TryCast(const Rtti::TypeID typeID)
+    void* FE_VECTORCALL Controller::RTTI_TryCast(const Rtti::TypeID typeID)
     {
         return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(this, typeID);
     }
 
-    const void* FE_VECTORCALL AsyncIOController::RTTI_TryCast(const Rtti::TypeID typeID) const
+    const void* FE_VECTORCALL Controller::RTTI_TryCast(const Rtti::TypeID typeID) const
     {
-        return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(const_cast<AsyncIOController*>(this), typeID);
+        return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(const_cast<Controller*>(this), typeID);
     }
 
-    void AsyncIOController::Reflect(Rtti::ReflectionContext& context)
+    void Controller::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9();
 
@@ -1700,7 +1598,7 @@ namespace FE::IO
 
         static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0x24, 0x27, 0xb1, 0xd9, 0xf1, 0xa5, 0x4a, 0x1b,
-            0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::IAsyncController
+            0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28, // FE::IO::Async::IController
             0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
             0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
         };
@@ -1708,7 +1606,7 @@ namespace FE::IO
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
-        context.ReflectClass<AsyncIOController>(typeInstance,
+        context.ReflectClass<Controller>(typeInstance,
                                                 Rtti::TypeID::LoadAligned(kTypeIDBytes),
                                                 "FE::IO::AsyncController",
                                                 kBaseClassTypeIDs,
@@ -1716,7 +1614,7 @@ namespace FE::IO
                                                 kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_4f28d2d71ab44279a3bda1d15b2f5ba9(&AsyncIOController::Reflect);
+    static Rtti::TypeRegistrar GTypeRegistrar_4f28d2d71ab44279a3bda1d15b2f5ba9(&Controller::Reflect);
 } // namespace FE::IO
 
 
@@ -2613,99 +2511,6 @@ namespace FE::Rtti
     static TypeRegistrar GTypeRegistrar_9ff56e68875743e28826acf3419f16fd(
         &Internal::ExternalTypeReflector<FE::Cli::Flag>::Reflect);
 } // namespace FE::Rtti
-
-
-namespace FE::IO
-{
-    const Rtti::TypeID IAsyncStreamIO::TypeID = Rtti::TypeID{ "a44064ec-34e0-4b99-9bc7-a2b27321f617" };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a44064ec34e04b999bc7a2b27321f617(IAsyncStreamIO* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0xa4, 0x40, 0x64, 0xec, 0x34, 0xe0, 0x4b, 0x99,
-                0x9b, 0xc7, 0xa2, 0xb2, 0x73, 0x21, 0xf6, 0x17, // FE::IO::IAsyncStreamIO (this type)
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-
-        Rtti::Type& RTTI_GetMutableType_a44064ec34e04b999bc7a2b27321f617()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_a44064ec34e04b999bc7a2b27321f617([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       [[maybe_unused]] Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<IAsyncStreamIO>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                return DI::ResultCode::kSuccess;
-            }
-        }
-    } // namespace
-
-    const Rtti::Type& IAsyncStreamIO::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_a44064ec34e04b999bc7a2b27321f617();
-    }
-
-    void* FE_VECTORCALL IAsyncStreamIO::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_a44064ec34e04b999bc7a2b27321f617(this, typeID);
-    }
-
-    const void* FE_VECTORCALL IAsyncStreamIO::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_a44064ec34e04b999bc7a2b27321f617(const_cast<IAsyncStreamIO*>(this), typeID);
-    }
-
-    void IAsyncStreamIO::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_a44064ec34e04b999bc7a2b27321f617();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xa4, 0x40, 0x64, 0xec, 0x34, 0xe0, 0x4b, 0x99,
-            0x9b, 0xc7, 0xa2, 0xb2, 0x73, 0x21, 0xf6, 0x17, // FE::IO::IAsyncStreamIO
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<IAsyncStreamIO>(typeInstance,
-                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                             "FE::IO::IAsyncStreamIO",
-                                             kBaseClassTypeIDs,
-                                             kAttributes,
-                                             kFields,
-                                             &RTTI_Activator_a44064ec34e04b999bc7a2b27321f617);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_a44064ec34e04b999bc7a2b27321f617(&IAsyncStreamIO::Reflect);
-} // namespace FE::IO
 
 
 namespace FE::Rtti

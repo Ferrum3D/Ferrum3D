@@ -2,7 +2,7 @@
 #include <Core/Base/PlatformInclude.h>
 #include <Core/Containers/ConcurrentQueue.h>
 #include <Core/Containers/SegmentedVector.h>
-#include <Core/IO/AsyncStreamIO.h>
+#include <Core/IO/AsyncImpl.h>
 #include <festd/bit_vector.h>
 #include <festd/ring_buffer.h>
 
@@ -10,7 +10,7 @@
 #    error "OverlappedAsyncIOBackend is Windows-only"
 #endif
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     struct OverlappedAsyncIOBackend final : public IAsyncIOBackend
     {
@@ -69,4 +69,4 @@ namespace FE::IO
         festd::bit_vector m_freeRequests;
         festd::ring_buffer<uint32_t> m_pendingRequests;
     };
-} // namespace FE::IO
+} // namespace FE::IO::Async

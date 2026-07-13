@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/Logging/Logger.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Core/Threading/Event.h>
@@ -7,12 +7,19 @@
 #include <festd/unordered_map.h>
 #include <festd/vector.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
-    struct AsyncIOOperation;
-    struct AsyncIOController;
-    struct AsyncIOCachedFile;
-    struct AsyncIOOpenFileCache;
+    struct Operation;
+    struct Controller;
+    struct CachedFile;
+    struct OpenFileCache;
+
+
+    namespace Internal
+    {
+        void Init(std::pmr::memory_resource* allocator);
+        void Shutdown();
+    } // namespace Internal
 
 
     struct AsyncReadHandle final : TypedHandle<AsyncReadHandle, uint32_t>
@@ -23,7 +30,7 @@ namespace FE::IO
     struct ReadGroup final
     {
         Path m_sourcePath;
-        AsyncIOOperation* m_operation = nullptr;
+        Operation* m_operation = nullptr;
         AsyncReadHandle m_handle;
         void* m_stagingMemory = nullptr;
         size_t m_stagingMemorySize = 0;
@@ -36,7 +43,7 @@ namespace FE::IO
 
     struct AsyncIOPhysicalRead final
     {
-        Rc<AsyncIOCachedFile> m_file;
+        Rc<CachedFile> m_file;
         size_t m_offset = 0;
         size_t m_size = 0;
         void* m_destination = nullptr;
@@ -67,43 +74,43 @@ namespace FE::IO
     };
 
 
-    struct AsyncIOOperation final
+    struct Operation final
     {
         Priority m_priority = Priority::kNormal;
         std::atomic<uint32_t> m_pendingWork = 0;
-        Rc<AsyncIOController> m_controller;
-        AsyncReadBatch m_batch;
+        Rc<Controller> m_controller;
+        Batch m_batch;
         Threading::SpinLock m_completionLock;
     };
 
 
-    struct AsyncIOController final : public IAsyncController
+    struct Controller final : public IController
     {
         FE_RTTI("4F28D2D7-1AB4-4279-A3BD-A1D15B2F5BA9");
 
-        AsyncIOController(Memory::SpinLockedPool<AsyncIOController>& pool)
+        Controller(Memory::SpinLockedPool<Controller>& pool)
             : m_pool(pool)
         {
         }
 
-        ~AsyncIOController() override = default;
+        ~Controller() override = default;
 
         void DoRelease() override;
 
         void Cancel() override;
-        AsyncOperationStatus GetStatus() const override;
+        Status GetStatus() const override;
         ResultCode GetLastOperationResult() const override;
 
-        Memory::SpinLockedPool<AsyncIOController>& m_pool;
+        Memory::SpinLockedPool<Controller>& m_pool;
         std::atomic<bool> m_cancellationRequested = false;
-        std::atomic<AsyncOperationStatus> m_status = AsyncOperationStatus::kQueued;
+        std::atomic<Status> m_status = Status::kQueued;
         std::atomic<ResultCode> m_lastResult = ResultCode::kSuccess;
     };
 
 
-    struct AsyncIOCachedFile final : public Memory::RefCountedObjectBase
+    struct CachedFile final : public Memory::RefCountedObjectBase
     {
-        AsyncIOCachedFile(Memory::SpinLockedPool<AsyncIOCachedFile>& pool)
+        CachedFile(Memory::SpinLockedPool<CachedFile>& pool)
             : m_pool(pool)
         {
         }
@@ -115,11 +122,11 @@ namespace FE::IO
         }
 
     private:
-        friend AsyncIOOpenFileCache;
+        friend OpenFileCache;
 
         void DoRelease() override;
 
-        Memory::SpinLockedPool<AsyncIOCachedFile>& m_pool;
+        Memory::SpinLockedPool<CachedFile>& m_pool;
         uint64_t m_lastUseTime = 0;
         uint64_t m_nameHash = 0;
         Path m_path;
@@ -127,12 +134,12 @@ namespace FE::IO
     };
 
 
-    struct AsyncIOOpenFileCache final
+    struct OpenFileCache final
     {
         void Init(uint32_t cacheSize, IAsyncIOBackend* backend);
         void Shutdown();
 
-        [[nodiscard]] festd::expected<Rc<AsyncIOCachedFile>, ResultCode> CreateFile(festd::string_view path);
+        [[nodiscard]] festd::expected<Rc<CachedFile>, ResultCode> CreateFile(festd::string_view path);
 
         void CollectGarbage();
 
@@ -141,20 +148,20 @@ namespace FE::IO
 
         IAsyncIOBackend* m_backend = nullptr;
         uint32_t m_cacheSize = 0;
-        festd::vector<Rc<AsyncIOCachedFile>> m_entries;
-        Memory::SpinLockedPool<AsyncIOCachedFile> m_entryPool{ "IO/Async/OpenFileCacheEntryPool" };
+        festd::vector<Rc<CachedFile>> m_entries;
+        Memory::SpinLockedPool<CachedFile> m_entryPool{ "IO/Async/OpenFileCacheEntryPool" };
     };
 
 
-    struct AsyncStreamIO final : public IAsyncStreamIO
+    struct SchedulerImpl final
     {
-        FE_RTTI("1ADBD843-E841-4B14-96EA-4AA08C901084");
+        SchedulerImpl();
+        ~SchedulerImpl();
 
-        AsyncStreamIO();
-        ~AsyncStreamIO() override;
+        Rc<IController> Read(const Batch& batch, Priority priority);
+        Rc<IController> Read(Batch&& batch, Priority priority);
 
-        Rc<IAsyncController> ReadBatch(const AsyncReadBatch& batch, Priority priority) override;
-        Rc<IAsyncController> ReadBatch(AsyncReadBatch&& batch, Priority priority) override;
+        static SchedulerImpl& Get();
 
     private:
         Threading::Thread m_thread;
@@ -162,29 +169,24 @@ namespace FE::IO
         std::atomic<bool> m_exitRequested = false;
 
         Rc<IAsyncIOBackend> m_backend;
-        AsyncIOOpenFileCache m_fileCache;
+        OpenFileCache m_fileCache;
 
         TracyLockable(Threading::SpinLock, m_queueLock);
-        festd::vector<AsyncIOOperation*> m_queue;
-        festd::vector<AsyncIOOperation*> m_runningOperations;
+        festd::vector<Operation*> m_queue;
+        festd::vector<Operation*> m_runningOperations;
 
-        Memory::SpinLockedPool<AsyncIOOperation> m_operationPool{ "IO/Async/OperationPool" };
+        Memory::SpinLockedPool<Operation> m_operationPool{ "IO/Async/OperationPool" };
         Memory::SpinLockedPool<ReadGroup> m_groupPool{ "IO/Async/ReadGroupPool" };
-        Memory::SpinLockedPool<AsyncIOController> m_controllerPool{ "IO/Async/ControllerPool" };
+        Memory::SpinLockedPool<Controller> m_controllerPool{ "IO/Async/ControllerPool" };
 
         void* m_stagingMemory = nullptr;
         Memory::TLSFAllocator m_stagingAllocator;
 
-        void DoRelease() override
-        {
-            Memory::DefaultDelete(this);
-        }
-
-        void EnqueueImpl(AsyncIOOperation* operation);
-        AsyncIOOperation* TryDequeue();
-        void ProcessOperation(AsyncIOOperation* operation);
+        void EnqueueImpl(Operation* operation);
+        Operation* TryDequeue();
+        void ProcessOperation(Operation* operation);
         void ProcessBackendCompletions();
-        bool TryFinalizeOperation(const AsyncIOOperation* operation);
+        bool TryFinalizeOperation(const Operation* operation);
         void SchedulerThread();
     };
-} // namespace FE::IO
+} // namespace FE::IO::Async

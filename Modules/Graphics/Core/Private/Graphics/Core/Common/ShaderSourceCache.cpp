@@ -1,4 +1,4 @@
-﻿#include <Core/IO/IAsyncStreamIO.h>
+﻿#include <Core/IO/Async.h>
 #include <Core/Jobs/JobGraph.h>
 #include <Core/Logging/Trace.h>
 #include <Graphics/Core/Common/ShaderSourceCache.h>
@@ -18,13 +18,12 @@ namespace FE::Graphics::Core
     }
 
 
-    ShaderSourceCache::ShaderSourceCache(IO::IAsyncStreamIO* asyncIO)
-        : m_filePool("Graphics/Core/ShaderSourceCache/FilePool")
-        , m_asyncIO(asyncIO)
+    ShaderSourceCache::ShaderSourceCache()
+        : m_filePool("Graphics/ShaderSourceCache/FilePool")
     {
         FE_PROFILER_ZONE();
 
-        Jobs::Graph jobGraph("Graphics/Core/ShaderSourceCache/Load", Jobs::FiberAffinityMask::kAllBackground);
+        Jobs::Graph jobGraph{ "Graphics/ShaderSourceCache/Load", Jobs::FiberAffinityMask::kAllBackground };
         ReadDirectory(jobGraph, IO::GetAbsolutePath("Shaders"));
         ReadDirectory(jobGraph, IO::GetAbsolutePath("../../Modules/Graphics/Framework/Shaders"));
 
@@ -51,11 +50,11 @@ namespace FE::Graphics::Core
                 source[sourceSize] = 0;
 
                 Rc completionWaitGroup = WaitGroup::Create();
-                IO::AsyncReadBatch batch{ completionWaitGroup.Get() };
-                batch.SetSource({ .m_filePath = entry.m_path, .m_byteOffset = 0, .m_byteSize = sourceSize });
+                IO::Async::Batch batch{ completionWaitGroup.Get() };
+                batch.SetSource(entry.m_path, entry.m_stats.m_byteSize);
                 batch.Read(source, sourceSize);
 
-                Rc controller = m_asyncIO->ReadBatch(std::move(batch));
+                Rc controller = IO::Async::Read(std::move(batch));
                 jobGraph.Dispatch(shaderName,
                                   { completionWaitGroup },
                                   [this, shaderName, source, sourceSize, controller, fullPath = IO::Path(entry.m_path)] {

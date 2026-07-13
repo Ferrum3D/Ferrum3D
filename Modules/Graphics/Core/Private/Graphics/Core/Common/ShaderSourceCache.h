@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/Jobs/Base.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Core/Threading/SharedSpinLock.h>
@@ -39,7 +39,7 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("FE08F0A8-40B4-4C17-B152-8220DC1BF5F6");
 
-        ShaderSourceCache(IO::IAsyncStreamIO* asyncIO);
+        ShaderSourceCache();
 
         [[nodiscard]] bool IsLoading() const;
 
@@ -47,14 +47,13 @@ namespace FE::Graphics::Core
 
     private:
         void ReadDirectory(Jobs::Graph& jobGraph, const IO::Path& path);
-        void OnFileLoaded(const IO::IAsyncController* controller, festd::string_view fullPath, Env::Name shaderName, char* source,
-                          uint32_t sourceSize);
+        void OnFileLoaded(const IO::Async::IController* controller, festd::string_view fullPath, Env::Name shaderName,
+                          char* source, uint32_t sourceSize);
 
         void DoRelease() override;
 
         Memory::Pool<ShaderSourceFile> m_filePool;
         festd::segmented_unordered_dense_map<Env::Name, Rc<ShaderSourceFile>> m_filesMap;
-        IO::IAsyncStreamIO* m_asyncIO;
         Threading::SharedSpinLock m_lock;
         std::atomic<uint32_t> m_loadingJobCount;
     };

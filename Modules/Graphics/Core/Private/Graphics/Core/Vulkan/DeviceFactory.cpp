@@ -1,7 +1,7 @@
 ﻿#include <Core/Base/Platform.h>
 #include <Core/CLI/CommandLine.h>
 #include <Core/DI/Builder.h>
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/Logging/Trace.h>
 #include <festd/vector.h>
 

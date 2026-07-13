@@ -1,4 +1,4 @@
-﻿#include <Core/IO/IAsyncStreamIO.h>
+﻿#include <Core/IO/Async.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/Vulkan/Device.h>
@@ -8,7 +8,7 @@
 namespace FE::Graphics::Vulkan
 {
     ShaderLibrary::ShaderLibrary(Core::Device* device, Core::ShaderCompiler* shaderCompiler)
-        : m_shaderPool("Graphics/Core/ShaderLibrary/ShaderInfoPool", sizeof(ShaderInfo))
+        : m_shaderPool("Graphics/ShaderLibrary/ShaderInfoPool", sizeof(ShaderInfo))
         , m_shaderCompiler(shaderCompiler)
     {
         m_device = device;

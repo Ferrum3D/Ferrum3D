@@ -1,9 +1,9 @@
-#include <Core/IO/AsyncStreamIO.h>
+﻿#include <Core/IO/AsyncImpl.h>
 #include <Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h>
 #include <Core/Platform/Windows/Common.h>
 #include <Core/Strings/Encoding.h>
 
-namespace FE::IO
+namespace FE::IO::Async
 {
     namespace
     {
@@ -124,8 +124,9 @@ namespace FE::IO
             FE_AssertDebug(m_readRequests.size() == m_freeRequests.size());
 
             requestIndex = m_freeRequests.find_first();
-            m_freeRequests.reset(requestIndex);
         }
+
+        m_freeRequests.reset(requestIndex);
 
         auto& readRequest = m_readRequests[requestIndex];
         readRequest.m_file = reinterpret_cast<HANDLE>(fileHandle.m_value);
@@ -224,4 +225,4 @@ namespace FE::IO
             StartRead(m_readRequests[pendingRequestIndex]);
         }
     }
-} // namespace FE::IO
+} // namespace FE::IO::Async

@@ -1,7 +1,7 @@
 ﻿#include <Core/Containers/ByteBuffer.h>
 #include <Core/DI/Activator.h>
 #include <Core/IO/FileStream.h>
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Core/Memory/LinearAllocator.h>

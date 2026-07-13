@@ -41,7 +41,7 @@
     Public/Core/DI/Registration.h
     Public/Core/DI/Registry.h
 
-    Public/Core/IO/IAsyncStreamIO.h
+    Public/Core/IO/Async.h
     Public/Core/IO/BaseIO.h
     Public/Core/IO/FileStream.h
     Public/Core/IO/IStream.h
@@ -137,8 +137,8 @@ set(COMMON_SOURCES
 
     Private/Core/IO/Platform/PlatformFile.h
     Private/Core/IO/Platform/PlatformPath.h
-    Private/Core/IO/AsyncStreamIO.h
-    Private/Core/IO/AsyncStreamIO.cpp
+    Private/Core/IO/AsyncImpl.h
+    Private/Core/IO/AsyncImpl.cpp
     Private/Core/IO/DefaultAsyncIOBackend.h
     Private/Core/IO/DefaultAsyncIOBackend.cpp
     Private/Core/IO/BaseIO.cpp

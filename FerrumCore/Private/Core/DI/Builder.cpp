@@ -1,6 +1,5 @@
 #include <Core/DI/Builder.h>
 #include <Core/DI/Registry.h>
-#include <Core/IO/AsyncStreamIO.h>
 
 namespace FE::DI
 {
@@ -15,12 +14,6 @@ namespace FE::DI
         ServiceRegistration* pRegistration = m_registry->Add(id);
         ServiceActivator* pActivator = m_registry->GetActivator(pRegistration->m_index);
         return { pRegistration, pActivator };
-    }
-
-
-    void RegisterCoreServices(const ServiceRegistryBuilder& builder)
-    {
-        builder.Bind<IO::IAsyncStreamIO>().To<IO::AsyncStreamIO>().InSingletonScope();
     }
 
 

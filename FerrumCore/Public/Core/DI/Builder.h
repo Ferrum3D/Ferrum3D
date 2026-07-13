@@ -122,7 +122,4 @@ namespace FE::DI
 
         Internal::ServiceRegistrationSpec BindImpl(const Uuid& id) const;
     };
-
-
-    void RegisterCoreServices(const ServiceRegistryBuilder& builder);
 } // namespace FE::DI

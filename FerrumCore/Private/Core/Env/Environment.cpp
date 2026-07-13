@@ -3,9 +3,9 @@
 #include <Core/Base/StackTracePrivate.h>
 #include <Core/CLI/CommandLine.h>
 #include <Core/Compression/CompressionPrivate.h>
-#include <Core/DI/Builder.h>
 #include <Core/DI/Container.h>
 #include <Core/Env/Environment.h>
+#include <Core/IO/AsyncImpl.h>
 #include <Core/IO/BaseIOPrivate.h>
 #include <Core/Jobs/JobSystem.h>
 #include <Core/Logging/LoggerPrivate.h>
@@ -160,56 +160,62 @@ namespace FE
         };
 
 
+#define FE_CORE_SYSTEM(name)                                                                                                     \
+    struct FE_UNIQUE_IDENT(CoreSystemInitializerScope)                                                                           \
+    {                                                                                                                            \
+        FE_UNIQUE_IDENT(CoreSystemInitializerScope)(std::pmr::memory_resource * allocator)                                       \
+        {                                                                                                                        \
+            name::Internal::Init(allocator);                                                                                     \
+        }                                                                                                                        \
+        ~FE_UNIQUE_IDENT(CoreSystemInitializerScope)()                                                                           \
+        {                                                                                                                        \
+            name::Internal::Shutdown();                                                                                          \
+        }                                                                                                                        \
+    } FE_UNIQUE_IDENT(m_coreSystemInitializerScope)                                                                              \
+    {                                                                                                                            \
+        &m_linearMemoryResource                                                                                                  \
+    }
+
+
         struct Environment final
         {
-            struct HighPriorityInitializer final
-            {
-                HighPriorityInitializer(std::pmr::memory_resource* allocator)
-                {
-                    tracy::StartupProfiler();
-
-                    IO::Internal::Init(allocator);
-                    Trace::Internal::InitStackTrace(allocator);
-                    Memory::Internal::Init(allocator);
-                    Trace::Internal::Init(allocator);
-                    Logger::Internal::Init(allocator);
-                    Threading::Internal::Init(allocator);
-                    Jobs::Internal::Init(allocator);
-                    Compression::Internal::Init(allocator);
-                    Rtti::TypeRegistry::Internal::Init(allocator);
-                }
-
-                ~HighPriorityInitializer()
-                {
-                    Rtti::TypeRegistry::Internal::Shutdown();
-                    Compression::Internal::Shutdown();
-                    Jobs::Internal::Shutdown();
-                    Threading::Internal::Shutdown();
-                    Logger::Internal::Shutdown();
-                    Trace::Internal::Shutdown();
-                    Memory::Internal::Shutdown();
-                    Trace::Internal::ShutdownStackTrace();
-                    IO::Internal::Shutdown();
-
-                    tracy::ShutdownProfiler();
-                }
-            };
-
             VirtualMemoryResource m_virtualMemoryResource;
-            Memory::SpinLockedLinearAllocator m_linearMemoryResource;
+            Memory::SpinLockedLinearAllocator m_linearMemoryResource{ UINT64_C(4) * 1024 * 1024, &m_virtualMemoryResource };
             DefaultMemoryResource m_defaultMemoryResource;
 
-            HighPriorityInitializer m_highPriorityInitializer;
+            struct TracyInitializer final
+            {
+                TracyInitializer()
+                {
+                    tracy::StartupProfiler();
+                }
+
+                ~TracyInitializer()
+                {
+                    tracy::ShutdownProfiler();
+                }
+            } m_tracyInitializer;
+
+            FE_CORE_SYSTEM(IO);
+            FE_CORE_SYSTEM(Trace::StackTrace);
+            FE_CORE_SYSTEM(Memory);
+            FE_CORE_SYSTEM(Trace);
 
             NameDataAllocator m_nameDataAllocator;
+
+            FE_CORE_SYSTEM(Logger);
+            FE_CORE_SYSTEM(Threading);
+            FE_CORE_SYSTEM(Jobs);
+            FE_CORE_SYSTEM(Compression);
+            FE_CORE_SYSTEM(Rtti::TypeRegistry);
+            FE_CORE_SYSTEM(IO::Async);
+
             DI::Container m_diContainer;
 
             Env::ApplicationInfo m_appInfo;
             festd::span<const festd::string_view> m_commandLineArgs;
 
             Environment()
-                : m_linearMemoryResource(UINT64_C(2) * 1024 * 1024, &m_virtualMemoryResource)
-                , m_highPriorityInitializer(&m_linearMemoryResource)
             {
                 const Platform::CpuInfo cpuInfo = Platform::GetCpuInfo();
                 if (!cpuInfo.MeetsMinimalRequirements())
@@ -360,10 +366,6 @@ namespace FE
             args[argIndex] = argv[argIndex + 1];
 
         GEnvironment.m_commandLineArgs = festd::span(args, argCount);
-
-        DI::ServiceRegistryBuilder builder{ GetRootServiceRegistry() };
-        DI::RegisterCoreServices(builder);
-        builder.Build();
     }
 
 

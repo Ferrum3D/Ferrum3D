@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/IO/IAsyncStreamIO.h>
+#include <Core/IO/Async.h>
 #include <Core/Jobs/JobNode.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Assets/ITextureAssetManager.h>

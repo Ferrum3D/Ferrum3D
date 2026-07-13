@@ -44,7 +44,7 @@ namespace FE::Graphics::Vulkan
 
         VkQueue m_nativeQueue = VK_NULL_HANDLE;
 
-        Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/Core/GraphicsCommandBufferPagePool", 8096 };
+        Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/GraphicsCommandBufferPagePool", 8096 };
         festd::inline_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
     };
 
