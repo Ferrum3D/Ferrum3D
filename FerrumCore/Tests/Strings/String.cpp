@@ -542,6 +542,10 @@ TEST(Strings, Compare)
     EXPECT_GT(festd::string("az").compare("aaz"), 0);
     EXPECT_GT(festd::string("aza").compare("aa"), 0);
     EXPECT_GT(festd::string("az").compare("aaa"), 0);
+
+    EXPECT_EQ(festd::string("abc") <=> festd::string("abc"), std::strong_ordering::equal);
+    EXPECT_EQ(festd::string("az") <=> festd::string("aa"), std::strong_ordering::greater);
+    EXPECT_EQ(festd::string("aa") <=> festd::string("az"), std::strong_ordering::less);
 }
 
 TEST(Strings, Strip)

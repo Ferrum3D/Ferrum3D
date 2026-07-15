@@ -1246,165 +1246,54 @@ namespace FE::Internal
     }
 
 
-    //! @brief Check two UTF-8 strings for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.data(), lhs.size()) == 0);
     }
 
-    //! @brief Check two UTF-8 strings for byte inequality.
-    inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    //! @brief Compare two UTF-8 strings by Unicode codepoint values.
-    inline bool operator<(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return lhs.compare(rhs) < 0;
-    }
-
-    inline bool operator>(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return lhs.compare(rhs) > 0;
-    }
-
-    inline bool operator<=(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return lhs.compare(rhs) <= 0;
-    }
-
-    inline bool operator>=(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return lhs.compare(rhs) >= 0;
-    }
-
-
-    //! @brief Check a UTF-8 string and a null-terminated UTF-8 string for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
     {
         return lhs.size() == ASCII::Length(rhs) && (lhs.size() == 0 || memcmp(lhs.data(), rhs, lhs.size()) == 0);
     }
 
-    inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    inline bool operator<(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
-    {
-        return lhs.compare(rhs) < 0;
-    }
-
-    inline bool operator>(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
-    {
-        return lhs.compare(rhs) > 0;
-    }
-
-    inline bool operator<=(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
-    {
-        return lhs.compare(rhs) <= 0;
-    }
-
-    inline bool operator>=(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
-    {
-        return lhs.compare(rhs) >= 0;
-    }
-
-
-    //! @brief Check a null-terminated UTF-8 string and a UTF-8 string for byte equality.
     inline bool operator==(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return ASCII::Length(lhs) == rhs.size() && (rhs.size() == 0 || memcmp(lhs, rhs.data(), rhs.size()) == 0);
     }
 
-    inline bool operator!=(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    inline bool operator<(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) < 0;
-    }
-
-    inline bool operator>(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) > 0;
-    }
-
-    inline bool operator<=(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) <= 0;
-    }
-
-    inline bool operator>=(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) >= 0;
-    }
-
-
-    //! @brief Check an environment name and a UTF-8 string for byte equality.
     inline bool operator==(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.c_str(), rhs.data(), lhs.size()) == 0);
     }
 
-    inline bool operator!=(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    inline bool operator<(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) < 0;
-    }
-
-    inline bool operator>(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) > 0;
-    }
-
-    inline bool operator<=(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) <= 0;
-    }
-
-    inline bool operator>=(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
-    {
-        return StringImpl<BasicStringViewImpl>{ lhs }.compare(rhs) >= 0;
-    }
-
-
-    //! @brief Check a UTF-8 string and an environment name for byte equality.
     inline bool operator==(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
     {
         return lhs.size() == rhs.size() && (lhs.size() == 0 || memcmp(lhs.data(), rhs.c_str(), lhs.size()) == 0);
     }
 
-    inline bool operator!=(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
+    inline std::strong_ordering operator<=>(const StringImpl<BasicStringViewImpl> lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return !(lhs == rhs);
+        return lhs.compare(rhs) <=> 0;
     }
 
-    inline bool operator<(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
+    inline std::strong_ordering operator<=>(const StringImpl<BasicStringViewImpl> lhs, const char* rhs)
     {
-        return lhs.compare(StringImpl<BasicStringViewImpl>{ rhs }) < 0;
+        return lhs.compare(rhs) <=> 0;
     }
 
-    inline bool operator>(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
+    inline std::strong_ordering operator<=>(const char* lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return lhs.compare(StringImpl<BasicStringViewImpl>{ rhs }) > 0;
+        return StringImpl<BasicStringViewImpl>(lhs).compare(rhs) <=> 0;
     }
 
-    inline bool operator<=(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
+    inline std::strong_ordering operator<=>(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
     {
-        return lhs.compare(StringImpl<BasicStringViewImpl>{ rhs }) <= 0;
+        return lhs.compare(StringImpl<BasicStringViewImpl>(rhs)) <=> 0;
     }
 
-    inline bool operator>=(const StringImpl<BasicStringViewImpl> lhs, const Env::Name rhs)
+    inline std::strong_ordering operator<=>(const Env::Name lhs, const StringImpl<BasicStringViewImpl> rhs)
     {
-        return lhs.compare(StringImpl<BasicStringViewImpl>{ rhs }) >= 0;
+        return StringImpl<BasicStringViewImpl>(lhs).compare(rhs) <=> 0;
     }
 
 

@@ -161,6 +161,13 @@ namespace FE::IO
             return Iter{ m_data + m_size };
         }
 
+        std::strong_ordering operator<=>(const PathView& other) const
+        {
+            const festd::string_view lhs{ *this };
+            const festd::string_view rhs{ other };
+            return lhs <=> rhs;
+        }
+
     private:
         void Parse(const festd::string_view view)
         {
@@ -213,19 +220,11 @@ namespace FE::IO
         const char* m_data = nullptr;
         uint32_t m_size = 0;
 
-        union
-        {
-            struct
-            {
-                uint32_t m_filenameSize : 10;
-                uint32_t m_extensionSize : 10;
-                uint32_t m_hasRootName : 1;
-                uint32_t m_hasRootDirectory : 1;
-                uint32_t m_hasRelativePath : 1;
-            };
-
-            uint32_t m_flags = 0;
-        };
+        uint32_t m_filenameSize : 10;
+        uint32_t m_extensionSize : 10;
+        uint32_t m_hasRootName : 1;
+        uint32_t m_hasRootDirectory : 1;
+        uint32_t m_hasRelativePath : 1;
     };
 
 
