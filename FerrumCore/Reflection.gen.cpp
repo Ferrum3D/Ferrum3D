@@ -18,6 +18,7 @@
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Color.h>
 #include <Core/Math/Matrix4x4.h>
+#include <Core/Math/Obb.h>
 #include <Core/Math/Quaternion.h>
 #include <Core/Math/Rect.h>
 #include <Core/Math/Sphere.h>
@@ -1526,6 +1527,82 @@ namespace FE::IO::Async
 
     static Rtti::TypeRegistrar GTypeRegistrar_70064b01c4644ad78169c61c9d37419a(&OverlappedAsyncIOBackend::Reflect);
 } // namespace FE::IO::Async
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_71b0b56a6a5e4f22b06264e4ba2d9ea0()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Obb>()
+    {
+        return GetMutableType_71b0b56a6a5e4f22b06264e4ba2d9ea0();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Obb>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x71, 0xb0, 0xb5, 0x6a, 0x6a, 0x5e, 0x4f, 0x22, 0xb0, 0x62, 0x64, 0xe4, 0xba, 0x2d, 0x9e, 0xa0, // FE::Obb
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Obb>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_71b0b56a6a5e4f22b06264e4ba2d9ea0();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x71, 0xb0, 0xb5, 0x6a, 0x6a, 0x5e, 0x4f, 0x22, 0xb0, 0x62, 0x64, 0xe4, 0xba, 0x2d, 0x9e, 0xa0, // FE::Obb
+        };
+
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(TypeID)] = {
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 center
+            0xbf, 0x82, 0x3b, 0x0d, 0x67, 0x23, 0x41, 0xc1,
+            0x9a, 0x90, 0xda, 0x7a, 0xee, 0xa6, 0xbd, 0x6d, // FE::Vector3 extents
+            0xe9, 0xa0, 0xd3, 0xb6, 0xe0, 0x43, 0x47, 0xe6,
+            0x86, 0x07, 0x7b, 0x36, 0x2c, 0xed, 0x07, 0x7e, // FE::Quaternion rotation
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_center = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_extents = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_rotation = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("center",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &FE::Obb::center,
+                                                        kAttributes_center,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("extents",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &FE::Obb::extents,
+                                                        kAttributes_extents,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("rotation",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &FE::Obb::rotation,
+                                                        kAttributes_rotation,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<FE::Obb>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "FE::Obb", {}, kAttributes, kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_71b0b56a6a5e4f22b06264e4ba2d9ea0(&Internal::ExternalTypeReflector<FE::Obb>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Rtti

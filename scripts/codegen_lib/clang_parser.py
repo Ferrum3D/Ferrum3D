@@ -21,7 +21,6 @@ from .model import (
 class ParseConfig:
     project_dir: Path
     llvm_dir: Path
-    base_compiler_args: list[str]
 
 
 _INDEX = None
@@ -345,16 +344,16 @@ def visit(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], project_di
 
 
 def parse_file(
-    file_path: str,
-    include_dirs: list[str],
-    defines: list[str],
+    file_path: Path,
+    contents: str,
+    compiler_args: list[str],
     config: ParseConfig,
 ) -> dict[uuid.UUID, ReflectedType] | None:
-    compiler_args = config.base_compiler_args + [f"-I{x}" for x in include_dirs] + [f"-D{x}" for x in defines]
     index = _get_index(config.llvm_dir)
     tu = index.parse(
-        file_path,
+        str(file_path),
         args=compiler_args,
+        unsaved_files=[(str(file_path), contents)],
         options=cindex.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES | cindex.TranslationUnit.PARSE_INCOMPLETE
     )
 
