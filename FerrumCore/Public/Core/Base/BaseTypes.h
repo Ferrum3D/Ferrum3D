@@ -57,6 +57,12 @@ namespace FE
     };
 
 
+    template<class T, class... TArgs>
+    concept Constructible = requires(TArgs&&... args) {
+        { new T(std::forward<TArgs>(args)...) } -> std::same_as<T*>;
+    };
+
+
     //! @brief Location in source file.
     struct SourceLocation final
     {

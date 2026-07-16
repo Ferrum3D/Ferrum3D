@@ -160,14 +160,14 @@ namespace FE::Memory
         }
 
         template<class... TArgs>
-            requires std::constructible_from<T, TArgs...>
+            requires Constructible<T, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-            requires std::constructible_from<T, Pool&, TArgs...>
+            requires Constructible<T, Pool&, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), *this, std::forward<TArgs>(args)...);
@@ -216,14 +216,14 @@ namespace FE::Memory
         }
 
         template<class... TArgs>
-            requires std::constructible_from<T, TArgs...>
+            requires Constructible<T, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), std::forward<TArgs>(args)...);
         }
 
         template<class... TArgs>
-            requires std::constructible_from<T, LockedPool&, TArgs...>
+            requires Constructible<T, LockedPool&, TArgs...>
         T* New(TArgs&&... args)
         {
             return Memory::New<T>(GetAllocator(), *this, std::forward<TArgs>(args)...);

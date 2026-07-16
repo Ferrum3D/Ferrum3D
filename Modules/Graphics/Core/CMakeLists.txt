@@ -63,6 +63,7 @@ set(COMMON_SOURCES
 
     Private/Graphics/Core/AsyncCopyQueue.cpp
     Private/Graphics/Core/DescriptorManager.cpp
+    Private/Graphics/Core/DeviceFactory.cpp
     Private/Graphics/Core/Format.cpp
     Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp

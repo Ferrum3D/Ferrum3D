@@ -12,5 +12,10 @@ namespace FE::Graphics::Core
         virtual void CreateDevice(Env::Name adapterName) = 0;
 
         [[nodiscard]] virtual festd::span<const AdapterInfo> EnumerateAdapters() const = 0;
+
+        static void Init(GraphicsAPI api);
+        static void Shutdown();
+
+        static DeviceFactory& Get();
     };
 } // namespace FE::Graphics::Core

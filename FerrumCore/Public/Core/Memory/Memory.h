@@ -70,7 +70,7 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class TAllocator, class... TArgs>
-            requires std::constructible_from<T, TArgs...>
+            requires Constructible<T, TArgs...>
         [[nodiscard]] T* New(TAllocator* allocator, TArgs&&... args)
         {
             return new (allocator->allocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
@@ -85,7 +85,7 @@ namespace FE
         //!
         //! @return The allocated object.
         template<class T, class... TArgs>
-            requires std::constructible_from<T, TArgs...>
+            requires Constructible<T, TArgs...>
         [[nodiscard]] T* DefaultNew(TArgs&&... args)
         {
             return new (DefaultAllocate(sizeof(T), alignof(T))) T(std::forward<TArgs>(args)...);
