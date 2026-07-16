@@ -45,6 +45,12 @@ namespace FE
             m_simdVector = Parse(string).m_simdVector;
         }
 
+        Uuid(const std::initializer_list<uint8_t> bytes) noexcept
+        {
+            FE_Assert(bytes.size() == sizeof(m_bytes));
+            festd::copy(bytes.begin(), bytes.end(), m_bytes);
+        }
+
         [[nodiscard]] uint8_t* data()
         {
             return m_bytes;

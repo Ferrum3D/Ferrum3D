@@ -49,12 +49,10 @@ class ConstructorInfo:
     def __init__(self, args: list["ReflectedType"], is_valid: bool = True) -> None:
         self.args = args
         self.is_valid = is_valid
-        self.is_di_compatible = all(t.pointer_level == 1 and t.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) for t in args)
 
     @staticmethod
     def create_invalid() -> ConstructorInfo:
         info = ConstructorInfo([], False)
-        info.is_di_compatible = False
         return info
 
 
@@ -131,9 +129,6 @@ class ReflectedType:
         self.is_enum = kind == TypeKind.ENUM
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS
         self.pointer_level = 0
-        self.is_di_compatible = len(constructors) == 1 and constructors[0].is_di_compatible or len(constructors) == 0
-        if not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID):
-            self.is_di_compatible = False
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:
         #     print(f'Warning: {self.qualified_name} is not derived from RefCountedObjectBase')
