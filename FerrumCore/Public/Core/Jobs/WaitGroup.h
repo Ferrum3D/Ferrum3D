@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include <Core/Jobs/Base.h>
 #include <Core/Env/Environment.h>
+#include <Core/Jobs/Base.h>
+#include <Core/Memory/RefCount.h>
 
 namespace FE
 {

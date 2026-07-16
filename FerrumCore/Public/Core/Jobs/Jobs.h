@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Jobs/JobNode.h>
+#include <Core/Memory/Memory.h>
 
 namespace FE::Jobs
 {

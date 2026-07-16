@@ -1,5 +1,7 @@
 ﻿#pragma once
-#include <Core/DI/BaseDI.h>
+#include <Core/Base/BaseTypes.h>
+#include <Core/Base/Hash.h>
+#include <Core/RTTI/RTTI.h>
 
 namespace FE::Memory
 {
@@ -168,10 +170,7 @@ namespace FE::Env
         static Module* GetModuleList();
         static void ShutdownModules();
 
-        virtual void RegisterServices([[maybe_unused]] const DI::ServiceRegistryBuilder& builder) {}
-
         Module* m_next = nullptr;
-        DI::ServiceRegistry* m_serviceRegistry = nullptr;
 
     protected:
         virtual void Shutdown() = 0;
@@ -236,10 +235,6 @@ public:                                                                         
     const ApplicationInfo& GetApplicationInfo();
 
     std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);
-    DI::IServiceProvider* GetServiceProvider();
-
-    DI::ServiceRegistry* CreateServiceRegistry();
-    DI::ServiceRegistry* GetRootServiceRegistry();
 } // namespace FE::Env
 
 FE_RTTI_Reflect(FE::Env::Name, "99D46840-914F-44E0-8D0E-9C6F24928015");

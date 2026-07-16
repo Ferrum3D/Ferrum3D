@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Core/Memory/Memory.h>
 #include <festd/Internal/StringBase.h>
 #include <memory_resource>
 

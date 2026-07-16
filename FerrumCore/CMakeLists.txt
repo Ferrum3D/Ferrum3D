@@ -33,14 +33,6 @@
     Public/Core/Containers/Pow2Array.h
     Public/Core/Containers/SegmentedVector.h
 
-    Public/Core/DI/Activator.h
-    Public/Core/DI/BaseDI.h
-    Public/Core/DI/Builder.h
-    Public/Core/DI/Container.h
-    Public/Core/DI/LifetimeScope.h
-    Public/Core/DI/Registration.h
-    Public/Core/DI/Registry.h
-
     Public/Core/IO/Async.h
     Public/Core/IO/BaseIO.h
     Public/Core/IO/FileStream.h
@@ -129,11 +121,6 @@ set(COMMON_SOURCES
 
     Private/Core/Compression/Compression.cpp
     Private/Core/Compression/CompressionPrivate.h
-
-    Private/Core/DI/BaseDI.cpp
-    Private/Core/DI/Builder.cpp
-    Private/Core/DI/Container.cpp
-    Private/Core/DI/LifetimeScope.cpp
 
     Private/Core/IO/Platform/PlatformFile.h
     Private/Core/IO/Platform/PlatformPath.h

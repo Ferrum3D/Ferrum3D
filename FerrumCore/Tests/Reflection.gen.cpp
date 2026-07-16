@@ -124,7 +124,6 @@ namespace FE::Cli::Tests
                                     kBaseClassTypeIDs,
                                     kAttributes,
                                     kFields,
-                                    nullptr,
                                     &RTTI_DefaultConstruct_d5dd1441e7ec48e5970615434aa507d5);
     }
 

@@ -3,7 +3,6 @@
 #include <Core/Base/StackTracePrivate.h>
 #include <Core/CLI/CommandLine.h>
 #include <Core/Compression/CompressionPrivate.h>
-#include <Core/DI/Container.h>
 #include <Core/Env/Environment.h>
 #include <Core/IO/AsyncImpl.h>
 #include <Core/IO/BaseIOPrivate.h>
@@ -210,8 +209,6 @@ namespace FE
             FE_CORE_SYSTEM(Rtti::TypeRegistry);
             FE_CORE_SYSTEM(IO::Async);
 
-            DI::Container m_diContainer;
-
             Env::ApplicationInfo m_appInfo;
             festd::span<const festd::string_view> m_commandLineArgs;
 
@@ -225,8 +222,6 @@ namespace FE
                         festd::string_view(cpuInfo.m_cpuName));
                     Platform::FatalInitError(message.c_str());
                 }
-
-                m_diContainer.GetRegistryRoot()->Initialize();
             }
 
             std::pmr::memory_resource* GetStaticAllocator(const Memory::StaticAllocatorType type)
@@ -257,27 +252,9 @@ namespace FE
     } // namespace
 
 
-    DI::ServiceRegistry* Env::CreateServiceRegistry()
-    {
-        return GEnvironment.m_diContainer.GetRegistryRoot()->CreateRegistry();
-    }
-
-
-    DI::ServiceRegistry* Env::GetRootServiceRegistry()
-    {
-        return GEnvironment.m_diContainer.GetRegistryRoot()->GetRootRegistry();
-    }
-
-
     std::pmr::memory_resource* Env::GetStaticAllocator(const Memory::StaticAllocatorType type)
     {
         return GEnvironment.GetStaticAllocator(type);
-    }
-
-
-    DI::IServiceProvider* Env::GetServiceProvider()
-    {
-        return &GEnvironment.m_diContainer;
     }
 
 
