@@ -37,7 +37,7 @@ namespace FE::Platform
         DWORD GetFileShareMode(const IO::OpenMode openMode)
         {
             if (openMode == IO::OpenMode::kReadOnly)
-                return FILE_SHARE_READ;
+                return FILE_SHARE_READ | FILE_SHARE_WRITE;
 
             return 0;
         }
