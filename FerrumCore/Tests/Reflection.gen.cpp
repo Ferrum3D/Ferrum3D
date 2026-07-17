@@ -10,7 +10,9 @@
 
 namespace FE::Cli::Tests
 {
-    const Rtti::TypeID Build::TypeID = Rtti::TypeID{ "d5dd1441-e7ec-48e5-9706-15434aa507d5" };
+    const Rtti::TypeID Build::TypeID = Rtti::TypeID{
+        0xd5, 0xdd, 0x14, 0x41, 0xe7, 0xec, 0x48, 0xe5, 0x97, 0x06, 0x15, 0x43, 0x4a, 0xa5, 0x07, 0xd5,
+    };
 
     namespace
     {
@@ -133,7 +135,9 @@ namespace FE::Cli::Tests
 
 namespace FE::Cli::Tests
 {
-    const Rtti::TypeID TestParser::TypeID = Rtti::TypeID{ "ef03ae87-b2df-4fa0-a77d-b92cc8e2015c" };
+    const Rtti::TypeID TestParser::TypeID = Rtti::TypeID{
+        0xef, 0x03, 0xae, 0x87, 0xb2, 0xdf, 0x4f, 0xa0, 0xa7, 0x7d, 0xb9, 0x2c, 0xc8, 0xe2, 0x01, 0x5c,
+    };
 
     namespace
     {

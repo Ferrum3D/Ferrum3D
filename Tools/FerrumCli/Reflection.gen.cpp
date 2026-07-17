@@ -10,7 +10,9 @@
 
 namespace FE::FerrumCli
 {
-    const Rtti::TypeID CommandLineParser::TypeID = Rtti::TypeID{ "2b409ccd-3ca4-46a0-ba21-48b1d92aed2b" };
+    const Rtti::TypeID CommandLineParser::TypeID = Rtti::TypeID{
+        0x2b, 0x40, 0x9c, 0xcd, 0x3c, 0xa4, 0x46, 0xa0, 0xba, 0x21, 0x48, 0xb1, 0xd9, 0x2a, 0xed, 0x2b,
+    };
 
     namespace
     {
@@ -122,7 +124,9 @@ namespace FE::FerrumCli
 
 namespace FE::FerrumCli
 {
-    const Rtti::TypeID Build::TypeID = Rtti::TypeID{ "4d105b8d-0e84-460b-98bc-8a4c3710a193" };
+    const Rtti::TypeID Build::TypeID = Rtti::TypeID{
+        0x4d, 0x10, 0x5b, 0x8d, 0x0e, 0x84, 0x46, 0x0b, 0x98, 0xbc, 0x8a, 0x4c, 0x37, 0x10, 0xa1, 0x93,
+    };
 
     namespace
     {

@@ -35,7 +35,9 @@
 
 namespace FE::Cli
 {
-    const Rtti::TypeID Command::TypeID = Rtti::TypeID{ "01ddd116-d090-49e4-98b9-4100cfb50509" };
+    const Rtti::TypeID Command::TypeID = Rtti::TypeID{
+        0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09,
+    };
 
     namespace
     {
@@ -54,7 +56,6 @@ namespace FE::Cli
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_01ddd116d09049e498b94100cfb50509()
         {
             static Rtti::Type typeInstance;
@@ -76,7 +77,6 @@ namespace FE::Cli
     {
         return RTTI_TryCastImpl_01ddd116d09049e498b94100cfb50509(const_cast<Command*>(this), typeID);
     }
-
     void Command::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_01ddd116d09049e498b94100cfb50509();
@@ -177,7 +177,9 @@ namespace FE::Rtti
 
 namespace FE::Cli
 {
-    const Rtti::TypeID Subcommand::TypeID = Rtti::TypeID{ "0f01e827-c9d9-43f0-8969-47bf6d035b82" };
+    const Rtti::TypeID Subcommand::TypeID = Rtti::TypeID{
+        0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82,
+    };
 
     namespace
     {
@@ -202,7 +204,6 @@ namespace FE::Cli
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_0f01e827c9d943f0896947bf6d035b82()
         {
             static Rtti::Type typeInstance;
@@ -224,7 +225,6 @@ namespace FE::Cli
     {
         return RTTI_TryCastImpl_0f01e827c9d943f0896947bf6d035b82(const_cast<Subcommand*>(this), typeID);
     }
-
     void Subcommand::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_0f01e827c9d943f0896947bf6d035b82();
@@ -402,7 +402,9 @@ namespace FE::Rtti
 
 namespace FE::IO::Async
 {
-    const Rtti::TypeID IController::TypeID = Rtti::TypeID{ "2427b1d9-f1a5-4a1b-a804-eb9aca502c28" };
+    const Rtti::TypeID IController::TypeID = Rtti::TypeID{
+        0x24, 0x27, 0xb1, 0xd9, 0xf1, 0xa5, 0x4a, 0x1b, 0xa8, 0x04, 0xeb, 0x9a, 0xca, 0x50, 0x2c, 0x28,
+    };
 
     namespace
     {
@@ -427,7 +429,6 @@ namespace FE::IO::Async
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_2427b1d9f1a54a1ba804eb9aca502c28()
         {
             static Rtti::Type typeInstance;
@@ -449,7 +450,6 @@ namespace FE::IO::Async
     {
         return RTTI_TryCastImpl_2427b1d9f1a54a1ba804eb9aca502c28(const_cast<IController*>(this), typeID);
     }
-
     void IController::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_2427b1d9f1a54a1ba804eb9aca502c28();
@@ -481,7 +481,9 @@ namespace FE::IO::Async
 
 namespace FE::IO
 {
-    const Rtti::TypeID FileStream::TypeID = Rtti::TypeID{ "25bf9144-cf17-4085-b0d4-f269d5f7ccb7" };
+    const Rtti::TypeID FileStream::TypeID = Rtti::TypeID{
+        0x25, 0xbf, 0x91, 0x44, 0xcf, 0x17, 0x40, 0x85, 0xb0, 0xd4, 0xf2, 0x69, 0xd5, 0xf7, 0xcc, 0xb7,
+    };
 
     namespace
     {
@@ -524,7 +526,6 @@ namespace FE::IO
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_25bf9144cf174085b0d4f269d5f7ccb7()
         {
             static Rtti::Type typeInstance;
@@ -546,7 +547,6 @@ namespace FE::IO
     {
         return RTTI_TryCastImpl_25bf9144cf174085b0d4f269d5f7ccb7(const_cast<FileStream*>(this), typeID);
     }
-
     void FileStream::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_25bf9144cf174085b0d4f269d5f7ccb7();
@@ -822,7 +822,9 @@ namespace FE::Rtti
 
 namespace FE::IO
 {
-    const Rtti::TypeID StreamBase::TypeID = Rtti::TypeID{ "2f74ff8d-4d81-44be-962a-9d30669e03c8" };
+    const Rtti::TypeID StreamBase::TypeID = Rtti::TypeID{
+        0x2f, 0x74, 0xff, 0x8d, 0x4d, 0x81, 0x44, 0xbe, 0x96, 0x2a, 0x9d, 0x30, 0x66, 0x9e, 0x03, 0xc8,
+    };
 
     namespace
     {
@@ -853,7 +855,6 @@ namespace FE::IO
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_2f74ff8d4d8144be962a9d30669e03c8()
         {
             static Rtti::Type typeInstance;
@@ -875,7 +876,6 @@ namespace FE::IO
     {
         return RTTI_TryCastImpl_2f74ff8d4d8144be962a9d30669e03c8(const_cast<StreamBase*>(this), typeID);
     }
-
     void StreamBase::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_2f74ff8d4d8144be962a9d30669e03c8();
@@ -1217,7 +1217,9 @@ namespace FE::Rtti
 
 namespace FE::IO::Async
 {
-    const Rtti::TypeID Controller::TypeID = Rtti::TypeID{ "4f28d2d7-1ab4-4279-a3bd-a1d15b2f5ba9" };
+    const Rtti::TypeID Controller::TypeID = Rtti::TypeID{
+        0x4f, 0x28, 0xd2, 0xd7, 0x1a, 0xb4, 0x42, 0x79, 0xa3, 0xbd, 0xa1, 0xd1, 0x5b, 0x2f, 0x5b, 0xa9,
+    };
 
     namespace
     {
@@ -1248,7 +1250,6 @@ namespace FE::IO::Async
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9()
         {
             static Rtti::Type typeInstance;
@@ -1270,7 +1271,6 @@ namespace FE::IO::Async
     {
         return RTTI_TryCastImpl_4f28d2d71ab44279a3bda1d15b2f5ba9(const_cast<Controller*>(this), typeID);
     }
-
     void Controller::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_4f28d2d71ab44279a3bda1d15b2f5ba9();
@@ -1302,51 +1302,49 @@ namespace FE::IO::Async
 } // namespace FE::IO::Async
 
 
-namespace FE::Rtti
+namespace FE
 {
+    const Rtti::TypeID Aabb::TypeID = Rtti::TypeID{
+        0x52, 0x1e, 0x15, 0x92, 0x5f, 0xf2, 0x40, 0x2b, 0x9c, 0x85, 0x8e, 0xde, 0x1d, 0x30, 0x79, 0x8c,
+    };
+
     namespace
     {
-        Type& GetMutableType_521e15925ff2402b9c858ede1d30798c()
+        Rtti::Type& RTTI_GetMutableType_521e15925ff2402b9c858ede1d30798c()
         {
-            static Type typeInstance;
+            static Rtti::Type typeInstance;
             return typeInstance;
         }
     } // namespace
 
-    template<>
-    const Type& GetType<FE::Aabb>()
+    const Rtti::Type& Aabb::RTTI_GetType()
     {
-        return GetMutableType_521e15925ff2402b9c858ede1d30798c();
+        return RTTI_GetMutableType_521e15925ff2402b9c858ede1d30798c();
     }
 
-    template<>
-    TypeID GetTypeID<FE::Aabb>()
+    void Aabb::Reflect(Rtti::ReflectionContext& context)
     {
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_521e15925ff2402b9c858ede1d30798c();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
             0x52, 0x1e, 0x15, 0x92, 0x5f, 0xf2, 0x40, 0x2b, 0x9c, 0x85, 0x8e, 0xde, 0x1d, 0x30, 0x79, 0x8c, // FE::Aabb
         };
 
-        return TypeID::LoadAligned(kTypeIDBytes);
-    }
-
-    void Internal::ExternalTypeReflector<FE::Aabb>::Reflect(ReflectionContext& context)
-    {
-        Type& typeInstance = GetMutableType_521e15925ff2402b9c858ede1d30798c();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
-            0x52, 0x1e, 0x15, 0x92, 0x5f, 0xf2, 0x40, 0x2b, 0x9c, 0x85, 0x8e, 0xde, 0x1d, 0x30, 0x79, 0x8c, // FE::Aabb
-        };
-
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static const festd::array<Rtti::FieldInfo, 0> kFields = {};
 
-        context
-            .ReflectClass<FE::Aabb>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "FE::Aabb", {}, kAttributes, kFields);
+        context.ReflectClass<Aabb>(typeInstance,
+                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                   "FE::Aabb",
+                                   kBaseClassTypeIDs,
+                                   kAttributes,
+                                   kFields);
     }
 
-    static TypeRegistrar GTypeRegistrar_521e15925ff2402b9c858ede1d30798c(&Internal::ExternalTypeReflector<FE::Aabb>::Reflect);
-} // namespace FE::Rtti
+    static Rtti::TypeRegistrar GTypeRegistrar_521e15925ff2402b9c858ede1d30798c(&Aabb::Reflect);
+} // namespace FE
 
 
 namespace FE::Rtti
@@ -1444,7 +1442,9 @@ namespace FE::Rtti
 
 namespace FE::IO::Async
 {
-    const Rtti::TypeID OverlappedAsyncIOBackend::TypeID = Rtti::TypeID{ "70064b01-c464-4ad7-8169-c61c9d37419a" };
+    const Rtti::TypeID OverlappedAsyncIOBackend::TypeID = Rtti::TypeID{
+        0x70, 0x06, 0x4b, 0x01, 0xc4, 0x64, 0x4a, 0xd7, 0x81, 0x69, 0xc6, 0x1c, 0x9d, 0x37, 0x41, 0x9a,
+    };
 
     namespace
     {
@@ -1475,7 +1475,6 @@ namespace FE::IO::Async
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_70064b01c4644ad78169c61c9d37419a()
         {
             static Rtti::Type typeInstance;
@@ -1497,7 +1496,6 @@ namespace FE::IO::Async
     {
         return RTTI_TryCastImpl_70064b01c4644ad78169c61c9d37419a(const_cast<OverlappedAsyncIOBackend*>(this), typeID);
     }
-
     void OverlappedAsyncIOBackend::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_70064b01c4644ad78169c61c9d37419a();
@@ -1649,7 +1647,9 @@ namespace FE::Rtti
 
 namespace FE::IO::Async
 {
-    const Rtti::TypeID IAsyncIOBackend::TypeID = Rtti::TypeID{ "780d7b19-9084-4d59-9a45-a913994efed6" };
+    const Rtti::TypeID IAsyncIOBackend::TypeID = Rtti::TypeID{
+        0x78, 0x0d, 0x7b, 0x19, 0x90, 0x84, 0x4d, 0x59, 0x9a, 0x45, 0xa9, 0x13, 0x99, 0x4e, 0xfe, 0xd6,
+    };
 
     namespace
     {
@@ -1674,7 +1674,6 @@ namespace FE::IO::Async
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_780d7b1990844d599a45a913994efed6()
         {
             static Rtti::Type typeInstance;
@@ -1696,7 +1695,6 @@ namespace FE::IO::Async
     {
         return RTTI_TryCastImpl_780d7b1990844d599a45a913994efed6(const_cast<IAsyncIOBackend*>(this), typeID);
     }
-
     void IAsyncIOBackend::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_780d7b1990844d599a45a913994efed6();
@@ -2307,7 +2305,9 @@ namespace FE::Rtti
 
 namespace FE::Memory
 {
-    const Rtti::TypeID RefCountedObjectBase::TypeID = Rtti::TypeID{ "b4fa5c63-69c0-4666-8a92-726f070d769b" };
+    const Rtti::TypeID RefCountedObjectBase::TypeID = Rtti::TypeID{
+        0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66, 0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b,
+    };
 
     namespace
     {
@@ -2326,7 +2326,6 @@ namespace FE::Memory
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_b4fa5c6369c046668a92726f070d769b()
         {
             static Rtti::Type typeInstance;
@@ -2348,7 +2347,6 @@ namespace FE::Memory
     {
         return RTTI_TryCastImpl_b4fa5c6369c046668a92726f070d769b(const_cast<RefCountedObjectBase*>(this), typeID);
     }
-
     void RefCountedObjectBase::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_b4fa5c6369c046668a92726f070d769b();
@@ -2575,7 +2573,9 @@ namespace FE::Rtti
 
 namespace FE::IO::Async
 {
-    const Rtti::TypeID DefaultAsyncIOBackend::TypeID = Rtti::TypeID{ "c1752d59-0343-46d0-b95a-127eb2321cc7" };
+    const Rtti::TypeID DefaultAsyncIOBackend::TypeID = Rtti::TypeID{
+        0xc1, 0x75, 0x2d, 0x59, 0x03, 0x43, 0x46, 0xd0, 0xb9, 0x5a, 0x12, 0x7e, 0xb2, 0x32, 0x1c, 0xc7,
+    };
 
     namespace
     {
@@ -2606,7 +2606,6 @@ namespace FE::IO::Async
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_c1752d59034346d0b95a127eb2321cc7()
         {
             static Rtti::Type typeInstance;
@@ -2628,7 +2627,6 @@ namespace FE::IO::Async
     {
         return RTTI_TryCastImpl_c1752d59034346d0b95a127eb2321cc7(const_cast<DefaultAsyncIOBackend*>(this), typeID);
     }
-
     void DefaultAsyncIOBackend::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_c1752d59034346d0b95a127eb2321cc7();
@@ -2662,7 +2660,9 @@ namespace FE::IO::Async
 
 namespace FE::Cli
 {
-    const Rtti::TypeID Parser::TypeID = Rtti::TypeID{ "c3c49654-fe98-4ce6-b759-06d7ef4eaa0f" };
+    const Rtti::TypeID Parser::TypeID = Rtti::TypeID{
+        0xc3, 0xc4, 0x96, 0x54, 0xfe, 0x98, 0x4c, 0xe6, 0xb7, 0x59, 0x06, 0xd7, 0xef, 0x4e, 0xaa, 0x0f,
+    };
 
     namespace
     {
@@ -2687,7 +2687,6 @@ namespace FE::Cli
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_c3c49654fe984ce6b75906d7ef4eaa0f()
         {
             static Rtti::Type typeInstance;
@@ -2709,7 +2708,6 @@ namespace FE::Cli
     {
         return RTTI_TryCastImpl_c3c49654fe984ce6b75906d7ef4eaa0f(const_cast<Parser*>(this), typeID);
     }
-
     void Parser::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_c3c49654fe984ce6b75906d7ef4eaa0f();
@@ -2751,7 +2749,9 @@ namespace FE::Cli
 
 namespace FE::IO
 {
-    const Rtti::TypeID BufferedStream::TypeID = Rtti::TypeID{ "ccad9e96-a9c7-4543-9414-1a0e00e8d5b6" };
+    const Rtti::TypeID BufferedStream::TypeID = Rtti::TypeID{
+        0xcc, 0xad, 0x9e, 0x96, 0xa9, 0xc7, 0x45, 0x43, 0x94, 0x14, 0x1a, 0x0e, 0x00, 0xe8, 0xd5, 0xb6,
+    };
 
     namespace
     {
@@ -2788,7 +2788,6 @@ namespace FE::IO
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_ccad9e96a9c7454394141a0e00e8d5b6()
         {
             static Rtti::Type typeInstance;
@@ -2810,7 +2809,6 @@ namespace FE::IO
     {
         return RTTI_TryCastImpl_ccad9e96a9c7454394141a0e00e8d5b6(const_cast<BufferedStream*>(this), typeID);
     }
-
     void BufferedStream::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_ccad9e96a9c7454394141a0e00e8d5b6();
@@ -3255,7 +3253,9 @@ namespace FE::Rtti
 
 namespace FE::IO
 {
-    const Rtti::TypeID IStream::TypeID = Rtti::TypeID{ "fd697dc5-020e-4998-adf2-9dfaf48e2a75" };
+    const Rtti::TypeID IStream::TypeID = Rtti::TypeID{
+        0xfd, 0x69, 0x7d, 0xc5, 0x02, 0x0e, 0x49, 0x98, 0xad, 0xf2, 0x9d, 0xfa, 0xf4, 0x8e, 0x2a, 0x75,
+    };
 
     namespace
     {
@@ -3280,7 +3280,6 @@ namespace FE::IO
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_fd697dc5020e4998adf29dfaf48e2a75()
         {
             static Rtti::Type typeInstance;
@@ -3302,7 +3301,6 @@ namespace FE::IO
     {
         return RTTI_TryCastImpl_fd697dc5020e4998adf29dfaf48e2a75(const_cast<IStream*>(this), typeID);
     }
-
     void IStream::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_fd697dc5020e4998adf29dfaf48e2a75();

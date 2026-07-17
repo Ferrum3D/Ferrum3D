@@ -113,7 +113,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ComputePipeline::TypeID = Rtti::TypeID{ "0ed571f4-58c9-40d9-aa58-c70450fb0e6a" };
+    const Rtti::TypeID ComputePipeline::TypeID = Rtti::TypeID{
+        0x0e, 0xd5, 0x71, 0xf4, 0x58, 0xc9, 0x40, 0xd9, 0xaa, 0x58, 0xc7, 0x04, 0x50, 0xfb, 0x0e, 0x6a,
+    };
 
     namespace
     {
@@ -237,7 +239,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID Viewport::TypeID = Rtti::TypeID{ "1182bf45-88b6-4763-a120-bc823919d74d" };
+    const Rtti::TypeID Viewport::TypeID = Rtti::TypeID{
+        0x11, 0x82, 0xbf, 0x45, 0x88, 0xb6, 0x47, 0x63, 0xa1, 0x20, 0xbc, 0x82, 0x39, 0x19, 0xd7, 0x4d,
+    };
 
     namespace
     {
@@ -432,7 +436,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{ "2249e029-7abd-4eee-9d1d-c59570fd27ef" };
+    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{
+        0x22, 0x49, 0xe0, 0x29, 0x7a, 0xbd, 0x4e, 0xee, 0x9d, 0x1d, 0xc5, 0x95, 0x70, 0xfd, 0x27, 0xef,
+    };
 
     namespace
     {
@@ -534,7 +540,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Device::TypeID = Rtti::TypeID{ "23d426e6-3322-4cb2-9800-deba7c3deac0" };
+    const Rtti::TypeID Device::TypeID = Rtti::TypeID{
+        0x23, 0xd4, 0x26, 0xe6, 0x33, 0x22, 0x4c, 0xb2, 0x98, 0x00, 0xde, 0xba, 0x7c, 0x3d, 0xea, 0xc0,
+    };
 
     namespace
     {
@@ -620,7 +628,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{ "261c8b48-9a5f-481a-b31c-aa7d48bc0e33" };
+    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{
+        0x26, 0x1c, 0x8b, 0x48, 0x9a, 0x5f, 0x48, 0x1a, 0xb3, 0x1c, 0xaa, 0x7d, 0x48, 0xbc, 0x0e, 0x33,
+    };
 
     namespace
     {
@@ -714,7 +724,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{ "2c1855f0-034b-47b7-869a-f9512903212f" };
+    const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{
+        0x2c, 0x18, 0x55, 0xf0, 0x03, 0x4b, 0x47, 0xb7, 0x86, 0x9a, 0xf9, 0x51, 0x29, 0x03, 0x21, 0x2f,
+    };
 
     namespace
     {
@@ -808,7 +820,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ResourcePool::TypeID = Rtti::TypeID{ "32b0d24a-62eb-47d5-869d-897424fd3439" };
+    const Rtti::TypeID ResourcePool::TypeID = Rtti::TypeID{
+        0x32, 0xb0, 0xd2, 0x4a, 0x62, 0xeb, 0x47, 0xd5, 0x86, 0x9d, 0x89, 0x74, 0x24, 0xfd, 0x34, 0x39,
+    };
 
     namespace
     {
@@ -990,7 +1004,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID GraphicsQueue::TypeID = Rtti::TypeID{ "3830a626-8eee-4ffe-8f17-0195dde01262" };
+    const Rtti::TypeID GraphicsQueue::TypeID = Rtti::TypeID{
+        0x38, 0x30, 0xa6, 0x26, 0x8e, 0xee, 0x4f, 0xfe, 0x8f, 0x17, 0x01, 0x95, 0xdd, 0xe0, 0x12, 0x62,
+    };
 
     namespace
     {
@@ -1106,7 +1122,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ResourcePool::TypeID = Rtti::TypeID{ "389492dc-7ae2-4b58-984c-6a1529edfb41" };
+    const Rtti::TypeID ResourcePool::TypeID = Rtti::TypeID{
+        0x38, 0x94, 0x92, 0xdc, 0x7a, 0xe2, 0x4b, 0x58, 0x98, 0x4c, 0x6a, 0x15, 0x29, 0xed, 0xfb, 0x41,
+    };
 
     namespace
     {
@@ -1254,7 +1272,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{ "39f873dc-8f3d-4821-ba66-92fcd380b69a" };
+    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{
+        0x39, 0xf8, 0x73, 0xdc, 0x8f, 0x3d, 0x48, 0x21, 0xba, 0x66, 0x92, 0xfc, 0xd3, 0x80, 0xb6, 0x9a,
+    };
 
     namespace
     {
@@ -1349,7 +1369,9 @@ namespace FE::Graphics::Common
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID DeviceFactory::TypeID = Rtti::TypeID{ "4247535c-3e97-42e7-a869-1dc542afbf25" };
+    const Rtti::TypeID DeviceFactory::TypeID = Rtti::TypeID{
+        0x42, 0x47, 0x53, 0x5c, 0x3e, 0x97, 0x42, 0xe7, 0xa8, 0x69, 0x1d, 0xc5, 0x42, 0xaf, 0xbf, 0x25,
+    };
 
     namespace
     {
@@ -1451,7 +1473,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID PipelineFactory::TypeID = Rtti::TypeID{ "437e4387-bde0-42da-8986-fa909d8bfede" };
+    const Rtti::TypeID PipelineFactory::TypeID = Rtti::TypeID{
+        0x43, 0x7e, 0x43, 0x87, 0xbd, 0xe0, 0x42, 0xda, 0x89, 0x86, 0xfa, 0x90, 0x9d, 0x8b, 0xfe, 0xde,
+    };
 
     namespace
     {
@@ -1575,7 +1599,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID GraphicsPipeline::TypeID = Rtti::TypeID{ "4524c98f-c971-47eb-a896-6c4ea33ca549" };
+    const Rtti::TypeID GraphicsPipeline::TypeID = Rtti::TypeID{
+        0x45, 0x24, 0xc9, 0x8f, 0xc9, 0x71, 0x47, 0xeb, 0xa8, 0x96, 0x6c, 0x4e, 0xa3, 0x3c, 0xa5, 0x49,
+    };
 
     namespace
     {
@@ -1699,7 +1725,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Resource::TypeID = Rtti::TypeID{ "490b70ff-2ce3-4b16-8466-b64997ac87f5" };
+    const Rtti::TypeID Resource::TypeID = Rtti::TypeID{
+        0x49, 0x0b, 0x70, 0xff, 0x2c, 0xe3, 0x4b, 0x16, 0x84, 0x66, 0xb6, 0x49, 0x97, 0xac, 0x87, 0xf5,
+    };
 
     namespace
     {
@@ -1847,7 +1875,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID GraphicsPipeline::TypeID = Rtti::TypeID{ "4ebe406c-c4d7-40e5-9485-91c18c8c2527" };
+    const Rtti::TypeID GraphicsPipeline::TypeID = Rtti::TypeID{
+        0x4e, 0xbe, 0x40, 0x6c, 0xc4, 0xd7, 0x40, 0xe5, 0x94, 0x85, 0x91, 0xc1, 0x8c, 0x8c, 0x25, 0x27,
+    };
 
     namespace
     {
@@ -1949,7 +1979,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{ "521a8cce-6a61-4d51-962c-16abab20ae89" };
+    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{
+        0x52, 0x1a, 0x8c, 0xce, 0x6a, 0x61, 0x4d, 0x51, 0x96, 0x2c, 0x16, 0xab, 0xab, 0x20, 0xae, 0x89,
+    };
 
     namespace
     {
@@ -2044,7 +2076,9 @@ namespace FE::Graphics::Common
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID DeviceObject::TypeID = Rtti::TypeID{ "52579f06-74cd-4151-8099-4d4283e8b6b0" };
+    const Rtti::TypeID DeviceObject::TypeID = Rtti::TypeID{
+        0x52, 0x57, 0x9f, 0x06, 0x74, 0xcd, 0x41, 0x51, 0x80, 0x99, 0x4d, 0x42, 0x83, 0xe8, 0xb6, 0xb0,
+    };
 
     namespace
     {
@@ -2123,7 +2157,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{ "585305a0-06eb-4b16-8ef1-26faaceb6ab8" };
+    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{
+        0x58, 0x53, 0x05, 0xa0, 0x06, 0xeb, 0x4b, 0x16, 0x8e, 0xf1, 0x26, 0xfa, 0xac, 0xeb, 0x6a, 0xb8,
+    };
 
     namespace
     {
@@ -2268,7 +2304,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Viewport::TypeID = Rtti::TypeID{ "6190ef25-7202-48e9-a4e7-c5b123881d58" };
+    const Rtti::TypeID Viewport::TypeID = Rtti::TypeID{
+        0x61, 0x90, 0xef, 0x25, 0x72, 0x02, 0x48, 0xe9, 0xa4, 0xe7, 0xc5, 0xb1, 0x23, 0x88, 0x1d, 0x58,
+    };
 
     namespace
     {
@@ -2362,7 +2400,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{ "686e6ebe-8038-4e26-919c-70834410bc1f" };
+    const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{
+        0x68, 0x6e, 0x6e, 0xbe, 0x80, 0x38, 0x4e, 0x26, 0x91, 0x9c, 0x70, 0x83, 0x44, 0x10, 0xbc, 0x1f,
+    };
 
     namespace
     {
@@ -2449,7 +2489,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{ "691ea96f-e1f3-47c5-bf5b-24258dfa57a8" };
+    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{
+        0x69, 0x1e, 0xa9, 0x6f, 0xe1, 0xf3, 0x47, 0xc5, 0xbf, 0x5b, 0x24, 0x25, 0x8d, 0xfa, 0x57, 0xa8,
+    };
 
     namespace
     {
@@ -2560,7 +2602,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{ "6e88784e-1918-41ac-9343-0e93cf07c3b4" };
+    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{
+        0x6e, 0x88, 0x78, 0x4e, 0x19, 0x18, 0x41, 0xac, 0x93, 0x43, 0x0e, 0x93, 0xcf, 0x07, 0xc3, 0xb4,
+    };
 
     namespace
     {
@@ -2754,7 +2798,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID DescriptorManager::TypeID = Rtti::TypeID{ "7238722e-6241-4eb2-b140-c0545346dd57" };
+    const Rtti::TypeID DescriptorManager::TypeID = Rtti::TypeID{
+        0x72, 0x38, 0x72, 0x2e, 0x62, 0x41, 0x4e, 0xb2, 0xb1, 0x40, 0xc0, 0x54, 0x53, 0x46, 0xdd, 0x57,
+    };
 
     namespace
     {
@@ -2833,7 +2879,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{ "73a6b2da-9bd1-421e-b27f-aa09da277f42" };
+    const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{
+        0x73, 0xa6, 0xb2, 0xda, 0x9b, 0xd1, 0x42, 0x1e, 0xb2, 0x7f, 0xaa, 0x09, 0xda, 0x27, 0x7f, 0x42,
+    };
 
     namespace
     {
@@ -2956,7 +3004,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ComputePipeline::TypeID = Rtti::TypeID{ "768e754c-d58b-4fdc-bc8d-893e8a7e0438" };
+    const Rtti::TypeID ComputePipeline::TypeID = Rtti::TypeID{
+        0x76, 0x8e, 0x75, 0x4c, 0xd5, 0x8b, 0x4f, 0xdc, 0xbc, 0x8d, 0x89, 0x3e, 0x8a, 0x7e, 0x04, 0x38,
+    };
 
     namespace
     {
@@ -3058,7 +3108,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{ "7748916a-053b-447d-82d1-c417599323d7" };
+    const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{
+        0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d, 0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7,
+    };
 
     namespace
     {
@@ -3137,7 +3189,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID Fence::TypeID = Rtti::TypeID{ "78363647-3381-46f2-97b1-2a1ac8afc3c1" };
+    const Rtti::TypeID Fence::TypeID = Rtti::TypeID{
+        0x78, 0x36, 0x36, 0x47, 0x33, 0x81, 0x46, 0xf2, 0x97, 0xb1, 0x2a, 0x1a, 0xc8, 0xaf, 0xc3, 0xc1,
+    };
 
     namespace
     {
@@ -3232,7 +3286,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID Device::TypeID = Rtti::TypeID{ "7ae4b802-75af-439e-aa48-bc72761b7b72" };
+    const Rtti::TypeID Device::TypeID = Rtti::TypeID{
+        0x7a, 0xe4, 0xb8, 0x02, 0x75, 0xaf, 0x43, 0x9e, 0xaa, 0x48, 0xbc, 0x72, 0x76, 0x1b, 0x7b, 0x72,
+    };
 
     namespace
     {
@@ -3348,7 +3404,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{ "816f7fb8-a3c4-4d22-b8f0-a88d8db78f47" };
+    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{
+        0x81, 0x6f, 0x7f, 0xb8, 0xa3, 0xc4, 0x4d, 0x22, 0xb8, 0xf0, 0xa8, 0x8d, 0x8d, 0xb7, 0x8f, 0x47,
+    };
 
     namespace
     {
@@ -3450,7 +3508,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID BufferInstance::TypeID = Rtti::TypeID{ "82bd426f-a6c0-45bd-9f67-8223ca9b70cc" };
+    const Rtti::TypeID BufferInstance::TypeID = Rtti::TypeID{
+        0x82, 0xbd, 0x42, 0x6f, 0xa6, 0xc0, 0x45, 0xbd, 0x9f, 0x67, 0x82, 0x23, 0xca, 0x9b, 0x70, 0xcc,
+    };
 
     namespace
     {
@@ -3537,7 +3597,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID Device::TypeID = Rtti::TypeID{ "830776b9-20ac-4d55-b7dc-685ea6d20cc2" };
+    const Rtti::TypeID Device::TypeID = Rtti::TypeID{
+        0x83, 0x07, 0x76, 0xb9, 0x20, 0xac, 0x4d, 0x55, 0xb7, 0xdc, 0x68, 0x5e, 0xa6, 0xd2, 0x0c, 0xc2,
+    };
 
     namespace
     {
@@ -3624,7 +3686,9 @@ namespace FE::Graphics::Common
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID PipelineBase::TypeID = Rtti::TypeID{ "8d4ec84b-525c-4a21-9fbd-1c304f3471d2" };
+    const Rtti::TypeID PipelineBase::TypeID = Rtti::TypeID{
+        0x8d, 0x4e, 0xc8, 0x4b, 0x52, 0x5c, 0x4a, 0x21, 0x9f, 0xbd, 0x1c, 0x30, 0x4f, 0x34, 0x71, 0xd2,
+    };
 
     namespace
     {
@@ -3718,7 +3782,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{ "99f7a913-61ef-4c87-9b27-d06ca99f0d00" };
+    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{
+        0x99, 0xf7, 0xa9, 0x13, 0x61, 0xef, 0x4c, 0x87, 0x9b, 0x27, 0xd0, 0x6c, 0xa9, 0x9f, 0x0d, 0x00,
+    };
 
     namespace
     {
@@ -3828,7 +3894,9 @@ namespace FE::Graphics::Common
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ShaderCompilerDXC::TypeID = Rtti::TypeID{ "9daf49f9-4e5d-4042-b123-67200dc60a14" };
+    const Rtti::TypeID ShaderCompilerDXC::TypeID = Rtti::TypeID{
+        0x9d, 0xaf, 0x49, 0xf9, 0x4e, 0x5d, 0x40, 0x42, 0xb1, 0x23, 0x67, 0x20, 0x0d, 0xc6, 0x0a, 0x14,
+    };
 
     namespace
     {
@@ -3930,7 +3998,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{ "9ecff14f-1d5a-4997-b6d5-735e935a9d64" };
+    const Rtti::TypeID ShaderReflection::TypeID = Rtti::TypeID{
+        0x9e, 0xcf, 0xf1, 0x4f, 0x1d, 0x5a, 0x49, 0x97, 0xb6, 0xd5, 0x73, 0x5e, 0x93, 0x5a, 0x9d, 0x64,
+    };
 
     namespace
     {
@@ -4292,7 +4362,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Common
 {
-    const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{ "b498017d-c07f-4022-8c3d-6f4c9ccf132b" };
+    const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{
+        0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22, 0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b,
+    };
 
     namespace
     {
@@ -4428,7 +4500,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ShaderLibrary::TypeID = Rtti::TypeID{ "be44fcfd-5540-49f6-aece-569be88a8450" };
+    const Rtti::TypeID ShaderLibrary::TypeID = Rtti::TypeID{
+        0xbe, 0x44, 0xfc, 0xfd, 0x55, 0x40, 0x49, 0xf6, 0xae, 0xce, 0x56, 0x9b, 0xe8, 0x8a, 0x84, 0x50,
+    };
 
     namespace
     {
@@ -4522,7 +4596,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID GraphicsQueue::TypeID = Rtti::TypeID{ "bfa35db4-e1aa-4914-87fb-d392b0308b34" };
+    const Rtti::TypeID GraphicsQueue::TypeID = Rtti::TypeID{
+        0xbf, 0xa3, 0x5d, 0xb4, 0xe1, 0xaa, 0x49, 0x14, 0x87, 0xfb, 0xd3, 0x92, 0xb0, 0x30, 0x8b, 0x34,
+    };
 
     namespace
     {
@@ -4616,7 +4692,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{ "c27fc437-a09a-49f7-b3b6-dee56c0cf04f" };
+    const Rtti::TypeID FrameGraphContext::TypeID = Rtti::TypeID{
+        0xc2, 0x7f, 0xc4, 0x37, 0xa0, 0x9a, 0x49, 0xf7, 0xb3, 0xb6, 0xde, 0xe5, 0x6c, 0x0c, 0xf0, 0x4f,
+    };
 
     namespace
     {
@@ -4719,7 +4797,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID TextureInstance::TypeID = Rtti::TypeID{ "c47d99b8-920d-49b6-a1b9-0f24143c3feb" };
+    const Rtti::TypeID TextureInstance::TypeID = Rtti::TypeID{
+        0xc4, 0x7d, 0x99, 0xb8, 0x92, 0x0d, 0x49, 0xb6, 0xa1, 0xb9, 0x0f, 0x24, 0x14, 0x3c, 0x3f, 0xeb,
+    };
 
     namespace
     {
@@ -4806,7 +4886,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID DeviceFactory::TypeID = Rtti::TypeID{ "c6cc0410-bb89-484a-8fd7-9df99ae3cd31" };
+    const Rtti::TypeID DeviceFactory::TypeID = Rtti::TypeID{
+        0xc6, 0xcc, 0x04, 0x10, 0xbb, 0x89, 0x48, 0x4a, 0x8f, 0xd7, 0x9d, 0xf9, 0x9a, 0xe3, 0xcd, 0x31,
+    };
 
     namespace
     {
@@ -4892,7 +4974,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{ "cb0b65e8-b7f7-4f27-92be-fb6e90ebd352" };
+    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{
+        0xcb, 0x0b, 0x65, 0xe8, 0xb7, 0xf7, 0x4f, 0x27, 0x92, 0xbe, 0xfb, 0x6e, 0x90, 0xeb, 0xd3, 0x52,
+    };
 
     namespace
     {
@@ -5003,7 +5087,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID PipelineFactory::TypeID = Rtti::TypeID{ "cd16508a-5f34-4700-8d23-af217b55ffd1" };
+    const Rtti::TypeID PipelineFactory::TypeID = Rtti::TypeID{
+        0xcd, 0x16, 0x50, 0x8a, 0x5f, 0x34, 0x47, 0x00, 0x8d, 0x23, 0xaf, 0x21, 0x7b, 0x55, 0xff, 0xd1,
+    };
 
     namespace
     {
@@ -5228,7 +5314,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID Fence::TypeID = Rtti::TypeID{ "d815152f-a41f-45c8-81ab-f921f19e8aa3" };
+    const Rtti::TypeID Fence::TypeID = Rtti::TypeID{
+        0xd8, 0x15, 0x15, 0x2f, 0xa4, 0x1f, 0x45, 0xc8, 0x81, 0xab, 0xf9, 0x21, 0xf1, 0x9e, 0x8a, 0xa3,
+    };
 
     namespace
     {
@@ -5322,7 +5410,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID DescriptorManager::TypeID = Rtti::TypeID{ "d88b5624-a48e-4f19-9a0a-e059375241c8" };
+    const Rtti::TypeID DescriptorManager::TypeID = Rtti::TypeID{
+        0xd8, 0x8b, 0x56, 0x24, 0xa4, 0x8e, 0x4f, 0x19, 0x9a, 0x0a, 0xe0, 0x59, 0x37, 0x52, 0x41, 0xc8,
+    };
 
     namespace
     {
@@ -5496,7 +5586,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ShaderLibrary::TypeID = Rtti::TypeID{ "e2254cbd-679c-4310-87cf-fa8da780bda1" };
+    const Rtti::TypeID ShaderLibrary::TypeID = Rtti::TypeID{
+        0xe2, 0x25, 0x4c, 0xbd, 0x67, 0x9c, 0x43, 0x10, 0x87, 0xcf, 0xfa, 0x8d, 0xa7, 0x80, 0xbd, 0xa1,
+    };
 
     namespace
     {
@@ -5619,7 +5711,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{ "ea570124-75f4-4efc-9c49-69eb5eb0404c" };
+    const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{
+        0xea, 0x57, 0x01, 0x24, 0x75, 0xf4, 0x4e, 0xfc, 0x9c, 0x49, 0x69, 0xeb, 0x5e, 0xb0, 0x40, 0x4c,
+    };
 
     namespace
     {
@@ -5850,7 +5944,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID CommandBuffer::TypeID = Rtti::TypeID{ "f14e4f22-6734-4747-bb3c-fe3ba6697e46" };
+    const Rtti::TypeID CommandBuffer::TypeID = Rtti::TypeID{
+        0xf1, 0x4e, 0x4f, 0x22, 0x67, 0x34, 0x47, 0x47, 0xbb, 0x3c, 0xfe, 0x3b, 0xa6, 0x69, 0x7e, 0x46,
+    };
 
     namespace
     {
@@ -5937,7 +6033,9 @@ namespace FE::Graphics::Vulkan
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ShaderCompiler::TypeID = Rtti::TypeID{ "f3d5e284-1dbf-40cc-9790-7d97fa69b18d" };
+    const Rtti::TypeID ShaderCompiler::TypeID = Rtti::TypeID{
+        0xf3, 0xd5, 0xe2, 0x84, 0x1d, 0xbf, 0x40, 0xcc, 0x97, 0x90, 0x7d, 0x97, 0xfa, 0x69, 0xb1, 0x8d,
+    };
 
     namespace
     {
@@ -6023,7 +6121,9 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Core
 {
-    const Rtti::TypeID ShaderSourceCache::TypeID = Rtti::TypeID{ "fe08f0a8-40b4-4c17-b152-8220dc1bf5f6" };
+    const Rtti::TypeID ShaderSourceCache::TypeID = Rtti::TypeID{
+        0xfe, 0x08, 0xf0, 0xa8, 0x40, 0xb4, 0x4c, 0x17, 0xb1, 0x52, 0x82, 0x20, 0xdc, 0x1b, 0xf5, 0xf6,
+    };
 
     namespace
     {

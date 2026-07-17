@@ -1,5 +1,8 @@
 ﻿#pragma once
-#include <Core/Base/Base.h>
+#include <Core/Base/Assert.h>
+#include <Core/Base/BaseMath.h>
+#include <Core/Base/Hash.h>
+#include <festd/base.h>
 
 namespace FE
 {

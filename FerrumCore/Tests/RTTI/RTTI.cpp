@@ -1,6 +1,7 @@
 #include <Cli/CommandLineTypes.h>
 #include <Core/Compression/Compression.h>
 #include <Core/IO/FileStream.h>
+#include <Core/Math/Aabb.h>
 #include <Core/Math/Transform.h>
 #include <Core/RTTI/Reflection.h>
 #include <gtest/gtest.h>
@@ -20,6 +21,23 @@ TEST(RTTI, BuiltinTypes)
     EXPECT_EQ(type.m_alignment, alignof(uint32_t));
 
     EXPECT_TRUE(type.m_fields.empty());
+}
+
+TEST(RTTI, MemberReflection)
+{
+    static_assert(!std::is_polymorphic_v<Aabb>);
+    static_assert(std::is_trivial_v<Aabb>);
+    static_assert(std::is_standard_layout_v<Aabb>);
+
+    const Rtti::Type& type = Rtti::GetType<Aabb>();
+    EXPECT_EQ(type.m_name, "Aabb");
+    EXPECT_EQ(type.m_qualifiedName, "FE::Aabb");
+    EXPECT_EQ(type.m_id, Aabb::TypeID);
+    EXPECT_EQ(type.m_id, Rtti::GetTypeID<Aabb>());
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType(type.m_id));
+    EXPECT_EQ(&type, Rtti::TypeRegistry::FindType("FE::Aabb"));
+    EXPECT_EQ(type.m_size, sizeof(Aabb));
+    EXPECT_EQ(type.m_alignment, alignof(Aabb));
 }
 
 TEST(RTTI, DynamicCast)

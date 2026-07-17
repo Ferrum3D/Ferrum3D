@@ -1,6 +1,6 @@
-#include <festd/string.h>
 #include <Core/Math/UUID.h>
 #include <Tests/Common/TestCommon.h>
+#include <festd/string.h>
 
 TEST(UUID, Parse)
 {
@@ -67,4 +67,11 @@ TEST(UUID, Parse)
     EXPECT_FALSE(FE::Uuid::Parse("62G1B7A1-C14A-4129-AC57-7E77289123E9").IsValid());
     EXPECT_FALSE(FE::Uuid::Parse("62EGB7A1-C14A-4129-AC57-7E77289123E9").IsValid());
     EXPECT_FALSE(FE::Uuid::Parse("62E1G7A1-C14A-4129-AC57-7E77289123E9").IsValid());
+}
+
+TEST(UUID, Init)
+{
+    const FE::Uuid uuid1 = FE::Uuid::Parse("62e1b7a1-c14a-4129-ac57-7e77289123e9");
+    const FE::Uuid uuid2{ 0x62, 0xe1, 0xb7, 0xa1, 0xc1, 0x4a, 0x41, 0x29, 0xac, 0x57, 0x7e, 0x77, 0x28, 0x91, 0x23, 0xe9 };
+    EXPECT_EQ(uuid1, uuid2);
 }

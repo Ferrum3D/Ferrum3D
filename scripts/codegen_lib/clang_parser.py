@@ -239,12 +239,14 @@ def visit_external_rtti_declaration(
     types: dict[uuid.UUID, ReflectedType],
     project_dir: Path,
 ) -> bool:
+    if node.get_num_template_arguments() != 1 or not node.displayname.startswith("ExternalTypeReflector<"):
+        return False
+
     reflected_type_id, need_reflect = parse_rtti_attribute(attributes)
     if reflected_type_id is None:
         return False
 
     assert need_reflect
-    assert node.get_num_template_arguments() == 1
 
     namespace_name = ""
     type_name = ""
@@ -298,17 +300,40 @@ def visit_external_rtti_declaration(
 
 
 def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], project_dir: Path):
+    if node.spelling == "RTTI_ReflectionMarker":
+        return
+
     attributes = parse_attributes(node)
     if visit_external_rtti_declaration(node, attributes, types, project_dir):
         return
 
-    # Find static Reflect method declaration. It is used as a marker to generate reflection code.
-    # We need to generate the implementation for this method.
-    reflected_type_id, need_reflect = None, False
+    reflected_type_id = None
+    need_reflect = False
+    has_rtti = False
+    member_reflection_id = None
+    type_kind = TypeKind.NORMAL
     for child in node.get_children():
         if child.is_static_method() and child.spelling == "Reflect":
             annotations = parse_attributes(child)
-            reflected_type_id, need_reflect = parse_rtti_attribute(annotations)
+            reflected_type_id, _ = parse_rtti_attribute(annotations)
+            has_rtti = reflected_type_id is not None
+        elif is_class(child.kind) and child.spelling == "RTTI_ReflectionMarker":
+            marker_attributes = parse_attributes(child)
+            if "ReflectFull" not in marker_attributes:
+                continue
+
+            need_reflect = True
+            marker_id = marker_attributes["ReflectFull"]
+            if marker_id != "1":
+                member_reflection_id = parse_rtti_id(marker_id)
+
+    if member_reflection_id is not None:
+        if has_rtti:
+            raise Exception(f"{get_qualified_name(node)} must use FE_RTTI_Reflect() after FE_RTTI")
+        reflected_type_id = member_reflection_id
+        type_kind = TypeKind.MEMBER_CLASS
+    elif need_reflect and not has_rtti:
+        raise Exception(f"{get_qualified_name(node)} uses FE_RTTI_Reflect() without FE_RTTI")
 
     if reflected_type_id:
         namespace_name = get_namespace(node)
@@ -319,7 +344,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
 
         bases = get_all_base_types(base_types, types)
         ref_type = ReflectedType(
-            TypeKind.NORMAL,
+            type_kind,
             need_reflect,
             reflected_type_id,
             namespace_name,

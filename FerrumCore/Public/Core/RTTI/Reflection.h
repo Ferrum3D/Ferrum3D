@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/RTTI/RTTI.h>
+#include <Core/Base/Base.h>
 #include <festd/intrusive_list.h>
 
 namespace FE::Rtti

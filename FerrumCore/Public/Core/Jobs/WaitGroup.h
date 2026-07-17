@@ -2,6 +2,7 @@
 #include <Core/Env/Environment.h>
 #include <Core/Jobs/Base.h>
 #include <Core/Memory/RefCount.h>
+#include <festd/span.h>
 
 namespace FE
 {

@@ -344,7 +344,6 @@ namespace FE::IO::Async
         if (canceledOnStart)
         {
             SetOperationResult(operation, ResultCode::kCanceled);
-            operation->m_batch.m_completionCallback(operation->m_controller.Get());
             return;
         }
 

@@ -1,4 +1,5 @@
-﻿#include <Core/Memory/PoolAllocator.h>
+﻿#include <Core/Base/Base.h>
+#include <Core/Memory/PoolAllocator.h>
 
 namespace FE::Memory
 {

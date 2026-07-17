@@ -31,7 +31,9 @@
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID MeshGroupTable::TypeID = Rtti::TypeID{ "03321e1e-0a92-5203-b75c-027838609287" };
+    const Rtti::TypeID MeshGroupTable::TypeID = Rtti::TypeID{
+        0x03, 0x32, 0x1e, 0x1e, 0x0a, 0x92, 0x52, 0x03, 0xb7, 0x5c, 0x02, 0x78, 0x38, 0x60, 0x92, 0x87,
+    };
 
     namespace
     {
@@ -118,7 +120,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID ViewImpl::TypeID = Rtti::TypeID{ "113ac827-90ac-48f7-9a7a-4c7ae0695ad8" };
+    const Rtti::TypeID ViewImpl::TypeID = Rtti::TypeID{
+        0x11, 0x3a, 0xc8, 0x27, 0x90, 0xac, 0x48, 0xf7, 0x9a, 0x7a, 0x4c, 0x7a, 0xe0, 0x69, 0x5a, 0xd8,
+    };
 
     namespace
     {
@@ -205,7 +209,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID MeshSceneModule::TypeID = Rtti::TypeID{ "1784843c-5085-4289-aa82-04c480e423ee" };
+    const Rtti::TypeID MeshSceneModule::TypeID = Rtti::TypeID{
+        0x17, 0x84, 0x84, 0x3c, 0x50, 0x85, 0x42, 0x89, 0xaa, 0x82, 0x04, 0xc4, 0x80, 0xe4, 0x23, 0xee,
+    };
 
     namespace
     {
@@ -460,7 +466,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID Scene::TypeID = Rtti::TypeID{ "20121f05-8d10-4427-9925-2dba388379c9" };
+    const Rtti::TypeID Scene::TypeID = Rtti::TypeID{
+        0x20, 0x12, 0x1f, 0x05, 0x8d, 0x10, 0x44, 0x27, 0x99, 0x25, 0x2d, 0xba, 0x38, 0x83, 0x79, 0xc9,
+    };
 
     namespace
     {
@@ -538,7 +546,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID RendererModuleBase::TypeID = Rtti::TypeID{ "273b0f50-b991-4323-a516-6c87bbcd83a1" };
+    const Rtti::TypeID RendererModuleBase::TypeID = Rtti::TypeID{
+        0x27, 0x3b, 0x0f, 0x50, 0xb9, 0x91, 0x43, 0x23, 0xa5, 0x16, 0x6c, 0x87, 0xbb, 0xcd, 0x83, 0xa1,
+    };
 
     namespace
     {
@@ -617,7 +627,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics::OpaquePass
 {
-    const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{ "38d17f97-8b8f-40e0-aef7-3b828c04182e" };
+    const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
+        0x38, 0xd1, 0x7f, 0x97, 0x8b, 0x8f, 0x40, 0xe0, 0xae, 0xf7, 0x3b, 0x82, 0x8c, 0x04, 0x18, 0x2e,
+    };
 
     namespace
     {
@@ -725,7 +737,9 @@ namespace FE::Graphics::OpaquePass
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID MeshLodInfoTable::TypeID = Rtti::TypeID{ "429a06b5-0beb-5171-87f8-18737671fb7f" };
+    const Rtti::TypeID MeshLodInfoTable::TypeID = Rtti::TypeID{
+        0x42, 0x9a, 0x06, 0xb5, 0x0b, 0xeb, 0x51, 0x71, 0x87, 0xf8, 0x18, 0x73, 0x76, 0x71, 0xfb, 0x7f,
+    };
 
     namespace
     {
@@ -941,7 +955,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID View::TypeID = Rtti::TypeID{ "4b83afa4-70b9-4af9-8ab8-1082c6b49849" };
+    const Rtti::TypeID View::TypeID = Rtti::TypeID{
+        0x4b, 0x83, 0xaf, 0xa4, 0x70, 0xb9, 0x4a, 0xf9, 0x8a, 0xb8, 0x10, 0x82, 0xc6, 0xb4, 0x98, 0x49,
+    };
 
     namespace
     {
@@ -1019,7 +1035,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics::DepthPrepass
 {
-    const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{ "682bb365-e2a5-46d7-a859-d9621f16aae1" };
+    const Rtti::TypeID ViewModule::TypeID = Rtti::TypeID{
+        0x68, 0x2b, 0xb3, 0x65, 0xe2, 0xa5, 0x46, 0xd7, 0xa8, 0x59, 0xd9, 0x62, 0x1f, 0x16, 0xaa, 0xe1,
+    };
 
     namespace
     {
@@ -1127,7 +1145,9 @@ namespace FE::Graphics::DepthPrepass
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID ModelAssetManager::TypeID = Rtti::TypeID{ "6ca86f05-71ea-45d8-9d22-d57e469f4752" };
+    const Rtti::TypeID ModelAssetManager::TypeID = Rtti::TypeID{
+        0x6c, 0xa8, 0x6f, 0x05, 0x71, 0xea, 0x45, 0xd8, 0x9d, 0x22, 0xd5, 0x7e, 0x46, 0x9f, 0x47, 0x52,
+    };
 
     namespace
     {
@@ -1317,7 +1337,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID SceneImpl::TypeID = Rtti::TypeID{ "75336687-960e-4693-ae02-a6dcda770fac" };
+    const Rtti::TypeID SceneImpl::TypeID = Rtti::TypeID{
+        0x75, 0x33, 0x66, 0x87, 0x96, 0x0e, 0x46, 0x93, 0xae, 0x02, 0xa6, 0xdc, 0xda, 0x77, 0x0f, 0xac,
+    };
 
     namespace
     {
@@ -1425,7 +1447,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID SceneModuleBase::TypeID = Rtti::TypeID{ "7729e683-8638-4712-81d3-b1c78b16bfe3" };
+    const Rtti::TypeID SceneModuleBase::TypeID = Rtti::TypeID{
+        0x77, 0x29, 0xe6, 0x83, 0x86, 0x38, 0x47, 0x12, 0x81, 0xd3, 0xb1, 0xc7, 0x8b, 0x16, 0xbf, 0xe3,
+    };
 
     namespace
     {
@@ -1504,7 +1528,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID ViewModuleBase::TypeID = Rtti::TypeID{ "77bc4de9-a792-4a65-bcb8-f23556551774" };
+    const Rtti::TypeID ViewModuleBase::TypeID = Rtti::TypeID{
+        0x77, 0xbc, 0x4d, 0xe9, 0xa7, 0x92, 0x4a, 0x65, 0xbc, 0xb8, 0xf2, 0x35, 0x56, 0x55, 0x17, 0x74,
+    };
 
     namespace
     {
@@ -1769,7 +1795,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID Renderer::TypeID = Rtti::TypeID{ "8666f778-3bbf-44cb-87b6-aa1c7b2089d7" };
+    const Rtti::TypeID Renderer::TypeID = Rtti::TypeID{
+        0x86, 0x66, 0xf7, 0x78, 0x3b, 0xbf, 0x44, 0xcb, 0x87, 0xb6, 0xaa, 0x1c, 0x7b, 0x20, 0x89, 0xd7,
+    };
 
     namespace
     {
@@ -1848,7 +1876,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID MeshInstanceTable::TypeID = Rtti::TypeID{ "8a836070-a798-50fb-a93b-6fe5848b70b9" };
+    const Rtti::TypeID MeshInstanceTable::TypeID = Rtti::TypeID{
+        0x8a, 0x83, 0x60, 0x70, 0xa7, 0x98, 0x50, 0xfb, 0xa9, 0x3b, 0x6f, 0xe5, 0x84, 0x8b, 0x70, 0xb9,
+    };
 
     namespace
     {
@@ -1935,7 +1965,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID IModelAssetManager::TypeID = Rtti::TypeID{ "8e721d85-b882-48e9-ad6e-2ac80a52632e" };
+    const Rtti::TypeID IModelAssetManager::TypeID = Rtti::TypeID{
+        0x8e, 0x72, 0x1d, 0x85, 0xb8, 0x82, 0x48, 0xe9, 0xad, 0x6e, 0x2a, 0xc8, 0x0a, 0x52, 0x63, 0x2e,
+    };
 
     namespace
     {
@@ -2029,7 +2061,9 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID TextureAssetManager::TypeID = Rtti::TypeID{ "9bc819e7-f2cd-47d3-a84c-421cef60fc98" };
+    const Rtti::TypeID TextureAssetManager::TypeID = Rtti::TypeID{
+        0x9b, 0xc8, 0x19, 0xe7, 0xf2, 0xcd, 0x47, 0xd3, 0xa8, 0x4c, 0x42, 0x1c, 0xef, 0x60, 0xfc, 0x98,
+    };
 
     namespace
     {
@@ -2240,7 +2274,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics::DB
 {
-    const Rtti::TypeID TableBase::TypeID = Rtti::TypeID{ "b0b29217-3d30-4b35-8026-9d0eb91b8fd2" };
+    const Rtti::TypeID TableBase::TypeID = Rtti::TypeID{
+        0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35, 0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2,
+    };
 
     namespace
     {
@@ -2430,7 +2466,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID RendererImpl::TypeID = Rtti::TypeID{ "cfd1e397-fc2e-4f9b-99f3-4cf67f695b1e" };
+    const Rtti::TypeID RendererImpl::TypeID = Rtti::TypeID{
+        0xcf, 0xd1, 0xe3, 0x97, 0xfc, 0x2e, 0x4f, 0x9b, 0x99, 0xf3, 0x4c, 0xf6, 0x7f, 0x69, 0x5b, 0x1e,
+    };
 
     namespace
     {
@@ -2634,7 +2672,9 @@ namespace FE::Rtti
 
 namespace FE::Graphics
 {
-    const Rtti::TypeID ITextureAssetManager::TypeID = Rtti::TypeID{ "de919340-61e9-467e-96cb-caf037a20a3a" };
+    const Rtti::TypeID ITextureAssetManager::TypeID = Rtti::TypeID{
+        0xde, 0x91, 0x93, 0x40, 0x61, 0xe9, 0x46, 0x7e, 0x96, 0xcb, 0xca, 0xf0, 0x37, 0xa2, 0x0a, 0x3a,
+    };
 
     namespace
     {

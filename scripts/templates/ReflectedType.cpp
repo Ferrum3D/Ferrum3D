@@ -110,10 +110,13 @@ namespace FE::Rtti
 {% else %}
 namespace {{ type.namespace }}
 {
-    const Rtti::TypeID {{ type.name }}::TypeID = Rtti::TypeID{ "{{ type.id }}" };
+    const Rtti::TypeID {{ type.name }}::TypeID = Rtti::TypeID{
+        {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %}
+    };
 
     namespace
     {
+{% if not type.is_member -%}
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_{{ type.id.bytes.hex() }}({{ type.name }}* thisPtr, const Rtti::TypeID typeID)
         {
             static constexpr alignas(16) uint8_t kBaseClassTypeIDs[{{ type.bases|length + 1 }} * sizeof(Rtti::TypeID)] = {
@@ -137,6 +140,7 @@ namespace {{ type.namespace }}
 
             return nullptr;
         }
+{% endif -%}
 
         Rtti::Type& RTTI_GetMutableType_{{ type.id.bytes.hex() }}()
         {
@@ -156,6 +160,7 @@ namespace {{ type.namespace }}
         return RTTI_GetMutableType_{{ type.id.bytes.hex() }}();
     }
 
+{% if not type.is_member -%}
     void* FE_VECTORCALL {{ type.name }}::RTTI_TryCast(const Rtti::TypeID typeID)
     {
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(this, typeID);
@@ -165,6 +170,7 @@ namespace {{ type.namespace }}
     {
         return RTTI_TryCastImpl_{{ type.id.bytes.hex() }}(const_cast<{{ type.name }}*>(this), typeID);
     }
+{% endif -%}
 
     void {{ type.name }}::Reflect(Rtti::ReflectionContext& context)
     {

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Core/Base/Hash.h>
 #include <Core/Math/UUID.h>
 #include <festd/base.h>
@@ -49,7 +49,7 @@ namespace FE::Rtti
     } // namespace Internal
 
 
-#define FE_RTTI_IMPL_POLYMORPHIC(uuid, codegenAttribute)                                                                         \
+#define FE_RTTI_IMPL_POLYMORPHIC(uuid)                                                                                           \
 private:                                                                                                                         \
     template<class T_RTTI, std::enable_if_t<FE::Rtti::Internal::kIsRTTIDefined<T_RTTI>, bool>>                                   \
     friend const FE::Rtti::Type& FE::Rtti::GetType();                                                                            \
@@ -70,13 +70,32 @@ private:                                                                        
                                                                                                                                  \
 public:                                                                                                                          \
     static const FE::Rtti::TypeID TypeID;                                                                                        \
-    static FE_CODEGEN_ATTRIBUTE(#codegenAttribute "=" uuid) void Reflect(FE::Rtti::ReflectionContext& context)
+    static FE_CODEGEN_ATTRIBUTE("ReflectBasic=" uuid) void Reflect(FE::Rtti::ReflectionContext& context)
 
 
-//! @brief Macro to register a class to the RTTI system without reflecting it.
-//!
-//! This macro enables `Rtti::Cast` and `Rtti::AssertCast`. Use this inside a polymorphic class definition.
-#define FE_RTTI(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectBasic)
+//! @brief Register a polymorphic class for dynamic casts without reflecting its fields.
+#define FE_RTTI(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid)
+
+#define FE_RTTI_Reflect_0()                                                                                                      \
+public:                                                                                                                          \
+    struct FE_CODEGEN_ATTRIBUTE("ReflectFull") RTTI_ReflectionMarker                                                             \
+    {                                                                                                                            \
+    }
+
+#define FE_RTTI_Reflect_1(uuid)                                                                                                  \
+private:                                                                                                                         \
+    template<class T_RTTI, std::enable_if_t<FE::Rtti::Internal::kIsRTTIDefined<T_RTTI>, bool>>                                   \
+    friend const FE::Rtti::Type& FE::Rtti::GetType();                                                                            \
+                                                                                                                                 \
+    static const FE::Rtti::Type& RTTI_GetType();                                                                                 \
+                                                                                                                                 \
+public:                                                                                                                          \
+    static const FE::Rtti::TypeID TypeID;                                                                                        \
+    static void Reflect(FE::Rtti::ReflectionContext& context);                                                                   \
+                                                                                                                                 \
+    struct FE_CODEGEN_ATTRIBUTE("ReflectFull=" uuid) RTTI_ReflectionMarker                                                       \
+    {                                                                                                                            \
+    }
 
 #define FE_RTTI_Reflect_2(typename, uuid)                                                                                        \
     template<>                                                                                                                   \
@@ -90,22 +109,15 @@ public:                                                                         
         static void Reflect(FE::Rtti::ReflectionContext& context);                                                               \
     }
 
-#define FE_RTTI_Reflect_1(uuid) FE_RTTI_IMPL_POLYMORPHIC(uuid, ReflectFull)
+#define FE_RTTI_REFLECT_SELECT(_0, _1, _2, name, ...) name
 
-//! @brief Macro to reflect a class to the RTTI system.
+//! @brief Add full reflection metadata to a type.
 //!
-//! Two variants are available:
-//!
-//! - `FE_RTTI_Reflect(uuid)` - version with one argument, uuid is a string literal. Use this inside a polymorphic
-//!   class definition.
-//!
-//! - `FE_RTTI_Reflect(type, uuid)` - version with two arguments, type is a fully qualified class name, uuid is a string literal.
-//!   Use this in the global scope to reflect external non-polymorphic types.
-//!
-//! @note `uuid` can either be a string literal specifying a UUID or "Random" to generate a random UUID each time
-//!       the reflection codegen is run.
-#define FE_RTTI_Reflect(...) FE_MACRO_SPECIALIZE(FE_RTTI_Reflect, __VA_ARGS__)
-
+//! - `FE_RTTI_Reflect()` marks a polymorphic class already registered with `FE_RTTI` for full reflection.
+//! - `FE_RTTI_Reflect(uuid)` reflects a non-polymorphic class from inside its definition.
+//! - `FE_RTTI_Reflect(type, uuid)` reflects an external non-polymorphic type from global scope.
+#define FE_RTTI_Reflect(...)                                                                                                     \
+    FE_RTTI_REFLECT_SELECT(_0 __VA_OPT__(, ) __VA_ARGS__, FE_RTTI_Reflect_2, FE_RTTI_Reflect_1, FE_RTTI_Reflect_0)(__VA_ARGS__)
 
     template<class T, std::enable_if_t<Internal::kIsRTTIDefined<T>, bool> = true>
     const Type& GetType()

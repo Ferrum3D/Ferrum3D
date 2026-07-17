@@ -2,6 +2,7 @@
 #include <Core/Containers/ConcurrentQueue.h>
 #include <Core/Jobs/WaitGroup.h>
 #include <Core/Memory/RefCount.h>
+#include <festd/span.h>
 
 namespace FE::Jobs
 {

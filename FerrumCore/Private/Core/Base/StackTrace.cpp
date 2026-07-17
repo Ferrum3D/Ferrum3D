@@ -8,6 +8,7 @@
 #include <festd/unordered_map.h>
 
 #if FE_DEVELOPMENT
+#    include <Core/Base/Base.h>
 #    include <DbgHelp.h>
 #    include <xxhash.h>
 #    pragma comment(lib, "dbghelp.lib")

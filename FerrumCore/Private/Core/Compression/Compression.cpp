@@ -1,3 +1,4 @@
+#include <Core/Base/Base.h>
 #include <Core/Compression/Compression.h>
 #include <Core/Compression/CompressionPrivate.h>
 #include <Core/Memory/Memory.h>

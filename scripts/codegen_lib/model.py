@@ -17,6 +17,7 @@ class TypeKind(Enum):
     BUILTIN = 1
     EXTERNAL_CLASS = 2
     ENUM = 3
+    MEMBER_CLASS = 4
 
 
 # Should be kept in sync with Reflection.h
@@ -128,6 +129,7 @@ class ReflectedType:
         self.is_builtin = kind == TypeKind.BUILTIN
         self.is_enum = kind == TypeKind.ENUM
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS
+        self.is_member = kind == TypeKind.MEMBER_CLASS
         self.pointer_level = 0
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:

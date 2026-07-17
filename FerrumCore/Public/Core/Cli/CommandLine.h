@@ -55,7 +55,8 @@ namespace FE::Cli
 
     struct Command
     {
-        FE_RTTI_Reflect("01DDD116-D090-49E4-98B9-4100CFB50509");
+        FE_RTTI("01DDD116-D090-49E4-98B9-4100CFB50509");
+        FE_RTTI_Reflect();
 
         template<class T>
         [[nodiscard]] const T* GetSubcommand() const
@@ -81,13 +82,15 @@ namespace FE::Cli
 
     struct Subcommand : public Command
     {
-        FE_RTTI_Reflect("0F01E827-C9D9-43F0-8969-47BF6D035B82");
+        FE_RTTI("0F01E827-C9D9-43F0-8969-47BF6D035B82");
+        FE_RTTI_Reflect();
     };
 
 
     struct Parser : public Command
     {
-        FE_RTTI_Reflect("C3C49654-FE98-4CE6-B759-06D7EF4EAA0F");
+        FE_RTTI("C3C49654-FE98-4CE6-B759-06D7EF4EAA0F");
+        FE_RTTI_Reflect();
 
         [[nodiscard]] bool IsValid() const
         {

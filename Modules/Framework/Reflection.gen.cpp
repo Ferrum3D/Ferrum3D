@@ -15,7 +15,9 @@
 
 namespace FE::Framework::Core
 {
-    const Rtti::TypeID PlatformApplication::TypeID = Rtti::TypeID{ "63770294-e7a2-4cdd-866c-bbc49ec93214" };
+    const Rtti::TypeID PlatformApplication::TypeID = Rtti::TypeID{
+        0x63, 0x77, 0x02, 0x94, 0xe7, 0xa2, 0x4c, 0xdd, 0x86, 0x6c, 0xbb, 0xc4, 0x9e, 0xc9, 0x32, 0x14,
+    };
 
     namespace
     {
@@ -109,7 +111,9 @@ namespace FE::Framework::Core
 
 namespace FE::Framework::Windows
 {
-    const Rtti::TypeID PlatformApplication::TypeID = Rtti::TypeID{ "70a9df12-1d5d-4d0a-8c24-c014e3963121" };
+    const Rtti::TypeID PlatformApplication::TypeID = Rtti::TypeID{
+        0x70, 0xa9, 0xdf, 0x12, 0x1d, 0x5d, 0x4d, 0x0a, 0x8c, 0x24, 0xc0, 0x14, 0xe3, 0x96, 0x31, 0x21,
+    };
 
     namespace
     {
@@ -211,7 +215,9 @@ namespace FE::Framework::Windows
 
 namespace FE::Framework::Windows
 {
-    const Rtti::TypeID PlatformWindow::TypeID = Rtti::TypeID{ "74e2d079-ade7-4348-ad82-b1094b3b5171" };
+    const Rtti::TypeID PlatformWindow::TypeID = Rtti::TypeID{
+        0x74, 0xe2, 0xd0, 0x79, 0xad, 0xe7, 0x43, 0x48, 0xad, 0x82, 0xb1, 0x09, 0x4b, 0x3b, 0x51, 0x71,
+    };
 
     namespace
     {
@@ -326,7 +332,9 @@ namespace FE::Framework::Windows
 
 namespace FE::Framework
 {
-    const Rtti::TypeID Application::TypeID = Rtti::TypeID{ "af07edca-2d55-4e2d-a5ef-85ed53b4cdab" };
+    const Rtti::TypeID Application::TypeID = Rtti::TypeID{
+        0xaf, 0x07, 0xed, 0xca, 0x2d, 0x55, 0x4e, 0x2d, 0xa5, 0xef, 0x85, 0xed, 0x53, 0xb4, 0xcd, 0xab,
+    };
 
     namespace
     {
@@ -405,7 +413,9 @@ namespace FE::Framework
 
 namespace FE::Framework::Core
 {
-    const Rtti::TypeID PlatformWindow::TypeID = Rtti::TypeID{ "c1f93be6-5fe7-4e28-a5f6-8a1e9a5f427f" };
+    const Rtti::TypeID PlatformWindow::TypeID = Rtti::TypeID{
+        0xc1, 0xf9, 0x3b, 0xe6, 0x5f, 0xe7, 0x4e, 0x28, 0xa5, 0xf6, 0x8a, 0x1e, 0x9a, 0x5f, 0x42, 0x7f,
+    };
 
     namespace
     {
@@ -499,7 +509,9 @@ namespace FE::Framework::Core
 
 namespace FE::Framework
 {
-    const Rtti::TypeID EntityRegistry::TypeID = Rtti::TypeID{ "d7d3e880-e152-4014-b598-a9a97f5e463c" };
+    const Rtti::TypeID EntityRegistry::TypeID = Rtti::TypeID{
+        0xd7, 0xd3, 0xe8, 0x80, 0xe1, 0x52, 0x40, 0x14, 0xb5, 0x98, 0xa9, 0xa9, 0x7f, 0x5e, 0x46, 0x3c,
+    };
 
     namespace
     {

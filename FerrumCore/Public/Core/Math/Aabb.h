@@ -20,6 +20,7 @@ namespace FE
                 Vector3 min, max;
             };
         };
+        FE_RTTI_Reflect("521E1592-5FF2-402B-9C85-8EDE1D30798C");
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb() = default;
 
@@ -180,5 +181,4 @@ namespace FE
     } // namespace Math
 } // namespace FE
 
-FE_RTTI_Reflect(FE::Aabb, "521E1592-5FF2-402B-9C85-8EDE1D30798C");
 FE_RTTI_Reflect(FE::PackedAabb, "8CF4D497-C07B-4881-9149-47A33F9AA20D");

@@ -1,4 +1,6 @@
 #include <Core/Jobs/JobGraph.h>
+
+#include <Core/Base/Base.h>
 #include <Core/Jobs/JobNode.h>
 #include <Core/Jobs/WaitGroup.h>
 #include <festd/vector.h>

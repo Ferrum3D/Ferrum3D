@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Core/Memory/RefCount.h>
 #include <Core/Threading/SpinLock.h>
+#include <festd/span.h>
 
 namespace FE
 {
