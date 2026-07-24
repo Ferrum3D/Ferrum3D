@@ -84,12 +84,10 @@ namespace FE::Graphics::Vulkan
 
         FE_Assert(m_instance == nullptr);
 
-        m_instance = TextureInstance::Create();
-        m_instance->m_pool = resourcePool;
-        m_instance->m_bindFlags = params.m_bindFlags;
-        m_instance->m_type = m_type;
+        m_instance = TextureInstance::Create(m_desc, params, resourcePool);
+        m_instance->m_subresourceStates.push_back(Common::SubresourceState{});
 
-        VkImageCreateInfo imageCI{};
+        VkImageCreateInfo imageCI = {};
         imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageCI.usage = GetImageUsage(params.m_bindFlags);
 
@@ -125,7 +123,7 @@ namespace FE::Graphics::Vulkan
         imageCI.format = Translate(m_desc.m_imageFormat);
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCI.samples = GetVKSampleCountFlags(m_desc.m_sampleCount);
+        imageCI.samples = TranslateSampleCount(m_desc.m_sampleCount);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VmaAllocationCreateInfo allocationCI{};
@@ -153,9 +151,7 @@ namespace FE::Graphics::Vulkan
             break;
         }
 
-        m_instance->m_memoryStatus = params.m_memory;
-
-        const VmaAllocator allocator = ImplCast(m_instance->m_pool)->GetAllocator();
+        const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
 
         // TODO: maybe handle OOM differently
         auto* textureInstance = Rtti::AssertCast<TextureInstance*>(m_instance);
@@ -168,10 +164,6 @@ namespace FE::Graphics::Vulkan
 
         InitWholeImageView();
         UpdateDebugNames();
-
-        Common::SubresourceState& initialState = textureInstance->m_subresourceStates.emplace_back();
-        initialState.m_value = 0;
-        initialState.m_layout = Core::BarrierLayout::kUndefined;
     }
 
 
@@ -323,7 +315,7 @@ namespace FE::Graphics::Vulkan
 
         if (textureInstance->m_vmaAllocation)
         {
-            const VmaAllocator allocator = ImplCast(textureInstance->m_pool)->GetAllocator();
+            const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
             vmaSetAllocationName(allocator, textureInstance->m_vmaAllocation, m_name.c_str());
         }
     }

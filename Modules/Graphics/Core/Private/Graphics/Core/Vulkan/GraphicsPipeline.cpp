@@ -231,7 +231,7 @@ namespace FE::Graphics::Vulkan
         VkPipelineMultisampleStateCreateInfo multisamplingCI{};
         multisamplingCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisamplingCI.sampleShadingEnable = VK_FALSE;
-        multisamplingCI.rasterizationSamples = GetVKSampleCountFlags(m_desc.m_sampleCount);
+        multisamplingCI.rasterizationSamples = TranslateSampleCount(m_desc.m_sampleCount);
         pipelineCI.pMultisampleState = &multisamplingCI;
 
         VkPipelineDepthStencilStateCreateInfo depthStencilCI{};

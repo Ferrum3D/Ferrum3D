@@ -1,22 +1,13 @@
 ﻿#include <Core/Base/Platform.h>
 #include <Core/CLI/CommandLine.h>
-#include <Core/DI/Builder.h>
 #include <Core/IO/Async.h>
 #include <Core/Logging/Trace.h>
 #include <festd/vector.h>
 
-#include <Graphics/Core/Common/ShaderSourceCache.h>
-#include <Graphics/Core/ShaderCompilerDXC.h>
-#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
-#include <Graphics/Core/Vulkan/DescriptorManager.h>
+#include <Graphics/Core/AdapterInfo.h>
+#include <Graphics/Core/Vulkan/Base/Config.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
-#include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
-#include <Graphics/Core/Vulkan/GraphicsQueue.h>
-#include <Graphics/Core/Vulkan/PipelineFactory.h>
-#include <Graphics/Core/Vulkan/ResourcePool.h>
-#include <Graphics/Core/Vulkan/ShaderLibrary.h>
-#include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -101,7 +92,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void DeviceFactory::CreateDevice(const Env::Name adapterName)
+    Rc<Core::Device> DeviceFactory::CreateDevice(const Env::Name adapterName)
     {
         FE_PROFILER_ZONE();
 
@@ -109,36 +100,14 @@ namespace FE::Graphics::Vulkan
         {
             if (m_adapters[adapterIndex].m_name == adapterName)
             {
-                Rc device = Env::GetServiceProvider()->ResolveRequired<Core::Device>();
-                ImplCast(device.Get())->Init(m_nativeAdapters[adapterIndex]);
-                return;
+                Rc device = Memory::DefaultNew<Device>(this);
+                device->Init(m_nativeAdapters[adapterIndex]);
+                return device;
             }
         }
 
         FE_AssertMsg(false, "Adapter {} was not found", adapterName);
-    }
-
-
-    void DeviceFactory::RegisterServices(const DI::ServiceRegistryBuilder& builder)
-    {
-        FE_PROFILER_ZONE();
-
-        // public singletons
-        builder.Bind<Core::Device>().To<Device>().InSingletonScope();
-        builder.Bind<Core::ResourcePool>().To<ResourcePool>().InSingletonScope();
-        builder.Bind<Core::AsyncCopyQueue>().To<AsyncCopyQueue>().InSingletonScope();
-        builder.Bind<Core::PipelineFactory>().To<PipelineFactory>().InSingletonScope();
-        builder.Bind<Core::ShaderLibrary>().To<ShaderLibrary>().InSingletonScope();
-        builder.Bind<Core::DescriptorManager>().To<DescriptorManager>().InSingletonScope();
-        builder.Bind<Core::GraphicsQueue>().To<GraphicsQueue>().InSingletonScope();
-
-        // private singletons
-        builder.Bind<Core::ShaderSourceCache>().ToSelf().InSingletonScope();
-        builder.Bind<Core::ShaderCompiler>().To<Core::ShaderCompilerDXC>().InSingletonScope();
-
-        // TODO: remove these transient services
-        builder.Bind<Core::FrameGraph>().To<FrameGraph>().InTransientScope();
-        builder.Bind<Core::Viewport>().To<Viewport>().InTransientScope();
+        return nullptr;
     }
 
 
@@ -146,6 +115,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
+        m_api = Core::GraphicsApi::kVulkan;
         VerifyVk(volkInitialize());
 
         uint32_t layerCount;

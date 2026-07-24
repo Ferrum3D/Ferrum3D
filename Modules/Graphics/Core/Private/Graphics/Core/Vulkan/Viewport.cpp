@@ -366,16 +366,15 @@ namespace FE::Graphics::Vulkan
             const Rc image = Texture::Create(m_device, imageName, colorTargetDesc);
             image->SetImmediateDestroyPolicy();
 
-            TextureInstance* imageInstance = m_imageInstances.emplace_back(TextureInstance::Create());
-            imageInstance->m_bindFlags = Core::BarrierAccessFlags::kRenderTarget | Core::BarrierAccessFlags::kCopyDest;
-            imageInstance->m_memoryStatus = Core::ResourceMemory::kDeviceLocal;
-            imageInstance->m_type = Core::ResourceType::kTexture;
-            imageInstance->m_image = vkImages[i];
-            imageInstance->m_textureDesc = colorTargetDesc;
+            constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kRenderTarget
+                                                                   | Core::BarrierAccessFlags::kCopyDest,
+                                                               .m_memory = Core::ResourceMemory::kDeviceLocal };
 
-            Common::SubresourceState initialState;
-            initialState.m_value = 0;
-            initialState.m_layout = Core::BarrierLayout::kUndefined;
+            auto* imageInstance = TextureInstance::Create(colorTargetDesc, commitParams);
+            imageInstance->m_image = vkImages[i];
+            m_imageInstances.push_back(imageInstance);
+
+            Common::SubresourceState initialState = {};
             initialState.m_queueType = Core::DeviceQueueType::kGraphics;
             imageInstance->m_subresourceStates.push_back(initialState);
 
@@ -408,7 +407,7 @@ namespace FE::Graphics::Vulkan
 
         for (TextureInstance* imageInstance : m_imageInstances)
         {
-            imageInstance->Invalidate(NativeCast(m_device));
+            imageInstance->Invalidate(m_device);
             TextureInstance::Delete(imageInstance);
         }
 

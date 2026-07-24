@@ -7,14 +7,18 @@ namespace FE::Graphics::Core
     enum class VertexChannelFormat : uint32_t;
 
     struct Device;
+    struct DeviceFactory;
     struct DeviceObject;
 
     struct Fence;
     struct FenceSyncPoint;
 
-    struct Buffer;
     struct Resource;
+
+    struct Buffer;
     struct Texture;
+    struct BufferDesc;
+    struct TextureDesc;
 
     struct PipelineFactory;
     struct PipelineBase;
@@ -25,6 +29,7 @@ namespace FE::Graphics::Core
     struct AsyncCopyQueue;
     struct GraphicsQueue;
     struct ResourcePool;
+    struct Viewport;
 
 
     struct FrameGraph;

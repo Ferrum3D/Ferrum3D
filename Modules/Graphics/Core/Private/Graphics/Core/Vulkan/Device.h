@@ -148,6 +148,21 @@ namespace FE::Graphics::Vulkan
             return m_nativeAdapter;
         }
 
+        VmaAllocator GetVmaInstance() const
+        {
+            return m_vmaInstance;
+        }
+
+
+        Rc<Core::AsyncCopyQueue> CreateAsyncCopyQueue() override;
+        Rc<Core::GraphicsQueue> CreateGraphicsQueue() override;
+        Rc<Core::Fence> CreateFence(uint64_t initialValue) override;
+        Rc<Core::DescriptorManager> CreateDescriptorManager() override;
+        Rc<Core::PipelineFactory> CreatePipelineFactory(Core::DescriptorManager* descriptorManager) override;
+        Rc<Core::ResourcePool> CreateResourcePool(Core::GraphicsQueue* graphicsQueue,
+                                                  Core::AsyncCopyQueue* asyncCopyQueue) override;
+        Rc<Core::Viewport> CreateViewport(Core::ResourcePool* resourcePool, Core::GraphicsQueue* graphicsQueue) override;
+
         void WaitIdle() override;
 
     private:
@@ -159,6 +174,8 @@ namespace FE::Graphics::Vulkan
         VkDevice m_nativeDevice = VK_NULL_HANDLE;
         VkPhysicalDevice m_nativeAdapter = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties m_adapterProperties{};
+
+        VmaAllocator m_vmaInstance = VK_NULL_HANDLE;
 
         VulkanObjectCache<SamplerFactory> m_samplerCache;
 

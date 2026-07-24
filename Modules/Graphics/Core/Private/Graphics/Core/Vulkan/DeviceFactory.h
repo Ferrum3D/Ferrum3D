@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
+#include <festd/vector.h>
 
 namespace FE::DI
 {
@@ -23,9 +24,7 @@ namespace FE::Graphics::Vulkan
             return m_instance;
         }
 
-        void CreateDevice(Env::Name adapterName) override;
-
-        void RegisterServices(const DI::ServiceRegistryBuilder& builder);
+        Rc<Core::Device> CreateDevice(Env::Name adapterName) override;
 
         [[nodiscard]] festd::span<const Core::AdapterInfo> EnumerateAdapters() const override;
 

@@ -18,7 +18,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("73A6B2DA-9BD1-421E-B27F-AA09DA277F42");
 
-        AsyncCopyQueue(Core::Device* device, Core::ResourcePool* resourcePool);
+        explicit AsyncCopyQueue(Core::Device* device);
         ~AsyncCopyQueue() override;
 
         Core::FenceSyncPoint GetCurrentFence() const override;
@@ -50,8 +50,6 @@ namespace FE::Graphics::Vulkan
         void ProcessCommandList(ProcessingItem* item);
         VkDeviceSize AllocateStagingMemory(ProcessingItem* item, size_t byteSize, size_t byteAlignment);
         Rc<CommandBuffer> AcquireCommandBuffer();
-
-        Core::ResourcePool* m_resourcePool = nullptr;
 
         Threading::ThreadHandle m_thread;
         Threading::Event m_threadEvent;

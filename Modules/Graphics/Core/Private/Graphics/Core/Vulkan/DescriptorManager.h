@@ -12,7 +12,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("D88B5624-A48E-4F19-9A0A-E059375241C8");
 
-        DescriptorManager(Core::Device* device);
+        explicit DescriptorManager(Core::Device* device);
         ~DescriptorManager() override;
 
         uint64_t GetDeviceAddress(uint32_t descriptorIndex) override;

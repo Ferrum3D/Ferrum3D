@@ -12,10 +12,10 @@ namespace FE::Graphics::Vulkan
 {
     struct ResourcePool final : public Core::ResourcePool
     {
-        ResourcePool(Core::Device* device);
-        ~ResourcePool() override;
-
         FE_RTTI("32B0D24A-62EB-47D5-869D-897424FD3439");
+
+        explicit ResourcePool(Core::Device* device, Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue);
+        ~ResourcePool() override;
 
         Core::Texture* CreateTexture(Env::Name name, Core::TextureDesc desc) override;
         Core::Buffer* CreateBuffer(Env::Name name, Core::BufferDesc desc) override;
@@ -28,11 +28,6 @@ namespace FE::Graphics::Vulkan
 
         void EndFrame() override;
 
-        [[nodiscard]] VmaAllocator GetAllocator() const
-        {
-            return m_vmaAllocator;
-        }
-
     private:
         uint32_t AllocateResourceSlot();
 
@@ -40,7 +35,6 @@ namespace FE::Graphics::Vulkan
         uint32_t FindFreeResource(const TDesc& desc, const TParams& params);
 
         void FinalizeDecommit(ResourceInstance* resourceInstance);
-        void EnsureQueues();
 
         void DestroyObject() override
         {
@@ -48,7 +42,6 @@ namespace FE::Graphics::Vulkan
         }
 
         Threading::SpinLock m_lock;
-        VmaAllocator m_vmaAllocator = VK_NULL_HANDLE;
 
         GraphicsQueue* m_graphicsQueue = nullptr;
         AsyncCopyQueue* m_asyncCopyQueue = nullptr;

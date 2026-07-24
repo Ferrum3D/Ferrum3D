@@ -89,7 +89,7 @@ namespace FE::Graphics::Core
     }
 
 
-    void ShaderSourceCache::OnFileLoaded(const IO::IAsyncController* controller, const festd::string_view fullPath,
+    void ShaderSourceCache::OnFileLoaded(const IO::Async::IController* controller, const festd::string_view fullPath,
                                          const Env::Name shaderName, char* source, const uint32_t sourceSize)
     {
         auto deferFree = festd::defer([source, this] {
@@ -99,14 +99,14 @@ namespace FE::Graphics::Core
 
         switch (controller->GetStatus())
         {
-        case IO::AsyncOperationStatus::kFailed:
+        case IO::Async::Status::kFailed:
             Logger::LogError("Failed to read shader file: {}", fullPath);
             [[fallthrough]];
 
-        case IO::AsyncOperationStatus::kCanceled:
+        case IO::Async::Status::kCanceled:
             return;
 
-        case IO::AsyncOperationStatus::kSucceeded:
+        case IO::Async::Status::kSucceeded:
             break;
 
         default:

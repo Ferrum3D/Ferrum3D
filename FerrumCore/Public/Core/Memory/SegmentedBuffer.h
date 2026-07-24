@@ -93,11 +93,10 @@ namespace FE::Memory
 
         std::byte* AllocateSegment(const uint32_t size)
         {
-            auto* segment =
-                static_cast<SegmentedBuffer::Segment*>(m_buffer.m_allocator->allocate(size + sizeof(SegmentedBuffer::Segment)));
-            Zero(segment, sizeof(SegmentedBuffer::Segment));
+            const uint32_t allocationSize = size + sizeof(SegmentedBuffer::Segment);
+            auto* segment = new (m_buffer.m_allocator->allocate(allocationSize)) SegmentedBuffer::Segment;
             segment->m_size = size;
-            segment->m_capacity = size + sizeof(SegmentedBuffer::Segment);
+            segment->m_capacity = allocationSize;
             m_segments.push_back(segment);
             return reinterpret_cast<std::byte*>(segment + 1);
         }

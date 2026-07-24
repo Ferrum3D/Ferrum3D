@@ -42,6 +42,15 @@ namespace FE::Graphics
         [[nodiscard]] virtual Scene* CreateScene() = 0;
         virtual void Render(Scene* scene, Core::Viewport* viewport) = 0;
 
+        virtual Core::GraphicsQueue* GetGraphicsQueue() const = 0;
+        virtual Core::AsyncCopyQueue* GetAsyncCopyQueue() const = 0;
+        virtual Core::ResourcePool* GetResourcePool() const = 0;
+
+        static void Init(Core::Device* device);
+        static void Shutdown();
+
+        static Renderer& Get();
+
     protected:
         Renderer()
             : m_moduleList(this)

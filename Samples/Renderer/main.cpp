@@ -1,4 +1,3 @@
-#include <Core/DI/Activator.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Math/Matrix4x4.h>
 #include <Framework/Application/Application.h>
@@ -27,39 +26,38 @@ namespace
     {
         ~ExampleApplication() override
         {
-            if (m_device != nullptr)
-                m_device->WaitIdle();
+            Renderer::Shutdown();
         }
 
         void InitializeApp()
         {
             FE_PROFILER_ZONE();
 
-            DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-
-            m_factory = serviceProvider->ResolveRequired<Core::DeviceFactory>();
-            for (const Core::AdapterInfo& adapterInfo : m_factory->EnumerateAdapters())
+            auto& factory = Core::DeviceFactory::Get();
+            for (const Core::AdapterInfo& adapterInfo : factory.EnumerateAdapters())
             {
                 if (adapterInfo.m_kind == Core::AdapterKind::kDiscrete)
                 {
-                    m_factory->CreateDevice(adapterInfo.m_name);
+                    m_device = factory.CreateDevice(adapterInfo.m_name);
                     break;
                 }
             }
 
-            m_device = serviceProvider->ResolveRequired<Core::Device>();
+            Renderer::Init(m_device.Get());
+
+            auto& renderer = Renderer::Get();
+            Core::ResourcePool* resourcePool = renderer.GetResourcePool();
+            Core::GraphicsQueue* graphicsQueue = renderer.GetGraphicsQueue();
 
             const RectInt clientRect = m_mainWindow->GetClientRect();
-            m_viewport = serviceProvider->ResolveRequired<Core::Viewport>();
-            m_viewport->Init({ static_cast<uint32_t>(clientRect.Width()),
-                               static_cast<uint32_t>(clientRect.Height()),
-                               m_mainWindow->GetNativeHandle().m_value });
+            m_viewport = m_device->CreateViewport(resourcePool, graphicsQueue);
+            m_viewport->Init(Core::ViewportDesc::Create(clientRect, m_mainWindow->GetNativeHandle().m_value));
 
-            Core::CompileGlobalPipelineSets(serviceProvider->ResolveRequired<Core::PipelineFactory>());
+            m_pipelineFactory = m_device->CreatePipelineFactory();
+            Core::CompileGlobalPipelineSets(m_pipelineFactory.Get());
             Core::WaitForGlobalPipelineSets();
 
-            m_renderer = serviceProvider->ResolveRequired<Renderer>();
-            m_scene = m_renderer->CreateScene();
+            m_scene = renderer.CreateScene();
             m_scene->GetModules().Add<MeshSceneModule>();
             m_view = m_scene->CreateView();
             m_view->GetModules().Add<DepthPrepass::ViewModule>();
@@ -96,7 +94,7 @@ namespace
         Rc<WaitGroup> ScheduleUpdate() override
         {
             FE_PROFILER_ZONE();
-            m_renderer->Render(m_scene, m_viewport.Get());
+            Renderer::Get().Render(m_scene.Get(), m_viewport.Get());
             return nullptr;
         }
 
@@ -105,13 +103,12 @@ namespace
             this->~ExampleApplication();
         }
 
-        Core::DeviceFactory* m_factory = nullptr;
-        Core::Device* m_device = nullptr;
+        Rc<Core::Device> m_device;
         Rc<Core::Viewport> m_viewport;
+        Rc<Core::PipelineFactory> m_pipelineFactory;
 
-        Renderer* m_renderer = nullptr;
-        Scene* m_scene = nullptr;
-        View* m_view = nullptr;
+        Rc<Scene> m_scene;
+        Rc<View> m_view;
 
         Rc<ModelAsset> m_model;
         MeshBatch* m_batch = nullptr;

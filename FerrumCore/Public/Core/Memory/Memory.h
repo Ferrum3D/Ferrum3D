@@ -61,10 +61,27 @@ namespace FE
         }
 
 
+        //! @brief Allocate memory for an object of type T using the provided allocator.
+        //!
+        //! This function does not call the constructor of T.
+        //!
+        //! @param allocator    The allocator to use.
+        //!
+        //! @tparam T           The type of the object to allocate.
+        //! @tparam TAllocator  The type of the provided allocator.
+        //!
+        //! @return The allocated memory.
+        template<class T, class TAllocator>
+        void* Allocate(TAllocator* allocator)
+        {
+            return allocator->allocate(sizeof(T), alignof(T));
+        }
+
+
         //! @brief Create a new object of type T using the provided allocator.
         //!
-        //! @param allocator The allocator to use.
-        //! @param args       The arguments to call the constructor of T with.
+        //! @param allocator    The allocator to use.
+        //! @param args         The arguments to call the constructor of T with.
         //!
         //! @tparam T           The type of the object to allocate.
         //! @tparam TAllocator  The type of the provided allocator.
@@ -82,7 +99,7 @@ namespace FE
         //!
         //! @param args The arguments to call the constructor of T with.
         //!
-        //! @tparam T  The type of the object to allocate.
+        //! @tparam T   The type of the object to allocate.
         //!
         //! @return The allocated object.
         template<class T, class... TArgs>
@@ -95,13 +112,13 @@ namespace FE
 
         //! @brief Delete an object previously created via Memory::New().
         //!
-        //! @param allocator    The allocator to use.
+        //! @param allocator     The allocator to use.
         //! @param pointer       The pointer to the object to delete previously returned by Memory::New().
         //! @param byteSize      The size of the object to delete.
         //! @param byteAlignment The alignment that was specified when Memory::New() was called.
         //!
-        //! @tparam T           The type of the object to delete.
-        //! @tparam TAllocator  The type of the provided allocator.
+        //! @tparam T            The type of the object to delete.
+        //! @tparam TAllocator   The type of the provided allocator.
         template<class T, class TAllocator>
         void Delete(TAllocator* allocator, T* pointer, size_t byteSize = 0, size_t byteAlignment = kDefaultAlignment)
         {

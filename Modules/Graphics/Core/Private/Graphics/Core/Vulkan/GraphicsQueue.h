@@ -9,9 +9,9 @@ namespace FE::Graphics::Vulkan
 {
     struct GraphicsQueue final : public Core::GraphicsQueue
     {
-        GraphicsQueue(Core::Device* device);
-
         FE_RTTI("3830A626-8EEE-4FFE-8F17-0195DDE01262");
+
+        explicit GraphicsQueue(Core::Device* device);
 
         CommandBuffer* GetCurrentCommandBuffer();
 

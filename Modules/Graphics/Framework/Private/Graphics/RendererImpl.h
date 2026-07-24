@@ -12,11 +12,15 @@ namespace FE::Graphics
     {
         FE_RTTI("CFD1E397-FC2E-4F9B-99F3-4CF67F695B1E");
 
-        RendererImpl();
+        RendererImpl(Core::Device* device);
         ~RendererImpl() override;
 
         Scene* CreateScene() override;
         void Render(Scene* scene, Core::Viewport* viewport) override;
+
+        Core::GraphicsQueue* GetGraphicsQueue() const override;
+        Core::AsyncCopyQueue* GetAsyncCopyQueue() const override;
+        Core::ResourcePool* GetResourcePool() const override;
 
         [[nodiscard]] DB::Database* GetDatabase() const
         {
@@ -29,6 +33,10 @@ namespace FE::Graphics
         void EnsureMainDepthTarget(const Core::ViewportDesc& viewportDesc);
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
+
+        Rc<Core::GraphicsQueue> m_graphicsQueue;
+        Rc<Core::AsyncCopyQueue> m_asyncCopyQueue;
+        Rc<Core::ResourcePool> m_resourcePool;
 
         festd::unique_ptr<DB::Database> m_database;
         festd::vector<Rc<Scene>> m_scenes;

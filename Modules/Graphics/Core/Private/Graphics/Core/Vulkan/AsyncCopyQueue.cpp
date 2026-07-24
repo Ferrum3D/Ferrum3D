@@ -564,8 +564,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    AsyncCopyQueue::AsyncCopyQueue(Core::Device* device, Core::ResourcePool* resourcePool)
-        : m_resourcePool(resourcePool)
+    AsyncCopyQueue::AsyncCopyQueue(Core::Device* device)
     {
         m_device = device;
         SetImmediateDestroyPolicy();
@@ -582,10 +581,29 @@ namespace FE::Graphics::Vulkan
         m_threadEvent = Threading::Event::CreateManualReset();
         m_suspendEvent = Threading::Event::CreateManualReset();
 
-        m_uploadBuffer = ImplCast(m_resourcePool->CreateByteAddressBuffer("AsyncUploadBuffer", kUploadBufferSize));
-        m_resourcePool->CommitBufferMemory(
-            m_uploadBuffer.Get(),
-            { .m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest, .m_memory = Core::ResourceMemory::kHostWriteThrough });
+        constexpr Core::BufferDesc uploadBufferDesc{ .m_size = kUploadBufferSize, .m_format = Core::Format::kUndefined };
+        constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest,
+                                                           .m_memory = Core::ResourceMemory::kHostWriteThrough };
+        m_uploadBuffer = Buffer::Create(m_device, "AsyncUploadBuffer", uploadBufferDesc);
+
+        VkBufferCreateInfo bufferCI = {};
+        VmaAllocationCreateInfo allocationCI = {};
+        TranslateBufferDesc(uploadBufferDesc, commitParams, bufferCI, allocationCI);
+
+        auto* uploadBufferInstance = BufferInstance::Create(uploadBufferDesc, commitParams);
+        const VmaAllocator vmaInstance = ImplCast(m_device)->GetVmaInstance();
+        VerifyVk(vmaCreateBuffer(vmaInstance,
+                                 &bufferCI,
+                                 &allocationCI,
+                                 &uploadBufferInstance->m_buffer,
+                                 &uploadBufferInstance->m_vmaAllocation,
+                                 nullptr));
+
+        constexpr Common::SubresourceState initialState = { .m_queueType = Core::DeviceQueueType::kTransfer };
+        uploadBufferInstance->m_subresourceStates.push_back(initialState);
+
+        m_uploadBuffer->SwapInternal(uploadBufferInstance);
+        FE_Assert(uploadBufferInstance == nullptr);
 
         m_fence = Fence::Create(m_device, 0);
 

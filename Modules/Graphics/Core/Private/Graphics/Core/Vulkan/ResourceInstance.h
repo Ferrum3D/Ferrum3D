@@ -5,6 +5,10 @@
 
 namespace FE::Graphics::Vulkan
 {
+    void TranslateBufferDesc(Core::BufferDesc bufferDesc, Core::ResourceCommitParams params, VkBufferCreateInfo& bufferCI,
+                             VmaAllocationCreateInfo& allocationCI);
+
+
     struct ResourceInstance : public Common::ResourceInstance
     {
         FE_RTTI("7748916A-053B-447D-82D1-C417599323D7");
@@ -21,10 +25,11 @@ namespace FE::Graphics::Vulkan
         VkBuffer m_buffer = VK_NULL_HANDLE;
         VkBufferView m_view = VK_NULL_HANDLE;
 
-        static BufferInstance* Create();
+        static BufferInstance* Create(Core::BufferDesc desc, Core::ResourceCommitParams commitParams,
+                                      Core::ResourcePool* pool = nullptr);
         static void Delete(BufferInstance* instance);
 
-        void Invalidate(VkDevice device);
+        void Invalidate(const Core::Device* device);
     };
 
 
@@ -42,9 +47,10 @@ namespace FE::Graphics::Vulkan
         VkImageView m_wholeImageView = VK_NULL_HANDLE;
         festd::inline_vector<ViewCacheEntry, 4> m_viewCache;
 
-        static TextureInstance* Create();
+        static TextureInstance* Create(Core::TextureDesc desc, Core::ResourceCommitParams commitParams,
+                                       Core::ResourcePool* pool = nullptr);
         static void Delete(TextureInstance* instance);
 
-        void Invalidate(VkDevice device);
+        void Invalidate(const Core::Device* device);
     };
 } // namespace FE::Graphics::Vulkan

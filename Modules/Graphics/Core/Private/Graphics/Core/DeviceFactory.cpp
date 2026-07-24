@@ -6,17 +6,17 @@ namespace FE::Graphics::Core
     static Rc<DeviceFactory> GDeviceFactory;
 
 
-    void DeviceFactory::Init(const GraphicsAPI api)
+    void DeviceFactory::Init(const GraphicsApi api)
     {
         FE_Assert(GDeviceFactory == nullptr, "DeviceFactory already initialized");
         switch (api)
         {
         default:
-        case GraphicsAPI::kNone:
+        case GraphicsApi::kNone:
             FE_DebugBreak();
             [[fallthrough]];
 
-        case GraphicsAPI::kVulkan:
+        case GraphicsApi::kVulkan:
             GDeviceFactory = Memory::DefaultNew<Vulkan::DeviceFactory>();
             break;
         }

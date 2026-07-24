@@ -11,6 +11,14 @@ namespace FE::Graphics::Core
         virtual void WaitIdle() = 0;
         virtual void EndFrame() = 0;
 
+        virtual Rc<GraphicsQueue> CreateGraphicsQueue() = 0;
+        virtual Rc<AsyncCopyQueue> CreateAsyncCopyQueue() = 0;
+        virtual Rc<Fence> CreateFence(uint64_t initialValue) = 0;
+        virtual Rc<DescriptorManager> CreateDescriptorManager() = 0;
+        virtual Rc<ResourcePool> CreateResourcePool(GraphicsQueue* graphicsQueue, AsyncCopyQueue* asyncCopyQueue) = 0;
+        virtual Rc<Viewport> CreateViewport(ResourcePool* resourcePool, GraphicsQueue* graphicsQueue) = 0;
+        virtual Rc<PipelineFactory> CreatePipelineFactory(DescriptorManager* descriptorManager) = 0;
+
     private:
         friend DeviceObject;
         friend Resource;

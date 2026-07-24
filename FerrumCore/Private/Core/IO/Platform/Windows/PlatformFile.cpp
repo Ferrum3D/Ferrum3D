@@ -98,6 +98,7 @@ namespace FE::Platform
             stdDescriptor = STD_ERROR_HANDLE;
             break;
         default:
+            FE_DebugBreak();
             return FileHandle{};
         }
 

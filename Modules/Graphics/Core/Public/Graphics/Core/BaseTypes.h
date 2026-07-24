@@ -1,7 +1,7 @@
 ﻿#pragma once
+#include <Core/Env/Environment.h>
 #include <Core/Math/Vector2.h>
 #include <Core/Math/Vector3UInt.h>
-#include <Core/Env/Environment.h>
 #include <Core/Strings/Format.h>
 
 namespace FE::Graphics
@@ -119,10 +119,11 @@ namespace FE::Graphics::Core
     };
 
 
-    enum class GraphicsAPI : uint32_t
+    enum class GraphicsApi : uint32_t
     {
         kNone,
-        kVulkan
+        kVulkan,
+        kCount,
     };
 
 

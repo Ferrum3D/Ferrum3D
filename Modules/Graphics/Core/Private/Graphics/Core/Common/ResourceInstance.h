@@ -7,19 +7,20 @@
 
 namespace FE::Graphics::Common
 {
-    union SubresourceState final
+    struct SubresourceState final
     {
-        struct
-        {
-            Core::BarrierAccessFlags m_access : 24;
-            Core::BarrierLayout m_layout : 8;
-            Core::BarrierSyncFlags m_sync : 24;
-            Core::DeviceQueueType m_queueType : 8;
-        };
-
-        uint64_t m_value = 0;
+        Core::BarrierAccessFlags m_access : 24 = Core::BarrierAccessFlags::kNone;
+        Core::BarrierLayout m_layout : 8 = Core::BarrierLayout::kUndefined;
+        Core::BarrierSyncFlags m_sync : 24 = Core::BarrierSyncFlags::kNone;
+        Core::DeviceQueueType m_queueType : 8 = Core::DeviceQueueType::kGraphics;
     };
     static_assert(sizeof(SubresourceState) == sizeof(uint64_t));
+
+
+    inline bool operator==(const SubresourceState lhs, const SubresourceState rhs)
+    {
+        return std::bit_cast<uint64_t>(lhs) == std::bit_cast<uint64_t>(rhs);
+    }
 
 
     struct ResourceInstance

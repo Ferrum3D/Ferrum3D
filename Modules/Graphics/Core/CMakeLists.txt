@@ -23,7 +23,6 @@
     Public/Graphics/Core/InputLayoutBuilder.h
     Public/Graphics/Core/InputStreamLayout.h
     Public/Graphics/Core/Meshlet.h
-    Public/Graphics/Core/Module.h
     Public/Graphics/Core/PipelineBase.h
     Public/Graphics/Core/PipelineFactory.h
     Public/Graphics/Core/PipelineStates.h
@@ -65,7 +64,6 @@ set(COMMON_SOURCES
     Private/Graphics/Core/DescriptorManager.cpp
     Private/Graphics/Core/DeviceFactory.cpp
     Private/Graphics/Core/Format.cpp
-    Private/Graphics/Core/Module.cpp
     Private/Graphics/Core/PipelineVariantSet.cpp
     Private/Graphics/Core/RingUploader.cpp
     Private/Graphics/Core/ShaderCompilerDXC.cpp

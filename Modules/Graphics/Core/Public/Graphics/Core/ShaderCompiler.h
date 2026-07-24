@@ -19,7 +19,7 @@ namespace FE::Graphics::Core
     {
         ByteBuffer m_byteCode;       //!< Shader bytecode, DWORD aligned.
         uint64_t m_hash = 0;         //!< Shader hash.
-        uint32_t m_byteCodeSize = 0; //! Unaligned shader bytecode size in bytes.
+        uint32_t m_byteCodeSize = 0; //!< Unaligned shader bytecode size in bytes.
         bool m_codeValid = false;    //!< True if shader was successfully compiled.
         bool m_hashValid = false;    //!< True if hash was successfully calculated.
     };

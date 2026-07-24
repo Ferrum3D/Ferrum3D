@@ -31,6 +31,7 @@ class Project:
 
 REFLECTION_PROJECTS = [
     Project("Core", PROJECT_DIR / "FerrumCore"),
+    Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core"),
 ]
 
 
@@ -186,13 +187,16 @@ def main():
 
     reflected_types_dict = {}
     parse_config = ParseConfig(project_dir=PROJECT_DIR, llvm_dir=LLVM_DIR)
-    for project in REFLECTION_PROJECTS:
+    for i, project in enumerate(REFLECTION_PROJECTS):
+        project_start_time = time.perf_counter()
+        print(f'project [{i}/{len(REFLECTION_PROJECTS)}] {project.name:30}', end='')
         command = _find_project_command(commands, project)
         compiler_args = _extract_compiler_args(command)
         headers = _sort_headers_by_dependencies(_find_headers(project), _extract_include_dirs(compiler_args))
         synthetic_tu = _generate_synthetic_tu(headers)
         synthetic_tu_path = project.root / "Reflection.synthetic.cpp"
         reflected_types_dict.update(parse_file(synthetic_tu_path, synthetic_tu, compiler_args, parse_config) or {})
+        print(f"| done ({time.perf_counter() - project_start_time:.2f} seconds)")
 
     reflected_types = list(reflected_types_dict.values())
     for t in reflected_types:

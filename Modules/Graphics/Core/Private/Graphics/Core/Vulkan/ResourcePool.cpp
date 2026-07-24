@@ -6,21 +6,13 @@
 
 namespace FE::Graphics::Vulkan
 {
-    ResourcePool::ResourcePool(Core::Device* device)
+    ResourcePool::ResourcePool(Core::Device* device, Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue)
     {
-        FE_PROFILER_ZONE();
-
         m_device = device;
+        m_graphicsQueue = ImplCast(graphicsQueue);
+        m_asyncCopyQueue = ImplCast(asyncCopyQueue);
 
         SetImmediateDestroyPolicy();
-
-        VmaAllocatorCreateInfo createInfo = {};
-        createInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-        createInfo.device = NativeCast(device);
-        createInfo.physicalDevice = ImplCast(device)->GetNativeAdapter();
-        createInfo.instance = NativeCast(ImplCast(device)->GetDeviceFactory());
-        createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        VerifyVk(vmaCreateAllocator(&createInfo, &m_vmaAllocator));
     }
 
 
@@ -41,8 +33,6 @@ namespace FE::Graphics::Vulkan
             if (!resources.empty())
                 FE_DebugBreak();
         }
-
-        vmaDestroyAllocator(m_vmaAllocator);
     }
 
 
@@ -184,8 +174,6 @@ namespace FE::Graphics::Vulkan
 
     void ResourcePool::FinalizeDecommit(ResourceInstance* resourceInstance)
     {
-        EnsureQueues();
-
         const uint64_t graphicsQueueFenceValue = m_graphicsQueue->GetCurrentFence().m_value;
         const uint64_t transferQueueFenceValue = m_asyncCopyQueue->GetCurrentFence().m_value;
         resourceInstance->m_lastFenceValues[festd::to_underlying(Core::DeviceQueueType::kGraphics)] = graphicsQueueFenceValue;
@@ -194,17 +182,5 @@ namespace FE::Graphics::Vulkan
         const uint32_t slot = AllocateResourceSlot();
         m_resources[slot] = resourceInstance;
         m_pendingResources.set(slot);
-    }
-
-
-    void ResourcePool::EnsureQueues()
-    {
-        // We can't just add dependencies to the constructor to let DI handle it since AsyncCopyQueue depends on ResourcePool.
-        if (m_graphicsQueue == nullptr || m_asyncCopyQueue == nullptr)
-        {
-            auto* serviceProvider = Env::GetServiceProvider();
-            m_graphicsQueue = ImplCast(serviceProvider->ResolveRequired<Core::GraphicsQueue>());
-            m_asyncCopyQueue = ImplCast(serviceProvider->ResolveRequired<Core::AsyncCopyQueue>());
-        }
     }
 } // namespace FE::Graphics::Vulkan

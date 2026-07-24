@@ -5,7 +5,7 @@
 
 namespace FE::Graphics::Vulkan
 {
-    inline VkSampleCountFlagBits GetVKSampleCountFlags(const uint32_t sampleCount)
+    inline VkSampleCountFlagBits TranslateSampleCount(const uint32_t sampleCount)
     {
         FE_AssertDebug(sampleCount <= 64 && Math::IsPowerOfTwo(sampleCount));
         return static_cast<VkSampleCountFlagBits>(sampleCount);

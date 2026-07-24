@@ -7,37 +7,6 @@
 
 namespace FE::Graphics::Vulkan
 {
-    namespace
-    {
-        VkBufferUsageFlags GetBufferUsage(const Core::BarrierAccessFlags accessFlags, const bool isTexelBuffer)
-        {
-            FE_Assert((accessFlags & Core::BarrierAccessFlags::kAllBufferAccessMask) == accessFlags);
-
-            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-
-            if (Bit::AnySet(accessFlags, Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite))
-            {
-                usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-                usage |= isTexelBuffer ? VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            }
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndexBuffer))
-                usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kVertexBuffer))
-                usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kConstantBuffer))
-                usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndirectArgument))
-                usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kAccelerationStructureRead))
-                usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-            if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kAccelerationStructureWrite))
-                usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-
-            return usage;
-        }
-    } // namespace
-
-
     FE_DECLARE_VULKAN_OBJECT_POOL(Buffer);
 
 
@@ -88,9 +57,7 @@ namespace FE::Graphics::Vulkan
 
         if (bufferInstance->m_vmaAllocation)
         {
-            vmaSetAllocationName(ImplCast(bufferInstance->m_pool)->GetAllocator(),
-                                 bufferInstance->m_vmaAllocation,
-                                 m_name.c_str());
+            vmaSetAllocationName(ImplCast(m_device)->GetVmaInstance(), bufferInstance->m_vmaAllocation, m_name.c_str());
         }
     }
 
@@ -105,7 +72,7 @@ namespace FE::Graphics::Vulkan
         FE_Assert(bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
                   || bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
 
-        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
         const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
 
         void* result;
@@ -117,7 +84,7 @@ namespace FE::Graphics::Vulkan
     void Buffer::Unmap()
     {
         const auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
-        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
         const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
         vmaUnmapMemory(allocator, allocation);
     }
@@ -131,7 +98,7 @@ namespace FE::Graphics::Vulkan
         FE_Assert(bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostRandomAccess
                   || bufferInstance->m_memoryStatus == Core::ResourceMemory::kHostWriteThrough);
 
-        const VmaAllocator allocator = ImplCast(bufferInstance->m_pool)->GetAllocator();
+        const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
         const VmaAllocation allocation = bufferInstance->m_vmaAllocation;
         VerifyVk(vmaFlushAllocation(allocator, allocation, offset, byteSize));
     }
@@ -153,47 +120,16 @@ namespace FE::Graphics::Vulkan
 
         FE_Assert(m_instance == nullptr);
 
-        m_instance = BufferInstance::Create();
-        m_instance->m_pool = resourcePool;
-        m_instance->m_bindFlags = params.m_bindFlags;
-        m_instance->m_type = m_type;
-
-        Common::SubresourceState& initialState = m_instance->m_subresourceStates.emplace_back();
-        initialState.m_value = 0;
+        m_instance = BufferInstance::Create(m_desc, params, resourcePool);
+        m_instance->m_subresourceStates.push_back(Common::SubresourceState{});
 
         const bool isTexelBuffer = m_desc.m_format != Core::Format::kUndefined;
 
-        VkBufferCreateInfo bufferCI{};
-        bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferCI.size = m_desc.m_size;
-        bufferCI.usage = GetBufferUsage(params.m_bindFlags, isTexelBuffer);
+        VkBufferCreateInfo bufferCI = {};
+        VmaAllocationCreateInfo allocationCI = {};
+        TranslateBufferDesc(m_desc, params, bufferCI, allocationCI);
 
-        VmaAllocationCreateInfo allocationCI{};
-        allocationCI.usage = VMA_MEMORY_USAGE_AUTO;
-
-        switch (params.m_memory)
-        {
-        default:
-        case Core::ResourceMemory::kNotCommitted:
-            FE_DebugBreak();
-            [[fallthrough]];
-
-        case Core::ResourceMemory::kDeviceLocal:
-            allocationCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-            break;
-
-        case Core::ResourceMemory::kHostRandomAccess:
-            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            break;
-
-        case Core::ResourceMemory::kHostWriteThrough:
-            allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-            break;
-        }
-
-        m_instance->m_memoryStatus = params.m_memory;
-
-        const VmaAllocator allocator = resourcePool->GetAllocator();
+        const VmaAllocator allocator = ImplCast(m_device)->GetVmaInstance();
         auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(m_instance);
         VerifyVk(vmaCreateBuffer(allocator,
                                  &bufferCI,
@@ -228,6 +164,8 @@ namespace FE::Graphics::Vulkan
         BufferInstance* oldInstance = static_cast<BufferInstance*>(m_instance);
         m_instance = instance;
         instance = oldInstance;
+
+        UpdateDebugNames();
     }
 
 

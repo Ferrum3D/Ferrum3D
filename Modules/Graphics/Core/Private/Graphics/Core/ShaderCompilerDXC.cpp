@@ -1,10 +1,8 @@
 ﻿#include <Core/Containers/ByteBuffer.h>
-#include <Core/DI/Activator.h>
 #include <Core/IO/FileStream.h>
 #include <Core/IO/Async.h>
 #include <Core/Logging/Trace.h>
 #include <Core/Memory/FiberTempAllocator.h>
-#include <Core/Memory/LinearAllocator.h>
 #include <Graphics/Core/ShaderCompilerDXC.h>
 
 #define near
@@ -146,7 +144,7 @@ namespace FE::Graphics::Core
         const HRESULT hrCompiler = dxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_dxcCompiler.ReleaseAndGetAddressOf()));
         FE_Assert(SUCCEEDED(hrCompiler), "Failed to create DXC compiler");
 
-        m_shaderSourceCache = DI::DefaultNew<ShaderSourceCache>().value();
+        m_shaderSourceCache = Memory::DefaultNew<ShaderSourceCache>();
         m_dxcIncludeHandler = Memory::DefaultNew<DxcIncludeHandler>(m_dxcUtils.Get(), m_shaderSourceCache.Get());
     }
 

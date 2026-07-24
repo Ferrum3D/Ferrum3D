@@ -1,4 +1,5 @@
 #include <Graphics/Core/Common/Buffer.h>
+#include <Graphics/Core/DeviceFactory.h>
 
 namespace FE::Graphics::Common
 {

@@ -3,8 +3,15 @@
 #include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/DeviceFactory.h>
 #include <festd/vector.h>
+
+#include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
+#include <Graphics/Core/Vulkan/DescriptorManager.h>
+#include <Graphics/Core/Vulkan/DeviceFactory.h>
+#include <Graphics/Core/Vulkan/GraphicsQueue.h>
+#include <Graphics/Core/Vulkan/PipelineFactory.h>
+#include <Graphics/Core/Vulkan/ResourcePool.h>
+#include <Graphics/Core/Vulkan/Viewport.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -192,7 +199,57 @@ namespace FE::Graphics::Vulkan
             vkCreateCommandPool(m_nativeDevice, &poolCI, VK_NULL_HANDLE, &queueFamilyData.m_commandPool);
         }
 
+        VmaAllocatorCreateInfo createInfo = {};
+        createInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+        createInfo.device = m_nativeDevice;
+        createInfo.physicalDevice = m_nativeAdapter;
+        createInfo.instance = NativeCast(m_deviceFactory);
+        createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+        VerifyVk(vmaCreateAllocator(&createInfo, &m_vmaInstance));
+
         m_samplerCache.Init(this);
+    }
+
+
+    Rc<Core::AsyncCopyQueue> Device::CreateAsyncCopyQueue()
+    {
+        return Memory::DefaultNew<AsyncCopyQueue>(this);
+    }
+
+
+    Rc<Core::GraphicsQueue> Device::CreateGraphicsQueue()
+    {
+        return Memory::DefaultNew<GraphicsQueue>(this);
+    }
+
+
+    Rc<Core::Fence> Device::CreateFence(const uint64_t initialValue)
+    {
+        return Fence::Create(this, initialValue);
+    }
+
+
+    Rc<Core::DescriptorManager> Device::CreateDescriptorManager()
+    {
+        return Memory::DefaultNew<DescriptorManager>(this);
+    }
+
+
+    Rc<Core::PipelineFactory> Device::CreatePipelineFactory(Core::DescriptorManager* descriptorManager)
+    {
+        return Memory::DefaultNew<PipelineFactory>(this, descriptorManager);
+    }
+
+
+    Rc<Core::ResourcePool> Device::CreateResourcePool(Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue)
+    {
+        return Memory::DefaultNew<ResourcePool>(this, graphicsQueue, asyncCopyQueue);
+    }
+
+
+    Rc<Core::Viewport> Device::CreateViewport(Core::ResourcePool* resourcePool, Core::GraphicsQueue* graphicsQueue)
+    {
+        return Memory::DefaultNew<Viewport>(this, resourcePool, graphicsQueue);
     }
 
 
@@ -202,6 +259,7 @@ namespace FE::Graphics::Vulkan
 
         vkDeviceWaitIdle(m_nativeDevice);
         ForceReleasePendingDisposers();
+        vmaDestroyAllocator(m_vmaInstance);
     }
 
 

@@ -13,17 +13,48 @@
 
 namespace FE::Graphics
 {
-    RendererImpl::RendererImpl() {}
+    static Rc<RendererImpl> GRenderer;
 
 
-    RendererImpl::~RendererImpl() = default;
+    void Renderer::Init(Core::Device* device)
+    {
+        GRenderer = Memory::DefaultNew<RendererImpl>(device);
+    }
+
+
+    void Renderer::Shutdown()
+    {
+        GRenderer.Reset();
+    }
+
+
+    Renderer& Renderer::Get()
+    {
+        return *GRenderer;
+    }
+
+
+    RendererImpl::RendererImpl(Core::Device* device)
+        : m_device(device)
+    {
+        m_graphicsQueue = m_device->CreateGraphicsQueue();
+        m_asyncCopyQueue = m_device->CreateAsyncCopyQueue();
+
+        m_resourcePool = m_device->CreateResourcePool(m_graphicsQueue.Get(), m_asyncCopyQueue.Get());
+    }
+
+
+    RendererImpl::~RendererImpl()
+    {
+        m_device->WaitIdle();
+    }
 
 
     Scene* RendererImpl::CreateScene()
     {
         EnsureDatabase();
 
-        Rc<Scene> scene = Rc<SceneImpl>::New(std::pmr::get_default_resource(), this);
+        Rc<Scene> scene = Memory::DefaultNew<SceneImpl>(this);
         m_scenes.push_back(scene);
         return scene.Get();
     }
@@ -33,10 +64,6 @@ namespace FE::Graphics
     {
         FE_Assert(scene != nullptr);
         FE_Assert(viewport != nullptr);
-
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        if (m_device == nullptr)
-            m_device = serviceProvider->ResolveRequired<Core::Device>();
 
         EnsureDatabase();
 
@@ -66,6 +93,24 @@ namespace FE::Graphics
         frameGraph->CompileAndExecute();
         viewport->Present();
         m_device->EndFrame();
+    }
+
+
+    Core::GraphicsQueue* RendererImpl::GetGraphicsQueue() const
+    {
+        return m_graphicsQueue.Get();
+    }
+
+
+    Core::AsyncCopyQueue* RendererImpl::GetAsyncCopyQueue() const
+    {
+        return m_asyncCopyQueue.Get();
+    }
+
+
+    Core::ResourcePool* RendererImpl::GetResourcePool() const
+    {
+        return m_resourcePool.Get();
     }
 
 
