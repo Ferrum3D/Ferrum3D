@@ -34,8 +34,8 @@ namespace FE::Rtti
 
 
         template<class TDst, class TSrc>
-        inline constexpr bool kIsDynamicCastAllowed =
-            std::is_base_of_v<TSrc, TDst> || std::is_base_of_v<TDst, TSrc> || std::is_same_v<TDst, TSrc>;
+        inline constexpr bool kIsDynamicCastAllowed = (std::is_const_v<TDst> == std::is_const_v<TSrc> || !std::is_const_v<TSrc>)
+            && (std::is_base_of_v<TSrc, TDst> || std::is_base_of_v<TDst, TSrc> || std::is_same_v<TDst, TSrc>);
 
         template<class TDstPtr, class TSrc>
         using EnableDynCast = std::enable_if_t<kIsDynamicCastAllowed<std::remove_pointer_t<TDstPtr>, TSrc>, bool>;
@@ -154,7 +154,7 @@ public:                                                                         
         if (source == nullptr)
             return nullptr;
 
-        using DestinationClass = std::remove_pointer_t<TDstPtr>;
+        using DestinationClass = std::remove_const_t<std::remove_pointer_t<TDstPtr>>;
         if (auto* dest = source->RTTI_TryCast(DestinationClass::TypeID))
             return static_cast<TDstPtr>(dest);
 
@@ -175,7 +175,7 @@ public:                                                                         
 
         if (Build::IsDebug())
         {
-            using DestinationClass = std::remove_pointer_t<TDstPtr>;
+            using DestinationClass = std::remove_const_t<std::remove_pointer_t<TDstPtr>>;
             auto* dest = source->RTTI_TryCast(DestinationClass::TypeID);
             FE_Assert(static_cast<TDstPtr>(dest) == static_cast<TDstPtr>(source), "AssertCast failed");
         }

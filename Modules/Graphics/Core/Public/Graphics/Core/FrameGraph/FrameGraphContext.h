@@ -11,18 +11,18 @@ namespace FE::Graphics::Core
     {
         static constexpr uint32_t kMaxRenderTargets = 8;
 
-        uint32_t m_colorClearMask : kMaxRenderTargets;
-        uint32_t m_colorDiscardMask : kMaxRenderTargets;
-        uint32_t m_depthStencilCleared : 1;
-        uint32_t m_depthStencilDiscarded : 1;
-        uint32_t m_unused : 6;
-        uint32_t m_stencilClearValue : kMaxRenderTargets;
-        float m_depthClearValue;
+        uint32_t m_colorClearMask : kMaxRenderTargets = 0;
+        uint32_t m_colorDiscardMask : kMaxRenderTargets = 0;
+        uint32_t m_depthStencilCleared : 1 = 0;
+        uint32_t m_depthStencilDiscarded : 1 = 0;
+        uint32_t m_unused : 6 = 0;
+        uint32_t m_stencilClearValue : kMaxRenderTargets = 0;
+        float m_depthClearValue = 0.0f;
         Color4F m_colorClearValues[kMaxRenderTargets];
 
         RenderTargetLoadOperations()
         {
-            memset(this, 0, sizeof(*this));
+            festd::fill(m_colorClearValues, Colors::kTransparentBlack);
         }
 
         RenderTargetLoadOperations& ClearColor(const uint32_t renderTargetIndex, const Color4F color)
@@ -105,14 +105,9 @@ namespace FE::Graphics::Core
     {
         static constexpr uint32_t kMaxRenderTargets = 8;
 
-        uint32_t m_colorDiscardMask : kMaxRenderTargets;
-        uint32_t m_depthStencilDiscarded : 1;
-        uint32_t m_unused : 23;
-
-        RenderTargetStoreOperations()
-        {
-            memset(this, 0, sizeof(*this));
-        }
+        uint32_t m_colorDiscardMask : kMaxRenderTargets = 0;
+        uint32_t m_depthStencilDiscarded : 1 = 0;
+        uint32_t m_unused : 23 = 0;
 
         RenderTargetStoreOperations& DiscardColor(const uint32_t renderTargetIndex)
         {

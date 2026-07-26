@@ -91,8 +91,6 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/AsyncCopyQueue.h
     Private/Graphics/Core/Vulkan/Barrier.cpp
     Private/Graphics/Core/Vulkan/Barrier.h
-    Private/Graphics/Core/Vulkan/Buffer.cpp
-    Private/Graphics/Core/Vulkan/Buffer.h
     Private/Graphics/Core/Vulkan/CommandBuffer.cpp
     Private/Graphics/Core/Vulkan/CommandBuffer.h
     Private/Graphics/Core/Vulkan/ComputePipeline.cpp
@@ -123,8 +121,6 @@ set(VULKAN_SOURCES
     Private/Graphics/Core/Vulkan/ShaderLibrary.h
     Private/Graphics/Core/Vulkan/ShaderReflection.cpp
     Private/Graphics/Core/Vulkan/ShaderReflection.h
-    Private/Graphics/Core/Vulkan/Texture.cpp
-    Private/Graphics/Core/Vulkan/Texture.h
     Private/Graphics/Core/Vulkan/Viewport.cpp
     Private/Graphics/Core/Vulkan/Viewport.h
 )

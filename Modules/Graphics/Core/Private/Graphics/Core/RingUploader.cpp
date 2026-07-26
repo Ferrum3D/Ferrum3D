@@ -14,7 +14,7 @@ namespace FE::Graphics::Core
     void RingUploader::Setup(const Env::Name name, ResourcePool* resourcePool, const uint32_t capacity)
     {
         FE_Assert(m_buffer == nullptr);
-        m_buffer = resourcePool->CreateByteAddressBuffer(name, capacity);
+        m_buffer = Buffer::CreateByteAddress(resourcePool->GetDevice(), name, capacity);
 
         ResourceCommitParams commitParams;
         commitParams.m_bindFlags = BarrierAccessFlags::kCopySourceAndDest;

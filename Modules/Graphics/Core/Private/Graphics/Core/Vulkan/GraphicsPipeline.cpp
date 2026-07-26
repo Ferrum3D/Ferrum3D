@@ -198,7 +198,7 @@ namespace FE::Graphics::Vulkan
                 attribute = {};
                 attribute.location = vsReflection->GetInputAttributeLocation(channelSemantic.ToName());
                 attribute.binding = channel.m_streamIndex;
-                attribute.format = Translate(formatInfo.m_format);
+                attribute.format = Translate(static_cast<Core::Format>(formatInfo));
                 attribute.offset = channel.m_offset;
             });
 

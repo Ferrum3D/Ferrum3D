@@ -1,11 +1,11 @@
+#include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/Base/Viewport.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Format.h>
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsPipeline.h>
-#include <Graphics/Core/Vulkan/Texture.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -89,7 +89,8 @@ namespace FE::Graphics::Vulkan
         for (uint32_t rtIndex = 0; rtIndex < m_renderTargetState.m_renderTargetCount; ++rtIndex)
         {
             const Core::TextureView& renderTargetView = m_renderTargetState.m_renderTargets[rtIndex];
-            const Texture* image = ImplCast(renderTargetView.m_resource);
+            const Common::Texture* image = Common::ImplCast(renderTargetView.m_resource);
+            auto* instance = Rtti::AssertCast<TextureInstance*>(image->GetInstance());
             const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
             FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
             FE_Assert(renderTargetView.m_subresource.m_mipSliceCount == 1);
@@ -97,7 +98,7 @@ namespace FE::Graphics::Vulkan
 
             auto& attachmentInfo = colorAttachments[rtIndex];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            attachmentInfo.imageView = image->GetSubresourceView(renderTargetView.m_subresource);
+            attachmentInfo.imageView = instance->GetSubresourceView(m_device, renderTargetView.m_subresource);
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             SetRenderingAttachmentInfo(attachmentInfo,
                                        rtIndex,
@@ -112,14 +113,15 @@ namespace FE::Graphics::Vulkan
         if (m_renderTargetState.m_depthStencil.IsValid())
         {
             const Core::TextureView& depthStencilView = m_renderTargetState.m_depthStencil;
-            const Texture* image = ImplCast(depthStencilView.m_resource);
+            const Common::Texture* image = Common::ImplCast(depthStencilView.m_resource);
+            auto* instance = Rtti::AssertCast<TextureInstance*>(image->GetInstance());
             const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
             FE_Assert(Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kDepthStencil));
             FE_Assert(depthStencilView.m_subresource.m_mipSliceCount == 1);
             FE_Assert(depthStencilView.m_subresource.m_arraySize == 1);
 
             depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            depthAttachment.imageView = image->GetSubresourceView(depthStencilView.m_subresource);
+            depthAttachment.imageView = instance->GetSubresourceView(m_device, depthStencilView.m_subresource);
             depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             SetRenderingDepthAttachmentInfo(depthAttachment,
                                             m_renderTargetState.m_loadOperations,

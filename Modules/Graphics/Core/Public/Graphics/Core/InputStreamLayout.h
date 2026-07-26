@@ -23,27 +23,20 @@ namespace FE::Graphics::Core
 
     struct InputStreamChannelDesc final
     {
-        ShaderSemanticName m_shaderSemanticName : 4;
-        uint32_t m_shaderSemanticIndex : 4;
-        VertexChannelFormat m_format : 10;
-        uint32_t m_streamIndex : 4;
-        uint32_t m_offset : 10;
+        ShaderSemanticName m_shaderSemanticName : 4 = ShaderSemanticName::kPosition;
+        uint32_t m_shaderSemanticIndex : 4 = 0;
+        VertexChannelFormat m_format : 10 = VertexChannelFormat::kUndefined;
+        uint32_t m_streamIndex : 4 = 0;
+        uint32_t m_offset : 10 = 0;
     };
 
 
     struct InputStreamLayout final
     {
-        PrimitiveTopology m_topology : 5;
-        uint32_t m_perInstanceStreamsMask : Limits::Pipeline::kMaxVertexStreams;
-        uint32_t m_activeChannelsMask : Limits::Pipeline::kMaxStreamChannels;
+        PrimitiveTopology m_topology : 5 = PrimitiveTopology::kNone;
+        uint32_t m_perInstanceStreamsMask : Limits::Pipeline::kMaxVertexStreams = 0;
+        uint32_t m_activeChannelsMask : Limits::Pipeline::kMaxStreamChannels = 0;
         InputStreamChannelDesc m_channels[Limits::Pipeline::kMaxStreamChannels];
-
-        InputStreamLayout() = default;
-
-        explicit InputStreamLayout(ForceInitType)
-        {
-            memset(this, 0, sizeof(*this));
-        }
 
         void ResetStreams()
         {
@@ -105,5 +98,5 @@ namespace FE::Graphics::Core
         static const InputStreamLayout kNull;
     };
 
-    inline const InputStreamLayout InputStreamLayout::kNull{ kForceInit };
+    inline const InputStreamLayout InputStreamLayout::kNull = {};
 } // namespace FE::Graphics::Core

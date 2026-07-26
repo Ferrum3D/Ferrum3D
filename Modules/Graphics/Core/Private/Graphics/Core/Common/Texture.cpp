@@ -1,7 +1,49 @@
+#include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/Common/Texture.h>
+
+namespace FE::Graphics::Core
+{
+    static Memory::SpinLockedPool<Common::Texture> GTexturePool{ "Graphics/Core/TexturePool" };
+
+
+    Rc<Texture> Texture::Create(Device* device, const Env::Name name, const TextureDesc& desc)
+    {
+        return GTexturePool.New(device, name, desc);
+    }
+} // namespace FE::Graphics::Core
+
 
 namespace FE::Graphics::Common
 {
+    Texture::Texture(Core::Device* device, const Env::Name name, const Core::TextureDesc& desc)
+    {
+        m_device = device;
+        m_name = name;
+        m_desc = desc;
+        m_type = Core::ResourceType::kTexture;
+        Register();
+    }
+
+
+    Texture::~Texture()
+    {
+        DecommitMemory();
+    }
+
+
+    void Texture::DecommitMemory()
+    {
+        if (m_instance == nullptr)
+            return;
+
+        for (auto& barriers : m_queueReleaseBarriers)
+            FE_Assert(barriers.empty());
+
+        FE_Assert(m_instance->m_pool, "Externally created textures not implemented");
+        m_instance->m_pool->DecommitTextureMemory(this);
+    }
+
+
     Core::ResourceMemory Texture::GetMemoryStatus() const
     {
         if (m_instance == nullptr)
@@ -20,7 +62,7 @@ namespace FE::Graphics::Common
         auto& subresourceStates = m_instance->m_subresourceStates;
         if (subresourceStates.size() == 1)
         {
-            if (subresource == m_wholeImageSubresource)
+            if (subresource == m_instance->m_wholeImageSubresource)
             {
                 subresourceStates[0] = state;
                 return;
@@ -89,7 +131,7 @@ namespace FE::Graphics::Common
         auto& subresourceStates = m_instance->m_subresourceStates;
         if (subresourceStates.size() == 1)
         {
-            if (subresource == m_wholeImageSubresource)
+            if (subresource == m_instance->m_wholeImageSubresource)
             {
                 subresourceStates[0].m_queueType = queue;
                 return;
@@ -101,5 +143,34 @@ namespace FE::Graphics::Common
         const Core::TextureSubresourceIterator subresourceIterator{ subresource };
         for (const auto [mipIndex, arrayIndex] : subresourceIterator)
             subresourceStates[mipIndex * m_desc.m_arraySize + arrayIndex].m_queueType = queue;
+    }
+
+
+    void Texture::SwapInstance(ResourceInstance*& instance)
+    {
+        FE_PROFILER_ZONE();
+
+        if (instance != nullptr)
+        {
+            FE_Assert(m_desc == instance->m_textureDesc);
+            FE_Assert(instance->m_memoryStatus != Core::ResourceMemory::kNotCommitted);
+        }
+
+        std::unique_lock lk{ m_lock };
+
+        for (auto& barriers : m_queueReleaseBarriers)
+            FE_Assert(barriers.empty());
+
+        auto* oldInstance = m_instance;
+        m_instance = instance;
+        instance = oldInstance;
+
+        m_instance->UpdateDebugNames(m_device, m_name);
+    }
+
+
+    void Texture::DestroyObject()
+    {
+        Core::GTexturePool.Delete(this);
     }
 } // namespace FE::Graphics::Common

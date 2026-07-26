@@ -84,7 +84,7 @@ namespace FE::Graphics::Tools
             dst[mipIndex - 1] = resourcePool->CreateTexture(mipName, sourceDesc.m_imageFormat, { width, height });
         }
 
-        Core::Buffer* globalAtomic = resourcePool->CreateStructuredBuffer<SpdGlobalAtomicBuffer>("SpdGlobalAtomic", 1);
+        const auto globalAtomic = Core::Buffer::CreateStructured<SpdGlobalAtomicBuffer>(graph.GetDevice(), "SpdGlobalAtomic", 1);
 
         Pipeline::Specializer specializer;
         specializer.Set<Pipeline::AllowFloat16>(settings.m_allowFloat16);

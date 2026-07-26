@@ -1,7 +1,6 @@
 #include <Graphics/Core/Vulkan/Barrier.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/Texture.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 
 namespace FE::Graphics::Vulkan
 {

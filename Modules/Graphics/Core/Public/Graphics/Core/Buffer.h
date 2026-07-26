@@ -47,6 +47,25 @@ namespace FE::Graphics::Core
     {
         FE_RTTI("2249E029-7ABD-4EEE-9D1D-C59570FD27EF");
 
+        static Rc<Buffer> Create(Device* device, Env::Name name, const BufferDesc& desc);
+
+        template<class T>
+        static Rc<Buffer> CreateStructured(Device* device, const Env::Name name, const uint32_t elementCount)
+        {
+            BufferDesc desc;
+            desc.m_format = Format::kUndefined;
+            desc.m_size = sizeof(T) * elementCount;
+            return Create(device, name, desc);
+        }
+
+        static Rc<Buffer> CreateByteAddress(Device* device, const Env::Name name, const uint32_t byteSize)
+        {
+            BufferDesc desc;
+            desc.m_format = Format::kUndefined;
+            desc.m_size = byteSize;
+            return Create(device, name, desc);
+        }
+
         [[nodiscard]] virtual void* Map() = 0;
         virtual void Unmap() = 0;
         virtual void FlushMappedRange(uint32_t offset, uint32_t byteSize) = 0;

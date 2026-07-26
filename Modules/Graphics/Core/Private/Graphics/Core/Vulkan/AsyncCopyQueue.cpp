@@ -1,11 +1,13 @@
-﻿#include <Graphics/Core/Common/ResourceBarrierBatcher.h>
+﻿#include <Graphics/Core/Common/Buffer.h>
+#include <Graphics/Core/Common/ResourceBarrierBatcher.h>
+#include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Barrier.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/Fence.h>
 #include <Graphics/Core/Vulkan/Format.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
-#include <Graphics/Core/Vulkan/Texture.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -92,7 +94,7 @@ namespace FE::Graphics::Vulkan
 
         struct ScopedMapper final
         {
-            Buffer* m_buffer = nullptr;
+            Core::Buffer* m_buffer = nullptr;
             void* m_data = nullptr;
 
             std::byte* Map()
@@ -305,7 +307,7 @@ namespace FE::Graphics::Vulkan
                     AsyncUploadBufferCommand cmd;
                     FE_Verify(reader.Read(cmd));
 
-                    auto* buffer = const_cast<Buffer*>(ImplCast(cmd.m_buffer));
+                    auto* buffer = const_cast<Common::Buffer*>(Common::ImplCast(cmd.m_buffer));
 
                     Common::SubresourceState subresourceState = buffer->GetState();
 
@@ -340,7 +342,7 @@ namespace FE::Graphics::Vulkan
                         copy.srcOffset = allocationOffset;
                         copy.dstOffset = cmd.m_destinationOffset + uploadedBytes;
                         copy.size = allocationSize;
-                        vkCmdCopyBuffer(commandBuffer, m_uploadBuffer->GetNative(), NativeCast(cmd.m_buffer), 1, &copy);
+                        vkCmdCopyBuffer(commandBuffer, NativeCast(m_uploadBuffer.Get()), NativeCast(cmd.m_buffer), 1, &copy);
 
                         uploadedBytes += allocationSize;
                     }
@@ -373,7 +375,7 @@ namespace FE::Graphics::Vulkan
                     AsyncUploadTextureCommand cmd;
                     FE_Verify(reader.Read(cmd));
 
-                    auto* texture = const_cast<Texture*>(ImplCast(cmd.m_texture));
+                    auto* texture = const_cast<Common::Texture*>(Common::ImplCast(cmd.m_texture));
                     const Core::TextureDesc imageDesc = texture->GetDesc();
                     const Core::FormatInfo formatInfo{ imageDesc.m_imageFormat };
                     const Core::TextureSubresource subresource = cmd.m_subresource;
@@ -466,8 +468,8 @@ namespace FE::Graphics::Vulkan
                     FlushResourceBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, beforeBarrierBatcher);
 
                     vkCmdCopyBufferToImage(commandBuffer,
-                                           m_uploadBuffer->GetNative(),
-                                           texture->GetNative(),
+                                           NativeCast(m_uploadBuffer.Get()),
+                                           NativeCast(texture),
                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                            bufferImageCopies.size(),
                                            bufferImageCopies.data());
@@ -582,28 +584,14 @@ namespace FE::Graphics::Vulkan
         m_suspendEvent = Threading::Event::CreateManualReset();
 
         constexpr Core::BufferDesc uploadBufferDesc{ .m_size = kUploadBufferSize, .m_format = Core::Format::kUndefined };
+        m_uploadBuffer = Core::Buffer::Create(m_device, "AsyncUploadBuffer", uploadBufferDesc);
+
         constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kCopySourceAndDest,
                                                            .m_memory = Core::ResourceMemory::kHostWriteThrough };
-        m_uploadBuffer = Buffer::Create(m_device, "AsyncUploadBuffer", uploadBufferDesc);
+        auto* bufferInstance = BufferInstance::Create(uploadBufferDesc, commitParams);
+        bufferInstance->Allocate(m_device);
 
-        VkBufferCreateInfo bufferCI = {};
-        VmaAllocationCreateInfo allocationCI = {};
-        TranslateBufferDesc(uploadBufferDesc, commitParams, bufferCI, allocationCI);
-
-        auto* uploadBufferInstance = BufferInstance::Create(uploadBufferDesc, commitParams);
-        const VmaAllocator vmaInstance = ImplCast(m_device)->GetVmaInstance();
-        VerifyVk(vmaCreateBuffer(vmaInstance,
-                                 &bufferCI,
-                                 &allocationCI,
-                                 &uploadBufferInstance->m_buffer,
-                                 &uploadBufferInstance->m_vmaAllocation,
-                                 nullptr));
-
-        constexpr Common::SubresourceState initialState = { .m_queueType = Core::DeviceQueueType::kTransfer };
-        uploadBufferInstance->m_subresourceStates.push_back(initialState);
-
-        m_uploadBuffer->SwapInternal(uploadBufferInstance);
-        FE_Assert(uploadBufferInstance == nullptr);
+        Common::ImplCast(m_uploadBuffer.Get())->AssignInstance(bufferInstance);
 
         m_fence = Fence::Create(m_device, 0);
 

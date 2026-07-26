@@ -15,19 +15,14 @@ namespace FE::Graphics::Core
 
     struct TextureDesc final
     {
-        uint32_t m_width : 14;
-        uint32_t m_height : 14;
-        uint32_t m_sampleCount : 4;
-        uint32_t m_depth : 14;
-        uint32_t m_arraySize : 12;
-        uint32_t m_mipSliceCount : 4;
-        TextureDimension m_dimension : 2;
-        Format m_imageFormat;
-
-        TextureDesc()
-        {
-            memset(this, 0, sizeof(*this));
-        }
+        uint32_t m_width : 14 = 0;
+        uint32_t m_height : 14 = 0;
+        uint32_t m_sampleCount : 4 = 0;
+        uint32_t m_depth : 14 = 0;
+        uint32_t m_arraySize : 12 = 0;
+        uint32_t m_mipSliceCount : 4 = 0;
+        TextureDimension m_dimension : 2 = TextureDimension::k1D;
+        Format m_imageFormat = Format::kUndefined;
 
         [[nodiscard]] Vector3UInt GetSize() const
         {
@@ -275,6 +270,34 @@ namespace FE::Graphics::Core
     struct Texture : public Resource
     {
         FE_RTTI("816F7FB8-A3C4-4D22-B8F0-A88D8DB78F47");
+
+        static Rc<Texture> Create(Device* device, Env::Name name, const TextureDesc& desc);
+
+        static Rc<Texture> Create(Device* device, const Env::Name name, const Format format, const Vector2UInt size,
+                                  const uint32_t mipCount = 1)
+        {
+            TextureDesc desc;
+            desc.SetSize(size);
+            desc.m_dimension = TextureDimension::k2D;
+            desc.m_mipSliceCount = mipCount;
+            desc.m_imageFormat = format;
+            desc.m_sampleCount = 1;
+            desc.m_arraySize = 1;
+            return Create(device, name, desc);
+        }
+
+        static Rc<Texture> Create(Device* device, const Env::Name name, const Format format, const Vector3UInt size,
+                                  const uint32_t mipCount = 1)
+        {
+            TextureDesc desc;
+            desc.SetSize(size);
+            desc.m_dimension = TextureDimension::k3D;
+            desc.m_mipSliceCount = mipCount;
+            desc.m_imageFormat = format;
+            desc.m_sampleCount = 1;
+            desc.m_arraySize = 1;
+            return Create(device, name, desc);
+        }
 
         [[nodiscard]] const TextureDesc& GetDesc() const
         {

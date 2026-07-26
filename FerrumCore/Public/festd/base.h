@@ -14,6 +14,23 @@
 
 namespace FE::festd
 {
+    namespace Internal
+    {
+        template<class TContainer>
+        struct ContainerType_Impl
+        {
+            using Type = std::remove_cvref_t<decltype(*eastl::begin(std::declval<TContainer>()))>;
+        };
+
+
+        template<class T, uint32_t TSize>
+        struct ContainerType_Impl<T[TSize]>
+        {
+            using Type = T;
+        };
+    } // namespace Internal
+
+
     template<typename, template<typename> class, typename = std::void_t<>>
     struct detect : std::false_type
     {
@@ -29,7 +46,7 @@ namespace FE::festd
 
 
     template<class TContainer>
-    using ContainerType = std::remove_reference_t<decltype(*eastl::begin(std::declval<TContainer>()))>;
+    using ContainerType = Internal::ContainerType_Impl<TContainer>::Type;
 
     template<class TIter>
     using IteratorType = std::remove_reference_t<decltype(*std::declval<TIter>())>;

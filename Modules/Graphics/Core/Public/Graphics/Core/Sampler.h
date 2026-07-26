@@ -40,28 +40,22 @@ namespace FE::Graphics::Core
 
     struct SamplerState final
     {
-        SamplerAddressMode m_addressModeU : 3;
-        SamplerAddressMode m_addressModeV : 3;
-        SamplerAddressMode m_addressModeW : 3;
-        SamplerAnisotropy m_anisotropy : 7;
-        CompareOp m_compareOp : 15;
-        uint32_t m_compareEnable : 1;
-        SamplerBorderColor m_borderColor : 2;
-        SamplerFilter m_minFilter : 2;
-        SamplerFilter m_magFilter : 2;
-        SamplerFilter m_mipFilter : 2;
-        uint32_t m_mipBias : 8;
-        uint32_t m_minLod : 8;
-        uint32_t m_maxLod : 8;
-
-        SamplerState()
-        {
-            memset(this, 0, sizeof(SamplerState));
-        }
+        SamplerAddressMode m_addressModeU : 3 = SamplerAddressMode::kWrap;
+        SamplerAddressMode m_addressModeV : 3 = SamplerAddressMode::kWrap;
+        SamplerAddressMode m_addressModeW : 3 = SamplerAddressMode::kWrap;
+        SamplerAnisotropy m_anisotropy : 7 = SamplerAnisotropy::kNone;
+        CompareOp m_compareOp : 15 = CompareOp::kNever;
+        uint32_t m_compareEnable : 1 = 0;
+        SamplerBorderColor m_borderColor : 2 = SamplerBorderColor::kTransparentBlack;
+        SamplerFilter m_minFilter : 2 = SamplerFilter::kPoint;
+        SamplerFilter m_magFilter : 2 = SamplerFilter::kPoint;
+        SamplerFilter m_mipFilter : 2 = SamplerFilter::kPoint;
+        uint32_t m_mipBias : 8 = 0;
+        uint32_t m_minLod : 8 = 0;
+        uint32_t m_maxLod : 8 = 0;
 
         SamplerState(const SamplerAddressMode addressMode, const SamplerFilter filter, const SamplerBorderColor borderColor)
         {
-            memset(this, 0, sizeof(SamplerState));
             m_addressModeU = addressMode;
             m_addressModeV = addressMode;
             m_addressModeW = addressMode;

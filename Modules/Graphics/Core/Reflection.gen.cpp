@@ -37,7 +37,6 @@
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
@@ -53,7 +52,6 @@
 #include <Graphics/Core/Vulkan/ResourcePool.h>
 #include <Graphics/Core/Vulkan/ShaderLibrary.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
-#include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
 
 
@@ -2186,117 +2184,6 @@ namespace FE::Graphics::Vulkan
 } // namespace FE::Graphics::Vulkan
 
 
-namespace FE::Graphics::Vulkan
-{
-    const Rtti::TypeID Texture::TypeID = Rtti::TypeID{
-        0x69, 0x1e, 0xa9, 0x6f, 0xe1, 0xf3, 0x47, 0xc5, 0xbf, 0x5b, 0x24, 0x25, 0x8d, 0xfa, 0x57, 0xa8,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_691ea96fe1f347c5bf5b24258dfa57a8(Texture* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-                0x69, 0x1e, 0xa9, 0x6f, 0xe1, 0xf3, 0x47, 0xc5,
-                0xbf, 0x5b, 0x24, 0x25, 0x8d, 0xfa, 0x57, 0xa8, // FE::Graphics::Vulkan::Texture (this type)
-                0x99, 0xf7, 0xa9, 0x13, 0x61, 0xef, 0x4c, 0x87,
-                0x9b, 0x27, 0xd0, 0x6c, 0xa9, 0x9f, 0x0d, 0x00, // FE::Graphics::Common::Texture
-                0x81, 0x6f, 0x7f, 0xb8, 0xa3, 0xc4, 0x4d, 0x22,
-                0xb8, 0xf0, 0xa8, 0x8d, 0x8d, 0xb7, 0x8f, 0x47, // FE::Graphics::Core::Texture
-                0x49, 0x0b, 0x70, 0xff, 0x2c, 0xe3, 0x4b, 0x16,
-                0x84, 0x66, 0xb6, 0x49, 0x97, 0xac, 0x87, 0xf5, // FE::Graphics::Core::Resource
-                0x52, 0x57, 0x9f, 0x06, 0x74, 0xcd, 0x41, 0x51,
-                0x80, 0x99, 0x4d, 0x42, 0x83, 0xe8, 0xb6, 0xb0, // FE::Graphics::Core::DeviceObject
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Common::Texture*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::Texture*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::Resource*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 4 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::DeviceObject*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 5 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_691ea96fe1f347c5bf5b24258dfa57a8()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& Texture::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_691ea96fe1f347c5bf5b24258dfa57a8();
-    }
-
-    void* FE_VECTORCALL Texture::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_691ea96fe1f347c5bf5b24258dfa57a8(this, typeID);
-    }
-
-    const void* FE_VECTORCALL Texture::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_691ea96fe1f347c5bf5b24258dfa57a8(const_cast<Texture*>(this), typeID);
-    }
-    void Texture::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_691ea96fe1f347c5bf5b24258dfa57a8();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x69, 0x1e, 0xa9, 0x6f, 0xe1, 0xf3, 0x47, 0xc5,
-            0xbf, 0x5b, 0x24, 0x25, 0x8d, 0xfa, 0x57, 0xa8, // FE::Graphics::Vulkan::Texture
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 5 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x99, 0xf7, 0xa9, 0x13, 0x61, 0xef, 0x4c, 0x87,
-            0x9b, 0x27, 0xd0, 0x6c, 0xa9, 0x9f, 0x0d, 0x00, // FE::Graphics::Common::Texture
-            0x81, 0x6f, 0x7f, 0xb8, 0xa3, 0xc4, 0x4d, 0x22,
-            0xb8, 0xf0, 0xa8, 0x8d, 0x8d, 0xb7, 0x8f, 0x47, // FE::Graphics::Core::Texture
-            0x49, 0x0b, 0x70, 0xff, 0x2c, 0xe3, 0x4b, 0x16,
-            0x84, 0x66, 0xb6, 0x49, 0x97, 0xac, 0x87, 0xf5, // FE::Graphics::Core::Resource
-            0x52, 0x57, 0x9f, 0x06, 0x74, 0xcd, 0x41, 0x51,
-            0x80, 0x99, 0x4d, 0x42, 0x83, 0xe8, 0xb6, 0xb0, // FE::Graphics::Core::DeviceObject
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<Texture>(typeInstance,
-                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                      "FE::Graphics::Vulkan::Texture",
-                                      kBaseClassTypeIDs,
-                                      kAttributes,
-                                      kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_691ea96fe1f347c5bf5b24258dfa57a8(&Texture::Reflect);
-} // namespace FE::Graphics::Vulkan
-
-
 namespace FE::Graphics::Common
 {
     const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{
@@ -2755,85 +2642,6 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics::Vulkan
 {
-    const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{
-        0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d, 0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_7748916a053b447d82d1c417599323d7(ResourceInstance* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
-                0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-                0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance (this type)
-                0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
-                0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Common::ResourceInstance*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_7748916a053b447d82d1c417599323d7()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& ResourceInstance::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_7748916a053b447d82d1c417599323d7();
-    }
-
-    void* FE_VECTORCALL ResourceInstance::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_7748916a053b447d82d1c417599323d7(this, typeID);
-    }
-
-    const void* FE_VECTORCALL ResourceInstance::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_7748916a053b447d82d1c417599323d7(const_cast<ResourceInstance*>(this), typeID);
-    }
-    void ResourceInstance::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_7748916a053b447d82d1c417599323d7();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-            0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
-            0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<ResourceInstance>(typeInstance,
-                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                               "FE::Graphics::Vulkan::ResourceInstance",
-                                               kBaseClassTypeIDs,
-                                               kAttributes,
-                                               kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_7748916a053b447d82d1c417599323d7(&ResourceInstance::Reflect);
-} // namespace FE::Graphics::Vulkan
-
-
-namespace FE::Graphics::Vulkan
-{
     const Rtti::TypeID Fence::TypeID = Rtti::TypeID{
         0x78, 0x36, 0x36, 0x47, 0x33, 0x81, 0x46, 0xf2, 0x97, 0xb1, 0x2a, 0x1a, 0xc8, 0xaf, 0xc3, 0xc1,
     };
@@ -3128,11 +2936,9 @@ namespace FE::Graphics::Vulkan
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_82bd426fa6c045bd9f678223ca9b70cc(BufferInstance* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
                 0x82, 0xbd, 0x42, 0x6f, 0xa6, 0xc0, 0x45, 0xbd,
                 0x9f, 0x67, 0x82, 0x23, 0xca, 0x9b, 0x70, 0xcc, // FE::Graphics::Vulkan::BufferInstance (this type)
-                0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-                0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance
                 0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
                 0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
             };
@@ -3142,10 +2948,6 @@ namespace FE::Graphics::Vulkan
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return thisPtr;
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Vulkan::ResourceInstance*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Graphics::Common::ResourceInstance*>(thisPtr);
@@ -3182,9 +2984,7 @@ namespace FE::Graphics::Vulkan
             0x9f, 0x67, 0x82, 0x23, 0xca, 0x9b, 0x70, 0xcc, // FE::Graphics::Vulkan::BufferInstance
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-            0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
             0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
         };
@@ -4347,11 +4147,9 @@ namespace FE::Graphics::Vulkan
         FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_c47d99b8920d49b6a1b90f24143c3feb(TextureInstance* thisPtr,
                                                                                               const Rtti::TypeID typeID)
         {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[2 * sizeof(Rtti::TypeID)] = {
                 0xc4, 0x7d, 0x99, 0xb8, 0x92, 0x0d, 0x49, 0xb6,
                 0xa1, 0xb9, 0x0f, 0x24, 0x14, 0x3c, 0x3f, 0xeb, // FE::Graphics::Vulkan::TextureInstance (this type)
-                0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-                0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance
                 0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
                 0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
             };
@@ -4361,10 +4159,6 @@ namespace FE::Graphics::Vulkan
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return thisPtr;
             id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Vulkan::ResourceInstance*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
             mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
             if (_mm_movemask_epi8(mask) == 0xffff)
                 return static_cast<FE::Graphics::Common::ResourceInstance*>(thisPtr);
@@ -4401,9 +4195,7 @@ namespace FE::Graphics::Vulkan
             0xa1, 0xb9, 0x0f, 0x24, 0x14, 0x3c, 0x3f, 0xeb, // FE::Graphics::Vulkan::TextureInstance
         };
 
-        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x77, 0x48, 0x91, 0x6a, 0x05, 0x3b, 0x44, 0x7d,
-            0x82, 0xd1, 0xc4, 0x17, 0x59, 0x93, 0x23, 0xd7, // FE::Graphics::Vulkan::ResourceInstance
+        static constexpr alignas(16) festd::array<uint8_t, 1 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
             0xb4, 0x98, 0x01, 0x7d, 0xc0, 0x7f, 0x40, 0x22,
             0x8c, 0x3d, 0x6f, 0x4c, 0x9c, 0xcf, 0x13, 0x2b, // FE::Graphics::Common::ResourceInstance
         };
@@ -4500,117 +4292,6 @@ namespace FE::Graphics::Core
 
     static Rtti::TypeRegistrar GTypeRegistrar_c6cc0410bb89484a8fd79df99ae3cd31(&DeviceFactory::Reflect);
 } // namespace FE::Graphics::Core
-
-
-namespace FE::Graphics::Vulkan
-{
-    const Rtti::TypeID Buffer::TypeID = Rtti::TypeID{
-        0xcb, 0x0b, 0x65, 0xe8, 0xb7, 0xf7, 0x4f, 0x27, 0x92, 0xbe, 0xfb, 0x6e, 0x90, 0xeb, 0xd3, 0x52,
-    };
-
-    namespace
-    {
-        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_cb0b65e8b7f74f2792befb6e90ebd352(Buffer* thisPtr,
-                                                                                              const Rtti::TypeID typeID)
-        {
-            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[6 * sizeof(Rtti::TypeID)] = {
-                0xcb, 0x0b, 0x65, 0xe8, 0xb7, 0xf7, 0x4f, 0x27,
-                0x92, 0xbe, 0xfb, 0x6e, 0x90, 0xeb, 0xd3, 0x52, // FE::Graphics::Vulkan::Buffer (this type)
-                0x6e, 0x88, 0x78, 0x4e, 0x19, 0x18, 0x41, 0xac,
-                0x93, 0x43, 0x0e, 0x93, 0xcf, 0x07, 0xc3, 0xb4, // FE::Graphics::Common::Buffer
-                0x22, 0x49, 0xe0, 0x29, 0x7a, 0xbd, 0x4e, 0xee,
-                0x9d, 0x1d, 0xc5, 0x95, 0x70, 0xfd, 0x27, 0xef, // FE::Graphics::Core::Buffer
-                0x49, 0x0b, 0x70, 0xff, 0x2c, 0xe3, 0x4b, 0x16,
-                0x84, 0x66, 0xb6, 0x49, 0x97, 0xac, 0x87, 0xf5, // FE::Graphics::Core::Resource
-                0x52, 0x57, 0x9f, 0x06, 0x74, 0xcd, 0x41, 0x51,
-                0x80, 0x99, 0x4d, 0x42, 0x83, 0xe8, 0xb6, 0xb0, // FE::Graphics::Core::DeviceObject
-                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-            };
-
-            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
-            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return thisPtr;
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Common::Buffer*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::Buffer*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 3 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::Resource*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 4 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Graphics::Core::DeviceObject*>(thisPtr);
-            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 5 * sizeof(Rtti::TypeID)));
-            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
-            if (_mm_movemask_epi8(mask) == 0xffff)
-                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
-
-            return nullptr;
-        }
-        Rtti::Type& RTTI_GetMutableType_cb0b65e8b7f74f2792befb6e90ebd352()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& Buffer::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_cb0b65e8b7f74f2792befb6e90ebd352();
-    }
-
-    void* FE_VECTORCALL Buffer::RTTI_TryCast(const Rtti::TypeID typeID)
-    {
-        return RTTI_TryCastImpl_cb0b65e8b7f74f2792befb6e90ebd352(this, typeID);
-    }
-
-    const void* FE_VECTORCALL Buffer::RTTI_TryCast(const Rtti::TypeID typeID) const
-    {
-        return RTTI_TryCastImpl_cb0b65e8b7f74f2792befb6e90ebd352(const_cast<Buffer*>(this), typeID);
-    }
-    void Buffer::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_cb0b65e8b7f74f2792befb6e90ebd352();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xcb, 0x0b, 0x65, 0xe8, 0xb7, 0xf7, 0x4f, 0x27,
-            0x92, 0xbe, 0xfb, 0x6e, 0x90, 0xeb, 0xd3, 0x52, // FE::Graphics::Vulkan::Buffer
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 5 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
-            0x6e, 0x88, 0x78, 0x4e, 0x19, 0x18, 0x41, 0xac,
-            0x93, 0x43, 0x0e, 0x93, 0xcf, 0x07, 0xc3, 0xb4, // FE::Graphics::Common::Buffer
-            0x22, 0x49, 0xe0, 0x29, 0x7a, 0xbd, 0x4e, 0xee,
-            0x9d, 0x1d, 0xc5, 0x95, 0x70, 0xfd, 0x27, 0xef, // FE::Graphics::Core::Buffer
-            0x49, 0x0b, 0x70, 0xff, 0x2c, 0xe3, 0x4b, 0x16,
-            0x84, 0x66, 0xb6, 0x49, 0x97, 0xac, 0x87, 0xf5, // FE::Graphics::Core::Resource
-            0x52, 0x57, 0x9f, 0x06, 0x74, 0xcd, 0x41, 0x51,
-            0x80, 0x99, 0x4d, 0x42, 0x83, 0xe8, 0xb6, 0xb0, // FE::Graphics::Core::DeviceObject
-            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
-            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
-
-        context.ReflectClass<Buffer>(typeInstance,
-                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                     "FE::Graphics::Vulkan::Buffer",
-                                     kBaseClassTypeIDs,
-                                     kAttributes,
-                                     kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_cb0b65e8b7f74f2792befb6e90ebd352(&Buffer::Reflect);
-} // namespace FE::Graphics::Vulkan
 
 
 namespace FE::Graphics::Core

@@ -1,8 +1,9 @@
-#include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Common/Buffer.h>
+#include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/Device.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
-#include <Graphics/Core/Vulkan/Texture.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -36,25 +37,13 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    Core::Texture* ResourcePool::CreateTexture(const Env::Name name, const Core::TextureDesc desc)
-    {
-        return Texture::Create(m_device, name, desc);
-    }
-
-
-    Core::Buffer* ResourcePool::CreateBuffer(const Env::Name name, const Core::BufferDesc desc)
-    {
-        return Buffer::Create(m_device, name, desc);
-    }
-
-
     template<class TDesc, class TParams>
     uint32_t ResourcePool::FindFreeResource(const TDesc& desc, const TParams& params)
     {
         uint32_t bestCompatibilityScore = 0;
         uint32_t bestResourceIndex = kInvalidIndex;
         Bit::Traverse(m_freedResources.view(), [&](const uint32_t resourceIndex) {
-            const ResourceInstance* resource = m_resources[resourceIndex];
+            const Common::ResourceInstance* resource = m_resources[resourceIndex];
             const uint32_t compatibilityScore = resource->ScoreCompatibility(desc, params);
             if (compatibilityScore > bestCompatibilityScore)
             {
@@ -73,20 +62,24 @@ namespace FE::Graphics::Vulkan
 
         FE_Assert(buffer->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted);
 
+        Common::ResourceInstance* instance;
         const uint32_t bestResourceIndex = FindFreeResource(buffer->GetDesc(), params);
         if (bestResourceIndex != kInvalidIndex)
         {
-            ResourceInstance* bestResource = m_resources[bestResourceIndex];
-            FE_Assert(bestResource);
+            instance = m_resources[bestResourceIndex];
+            FE_Assert(instance);
 
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
-            auto* bufferInstance = Rtti::AssertCast<BufferInstance*>(bestResource);
-            ImplCast(buffer)->SwapInternal(bufferInstance);
-            return;
+        }
+        else
+        {
+            auto* newInstance = BufferInstance::Create(buffer->GetDesc(), params, this);
+            newInstance->Allocate(m_device);
+            instance = newInstance;
         }
 
-        ImplCast(buffer)->CommitInternal(this, params);
+        Common::ImplCast(buffer)->AssignInstance(instance);
     }
 
 
@@ -96,22 +89,24 @@ namespace FE::Graphics::Vulkan
 
         FE_Assert(texture->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted);
 
+        Common::ResourceInstance* instance;
         const uint32_t bestResourceIndex = FindFreeResource(texture->GetDesc(), params);
         if (bestResourceIndex != kInvalidIndex)
         {
-            ResourceInstance* bestResource = m_resources[bestResourceIndex];
-            FE_Assert(bestResource);
+            instance = m_resources[bestResourceIndex];
+            FE_Assert(instance);
 
             m_resources[bestResourceIndex] = nullptr;
             m_emptyResources.set(bestResourceIndex);
-
-            auto* textureInstance = Rtti::AssertCast<TextureInstance*>(bestResource);
-            ImplCast(texture)->SwapInternal(textureInstance);
-            FE_Assert(textureInstance == nullptr);
-            return;
+        }
+        else
+        {
+            auto* newInstance = TextureInstance::Create(texture->GetDesc(), params, this);
+            newInstance->Allocate(m_device);
+            instance = newInstance;
         }
 
-        ImplCast(texture)->CommitInternal(this, params);
+        Common::ImplCast(texture)->AssignInstance(instance);
     }
 
 
@@ -119,8 +114,8 @@ namespace FE::Graphics::Vulkan
     {
         std::unique_lock lk{ m_lock };
 
-        BufferInstance* instance = nullptr;
-        ImplCast(buffer)->SwapInternal(instance);
+        Common::ResourceInstance* instance = nullptr;
+        Common::ImplCast(buffer)->SwapInstance(instance);
         FinalizeDecommit(instance);
     }
 
@@ -129,8 +124,8 @@ namespace FE::Graphics::Vulkan
     {
         std::unique_lock lk{ m_lock };
 
-        TextureInstance* instance = nullptr;
-        ImplCast(texture)->SwapInternal(instance);
+        Common::ResourceInstance* instance = nullptr;
+        Common::ImplCast(texture)->SwapInstance(instance);
         FinalizeDecommit(instance);
     }
 
@@ -140,7 +135,7 @@ namespace FE::Graphics::Vulkan
         std::unique_lock lk{ m_lock };
 
         Bit::Traverse(m_pendingResources.view(), [&](const uint32_t resourceIndex) {
-            const ResourceInstance* resource = m_resources[resourceIndex];
+            const Common::ResourceInstance* resource = m_resources[resourceIndex];
             FE_Assert(resource);
 
             m_freedResources.set(resourceIndex);
@@ -172,7 +167,7 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void ResourcePool::FinalizeDecommit(ResourceInstance* resourceInstance)
+    void ResourcePool::FinalizeDecommit(Common::ResourceInstance* resourceInstance)
     {
         const uint64_t graphicsQueueFenceValue = m_graphicsQueue->GetCurrentFence().m_value;
         const uint64_t transferQueueFenceValue = m_asyncCopyQueue->GetCurrentFence().m_value;

@@ -5,8 +5,10 @@
 #include <Graphics/Core/Vulkan/FrameGraph/FrameGraphContext.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/Platform/VulkanSurface.h>
-#include <Graphics/Core/Vulkan/Texture.h>
 #include <Graphics/Core/Vulkan/Viewport.h>
+
+#include <Graphics/Core/Common/Texture.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -363,7 +365,7 @@ namespace FE::Graphics::Vulkan
         {
             const Env::Name imageName = Fmt::FormatName("Swapchain Color Target {}", i);
 
-            const Rc image = Texture::Create(m_device, imageName, colorTargetDesc);
+            const Rc image = Core::Texture::Create(m_device, imageName, colorTargetDesc);
             image->SetImmediateDestroyPolicy();
 
             constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kRenderTarget
@@ -378,13 +380,12 @@ namespace FE::Graphics::Vulkan
             initialState.m_queueType = Core::DeviceQueueType::kGraphics;
             imageInstance->m_subresourceStates.push_back(initialState);
 
-            image->SwapInternal(imageInstance);
-            FE_Assert(imageInstance == nullptr);
+            Common::ImplCast(image.Get())->AssignInstance(imageInstance);
 
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
             nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-            nameInfo.objectHandle = reinterpret_cast<uint64_t>(image->GetNative());
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(NativeCast(image.Get()));
             nameInfo.pObjectName = imageName.c_str();
             VerifyVk(vkSetDebugUtilsObjectNameEXT(NativeCast(m_device), &nameInfo));
 
@@ -399,10 +400,10 @@ namespace FE::Graphics::Vulkan
 
         m_commandQueue->Drain();
 
-        for (const Rc<Texture>& image : m_images)
+        for (const Rc<Core::Texture>& image : m_images)
         {
-            TextureInstance* instance = nullptr;
-            image->SwapInternal(instance);
+            Common::ResourceInstance* instance = nullptr;
+            Common::ImplCast(image.Get())->SwapInstance(instance);
         }
 
         for (TextureInstance* imageInstance : m_imageInstances)
@@ -449,7 +450,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        Texture* renderTarget = m_images[m_imageIndex].Get();
+        Common::Texture* renderTarget = Common::ImplCast(m_images[m_imageIndex].Get());
         const Core::TextureSubresource subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
 
         Common::SubresourceState state = renderTarget->GetState(subresource);
@@ -492,7 +493,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        Texture* renderTarget = m_images[m_imageIndex].Get();
+        Common::Texture* renderTarget = Common::ImplCast(m_images[m_imageIndex].Get());
         const Core::TextureSubresource subresource = Core::TextureSubresource::CreateWhole(renderTarget->GetDesc());
         Common::SubresourceState state = renderTarget->GetState(subresource);
 

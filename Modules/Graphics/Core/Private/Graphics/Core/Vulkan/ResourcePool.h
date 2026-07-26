@@ -1,11 +1,10 @@
 #pragma once
 #include <Core/Memory/PoolAllocator.h>
+#include <Graphics/Core/Common/ResourceInstance.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
-#include <Graphics/Core/Vulkan/Texture.h>
 #include <festd/bit_vector.h>
 
 namespace FE::Graphics::Vulkan
@@ -16,9 +15,6 @@ namespace FE::Graphics::Vulkan
 
         explicit ResourcePool(Core::Device* device, Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue);
         ~ResourcePool() override;
-
-        Core::Texture* CreateTexture(Env::Name name, Core::TextureDesc desc) override;
-        Core::Buffer* CreateBuffer(Env::Name name, Core::BufferDesc desc) override;
 
         void CommitBufferMemory(Core::Buffer* buffer, const Core::ResourceCommitParams& params) override;
         void CommitTextureMemory(Core::Texture* texture, const Core::ResourceCommitParams& params) override;
@@ -34,7 +30,7 @@ namespace FE::Graphics::Vulkan
         template<class TDesc, class TParams>
         uint32_t FindFreeResource(const TDesc& desc, const TParams& params);
 
-        void FinalizeDecommit(ResourceInstance* resourceInstance);
+        void FinalizeDecommit(Common::ResourceInstance* resourceInstance);
 
         void DestroyObject() override
         {
@@ -46,7 +42,7 @@ namespace FE::Graphics::Vulkan
         GraphicsQueue* m_graphicsQueue = nullptr;
         AsyncCopyQueue* m_asyncCopyQueue = nullptr;
 
-        festd::vector<ResourceInstance*> m_resources;
+        festd::vector<Common::ResourceInstance*> m_resources;
         festd::bit_vector m_freedResources;
         festd::bit_vector m_pendingResources;
         festd::bit_vector m_emptyResources;

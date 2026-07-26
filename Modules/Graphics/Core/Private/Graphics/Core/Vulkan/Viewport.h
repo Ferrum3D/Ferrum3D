@@ -6,6 +6,7 @@
 
 namespace FE::Graphics::Vulkan
 {
+    struct TextureInstance;
     struct DeviceFactory;
     struct CommandBuffer;
     struct GraphicsQueue;
@@ -60,7 +61,7 @@ namespace FE::Graphics::Vulkan
         festd::inline_vector<Rc<Semaphore>> m_imageAvailableSemaphores;
         festd::inline_vector<Rc<Semaphore>> m_renderFinishedSemaphores;
 
-        festd::inline_vector<Rc<Texture>> m_images;
+        festd::inline_vector<Rc<Core::Texture>> m_images;
         festd::inline_vector<TextureInstance*> m_imageInstances;
     };
 

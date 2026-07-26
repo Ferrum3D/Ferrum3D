@@ -8,7 +8,6 @@
 #include <Graphics/Core/Fence.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Vulkan/Base/BaseTypes.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
 #include <Graphics/Core/Vulkan/CommandBuffer.h>
 #include <festd/ring_buffer.h>
 
@@ -58,7 +57,7 @@ namespace FE::Graphics::Vulkan
         Threading::SharedSpinLock m_suspendLock;
 
         VkQueue m_queue = VK_NULL_HANDLE;
-        Rc<Buffer> m_uploadBuffer;
+        Rc<Core::Buffer> m_uploadBuffer;
         VmaVirtualBlock m_uploadRingBuffer = VK_NULL_HANDLE;
         std::atomic<uint64_t> m_fenceValue = 0;
         Rc<Core::Fence> m_fence;

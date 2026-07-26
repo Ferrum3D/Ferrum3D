@@ -1,8 +1,8 @@
 ﻿#include <Core/Memory/FiberTempAllocator.h>
-#include <Graphics/Core/Vulkan/Buffer.h>
+#include <Graphics/Core/Common/Texture.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Device.h>
-#include <Graphics/Core/Vulkan/Texture.h>
+#include <Graphics/Core/Vulkan/ResourceInstance.h>
 
 namespace FE::Graphics::Vulkan
 {
@@ -204,6 +204,7 @@ namespace FE::Graphics::Vulkan
             case Core::ResourceType::kTexture:
                 {
                     const Core::Texture* texture = Rtti::AssertCast<const Core::Texture*>(descriptor.m_resource);
+                    auto* instance = Rtti::AssertCast<TextureInstance*>(Common::ImplCast(texture)->GetInstance());
 
                     VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -215,7 +216,7 @@ namespace FE::Graphics::Vulkan
 
                     auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
                     imageInfo->imageLayout = layout;
-                    imageInfo->imageView = ImplCast(texture)->GetSubresourceView(descriptor.m_textureSubresource);
+                    imageInfo->imageView = instance->GetSubresourceView(m_device, descriptor.m_textureSubresource);
                     imageInfo->sampler = VK_NULL_HANDLE;
 
                     m_vkResourceDescriptors.push_back(

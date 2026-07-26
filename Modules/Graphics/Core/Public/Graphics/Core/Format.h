@@ -243,21 +243,18 @@ namespace FE::Graphics::Core
     Format TranslateFormat(VertexChannelFormat format);
 
 
-    union FormatInfo final
+    struct FormatInfo final
     {
-        FormatInfo()
-            : m_format(Format::kUndefined)
-        {
-        }
+        FormatInfo() = default;
 
         explicit FormatInfo(const Format format)
-            : m_format(format)
         {
+            *this = std::bit_cast<FormatInfo>(format);
         }
 
         explicit FormatInfo(const VertexChannelFormat format)
-            : m_format(TranslateFormat(format))
         {
+            *this = std::bit_cast<FormatInfo>(TranslateFormat(format));
         }
 
         [[nodiscard]] uint32_t GetChannelCount() const
@@ -317,24 +314,24 @@ namespace FE::Graphics::Core
             return CalculateImageByteSize(size, CalculateMipCount(size));
         }
 
-        [[nodiscard]] bool IsValid() const
+        [[nodiscard]] explicit operator Format() const
         {
-            return m_format != Format::kUndefined;
+            return std::bit_cast<Format>(*this);
         }
 
-        struct
+        [[nodiscard]] bool IsValid() const
         {
-            uint32_t m_formatIndex : 17;
-            uint32_t m_isSRGB : 1;
-            uint32_t m_isSigned : 1;
-            uint32_t m_isBlockCompressed : 1;
-            ImageAspect m_aspectFlags : 3;
-            FormatChannelCount m_channelCount : 2;
-            uint32_t m_texelByteSize : 5;
-            FormatType m_type : 2;
-        };
+            return static_cast<Format>(*this) != Format::kUndefined;
+        }
 
-        Format m_format;
+        uint32_t m_formatIndex : 17 = 0;
+        uint32_t m_isSRGB : 1 = 0;
+        uint32_t m_isSigned : 1 = 0;
+        uint32_t m_isBlockCompressed : 1 = 0;
+        ImageAspect m_aspectFlags : 3 = ImageAspect::kColor;
+        FormatChannelCount m_channelCount : 2 = FormatChannelCount::k1;
+        uint32_t m_texelByteSize : 5 = 0;
+        FormatType m_type : 2 = FormatType::kNone;
     };
 
     static_assert(sizeof(Format) == sizeof(FormatInfo));

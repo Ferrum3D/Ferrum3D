@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Graphics/Core/Barrier.h>
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/ResourcePool.h>
@@ -40,6 +40,14 @@ namespace FE::Graphics::Common
         ResourceInstance& operator=(const ResourceInstance&) = delete;
         ResourceInstance& operator=(ResourceInstance&&) = delete;
 
+        virtual void UpdateDebugNames(Core::Device* device, Env::Name name) = 0;
+
+        virtual void* Map(Core::Device* device) = 0;
+        virtual void Unmap(Core::Device* device) = 0;
+        virtual void FlushMappedRange(Core::Device* device, uint32_t offset, uint32_t byteSize) = 0;
+
+        festd::array<uint64_t, festd::to_underlying(Core::DeviceQueueType::kCount)> m_lastFenceValues = {};
+
         Core::ResourcePool* m_pool = nullptr;
         Core::BarrierAccessFlags m_bindFlags : 26;
         Core::ResourceMemory m_memoryStatus : 4;
@@ -52,6 +60,9 @@ namespace FE::Graphics::Common
         };
 
         festd::inline_vector<SubresourceState, 1> m_subresourceStates;
+
+        Env::Name m_name;
+        Core::TextureSubresource m_wholeImageSubresource = {};
 
         [[nodiscard]] uint32_t ScoreCompatibility(const Core::BufferDesc desc, const Core::ResourceCommitParams& params) const
         {
