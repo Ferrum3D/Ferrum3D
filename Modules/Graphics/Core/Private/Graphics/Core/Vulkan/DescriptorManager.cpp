@@ -204,7 +204,7 @@ namespace FE::Graphics::Vulkan
             case Core::ResourceType::kTexture:
                 {
                     const Core::Texture* texture = Rtti::AssertCast<const Core::Texture*>(descriptor.m_resource);
-                    auto* instance = Rtti::AssertCast<TextureInstance*>(Common::ImplCast(texture)->GetInstance());
+                    auto* instance = GetInstance(texture);
 
                     VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

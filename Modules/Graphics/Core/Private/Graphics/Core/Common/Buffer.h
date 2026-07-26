@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/Common/ResourceInstance.h>
 
@@ -37,7 +37,7 @@ namespace FE::Graphics::Common
             return m_instance;
         }
 
-    protected:
+    private:
         mutable Threading::SpinLock m_lock;
         festd::optional<Core::BufferBarrierDesc> m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
 

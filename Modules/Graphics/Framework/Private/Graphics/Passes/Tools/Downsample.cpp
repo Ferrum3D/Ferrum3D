@@ -57,9 +57,9 @@ namespace FE::Graphics::Tools
     } // namespace
 
 
-    festd::fixed_vector<Core::Texture*, Downsample::kMaxMipCount> Downsample::AddPass(Core::FrameGraph& graph,
-                                                                                      const Core::TextureView src,
-                                                                                      const Settings& settings)
+    festd::fixed_vector<Rc<Core::Texture>, Downsample::kMaxMipCount> Downsample::AddPass(Core::FrameGraph& graph,
+                                                                                         const Core::TextureView src,
+                                                                                         const Settings& settings)
     {
         const Core::TextureDesc sourceDesc = src.GetBaseDesc();
         const Env::Name sourceName = src.GetName();
@@ -71,20 +71,20 @@ namespace FE::Graphics::Tools
         uint32_t numMips;
         SpdSetup(dispatchThreadGroupCount, workGroupOffset, numWorkGroups, numMips, rect, settings.m_mipCount);
 
-        festd::fixed_vector<Core::Texture*, kMaxMipCount> dst;
+        festd::fixed_vector<Rc<Core::Texture>, kMaxMipCount> dst;
         dst.resize(numMips);
 
-        Core::ResourcePool* resourcePool = graph.GetResourcePool();
+        Core::Device* device = graph.GetDevice();
         for (uint32_t mipIndex = 1; mipIndex <= numMips; ++mipIndex)
         {
             const uint32_t width = Math::Max(1u, sourceDesc.m_width >> mipIndex);
             const uint32_t height = Math::Max(1u, sourceDesc.m_height >> mipIndex);
 
             const Env::Name mipName = Fmt::FormatName("{}_DownsampleMip_{}", sourceName, mipIndex);
-            dst[mipIndex - 1] = resourcePool->CreateTexture(mipName, sourceDesc.m_imageFormat, { width, height });
+            dst[mipIndex - 1] = Core::Texture::Create(device, mipName, sourceDesc.m_imageFormat, { width, height });
         }
 
-        const auto globalAtomic = Core::Buffer::CreateStructured<SpdGlobalAtomicBuffer>(graph.GetDevice(), "SpdGlobalAtomic", 1);
+        const auto globalAtomic = Core::Buffer::CreateStructured<SpdGlobalAtomicBuffer>(device, "SpdGlobalAtomic", 1);
 
         Pipeline::Specializer specializer;
         specializer.Set<Pipeline::AllowFloat16>(settings.m_allowFloat16);
@@ -98,11 +98,11 @@ namespace FE::Graphics::Tools
         constants.m_numWorkGroups = numWorkGroups;
         constants.m_workGroupOffset = workGroupOffset;
         constants.m_invInputSize = Math::Reciprocal(Vector2(sourceDesc.GetSize2D()));
-        constants.m_internalGlobalAtomic = graph.GetDescriptor(globalAtomic);
+        constants.m_internalGlobalAtomic = graph.GetDescriptor(globalAtomic.Get());
 
         constants.m_input = graph.GetDescriptor(src);
         for (uint32_t mipIndex = 0; mipIndex < numMips; ++mipIndex)
-            constants.m_inputSrcMips[mipIndex] = graph.GetDescriptor(dst[mipIndex]);
+            constants.m_inputSrcMips[mipIndex] = graph.GetDescriptor(dst[mipIndex].Get());
 
         constants.m_inputSrcMidMip = constants.m_inputSrcMips[5];
         constants.m_linearClamp = graph.GetSampler(Core::SamplerState::kLinearClamp);

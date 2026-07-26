@@ -89,9 +89,9 @@ namespace FE::Graphics::Vulkan
         for (uint32_t rtIndex = 0; rtIndex < m_renderTargetState.m_renderTargetCount; ++rtIndex)
         {
             const Core::TextureView& renderTargetView = m_renderTargetState.m_renderTargets[rtIndex];
-            const Common::Texture* image = Common::ImplCast(renderTargetView.m_resource);
-            auto* instance = Rtti::AssertCast<TextureInstance*>(image->GetInstance());
-            const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
+            const Core::Texture* texture = renderTargetView.m_resource;
+            TextureInstance* instance = GetInstance(texture);
+            const Core::FormatInfo formatInfo{ texture->GetDesc().m_imageFormat };
             FE_Assert(formatInfo.m_aspectFlags == Core::ImageAspect::kColor);
             FE_Assert(renderTargetView.m_subresource.m_mipSliceCount == 1);
             FE_Assert(renderTargetView.m_subresource.m_arraySize == 1);
@@ -113,9 +113,9 @@ namespace FE::Graphics::Vulkan
         if (m_renderTargetState.m_depthStencil.IsValid())
         {
             const Core::TextureView& depthStencilView = m_renderTargetState.m_depthStencil;
-            const Common::Texture* image = Common::ImplCast(depthStencilView.m_resource);
-            auto* instance = Rtti::AssertCast<TextureInstance*>(image->GetInstance());
-            const Core::FormatInfo formatInfo{ image->GetDesc().m_imageFormat };
+            const Core::Texture* texture = depthStencilView.m_resource;
+            TextureInstance* instance = GetInstance(texture);
+            const Core::FormatInfo formatInfo{ texture->GetDesc().m_imageFormat };
             FE_Assert(Bit::AnySet(formatInfo.m_aspectFlags, Core::ImageAspect::kDepthStencil));
             FE_Assert(depthStencilView.m_subresource.m_mipSliceCount == 1);
             FE_Assert(depthStencilView.m_subresource.m_arraySize == 1);
