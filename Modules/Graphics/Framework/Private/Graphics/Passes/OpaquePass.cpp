@@ -99,7 +99,7 @@ namespace FE::Graphics::OpaquePass
         passDesc->m_viewport = viewData.m_viewportRect;
         passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
 
-        const bool hasDepthPrepass = blackboard.TryGet<DepthPrepass::PassData>() != nullptr;
+        const bool hasDepthPrepass = blackboard.Contains<DepthPrepass::PassData>();
         graph.AddPass("OpaquePass",
                       passDesc,
                       [meshletCount = lodInfo.m_meshletCount, hasDepthPrepass](Core::FrameGraphContext& context) {

@@ -22,15 +22,16 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::Tools::Downsample)
         RWTexture2DArrayDescriptor<float4> m_inputSrcMips[kSpdMaxMipLevels + 1];
         SamplerDescriptor m_linearClamp;
         float m_padding;
+
+        FE_RTTI_Reflect("1E74B92C-3D4D-4A75-AF29-F023496E19BF");
     };
 
     struct PassDesc
     {
         Constants m_constants;
         Core::PassComputePipeline m_pipeline;
+
+        FE_RTTI_Reflect("C9D2D096-0986-4DFB-B940-15C9AC6EA4AB");
     };
 
 FE_HOST_END_NAMESPACE
-
-FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Downsample::Constants);
-FE_DECLARE_PASS_DATA(FE::Graphics::Tools::Downsample::PassDesc);

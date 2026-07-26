@@ -8,6 +8,7 @@ namespace FE::Graphics::DepthPrepass
 {
     struct PassData final
     {
+        FE_RTTI_Reflect("6AE6D9A2-F171-4552-A2B4-208BECB536AA");
     };
 
     struct ViewModule final : public ViewModuleBase
@@ -22,5 +23,3 @@ namespace FE::Graphics::DepthPrepass
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene);
 } // namespace FE::Graphics::DepthPrepass
-
-FE_DECLARE_PASS_DATA(FE::Graphics::DepthPrepass::PassData);

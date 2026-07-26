@@ -123,7 +123,7 @@ class ReflectedType:
         self.bases = bases
         self.fields = fields
         self.constructors = constructors
-        self.is_default_constructible = self.is_derived_from(CLI_SUBCOMMAND_ID) and not is_abstract and (
+        self.is_default_constructible = not is_abstract and (
             len(constructors) == 0 or any(c.is_valid and len(c.args) == 0 for c in constructors)
         )
         self.is_builtin = kind == TypeKind.BUILTIN

@@ -15,6 +15,8 @@ namespace FE::Graphics::Common
         {
             Core::PassBufferAccess m_destination;
             Core::PassBufferAccess m_source;
+
+            FE_RTTI_Reflect("BBA1B6AA-ADD5-4970-8AD0-B4121D8FC577");
         };
     } // namespace InternalPassDesc
 
@@ -143,5 +145,3 @@ namespace FE::Graphics::Common
         festd::segmented_unordered_dense_map<uint32_t, uint32_t> m_resourceIndexMap;
     };
 } // namespace FE::Graphics::Common
-
-FE_DECLARE_PASS_DATA(FE::Graphics::Common::InternalPassDesc::CopyBufferToBuffer);

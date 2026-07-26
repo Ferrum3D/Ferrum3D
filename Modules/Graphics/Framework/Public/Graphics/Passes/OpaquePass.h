@@ -8,6 +8,7 @@ namespace FE::Graphics::OpaquePass
 {
     struct PassData final
     {
+        FE_RTTI_Reflect("B27600BC-3187-49D2-A81F-254D6E0C606C");
     };
 
     struct ViewModule final : public ViewModuleBase
@@ -22,5 +23,3 @@ namespace FE::Graphics::OpaquePass
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene);
 } // namespace FE::Graphics::OpaquePass
-
-FE_DECLARE_PASS_DATA(FE::Graphics::OpaquePass::PassData);

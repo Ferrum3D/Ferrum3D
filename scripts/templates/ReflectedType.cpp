@@ -221,8 +221,7 @@ namespace {{ type.namespace }}
         };
 
         context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields
-            {%- if type.is_default_constructible %}, &RTTI_DefaultConstruct_{{ type.id.bytes.hex() }}
-            {%- endif -%}
+            {%- if type.is_default_constructible %}, &RTTI_DefaultConstruct_{{ type.id.bytes.hex() }} {% endif %}
         );
     }
 

@@ -12,8 +12,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::OpaquePass)
         Core::PassDepthTarget m_depthTarget;
         Core::PassViewport m_viewport;
         Core::PassGraphicsPipeline m_pipeline;
+
+        FE_RTTI_Reflect("36F8EE1D-C760-4977-A8CD-A8CC79F66803");
     };
 
 FE_HOST_END_NAMESPACE
-
-FE_DECLARE_PASS_DATA(FE::Graphics::OpaquePass::PassDesc);
