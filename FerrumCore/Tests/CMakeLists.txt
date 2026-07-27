@@ -26,6 +26,9 @@ set(SRC
 
     RTTI/RTTI.cpp
 
+    Serialization/Serialization.cpp
+    Serialization/SerializationTypes.h
+
     Reflection.gen.cpp
 
     Strings/Format.cpp

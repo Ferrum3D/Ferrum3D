@@ -31,6 +31,7 @@ class Project:
 
 REFLECTION_PROJECTS = [
     Project("Core", PROJECT_DIR / "FerrumCore"),
+    Project("CoreTests", PROJECT_DIR / "FerrumCore/Tests"),
     Project("GraphicsCore", PROJECT_DIR / "Modules/Graphics/Core"),
 ]
 

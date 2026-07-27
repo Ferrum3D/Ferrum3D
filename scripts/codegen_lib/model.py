@@ -6,8 +6,6 @@ from pathlib import Path
 import uuid
 
 UUID_NAMESPACE = uuid.UUID("ba6b72ef-3286-4c71-9822-2519da4e156a")
-USE_INTERNAL_ID = uuid.UUID("9ecf45e0-cba3-4e15-b613-ed66e3c4be5d")
-
 REF_COUNTED_OBJECT_BASE_ID = uuid.UUID("b4fa5c63-69c0-4666-8a92-726f070d769b")
 CLI_SUBCOMMAND_ID = uuid.UUID("0f01e827-c9d9-43f0-8969-47bf6d035b82")
 
@@ -35,7 +33,8 @@ class FieldFlags(Flag):
 
 
 class FieldInfo:
-    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type: "ReflectedType|None", enum_value=None, array_size=1) -> None:
+    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type: "ReflectedType|None", enum_value=None,
+                 array_size=1, is_bitfield=False) -> None:
         self.name = name
         self.attributes = attributes
         self.display_attributes = list(attributes.items())
@@ -43,7 +42,12 @@ class FieldInfo:
         self.type = type
         self.enum_value = enum_value
         self.array_size = array_size
+        self.is_bitfield = is_bitfield
         self.display_name = attributes.get("DisplayName", name)
+
+    @property
+    def skip_serializing(self) -> bool:
+        return "SkipSerializing" in self.attributes or "Transient" in self.attributes
 
 
 class ConstructorInfo:
@@ -101,6 +105,9 @@ class ReflectedType:
         constructors: list[ConstructorInfo],
         is_abstract: bool,
         project_dir: Path,
+        direct_bases: list[ReflectedType] | None = None,
+        is_serializable: bool = False,
+        serialization_version: str | None = None,
     ):
         self.need_reflect = need_reflect
         self.name = name
@@ -108,7 +115,7 @@ class ReflectedType:
         self.qualified_name = f"{namespace}::{name}" if namespace else name
 
         self.internal_id = get_internal_type_id(self.qualified_name)
-        self.id = self.internal_id if id == USE_INTERNAL_ID else id
+        self.id = id
 
         assert(location.file is not None)
         self.module_path = get_module_path(location.file.name, project_dir)
@@ -121,7 +128,10 @@ class ReflectedType:
         self.attributes = attributes
         self.display_attributes = list(attributes.items())
         self.bases = bases
+        self.direct_bases = direct_bases or []
         self.fields = fields
+        self.reflection_fields = [field for field in fields if not field.is_bitfield]
+        self.serialization_fields = [field for field in fields if not field.skip_serializing]
         self.constructors = constructors
         self.is_default_constructible = not is_abstract and (
             len(constructors) == 0 or any(c.is_valid and len(c.args) == 0 for c in constructors)
@@ -130,6 +140,8 @@ class ReflectedType:
         self.is_enum = kind == TypeKind.ENUM
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS
         self.is_member = kind == TypeKind.MEMBER_CLASS
+        self.is_serializable = is_serializable
+        self.serialization_version = serialization_version
         self.pointer_level = 0
 
         # if not self.is_external and not self.is_derived_from(REF_COUNTED_OBJECT_BASE_ID) and self.id != REF_COUNTED_OBJECT_BASE_ID:

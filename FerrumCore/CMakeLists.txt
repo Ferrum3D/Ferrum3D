@@ -84,6 +84,10 @@
     Public/Core/RTTI/ReflectionContext.h
     Public/Core/RTTI/RTTI.h
 
+    Public/Core/Serialization/BinarySerialization.h
+    Public/Core/Serialization/JsonSerialization.h
+    Public/Core/Serialization/Serialization.h
+
     Public/Core/SIMD/Intersection.h
     Public/Core/SIMD/Soa.h
     Public/Core/SIMD/Utils.h
@@ -164,6 +168,10 @@ set(COMMON_SOURCES
     Private/Core/RTTI/Reflection.cpp
     Private/Core/RTTI/ReflectionPrivate.h
 
+    Private/Core/Serialization/BinarySerialization.cpp
+    Private/Core/Serialization/JsonSerialization.cpp
+    Private/Core/Serialization/Serialization.cpp
+
     Private/Core/Strings/Encoding.cpp
     Private/Core/Strings/Parser.cpp
 
@@ -221,7 +229,8 @@ target_link_libraries(FeCore
     small_vector
     tl_expected
     jeaiii_itoa
-    dragonbox::dragonbox_to_chars)
+    dragonbox::dragonbox_to_chars
+    rapidjson)
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCore PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

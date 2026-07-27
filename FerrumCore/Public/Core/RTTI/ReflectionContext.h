@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <Core/RTTI/Reflection.h>
+#include <Core/Serialization/Serialization.h>
 
 namespace FE::Rtti
 {
@@ -21,6 +22,17 @@ namespace FE::Rtti
             type.m_name = GetShortName(qualifiedName);
             type.m_qualifiedName = qualifiedName;
             type.m_defaultConstructor = defaultConstructor;
+            if constexpr (std::is_default_constructible_v<T>)
+            {
+                if (type.m_defaultConstructor == nullptr)
+                    type.m_defaultConstructor = [](void* storage) {
+                        ::new (storage) T();
+                    };
+            }
+            if constexpr (std::is_destructible_v<T>)
+                type.m_destructor = [](void* storage) {
+                    static_cast<T*>(storage)->~T();
+                };
             type.m_baseTypes = festd::span(reinterpret_cast<const TypeID*>(baseTypes.data()), baseTypes.size() / sizeof(TypeID));
             type.m_attributes = attributes;
             type.m_fields = fields;
@@ -33,6 +45,7 @@ namespace FE::Rtti
             if (std::is_standard_layout_v<T>)
                 type.m_flags |= TypeFlags::kStandardLayout;
 
+            Serialization::BindType<T>(type);
             RegisterType(type);
         }
 
@@ -56,6 +69,7 @@ namespace FE::Rtti
             type.m_alignment = alignof(T);
             type.m_flags = TypeFlags::kEnum | TypeFlags::kTrivial | TypeFlags::kStandardLayout;
 
+            Serialization::BindType<T>(type);
             RegisterType(type);
         }
 
@@ -73,6 +87,7 @@ namespace FE::Rtti
             if (std::is_standard_layout_v<T>)
                 type.m_flags |= TypeFlags::kStandardLayout;
 
+            Serialization::BindType<T>(type);
             RegisterType(type);
         }
 

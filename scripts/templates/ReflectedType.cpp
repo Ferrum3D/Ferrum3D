@@ -67,9 +67,9 @@ namespace FE::Rtti
         context.ReflectEnum<{{ type.qualified_name }}>(typeInstance, TypeID::LoadAligned(kTypeIDBytes), kUnderlyingTypeIDBytes,
             "{{ type.qualified_name }}", kAttributes, kEnumNames, kEnumDisplayNames, kEnumValues);
 {%- else %}
-        {%- if type.fields|length > 0 %}
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.fields|length }} * sizeof(TypeID)] = {
-            {%- for field in type.fields %}
+        {%- if type.reflection_fields|length > 0 %}
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.reflection_fields|length }} * sizeof(TypeID)] = {
+            {%- for field in type.reflection_fields %}
             {%- if field.type %}
             {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
             {%- else %}
@@ -84,15 +84,15 @@ namespace FE::Rtti
             Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {%- endfor %}
         };
-        {% for field in type.fields %}
+        {% for field in type.reflection_fields %}
         static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
             {%- for attribute in field.display_attributes %}
             Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {% endfor %}
         };
         {% endfor %}
-        static const festd::array<Rtti::FieldInfo, {{ type.fields|length }}> kFields = {
-            {%- for field in type.fields %}
+        static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
+            {%- for field in type.reflection_fields %}
             Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
                                                      TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.qualified_name }}::{{ field.name }},
@@ -186,9 +186,9 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
-        {%- if type.fields|length > 0 %}
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.fields|length }} * sizeof(Rtti::TypeID)] = {
-            {%- for field in type.fields %}
+        {%- if type.reflection_fields|length > 0 %}
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[{{ type.reflection_fields|length }} * sizeof(Rtti::TypeID)] = {
+            {%- for field in type.reflection_fields %}
             {%- if field.type %}
             {% for b in field.type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ field.type.qualified_name }} {{ field.name }}
             {%- else %}
@@ -203,15 +203,15 @@ namespace {{ type.namespace }}
             Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {%- endfor %}
         };
-        {% for field in type.fields %}
+        {% for field in type.reflection_fields %}
         static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
             {%- for attribute in field.display_attributes %}
             Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
             {% endfor %}
         };
         {% endfor %}
-        static const festd::array<Rtti::FieldInfo, {{ type.fields|length }}> kFields = {
-            {%- for field in type.fields %}
+        static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
+            {%- for field in type.reflection_fields %}
             Rtti::ReflectionContext::CreateFieldInfo<{{ field.array_size }}>("{{ field.name }}",
                                                      Rtti::TypeID::LoadAligned(kFieldTypeIDs + {{ loop.index0 }} * sizeof(TypeID)),
                                                      &{{ type.name }}::{{ field.name }},
@@ -226,5 +226,70 @@ namespace {{ type.namespace }}
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
+{%- if type.is_serializable %}
+
+    bool {{ type.name }}::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (!context.BeginObject())
+            return false;
+        {%- for base in type.direct_bases %}
+        context.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
+        {%- endfor %}
+        {%- for field in type.serialization_fields %}
+        {%- if field.is_bitfield %}
+        const auto value_{{ field.name }} = {{ field.name }};
+        context.Field("{{ field.name }}", value_{{ field.name }});
+        {%- else %}
+        context.Field("{{ field.name }}", {{ field.name }});
+        {%- endif %}
+        {%- endfor %}
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    bool {{ type.name }}::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    {
+        if (!context.BeginObject())
+            return false;
+        {%- for base in type.direct_bases %}
+        context.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
+        {%- endfor %}
+        {%- for field in type.serialization_fields %}
+        {%- if field.is_bitfield %}
+        auto value_{{ field.name }} = {{ field.name }};
+        context.Field("{{ field.name }}", value_{{ field.name }});
+        {{ field.name }} = value_{{ field.name }};
+        {%- else %}
+        context.Field("{{ field.name }}", {{ field.name }});
+        {%- endif %}
+        {%- endfor %}
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    uint64_t {{ type.name }}::RTTI_GetSerializationSchemaHash()
+    {
+        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
+        {%- for base in type.direct_bases %}
+        result = FE::Serialization::Internal::CombineSchemaHashes(
+            result, FE::CompileTimeHash("$base:{{ base.qualified_name }}", {{ 6 + (base.qualified_name|length) }}));
+        result = FE::Serialization::Internal::CombineSchemaHashes(
+            result, FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
+        {%- endfor %}
+        {%- for field in type.serialization_fields %}
+        result = FE::Serialization::Internal::CombineSchemaHashes(
+            result, FE::CompileTimeHash("{{ field.name }}", {{ field.name|length }}));
+        result = FE::Serialization::Internal::CombineSchemaHashes(
+            result, FE::Serialization::GetSchemaHash<decltype({{ field.name }})>());
+        {%- endfor %}
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, {{ type.serialization_version or 0 }});
+        return result;
+    }
+
+    uint32_t {{ type.name }}::RTTI_GetSerializationVersion()
+    {
+        return {{ type.serialization_version or 0 }};
+    }
+{% endif %}
 }
 {% endif %}

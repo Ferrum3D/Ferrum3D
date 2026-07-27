@@ -12,7 +12,6 @@ from .model import (
     ConstructorInfo,
     ReflectedType,
     TypeKind,
-    USE_INTERNAL_ID,
     get_internal_type_id,
 )
 
@@ -96,8 +95,6 @@ def get_annotation_tokens(node: cindex.Cursor) -> list[str]:
 
 
 def parse_rtti_id(id_string: str) -> uuid.UUID:
-    if id_string == "Random":
-        return USE_INTERNAL_ID
     return uuid.UUID(id_string)
 
 
@@ -220,7 +217,8 @@ def parse_class(
             field_attributes = parse_attributes(child)
             field_flags = get_field_flags(child, access_spec)
             if not public_only or access_spec == cindex.AccessSpecifier.PUBLIC:
-                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type, array_size=array_size))
+                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type, array_size=array_size,
+                                        is_bitfield=child.is_bitfield()))
 
 
 def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
@@ -311,6 +309,8 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
     need_reflect = False
     has_rtti = False
     member_reflection_id = None
+    is_serializable = False
+    serialization_version = None
     type_kind = TypeKind.NORMAL
     for child in node.get_children():
         if child.is_static_method() and child.spelling == "Reflect":
@@ -326,6 +326,11 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             marker_id = marker_attributes["ReflectFull"]
             if marker_id != "1":
                 member_reflection_id = parse_rtti_id(marker_id)
+        elif is_class(child.kind) and child.spelling == "RTTI_SerializationMarker":
+            marker_attributes = parse_attributes(child)
+            is_serializable = "SerializeGenerated" in marker_attributes
+        elif child.kind == cindex.CursorKind.VAR_DECL and child.spelling in ("kVersion", "kSerializationVersion"):
+            serialization_version = child.spelling
 
     if member_reflection_id is not None:
         if has_rtti:
@@ -342,6 +347,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
         constructors = []
         parse_class(node, fields, base_types, constructors, types, need_reflect, False)
 
+        direct_bases = list(filter(None, (resolve_type(t, types) for t in base_types)))
         bases = get_all_base_types(base_types, types)
         ref_type = ReflectedType(
             type_kind,
@@ -356,6 +362,9 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
             constructors,
             node.is_abstract_record(),
             project_dir,
+            direct_bases=direct_bases,
+            is_serializable=is_serializable,
+            serialization_version=serialization_version,
         )
         types[ref_type.internal_id] = ref_type
 

@@ -6,6 +6,310 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <Cli/CommandLineTypes.h>
+#include <Serialization/SerializationTypes.h>
+
+
+namespace FE::Serialization::Tests
+{
+    const Rtti::TypeID PackedDesc::TypeID = Rtti::TypeID{
+        0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7, 0x89, 0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_8e8f777d28c647f789c6e66e68a2b31d()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+
+        void RTTI_DefaultConstruct_8e8f777d28c647f789c6e66e68a2b31d(void* storage)
+        {
+            ::new (storage) PackedDesc();
+        }
+    } // namespace
+
+    const Rtti::Type& PackedDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_8e8f777d28c647f789c6e66e68a2b31d();
+    }
+
+    void PackedDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_8e8f777d28c647f789c6e66e68a2b31d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7,
+            0x89, 0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d, // FE::Serialization::Tests::PackedDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x66, 0xd8, 0x93, 0x0b, 0x34, 0x58, 0x48, 0x47, 0xb6, 0xf1, 0x00, 0x2c, 0x70, 0xdc, 0x1e, 0xd2, // float m_scale
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scale = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scale",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PackedDesc::m_scale,
+                                                        kAttributes_m_scale,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PackedDesc>(typeInstance,
+                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                         "FE::Serialization::Tests::PackedDesc",
+                                         kBaseClassTypeIDs,
+                                         kAttributes,
+                                         kFields,
+                                         &RTTI_DefaultConstruct_8e8f777d28c647f789c6e66e68a2b31d);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_8e8f777d28c647f789c6e66e68a2b31d(&PackedDesc::Reflect);
+
+    bool PackedDesc::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (!context.BeginObject())
+            return false;
+        const auto value_m_width = m_width;
+        context.Field("m_width", value_m_width);
+        const auto value_m_height = m_height;
+        context.Field("m_height", value_m_height);
+        const auto value_m_flags = m_flags;
+        context.Field("m_flags", value_m_flags);
+        context.Field("m_scale", m_scale);
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    bool PackedDesc::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    {
+        if (!context.BeginObject())
+            return false;
+        auto value_m_width = m_width;
+        context.Field("m_width", value_m_width);
+        m_width = value_m_width;
+        auto value_m_height = m_height;
+        context.Field("m_height", value_m_height);
+        m_height = value_m_height;
+        auto value_m_flags = m_flags;
+        context.Field("m_flags", value_m_flags);
+        m_flags = value_m_flags;
+        context.Field("m_scale", m_scale);
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    uint64_t PackedDesc::RTTI_GetSerializationSchemaHash()
+    {
+        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_width", 7));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_width)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_height", 8));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_height)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_flags", 7));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_flags)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_scale", 7));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_scale)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, 0);
+        return result;
+    }
+
+    uint32_t PackedDesc::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Serialization::Tests
+
+
+namespace FE::Serialization::Tests
+{
+    const Rtti::TypeID TestObject::TypeID = Rtti::TypeID{
+        0xcc, 0x51, 0x82, 0x2c, 0x73, 0x86, 0x45, 0x96, 0xa2, 0x08, 0xf4, 0xa4, 0x95, 0x0d, 0x63, 0xcb,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_cc51822c73864596a208f4a4950d63cb(TestObject* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xcc, 0x51, 0x82, 0x2c, 0x73, 0x86, 0x45, 0x96,
+                0xa2, 0x08, 0xf4, 0xa4, 0x95, 0x0d, 0x63, 0xcb, // FE::Serialization::Tests::TestObject (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_cc51822c73864596a208f4a4950d63cb()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+
+        void RTTI_DefaultConstruct_cc51822c73864596a208f4a4950d63cb(void* storage)
+        {
+            ::new (storage) TestObject();
+        }
+    } // namespace
+
+    const Rtti::Type& TestObject::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_cc51822c73864596a208f4a4950d63cb();
+    }
+
+    void* FE_VECTORCALL TestObject::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_cc51822c73864596a208f4a4950d63cb(this, typeID);
+    }
+
+    const void* FE_VECTORCALL TestObject::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_cc51822c73864596a208f4a4950d63cb(const_cast<TestObject*>(this), typeID);
+    }
+    void TestObject::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_cc51822c73864596a208f4a4950d63cb();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xcc, 0x51, 0x82, 0x2c, 0x73, 0x86, 0x45, 0x96,
+            0xa2, 0x08, 0xf4, 0xa4, 0x95, 0x0d, 0x63, 0xcb, // FE::Serialization::Tests::TestObject
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_id
+            0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7, 0x89,
+            0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d, // FE::Serialization::Tests::PackedDesc m_desc
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_values
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_coordinates
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_name
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac,
+            0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_transient
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_id = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_desc = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_values = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_coordinates = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_transient = {
+            Rtti::Attribute{ .m_key = "SkipSerializing", .m_value = "1" },
+
+        };
+
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_id",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &TestObject::m_id,
+                                                        kAttributes_m_id,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_desc",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &TestObject::m_desc,
+                                                        kAttributes_m_desc,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_values",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &TestObject::m_values,
+                                                        kAttributes_m_values,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_coordinates",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &TestObject::m_coordinates,
+                                                        kAttributes_m_coordinates,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &TestObject::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_transient",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &TestObject::m_transient,
+                                                        kAttributes_m_transient,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TestObject>(typeInstance,
+                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                         "FE::Serialization::Tests::TestObject",
+                                         kBaseClassTypeIDs,
+                                         kAttributes,
+                                         kFields,
+                                         &RTTI_DefaultConstruct_cc51822c73864596a208f4a4950d63cb);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_cc51822c73864596a208f4a4950d63cb(&TestObject::Reflect);
+
+    bool TestObject::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (!context.BeginObject())
+            return false;
+        context.Field("m_id", m_id);
+        context.Field("m_desc", m_desc);
+        context.Field("m_values", m_values);
+        context.Field("m_coordinates", m_coordinates);
+        context.Field("m_name", m_name);
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    bool TestObject::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    {
+        if (!context.BeginObject())
+            return false;
+        context.Field("m_id", m_id);
+        context.Field("m_desc", m_desc);
+        context.Field("m_values", m_values);
+        context.Field("m_coordinates", m_coordinates);
+        context.Field("m_name", m_name);
+        context.EndObject();
+        return context.IsValid();
+    }
+
+    uint64_t TestObject::RTTI_GetSerializationSchemaHash()
+    {
+        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_id", 4));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_id)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_desc", 6));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_desc)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_values", 8));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_values)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_coordinates", 13));
+        result =
+            FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_coordinates)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_name", 6));
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_name)>());
+        result = FE::Serialization::Internal::CombineSchemaHashes(result, kSerializationVersion);
+        return result;
+    }
+
+    uint32_t TestObject::RTTI_GetSerializationVersion()
+    {
+        return kSerializationVersion;
+    }
+
+} // namespace FE::Serialization::Tests
 
 
 namespace FE::Cli::Tests
@@ -43,7 +347,6 @@ namespace FE::Cli::Tests
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_d5dd1441e7ec48e5970615434aa507d5()
         {
             static Rtti::Type typeInstance;
@@ -70,7 +373,6 @@ namespace FE::Cli::Tests
     {
         return RTTI_TryCastImpl_d5dd1441e7ec48e5970615434aa507d5(const_cast<Build*>(this), typeID);
     }
-
     void Build::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_d5dd1441e7ec48e5970615434aa507d5();
@@ -168,11 +470,15 @@ namespace FE::Cli::Tests
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_ef03ae87b2df4fa0a77db92cc8e2015c()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
+        }
+
+        void RTTI_DefaultConstruct_ef03ae87b2df4fa0a77db92cc8e2015c(void* storage)
+        {
+            ::new (storage) TestParser();
         }
     } // namespace
 
@@ -190,7 +496,6 @@ namespace FE::Cli::Tests
     {
         return RTTI_TryCastImpl_ef03ae87b2df4fa0a77db92cc8e2015c(const_cast<TestParser*>(this), typeID);
     }
-
     void TestParser::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_ef03ae87b2df4fa0a77db92cc8e2015c();
@@ -242,7 +547,8 @@ namespace FE::Cli::Tests
                                          "FE::Cli::Tests::TestParser",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields);
+                                         kFields,
+                                         &RTTI_DefaultConstruct_ef03ae87b2df4fa0a77db92cc8e2015c);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ef03ae87b2df4fa0a77db92cc8e2015c(&TestParser::Reflect);

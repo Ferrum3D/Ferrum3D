@@ -185,6 +185,24 @@ public:                                                                         
 } // namespace FE::Rtti
 
 
+namespace FE::Serialization
+{
+    class SerializationContext;
+}
+
+
+#define FE_RTTI_Serialize()                                                                                                      \
+public:                                                                                                                          \
+    bool RTTI_Serialize(FE::Serialization::SerializationContext& context) const;                                                 \
+    bool RTTI_Deserialize(FE::Serialization::SerializationContext& context);                                                     \
+    static uint64_t RTTI_GetSerializationSchemaHash();                                                                           \
+    static uint32_t RTTI_GetSerializationVersion();                                                                              \
+                                                                                                                                 \
+    struct FE_CODEGEN_ATTRIBUTE("SerializeGenerated") RTTI_SerializationMarker                                                   \
+    {                                                                                                                            \
+    }
+
+
 FE_RTTI_Reflect(uint8_t, "80E074D8-C4C0-4190-B716-701DBA47F9F7");
 FE_RTTI_Reflect(uint16_t, "DA7E1828-9EC2-408B-A93B-50F254939992");
 FE_RTTI_Reflect(uint32_t, "334F0750-1B4E-4F4C-AC6F-985382D4BD11");

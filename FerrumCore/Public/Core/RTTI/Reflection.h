@@ -2,6 +2,11 @@
 #include <Core/Base/Base.h>
 #include <festd/intrusive_list.h>
 
+namespace FE::Serialization
+{
+    class SerializationContext;
+}
+
 namespace FE::Rtti
 {
     enum class TypeFlags : uint32_t
@@ -74,11 +79,17 @@ namespace FE::Rtti
     struct Type final : public festd::intrusive_list_node
     {
         using DefaultConstructor = void (*)(void*);
+        using Destructor = void (*)(void*);
+        using Serialize = bool (*)(Serialization::SerializationContext&, const void*);
+        using Deserialize = bool (*)(Serialization::SerializationContext&, void*);
 
         TypeID m_id = TypeID::kNull;
         festd::ascii_view m_name;
         festd::ascii_view m_qualifiedName;
         DefaultConstructor m_defaultConstructor = nullptr;
+        Destructor m_destructor = nullptr;
+        Serialize m_serialize = nullptr;
+        Deserialize m_deserialize = nullptr;
         festd::span<const TypeID> m_baseTypes;
         festd::span<const Attribute> m_attributes;
         festd::span<const FieldInfo> m_fields;
@@ -87,6 +98,8 @@ namespace FE::Rtti
         festd::span<const int64_t> m_enumValues;
         uint32_t m_size = 0;
         uint32_t m_alignment = 0;
+        uint32_t m_serializationVersion = 0;
+        uint64_t m_serializationSchemaHash = 0;
         TypeFlags m_flags = TypeFlags::kNone;
     };
 
