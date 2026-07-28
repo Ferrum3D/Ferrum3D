@@ -147,12 +147,6 @@ namespace {{ type.namespace }}
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-{% if type.is_default_constructible %}
-        void RTTI_DefaultConstruct_{{ type.id.bytes.hex() }}(void* storage)
-        {
-            ::new (storage) {{ type.name }}();
-        }
-{% endif -%}
     }
 
     const Rtti::Type& {{ type.name }}::RTTI_GetType()
@@ -220,9 +214,7 @@ namespace {{ type.namespace }}
             {%- endfor %}
         };
 
-        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields
-            {%- if type.is_default_constructible %}, &RTTI_DefaultConstruct_{{ type.id.bytes.hex() }} {% endif %}
-        );
+        context.ReflectClass<{{ type.name }}>(typeInstance, Rtti::TypeID::LoadAligned(kTypeIDBytes), "{{ type.qualified_name }}", kBaseClassTypeIDs, kAttributes, kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);

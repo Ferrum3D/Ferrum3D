@@ -68,11 +68,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_009ddc47bc1945258a6456403d359c95(void* storage)
-        {
-            ::new (storage) TextureAccessPassDesc();
-        }
     } // namespace
 
     const Rtti::Type& TextureAccessPassDesc::RTTI_GetType()
@@ -111,8 +106,7 @@ namespace FE::Graphics::Core
                                                     "FE::Graphics::Core::TextureAccessPassDesc",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields,
-                                                    &RTTI_DefaultConstruct_009ddc47bc1945258a6456403d359c95);
+                                                    kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_009ddc47bc1945258a6456403d359c95(&TextureAccessPassDesc::Reflect);
@@ -384,11 +378,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_1d24000b33b44baf88259602cdb08cc8(void* storage)
-        {
-            ::new (storage) PassColorTarget();
-        }
     } // namespace
 
     const Rtti::Type& PassColorTarget::RTTI_GetType()
@@ -426,8 +415,7 @@ namespace FE::Graphics::Core
                                               "FE::Graphics::Core::PassColorTarget",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields,
-                                              &RTTI_DefaultConstruct_1d24000b33b44baf88259602cdb08cc8);
+                                              kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1d24000b33b44baf88259602cdb08cc8(&PassColorTarget::Reflect);
@@ -890,11 +878,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_3722e747aabe49d89d95adc6d080d8e7(void* storage)
-        {
-            ::new (storage) PassViewport();
-        }
     } // namespace
 
     const Rtti::Type& PassViewport::RTTI_GetType()
@@ -933,8 +916,7 @@ namespace FE::Graphics::Core
                                            "FE::Graphics::Core::PassViewport",
                                            kBaseClassTypeIDs,
                                            kAttributes,
-                                           kFields,
-                                           &RTTI_DefaultConstruct_3722e747aabe49d89d95adc6d080d8e7);
+                                           kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_3722e747aabe49d89d95adc6d080d8e7(&PassViewport::Reflect);
@@ -1312,11 +1294,6 @@ namespace FE::Graphics::Vulkan
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_4247535c3e9742e7a8691dc542afbf25(void* storage)
-        {
-            ::new (storage) DeviceFactory();
-        }
     } // namespace
 
     const Rtti::Type& DeviceFactory::RTTI_GetType()
@@ -1357,8 +1334,7 @@ namespace FE::Graphics::Vulkan
                                             "FE::Graphics::Vulkan::DeviceFactory",
                                             kBaseClassTypeIDs,
                                             kAttributes,
-                                            kFields,
-                                            &RTTI_DefaultConstruct_4247535c3e9742e7a8691dc542afbf25);
+                                            kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4247535c3e9742e7a8691dc542afbf25(&DeviceFactory::Reflect);
@@ -1663,11 +1639,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_4a168bad024c480f9333de48b324d7f4(void* storage)
-        {
-            ::new (storage) BufferAccessPassDesc();
-        }
     } // namespace
 
     const Rtti::Type& BufferAccessPassDesc::RTTI_GetType()
@@ -1706,8 +1677,7 @@ namespace FE::Graphics::Core
                                                    "FE::Graphics::Core::BufferAccessPassDesc",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields,
-                                                   &RTTI_DefaultConstruct_4a168bad024c480f9333de48b324d7f4);
+                                                   kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4a168bad024c480f9333de48b324d7f4(&BufferAccessPassDesc::Reflect);
@@ -2430,11 +2400,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_6ff3f59eaebb49e89b1d13a9580808ff(void* storage)
-        {
-            ::new (storage) PassBufferAccess();
-        }
     } // namespace
 
     const Rtti::Type& PassBufferAccess::RTTI_GetType()
@@ -2491,8 +2456,7 @@ namespace FE::Graphics::Core
                                                "FE::Graphics::Core::PassBufferAccess",
                                                kBaseClassTypeIDs,
                                                kAttributes,
-                                               kFields,
-                                               &RTTI_DefaultConstruct_6ff3f59eaebb49e89b1d13a9580808ff);
+                                               kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_6ff3f59eaebb49e89b1d13a9580808ff(&PassBufferAccess::Reflect);
@@ -3087,11 +3051,6 @@ namespace FE::Graphics::Vulkan
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_82bd426fa6c045bd9f678223ca9b70cc(void* storage)
-        {
-            ::new (storage) BufferInstance();
-        }
     } // namespace
 
     const Rtti::Type& BufferInstance::RTTI_GetType()
@@ -3130,8 +3089,7 @@ namespace FE::Graphics::Vulkan
                                              "FE::Graphics::Vulkan::BufferInstance",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields,
-                                             &RTTI_DefaultConstruct_82bd426fa6c045bd9f678223ca9b70cc);
+                                             kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_82bd426fa6c045bd9f678223ca9b70cc(&BufferInstance::Reflect);
@@ -3455,11 +3413,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_9daf49f94e5d4042b12367200dc60a14(void* storage)
-        {
-            ::new (storage) ShaderCompilerDXC();
-        }
     } // namespace
 
     const Rtti::Type& ShaderCompilerDXC::RTTI_GetType()
@@ -3500,8 +3453,7 @@ namespace FE::Graphics::Core
                                                 "FE::Graphics::Core::ShaderCompilerDXC",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields,
-                                                &RTTI_DefaultConstruct_9daf49f94e5d4042b12367200dc60a14);
+                                                kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9daf49f94e5d4042b12367200dc60a14(&ShaderCompilerDXC::Reflect);
@@ -3600,11 +3552,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_9f23330e8c014119a9570d9a808c7273(void* storage)
-        {
-            ::new (storage) PassTextureAccess();
-        }
     } // namespace
 
     const Rtti::Type& PassTextureAccess::RTTI_GetType()
@@ -3679,8 +3626,7 @@ namespace FE::Graphics::Core
                                                 "FE::Graphics::Core::PassTextureAccess",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields,
-                                                &RTTI_DefaultConstruct_9f23330e8c014119a9570d9a808c7273);
+                                                kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_9f23330e8c014119a9570d9a808c7273(&PassTextureAccess::Reflect);
@@ -3878,11 +3824,6 @@ namespace FE::Graphics::Common::InternalPassDesc
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_bba1b6aaadd549708ad0b4121d8fc577(void* storage)
-        {
-            ::new (storage) CopyBufferToBuffer();
-        }
     } // namespace
 
     const Rtti::Type& CopyBufferToBuffer::RTTI_GetType()
@@ -3930,8 +3871,7 @@ namespace FE::Graphics::Common::InternalPassDesc
                                                  "FE::Graphics::Common::InternalPassDesc::CopyBufferToBuffer",
                                                  kBaseClassTypeIDs,
                                                  kAttributes,
-                                                 kFields,
-                                                 &RTTI_DefaultConstruct_bba1b6aaadd549708ad0b4121d8fc577);
+                                                 kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_bba1b6aaadd549708ad0b4121d8fc577(&CopyBufferToBuffer::Reflect);
@@ -3950,11 +3890,6 @@ namespace FE::Graphics::Core
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        void RTTI_DefaultConstruct_bde9ab4ad5064b1996123fb7e5133eea(void* storage)
-        {
-            ::new (storage) PassComputePipeline();
         }
     } // namespace
 
@@ -3994,8 +3929,7 @@ namespace FE::Graphics::Core
                                                   "FE::Graphics::Core::PassComputePipeline",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields,
-                                                  &RTTI_DefaultConstruct_bde9ab4ad5064b1996123fb7e5133eea);
+                                                  kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_bde9ab4ad5064b1996123fb7e5133eea(&PassComputePipeline::Reflect);
@@ -4313,11 +4247,6 @@ namespace FE::Graphics::Vulkan
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_c47d99b8920d49b6a1b90f24143c3feb(void* storage)
-        {
-            ::new (storage) TextureInstance();
-        }
     } // namespace
 
     const Rtti::Type& TextureInstance::RTTI_GetType()
@@ -4356,8 +4285,7 @@ namespace FE::Graphics::Vulkan
                                               "FE::Graphics::Vulkan::TextureInstance",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields,
-                                              &RTTI_DefaultConstruct_c47d99b8920d49b6a1b90f24143c3feb);
+                                              kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c47d99b8920d49b6a1b90f24143c3feb(&TextureInstance::Reflect);
@@ -4543,11 +4471,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_d11ce8813d3c47afa050346482677316(void* storage)
-        {
-            ::new (storage) PassDepthTarget();
-        }
     } // namespace
 
     const Rtti::Type& PassDepthTarget::RTTI_GetType()
@@ -4585,8 +4508,7 @@ namespace FE::Graphics::Core
                                               "FE::Graphics::Core::PassDepthTarget",
                                               kBaseClassTypeIDs,
                                               kAttributes,
-                                              kFields,
-                                              &RTTI_DefaultConstruct_d11ce8813d3c47afa050346482677316);
+                                              kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d11ce8813d3c47afa050346482677316(&PassDepthTarget::Reflect);
@@ -4780,11 +4702,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_d90ed870c966443f9bfe1d753aeedfbf(void* storage)
-        {
-            ::new (storage) PassGraphicsPipeline();
-        }
     } // namespace
 
     const Rtti::Type& PassGraphicsPipeline::RTTI_GetType()
@@ -4823,8 +4740,7 @@ namespace FE::Graphics::Core
                                                    "FE::Graphics::Core::PassGraphicsPipeline",
                                                    kBaseClassTypeIDs,
                                                    kAttributes,
-                                                   kFields,
-                                                   &RTTI_DefaultConstruct_d90ed870c966443f9bfe1d753aeedfbf);
+                                                   kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d90ed870c966443f9bfe1d753aeedfbf(&PassGraphicsPipeline::Reflect);
@@ -5026,11 +4942,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_ee4ca91a4d2f455fb9a2f8f897463d3e(void* storage)
-        {
-            ::new (storage) PassScissor();
-        }
     } // namespace
 
     const Rtti::Type& PassScissor::RTTI_GetType()
@@ -5069,8 +4980,7 @@ namespace FE::Graphics::Core
                                           "FE::Graphics::Core::PassScissor",
                                           kBaseClassTypeIDs,
                                           kAttributes,
-                                          kFields,
-                                          &RTTI_DefaultConstruct_ee4ca91a4d2f455fb9a2f8f897463d3e);
+                                          kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ee4ca91a4d2f455fb9a2f8f897463d3e(&PassScissor::Reflect);
@@ -5277,11 +5187,6 @@ namespace FE::Graphics::Core
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_fe08f0a840b44c17b1528220dc1bf5f6(void* storage)
-        {
-            ::new (storage) ShaderSourceCache();
-        }
     } // namespace
 
     const Rtti::Type& ShaderSourceCache::RTTI_GetType()
@@ -5320,8 +5225,7 @@ namespace FE::Graphics::Core
                                                 "FE::Graphics::Core::ShaderSourceCache",
                                                 kBaseClassTypeIDs,
                                                 kAttributes,
-                                                kFields,
-                                                &RTTI_DefaultConstruct_fe08f0a840b44c17b1528220dc1bf5f6);
+                                                kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_fe08f0a840b44c17b1528220dc1bf5f6(&ShaderSourceCache::Reflect);

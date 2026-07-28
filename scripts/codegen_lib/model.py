@@ -133,9 +133,6 @@ class ReflectedType:
         self.reflection_fields = [field for field in fields if not field.is_bitfield]
         self.serialization_fields = [field for field in fields if not field.skip_serializing]
         self.constructors = constructors
-        self.is_default_constructible = not is_abstract and (
-            len(constructors) == 0 or any(c.is_valid and len(c.args) == 0 for c in constructors)
-        )
         self.is_builtin = kind == TypeKind.BUILTIN
         self.is_enum = kind == TypeKind.ENUM
         self.is_external = self.is_builtin or self.is_enum or kind == TypeKind.EXTERNAL_CLASS

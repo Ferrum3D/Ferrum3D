@@ -64,8 +64,8 @@ namespace FE::Serialization
     struct Serializer;
 
 
-    class SerializationContext;
-    class ObjectScope;
+    struct SerializationContext;
+    struct ObjectScope;
 
 
     namespace Internal
@@ -91,9 +91,8 @@ namespace FE::Serialization
     uint32_t GetVersion();
 
 
-    class SerializationContext
+    struct SerializationContext
     {
-    public:
         virtual ~SerializationContext() = default;
 
         SerializationContext(const SerializationContext&) = delete;
@@ -392,9 +391,8 @@ namespace FE::Serialization
     };
 
 
-    class ObjectScope final
+    struct ObjectScope final
     {
-    public:
         ObjectScope(const ObjectScope&) = delete;
         ObjectScope& operator=(const ObjectScope&) = delete;
 
@@ -592,15 +590,9 @@ namespace FE::Serialization
             return true;
         }
 
-        static uint64_t GetSchemaHash()
+        static constexpr uint64_t GetSchemaHash()
         {
-            static const uint64_t kHash = [] {
-                Hasher hasher;
-                hasher.Update("enum", 4);
-                hasher.UpdateRaw(TypeNameHash<T>);
-                return hasher.Finalize();
-            }();
-            return kHash;
+            return TypeNameHash<T>;
         }
 
         static constexpr uint32_t GetVersion()
@@ -621,6 +613,7 @@ namespace FE::Serialization
 
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
+
             context.EndArray();
             return context.IsValid();
         }
@@ -630,6 +623,7 @@ namespace FE::Serialization
             uint32_t size = 0;
             if (!context.BeginArray(size))
                 return false;
+
             if (size != TSize)
             {
                 context.ReportError(ErrorCode::kMalformedData);
@@ -639,19 +633,16 @@ namespace FE::Serialization
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
             context.EndArray();
+
             return context.IsValid();
         }
 
-        static uint64_t GetSchemaHash()
+        static constexpr uint64_t GetSchemaHash()
         {
-            static const uint64_t kHash = [] {
-                Hasher hasher;
-                hasher.Update("array", 5);
-                hasher.Update(TSize);
-                hasher.UpdateRaw(Serialization::GetSchemaHash<T>());
-                return hasher.Finalize();
-            }();
-            return kHash;
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("c-array");
+            constexpr uint64_t kSizeHash = HashCombine(kTypeNameHash, TSize);
+            static uint64_t schemaHash = HashCombine(kSizeHash, Serialization::GetSchemaHash<T>());
+            return schemaHash;
         }
 
         static constexpr uint32_t GetVersion()
@@ -662,9 +653,9 @@ namespace FE::Serialization
 
 
     template<class T, size_t TSize>
-    struct Serializer<eastl::array<T, TSize>>
+    struct Serializer<festd::array<T, TSize>>
     {
-        static bool Serialize(SerializationContext& context, const eastl::array<T, TSize>& value)
+        static bool Serialize(SerializationContext& context, const festd::array<T, TSize>& value)
         {
             uint32_t size = static_cast<uint32_t>(TSize);
             if (!context.BeginArray(size))
@@ -673,14 +664,16 @@ namespace FE::Serialization
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
             context.EndArray();
+
             return context.IsValid();
         }
 
-        static bool Deserialize(SerializationContext& context, eastl::array<T, TSize>& value)
+        static bool Deserialize(SerializationContext& context, festd::array<T, TSize>& value)
         {
             uint32_t size = 0;
             if (!context.BeginArray(size))
                 return false;
+
             if (size != TSize)
             {
                 context.ReportError(ErrorCode::kMalformedData);
@@ -690,19 +683,16 @@ namespace FE::Serialization
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
             context.EndArray();
+
             return context.IsValid();
         }
 
-        static uint64_t GetSchemaHash()
+        static constexpr uint64_t GetSchemaHash()
         {
-            static const uint64_t kHash = [] {
-                Hasher hasher;
-                hasher.Update("array", 5);
-                hasher.Update(TSize);
-                hasher.UpdateRaw(Serialization::GetSchemaHash<T>());
-                return hasher.Finalize();
-            }();
-            return kHash;
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("array");
+            constexpr uint64_t kSizeHash = HashCombine(kTypeNameHash, TSize);
+            static uint64_t schemaHash = HashCombine(kSizeHash, Serialization::GetSchemaHash<T>());
+            return schemaHash;
         }
 
         static constexpr uint32_t GetVersion()
@@ -724,6 +714,7 @@ namespace FE::Serialization
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
             context.EndArray();
+
             return context.IsValid();
         }
 
@@ -737,18 +728,15 @@ namespace FE::Serialization
             for (uint32_t i = 0; i < size; ++i)
                 context.Element(i, value[i]);
             context.EndArray();
+
             return context.IsValid();
         }
 
-        static uint64_t GetSchemaHash()
+        static constexpr uint64_t GetSchemaHash()
         {
-            static const uint64_t kHash = [] {
-                Hasher hasher;
-                hasher.Update("vector", 6);
-                hasher.UpdateRaw(Serialization::GetSchemaHash<T>());
-                return hasher.Finalize();
-            }();
-            return kHash;
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("vector");
+            static uint64_t schemaHash = HashCombine(kTypeNameHash, Serialization::GetSchemaHash<T>());
+            return schemaHash;
         }
 
         static constexpr uint32_t GetVersion()
@@ -785,7 +773,8 @@ namespace FE::Serialization
 
         static constexpr uint64_t GetSchemaHash()
         {
-            return CompileTimeHash("string", 6);
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("string");
+            return kTypeNameHash;
         }
 
         static constexpr uint32_t GetVersion()
@@ -803,7 +792,8 @@ namespace FE::Serialization
 
         static constexpr uint64_t GetSchemaHash()
         {
-            return CompileTimeHash("uuid", 4);
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("Uuid");
+            return kTypeNameHash;
         }
 
         static constexpr uint32_t GetVersion()

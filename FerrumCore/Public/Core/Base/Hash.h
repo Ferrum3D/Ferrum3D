@@ -165,36 +165,29 @@ namespace FE
     inline constexpr uint64_t TypeNameHash = CompileTimeHash(TypeName<T>.data(), TypeName<T>.length());
 
 
-    inline void HashCombine(size_t& /* seed */) {}
-
-
-    //! @brief Combine hashes of specified values with seed.
-    //!
-    //! @tparam Args  Types of values.
-    //!
-    //! @param seed Initial hash value to combine with.
-    //! @param args The values to calculate hash of.
-    template<class T, class... Args>
-    void HashCombine(size_t& seed, const T& value, const Args&... args)
+    constexpr uint64_t HashCombine(const uint64_t lhs, const uint64_t rhs)
     {
-        eastl::hash<T> hasher;
-        seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        HashCombine(seed, args...);
+        return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
     }
 
 
-    template<class... TArgs>
-    size_t HashAll(const TArgs&... args)
+    template<class T>
+    uint64_t HashAll(const T& value)
     {
-        size_t seed = Internal::HashSecret[0];
-        HashCombine(seed, args...);
-        return seed;
+        return eastl::hash<T>{}(value);
+    }
+
+
+    template<class T, class... TArgs>
+    uint64_t HashAll(const T& value, const TArgs&... args)
+    {
+        return HashCombine(eastl::hash<T>{}(value), HashAll<TArgs...>(args...));
     }
 
 
     struct Hasher final
     {
-        explicit Hasher(const uint64_t seed = Internal::HashSecret[0])
+        explicit constexpr Hasher(const uint64_t seed = Internal::HashSecret[0])
             : m_seed(seed)
             , m_hash(seed)
         {
@@ -207,7 +200,7 @@ namespace FE
         Hasher(Hasher&&) = delete;
         Hasher& operator=(Hasher&&) = delete;
 
-        Hasher& UpdateRaw(const uint64_t hash)
+        constexpr Hasher& UpdateRaw(const uint64_t hash)
         {
             m_hash ^= hash + 0x9e3779b9 + (m_hash << 6) + (m_hash >> 2);
             return *this;
@@ -224,7 +217,7 @@ namespace FE
             return UpdateRaw(eastl::hash<T>()(value));
         }
 
-        [[nodiscard]] uint64_t Finalize()
+        [[nodiscard]] constexpr uint64_t Finalize()
         {
             const uint64_t hash = m_hash;
             m_hash = m_seed;

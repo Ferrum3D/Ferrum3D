@@ -4,25 +4,25 @@ namespace FE::Serialization
 {
     namespace
     {
-        inline constexpr uint32_t kPackedMagic = UINT32_C(0x4b505346);
-        inline constexpr uint32_t kTaggedMagic = UINT32_C(0x47545346);
+        constexpr uint32_t kPackedMagic = UINT32_C(0x4b505346);
+        constexpr uint32_t kTaggedMagic = UINT32_C(0x47545346);
 
 
         struct PackedHeader final
         {
-            uint64_t m_schemaHash;
             uint32_t m_magic;
             uint32_t m_version;
+            uint64_t m_schemaHash;
             uint8_t m_typeID[16];
         };
 
 
         struct TaggedHeader final
         {
-            uint64_t m_schemaHash;
-            uint64_t m_payloadSize;
             uint32_t m_magic;
             uint32_t m_version;
+            uint64_t m_schemaHash;
+            uint64_t m_payloadSize;
             uint8_t m_typeID[16];
         };
 
@@ -35,7 +35,7 @@ namespace FE::Serialization
 
         PackedHeader CreatePackedHeader(const Rtti::TypeID type, const uint32_t version, const uint64_t schemaHash)
         {
-            PackedHeader header{};
+            PackedHeader header = {};
             header.m_schemaHash = schemaHash;
             header.m_magic = kPackedMagic;
             header.m_version = version;
@@ -46,7 +46,7 @@ namespace FE::Serialization
 
         TaggedHeader CreateTaggedHeader(const Rtti::TypeID type, const uint32_t version, const uint64_t schemaHash)
         {
-            TaggedHeader header{};
+            TaggedHeader header = {};
             header.m_schemaHash = schemaHash;
             header.m_magic = kTaggedMagic;
             header.m_version = version;
@@ -134,6 +134,7 @@ namespace FE::Serialization
                 Fail(ErrorCode::kStreamWriteFailed);
                 return false;
             }
+
             return true;
         }
 

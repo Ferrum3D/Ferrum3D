@@ -56,15 +56,31 @@ This only changes the current process environment. It leaves the normal Windows 
   - 130-column limit.
   - Allman-style braces for namespaces, classes, structs, functions, enums, control statements, and extern blocks.
   - `else`, `catch`, and `while` after `do` appear on their own lines with braces.
+  - Always declare classes as `struct`. All public fields and functions must be declared before protected and private.
+  - Declare type template parameters as `class`, not `typename` except in shader code since HLSL only supports `typename`.
   - Pointer and reference stars bind to the type side, for example `Buffer*` and `BufferInstance*&`.
   - Keep short empty functions/lambdas compact only where the formatter allows it.
   - Preserve include blocks and sort includes case-sensitively when changing include lists.
 - Include order in implementation files follows project headers grouped at the top, as in `Buffer.cpp`. Prefer angle-bracket project includes such as `#include <Graphics/Core/Vulkan/Buffer.h>`.
 - Use namespaces in the `FE::...` hierarchy and close nontrivial namespaces with comments, for example `} // namespace FE::Graphics::Vulkan`.
 - Keep anonymous helper functions in an unnamed namespace inside the implementation file when they are local to that translation unit.
-- Prefer early returns for invalid or empty states, as in `Buffer::UpdateDebugNames()` and `Buffer::DecommitMemory()`.
+- Prefer early returns for invalid or empty states.
 - Use existing project diagnostics and helpers instead of ad hoc checks: `FE_Assert`, `FE_AssertDebug`, `FE_DebugBreak`, `VerifyVk`, `FE_PROFILER_ZONE`, `Rtti::AssertCast`, `NativeCast`, and `ImplCast`.
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
+
+## Memory management
+
+Never use `std::unique_ptr` or anything else from the standard library that can allocate memory.
+Instead of `operator new` use allocation functions from `Core/Memory/Memory.h`.
+All memory allocations in the engine must go through the same entry point to enable tracking, DebugHeap etc.
+Classes from `festd` namespace are allowed, e.g. `festd::unique_ptr`, `festd::vector` as they all use engine's global allocator instead of the one provided by the CRT.
+
+Avoid unnecessary temporary memory allocations. Prefer fixed buffers on stack where possible, fixed containers, e.g. `festd::fixed_vector`, `festd::fixed_string`.
+In other cases consider using `festd::inline_vector` or `festd::inline_string` unless it is clear that small buffer optimizations would introduce unnecessary overhead
+like increasing struct sizes or stack usage without reducing allocations in the most common case.
+
+If the code is not intended to run on a dedicated thread, consider using `Memory::FiberTempAllocator`.
+It is a special fiber-local allocator that is fast and doesn't require deallocation. Using it outside of fibers causes undefined behavior.
 
 ## Naming Conventions
 

@@ -61,11 +61,6 @@ namespace FE::Cli
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_01ddd116d09049e498b94100cfb50509(void* storage)
-        {
-            ::new (storage) Command();
-        }
     } // namespace
 
     const Rtti::Type& Command::RTTI_GetType()
@@ -121,8 +116,7 @@ namespace FE::Cli
                                       "FE::Cli::Command",
                                       kBaseClassTypeIDs,
                                       kAttributes,
-                                      kFields,
-                                      &RTTI_DefaultConstruct_01ddd116d09049e498b94100cfb50509);
+                                      kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_01ddd116d09049e498b94100cfb50509(&Command::Reflect);
@@ -215,11 +209,6 @@ namespace FE::Cli
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_0f01e827c9d943f0896947bf6d035b82(void* storage)
-        {
-            ::new (storage) Subcommand();
-        }
     } // namespace
 
     const Rtti::Type& Subcommand::RTTI_GetType()
@@ -256,8 +245,7 @@ namespace FE::Cli
                                          "FE::Cli::Subcommand",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_DefaultConstruct_0f01e827c9d943f0896947bf6d035b82);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_0f01e827c9d943f0896947bf6d035b82(&Subcommand::Reflect);
@@ -1327,11 +1315,6 @@ namespace FE
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_521e15925ff2402b9c858ede1d30798c(void* storage)
-        {
-            ::new (storage) Aabb();
-        }
     } // namespace
 
     const Rtti::Type& Aabb::RTTI_GetType()
@@ -1357,8 +1340,7 @@ namespace FE
                                    "FE::Aabb",
                                    kBaseClassTypeIDs,
                                    kAttributes,
-                                   kFields,
-                                   &RTTI_DefaultConstruct_521e15925ff2402b9c858ede1d30798c);
+                                   kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_521e15925ff2402b9c858ede1d30798c(&Aabb::Reflect);
@@ -2629,11 +2611,6 @@ namespace FE::IO::Async
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_c1752d59034346d0b95a127eb2321cc7(void* storage)
-        {
-            ::new (storage) DefaultAsyncIOBackend();
-        }
     } // namespace
 
     const Rtti::Type& DefaultAsyncIOBackend::RTTI_GetType()
@@ -2674,8 +2651,7 @@ namespace FE::IO::Async
                                                     "FE::IO::Async::DefaultAsyncIOBackend",
                                                     kBaseClassTypeIDs,
                                                     kAttributes,
-                                                    kFields,
-                                                    &RTTI_DefaultConstruct_c1752d59034346d0b95a127eb2321cc7);
+                                                    kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c1752d59034346d0b95a127eb2321cc7(&DefaultAsyncIOBackend::Reflect);
@@ -2715,11 +2691,6 @@ namespace FE::Cli
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        void RTTI_DefaultConstruct_c3c49654fe984ce6b75906d7ef4eaa0f(void* storage)
-        {
-            ::new (storage) Parser();
         }
     } // namespace
 
@@ -2769,8 +2740,7 @@ namespace FE::Cli
                                      "FE::Cli::Parser",
                                      kBaseClassTypeIDs,
                                      kAttributes,
-                                     kFields,
-                                     &RTTI_DefaultConstruct_c3c49654fe984ce6b75906d7ef4eaa0f);
+                                     kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c3c49654fe984ce6b75906d7ef4eaa0f(&Parser::Reflect);

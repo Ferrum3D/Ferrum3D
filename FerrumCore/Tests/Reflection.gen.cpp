@@ -22,11 +22,6 @@ namespace FE::Serialization::Tests
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_8e8f777d28c647f789c6e66e68a2b31d(void* storage)
-        {
-            ::new (storage) PackedDesc();
-        }
     } // namespace
 
     const Rtti::Type& PackedDesc::RTTI_GetType()
@@ -64,8 +59,7 @@ namespace FE::Serialization::Tests
                                          "FE::Serialization::Tests::PackedDesc",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_DefaultConstruct_8e8f777d28c647f789c6e66e68a2b31d);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_8e8f777d28c647f789c6e66e68a2b31d(&PackedDesc::Reflect);
@@ -160,11 +154,6 @@ namespace FE::Serialization::Tests
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        void RTTI_DefaultConstruct_cc51822c73864596a208f4a4950d63cb(void* storage)
-        {
-            ::new (storage) TestObject();
         }
     } // namespace
 
@@ -261,8 +250,7 @@ namespace FE::Serialization::Tests
                                          "FE::Serialization::Tests::TestObject",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_DefaultConstruct_cc51822c73864596a208f4a4950d63cb);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_cc51822c73864596a208f4a4950d63cb(&TestObject::Reflect);
@@ -365,11 +353,6 @@ namespace FE::Cli::Tests
             static Rtti::Type typeInstance;
             return typeInstance;
         }
-
-        void RTTI_DefaultConstruct_d5dd1441e7ec48e5970615434aa507d5(void* storage)
-        {
-            ::new (storage) Build();
-        }
     } // namespace
 
     const Rtti::Type& Build::RTTI_GetType()
@@ -440,8 +423,7 @@ namespace FE::Cli::Tests
                                     "FE::Cli::Tests::Build",
                                     kBaseClassTypeIDs,
                                     kAttributes,
-                                    kFields,
-                                    &RTTI_DefaultConstruct_d5dd1441e7ec48e5970615434aa507d5);
+                                    kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_d5dd1441e7ec48e5970615434aa507d5(&Build::Reflect);
@@ -487,11 +469,6 @@ namespace FE::Cli::Tests
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        void RTTI_DefaultConstruct_ef03ae87b2df4fa0a77db92cc8e2015c(void* storage)
-        {
-            ::new (storage) TestParser();
         }
     } // namespace
 
@@ -560,8 +537,7 @@ namespace FE::Cli::Tests
                                          "FE::Cli::Tests::TestParser",
                                          kBaseClassTypeIDs,
                                          kAttributes,
-                                         kFields,
-                                         &RTTI_DefaultConstruct_ef03ae87b2df4fa0a77db92cc8e2015c);
+                                         kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_ef03ae87b2df4fa0a77db92cc8e2015c(&TestParser::Reflect);

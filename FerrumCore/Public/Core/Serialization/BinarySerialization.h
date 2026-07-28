@@ -3,9 +3,8 @@
 
 namespace FE::Serialization
 {
-    class PackedBinaryContext final : public SerializationContext
+    struct PackedBinaryContext final : public SerializationContext
     {
-    public:
         explicit PackedBinaryContext(IO::IStream* stream);
         ~PackedBinaryContext() override;
 
@@ -35,9 +34,8 @@ namespace FE::Serialization
     };
 
 
-    class TaggedBinaryContext final : public SerializationContext
+    struct TaggedBinaryContext final : public SerializationContext
     {
-    public:
         explicit TaggedBinaryContext(IO::IStream* stream);
         ~TaggedBinaryContext() override;
 

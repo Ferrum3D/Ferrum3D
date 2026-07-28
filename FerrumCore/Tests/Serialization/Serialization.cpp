@@ -180,7 +180,7 @@ namespace FE::Serialization::Tests
 
         auto bytes = stream.GetMutableData();
         ASSERT_GE(bytes.size(), 9);
-        bytes[8] = std::byte{ 0 };
+        bytes[0] = std::byte{ 0 };
 
         stream.Rewind();
         TestObject destination;

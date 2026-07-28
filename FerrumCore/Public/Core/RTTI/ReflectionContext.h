@@ -16,23 +16,25 @@ namespace FE::Rtti
         template<class T>
         void ReflectClass(Type& type, const TypeID id, const festd::ascii_view qualifiedName,
                           const festd::span<const uint8_t> baseTypes, const festd::span<const Attribute> attributes,
-                          const festd::span<const FieldInfo> fields, Type::DefaultConstructor defaultConstructor = nullptr)
+                          const festd::span<const FieldInfo> fields)
         {
             type.m_id = id;
             type.m_name = GetShortName(qualifiedName);
             type.m_qualifiedName = qualifiedName;
-            type.m_defaultConstructor = defaultConstructor;
+
             if constexpr (std::is_default_constructible_v<T>)
             {
-                if (type.m_defaultConstructor == nullptr)
-                    type.m_defaultConstructor = [](void* storage) {
-                        ::new (storage) T();
-                    };
+                type.m_defaultConstructor = [](void* storage) {
+                    ::new (storage) T();
+                };
             }
             if constexpr (std::is_destructible_v<T>)
+            {
                 type.m_destructor = [](void* storage) {
                     static_cast<T*>(storage)->~T();
                 };
+            }
+
             type.m_baseTypes = festd::span(reinterpret_cast<const TypeID*>(baseTypes.data()), baseTypes.size() / sizeof(TypeID));
             type.m_attributes = attributes;
             type.m_fields = fields;

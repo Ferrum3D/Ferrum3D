@@ -3,9 +3,8 @@
 
 namespace FE::Serialization
 {
-    class JsonContext final : public SerializationContext
+    struct JsonContext final : public SerializationContext
     {
-    public:
         explicit JsonContext(IO::IStream* stream);
         ~JsonContext() override;
 

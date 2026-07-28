@@ -4,7 +4,7 @@
 
 namespace FE::Serialization
 {
-    class SerializationContext;
+    struct SerializationContext;
 }
 
 namespace FE::Rtti

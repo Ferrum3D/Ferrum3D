@@ -187,7 +187,7 @@ public:                                                                         
 
 namespace FE::Serialization
 {
-    class SerializationContext;
+    struct SerializationContext;
 }
 
 
