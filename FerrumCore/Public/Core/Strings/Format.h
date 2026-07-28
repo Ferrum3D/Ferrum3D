@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Core/Base/Base.h>
 #include <concepts>
+#include <cstdio>
 #include <festd/string.h>
 #include <itoa/jeaiii_to_text.h>
 
@@ -88,6 +89,56 @@ namespace FE::Fmt
     };
 
 
+    template<Internal::FormattableFloat TFloat>
+    struct HexFloatFormatter final
+    {
+        explicit HexFloatFormatter(const TFloat value)
+        {
+            constexpr int32_t kPrecision = (std::numeric_limits<TFloat>::digits - 1 + 3) / 4;
+            const int32_t size = std::snprintf(m_buffer, sizeof(m_buffer), "%.*a", kPrecision, static_cast<double>(value));
+            FE_Assert(size > 0 && size < sizeof(m_buffer));
+            m_size = size > 0 && size < sizeof(m_buffer) ? static_cast<uint8_t>(size) : 0;
+        }
+
+        [[nodiscard]] festd::string_view View() const
+        {
+            return { m_buffer, m_size };
+        }
+
+        char m_buffer[32];
+        uint8_t m_size;
+    };
+
+
+    template<std::unsigned_integral TInteger>
+    struct HexFormatter final
+    {
+        explicit HexFormatter(const TInteger value)
+        {
+            static constexpr char kDigits[] = "0123456789abcdef";
+            char* output = m_buffer + sizeof(m_buffer);
+            TInteger remaining = value;
+            do
+            {
+                *--output = kDigits[remaining & 0xf];
+                remaining >>= 4;
+            }
+            while (remaining != 0);
+
+            m_size = static_cast<uint8_t>(m_buffer + sizeof(m_buffer) - output);
+            memmove(m_buffer, output, m_size);
+        }
+
+        [[nodiscard]] festd::string_view View() const
+        {
+            return { m_buffer, m_size };
+        }
+
+        char m_buffer[sizeof(TInteger) * 2];
+        uint8_t m_size;
+    };
+
+
     template<class TBuffer, class T>
     struct ValueFormatter
     {
@@ -162,8 +213,7 @@ namespace FE::Fmt
     };
 
     template<class TBuffer, class T>
-        requires Internal::BufferPlusAppendableValue<TBuffer, T>
-        && (!Internal::BufferAppendableValue<TBuffer, T>)
+        requires Internal::BufferPlusAppendableValue<TBuffer, T> && (!Internal::BufferAppendableValue<TBuffer, T>)
     struct ValueFormatter<TBuffer, T>
     {
         void Format(TBuffer& buffer, const T& value) const

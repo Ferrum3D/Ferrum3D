@@ -43,6 +43,10 @@ namespace FE::Parser
     ResultCode TryParseDouble(festd::string_view s, double& result);
 
 
+    //! @brief Convert a hexadecimal floating-point representation to a double.
+    ResultCode TryParseHexDouble(festd::string_view s, double& result);
+
+
     template<class T>
     festd::expected<T, ResultCode> TryParse(const festd::string_view s)
     {

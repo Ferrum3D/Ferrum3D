@@ -1,6 +1,5 @@
 #pragma once
 #include <Core/Serialization/Serialization.h>
-#include <memory>
 
 namespace FE::Serialization
 {
@@ -12,7 +11,7 @@ namespace FE::Serialization
 
     private:
         struct Impl;
-        std::unique_ptr<Impl> m_impl;
+        festd::unique_ptr<Impl> m_impl;
 
         void Reset() override;
         bool BeginDocument(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) override;
@@ -25,8 +24,13 @@ namespace FE::Serialization
         void EndArrayImpl() override;
         bool BeginElement(uint32_t index) override;
         void EndElement() override;
-        void TransferScalar(ScalarKind kind, void* value, uint32_t byteSize) override;
-        void TransferBytes(void* value, uint32_t byteSize) override;
-        void TransferString(festd::string* output, festd::string_view input) override;
+        void StoreScalarImpl(ScalarKind kind, const void* value, uint32_t byteSize) override;
+        void LoadScalarImpl(ScalarKind kind, void* value, uint32_t byteSize) override;
+        void StoreBytesImpl(const void* value, uint32_t byteSize) override;
+        void LoadBytesImpl(void* value, uint32_t byteSize) override;
+        void StoreStringImpl(festd::string_view value) override;
+        uint32_t LoadStringSizeImpl() override;
+        void LoadStringImpl(festd::span<char> buffer) override;
+        [[nodiscard]] uint64_t GetCurrentOffset() const override;
     };
 } // namespace FE::Serialization

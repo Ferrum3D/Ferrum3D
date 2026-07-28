@@ -1,4 +1,5 @@
 #include <Core/Serialization/Serialization.h>
+#include <Core/Strings/Format.h>
 
 namespace FE::Serialization
 {
@@ -12,7 +13,7 @@ namespace FE::Serialization
             return false;
 
         if (!type.m_serialize(*this, value))
-            Fail();
+            Fail(ErrorCode::kSerializerError);
         EndDocument();
         return m_isValid;
     }
@@ -28,7 +29,7 @@ namespace FE::Serialization
             return false;
 
         if (!type.m_deserialize(*this, value))
-            Fail();
+            Fail(ErrorCode::kSerializerError);
         EndDocument();
         return m_isValid;
     }
@@ -42,19 +43,8 @@ namespace FE::Serialization
             return context.IsValid();
         }
 
-        static constexpr char kHex[] = "0123456789abcdef";
-        char buffer[36];
-        uint32_t outputIndex = 0;
-        for (uint32_t byteIndex = 0; byteIndex < 16; ++byteIndex)
-        {
-            if (byteIndex == 4 || byteIndex == 6 || byteIndex == 8 || byteIndex == 10)
-                buffer[outputIndex++] = '-';
-
-            buffer[outputIndex++] = kHex[value.m_bytes[byteIndex] >> 4];
-            buffer[outputIndex++] = kHex[value.m_bytes[byteIndex] & 0xf];
-        }
-
-        context.String(festd::string_view{ buffer, sizeof(buffer) });
+        const festd::fixed_string formatted = Fmt::FixedFormat("{}", value);
+        context.StoreString(formatted);
         return context.IsValid();
     }
 
@@ -67,12 +57,23 @@ namespace FE::Serialization
             return context.IsValid();
         }
 
-        festd::string string;
-        context.String(string);
+        const uint32_t size = context.LoadStringSize();
+        if (!context.IsValid())
+            return false;
+        if (size != 36)
+        {
+            context.ReportError(ErrorCode::kInvalidString);
+            return false;
+        }
+
+        char buffer[36];
+        context.LoadString(festd::span<char>{ buffer });
         if (!context.IsValid())
             return false;
 
-        value = Uuid::Parse(festd::ascii_view{ string.data(), string.size() });
-        return value.IsValid();
+        value = Uuid::Parse(festd::ascii_view{ buffer, sizeof(buffer) });
+        if (!value.IsValid())
+            context.ReportError(ErrorCode::kInvalidString);
+        return context.IsValid();
     }
 } // namespace FE::Serialization

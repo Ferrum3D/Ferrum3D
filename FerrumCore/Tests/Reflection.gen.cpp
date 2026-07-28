@@ -72,50 +72,57 @@ namespace FE::Serialization::Tests
 
     bool PackedDesc::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
         const auto value_m_width = m_width;
-        context.Field("m_width", value_m_width);
+        object.Field("m_width", value_m_width);
         const auto value_m_height = m_height;
-        context.Field("m_height", value_m_height);
+        object.Field("m_height", value_m_height);
         const auto value_m_flags = m_flags;
-        context.Field("m_flags", value_m_flags);
-        context.Field("m_scale", m_scale);
-        context.EndObject();
+        object.Field("m_flags", value_m_flags);
+        object.Field("m_scale", m_scale);
         return context.IsValid();
     }
 
     bool PackedDesc::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
         auto value_m_width = m_width;
-        context.Field("m_width", value_m_width);
+        object.Field("m_width", value_m_width);
         m_width = value_m_width;
         auto value_m_height = m_height;
-        context.Field("m_height", value_m_height);
+        object.Field("m_height", value_m_height);
         m_height = value_m_height;
         auto value_m_flags = m_flags;
-        context.Field("m_flags", value_m_flags);
+        object.Field("m_flags", value_m_flags);
         m_flags = value_m_flags;
-        context.Field("m_scale", m_scale);
-        context.EndObject();
+        object.Field("m_scale", m_scale);
         return context.IsValid();
     }
 
     uint64_t PackedDesc::RTTI_GetSerializationSchemaHash()
     {
-        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_width", 7));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_width)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_height", 8));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_height)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_flags", 7));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_flags)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_scale", 7));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_scale)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, 0);
-        return result;
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x8e, 0x8f, 0x77, 0x7d, 0x28, 0xc6, 0x47, 0xf7, 0x89, 0xc6, 0xe6, 0x6e, 0x68, 0xa2, 0xb3, 0x1d,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_width", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_width)>());
+            hasher.Update("m_height", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_height)>());
+            hasher.Update("m_flags", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_flags)>());
+            hasher.Update("m_scale", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_scale)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+        return kHash;
     }
 
     uint32_t PackedDesc::RTTI_GetSerializationVersion()
@@ -262,46 +269,52 @@ namespace FE::Serialization::Tests
 
     bool TestObject::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
-        context.Field("m_id", m_id);
-        context.Field("m_desc", m_desc);
-        context.Field("m_values", m_values);
-        context.Field("m_coordinates", m_coordinates);
-        context.Field("m_name", m_name);
-        context.EndObject();
+        object.Field("m_id", m_id);
+        object.Field("m_desc", m_desc);
+        object.Field("m_values", m_values);
+        object.Field("m_coordinates", m_coordinates);
+        object.Field("m_name", m_name);
         return context.IsValid();
     }
 
     bool TestObject::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
-        context.Field("m_id", m_id);
-        context.Field("m_desc", m_desc);
-        context.Field("m_values", m_values);
-        context.Field("m_coordinates", m_coordinates);
-        context.Field("m_name", m_name);
-        context.EndObject();
+        object.Field("m_id", m_id);
+        object.Field("m_desc", m_desc);
+        object.Field("m_values", m_values);
+        object.Field("m_coordinates", m_coordinates);
+        object.Field("m_name", m_name);
         return context.IsValid();
     }
 
     uint64_t TestObject::RTTI_GetSerializationSchemaHash()
     {
-        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_id", 4));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_id)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_desc", 6));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_desc)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_values", 8));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_values)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_coordinates", 13));
-        result =
-            FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_coordinates)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::CompileTimeHash("m_name", 6));
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, FE::Serialization::GetSchemaHash<decltype(m_name)>());
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, kSerializationVersion);
-        return result;
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xcc, 0x51, 0x82, 0x2c, 0x73, 0x86, 0x45, 0x96, 0xa2, 0x08, 0xf4, 0xa4, 0x95, 0x0d, 0x63, 0xcb,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_id", 4);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_id)>());
+            hasher.Update("m_desc", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_desc)>());
+            hasher.Update("m_values", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_values)>());
+            hasher.Update("m_coordinates", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_coordinates)>());
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update(kSerializationVersion);
+            return hasher.Finalize();
+        }();
+        return kHash;
     }
 
     uint32_t TestObject::RTTI_GetSerializationVersion()

@@ -8,43 +8,50 @@ namespace FE::Serialization
         inline constexpr uint32_t kTaggedMagic = UINT32_C(0x47545346);
 
 
-        template<class T>
-        bool Write(IO::IStream* stream, const T& value)
+        struct PackedHeader final
         {
-            return stream->WriteFromBuffer(&value, sizeof(value)) == sizeof(value);
+            uint64_t m_schemaHash;
+            uint32_t m_magic;
+            uint32_t m_version;
+            uint8_t m_typeID[16];
+        };
+
+
+        struct TaggedHeader final
+        {
+            uint64_t m_schemaHash;
+            uint64_t m_payloadSize;
+            uint32_t m_magic;
+            uint32_t m_version;
+            uint8_t m_typeID[16];
+        };
+
+
+        static_assert(sizeof(PackedHeader) == 32);
+        static_assert(sizeof(TaggedHeader) == 40);
+        static_assert(std::is_trivially_copyable_v<PackedHeader>);
+        static_assert(std::is_trivially_copyable_v<TaggedHeader>);
+
+
+        PackedHeader CreatePackedHeader(const Rtti::TypeID type, const uint32_t version, const uint64_t schemaHash)
+        {
+            PackedHeader header{};
+            header.m_schemaHash = schemaHash;
+            header.m_magic = kPackedMagic;
+            header.m_version = version;
+            memcpy(header.m_typeID, type.data(), type.size());
+            return header;
         }
 
 
-        template<class T>
-        bool Read(IO::IStream* stream, T& value)
+        TaggedHeader CreateTaggedHeader(const Rtti::TypeID type, const uint32_t version, const uint64_t schemaHash)
         {
-            return stream->ReadToBuffer(&value, sizeof(value)) == sizeof(value);
-        }
-
-
-        bool WriteHeader(IO::IStream* stream, const uint32_t magic, const Rtti::TypeID type, const uint32_t version,
-                         const uint64_t schemaHash)
-        {
-            return Write(stream, magic) && stream->WriteFromBuffer(type.data(), type.size()) == type.size()
-                && Write(stream, version) && Write(stream, schemaHash);
-        }
-
-
-        bool ReadHeader(IO::IStream* stream, const uint32_t expectedMagic, const Rtti::TypeID expectedType,
-                        const uint64_t expectedSchema, uint32_t& version, uint64_t& schemaHash)
-        {
-            uint32_t magic = 0;
-            Rtti::TypeID type;
-            if (!Read(stream, magic) || magic != expectedMagic || stream->ReadToBuffer(type.data(), type.size()) != type.size()
-                || !Read(stream, version) || !Read(stream, schemaHash))
-            {
-                return false;
-            }
-
-            if (expectedType.IsValid() && type != expectedType)
-                return false;
-
-            return expectedSchema == 0 || schemaHash == expectedSchema;
+            TaggedHeader header{};
+            header.m_schemaHash = schemaHash;
+            header.m_magic = kTaggedMagic;
+            header.m_version = version;
+            memcpy(header.m_typeID, type.data(), type.size());
+            return header;
         }
 
 
@@ -75,10 +82,13 @@ namespace FE::Serialization
 
         bool ReadFrame(InputFrame& frame, void* destination, const size_t size)
         {
+            if (frame.m_position > frame.m_size)
+                return false;
             if (size > frame.m_size - frame.m_position)
                 return false;
 
-            memcpy(destination, frame.m_data + frame.m_position, size);
+            if (size != 0)
+                memcpy(destination, frame.m_data + frame.m_position, size);
             frame.m_position += size;
             return true;
         }
@@ -93,12 +103,13 @@ namespace FE::Serialization
         }
 
         IO::IStream* m_stream;
+        uint32_t m_pendingStringSize = 0;
     };
 
 
     PackedBinaryContext::PackedBinaryContext(IO::IStream* stream)
         : SerializationContext(Format::kPackedBinary)
-        , m_impl(std::make_unique<Impl>(stream))
+        , m_impl(festd::make_unique<Impl>(stream))
     {
         FE_Assert(stream != nullptr);
     }
@@ -107,19 +118,52 @@ namespace FE::Serialization
     PackedBinaryContext::~PackedBinaryContext() = default;
 
 
-    void PackedBinaryContext::Reset() {}
+    void PackedBinaryContext::Reset()
+    {
+        m_impl->m_pendingStringSize = 0;
+    }
 
 
     bool PackedBinaryContext::BeginDocument(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
     {
         if (IsSerializing())
-            return WriteHeader(m_impl->m_stream, kPackedMagic, expectedType, version, schemaHash);
+        {
+            const PackedHeader header = CreatePackedHeader(expectedType, version, schemaHash);
+            if (!m_impl->m_stream->Write(header))
+            {
+                Fail(ErrorCode::kStreamWriteFailed);
+                return false;
+            }
+            return true;
+        }
 
-        const bool result =
-            ReadHeader(m_impl->m_stream, kPackedMagic, expectedType, schemaHash, m_serializedVersion, m_serializedSchemaHash);
-        if (!result)
-            Fail();
-        return result;
+        PackedHeader header{};
+        if (!m_impl->m_stream->Read(header))
+        {
+            Fail(ErrorCode::kStreamReadFailed);
+            return false;
+        }
+        if (header.m_magic != kPackedMagic)
+        {
+            Fail(ErrorCode::kInvalidHeader);
+            return false;
+        }
+
+        const Rtti::TypeID serializedType = Rtti::TypeID::LoadUnaligned(header.m_typeID);
+        if (expectedType.IsValid() && serializedType != expectedType)
+        {
+            Fail(ErrorCode::kTypeMismatch);
+            return false;
+        }
+        if (schemaHash != 0 && header.m_schemaHash != schemaHash)
+        {
+            Fail(ErrorCode::kSchemaMismatch);
+            return false;
+        }
+
+        m_serializedVersion = header.m_version;
+        m_serializedSchemaHash = header.m_schemaHash;
+        return true;
     }
 
 
@@ -138,15 +182,9 @@ namespace FE::Serialization
 
     bool PackedBinaryContext::BeginArrayImpl(uint32_t& size)
     {
-        if (IsSerializing())
-        {
-            if (!Write(m_impl->m_stream, size))
-                Fail();
-        }
-        else if (!Read(m_impl->m_stream, size))
-        {
-            Fail();
-        }
+        const bool succeeded = IsSerializing() ? m_impl->m_stream->Write(size) : m_impl->m_stream->Read(size);
+        if (!succeeded)
+            Fail(IsSerializing() ? ErrorCode::kStreamWriteFailed : ErrorCode::kStreamReadFailed);
         return IsValid();
     }
 
@@ -159,40 +197,69 @@ namespace FE::Serialization
     void PackedBinaryContext::EndElement() {}
 
 
-    void PackedBinaryContext::TransferScalar(ScalarKind, void* value, const uint32_t byteSize)
+    void PackedBinaryContext::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
     {
-        TransferBytes(value, byteSize);
+        StoreBytesImpl(value, byteSize);
     }
 
 
-    void PackedBinaryContext::TransferBytes(void* value, const uint32_t byteSize)
+    void PackedBinaryContext::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
     {
-        const size_t transferred = IsSerializing() ? m_impl->m_stream->WriteFromBuffer(value, byteSize)
-                                                   : m_impl->m_stream->ReadToBuffer(value, byteSize);
-        if (transferred != byteSize)
-            Fail();
+        LoadBytesImpl(value, byteSize);
     }
 
 
-    void PackedBinaryContext::TransferString(festd::string* output, const festd::string_view input)
+    void PackedBinaryContext::StoreBytesImpl(const void* value, const uint32_t byteSize)
     {
-        uint32_t size = output ? 0 : input.size();
-        if (IsSerializing())
+        if (m_impl->m_stream->WriteFromBuffer(value, byteSize) != byteSize)
+            Fail(ErrorCode::kStreamWriteFailed);
+    }
+
+
+    void PackedBinaryContext::LoadBytesImpl(void* value, const uint32_t byteSize)
+    {
+        if (m_impl->m_stream->ReadToBuffer(value, byteSize) != byteSize)
+            Fail(ErrorCode::kStreamReadFailed);
+    }
+
+
+    void PackedBinaryContext::StoreStringImpl(const festd::string_view value)
+    {
+        const uint32_t size = value.size();
+        if (!m_impl->m_stream->Write(size))
         {
-            if (!Write(m_impl->m_stream, size) || (size != 0 && m_impl->m_stream->WriteFromBuffer(input.data(), size) != size))
-                Fail();
+            Fail(ErrorCode::kStreamWriteFailed);
             return;
         }
+        if (size != 0 && m_impl->m_stream->WriteFromBuffer(value.data(), size) != size)
+            Fail(ErrorCode::kStreamWriteFailed);
+    }
 
-        if (!Read(m_impl->m_stream, size))
+
+    uint32_t PackedBinaryContext::LoadStringSizeImpl()
+    {
+        if (!m_impl->m_stream->Read(m_impl->m_pendingStringSize))
+            Fail(ErrorCode::kStreamReadFailed);
+        return m_impl->m_pendingStringSize;
+    }
+
+
+    void PackedBinaryContext::LoadStringImpl(const festd::span<char> buffer)
+    {
+        if (buffer.size() != m_impl->m_pendingStringSize)
         {
-            Fail();
+            Fail(ErrorCode::kMalformedData);
             return;
         }
+        if (!buffer.empty() && m_impl->m_stream->ReadToBuffer(buffer.data(), buffer.size()) != buffer.size())
+            Fail(ErrorCode::kStreamReadFailed);
+        m_impl->m_pendingStringSize = 0;
+    }
 
-        output->resize_uninitialized(size);
-        if (size != 0 && m_impl->m_stream->ReadToBuffer(output->data(), size) != size)
-            Fail();
+
+    uint64_t PackedBinaryContext::GetCurrentOffset() const
+    {
+        return m_impl->m_stream->Tell();
     }
 
 
@@ -210,17 +277,19 @@ namespace FE::Serialization
         }
 
         IO::IStream* m_stream;
+        TaggedHeader m_outputHeader{};
         festd::vector<festd::vector<std::byte>> m_outputFrames;
         festd::vector<uint64_t> m_outputFieldIDs;
         festd::vector<InputFrame> m_inputFrames;
         festd::vector<InputArray> m_inputArrays;
         festd::vector<std::byte> m_inputStorage;
+        uint32_t m_pendingStringSize = 0;
     };
 
 
     TaggedBinaryContext::TaggedBinaryContext(IO::IStream* stream)
         : SerializationContext(Format::kTaggedBinary)
-        , m_impl(std::make_unique<Impl>(stream))
+        , m_impl(festd::make_unique<Impl>(stream))
     {
         FE_Assert(stream != nullptr);
     }
@@ -231,11 +300,13 @@ namespace FE::Serialization
 
     void TaggedBinaryContext::Reset()
     {
+        m_impl->m_outputHeader = {};
         m_impl->m_outputFrames.clear();
         m_impl->m_outputFieldIDs.clear();
         m_impl->m_inputFrames.clear();
         m_impl->m_inputArrays.clear();
         m_impl->m_inputStorage.clear();
+        m_impl->m_pendingStringSize = 0;
     }
 
 
@@ -243,33 +314,46 @@ namespace FE::Serialization
     {
         if (IsSerializing())
         {
-            if (!WriteHeader(m_impl->m_stream, kTaggedMagic, expectedType, version, schemaHash))
-            {
-                Fail();
-                return false;
-            }
+            m_impl->m_outputHeader = CreateTaggedHeader(expectedType, version, schemaHash);
             m_impl->m_outputFrames.emplace_back();
             return true;
         }
 
-        uint32_t magic = 0;
-        Rtti::TypeID type;
-        uint64_t payloadSize = 0;
-        if (!Read(m_impl->m_stream, magic) || magic != kTaggedMagic
-            || m_impl->m_stream->ReadToBuffer(type.data(), type.size()) != type.size()
-            || !Read(m_impl->m_stream, m_serializedVersion) || !Read(m_impl->m_stream, m_serializedSchemaHash)
-            || !Read(m_impl->m_stream, payloadSize) || (expectedType.IsValid() && type != expectedType)
-            || payloadSize > Constants::kMaxU32)
+        TaggedHeader header{};
+        if (!m_impl->m_stream->Read(header))
         {
-            Fail();
+            Fail(ErrorCode::kStreamReadFailed);
+            return false;
+        }
+        if (header.m_magic != kTaggedMagic)
+        {
+            Fail(ErrorCode::kInvalidHeader);
             return false;
         }
 
-        m_impl->m_inputStorage.resize(static_cast<uint32_t>(payloadSize));
-        if (payloadSize != 0 && m_impl->m_stream->ReadToBuffer(m_impl->m_inputStorage.data(), payloadSize) != payloadSize)
+        const Rtti::TypeID serializedType = Rtti::TypeID::LoadUnaligned(header.m_typeID);
+        if (expectedType.IsValid() && serializedType != expectedType)
         {
-            Fail();
+            Fail(ErrorCode::kTypeMismatch);
             return false;
+        }
+        if (header.m_payloadSize > Constants::kMaxU32)
+        {
+            Fail(ErrorCode::kSizeLimitExceeded);
+            return false;
+        }
+
+        m_serializedVersion = header.m_version;
+        m_serializedSchemaHash = header.m_schemaHash;
+        m_impl->m_inputStorage.resize(static_cast<uint32_t>(header.m_payloadSize));
+        if (header.m_payloadSize != 0)
+        {
+            const size_t bytesRead = m_impl->m_stream->ReadToBuffer(m_impl->m_inputStorage.data(), header.m_payloadSize);
+            if (bytesRead != header.m_payloadSize)
+            {
+                Fail(ErrorCode::kStreamReadFailed);
+                return false;
+            }
         }
 
         m_impl->m_inputFrames.push_back({ m_impl->m_inputStorage.data(), m_impl->m_inputStorage.size(), 0 });
@@ -284,10 +368,14 @@ namespace FE::Serialization
 
         FE_Assert(m_impl->m_outputFrames.size() == 1);
         const auto& payload = m_impl->m_outputFrames.back();
-        const uint64_t payloadSize = payload.size();
-        if (!Write(m_impl->m_stream, payloadSize)
-            || (payloadSize != 0 && m_impl->m_stream->WriteFromBuffer(payload.data(), payloadSize) != payloadSize))
-            Fail();
+        m_impl->m_outputHeader.m_payloadSize = payload.size();
+        if (!m_impl->m_stream->Write(m_impl->m_outputHeader))
+        {
+            Fail(ErrorCode::kStreamWriteFailed);
+            return;
+        }
+        if (!payload.empty() && m_impl->m_stream->WriteFromBuffer(payload.data(), payload.size()) != payload.size())
+            Fail(ErrorCode::kStreamWriteFailed);
     }
 
 
@@ -313,10 +401,19 @@ namespace FE::Serialization
         {
             uint64_t currentID = 0;
             uint64_t fieldSize = 0;
-            if (!ReadFrame(scanner, &currentID, sizeof(currentID)) || !ReadFrame(scanner, &fieldSize, sizeof(fieldSize))
-                || fieldSize > scanner.m_size - scanner.m_position)
+            if (!ReadFrame(scanner, &currentID, sizeof(currentID)))
             {
-                Fail();
+                Fail(ErrorCode::kMalformedData);
+                return false;
+            }
+            if (!ReadFrame(scanner, &fieldSize, sizeof(fieldSize)))
+            {
+                Fail(ErrorCode::kMalformedData);
+                return false;
+            }
+            if (fieldSize > scanner.m_size - scanner.m_position)
+            {
+                Fail(ErrorCode::kMalformedData);
                 return false;
             }
 
@@ -345,11 +442,10 @@ namespace FE::Serialization
             Append(parent, fieldID);
             Append(parent, static_cast<uint64_t>(payload.size()));
             AppendBytes(parent, payload.data(), payload.size());
+            return;
         }
-        else
-        {
-            m_impl->m_inputFrames.pop_back();
-        }
+
+        m_impl->m_inputFrames.pop_back();
     }
 
 
@@ -364,7 +460,7 @@ namespace FE::Serialization
         InputFrame arrayFrame = m_impl->m_inputFrames.back();
         if (!ReadFrame(arrayFrame, &size, sizeof(size)))
         {
-            Fail();
+            Fail(ErrorCode::kMalformedData);
             return false;
         }
 
@@ -390,10 +486,14 @@ namespace FE::Serialization
 
         auto& array = m_impl->m_inputArrays.back();
         uint64_t elementSize = 0;
-        if (!ReadFrame(array.m_frame, &elementSize, sizeof(elementSize))
-            || elementSize > array.m_frame.m_size - array.m_frame.m_position)
+        if (!ReadFrame(array.m_frame, &elementSize, sizeof(elementSize)))
         {
-            Fail();
+            Fail(ErrorCode::kMalformedData);
+            return false;
+        }
+        if (elementSize > array.m_frame.m_size - array.m_frame.m_position)
+        {
+            Fail(ErrorCode::kMalformedData);
             return false;
         }
 
@@ -412,51 +512,89 @@ namespace FE::Serialization
             auto& parent = m_impl->m_outputFrames.back();
             Append(parent, static_cast<uint64_t>(payload.size()));
             AppendBytes(parent, payload.data(), payload.size());
-        }
-        else
-        {
-            m_impl->m_inputFrames.pop_back();
-        }
-    }
-
-
-    void TaggedBinaryContext::TransferScalar(ScalarKind, void* value, const uint32_t byteSize)
-    {
-        TransferBytes(value, byteSize);
-    }
-
-
-    void TaggedBinaryContext::TransferBytes(void* value, const uint32_t byteSize)
-    {
-        if (IsSerializing())
-        {
-            AppendBytes(m_impl->m_outputFrames.back(), value, byteSize);
-        }
-        else if (!ReadFrame(m_impl->m_inputFrames.back(), value, byteSize))
-        {
-            Fail();
-        }
-    }
-
-
-    void TaggedBinaryContext::TransferString(festd::string* output, const festd::string_view input)
-    {
-        uint32_t size = output ? 0 : input.size();
-        if (IsSerializing())
-        {
-            Append(m_impl->m_outputFrames.back(), size);
-            AppendBytes(m_impl->m_outputFrames.back(), input.data(), size);
             return;
         }
 
+        m_impl->m_inputFrames.pop_back();
+    }
+
+
+    void TaggedBinaryContext::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
+    {
+        StoreBytesImpl(value, byteSize);
+    }
+
+
+    void TaggedBinaryContext::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
+    {
+        LoadBytesImpl(value, byteSize);
+    }
+
+
+    void TaggedBinaryContext::StoreBytesImpl(const void* value, const uint32_t byteSize)
+    {
+        AppendBytes(m_impl->m_outputFrames.back(), value, byteSize);
+    }
+
+
+    void TaggedBinaryContext::LoadBytesImpl(void* value, const uint32_t byteSize)
+    {
+        if (!ReadFrame(m_impl->m_inputFrames.back(), value, byteSize))
+            Fail(ErrorCode::kMalformedData);
+    }
+
+
+    void TaggedBinaryContext::StoreStringImpl(const festd::string_view value)
+    {
+        const uint32_t size = value.size();
+        Append(m_impl->m_outputFrames.back(), size);
+        AppendBytes(m_impl->m_outputFrames.back(), value.data(), size);
+    }
+
+
+    uint32_t TaggedBinaryContext::LoadStringSizeImpl()
+    {
         InputFrame& frame = m_impl->m_inputFrames.back();
-        if (!ReadFrame(frame, &size, sizeof(size)) || size > frame.m_size - frame.m_position)
+        if (!ReadFrame(frame, &m_impl->m_pendingStringSize, sizeof(m_impl->m_pendingStringSize)))
         {
-            Fail();
+            Fail(ErrorCode::kMalformedData);
+            return 0;
+        }
+        if (m_impl->m_pendingStringSize > frame.m_size - frame.m_position)
+        {
+            Fail(ErrorCode::kMalformedData);
+            return 0;
+        }
+        return m_impl->m_pendingStringSize;
+    }
+
+
+    void TaggedBinaryContext::LoadStringImpl(const festd::span<char> buffer)
+    {
+        if (buffer.size() != m_impl->m_pendingStringSize)
+        {
+            Fail(ErrorCode::kMalformedData);
             return;
         }
+        if (!ReadFrame(m_impl->m_inputFrames.back(), buffer.data(), buffer.size()))
+        {
+            Fail(ErrorCode::kMalformedData);
+            return;
+        }
+        m_impl->m_pendingStringSize = 0;
+    }
 
-        output->assign(reinterpret_cast<const char*>(frame.m_data + frame.m_position), size);
-        frame.m_position += size;
+
+    uint64_t TaggedBinaryContext::GetCurrentOffset() const
+    {
+        if (IsSerializing())
+            return m_impl->m_stream->Tell();
+        if (m_impl->m_inputFrames.empty())
+            return m_impl->m_stream->Tell();
+        if (m_impl->m_inputStorage.empty())
+            return m_impl->m_stream->Tell();
+
+        const InputFrame& frame = m_impl->m_inputFrames.back();
+        return sizeof(TaggedHeader) + static_cast<uint64_t>(frame.m_data - m_impl->m_inputStorage.data()) + frame.m_position;
     }
 } // namespace FE::Serialization

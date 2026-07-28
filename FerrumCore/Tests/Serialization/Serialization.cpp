@@ -90,6 +90,12 @@ namespace FE::Serialization::Tests
                 return m_data;
             }
 
+            [[nodiscard]] festd::span<std::byte> GetMutableData()
+            {
+                FlushWrites();
+                return m_data;
+            }
+
         private:
             festd::vector<std::byte> m_data;
             size_t m_position = 0;
@@ -165,6 +171,26 @@ namespace FE::Serialization::Tests
     }
 
 
+    TEST(Serialization, BinaryErrorIncludesCodeAndOffset)
+    {
+        MemoryStream stream;
+        const TestObject source = CreateObject();
+        PackedBinaryContext writer(&stream);
+        ASSERT_TRUE(writer.Store(source));
+
+        auto bytes = stream.GetMutableData();
+        ASSERT_GE(bytes.size(), 9);
+        bytes[8] = std::byte{ 0 };
+
+        stream.Rewind();
+        TestObject destination;
+        PackedBinaryContext reader(&stream);
+        EXPECT_FALSE(reader.Load(destination));
+        EXPECT_EQ(reader.GetError().m_code, ErrorCode::kInvalidHeader);
+        EXPECT_EQ(reader.GetError().m_byteOffset, 32);
+    }
+
+
     TEST(Serialization, TaggedBinaryRoundTrip)
     {
         TestRoundTrip<TaggedBinaryContext>();
@@ -191,10 +217,10 @@ namespace FE::Serialization::Tests
         oldType.m_serializationSchemaHash = 11;
         oldType.m_serialize = [](SerializationContext& context, const void* value) {
             const auto& typedValue = *static_cast<const OldValue*>(value);
-            if (!context.BeginObject())
+            auto object = context.BeginObject();
+            if (!object)
                 return false;
-            context.Field("m_common", typedValue.m_common).Field("m_removed", typedValue.m_removed);
-            context.EndObject();
+            object.Field("m_common", typedValue.m_common).Field("m_removed", typedValue.m_removed);
             return context.IsValid();
         };
 
@@ -204,10 +230,10 @@ namespace FE::Serialization::Tests
         newType.m_serializationSchemaHash = 22;
         newType.m_deserialize = [](SerializationContext& context, void* value) {
             auto& typedValue = *static_cast<NewValue*>(value);
-            if (!context.BeginObject())
+            auto object = context.BeginObject();
+            if (!object)
                 return false;
-            context.Field("m_common", typedValue.m_common).Field("m_added", typedValue.m_added);
-            context.EndObject();
+            object.Field("m_common", typedValue.m_common).Field("m_added", typedValue.m_added);
             return context.IsValid();
         };
 
@@ -246,6 +272,40 @@ namespace FE::Serialization::Tests
     }
 
 
+    TEST(Serialization, JsonEmptyValuesRoundTrip)
+    {
+        MemoryStream stream;
+        TestObject source = CreateObject();
+        source.m_name.clear();
+        source.m_values.clear();
+
+        JsonContext writer(&stream);
+        ASSERT_TRUE(writer.Store(source));
+
+        stream.Rewind();
+        TestObject destination;
+        JsonContext reader(&stream);
+        ASSERT_TRUE(reader.Load(destination));
+        ExpectEqual(source, destination);
+    }
+
+
+    TEST(Serialization, JsonParseErrorIncludesLineAndColumn)
+    {
+        MemoryStream stream;
+        static constexpr char kInvalidJson[] = "{\n  \"$type\": ]\n}";
+        ASSERT_EQ(stream.WriteFromBuffer(kInvalidJson, sizeof(kInvalidJson) - 1), sizeof(kInvalidJson) - 1);
+        stream.Rewind();
+
+        TestObject destination;
+        JsonContext reader(&stream);
+        EXPECT_FALSE(reader.Load(destination));
+        EXPECT_EQ(reader.GetError().m_code, ErrorCode::kJsonParseError);
+        EXPECT_EQ(reader.GetError().m_line, 2);
+        EXPECT_GT(reader.GetError().m_column, 1);
+    }
+
+
     TEST(Serialization, DynamicCallbacksAndLifecycle)
     {
         const Rtti::Type& type = Rtti::GetType<TestObject>();
@@ -256,7 +316,7 @@ namespace FE::Serialization::Tests
         EXPECT_EQ(type.m_serializationVersion, TestObject::kSerializationVersion);
         EXPECT_NE(type.m_serializationSchemaHash, 0);
 
-        void* storage = ::operator new(type.m_size, std::align_val_t(type.m_alignment));
+        void* storage = Memory::DefaultAllocate(type.m_size, type.m_alignment);
         type.m_defaultConstructor(storage);
 
         MemoryStream stream;
@@ -270,7 +330,7 @@ namespace FE::Serialization::Tests
         ExpectEqual(source, *static_cast<TestObject*>(storage));
 
         type.m_destructor(storage);
-        ::operator delete(storage, std::align_val_t(type.m_alignment));
+        Memory::DefaultFree(storage);
     }
 
 

@@ -230,60 +230,63 @@ namespace {{ type.namespace }}
 
     bool {{ type.name }}::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
         {%- for base in type.direct_bases %}
-        context.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
+        object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
         const auto value_{{ field.name }} = {{ field.name }};
-        context.Field("{{ field.name }}", value_{{ field.name }});
+        object.Field("{{ field.name }}", value_{{ field.name }});
         {%- else %}
-        context.Field("{{ field.name }}", {{ field.name }});
+        object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
-        context.EndObject();
         return context.IsValid();
     }
 
     bool {{ type.name }}::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
     {
-        if (!context.BeginObject())
+        auto object = context.BeginObject();
+        if (!object)
             return false;
         {%- for base in type.direct_bases %}
-        context.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
+        object.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
         auto value_{{ field.name }} = {{ field.name }};
-        context.Field("{{ field.name }}", value_{{ field.name }});
+        object.Field("{{ field.name }}", value_{{ field.name }});
         {{ field.name }} = value_{{ field.name }};
         {%- else %}
-        context.Field("{{ field.name }}", {{ field.name }});
+        object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
-        context.EndObject();
         return context.IsValid();
     }
 
     uint64_t {{ type.name }}::RTTI_GetSerializationSchemaHash()
     {
-        uint64_t result = FE::Serialization::Internal::kSchemaSeed;
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                {% for b in type.id.bytes %}{{ '0x%02x' % b }}, {% endfor %}
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
         {%- for base in type.direct_bases %}
-        result = FE::Serialization::Internal::CombineSchemaHashes(
-            result, FE::CompileTimeHash("$base:{{ base.qualified_name }}", {{ 6 + (base.qualified_name|length) }}));
-        result = FE::Serialization::Internal::CombineSchemaHashes(
-            result, FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
+            hasher.Update("$base:{{ base.qualified_name }}", {{ 6 + (base.qualified_name|length) }});
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<{{ base.qualified_name }}>());
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-        result = FE::Serialization::Internal::CombineSchemaHashes(
-            result, FE::CompileTimeHash("{{ field.name }}", {{ field.name|length }}));
-        result = FE::Serialization::Internal::CombineSchemaHashes(
-            result, FE::Serialization::GetSchemaHash<decltype({{ field.name }})>());
+            hasher.Update("{{ field.name }}", {{ field.name|length }});
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype({{ field.name }})>());
         {%- endfor %}
-        result = FE::Serialization::Internal::CombineSchemaHashes(result, {{ type.serialization_version or 0 }});
-        return result;
+            hasher.Update({{ type.serialization_version or 0 }});
+            return hasher.Finalize();
+        }();
+        return kHash;
     }
 
     uint32_t {{ type.name }}::RTTI_GetSerializationVersion()

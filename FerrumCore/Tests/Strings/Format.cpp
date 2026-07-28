@@ -1,5 +1,5 @@
-﻿#include <Core/Strings/Format.h>
-#include <Core/Math/UUID.h>
+﻿#include <Core/Math/UUID.h>
+#include <Core/Strings/Format.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -27,6 +27,14 @@ TEST(Format, Escape)
 TEST(Format, Fixed)
 {
     EXPECT_EQ(Fmt::FixedFormat("{} + {} = {}", 2, 2, 5), "2 + 2 = 5");
+}
+
+
+TEST(Format, HexadecimalNumbers)
+{
+    EXPECT_EQ(Fmt::HexFormatter{ UINT64_C(0x1234abcdef) }.View(), "1234abcdef");
+    EXPECT_EQ(Fmt::HexFloatFormatter{ 0.123f }.View(), "0x1.f7cedap-4");
+    EXPECT_EQ(Fmt::HexFloatFormatter{ -2.5 }.View(), "-0x1.4000000000000p+1");
 }
 
 TEST(Format, ManualIndices)
