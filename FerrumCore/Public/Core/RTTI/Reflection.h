@@ -5,7 +5,8 @@
 namespace FE::Serialization
 {
     struct SerializationContext;
-}
+    struct DeserializationContext;
+} // namespace FE::Serialization
 
 namespace FE::Rtti
 {
@@ -81,7 +82,7 @@ namespace FE::Rtti
         using DefaultConstructor = void (*)(void*);
         using Destructor = void (*)(void*);
         using Serialize = bool (*)(Serialization::SerializationContext&, const void*);
-        using Deserialize = bool (*)(Serialization::SerializationContext&, void*);
+        using Deserialize = bool (*)(Serialization::DeserializationContext&, void*);
 
         TypeID m_id = TypeID::kNull;
         festd::ascii_view m_name;

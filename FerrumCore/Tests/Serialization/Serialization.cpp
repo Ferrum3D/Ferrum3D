@@ -146,18 +146,19 @@ namespace FE::Serialization::Tests
         }
 
 
-        template<class TContext>
+        template<class TFormat>
         void TestRoundTrip()
         {
             MemoryStream stream;
             TestObject source = CreateObject();
-            TContext writer(&stream);
+            TFormat format;
+            SerializationContext writer(&stream, format);
             ASSERT_TRUE(writer.Store(source));
 
             stream.Rewind();
             TestObject destination;
             destination.m_transient = 99;
-            TContext reader(&stream);
+            DeserializationContext reader(&stream, format);
             ASSERT_TRUE(reader.Load(destination));
             ExpectEqual(source, destination);
             EXPECT_EQ(destination.m_transient, 99);
@@ -167,7 +168,7 @@ namespace FE::Serialization::Tests
 
     TEST(Serialization, PackedBinaryRoundTrip)
     {
-        TestRoundTrip<PackedBinaryContext>();
+        TestRoundTrip<PackedBinaryFormat>();
     }
 
 
@@ -175,7 +176,8 @@ namespace FE::Serialization::Tests
     {
         MemoryStream stream;
         const TestObject source = CreateObject();
-        PackedBinaryContext writer(&stream);
+        PackedBinaryFormat format;
+        SerializationContext writer(&stream, format);
         ASSERT_TRUE(writer.Store(source));
 
         auto bytes = stream.GetMutableData();
@@ -184,7 +186,7 @@ namespace FE::Serialization::Tests
 
         stream.Rewind();
         TestObject destination;
-        PackedBinaryContext reader(&stream);
+        DeserializationContext reader(&stream, format);
         EXPECT_FALSE(reader.Load(destination));
         EXPECT_EQ(reader.GetError().m_code, ErrorCode::kInvalidHeader);
         EXPECT_EQ(reader.GetError().m_byteOffset, 32);
@@ -193,7 +195,7 @@ namespace FE::Serialization::Tests
 
     TEST(Serialization, TaggedBinaryRoundTrip)
     {
-        TestRoundTrip<TaggedBinaryContext>();
+        TestRoundTrip<TaggedBinaryFormat>();
     }
 
 
@@ -217,34 +219,37 @@ namespace FE::Serialization::Tests
         oldType.m_serializationSchemaHash = 11;
         oldType.m_serialize = [](SerializationContext& context, const void* value) {
             const auto& typedValue = *static_cast<const OldValue*>(value);
-            auto object = context.BeginObject();
-            if (!object)
-                return false;
-            object.Field("m_common", typedValue.m_common).Field("m_removed", typedValue.m_removed);
-            return context.IsValid();
+            if (auto object = context.BeginObject())
+            {
+                object.Field("m_common", typedValue.m_common).Field("m_removed", typedValue.m_removed);
+                return context.IsValid();
+            }
+            return false;
         };
 
         Rtti::Type newType;
         newType.m_id = oldType.m_id;
         newType.m_serializationVersion = 2;
         newType.m_serializationSchemaHash = 22;
-        newType.m_deserialize = [](SerializationContext& context, void* value) {
+        newType.m_deserialize = [](DeserializationContext& context, void* value) {
             auto& typedValue = *static_cast<NewValue*>(value);
-            auto object = context.BeginObject();
-            if (!object)
-                return false;
-            object.Field("m_common", typedValue.m_common).Field("m_added", typedValue.m_added);
-            return context.IsValid();
+            if (auto object = context.BeginObject())
+            {
+                object.Field("m_common", typedValue.m_common).Field("m_added", typedValue.m_added);
+                return context.IsValid();
+            }
+            return false;
         };
 
         MemoryStream stream;
         const OldValue source{ .m_common = 42, .m_removed = 99 };
-        TaggedBinaryContext writer(&stream);
+        TaggedBinaryFormat format;
+        SerializationContext writer(&stream, format);
         ASSERT_TRUE(writer.Store(oldType, &source));
 
         stream.Rewind();
         NewValue destination;
-        TaggedBinaryContext reader(&stream);
+        DeserializationContext reader(&stream, format);
         ASSERT_TRUE(reader.Load(newType, &destination));
         EXPECT_EQ(destination.m_common, source.m_common);
         EXPECT_EQ(destination.m_added, 17);
@@ -257,7 +262,8 @@ namespace FE::Serialization::Tests
     {
         MemoryStream stream;
         TestObject source = CreateObject();
-        JsonContext writer(&stream);
+        JsonFormat format;
+        SerializationContext writer(&stream, format);
         ASSERT_TRUE(writer.Store(source));
 
         const auto json = stream.GetData();
@@ -266,7 +272,7 @@ namespace FE::Serialization::Tests
 
         stream.Rewind();
         TestObject destination;
-        JsonContext reader(&stream);
+        DeserializationContext reader(&stream, format);
         ASSERT_TRUE(reader.Load(destination));
         ExpectEqual(source, destination);
     }
@@ -279,12 +285,13 @@ namespace FE::Serialization::Tests
         source.m_name.clear();
         source.m_values.clear();
 
-        JsonContext writer(&stream);
+        JsonFormat format;
+        SerializationContext writer(&stream, format);
         ASSERT_TRUE(writer.Store(source));
 
         stream.Rewind();
         TestObject destination;
-        JsonContext reader(&stream);
+        DeserializationContext reader(&stream, format);
         ASSERT_TRUE(reader.Load(destination));
         ExpectEqual(source, destination);
     }
@@ -298,7 +305,8 @@ namespace FE::Serialization::Tests
         stream.Rewind();
 
         TestObject destination;
-        JsonContext reader(&stream);
+        JsonFormat format;
+        DeserializationContext reader(&stream, format);
         EXPECT_FALSE(reader.Load(destination));
         EXPECT_EQ(reader.GetError().m_code, ErrorCode::kJsonParseError);
         EXPECT_EQ(reader.GetError().m_line, 2);
@@ -321,11 +329,12 @@ namespace FE::Serialization::Tests
 
         MemoryStream stream;
         const TestObject source = CreateObject();
-        TaggedBinaryContext writer(&stream);
+        TaggedBinaryFormat format;
+        SerializationContext writer(&stream, format);
         ASSERT_TRUE(writer.Store(type, &source));
 
         stream.Rewind();
-        TaggedBinaryContext reader(&stream);
+        DeserializationContext reader(&stream, format);
         ASSERT_TRUE(reader.Load(type, storage));
         ExpectEqual(source, *static_cast<TestObject*>(storage));
 

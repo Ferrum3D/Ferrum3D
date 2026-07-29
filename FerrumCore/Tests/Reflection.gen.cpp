@@ -66,35 +66,37 @@ namespace FE::Serialization::Tests
 
     bool PackedDesc::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
-        const auto value_m_width = m_width;
-        object.Field("m_width", value_m_width);
-        const auto value_m_height = m_height;
-        object.Field("m_height", value_m_height);
-        const auto value_m_flags = m_flags;
-        object.Field("m_flags", value_m_flags);
-        object.Field("m_scale", m_scale);
-        return context.IsValid();
+        if (auto object = context.BeginObject())
+        {
+            const auto value_m_width = m_width;
+            object.Field("m_width", value_m_width);
+            const auto value_m_height = m_height;
+            object.Field("m_height", value_m_height);
+            const auto value_m_flags = m_flags;
+            object.Field("m_flags", value_m_flags);
+            object.Field("m_scale", m_scale);
+            return context.IsValid();
+        }
+        return false;
     }
 
-    bool PackedDesc::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    bool PackedDesc::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
-        auto value_m_width = m_width;
-        object.Field("m_width", value_m_width);
-        m_width = value_m_width;
-        auto value_m_height = m_height;
-        object.Field("m_height", value_m_height);
-        m_height = value_m_height;
-        auto value_m_flags = m_flags;
-        object.Field("m_flags", value_m_flags);
-        m_flags = value_m_flags;
-        object.Field("m_scale", m_scale);
-        return context.IsValid();
+        if (auto object = context.BeginObject())
+        {
+            auto value_m_width = m_width;
+            object.Field("m_width", value_m_width);
+            m_width = value_m_width;
+            auto value_m_height = m_height;
+            object.Field("m_height", value_m_height);
+            m_height = value_m_height;
+            auto value_m_flags = m_flags;
+            object.Field("m_flags", value_m_flags);
+            m_flags = value_m_flags;
+            object.Field("m_scale", m_scale);
+            return context.IsValid();
+        }
+        return false;
     }
 
     uint64_t PackedDesc::RTTI_GetSerializationSchemaHash()
@@ -257,28 +259,30 @@ namespace FE::Serialization::Tests
 
     bool TestObject::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
-        object.Field("m_id", m_id);
-        object.Field("m_desc", m_desc);
-        object.Field("m_values", m_values);
-        object.Field("m_coordinates", m_coordinates);
-        object.Field("m_name", m_name);
-        return context.IsValid();
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_id", m_id);
+            object.Field("m_desc", m_desc);
+            object.Field("m_values", m_values);
+            object.Field("m_coordinates", m_coordinates);
+            object.Field("m_name", m_name);
+            return context.IsValid();
+        }
+        return false;
     }
 
-    bool TestObject::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    bool TestObject::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
-        object.Field("m_id", m_id);
-        object.Field("m_desc", m_desc);
-        object.Field("m_values", m_values);
-        object.Field("m_coordinates", m_coordinates);
-        object.Field("m_name", m_name);
-        return context.IsValid();
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_id", m_id);
+            object.Field("m_desc", m_desc);
+            object.Field("m_values", m_values);
+            object.Field("m_coordinates", m_coordinates);
+            object.Field("m_name", m_name);
+            return context.IsValid();
+        }
+        return false;
     }
 
     uint64_t TestObject::RTTI_GetSerializationSchemaHash()

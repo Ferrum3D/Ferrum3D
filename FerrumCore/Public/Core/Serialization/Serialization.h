@@ -65,13 +65,28 @@ namespace FE::Serialization
 
 
     struct SerializationContext;
-    struct ObjectScope;
+    struct DeserializationContext;
+    struct SerializationObject;
+    struct DeserializationObject;
+    struct SerializationArray;
+    struct DeserializationArray;
 
 
     namespace Internal
     {
         template<class T>
         using ValueType = std::remove_cv_t<std::remove_reference_t<T>>;
+
+
+        struct ContextState final
+        {
+            Direction m_direction = Direction::kSerialize;
+            IO::IStream* m_stream = nullptr;
+            bool m_isValid = true;
+            uint32_t m_serializedVersion = 0;
+            uint64_t m_serializedSchemaHash = 0;
+            Error m_error;
+        };
     } // namespace Internal
 
 
@@ -80,7 +95,7 @@ namespace FE::Serialization
 
 
     template<class T>
-    bool DeserializeValue(SerializationContext& context, T& value);
+    bool DeserializeValue(DeserializationContext& context, T& value);
 
 
     template<class T>
@@ -91,232 +106,92 @@ namespace FE::Serialization
     uint32_t GetVersion();
 
 
-    struct SerializationContext
+    struct SerializationFormat
     {
-        virtual ~SerializationContext() = default;
+        virtual ~SerializationFormat() = default;
 
-        SerializationContext(const SerializationContext&) = delete;
-        SerializationContext(SerializationContext&&) = delete;
-        SerializationContext& operator=(const SerializationContext&) = delete;
-        SerializationContext& operator=(SerializationContext&&) = delete;
+        SerializationFormat(const SerializationFormat&) = delete;
+        SerializationFormat(SerializationFormat&&) = delete;
+        SerializationFormat& operator=(const SerializationFormat&) = delete;
+        SerializationFormat& operator=(SerializationFormat&&) = delete;
 
-        [[nodiscard]] Direction GetDirection() const
+    protected:
+        explicit SerializationFormat(const Format format)
+            : m_format(format)
         {
-            return m_direction;
-        }
-
-        [[nodiscard]] Format GetFormat() const
-        {
-            return m_format;
         }
 
         [[nodiscard]] bool IsSerializing() const
         {
-            return m_direction == Direction::kSerialize;
+            return m_state->m_direction == Direction::kSerialize;
         }
 
         [[nodiscard]] bool IsDeserializing() const
         {
-            return m_direction == Direction::kDeserialize;
-        }
-
-        [[nodiscard]] bool IsBinary() const
-        {
-            return m_format != Format::kJson;
+            return m_state->m_direction == Direction::kDeserialize;
         }
 
         [[nodiscard]] bool IsValid() const
         {
-            return m_isValid;
+            return m_state->m_isValid;
         }
 
-        [[nodiscard]] const Error& GetError() const
+        [[nodiscard]] IO::IStream* GetStream() const
         {
-            return m_error;
+            return m_state->m_stream;
         }
 
-        [[nodiscard]] uint32_t GetSerializedVersion() const
+        void SetSerializedVersion(const uint32_t version)
         {
-            return m_serializedVersion;
+            m_state->m_serializedVersion = version;
         }
 
-        [[nodiscard]] uint64_t GetSerializedSchemaHash() const
+        void SetSerializedSchemaHash(const uint64_t schemaHash)
         {
-            return m_serializedSchemaHash;
-        }
-
-        template<class T>
-        bool Store(const T& value)
-        {
-            Begin(Direction::kSerialize);
-            const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
-            if (!BeginDocument(typeID, GetVersion<T>(), GetSchemaHash<T>()))
-                return false;
-
-            if (!SerializeValue(*this, value))
-                Fail(ErrorCode::kSerializerError);
-            EndDocument();
-            return m_isValid;
-        }
-
-        template<class T>
-        bool Load(T& value)
-        {
-            Begin(Direction::kDeserialize);
-            const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
-            if (!BeginDocument(typeID, GetVersion<T>(), GetSchemaHash<T>()))
-                return false;
-
-            if (!DeserializeValue(*this, value))
-                Fail(ErrorCode::kSerializerError);
-            EndDocument();
-            return m_isValid;
-        }
-
-        bool Store(const Rtti::Type& type, const void* value);
-        bool Load(const Rtti::Type& type, void* value);
-
-        template<class T>
-        SerializationContext& Element(const uint32_t index, const T& value)
-        {
-            if (!m_isValid || !BeginElement(index))
-                return *this;
-
-            if (!SerializeValue(*this, value))
-                Fail(ErrorCode::kSerializerError);
-            EndElement();
-            return *this;
-        }
-
-        template<class T>
-        SerializationContext& Element(const uint32_t index, T& value)
-        {
-            if (!m_isValid || !BeginElement(index))
-                return *this;
-
-            if (IsSerializing())
-            {
-                if (!SerializeValue(*this, value))
-                    Fail(ErrorCode::kSerializerError);
-            }
-            else
-            {
-                if (!DeserializeValue(*this, value))
-                    Fail(ErrorCode::kSerializerError);
-            }
-
-            EndElement();
-            return *this;
-        }
-
-        template<class T>
-        SerializationContext& Number(T& value)
-        {
-            static_assert(std::is_arithmetic_v<T>);
-            if (IsSerializing())
-                StoreScalarImpl(GetScalarKind<T>(), &value, sizeof(T));
-            else
-                LoadScalarImpl(GetScalarKind<T>(), &value, sizeof(T));
-            return *this;
-        }
-
-        template<class T>
-        SerializationContext& Number(const T& value)
-        {
-            static_assert(std::is_arithmetic_v<T>);
-            FE_Assert(IsSerializing());
-            StoreScalarImpl(GetScalarKind<T>(), &value, sizeof(T));
-            return *this;
-        }
-
-        template<class T>
-        SerializationContext& RawBytes(T& value)
-        {
-            static_assert(std::is_trivially_copyable_v<T>);
-            if (IsSerializing())
-                StoreBytesImpl(&value, sizeof(T));
-            else
-                LoadBytesImpl(&value, sizeof(T));
-            return *this;
-        }
-
-        template<class T>
-        SerializationContext& RawBytes(const T& value)
-        {
-            static_assert(std::is_trivially_copyable_v<T>);
-            FE_Assert(IsSerializing());
-            StoreBytesImpl(&value, sizeof(T));
-            return *this;
-        }
-
-        SerializationContext& StoreString(const festd::string_view value)
-        {
-            FE_Assert(IsSerializing());
-            StoreStringImpl(value);
-            return *this;
-        }
-
-        [[nodiscard]] uint32_t LoadStringSize()
-        {
-            FE_Assert(IsDeserializing());
-            return LoadStringSizeImpl();
-        }
-
-        SerializationContext& LoadString(const festd::span<char> buffer)
-        {
-            FE_Assert(IsDeserializing());
-            LoadStringImpl(buffer);
-            return *this;
-        }
-
-        ObjectScope BeginObject();
-
-        void ReportError(const ErrorCode code)
-        {
-            Fail(code);
-        }
-
-        bool BeginArray(uint32_t& size)
-        {
-            return m_isValid && BeginArrayImpl(size);
-        }
-
-        void EndArray()
-        {
-            if (m_isValid)
-                EndArrayImpl();
-        }
-
-    protected:
-        explicit SerializationContext(const Format format)
-            : m_format(format)
-        {
+            m_state->m_serializedSchemaHash = schemaHash;
         }
 
         void Fail(const ErrorCode code, const uint64_t byteOffset = UINT64_MAX, const uint32_t line = 0,
                   const uint32_t column = 0)
         {
-            if (!m_isValid)
+            if (!m_state->m_isValid)
                 return;
 
-            m_isValid = false;
-            m_error.m_code = code;
-            m_error.m_byteOffset = byteOffset == UINT64_MAX ? GetCurrentOffset() : byteOffset;
-            m_error.m_line = line;
-            m_error.m_column = column;
+            m_state->m_isValid = false;
+            m_state->m_error.m_code = code;
+            m_state->m_error.m_byteOffset = byteOffset == UINT64_MAX ? GetCurrentOffsetImpl() : byteOffset;
+            m_state->m_error.m_line = line;
+            m_state->m_error.m_column = column;
         }
 
-        virtual void Reset() = 0;
-        virtual bool BeginDocument(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) = 0;
-        virtual void EndDocument() = 0;
+    private:
+        friend SerializationContext;
+        friend DeserializationContext;
+        friend SerializationObject;
+        friend DeserializationObject;
+        friend SerializationArray;
+        friend DeserializationArray;
+
+        void Begin(Internal::ContextState& state, IO::IStream* stream, const Direction direction)
+        {
+            state = {};
+            state.m_direction = direction;
+            state.m_stream = stream;
+            m_state = &state;
+            ResetImpl();
+        }
+
+        virtual void ResetImpl() = 0;
+        virtual bool BeginDocumentImpl(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) = 0;
+        virtual void EndDocumentImpl() = 0;
         virtual bool BeginObjectImpl() = 0;
         virtual void EndObjectImpl() = 0;
-        virtual bool BeginField(festd::ascii_view name, uint64_t fieldID) = 0;
-        virtual void EndField() = 0;
+        virtual bool BeginFieldImpl(festd::ascii_view name, uint64_t fieldID) = 0;
+        virtual void EndFieldImpl() = 0;
         virtual bool BeginArrayImpl(uint32_t& size) = 0;
         virtual void EndArrayImpl() = 0;
-        virtual bool BeginElement(uint32_t index) = 0;
-        virtual void EndElement() = 0;
+        virtual bool BeginElementImpl(uint32_t index) = 0;
+        virtual void EndElementImpl() = 0;
         virtual void StoreScalarImpl(ScalarKind kind, const void* value, uint32_t byteSize) = 0;
         virtual void LoadScalarImpl(ScalarKind kind, void* value, uint32_t byteSize) = 0;
         virtual void StoreBytesImpl(const void* value, uint32_t byteSize) = 0;
@@ -324,57 +199,132 @@ namespace FE::Serialization
         virtual void StoreStringImpl(festd::string_view value) = 0;
         virtual uint32_t LoadStringSizeImpl() = 0;
         virtual void LoadStringImpl(festd::span<char> buffer) = 0;
-        [[nodiscard]] virtual uint64_t GetCurrentOffset() const = 0;
+        [[nodiscard]] virtual uint64_t GetCurrentOffsetImpl() const = 0;
 
-        Direction m_direction = Direction::kSerialize;
         const Format m_format;
-        bool m_isValid = true;
-        uint32_t m_serializedVersion = 0;
-        uint64_t m_serializedSchemaHash = 0;
-        Error m_error;
+        Internal::ContextState* m_state = nullptr;
+    };
+
+
+    struct SerializationContext final
+    {
+        SerializationContext(IO::IStream* stream, SerializationFormat& format)
+            : m_stream(stream)
+            , m_format(&format)
+        {
+            FE_Assert(stream != nullptr);
+        }
+
+        SerializationContext(const SerializationContext&) = delete;
+        SerializationContext(SerializationContext&&) = delete;
+        SerializationContext& operator=(const SerializationContext&) = delete;
+        SerializationContext& operator=(SerializationContext&&) = delete;
+
+        [[nodiscard]] Format GetFormat() const
+        {
+            return m_format->m_format;
+        }
+
+        [[nodiscard]] bool IsBinary() const
+        {
+            return GetFormat() != Format::kJson;
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_state.m_isValid;
+        }
+
+        [[nodiscard]] const Error& GetError() const
+        {
+            return m_state.m_error;
+        }
+
+        template<class T>
+        bool Store(const T& value)
+        {
+            Begin();
+            const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
+            if (!m_format->BeginDocumentImpl(typeID, GetVersion<T>(), GetSchemaHash<T>()))
+                return false;
+
+            if (!SerializeValue(*this, value))
+                m_format->Fail(ErrorCode::kSerializerError);
+
+            m_format->EndDocumentImpl();
+            return IsValid();
+        }
+
+        bool Store(const Rtti::Type& type, const void* value);
+
+        template<class T>
+        SerializationContext& Number(const T& value)
+        {
+            static_assert(std::is_arithmetic_v<T>);
+            m_format->StoreScalarImpl(GetScalarKind<T>(), &value, sizeof(T));
+            return *this;
+        }
+
+        template<class T>
+        SerializationContext& RawBytes(const T& value)
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            m_format->StoreBytesImpl(&value, sizeof(T));
+            return *this;
+        }
+
+        SerializationContext& StoreString(const festd::string_view value)
+        {
+            m_format->StoreStringImpl(value);
+            return *this;
+        }
+
+        SerializationObject BeginObject();
+        SerializationArray BeginArray(uint32_t size);
+
+        void ReportError(const ErrorCode code)
+        {
+            m_format->Fail(code);
+        }
 
     private:
-        void Begin(const Direction direction)
+        friend SerializationObject;
+        friend SerializationArray;
+
+        IO::IStream* m_stream;
+        SerializationFormat* m_format;
+        Internal::ContextState m_state;
+
+        void Begin()
         {
-            m_direction = direction;
-            m_isValid = true;
-            m_serializedVersion = 0;
-            m_serializedSchemaHash = 0;
-            m_error = {};
-            Reset();
+            m_format->Begin(m_state, m_stream, Direction::kSerialize);
         }
 
         template<class T>
         void Field(const festd::ascii_view name, const T& value)
         {
-            if (!m_isValid || !BeginField(name, CompileTimeHash(name.data(), name.size())))
+            if (!IsValid())
+                return;
+            if (!m_format->BeginFieldImpl(name, CompileTimeHash(name.data(), name.size())))
                 return;
 
             if (!SerializeValue(*this, value))
-                Fail(ErrorCode::kSerializerError);
-            EndField();
+                m_format->Fail(ErrorCode::kSerializerError);
+            m_format->EndFieldImpl();
         }
 
         template<class T>
-        void Field(const festd::ascii_view name, T& value)
+        void Element(const uint32_t index, const T& value)
         {
-            if (!m_isValid || !BeginField(name, CompileTimeHash(name.data(), name.size())))
+            if (!IsValid())
+                return;
+            if (!m_format->BeginElementImpl(index))
                 return;
 
-            if (IsSerializing())
-            {
-                if (!SerializeValue(*this, value))
-                    Fail(ErrorCode::kSerializerError);
-            }
-            else if (!DeserializeValue(*this, value))
-            {
-                Fail(ErrorCode::kSerializerError);
-            }
-
-            EndField();
+            if (!SerializeValue(*this, value))
+                m_format->Fail(ErrorCode::kSerializerError);
+            m_format->EndElementImpl();
         }
-
-        friend ObjectScope;
 
         template<class T>
         static consteval ScalarKind GetScalarKind()
@@ -391,21 +341,170 @@ namespace FE::Serialization
     };
 
 
-    struct ObjectScope final
+    struct DeserializationContext final
     {
-        ObjectScope(const ObjectScope&) = delete;
-        ObjectScope& operator=(const ObjectScope&) = delete;
+        DeserializationContext(IO::IStream* stream, SerializationFormat& format)
+            : m_stream(stream)
+            , m_format(&format)
+        {
+            FE_Assert(stream != nullptr);
+        }
 
-        ObjectScope(ObjectScope&& other) noexcept
+        DeserializationContext(const DeserializationContext&) = delete;
+        DeserializationContext(DeserializationContext&&) = delete;
+        DeserializationContext& operator=(const DeserializationContext&) = delete;
+        DeserializationContext& operator=(DeserializationContext&&) = delete;
+
+        [[nodiscard]] Format GetFormat() const
+        {
+            return m_format->m_format;
+        }
+
+        [[nodiscard]] bool IsBinary() const
+        {
+            return GetFormat() != Format::kJson;
+        }
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_state.m_isValid;
+        }
+
+        [[nodiscard]] const Error& GetError() const
+        {
+            return m_state.m_error;
+        }
+
+        [[nodiscard]] uint32_t GetSerializedVersion() const
+        {
+            return m_state.m_serializedVersion;
+        }
+
+        [[nodiscard]] uint64_t GetSerializedSchemaHash() const
+        {
+            return m_state.m_serializedSchemaHash;
+        }
+
+        template<class T>
+        bool Load(T& value)
+        {
+            Begin();
+            const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
+            if (!m_format->BeginDocumentImpl(typeID, GetVersion<T>(), GetSchemaHash<T>()))
+                return false;
+
+            if (!DeserializeValue(*this, value))
+                m_format->Fail(ErrorCode::kSerializerError);
+            m_format->EndDocumentImpl();
+            return IsValid();
+        }
+
+        bool Load(const Rtti::Type& type, void* value);
+
+        template<class T>
+        DeserializationContext& Number(T& value)
+        {
+            static_assert(std::is_arithmetic_v<T>);
+            m_format->LoadScalarImpl(GetScalarKind<T>(), &value, sizeof(T));
+            return *this;
+        }
+
+        template<class T>
+        DeserializationContext& RawBytes(T& value)
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            m_format->LoadBytesImpl(&value, sizeof(T));
+            return *this;
+        }
+
+        [[nodiscard]] uint32_t LoadStringSize()
+        {
+            return m_format->LoadStringSizeImpl();
+        }
+
+        DeserializationContext& LoadString(const festd::span<char> buffer)
+        {
+            m_format->LoadStringImpl(buffer);
+            return *this;
+        }
+
+        DeserializationObject BeginObject();
+        DeserializationArray BeginArray(uint32_t& size);
+
+        void ReportError(const ErrorCode code)
+        {
+            m_format->Fail(code);
+        }
+
+    private:
+        friend DeserializationObject;
+        friend DeserializationArray;
+
+        IO::IStream* m_stream;
+        SerializationFormat* m_format;
+        Internal::ContextState m_state;
+
+        void Begin()
+        {
+            m_format->Begin(m_state, m_stream, Direction::kDeserialize);
+        }
+
+        template<class T>
+        void Field(const festd::ascii_view name, T& value)
+        {
+            if (!IsValid())
+                return;
+            if (!m_format->BeginFieldImpl(name, CompileTimeHash(name.data(), name.size())))
+                return;
+
+            if (!DeserializeValue(*this, value))
+                m_format->Fail(ErrorCode::kSerializerError);
+            m_format->EndFieldImpl();
+        }
+
+        template<class T>
+        void Element(const uint32_t index, T& value)
+        {
+            if (!IsValid())
+                return;
+            if (!m_format->BeginElementImpl(index))
+                return;
+
+            if (!DeserializeValue(*this, value))
+                m_format->Fail(ErrorCode::kSerializerError);
+            m_format->EndElementImpl();
+        }
+
+        template<class T>
+        static consteval ScalarKind GetScalarKind()
+        {
+            if constexpr (std::is_same_v<T, bool>)
+                return ScalarKind::kBool;
+            else if constexpr (std::is_floating_point_v<T>)
+                return ScalarKind::kFloat;
+            else if constexpr (std::is_signed_v<T>)
+                return ScalarKind::kSigned;
+            else
+                return ScalarKind::kUnsigned;
+        }
+    };
+
+
+    struct SerializationObject final
+    {
+        SerializationObject(const SerializationObject&) = delete;
+        SerializationObject& operator=(const SerializationObject&) = delete;
+
+        SerializationObject(SerializationObject&& other) noexcept
             : m_context(other.m_context)
         {
             other.m_context = nullptr;
         }
 
-        ~ObjectScope()
+        ~SerializationObject()
         {
             if (m_context != nullptr)
-                m_context->EndObjectImpl();
+                m_context->m_format->EndObjectImpl();
         }
 
         [[nodiscard]] explicit operator bool() const
@@ -414,15 +513,7 @@ namespace FE::Serialization
         }
 
         template<class T>
-        ObjectScope& Field(const festd::ascii_view name, const T& value)
-        {
-            if (m_context != nullptr)
-                m_context->Field(name, value);
-            return *this;
-        }
-
-        template<class T>
-        ObjectScope& Field(const festd::ascii_view name, T& value)
+        SerializationObject& Field(const festd::ascii_view name, const T& value)
         {
             if (m_context != nullptr)
                 m_context->Field(name, value);
@@ -432,7 +523,7 @@ namespace FE::Serialization
     private:
         friend SerializationContext;
 
-        explicit ObjectScope(SerializationContext* context)
+        explicit SerializationObject(SerializationContext* context)
             : m_context(context)
         {
         }
@@ -441,18 +532,164 @@ namespace FE::Serialization
     };
 
 
-    inline ObjectScope SerializationContext::BeginObject()
+    struct DeserializationObject final
     {
-        return ObjectScope{ m_isValid && BeginObjectImpl() ? this : nullptr };
+        DeserializationObject(const DeserializationObject&) = delete;
+        DeserializationObject& operator=(const DeserializationObject&) = delete;
+
+        DeserializationObject(DeserializationObject&& other) noexcept
+            : m_context(other.m_context)
+        {
+            other.m_context = nullptr;
+        }
+
+        ~DeserializationObject()
+        {
+            if (m_context != nullptr)
+                m_context->m_format->EndObjectImpl();
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_context != nullptr;
+        }
+
+        template<class T>
+        DeserializationObject& Field(const festd::ascii_view name, T& value)
+        {
+            if (m_context != nullptr)
+                m_context->Field(name, value);
+            return *this;
+        }
+
+    private:
+        friend DeserializationContext;
+
+        explicit DeserializationObject(DeserializationContext* context)
+            : m_context(context)
+        {
+        }
+
+        DeserializationContext* m_context;
+    };
+
+
+    struct SerializationArray final
+    {
+        SerializationArray(const SerializationArray&) = delete;
+        SerializationArray& operator=(const SerializationArray&) = delete;
+
+        SerializationArray(SerializationArray&& other) noexcept
+            : m_context(other.m_context)
+        {
+            other.m_context = nullptr;
+        }
+
+        ~SerializationArray()
+        {
+            if (m_context != nullptr)
+                m_context->m_format->EndArrayImpl();
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_context != nullptr;
+        }
+
+        template<class T>
+        SerializationArray& Element(const uint32_t index, const T& value)
+        {
+            if (m_context != nullptr)
+                m_context->Element(index, value);
+            return *this;
+        }
+
+    private:
+        friend SerializationContext;
+
+        explicit SerializationArray(SerializationContext* context)
+            : m_context(context)
+        {
+        }
+
+        SerializationContext* m_context;
+    };
+
+
+    struct DeserializationArray final
+    {
+        DeserializationArray(const DeserializationArray&) = delete;
+        DeserializationArray& operator=(const DeserializationArray&) = delete;
+
+        DeserializationArray(DeserializationArray&& other) noexcept
+            : m_context(other.m_context)
+        {
+            other.m_context = nullptr;
+        }
+
+        ~DeserializationArray()
+        {
+            if (m_context != nullptr)
+                m_context->m_format->EndArrayImpl();
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_context != nullptr;
+        }
+
+        template<class T>
+        DeserializationArray& Element(const uint32_t index, T& value)
+        {
+            if (m_context != nullptr)
+                m_context->Element(index, value);
+            return *this;
+        }
+
+    private:
+        friend DeserializationContext;
+
+        explicit DeserializationArray(DeserializationContext* context)
+            : m_context(context)
+        {
+        }
+
+        DeserializationContext* m_context;
+    };
+
+
+    inline SerializationObject SerializationContext::BeginObject()
+    {
+        return SerializationObject{ IsValid() && m_format->BeginObjectImpl() ? this : nullptr };
+    }
+
+
+    inline SerializationArray SerializationContext::BeginArray(const uint32_t size)
+    {
+        uint32_t mutableSize = size;
+        return SerializationArray{ IsValid() && m_format->BeginArrayImpl(mutableSize) ? this : nullptr };
+    }
+
+
+    inline DeserializationObject DeserializationContext::BeginObject()
+    {
+        return DeserializationObject{ IsValid() && m_format->BeginObjectImpl() ? this : nullptr };
+    }
+
+
+    inline DeserializationArray DeserializationContext::BeginArray(uint32_t& size)
+    {
+        return DeserializationArray{ IsValid() && m_format->BeginArrayImpl(size) ? this : nullptr };
     }
 
 
     namespace Internal
     {
         template<class T>
-        concept HasSerializer = requires(SerializationContext& context, const T& constValue, T& value) {
-            { Serializer<T>::Serialize(context, constValue) } -> std::same_as<bool>;
-            { Serializer<T>::Deserialize(context, value) } -> std::same_as<bool>;
+        concept HasSerializer = requires(SerializationContext& serializationContext,
+                                         DeserializationContext& deserializationContext, const T& constValue, T& value) {
+            { Serializer<T>::Serialize(serializationContext, constValue) } -> std::same_as<bool>;
+            { Serializer<T>::Deserialize(deserializationContext, value) } -> std::same_as<bool>;
         };
 
 
@@ -479,7 +716,7 @@ namespace FE::Serialization
 
 
     template<class T>
-    bool DeserializeValue(SerializationContext& context, T& value)
+    bool DeserializeValue(DeserializationContext& context, T& value)
     {
         using ValueType = Internal::ValueType<T>;
         static_assert(Internal::HasSerializer<ValueType>, "No serializer is defined for this type");
@@ -523,7 +760,7 @@ namespace FE::Serialization
             return value.RTTI_Serialize(context);
         }
 
-        static bool Deserialize(SerializationContext& context, T& value)
+        static bool Deserialize(DeserializationContext& context, T& value)
         {
             return value.RTTI_Deserialize(context);
         }
@@ -550,44 +787,10 @@ namespace FE::Serialization
             return context.IsValid();
         }
 
-        static bool Deserialize(SerializationContext& context, T& value)
+        static bool Deserialize(DeserializationContext& context, T& value)
         {
             context.Number(value);
             return context.IsValid();
-        }
-
-        static constexpr uint64_t GetSchemaHash()
-        {
-            return TypeNameHash<T>;
-        }
-
-        static constexpr uint32_t GetVersion()
-        {
-            return 0;
-        }
-    };
-
-
-    template<class T>
-        requires std::is_enum_v<T>
-    struct Serializer<T>
-    {
-        using UnderlyingType = std::underlying_type_t<T>;
-
-        static bool Serialize(SerializationContext& context, const T value)
-        {
-            const UnderlyingType underlyingValue = static_cast<UnderlyingType>(value);
-            return SerializeValue(context, underlyingValue);
-        }
-
-        static bool Deserialize(SerializationContext& context, T& value)
-        {
-            UnderlyingType underlyingValue{};
-            if (!DeserializeValue(context, underlyingValue))
-                return false;
-
-            value = static_cast<T>(underlyingValue);
-            return true;
         }
 
         static constexpr uint64_t GetSchemaHash()
@@ -607,34 +810,31 @@ namespace FE::Serialization
     {
         static bool Serialize(SerializationContext& context, const T (&value)[TSize])
         {
-            uint32_t size = static_cast<uint32_t>(TSize);
-            if (!context.BeginArray(size))
-                return false;
-
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-
-            context.EndArray();
-            return context.IsValid();
+            if (auto array = context.BeginArray(static_cast<uint32_t>(TSize)))
+            {
+                for (uint32_t i = 0; i < TSize; ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
+            }
+            return false;
         }
 
-        static bool Deserialize(SerializationContext& context, T (&value)[TSize])
+        static bool Deserialize(DeserializationContext& context, T (&value)[TSize])
         {
             uint32_t size = 0;
-            if (!context.BeginArray(size))
-                return false;
-
-            if (size != TSize)
+            if (auto array = context.BeginArray(size))
             {
-                context.ReportError(ErrorCode::kMalformedData);
-                return false;
+                if (size != TSize)
+                {
+                    context.ReportError(ErrorCode::kMalformedData);
+                    return false;
+                }
+
+                for (uint32_t i = 0; i < size; ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
             }
-
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-            context.EndArray();
-
-            return context.IsValid();
+            return false;
         }
 
         static constexpr uint64_t GetSchemaHash()
@@ -657,34 +857,31 @@ namespace FE::Serialization
     {
         static bool Serialize(SerializationContext& context, const festd::array<T, TSize>& value)
         {
-            uint32_t size = static_cast<uint32_t>(TSize);
-            if (!context.BeginArray(size))
-                return false;
-
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-            context.EndArray();
-
-            return context.IsValid();
+            if (auto array = context.BeginArray(static_cast<uint32_t>(TSize)))
+            {
+                for (uint32_t i = 0; i < TSize; ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
+            }
+            return false;
         }
 
-        static bool Deserialize(SerializationContext& context, festd::array<T, TSize>& value)
+        static bool Deserialize(DeserializationContext& context, festd::array<T, TSize>& value)
         {
             uint32_t size = 0;
-            if (!context.BeginArray(size))
-                return false;
-
-            if (size != TSize)
+            if (auto array = context.BeginArray(size))
             {
-                context.ReportError(ErrorCode::kMalformedData);
-                return false;
+                if (size != TSize)
+                {
+                    context.ReportError(ErrorCode::kMalformedData);
+                    return false;
+                }
+
+                for (uint32_t i = 0; i < size; ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
             }
-
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-            context.EndArray();
-
-            return context.IsValid();
+            return false;
         }
 
         static constexpr uint64_t GetSchemaHash()
@@ -707,29 +904,26 @@ namespace FE::Serialization
     {
         static bool Serialize(SerializationContext& context, const eastl::vector<T, TAllocator>& value)
         {
-            uint32_t size = static_cast<uint32_t>(value.size());
-            if (!context.BeginArray(size))
-                return false;
-
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-            context.EndArray();
-
-            return context.IsValid();
+            if (auto array = context.BeginArray(static_cast<uint32_t>(value.size())))
+            {
+                for (uint32_t i = 0; i < value.size(); ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
+            }
+            return false;
         }
 
-        static bool Deserialize(SerializationContext& context, eastl::vector<T, TAllocator>& value)
+        static bool Deserialize(DeserializationContext& context, eastl::vector<T, TAllocator>& value)
         {
             uint32_t size = 0;
-            if (!context.BeginArray(size))
-                return false;
-
-            value.resize(size);
-            for (uint32_t i = 0; i < size; ++i)
-                context.Element(i, value[i]);
-            context.EndArray();
-
-            return context.IsValid();
+            if (auto array = context.BeginArray(size))
+            {
+                value.resize(size);
+                for (uint32_t i = 0; i < size; ++i)
+                    array.Element(i, value[i]);
+                return context.IsValid();
+            }
+            return false;
         }
 
         static constexpr uint64_t GetSchemaHash()
@@ -737,6 +931,40 @@ namespace FE::Serialization
             constexpr uint64_t kTypeNameHash = CompileTimeHash("vector");
             static uint64_t schemaHash = HashCombine(kTypeNameHash, Serialization::GetSchemaHash<T>());
             return schemaHash;
+        }
+
+        static constexpr uint32_t GetVersion()
+        {
+            return 0;
+        }
+    };
+
+
+    template<class T>
+        requires std::is_enum_v<T>
+    struct Serializer<T>
+    {
+        using UnderlyingType = std::underlying_type_t<T>;
+
+        static bool Serialize(SerializationContext& context, const T value)
+        {
+            const UnderlyingType underlyingValue = static_cast<UnderlyingType>(value);
+            return SerializeValue(context, underlyingValue);
+        }
+
+        static bool Deserialize(DeserializationContext& context, T& value)
+        {
+            UnderlyingType underlyingValue{};
+            if (!DeserializeValue(context, underlyingValue))
+                return false;
+
+            value = static_cast<T>(underlyingValue);
+            return true;
+        }
+
+        static constexpr uint64_t GetSchemaHash()
+        {
+            return TypeNameHash<T>;
         }
 
         static constexpr uint32_t GetVersion()
@@ -760,7 +988,7 @@ namespace FE::Serialization
             return context.IsValid();
         }
 
-        static bool Deserialize(SerializationContext& context, StringType& value)
+        static bool Deserialize(DeserializationContext& context, StringType& value)
         {
             const uint32_t size = context.LoadStringSize();
             if (!context.IsValid())
@@ -788,7 +1016,7 @@ namespace FE::Serialization
     struct Serializer<Uuid>
     {
         static bool Serialize(SerializationContext& context, const Uuid& value);
-        static bool Deserialize(SerializationContext& context, Uuid& value);
+        static bool Deserialize(DeserializationContext& context, Uuid& value);
 
         static constexpr uint64_t GetSchemaHash()
         {
@@ -811,7 +1039,7 @@ namespace FE::Serialization
             type.m_serialize = [](SerializationContext& context, const void* value) {
                 return SerializeValue(context, *static_cast<const T*>(value));
             };
-            type.m_deserialize = [](SerializationContext& context, void* value) {
+            type.m_deserialize = [](DeserializationContext& context, void* value) {
                 return DeserializeValue(context, *static_cast<T*>(value));
             };
             type.m_serializationVersion = GetVersion<T>();

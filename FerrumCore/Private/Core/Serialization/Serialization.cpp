@@ -8,30 +8,30 @@ namespace FE::Serialization
         if (type.m_serialize == nullptr || value == nullptr)
             return false;
 
-        Begin(Direction::kSerialize);
-        if (!BeginDocument(type.m_id, type.m_serializationVersion, type.m_serializationSchemaHash))
+        Begin();
+        if (!m_format->BeginDocumentImpl(type.m_id, type.m_serializationVersion, type.m_serializationSchemaHash))
             return false;
 
         if (!type.m_serialize(*this, value))
-            Fail(ErrorCode::kSerializerError);
-        EndDocument();
-        return m_isValid;
+            m_format->Fail(ErrorCode::kSerializerError);
+        m_format->EndDocumentImpl();
+        return IsValid();
     }
 
 
-    bool SerializationContext::Load(const Rtti::Type& type, void* value)
+    bool DeserializationContext::Load(const Rtti::Type& type, void* value)
     {
         if (type.m_deserialize == nullptr || value == nullptr)
             return false;
 
-        Begin(Direction::kDeserialize);
-        if (!BeginDocument(type.m_id, type.m_serializationVersion, type.m_serializationSchemaHash))
+        Begin();
+        if (!m_format->BeginDocumentImpl(type.m_id, type.m_serializationVersion, type.m_serializationSchemaHash))
             return false;
 
         if (!type.m_deserialize(*this, value))
-            Fail(ErrorCode::kSerializerError);
-        EndDocument();
-        return m_isValid;
+            m_format->Fail(ErrorCode::kSerializerError);
+        m_format->EndDocumentImpl();
+        return IsValid();
     }
 
 
@@ -49,7 +49,7 @@ namespace FE::Serialization
     }
 
 
-    bool Serializer<Uuid>::Deserialize(SerializationContext& context, Uuid& value)
+    bool Serializer<Uuid>::Deserialize(DeserializationContext& context, Uuid& value)
     {
         if (context.IsBinary())
         {

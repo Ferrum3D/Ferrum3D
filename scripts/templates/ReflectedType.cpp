@@ -222,41 +222,43 @@ namespace {{ type.namespace }}
 
     bool {{ type.name }}::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
+        if (auto object = context.BeginObject())
+        {
         {%- for base in type.direct_bases %}
-        object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
+            object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
-        const auto value_{{ field.name }} = {{ field.name }};
-        object.Field("{{ field.name }}", value_{{ field.name }});
+            const auto value_{{ field.name }} = {{ field.name }};
+            object.Field("{{ field.name }}", value_{{ field.name }});
         {%- else %}
-        object.Field("{{ field.name }}", {{ field.name }});
+            object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
-        return context.IsValid();
+            return context.IsValid();
+        }
+        return false;
     }
 
-    bool {{ type.name }}::RTTI_Deserialize(FE::Serialization::SerializationContext& context)
+    bool {{ type.name }}::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
     {
-        auto object = context.BeginObject();
-        if (!object)
-            return false;
+        if (auto object = context.BeginObject())
+        {
         {%- for base in type.direct_bases %}
-        object.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
+            object.Field("$base:{{ base.qualified_name }}", static_cast<{{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
-        auto value_{{ field.name }} = {{ field.name }};
-        object.Field("{{ field.name }}", value_{{ field.name }});
-        {{ field.name }} = value_{{ field.name }};
+            auto value_{{ field.name }} = {{ field.name }};
+            object.Field("{{ field.name }}", value_{{ field.name }});
+            {{ field.name }} = value_{{ field.name }};
         {%- else %}
-        object.Field("{{ field.name }}", {{ field.name }});
+            object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
-        return context.IsValid();
+            return context.IsValid();
+        }
+        return false;
     }
 
     uint64_t {{ type.name }}::RTTI_GetSerializationSchemaHash()

@@ -95,41 +95,34 @@ namespace FE::Serialization
     } // namespace
 
 
-    struct PackedBinaryContext::Impl final
+    struct PackedBinaryFormat::Impl final
     {
-        explicit Impl(IO::IStream* stream)
-            : m_stream(stream)
-        {
-        }
-
-        IO::IStream* m_stream;
         uint32_t m_pendingStringSize = 0;
     };
 
 
-    PackedBinaryContext::PackedBinaryContext(IO::IStream* stream)
-        : SerializationContext(Format::kPackedBinary)
-        , m_impl(festd::make_unique<Impl>(stream))
+    PackedBinaryFormat::PackedBinaryFormat()
+        : SerializationFormat(Format::kPackedBinary)
+        , m_impl(festd::make_unique<Impl>())
     {
-        FE_Assert(stream != nullptr);
     }
 
 
-    PackedBinaryContext::~PackedBinaryContext() = default;
+    PackedBinaryFormat::~PackedBinaryFormat() = default;
 
 
-    void PackedBinaryContext::Reset()
+    void PackedBinaryFormat::ResetImpl()
     {
         m_impl->m_pendingStringSize = 0;
     }
 
 
-    bool PackedBinaryContext::BeginDocument(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
+    bool PackedBinaryFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
     {
         if (IsSerializing())
         {
             const PackedHeader header = CreatePackedHeader(expectedType, version, schemaHash);
-            if (!m_impl->m_stream->Write(header))
+            if (!GetStream()->Write(header))
             {
                 Fail(ErrorCode::kStreamWriteFailed);
                 return false;
@@ -139,7 +132,7 @@ namespace FE::Serialization
         }
 
         PackedHeader header{};
-        if (!m_impl->m_stream->Read(header))
+        if (!GetStream()->Read(header))
         {
             Fail(ErrorCode::kStreamReadFailed);
             return false;
@@ -162,109 +155,109 @@ namespace FE::Serialization
             return false;
         }
 
-        m_serializedVersion = header.m_version;
-        m_serializedSchemaHash = header.m_schemaHash;
+        SetSerializedVersion(header.m_version);
+        SetSerializedSchemaHash(header.m_schemaHash);
         return true;
     }
 
 
-    void PackedBinaryContext::EndDocument() {}
-    bool PackedBinaryContext::BeginObjectImpl()
+    void PackedBinaryFormat::EndDocumentImpl() {}
+    bool PackedBinaryFormat::BeginObjectImpl()
     {
         return true;
     }
-    void PackedBinaryContext::EndObjectImpl() {}
-    bool PackedBinaryContext::BeginField(festd::ascii_view, uint64_t)
+    void PackedBinaryFormat::EndObjectImpl() {}
+    bool PackedBinaryFormat::BeginFieldImpl(festd::ascii_view, uint64_t)
     {
         return true;
     }
-    void PackedBinaryContext::EndField() {}
+    void PackedBinaryFormat::EndFieldImpl() {}
 
 
-    bool PackedBinaryContext::BeginArrayImpl(uint32_t& size)
+    bool PackedBinaryFormat::BeginArrayImpl(uint32_t& size)
     {
-        const bool succeeded = IsSerializing() ? m_impl->m_stream->Write(size) : m_impl->m_stream->Read(size);
+        const bool succeeded = IsSerializing() ? GetStream()->Write(size) : GetStream()->Read(size);
         if (!succeeded)
             Fail(IsSerializing() ? ErrorCode::kStreamWriteFailed : ErrorCode::kStreamReadFailed);
         return IsValid();
     }
 
 
-    void PackedBinaryContext::EndArrayImpl() {}
-    bool PackedBinaryContext::BeginElement(uint32_t)
+    void PackedBinaryFormat::EndArrayImpl() {}
+    bool PackedBinaryFormat::BeginElementImpl(uint32_t)
     {
         return true;
     }
-    void PackedBinaryContext::EndElement() {}
+    void PackedBinaryFormat::EndElementImpl() {}
 
 
-    void PackedBinaryContext::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
+    void PackedBinaryFormat::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
     {
         StoreBytesImpl(value, byteSize);
     }
 
 
-    void PackedBinaryContext::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
+    void PackedBinaryFormat::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
     {
         LoadBytesImpl(value, byteSize);
     }
 
 
-    void PackedBinaryContext::StoreBytesImpl(const void* value, const uint32_t byteSize)
+    void PackedBinaryFormat::StoreBytesImpl(const void* value, const uint32_t byteSize)
     {
-        if (m_impl->m_stream->WriteFromBuffer(value, byteSize) != byteSize)
+        if (GetStream()->WriteFromBuffer(value, byteSize) != byteSize)
             Fail(ErrorCode::kStreamWriteFailed);
     }
 
 
-    void PackedBinaryContext::LoadBytesImpl(void* value, const uint32_t byteSize)
+    void PackedBinaryFormat::LoadBytesImpl(void* value, const uint32_t byteSize)
     {
-        if (m_impl->m_stream->ReadToBuffer(value, byteSize) != byteSize)
+        if (GetStream()->ReadToBuffer(value, byteSize) != byteSize)
             Fail(ErrorCode::kStreamReadFailed);
     }
 
 
-    void PackedBinaryContext::StoreStringImpl(const festd::string_view value)
+    void PackedBinaryFormat::StoreStringImpl(const festd::string_view value)
     {
         const uint32_t size = value.size();
-        if (!m_impl->m_stream->Write(size))
+        if (!GetStream()->Write(size))
         {
             Fail(ErrorCode::kStreamWriteFailed);
             return;
         }
-        if (size != 0 && m_impl->m_stream->WriteFromBuffer(value.data(), size) != size)
+        if (size != 0 && GetStream()->WriteFromBuffer(value.data(), size) != size)
             Fail(ErrorCode::kStreamWriteFailed);
     }
 
 
-    uint32_t PackedBinaryContext::LoadStringSizeImpl()
+    uint32_t PackedBinaryFormat::LoadStringSizeImpl()
     {
-        if (!m_impl->m_stream->Read(m_impl->m_pendingStringSize))
+        if (!GetStream()->Read(m_impl->m_pendingStringSize))
             Fail(ErrorCode::kStreamReadFailed);
         return m_impl->m_pendingStringSize;
     }
 
 
-    void PackedBinaryContext::LoadStringImpl(const festd::span<char> buffer)
+    void PackedBinaryFormat::LoadStringImpl(const festd::span<char> buffer)
     {
         if (buffer.size() != m_impl->m_pendingStringSize)
         {
             Fail(ErrorCode::kMalformedData);
             return;
         }
-        if (!buffer.empty() && m_impl->m_stream->ReadToBuffer(buffer.data(), buffer.size()) != buffer.size())
+        if (!buffer.empty() && GetStream()->ReadToBuffer(buffer.data(), buffer.size()) != buffer.size())
             Fail(ErrorCode::kStreamReadFailed);
         m_impl->m_pendingStringSize = 0;
     }
 
 
-    uint64_t PackedBinaryContext::GetCurrentOffset() const
+    uint64_t PackedBinaryFormat::GetCurrentOffsetImpl() const
     {
-        return m_impl->m_stream->Tell();
+        return GetStream()->Tell();
     }
 
 
-    struct TaggedBinaryContext::Impl final
+    struct TaggedBinaryFormat::Impl final
     {
         struct InputArray final
         {
@@ -272,12 +265,6 @@ namespace FE::Serialization
             uint32_t m_count = 0;
         };
 
-        explicit Impl(IO::IStream* stream)
-            : m_stream(stream)
-        {
-        }
-
-        IO::IStream* m_stream;
         TaggedHeader m_outputHeader{};
         festd::vector<festd::vector<std::byte>> m_outputFrames;
         festd::vector<uint64_t> m_outputFieldIDs;
@@ -288,18 +275,17 @@ namespace FE::Serialization
     };
 
 
-    TaggedBinaryContext::TaggedBinaryContext(IO::IStream* stream)
-        : SerializationContext(Format::kTaggedBinary)
-        , m_impl(festd::make_unique<Impl>(stream))
+    TaggedBinaryFormat::TaggedBinaryFormat()
+        : SerializationFormat(Format::kTaggedBinary)
+        , m_impl(festd::make_unique<Impl>())
     {
-        FE_Assert(stream != nullptr);
     }
 
 
-    TaggedBinaryContext::~TaggedBinaryContext() = default;
+    TaggedBinaryFormat::~TaggedBinaryFormat() = default;
 
 
-    void TaggedBinaryContext::Reset()
+    void TaggedBinaryFormat::ResetImpl()
     {
         m_impl->m_outputHeader = {};
         m_impl->m_outputFrames.clear();
@@ -311,7 +297,7 @@ namespace FE::Serialization
     }
 
 
-    bool TaggedBinaryContext::BeginDocument(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
+    bool TaggedBinaryFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
     {
         if (IsSerializing())
         {
@@ -321,7 +307,7 @@ namespace FE::Serialization
         }
 
         TaggedHeader header{};
-        if (!m_impl->m_stream->Read(header))
+        if (!GetStream()->Read(header))
         {
             Fail(ErrorCode::kStreamReadFailed);
             return false;
@@ -344,12 +330,12 @@ namespace FE::Serialization
             return false;
         }
 
-        m_serializedVersion = header.m_version;
-        m_serializedSchemaHash = header.m_schemaHash;
+        SetSerializedVersion(header.m_version);
+        SetSerializedSchemaHash(header.m_schemaHash);
         m_impl->m_inputStorage.resize(static_cast<uint32_t>(header.m_payloadSize));
         if (header.m_payloadSize != 0)
         {
-            const size_t bytesRead = m_impl->m_stream->ReadToBuffer(m_impl->m_inputStorage.data(), header.m_payloadSize);
+            const size_t bytesRead = GetStream()->ReadToBuffer(m_impl->m_inputStorage.data(), header.m_payloadSize);
             if (bytesRead != header.m_payloadSize)
             {
                 Fail(ErrorCode::kStreamReadFailed);
@@ -362,7 +348,7 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::EndDocument()
+    void TaggedBinaryFormat::EndDocumentImpl()
     {
         if (!IsSerializing() || !IsValid())
             return;
@@ -370,24 +356,24 @@ namespace FE::Serialization
         FE_Assert(m_impl->m_outputFrames.size() == 1);
         const auto& payload = m_impl->m_outputFrames.back();
         m_impl->m_outputHeader.m_payloadSize = payload.size();
-        if (!m_impl->m_stream->Write(m_impl->m_outputHeader))
+        if (!GetStream()->Write(m_impl->m_outputHeader))
         {
             Fail(ErrorCode::kStreamWriteFailed);
             return;
         }
-        if (!payload.empty() && m_impl->m_stream->WriteFromBuffer(payload.data(), payload.size()) != payload.size())
+        if (!payload.empty() && GetStream()->WriteFromBuffer(payload.data(), payload.size()) != payload.size())
             Fail(ErrorCode::kStreamWriteFailed);
     }
 
 
-    bool TaggedBinaryContext::BeginObjectImpl()
+    bool TaggedBinaryFormat::BeginObjectImpl()
     {
         return true;
     }
-    void TaggedBinaryContext::EndObjectImpl() {}
+    void TaggedBinaryFormat::EndObjectImpl() {}
 
 
-    bool TaggedBinaryContext::BeginField(festd::ascii_view, const uint64_t fieldID)
+    bool TaggedBinaryFormat::BeginFieldImpl(festd::ascii_view, const uint64_t fieldID)
     {
         if (IsSerializing())
         {
@@ -430,7 +416,7 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::EndField()
+    void TaggedBinaryFormat::EndFieldImpl()
     {
         if (IsSerializing())
         {
@@ -450,7 +436,7 @@ namespace FE::Serialization
     }
 
 
-    bool TaggedBinaryContext::BeginArrayImpl(uint32_t& size)
+    bool TaggedBinaryFormat::BeginArrayImpl(uint32_t& size)
     {
         if (IsSerializing())
         {
@@ -470,14 +456,14 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::EndArrayImpl()
+    void TaggedBinaryFormat::EndArrayImpl()
     {
         if (IsDeserializing())
             m_impl->m_inputArrays.pop_back();
     }
 
 
-    bool TaggedBinaryContext::BeginElement(uint32_t)
+    bool TaggedBinaryFormat::BeginElementImpl(uint32_t)
     {
         if (IsSerializing())
         {
@@ -504,7 +490,7 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::EndElement()
+    void TaggedBinaryFormat::EndElementImpl()
     {
         if (IsSerializing())
         {
@@ -520,32 +506,32 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
+    void TaggedBinaryFormat::StoreScalarImpl(ScalarKind, const void* value, const uint32_t byteSize)
     {
         StoreBytesImpl(value, byteSize);
     }
 
 
-    void TaggedBinaryContext::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
+    void TaggedBinaryFormat::LoadScalarImpl(ScalarKind, void* value, const uint32_t byteSize)
     {
         LoadBytesImpl(value, byteSize);
     }
 
 
-    void TaggedBinaryContext::StoreBytesImpl(const void* value, const uint32_t byteSize)
+    void TaggedBinaryFormat::StoreBytesImpl(const void* value, const uint32_t byteSize)
     {
         AppendBytes(m_impl->m_outputFrames.back(), value, byteSize);
     }
 
 
-    void TaggedBinaryContext::LoadBytesImpl(void* value, const uint32_t byteSize)
+    void TaggedBinaryFormat::LoadBytesImpl(void* value, const uint32_t byteSize)
     {
         if (!ReadFrame(m_impl->m_inputFrames.back(), value, byteSize))
             Fail(ErrorCode::kMalformedData);
     }
 
 
-    void TaggedBinaryContext::StoreStringImpl(const festd::string_view value)
+    void TaggedBinaryFormat::StoreStringImpl(const festd::string_view value)
     {
         const uint32_t size = value.size();
         Append(m_impl->m_outputFrames.back(), size);
@@ -553,7 +539,7 @@ namespace FE::Serialization
     }
 
 
-    uint32_t TaggedBinaryContext::LoadStringSizeImpl()
+    uint32_t TaggedBinaryFormat::LoadStringSizeImpl()
     {
         InputFrame& frame = m_impl->m_inputFrames.back();
         if (!ReadFrame(frame, &m_impl->m_pendingStringSize, sizeof(m_impl->m_pendingStringSize)))
@@ -570,7 +556,7 @@ namespace FE::Serialization
     }
 
 
-    void TaggedBinaryContext::LoadStringImpl(const festd::span<char> buffer)
+    void TaggedBinaryFormat::LoadStringImpl(const festd::span<char> buffer)
     {
         if (buffer.size() != m_impl->m_pendingStringSize)
         {
@@ -586,14 +572,14 @@ namespace FE::Serialization
     }
 
 
-    uint64_t TaggedBinaryContext::GetCurrentOffset() const
+    uint64_t TaggedBinaryFormat::GetCurrentOffsetImpl() const
     {
         if (IsSerializing())
-            return m_impl->m_stream->Tell();
+            return GetStream()->Tell();
         if (m_impl->m_inputFrames.empty())
-            return m_impl->m_stream->Tell();
+            return GetStream()->Tell();
         if (m_impl->m_inputStorage.empty())
-            return m_impl->m_stream->Tell();
+            return GetStream()->Tell();
 
         const InputFrame& frame = m_impl->m_inputFrames.back();
         return sizeof(TaggedHeader) + static_cast<uint64_t>(frame.m_data - m_impl->m_inputStorage.data()) + frame.m_position;

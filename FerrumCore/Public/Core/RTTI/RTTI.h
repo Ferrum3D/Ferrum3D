@@ -188,13 +188,14 @@ public:                                                                         
 namespace FE::Serialization
 {
     struct SerializationContext;
-}
+    struct DeserializationContext;
+} // namespace FE::Serialization
 
 
 #define FE_RTTI_Serialize()                                                                                                      \
 public:                                                                                                                          \
     bool RTTI_Serialize(FE::Serialization::SerializationContext& context) const;                                                 \
-    bool RTTI_Deserialize(FE::Serialization::SerializationContext& context);                                                     \
+    bool RTTI_Deserialize(FE::Serialization::DeserializationContext& context);                                                   \
     static uint64_t RTTI_GetSerializationSchemaHash();                                                                           \
     static uint32_t RTTI_GetSerializationVersion();                                                                              \
                                                                                                                                  \

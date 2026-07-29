@@ -155,7 +155,7 @@ namespace FE::Serialization
     } // namespace
 
 
-    struct JsonContext::Impl final
+    struct JsonFormat::Impl final
     {
         using Encoding = rapidjson::UTF8<>;
         using PoolAllocator = rapidjson::MemoryPoolAllocator<RapidJsonAllocator>;
@@ -164,16 +164,14 @@ namespace FE::Serialization
         using Document = rapidjson::GenericDocument<Encoding, PoolAllocator, RapidJsonAllocator>;
         using Value = rapidjson::GenericValue<Encoding, PoolAllocator>;
 
-        explicit Impl(IO::IStream* stream)
-            : m_stream(stream)
-            , m_poolAllocator(64 * 1024, &m_allocator)
+        Impl()
+            : m_poolAllocator(64 * 1024, &m_allocator)
             , m_output(&m_allocator)
             , m_writer(m_output, &m_allocator)
             , m_document(&m_poolAllocator, 1024, &m_allocator)
         {
         }
 
-        IO::IStream* m_stream;
         RapidJsonAllocator m_allocator;
         PoolAllocator m_poolAllocator;
         Output m_output;
@@ -185,18 +183,17 @@ namespace FE::Serialization
     };
 
 
-    JsonContext::JsonContext(IO::IStream* stream)
-        : SerializationContext(Format::kJson)
-        , m_impl(festd::make_unique<Impl>(stream))
+    JsonFormat::JsonFormat()
+        : SerializationFormat(Format::kJson)
+        , m_impl(festd::make_unique<Impl>())
     {
-        FE_Assert(stream != nullptr);
     }
 
 
-    JsonContext::~JsonContext() = default;
+    JsonFormat::~JsonFormat() = default;
 
 
-    void JsonContext::Reset()
+    void JsonFormat::ResetImpl()
     {
         m_impl->m_document.SetNull();
         m_impl->m_poolAllocator.Clear();
@@ -208,7 +205,7 @@ namespace FE::Serialization
     }
 
 
-    bool JsonContext::BeginDocument(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
+    bool JsonFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
     {
         if (IsSerializing())
         {
@@ -232,7 +229,7 @@ namespace FE::Serialization
         char chunk[4096];
         while (true)
         {
-            const size_t bytesRead = m_impl->m_stream->ReadToBuffer(chunk, sizeof(chunk));
+            const size_t bytesRead = GetStream()->ReadToBuffer(chunk, sizeof(chunk));
             m_impl->m_input.insert(m_impl->m_input.end(), chunk, chunk + bytesRead);
             if (bytesRead != sizeof(chunk))
                 break;
@@ -305,31 +302,33 @@ namespace FE::Serialization
         festd::string_view schemaString{ schemaValue.GetString(), schemaValue.GetStringLength() };
         if (schemaString.starts_with("0x"))
             schemaString = schemaString.substr(2);
-        if (Parser::TryParseUInt64(schemaString, m_serializedSchemaHash, 16) != Parser::ResultCode::kSuccess)
+        uint64_t serializedSchemaHash = 0;
+        if (Parser::TryParseUInt64(schemaString, serializedSchemaHash, 16) != Parser::ResultCode::kSuccess)
         {
             Fail(ErrorCode::kInvalidNumber);
             return false;
         }
 
-        m_serializedVersion = versionValue.GetUint();
+        SetSerializedVersion(versionValue.GetUint());
+        SetSerializedSchemaHash(serializedSchemaHash);
         m_impl->m_inputValues.push_back(&m_impl->m_document["$value"]);
         return true;
     }
 
 
-    void JsonContext::EndDocument()
+    void JsonFormat::EndDocumentImpl()
     {
         if (!IsSerializing() || !IsValid())
             return;
 
         m_impl->m_writer.EndObject();
         const size_t size = m_impl->m_output.GetSize();
-        if (m_impl->m_stream->WriteFromBuffer(m_impl->m_output.GetString(), size) != size)
+        if (GetStream()->WriteFromBuffer(m_impl->m_output.GetString(), size) != size)
             Fail(ErrorCode::kStreamWriteFailed);
     }
 
 
-    bool JsonContext::BeginObjectImpl()
+    bool JsonFormat::BeginObjectImpl()
     {
         if (IsSerializing())
         {
@@ -346,14 +345,14 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::EndObjectImpl()
+    void JsonFormat::EndObjectImpl()
     {
         if (IsSerializing() && IsValid())
             m_impl->m_writer.EndObject();
     }
 
 
-    bool JsonContext::BeginField(const festd::ascii_view name, uint64_t)
+    bool JsonFormat::BeginFieldImpl(const festd::ascii_view name, uint64_t)
     {
         if (IsSerializing())
         {
@@ -371,14 +370,14 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::EndField()
+    void JsonFormat::EndFieldImpl()
     {
         if (IsDeserializing())
             m_impl->m_inputValues.pop_back();
     }
 
 
-    bool JsonContext::BeginArrayImpl(uint32_t& size)
+    bool JsonFormat::BeginArrayImpl(uint32_t& size)
     {
         if (IsSerializing())
         {
@@ -398,14 +397,14 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::EndArrayImpl()
+    void JsonFormat::EndArrayImpl()
     {
         if (IsSerializing() && IsValid())
             m_impl->m_writer.EndArray();
     }
 
 
-    bool JsonContext::BeginElement(const uint32_t index)
+    bool JsonFormat::BeginElementImpl(const uint32_t index)
     {
         if (IsSerializing())
             return true;
@@ -427,14 +426,14 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::EndElement()
+    void JsonFormat::EndElementImpl()
     {
         if (IsDeserializing())
             m_impl->m_inputValues.pop_back();
     }
 
 
-    void JsonContext::StoreScalarImpl(const ScalarKind kind, const void* value, const uint32_t byteSize)
+    void JsonFormat::StoreScalarImpl(const ScalarKind kind, const void* value, const uint32_t byteSize)
     {
         auto& writer = m_impl->m_writer;
         switch (kind)
@@ -475,7 +474,7 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::LoadScalarImpl(const ScalarKind kind, void* value, const uint32_t byteSize)
+    void JsonFormat::LoadScalarImpl(const ScalarKind kind, void* value, const uint32_t byteSize)
     {
         const Impl::Value* input = m_impl->m_inputValues.back();
         switch (kind)
@@ -535,7 +534,7 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::StoreBytesImpl(const void* value, const uint32_t byteSize)
+    void JsonFormat::StoreBytesImpl(const void* value, const uint32_t byteSize)
     {
         static constexpr char kHex[] = "0123456789abcdef";
         festd::inline_string buffer;
@@ -550,7 +549,7 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::LoadBytesImpl(void* value, const uint32_t byteSize)
+    void JsonFormat::LoadBytesImpl(void* value, const uint32_t byteSize)
     {
         const Impl::Value* input = m_impl->m_inputValues.back();
         if (!input->IsString())
@@ -589,14 +588,14 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::StoreStringImpl(const festd::string_view value)
+    void JsonFormat::StoreStringImpl(const festd::string_view value)
     {
         const char* data = value.empty() ? "" : value.data();
         m_impl->m_writer.String(data, static_cast<rapidjson::SizeType>(value.size()));
     }
 
 
-    uint32_t JsonContext::LoadStringSizeImpl()
+    uint32_t JsonFormat::LoadStringSizeImpl()
     {
         const Impl::Value* value = m_impl->m_inputValues.back();
         if (!value->IsString())
@@ -609,7 +608,7 @@ namespace FE::Serialization
     }
 
 
-    void JsonContext::LoadStringImpl(const festd::span<char> buffer)
+    void JsonFormat::LoadStringImpl(const festd::span<char> buffer)
     {
         if (buffer.size() != m_impl->m_pendingStringSize)
         {
@@ -624,8 +623,8 @@ namespace FE::Serialization
     }
 
 
-    uint64_t JsonContext::GetCurrentOffset() const
+    uint64_t JsonFormat::GetCurrentOffsetImpl() const
     {
-        return m_impl->m_stream->Tell();
+        return GetStream()->Tell();
     }
 } // namespace FE::Serialization
