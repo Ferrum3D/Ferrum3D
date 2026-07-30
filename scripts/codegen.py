@@ -19,7 +19,6 @@ os.chdir(script_directory)
 PROJECT_DIR = Path.cwd().parent.absolute()
 LLVM_DIR = PROJECT_DIR / "ThirdParty/llvm"
 
-HEADER_SUFFIXES = {".h", ".hh", ".hpp", ".hxx", ".h++"}
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s*(?:"([^"]+)"|<([^>]+)>)', re.MULTILINE)
 
 
@@ -118,7 +117,7 @@ def _find_headers(project: Project) -> list[Path]:
         path.resolve()
         for path in project.root.rglob("*")
         if path.is_file()
-        and path.suffix.lower() in HEADER_SUFFIXES
+        and path.suffix.lower() == ".h"
         and not _is_relative_to(path, tests_dir)
     )
 

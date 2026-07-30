@@ -1,7 +1,7 @@
 #include <Core/Serialization/JsonSerialization.h>
 #include <Core/Strings/Format.h>
 #include <Core/Strings/Parser.h>
-#include <cmath>
+
 FE_PUSH_MSVC_WARNING(5054)
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
@@ -27,10 +27,13 @@ namespace FE::Serialization
                 {
                     if (original != nullptr)
                         Memory::DefaultFree(original);
+
                     return nullptr;
                 }
+
                 if (original == nullptr)
                     return Memory::DefaultAllocate(newSize);
+
                 return Memory::DefaultReallocate(original, newSize);
             }
 
@@ -138,7 +141,7 @@ namespace FE::Serialization
         {
             line = 1;
             column = 1;
-            const uint32_t end = static_cast<uint32_t>(std::min<uint64_t>(offset, input.size()));
+            const uint32_t end = static_cast<uint32_t>(Math::Min<uint64_t>(offset, input.size()));
             for (uint32_t i = 0; i < end; ++i)
             {
                 if (input[i] == '\n')
@@ -205,7 +208,7 @@ namespace FE::Serialization
     }
 
 
-    bool JsonFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
+    ResultCode JsonFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
     {
         if (IsSerializing())
         {
@@ -223,13 +226,13 @@ namespace FE::Serialization
             writer.Key("$schema");
             writer.String(schemaString.data(), schemaString.size());
             writer.Key("$value");
-            return true;
+            return ResultCode::kSuccess;
         }
 
         char chunk[4096];
         while (true)
         {
-            const size_t bytesRead = GetStream()->ReadToBuffer(chunk, sizeof(chunk));
+            const size_t bytesRead = m_stream->ReadToBuffer(chunk, sizeof(chunk));
             m_impl->m_input.insert(m_impl->m_input.end(), chunk, chunk + bytesRead);
             if (bytesRead != sizeof(chunk))
                 break;
@@ -242,301 +245,267 @@ namespace FE::Serialization
             const uint64_t offset = m_impl->m_document.GetErrorOffset();
             uint32_t line = 0;
             uint32_t column = 0;
-            GetLineAndColumn(festd::span<const char>{ m_impl->m_input.data(), m_impl->m_input.size() }, offset, line, column);
-            Fail(ErrorCode::kJsonParseError, offset, line, column);
-            return false;
+            GetLineAndColumn(m_impl->m_input, offset, line, column);
+            return Fail(ResultCode::kJsonParseError, offset, line, column);
         }
+
         if (!m_impl->m_document.IsObject())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (!m_impl->m_document.HasMember("$type"))
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (!m_impl->m_document.HasMember("$version"))
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (!m_impl->m_document.HasMember("$schema"))
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (!m_impl->m_document.HasMember("$value"))
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
 
         const auto& typeValue = m_impl->m_document["$type"];
-        const auto& versionValue = m_impl->m_document["$version"];
-        const auto& schemaValue = m_impl->m_document["$schema"];
         if (!typeValue.IsString())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
+        const auto& versionValue = m_impl->m_document["$version"];
         if (!versionValue.IsUint())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
+        const auto& schemaValue = m_impl->m_document["$schema"];
         if (!schemaValue.IsString())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
 
-        const Rtti::TypeID serializedType =
-            Rtti::TypeID::Parse(festd::ascii_view{ typeValue.GetString(), typeValue.GetStringLength() });
+        const festd::ascii_view serializedTypeIdString{ typeValue.GetString(), typeValue.GetStringLength() };
+        const Rtti::TypeID serializedType = Rtti::TypeID::Parse(serializedTypeIdString);
         if (expectedType.IsValid() && serializedType != expectedType)
-        {
-            Fail(ErrorCode::kTypeMismatch);
-            return false;
-        }
+            return Fail(ResultCode::kTypeMismatch);
 
-        festd::string_view schemaString{ schemaValue.GetString(), schemaValue.GetStringLength() };
-        if (schemaString.starts_with("0x"))
-            schemaString = schemaString.substr(2);
         uint64_t serializedSchemaHash = 0;
+        const festd::string_view schemaString{ schemaValue.GetString(), schemaValue.GetStringLength() };
         if (Parser::TryParseUInt64(schemaString, serializedSchemaHash, 16) != Parser::ResultCode::kSuccess)
-        {
-            Fail(ErrorCode::kInvalidNumber);
-            return false;
-        }
+            return Fail(ResultCode::kInvalidNumber);
 
-        SetSerializedVersion(versionValue.GetUint());
-        SetSerializedSchemaHash(serializedSchemaHash);
+        m_serializedVersion = versionValue.GetUint();
+        m_serializedSchemaHash = serializedSchemaHash;
         m_impl->m_inputValues.push_back(&m_impl->m_document["$value"]);
-        return true;
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::EndDocumentImpl()
+    ResultCode JsonFormat::EndDocumentImpl()
     {
         if (!IsSerializing() || !IsValid())
-            return;
+            return m_error.m_code;
 
         m_impl->m_writer.EndObject();
         const size_t size = m_impl->m_output.GetSize();
-        if (GetStream()->WriteFromBuffer(m_impl->m_output.GetString(), size) != size)
-            Fail(ErrorCode::kStreamWriteFailed);
+        if (m_stream->WriteFromBuffer(m_impl->m_output.GetString(), size) != size)
+            return Fail(ResultCode::kStreamWriteFailed);
+
+        return ResultCode::kSuccess;
     }
 
 
-    bool JsonFormat::BeginObjectImpl()
+    ResultCode JsonFormat::BeginObjectImpl()
     {
         if (IsSerializing())
         {
             m_impl->m_writer.StartObject();
-            return true;
+            return ResultCode::kSuccess;
         }
 
         if (!m_impl->m_inputValues.back()->IsObject())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
-        return true;
+            return Fail(ResultCode::kMalformedData);
+
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::EndObjectImpl()
+    ResultCode JsonFormat::EndObjectImpl()
     {
         if (IsSerializing() && IsValid())
             m_impl->m_writer.EndObject();
+
+        return m_error.m_code;
     }
 
 
-    bool JsonFormat::BeginFieldImpl(const festd::ascii_view name, uint64_t)
+    ResultCode JsonFormat::BeginFieldImpl(const festd::ascii_view name, uint64_t, bool& exists)
     {
+        exists = true;
         if (IsSerializing())
         {
             m_impl->m_writer.Key(name.data(), static_cast<rapidjson::SizeType>(name.size()));
-            return true;
+            return ResultCode::kSuccess;
         }
 
         Impl::Value* object = m_impl->m_inputValues.back();
         const auto member = object->FindMember(rapidjson::StringRef(name.data(), name.size()));
         if (member == object->MemberEnd())
-            return false;
+        {
+            exists = false;
+            return ResultCode::kSuccess;
+        }
 
         m_impl->m_inputValues.push_back(&member->value);
-        return true;
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::EndFieldImpl()
+    ResultCode JsonFormat::EndFieldImpl()
     {
         if (IsDeserializing())
             m_impl->m_inputValues.pop_back();
+
+        return ResultCode::kSuccess;
     }
 
 
-    bool JsonFormat::BeginArrayImpl(uint32_t& size)
+    ResultCode JsonFormat::BeginArrayImpl(uint32_t& size)
     {
         if (IsSerializing())
         {
             m_impl->m_writer.StartArray();
-            return true;
+            return ResultCode::kSuccess;
         }
 
         Impl::Value* array = m_impl->m_inputValues.back();
         if (!array->IsArray())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
 
         size = array->Size();
-        return true;
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::EndArrayImpl()
+    ResultCode JsonFormat::EndArrayImpl()
     {
         if (IsSerializing() && IsValid())
             m_impl->m_writer.EndArray();
+
+        return m_error.m_code;
     }
 
 
-    bool JsonFormat::BeginElementImpl(const uint32_t index)
+    ResultCode JsonFormat::BeginElementImpl(const uint32_t index)
     {
         if (IsSerializing())
-            return true;
+            return ResultCode::kSuccess;
 
         Impl::Value* array = m_impl->m_inputValues.back();
         if (!array->IsArray())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (index >= array->Size())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return false;
-        }
+            return Fail(ResultCode::kMalformedData);
 
         m_impl->m_inputValues.push_back(&(*array)[index]);
-        return true;
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::EndElementImpl()
+    ResultCode JsonFormat::EndElementImpl()
     {
         if (IsDeserializing())
             m_impl->m_inputValues.pop_back();
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::StoreScalarImpl(const ScalarKind kind, const void* value, const uint32_t byteSize)
+    ResultCode JsonFormat::StoreScalarImpl(const ScalarKind kind, const void* value, const uint32_t byteSize)
     {
         auto& writer = m_impl->m_writer;
         switch (kind)
         {
         case ScalarKind::kBool:
             writer.Bool(*static_cast<const bool*>(value));
-            return;
+            return ResultCode::kSuccess;
+
         case ScalarKind::kSigned:
             writer.Int64(LoadSigned(value, byteSize));
-            return;
+            return ResultCode::kSuccess;
+
         case ScalarKind::kUnsigned:
             writer.Uint64(LoadUnsigned(value, byteSize));
-            return;
+            return ResultCode::kSuccess;
+
         case ScalarKind::kFloat:
             if (byteSize == sizeof(float))
             {
                 const float number = *static_cast<const float*>(value);
-                if (!std::isfinite(number))
-                {
-                    Fail(ErrorCode::kUnsupportedValue);
-                    return;
-                }
-                const Fmt::HexFloatFormatter formatter{ number };
-                writer.String(formatter.View().data(), formatter.View().size());
-                return;
+                const uint32_t bits = std::bit_cast<uint32_t>(number);
+                writer.Uint(bits);
+                return ResultCode::kSuccess;
             }
 
             const double number = *static_cast<const double*>(value);
-            if (!std::isfinite(number))
-            {
-                Fail(ErrorCode::kUnsupportedValue);
-                return;
-            }
-            const Fmt::HexFloatFormatter formatter{ number };
-            writer.String(formatter.View().data(), formatter.View().size());
-            return;
+            const uint64_t bits = std::bit_cast<uint64_t>(number);
+            writer.Uint64(bits);
+            return ResultCode::kSuccess;
         }
+
+        return Fail(ResultCode::kUnsupportedValue);
     }
 
 
-    void JsonFormat::LoadScalarImpl(const ScalarKind kind, void* value, const uint32_t byteSize)
+    ResultCode JsonFormat::LoadScalarImpl(const ScalarKind kind, void* value, const uint32_t byteSize)
     {
         const Impl::Value* input = m_impl->m_inputValues.back();
         switch (kind)
         {
         case ScalarKind::kBool:
             if (!input->IsBool())
-                Fail(ErrorCode::kMalformedData);
-            else
-                *static_cast<bool*>(value) = input->GetBool();
-            return;
+                return Fail(ResultCode::kMalformedData);
+            *static_cast<bool*>(value) = input->GetBool();
+            return ResultCode::kSuccess;
+
         case ScalarKind::kSigned:
             if (!input->IsInt64())
-            {
-                Fail(ErrorCode::kMalformedData);
-                return;
-            }
+                return Fail(ResultCode::kMalformedData);
+
             if (!StoreSigned(value, byteSize, input->GetInt64()))
-                Fail(ErrorCode::kInvalidNumber);
-            return;
+                return Fail(ResultCode::kInvalidNumber);
+
+            return ResultCode::kSuccess;
+
         case ScalarKind::kUnsigned:
             if (!input->IsUint64())
-            {
-                Fail(ErrorCode::kMalformedData);
-                return;
-            }
+                return Fail(ResultCode::kMalformedData);
+
             if (!StoreUnsigned(value, byteSize, input->GetUint64()))
-                Fail(ErrorCode::kInvalidNumber);
-            return;
+                return Fail(ResultCode::kInvalidNumber);
+
+            return ResultCode::kSuccess;
+
         case ScalarKind::kFloat:
             if (input->IsNumber())
             {
                 if (byteSize == sizeof(float))
-                    *static_cast<float*>(value) = input->GetFloat();
+                {
+                    const uint32_t bits = input->GetUint();
+                    *static_cast<float*>(value) = std::bit_cast<float>(bits);
+                }
                 else
-                    *static_cast<double*>(value) = input->GetDouble();
-                return;
-            }
-            if (!input->IsString())
-            {
-                Fail(ErrorCode::kMalformedData);
-                return;
+                {
+                    const uint64_t bits = input->GetUint64();
+                    *static_cast<double*>(value) = std::bit_cast<double>(bits);
+                }
+
+                return ResultCode::kSuccess;
             }
 
-            double parsedValue = 0.0;
-            const festd::string_view string{ input->GetString(), input->GetStringLength() };
-            if (Parser::TryParseHexDouble(string, parsedValue) != Parser::ResultCode::kSuccess)
-            {
-                Fail(ErrorCode::kInvalidNumber);
-                return;
-            }
-            if (byteSize == sizeof(float))
-                *static_cast<float*>(value) = static_cast<float>(parsedValue);
-            else
-                *static_cast<double*>(value) = parsedValue;
-            return;
+            return Fail(ResultCode::kMalformedData);
         }
+
+        return Fail(ResultCode::kUnsupportedValue);
     }
 
 
-    void JsonFormat::StoreBytesImpl(const void* value, const uint32_t byteSize)
+    ResultCode JsonFormat::StoreBytesImpl(const void* value, const uint32_t byteSize)
     {
         static constexpr char kHex[] = "0123456789abcdef";
+
         festd::inline_string buffer;
         buffer.resize_uninitialized(byteSize * 2);
         const auto* bytes = static_cast<const uint8_t*>(value);
@@ -545,23 +514,20 @@ namespace FE::Serialization
             buffer.data()[i * 2] = kHex[bytes[i] >> 4];
             buffer.data()[i * 2 + 1] = kHex[bytes[i] & 0xf];
         }
+
         m_impl->m_writer.String(buffer.data(), buffer.size());
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::LoadBytesImpl(void* value, const uint32_t byteSize)
+    ResultCode JsonFormat::LoadBytesImpl(void* value, const uint32_t byteSize)
     {
         const Impl::Value* input = m_impl->m_inputValues.back();
         if (!input->IsString())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         if (input->GetStringLength() != byteSize * 2)
-        {
-            Fail(ErrorCode::kMalformedData);
-            return;
-        }
+            return Fail(ResultCode::kMalformedData);
 
         auto HexValue = [](const char c) -> uint8_t {
             if (c >= '0' && c <= '9')
@@ -579,52 +545,51 @@ namespace FE::Serialization
             const uint8_t high = HexValue(input->GetString()[i * 2]);
             const uint8_t low = HexValue(input->GetString()[i * 2 + 1]);
             if (high == UINT8_MAX || low == UINT8_MAX)
-            {
-                Fail(ErrorCode::kInvalidString);
-                return;
-            }
+                return Fail(ResultCode::kInvalidString);
+
             bytes[i] = static_cast<uint8_t>((high << 4) | low);
         }
+
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::StoreStringImpl(const festd::string_view value)
+    ResultCode JsonFormat::StoreStringImpl(const festd::string_view value)
     {
         const char* data = value.empty() ? "" : value.data();
-        m_impl->m_writer.String(data, static_cast<rapidjson::SizeType>(value.size()));
+        m_impl->m_writer.String(data, value.size());
+        return ResultCode::kSuccess;
     }
 
 
-    uint32_t JsonFormat::LoadStringSizeImpl()
+    ResultCode JsonFormat::LoadStringSizeImpl(uint32_t& size)
     {
         const Impl::Value* value = m_impl->m_inputValues.back();
         if (!value->IsString())
-        {
-            Fail(ErrorCode::kMalformedData);
-            return 0;
-        }
+            return Fail(ResultCode::kMalformedData);
+
         m_impl->m_pendingStringSize = value->GetStringLength();
-        return m_impl->m_pendingStringSize;
+        size = m_impl->m_pendingStringSize;
+        return ResultCode::kSuccess;
     }
 
 
-    void JsonFormat::LoadStringImpl(const festd::span<char> buffer)
+    ResultCode JsonFormat::LoadStringImpl(const festd::span<char> buffer)
     {
         if (buffer.size() != m_impl->m_pendingStringSize)
-        {
-            Fail(ErrorCode::kMalformedData);
-            return;
-        }
+            return Fail(ResultCode::kMalformedData);
 
         const Impl::Value* value = m_impl->m_inputValues.back();
         if (!buffer.empty())
             memcpy(buffer.data(), value->GetString(), buffer.size());
+
         m_impl->m_pendingStringSize = 0;
+        return ResultCode::kSuccess;
     }
 
 
     uint64_t JsonFormat::GetCurrentOffsetImpl() const
     {
-        return GetStream()->Tell();
+        return m_stream->Tell();
     }
 } // namespace FE::Serialization

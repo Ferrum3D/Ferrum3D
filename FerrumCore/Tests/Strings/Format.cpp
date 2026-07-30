@@ -33,8 +33,6 @@ TEST(Format, Fixed)
 TEST(Format, HexadecimalNumbers)
 {
     EXPECT_EQ(Fmt::HexFormatter{ UINT64_C(0x1234abcdef) }.View(), "1234abcdef");
-    EXPECT_EQ(Fmt::HexFloatFormatter{ 0.123f }.View(), "0x1.f7cedap-4");
-    EXPECT_EQ(Fmt::HexFloatFormatter{ -2.5 }.View(), "-0x1.4000000000000p+1");
 }
 
 TEST(Format, ManualIndices)

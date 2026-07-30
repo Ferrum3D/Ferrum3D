@@ -64,39 +64,38 @@ namespace FE::Serialization::Tests
 
     static Rtti::TypeRegistrar GTypeRegistrar_8e8f777d28c647f789c6e66e68a2b31d(&PackedDesc::Reflect);
 
-    bool PackedDesc::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    FE::Serialization::ResultCode PackedDesc::Serialize(FE::Serialization::SerializationContext& context) const
     {
         if (auto object = context.BeginObject())
         {
-            const auto value_m_width = m_width;
-            object.Field("m_width", value_m_width);
-            const auto value_m_height = m_height;
-            object.Field("m_height", value_m_height);
-            const auto value_m_flags = m_flags;
-            object.Field("m_flags", value_m_flags);
+            object.Field("m_width", m_width);
+            object.Field("m_height", m_height);
+            object.Field("m_flags", m_flags);
             object.Field("m_scale", m_scale);
-            return context.IsValid();
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
-    bool PackedDesc::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
+    FE::Serialization::ResultCode PackedDesc::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
         {
-            auto value_m_width = m_width;
-            object.Field("m_width", value_m_width);
-            m_width = value_m_width;
-            auto value_m_height = m_height;
-            object.Field("m_height", value_m_height);
-            m_height = value_m_height;
-            auto value_m_flags = m_flags;
-            object.Field("m_flags", value_m_flags);
-            m_flags = value_m_flags;
+            auto bitfield_temp_m_width = m_width;
+            auto bitfield_temp_m_height = m_height;
+            auto bitfield_temp_m_flags = m_flags;
+            object.Field("m_width", bitfield_temp_m_width);
+            object.Field("m_height", bitfield_temp_m_height);
+            object.Field("m_flags", bitfield_temp_m_flags);
             object.Field("m_scale", m_scale);
-            return context.IsValid();
+            m_width = bitfield_temp_m_width;
+            m_height = bitfield_temp_m_height;
+            m_flags = bitfield_temp_m_flags;
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
     uint64_t PackedDesc::RTTI_GetSerializationSchemaHash()
@@ -118,6 +117,7 @@ namespace FE::Serialization::Tests
             hasher.Update(0);
             return hasher.Finalize();
         }();
+
         return kHash;
     }
 
@@ -257,7 +257,7 @@ namespace FE::Serialization::Tests
 
     static Rtti::TypeRegistrar GTypeRegistrar_cc51822c73864596a208f4a4950d63cb(&TestObject::Reflect);
 
-    bool TestObject::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    FE::Serialization::ResultCode TestObject::Serialize(FE::Serialization::SerializationContext& context) const
     {
         if (auto object = context.BeginObject())
         {
@@ -266,12 +266,13 @@ namespace FE::Serialization::Tests
             object.Field("m_values", m_values);
             object.Field("m_coordinates", m_coordinates);
             object.Field("m_name", m_name);
-            return context.IsValid();
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
-    bool TestObject::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
+    FE::Serialization::ResultCode TestObject::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
         {
@@ -280,9 +281,10 @@ namespace FE::Serialization::Tests
             object.Field("m_values", m_values);
             object.Field("m_coordinates", m_coordinates);
             object.Field("m_name", m_name);
-            return context.IsValid();
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
     uint64_t TestObject::RTTI_GetSerializationSchemaHash()
@@ -303,15 +305,16 @@ namespace FE::Serialization::Tests
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_coordinates)>());
             hasher.Update("m_name", 6);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
-            hasher.Update(kSerializationVersion);
+            hasher.Update(kVersion);
             return hasher.Finalize();
         }();
+
         return kHash;
     }
 
     uint32_t TestObject::RTTI_GetSerializationVersion()
     {
-        return kSerializationVersion;
+        return kVersion;
     }
 
 } // namespace FE::Serialization::Tests

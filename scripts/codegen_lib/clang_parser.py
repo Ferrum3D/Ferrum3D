@@ -329,7 +329,7 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
         elif is_class(child.kind) and child.spelling == "RTTI_SerializationMarker":
             marker_attributes = parse_attributes(child)
             is_serializable = "SerializeGenerated" in marker_attributes
-        elif child.kind == cindex.CursorKind.VAR_DECL and child.spelling in ("kVersion", "kSerializationVersion"):
+        elif child.kind == cindex.CursorKind.VAR_DECL and child.spelling == "kVersion":
             serialization_version = child.spelling
 
     if member_reflection_id is not None:

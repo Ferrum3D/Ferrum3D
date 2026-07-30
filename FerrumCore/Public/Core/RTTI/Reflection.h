@@ -4,6 +4,7 @@
 
 namespace FE::Serialization
 {
+    enum class ResultCode : int32_t;
     struct SerializationContext;
     struct DeserializationContext;
 } // namespace FE::Serialization
@@ -81,8 +82,8 @@ namespace FE::Rtti
     {
         using DefaultConstructor = void (*)(void*);
         using Destructor = void (*)(void*);
-        using Serialize = bool (*)(Serialization::SerializationContext&, const void*);
-        using Deserialize = bool (*)(Serialization::DeserializationContext&, void*);
+        using Serialize = Serialization::ResultCode (*)(Serialization::SerializationContext&, const void*);
+        using Deserialize = Serialization::ResultCode (*)(Serialization::DeserializationContext&, void*);
 
         TypeID m_id = TypeID::kNull;
         festd::ascii_view m_name;

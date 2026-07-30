@@ -20,7 +20,7 @@ namespace FE::Serialization::Tests
 
     struct TestObject final
     {
-        static constexpr uint32_t kSerializationVersion = 1 + 2;
+        static constexpr uint32_t kVersion = 1 + 2;
 
         Uuid m_id;
         PackedDesc m_desc;

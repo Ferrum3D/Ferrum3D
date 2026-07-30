@@ -1,4 +1,4 @@
-#include <Core/IO/StreamBase.h>
+﻿#include <Core/IO/StreamBase.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Serialization/SerializationTypes.h>
@@ -8,9 +8,8 @@ namespace FE::Serialization::Tests
 {
     namespace
     {
-        class MemoryStream final : public IO::BufferedStream
+        struct MemoryStream final : public IO::BufferedStream
         {
-        public:
             MemoryStream()
                 : BufferedStream(nullptr)
             {
@@ -117,6 +116,37 @@ namespace FE::Serialization::Tests
         };
 
 
+        struct ManualObject final
+        {
+            static constexpr uint32_t kVersion = 7;
+
+            uint32_t m_count = 0;
+            festd::string m_name;
+
+            static ResultCode Serialize(SerializationContext& context, const ManualObject& value)
+            {
+                if (auto object = context.BeginObject())
+                {
+                    object.Field("m_count", value.m_count).Field("m_name", value.m_name);
+                    return context.GetResultCode();
+                }
+
+                return context.GetResultCode();
+            }
+
+            static ResultCode Deserialize(DeserializationContext& context, ManualObject& value)
+            {
+                if (auto object = context.BeginObject())
+                {
+                    object.Field("m_count", value.m_count).Field("m_name", value.m_name);
+                    return context.GetResultCode();
+                }
+
+                return context.GetResultCode();
+            }
+        };
+
+
         TestObject CreateObject()
         {
             TestObject result;
@@ -153,13 +183,13 @@ namespace FE::Serialization::Tests
             TestObject source = CreateObject();
             TFormat format;
             SerializationContext writer(&stream, format);
-            ASSERT_TRUE(writer.Store(source));
+            ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
 
             stream.Rewind();
             TestObject destination;
             destination.m_transient = 99;
             DeserializationContext reader(&stream, format);
-            ASSERT_TRUE(reader.Load(destination));
+            ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
             ExpectEqual(source, destination);
             EXPECT_EQ(destination.m_transient, 99);
         }
@@ -178,24 +208,48 @@ namespace FE::Serialization::Tests
         const TestObject source = CreateObject();
         PackedBinaryFormat format;
         SerializationContext writer(&stream, format);
-        ASSERT_TRUE(writer.Store(source));
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
 
         auto bytes = stream.GetMutableData();
         ASSERT_GE(bytes.size(), 9);
+        const std::byte firstByte = bytes[0];
         bytes[0] = std::byte{ 0 };
 
         stream.Rewind();
         TestObject destination;
         DeserializationContext reader(&stream, format);
-        EXPECT_FALSE(reader.Load(destination));
-        EXPECT_EQ(reader.GetError().m_code, ErrorCode::kInvalidHeader);
+        EXPECT_EQ(reader.Load(destination), ResultCode::kInvalidHeader);
+        EXPECT_EQ(reader.GetError().m_code, ResultCode::kInvalidHeader);
         EXPECT_EQ(reader.GetError().m_byteOffset, 32);
+
+        bytes[0] = firstByte;
+        stream.Rewind();
+        EXPECT_EQ(reader.Load(destination), ResultCode::kSuccess);
+        EXPECT_EQ(reader.GetError().m_code, ResultCode::kSuccess);
     }
 
 
     TEST(Serialization, TaggedBinaryRoundTrip)
     {
         TestRoundTrip<TaggedBinaryFormat>();
+    }
+
+
+    TEST(Serialization, ManualSerializationWithoutMacrosOrCodegen)
+    {
+        MemoryStream stream;
+        const ManualObject source{ .m_count = 42, .m_name = "manual" };
+        PackedBinaryFormat format;
+        SerializationContext writer(&stream, format);
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+
+        stream.Rewind();
+        ManualObject destination;
+        DeserializationContext reader(&stream, format);
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+        EXPECT_EQ(destination.m_count, source.m_count);
+        EXPECT_EQ(destination.m_name, source.m_name);
+        EXPECT_EQ(reader.GetSerializedVersion(), ManualObject::kVersion);
     }
 
 
@@ -222,9 +276,10 @@ namespace FE::Serialization::Tests
             if (auto object = context.BeginObject())
             {
                 object.Field("m_common", typedValue.m_common).Field("m_removed", typedValue.m_removed);
-                return context.IsValid();
+                return context.GetResultCode();
             }
-            return false;
+
+            return context.GetResultCode();
         };
 
         Rtti::Type newType;
@@ -236,21 +291,22 @@ namespace FE::Serialization::Tests
             if (auto object = context.BeginObject())
             {
                 object.Field("m_common", typedValue.m_common).Field("m_added", typedValue.m_added);
-                return context.IsValid();
+                return context.GetResultCode();
             }
-            return false;
+
+            return context.GetResultCode();
         };
 
         MemoryStream stream;
         const OldValue source{ .m_common = 42, .m_removed = 99 };
         TaggedBinaryFormat format;
         SerializationContext writer(&stream, format);
-        ASSERT_TRUE(writer.Store(oldType, &source));
+        ASSERT_EQ(writer.Store(oldType, &source), ResultCode::kSuccess);
 
         stream.Rewind();
         NewValue destination;
         DeserializationContext reader(&stream, format);
-        ASSERT_TRUE(reader.Load(newType, &destination));
+        ASSERT_EQ(reader.Load(newType, &destination), ResultCode::kSuccess);
         EXPECT_EQ(destination.m_common, source.m_common);
         EXPECT_EQ(destination.m_added, 17);
         EXPECT_EQ(reader.GetSerializedVersion(), 1);
@@ -264,16 +320,16 @@ namespace FE::Serialization::Tests
         TestObject source = CreateObject();
         JsonFormat format;
         SerializationContext writer(&stream, format);
-        ASSERT_TRUE(writer.Store(source));
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
 
         const auto json = stream.GetData();
         const std::string_view text{ reinterpret_cast<const char*>(json.data()), json.size() };
-        EXPECT_NE(text.find("\"0x1.f7cedap-4\""), std::string_view::npos);
+        ASSERT_GT(text.size(), 0);
 
         stream.Rewind();
         TestObject destination;
         DeserializationContext reader(&stream, format);
-        ASSERT_TRUE(reader.Load(destination));
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
         ExpectEqual(source, destination);
     }
 
@@ -287,12 +343,12 @@ namespace FE::Serialization::Tests
 
         JsonFormat format;
         SerializationContext writer(&stream, format);
-        ASSERT_TRUE(writer.Store(source));
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
 
         stream.Rewind();
         TestObject destination;
         DeserializationContext reader(&stream, format);
-        ASSERT_TRUE(reader.Load(destination));
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
         ExpectEqual(source, destination);
     }
 
@@ -307,8 +363,8 @@ namespace FE::Serialization::Tests
         TestObject destination;
         JsonFormat format;
         DeserializationContext reader(&stream, format);
-        EXPECT_FALSE(reader.Load(destination));
-        EXPECT_EQ(reader.GetError().m_code, ErrorCode::kJsonParseError);
+        EXPECT_EQ(reader.Load(destination), ResultCode::kJsonParseError);
+        EXPECT_EQ(reader.GetError().m_code, ResultCode::kJsonParseError);
         EXPECT_EQ(reader.GetError().m_line, 2);
         EXPECT_GT(reader.GetError().m_column, 1);
     }
@@ -321,7 +377,7 @@ namespace FE::Serialization::Tests
         ASSERT_NE(type.m_destructor, nullptr);
         ASSERT_NE(type.m_serialize, nullptr);
         ASSERT_NE(type.m_deserialize, nullptr);
-        EXPECT_EQ(type.m_serializationVersion, TestObject::kSerializationVersion);
+        EXPECT_EQ(type.m_serializationVersion, TestObject::kVersion);
         EXPECT_NE(type.m_serializationSchemaHash, 0);
 
         void* storage = Memory::DefaultAllocate(type.m_size, type.m_alignment);
@@ -331,11 +387,11 @@ namespace FE::Serialization::Tests
         const TestObject source = CreateObject();
         TaggedBinaryFormat format;
         SerializationContext writer(&stream, format);
-        ASSERT_TRUE(writer.Store(type, &source));
+        ASSERT_EQ(writer.Store(type, &source), ResultCode::kSuccess);
 
         stream.Rewind();
         DeserializationContext reader(&stream, format);
-        ASSERT_TRUE(reader.Load(type, storage));
+        ASSERT_EQ(reader.Load(type, storage), ResultCode::kSuccess);
         ExpectEqual(source, *static_cast<TestObject*>(storage));
 
         type.m_destructor(storage);

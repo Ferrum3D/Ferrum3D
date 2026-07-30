@@ -187,6 +187,7 @@ public:                                                                         
 
 namespace FE::Serialization
 {
+    enum class ResultCode : int32_t;
     struct SerializationContext;
     struct DeserializationContext;
 } // namespace FE::Serialization
@@ -194,8 +195,8 @@ namespace FE::Serialization
 
 #define FE_RTTI_Serialize()                                                                                                      \
 public:                                                                                                                          \
-    bool RTTI_Serialize(FE::Serialization::SerializationContext& context) const;                                                 \
-    bool RTTI_Deserialize(FE::Serialization::DeserializationContext& context);                                                   \
+    FE::Serialization::ResultCode Serialize(FE::Serialization::SerializationContext& context) const;                             \
+    FE::Serialization::ResultCode Deserialize(FE::Serialization::DeserializationContext& context);                               \
     static uint64_t RTTI_GetSerializationSchemaHash();                                                                           \
     static uint32_t RTTI_GetSerializationVersion();                                                                              \
                                                                                                                                  \

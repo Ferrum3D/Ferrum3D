@@ -30,12 +30,12 @@
 		<StringView>m_data,[m_size]</StringView>
 	</Type>
 
-	<Type Name="FE::Internal::StringImpl&lt;FE::Internal::BasicStringImpl&lt;*&lt;FE::Internal::DynamicStringStorage&gt;&gt;&gt;">
-		<DisplayString>{m_long.m_marker == 0xff ? m_long.m_data : &amp;m_short.m_data}</DisplayString>
-		<StringView>m_long.m_marker == 0xff ? m_long.m_data : &amp;m_short.m_data</StringView>
+	<Type Name="FE::Internal::DynamicStringStorage">
+		<DisplayString>{((char*)(this))[23] == 0xff ? (const char*)m_long.m_data : (const char*)&amp;m_short.m_data}</DisplayString>
+		<StringView>((char*)(this))[23] == 0xff ? (const char*)m_long.m_data : (const char*)&amp;m_short.m_data</StringView>
 	</Type>
 
-	<Type Name="FE::Internal::StringImpl&lt;FE::Internal::BasicStringImpl&lt;*&lt;FE::Internal::FixedStringStorage&lt;*&gt;&gt;&gt;&gt;">
+	<Type Name="FE::Internal::FixedStringStorage">
 		<DisplayString>{m_data,[m_size]}</DisplayString>
 		<StringView>m_data,[m_size]</StringView>
 	</Type>

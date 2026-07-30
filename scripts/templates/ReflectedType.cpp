@@ -220,7 +220,7 @@ namespace {{ type.namespace }}
     static Rtti::TypeRegistrar GTypeRegistrar_{{ type.id.bytes.hex() }}(&{{ type.name }}::Reflect);
 {%- if type.is_serializable %}
 
-    bool {{ type.name }}::RTTI_Serialize(FE::Serialization::SerializationContext& context) const
+    FE::Serialization::ResultCode {{ type.name }}::Serialize(FE::Serialization::SerializationContext& context) const
     {
         if (auto object = context.BeginObject())
         {
@@ -228,19 +228,15 @@ namespace {{ type.namespace }}
             object.Field("$base:{{ base.qualified_name }}", static_cast<const {{ base.qualified_name }}&>(*this));
         {%- endfor %}
         {%- for field in type.serialization_fields %}
-        {%- if field.is_bitfield %}
-            const auto value_{{ field.name }} = {{ field.name }};
-            object.Field("{{ field.name }}", value_{{ field.name }});
-        {%- else %}
             object.Field("{{ field.name }}", {{ field.name }});
-        {%- endif %}
         {%- endfor %}
-            return context.IsValid();
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
-    bool {{ type.name }}::RTTI_Deserialize(FE::Serialization::DeserializationContext& context)
+    FE::Serialization::ResultCode {{ type.name }}::Deserialize(FE::Serialization::DeserializationContext& context)
     {
         if (auto object = context.BeginObject())
         {
@@ -249,16 +245,25 @@ namespace {{ type.namespace }}
         {%- endfor %}
         {%- for field in type.serialization_fields %}
         {%- if field.is_bitfield %}
-            auto value_{{ field.name }} = {{ field.name }};
-            object.Field("{{ field.name }}", value_{{ field.name }});
-            {{ field.name }} = value_{{ field.name }};
+            auto bitfield_temp_{{ field.name }} = {{ field.name }};
+        {%- endif %}
+        {%- endfor %}
+        {%- for field in type.serialization_fields %}
+        {%- if field.is_bitfield %}
+            object.Field("{{ field.name }}", bitfield_temp_{{ field.name }});
         {%- else %}
             object.Field("{{ field.name }}", {{ field.name }});
         {%- endif %}
         {%- endfor %}
-            return context.IsValid();
+        {%- for field in type.serialization_fields %}
+        {%- if field.is_bitfield %}
+            {{ field.name }} = bitfield_temp_{{ field.name }};
+        {%- endif %}
+        {%- endfor %}
+            return context.GetResultCode();
         }
-        return false;
+
+        return context.GetResultCode();
     }
 
     uint64_t {{ type.name }}::RTTI_GetSerializationSchemaHash()
@@ -280,6 +285,7 @@ namespace {{ type.namespace }}
             hasher.Update({{ type.serialization_version or 0 }});
             return hasher.Finalize();
         }();
+
         return kHash;
     }
 

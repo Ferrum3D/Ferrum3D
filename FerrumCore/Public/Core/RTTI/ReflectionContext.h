@@ -4,6 +4,24 @@
 
 namespace FE::Rtti
 {
+    template<class T>
+    void BindTypeSerialization(Type& type)
+    {
+        using namespace Serialization;
+        if constexpr (Serialization::Internal::HasSerializer<T>)
+        {
+            type.m_serialize = [](SerializationContext& context, const void* value) {
+                return SerializeValue(context, *static_cast<const T*>(value));
+            };
+            type.m_deserialize = [](DeserializationContext& context, void* value) {
+                return DeserializeValue(context, *static_cast<T*>(value));
+            };
+            type.m_serializationVersion = GetVersion<T>();
+            type.m_serializationSchemaHash = GetSchemaHash<T>();
+        }
+    }
+
+
     struct ReflectionContext
     {
         virtual ~ReflectionContext() = default;
@@ -47,7 +65,7 @@ namespace FE::Rtti
             if (std::is_standard_layout_v<T>)
                 type.m_flags |= TypeFlags::kStandardLayout;
 
-            Serialization::BindType<T>(type);
+            BindTypeSerialization<T>(type);
             RegisterType(type);
         }
 
@@ -71,7 +89,7 @@ namespace FE::Rtti
             type.m_alignment = alignof(T);
             type.m_flags = TypeFlags::kEnum | TypeFlags::kTrivial | TypeFlags::kStandardLayout;
 
-            Serialization::BindType<T>(type);
+            BindTypeSerialization<T>(type);
             RegisterType(type);
         }
 
@@ -89,7 +107,7 @@ namespace FE::Rtti
             if (std::is_standard_layout_v<T>)
                 type.m_flags |= TypeFlags::kStandardLayout;
 
-            Serialization::BindType<T>(type);
+            BindTypeSerialization<T>(type);
             RegisterType(type);
         }
 

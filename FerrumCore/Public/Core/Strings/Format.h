@@ -89,27 +89,6 @@ namespace FE::Fmt
     };
 
 
-    template<Internal::FormattableFloat TFloat>
-    struct HexFloatFormatter final
-    {
-        explicit HexFloatFormatter(const TFloat value)
-        {
-            constexpr int32_t kPrecision = (std::numeric_limits<TFloat>::digits - 1 + 3) / 4;
-            const int32_t size = std::snprintf(m_buffer, sizeof(m_buffer), "%.*a", kPrecision, static_cast<double>(value));
-            FE_Assert(size > 0 && size < sizeof(m_buffer));
-            m_size = size > 0 && size < sizeof(m_buffer) ? static_cast<uint8_t>(size) : 0;
-        }
-
-        [[nodiscard]] festd::string_view View() const
-        {
-            return { m_buffer, m_size };
-        }
-
-        char m_buffer[32];
-        uint8_t m_size;
-    };
-
-
     template<std::unsigned_integral TInteger>
     struct HexFormatter final
     {
