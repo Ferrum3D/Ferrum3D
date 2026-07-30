@@ -8,11 +8,18 @@ namespace FE::Serialization
     {
         if (code == ResultCode::kSuccess)
             return m_error.m_code;
+
         if (m_error.m_code != ResultCode::kSuccess)
             return m_error.m_code;
 
         m_error.m_code = code;
-        m_error.m_byteOffset = byteOffset == UINT64_MAX ? GetCurrentOffsetImpl() : byteOffset;
+        if (byteOffset != UINT64_MAX)
+            m_error.m_byteOffset = byteOffset;
+        else if (m_direction == Direction::kSerialize)
+            m_error.m_byteOffset = GetStoreCurrentOffsetImpl();
+        else
+            m_error.m_byteOffset = GetLoadCurrentOffsetImpl();
+
         m_error.m_line = line;
         m_error.m_column = column;
         return code;
@@ -28,10 +35,16 @@ namespace FE::Serialization
         m_error = {};
         m_serializedVersion = 0;
         m_serializedSchemaHash = 0;
+
         ResetImpl();
         m_isDocumentActive = true;
 
-        const ResultCode result = BeginDocumentImpl(expectedType, version, schemaHash);
+        ResultCode result;
+        if (direction == Direction::kSerialize)
+            result = BeginStoreDocumentImpl(expectedType, version, schemaHash);
+        else
+            result = BeginLoadDocumentImpl(expectedType, version, schemaHash);
+
         Fail(result);
         if (result != ResultCode::kSuccess)
             EndDocument();
@@ -45,7 +58,10 @@ namespace FE::Serialization
         if (!m_isDocumentActive)
             return m_error.m_code;
 
-        Fail(EndDocumentImpl());
+        if (m_direction == Direction::kSerialize)
+            Fail(EndStoreDocumentImpl());
+        else
+            Fail(EndLoadDocumentImpl());
         const ResultCode result = m_error.m_code;
         ResetImpl();
         m_stream = nullptr;
@@ -58,7 +74,9 @@ namespace FE::Serialization
     {
         if (!IsValid())
             return SerializationObject{ nullptr };
-        return SerializationObject{ m_format->Record(m_format->BeginObjectImpl()) == ResultCode::kSuccess ? this : nullptr };
+
+        const ResultCode result = m_format->Record(m_format->BeginStoreObjectImpl());
+        return SerializationObject{ result == ResultCode::kSuccess ? this : nullptr };
     }
 
 
@@ -67,9 +85,8 @@ namespace FE::Serialization
         if (!IsValid())
             return SerializationArray{ nullptr };
 
-        uint32_t mutableSize = size;
-        return SerializationArray{ m_format->Record(m_format->BeginArrayImpl(mutableSize)) == ResultCode::kSuccess ? this
-                                                                                                                   : nullptr };
+        const ResultCode result = m_format->Record(m_format->BeginStoreArrayImpl(size));
+        return SerializationArray{ result == ResultCode::kSuccess ? this : nullptr };
     }
 
 
@@ -78,7 +95,8 @@ namespace FE::Serialization
         if (!IsValid())
             return DeserializationObject{ nullptr };
 
-        return DeserializationObject{ m_format->Record(m_format->BeginObjectImpl()) == ResultCode::kSuccess ? this : nullptr };
+        const ResultCode result = m_format->Record(m_format->BeginLoadObjectImpl());
+        return DeserializationObject{ result == ResultCode::kSuccess ? this : nullptr };
     }
 
 
@@ -87,7 +105,8 @@ namespace FE::Serialization
         if (!IsValid())
             return DeserializationArray{ nullptr };
 
-        return DeserializationArray{ m_format->Record(m_format->BeginArrayImpl(size)) == ResultCode::kSuccess ? this : nullptr };
+        const ResultCode result = m_format->Record(m_format->BeginLoadArrayImpl(size));
+        return DeserializationArray{ result == ResultCode::kSuccess ? this : nullptr };
     }
 
 
@@ -151,7 +170,7 @@ namespace FE::Serialization
             return context.ReportError(ResultCode::kInvalidString);
 
         char buffer[36];
-        result = context.LoadString(festd::span<char>{ buffer });
+        result = context.LoadString(buffer);
         if (result != ResultCode::kSuccess)
             return result;
 

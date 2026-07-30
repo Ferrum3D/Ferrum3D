@@ -111,30 +111,20 @@ namespace FE::Serialization
         {
         }
 
-        [[nodiscard]] bool IsSerializing() const
-        {
-            return m_direction == Direction::kSerialize;
-        }
-
-        [[nodiscard]] bool IsDeserializing() const
-        {
-            return m_direction == Direction::kDeserialize;
-        }
-
         [[nodiscard]] bool IsValid() const
         {
             return m_error.m_code == ResultCode::kSuccess;
         }
 
-        ResultCode Fail(ResultCode code, uint64_t byteOffset = UINT64_MAX, uint32_t line = 0, uint32_t column = 0);
+        ResultCode Fail(ResultCode code, uint64_t byteOffset = Constants::kMaxU64, uint32_t line = 0, uint32_t column = 0);
 
+        bool m_isDocumentActive = false;
         Format m_format;
-        IO::IStream* m_stream = nullptr;
         Direction m_direction = Direction::kSerialize;
-        Error m_error;
         uint32_t m_serializedVersion = 0;
         uint64_t m_serializedSchemaHash = 0;
-        bool m_isDocumentActive = false;
+        Error m_error;
+        IO::IStream* m_stream = nullptr;
 
     private:
         friend SerializationContext;
@@ -155,16 +145,26 @@ namespace FE::Serialization
         }
 
         virtual void ResetImpl() = 0;
-        virtual ResultCode BeginDocumentImpl(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) = 0;
-        virtual ResultCode EndDocumentImpl() = 0;
-        virtual ResultCode BeginObjectImpl() = 0;
-        virtual ResultCode EndObjectImpl() = 0;
-        virtual ResultCode BeginFieldImpl(festd::ascii_view name, uint64_t fieldID, bool& exists) = 0;
-        virtual ResultCode EndFieldImpl() = 0;
-        virtual ResultCode BeginArrayImpl(uint32_t& size) = 0;
-        virtual ResultCode EndArrayImpl() = 0;
-        virtual ResultCode BeginElementImpl(uint32_t index) = 0;
-        virtual ResultCode EndElementImpl() = 0;
+        virtual ResultCode BeginStoreDocumentImpl(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) = 0;
+        virtual ResultCode BeginLoadDocumentImpl(Rtti::TypeID expectedType, uint32_t version, uint64_t schemaHash) = 0;
+        virtual ResultCode EndStoreDocumentImpl() = 0;
+        virtual ResultCode EndLoadDocumentImpl() = 0;
+        virtual ResultCode BeginStoreObjectImpl() = 0;
+        virtual ResultCode BeginLoadObjectImpl() = 0;
+        virtual ResultCode EndStoreObjectImpl() = 0;
+        virtual ResultCode EndLoadObjectImpl() = 0;
+        virtual ResultCode BeginStoreFieldImpl(festd::ascii_view name, uint64_t fieldID) = 0;
+        virtual ResultCode BeginLoadFieldImpl(festd::ascii_view name, uint64_t fieldID, bool& exists) = 0;
+        virtual ResultCode EndStoreFieldImpl() = 0;
+        virtual ResultCode EndLoadFieldImpl() = 0;
+        virtual ResultCode BeginStoreArrayImpl(uint32_t size) = 0;
+        virtual ResultCode BeginLoadArrayImpl(uint32_t& size) = 0;
+        virtual ResultCode EndStoreArrayImpl() = 0;
+        virtual ResultCode EndLoadArrayImpl() = 0;
+        virtual ResultCode BeginStoreElementImpl(uint32_t index) = 0;
+        virtual ResultCode BeginLoadElementImpl(uint32_t index) = 0;
+        virtual ResultCode EndStoreElementImpl() = 0;
+        virtual ResultCode EndLoadElementImpl() = 0;
         virtual ResultCode StoreScalarImpl(ScalarKind kind, const void* value, uint32_t byteSize) = 0;
         virtual ResultCode LoadScalarImpl(ScalarKind kind, void* value, uint32_t byteSize) = 0;
         virtual ResultCode StoreBytesImpl(const void* value, uint32_t byteSize) = 0;
@@ -172,7 +172,8 @@ namespace FE::Serialization
         virtual ResultCode StoreStringImpl(festd::string_view value) = 0;
         virtual ResultCode LoadStringSizeImpl(uint32_t& size) = 0;
         virtual ResultCode LoadStringImpl(festd::span<char> buffer) = 0;
-        [[nodiscard]] virtual uint64_t GetCurrentOffsetImpl() const = 0;
+        [[nodiscard]] virtual uint64_t GetStoreCurrentOffsetImpl() const = 0;
+        [[nodiscard]] virtual uint64_t GetLoadCurrentOffsetImpl() const = 0;
     };
 
 
@@ -270,14 +271,13 @@ namespace FE::Serialization
             if (!IsValid())
                 return GetResultCode();
 
-            bool exists = false;
-            const ResultCode result = m_format->BeginFieldImpl(name, DefaultHash(name), exists);
+            const ResultCode result = m_format->BeginStoreFieldImpl(name, DefaultHash(name));
             m_format->Record(result);
-            if (result != ResultCode::kSuccess || !exists)
+            if (result != ResultCode::kSuccess)
                 return GetResultCode();
 
             m_format->Record(SerializeValue(*this, value));
-            m_format->Record(m_format->EndFieldImpl());
+            m_format->Record(m_format->EndStoreFieldImpl());
             return GetResultCode();
         }
 
@@ -287,13 +287,13 @@ namespace FE::Serialization
             if (!IsValid())
                 return GetResultCode();
 
-            const ResultCode result = m_format->BeginElementImpl(index);
+            const ResultCode result = m_format->BeginStoreElementImpl(index);
             m_format->Record(result);
             if (result != ResultCode::kSuccess)
                 return result;
 
             m_format->Record(SerializeValue(*this, value));
-            m_format->Record(m_format->EndElementImpl());
+            m_format->Record(m_format->EndStoreElementImpl());
             return GetResultCode();
         }
 
@@ -422,13 +422,13 @@ namespace FE::Serialization
                 return GetResultCode();
 
             bool exists = false;
-            const ResultCode result = m_format->BeginFieldImpl(name, DefaultHash(name), exists);
+            const ResultCode result = m_format->BeginLoadFieldImpl(name, DefaultHash(name), exists);
             m_format->Record(result);
             if (result != ResultCode::kSuccess || !exists)
                 return GetResultCode();
 
             m_format->Record(DeserializeValue(*this, value));
-            m_format->Record(m_format->EndFieldImpl());
+            m_format->Record(m_format->EndLoadFieldImpl());
             return GetResultCode();
         }
 
@@ -438,13 +438,13 @@ namespace FE::Serialization
             if (!IsValid())
                 return GetResultCode();
 
-            const ResultCode result = m_format->BeginElementImpl(index);
+            const ResultCode result = m_format->BeginLoadElementImpl(index);
             m_format->Record(result);
             if (result != ResultCode::kSuccess)
                 return result;
 
             m_format->Record(DeserializeValue(*this, value));
-            m_format->Record(m_format->EndElementImpl());
+            m_format->Record(m_format->EndLoadElementImpl());
             return GetResultCode();
         }
 
@@ -477,7 +477,7 @@ namespace FE::Serialization
         ~SerializationObject()
         {
             if (m_context != nullptr)
-                m_context->m_format->Record(m_context->m_format->EndObjectImpl());
+                m_context->m_format->Record(m_context->m_format->EndStoreObjectImpl());
         }
 
         [[nodiscard]] explicit operator bool() const
@@ -519,7 +519,7 @@ namespace FE::Serialization
         ~DeserializationObject()
         {
             if (m_context != nullptr)
-                m_context->m_format->Record(m_context->m_format->EndObjectImpl());
+                m_context->m_format->Record(m_context->m_format->EndLoadObjectImpl());
         }
 
         [[nodiscard]] explicit operator bool() const
@@ -561,7 +561,7 @@ namespace FE::Serialization
         ~SerializationArray()
         {
             if (m_context != nullptr)
-                m_context->m_format->Record(m_context->m_format->EndArrayImpl());
+                m_context->m_format->Record(m_context->m_format->EndStoreArrayImpl());
         }
 
         [[nodiscard]] explicit operator bool() const
@@ -603,7 +603,7 @@ namespace FE::Serialization
         ~DeserializationArray()
         {
             if (m_context != nullptr)
-                m_context->m_format->Record(m_context->m_format->EndArrayImpl());
+                m_context->m_format->Record(m_context->m_format->EndLoadArrayImpl());
         }
 
         [[nodiscard]] explicit operator bool() const

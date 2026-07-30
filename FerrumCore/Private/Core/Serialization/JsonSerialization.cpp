@@ -86,17 +86,17 @@ namespace FE::Serialization
             switch (byteSize)
             {
             case 1:
-                if (value > UINT8_MAX)
+                if (value > Constants::kMaxU8)
                     return false;
                 *static_cast<uint8_t*>(destination) = static_cast<uint8_t>(value);
                 return true;
             case 2:
-                if (value > UINT16_MAX)
+                if (value > Constants::kMaxU16)
                     return false;
                 *static_cast<uint16_t*>(destination) = static_cast<uint16_t>(value);
                 return true;
             case 4:
-                if (value > UINT32_MAX)
+                if (value > Constants::kMaxU32)
                     return false;
                 *static_cast<uint32_t*>(destination) = static_cast<uint32_t>(value);
                 return true;
@@ -114,17 +114,17 @@ namespace FE::Serialization
             switch (byteSize)
             {
             case 1:
-                if (value < INT8_MIN || value > INT8_MAX)
+                if (value < Constants::kMinI8 || value > Constants::kMaxI8)
                     return false;
                 *static_cast<int8_t*>(destination) = static_cast<int8_t>(value);
                 return true;
             case 2:
-                if (value < INT16_MIN || value > INT16_MAX)
+                if (value < Constants::kMinI16 || value > Constants::kMaxI16)
                     return false;
                 *static_cast<int16_t*>(destination) = static_cast<int16_t>(value);
                 return true;
             case 4:
-                if (value < INT32_MIN || value > INT32_MAX)
+                if (value < Constants::kMinI32 || value > Constants::kMaxI32)
                     return false;
                 *static_cast<int32_t*>(destination) = static_cast<int32_t>(value);
                 return true;
@@ -141,6 +141,7 @@ namespace FE::Serialization
         {
             line = 1;
             column = 1;
+
             const uint32_t end = static_cast<uint32_t>(Math::Min<uint64_t>(offset, input.size()));
             for (uint32_t i = 0; i < end; ++i)
             {
@@ -208,27 +209,28 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::BeginDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version, const uint64_t schemaHash)
+    ResultCode JsonFormat::BeginStoreDocumentImpl(const Rtti::TypeID expectedType, const uint32_t version,
+                                                  const uint64_t schemaHash)
     {
-        if (IsSerializing())
-        {
-            auto& writer = m_impl->m_writer;
-            writer.StartObject();
+        auto& writer = m_impl->m_writer;
+        writer.StartObject();
 
-            const festd::fixed_string typeString = Fmt::FixedFormat("{}", expectedType);
-            writer.Key("$type");
-            writer.String(typeString.data(), typeString.size());
-            writer.Key("$version");
-            writer.Uint(version);
+        const festd::fixed_string typeString = Fmt::FixedFormat("{}", expectedType);
+        writer.Key("$type");
+        writer.String(typeString.data(), typeString.size());
+        writer.Key("$version");
+        writer.Uint(version);
 
-            festd::basic_fixed_string<18> schemaString = "0x";
-            schemaString.append(Fmt::HexFormatter{ schemaHash }.View());
-            writer.Key("$schema");
-            writer.String(schemaString.data(), schemaString.size());
-            writer.Key("$value");
-            return ResultCode::kSuccess;
-        }
+        festd::basic_fixed_string<18> schemaString = "0x";
+        schemaString.append(Fmt::HexFormatter{ schemaHash }.View());
+        writer.Key("$schema");
+        writer.String(schemaString.data(), schemaString.size());
+        writer.Key("$value");
+        return ResultCode::kSuccess;
+    }
 
+    ResultCode JsonFormat::BeginLoadDocumentImpl(const Rtti::TypeID expectedType, uint32_t, uint64_t)
+    {
         char chunk[4096];
         while (true)
         {
@@ -293,9 +295,9 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::EndDocumentImpl()
+    ResultCode JsonFormat::EndStoreDocumentImpl()
     {
-        if (!IsSerializing() || !IsValid())
+        if (!IsValid())
             return m_error.m_code;
 
         m_impl->m_writer.EndObject();
@@ -307,14 +309,20 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::BeginObjectImpl()
+    ResultCode JsonFormat::EndLoadDocumentImpl()
     {
-        if (IsSerializing())
-        {
-            m_impl->m_writer.StartObject();
-            return ResultCode::kSuccess;
-        }
+        return ResultCode::kSuccess;
+    }
 
+
+    ResultCode JsonFormat::BeginStoreObjectImpl()
+    {
+        m_impl->m_writer.StartObject();
+        return ResultCode::kSuccess;
+    }
+
+    ResultCode JsonFormat::BeginLoadObjectImpl()
+    {
         if (!m_impl->m_inputValues.back()->IsObject())
             return Fail(ResultCode::kMalformedData);
 
@@ -322,24 +330,30 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::EndObjectImpl()
+    ResultCode JsonFormat::EndStoreObjectImpl()
     {
-        if (IsSerializing() && IsValid())
+        if (IsValid())
             m_impl->m_writer.EndObject();
 
         return m_error.m_code;
     }
 
 
-    ResultCode JsonFormat::BeginFieldImpl(const festd::ascii_view name, uint64_t, bool& exists)
+    ResultCode JsonFormat::EndLoadObjectImpl()
+    {
+        return ResultCode::kSuccess;
+    }
+
+
+    ResultCode JsonFormat::BeginStoreFieldImpl(const festd::ascii_view name, uint64_t)
+    {
+        m_impl->m_writer.Key(name.data(), static_cast<rapidjson::SizeType>(name.size()));
+        return ResultCode::kSuccess;
+    }
+
+    ResultCode JsonFormat::BeginLoadFieldImpl(const festd::ascii_view name, uint64_t, bool& exists)
     {
         exists = true;
-        if (IsSerializing())
-        {
-            m_impl->m_writer.Key(name.data(), static_cast<rapidjson::SizeType>(name.size()));
-            return ResultCode::kSuccess;
-        }
-
         Impl::Value* object = m_impl->m_inputValues.back();
         const auto member = object->FindMember(rapidjson::StringRef(name.data(), name.size()));
         if (member == object->MemberEnd())
@@ -353,23 +367,27 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::EndFieldImpl()
+    ResultCode JsonFormat::EndStoreFieldImpl()
     {
-        if (IsDeserializing())
-            m_impl->m_inputValues.pop_back();
-
         return ResultCode::kSuccess;
     }
 
 
-    ResultCode JsonFormat::BeginArrayImpl(uint32_t& size)
+    ResultCode JsonFormat::EndLoadFieldImpl()
     {
-        if (IsSerializing())
-        {
-            m_impl->m_writer.StartArray();
-            return ResultCode::kSuccess;
-        }
+        m_impl->m_inputValues.pop_back();
+        return ResultCode::kSuccess;
+    }
 
+
+    ResultCode JsonFormat::BeginStoreArrayImpl(uint32_t)
+    {
+        m_impl->m_writer.StartArray();
+        return ResultCode::kSuccess;
+    }
+
+    ResultCode JsonFormat::BeginLoadArrayImpl(uint32_t& size)
+    {
         Impl::Value* array = m_impl->m_inputValues.back();
         if (!array->IsArray())
             return Fail(ResultCode::kMalformedData);
@@ -379,20 +397,29 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::EndArrayImpl()
+    ResultCode JsonFormat::EndStoreArrayImpl()
     {
-        if (IsSerializing() && IsValid())
+        if (IsValid())
             m_impl->m_writer.EndArray();
 
         return m_error.m_code;
     }
 
 
-    ResultCode JsonFormat::BeginElementImpl(const uint32_t index)
+    ResultCode JsonFormat::EndLoadArrayImpl()
     {
-        if (IsSerializing())
-            return ResultCode::kSuccess;
+        return ResultCode::kSuccess;
+    }
 
+
+    ResultCode JsonFormat::BeginStoreElementImpl(uint32_t)
+    {
+        return ResultCode::kSuccess;
+    }
+
+
+    ResultCode JsonFormat::BeginLoadElementImpl(const uint32_t index)
+    {
         Impl::Value* array = m_impl->m_inputValues.back();
         if (!array->IsArray())
             return Fail(ResultCode::kMalformedData);
@@ -405,10 +432,15 @@ namespace FE::Serialization
     }
 
 
-    ResultCode JsonFormat::EndElementImpl()
+    ResultCode JsonFormat::EndStoreElementImpl()
     {
-        if (IsDeserializing())
-            m_impl->m_inputValues.pop_back();
+        return ResultCode::kSuccess;
+    }
+
+
+    ResultCode JsonFormat::EndLoadElementImpl()
+    {
+        m_impl->m_inputValues.pop_back();
         return ResultCode::kSuccess;
     }
 
@@ -431,20 +463,10 @@ namespace FE::Serialization
             return ResultCode::kSuccess;
 
         case ScalarKind::kFloat:
-            if (byteSize == sizeof(float))
-            {
-                const float number = *static_cast<const float*>(value);
-                const uint32_t bits = std::bit_cast<uint32_t>(number);
-                writer.Uint(bits);
-                return ResultCode::kSuccess;
-            }
-
-            const double number = *static_cast<const double*>(value);
-            const uint64_t bits = std::bit_cast<uint64_t>(number);
-            writer.Uint64(bits);
-            return ResultCode::kSuccess;
+            return StoreBytesImpl(value, byteSize);
         }
 
+        FE_DebugBreak();
         return Fail(ResultCode::kUnsupportedValue);
     }
 
@@ -457,6 +479,7 @@ namespace FE::Serialization
         case ScalarKind::kBool:
             if (!input->IsBool())
                 return Fail(ResultCode::kMalformedData);
+
             *static_cast<bool*>(value) = input->GetBool();
             return ResultCode::kSuccess;
 
@@ -479,23 +502,7 @@ namespace FE::Serialization
             return ResultCode::kSuccess;
 
         case ScalarKind::kFloat:
-            if (input->IsNumber())
-            {
-                if (byteSize == sizeof(float))
-                {
-                    const uint32_t bits = input->GetUint();
-                    *static_cast<float*>(value) = std::bit_cast<float>(bits);
-                }
-                else
-                {
-                    const uint64_t bits = input->GetUint64();
-                    *static_cast<double*>(value) = std::bit_cast<double>(bits);
-                }
-
-                return ResultCode::kSuccess;
-            }
-
-            return Fail(ResultCode::kMalformedData);
+            return LoadBytesImpl(value, byteSize);
         }
 
         return Fail(ResultCode::kUnsupportedValue);
@@ -588,7 +595,13 @@ namespace FE::Serialization
     }
 
 
-    uint64_t JsonFormat::GetCurrentOffsetImpl() const
+    uint64_t JsonFormat::GetStoreCurrentOffsetImpl() const
+    {
+        return m_stream->Tell();
+    }
+
+
+    uint64_t JsonFormat::GetLoadCurrentOffsetImpl() const
     {
         return m_stream->Tell();
     }

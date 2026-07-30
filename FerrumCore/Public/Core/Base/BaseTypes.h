@@ -40,6 +40,11 @@ namespace FE
 
         template<class T>
         inline constexpr T kMinValue = std::numeric_limits<T>::min();
+
+        template<size_t TValue>
+        using MinUintToStore = std::conditional_t<TValue <= kMaxU8, uint8_t,
+                                                  std::conditional_t<TValue <= kMaxU16, uint16_t, //
+                                                                     std::conditional_t<TValue <= kMaxU32, uint32_t, uint64_t>>>;
     } // namespace Constants
 
 

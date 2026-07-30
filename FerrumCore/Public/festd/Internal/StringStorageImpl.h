@@ -205,8 +205,8 @@ namespace FE::Internal
     {
         static constexpr uint32_t kCapacity = TCapacity;
 
-        using SizeBaseType =
-            std::conditional_t<TCapacity <= UINT8_MAX, uint8_t, std::conditional_t<TCapacity <= UINT16_MAX, uint16_t, uint32_t>>;
+        static_assert(TCapacity > 0);
+        using SizeBaseType = Constants::MinUintToStore<TCapacity>;
 
         char m_data[TCapacity + 1];
         SizeBaseType m_size;
@@ -279,9 +279,7 @@ namespace FE::Internal
         static constexpr uint32_t kInlineCapacity = TCapacity;
 
         static_assert(TCapacity > 0);
-
-        using SizeBaseType =
-            std::conditional_t<TCapacity <= UINT8_MAX, uint8_t, std::conditional_t<TCapacity <= UINT16_MAX, uint16_t, uint32_t>>;
+        using SizeBaseType = Constants::MinUintToStore<TCapacity>;
 
         struct Long final
         {

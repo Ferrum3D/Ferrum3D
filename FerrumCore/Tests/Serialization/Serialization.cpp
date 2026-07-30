@@ -218,9 +218,9 @@ namespace FE::Serialization::Tests
         stream.Rewind();
         TestObject destination;
         DeserializationContext reader(&stream, format);
-        EXPECT_EQ(reader.Load(destination), ResultCode::kInvalidHeader);
-        EXPECT_EQ(reader.GetError().m_code, ResultCode::kInvalidHeader);
-        EXPECT_EQ(reader.GetError().m_byteOffset, 32);
+        EXPECT_EQ(reader.Load(destination), ResultCode::kSchemaMismatch);
+        EXPECT_EQ(reader.GetError().m_code, ResultCode::kSchemaMismatch);
+        EXPECT_EQ(reader.GetError().m_byteOffset, 8);
 
         bytes[0] = firstByte;
         stream.Rewind();
@@ -239,7 +239,7 @@ namespace FE::Serialization::Tests
     {
         MemoryStream stream;
         const ManualObject source{ .m_count = 42, .m_name = "manual" };
-        PackedBinaryFormat format;
+        TaggedBinaryFormat format;
         SerializationContext writer(&stream, format);
         ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
 

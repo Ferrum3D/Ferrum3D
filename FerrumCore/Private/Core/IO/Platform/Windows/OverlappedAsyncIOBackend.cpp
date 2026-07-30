@@ -132,8 +132,8 @@ namespace FE::IO::Async
         readRequest.m_file = reinterpret_cast<HANDLE>(fileHandle.m_value);
         readRequest.m_destination = read.m_destination;
         readRequest.m_size = read.m_size;
-        readRequest.m_overlapped.Offset = static_cast<DWORD>(read.m_offset & UINT32_MAX);
-        readRequest.m_overlapped.OffsetHigh = static_cast<DWORD>((read.m_offset >> 32) & UINT32_MAX);
+        readRequest.m_overlapped.Offset = static_cast<DWORD>(read.m_offset & Constants::kMaxU32);
+        readRequest.m_overlapped.OffsetHigh = static_cast<DWORD>((read.m_offset >> 32) & Constants::kMaxU32);
         readRequest.m_completion.m_group = read.m_group;
         readRequest.m_completion.m_handle = AsyncReadHandle{ requestIndex };
 
