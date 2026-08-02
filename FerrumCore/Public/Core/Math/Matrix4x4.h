@@ -38,6 +38,10 @@ namespace FE
             };
         };
 
+        FE_RTTI_Reflect("E9BB71CE-A3B2-4E7D-AA6F-E1BAB71605BA");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Matrix4x4& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Matrix4x4& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Matrix4x4(ForceInitType)
@@ -497,5 +501,3 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Matrix4x4, "E9BB71CE-A3B2-4E7D-AA6F-E1BAB71605BA");

@@ -11,6 +11,9 @@ namespace FE
         Vector3 extents;
         Quaternion rotation;
 
+        FE_RTTI_Reflect("71B0B56A-6A5E-4F22-B062-64E4BA2D9EA0");
+        FE_RTTI_Serialize();
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Obb() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Obb(ForceInitType)
@@ -98,5 +101,3 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Obb, "71B0B56A-6A5E-4F22-B062-64E4BA2D9EA0");

@@ -218,6 +218,14 @@ namespace FE::Serialization
         const festd::fixed_string typeString = Fmt::FixedFormat("{}", expectedType);
         writer.Key("$type");
         writer.String(typeString.data(), typeString.size());
+
+        if (const Rtti::Type* typeInfo = Rtti::TypeRegistry::FindType(expectedType))
+        {
+            const festd::string_view typeName{ typeInfo->m_qualifiedName };
+            writer.Key("$typename");
+            writer.String(typeName.data(), typeName.size());
+        }
+
         writer.Key("$version");
         writer.Uint(version);
 

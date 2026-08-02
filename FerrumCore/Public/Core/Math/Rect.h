@@ -28,6 +28,9 @@ namespace FE
             };
         };
 
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const RectBase& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, RectBase& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE RectBase(ForceInitType)

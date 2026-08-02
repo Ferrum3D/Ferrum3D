@@ -1,4 +1,13 @@
 ﻿#include <Core/IO/StreamBase.h>
+#include <Core/Math/Aabb.h>
+#include <Core/Math/Color.h>
+#include <Core/Math/Matrix4x4.h>
+#include <Core/Math/Obb.h>
+#include <Core/Math/Rect.h>
+#include <Core/Math/Sphere.h>
+#include <Core/Math/Transform.h>
+#include <Core/Math/Vector3Int.h>
+#include <Core/Math/Vector3UInt.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Serialization/SerializationTypes.h>
@@ -193,6 +202,101 @@ namespace FE::Serialization::Tests
             ExpectEqual(source, destination);
             EXPECT_EQ(destination.m_transient, 99);
         }
+
+
+        template<class T>
+            requires requires(const T& value) { value.m_values; }
+        void ExpectMathValueEqual(const T& expected, const T& actual)
+        {
+            constexpr size_t kValueCount = sizeof(expected.m_values) / sizeof(expected.m_values[0]);
+            for (size_t i = 0; i < kValueCount; ++i)
+                EXPECT_EQ(actual.m_values[i], expected.m_values[i]);
+        }
+
+
+        void ExpectMathValueEqual(const Sphere& expected, const Sphere& actual)
+        {
+            ExpectMathValueEqual(expected.m_centerRadius, actual.m_centerRadius);
+        }
+
+
+        void ExpectMathValueEqual(const Obb& expected, const Obb& actual)
+        {
+            ExpectMathValueEqual(expected.center, actual.center);
+            ExpectMathValueEqual(expected.extents, actual.extents);
+            ExpectMathValueEqual(expected.rotation, actual.rotation);
+        }
+
+
+        void ExpectMathValueEqual(const Transform& expected, const Transform& actual)
+        {
+            ExpectMathValueEqual(expected.m_translationScale, actual.m_translationScale);
+            ExpectMathValueEqual(expected.m_rotation, actual.m_rotation);
+        }
+
+
+        template<class TFormat, class T>
+        void TestMathValueRoundTrip(const T& source)
+        {
+            const Rtti::Type& type = Rtti::GetType<T>();
+            ASSERT_NE(type.m_serialize, nullptr);
+            ASSERT_NE(type.m_deserialize, nullptr);
+            if constexpr (requires { T::RTTI_GetSerializationSchemaHash(); })
+                ASSERT_NE(type.m_serializationSchemaHash, 0);
+            else
+                ASSERT_EQ(type.m_serializationSchemaHash, TypeNameHash<T>);
+
+            MemoryStream stream;
+            TFormat format;
+            SerializationContext writer(&stream, format);
+            ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+
+            [[maybe_unused]] festd::string_view text;
+            if constexpr (std::is_same_v<TFormat, JsonFormat>)
+            {
+                text = festd::string_view{ reinterpret_cast<const char*>(stream.GetData().data()), stream.GetData().size() };
+                ASSERT_GT(text.size(), 0);
+            }
+
+            stream.Rewind();
+            T destination{};
+            DeserializationContext reader(&stream, format);
+            ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+            ExpectMathValueEqual(source, destination);
+        }
+
+
+        template<class TFormat>
+        void TestMathValuesRoundTrip()
+        {
+            TestMathValueRoundTrip<TFormat>(Vector2{ 1.25f, -2.5f });
+            TestMathValueRoundTrip<TFormat>(Vector2Int{ -12, 34 });
+            TestMathValueRoundTrip<TFormat>(Vector2UInt{ 56, 78 });
+
+            TestMathValueRoundTrip<TFormat>(RectF{ -1.0f, -2.0f, 3.0f, 4.0f });
+            TestMathValueRoundTrip<TFormat>(RectInt{ -10, -20, 30, 40 });
+            TestMathValueRoundTrip<TFormat>(RectUInt{ 10, 20, 30, 40 });
+
+            TestMathValueRoundTrip<TFormat>(Vector3{ 1.0f, -2.0f, 3.5f });
+            TestMathValueRoundTrip<TFormat>(PackedVector3F{ -4.0f, 5.0f, 6.25f });
+            TestMathValueRoundTrip<TFormat>(Vector3Int{ -7, 8, -9 });
+            TestMathValueRoundTrip<TFormat>(PackedVector3Int{ 10, -11, 12 });
+            TestMathValueRoundTrip<TFormat>(Vector3UInt{ 13, 14, 0xf0000000u });
+            TestMathValueRoundTrip<TFormat>(PackedVector3UInt{ 16, 17, 18 });
+
+            TestMathValueRoundTrip<TFormat>(Vector4{ 1.0f, 2.0f, 3.0f, 4.0f });
+            TestMathValueRoundTrip<TFormat>(PackedVector4F{ -1.0f, -2.0f, -3.0f, -4.0f });
+            TestMathValueRoundTrip<TFormat>(Quaternion{ 0.1f, 0.2f, 0.3f, 0.9f });
+            TestMathValueRoundTrip<TFormat>(Color4F{ 0.2f, 0.4f, 0.6f, 0.8f });
+
+            TestMathValueRoundTrip<TFormat>(
+                Matrix4x4::FromRows({ 1, 2, 3, 4 }, { 5, 6, 7, 8 }, { -1, -2, -3, -4 }, { -5, -6, -7, -8 }));
+            TestMathValueRoundTrip<TFormat>(Aabb{ Vector3{ -1, -2, -3 }, Vector3{ 4, 5, 6 } });
+            TestMathValueRoundTrip<TFormat>(PackedAabb{ PackedVector3F{ -7, -8, -9 }, PackedVector3F{ 10, 11, 12 } });
+            TestMathValueRoundTrip<TFormat>(Sphere{ Vector3{ 1, 2, 3 }, 4.5f });
+            TestMathValueRoundTrip<TFormat>(Obb{ Vector3{ 1, 2, 3 }, Vector3{ 4, 5, 6 }, Quaternion{ 0.1f, 0.2f, 0.3f, 0.9f } });
+            TestMathValueRoundTrip<TFormat>(Transform::Create(Vector3{ 7, 8, 9 }, Quaternion{ 0.2f, 0.3f, 0.4f, 0.8f }, 2.5f));
+        }
     } // namespace
 
 
@@ -232,6 +336,24 @@ namespace FE::Serialization::Tests
     TEST(Serialization, TaggedBinaryRoundTrip)
     {
         TestRoundTrip<TaggedBinaryFormat>();
+    }
+
+
+    TEST(Serialization, MathValuesPackedBinaryRoundTrip)
+    {
+        TestMathValuesRoundTrip<PackedBinaryFormat>();
+    }
+
+
+    TEST(Serialization, MathValuesTaggedBinaryRoundTrip)
+    {
+        TestMathValuesRoundTrip<TaggedBinaryFormat>();
+    }
+
+
+    TEST(Serialization, MathValuesJsonRoundTrip)
+    {
+        TestMathValuesRoundTrip<JsonFormat>();
     }
 
 

@@ -148,6 +148,7 @@ set(COMMON_SOURCES
 
     Private/Core/Math/Colors.cpp
     Private/Core/Math/Matrix4x4.cpp
+    Private/Core/Math/Serialization.cpp
 
     Private/Core/Memory/FiberTempAllocator.cpp
     Private/Core/Memory/LinearAllocator.cpp

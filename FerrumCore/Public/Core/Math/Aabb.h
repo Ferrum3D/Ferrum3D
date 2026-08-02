@@ -20,7 +20,10 @@ namespace FE
                 Vector3 min, max;
             };
         };
+
         FE_RTTI_Reflect("521E1592-5FF2-402B-9C85-8EDE1D30798C");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Aabb& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Aabb& value);
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Aabb() = default;
 
@@ -91,6 +94,10 @@ namespace FE
                 PackedVector3F min, max;
             };
         };
+
+        FE_RTTI_Reflect("8CF4D497-C07B-4881-9149-47A33F9AA20D");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const PackedAabb& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, PackedAabb& value);
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE PackedAabb() = default;
 
@@ -180,5 +187,3 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
-
-FE_RTTI_Reflect(FE::PackedAabb, "8CF4D497-C07B-4881-9149-47A33F9AA20D");

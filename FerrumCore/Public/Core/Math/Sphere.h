@@ -12,6 +12,10 @@ namespace FE
             Vector4 m_centerRadius;
         };
 
+        FE_RTTI_Reflect("610C03BA-7484-4A59-B85E-67595ACC6BA4");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Sphere& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Sphere& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Sphere() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Sphere(ForceInitType)
@@ -50,5 +54,3 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Sphere, "610C03BA-7484-4A59-B85E-67595ACC6BA4");

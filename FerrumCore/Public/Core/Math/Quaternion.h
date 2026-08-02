@@ -15,6 +15,10 @@ namespace FE
             };
         };
 
+        FE_RTTI_Reflect("E9A0D3B6-E043-47E6-8607-7B362CED077E");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Quaternion& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Quaternion& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Quaternion(ForceInitType)
@@ -309,5 +313,3 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Quaternion, "E9A0D3B6-E043-47E6-8607-7B362CED077E");

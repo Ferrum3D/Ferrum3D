@@ -15,6 +15,10 @@ namespace FE
             };
         };
 
+        FE_RTTI_Reflect("22E32E11-EC62-450C-9F6C-CD8BB764475A");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Vector3Int& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Vector3Int& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector3Int(ForceInitType)
@@ -84,6 +88,10 @@ namespace FE
                 int32_t x, y, z;
             };
         };
+
+        FE_RTTI_Reflect("1BAAE96E-9228-4519-B36F-2AC2ED84C91E");
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const PackedVector3Int& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, PackedVector3Int& value);
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE PackedVector3Int() = default;
 
@@ -233,5 +241,3 @@ namespace FE
         return Math::CmpNotEqualMask(lhs, rhs) != 0;
     }
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Vector3Int, "22E32E11-EC62-450C-9F6C-CD8BB764475A");

@@ -15,6 +15,9 @@ namespace FE
             };
         };
 
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const Vector2Base& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, Vector2Base& value);
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base() = default;
 
         explicit FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Vector2Base(ForceInitType)

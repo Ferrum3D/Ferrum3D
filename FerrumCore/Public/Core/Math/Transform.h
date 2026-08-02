@@ -10,6 +10,9 @@ namespace FE
         Vector4 m_translationScale;
         Quaternion m_rotation;
 
+        FE_RTTI_Reflect("27C520A6-9608-453D-BE4E-DCA551251325");
+        FE_RTTI_Serialize();
+
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE Transform() = default;
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE explicit Transform(ForceInitType)
@@ -124,5 +127,3 @@ namespace FE
         }
     } // namespace Math
 } // namespace FE
-
-FE_RTTI_Reflect(FE::Transform, "27C520A6-9608-453D-BE4E-DCA551251325");
