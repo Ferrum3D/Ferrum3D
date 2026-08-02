@@ -31,9 +31,9 @@ namespace FE::Compression
     {
         kNone,
 
-        kDeflate FE_ATTRIBUTE(DisplayName = Deflate),
-        kZstd FE_ATTRIBUTE(DisplayName = Zstd),
-        kInvalid FE_ATTRIBUTE(DisplayName = Invalid),
+        kDeflate FE_META(DisplayName = Deflate),
+        kZstd FE_META(DisplayName = Zstd),
+        kInvalid FE_META(DisplayName = Invalid),
     };
 
 

@@ -959,6 +959,7 @@ namespace FE::Serialization
     template<class TBase>
         requires requires(FE::Internal::StringImpl<TBase>& value, const char* data, const uint32_t size) {
             value.assign(data, size);
+            value.resize_uninitialized(size);
         }
     struct Serializer<FE::Internal::StringImpl<TBase>>
     {
@@ -972,7 +973,7 @@ namespace FE::Serialization
         static ResultCode Deserialize(DeserializationContext& context, StringType& value)
         {
             uint32_t size = 0;
-            ResultCode result = context.LoadStringSize(size);
+            const ResultCode result = context.LoadStringSize(size);
             if (result != ResultCode::kSuccess)
                 return result;
 
