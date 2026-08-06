@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Memory/PoolAllocator.h>
 #include <Graphics/Core/PipelineFactory.h>
+#include <Graphics/Core/ShaderCompiler.h>
 #include <Graphics/Core/Vulkan/Base/Config.h>
 #include <festd/unordered_map.h>
 
@@ -28,6 +29,7 @@ namespace FE::Graphics::Vulkan
         }
 
         FE_PROFILER_LOCK(Threading::SpinLock, m_lock);
+        Rc<Core::ShaderCompiler> m_shaderCompiler;
         Rc<ShaderLibrary> m_shaderLibrary;
         DescriptorManager* m_descriptorManager = nullptr;
         VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;

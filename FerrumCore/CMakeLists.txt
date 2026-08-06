@@ -1,212 +1,37 @@
-﻿set(PUBLIC_HEADERS
-    Public/festd/Internal/BitStorage.h
-    Public/festd/Internal/StringBase.h
-    Public/festd/Internal/StringStorageImpl.h
-
-    Public/festd/base.h
-    Public/festd/bit_vector.h
-    Public/festd/fixed_function.h
-    Public/festd/intrusive_list.h
-    Public/festd/ring_buffer.h
-    Public/festd/span.h
-    Public/festd/string.h
-    Public/festd/unordered_map.h
-    Public/festd/vector.h
-
-    Public/Core/Base/Assert.h
-    Public/Core/Base/Base.h
-    Public/Core/Base/BaseMath.h
-    Public/Core/Base/BaseTypes.h
-    Public/Core/Base/CompilerTraits.h
-    Public/Core/Base/Hash.h
-    Public/Core/Base/Platform.h
-    Public/Core/Base/PlatformInclude.h
-    Public/Core/Base/PlatformTraits.h
-    Public/Core/Base/StackTrace.h
-
-    Public/Core/CLI/CommandLine.h
-
-    Public/Core/Compression/Compression.h
-
-    Public/Core/Containers/ByteBuffer.h
-    Public/Core/Containers/ConcurrentQueue.h
-    Public/Core/Containers/Pow2Array.h
-    Public/Core/Containers/SegmentedVector.h
-
-    Public/Core/IO/Async.h
-    Public/Core/IO/BaseIO.h
-    Public/Core/IO/FileStream.h
-    Public/Core/IO/IStream.h
-    Public/Core/IO/Path.h
-    Public/Core/IO/PathParser.h
-    Public/Core/IO/StreamBase.h
-
-    Public/Core/Jobs/Base.h
-    Public/Core/Jobs/JobGraph.h
-    Public/Core/Jobs/JobNode.h
-    Public/Core/Jobs/Jobs.h
-    Public/Core/Jobs/WaitGroup.h
-
-    Public/Core/Logging/Logger.h
-    Public/Core/Logging/Trace.h
-
-    Public/Core/Math/Aabb.h
-    Public/Core/Math/Color.h
-    Public/Core/Math/Colors.h
-    Public/Core/Math/Matrix4x4.h
-    Public/Core/Math/Obb.h
-    Public/Core/Math/Packing.h
-    Public/Core/Math/Quaternion.h
-    Public/Core/Math/Random.h
-    Public/Core/Math/Rect.h
-    Public/Core/Math/Sphere.h
-    Public/Core/Math/Transform.h
-    Public/Core/Math/UUID.h
-    Public/Core/Math/Vector2.h
-    Public/Core/Math/Vector3.h
-    Public/Core/Math/Vector3Int.h
-    Public/Core/Math/Vector3UInt.h
-    Public/Core/Math/Vector4.h
-
-    Public/Core/Memory/BuddyAllocator.h
-    Public/Core/Memory/FiberTempAllocator.h
-    Public/Core/Memory/LinearAllocator.h
-    Public/Core/Memory/Memory.h
-    Public/Core/Memory/PoolAllocator.h
-    Public/Core/Memory/RingBufferAllocator.h
-    Public/Core/Memory/RefCount.h
-    Public/Core/Memory/SegmentedBuffer.h
-
-    Public/Core/Env/Environment.h
-    Public/Core/Env/LibraryLoader.h
-
-    Public/Core/RTTI/Reflection.h
-    Public/Core/RTTI/ReflectionContext.h
-    Public/Core/RTTI/RTTI.h
-
-    Public/Core/Serialization/BinarySerialization.h
-    Public/Core/Serialization/JsonSerialization.h
-    Public/Core/Serialization/Serialization.h
-
-    Public/Core/SIMD/Intersection.h
-    Public/Core/SIMD/Soa.h
-    Public/Core/SIMD/Utils.h
-
-    Public/Core/Strings/Encoding.h
-    Public/Core/Strings/Format.h
-    Public/Core/Strings/Parser.h
-    Public/Core/Strings/Utils.h
-
-    Public/Core/Threading/Context.h
-    Public/Core/Threading/ConditionVariable.h
-    Public/Core/Threading/Event.h
-    Public/Core/Threading/Fiber.h
-    Public/Core/Threading/Mutex.h
-    Public/Core/Threading/Semaphore.h
-    Public/Core/Threading/SharedSpinLock.h
-    Public/Core/Threading/SpinLock.h
-    Public/Core/Threading/Thread.h
-
-    Public/Core/Time/BaseTime.h
-    Public/Core/Time/DateTime.h
-    Public/Core/Time/TimeSpan.h
-
-    Public/Core/Utils/Core.natvis
-    Public/Core/Utils/Crc32.h
+file(GLOB_RECURSE PUBLIC_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Public/*.h"
+    "Public/*.natvis"
 )
 
-set(COMMON_SOURCES
-    Private/Core/Base/Assert.cpp
-    Private/Core/Base/AssertPrivate.h
-    Private/Core/Base/StackTrace.cpp
-    Private/Core/Base/StackTracePrivate.h
-
-    Private/Core/CLI/CommandLine.cpp
-
-    Private/Core/Compression/Compression.cpp
-    Private/Core/Compression/CompressionPrivate.h
-
-    Private/Core/IO/Platform/PlatformFile.h
-    Private/Core/IO/Platform/PlatformPath.h
-    Private/Core/IO/AsyncImpl.h
-    Private/Core/IO/AsyncImpl.cpp
-    Private/Core/IO/DefaultAsyncIOBackend.h
-    Private/Core/IO/DefaultAsyncIOBackend.cpp
-    Private/Core/IO/BaseIO.cpp
-    Private/Core/IO/BaseIOPrivate.h
-    Private/Core/IO/FileStream.cpp
-    Private/Core/IO/Path.cpp
-
-    Private/Core/Jobs/JobGraph.cpp
-    Private/Core/Jobs/JobNode.cpp
-    Private/Core/Jobs/JobSystem.h
-    Private/Core/Jobs/JobSystem.cpp
-    Private/Core/Jobs/WaitGroup.cpp
-
-    Private/Core/Logging/Logger.cpp
-    Private/Core/Logging/LoggerPrivate.h
-
-    Private/Core/Math/Colors.cpp
-    Private/Core/Math/Matrix4x4.cpp
-    Private/Core/Math/Serialization.cpp
-
-    Private/Core/Memory/FiberTempAllocator.cpp
-    Private/Core/Memory/LinearAllocator.cpp
-    Private/Core/Memory/Memory.cpp
-    Private/Core/Memory/MemoryPrivate.h
-    Private/Core/Memory/PoolAllocator.cpp
-    Private/Core/Memory/BuddyAllocator.cpp
-    Private/Core/Memory/RingBufferAllocator.cpp
-    Private/Core/Memory/tlsf.c
-    Private/Core/Memory/tlsf.h
-
-    Private/Core/Env/Environment.cpp
-    Private/Core/Env/LibraryLoader.cpp
-
-    Private/Core/Platform/Windows/Common.h
-    Private/Core/Platform/Windows/Platform.cpp
-
-    Private/Core/RTTI/Reflection.cpp
-    Private/Core/RTTI/ReflectionPrivate.h
-
-    Private/Core/Serialization/BinarySerialization.cpp
-    Private/Core/Serialization/JsonSerialization.cpp
-    Private/Core/Serialization/Serialization.cpp
-
-    Private/Core/Strings/Encoding.cpp
-    Private/Core/Strings/Parser.cpp
-
-    Private/Core/Threading/Context.cpp
-    Private/Core/Threading/Fiber.cpp
-    Private/Core/Threading/ThreadingPrivate.h
-
-    Private/Core/Time/Platform/PlatformTime.cpp
-    Private/Core/Time/DateTime.cpp
-
-    Private/Core/Utils/Crc32.cpp
+file(GLOB_RECURSE COMMON_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/*.c"
+    "Private/*.cpp"
+    "Private/*.h"
 )
 
-set(WINDOWS_SOURCES
-    Private/Core/Base/Platform/Windows/PlatformAssert.cpp
-
-    Private/Core/IO/Platform/Windows/PlatformFile.cpp
-    Private/Core/IO/Platform/Windows/PlatformPath.cpp
-    Private/Core/IO/Platform/Windows/OverlappedAsyncIOBackend.h
-    Private/Core/IO/Platform/Windows/OverlappedAsyncIOBackend.cpp
-
-    Private/Core/Threading/Platform/Windows/Event.cpp
-    Private/Core/Threading/Platform/Windows/ConditionVariable.cpp
-    Private/Core/Threading/Platform/Windows/Thread.cpp
-    Private/Core/Threading/Platform/Windows/Mutex.cpp
-    Private/Core/Threading/Platform/Windows/Semaphore.cpp
-
-    Private/Core/Time/Platform/Windows/PlatformTime.cpp
+file(GLOB_RECURSE WINDOWS_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/Core/Platform/Windows/*.cpp"
+    "Private/Core/Platform/Windows/*.h"
+    "Private/Core/*/Platform/Windows/*.cpp"
+    "Private/Core/*/Platform/Windows/*.h"
 )
+list(REMOVE_ITEM COMMON_SOURCES ${WINDOWS_SOURCES})
 
-set(GENERATED_SOURCES
-    Reflection.gen.cpp
+file(GLOB GENERATED_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.gen.cpp"
 )
-
 
 add_library(FeCore STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES} ${GENERATED_SOURCES})
 

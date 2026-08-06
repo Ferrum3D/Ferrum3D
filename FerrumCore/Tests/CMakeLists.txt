@@ -1,44 +1,9 @@
-set(SRC
-    Common/TestCommon.h
-
-    Compression.cpp
-
-    Cli/CommandLine.cpp
-    Cli/CommandLineTypes.h
-
-    Containers/BitSet.cpp
-    Containers/SegmentedVector.cpp
-
-    IO/Path.cpp
-    IO/AsyncStreamIO.cpp
-
-    Jobs/JobSystem.cpp
-
-    Math/Matrix4x4.cpp
-    Math/Transform.cpp
-    Math/Vector3.cpp
-    Math/Vector4.cpp
-
-    Memory/BuddyAllocator.cpp
-    Memory/RingBufferAllocator.cpp
-
-    Modules/Environment.cpp
-
-    RTTI/RTTI.cpp
-
-    Serialization/Serialization.cpp
-    Serialization/SerializationTypes.h
-
-    Reflection.gen.cpp
-
-    Strings/Format.cpp
-    Strings/String.cpp
-
-    Time/DateTime.cpp
-
-    Utils/UUID.cpp
-
-    main.cpp
+file(GLOB_RECURSE SRC
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.cpp"
+    "*.h"
 )
 
 add_executable(FeCoreTests ${SRC})

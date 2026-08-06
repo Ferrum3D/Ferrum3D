@@ -1,109 +1,40 @@
-﻿include(Public/Graphics/Tables/TableList.cmake)
-include(Shaders/Shaders/Tables/TableList.cmake)
-
-set(SHADER_SHARED_HEADERS
-    Shaders/Shaders/Base/Base.h
-
-    Shaders/Shaders/Database/Base.h
-
-    Shaders/Shaders/Passes/DepthPrepass/DepthPrepass.h
-    Shaders/Shaders/Passes/MeshPass/MeshPass.h
-    Shaders/Shaders/Passes/OpaquePass/OpaquePass.h
-    Shaders/Shaders/Passes/Tools/Blit/Blit.h
-    Shaders/Shaders/Passes/Tools/Downsample/Downsample.h
+file(GLOB_RECURSE SHADER_SHARED_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Shaders/Shaders/*.h"
 )
 
-set(SHADER_SOURCES
-    ${GPUDB_TABLE_SHADERS}
-
-    Shaders/Shaders/Base/Base.hlsli
-    Shaders/Shaders/Base/BaseTypes.hlsli
-    Shaders/Shaders/Base/Descriptors.hlsli
-
-    Shaders/Shaders/Core/Meshlet.hlsli
-
-    Shaders/Shaders/Database/Base.hlsli
-
-    Shaders/Shaders/Passes/MeshPass/Common.hlsli
-    Shaders/Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl
-    Shaders/Shaders/Passes/OpaquePass/OpaquePass.ps.hlsl
-    Shaders/Shaders/Passes/Tools/Blit/Blit.hlsli
-    Shaders/Shaders/Passes/Tools/Blit/Blit.ps.hlsl
-    Shaders/Shaders/Passes/Tools/Blit/Blit.vs.hlsl
-    Shaders/Shaders/Passes/Tools/Downsample/Downsample.cs.hlsl
-
-    Shaders/Shaders/Platform/Vulkan/Intrinsics.hlsli
+file(GLOB_RECURSE SHADER_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Shaders/Shaders/*.hlsl"
+    "Shaders/Shaders/*.hlsli"
 )
-
 set_source_files_properties(${SHADER_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
-set(PUBLIC_HEADERS
-    ${GPUDB_TABLE_SOURCES}
-
-    Public/Graphics/Assets/Base.h
-    Public/Graphics/Assets/IModelAssetManager.h
-    Public/Graphics/Assets/ITextureAssetManager.h
-    Public/Graphics/Assets/ModelAssetFormat.h
-    Public/Graphics/Assets/TextureAssetFormat.h
-
-    Public/Graphics/Base/Base.h
-    Public/Graphics/Base/BaseModuleList.h
-    Public/Graphics/Base/DrawTag.h
-
-    Public/Graphics/Database/Base.h
-    Public/Graphics/Database/Database.h
-
-    Public/Graphics/Features/Mesh/MeshSceneModule.h
-
-    Public/Graphics/Passes/DepthPrepass.h
-    Public/Graphics/Passes/DrawTags.h
-    Public/Graphics/Passes/OpaquePass.h
-    Public/Graphics/Passes/Tools/Blit.h
-    Public/Graphics/Passes/Tools/Downsample.h
-
-    Public/Graphics/Scene/Octree.h
-    Public/Graphics/Scene/Scene.h
-    Public/Graphics/Scene/View.h
-
-    Public/Graphics/Module.h
-    Public/Graphics/Renderer.h
+file(GLOB_RECURSE PUBLIC_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Public/*.h"
 )
 
-set(COMMON_SOURCES
-    Private/Graphics/Assets/ModelAssetManager.cpp
-    Private/Graphics/Assets/ModelAssetManager.h
-    Private/Graphics/Assets/TextureAssetManager.cpp
-    Private/Graphics/Assets/TextureAssetManager.h
-
-    Private/Graphics/Base/DrawTag.cpp
-
-    Private/Graphics/Database/Database.cpp
-
-    Private/Graphics/Features/Mesh/MeshSceneModule.cpp
-
-    Private/Graphics/Passes/DepthPrepass.cpp
-    Private/Graphics/Passes/DrawTags.cpp
-    Private/Graphics/Passes/OpaquePass.cpp
-    Private/Graphics/Passes/RendererPassCommon.h
-    Private/Graphics/Passes/Tools/Blit.cpp
-    Private/Graphics/Passes/Tools/Downsample.cpp
-
-    Private/Graphics/Scene/Octree.cpp
-    Private/Graphics/Scene/SceneImpl.cpp
-    Private/Graphics/Scene/SceneImpl.h
-    Private/Graphics/Scene/View.cpp
-    Private/Graphics/Scene/ViewImpl.cpp
-    Private/Graphics/Scene/ViewImpl.h
-
-    Private/Graphics/Module.cpp
-    Private/Graphics/RendererImpl.cpp
-    Private/Graphics/RendererImpl.h
+file(GLOB_RECURSE COMMON_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/*.cpp"
+    "Private/*.h"
 )
 
-set(GENERATED_SOURCES
-    Reflection.gen.cpp
+file(GLOB GENERATED_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.gen.cpp"
 )
-
 
 add_library(FeGraphics STATIC
     ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${SHADER_SHARED_HEADERS} ${SHADER_SOURCES} ${GENERATED_SOURCES})

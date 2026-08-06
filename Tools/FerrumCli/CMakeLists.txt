@@ -1,21 +1,29 @@
-set(PUBLIC_HEADERS
-    Public/FerrumCli/CommandLine.h
+file(GLOB_RECURSE PUBLIC_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Public/*.h"
 )
 
-set(PRIVATE_SOURCES
-    Private/FerrumCli/App.cpp
-    Private/FerrumCli/App.h
+file(GLOB_RECURSE PRIVATE_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/*.cpp"
+    "Private/*.h"
 )
 
-set(GENERATED_SOURCES
-    Reflection.gen.cpp
+file(GLOB ROOT_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.cpp"
 )
 
 add_executable(FerrumCli
     ${PUBLIC_HEADERS}
     ${PRIVATE_SOURCES}
-    ${GENERATED_SOURCES}
-    main.cpp
+    ${ROOT_SOURCES}
 )
 
 fe_configure_target(FerrumCli)

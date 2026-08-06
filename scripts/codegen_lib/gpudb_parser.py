@@ -176,15 +176,6 @@ def _clear_folder(folder: Path):
     folder.mkdir(parents=True, exist_ok=True)
 
 
-def _generate_cmake(tables: list[Table], basedir: str, ext: str, varname: str) -> str:
-    text = f'set({varname}\n'
-    text += f'    {basedir}/Forwards.{ext}\n'
-    for table in tables:
-        text += f'    {basedir}/{table.name}.{ext}\n'
-    text += ')\n'
-    return text
-
-
 def _generate_forwards_cpp(tables: list[Table]) -> str:
     text = '#pragma once\n\nnamespace FE::Graphics\n{\n'
     for table in tables:
@@ -242,13 +233,6 @@ def generate_gpudb(env: Environment, templates_dir: Path, project_root: Path, cl
         hlsl_code_path = hlsl_dir / f'{table.name}.hlsli'
         hlsl_code_path.write_text(hlsl_code, newline='\n')
         _run_clang_format(clang_format_path, clang_format_style, hlsl_code_path)
-
-    cpp_cmake = _generate_cmake(tables, CPP_DIR_RELATIVE.as_posix(), 'h', 'GPUDB_TABLE_SOURCES')
-    hlsl_cmake = _generate_cmake(tables, HLSL_DIR_RELATIVE.as_posix(), 'hlsli', 'GPUDB_TABLE_SHADERS')
-
-    (cpp_dir / 'TableList.cmake').write_text(cpp_cmake, newline='\n')
-    (hlsl_dir / 'TableList.cmake').write_text(hlsl_cmake, newline='\n')
-
 
 if __name__ == "__main__":
     script_path = os.path.abspath(__file__)

@@ -1,6 +1,6 @@
-#include <Core/DI/Activator.h>
 #include <Core/Jobs/Jobs.h>
 #include <Graphics/Core/DescriptorManager.h>
+#include <Graphics/Core/ShaderCompilerDXC.h>
 #include <Graphics/Core/Vulkan/ComputePipeline.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/Device.h>
@@ -27,7 +27,8 @@ namespace FE::Graphics::Vulkan
 
         VerifyVk(vkCreatePipelineCache(NativeCast(device), &pipelineCacheCI, nullptr, &m_pipelineCache));
 
-        m_shaderLibrary = DI::DefaultNew<ShaderLibrary>().value();
+        m_shaderCompiler = Memory::DefaultNew<Core::ShaderCompilerDXC>();
+        m_shaderLibrary = Memory::DefaultNew<ShaderLibrary>(device, m_shaderCompiler.Get());
     }
 
 
@@ -63,7 +64,7 @@ namespace FE::Graphics::Vulkan
         if (it != m_graphicsPipelinesMap.end())
             return it->second;
 
-        auto* pipeline = DI::DefaultNew<GraphicsPipeline>().value();
+        auto* pipeline = Memory::DefaultNew<GraphicsPipeline>(m_device);
         pipeline->AddRef();
         m_graphicsPipelinesMap[hash] = pipeline;
         lock.unlock();
@@ -100,7 +101,7 @@ namespace FE::Graphics::Vulkan
         if (it != m_computePipelinesMap.end())
             return it->second;
 
-        auto* pipeline = DI::DefaultNew<ComputePipeline>().value();
+        auto* pipeline = Memory::DefaultNew<ComputePipeline>(m_device);
         pipeline->AddRef();
         m_computePipelinesMap[hash] = pipeline;
         lock.unlock();

@@ -1,49 +1,33 @@
-﻿set(PUBLIC_HEADERS
-    Public/Framework/Application/Core/PlatformApplication.h
-    Public/Framework/Application/Core/PlatformEvent.h
-    Public/Framework/Application/Core/PlatformMonitor.h
-    Public/Framework/Application/Core/PlatformWindow.h
-
-    Public/Framework/Application/Application.h
-
-    Public/Framework/Entities/Archetype.h
-    Public/Framework/Entities/Base.h
-    Public/Framework/Entities/Entity.h
-    Public/Framework/Entities/EntityComponentRegistry.h
-    Public/Framework/Entities/EntityRegistry.h
-    Public/Framework/Entities/EntitySystem.h
-    Public/Framework/Entities/EntityUpdateContext.h
-    Public/Framework/Entities/EntityWorld.h
-    Public/Framework/Entities/EntityWorldSystem.h
-
-    Public/Framework/Input/Core/Keys.h
-
-    Public/Framework/Module.h
+file(GLOB_RECURSE PUBLIC_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Public/*.h"
 )
 
-set(COMMON_SOURCES
-    Private/Framework/Application/Application.cpp
-
-    Private/Framework/Entities/Archetype.cpp
-    Private/Framework/Entities/Entity.cpp
-    Private/Framework/Entities/EntityComponentRegistry.cpp
-    Private/Framework/Entities/EntityRegistry.cpp
-    Private/Framework/Entities/EntityWorld.cpp
-
-    Private/Framework/Module.cpp
+file(GLOB_RECURSE COMMON_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/*.cpp"
+    "Private/*.h"
 )
 
-set(WINDOWS_SOURCES
-    Private/Framework/Application/Platform/Windows/PlatformApplication.cpp
-    Private/Framework/Application/Platform/Windows/PlatformApplication.h
-    Private/Framework/Application/Platform/Windows/PlatformWindow.cpp
-    Private/Framework/Application/Platform/Windows/PlatformWindow.h
+file(GLOB_RECURSE WINDOWS_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/Framework/Application/Platform/Windows/*.cpp"
+    "Private/Framework/Application/Platform/Windows/*.h"
 )
+list(REMOVE_ITEM COMMON_SOURCES ${WINDOWS_SOURCES})
 
-set(GENERATED_SOURCES
-    Reflection.gen.cpp
+file(GLOB GENERATED_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.gen.cpp"
 )
-
 
 add_library(FeFramework STATIC ${PUBLIC_HEADERS} ${COMMON_SOURCES} ${WINDOWS_SOURCES} ${GENERATED_SOURCES})
 

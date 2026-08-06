@@ -1,7 +1,6 @@
 ﻿#include <Core/DI/Builder.h>
 #include <Graphics/Assets/ModelAssetManager.h>
 #include <Graphics/Assets/TextureAssetManager.h>
-#include <Graphics/Core/Module.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Module.h>
 #include <Graphics/RendererImpl.h>
@@ -18,7 +17,5 @@ namespace FE::Graphics
     }
 
 
-    FE_IMPLEMENT_MODULE(Module, [] {
-        Core::Module::Init();
-    });
+    FE_IMPLEMENT_MODULE(Module);
 } // namespace FE::Graphics

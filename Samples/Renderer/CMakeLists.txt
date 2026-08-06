@@ -1,4 +1,12 @@
-add_executable(RendererSample main.cpp)
+file(GLOB_RECURSE SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "*.cpp"
+    "*.h"
+)
+
+add_executable(RendererSample ${SOURCES})
 
 fe_configure_target(RendererSample)
 

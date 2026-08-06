@@ -1,17 +1,16 @@
-set(PUBLIC_HEADERS
-    Public/AssetBuilder/ModelProcessor.h
-    Public/AssetBuilder/TextureProcessor.h
+file(GLOB_RECURSE PUBLIC_HEADERS
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Public/*.h"
 )
 
-set(PRIVATE_SOURCES
-    Private/AssetBuilder/Utils.cpp
-    Private/AssetBuilder/Utils.h
-    Private/AssetBuilder/TextureProcessor.cpp
-    Private/AssetBuilder/MeshOptimization.cpp
-    Private/AssetBuilder/MeshOptimization.h
-    Private/AssetBuilder/ModelImporter.cpp
-    Private/AssetBuilder/ModelImporter.h
-    Private/AssetBuilder/ModelProcessor.cpp
+file(GLOB_RECURSE PRIVATE_SOURCES
+    CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "Private/*.cpp"
+    "Private/*.h"
 )
 
 add_library(AssetBuilder STATIC ${PUBLIC_HEADERS} ${PRIVATE_SOURCES})
