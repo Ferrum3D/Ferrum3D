@@ -57,18 +57,28 @@ namespace FE::IO
                 if (this == &other)
                     return *this;
 
-                Attach(other.GetAssetSlot());
-                static_cast<THandle*>(this)->InternalAddRef();
+                Reset(other.GetAssetSlot());
                 return *this;
             }
 
             AssetHandleBase& operator=(AssetHandleBase&& other) noexcept
             {
-                Attach(other.Detach());
+                Adopt(other.Detach());
                 return *this;
             }
 
-            void Attach(AssetSlot* slot)
+            void Reset(AssetSlot* slot)
+            {
+                if (m_slot == slot)
+                    return;
+
+                static_cast<THandle*>(this)->InternalRelease();
+                m_slot = slot;
+                static_cast<THandle*>(this)->InternalAddRef();
+            }
+
+            // Takes ownership of an existing reference without incrementing it.
+            void Adopt(AssetSlot* slot)
             {
                 static_cast<THandle*>(this)->InternalRelease();
                 m_slot = slot;
@@ -115,9 +125,15 @@ namespace FE::IO
 
     struct WeakResidencyTicket : public Internal::AssetHandleBase<WeakResidencyTicket>
     {
-        using AssetHandleBase::AssetHandleBase;
+        WeakResidencyTicket() = default;
+        explicit WeakResidencyTicket(AssetSlot* slot)
+            : AssetHandleBase(slot)
+        {
+        }
 
     protected:
+        friend struct Internal::AssetHandleBase<WeakResidencyTicket>;
+
         void InternalAddRef();
         void InternalRelease();
     };
@@ -125,9 +141,15 @@ namespace FE::IO
 
     struct ResidencyTicket : public Internal::AssetHandleBase<ResidencyTicket>
     {
-        using AssetHandleBase::AssetHandleBase;
+        ResidencyTicket() = default;
+        explicit ResidencyTicket(AssetSlot* slot)
+            : AssetHandleBase(slot)
+        {
+        }
 
     protected:
+        friend struct Internal::AssetHandleBase<ResidencyTicket>;
+
         void InternalAddRef();
         void InternalRelease();
     };
@@ -136,7 +158,16 @@ namespace FE::IO
     template<class T>
     struct AssetLease final : public ResidencyTicket
     {
-        using ResidencyTicket::ResidencyTicket;
+        AssetLease() = default;
+        explicit AssetLease(AssetSlot* slot)
+            : ResidencyTicket(slot)
+        {
+        }
+
+        explicit AssetLease(const ResidencyTicket& ticket)
+            : ResidencyTicket(ticket)
+        {
+        }
 
         [[nodiscard]] const T* Get() const
         {
@@ -148,21 +179,20 @@ namespace FE::IO
     template<class T>
     struct AssetHandle final : public WeakResidencyTicket
     {
-        using WeakResidencyTicket::WeakResidencyTicket;
-
-        explicit AssetHandle(const AssetLease<T> lease)
+        AssetHandle() = default;
+        explicit AssetHandle(AssetSlot* slot)
+            : WeakResidencyTicket(slot)
         {
-            Attach(lease.Get());
+        }
+
+        explicit AssetHandle(const AssetLease<T>& lease)
+            : WeakResidencyTicket(lease.GetAssetSlot())
+        {
         }
 
         [[nodiscard]] const T* Get() const
         {
             return static_cast<const T*>(GetAssetInstance());
-        }
-
-        [[nodiscard]] AssetLease<T> Lock() const
-        {
-            return AssetLease<T>(m_slot);
         }
     };
 

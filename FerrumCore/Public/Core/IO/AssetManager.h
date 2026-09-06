@@ -33,8 +33,7 @@ namespace FE::IO
         {
             const AssetID assetId = link.GetAssetID();
             const ResidencyTicket ticket = LoadAsset(assetId);
-            AssetSlot* slot = FindAssetSlot(assetId);
-            return AssetLease<T>(slot);
+            return AssetLease<T>(ticket);
         }
 
         static void Tick();

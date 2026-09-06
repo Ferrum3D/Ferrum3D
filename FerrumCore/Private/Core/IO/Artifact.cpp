@@ -21,7 +21,7 @@ namespace FE::IO
     void ArtifactStore::Shutdown()
     {
         FE_Assert(GImpl != nullptr, "Artifact Store not initialized");
-        GImpl->~Impl();
+        Memory::DefaultDelete(GImpl);
         GImpl = nullptr;
     }
 

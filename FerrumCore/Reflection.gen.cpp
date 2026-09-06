@@ -2816,7 +2816,7 @@ namespace FE::IO
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_artifactId
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -2825,6 +2825,8 @@ namespace FE::IO
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_assetTypeId
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_payloads
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependencies
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -2836,7 +2838,9 @@ namespace FE::IO
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_payloads = {};
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependencies = {};
+
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_artifactId",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &ArtifactRecord::m_artifactId,
@@ -2856,6 +2860,11 @@ namespace FE::IO
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &ArtifactRecord::m_payloads,
                                                         kAttributes_m_payloads,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependencies",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &ArtifactRecord::m_dependencies,
+                                                        kAttributes_m_dependencies,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -2877,6 +2886,7 @@ namespace FE::IO
             object.Field("m_assetId", m_assetId);
             object.Field("m_assetTypeId", m_assetTypeId);
             object.Field("m_payloads", m_payloads);
+            object.Field("m_dependencies", m_dependencies);
         }
 
         return context.GetResultCode();
@@ -2890,6 +2900,7 @@ namespace FE::IO
             object.Field("m_assetId", m_assetId);
             object.Field("m_assetTypeId", m_assetTypeId);
             object.Field("m_payloads", m_payloads);
+            object.Field("m_dependencies", m_dependencies);
         }
 
         return context.GetResultCode();
@@ -2911,6 +2922,8 @@ namespace FE::IO
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_assetTypeId)>());
             hasher.Update("m_payloads", 10);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_payloads)>());
+            hasher.Update("m_dependencies", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependencies)>());
             hasher.Update(0);
             return hasher.Finalize();
         }();
@@ -3707,16 +3720,26 @@ namespace FE::IO
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_chunks
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0xb1, 0x45, 0xa0, 0x1f, 0xa9, 0x10, 0x45, 0xba,
+            0xa1, 0x93, 0x34, 0x78, 0x92, 0x14, 0xc1, 0x85, // FE::IO::ResolvedDataSource m_resolvedDataSource
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_chunks
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolvedDataSource = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_chunks = {};
 
-        static const festd::array<Rtti::FieldInfo, 1> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_chunks",
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolvedDataSource",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &ArtifactPayloadRecord::m_resolvedDataSource,
+                                                        kAttributes_m_resolvedDataSource,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_chunks",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &ArtifactPayloadRecord::m_chunks,
                                                         kAttributes_m_chunks,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
@@ -3736,6 +3759,7 @@ namespace FE::IO
     {
         if (auto object = context.BeginObject())
         {
+            object.Field("m_resolvedDataSource", m_resolvedDataSource);
             object.Field("m_chunks", m_chunks);
         }
 
@@ -3746,6 +3770,7 @@ namespace FE::IO
     {
         if (auto object = context.BeginObject())
         {
+            object.Field("m_resolvedDataSource", m_resolvedDataSource);
             object.Field("m_chunks", m_chunks);
         }
 
@@ -3760,6 +3785,8 @@ namespace FE::IO
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_resolvedDataSource", 20);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_resolvedDataSource)>());
             hasher.Update("m_chunks", 8);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_chunks)>());
             hasher.Update(0);
@@ -3808,8 +3835,8 @@ namespace FE::IO
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0xb1, 0x45, 0xa0, 0x1f, 0xa9, 0x10, 0x45, 0xba,
-            0xa1, 0x93, 0x34, 0x78, 0x92, 0x14, 0xc1, 0x85, // FE::IO::ResolvedDataSource m_resolvedDataSource
+            0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
+            0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_offsetInPayload
             0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
             0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_uncompressedSize
             0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
@@ -3819,7 +3846,7 @@ namespace FE::IO
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_resolvedDataSource = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsetInPayload = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_uncompressedSize = {};
 
@@ -3828,10 +3855,10 @@ namespace FE::IO
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_checksum = {};
 
         static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_resolvedDataSource",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsetInPayload",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &ArtifactChunkRecord::m_resolvedDataSource,
-                                                        kAttributes_m_resolvedDataSource,
+                                                        &ArtifactChunkRecord::m_offsetInPayload,
+                                                        kAttributes_m_offsetInPayload,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_uncompressedSize",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
@@ -3864,7 +3891,7 @@ namespace FE::IO
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_resolvedDataSource", m_resolvedDataSource);
+            object.Field("m_offsetInPayload", m_offsetInPayload);
             object.Field("m_uncompressedSize", m_uncompressedSize);
             object.Field("m_compressionMethod", m_compressionMethod);
             object.Field("m_checksum", m_checksum);
@@ -3877,7 +3904,7 @@ namespace FE::IO
     {
         if (auto object = context.BeginObject())
         {
-            object.Field("m_resolvedDataSource", m_resolvedDataSource);
+            object.Field("m_offsetInPayload", m_offsetInPayload);
             object.Field("m_uncompressedSize", m_uncompressedSize);
             object.Field("m_compressionMethod", m_compressionMethod);
             object.Field("m_checksum", m_checksum);
@@ -3894,8 +3921,8 @@ namespace FE::IO
             };
             FE::Hasher hasher;
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
-            hasher.Update("m_resolvedDataSource", 20);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_resolvedDataSource)>());
+            hasher.Update("m_offsetInPayload", 17);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_offsetInPayload)>());
             hasher.Update("m_uncompressedSize", 18);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_uncompressedSize)>());
             hasher.Update("m_compressionMethod", 19);

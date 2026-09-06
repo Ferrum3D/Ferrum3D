@@ -59,13 +59,20 @@ namespace FE::IO
             m_freeAssetSlots.resize(m_freeAssetSlots.size() + kGrowSize, true);
             m_initialReadCompleted.resize(m_initialReadCompleted.size() + kGrowSize, false);
             m_pendingFinalize.resize(m_pendingFinalize.size() + kGrowSize, false);
-            m_assetSlots.resize(m_assetSlots.size() + kGrowSize);
+            m_liveAssetSlots.resize(m_liveAssetSlots.size() + kGrowSize, false);
+            for (uint32_t index = 0; index < kGrowSize; ++index)
+                m_assetSlots.emplace_back();
             slotIndex = m_freeAssetSlots.find_first();
         }
 
+        m_freeAssetSlots.reset(slotIndex);
         m_assetIdToSlotMap.insert({ assetId, slotIndex });
-        m_assetSlots[slotIndex].m_index = slotIndex;
-        return m_assetSlots[slotIndex];
+        AssetSlotInternal& slot = m_assetSlots[slotIndex];
+        slot.m_index = slotIndex;
+        slot.m_slot.m_assetId = assetId;
+        slot.m_slot.m_typeId = Rtti::TypeID::kNull;
+        slot.m_slot.m_currentArtifactId = ArtifactID::kNull;
+        return slot;
     }
 
 
@@ -85,8 +92,6 @@ namespace FE::IO
 
     void AssetManager::Init()
     {
-        ArtifactStore::Init();
-
         FE_Assert(GImpl == nullptr, "Asset Manager already initialized");
         GImpl = Memory::DefaultNew<Impl>();
     }
@@ -95,10 +100,8 @@ namespace FE::IO
     void AssetManager::Shutdown()
     {
         FE_Assert(GImpl != nullptr, "Asset Manager not initialized");
-        GImpl->~Impl();
+        Memory::DefaultDelete(GImpl);
         GImpl = nullptr;
-
-        ArtifactStore::Shutdown();
     }
 
 
@@ -118,7 +121,7 @@ namespace FE::IO
 
         Rc<WaitGroup> completionWaitGroup = WaitGroup::Create();
         Async::Batch artifactMetaBatch(artifactMetaLocation, completionWaitGroup.Get());
-        artifactMetaBatch.ReadAppend(slot.m_readBuffer, artifactMetaLocation.m_byteSize);
+        artifactMetaBatch.ReadAppendToEnd(slot.m_readBuffer);
         slot.m_slot.m_asyncController = Async::Read(artifactMetaBatch);
 
         Jobs::Graph graph("LoadAsset", Jobs::FiberAffinityMask::kAllBackground);
@@ -133,7 +136,7 @@ namespace FE::IO
             for (const AssetID& dependency : slot.m_artifactRecord.m_dependencies)
             {
                 // TODO: figure out how to handle dependency loading and ref counting.
-                LoadAsset(dependency);
+                static_cast<void>(LoadAsset(dependency));
             }
         });
         graph.Dispatch("InitialRead", { completionWaitGroup }, [&slot] {
@@ -167,6 +170,16 @@ namespace FE::IO
         graph.Detach();
 
         return ResidencyTicket{ &slot.m_slot };
+    }
+
+
+    AssetSlot* AssetManager::FindAssetSlot(const AssetID assetId)
+    {
+        const auto it = GImpl->m_assetIdToSlotMap.find(assetId);
+        if (it == GImpl->m_assetIdToSlotMap.end())
+            return nullptr;
+
+        return &GImpl->m_assetSlots[it->second].m_slot;
     }
 
 

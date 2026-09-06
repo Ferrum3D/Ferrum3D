@@ -45,6 +45,7 @@ namespace FE::IO
 
     struct ArtifactStore final
     {
+        // The process environment owns the artifact store lifetime.
         static void Init();
         static void Shutdown();
 

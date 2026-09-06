@@ -1,6 +1,6 @@
 ﻿#include <Core/Base/Platform.h>
-#include <Core/Jobs/Jobs.h>
 #include <Core/Env/Environment.h>
+#include <Core/Jobs/Jobs.h>
 #include <gtest/gtest.h>
 
 using namespace FE;
@@ -28,5 +28,6 @@ int main(int argc, char** argv)
     });
     Jobs::StartJobSystem();
 
+    Env::Shutdown();
     return exitCode;
 }

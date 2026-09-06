@@ -109,7 +109,11 @@ namespace FE::IO::Async
 
     void Batch::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
     {
-        ValidateRead(sourceOffset, destinationSize);
+        if ((destination == nullptr && destinationSize != 0) || !ValidateRead(sourceOffset, destinationSize))
+        {
+            m_validationResult = ResultCode::kInvalidArgument;
+            return;
+        }
 
         Command command;
         command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
@@ -125,7 +129,13 @@ namespace FE::IO::Async
     void Batch::Read(void* destination, const size_t destinationSize, const size_t compressedSize,
                      const Compression::Method compressionMethod, const size_t sourceOffset)
     {
-        ValidateRead(sourceOffset, compressedSize);
+        if ((destination == nullptr && destinationSize != 0)
+            || (compressionMethod == Compression::Method::kNone && destinationSize != compressedSize)
+            || !ValidateRead(sourceOffset, compressedSize))
+        {
+            m_validationResult = ResultCode::kInvalidArgument;
+            return;
+        }
 
         Command command;
         command.m_destination.m_byteBuffer = static_cast<std::byte*>(destination);
@@ -153,6 +163,12 @@ namespace FE::IO::Async
 
     void Batch::ReadAppend(festd::pmr::vector<std::byte>& destination, const size_t bytesToRead, const size_t sourceOffset)
     {
+        if (!ValidateRead(sourceOffset, bytesToRead))
+        {
+            m_validationResult = ResultCode::kInvalidArgument;
+            return;
+        }
+
         Command command;
         command.m_destination.m_vector = &destination;
         command.m_sourceOffset = sourceOffset;
@@ -164,10 +180,34 @@ namespace FE::IO::Async
     }
 
 
+    void Batch::ReadAppendToEnd(festd::pmr::vector<std::byte>& destination, const size_t sourceOffset)
+    {
+        if (!m_resolvedDataSource.IsValid()
+            || (m_resolvedDataSource.m_byteSize != 0 && sourceOffset > m_resolvedDataSource.m_byteSize))
+        {
+            m_validationResult = ResultCode::kInvalidArgument;
+            return;
+        }
+
+        Command command;
+        command.m_destination.m_vector = &destination;
+        command.m_sourceOffset = sourceOffset;
+        command.m_compressionMethod = Compression::Method::kNone;
+        command.m_vectorDestination = true;
+        command.m_readToEnd = true;
+        m_commands.push_back(command);
+    }
+
+
     void Batch::ReadAppend(festd::pmr::vector<std::byte>& destination, const Compression::Method compressionMethod,
                            const size_t compressedSize, const size_t uncompressedSize, const size_t sourceOffset)
     {
-        ValidateRead(sourceOffset, compressedSize);
+        if ((compressionMethod == Compression::Method::kNone && uncompressedSize != compressedSize)
+            || !ValidateRead(sourceOffset, compressedSize))
+        {
+            m_validationResult = ResultCode::kInvalidArgument;
+            return;
+        }
 
         Command command;
         command.m_destination.m_vector = &destination;
@@ -180,12 +220,18 @@ namespace FE::IO::Async
     }
 
 
-    void Batch::ValidateRead(const size_t offset, const size_t byteSize) const
+    bool Batch::ValidateRead(const size_t offset, const size_t byteSize)
     {
-        FE_Assert(m_resolvedDataSource.IsValid());
+        if (!m_resolvedDataSource.IsValid() || offset > Constants::kMaxValue<size_t> - byteSize)
+            return false;
 
         if (m_resolvedDataSource.m_byteSize != 0)
-            FE_Assert(offset + byteSize <= m_resolvedDataSource.m_byteSize);
+        {
+            if (offset > m_resolvedDataSource.m_byteSize || byteSize > m_resolvedDataSource.m_byteSize - offset)
+                return false;
+        }
+
+        return true;
     }
 
 
@@ -340,6 +386,12 @@ namespace FE::IO::Async
 
         operation->m_controller->m_status.store(Status::kRunning, std::memory_order_release);
 
+        if (operation->m_batch.m_validationResult != ResultCode::kSuccess)
+        {
+            SetOperationResult(operation, operation->m_batch.m_validationResult);
+            return;
+        }
+
         const bool canceledOnStart = operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire);
         if (canceledOnStart)
         {
@@ -348,32 +400,140 @@ namespace FE::IO::Async
         }
 
         const ResolvedDataSource dataSource = operation->m_batch.m_resolvedDataSource;
-        for (const Batch::Command& command : operation->m_batch.m_commands)
+        if (operation->m_batch.m_commands.empty())
+            return;
+
+        const festd::expected fileOpenResult = m_fileCache.CreateFile(dataSource.m_filePath);
+        if (!fileOpenResult.has_value())
         {
-            const festd::expected fileOpenResult = m_fileCache.CreateFile(dataSource.m_filePath);
-            if (!fileOpenResult.has_value())
+            SetOperationResult(operation, fileOpenResult.error());
+            return;
+        }
+
+        Rc file = fileOpenResult.value();
+        FileStats fileStats;
+        bool hasFileStats = false;
+
+        for (Batch::Command& command : operation->m_batch.m_commands)
+        {
+            if (command.m_readToEnd)
             {
-                SetOperationResult(operation, fileOpenResult.error());
-                break;
+                size_t sourceSize = dataSource.m_byteSize;
+                if (sourceSize == 0)
+                {
+                    if (!hasFileStats)
+                    {
+                        const ResultCode statsResult = Platform::GetFileStats(file->GetFileHandle(), fileStats);
+                        if (statsResult != ResultCode::kSuccess)
+                        {
+                            SetOperationResult(operation, statsResult);
+                            return;
+                        }
+                        hasFileStats = true;
+                    }
+
+                    if (dataSource.m_byteOffset > fileStats.m_byteSize)
+                    {
+                        SetOperationResult(operation, ResultCode::kInvalidArgument);
+                        return;
+                    }
+                    sourceSize = fileStats.m_byteSize - dataSource.m_byteOffset;
+                }
+
+                if (command.m_sourceOffset > sourceSize)
+                {
+                    SetOperationResult(operation, ResultCode::kInvalidArgument);
+                    return;
+                }
+
+                command.m_compressedSize = sourceSize - command.m_sourceOffset;
+                command.m_uncompressedSize = command.m_compressedSize;
             }
 
-            Rc file = fileOpenResult.value();
+            if (command.m_sourceOffset > Constants::kMaxValue<size_t> - dataSource.m_byteOffset)
+            {
+                SetOperationResult(operation, ResultCode::kInvalidArgument);
+                return;
+            }
 
-            std::byte* destination;
+            const size_t physicalOffset = dataSource.m_byteOffset + command.m_sourceOffset;
+            if (command.m_compressedSize > Constants::kMaxValue<size_t> - physicalOffset
+                || (dataSource.m_byteSize != 0
+                    && (command.m_sourceOffset > dataSource.m_byteSize
+                        || command.m_compressedSize > dataSource.m_byteSize - command.m_sourceOffset)))
+            {
+                SetOperationResult(operation, ResultCode::kInvalidArgument);
+                return;
+            }
+
             if (command.m_vectorDestination)
             {
-                FileStats fileStats;
-                FE_Verify(Platform::GetFileStats(file->GetFileHandle(), fileStats) == ResultCode::kSuccess);
-
                 auto& v = *command.m_destination.m_vector;
-                const uint32_t initialSize = v.size();
-                v.resize(static_cast<uint32_t>(initialSize + fileStats.m_byteSize - command.m_sourceOffset));
-                destination = v.data() + initialSize;
+                size_t destinationOffset = v.size();
+                for (const Batch::Command& previousCommand : operation->m_batch.m_commands)
+                {
+                    if (&previousCommand == &command)
+                        break;
+                    if (previousCommand.m_vectorDestination && previousCommand.m_destination.m_vector == &v)
+                    {
+                        if (destinationOffset > Constants::kMaxValue<size_t> - previousCommand.m_uncompressedSize)
+                        {
+                            SetOperationResult(operation, ResultCode::kInvalidArgument);
+                            return;
+                        }
+                        destinationOffset += previousCommand.m_uncompressedSize;
+                    }
+                }
+                command.m_destinationOffset = destinationOffset;
             }
-            else
+        }
+
+        for (uint32_t commandIndex = 0; commandIndex < operation->m_batch.m_commands.size(); ++commandIndex)
+        {
+            Batch::Command& command = operation->m_batch.m_commands[commandIndex];
+            if (!command.m_vectorDestination)
+                continue;
+
+            if (command.m_uncompressedSize > Constants::kMaxValue<uint32_t>
+                || command.m_destinationOffset > Constants::kMaxValue<uint32_t> - command.m_uncompressedSize)
             {
-                destination = command.m_destination.m_byteBuffer;
+                SetOperationResult(operation, ResultCode::kInvalidArgument);
+                return;
             }
+        }
+
+        for (uint32_t commandIndex = 0; commandIndex < operation->m_batch.m_commands.size(); ++commandIndex)
+        {
+            Batch::Command& command = operation->m_batch.m_commands[commandIndex];
+            if (!command.m_vectorDestination)
+                continue;
+
+            bool isLastCommandForVector = true;
+            for (uint32_t nextIndex = commandIndex + 1; nextIndex < operation->m_batch.m_commands.size(); ++nextIndex)
+            {
+                const Batch::Command& nextCommand = operation->m_batch.m_commands[nextIndex];
+                if (nextCommand.m_vectorDestination && nextCommand.m_destination.m_vector == command.m_destination.m_vector)
+                {
+                    isLastCommandForVector = false;
+                    break;
+                }
+            }
+
+            if (!isLastCommandForVector)
+                continue;
+
+            command.m_destination.m_vector->resize(
+                static_cast<uint32_t>(command.m_destinationOffset + command.m_uncompressedSize));
+        }
+
+        for (const Batch::Command& command : operation->m_batch.m_commands)
+        {
+            if (command.m_compressedSize == 0 && command.m_uncompressedSize == 0)
+                continue;
+
+            std::byte* destination = command.m_vectorDestination
+                ? command.m_destination.m_vector->data() + command.m_destinationOffset
+                : command.m_destination.m_byteBuffer;
 
             auto* group = m_groupPool.New();
             group->m_sourcePath = dataSource.m_filePath;
@@ -395,7 +555,7 @@ namespace FE::IO::Async
             operation->m_pendingWork.fetch_add(1, std::memory_order_acq_rel);
 
             AsyncIOPhysicalRead read;
-            read.m_file = std::move(file);
+            read.m_file = file;
             read.m_offset = dataSource.m_byteOffset + command.m_sourceOffset;
             read.m_destination = readDestination;
             read.m_size = command.m_compressedSize;
@@ -422,6 +582,8 @@ namespace FE::IO::Async
             {
                 if (group->m_compressionMethod != Compression::Method::kNone)
                     result = ResultCode::kDecompressionError;
+                else
+                    result = ResultCode::kIOError;
             }
 
             if (operation->m_controller->m_cancellationRequested.load(std::memory_order_acquire))
@@ -431,7 +593,7 @@ namespace FE::IO::Async
             {
                 SetOperationResult(operation, result);
                 if (group->m_stagingMemory != nullptr)
-                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize);
+                    m_stagingAllocator.deallocate(group->m_stagingMemory, group->m_stagingMemorySize, Memory::kDefaultAlignment);
 
                 CompleteOperationWork(operation);
                 m_groupPool.Delete(group);
@@ -465,9 +627,9 @@ namespace FE::IO::Async
                             Logger::LogError("Compression error");
                             blockResult = ResultCode::kDecompressionError;
                         }
-                        else
+                        else if (decompressionResult.m_decompressedSize != group->m_destinationSize)
                         {
-                            FE_Assert(decompressionResult.m_decompressedSize == group->m_destinationSize);
+                            blockResult = ResultCode::kDecompressionError;
                         }
                     }
 

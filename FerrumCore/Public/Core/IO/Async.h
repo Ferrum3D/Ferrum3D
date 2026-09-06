@@ -37,9 +37,14 @@ namespace FE::IO::Async
         void Read(festd::span<std::byte> destination, size_t compressedSize, Compression::Method compressionMethod,
                   size_t sourceOffset = 0);
 
-        // The data read from the file will be appended to the destination.
-        // If bytesToRead is greater than sourceOffset + size of source file in bytes, the source file will be read until EOF.
+        // The requested number of bytes will be appended to the destination. A zero-byte read appends nothing.
+        // sourceOffset is relative to ResolvedDataSource::m_byteOffset and is bounded by m_byteSize when it is known.
+        // The destination must remain alive and must not be modified until the batch completes.
         void ReadAppend(festd::pmr::vector<std::byte>& destination, size_t bytesToRead, size_t sourceOffset = 0);
+        // All bytes from sourceOffset to the end of the resolved source range will be appended to the destination. If the
+        // source range size is unknown, the physical file size and ResolvedDataSource::m_byteOffset determine its end.
+        // The destination must remain alive and must not be modified until the batch completes.
+        void ReadAppendToEnd(festd::pmr::vector<std::byte>& destination, size_t sourceOffset = 0);
         void ReadAppend(festd::pmr::vector<std::byte>& destination, Compression::Method compressionMethod, size_t compressedSize,
                         size_t uncompressedSize, size_t sourceOffset = 0);
 
@@ -79,15 +84,18 @@ namespace FE::IO::Async
             size_t m_uncompressedSize = 0;
             Compression::Method m_compressionMethod = Compression::Method::kNone;
             bool m_vectorDestination = false;
+            bool m_readToEnd = false;
+            size_t m_destinationOffset = 0;
         };
 
-        void ValidateRead(size_t offset, size_t byteSize) const;
+        [[nodiscard]] bool ValidateRead(size_t offset, size_t byteSize);
 
         Trace::CallStack m_callStack;
         ResolvedDataSource m_resolvedDataSource;
         festd::inline_vector<Command, 1> m_commands;
         festd::fixed_function<48, void(IController* controller)> m_completionCallback;
         Rc<WaitGroup> m_completionWaitGroup;
+        ResultCode m_validationResult = ResultCode::kSuccess;
     };
 
 
