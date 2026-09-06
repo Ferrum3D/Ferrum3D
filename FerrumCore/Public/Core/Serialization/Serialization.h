@@ -921,6 +921,51 @@ namespace FE::Serialization
     };
 
 
+    template<class T, size_t TInlineCapacity, class TAllocator>
+    struct Serializer<gch::small_vector<T, TInlineCapacity, TAllocator>>
+    {
+        static ResultCode Serialize(SerializationContext& context, const gch::small_vector<T, TInlineCapacity, TAllocator>& value)
+        {
+            if (auto array = context.BeginArray(static_cast<uint32_t>(value.size())))
+            {
+                for (uint32_t i = 0; i < value.size(); ++i)
+                    array.Element(i, value[i]);
+
+                return context.GetResultCode();
+            }
+
+            return context.GetResultCode();
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, gch::small_vector<T, TInlineCapacity, TAllocator>& value)
+        {
+            uint32_t size = 0;
+            if (auto array = context.BeginArray(size))
+            {
+                value.resize(size);
+                for (uint32_t i = 0; i < size; ++i)
+                    array.Element(i, value[i]);
+
+                return context.GetResultCode();
+            }
+
+            return context.GetResultCode();
+        }
+
+        static constexpr uint64_t GetSchemaHash()
+        {
+            constexpr uint64_t kTypeNameHash = CompileTimeHash("vector");
+            static uint64_t schemaHash = HashCombine(kTypeNameHash, Serialization::GetSchemaHash<T>());
+            return schemaHash;
+        }
+
+        static constexpr uint32_t GetVersion()
+        {
+            return 0;
+        }
+    };
+
+
     template<class T>
         requires std::is_enum_v<T>
     struct Serializer<T>
@@ -990,6 +1035,33 @@ namespace FE::Serialization
         static constexpr uint32_t GetVersion()
         {
             return 0;
+        }
+    };
+
+
+    template<>
+    struct Serializer<IO::Path>
+    {
+        using Base = Serializer<IO::Path::Base>;
+
+        static ResultCode Serialize(SerializationContext& context, const IO::Path& value)
+        {
+            return Base::Serialize(context, value.AsBaseString());
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, IO::Path& value)
+        {
+            return Base::Deserialize(context, value.AsBaseString());
+        }
+
+        static constexpr uint64_t GetSchemaHash()
+        {
+            return Base::GetSchemaHash();
+        }
+
+        static constexpr uint32_t GetVersion()
+        {
+            return Base::GetVersion();
         }
     };
 

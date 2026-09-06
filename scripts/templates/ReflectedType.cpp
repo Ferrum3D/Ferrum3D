@@ -230,7 +230,6 @@ namespace {{ type.namespace }}
         {%- for field in type.serialization_fields %}
             object.Field("{{ field.name }}", {{ field.name }});
         {%- endfor %}
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();
@@ -260,7 +259,6 @@ namespace {{ type.namespace }}
             {{ field.name }} = bitfield_temp_{{ field.name }};
         {%- endif %}
         {%- endfor %}
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();

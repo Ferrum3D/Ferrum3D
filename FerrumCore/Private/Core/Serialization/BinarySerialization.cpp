@@ -25,9 +25,9 @@ namespace FE::Serialization
         TaggedHeader CreateTaggedHeader(const Rtti::TypeID type, const uint32_t version, const uint64_t schemaHash)
         {
             TaggedHeader header = {};
-            header.m_schemaHash = schemaHash;
             header.m_magic = kTaggedMagic;
             header.m_version = version;
+            header.m_schemaHash = schemaHash;
             memcpy(header.m_typeID, type.data(), type.size());
             return header;
         }

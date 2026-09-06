@@ -72,7 +72,6 @@ namespace FE::Serialization::Tests
             object.Field("m_height", m_height);
             object.Field("m_flags", m_flags);
             object.Field("m_scale", m_scale);
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();
@@ -92,7 +91,6 @@ namespace FE::Serialization::Tests
             m_width = bitfield_temp_m_width;
             m_height = bitfield_temp_m_height;
             m_flags = bitfield_temp_m_flags;
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();
@@ -266,7 +264,6 @@ namespace FE::Serialization::Tests
             object.Field("m_values", m_values);
             object.Field("m_coordinates", m_coordinates);
             object.Field("m_name", m_name);
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();
@@ -281,7 +278,6 @@ namespace FE::Serialization::Tests
             object.Field("m_values", m_values);
             object.Field("m_coordinates", m_coordinates);
             object.Field("m_name", m_name);
-            return context.GetResultCode();
         }
 
         return context.GetResultCode();

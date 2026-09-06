@@ -76,14 +76,6 @@ namespace FE::IO
 
     festd::string_view GetResultDesc(ResultCode code);
 
-#define FE_IO_ASSERT(expr)                                                                                                       \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        ::FE::IO::ResultCode code = expr;                                                                                        \
-        FE_AssertMsg(code == ::FE::IO::ResultCode::kSuccess, "IO error: {}", ::FE::IO::GetResultDesc(code));                     \
-    }                                                                                                                            \
-    while (0)
-
 
     //! @brief I/O operation priority.
     //!
@@ -123,11 +115,22 @@ namespace FE::IO
         size_t m_byteOffset = 0;
         size_t m_byteSize = 0;
 
+        FE_RTTI_Reflect("B145A01F-A910-45BA-A193-34789214C185");
+        FE_RTTI_Serialize();
+
         [[nodiscard]] bool IsValid() const
         {
             return !m_filePath.empty();
         }
     };
+
+
+    using AssetID = Uuid;
+    using ArtifactID = Uuid;
+
+    struct AssetRecord;
+    struct AssetSlot;
+    struct ResidencyTicket;
 
 
     enum class StandardDescriptor : uint32_t

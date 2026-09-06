@@ -232,6 +232,8 @@ public:                                                                         
     };
 
     void Init(const ApplicationInfo& info, int32_t argc, const char** argv);
+    void Shutdown();
+
     const ApplicationInfo& GetApplicationInfo();
 
     std::pmr::memory_resource* GetStaticAllocator(Memory::StaticAllocatorType type);

@@ -284,6 +284,16 @@ namespace FE::IO
         }
 
         void append(festd::string_view path);
+
+        Base& AsBaseString()
+        {
+            return *this;
+        }
+
+        const Base& AsBaseString() const
+        {
+            return *this;
+        }
     };
 
 

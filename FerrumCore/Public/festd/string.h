@@ -1361,6 +1361,13 @@ namespace FE::festd
 
 namespace FE
 {
+    template<class T>
+    concept AppendableString = requires(T& t, const uint32_t size, const int32_t codepoint) {
+        { t.reserve(size) } -> std::same_as<void>;
+        { t.append(codepoint) } -> std::same_as<void>;
+    };
+
+
     //! @brief Compute a compile-time hash for a UTF-8 string view.
     constexpr uint64_t CompileTimeHash(const festd::string_view str)
     {
@@ -1384,6 +1391,30 @@ namespace FE
             memcpy(memory, str.data(), str.size());
             static_cast<char*>(memory)[str.size()] = '\0';
             return { static_cast<char*>(memory), str.size() };
+        }
+
+
+        template<AppendableString TOutput>
+        TOutput ToLower(const festd::string_view input)
+        {
+            TOutput output;
+            output.reserve(input.size());
+            for (auto it = input.begin(); it != input.end(); ++it)
+                output.append(UTF8::ToLower(*it));
+
+            return output;
+        }
+
+
+        template<AppendableString TOutput>
+        TOutput ToUpper(const festd::string_view input)
+        {
+            TOutput output;
+            output.reserve(input.size());
+            for (auto it = input.begin(); it != input.end(); ++it)
+                output.append(UTF8::ToUpper(*it));
+
+            return output;
         }
     } // namespace Str
 } // namespace FE

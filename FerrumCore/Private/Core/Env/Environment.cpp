@@ -4,6 +4,7 @@
 #include <Core/CLI/CommandLine.h>
 #include <Core/Compression/CompressionPrivate.h>
 #include <Core/Env/Environment.h>
+#include <Core/IO/Artifact.h>
 #include <Core/IO/AsyncImpl.h>
 #include <Core/IO/BaseIOPrivate.h>
 #include <Core/Jobs/JobSystem.h>
@@ -182,7 +183,8 @@ namespace FE
             Memory::SpinLockedLinearAllocator m_linearMemoryResource{ UINT64_C(4) * 1024 * 1024, &m_virtualMemoryResource };
             DefaultMemoryResource m_defaultMemoryResource;
 
-            struct TracyInitializer final
+#if FE_DEVELOPMENT
+            [[no_unique_address]] struct TracyInitializer final
             {
                 TracyInitializer()
                 {
@@ -194,6 +196,7 @@ namespace FE
                     tracy::ShutdownProfiler();
                 }
             } m_tracyInitializer;
+#endif
 
             FE_CORE_SYSTEM(IO);
             FE_CORE_SYSTEM(Trace::StackTrace);
@@ -343,6 +346,14 @@ namespace FE
             args[argIndex] = argv[argIndex + 1];
 
         GEnvironment.m_commandLineArgs = festd::span(args, argCount);
+
+        IO::ArtifactStore::Init();
+    }
+
+
+    void Env::Shutdown()
+    {
+        IO::ArtifactStore::Shutdown();
     }
 
 

@@ -152,4 +152,111 @@ namespace FE::IO
 
         virtual size_t WriteImpl(const void* buffer, size_t byteSize) = 0;
     };
+
+
+    struct ReadOnlyMemoryStream final : public StreamBase
+    {
+        ReadOnlyMemoryStream() = default;
+        ReadOnlyMemoryStream(const void* buffer, const size_t bufferByteSize)
+        {
+            OpenInPlace(buffer, bufferByteSize);
+        }
+
+        explicit ReadOnlyMemoryStream(const festd::span<const std::byte> buffer)
+            : ReadOnlyMemoryStream(buffer.data(), buffer.size_bytes())
+        {
+        }
+
+        void OpenInPlace(const void* buffer, const size_t bufferByteSize)
+        {
+            m_buffer = static_cast<const std::byte*>(buffer);
+            m_bufferSize = bufferByteSize;
+            m_position = 0;
+        }
+
+        [[nodiscard]] bool SeekAllowed() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] bool IsOpen() const override
+        {
+            return m_buffer != nullptr;
+        }
+
+        ResultCode Seek(const intptr_t offset, const SeekMode seekMode) override
+        {
+            intptr_t newPosition;
+            switch (seekMode)
+            {
+            default:
+                FE_DebugBreak();
+                [[fallthrough]];
+
+            case SeekMode::kBegin:
+                newPosition = offset;
+                break;
+
+            case SeekMode::kEnd:
+                newPosition = static_cast<intptr_t>(m_bufferSize) + offset;
+                break;
+
+            case SeekMode::kCurrent:
+                newPosition = static_cast<intptr_t>(m_position) + offset;
+                break;
+            }
+
+            if (newPosition >= 0 && newPosition <= m_bufferSize)
+                m_position = newPosition;
+
+            return ResultCode::kSuccess;
+        }
+
+        [[nodiscard]] uintptr_t Tell() const override
+        {
+            return m_position;
+        }
+
+        [[nodiscard]] size_t Length() const override
+        {
+            return m_bufferSize;
+        }
+
+        size_t ReadToBuffer(void* buffer, const size_t byteSize) override
+        {
+            const size_t bytesToRead = Math::Min(byteSize, m_bufferSize - m_position);
+            memcpy(buffer, m_buffer + m_position, bytesToRead);
+            return bytesToRead;
+        }
+
+        size_t WriteFromBuffer(const void* buffer, size_t byteSize) override
+        {
+            FE_Unused(buffer);
+            FE_Unused(byteSize);
+            FE_DebugBreak();
+            return 0;
+        }
+
+        [[nodiscard]] festd::string_view GetName() override
+        {
+            return "ReadOnlyMemoryStream";
+        }
+
+        [[nodiscard]] OpenMode GetOpenMode() const override
+        {
+            return OpenMode::kReadOnly;
+        }
+
+        void Close() override {}
+
+    private:
+        const std::byte* m_buffer = nullptr;
+        size_t m_bufferSize = 0;
+        uintptr_t m_position = 0;
+
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+    };
 } // namespace FE::IO

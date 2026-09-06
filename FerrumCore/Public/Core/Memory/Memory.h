@@ -283,9 +283,8 @@ namespace FE
 
 
         template<class T, class TSizeType = size_t>
-        class StdDefaultAllocator final
+        struct StdDefaultAllocator final
         {
-        public:
             using value_type = T;
             using size_type = TSizeType;
 

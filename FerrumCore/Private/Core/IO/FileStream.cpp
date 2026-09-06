@@ -3,6 +3,15 @@
 
 namespace FE::IO
 {
+#define FE_IO_ASSERT(expr)                                                                                                       \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        const ResultCode code = expr;                                                                                            \
+        FE_AssertMsg(code == ResultCode::kSuccess, "IO error: {}", GetResultDesc(code));                                         \
+    }                                                                                                                            \
+    while (0)
+
+
     bool FileStream::SeekAllowed() const
     {
         return true;

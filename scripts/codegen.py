@@ -189,7 +189,7 @@ def main():
     parse_config = ParseConfig(project_dir=PROJECT_DIR, llvm_dir=LLVM_DIR)
     for i, project in enumerate(REFLECTION_PROJECTS):
         project_start_time = time.perf_counter()
-        print(f'project [{i}/{len(REFLECTION_PROJECTS)}] {project.name:30}', end='')
+        print(f'project [{i + 1}/{len(REFLECTION_PROJECTS)}] {project.name:30}', end='')
         command = _find_project_command(commands, project)
         compiler_args = _extract_compiler_args(command)
         headers = _sort_headers_by_dependencies(_find_headers(project), _extract_include_dirs(compiler_args))
