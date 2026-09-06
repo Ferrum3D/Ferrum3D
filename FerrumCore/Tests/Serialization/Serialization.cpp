@@ -147,7 +147,7 @@ namespace FE::Serialization::Tests
             {
                 if (auto object = context.BeginObject())
                 {
-                    object.Field("m_count", value.m_count).Field("m_name", value.m_name);
+                    object.RequiredField("m_count", value.m_count).Field("m_name", value.m_name);
                     return context.GetResultCode();
                 }
 
@@ -472,6 +472,48 @@ namespace FE::Serialization::Tests
         DeserializationContext reader(&stream, format);
         ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
         ExpectEqual(source, destination);
+    }
+
+
+    TEST(Serialization, JsonRequiredFieldRejectsMissingValue)
+    {
+        constexpr festd::string_view json =
+            R"({"$type":"00000000-0000-0000-0000-000000000000","$version":7,"$schema":"0x0","$value":{}})";
+        IO::ReadOnlyMemoryStream stream(
+            festd::span<const std::byte>{ reinterpret_cast<const std::byte*>(json.data()), json.size() });
+        JsonFormat format;
+        DeserializationContext reader(&stream, format);
+        ManualObject destination;
+        EXPECT_EQ(reader.Load(destination), ResultCode::kMissingField);
+        EXPECT_EQ(reader.GetError().m_code, ResultCode::kMissingField);
+    }
+
+
+    TEST(Serialization, JsonRequiredFieldAcceptsZeroAndPreservesOptionalDefault)
+    {
+        constexpr festd::string_view json =
+            R"({"$type":"00000000-0000-0000-0000-000000000000","$version":7,"$schema":"0x0","$value":{"m_count":0}})";
+        IO::ReadOnlyMemoryStream stream(
+            festd::span<const std::byte>{ reinterpret_cast<const std::byte*>(json.data()), json.size() });
+        JsonFormat format;
+        DeserializationContext reader(&stream, format);
+        ManualObject destination;
+        destination.m_count = 42;
+        destination.m_name = "default";
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+        EXPECT_EQ(destination.m_count, 0);
+        EXPECT_EQ(destination.m_name, "default");
+    }
+
+
+    TEST(Serialization, JsonRejectsInvalidUtf8)
+    {
+        constexpr char json[] = "{\"invalid\":\"\xFF\"}";
+        IO::ReadOnlyMemoryStream stream(json, sizeof(json) - 1);
+        JsonFormat format;
+        DeserializationContext reader(&stream, format);
+        ManualObject destination;
+        EXPECT_EQ(reader.Load(destination), ResultCode::kJsonParseError);
     }
 
 

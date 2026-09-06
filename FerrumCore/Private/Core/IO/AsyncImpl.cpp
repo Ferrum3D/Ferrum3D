@@ -17,6 +17,15 @@ namespace FE::IO::Async
         constexpr size_t kStagingHeapSize = 256 * 1024 * 1024;
 
 
+        bool IsRangeWithinLimit(const size_t offset, const size_t byteSize, const size_t limit)
+        {
+            if (offset > limit)
+                return false;
+
+            return byteSize <= limit - offset;
+        }
+
+
         void SetOperationResult(const Operation* operation, const ResultCode result)
         {
             if (result == ResultCode::kSuccess)
@@ -109,7 +118,8 @@ namespace FE::IO::Async
 
     void Batch::Read(void* destination, const size_t destinationSize, const size_t sourceOffset)
     {
-        if ((destination == nullptr && destinationSize != 0) || !ValidateRead(sourceOffset, destinationSize))
+        const bool hasDestination = destination != nullptr || destinationSize == 0;
+        if (!hasDestination || !ValidateRead(sourceOffset, destinationSize))
         {
             m_validationResult = ResultCode::kInvalidArgument;
             return;
@@ -129,9 +139,9 @@ namespace FE::IO::Async
     void Batch::Read(void* destination, const size_t destinationSize, const size_t compressedSize,
                      const Compression::Method compressionMethod, const size_t sourceOffset)
     {
-        if ((destination == nullptr && destinationSize != 0)
-            || (compressionMethod == Compression::Method::kNone && destinationSize != compressedSize)
-            || !ValidateRead(sourceOffset, compressedSize))
+        const bool hasDestination = destination != nullptr || destinationSize == 0;
+        const bool hasMatchingRawSize = compressionMethod != Compression::Method::kNone || destinationSize == compressedSize;
+        if (!hasDestination || !hasMatchingRawSize || !ValidateRead(sourceOffset, compressedSize))
         {
             m_validationResult = ResultCode::kInvalidArgument;
             return;
@@ -182,8 +192,7 @@ namespace FE::IO::Async
 
     void Batch::ReadAppendToEnd(festd::pmr::vector<std::byte>& destination, const size_t sourceOffset)
     {
-        if (!m_resolvedDataSource.IsValid()
-            || (m_resolvedDataSource.m_byteSize != 0 && sourceOffset > m_resolvedDataSource.m_byteSize))
+        if (!ValidateRead(sourceOffset, 0))
         {
             m_validationResult = ResultCode::kInvalidArgument;
             return;
@@ -202,8 +211,8 @@ namespace FE::IO::Async
     void Batch::ReadAppend(festd::pmr::vector<std::byte>& destination, const Compression::Method compressionMethod,
                            const size_t compressedSize, const size_t uncompressedSize, const size_t sourceOffset)
     {
-        if ((compressionMethod == Compression::Method::kNone && uncompressedSize != compressedSize)
-            || !ValidateRead(sourceOffset, compressedSize))
+        const bool hasMatchingRawSize = compressionMethod != Compression::Method::kNone || uncompressedSize == compressedSize;
+        if (!hasMatchingRawSize || !ValidateRead(sourceOffset, compressedSize))
         {
             m_validationResult = ResultCode::kInvalidArgument;
             return;
@@ -222,13 +231,15 @@ namespace FE::IO::Async
 
     bool Batch::ValidateRead(const size_t offset, const size_t byteSize)
     {
-        if (!m_resolvedDataSource.IsValid() || offset > Constants::kMaxValue<size_t> - byteSize)
+        if (!m_resolvedDataSource.IsValid())
+            return false;
+
+        if (!IsRangeWithinLimit(offset, byteSize, Constants::kMaxValue<size_t>))
             return false;
 
         if (m_resolvedDataSource.m_byteSize != 0)
         {
-            if (offset > m_resolvedDataSource.m_byteSize || byteSize > m_resolvedDataSource.m_byteSize - offset)
-                return false;
+            return IsRangeWithinLimit(offset, byteSize, m_resolvedDataSource.m_byteSize);
         }
 
         return true;
@@ -457,13 +468,19 @@ namespace FE::IO::Async
             }
 
             const size_t physicalOffset = dataSource.m_byteOffset + command.m_sourceOffset;
-            if (command.m_compressedSize > Constants::kMaxValue<size_t> - physicalOffset
-                || (dataSource.m_byteSize != 0
-                    && (command.m_sourceOffset > dataSource.m_byteSize
-                        || command.m_compressedSize > dataSource.m_byteSize - command.m_sourceOffset)))
+            if (!IsRangeWithinLimit(physicalOffset, command.m_compressedSize, Constants::kMaxValue<size_t>))
             {
                 SetOperationResult(operation, ResultCode::kInvalidArgument);
                 return;
+            }
+
+            if (dataSource.m_byteSize != 0)
+            {
+                if (!IsRangeWithinLimit(command.m_sourceOffset, command.m_compressedSize, dataSource.m_byteSize))
+                {
+                    SetOperationResult(operation, ResultCode::kInvalidArgument);
+                    return;
+                }
             }
 
             if (command.m_vectorDestination)
@@ -494,8 +511,7 @@ namespace FE::IO::Async
             if (!command.m_vectorDestination)
                 continue;
 
-            if (command.m_uncompressedSize > Constants::kMaxValue<uint32_t>
-                || command.m_destinationOffset > Constants::kMaxValue<uint32_t> - command.m_uncompressedSize)
+            if (!IsRangeWithinLimit(command.m_destinationOffset, command.m_uncompressedSize, Constants::kMaxValue<uint32_t>))
             {
                 SetOperationResult(operation, ResultCode::kInvalidArgument);
                 return;

@@ -249,7 +249,7 @@ namespace FE::Serialization
         }
         m_impl->m_input.push_back('\0');
 
-        m_impl->m_document.ParseInsitu(m_impl->m_input.data());
+        m_impl->m_document.ParseInsitu<rapidjson::kParseValidateEncodingFlag>(m_impl->m_input.data());
         if (m_impl->m_document.HasParseError())
         {
             const uint64_t offset = m_impl->m_document.GetErrorOffset();

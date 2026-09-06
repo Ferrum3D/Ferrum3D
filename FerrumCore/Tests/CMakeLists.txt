@@ -17,6 +17,7 @@ target_include_directories(FeCoreTests PRIVATE
 
 set_target_properties(FeCoreTests PROPERTIES FOLDER "Core")
 target_link_libraries(FeCoreTests gtest gmock FeCore)
+target_compile_definitions(FeCoreTests PRIVATE FE_CORE_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 get_property("TARGET_SOURCE_FILES" TARGET FeCoreTests PROPERTY SOURCES)
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${TARGET_SOURCE_FILES})

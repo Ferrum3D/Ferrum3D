@@ -1,0 +1,12 @@
+{
+  "$type": "00000000-0000-0000-0000-000000000000",
+  "$version": 1,
+  "$schema": "0x6172746966616374",
+  "$value": {
+  "schema": "ferrum-artifact", "platform": "windows-x64",
+  "asset": "77777777-7777-4777-8777-777777777777", "artifact": "d7d7d7d7-d7d7-4d7d-8d7d-d7d7d7d7d7d7",
+  "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11",
+  "dependencies": [{ "asset": "66666666-6666-4666-8666-666666666666", "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "kind": "hard" }],
+  "payloads": [{ "offset": 0, "size": 1, "chunks": [{ "offset": 0, "compressedSize": 1, "uncompressedSize": 1, "compression": "none", "checksum": 0 }] }]
+  }
+}

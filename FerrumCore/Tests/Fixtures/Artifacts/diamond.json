@@ -1,0 +1,18 @@
+{
+  "$type": "00000000-0000-0000-0000-000000000000",
+  "$version": 1,
+  "$schema": "0x6172746966616374",
+  "$value": {
+  "schema": "ferrum-artifact", "platform": "windows-x64",
+  "asset": "33333333-3333-4333-8333-333333333333", "artifact": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11",
+  "dependencies": [
+    { "asset": "22222222-2222-4222-8222-222222222222", "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "kind": "hard" },
+    { "asset": "44444444-4444-4444-8444-444444444444", "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "kind": "hard" }
+  ],
+  "payloads": [
+    { "source": "payloads/diamond.bin", "offset": 8, "size": 2, "chunks": [{ "offset": 0, "compressedSize": 2, "uncompressedSize": 2, "compression": "none", "checksum": 1104745215 }] },
+    { "source": "payloads/diamond-lod.bin", "offset": 2, "size": 2, "chunks": [{ "offset": 0, "compressedSize": 2, "uncompressedSize": 8, "compression": "zstd", "checksum": 11223344 }] }
+  ]
+  }
+}

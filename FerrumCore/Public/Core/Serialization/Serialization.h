@@ -48,6 +48,7 @@ namespace FE::Serialization
         kInvalidNumber = -10,
         kInvalidString = -11,
         kUnsupportedValue = -12,
+        kMissingField = -13,
         kUnknownError = kDefaultErrorCode<ResultCode>,
     };
 
@@ -416,7 +417,7 @@ namespace FE::Serialization
         SerializationFormat* m_format;
 
         template<class T>
-        ResultCode Field(const festd::ascii_view name, T& value)
+        ResultCode Field(const festd::ascii_view name, T& value, const bool isRequired = false)
         {
             if (!IsValid())
                 return GetResultCode();
@@ -424,8 +425,11 @@ namespace FE::Serialization
             bool exists = false;
             const ResultCode result = m_format->BeginLoadFieldImpl(name, DefaultHash(name), exists);
             m_format->Record(result);
-            if (result != ResultCode::kSuccess || !exists)
+            if (result != ResultCode::kSuccess)
                 return GetResultCode();
+
+            if (!exists)
+                return isRequired ? ReportError(ResultCode::kMissingField) : GetResultCode();
 
             m_format->Record(DeserializeValue(*this, value));
             m_format->Record(m_format->EndLoadFieldImpl());
@@ -532,6 +536,14 @@ namespace FE::Serialization
         {
             if (m_context != nullptr)
                 m_context->Field(name, value);
+            return *this;
+        }
+
+        template<class T>
+        DeserializationObject& RequiredField(const festd::ascii_view name, T& value)
+        {
+            if (m_context != nullptr)
+                m_context->Field(name, value, true);
             return *this;
         }
 

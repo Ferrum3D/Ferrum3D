@@ -65,6 +65,7 @@ This only changes the current process environment. It leaves the normal Windows 
 - Use namespaces in the `FE::...` hierarchy and close nontrivial namespaces with comments, for example `} // namespace FE::Graphics::Vulkan`.
 - Keep anonymous helper functions in an unnamed namespace inside the implementation file when they are local to that translation unit.
 - Prefer early returns for invalid or empty states.
+- Avoid complex multi-line boolean conditions. Use named predicates, separate early-return checks, or focused validation helpers so each condition is easy to read.
 - Use existing project diagnostics and helpers instead of ad hoc checks: `FE_Assert`, `FE_AssertDebug`, `FE_DebugBreak`, `VerifyVk`, `FE_PROFILER_ZONE`, `Rtti::AssertCast`, `NativeCast`, and `ImplCast`.
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
 

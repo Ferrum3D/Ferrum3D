@@ -1,0 +1,12 @@
+{
+  "$type": "00000000-0000-0000-0000-000000000000",
+  "$version": 1,
+  "$schema": "0x6172746966616374",
+  "$value": {
+  "schema": "ferrum-artifact", "platform": "windows-x64",
+  "asset": "88888888-8888-4888-8888-888888888888", "artifact": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11",
+  "dependencies": [{ "asset": "99999999-9999-4999-8999-999999999999", "type": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "kind": "soft" }],
+  "payloads": [{ "source": "payloads/soft.bin", "offset": 0, "size": 1, "chunks": [{ "offset": 0, "compressedSize": 1, "uncompressedSize": 1, "compression": "none", "checksum": 1259060791 }] }]
+  }
+}

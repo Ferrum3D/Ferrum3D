@@ -2,10 +2,7 @@
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/IO/Async.h>
-#include <Core/IO/StreamBase.h>
 #include <Core/Jobs/JobGraph.h>
-#include <Core/Serialization/BinarySerialization.h>
-#include <Core/Serialization/Serialization.h>
 #include <festd/bit_vector.h>
 #include <festd/unordered_map.h>
 
@@ -17,7 +14,9 @@ namespace FE::IO
         AssetSlot m_slot;
 
         ArtifactRecord m_artifactRecord;
+        ArtifactMetadataError m_metadataError;
         festd::pmr::vector<std::byte> m_readBuffer;
+        bool m_metadataValid = false;
     };
 
 
@@ -72,6 +71,8 @@ namespace FE::IO
         slot.m_slot.m_assetId = assetId;
         slot.m_slot.m_typeId = Rtti::TypeID::kNull;
         slot.m_slot.m_currentArtifactId = ArtifactID::kNull;
+        slot.m_metadataError = {};
+        slot.m_metadataValid = false;
         return slot;
     }
 
@@ -125,21 +126,36 @@ namespace FE::IO
         slot.m_slot.m_asyncController = Async::Read(artifactMetaBatch);
 
         Jobs::Graph graph("LoadAsset", Jobs::FiberAffinityMask::kAllBackground);
-        completionWaitGroup = graph.Dispatch("DeserializeArtifact", { completionWaitGroup }, [&slot] {
-            ReadOnlyMemoryStream sourceData(slot.m_readBuffer);
-            Serialization::TaggedBinaryFormat format;
-            Serialization::DeserializationContext context(&sourceData, format);
-
-            const Serialization::ResultCode serializationResult = context.Load(slot.m_artifactRecord);
-            FE_Assert(serializationResult == Serialization::ResultCode::kSuccess); // TODO: error handling
-
-            for (const AssetID& dependency : slot.m_artifactRecord.m_dependencies)
+        completionWaitGroup = graph.Dispatch("DeserializeArtifact", { completionWaitGroup }, [&slot, artifactMetaLocation] {
+            if (slot.m_slot.m_asyncController->GetStatus() != Async::Status::kSucceeded)
             {
-                // TODO: figure out how to handle dependency loading and ref counting.
-                static_cast<void>(LoadAsset(dependency));
+                slot.m_metadataError.m_code = ArtifactMetadataErrorCode::kInvalidField;
+                slot.m_metadataError.m_assetId = slot.m_slot.m_assetId;
+                slot.m_metadataError.m_source = artifactMetaLocation.m_filePath;
+                slot.m_metadataError.m_field = "$io";
+                slot.m_metadataError.m_message = "metadata read failed";
+                return;
             }
+
+            ArtifactResolutionContext resolutionContext;
+            resolutionContext.m_assetId = slot.m_slot.m_assetId;
+            resolutionContext.m_metadataSource = artifactMetaLocation;
+            ArtifactDecodeResult result = ArtifactStore::Decode(slot.m_readBuffer, resolutionContext);
+            if (!result)
+            {
+                slot.m_metadataError = result.error();
+                return;
+            }
+
+            slot.m_slot.m_typeId = result->m_assetTypeId;
+            slot.m_slot.m_currentArtifactId = result->m_artifactId;
+            slot.m_artifactRecord = std::move(result.value());
+            slot.m_metadataValid = true;
         });
         graph.Dispatch("InitialRead", { completionWaitGroup }, [&slot] {
+            if (!slot.m_metadataValid)
+                return;
+
             const ArtifactPayloadRecord& payloadRecord = slot.m_artifactRecord.m_payloads[0];
 
             // TODO: read the first payload, it must contain the actual asset data.
@@ -156,7 +172,11 @@ namespace FE::IO
             Rc<WaitGroup> initialReadCompleted = WaitGroup::Create();
             Async::Batch initialReadBatch(payloadRecord.m_resolvedDataSource, initialReadCompleted.Get());
             for (const ArtifactChunkRecord& chunkRecord : payloadRecord.m_chunks)
-                initialReadBatch.ReadAppend(slot.m_readBuffer, chunkRecord.m_uncompressedSize, chunkRecord.m_offsetInPayload);
+                initialReadBatch.ReadAppend(slot.m_readBuffer,
+                                            chunkRecord.m_compressionMethod,
+                                            chunkRecord.m_compressedSize,
+                                            chunkRecord.m_uncompressedSize,
+                                            chunkRecord.m_offsetInPayload);
 
             Async::Read(initialReadBatch); // TODO: where to store the controller and how to handle cancellation?
 
