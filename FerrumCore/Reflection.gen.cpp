@@ -1883,6 +1883,133 @@ namespace FE::IO::Async
 } // namespace FE::IO::Async
 
 
+namespace FE::IO
+{
+    const Rtti::TypeID ArtifactDependencyRecord::TypeID = Rtti::TypeID{
+        0x78, 0xc4, 0xf7, 0xbd, 0xad, 0x22, 0x47, 0x57, 0xa6, 0xbb, 0xa0, 0x95, 0x91, 0x18, 0xfb, 0xe2,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_78c4f7bdad224757a6bba0959118fbe2()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ArtifactDependencyRecord::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_78c4f7bdad224757a6bba0959118fbe2();
+    }
+
+    void ArtifactDependencyRecord::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_78c4f7bdad224757a6bba0959118fbe2();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x78, 0xc4, 0xf7, 0xbd, 0xad, 0x22, 0x47, 0x57,
+            0xa6, 0xbb, 0xa0, 0x95, 0x91, 0x18, 0xfb, 0xe2, // FE::IO::ArtifactDependencyRecord
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_assetId
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_expectedTypeId
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_kind
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_assetId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_expectedTypeId = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_kind = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_assetId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &ArtifactDependencyRecord::m_assetId,
+                                                        kAttributes_m_assetId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_expectedTypeId",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &ArtifactDependencyRecord::m_expectedTypeId,
+                                                        kAttributes_m_expectedTypeId,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_kind",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &ArtifactDependencyRecord::m_kind,
+                                                        kAttributes_m_kind,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ArtifactDependencyRecord>(typeInstance,
+                                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                       "FE::IO::ArtifactDependencyRecord",
+                                                       kBaseClassTypeIDs,
+                                                       kAttributes,
+                                                       kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_78c4f7bdad224757a6bba0959118fbe2(&ArtifactDependencyRecord::Reflect);
+
+    FE::Serialization::ResultCode ArtifactDependencyRecord::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_expectedTypeId", m_expectedTypeId);
+            object.Field("m_kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ArtifactDependencyRecord::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_assetId", m_assetId);
+            object.Field("m_expectedTypeId", m_expectedTypeId);
+            object.Field("m_kind", m_kind);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ArtifactDependencyRecord::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x78, 0xc4, 0xf7, 0xbd, 0xad, 0x22, 0x47, 0x57, 0xa6, 0xbb, 0xa0, 0x95, 0x91, 0x18, 0xfb, 0xe2,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_assetId", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_assetId)>());
+            hasher.Update("m_expectedTypeId", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_expectedTypeId)>());
+            hasher.Update("m_kind", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_kind)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ArtifactDependencyRecord::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO
+
+
 namespace FE::Rtti
 {
     namespace
@@ -3834,9 +3961,11 @@ namespace FE::IO
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
             0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
             0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_offsetInPayload
+            0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
+            0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_compressedSize
             0x76, 0xe0, 0xd6, 0x16, 0xa6, 0x46, 0x42, 0x2a,
             0xb5, 0x06, 0x07, 0xad, 0xbe, 0x41, 0x75, 0x6b, // uint64_t m_uncompressedSize
             0x80, 0xad, 0x0e, 0x9b, 0x04, 0x9d, 0x41, 0xec,
@@ -3848,30 +3977,37 @@ namespace FE::IO
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_offsetInPayload = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_compressedSize = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_uncompressedSize = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_compressionMethod = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_checksum = {};
 
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static const festd::array<Rtti::FieldInfo, 5> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_offsetInPayload",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &ArtifactChunkRecord::m_offsetInPayload,
                                                         kAttributes_m_offsetInPayload,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_uncompressedSize",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_compressedSize",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &ArtifactChunkRecord::m_compressedSize,
+                                                        kAttributes_m_compressedSize,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_uncompressedSize",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &ArtifactChunkRecord::m_uncompressedSize,
                                                         kAttributes_m_uncompressedSize,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_compressionMethod",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &ArtifactChunkRecord::m_compressionMethod,
                                                         kAttributes_m_compressionMethod,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_checksum",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
                                                         &ArtifactChunkRecord::m_checksum,
                                                         kAttributes_m_checksum,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
@@ -3892,6 +4028,7 @@ namespace FE::IO
         if (auto object = context.BeginObject())
         {
             object.Field("m_offsetInPayload", m_offsetInPayload);
+            object.Field("m_compressedSize", m_compressedSize);
             object.Field("m_uncompressedSize", m_uncompressedSize);
             object.Field("m_compressionMethod", m_compressionMethod);
             object.Field("m_checksum", m_checksum);
@@ -3905,6 +4042,7 @@ namespace FE::IO
         if (auto object = context.BeginObject())
         {
             object.Field("m_offsetInPayload", m_offsetInPayload);
+            object.Field("m_compressedSize", m_compressedSize);
             object.Field("m_uncompressedSize", m_uncompressedSize);
             object.Field("m_compressionMethod", m_compressionMethod);
             object.Field("m_checksum", m_checksum);
@@ -3923,6 +4061,8 @@ namespace FE::IO
             hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
             hasher.Update("m_offsetInPayload", 17);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_offsetInPayload)>());
+            hasher.Update("m_compressedSize", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_compressedSize)>());
             hasher.Update("m_uncompressedSize", 18);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_uncompressedSize)>());
             hasher.Update("m_compressionMethod", 19);

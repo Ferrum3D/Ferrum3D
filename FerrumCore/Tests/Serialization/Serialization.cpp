@@ -475,6 +475,17 @@ namespace FE::Serialization::Tests
     }
 
 
+    TEST(Serialization, JsonRejectsInvalidUtf8)
+    {
+        constexpr char json[] = "{\"invalid\":\"\xFF\"}";
+        IO::ReadOnlyMemoryStream stream(json, sizeof(json) - 1);
+        JsonFormat format;
+        DeserializationContext reader(&stream, format);
+        ManualObject destination;
+        EXPECT_EQ(reader.Load(destination), ResultCode::kJsonParseError);
+    }
+
+
     TEST(Serialization, JsonParseErrorIncludesLineAndColumn)
     {
         MemoryStream stream;

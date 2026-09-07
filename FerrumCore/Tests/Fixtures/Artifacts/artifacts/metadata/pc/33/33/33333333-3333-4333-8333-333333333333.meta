@@ -1,0 +1,15 @@
+{
+  "$type": "bfcd80e4-db85-41f2-b43d-f08ea62aa6ec", "$version": 0, "$schema": "0x4d3ae890a4a739c5",
+  "$value": {
+    "m_artifactId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "m_assetId": "33333333-3333-4333-8333-333333333333",
+    "m_assetTypeId": "334f0750-1b4e-4f4c-ac6f-985382d4bd11",
+    "m_payloads": [
+      { "m_resolvedDataSource": { "m_filePath": "payloads/diamond.bin", "m_byteOffset": 8, "m_byteSize": 2 }, "m_chunks": [{ "m_offsetInPayload": 0, "m_compressedSize": 2, "m_uncompressedSize": 2, "m_compressionMethod": 0, "m_checksum": { "m_current": 1104745215 } }] },
+      { "m_resolvedDataSource": { "m_filePath": "payloads/diamond-lod.bin", "m_byteOffset": 2, "m_byteSize": 2 }, "m_chunks": [{ "m_offsetInPayload": 0, "m_compressedSize": 2, "m_uncompressedSize": 8, "m_compressionMethod": 2, "m_checksum": { "m_current": 11223344 } }] }
+    ],
+    "m_dependencies": [
+      { "m_assetId": "22222222-2222-4222-8222-222222222222", "m_expectedTypeId": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "m_kind": 0 },
+      { "m_assetId": "44444444-4444-4444-8444-444444444444", "m_expectedTypeId": "334f0750-1b4e-4f4c-ac6f-985382d4bd11", "m_kind": 0 }
+    ]
+  }
+}
