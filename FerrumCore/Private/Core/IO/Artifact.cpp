@@ -8,6 +8,7 @@ namespace FE::IO
 {
     namespace
     {
+        //! Construct a decode failure using the caller's requested identity and exact metadata source.
         ArtifactDecodeResult Fail(const ArtifactResolutionContext& context, const ArtifactMetadataErrorCode code,
                                   const festd::string_view message)
         {
@@ -20,6 +21,7 @@ namespace FE::IO
         }
 
 
+        //! True when a serialized payload override stays within the configured artifact-store root.
         bool IsSafeRelativeSource(const Path& source)
         {
             if (source.empty())
@@ -45,20 +47,25 @@ namespace FE::IO
         }
 
 
+        //! Convert serialization-layer failures into the smaller artifact metadata error vocabulary.
         ArtifactMetadataErrorCode MapSerializationError(const Serialization::ResultCode result)
         {
             if (result == Serialization::ResultCode::kTypeMismatch)
                 return ArtifactMetadataErrorCode::kUnsupportedSchema;
-            return ArtifactMetadataErrorCode::kInvalidJson;
+
+            return ArtifactMetadataErrorCode::kInvalidFormat;
         }
     } // namespace
 
 
+    //! Process-owned development artifact-store configuration.
     struct ArtifactStore::Impl final
     {
+        //! Absolute root prepended to deterministic metadata/data paths and safe relative payload overrides.
         Path m_assetDirectoryPath;
     };
 
+    //! Active process-wide implementation, owned by Env initialization/shutdown.
     ArtifactStore::Impl* ArtifactStore::GImpl = nullptr;
 
 
@@ -79,6 +86,7 @@ namespace FE::IO
 
     ResolvedDataSource ArtifactStore::ResolveMeta(const AssetID assetID)
     {
+        // Deterministic sharded metadata lookup: artifacts/metadata/<platform>/<2>/<2>/<asset-id>.meta.
         const auto idString = Str::ToLower<festd::fixed_string>(Fmt::FixedFormat("{}", assetID));
         Path relativePath("artifacts/metadata/pc");
         relativePath /= festd::string_view{ idString.data(), 2 };
@@ -92,6 +100,7 @@ namespace FE::IO
 
     ResolvedDataSource ArtifactStore::ResolveData(const ArtifactID artifactID)
     {
+        // Immutable artifact-addressed payload lookup: artifacts/data/<2>/<2>/<artifact-id>.bin.
         const auto idString = Str::ToLower<festd::fixed_string>(Fmt::FixedFormat("{}", artifactID));
         Path relativePath("artifacts/data");
         relativePath /= festd::string_view{ idString.data(), 2 };
@@ -105,6 +114,7 @@ namespace FE::IO
 
     ArtifactDecodeResult ArtifactStore::Decode(const festd::span<const std::byte> bytes, const ArtifactResolutionContext& context)
     {
+        // Decode stage: ArtifactStore, rather than AssetManager, owns selection and use of the metadata serialization format.
         ReadOnlyMemoryStream stream(bytes);
         Serialization::JsonFormat format;
         Serialization::DeserializationContext deserializationContext(&stream, format);
@@ -117,6 +127,7 @@ namespace FE::IO
             return Fail(context, code, "metadata does not match the JSON artifact schema");
         }
 
+        // Identity/type stage: reject valid JSON that belongs to another request or cannot be constructed by this runtime.
         if (result.m_assetId != context.m_assetId)
             return Fail(context, ArtifactMetadataErrorCode::kIdentityMismatch, "asset does not match the requested asset");
 
@@ -126,9 +137,11 @@ namespace FE::IO
         if (Rtti::TypeRegistry::FindType(result.m_assetTypeId) == nullptr)
             return Fail(context, ArtifactMetadataErrorCode::kUnknownType, "asset type ID is not registered");
 
+        // Layout stage: payload zero is the mandatory generic serialized-object payload.
         if (result.m_payloads.empty())
-            return Fail(context, ArtifactMetadataErrorCode::kInvalidLayout, "payload zero is required");
+            return Fail(context, ArtifactMetadataErrorCode::kInvalidFormat, "payload zero is required");
 
+        // Normalization stage: replace implicit artifact data paths and anchor safe overrides at the configured store root.
         for (ArtifactPayloadRecord& payload : result.m_payloads)
         {
             ResolvedDataSource& dataSource = payload.m_resolvedDataSource;
@@ -139,7 +152,7 @@ namespace FE::IO
             else
             {
                 if (!IsSafeRelativeSource(dataSource.m_filePath))
-                    return Fail(context, ArtifactMetadataErrorCode::kInvalidField, "payload source must be store-relative");
+                    return Fail(context, ArtifactMetadataErrorCode::kInvalidFormat, "payload source must be store-relative");
 
                 dataSource.m_filePath = GImpl->m_assetDirectoryPath / dataSource.m_filePath;
             }

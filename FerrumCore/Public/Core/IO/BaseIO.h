@@ -109,15 +109,25 @@ namespace FE::IO
     }
 
 
+    //! @brief Physical file and optional bounded byte range selected by a resolver.
+    //!
+    //! A zero m_byteSize means the caller may read to the physical end of the file. Nonzero ranges are relative to m_byteOffset
+    //! and must be honored by asynchronous batch operations.
     struct ResolvedDataSource final
     {
+        //! Absolute or otherwise fully resolved physical file path.
         Path m_filePath;
+
+        //! First physical byte belonging to this logical source.
         size_t m_byteOffset = 0;
+
+        //! Bounded logical source length, or zero when the length is not specified.
         size_t m_byteSize = 0;
 
         FE_RTTI_Reflect("B145A01F-A910-45BA-A193-34789214C185");
         FE_RTTI_Serialize();
 
+        //! @brief True when resolution produced a physical file path.
         [[nodiscard]] bool IsValid() const
         {
             return !m_filePath.empty();
@@ -125,9 +135,13 @@ namespace FE::IO
     };
 
 
+    //! Stable identity of a logical asset, independent of source paths and compiled generations.
     using AssetID = Uuid;
+
+    //! Identity of one immutable compiled representation of a logical asset.
     using ArtifactID = Uuid;
 
+    //! Legacy forward declarations for asset runtime types defined by the asset subsystem headers.
     struct AssetRecord;
     struct AssetSlot;
     struct ResidencyTicket;

@@ -19,13 +19,6 @@ namespace FE::IO
         }
 
 
-        Async::Status AssetHandleImpl::GetStatus() const
-        {
-            FE_AssertDebug(m_slot);
-            return m_slot->m_asyncController->GetStatus();
-        }
-
-
         const void* AssetHandleImpl::GetAssetInstance() const
         {
             FE_AssertDebug(m_slot);
