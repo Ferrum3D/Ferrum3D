@@ -179,6 +179,67 @@ namespace FE::IO::Tests
     }
 
 
+    TEST_F(AssetManagerTest, TypedRootRejectsAnIncompatibleAssetType)
+    {
+        Link<SyntheticAsset> link;
+        link.SetAssetID(kSimple);
+
+        AssetRequest request = AssetManager::LoadAsset(link);
+        request.WaitForDiscovery();
+
+        EXPECT_EQ(request.GetDiscoveryResult(), AssetLoadResult::kFailed);
+        EXPECT_FALSE(request.GetError().empty());
+        EXPECT_EQ(request.GetAssetSlot()->m_strongRefCount.load(), 0);
+    }
+
+
+    TEST_F(AssetManagerTest, LinkResolvesItsSlotLazily)
+    {
+        Link<SyntheticAsset> link;
+        link.SetAssetID(kStage4Leaf);
+        EXPECT_EQ(link.GetAssetHandle().GetAssetSlot(), nullptr);
+
+        AssetRequest request = AssetManager::LoadAsset(link);
+        request.WaitForDiscovery();
+        for (uint32_t iteration = 0; iteration < 10000 && !request.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+
+        ASSERT_EQ(request.GetResult(), AssetLoadResult::kSucceeded) << request.GetError().data();
+        AssetHandle<SyntheticAsset> handle = link.GetAssetHandle();
+        EXPECT_EQ(handle.GetAssetSlot(), request.GetAssetSlot());
+        ASSERT_NE(handle.Get(), nullptr);
+        EXPECT_EQ(handle.Get()->m_value, 7);
+    }
+
+
+    TEST_F(AssetManagerTest, TickIsSafeWhileDiscoveryAppendsOperations)
+    {
+        Rc<WaitGroup> entered = WaitGroup::Create();
+        Rc<WaitGroup> resume = WaitGroup::Create();
+        AssetManager::SetDiscoveryBarrierForTests(entered.Get(), resume.Get());
+
+        AssetRequest request = AssetManager::LoadAsset(kDiamond);
+        entered->Wait();
+        AssetManager::Tick();
+
+        AssetManager::SetDiscoveryBarrierForTests(nullptr, nullptr);
+        resume->Signal();
+        for (uint32_t iteration = 0; iteration < 10000 && !request.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+
+        ASSERT_TRUE(request.IsCompleted());
+        EXPECT_EQ(request.GetDiscoveryResult(), AssetLoadResult::kSucceeded);
+        EXPECT_EQ(request.GetResult(), AssetLoadResult::kFailed);
+        EXPECT_FALSE(request.GetError().empty());
+    }
+
+
     TEST_F(AssetManagerTest, CoalescesConcurrentAndLateJoiningOperations)
     {
         Rc<WaitGroup> entered = WaitGroup::Create();

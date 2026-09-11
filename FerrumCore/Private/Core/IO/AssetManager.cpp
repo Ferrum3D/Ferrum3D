@@ -8,7 +8,6 @@
 #include <Core/Serialization/JsonSerialization.h>
 #include <Core/Threading/Mutex.h>
 #include <Core/Threading/Thread.h>
-#include <cctype>
 #include <festd/unordered_map.h>
 #include <festd/vector.h>
 
@@ -67,15 +66,6 @@ namespace FE::IO
         };
 
 
-        struct BindingState
-        {
-            void* m_context;
-            Operation* m_owner;
-            AssetSlot* (*m_resolve)(void*, Operation&, AssetID, Rtti::TypeID, DependencyKind);
-        };
-        thread_local BindingState* GBinding = nullptr;
-
-
         void DestroyObject(Operation& operation, void* object)
         {
             if (!object)
@@ -128,13 +118,14 @@ namespace FE::IO
         void CompleteMetadata(Operation& operation, ArtifactDecodeResult&& result);
         void StartMetadata(Operation& operation);
         void StartPayload(Operation& operation);
+        void TrackJob(Rc<WaitGroup>&& job);
+        void PruneCompletedJobs();
         void Release(Internal::AssetAcquisition& request);
         void Finish(Internal::AssetAcquisition& request, AssetLoadResult result, festd::string_view error = {});
         void DiscoveryDone(Internal::AssetAcquisition& request);
         void DetectGroups(Internal::AssetAcquisition& request);
         void DeleteIfUnused(Internal::AssetAcquisition* request);
         Streamer& GetStreamer(Operation& operation);
-        AssetSlot* Resolve(Operation& owner, AssetID id, Rtti::TypeID type, DependencyKind kind);
         void Tick();
     };
 
@@ -239,8 +230,8 @@ namespace FE::IO
             return;
         }
 
-        // Only hard dependencies extend the load closure. Soft and optional links are validated and may bind to an existing slot,
-        // but deserialization never starts additional discovery for them.
+        // Only hard dependencies extend the load closure. Soft and optional links are retained as identities and do not start
+        // additional discovery.
         for (const ArtifactDependencyRecord& dependency : operation.m_record.m_dependencies)
         {
             if (dependency.m_kind == DependencyKind::kHard)
@@ -263,6 +254,14 @@ namespace FE::IO
                 operation.m_slot->m_currentArtifactId = operation.m_record.m_artifactId;
                 operation.m_state = State::kPayload;
                 payload = true;
+
+                // Reserve and start the operation graph independently of acquisition lifetime. This keeps hard-dependency slots
+                // available for later lazy link lookup even when the last acquisition is canceled during this metadata read.
+                for (const ArtifactDependencyRecord& dependency : operation.m_record.m_dependencies)
+                {
+                    if (dependency.m_kind == DependencyKind::kHard)
+                        GetOperation(dependency.m_assetId, starts);
+                }
             }
             else
             {
@@ -341,8 +340,7 @@ namespace FE::IO
             },
             job.Get());
 
-        std::lock_guard lock{ m_mutex };
-        m_jobs.push_back(std::move(job));
+        TrackJob(std::move(job));
     }
 
 
@@ -392,10 +390,12 @@ namespace FE::IO
                     offset += chunk.m_uncompressedSize;
                 }
 
-                if (operation.m_error.empty() && (!operation.m_type || !operation.m_type->m_deserialize))
-                {
-                    operation.m_error = "asset type has no RTTI deserializer";
-                }
+                const bool hasDeserializer = operation.m_type && operation.m_type->m_deserialize;
+                const bool isTrivial =
+                    operation.m_type && (operation.m_type->m_flags & Rtti::TypeFlags::kTrivial) != Rtti::TypeFlags::kNone;
+                const bool canConstruct = operation.m_type && (operation.m_type->m_defaultConstructor || isTrivial);
+                if (operation.m_error.empty() && (!hasDeserializer || !canConstruct))
+                    operation.m_error = "asset type is not constructible and deserializable";
 
                 if (operation.m_error.empty())
                 {
@@ -403,20 +403,9 @@ namespace FE::IO
                     if (operation.m_type->m_defaultConstructor)
                         operation.m_type->m_defaultConstructor(operation.m_candidate);
                     else
-                        memset(operation.m_candidate, 0, operation.m_type->m_size);
+                        std::memset(operation.m_candidate, 0, operation.m_type->m_size);
 
                     ReadOnlyMemoryStream stream(bytes);
-                    BindingState binding{
-                        this,
-                        &operation,
-                        [](void* context, Operation& owner, AssetID id, Rtti::TypeID type, DependencyKind kind) {
-                            return static_cast<Impl*>(context)->Resolve(owner, id, type, kind);
-                        }
-                    };
-
-                    // Link<T> deserialization consults this thread-local scope. Resolve accepts only links declared by the
-                    // candidate's metadata and returns already reserved slots; it cannot discover assets or initiate I/O.
-                    GBinding = &binding;
                     Serialization::ResultCode result;
 
                     uint32_t firstContentByte = 0;
@@ -439,7 +428,6 @@ namespace FE::IO
                         result = context.Load(*operation.m_type, operation.m_candidate);
                     }
 
-                    GBinding = nullptr;
                     if (result != Serialization::ResultCode::kSuccess)
                     {
                         operation.m_error =
@@ -452,8 +440,30 @@ namespace FE::IO
             },
             job.Get());
 
+        TrackJob(std::move(job));
+    }
+
+
+    void AssetManager::Impl::TrackJob(Rc<WaitGroup>&& job)
+    {
         std::lock_guard lock{ m_mutex };
+        PruneCompletedJobs();
         m_jobs.push_back(std::move(job));
+    }
+
+
+    void AssetManager::Impl::PruneCompletedJobs()
+    {
+        for (uint32_t index = 0; index < m_jobs.size();)
+        {
+            if (m_jobs[index]->IsSignaled())
+            {
+                m_jobs[index] = std::move(m_jobs.back());
+                m_jobs.pop_back();
+            }
+            else
+                ++index;
+        }
     }
 
 
@@ -609,30 +619,11 @@ namespace FE::IO
     }
 
 
-    AssetSlot* AssetManager::Impl::Resolve(Operation& owner, AssetID id, Rtti::TypeID type, DependencyKind kind)
-    {
-        if (!id.IsValid())
-            return nullptr;
-
-        // Serialized data is not allowed to introduce dependencies absent from trusted metadata or to change their expected type
-        // or loading semantics. Returning an existing stable slot also ensures binding itself has no I/O side effects.
-        bool declared = false;
-        for (const ArtifactDependencyRecord& dependency : owner.m_record.m_dependencies)
-            declared |= dependency.m_assetId == id && dependency.m_expectedTypeId == type && dependency.m_kind == kind;
-
-        if (!declared)
-            return nullptr;
-
-        std::lock_guard lock{ m_mutex };
-        auto found = m_slots.find(id);
-        return found == m_slots.end() ? nullptr : found->second;
-    }
-
-
     void AssetManager::Impl::Tick()
     {
         // Pipeline stage 3: transfer background deserialization results to the main-thread state machine. Workers only enqueue
         // completions, so streamer callbacks and publication always happen from Tick.
+        std::unique_lock lock{ m_mutex };
         ConcurrentOnceConsumedQueue::Node* completion = m_payloadCompletions.DequeueAll();
         while (completion)
         {
@@ -641,156 +632,211 @@ namespace FE::IO
             operation->m_state = operation->m_error.empty() ? State::kCandidate : State::kFailed;
         }
 
-        bool progressed = true;
+        // Operations are manager-owned until shutdown. Process only the prefix visible at tick start; background discovery may
+        // append more operations while callbacks run without invalidating the stable operation objects.
+        const uint32_t operationCount = m_ownedOperations.size();
         festd::unordered_dense_set<uint32_t> processedGroups;
-        festd::unordered_dense_set<Operation*> processedSingles;
-        while (progressed)
-        {
-            progressed = false;
-            for (Operation* seed : m_ownedOperations)
+
+        const auto failGroup = [this, &lock](const festd::span<Operation* const> members, const festd::string_view error) {
+            festd::inline_vector<Operation*, 8> destroyOperations;
+            festd::inline_vector<void*, 8> destroyObjects;
+            for (Operation* member : members)
             {
-                if (seed->m_state != State::kCandidate && seed->m_state != State::kFinalizing)
+                if (member->m_state == State::kPublished)
                     continue;
 
-                uint32_t group = seed->m_slot->m_referenceGroup.load();
-                if (group == kInvalidIndex)
+                if (member->m_error.empty())
+                    member->m_error = error;
+                member->m_state = State::kFailed;
+                if (member->m_candidate)
                 {
-                    if (!processedSingles.insert(seed).second)
-                        continue;
+                    destroyOperations.push_back(member);
+                    destroyObjects.push_back(member->m_candidate);
+                    member->m_candidate = nullptr;
                 }
-                else if (!processedGroups.insert(group).second)
-                {
-                    continue;
-                }
-
-                festd::inline_vector<Operation*, 8> members;
-                if (group == kInvalidIndex)
-                {
-                    members.push_back(seed);
-                }
-                else
-                {
-                    for (Operation* operation : m_ownedOperations)
-                    {
-                        if (operation->m_slot->m_referenceGroup.load() == group)
-                            members.push_back(operation);
-                    }
-                }
-
-                // A reference group advances as a unit. In particular, a hard cycle cannot finalize or publish while one of its
-                // candidates is still being produced by a worker.
-                bool candidatesReady = true;
-                bool orderedCycle = false;
-                for (Operation* member : members)
-                {
-                    candidatesReady &= member->m_state == State::kCandidate || member->m_state == State::kFinalizing
-                        || member->m_state == State::kPublished;
-                    orderedCycle |= members.size() > 1 && GetStreamer(*member).RequiresFinalizedDependencies();
-                }
-
-                if (!candidatesReady)
-                    continue;
-
-                // A streamer that needs already-finalized dependencies imposes an ordering edge. Such an edge cannot be satisfied
-                // inside a cycle, so fail deterministically instead of leaving the group pending forever.
-                if (orderedCycle)
-                {
-                    for (Operation* member : members)
-                    {
-                        member->m_error = "finalization-order cycle is unsupported";
-                        member->m_state = State::kFailed;
-                        DestroyObject(*member, member->m_candidate);
-                        member->m_candidate = nullptr;
-                    }
-
-                    progressed = true;
-                    continue;
-                }
-
-                // Dependencies inside this group are candidates by construction. Hard dependencies outside the group must already
-                // be published before finalization starts, which gives acyclic graphs dependency-first ordering.
-                bool dependenciesReady = true;
-                for (Operation* member : members)
-                {
-                    for (const ArtifactDependencyRecord& dependency : member->m_record.m_dependencies)
-                    {
-                        if (dependency.m_kind != DependencyKind::kHard)
-                            continue;
-
-                        Operation* target = m_operations.find(dependency.m_assetId)->second;
-                        bool sameGroup = group != kInvalidIndex && target->m_slot->m_referenceGroup.load() == group;
-                        if (!sameGroup && target->m_state != State::kPublished)
-                            dependenciesReady = false;
-                    }
-                }
-
-                if (!dependenciesReady)
-                    continue;
-
-                // Pipeline stage 4: start or poll type-specific finalization. Pending finalizers retain their private candidate and
-                // are revisited by a later Tick; failure destroys every unpublished member of the group.
-                bool finalized = true;
-                bool failed = false;
-                for (Operation* member : members)
-                {
-                    if (member->m_state == State::kPublished)
-                        continue;
-
-                    Streamer& streamer = GetStreamer(*member);
-                    if (member->m_state == State::kCandidate)
-                    {
-                        member->m_finalize = streamer.FinalizeAssetLoading(*member->m_slot, member->m_candidate);
-                        member->m_state = State::kFinalizing;
-                    }
-                    else if (member->m_finalize == AssetFinalizeResult::kPending)
-                    {
-                        member->m_finalize = streamer.PollFinalize(*member->m_slot, member->m_candidate);
-                    }
-
-                    finalized &= member->m_finalize == AssetFinalizeResult::kSucceeded;
-                    failed |= member->m_finalize == AssetFinalizeResult::kFailed;
-                }
-
-                if (failed)
-                {
-                    for (Operation* member : members)
-                    {
-                        if (member->m_state != State::kPublished)
-                        {
-                            member->m_error = "asset finalization failed";
-                            member->m_state = State::kFailed;
-                            DestroyObject(*member, member->m_candidate);
-                            member->m_candidate = nullptr;
-                        }
-                    }
-
-                    progressed = true;
-                    continue;
-                }
-
-                if (!finalized)
-                    continue;
-
-                // Pipeline stage 5: commit the group. Slot contents are installed while the shared gate is closed. The release
-                // store opens the gate only after every member is installed, giving readers one visibility boundary for the group.
-                AssetPublicationGate* gate = Memory::DefaultNew<AssetPublicationGate>();
-                m_gates.push_back(gate);
-                for (Operation* member : members)
-                {
-                    if (member->m_state != State::kPublished)
-                    {
-                        member->m_slot->m_publicationGate.store(gate, std::memory_order_relaxed);
-                        member->m_slot->m_instance.store(member->m_candidate, std::memory_order_relaxed);
-                        member->m_candidate = nullptr;
-                        member->m_slot->m_generation.fetch_add(1, std::memory_order_relaxed);
-                        member->m_slot->m_completed.store(true, std::memory_order_relaxed);
-                        member->m_state = State::kPublished;
-                    }
-                }
-
-                gate->m_isOpen.store(true, std::memory_order_release);
-                progressed = true;
             }
+
+            lock.unlock();
+            for (uint32_t index = 0; index < destroyOperations.size(); ++index)
+                DestroyObject(*destroyOperations[index], destroyObjects[index]);
+            lock.lock();
+        };
+
+        for (uint32_t operationIndex = 0; operationIndex < operationCount; ++operationIndex)
+        {
+            Operation* seed = m_ownedOperations[operationIndex];
+            if (seed->m_state != State::kCandidate && seed->m_state != State::kFinalizing)
+                continue;
+
+            const uint32_t group = seed->m_slot->m_referenceGroup.load();
+            if (group != kInvalidIndex && !processedGroups.insert(group).second)
+                continue;
+
+            festd::inline_vector<Operation*, 8> members;
+            if (group == kInvalidIndex)
+            {
+                members.push_back(seed);
+            }
+            else
+            {
+                for (uint32_t memberIndex = 0; memberIndex < operationCount; ++memberIndex)
+                {
+                    Operation* operation = m_ownedOperations[memberIndex];
+                    if (operation->m_slot->m_referenceGroup.load() == group)
+                        members.push_back(operation);
+                }
+            }
+
+            // A reference group advances as a unit. In particular, a hard cycle cannot finalize or publish while one of its
+            // candidates is still being produced by a worker.
+            bool candidatesReady = true;
+            bool groupFailed = false;
+            bool orderedCycle = false;
+            for (Operation* member : members)
+            {
+                candidatesReady &= member->m_state == State::kCandidate || member->m_state == State::kFinalizing
+                    || member->m_state == State::kPublished;
+                groupFailed |= member->m_state == State::kFailed;
+                orderedCycle |= members.size() > 1 && GetStreamer(*member).RequiresFinalizedDependencies();
+            }
+
+            if (groupFailed)
+            {
+                failGroup(members, "asset reference group member failed");
+                continue;
+            }
+
+            if (!candidatesReady)
+                continue;
+
+            // A streamer that needs already-finalized dependencies imposes an ordering edge. Such an edge cannot be satisfied
+            // inside a cycle, so fail deterministically instead of leaving the group pending forever.
+            if (orderedCycle)
+            {
+                failGroup(members, "finalization-order cycle is unsupported");
+                continue;
+            }
+
+            // Dependencies inside this group are candidates by construction. External dependencies gate publication. Finalizers
+            // that do not request dependency ordering may overlap that wait.
+            bool dependenciesReady = true;
+            bool dependencyFailed = false;
+            festd::inline_vector<uint8_t, 8> memberDependenciesValidated;
+            festd::inline_vector<uint8_t, 8> memberDependenciesReady;
+            for (Operation* member : members)
+            {
+                bool currentDependenciesValidated = true;
+                bool currentDependenciesReady = true;
+                for (const ArtifactDependencyRecord& dependency : member->m_record.m_dependencies)
+                {
+                    if (dependency.m_kind != DependencyKind::kHard)
+                        continue;
+
+                    auto targetIt = m_operations.find(dependency.m_assetId);
+                    if (targetIt == m_operations.end())
+                    {
+                        dependencyFailed = true;
+                        currentDependenciesValidated = false;
+                        currentDependenciesReady = false;
+                        continue;
+                    }
+
+                    Operation* target = targetIt->second;
+                    const bool sameGroup = group != kInvalidIndex && target->m_slot->m_referenceGroup.load() == group;
+                    const bool typeIsKnown = target->m_slot->m_typeId.IsValid();
+                    const bool typeMismatch = typeIsKnown && target->m_slot->m_typeId != dependency.m_expectedTypeId;
+                    if (target->m_state == State::kFailed || typeMismatch)
+                    {
+                        dependencyFailed = true;
+                        currentDependenciesValidated = false;
+                        currentDependenciesReady = false;
+                    }
+                    else if (!typeIsKnown)
+                    {
+                        currentDependenciesValidated = false;
+                        currentDependenciesReady = false;
+                    }
+                    else if (!sameGroup && target->m_state != State::kPublished)
+                    {
+                        currentDependenciesReady = false;
+                    }
+                }
+
+                memberDependenciesValidated.push_back(currentDependenciesValidated);
+                memberDependenciesReady.push_back(currentDependenciesReady);
+                dependenciesReady &= currentDependenciesReady;
+            }
+
+            if (dependencyFailed)
+            {
+                failGroup(members, "hard dependency failed or has an incompatible type");
+                continue;
+            }
+
+            // Pipeline stage 4: start or poll type-specific finalization. Streamer callbacks execute without the registry lock,
+            // while operation state changes remain synchronized with concurrent requests and discovery.
+            bool finalized = true;
+            bool failed = false;
+            for (uint32_t memberIndex = 0; memberIndex < members.size(); ++memberIndex)
+            {
+                Operation* member = members[memberIndex];
+                if (member->m_state == State::kPublished)
+                    continue;
+
+                Streamer* streamer = &GetStreamer(*member);
+                const bool isStarting = member->m_state == State::kCandidate;
+                const bool dependenciesValidated = memberDependenciesValidated[memberIndex] != 0;
+                const bool dependencyOrderSatisfied = memberDependenciesReady[memberIndex] != 0;
+                bool mayStart = dependenciesValidated;
+                if (streamer->RequiresFinalizedDependencies())
+                    mayStart &= dependencyOrderSatisfied;
+                const bool shouldInvoke = (isStarting && mayStart)
+                    || (member->m_state == State::kFinalizing && member->m_finalize == AssetFinalizeResult::kPending);
+                if (shouldInvoke)
+                {
+                    if (isStarting)
+                        member->m_state = State::kFinalizing;
+
+                    AssetSlot* slot = member->m_slot;
+                    void* candidate = member->m_candidate;
+                    lock.unlock();
+                    const AssetFinalizeResult result =
+                        isStarting ? streamer->FinalizeAssetLoading(*slot, candidate) : streamer->PollFinalize(*slot, candidate);
+                    lock.lock();
+                    member->m_finalize = result;
+                }
+
+                finalized &= member->m_finalize == AssetFinalizeResult::kSucceeded;
+                failed |= member->m_finalize == AssetFinalizeResult::kFailed;
+            }
+
+            if (failed)
+            {
+                failGroup(members, "asset finalization failed");
+                continue;
+            }
+
+            if (!finalized || !dependenciesReady)
+                continue;
+
+            // Pipeline stage 5: commit the group. Completed is published before readers consult the gate; the shared release-store
+            // then opens one visibility boundary only after every candidate pointer is installed.
+            AssetPublicationGate* gate = Memory::DefaultNew<AssetPublicationGate>();
+            m_gates.push_back(gate);
+            for (Operation* member : members)
+            {
+                if (member->m_state != State::kPublished)
+                {
+                    member->m_slot->m_publicationGate.store(gate, std::memory_order_relaxed);
+                    member->m_slot->m_instance.store(member->m_candidate, std::memory_order_relaxed);
+                    member->m_candidate = nullptr;
+                    member->m_slot->m_generation.fetch_add(1, std::memory_order_relaxed);
+                    member->m_slot->m_completed.store(true, std::memory_order_release);
+                    member->m_state = State::kPublished;
+                }
+            }
+
+            gate->m_isOpen.store(true, std::memory_order_release);
         }
 
         // Complete acquisitions only after every member of their hard closure is published, or as soon as any member fails.
@@ -832,19 +878,9 @@ namespace FE::IO
 
     namespace Internal
     {
-        AssetSlot* ResolveAssetLink(AssetID id, Rtti::TypeID type, DependencyKind kind)
+        AssetSlot* FindAssetSlot(AssetID id)
         {
-            if (!GBinding)
-            {
-                return nullptr;
-            }
-            return GBinding->m_resolve(GBinding->m_context, *GBinding->m_owner, id, type, kind);
-        }
-
-
-        bool IsAssetBindingActive()
-        {
-            return GBinding != nullptr;
+            return AssetManager::FindAssetSlot(id);
         }
     } // namespace Internal
 
@@ -876,21 +912,18 @@ namespace FE::IO
             GImpl->m_shuttingDown = true;
         }
 
-        uint32_t waitedCount = 0;
         for (;;)
         {
             festd::vector<Rc<WaitGroup>> jobs;
             {
                 std::lock_guard lock{ GImpl->m_mutex };
+                GImpl->PruneCompletedJobs();
+                if (GImpl->m_jobs.empty())
+                    break;
+
                 jobs = GImpl->m_jobs;
             }
             WaitGroup::WaitAll(jobs);
-            waitedCount = jobs.size();
-            std::lock_guard lock{ GImpl->m_mutex };
-            if (GImpl->m_jobs.size() == waitedCount)
-            {
-                break;
-            }
         }
         GImpl->Tick();
         Memory::DefaultDelete(GImpl);
@@ -899,6 +932,12 @@ namespace FE::IO
 
 
     AssetRequest AssetManager::LoadAsset(AssetID id)
+    {
+        return LoadAsset(id, Rtti::TypeID::kNull);
+    }
+
+
+    AssetRequest AssetManager::LoadAsset(AssetID id, Rtti::TypeID expectedTypeId)
     {
         FE_Assert(GImpl);
         if (!id.IsValid())
@@ -909,7 +948,7 @@ namespace FE::IO
         {
             std::lock_guard lock{ GImpl->m_mutex };
             FE_Assert(!GImpl->m_shuttingDown);
-            GImpl->Join(*request, id, Rtti::TypeID::kNull, starts);
+            GImpl->Join(*request, id, expectedTypeId, starts);
             request->m_root = &GImpl->Slot(id);
             if (request->m_pendingMetadata == 0 && request->m_discovery.load() == AssetLoadResult::kPending)
                 GImpl->DiscoveryDone(*request);

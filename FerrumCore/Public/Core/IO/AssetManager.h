@@ -68,9 +68,9 @@ namespace FE::IO
 
         //! @brief Typed-link convenience overload; the link's runtime handle does not contribute residency.
         template<class T, DependencyKind TKind = DependencyKind::kHard>
-        [[nodiscard]] static AssetRequest LoadAsset(Link<T, TKind> link)
+        [[nodiscard]] static AssetRequest LoadAsset(const Link<T, TKind>& link)
         {
-            return LoadAsset(link.GetAssetID());
+            return LoadAsset(link.GetAssetID(), Rtti::GetTypeID<T>());
         }
 
         //! @brief Execute main-thread finalization and publication work.
@@ -97,6 +97,9 @@ namespace FE::IO
 
         //! Transition a pending acquisition to canceled without canceling work shared by other acquisitions.
         static void CancelRequest(Internal::AssetAcquisition* acquisition);
+
+        //! Acquire a root while preserving the type constraint supplied by a typed link.
+        [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId, Rtti::TypeID expectedTypeId);
 
         struct Impl;
         static Impl* GImpl;

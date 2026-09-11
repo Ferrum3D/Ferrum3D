@@ -15,11 +15,12 @@ namespace FE::IO
         bool AssetHandleImpl::IsReady() const
         {
             FE_AssertDebug(m_slot);
-            AssetPublicationGate* gate = m_slot->m_publicationGate.load(std::memory_order_acquire);
             if (!m_slot->m_completed.load(std::memory_order_acquire))
             {
                 return false;
             }
+
+            AssetPublicationGate* gate = m_slot->m_publicationGate.load(std::memory_order_acquire);
             return !gate || gate->m_isOpen.load(std::memory_order_acquire);
         }
 

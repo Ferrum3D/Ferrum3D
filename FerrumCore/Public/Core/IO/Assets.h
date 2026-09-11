@@ -14,11 +14,8 @@ namespace FE::IO
         //! @brief Opaque shared state owned by one logical residency acquisition.
         struct AssetAcquisition;
 
-        //! @brief Resolve a serialized link while an asset candidate is being deserialized.
-        AssetSlot* ResolveAssetLink(AssetID assetId, Rtti::TypeID expectedType, DependencyKind kind);
-
-        //! @brief True while deserialization is validating and binding an asset candidate.
-        bool IsAssetBindingActive();
+        //! @brief Find the stable slot for a logical asset without adding residency.
+        AssetSlot* FindAssetSlot(AssetID assetId);
     } // namespace Internal
 
 
@@ -356,11 +353,11 @@ namespace FE::IO
 
     //! @brief Serializable logical asset reference whose dependency behavior is encoded by TKind.
     //!
-    //! Only m_id is persistent data. m_handle is a runtime binding cache populated during object binding and never owns residency.
+    //! The link stores identity only. Resolving it produces a temporary non-owning handle to the manager-owned stable slot.
     template<class T, DependencyKind TKind = DependencyKind::kHard>
     struct Link final
     {
-        //! Dependency semantics available to serialization and binding code at compile time.
+        //! Dependency semantics available to serialization and loading code at compile time.
         static constexpr DependencyKind kKind = TKind;
 
         //! @brief Get the persistent logical asset identity.
@@ -370,18 +367,17 @@ namespace FE::IO
         }
 
 #if FE_DEVELOPMENT
-        //! @brief Change the logical target and discard any runtime binding to the old slot.
+        //! @brief Change the logical target.
         void SetAssetID(const AssetID id)
         {
             m_id = id;
-            m_handle.Invalidate();
         }
 #endif
 
-        //! @brief Get a copy of the current non-owning runtime binding.
+        //! @brief Resolve the current non-owning runtime handle without initiating a load.
         [[nodiscard]] AssetHandle<T> GetAssetHandle() const
         {
-            return m_handle;
+            return AssetHandle<T>(Internal::FindAssetSlot(m_id));
         }
 
     private:
@@ -389,20 +385,13 @@ namespace FE::IO
 
         //! Serialized logical identity; never contains a physical path or artifact location.
         AssetID m_id = AssetID::kNull;
-
-        //! Transient stable-slot binding established after metadata validation and deserialization.
-        AssetHandle<T> m_handle;
     };
 } // namespace FE::IO
 
 
 namespace FE::Serialization
 {
-    //! Asset links serialize only their logical ID. Runtime binding is supplied by AssetManager during candidate loading.
-    //!
-    //! During ordinary deserialization no binding scope exists, so an unresolved ID is accepted. During asset loading, the active
-    //! scope verifies the link against trusted artifact metadata and binds it to a stable slot. A missing hard target then makes the
-    //! payload malformed, while soft and optional targets may remain unbound without triggering discovery or I/O.
+    //! Asset links serialize only their logical ID. Runtime lookup is deferred until GetAssetHandle is called.
     template<class T, IO::DependencyKind TKind>
     struct Serializer<IO::Link<T, TKind>>
     {
@@ -413,18 +402,7 @@ namespace FE::Serialization
 
         static ResultCode Deserialize(DeserializationContext& context, IO::Link<T, TKind>& value)
         {
-            const ResultCode result = DeserializeValue(context, value.m_id);
-            if (result != ResultCode::kSuccess)
-            {
-                return result;
-            }
-
-            IO::AssetSlot* slot = IO::Internal::ResolveAssetLink(value.m_id, Rtti::GetTypeID<T>(), TKind);
-            value.m_handle.Reset(slot);
-            const bool mayRemainUnbound = TKind != IO::DependencyKind::kHard;
-            const bool isBinding = IO::Internal::IsAssetBindingActive();
-            return slot || !value.m_id.IsValid() || mayRemainUnbound || !isBinding ? ResultCode::kSuccess
-                                                                                   : ResultCode::kMalformedData;
+            return DeserializeValue(context, value.m_id);
         }
 
         static uint64_t GetSchemaHash()
