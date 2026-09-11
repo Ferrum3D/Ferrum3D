@@ -42,7 +42,9 @@ namespace
 
         festd::vector<std::byte> result(size);
         for (uint32_t index = 0; index < size; ++index)
+        {
             result[index] = static_cast<std::byte>(random.RandUInt64() & 0xff);
+        }
 
         return result;
     }
@@ -567,6 +569,7 @@ TEST(AssetHandles, ReferenceCountsAndLeaseConversion)
     IO::AssetSlot slot{};
     int instance = 42;
     slot.m_instance.store(&instance);
+    slot.m_completed.store(true);
 
     {
         IO::ResidencyTicket ticket(&slot);

@@ -60,6 +60,9 @@ This only changes the current process environment. It leaves the normal Windows 
   - Declare type template parameters as `class`, not `typename` except in shader code since HLSL only supports `typename`.
   - Pointer and reference stars bind to the type side, for example `Buffer*` and `BufferInstance*&`.
   - Keep short empty functions/lambdas compact only where the formatter allows it.
+  - Preserve intentional empty lines when editing; do not remove them as incidental cleanup.
+  - Add two empty lines between adjacent function definitions and between adjacent type definitions.
+  - Use braces for every multi-line `if`, `else`, `for`, `while`, `do`, and similar control statement.
   - Preserve include blocks and sort includes case-sensitively when changing include lists.
 - Include order in implementation files follows project headers grouped at the top, as in `Buffer.cpp`. Prefer angle-bracket project includes such as `#include <Graphics/Core/Vulkan/Buffer.h>`.
 - Use namespaces in the `FE::...` hierarchy and close nontrivial namespaces with comments, for example `} // namespace FE::Graphics::Vulkan`.
@@ -68,6 +71,8 @@ This only changes the current process environment. It leaves the normal Windows 
 - Avoid complex multi-line boolean conditions. Use named predicates, separate early-return checks, or focused validation helpers so each condition is easy to read.
 - Use existing project diagnostics and helpers instead of ad hoc checks: `FE_Assert`, `FE_AssertDebug`, `FE_DebugBreak`, `VerifyVk`, `FE_PROFILER_ZONE`, `Rtti::AssertCast`, `NativeCast`, and `ImplCast`.
 - Keep comments sparse. Use comments for namespace endings, complex intent, or non-obvious behavior rather than restating the code.
+- Prefer generated serialization via `FE_RTTI_Serialize()` whenever reflection can express the serialized fields. Write a manual
+  `Serializer` only when generated serialization cannot represent the required contract.
 
 ## Memory management
 

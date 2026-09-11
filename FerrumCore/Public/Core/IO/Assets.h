@@ -1,8 +1,11 @@
 ﻿#pragma once
 #include <Core/IO/BaseIO.h>
+#include <Core/Serialization/Serialization.h>
 
 namespace FE::IO
 {
+    enum class DependencyKind : uint32_t;
+
     template<class T>
     struct AssetLease;
 
@@ -10,23 +13,36 @@ namespace FE::IO
     {
         //! @brief Opaque shared state owned by one logical residency acquisition.
         struct AssetAcquisition;
+
+        //! @brief Resolve a serialized link while an asset candidate is being deserialized.
+        AssetSlot* ResolveAssetLink(AssetID assetId, Rtti::TypeID expectedType, DependencyKind kind);
+
+        //! @brief True while deserialization is validating and binding an asset candidate.
+        bool IsAssetBindingActive();
     } // namespace Internal
 
 
-    //! @brief Terminal state of dependency discovery for an AssetRequest.
-    //!
-    //! This state is independent of AssetSlot readiness. A successful request has discovered and retained its hard dependency
-    //! closure, but the corresponding slots do not become ready until a later publication stage installs usable instances.
+    //! @brief Terminal state of an AssetRequest.
     enum class AssetLoadResult : uint8_t
     {
-        //! At least one required metadata operation has not completed.
+        //! Required metadata, payload, finalization, or publication work remains.
         kPending,
-        //! The complete hard closure was validated and its residency contribution remains held.
+        //! The complete hard closure was published and its residency contribution remains held.
         kSucceeded,
         //! Required metadata failed or a typed dependency was incompatible; residency was rolled back.
         kFailed,
         //! This acquisition was canceled independently of any shared operation; residency was rolled back.
         kCanceled,
+    };
+
+
+    //! @brief Shared visibility gate for a publication group.
+    //!
+    //! Every slot in a hard-reference cycle points at the same gate. Candidate pointers are installed first and the gate is
+    //! opened with release semantics only after the complete group is usable.
+    struct AssetPublicationGate final
+    {
+        std::atomic<bool> m_isOpen = false;
     };
 
     namespace Internal
@@ -91,7 +107,9 @@ namespace FE::IO
             AssetHandleBase& operator=(const AssetHandleBase& other)
             {
                 if (this == &other)
+                {
                     return *this;
+                }
 
                 Reset(other.GetAssetSlot());
                 return *this;
@@ -106,7 +124,9 @@ namespace FE::IO
             void Reset(AssetSlot* slot)
             {
                 if (m_slot == slot)
+                {
                     return;
+                }
 
                 static_cast<THandle*>(this)->InternalRelease();
                 m_slot = slot;
@@ -153,11 +173,14 @@ namespace FE::IO
         //! Artifact selected for the current operation/generation. Null until metadata discovery succeeds.
         ArtifactID m_currentArtifactId;
 
-        //! Published object pointer. Stage 3 leaves this null; publication updates it with release semantics.
+        //! Published object pointer. Readers also validate m_publicationGate before accessing it.
         std::atomic<void*> m_instance = nullptr;
 
         //! Publication readiness flag. Discovery completion alone never sets this flag.
         std::atomic<bool> m_completed = false;
+
+        //! Publication gate shared by every member of the current reference group.
+        std::atomic<AssetPublicationGate*> m_publicationGate = nullptr;
 
         //! Monotonically increasing published-generation number.
         std::atomic<uint32_t> m_generation = 0;
@@ -194,13 +217,13 @@ namespace FE::IO
         //! @brief True when this object identifies an acquisition record.
         [[nodiscard]] bool IsValid() const;
 
-        //! @brief True after discovery succeeds, fails, or is canceled.
+        //! @brief True after the acquisition publishes, fails, or is canceled.
         [[nodiscard]] bool IsCompleted() const;
 
-        //! @brief True when this acquisition was canceled before discovery completed.
+        //! @brief True when this acquisition was canceled before publication completed.
         [[nodiscard]] bool IsCanceled() const;
 
-        //! @brief Get this acquisition's discovery result; an invalid request reports kFailed.
+        //! @brief Get this acquisition's final result; an invalid request reports kFailed.
         [[nodiscard]] AssetLoadResult GetResult() const;
 
         //! @brief Get the stable slot for the requested root asset, or null for an invalid request.
@@ -209,8 +232,17 @@ namespace FE::IO
         //! @brief Cancel this acquisition and release its recorded residency contribution.
         void Cancel();
 
-        //! @brief Suspend the calling fiber until discovery reaches a terminal result.
+        //! @brief Suspend the calling fiber until publication reaches a terminal result.
         void Wait() const;
+
+        //! @brief Suspend until the dependency metadata closure is known, without requiring Tick.
+        void WaitForDiscovery() const;
+
+        //! @brief Return the dependency-discovery result independently of publication.
+        [[nodiscard]] AssetLoadResult GetDiscoveryResult() const;
+
+        //! @brief Return a stable diagnostic after a failed request, or an empty view otherwise.
+        [[nodiscard]] festd::string_view GetError() const;
 
         //! @brief Release this request copy; the final copy releases the shared acquisition.
         void Reset();
@@ -353,6 +385,8 @@ namespace FE::IO
         }
 
     private:
+        friend struct Serialization::Serializer<Link<T, TKind>>;
+
         //! Serialized logical identity; never contains a physical path or artifact location.
         AssetID m_id = AssetID::kNull;
 
@@ -360,3 +394,47 @@ namespace FE::IO
         AssetHandle<T> m_handle;
     };
 } // namespace FE::IO
+
+
+namespace FE::Serialization
+{
+    //! Asset links serialize only their logical ID. Runtime binding is supplied by AssetManager during candidate loading.
+    //!
+    //! During ordinary deserialization no binding scope exists, so an unresolved ID is accepted. During asset loading, the active
+    //! scope verifies the link against trusted artifact metadata and binds it to a stable slot. A missing hard target then makes the
+    //! payload malformed, while soft and optional targets may remain unbound without triggering discovery or I/O.
+    template<class T, IO::DependencyKind TKind>
+    struct Serializer<IO::Link<T, TKind>>
+    {
+        static ResultCode Serialize(SerializationContext& context, const IO::Link<T, TKind>& value)
+        {
+            return SerializeValue(context, value.m_id);
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, IO::Link<T, TKind>& value)
+        {
+            const ResultCode result = DeserializeValue(context, value.m_id);
+            if (result != ResultCode::kSuccess)
+            {
+                return result;
+            }
+
+            IO::AssetSlot* slot = IO::Internal::ResolveAssetLink(value.m_id, Rtti::GetTypeID<T>(), TKind);
+            value.m_handle.Reset(slot);
+            const bool mayRemainUnbound = TKind != IO::DependencyKind::kHard;
+            const bool isBinding = IO::Internal::IsAssetBindingActive();
+            return slot || !value.m_id.IsValid() || mayRemainUnbound || !isBinding ? ResultCode::kSuccess
+                                                                                   : ResultCode::kMalformedData;
+        }
+
+        static uint64_t GetSchemaHash()
+        {
+            return Serialization::GetSchemaHash<IO::AssetID>();
+        }
+
+        static uint32_t GetVersion()
+        {
+            return 0;
+        }
+    };
+} // namespace FE::Serialization

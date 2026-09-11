@@ -15,13 +15,22 @@ namespace FE::IO
         bool AssetHandleImpl::IsReady() const
         {
             FE_AssertDebug(m_slot);
-            return m_slot->m_completed.load(std::memory_order_acquire);
+            AssetPublicationGate* gate = m_slot->m_publicationGate.load(std::memory_order_acquire);
+            if (!m_slot->m_completed.load(std::memory_order_acquire))
+            {
+                return false;
+            }
+            return !gate || gate->m_isOpen.load(std::memory_order_acquire);
         }
 
 
         const void* AssetHandleImpl::GetAssetInstance() const
         {
             FE_AssertDebug(m_slot);
+            if (!IsReady())
+            {
+                return nullptr;
+            }
             return m_slot->m_instance.load(std::memory_order_acquire);
         }
     } // namespace Internal
@@ -30,7 +39,9 @@ namespace FE::IO
     void WeakResidencyTicket::InternalAddRef()
     {
         if (m_slot)
+        {
             ++m_slot->m_weakRefCount;
+        }
     }
 
 
@@ -47,7 +58,9 @@ namespace FE::IO
     void ResidencyTicket::InternalAddRef()
     {
         if (m_slot)
+        {
             ++m_slot->m_strongRefCount;
+        }
     }
 
 

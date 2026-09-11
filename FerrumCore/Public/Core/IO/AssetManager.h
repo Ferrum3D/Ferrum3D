@@ -4,27 +4,41 @@
 
 namespace FE::IO
 {
+    enum class AssetFinalizeResult : uint8_t
+    {
+        kSucceeded,
+        kPending,
+        kFailed,
+    };
+
+
     //! @brief Type-specific publication/finalization hook for decoded asset candidates.
     //!
-    //! Stage 3 only performs metadata discovery, so these hooks are reserved for the publication pipeline implemented by the next
-    //! stage. Implementations must not treat metadata discovery alone as a ready asset.
+    //! Hooks execute from AssetManager::Tick on the main thread. Pending work is polled on later ticks, and failure prevents
+    //! publication of the candidate.
     struct Streamer
     {
         virtual ~Streamer() = default;
 
-        //! @brief Start or perform type-specific finalization; true means finalization completed synchronously.
-        virtual bool FinalizeAssetLoading(AssetSlot& assetSlot) = 0;
+        //! @brief Start or perform type-specific finalization for a deserialized candidate.
+        virtual AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, void* candidate) = 0;
 
         //! @brief Poll whether previously started asynchronous finalization has completed.
-        virtual bool IsFinalizeCompleted(AssetSlot& assetSlot) = 0;
+        virtual AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) = 0;
+
+        //! @brief True when finalization needs dependencies to be published before it can start.
+        virtual bool RequiresFinalizedDependencies() const
+        {
+            return false;
+        }
     };
 
 
     //! @brief No-op finalizer used by asset types that need no specialized publication work.
     struct DefaultStreamer final : public Streamer
     {
-        bool FinalizeAssetLoading(AssetSlot& assetSlot) override;
-        bool IsFinalizeCompleted(AssetSlot& assetSlot) override;
+        AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, void* candidate) override;
+        AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) override;
     };
 
 
@@ -32,7 +46,7 @@ namespace FE::IO
     //!
     //! LoadAsset is thread-safe and starts asynchronous wavefront metadata discovery. Per-asset operations are coalesced globally,
     //! while every returned AssetRequest owns an independent deduplicated residency contribution for its hard closure. Tick is
-    //! reserved for main-thread publication and currently performs no work.
+    //! advances type finalization and opens publication gates for usable groups.
     struct AssetManager final
     {
         //! @brief Initialize process-wide manager state before issuing requests.
@@ -43,11 +57,14 @@ namespace FE::IO
         //! The current milestone requires every AssetRequest to be released before shutdown.
         static void Shutdown();
 
-        //! @brief Acquire a root asset and asynchronously discover its transitive hard-dependency closure.
+        //! @brief Acquire a root asset and asynchronously load its transitive hard-dependency closure.
         [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId);
 
         //! @brief Find the stable slot reserved for an asset, or null if the asset has never participated in a request.
         [[nodiscard]] static AssetSlot* FindAssetSlot(AssetID assetId);
+
+        //! @brief Register a non-owning type-specific finalizer. Registration must remain valid until Shutdown.
+        static void RegisterStreamer(Rtti::TypeID typeId, Streamer* streamer);
 
         //! @brief Typed-link convenience overload; the link's runtime handle does not contribute residency.
         template<class T, DependencyKind TKind = DependencyKind::kHard>
@@ -56,9 +73,7 @@ namespace FE::IO
             return LoadAsset(link.GetAssetID());
         }
 
-        //! @brief Execute main-thread publication and retirement work.
-        //!
-        //! Stage 3 performs discovery entirely in background jobs, so this function is intentionally empty until stage 4.
+        //! @brief Execute main-thread finalization and publication work.
         static void Tick();
 
 #if FE_DEVELOPMENT

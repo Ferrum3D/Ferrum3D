@@ -6,6 +6,7 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <Cli/CommandLineTypes.h>
+#include <IO/AssetTestTypes.h>
 #include <Serialization/SerializationTypes.h>
 
 
@@ -431,6 +432,144 @@ namespace FE::Cli::Tests
 
     static Rtti::TypeRegistrar GTypeRegistrar_d5dd1441e7ec48e5970615434aa507d5(&Build::Reflect);
 } // namespace FE::Cli::Tests
+
+
+namespace FE::IO::Tests
+{
+    const Rtti::TypeID SyntheticAsset::TypeID = Rtti::TypeID{
+        0xd7, 0x34, 0xd8, 0x2a, 0x47, 0x90, 0x41, 0xe9, 0xb4, 0x28, 0x2d, 0x63, 0x9b, 0xe4, 0xcf, 0x17,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_d734d82a479041e9b4282d639be4cf17(SyntheticAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xd7, 0x34, 0xd8, 0x2a, 0x47, 0x90, 0x41, 0xe9,
+                0xb4, 0x28, 0x2d, 0x63, 0x9b, 0xe4, 0xcf, 0x17, // FE::IO::Tests::SyntheticAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_d734d82a479041e9b4282d639be4cf17()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& SyntheticAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_d734d82a479041e9b4282d639be4cf17();
+    }
+
+    void* FE_VECTORCALL SyntheticAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_d734d82a479041e9b4282d639be4cf17(this, typeID);
+    }
+
+    const void* FE_VECTORCALL SyntheticAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_d734d82a479041e9b4282d639be4cf17(const_cast<SyntheticAsset*>(this), typeID);
+    }
+    void SyntheticAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_d734d82a479041e9b4282d639be4cf17();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xd7, 0x34, 0xd8, 0x2a, 0x47, 0x90, 0x41, 0xe9,
+            0xb4, 0x28, 0x2d, 0x63, 0x9b, 0xe4, 0xcf, 0x17, // FE::IO::Tests::SyntheticAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_value
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_dependency
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_value = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_dependency = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_value",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &SyntheticAsset::m_value,
+                                                        kAttributes_m_value,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_dependency",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &SyntheticAsset::m_dependency,
+                                                        kAttributes_m_dependency,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<SyntheticAsset>(typeInstance,
+                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                             "FE::IO::Tests::SyntheticAsset",
+                                             kBaseClassTypeIDs,
+                                             kAttributes,
+                                             kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_d734d82a479041e9b4282d639be4cf17(&SyntheticAsset::Reflect);
+
+    FE::Serialization::ResultCode SyntheticAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_value", m_value);
+            object.Field("m_dependency", m_dependency);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode SyntheticAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_value", m_value);
+            object.Field("m_dependency", m_dependency);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t SyntheticAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xd7, 0x34, 0xd8, 0x2a, 0x47, 0x90, 0x41, 0xe9, 0xb4, 0x28, 0x2d, 0x63, 0x9b, 0xe4, 0xcf, 0x17,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_value", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_value)>());
+            hasher.Update("m_dependency", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_dependency)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t SyntheticAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::IO::Tests
 
 
 namespace FE::Cli::Tests
