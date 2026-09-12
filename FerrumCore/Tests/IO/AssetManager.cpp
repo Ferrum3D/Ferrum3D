@@ -58,6 +58,18 @@ namespace FE::IO::Tests
             }
         };
 
+        struct FailingStreamer final : Streamer
+        {
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, void*) override
+            {
+                return AssetFinalizeResult::kFailed;
+            }
+            AssetFinalizeResult PollFinalize(AssetSlot&, void*) override
+            {
+                return AssetFinalizeResult::kFailed;
+            }
+        };
+
         struct AssetManagerTest : testing::Test
         {
             void SetUp() override
@@ -412,5 +424,281 @@ namespace FE::IO::Tests
         request.WaitForDiscovery();
         ASSERT_EQ(request.GetDiscoveryResult(), AssetLoadResult::kFailed);
         EXPECT_EQ(request.GetAssetSlot()->m_strongRefCount.load(), 0);
+    }
+
+
+    TEST_F(AssetManagerTest, GenerationReadDelaysRetirementAndClosesNewAdmission)
+    {
+        AssetRequest request = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !request.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(request.GetResult(), AssetLoadResult::kSucceeded) << request.GetError().data();
+
+        AssetHandle<SyntheticAsset> handle(request.GetAssetSlot());
+        std::atomic<bool> readerEntered = false;
+        std::atomic<bool> readerResume = false;
+        std::atomic<uint32_t> observedValue = 0;
+        std::thread reader([handle, &readerEntered, &readerResume, &observedValue] {
+            AssetRead<SyntheticAsset> read = handle.Read();
+            if (read)
+                observedValue.store(read->m_value);
+            readerEntered.store(true, std::memory_order_release);
+            while (!readerResume.load(std::memory_order_acquire))
+                std::this_thread::yield();
+            if (read)
+                observedValue.store(read->m_value);
+        });
+        while (!readerEntered.load(std::memory_order_acquire))
+            std::this_thread::yield();
+        EXPECT_EQ(observedValue.load(), 7);
+        const uint32_t retiredBefore = AssetManager::GetRetiredGenerationCountForTests();
+
+        request.Reset();
+        AssetManager::Tick();
+        EXPECT_TRUE(AssetManager::IsRetiringForTests(kStage4Leaf));
+        EXPECT_FALSE(handle.IsReady());
+        EXPECT_FALSE(handle.Read());
+        EXPECT_EQ(observedValue.load(), 7);
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore);
+
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore);
+        readerResume.store(true, std::memory_order_release);
+        reader.join();
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore + 1);
+    }
+
+
+    TEST_F(AssetManagerTest, RenewedDemandAbortsRetirementBeforeDestruction)
+    {
+        AssetRequest first = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !first.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(first.GetResult(), AssetLoadResult::kSucceeded);
+
+        AssetHandle<SyntheticAsset> handle(first.GetAssetSlot());
+        AssetRead<SyntheticAsset> oldRead = handle.Read();
+        const uint32_t generation = handle.GetGeneration();
+        first.Reset();
+        AssetManager::Tick();
+        ASSERT_TRUE(AssetManager::IsRetiringForTests(kStage4Leaf));
+
+        AssetRequest renewed = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !renewed.IsCompleted(); ++iteration)
+            AssetManager::Tick();
+
+        EXPECT_EQ(renewed.GetResult(), AssetLoadResult::kSucceeded);
+        EXPECT_TRUE(handle.IsReady());
+        EXPECT_EQ(handle.GetGeneration(), generation);
+        EXPECT_EQ(handle.Get(), oldRead.Get());
+    }
+
+
+    TEST_F(AssetManagerTest, FinalReleaseRetiresTheCompleteUnsharedHardClosure)
+    {
+        AssetRequest request = AssetManager::LoadAsset(kStage4Root);
+        for (uint32_t iteration = 0; iteration < 10000 && !request.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(request.GetResult(), AssetLoadResult::kSucceeded);
+        const uint32_t retiredBefore = AssetManager::GetRetiredGenerationCountForTests();
+
+        request.Reset();
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore + 2);
+        EXPECT_FALSE(AssetManager::FindAssetSlot(kStage4Root)->m_completed.load());
+        EXPECT_FALSE(AssetManager::FindAssetSlot(kStage4Leaf)->m_completed.load());
+    }
+
+
+    TEST_F(AssetManagerTest, ReplacementPublishesBesideAReaderThenRetiresTheOldGeneration)
+    {
+        AssetRequest initial = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !initial.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(initial.GetResult(), AssetLoadResult::kSucceeded);
+
+        AssetHandle<SyntheticAsset> handle(initial.GetAssetSlot());
+        AssetRead<SyntheticAsset> oldRead = handle.Read();
+        ASSERT_TRUE(oldRead);
+        const SyntheticAsset* oldInstance = oldRead.Get();
+        const uint32_t oldGeneration = handle.GetGeneration();
+        const uint32_t retiredBefore = AssetManager::GetRetiredGenerationCountForTests();
+
+        AssetRequest replacement = AssetManager::ReloadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !replacement.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+
+        ASSERT_EQ(replacement.GetResult(), AssetLoadResult::kSucceeded) << replacement.GetError().data();
+        AssetRead<SyntheticAsset> newRead = handle.Read();
+        ASSERT_TRUE(newRead);
+        EXPECT_NE(newRead.Get(), oldInstance);
+        EXPECT_EQ(newRead->m_value, oldRead->m_value);
+        EXPECT_EQ(handle.GetGeneration(), oldGeneration + 1);
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore);
+
+        oldRead.Reset();
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore + 1);
+    }
+
+
+    TEST_F(AssetManagerTest, FailedReplacementPreservesTheUsableGeneration)
+    {
+        AssetRequest initial = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !initial.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(initial.GetResult(), AssetLoadResult::kSucceeded);
+
+        AssetHandle<SyntheticAsset> handle(initial.GetAssetSlot());
+        const SyntheticAsset* instance = handle.Get();
+        const uint32_t generation = handle.GetGeneration();
+        FailingStreamer failingStreamer;
+        AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &failingStreamer);
+
+        AssetRequest replacement = AssetManager::ReloadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !replacement.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+
+        EXPECT_EQ(replacement.GetResult(), AssetLoadResult::kFailed);
+        EXPECT_TRUE(handle.IsReady());
+        EXPECT_EQ(handle.Get(), instance);
+        EXPECT_EQ(handle.GetGeneration(), generation);
+    }
+
+
+    TEST_F(AssetManagerTest, SupersededReplacementCannotPublishAStaleCompletion)
+    {
+        AssetRequest initial = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !initial.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(initial.GetResult(), AssetLoadResult::kSucceeded);
+
+        Rc<WaitGroup> oldEntered = WaitGroup::Create();
+        Rc<WaitGroup> oldResume = WaitGroup::Create();
+        AssetManager::SetDiscoveryBarrierForTests(oldEntered.Get(), oldResume.Get());
+        AssetRequest oldReplacement = AssetManager::ReloadAsset(kStage4Leaf);
+        oldEntered->Wait();
+
+        Rc<WaitGroup> newEntered = WaitGroup::Create();
+        Rc<WaitGroup> newResume = WaitGroup::Create();
+        AssetManager::SetDiscoveryBarrierForTests(newEntered.Get(), newResume.Get());
+        AssetRequest newReplacement = AssetManager::ReloadAsset(kStage4Leaf);
+        newEntered->Wait();
+        AssetManager::SetDiscoveryBarrierForTests(nullptr, nullptr);
+        newResume->Signal();
+        for (uint32_t iteration = 0; iteration < 10000 && !newReplacement.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(newReplacement.GetResult(), AssetLoadResult::kSucceeded);
+        const uint32_t newGeneration = newReplacement.GetAssetSlot()->m_generation.load();
+
+        oldResume->Signal();
+        for (uint32_t iteration = 0; iteration < 10000 && !oldReplacement.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        EXPECT_EQ(oldReplacement.GetResult(), AssetLoadResult::kFailed);
+        EXPECT_EQ(newReplacement.GetAssetSlot()->m_generation.load(), newGeneration);
+    }
+
+
+    TEST_F(AssetManagerTest, CanceledReplacementReclaimsItsCandidateWithoutDisturbingCurrentGeneration)
+    {
+        AssetRequest initial = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && !initial.IsCompleted(); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(initial.GetResult(), AssetLoadResult::kSucceeded);
+        AssetHandle<SyntheticAsset> handle(initial.GetAssetSlot());
+        const SyntheticAsset* instance = handle.Get();
+        const uint32_t generation = handle.GetGeneration();
+
+        Rc<WaitGroup> entered = WaitGroup::Create();
+        Rc<WaitGroup> resume = WaitGroup::Create();
+        AssetManager::SetDiscoveryBarrierForTests(entered.Get(), resume.Get());
+        AssetRequest replacement = AssetManager::ReloadAsset(kStage4Leaf);
+        entered->Wait();
+        replacement.Cancel();
+        AssetManager::SetDiscoveryBarrierForTests(nullptr, nullptr);
+        resume->Signal();
+
+        EXPECT_EQ(replacement.GetResult(), AssetLoadResult::kCanceled);
+        for (uint32_t iteration = 0; iteration < 100; ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        EXPECT_EQ(handle.Get(), instance);
+        EXPECT_EQ(handle.GetGeneration(), generation);
+    }
+
+
+    TEST_F(AssetManagerTest, SharedDependencyRemainsPublishedUntilItsFinalDemandEnds)
+    {
+        AssetRequest root = AssetManager::LoadAsset(kStage4Root);
+        AssetRequest leaf = AssetManager::LoadAsset(kStage4Leaf);
+        for (uint32_t iteration = 0; iteration < 10000 && (!root.IsCompleted() || !leaf.IsCompleted()); ++iteration)
+        {
+            AssetManager::Tick();
+            std::this_thread::yield();
+        }
+        ASSERT_EQ(root.GetResult(), AssetLoadResult::kSucceeded);
+        ASSERT_EQ(leaf.GetResult(), AssetLoadResult::kSucceeded);
+        AssetHandle<SyntheticAsset> leafHandle(leaf.GetAssetSlot());
+
+        root.Reset();
+        AssetManager::Tick();
+        EXPECT_TRUE(leafHandle.IsReady());
+        EXPECT_EQ(leaf.GetAssetSlot()->m_strongRefCount.load(), 1);
+
+        leaf.Reset();
+        AssetManager::Tick();
+        EXPECT_FALSE(leafHandle.IsReady());
+    }
+
+
+    TEST(AssetManagerLifetime, ShutdownDrainsPendingWorkAndInvalidatesOutstandingHandlesAndRequests)
+    {
+        ArtifactStore::SetCatalogSource(Path(FE_CORE_TEST_SOURCE_DIR) / "Fixtures/Artifacts");
+        AssetManager::Init();
+        AssetRequest request = AssetManager::LoadAsset(kStage4Root);
+        AssetHandle<SyntheticAsset> handle(request.GetAssetSlot());
+
+        AssetManager::Shutdown();
+
+        EXPECT_FALSE(request.IsValid());
+        EXPECT_TRUE(request.IsCompleted());
+        EXPECT_FALSE(handle.IsReady());
+        request.Reset();
     }
 } // namespace FE::IO::Tests

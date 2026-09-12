@@ -52,13 +52,21 @@ namespace FE::IO
         //! @brief Initialize process-wide manager state before issuing requests.
         static void Init();
 
-        //! @brief Wait for dispatched discovery jobs and destroy manager-owned operation and slot storage.
+        //! @brief Drain dispatched work and completions, invalidate requests, and release manager-owned generation storage.
         //!
-        //! The current milestone requires every AssetRequest to be released before shutdown.
+        //! Stable slots remain allocated until non-owning handles that survived shutdown are released. Concrete AssetRead pins
+        //! must be released before shutdown.
         static void Shutdown();
 
         //! @brief Acquire a root asset and asynchronously load its transitive hard-dependency closure.
         [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId);
+
+#if FE_DEVELOPMENT
+        //! @brief Explicitly build and publish a fresh generation while preserving the usable current generation on failure.
+        //!
+        //! Automatic file watching and reload propagation remain outside this milestone.
+        [[nodiscard]] static AssetRequest ReloadAsset(AssetID assetId);
+#endif
 
         //! @brief Find the stable slot reserved for an asset, or null if the asset has never participated in a request.
         [[nodiscard]] static AssetSlot* FindAssetSlot(AssetID assetId);
@@ -84,10 +92,17 @@ namespace FE::IO
 
         //! @brief Return how many physical metadata reads were started for an asset in the current manager lifetime.
         [[nodiscard]] static uint32_t GetMetadataReadCountForTests(AssetID assetId);
+
+        //! @brief True after a zero-demand published generation has been detached and awaits outstanding read holds.
+        [[nodiscard]] static bool IsRetiringForTests(AssetID assetId);
+
+        //! @brief Number of concrete generations destroyed through the main-thread retirement path.
+        [[nodiscard]] static uint32_t GetRetiredGenerationCountForTests();
 #endif
 
     private:
         friend struct AssetRequest;
+        friend const void* Internal::AcquireAssetGeneration(AssetSlot* slot, void*& generationToken);
 
         //! Increment the public-copy count of an opaque acquisition record.
         static void AddRequestRef(Internal::AssetAcquisition* acquisition);

@@ -16,7 +16,92 @@ namespace FE::IO
 
         //! @brief Find the stable slot for a logical asset without adding residency.
         AssetSlot* FindAssetSlot(AssetID assetId);
+
+        //! @brief Try to pin the generation currently published in slot.
+        const void* AcquireAssetGeneration(AssetSlot* slot, void*& generationToken);
+
+        //! @brief Release a generation pin acquired by AcquireAssetGeneration.
+        void ReleaseAssetGeneration(void* generationToken);
     } // namespace Internal
+
+
+    //! @brief Short-lived pin on one concrete published generation.
+    //!
+    //! Retirement closes admission before detaching a generation from its slot. Existing reads remain valid until their final
+    //! pin is released; a read attempted after admission closes returns an empty object. Generation reads must be released before
+    //! AssetManager shutdown, while ordinary non-owning AssetHandle objects may outlive it.
+    template<class T>
+    struct AssetRead final
+    {
+        AssetRead() = default;
+        ~AssetRead()
+        {
+            Reset();
+        }
+
+        AssetRead(const AssetRead&) = delete;
+        AssetRead& operator=(const AssetRead&) = delete;
+
+        AssetRead(AssetRead&& other) noexcept
+            : m_instance(other.m_instance)
+            , m_generationToken(other.m_generationToken)
+        {
+            other.m_instance = nullptr;
+            other.m_generationToken = nullptr;
+        }
+
+        AssetRead& operator=(AssetRead&& other) noexcept
+        {
+            if (this != &other)
+            {
+                Reset();
+                m_instance = other.m_instance;
+                m_generationToken = other.m_generationToken;
+                other.m_instance = nullptr;
+                other.m_generationToken = nullptr;
+            }
+            return *this;
+        }
+
+        [[nodiscard]] explicit operator bool() const
+        {
+            return m_instance != nullptr;
+        }
+
+        [[nodiscard]] const T* Get() const
+        {
+            return m_instance;
+        }
+
+        [[nodiscard]] const T* operator->() const
+        {
+            FE_AssertDebug(m_instance);
+            return m_instance;
+        }
+
+        void Reset()
+        {
+            if (m_generationToken)
+                Internal::ReleaseAssetGeneration(m_generationToken);
+            m_instance = nullptr;
+            m_generationToken = nullptr;
+        }
+
+    private:
+        template<class U>
+        friend struct AssetHandle;
+        template<class U>
+        friend struct AssetLease;
+
+        explicit AssetRead(AssetSlot* slot)
+        {
+            const void* instance = Internal::AcquireAssetGeneration(slot, m_generationToken);
+            m_instance = static_cast<const T*>(instance);
+        }
+
+        const T* m_instance = nullptr;
+        void* m_generationToken = nullptr;
+    };
 
 
     //! @brief Terminal state of an AssetRequest.
@@ -193,6 +278,12 @@ namespace FE::IO
 
         //! Reserved controller for generation payload work; metadata-discovery status belongs to AssetRequest instead.
         Rc<Async::IController> m_asyncController;
+
+        //! Shutdown detaches slots from the manager but leaves storage alive while public handles still reference it.
+        std::atomic<bool> m_managerAlive = true;
+
+        //! One manager-owner reference plus one reference for each public weak or single-slot residency handle.
+        std::atomic<uint32_t> m_lifetimeRefCount = 1;
     };
 
 
@@ -325,6 +416,12 @@ namespace FE::IO
         {
             return static_cast<const T*>(GetAssetInstance());
         }
+
+        //! @brief Pin the concrete generation currently visible through this lease.
+        [[nodiscard]] AssetRead<T> Read() const
+        {
+            return AssetRead<T>(GetAssetSlot());
+        }
     };
 
 
@@ -347,6 +444,12 @@ namespace FE::IO
         [[nodiscard]] const T* Get() const
         {
             return static_cast<const T*>(GetAssetInstance());
+        }
+
+        //! @brief Pin the concrete generation currently visible through this handle.
+        [[nodiscard]] AssetRead<T> Read() const
+        {
+            return AssetRead<T>(GetAssetSlot());
         }
     };
 

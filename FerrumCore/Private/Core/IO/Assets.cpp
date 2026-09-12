@@ -42,6 +42,7 @@ namespace FE::IO
         if (m_slot)
         {
             ++m_slot->m_weakRefCount;
+            ++m_slot->m_lifetimeRefCount;
         }
     }
 
@@ -50,8 +51,13 @@ namespace FE::IO
     {
         if (m_slot)
         {
-            --m_slot->m_weakRefCount;
+            AssetSlot* slot = m_slot;
+            --slot->m_weakRefCount;
             m_slot = nullptr;
+            const uint32_t previous = slot->m_lifetimeRefCount.fetch_sub(1, std::memory_order_acq_rel);
+            FE_Assert(previous > 0, "Asset slot lifetime count underflow");
+            if (previous == 1)
+                Memory::DefaultDelete(slot);
         }
     }
 
@@ -61,6 +67,7 @@ namespace FE::IO
         if (m_slot)
         {
             ++m_slot->m_strongRefCount;
+            ++m_slot->m_lifetimeRefCount;
         }
     }
 
@@ -69,8 +76,13 @@ namespace FE::IO
     {
         if (m_slot)
         {
-            --m_slot->m_strongRefCount;
+            AssetSlot* slot = m_slot;
+            --slot->m_strongRefCount;
             m_slot = nullptr;
+            const uint32_t previous = slot->m_lifetimeRefCount.fetch_sub(1, std::memory_order_acq_rel);
+            FE_Assert(previous > 0, "Asset slot lifetime count underflow");
+            if (previous == 1)
+                Memory::DefaultDelete(slot);
         }
     }
 } // namespace FE::IO

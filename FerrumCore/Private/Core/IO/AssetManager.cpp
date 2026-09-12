@@ -29,6 +29,8 @@ namespace FE::IO
             Rc<WaitGroup> m_discoveryEvent = WaitGroup::Create();
             Rc<WaitGroup> m_completionEvent = WaitGroup::Create();
             festd::inline_string m_error;
+            void* m_targetOperation = nullptr;
+            std::atomic<bool> m_managerAlive = true;
         };
     } // namespace Internal
 
@@ -46,6 +48,10 @@ namespace FE::IO
             kFinalizing,
             // The object is visible through its slot and may be used by readers.
             kPublished,
+            // Admission is closed and the detached object is waiting for concrete-generation readers to drain.
+            kRetiring,
+            // Retirement completed. A later request creates a fresh operation for this logical asset.
+            kDormant,
             // A terminal error occurred before publication. No candidate from this operation is exposed.
             kFailed
         };
@@ -61,7 +67,14 @@ namespace FE::IO
             festd::vector<Internal::AssetAcquisition*> m_subscribers;
             const Rtti::Type* m_type = nullptr;
             void* m_candidate = nullptr;
+            void* m_retiredObject = nullptr;
             AssetFinalizeResult m_finalize = AssetFinalizeResult::kPending;
+            std::atomic<uint32_t> m_readHolds = 0;
+            bool m_acceptsReads = false;
+            bool m_shouldPublish = true;
+            bool m_isReplacement = false;
+            uint64_t m_replacementSerial = 0;
+            festd::vector<Operation*> m_dependencyHolds;
             uint32_t m_readCount = 1;
         };
 
@@ -101,10 +114,14 @@ namespace FE::IO
         festd::vector<AssetPublicationGate*> m_gates;
         festd::vector<Rc<WaitGroup>> m_jobs;
         festd::vector<Internal::AssetAcquisition*> m_waiters;
+        festd::unordered_dense_set<Internal::AssetAcquisition*> m_acquisitions;
         ConcurrentOnceConsumedQueue m_payloadCompletions;
         DefaultStreamer m_defaultStreamer;
         bool m_shuttingDown = false;
         uint32_t m_nextGroup = 0;
+        uint32_t m_retiredGenerationCount = 0;
+        uint64_t m_nextReplacementSerial = 0;
+        festd::unordered_dense_map<AssetID, uint64_t> m_latestReplacementSerial;
 #if FE_DEVELOPMENT
         Rc<WaitGroup> m_entered;
         Rc<WaitGroup> m_resume;
@@ -121,12 +138,16 @@ namespace FE::IO
         void TrackJob(Rc<WaitGroup>&& job);
         void PruneCompletedJobs();
         void Release(Internal::AssetAcquisition& request);
-        void Finish(Internal::AssetAcquisition& request, AssetLoadResult result, festd::string_view error = {});
+        void Finish(Internal::AssetAcquisition& request, AssetLoadResult result, festd::string_view error = {},
+                    AssetID failedAssetId = AssetID::kNull);
         void DiscoveryDone(Internal::AssetAcquisition& request);
         void DetectGroups(Internal::AssetAcquisition& request);
         void DeleteIfUnused(Internal::AssetAcquisition* request);
         Streamer& GetStreamer(Operation& operation);
         void Tick();
+#if FE_DEVELOPMENT
+        AssetRequest Reload(AssetID id);
+#endif
     };
 
     AssetManager::Impl* AssetManager::GImpl = nullptr;
@@ -136,8 +157,11 @@ namespace FE::IO
     {
         for (Operation* operation : m_ownedOperations)
         {
-            void* object =
-                operation->m_state == State::kPublished ? operation->m_slot->m_instance.load() : operation->m_candidate;
+            void* object = operation->m_candidate;
+            if (operation->m_state == State::kPublished)
+                object = operation->m_slot->m_instance.load();
+            else if (operation->m_state == State::kRetiring)
+                object = operation->m_retiredObject;
             DestroyObject(*operation, object);
             Memory::DefaultDelete(operation);
         }
@@ -145,7 +169,15 @@ namespace FE::IO
         for (AssetPublicationGate* gate : m_gates)
             Memory::DefaultDelete(gate);
         for (AssetSlot* slot : m_ownedSlots)
-            Memory::DefaultDelete(slot);
+        {
+            slot->m_instance.store(nullptr);
+            slot->m_completed.store(false);
+            slot->m_managerAlive.store(false, std::memory_order_release);
+            const uint32_t previous = slot->m_lifetimeRefCount.fetch_sub(1, std::memory_order_acq_rel);
+            FE_Assert(previous > 0, "Asset slot lifetime count underflow");
+            if (previous == 1)
+                Memory::DefaultDelete(slot);
+        }
     }
 
 
@@ -168,12 +200,25 @@ namespace FE::IO
     {
         auto found = m_operations.find(id);
         if (found != m_operations.end())
-            return *found->second;
+        {
+            Operation* operation = found->second;
+            if (operation->m_state == State::kRetiring && operation->m_retiredObject)
+            {
+                operation->m_acceptsReads = true;
+                operation->m_slot->m_instance.store(operation->m_retiredObject, std::memory_order_relaxed);
+                operation->m_slot->m_completed.store(true, std::memory_order_release);
+                operation->m_retiredObject = nullptr;
+                operation->m_state = State::kPublished;
+            }
+
+            if (operation->m_state != State::kDormant)
+                return *operation;
+        }
 
         Operation* operation = Memory::DefaultNew<Operation>();
         operation->m_id = id;
         operation->m_slot = &Slot(id);
-        m_operations.insert({ id, operation });
+        m_operations.insert_or_assign(id, operation);
         m_ownedOperations.push_back(operation);
         starts.push_back(operation);
         return *operation;
@@ -190,7 +235,7 @@ namespace FE::IO
         if (member != request.m_members.end())
         {
             if (type.IsValid() && member->second.IsValid() && member->second != type)
-                Finish(request, AssetLoadResult::kFailed, "incompatible dependency types");
+                Finish(request, AssetLoadResult::kFailed, "incompatible dependency types", id);
             else if (type.IsValid())
                 member->second = type;
 
@@ -205,7 +250,7 @@ namespace FE::IO
         operation.m_slot->m_strongRefCount.fetch_add(1);
         if (operation.m_state == State::kFailed)
         {
-            Finish(request, AssetLoadResult::kFailed, operation.m_error);
+            Finish(request, AssetLoadResult::kFailed, operation.m_error, id);
             return;
         }
 
@@ -226,7 +271,7 @@ namespace FE::IO
         Rtti::TypeID expected = request.m_members.find(operation.m_id)->second;
         if (expected.IsValid() && expected != operation.m_record.m_assetTypeId)
         {
-            Finish(request, AssetLoadResult::kFailed, "dependency type does not match metadata");
+            Finish(request, AssetLoadResult::kFailed, "dependency type does not match metadata", operation.m_id);
             return;
         }
 
@@ -250,8 +295,13 @@ namespace FE::IO
             {
                 operation.m_record = std::move(result.value());
                 operation.m_type = Rtti::TypeRegistry::FindType(operation.m_record.m_assetTypeId);
-                operation.m_slot->m_typeId = operation.m_record.m_assetTypeId;
-                operation.m_slot->m_currentArtifactId = operation.m_record.m_artifactId;
+                auto current = m_operations.find(operation.m_id);
+                const bool ownsSlotMetadata = current != m_operations.end() && current->second == &operation;
+                if (ownsSlotMetadata)
+                {
+                    operation.m_slot->m_typeId = operation.m_record.m_assetTypeId;
+                    operation.m_slot->m_currentArtifactId = operation.m_record.m_artifactId;
+                }
                 operation.m_state = State::kPayload;
                 payload = true;
 
@@ -265,7 +315,10 @@ namespace FE::IO
             }
             else
             {
-                operation.m_error = result.error().m_message;
+                operation.m_error = Fmt::FixedFormat("asset {} metadata stage failed at '{}': {}",
+                                                     operation.m_id,
+                                                     result.error().m_source,
+                                                     result.error().m_message);
                 operation.m_state = State::kFailed;
             }
 
@@ -277,7 +330,7 @@ namespace FE::IO
                 if (request->m_discovery.load() == AssetLoadResult::kPending)
                 {
                     if (operation.m_state == State::kFailed)
-                        Finish(*request, AssetLoadResult::kFailed, operation.m_error);
+                        Finish(*request, AssetLoadResult::kFailed, operation.m_error, operation.m_id);
                     else
                         Expand(*request, operation, starts);
 
@@ -376,7 +429,10 @@ namespace FE::IO
                 done->Wait();
 
                 if (controller->GetStatus() != Async::Status::kSucceeded)
-                    operation.m_error = "primary payload read failed";
+                    operation.m_error = Fmt::FixedFormat("asset {} artifact {} payload read failed at '{}'",
+                                                         operation.m_id,
+                                                         operation.m_record.m_artifactId,
+                                                         payload.m_resolvedDataSource.m_filePath);
 
                 size_t offset = 0;
                 for (const ArtifactChunkRecord& chunk : payload.m_chunks)
@@ -481,16 +537,35 @@ namespace FE::IO
     }
 
 
-    void AssetManager::Impl::Finish(Internal::AssetAcquisition& request, AssetLoadResult result, festd::string_view error)
+    void AssetManager::Impl::Finish(Internal::AssetAcquisition& request, AssetLoadResult result, festd::string_view error,
+                                    AssetID failedAssetId)
     {
         if (request.m_result.load() != AssetLoadResult::kPending)
             return;
 
         if (!error.empty())
-            request.m_error.assign(error.data(), error.size());
+        {
+            if (request.m_root && failedAssetId.IsValid())
+            {
+                request.m_error =
+                    Fmt::FixedFormat("root acquisition {} -> dependency {}: ", request.m_root->m_assetId, failedAssetId);
+                request.m_error.append(error.data(), error.size());
+            }
+            else if (request.m_root)
+            {
+                request.m_error = Fmt::FixedFormat("root acquisition {}: ", request.m_root->m_assetId);
+                request.m_error.append(error.data(), error.size());
+            }
+            else
+                request.m_error.assign(error.data(), error.size());
+        }
 
         if (result != AssetLoadResult::kSucceeded)
+        {
             Release(request);
+            if (request.m_targetOperation)
+                static_cast<Operation*>(request.m_targetOperation)->m_shouldPublish = false;
+        }
 
         request.m_result.store(result, std::memory_order_release);
         if (request.m_discovery.load() == AssetLoadResult::kPending)
@@ -532,7 +607,10 @@ namespace FE::IO
         for (const auto& member : request.m_members)
         {
             indices.insert({ member.first, nodes.size() });
-            nodes.push_back({ m_operations.find(member.first)->second });
+            Operation* operation = m_operations.find(member.first)->second;
+            if (member.first == request.m_root->m_assetId && request.m_targetOperation)
+                operation = static_cast<Operation*>(request.m_targetOperation);
+            nodes.push_back({ operation });
         }
 
         festd::vector<uint32_t> stack;
@@ -629,7 +707,17 @@ namespace FE::IO
         {
             Operation* operation = static_cast<Operation*>(completion);
             completion = completion->m_next;
+            if (!operation->m_shouldPublish && operation->m_error.empty())
+                operation->m_error = "replacement no longer has an interested acquisition";
             operation->m_state = operation->m_error.empty() ? State::kCandidate : State::kFailed;
+            if (operation->m_state == State::kFailed && operation->m_candidate)
+            {
+                void* candidate = operation->m_candidate;
+                operation->m_candidate = nullptr;
+                lock.unlock();
+                DestroyObject(*operation, candidate);
+                lock.lock();
+            }
         }
 
         // Operations are manager-owned until shutdown. Process only the prefix visible at tick start; background discovery may
@@ -667,6 +755,18 @@ namespace FE::IO
             Operation* seed = m_ownedOperations[operationIndex];
             if (seed->m_state != State::kCandidate && seed->m_state != State::kFinalizing)
                 continue;
+
+            if (seed->m_isReplacement)
+            {
+                auto latest = m_latestReplacementSerial.find(seed->m_id);
+                const bool wasSuperseded =
+                    latest == m_latestReplacementSerial.end() || latest->second != seed->m_replacementSerial;
+                if (wasSuperseded)
+                {
+                    failGroup(festd::span<Operation* const>(&seed, 1), "replacement was superseded by a newer generation");
+                    continue;
+                }
+            }
 
             const uint32_t group = seed->m_slot->m_referenceGroup.load();
             if (group != kInvalidIndex && !processedGroups.insert(group).second)
@@ -827,11 +927,38 @@ namespace FE::IO
             {
                 if (member->m_state != State::kPublished)
                 {
+                    auto currentIt = m_operations.find(member->m_id);
+                    Operation* current = currentIt == m_operations.end() ? nullptr : currentIt->second;
+                    if (current && current != member && current->m_state == State::kPublished)
+                    {
+                        current->m_acceptsReads = false;
+                        current->m_retiredObject = member->m_slot->m_instance.load(std::memory_order_acquire);
+                        current->m_state = State::kRetiring;
+                    }
+
+                    m_operations.insert_or_assign(member->m_id, member);
+                    member->m_slot->m_typeId = member->m_record.m_assetTypeId;
+                    member->m_slot->m_currentArtifactId = member->m_record.m_artifactId;
+
+                    for (const ArtifactDependencyRecord& dependency : member->m_record.m_dependencies)
+                    {
+                        if (dependency.m_kind != DependencyKind::kHard)
+                            continue;
+                        Operation* target = m_operations.find(dependency.m_assetId)->second;
+                        const bool sameGroup = group != kInvalidIndex && target->m_slot->m_referenceGroup.load() == group;
+                        if (!sameGroup)
+                        {
+                            target->m_readHolds.fetch_add(1, std::memory_order_relaxed);
+                            member->m_dependencyHolds.push_back(target);
+                        }
+                    }
+
                     member->m_slot->m_publicationGate.store(gate, std::memory_order_relaxed);
                     member->m_slot->m_instance.store(member->m_candidate, std::memory_order_relaxed);
                     member->m_candidate = nullptr;
                     member->m_slot->m_generation.fetch_add(1, std::memory_order_relaxed);
                     member->m_slot->m_completed.store(true, std::memory_order_release);
+                    member->m_acceptsReads = true;
                     member->m_state = State::kPublished;
                 }
             }
@@ -846,13 +973,19 @@ namespace FE::IO
 
             bool failed = false, published = true;
             festd::string_view error;
+            AssetID failedAssetId = AssetID::kNull;
             for (const auto& member : request->m_members)
             {
                 Operation* operation = m_operations.find(member.first)->second;
+                if (member.first == request->m_root->m_assetId && request->m_targetOperation)
+                    operation = static_cast<Operation*>(request->m_targetOperation);
                 failed |= operation->m_state == State::kFailed;
                 published &= operation->m_state == State::kPublished;
                 if (operation->m_state == State::kFailed)
+                {
                     error = operation->m_error;
+                    failedAssetId = member.first;
+                }
             }
 
             if (!failed && !published)
@@ -861,10 +994,93 @@ namespace FE::IO
                 continue;
             }
 
-            Finish(*request, failed ? AssetLoadResult::kFailed : AssetLoadResult::kSucceeded, error);
+            Finish(*request, failed ? AssetLoadResult::kFailed : AssetLoadResult::kSucceeded, error, failedAssetId);
             --request->m_workRefs;
             m_waiters.erase(m_waiters.begin() + index);
             DeleteIfUnused(request);
+        }
+
+        // Zero residency demand makes a generation eligible for eviction. Close admission and detach an entire cyclic group as
+        // one action; generation readers that entered before this point keep the detached objects alive.
+        processedGroups.clear();
+        for (uint32_t operationIndex = 0; operationIndex < operationCount; ++operationIndex)
+        {
+            Operation* seed = m_ownedOperations[operationIndex];
+            if (seed->m_state != State::kPublished || seed->m_slot->m_strongRefCount.load() != 0)
+                continue;
+
+            const uint32_t group = seed->m_slot->m_referenceGroup.load();
+            if (group != kInvalidIndex && !processedGroups.insert(group).second)
+                continue;
+
+            festd::inline_vector<Operation*, 8> members;
+            for (uint32_t memberIndex = 0; memberIndex < operationCount; ++memberIndex)
+            {
+                Operation* member = m_ownedOperations[memberIndex];
+                const bool isMember = group == kInvalidIndex ? member == seed : member->m_slot->m_referenceGroup.load() == group;
+                if (isMember)
+                    members.push_back(member);
+            }
+
+            bool mayRetire = true;
+            for (Operation* member : members)
+                mayRetire &= member->m_state == State::kPublished && member->m_slot->m_strongRefCount.load() == 0;
+            if (!mayRetire)
+                continue;
+
+            for (Operation* member : members)
+            {
+                member->m_acceptsReads = false;
+                member->m_slot->m_completed.store(false, std::memory_order_release);
+                member->m_retiredObject = member->m_slot->m_instance.exchange(nullptr, std::memory_order_acq_rel);
+                member->m_state = State::kRetiring;
+            }
+        }
+
+        // Concrete destruction is a main-thread operation. Dependents and cyclic groups are retained until every admitted reader
+        // in the retirement unit has left, so destructors cannot observe already-reclaimed required objects.
+        processedGroups.clear();
+        for (uint32_t operationIndex = 0; operationIndex < operationCount; ++operationIndex)
+        {
+            Operation* seed = m_ownedOperations[operationIndex];
+            if (seed->m_state != State::kRetiring)
+                continue;
+
+            const uint32_t group = seed->m_slot->m_referenceGroup.load();
+            if (group != kInvalidIndex && !processedGroups.insert(group).second)
+                continue;
+
+            festd::inline_vector<Operation*, 8> members;
+            bool readersDrained = true;
+            for (uint32_t memberIndex = 0; memberIndex < operationCount; ++memberIndex)
+            {
+                Operation* member = m_ownedOperations[memberIndex];
+                const bool isMember = group == kInvalidIndex ? member == seed : member->m_slot->m_referenceGroup.load() == group;
+                if (!isMember)
+                    continue;
+                members.push_back(member);
+                readersDrained &= member->m_state == State::kRetiring && member->m_readHolds.load(std::memory_order_acquire) == 0;
+            }
+
+            if (!readersDrained)
+                continue;
+
+            for (Operation* member : members)
+            {
+                void* object = member->m_retiredObject;
+                member->m_retiredObject = nullptr;
+                member->m_state = State::kDormant;
+                ++m_retiredGenerationCount;
+                lock.unlock();
+                DestroyObject(*member, object);
+                for (Operation* dependency : member->m_dependencyHolds)
+                {
+                    const uint32_t previous = dependency->m_readHolds.fetch_sub(1, std::memory_order_release);
+                    FE_Assert(previous > 0, "Asset generation dependency hold underflow");
+                }
+                member->m_dependencyHolds.clear();
+                lock.lock();
+            }
         }
     }
 
@@ -872,12 +1088,83 @@ namespace FE::IO
     void AssetManager::Impl::DeleteIfUnused(Internal::AssetAcquisition* request)
     {
         if (request->m_externalRefs.load() == 0 && request->m_workRefs == 0)
+        {
+            m_acquisitions.erase(request);
             Memory::DefaultDelete(request);
+        }
     }
+
+
+#if FE_DEVELOPMENT
+    AssetRequest AssetManager::Impl::Reload(AssetID id)
+    {
+        auto* request = Memory::DefaultNew<Internal::AssetAcquisition>();
+        Operation* operation = Memory::DefaultNew<Operation>();
+        {
+            std::lock_guard lock{ m_mutex };
+            FE_Assert(!m_shuttingDown);
+            AssetSlot& slot = Slot(id);
+            operation->m_id = id;
+            operation->m_slot = &slot;
+            operation->m_isReplacement = true;
+            operation->m_replacementSerial = ++m_nextReplacementSerial;
+            m_latestReplacementSerial.insert_or_assign(id, operation->m_replacementSerial);
+            m_ownedOperations.push_back(operation);
+
+            request->m_root = &slot;
+            request->m_targetOperation = operation;
+            request->m_members.insert({ id, slot.m_typeId });
+            request->m_residentSlots.push_back(&slot);
+            slot.m_strongRefCount.fetch_add(1);
+            ++request->m_pendingMetadata;
+            ++request->m_workRefs;
+            operation->m_subscribers.push_back(request);
+            m_acquisitions.insert(request);
+        }
+        StartMetadata(*operation);
+        return AssetRequest(request);
+    }
+#endif
 
 
     namespace Internal
     {
+        const void* AcquireAssetGeneration(AssetSlot* slot, void*& generationToken)
+        {
+            generationToken = nullptr;
+            if (!slot || !AssetManager::GImpl)
+                return nullptr;
+
+            std::lock_guard lock{ AssetManager::GImpl->m_mutex };
+            auto found = AssetManager::GImpl->m_operations.find(slot->m_assetId);
+            if (found == AssetManager::GImpl->m_operations.end())
+                return nullptr;
+
+            Operation* operation = found->second;
+            if (operation->m_slot != slot || operation->m_state != State::kPublished || !operation->m_acceptsReads)
+                return nullptr;
+
+            void* instance = slot->m_instance.load(std::memory_order_acquire);
+            if (!instance)
+                return nullptr;
+
+            operation->m_readHolds.fetch_add(1, std::memory_order_relaxed);
+            generationToken = operation;
+            return instance;
+        }
+
+
+        void ReleaseAssetGeneration(void* generationToken)
+        {
+            if (!generationToken)
+                return;
+
+            Operation* operation = static_cast<Operation*>(generationToken);
+            const uint32_t previous = operation->m_readHolds.fetch_sub(1, std::memory_order_release);
+            FE_Assert(previous > 0, "Asset generation read count underflow");
+        }
+
+
         AssetSlot* FindAssetSlot(AssetID id)
         {
             return AssetManager::FindAssetSlot(id);
@@ -926,6 +1213,25 @@ namespace FE::IO
             WaitGroup::WaitAll(jobs);
         }
         GImpl->Tick();
+        {
+            std::lock_guard lock{ GImpl->m_mutex };
+            festd::vector<Internal::AssetAcquisition*> abandoned;
+            for (Internal::AssetAcquisition* request : GImpl->m_acquisitions)
+            {
+                if (request->m_result.load() == AssetLoadResult::kPending)
+                    GImpl->Finish(*request, AssetLoadResult::kCanceled, "asset manager shut down");
+                GImpl->Release(*request);
+                request->m_root = nullptr;
+                request->m_managerAlive.store(false, std::memory_order_release);
+                if (request->m_externalRefs.load() == 0 && request->m_workRefs == 0)
+                    abandoned.push_back(request);
+            }
+            for (Internal::AssetAcquisition* request : abandoned)
+            {
+                GImpl->m_acquisitions.erase(request);
+                Memory::DefaultDelete(request);
+            }
+        }
         Memory::DefaultDelete(GImpl);
         GImpl = nullptr;
     }
@@ -950,6 +1256,7 @@ namespace FE::IO
             FE_Assert(!GImpl->m_shuttingDown);
             GImpl->Join(*request, id, expectedTypeId, starts);
             request->m_root = &GImpl->Slot(id);
+            GImpl->m_acquisitions.insert(request);
             if (request->m_pendingMetadata == 0 && request->m_discovery.load() == AssetLoadResult::kPending)
                 GImpl->DiscoveryDone(*request);
         }
@@ -959,6 +1266,15 @@ namespace FE::IO
 
         return AssetRequest(request);
     }
+
+
+#if FE_DEVELOPMENT
+    AssetRequest AssetManager::ReloadAsset(AssetID id)
+    {
+        FE_Assert(GImpl && id.IsValid());
+        return GImpl->Reload(id);
+    }
+#endif
 
 
     AssetSlot* AssetManager::FindAssetSlot(AssetID id)
@@ -1002,6 +1318,21 @@ namespace FE::IO
         auto found = GImpl->m_operations.find(id);
         return found == GImpl->m_operations.end() ? 0 : found->second->m_readCount;
     }
+
+
+    bool AssetManager::IsRetiringForTests(AssetID id)
+    {
+        std::lock_guard lock{ GImpl->m_mutex };
+        auto found = GImpl->m_operations.find(id);
+        return found != GImpl->m_operations.end() && found->second->m_state == State::kRetiring;
+    }
+
+
+    uint32_t AssetManager::GetRetiredGenerationCountForTests()
+    {
+        std::lock_guard lock{ GImpl->m_mutex };
+        return GImpl->m_retiredGenerationCount;
+    }
 #endif
 
 
@@ -1017,6 +1348,12 @@ namespace FE::IO
         FE_Assert(previous > 0);
         if (previous != 1)
             return;
+
+        if (!request->m_managerAlive.load(std::memory_order_acquire))
+        {
+            Memory::DefaultDelete(request);
+            return;
+        }
 
         std::lock_guard lock{ GImpl->m_mutex };
         if (request->m_result.load() == AssetLoadResult::kPending)
@@ -1092,7 +1429,7 @@ namespace FE::IO
 
     bool AssetRequest::IsValid() const
     {
-        return m_acquisition != nullptr;
+        return m_acquisition && m_acquisition->m_root;
     }
 
 
