@@ -87,3 +87,5 @@ UseTab: Never
 
 MacroBlockBegin: "^FE_HOST_BEGIN_NAMESPACE$"
 MacroBlockEnd: "^FE_HOST_END_NAMESPACE$"
+
+StatementMacros: ["FE_META"]

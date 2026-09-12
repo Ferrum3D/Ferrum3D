@@ -41,9 +41,68 @@ namespace FE::Rtti
 
     struct Attribute final
     {
-        festd::ascii_view m_key;
-        festd::ascii_view m_value;
+        uint64_t m_typeNameHash = 0;
+        const void* m_value = nullptr;
     };
+
+
+    namespace Internal
+    {
+        template<class T>
+        struct MetaAttributeCount
+        {
+            static_assert(std::derived_from<T, MetaAttributeBase>);
+            static constexpr uint32_t kValue = 1;
+        };
+
+        template<class TLeft, class TRight>
+        struct MetaAttributeCount<MetaAttributeList<TLeft, TRight>>
+        {
+            static constexpr uint32_t kValue = MetaAttributeCount<TLeft>::kValue + MetaAttributeCount<TRight>::kValue;
+        };
+
+
+        template<uint32_t TSize, class T>
+        constexpr void DescribeMetaAttribute(festd::array<Attribute, TSize>& result, uint32_t& index, const T& value)
+        {
+            if constexpr (kIsMetaAttributeList<T>)
+            {
+                DescribeMetaAttribute(result, index, value.m_left);
+                DescribeMetaAttribute(result, index, value.m_right);
+            }
+            else
+            {
+                static_assert(std::derived_from<T, MetaAttributeBase>);
+                result[index++] = Attribute{ .m_typeNameHash = TypeNameHash<T>, .m_value = &value };
+            }
+        }
+    } // namespace Internal
+
+
+    template<class T>
+    [[nodiscard]] constexpr auto DescribeAttributes(const T& values)
+    {
+        constexpr uint32_t kAttributeCount = Internal::MetaAttributeCount<T>::kValue;
+        festd::array<Attribute, kAttributeCount> result{};
+        uint32_t index = 0;
+        Internal::DescribeMetaAttribute(result, index, values);
+        return result;
+    }
+
+
+    template<class T>
+    [[nodiscard]] const T* TryGetAttribute(const festd::span<const Attribute> attributes)
+    {
+        static_assert(std::derived_from<T, MetaAttributeBase>);
+
+        for (const Attribute& attribute : attributes)
+        {
+            if (attribute.m_typeNameHash == TypeNameHash<T>)
+                return static_cast<const T*>(attribute.m_value);
+        }
+
+        return nullptr;
+    }
 
 
     struct FieldInfo final
@@ -55,6 +114,12 @@ namespace FE::Rtti
         uint32_t m_size = 0;
         uint32_t m_arraySize = 0;
         FieldFlags m_flags = FieldFlags::kNone;
+
+        template<class T>
+        [[nodiscard]] const T* TryGetAttribute() const
+        {
+            return Rtti::TryGetAttribute<T>(m_attributes);
+        }
 
         template<class TValue>
         const TValue& Get(const void* instance, const uint32_t arrayIndex = 0) const
@@ -103,6 +168,12 @@ namespace FE::Rtti
         uint32_t m_serializationVersion = 0;
         uint64_t m_serializationSchemaHash = 0;
         TypeFlags m_flags = TypeFlags::kNone;
+
+        template<class T>
+        [[nodiscard]] const T* TryGetAttribute() const
+        {
+            return Rtti::TryGetAttribute<T>(m_attributes);
+        }
     };
 
 

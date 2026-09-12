@@ -208,10 +208,7 @@ namespace FE::Serialization::Tests
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
 
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_transient = {
-            Rtti::Attribute{ .m_key = "SkipSerializing", .m_value = "1" },
-
-        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_transient = {};
 
         static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_id",
@@ -392,22 +389,16 @@ namespace FE::Cli::Tests
             0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
             0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
         };
-        static constexpr festd::array<Rtti::Attribute, 2> kAttributes = {
-            Rtti::Attribute{ .m_key = "Cli::Parent", .m_value = "FE::Cli::Tests::TestParser" },
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Build an asset" },
-        };
+        static constexpr auto kAttributeValues =
+            Rtti::DisplayName("Build") + Cli::Parent("FE::Cli::Tests::TestParser") + Cli::Description("Build an asset");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_help = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print this help message" },
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
 
-        };
-
-        static constexpr festd::array<Rtti::Attribute, 2> kAttributes_m_asset = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Asset to build" },
-
-            Rtti::Attribute{ .m_key = "Cli::ValueName", .m_value = "path" },
-
-        };
+        static constexpr auto kAttributeValues_m_asset =
+            Cli::Description("Asset to build") + Cli::ValueName("path") + Rtti::IntRange(2, 3);
+        static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
@@ -647,19 +638,14 @@ namespace FE::Cli::Tests
             0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
             0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_version
         };
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Test command line" },
-        };
+        static constexpr auto kAttributeValues = Cli::Description("Test command line");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_help = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print this help message" },
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
 
-        };
-
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_version = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print version" },
-
-        };
+        static constexpr auto kAttributeValues_m_version = Cli::Description("Print version");
+        static constexpr auto kAttributes_m_version = Rtti::DescribeAttributes(kAttributeValues_m_version);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",

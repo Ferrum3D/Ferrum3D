@@ -33,21 +33,21 @@ class FieldFlags(Flag):
 
 
 class FieldInfo:
-    def __init__(self, name: str, attributes: dict[str, str], flags: FieldFlags, type: "ReflectedType|None", enum_value=None,
-                 array_size=1, is_bitfield=False) -> None:
+    def __init__(self, name: str, attributes: list[str], codegen_attributes: dict[str, str], flags: FieldFlags,
+                 type: "ReflectedType|None", enum_value=None, array_size=1, is_bitfield=False) -> None:
         self.name = name
         self.attributes = attributes
-        self.display_attributes = list(attributes.items())
+        self.codegen_attributes = codegen_attributes
         self.flags = flags
         self.type = type
         self.enum_value = enum_value
         self.array_size = array_size
         self.is_bitfield = is_bitfield
-        self.display_name = attributes.get("DisplayName", name)
+        self.display_name = codegen_attributes.get("EnumName", name)
 
     @property
     def skip_serializing(self) -> bool:
-        return "SkipSerializing" in self.attributes or "Transient" in self.attributes
+        return "SkipSerializing" in self.codegen_attributes
 
 
 class ConstructorInfo:
@@ -99,7 +99,7 @@ class ReflectedType:
         namespace: str,
         name: str,
         location: cindex.SourceLocation,
-        attributes: dict[str, str],
+        attributes: list[str],
         bases: list[ReflectedType],
         fields: list[FieldInfo],
         constructors: list[ConstructorInfo],
@@ -126,7 +126,6 @@ class ReflectedType:
             )
 
         self.attributes = attributes
-        self.display_attributes = list(attributes.items())
         self.bases = bases
         self.direct_bases = direct_bases or []
         self.fields = fields

@@ -107,11 +107,32 @@ def parse_rtti_attribute(annotations: dict[str, str]) -> tuple[uuid.UUID | None,
     return None, False
 
 
+def is_codegen_attribute(annotation: str) -> bool:
+    return (
+        annotation == "SerializeGenerated"
+        or annotation == "SkipSerializing"
+        or annotation.startswith("EnumName:")
+        or annotation.startswith("ReflectBasic=")
+        or annotation.startswith("ReflectFull")
+    )
+
+
+def parse_meta_attributes(node: cindex.Cursor) -> list[str]:
+    return [annotation for annotation in get_annotation_tokens(node) if not is_codegen_attribute(annotation)]
+
+
 def parse_attributes(node: cindex.Cursor) -> dict[str, str]:
     annotations = get_annotation_tokens(node)
 
     attributes = {}
     for annotation_list in annotations:
+        if not is_codegen_attribute(annotation_list):
+            continue
+
+        if annotation_list.startswith("EnumName:"):
+            attributes["EnumName"] = annotation_list.removeprefix("EnumName:")
+            continue
+
         for annotation in annotation_list.split(";"):
             split_annotation = annotation.split("=", 1)
             if len(split_annotation) == 2:
@@ -214,11 +235,12 @@ def parse_class(
             canonical_type = child.type.get_canonical()
             field_type = resolve_type(canonical_type, types)
             array_size = canonical_type.get_array_size() if canonical_type.kind == cindex.TypeKind.CONSTANTARRAY else 1
-            field_attributes = parse_attributes(child)
+            field_attributes = parse_meta_attributes(child)
+            field_codegen_attributes = parse_attributes(child)
             field_flags = get_field_flags(child, access_spec)
             if not public_only or access_spec == cindex.AccessSpecifier.PUBLIC:
-                fields.append(FieldInfo(field_name, field_attributes, field_flags, field_type, array_size=array_size,
-                                        is_bitfield=child.is_bitfield()))
+                fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, field_flags, field_type,
+                                        array_size=array_size, is_bitfield=child.is_bitfield()))
 
 
 def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[cindex.Type]):
@@ -227,8 +249,10 @@ def parse_enum(node: cindex.Cursor, fields: list[FieldInfo], base_types: list[ci
         if child.kind == cindex.CursorKind.ENUM_CONSTANT_DECL:
             field_name = child.spelling
             field_value = child.enum_value
-            field_attributes = parse_attributes(child)
-            fields.append(FieldInfo(field_name, field_attributes, FieldFlags.NONE, None, enum_value=field_value))
+            field_attributes = parse_meta_attributes(child)
+            field_codegen_attributes = parse_attributes(child)
+            fields.append(FieldInfo(field_name, field_attributes, field_codegen_attributes, FieldFlags.NONE, None,
+                                    enum_value=field_value))
 
 
 def visit_external_rtti_declaration(
@@ -248,7 +272,7 @@ def visit_external_rtti_declaration(
 
     namespace_name = ""
     type_name = ""
-    attributes = {}
+    attributes = []
     fields = []
     base_types = []
 
@@ -301,9 +325,11 @@ def visit_class(node: cindex.Cursor, types: dict[uuid.UUID, ReflectedType], proj
     if node.spelling == "RTTI_ReflectionMarker":
         return
 
-    attributes = parse_attributes(node)
-    if visit_external_rtti_declaration(node, attributes, types, project_dir):
+    codegen_attributes = parse_attributes(node)
+    if visit_external_rtti_declaration(node, codegen_attributes, types, project_dir):
         return
+
+    attributes = parse_meta_attributes(node)
 
     reflected_type_id = None
     need_reflect = False

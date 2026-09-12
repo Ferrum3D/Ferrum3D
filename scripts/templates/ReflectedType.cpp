@@ -40,11 +40,12 @@ namespace FE::Rtti
             {% for b in type.bases[0].id.bytes %}{{ '0x%02x' % b }}, {% endfor %} // {{ type.bases[0].qualified_name }}
         };
 
-        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.display_attributes %}
-            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
-            {%- endfor %}
-        };
+        {%- if type.attributes|length > 0 %}
+        static constexpr auto kAttributeValues = {{ type.attributes|join(' + ') }};
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+        {%- else %}
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        {%- endif %}
 
         static constexpr festd::array<festd::ascii_view, {{ type.fields|length }}> kEnumNames = {
             {%- for field in type.fields %}
@@ -79,17 +80,19 @@ namespace FE::Rtti
         };
 
         {%- endif %}
-        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.display_attributes %}
-            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
-            {%- endfor %}
-        };
+        {%- if type.attributes|length > 0 %}
+        static constexpr auto kAttributeValues = {{ type.attributes|join(' + ') }};
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+        {%- else %}
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        {%- endif %}
         {% for field in type.reflection_fields %}
-        static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
-            {%- for attribute in field.display_attributes %}
-            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
-            {% endfor %}
-        };
+        {%- if field.attributes|length > 0 %}
+        static constexpr auto kAttributeValues_{{ field.name }} = {{ field.attributes|join(' + ') }};
+        static constexpr auto kAttributes_{{ field.name }} = Rtti::DescribeAttributes(kAttributeValues_{{ field.name }});
+        {%- else %}
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_{{ field.name }} = {};
+        {%- endif %}
         {% endfor %}
         static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
             {%- for field in type.reflection_fields %}
@@ -192,17 +195,19 @@ namespace {{ type.namespace }}
         };
 
         {%- endif %}
-        static constexpr festd::array<Rtti::Attribute, {{ type.attributes|length }}> kAttributes = {
-            {%- for attribute in type.display_attributes %}
-            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
-            {%- endfor %}
-        };
+        {%- if type.attributes|length > 0 %}
+        static constexpr auto kAttributeValues = {{ type.attributes|join(' + ') }};
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+        {%- else %}
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+        {%- endif %}
         {% for field in type.reflection_fields %}
-        static constexpr festd::array<Rtti::Attribute, {{ field.attributes|length }}> kAttributes_{{ field.name }} = {
-            {%- for attribute in field.display_attributes %}
-            Rtti::Attribute{ .m_key = "{{ attribute[0] }}", .m_value = "{{ attribute[1] }}" },
-            {% endfor %}
-        };
+        {%- if field.attributes|length > 0 %}
+        static constexpr auto kAttributeValues_{{ field.name }} = {{ field.attributes|join(' + ') }};
+        static constexpr auto kAttributes_{{ field.name }} = Rtti::DescribeAttributes(kAttributeValues_{{ field.name }});
+        {%- else %}
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_{{ field.name }} = {};
+        {%- endif %}
         {% endfor %}
         static const festd::array<Rtti::FieldInfo, {{ type.reflection_fields|length }}> kFields = {
             {%- for field in type.reflection_fields %}

@@ -6,14 +6,11 @@ namespace FE::Cli
 {
     namespace
     {
-        [[nodiscard]] festd::string_view GetAttribute(const festd::span<const Rtti::Attribute> attributes,
-                                                      const festd::ascii_view key)
+        template<class T>
+        [[nodiscard]] festd::string_view GetAttribute(const festd::span<const Rtti::Attribute> attributes)
         {
-            for (const Rtti::Attribute& attribute : attributes)
-            {
-                if (attribute.m_key == key)
-                    return attribute.m_value;
-            }
+            if (const T* attribute = Rtti::TryGetAttribute<T>(attributes))
+                return attribute->m_value;
 
             return {};
         }
@@ -57,7 +54,7 @@ namespace FE::Cli
 
         void AppendCommandName(festd::pmr::string& result, const Rtti::Type& type)
         {
-            const festd::string_view explicitName = GetAttribute(type.m_attributes, "Cli::Name");
+            const festd::string_view explicitName = GetAttribute<Name>(type.m_attributes);
             if (!explicitName.empty())
                 result.append(explicitName);
             else
@@ -67,7 +64,7 @@ namespace FE::Cli
 
         void AppendOptionName(festd::pmr::string& result, const Rtti::FieldInfo& field)
         {
-            const festd::string_view explicitName = GetAttribute(field.m_attributes, "Cli::Name");
+            const festd::string_view explicitName = GetAttribute<Name>(field.m_attributes);
             if (!explicitName.empty())
                 result.append(explicitName);
             else
@@ -78,7 +75,7 @@ namespace FE::Cli
         [[nodiscard]] bool NameMatches(festd::string_view name, const Rtti::Type& type)
         {
             festd::fixed_string inferred;
-            const festd::string_view explicitName = GetAttribute(type.m_attributes, "Cli::Name");
+            const festd::string_view explicitName = GetAttribute<Name>(type.m_attributes);
             if (!explicitName.empty())
                 return explicitName == name;
 
@@ -96,7 +93,7 @@ namespace FE::Cli
 
         [[nodiscard]] bool NameMatches(festd::string_view name, const Rtti::FieldInfo& field)
         {
-            const festd::string_view explicitName = GetAttribute(field.m_attributes, "Cli::Name");
+            const festd::string_view explicitName = GetAttribute<Name>(field.m_attributes);
             if (!explicitName.empty())
                 return explicitName == name;
 
@@ -124,14 +121,14 @@ namespace FE::Cli
 
         [[nodiscard]] bool HasParent(const Rtti::Type& type, const Rtti::Type& parent)
         {
-            const festd::string_view parentName = GetAttribute(type.m_attributes, "Cli::Parent");
+            const festd::string_view parentName = GetAttribute<Parent>(type.m_attributes);
             return parentName == parent.m_name || parentName == parent.m_qualifiedName;
         }
 
 
         [[nodiscard]] const Rtti::Type* FindParentType(const Rtti::Type& type)
         {
-            const festd::string_view parentName = GetAttribute(type.m_attributes, "Cli::Parent");
+            const festd::string_view parentName = GetAttribute<Parent>(type.m_attributes);
             if (parentName.empty())
                 return nullptr;
 
@@ -444,7 +441,7 @@ namespace FE::Cli
                 AppendCommandName(result, type);
                 const uint32_t nameSize = result.size() - nameBegin;
                 result.append(nameSize < 14 ? 14 - nameSize : 1, ' ');
-                result.append(GetAttribute(type.m_attributes, "Cli::Description"));
+                result.append(GetAttribute<Description>(type.m_attributes));
                 result += '\n';
             }
         }
@@ -463,14 +460,14 @@ namespace FE::Cli
                 if (field.m_type == Rtti::GetTypeID<Option>())
                 {
                     result.append(" <");
-                    const festd::string_view valueName = GetAttribute(field.m_attributes, "Cli::ValueName");
+                    const festd::string_view valueName = GetAttribute<ValueName>(field.m_attributes);
                     result.append(valueName.empty() ? festd::string_view{ "value" } : valueName);
                     result += '>';
                 }
 
                 const uint32_t nameSize = result.size() - nameBegin;
                 result.append(nameSize < 18 ? 18 - nameSize : 1, ' ');
-                result.append(GetAttribute(field.m_attributes, "Cli::Description"));
+                result.append(GetAttribute<Description>(field.m_attributes));
                 result += '\n';
             }
         }

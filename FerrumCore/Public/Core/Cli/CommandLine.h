@@ -20,6 +20,50 @@ namespace FE::Cli
     festd::optional<festd::string_view> GetValue(festd::string_view argument);
 
 
+    struct Name final : public Rtti::MetaAttributeBase
+    {
+        constexpr explicit Name(const festd::ascii_view value)
+            : m_value(value)
+        {
+        }
+
+        festd::ascii_view m_value;
+    };
+
+
+    struct Parent final : public Rtti::MetaAttributeBase
+    {
+        constexpr explicit Parent(const festd::ascii_view value)
+            : m_value(value)
+        {
+        }
+
+        festd::ascii_view m_value;
+    };
+
+
+    struct Description final : public Rtti::MetaAttributeBase
+    {
+        constexpr explicit Description(const festd::ascii_view value)
+            : m_value(value)
+        {
+        }
+
+        festd::ascii_view m_value;
+    };
+
+
+    struct ValueName final : public Rtti::MetaAttributeBase
+    {
+        constexpr explicit ValueName(const festd::ascii_view value)
+            : m_value(value)
+        {
+        }
+
+        festd::ascii_view m_value;
+    };
+
+
     struct Flag final
     {
         explicit operator bool() const

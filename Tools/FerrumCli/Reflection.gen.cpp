@@ -43,7 +43,6 @@ namespace FE::FerrumCli
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_2b409ccd3ca446a0ba2148b1d92aed2b()
         {
             static Rtti::Type typeInstance;
@@ -65,7 +64,6 @@ namespace FE::FerrumCli
     {
         return RTTI_TryCastImpl_2b409ccd3ca446a0ba2148b1d92aed2b(const_cast<CommandLineParser*>(this), typeID);
     }
-
     void CommandLineParser::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_2b409ccd3ca446a0ba2148b1d92aed2b();
@@ -87,15 +85,11 @@ namespace FE::FerrumCli
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_help = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print this help message" },
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
 
-        };
-
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_version = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print version" },
-
-        };
+        static constexpr auto kAttributeValues_m_version = Cli::Description("Print version");
+        static constexpr auto kAttributes_m_version = Rtti::DescribeAttributes(kAttributeValues_m_version);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
@@ -157,16 +151,10 @@ namespace FE::FerrumCli
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_4d105b8d0e84460b98bc8a4c3710a193()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        void RTTI_DefaultConstruct_4d105b8d0e84460b98bc8a4c3710a193(void* storage)
-        {
-            ::new (storage) Build();
         }
     } // namespace
 
@@ -184,7 +172,6 @@ namespace FE::FerrumCli
     {
         return RTTI_TryCastImpl_4d105b8d0e84460b98bc8a4c3710a193(const_cast<Build*>(this), typeID);
     }
-
     void Build::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_4d105b8d0e84460b98bc8a4c3710a193();
@@ -204,22 +191,15 @@ namespace FE::FerrumCli
             0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
             0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
         };
-        static constexpr festd::array<Rtti::Attribute, 2> kAttributes = {
-            Rtti::Attribute{ .m_key = "Cli::Parent", .m_value = "FE::FerrumCli::CommandLineParser" },
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Build an asset" },
-        };
+        static constexpr auto kAttributeValues =
+            Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Build an asset");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
-        static constexpr festd::array<Rtti::Attribute, 1> kAttributes_m_help = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Print this help message" },
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
 
-        };
-
-        static constexpr festd::array<Rtti::Attribute, 2> kAttributes_m_asset = {
-            Rtti::Attribute{ .m_key = "Cli::Description", .m_value = "Asset to build" },
-
-            Rtti::Attribute{ .m_key = "Cli::ValueName", .m_value = "path" },
-
-        };
+        static constexpr auto kAttributeValues_m_asset = Cli::Description("Asset to build") + Cli::ValueName("path");
+        static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
         static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
@@ -239,9 +219,7 @@ namespace FE::FerrumCli
                                     "FE::FerrumCli::Build",
                                     kBaseClassTypeIDs,
                                     kAttributes,
-                                    kFields,
-                                    nullptr,
-                                    &RTTI_DefaultConstruct_4d105b8d0e84460b98bc8a4c3710a193);
+                                    kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4d105b8d0e84460b98bc8a4c3710a193(&Build::Reflect);

@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Base/Hash.h>
 #include <Core/Math/UUID.h>
+#include <concepts>
 #include <festd/base.h>
 #include <type_traits>
 
@@ -11,12 +12,57 @@
 #    define FE_CODEGEN_ATTRIBUTE(value)
 #endif
 
-#define FE_META(...) FE_CODEGEN_ATTRIBUTE(#__VA_ARGS__)
+#if FE_CODEGEN
+#    define FE_META(...) FE_CODEGEN_ATTRIBUTE(#__VA_ARGS__)
+#elif __INTELLISENSE__ || __JETBRAINS_IDE__
+#    define FE_META(...) __declspec(align(__VA_ARGS__))
+#else
+#    define FE_META(...)
+#endif
+
+#define FE_ENUMNAME(name) FE_CODEGEN_ATTRIBUTE("EnumName:" name)
+#define FE_SKIP_SERIALIZING FE_CODEGEN_ATTRIBUTE("SkipSerializing")
 
 
 namespace FE::Rtti
 {
     using TypeID = Uuid;
+
+
+    struct MetaAttributeBase
+    {
+#if __INTELLISENSE__ || __JETBRAINS_IDE__
+        constexpr operator int32_t() const
+        {
+            return 0;
+        }
+#endif
+    };
+
+
+    struct DisplayName final : public MetaAttributeBase
+    {
+        constexpr explicit DisplayName(const festd::ascii_view name)
+            : m_name(name)
+        {
+        }
+
+        festd::ascii_view m_name;
+    };
+
+
+    struct IntRange final : public MetaAttributeBase
+    {
+        constexpr IntRange(const int64_t min, const int64_t max)
+            : m_min(min)
+            , m_max(max)
+        {
+        }
+
+        int64_t m_min;
+        int64_t m_max;
+    };
+
 
     struct Attribute;
     struct FieldInfo;
@@ -27,6 +73,34 @@ namespace FE::Rtti
 
     namespace Internal
     {
+        template<class TLeft, class TRight>
+        struct MetaAttributeList final : public MetaAttributeBase
+        {
+            constexpr MetaAttributeList(const TLeft& left, const TRight& right)
+                : m_left(left)
+                , m_right(right)
+            {
+            }
+
+            TLeft m_left;
+            TRight m_right;
+        };
+
+
+        template<class T>
+        struct IsMetaAttributeList : std::false_type
+        {
+        };
+
+        template<class TLeft, class TRight>
+        struct IsMetaAttributeList<MetaAttributeList<TLeft, TRight>> : std::true_type
+        {
+        };
+
+        template<class T>
+        inline constexpr bool kIsMetaAttributeList = IsMetaAttributeList<std::remove_cv_t<T>>::value;
+
+
         template<class T>
         struct ExternalTypeReflector
         {
@@ -47,6 +121,15 @@ namespace FE::Rtti
         template<class T>
         inline constexpr bool kIsRTTIDefined = festd::detect_v<T, RTTIDefinedType>;
     } // namespace Internal
+
+
+    template<class TLeft, class TRight>
+        requires std::derived_from<std::remove_cvref_t<TLeft>, MetaAttributeBase>
+        && std::derived_from<std::remove_cvref_t<TRight>, MetaAttributeBase>
+    constexpr auto operator+(const TLeft& left, const TRight& right)
+    {
+        return Internal::MetaAttributeList<std::remove_cvref_t<TLeft>, std::remove_cvref_t<TRight>>(left, right);
+    }
 
 
 #define FE_RTTI_IMPL_POLYMORPHIC(uuid)                                                                                           \

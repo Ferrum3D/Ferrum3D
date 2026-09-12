@@ -2102,7 +2102,6 @@ namespace FE::Rtti
         static constexpr alignas(16) uint8_t kUnderlyingTypeIDBytes[sizeof(TypeID)] = {
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c, 0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t
         };
-
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<festd::ascii_view, 4> kEnumNames = {

@@ -128,6 +128,32 @@ TEST(RTTI, Reflection)
     EXPECT_EQ(transform.m_rotation, Quaternion::RotationX(1.0f));
 }
 
+TEST(RTTI, TypedAttributes)
+{
+    const Rtti::Type& type = Rtti::GetType<Cli::Tests::Build>();
+    ASSERT_EQ(type.m_attributes.size(), 3);
+
+    const Rtti::DisplayName* displayName = type.TryGetAttribute<Rtti::DisplayName>();
+    ASSERT_NE(displayName, nullptr);
+    EXPECT_EQ(displayName->m_name, "Build");
+
+    const Cli::Parent* parent = type.TryGetAttribute<Cli::Parent>();
+    ASSERT_NE(parent, nullptr);
+    EXPECT_EQ(parent->m_value, "FE::Cli::Tests::TestParser");
+
+    ASSERT_EQ(type.m_fields.size(), 2);
+    const Rtti::FieldInfo& assetField = type.m_fields[1];
+    const Cli::ValueName* valueName = assetField.TryGetAttribute<Cli::ValueName>();
+    ASSERT_NE(valueName, nullptr);
+    EXPECT_EQ(valueName->m_value, "path");
+
+    const Rtti::IntRange* range = assetField.TryGetAttribute<Rtti::IntRange>();
+    ASSERT_NE(range, nullptr);
+    EXPECT_EQ(range->m_min, 2);
+    EXPECT_EQ(range->m_max, 3);
+    EXPECT_EQ(type.m_fields[0].TryGetAttribute<Rtti::IntRange>(), nullptr);
+}
+
 TEST(RTTI, TypeEnumeration)
 {
     const Rtti::Type* transformType = nullptr;
