@@ -1,4 +1,3 @@
-#include <Core/DI/Activator.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
@@ -141,7 +140,7 @@ namespace FE::Graphics
 
         m_meshLodInfoTable->CopyColumn(lodsRef, lodInfos);
 
-        Core::DescriptorManager* descriptorManager = Env::GetServiceProvider()->ResolveRequired<Core::DescriptorManager>();
+        Core::DescriptorManager* descriptorManager = Renderer::Get().GetDescriptorManager();
         const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(modelAsset->GetGeometryBuffer(0));
         descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
 

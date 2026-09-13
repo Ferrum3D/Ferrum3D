@@ -1,16 +1,37 @@
 #pragma once
 #include <Core/Math/Sphere.h>
-#include <Graphics/Assets/IModelAssetManager.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/Forwards.h>
+#include <Graphics/Tables/MeshLodInfoTable.h>
 #include <festd/unordered_map.h>
 
 namespace FE::Graphics
 {
     struct MeshSceneModule;
+
+    struct ModelAsset
+    {
+        // TODO: This is a temporary replacement in place of the old ModelAsset to make the code compile.
+        //       - Move to a separate file.
+        //       - Implement the real model asset, and store an AssetLease pointing to it in this module.
+        //       - Implement mesh asset, MeshAssetStreamer, etc. Coordinate hot reloads with the scene module.
+
+        uint32_t m_lodCount = 0;
+
+        Core::MeshLodInfo GetLodInfo(uint32_t, uint32_t) const
+        {
+            return {};
+        }
+
+        Core::Buffer* GetGeometryBuffer(uint32_t) const
+        {
+            return nullptr;
+        }
+    };
+
 
     struct MeshBatch final
     {

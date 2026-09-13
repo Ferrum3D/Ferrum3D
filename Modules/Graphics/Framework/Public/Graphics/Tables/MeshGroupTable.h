@@ -40,6 +40,11 @@ namespace FE::Graphics
         {
         }
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         [[nodiscard]] DB::Ref<MeshGroupTable> AllocateRow()
         {
             const uint32_t rowIndex = AllocateRowUninitialized();

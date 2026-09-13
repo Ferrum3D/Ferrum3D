@@ -45,6 +45,7 @@ namespace FE::Graphics
         virtual Core::GraphicsQueue* GetGraphicsQueue() const = 0;
         virtual Core::AsyncCopyQueue* GetAsyncCopyQueue() const = 0;
         virtual Core::ResourcePool* GetResourcePool() const = 0;
+        virtual Core::DescriptorManager* GetDescriptorManager() const = 0;
 
         static void Init(Core::Device* device);
         static void Shutdown();

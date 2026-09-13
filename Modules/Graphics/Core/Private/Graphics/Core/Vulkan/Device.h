@@ -161,6 +161,8 @@ namespace FE::Graphics::Vulkan
         Rc<Core::PipelineFactory> CreatePipelineFactory(Core::DescriptorManager* descriptorManager) override;
         Rc<Core::ResourcePool> CreateResourcePool(Core::GraphicsQueue* graphicsQueue,
                                                   Core::AsyncCopyQueue* asyncCopyQueue) override;
+        Rc<Core::FrameGraph> CreateFrameGraph(Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool,
+                                              Core::GraphicsQueue* commandQueue) override;
         Rc<Core::Viewport> CreateViewport(Core::ResourcePool* resourcePool, Core::GraphicsQueue* graphicsQueue) override;
 
         void WaitIdle() override;

@@ -39,6 +39,11 @@ namespace FE::Graphics
         {
         }
 
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         [[nodiscard]] DB::Ref<MeshInstanceTable> AllocateRow()
         {
             const uint32_t rowIndex = AllocateRowUninitialized();

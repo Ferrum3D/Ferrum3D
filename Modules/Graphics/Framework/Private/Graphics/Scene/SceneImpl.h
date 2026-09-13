@@ -16,6 +16,11 @@ namespace FE::Graphics
         View* GetView(uint32_t index) const override;
 
     private:
+        void DoRelease() override
+        {
+            Memory::DefaultDelete(this);
+        }
+
         festd::vector<Rc<View>> m_views;
     };
 } // namespace FE::Graphics

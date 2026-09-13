@@ -17,4 +17,10 @@ namespace FE::Graphics
             module.Update(blackboard);
         });
     }
+
+
+    void ViewImpl::DoRelease()
+    {
+        Memory::DefaultDelete(this);
+    }
 } // namespace FE::Graphics

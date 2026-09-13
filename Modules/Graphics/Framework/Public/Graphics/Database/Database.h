@@ -33,7 +33,7 @@ namespace FE::Graphics::DB
     private:
         friend Database;
 
-        static StoragePage* Allocate(Core::ResourcePool* resourcePool, uint32_t globalID);
+        static StoragePage* Allocate(Core::Device* device, Core::ResourcePool* resourcePool, uint32_t globalID);
 
         uint32_t m_globalID = kInvalidIndex;
 
@@ -89,7 +89,7 @@ namespace FE::Graphics::DB
 
     struct Database final
     {
-        Database(Core::ResourcePool* resourcePool);
+        Database(Core::Device* device, Core::ResourcePool* resourcePool);
         ~Database();
 
         void Update(Core::FrameGraph& graph, const Core::FenceSyncPoint& fence);
@@ -108,6 +108,7 @@ namespace FE::Graphics::DB
         void UploadDirtyPages(Core::FrameGraph& graph);
         void UploadPageTables(Core::FrameGraph& graph);
 
+        Core::Device* m_device;
         Core::ResourcePool* m_resourcePool;
         Core::RingUploader m_uploader;
 

@@ -14,7 +14,7 @@ namespace FE::Graphics
 
     View* SceneImpl::CreateView()
     {
-        Rc<View> view = Rc<ViewImpl>::New(std::pmr::get_default_resource(), this);
+        Rc<View> view = Memory::DefaultNew<ViewImpl>(this);
         m_views.push_back(view);
         return view.Get();
     }

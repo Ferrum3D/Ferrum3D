@@ -1,4 +1,5 @@
 #pragma once
+#include <Graphics/Core/Base.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
@@ -21,6 +22,7 @@ namespace FE::Graphics
         Core::GraphicsQueue* GetGraphicsQueue() const override;
         Core::AsyncCopyQueue* GetAsyncCopyQueue() const override;
         Core::ResourcePool* GetResourcePool() const override;
+        Core::DescriptorManager* GetDescriptorManager() const override;
 
         [[nodiscard]] DB::Database* GetDatabase() const
         {
@@ -34,9 +36,13 @@ namespace FE::Graphics
         void SetupFrameGraph(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene, View& view,
                              Core::Viewport& viewport);
 
+        void DoRelease() override;
+
         Rc<Core::GraphicsQueue> m_graphicsQueue;
         Rc<Core::AsyncCopyQueue> m_asyncCopyQueue;
+        Rc<Core::DescriptorManager> m_descriptorManager;
         Rc<Core::ResourcePool> m_resourcePool;
+        Rc<Core::FrameGraph> m_frameGraph;
 
         festd::unique_ptr<DB::Database> m_database;
         festd::vector<Rc<Scene>> m_scenes;

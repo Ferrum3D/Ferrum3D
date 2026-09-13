@@ -43,12 +43,12 @@ namespace FE::Graphics::DB
     }
 
 
-    StoragePage* StoragePage::Allocate(Core::ResourcePool* resourcePool, const uint32_t globalID)
+    StoragePage* StoragePage::Allocate(Core::Device* device, Core::ResourcePool* resourcePool, const uint32_t globalID)
     {
         const Env::Name pageName = Fmt::FormatName("StoragePage_{}", globalID);
 
         StoragePage* page = GStoragePagePool.New();
-        page->m_deviceStorage = resourcePool->CreateByteAddressBuffer(pageName, kTablePageSize);
+        page->m_deviceStorage = Core::Buffer::CreateByteAddress(device, pageName, kTablePageSize);
         page->m_globalID = globalID;
 
         Core::ResourceCommitParams commitParams;
@@ -160,11 +160,12 @@ namespace FE::Graphics::DB
     }
 
 
-    Database::Database(Core::ResourcePool* resourcePool)
-        : m_resourcePool(resourcePool)
+    Database::Database(Core::Device* device, Core::ResourcePool* resourcePool)
+        : m_device(device)
+        , m_resourcePool(resourcePool)
     {
         m_uploader.Setup("GPUDatabaseUploader", resourcePool, 4 * 1024 * 1024);
-        m_pageTableDeviceStorage = resourcePool->CreateByteAddressBuffer("GPUDatabasePageTable", kPageTableStorageByteSize);
+        m_pageTableDeviceStorage = Core::Buffer::CreateByteAddress(device, "GPUDatabasePageTable", kPageTableStorageByteSize);
 
         Core::ResourceCommitParams commitParams;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
@@ -238,7 +239,7 @@ namespace FE::Graphics::DB
             return m_pages[freePageIndex];
         }
 
-        StoragePage* page = StoragePage::Allocate(m_resourcePool, m_pages.size());
+        StoragePage* page = StoragePage::Allocate(m_device, m_resourcePool, m_pages.size());
         m_pages.push_back(page);
 
         if (m_dirtyPages.size() < m_pages.size())

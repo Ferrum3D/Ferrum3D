@@ -1,4 +1,5 @@
 #include <Core/Env/Environment.h>
+#include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/GraphicsQueue.h>
@@ -40,7 +41,9 @@ namespace FE::Graphics
         m_graphicsQueue = m_device->CreateGraphicsQueue();
         m_asyncCopyQueue = m_device->CreateAsyncCopyQueue();
 
+        m_descriptorManager = m_device->CreateDescriptorManager();
         m_resourcePool = m_device->CreateResourcePool(m_graphicsQueue.Get(), m_asyncCopyQueue.Get());
+        m_frameGraph = m_device->CreateFrameGraph(m_descriptorManager.Get(), m_resourcePool.Get(), m_graphicsQueue.Get());
     }
 
 
@@ -67,30 +70,28 @@ namespace FE::Graphics
 
         EnsureDatabase();
 
-        Core::GraphicsQueue* graphicsQueue = serviceProvider->ResolveRequired<Core::GraphicsQueue>();
-        graphicsQueue->BeginFrame();
+        m_graphicsQueue->BeginFrame();
         viewport->AcquireNextImage();
         EnsureMainColorTarget(viewport->GetCurrentColorTarget()->GetDesc());
         EnsureMainDepthTarget(viewport->GetDesc());
 
-        Rc<Core::FrameGraph> frameGraph = serviceProvider->ResolveRequired<Core::FrameGraph>();
-        frameGraph->BeginFrame();
+        m_frameGraph->BeginFrame();
 
-        m_database->Update(*frameGraph, graphicsQueue->GetCurrentFence());
+        m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 
         for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
         {
-            frameGraph->GetBlackboard().Reset();
+            m_frameGraph->GetBlackboard().Reset();
             View* view = scene->GetView(viewIndex);
-            SetupFrameGraph(*frameGraph, frameGraph->GetBlackboard(), *scene, *view, *viewport);
+            SetupFrameGraph(*m_frameGraph, m_frameGraph->GetBlackboard(), *scene, *view, *viewport);
         }
 
         viewport->PrepareBlit();
-        Tools::Blit::AddPass(*frameGraph,
+        Tools::Blit::AddPass(*m_frameGraph,
                              Core::TextureView::Create(m_mainColorTarget.Get()),
                              Core::TextureView::Create(viewport->GetCurrentColorTarget()));
 
-        frameGraph->CompileAndExecute();
+        m_frameGraph->CompileAndExecute();
         viewport->Present();
         m_device->EndFrame();
     }
@@ -114,13 +115,18 @@ namespace FE::Graphics
     }
 
 
+    Core::DescriptorManager* RendererImpl::GetDescriptorManager() const
+    {
+        return m_descriptorManager.Get();
+    }
+
+
     void RendererImpl::EnsureDatabase()
     {
         if (m_database != nullptr)
             return;
 
-        Core::ResourcePool* resourcePool = Env::GetServiceProvider()->ResolveRequired<Core::ResourcePool>();
-        m_database = festd::make_unique<DB::Database>(resourcePool);
+        m_database = festd::make_unique<DB::Database>(m_device.Get(), m_resourcePool.Get());
     }
 
 
@@ -134,10 +140,7 @@ namespace FE::Graphics
         if (m_mainColorTarget != nullptr && !sizeMismatch && !formatMismatch)
             return;
 
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        Core::ResourcePool* resourcePool = serviceProvider->ResolveRequired<Core::ResourcePool>();
-
-        m_mainColorTarget = resourcePool->CreateTexture("RendererMainColor", swapchainColorTargetDesc);
+        m_mainColorTarget = Core::Texture::Create(m_device.Get(), "RendererMainColor", swapchainColorTargetDesc);
     }
 
 
@@ -149,17 +152,15 @@ namespace FE::Graphics
         if (m_mainDepthTarget != nullptr && !sizeMismatch)
             return;
 
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        Core::ResourcePool* resourcePool = serviceProvider->ResolveRequired<Core::ResourcePool>();
-
-        m_mainDepthTarget = resourcePool->CreateTexture("RendererMainDepth",
-                                                        Core::Format::kD32_SFLOAT_S8_UINT,
-                                                        { viewportDesc.m_width, viewportDesc.m_height });
+        m_mainDepthTarget = Core::Texture::Create(m_device.Get(),
+                                                  "RendererMainDepth",
+                                                  Core::Format::kD32_SFLOAT_S8_UINT,
+                                                  { viewportDesc.m_width, viewportDesc.m_height });
 
         Core::ResourceCommitParams commitParams;
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kDepthStencilRead | Core::BarrierAccessFlags::kDepthStencilWrite;
         commitParams.m_memory = Core::ResourceMemory::kDeviceLocal;
-        resourcePool->CommitTextureMemory(m_mainDepthTarget.Get(), commitParams);
+        m_resourcePool->CommitTextureMemory(m_mainDepthTarget.Get(), commitParams);
     }
 
 
@@ -179,5 +180,11 @@ namespace FE::Graphics
 
         DepthPrepass::AddPasses(graph, blackboard, scene);
         OpaquePass::AddPasses(graph, blackboard, scene);
+    }
+
+
+    void RendererImpl::DoRelease()
+    {
+        Memory::DefaultDelete(this);
     }
 } // namespace FE::Graphics

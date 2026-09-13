@@ -16,6 +16,8 @@ namespace FE::Graphics::Core
         virtual Rc<Fence> CreateFence(uint64_t initialValue) = 0;
         virtual Rc<DescriptorManager> CreateDescriptorManager() = 0;
         virtual Rc<ResourcePool> CreateResourcePool(GraphicsQueue* graphicsQueue, AsyncCopyQueue* asyncCopyQueue) = 0;
+        virtual Rc<FrameGraph> CreateFrameGraph(DescriptorManager* descriptorManager, ResourcePool* resourcePool,
+                                                GraphicsQueue* commandQueue) = 0;
         virtual Rc<Viewport> CreateViewport(ResourcePool* resourcePool, GraphicsQueue* graphicsQueue) = 0;
         virtual Rc<PipelineFactory> CreatePipelineFactory(DescriptorManager* descriptorManager) = 0;
 

@@ -11,5 +11,8 @@ namespace FE::Graphics
         ~ViewImpl() override;
 
         void Update(Core::FrameGraphBlackboard& blackboard) override;
+
+    private:
+        void DoRelease() override;
     };
 } // namespace FE::Graphics

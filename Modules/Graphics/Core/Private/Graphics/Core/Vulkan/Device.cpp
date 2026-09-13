@@ -8,6 +8,7 @@
 #include <Graphics/Core/Vulkan/AsyncCopyQueue.h>
 #include <Graphics/Core/Vulkan/DescriptorManager.h>
 #include <Graphics/Core/Vulkan/DeviceFactory.h>
+#include <Graphics/Core/Vulkan/FrameGraph/FrameGraph.h>
 #include <Graphics/Core/Vulkan/GraphicsQueue.h>
 #include <Graphics/Core/Vulkan/PipelineFactory.h>
 #include <Graphics/Core/Vulkan/ResourcePool.h>
@@ -244,6 +245,13 @@ namespace FE::Graphics::Vulkan
     Rc<Core::ResourcePool> Device::CreateResourcePool(Core::GraphicsQueue* graphicsQueue, Core::AsyncCopyQueue* asyncCopyQueue)
     {
         return Memory::DefaultNew<ResourcePool>(this, graphicsQueue, asyncCopyQueue);
+    }
+
+
+    Rc<Core::FrameGraph> Device::CreateFrameGraph(Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool,
+                                                  Core::GraphicsQueue* commandQueue)
+    {
+        return Memory::DefaultNew<FrameGraph>(this, descriptorManager, resourcePool, commandQueue);
     }
 
 
