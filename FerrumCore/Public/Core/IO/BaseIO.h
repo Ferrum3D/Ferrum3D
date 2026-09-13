@@ -339,8 +339,21 @@ namespace FE::IO
     }
 
 
+    namespace File
+    {
+        //! @brief Test whether a file exists.
+        bool Exists(festd::string_view path);
+
+        //! @brief Delete a file. Missing files are treated as successfully deleted.
+        ResultCode Delete(festd::string_view path);
+    } // namespace File
+
+
     namespace Directory
     {
+        //! @brief Create a directory and every missing parent directory.
+        ResultCode Create(festd::string_view path);
+
         //! @brief Iterate over a directory recursively.
         //!
         //! @param path    Path to the directory to iterate over.

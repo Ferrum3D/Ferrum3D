@@ -9,6 +9,8 @@ namespace FE::Platform
 
     IO::Path GetExecutablePath();
 
+    IO::ResultCode CreateDirectoryPath(festd::string_view path);
+
 
     struct DirectoryIterationParams final
     {

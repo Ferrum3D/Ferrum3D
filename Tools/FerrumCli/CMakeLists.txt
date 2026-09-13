@@ -40,8 +40,6 @@ set_target_properties(FerrumCli PROPERTIES
 target_link_libraries(FerrumCli
     AssetBuilder
     FeCore
-    FeFramework
-    FeGraphics
     FeGraphicsCore
 )
 

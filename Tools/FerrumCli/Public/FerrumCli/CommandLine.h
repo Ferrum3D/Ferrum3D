@@ -5,7 +5,22 @@ namespace FE::FerrumCli
 {
     struct CommandLineParser;
 
-    struct FE_META(Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Build an asset")) Build final
+    struct FE_META(Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Import source assets")) Import final
+        : public Cli::Subcommand
+    {
+        FE_RTTI("3F4138AA-84A9-4C02-889B-0E2B090BE723");
+        FE_RTTI_Reflect();
+
+        FE_META(Cli::Description("Print this help message"))
+        Cli::Flag m_help;
+        FE_META(Cli::Description("Source asset to import") + Cli::ValueName("path"))
+        Cli::Option m_asset;
+        FE_META(Cli::Description("Generated .asset file") + Cli::ValueName("path"))
+        Cli::Option m_output;
+    };
+
+
+    struct FE_META(Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Build an asset graph")) Build final
         : public Cli::Subcommand
     {
         FE_RTTI("4D105B8D-0E84-460B-98BC-8A4C3710A193");
@@ -13,8 +28,10 @@ namespace FE::FerrumCli
 
         FE_META(Cli::Description("Print this help message"))
         Cli::Flag m_help;
-        FE_META(Cli::Description("Asset to build") + Cli::ValueName("path"))
+        FE_META(Cli::Description(".asset file to build") + Cli::ValueName("path"))
         Cli::Option m_asset;
+        FE_META(Cli::Description("Artifact output directory") + Cli::ValueName("directory"))
+        Cli::Option m_output;
     };
 
     struct CommandLineParser final : public Cli::Parser

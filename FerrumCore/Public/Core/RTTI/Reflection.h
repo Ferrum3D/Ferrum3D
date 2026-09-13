@@ -146,6 +146,7 @@ namespace FE::Rtti
     struct Type final : public festd::intrusive_list_node
     {
         using DefaultConstructor = void (*)(void*);
+        using CopyConstructor = void (*)(void*, const void*);
         using Destructor = void (*)(void*);
         using Serialize = Serialization::ResultCode (*)(Serialization::SerializationContext&, const void*);
         using Deserialize = Serialization::ResultCode (*)(Serialization::DeserializationContext&, void*);
@@ -154,6 +155,7 @@ namespace FE::Rtti
         festd::ascii_view m_name;
         festd::ascii_view m_qualifiedName;
         DefaultConstructor m_defaultConstructor = nullptr;
+        CopyConstructor m_copyConstructor = nullptr;
         Destructor m_destructor = nullptr;
         Serialize m_serialize = nullptr;
         Deserialize m_deserialize = nullptr;

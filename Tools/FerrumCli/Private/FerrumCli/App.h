@@ -1,7 +1,6 @@
 #pragma once
 #include <Core/Logging/Logger.h>
 #include <FerrumCli/CommandLine.h>
-#include <Framework/Application/Application.h>
 
 namespace FE::FerrumCli
 {

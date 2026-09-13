@@ -173,6 +173,20 @@ namespace FE::Platform
     }
 
 
+    IO::ResultCode DeleteFilePath(const festd::string_view filePath)
+    {
+        const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
+        if (::DeleteFileW(widePath.ToWideString()))
+            return IO::ResultCode::kSuccess;
+
+        const DWORD error = GetLastError();
+        if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+            return IO::ResultCode::kSuccess;
+
+        return ConvertWin32IOError(error);
+    }
+
+
     void CloseFile(const FileHandle fileHandle)
     {
         FE_PROFILER_ZONE();

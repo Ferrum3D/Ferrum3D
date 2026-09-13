@@ -13,6 +13,8 @@ namespace FE::Platform
 
     bool FileExists(festd::string_view filePath);
 
+    IO::ResultCode DeleteFilePath(festd::string_view filePath);
+
     void CloseFile(FileHandle fileHandle);
 
     IO::ResultCode ReadFile(FileHandle fileHandle, void* buffer, size_t byteSize, size_t& bytesRead);

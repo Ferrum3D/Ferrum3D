@@ -108,8 +108,8 @@ namespace FE::AssetBuilder
         {
             auto& lod0 = festd::single(mesh->m_lods);
             memcpy(vertices.data() + vertexCopyOffset, lod0.m_vertices.data(), festd::size_bytes(lod0.m_vertices));
-            for (uint32_t i = indexCopyOffset; i < indexCopyOffset + lod0.m_indices.size(); ++i)
-                indices[i] = lod0.m_indices[i] + vertexCopyOffset;
+            for (uint32_t i = 0; i < lod0.m_indices.size(); ++i)
+                indices[indexCopyOffset + i] = lod0.m_indices[i] + vertexCopyOffset;
 
             indexRanges.push_back({ vertexCopyOffset, vertexCopyOffset + lod0.m_vertices.size() });
 
@@ -139,7 +139,7 @@ namespace FE::AssetBuilder
             lodIndices.resize(static_cast<uint32_t>(lodIndexCount));
         }
 
-        std::vector<IntermediateMeshLod> allLod0(model->m_meshes.size());
+        festd::vector<IntermediateMeshLod> allLod0(model->m_meshes.size());
         for (uint32_t meshIndex = 0; meshIndex < model->m_meshes.size(); ++meshIndex)
         {
             auto& meshLods = model->m_meshes[meshIndex]->m_lods;
@@ -200,6 +200,9 @@ namespace FE::AssetBuilder
         void GenerateMeshletsImpl(festd::vector<uint32_t>& indices, festd::vector<IntermediateVertex>& vertices,
                                   festd::vector<Core::MeshletHeader>& meshlets, festd::vector<Core::PackedTriangle>& primitives)
         {
+            if (indices.empty() || vertices.empty())
+                return;
+
             namespace Limits = Core::Limits::Mesh;
 
             const size_t maxMeshlets =

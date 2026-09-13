@@ -53,6 +53,20 @@ namespace FE
     }
 
 
+    IO::ResultCode Platform::CreateDirectoryPath(const festd::string_view path)
+    {
+        const Str::Utf8ToUtf16 widePath{ path.data(), path.size() };
+        if (::CreateDirectoryW(widePath.ToWideString(), nullptr))
+            return IO::ResultCode::kSuccess;
+
+        const DWORD error = GetLastError();
+        if (error == ERROR_ALREADY_EXISTS)
+            return IO::ResultCode::kSuccess;
+
+        return ConvertWin32IOError(error);
+    }
+
+
     IO::ResultCode Platform::IterateDirectoryRecursively(const DirectoryIterationParams& params)
     {
         festd::inline_vector<IO::Path, 4> directoryStack;

@@ -1,0 +1,28 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0x9fafb8575a05a191",
+    "$value": {
+        "m_sourcePath": "C:/Users/user/TheCode/Ferrum3D/Samples/Renderer/Assets/source/texture.dds",
+        "m_artifacts": [
+            {
+                "m_name": "Texture",
+                "m_assetId": "5C9F4230-E3BD-447C-8344-407F710CF0CD",
+                "m_assetTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                "m_buildSettings": {
+                    "m_typeId": "38A7F222-C636-4947-B700-9E6FA582BC4A",
+                    "m_value": {
+                        "m_sourceObjectIndex": 4294967295,
+                        "m_sourcePath": ""
+                    }
+                },
+                "m_dependencies": []
+            }
+        ],
+        "m_builtArtifactIds": [
+            "94228B87-8882-449E-BCAB-CF76CB40FF94"
+        ],
+        "m_embeddedSourceData": []
+    }
+}

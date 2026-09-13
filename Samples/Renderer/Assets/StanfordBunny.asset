@@ -1,0 +1,47 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0x9fafb8575a05a191",
+    "$value": {
+        "m_sourcePath": "C:/Users/user/TheCode/Ferrum3D/Samples/Renderer/Assets/source/StanfordBunny.glb",
+        "m_artifacts": [
+            {
+                "m_name": "Mesh.0",
+                "m_assetId": "31876883-7065-475C-8573-69F836B9DE73",
+                "m_assetTypeId": "44EBC248-FD5E-4CF4-AB4C-09511B78362C",
+                "m_buildSettings": {
+                    "m_typeId": "534CD65C-1645-484D-B124-37E908676F00",
+                    "m_value": {
+                        "m_sourceObjectIndex": 0,
+                        "m_generateLods": false
+                    }
+                },
+                "m_dependencies": []
+            },
+            {
+                "m_name": "Model.0",
+                "m_assetId": "4B01B878-5EEF-4D6A-AD04-FC9AF1F78416",
+                "m_assetTypeId": "2D0926A6-8312-4D3C-8675-F67BB9A62B67",
+                "m_buildSettings": {
+                    "m_typeId": "80D1A492-1C42-4C3C-9913-DF8085E9655A",
+                    "m_value": {
+                        "m_sourceObjectIndex": 0
+                    }
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "31876883-7065-475C-8573-69F836B9DE73",
+                        "m_expectedTypeId": "44EBC248-FD5E-4CF4-AB4C-09511B78362C",
+                        "m_kind": 0
+                    }
+                ]
+            }
+        ],
+        "m_builtArtifactIds": [
+            "7B8EF531-EF67-4826-8267-ADC49126632C",
+            "568E93AA-4CC8-40ED-B8F0-E3A9D89F7259"
+        ],
+        "m_embeddedSourceData": []
+    }
+}

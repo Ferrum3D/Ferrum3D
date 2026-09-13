@@ -1,388 +1,377 @@
+#include <AssetBuilder/ArtifactWriter.h>
 #include <AssetBuilder/TextureProcessor.h>
-#include <AssetBuilder/Utils.h>
 
-#include <Core/Compression/Compression.h>
-#include <Core/IO/FileStream.h>
-#include <Core/Math/Color.h>
-#include <Core/Memory/SegmentedBuffer.h>
-#include <Graphics/Assets/TextureAssetFormat.h>
-#include <Graphics/Core/Texture.h>
-#include <festd/vector.h>
+#include <Graphics/Assets/Assets.h>
 
-#include <cmp_core.h>
-
-#define STBI_MALLOC(size) FE::Memory::DefaultAllocate(size)
-#define STBI_REALLOC(p, newSize) FE::Memory::DefaultReallocate(p, newSize)
-#define STBI_FREE(p) FE::Memory::DefaultFree(p)
-
-#define STBIR_MALLOC(size, c) ((void)(c), FE::Memory::DefaultAllocate(size))
-#define STBIR_FREE(p, c) ((void)(c), FE::Memory::DefaultFree(p))
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include <stb_image_resize.h>
-
-using namespace FE::Graphics;
-
-namespace FE
+namespace FE::AssetBuilder
 {
+    using namespace Graphics;
+
     namespace
     {
-        std::byte* CompressTextureBC7(const float* sourceData, const uint32_t width, const uint32_t height)
+        constexpr uint32_t kDdsMagic = Math::MakeFourCC('D', 'D', 'S', ' ');
+        constexpr uint32_t kFourCcDx10 = Math::MakeFourCC('D', 'X', '1', '0');
+        constexpr uint32_t kDdsPixelFormatFourCc = 0x4;
+        constexpr uint32_t kDdsPixelFormatRgb = 0x40;
+        constexpr uint32_t kDdsCaps2Cubemap = 0x200;
+        constexpr uint32_t kDdsResourceMiscTextureCube = 0x4;
+
+        struct DdsPixelFormat final
         {
-            const uint32_t blockCountX = Math::CeilDivide(width, 4);
-            const uint32_t blockCountY = Math::CeilDivide(height, 4);
+            uint32_t m_size;
+            uint32_t m_flags;
+            uint32_t m_fourCc;
+            uint32_t m_rgbBitCount;
+            uint32_t m_rBitMask;
+            uint32_t m_gBitMask;
+            uint32_t m_bBitMask;
+            uint32_t m_aBitMask;
+        };
 
-            void* options;
-            CreateOptionsBC7(&options);
-            SetMaskBC7(options, 1 << 6);
-            SetQualityBC7(options, 0.3f);
 
-            auto* compressedData = static_cast<std::byte*>(Memory::DefaultAllocate(blockCountX * blockCountY * 16));
-            for (uint32_t yb = 0; yb < blockCountY; ++yb)
+        struct DdsHeader final
+        {
+            uint32_t m_size;
+            uint32_t m_flags;
+            uint32_t m_height;
+            uint32_t m_width;
+            uint32_t m_pitchOrLinearSize;
+            uint32_t m_depth;
+            uint32_t m_mipMapCount;
+            uint32_t m_reserved[11];
+            DdsPixelFormat m_pixelFormat;
+            uint32_t m_caps;
+            uint32_t m_caps2;
+            uint32_t m_caps3;
+            uint32_t m_caps4;
+            uint32_t m_reserved2;
+        };
+
+
+        struct DdsHeaderDx10 final
+        {
+            uint32_t m_dxgiFormat;
+            uint32_t m_resourceDimension;
+            uint32_t m_miscFlag;
+            uint32_t m_arraySize;
+            uint32_t m_miscFlags2;
+        };
+
+        static_assert(sizeof(DdsPixelFormat) == 32);
+        static_assert(sizeof(DdsHeader) == 124);
+        static_assert(sizeof(DdsHeaderDx10) == 20);
+
+
+        Core::Format TranslateDxgiFormat(const uint32_t format)
+        {
+            switch (format)
             {
-                for (uint32_t xb = 0; xb < blockCountX; ++xb)
+            case 2:
+                return Core::Format::kR32G32B32A32_SFLOAT;
+            case 3:
+                return Core::Format::kR32G32B32A32_UINT;
+            case 4:
+                return Core::Format::kR32G32B32A32_SINT;
+            case 10:
+                return Core::Format::kR16G16B16A16_SFLOAT;
+            case 11:
+                return Core::Format::kR16G16B16A16_UNORM;
+            case 12:
+                return Core::Format::kR16G16B16A16_UINT;
+            case 13:
+                return Core::Format::kR16G16B16A16_SNORM;
+            case 14:
+                return Core::Format::kR16G16B16A16_SINT;
+            case 16:
+                return Core::Format::kR32G32_SFLOAT;
+            case 17:
+                return Core::Format::kR32G32_UINT;
+            case 18:
+                return Core::Format::kR32G32_SINT;
+            case 24:
+                return Core::Format::kA2R10G10B10_UNORM;
+            case 25:
+                return Core::Format::kA2R10G10B10_UINT;
+            case 26:
+                return Core::Format::kB10G11R11_UFLOAT;
+            case 28:
+                return Core::Format::kR8G8B8A8_UNORM;
+            case 29:
+                return Core::Format::kR8G8B8A8_SRGB;
+            case 30:
+                return Core::Format::kR8G8B8A8_UINT;
+            case 31:
+                return Core::Format::kR8G8B8A8_SNORM;
+            case 32:
+                return Core::Format::kR8G8B8A8_SINT;
+            case 34:
+                return Core::Format::kR16G16_SFLOAT;
+            case 35:
+                return Core::Format::kR16G16_UNORM;
+            case 36:
+                return Core::Format::kR16G16_UINT;
+            case 37:
+                return Core::Format::kR16G16_SNORM;
+            case 38:
+                return Core::Format::kR16G16_SINT;
+            case 41:
+                return Core::Format::kR32_SFLOAT;
+            case 42:
+                return Core::Format::kR32_UINT;
+            case 43:
+                return Core::Format::kR32_SINT;
+            case 49:
+                return Core::Format::kR8G8_UNORM;
+            case 50:
+                return Core::Format::kR8G8_UINT;
+            case 51:
+                return Core::Format::kR8G8_SNORM;
+            case 52:
+                return Core::Format::kR8G8_SINT;
+            case 54:
+                return Core::Format::kR16_SFLOAT;
+            case 56:
+                return Core::Format::kR16_UNORM;
+            case 57:
+                return Core::Format::kR16_UINT;
+            case 58:
+                return Core::Format::kR16_SNORM;
+            case 59:
+                return Core::Format::kR16_SINT;
+            case 61:
+                return Core::Format::kR8_UNORM;
+            case 62:
+                return Core::Format::kR8_UINT;
+            case 63:
+                return Core::Format::kR8_SNORM;
+            case 64:
+                return Core::Format::kR8_SINT;
+            case 71:
+                return Core::Format::kBC1_UNORM;
+            case 72:
+                return Core::Format::kBC1_SRGB;
+            case 74:
+                return Core::Format::kBC2_UNORM;
+            case 75:
+                return Core::Format::kBC2_SRGB;
+            case 77:
+                return Core::Format::kBC3_UNORM;
+            case 78:
+                return Core::Format::kBC3_SRGB;
+            case 80:
+                return Core::Format::kBC4_UNORM;
+            case 81:
+                return Core::Format::kBC4_SNORM;
+            case 83:
+                return Core::Format::kBC5_UNORM;
+            case 84:
+                return Core::Format::kBC5_SNORM;
+            case 87:
+                return Core::Format::kB8G8R8A8_UNORM;
+            case 91:
+                return Core::Format::kB8G8R8A8_SRGB;
+            case 95:
+                return Core::Format::kBC6H_UFLOAT;
+            case 96:
+                return Core::Format::kBC6H_SFLOAT;
+            case 98:
+                return Core::Format::kBC7_UNORM;
+            case 99:
+                return Core::Format::kBC7_SRGB;
+            default:
+                return Core::Format::kUndefined;
+            }
+        }
+
+
+        Core::Format TranslateLegacyFormat(const DdsPixelFormat& format)
+        {
+            if ((format.m_flags & kDdsPixelFormatFourCc) != 0)
+            {
+                switch (format.m_fourCc)
                 {
-                    struct BlockPixel
-                    {
-                        uint8_t r, g, b, a;
-                    };
-
-                    BlockPixel blockData[16];
-                    for (uint32_t y = 0; y < 4; ++y)
-                    {
-                        for (uint32_t x = 0; x < 4; ++x)
-                        {
-                            const uint32_t xPixel = xb * 4 + x;
-                            const uint32_t yPixel = yb * 4 + y;
-                            if (xPixel >= width || yPixel >= height)
-                            {
-                                Memory::Zero(&blockData[y * 4 + x], sizeof(BlockPixel));
-                                blockData[y * 4 + x].a = 0x0;
-                                continue;
-                            }
-
-                            const __m128 pixelColor = _mm_load_ps(sourceData + (yPixel * width + xPixel) * 4);
-                            const __m128i t = _mm_cvttps_epi32(_mm_mul_ps(pixelColor, _mm_set1_ps(255.0f)));
-                            const __m128i v = _mm_min_epi32(t, _mm_set1_epi32(255));
-                            const uint32_t r = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 0));
-                            const uint32_t g = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 1));
-                            const uint32_t b = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 2));
-                            // const uint32_t a = static_cast<uint32_t>(_mm_extract_epi8(v, 4 * 3));
-
-                            blockData[y * 4 + x].r = r & 0xff;
-                            blockData[y * 4 + x].g = g & 0xff;
-                            blockData[y * 4 + x].b = b & 0xff;
-                            blockData[y * 4 + x].a = 0x0;
-                        }
-                    }
-
-                    uint8_t compressedBlock[16];
-                    CompressBlockBC7(reinterpret_cast<uint8_t*>(blockData), 16, compressedBlock, options);
-
-                    const __m128 block = _mm_loadu_ps(reinterpret_cast<const float*>(compressedBlock));
-                    _mm_store_ps(reinterpret_cast<float*>(compressedData + (yb * blockCountX + xb) * 16), block);
+                case Math::MakeFourCC('D', 'X', 'T', '1'):
+                    return Core::Format::kBC1_UNORM;
+                case Math::MakeFourCC('D', 'X', 'T', '3'):
+                    return Core::Format::kBC2_UNORM;
+                case Math::MakeFourCC('D', 'X', 'T', '5'):
+                    return Core::Format::kBC3_UNORM;
+                case Math::MakeFourCC('A', 'T', 'I', '1'):
+                case Math::MakeFourCC('B', 'C', '4', 'U'):
+                    return Core::Format::kBC4_UNORM;
+                case Math::MakeFourCC('B', 'C', '4', 'S'):
+                    return Core::Format::kBC4_SNORM;
+                case Math::MakeFourCC('A', 'T', 'I', '2'):
+                case Math::MakeFourCC('B', 'C', '5', 'U'):
+                    return Core::Format::kBC5_UNORM;
+                case Math::MakeFourCC('B', 'C', '5', 'S'):
+                    return Core::Format::kBC5_SNORM;
+                default:
+                    return Core::Format::kUndefined;
                 }
             }
 
-            return compressedData;
+            if ((format.m_flags & kDdsPixelFormatRgb) == 0 || format.m_rgbBitCount != 32)
+                return Core::Format::kUndefined;
+
+            const bool isRgba = format.m_rBitMask == 0x000000ff && format.m_gBitMask == 0x0000ff00
+                && format.m_bBitMask == 0x00ff0000 && format.m_aBitMask == 0xff000000;
+            if (isRgba)
+                return Core::Format::kR8G8B8A8_UNORM;
+
+            const bool isBgra = format.m_rBitMask == 0x00ff0000 && format.m_gBitMask == 0x0000ff00
+                && format.m_bBitMask == 0x000000ff && format.m_aBitMask == 0xff000000;
+            return isBgra ? Core::Format::kB8G8R8A8_UNORM : Core::Format::kUndefined;
+        }
+
+
+        struct ParsedDds final
+        {
+            Core::TextureDesc m_desc;
+            festd::inline_vector<festd::vector<std::byte>, 8> m_mips;
+        };
+
+
+        bool ParseDds(const festd::span<const std::byte> bytes, ParsedDds& result)
+        {
+            if (bytes.size() < sizeof(uint32_t) + sizeof(DdsHeader))
+                return false;
+
+            Memory::BlockReader reader(bytes);
+            uint32_t magic;
+            DdsHeader header;
+            if (!reader.ReadBytes(&magic, sizeof(magic)) || !reader.ReadBytes(&header, sizeof(header)) || magic != kDdsMagic
+                || header.m_size != sizeof(DdsHeader) || header.m_pixelFormat.m_size != sizeof(DdsPixelFormat))
+            {
+                return false;
+            }
+
+            DdsHeaderDx10 dx10{};
+            const bool hasDx10Header = header.m_pixelFormat.m_fourCc == kFourCcDx10;
+            if (hasDx10Header && !reader.ReadBytes(&dx10, sizeof(dx10)))
+                return false;
+
+            const Core::Format format =
+                hasDx10Header ? TranslateDxgiFormat(dx10.m_dxgiFormat) : TranslateLegacyFormat(header.m_pixelFormat);
+            if (format == Core::Format::kUndefined)
+                return false;
+
+            const uint32_t mipCount = Math::Max(header.m_mipMapCount, 1u);
+            uint32_t arraySize = hasDx10Header ? dx10.m_arraySize : 1;
+            Core::TextureDimension dimension = Core::TextureDimension::k2D;
+            if (hasDx10Header)
+            {
+                if (dx10.m_resourceDimension == 2)
+                    dimension = Core::TextureDimension::k1D;
+                else if (dx10.m_resourceDimension == 4)
+                    dimension = Core::TextureDimension::k3D;
+                else if (dx10.m_resourceDimension != 3)
+                    return false;
+
+                if ((dx10.m_miscFlag & kDdsResourceMiscTextureCube) != 0)
+                {
+                    dimension = Core::TextureDimension::kCubemap;
+                    arraySize *= 6;
+                }
+            }
+            else if ((header.m_caps2 & kDdsCaps2Cubemap) != 0)
+            {
+                dimension = Core::TextureDimension::kCubemap;
+                arraySize = 6;
+            }
+
+            const uint32_t depth = dimension == Core::TextureDimension::k3D ? Math::Max(header.m_depth, 1u) : 1u;
+            if (dimension == Core::TextureDimension::k3D && arraySize != 1)
+                return false;
+
+            const bool dimensionsValid = header.m_width > 0 && header.m_height > 0 && header.m_width < (1u << 14)
+                && header.m_height < (1u << 14) && depth < (1u << 14);
+            const bool subresourcesValid = arraySize > 0 && arraySize < (1u << 12) && mipCount < (1u << 4);
+            if (!dimensionsValid || !subresourcesValid)
+                return false;
+
+            result.m_desc.m_width = header.m_width;
+            result.m_desc.m_height = dimension == Core::TextureDimension::k1D ? 1 : header.m_height;
+            result.m_desc.m_depth = depth;
+            result.m_desc.m_arraySize = arraySize;
+            result.m_desc.m_mipSliceCount = mipCount;
+            result.m_desc.m_sampleCount = 1;
+            result.m_desc.m_dimension = dimension;
+            result.m_desc.m_imageFormat = format;
+
+            result.m_mips.resize(mipCount);
+            const Core::FormatInfo formatInfo(format);
+            for (uint32_t arrayIndex = 0; arrayIndex < arraySize; ++arrayIndex)
+            {
+                for (uint32_t sourceMip = 0; sourceMip < mipCount; ++sourceMip)
+                {
+                    const uint32_t mipSize =
+                        formatInfo.CalculateMipByteSize({ header.m_width, result.m_desc.m_height, depth }, sourceMip);
+                    if (reader.m_ptr + mipSize > reader.m_end)
+                        return false;
+
+                    const uint32_t destinationMip = mipCount - sourceMip - 1;
+                    festd::vector<std::byte>& mip = result.m_mips[destinationMip];
+                    const uint32_t oldSize = mip.size();
+                    mip.resize(oldSize + mipSize);
+                    memcpy(mip.data() + oldSize, reader.m_ptr, mipSize);
+                    reader.m_ptr += mipSize;
+                }
+
+                if (dimension == Core::TextureDimension::k3D)
+                    break;
+            }
+            return true;
         }
     } // namespace
 
 
-    bool AssetBuilder::ProcessTexture(const TextureProcessSettings& settings)
+    bool ValidateTextureSource(const IO::Path& path, const festd::span<const std::byte> sourceData)
     {
-        auto fileResult = IO::FileStream::Open(settings.m_inputFile, IO::OpenMode::kReadOnly);
-        if (!fileResult)
-        {
-            Logger::LogError("Failed to open file {}: {}", settings.m_inputFile, IO::GetResultDesc(fileResult.error()));
-            return false;
-        }
+        ParsedDds dds;
+        if (ParseDds(sourceData, dds))
+            return true;
 
-        Logger::LogInfo("Processing texture {}", settings.m_inputFile);
-
-        IO::FileStream* file = fileResult->Get();
-
-        const size_t rawSize = file->Length();
-        void* rawData = Memory::DefaultAllocate(rawSize);
-        if (file->ReadToBuffer(rawData, rawSize) != rawSize)
-        {
-            Memory::DefaultFree(rawData);
-            Logger::LogError("Failed to read file {}", settings.m_inputFile);
-            return false;
-        }
-
-        fileResult->Reset();
-        file = nullptr;
-
-        int32_t sourceWidth, sourceHeight, sourceChannels;
-        float* imageData = stbi_loadf_from_memory(static_cast<stbi_uc*>(rawData),
-                                                  static_cast<int32_t>(rawSize),
-                                                  &sourceWidth,
-                                                  &sourceHeight,
-                                                  &sourceChannels,
-                                                  4);
-
-        Memory::DefaultFree(rawData);
-
-        if (imageData == nullptr)
-        {
-            Logger::LogError("Failed to load image {}: {}", settings.m_inputFile, stbi_failure_reason());
-            return false;
-        }
-
-        Vector2UInt outputSize = settings.m_outputSize;
-        if (outputSize == Vector2UInt::kZero)
-        {
-            outputSize = Vector2UInt(sourceWidth, sourceHeight);
-        }
-
-        if (outputSize != Vector2UInt(sourceWidth, sourceHeight))
-        {
-            Logger::LogInfo("Resizing image from {}x{} to {}x{}", sourceWidth, sourceHeight, outputSize.x, outputSize.y);
-
-            const size_t outputWidth = outputSize.x;
-            const size_t outputHeight = outputSize.y;
-            auto* resizedData = static_cast<float*>(Memory::DefaultAllocate(outputWidth * outputHeight * 4 * sizeof(float)));
-
-            stbir_resize_float_generic(imageData,
-                                       sourceWidth,
-                                       sourceHeight,
-                                       0,
-                                       resizedData,
-                                       static_cast<int32_t>(outputWidth),
-                                       static_cast<int32_t>(outputHeight),
-                                       0,
-                                       4,
-                                       3,
-                                       0,
-                                       STBIR_EDGE_CLAMP,
-                                       STBIR_FILTER_MITCHELL,
-                                       STBIR_COLORSPACE_LINEAR,
-                                       nullptr);
-
-            stbi_image_free(imageData);
-            imageData = resizedData;
-        }
-
-        const Core::FormatInfo formatInfo{ settings.m_format };
-        if (formatInfo.GetChannelCount() < static_cast<uint32_t>(sourceChannels))
-        {
-            Logger::LogError("Image {} has {} channels, but requested format {} has {} channels",
-                             settings.m_inputFile,
-                             sourceChannels,
-                             settings.m_format,
-                             formatInfo.GetChannelCount());
-            return false;
-        }
-
-        festd::fixed_vector<float*, Core::Limits::Image::kMaxMipCount> mipData;
-        mipData.push_back(imageData);
-
-        const uint32_t mipCount = settings.m_generateMips ? Core::CalculateMipCount(outputSize) : 1;
-        if (mipCount > 1)
-        {
-            Logger::LogInfo("Generating {} mipmaps", mipCount - 1);
-        }
-
-        for (uint32_t mipIndex = 1; mipIndex < mipCount; ++mipIndex)
-        {
-            const uint32_t sourceMipIndex = mipIndex - 1;
-            const uint32_t sourceMipWidth = outputSize.x >> sourceMipIndex;
-            const uint32_t sourceMipHeight = outputSize.y >> sourceMipIndex;
-            const float* sourceMipData = mipData[sourceMipIndex];
-
-            const size_t mipWidth = Math::Max(1u, outputSize.x >> mipIndex);
-            const size_t mipHeight = Math::Max(1u, outputSize.y >> mipIndex);
-            auto* mipDataPtr = static_cast<float*>(Memory::DefaultAllocate(mipWidth * mipHeight * 4 * sizeof(float)));
-
-            stbir_resize_float_generic(sourceMipData,
-                                       static_cast<int32_t>(sourceMipWidth),
-                                       static_cast<int32_t>(sourceMipHeight),
-                                       0,
-                                       mipDataPtr,
-                                       static_cast<int32_t>(mipWidth),
-                                       static_cast<int32_t>(mipHeight),
-                                       0,
-                                       4,
-                                       3,
-                                       0,
-                                       STBIR_EDGE_CLAMP,
-                                       STBIR_FILTER_BOX,
-                                       STBIR_COLORSPACE_LINEAR,
-                                       nullptr);
-            mipData.push_back(mipDataPtr);
-
-            Logger::LogInfo("Generated mips [{}/{}]", mipIndex + 1, mipCount);
-        }
-
-        Logger::LogInfo("Compressing texture to format {}", settings.m_format);
-
-        festd::fixed_vector<std::byte*, Core::Limits::Image::kMaxMipCount> blockCompressedMipData;
-        auto deferDeleteData = festd::defer([&blockCompressedMipData] {
-            for (std::byte* data : blockCompressedMipData)
-                Memory::DefaultFree(data);
-        });
-
-        for (uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
-        {
-            const uint32_t width = Math::Max(1u, outputSize.x >> mipIndex);
-            const uint32_t height = Math::Max(1u, outputSize.y >> mipIndex);
-
-            if (formatInfo.m_isBlockCompressed)
-            {
-                switch (settings.m_format)
-                {
-                default:
-                    // not implemented
-                    FE_DebugBreak();
-                    break;
-
-                case Core::Format::kBC7_UNORM:
-                    blockCompressedMipData.push_back(CompressTextureBC7(mipData[mipIndex], width, height));
-                    break;
-                }
-            }
-
-            Logger::LogInfo("Compressed mips [{}/{}]", mipIndex + 1, mipCount);
-        }
-
-        for (float* data : mipData)
-            Memory::DefaultFree(data);
-        mipData.clear();
-
-        const auto compressor = Compression::Compressor::Create(Compression::Method::kZstd);
-
-        //
-        // The first block of the texture file contains the header, followed by an array of MipChainInfo structs.
-        // We also try to store there as many small mips as possible to read them all in one go together with the header.
-        //
-
-        Data::TextureHeader header;
-        header.m_magic = Data::kTextureMagic;
-        header.m_desc.m_width = outputSize.x;
-        header.m_desc.m_height = outputSize.y;
-        header.m_desc.m_sampleCount = 1;
-        header.m_desc.m_depth = 1;
-        header.m_desc.m_arraySize = 1;
-        header.m_desc.m_mipSliceCount = mipCount;
-        header.m_desc.m_dimension = Core::TextureDimension::k2D;
-        header.m_desc.m_imageFormat = settings.m_format;
-
-        festd::fixed_vector<Data::MipChainInfo, Core::Limits::Image::kMaxMipCount> mipChainInfo;
-
-        bool hasMipsInFirstBlock = false;
-        uint32_t firstBlockBytes = sizeof(Data::TextureHeader);
-
-        for (uint32_t i = mipCount; i > 0; --i)
-        {
-            const uint32_t mipIndex = i - 1;
-            const uint32_t mipBytes = formatInfo.CalculateMipByteSize(outputSize, mipIndex);
-
-            const uint32_t expectedFirstBlockSize = firstBlockBytes + mipBytes + sizeof(Data::MipChainInfo) * i;
-            if (expectedFirstBlockSize <= Compression::kBlockSize)
-            {
-                firstBlockBytes += mipBytes;
-
-                if (mipChainInfo.empty())
-                {
-                    FE_Assert(!hasMipsInFirstBlock);
-                    firstBlockBytes += sizeof(Data::MipChainInfo);
-                    mipChainInfo.push_back({});
-                    hasMipsInFirstBlock = true;
-                }
-
-                FE_Assert(mipChainInfo.size() == 1);
-
-                Data::MipChainInfo& firstMipInfo = mipChainInfo[0];
-                firstMipInfo.m_reserved = 0;
-                firstMipInfo.m_arraySlice = 0;
-                firstMipInfo.m_blockCount = 1;
-                firstMipInfo.m_mostDetailedMipSlice = mipIndex;
-                ++firstMipInfo.m_mipSliceCount;
-            }
-            else
-            {
-                Data::MipChainInfo& mipInfo = mipChainInfo.push_back();
-                mipInfo.m_reserved = 0;
-                mipInfo.m_arraySlice = 0;
-                mipInfo.m_blockCount = Math::CeilDivide(mipBytes, Compression::kBlockSize);
-                mipInfo.m_mostDetailedMipSlice = mipIndex;
-                mipInfo.m_mipSliceCount = 1;
-
-                firstBlockBytes += sizeof(Data::MipChainInfo);
-            }
-        }
-
-        auto outFileResult = IO::FileStream::Open(settings.m_outputFile, IO::OpenMode::kCreate);
-        if (!outFileResult)
-        {
-            Logger::LogError("Failed to open file {}: {}", settings.m_outputFile, IO::GetResultDesc(outFileResult.error()));
-            return false;
-        }
-
-        IO::FileStream* out = outFileResult->Get();
-
-        festd::vector<std::byte> tempCompressedBuffer{ static_cast<uint32_t>(compressor.GetBounds(Compression::kBlockSize)) };
-
-        {
-            Logger::LogInfo("Compressing final data using GDeflate");
-
-            festd::vector<std::byte> tempUncompressedBuffer{ Compression::kBlockSize };
-            Memory::BlockWriter writer{ tempUncompressedBuffer };
-            writer.Write(header);
-            FE_Verify(writer.WriteBytes(mipChainInfo.data(), festd::size_bytes(mipChainInfo)));
-
-            if (hasMipsInFirstBlock)
-            {
-                const Data::MipChainInfo& firstMipInfo = mipChainInfo[0];
-                for (uint32_t mipIndex = firstMipInfo.m_mostDetailedMipSlice;
-                     mipIndex < firstMipInfo.m_mostDetailedMipSlice + firstMipInfo.m_mipSliceCount;
-                     ++mipIndex)
-                {
-                    const uint32_t mipBytes = formatInfo.CalculateMipByteSize(outputSize, mipIndex);
-                    FE_Verify(writer.WriteBytes(blockCompressedMipData[mipIndex], mipBytes));
-                }
-
-                FE_Assert(writer.m_ptr - tempUncompressedBuffer.data() == firstBlockBytes);
-                FE_Assert(firstBlockBytes <= Compression::kBlockSize);
-            }
-
-            FE_Verify(compressor.Compress(tempUncompressedBuffer.data(),
-                                          writer.m_ptr - tempUncompressedBuffer.data(),
-                                          tempCompressedBuffer.data(),
-                                          tempCompressedBuffer.size()));
-
-            WriteCompactedPages(tempCompressedBuffer, out);
-
-            if (hasMipsInFirstBlock)
-                Logger::LogInfo("Compressed mip chains [1/{}]", mipChainInfo.size());
-        }
-
-        CompressedBlockWriter compressedBlockWriter{ out, &compressor };
-        for (uint32_t mipChainIndex = 0; mipChainIndex < mipChainInfo.size(); ++mipChainIndex)
-        {
-            if (mipChainIndex == 0 && hasMipsInFirstBlock)
-                continue;
-
-            const Data::MipChainInfo& mipInfo = mipChainInfo[mipChainIndex];
-            FE_Assert(mipInfo.m_mipSliceCount == 1);
-
-            compressedBlockWriter.WriteBytes(blockCompressedMipData[mipInfo.m_mostDetailedMipSlice],
-                                             formatInfo.CalculateMipByteSize(outputSize, mipInfo.m_mostDetailedMipSlice));
-            compressedBlockWriter.Flush();
-
-            Logger::LogInfo("Compressed mip chains [{}/{}]", mipChainIndex + 1, mipChainInfo.size());
-        }
-
-        compressedBlockWriter.Flush();
-        outFileResult->Reset();
-        out = nullptr;
-
-        Logger::LogInfo("Done writing to file {}", settings.m_outputFile);
-
-        return true;
+        Logger::LogError("Unsupported or malformed DDS texture '{}'", path);
+        return false;
     }
-} // namespace FE
+
+
+    bool ProcessTexture(const TextureProcessSettings& settings)
+    {
+        ParsedDds dds;
+        if (!ParseDds(settings.m_sourceData, dds))
+        {
+            Logger::LogError("Unsupported or malformed DDS texture '{}'", settings.m_inputFile);
+            return false;
+        }
+
+        TextureAsset header;
+        header.m_desc = dds.m_desc;
+        uint32_t tailMipCount = 0;
+        for (const festd::vector<std::byte>& mip : dds.m_mips)
+        {
+            if (header.m_mipTailData.size() + mip.size() > TextureAsset::kMaxMipTailByteSize)
+                break;
+
+            header.m_mipTailOffsets.push_back(header.m_mipTailData.size());
+            header.m_mipTailData.insert(header.m_mipTailData.end(), mip.begin(), mip.end());
+            ++tailMipCount;
+        }
+
+        ArtifactWriter writer(settings.m_outputDirectory,
+                              settings.m_assetId,
+                              settings.m_artifactId,
+                              Rtti::GetTypeID<TextureAsset>());
+        if (!writer.WriteHeader(header))
+            return false;
+
+        for (uint32_t mipIndex = tailMipCount; mipIndex < dds.m_mips.size(); ++mipIndex)
+        {
+            if (!writer.WritePayload(dds.m_mips[mipIndex]))
+                return false;
+        }
+
+        return writer.Finish();
+    }
+} // namespace FE::AssetBuilder

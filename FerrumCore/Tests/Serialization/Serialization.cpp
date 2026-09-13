@@ -8,6 +8,7 @@
 #include <Core/Math/Transform.h>
 #include <Core/Math/Vector3Int.h>
 #include <Core/Math/Vector3UInt.h>
+#include <Core/RTTI/Any.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Serialization/SerializationTypes.h>
@@ -529,6 +530,36 @@ namespace FE::Serialization::Tests
 
         type.m_destructor(storage);
         Memory::DefaultFree(storage);
+    }
+
+
+    TEST(Serialization, AnyUsesRuntimeSerializationAndOwnsItsValue)
+    {
+        Rtti::Any source;
+        source.Emplace<TestObject>(CreateObject());
+
+        Rtti::Any copy = source;
+        ASSERT_NE(copy.GetValue(), source.GetValue());
+        ASSERT_NE(copy.TryGet<TestObject>(), nullptr);
+        ExpectEqual(*source.TryGet<TestObject>(), *copy.TryGet<TestObject>());
+
+        MemoryStream stream;
+        JsonFormat format;
+        SerializationContext writer(&stream, format);
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+
+        stream.Rewind();
+        Rtti::Any destination;
+        DeserializationContext reader(&stream, format);
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+        ASSERT_NE(destination.TryGet<TestObject>(), nullptr);
+        ExpectEqual(*source.TryGet<TestObject>(), *destination.TryGet<TestObject>());
+
+        Rtti::Any scalar;
+        scalar.Emplace<uint32_t>(42);
+        Rtti::Any scalarCopy = scalar;
+        ASSERT_NE(scalarCopy.TryGet<uint32_t>(), nullptr);
+        EXPECT_EQ(*scalarCopy.TryGet<uint32_t>(), 42);
     }
 
 

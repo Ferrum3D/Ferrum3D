@@ -24,6 +24,9 @@ namespace FE::Graphics::Core
         TextureDimension m_dimension : 2 = TextureDimension::k1D;
         Format m_imageFormat = Format::kUndefined;
 
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const TextureDesc& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, TextureDesc& value);
+
         [[nodiscard]] Vector3UInt GetSize() const
         {
             return Vector3UInt{ m_width, m_height, m_depth };

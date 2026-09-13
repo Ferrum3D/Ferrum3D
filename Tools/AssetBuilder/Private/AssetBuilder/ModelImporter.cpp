@@ -3,13 +3,9 @@
 #include <Core/IO/Path.h>
 #include <Core/Strings/Parser.h>
 
-#define STBIW_MALLOC(size) FE::Memory::DefaultAllocate(size)
-#define STBIW_REALLOC(p, newSize) FE::Memory::DefaultReallocate(p, newSize)
-#define STBIW_FREE(p) FE::Memory::DefaultFree(p)
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #define TINYGLTF_NO_INCLUDE_RAPIDJSON
+#define TINYGLTF_NO_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/rapidjson.h"
@@ -27,33 +23,86 @@ namespace FE::AssetBuilder
 {
     namespace
     {
-        uint32_t GetVertexAttributeOffset(const festd::string_view attributeName)
+        struct VertexAttribute final
+        {
+            uint32_t m_offset = kInvalidIndex;
+            uint32_t m_size = 0;
+        };
+
+
+        template<class T>
+        T ReadUnaligned(const void* data, const size_t byteOffset)
+        {
+            T result;
+            memcpy(&result, static_cast<const std::byte*>(data) + byteOffset, sizeof(T));
+            return result;
+        }
+
+
+        float ReadVertexComponent(const std::byte* data, const uint32_t componentType, const bool isNormalized)
+        {
+            switch (componentType)
+            {
+            case TINYGLTF_COMPONENT_TYPE_BYTE:
+                {
+                    const int8_t value = ReadUnaligned<int8_t>(data, 0);
+                    return isNormalized ? Math::Max(static_cast<float>(value) / 127.0f, -1.0f) : value;
+                }
+            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                {
+                    const uint8_t value = ReadUnaligned<uint8_t>(data, 0);
+                    return isNormalized ? static_cast<float>(value) / 255.0f : value;
+                }
+            case TINYGLTF_COMPONENT_TYPE_SHORT:
+                {
+                    const int16_t value = ReadUnaligned<int16_t>(data, 0);
+                    return isNormalized ? Math::Max(static_cast<float>(value) / 32767.0f, -1.0f) : value;
+                }
+            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                {
+                    const uint16_t value = ReadUnaligned<uint16_t>(data, 0);
+                    return isNormalized ? static_cast<float>(value) / 65535.0f : value;
+                }
+            case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                return ReadUnaligned<float>(data, 0);
+            default:
+                FE_DebugBreak();
+                return 0.0f;
+            }
+        }
+
+
+        VertexAttribute GetVertexAttribute(const festd::string_view attributeName)
         {
             if (attributeName == "POSITION")
-                return offsetof(IntermediateVertex, m_position);
+                return { offsetof(IntermediateVertex, m_position), sizeof(Vector3) };
 
             if (attributeName == "NORMAL")
-                return offsetof(IntermediateVertex, m_normal);
+                return { offsetof(IntermediateVertex, m_normal), sizeof(Vector3) };
+
+            if (attributeName == "TANGENT")
+                return { offsetof(IntermediateVertex, m_tangentWithSign), sizeof(Vector4) };
 
             if (attributeName.starts_with("TEXCOORD_"))
             {
                 const uint32_t index = Parser::Parse<uint32_t>(attributeName.substr_ascii(sizeof("TEXCOORD_") - 1));
                 FE_Assert(index < Graphics::Core::Limits::Vertex::kMaxTexCoords);
-                return offsetof(IntermediateVertex, m_uv[index]);
+                return { offsetof(IntermediateVertex, m_uv[index]), sizeof(Vector2) };
             }
 
             if (attributeName.starts_with("COLOR_"))
             {
                 const uint32_t index = Parser::Parse<uint32_t>(attributeName.substr_ascii(sizeof("COLOR_") - 1));
                 FE_Assert(index < Graphics::Core::Limits::Vertex::kMaxColors);
-                return offsetof(IntermediateVertex, m_color[index]);
+                return { offsetof(IntermediateVertex, m_color[index]), sizeof(Color4F) };
             }
 
-            return kInvalidIndex;
+            return {};
         }
 
 
-        IntermediateModel* ParseModel(IntermediateScene* intermediateScene, const tinygltf::Model& model, const int32_t meshIndex)
+        IntermediateModel* ParseModel(IntermediateScene* intermediateScene, const tinygltf::Model& model, const int32_t meshIndex,
+                                      const Matrix4x4& worldTransform)
         {
             const tinygltf::Mesh& mesh = model.meshes[meshIndex];
 
@@ -70,11 +119,23 @@ namespace FE::AssetBuilder
 
                 IntermediateMeshLod& lod0 = intermediateMesh.m_lods.push_back();
                 lod0.m_vertices.resize(static_cast<uint32_t>(positionAccessor.count));
+                for (IntermediateVertex& vertex : lod0.m_vertices)
+                {
+                    vertex.m_position = Vector3::kZero;
+                    vertex.m_normal = Vector3::kZero;
+                    for (Vector2& uv : vertex.m_uv)
+                        uv = Vector2::kZero;
+                    for (Color4F& color : vertex.m_color)
+                        color = Color4F(1.0f);
+                    vertex.m_tangentWithSign = Vector4::kZero;
+                    memset(vertex.m_influenceBones, 0, sizeof(vertex.m_influenceBones));
+                    memset(vertex.m_influenceWeights, 0, sizeof(vertex.m_influenceWeights));
+                }
 
                 for (const auto& [attributeName, accessorIndex] : primitive.attributes)
                 {
-                    const uint32_t attributeOffset = GetVertexAttributeOffset(festd::string_view(attributeName));
-                    if (attributeOffset == kInvalidIndex)
+                    const VertexAttribute attribute = GetVertexAttribute(festd::string_view(attributeName));
+                    if (attribute.m_offset == kInvalidIndex)
                         continue;
 
                     const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
@@ -84,15 +145,23 @@ namespace FE::AssetBuilder
                     const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
                     const uint8_t* bufferData = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
 
-                    const uint32_t attributeByteSize = accessor.ByteStride(bufferView);
-                    FE_Assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+                    const uint32_t componentByteSize = tinygltf::GetComponentSizeInBytes(accessor.componentType);
+                    const uint32_t componentCount = tinygltf::GetNumComponentsInType(accessor.type);
+                    const uint32_t attributeStride = accessor.ByteStride(bufferView);
+                    FE_Assert(componentCount * sizeof(float) <= attribute.m_size);
 
                     for (uint32_t vertexIndex = 0; vertexIndex < lod0.m_vertices.size(); ++vertexIndex)
                     {
-                        void* vertexData = &lod0.m_vertices[vertexIndex];
-                        memcpy(static_cast<std::byte*>(vertexData) + attributeOffset,
-                               bufferData + static_cast<size_t>(vertexIndex) * attributeByteSize,
-                               attributeByteSize);
+                        float* vertexData = reinterpret_cast<float*>(reinterpret_cast<std::byte*>(&lod0.m_vertices[vertexIndex])
+                                                                     + attribute.m_offset);
+                        const std::byte* sourceData =
+                            reinterpret_cast<const std::byte*>(bufferData) + static_cast<size_t>(vertexIndex) * attributeStride;
+                        for (uint32_t componentIndex = 0; componentIndex < componentCount; ++componentIndex)
+                        {
+                            vertexData[componentIndex] = ReadVertexComponent(sourceData + componentIndex * componentByteSize,
+                                                                             accessor.componentType,
+                                                                             accessor.normalized);
+                        }
                     }
                 }
 
@@ -103,6 +172,7 @@ namespace FE::AssetBuilder
                     const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
                     const void* bufferData = &buffer.data[indicesAccessor.byteOffset + bufferView.byteOffset];
                     lod0.m_indices.resize(static_cast<uint32_t>(indicesAccessor.count));
+                    const uint32_t indexStride = indicesAccessor.ByteStride(bufferView);
 
                     switch (indicesAccessor.componentType)
                     {
@@ -113,19 +183,19 @@ namespace FE::AssetBuilder
                     case TINYGLTF_COMPONENT_TYPE_BYTE:
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                         for (uint32_t i = 0; i < lod0.m_indices.size(); ++i)
-                            lod0.m_indices[i] = static_cast<uint32_t>(static_cast<const uint8_t*>(bufferData)[i]);
+                            lod0.m_indices[i] = ReadUnaligned<uint8_t>(bufferData, i * indexStride);
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_SHORT:
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                         for (uint32_t i = 0; i < lod0.m_indices.size(); ++i)
-                            lod0.m_indices[i] = static_cast<uint32_t>(static_cast<const uint16_t*>(bufferData)[i]);
+                            lod0.m_indices[i] = ReadUnaligned<uint16_t>(bufferData, i * indexStride);
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_INT:
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                         for (uint32_t i = 0; i < lod0.m_indices.size(); ++i)
-                            lod0.m_indices[i] = static_cast<const uint32_t*>(bufferData)[i];
+                            lod0.m_indices[i] = ReadUnaligned<uint32_t>(bufferData, i * indexStride);
                         break;
                     }
                 }
@@ -134,6 +204,28 @@ namespace FE::AssetBuilder
                     lod0.m_indices.resize(lod0.m_vertices.size());
                     festd::iota(lod0.m_indices, 0);
                 }
+
+                const Matrix4x4 normalTransform = Math::Transpose(Math::Invert(worldTransform));
+                for (IntermediateVertex& vertex : lod0.m_vertices)
+                {
+                    vertex.m_position.x = -vertex.m_position.x;
+                    vertex.m_normal.x = -vertex.m_normal.x;
+                    vertex.m_tangentWithSign.x = -vertex.m_tangentWithSign.x;
+
+                    vertex.m_position = Vector4::GetXYZ(Vector4(vertex.m_position, 1.0f) * worldTransform);
+                    const Vector3 normal = Vector4::GetXYZ(Vector4(vertex.m_normal, 0.0f) * normalTransform);
+                    vertex.m_normal =
+                        Math::LengthSquared(normal) > Constants::kEpsilon ? Math::Normalize(normal) : Vector3::kZero;
+                    const float tangentSign = vertex.m_tangentWithSign.w;
+                    const Vector3 tangent =
+                        Vector4::GetXYZ(Vector4(Vector4::GetXYZ(vertex.m_tangentWithSign), 0.0f) * normalTransform);
+                    const Vector3 normalizedTangent =
+                        Math::LengthSquared(tangent) > Constants::kEpsilon ? Math::Normalize(tangent) : Vector3::kZero;
+                    vertex.m_tangentWithSign = Vector4(normalizedTangent, -tangentSign);
+                }
+
+                for (uint32_t index = 0; index + 2 < lod0.m_indices.size(); index += 3)
+                    festd::swap(lod0.m_indices[index + 1], lod0.m_indices[index + 2]);
             }
 
             return &intermediateModel;
@@ -141,7 +233,7 @@ namespace FE::AssetBuilder
 
 
         IntermediateSceneNode* ParseNode(IntermediateScene* intermediateScene, const tinygltf::Model& model,
-                                         const int32_t nodeIndex, IntermediateSceneNode* parent)
+                                         const int32_t nodeIndex, IntermediateSceneNode* parent, const Matrix4x4& parentTransform)
         {
             const tinygltf::Node& node = model.nodes[nodeIndex];
 
@@ -203,15 +295,17 @@ namespace FE::AssetBuilder
                 intermediateNode->m_nonUniformScale = scale;
             }
 
+            Matrix4x4 localTransform = Transform::ToMatrix(intermediateNode->m_transform);
+            if (intermediateNode->m_nonUniformScale != Vector3::kZero)
+                localTransform = Matrix4x4::Scale(intermediateNode->m_nonUniformScale) * localTransform;
+            const Matrix4x4 worldTransform = localTransform * parentTransform;
+
             for (const int32_t childIndex : node.children)
-            {
-                IntermediateSceneNode* childNode = ParseNode(intermediateScene, model, childIndex, intermediateNode);
-                intermediateNode->m_children.push_back(childNode);
-            }
+                ParseNode(intermediateScene, model, childIndex, intermediateNode, worldTransform);
 
             if (node.mesh >= 0)
             {
-                IntermediateModel* intermediateModel = ParseModel(intermediateScene, model, node.mesh);
+                IntermediateModel* intermediateModel = ParseModel(intermediateScene, model, node.mesh, worldTransform);
                 intermediateNode->m_model = intermediateModel;
             }
 
@@ -222,7 +316,7 @@ namespace FE::AssetBuilder
 
     struct ModelImporter::Implementation final
     {
-        bool Load(const void* data, const uint32_t byteSize)
+        bool Load(const void* data, const uint32_t byteSize, const IO::Path& sourcePath)
         {
             // We don't need to load images
             m_loader.SetImageLoader(
@@ -231,7 +325,23 @@ namespace FE::AssetBuilder
                 },
                 nullptr);
 
-            return m_loader.LoadBinaryFromMemory(&m_model, &m_error, &m_warn, static_cast<const uint8_t*>(data), byteSize);
+            m_sourceDirectory = IO::PathView(sourcePath).parent_directory();
+            if (IO::PathView(sourcePath).extension() == ".gltf")
+            {
+                return m_loader.LoadASCIIFromString(&m_model,
+                                                    &m_error,
+                                                    &m_warn,
+                                                    static_cast<const char*>(data),
+                                                    byteSize,
+                                                    m_sourceDirectory.data());
+            }
+
+            return m_loader.LoadBinaryFromMemory(&m_model,
+                                                 &m_error,
+                                                 &m_warn,
+                                                 static_cast<const uint8_t*>(data),
+                                                 byteSize,
+                                                 m_sourceDirectory.data());
         }
 
         IntermediateScene* ParseScene()
@@ -242,13 +352,31 @@ namespace FE::AssetBuilder
             tinygltf::Scene& scene = m_model.scenes[sceneIndex];
 
             for (const int32_t nodeIndex : scene.nodes)
-                ParseNode(intermediateScene, m_model, nodeIndex, nullptr);
+                ParseNode(intermediateScene, m_model, nodeIndex, nullptr, Matrix4x4::kIdentity);
+
+            for (const tinygltf::Texture& texture : m_model.textures)
+            {
+                if (texture.source < 0)
+                    continue;
+
+                const tinygltf::Image& image = m_model.images[texture.source];
+                if (image.uri.empty() || IO::PathView(image.uri.c_str()).extension() != ".dds")
+                    continue;
+
+                const IO::Path texturePath = IO::GetAbsolutePath(m_sourceDirectory / festd::string_view(image.uri.c_str()));
+                if (festd::find(intermediateScene->m_texturePaths.begin(), intermediateScene->m_texturePaths.end(), texturePath)
+                    == intermediateScene->m_texturePaths.end())
+                {
+                    intermediateScene->m_texturePaths.push_back(texturePath);
+                }
+            }
 
             return intermediateScene;
         }
 
         tinygltf::TinyGLTF m_loader;
         tinygltf::Model m_model;
+        IO::Path m_sourceDirectory;
 
         std::string m_error;
         std::string m_warn;
@@ -281,7 +409,10 @@ namespace FE::AssetBuilder
     IntermediateScene::~IntermediateScene()
     {
         for (IntermediateSceneNode* node : m_immediateNodes)
+        {
             node->Invalidate(*this);
+            m_nodePool.Delete(node);
+        }
     }
 
 
@@ -305,12 +436,12 @@ namespace FE::AssetBuilder
     }
 
 
-    ModelImporter ModelImporter::Create(const void* data, const uint32_t byteSize)
+    ModelImporter ModelImporter::Create(const void* data, const uint32_t byteSize, const IO::Path& sourcePath)
     {
         ModelImporter importer;
         importer.m_impl = Memory::DefaultNew<Implementation>();
 
-        const bool success = importer.m_impl->Load(data, byteSize);
+        const bool success = importer.m_impl->Load(data, byteSize, sourcePath);
 
         if (!importer.m_impl->m_error.empty())
             Logger::LogError("GLTF Error: {}", festd::string_view(importer.m_impl->m_error));

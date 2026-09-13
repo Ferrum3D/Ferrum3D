@@ -22,5 +22,7 @@ int main(const int32_t argc, const char** argv)
     });
     Jobs::StartJobSystem();
 
+    Env::Shutdown();
+
     return exitCode;
 }

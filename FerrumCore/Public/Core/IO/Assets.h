@@ -442,6 +442,13 @@ namespace FE::IO
     template<class T, DependencyKind TKind = DependencyKind::kHard>
     struct Link final
     {
+        Link() = default;
+
+        explicit Link(const AssetID id)
+            : m_id(id)
+        {
+        }
+
         //! Dependency semantics available to serialization and loading code at compile time.
         static constexpr DependencyKind kKind = TKind;
 

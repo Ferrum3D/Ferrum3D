@@ -95,6 +95,7 @@ namespace FE::AssetBuilder
         SegmentedVector<IntermediateMaterial> m_materials;
         SegmentedVector<IntermediateMesh> m_meshes;
         SegmentedVector<IntermediateModel> m_models;
+        festd::inline_vector<IO::Path, 4> m_texturePaths;
 
         Memory::Pool<IntermediateSceneNode> m_nodePool{ "IntermediateSceneNodePool" };
 
@@ -130,7 +131,7 @@ namespace FE::AssetBuilder
         ModelImporter(ModelImporter&& other) noexcept;
         ModelImporter& operator=(ModelImporter&& other) noexcept;
 
-        [[nodiscard]] static ModelImporter Create(const void* data, uint32_t byteSize);
+        [[nodiscard]] static ModelImporter Create(const void* data, uint32_t byteSize, const IO::Path& sourcePath);
 
         [[nodiscard]] IntermediateScene* ParseScene();
 

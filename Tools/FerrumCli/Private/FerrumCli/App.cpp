@@ -1,8 +1,7 @@
 #include <FerrumCli/App.h>
 
-#include <AssetBuilder/ModelProcessor.h>
-#include <AssetBuilder/TextureProcessor.h>
-#include <Core/DI/Builder.h>
+#include <AssetBuilder/AssetPipeline.h>
+#include <Core/IO/BaseIO.h>
 
 namespace FE::FerrumCli
 {
@@ -42,19 +41,52 @@ namespace FE::FerrumCli
             return 0;
         }
 
+        const Import* import = m_cli.GetSubcommand<Import>();
         const Build* build = m_cli.GetSubcommand<Build>();
-        if (build == nullptr)
+        if (import == nullptr && build == nullptr)
         {
             PrintHelp(m_cli);
             return 0;
         }
 
+        if (import != nullptr)
+        {
+            if (import->m_help)
+            {
+                PrintHelp(*import);
+                return 0;
+            }
+            if (!import->m_asset || import->m_asset.Get().empty())
+            {
+                IO::EPrintLn("Error: Option '--asset' is required");
+                PrintHelp(*import);
+                return 1;
+            }
+
+            const IO::PathView sourcePath(import->m_asset.Get());
+            IO::Path outputPath;
+            if (import->m_output)
+                outputPath = import->m_output.Get();
+            else
+            {
+                outputPath = sourcePath.parent_directory();
+                IO::Path outputName(sourcePath.stem());
+                outputName.AsBaseString() += ".asset";
+                outputPath /= outputName;
+            }
+
+            AssetBuilder::ImportAssetSettings settings;
+            settings.m_inputFile = sourcePath;
+            settings.m_outputFile = outputPath;
+            return AssetBuilder::ImportAsset(settings) ? 0 : 1;
+        }
+
+        FE_Assert(build != nullptr);
         if (build->m_help)
         {
             PrintHelp(*build);
             return 0;
         }
-
         if (!build->m_asset || build->m_asset.Get().empty())
         {
             IO::EPrintLn("Error: Option '--asset' is required");
@@ -62,31 +94,21 @@ namespace FE::FerrumCli
             return 1;
         }
 
-        const festd::string_view assetPath = build->m_asset.Get();
-        const IO::PathView pathView{ assetPath };
-        const IO::Path fullInputPath = IO::GetAbsolutePath(assetPath);
-
-        IO::Path outputPath = pathView.parent_directory();
-        outputPath /= pathView.stem();
-
-        bool succeeded;
-        if (pathView.extension() == ".glb")
+        const IO::PathView assetFilePath(build->m_asset.Get());
+        IO::Path outputPath;
+        if (build->m_output)
         {
-            AssetBuilder::ModelProcessSettings settings;
-            settings.m_inputFile = fullInputPath;
-            settings.m_outputFile = outputPath;
-            settings.m_outputFile.append(".fmd");
-            succeeded = AssetBuilder::ProcessModel(settings);
+            outputPath = build->m_output.Get();
         }
         else
         {
-            AssetBuilder::TextureProcessSettings settings;
-            settings.m_inputFile = fullInputPath;
-            settings.m_outputFile = outputPath;
-            settings.m_outputFile.append(".ftx");
-            succeeded = AssetBuilder::ProcessTexture(settings);
+            outputPath = assetFilePath.parent_directory();
+            outputPath /= assetFilePath.stem();
         }
 
-        return succeeded ? 0 : 1;
+        AssetBuilder::BuildAssetSettings settings;
+        settings.m_assetFile = assetFilePath;
+        settings.m_outputDirectory = outputPath;
+        return AssetBuilder::BuildAsset(settings) ? 0 : 1;
     }
 } // namespace FE::FerrumCli

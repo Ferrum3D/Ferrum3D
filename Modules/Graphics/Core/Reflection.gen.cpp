@@ -5,6 +5,7 @@
 
 #include <Core/RTTI/ReflectionContext.h>
 
+#include <Graphics/Assets/Assets.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/BaseTypes.h>
 #include <Graphics/Core/Buffer.h>
@@ -363,6 +364,106 @@ namespace FE::Graphics::Vulkan
 
     static Rtti::TypeRegistrar GTypeRegistrar_1182bf4588b64763a120bc823919d74d(&Viewport::Reflect);
 } // namespace FE::Graphics::Vulkan
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MeshSubmeshAssetInfo::TypeID = Rtti::TypeID{
+        0x16, 0xe3, 0xba, 0xa2, 0xa8, 0xb3, 0x4f, 0x66, 0xb1, 0x86, 0x48, 0xe7, 0x26, 0x5a, 0xec, 0xa7,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_16e3baa2a8b34f66b18648e7265aeca7()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MeshSubmeshAssetInfo::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_16e3baa2a8b34f66b18648e7265aeca7();
+    }
+
+    void MeshSubmeshAssetInfo::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_16e3baa2a8b34f66b18648e7265aeca7();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x16, 0xe3, 0xba, 0xa2, 0xa8, 0xb3, 0x4f, 0x66,
+            0xb1, 0x86, 0x48, 0xe7, 0x26, 0x5a, 0xec, 0xa7, // FE::Graphics::MeshSubmeshAssetInfo
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lods
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lods = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lods",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MeshSubmeshAssetInfo::m_lods,
+                                                        kAttributes_m_lods,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MeshSubmeshAssetInfo>(typeInstance,
+                                                   Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                   "FE::Graphics::MeshSubmeshAssetInfo",
+                                                   kBaseClassTypeIDs,
+                                                   kAttributes,
+                                                   kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_16e3baa2a8b34f66b18648e7265aeca7(&MeshSubmeshAssetInfo::Reflect);
+
+    FE::Serialization::ResultCode MeshSubmeshAssetInfo::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_lods", m_lods);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MeshSubmeshAssetInfo::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_lods", m_lods);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MeshSubmeshAssetInfo::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x16, 0xe3, 0xba, 0xa2, 0xa8, 0xb3, 0x4f, 0x66, 0xb1, 0x86, 0x48, 0xe7, 0x26, 0x5a, 0xec, 0xa7,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_lods", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lods)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MeshSubmeshAssetInfo::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Core
@@ -768,6 +869,153 @@ namespace FE::Graphics::Core
 
     static Rtti::TypeRegistrar GTypeRegistrar_2c1855f0034b47b7869af9512903212f(&AsyncCopyQueue::Reflect);
 } // namespace FE::Graphics::Core
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID ModelAsset::TypeID = Rtti::TypeID{
+        0x2d, 0x09, 0x26, 0xa6, 0x83, 0x12, 0x4d, 0x3c, 0x86, 0x75, 0xf6, 0x7b, 0xb9, 0xa6, 0x2b, 0x67,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_2d0926a683124d3c8675f67bb9a62b67(ModelAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x2d, 0x09, 0x26, 0xa6, 0x83, 0x12, 0x4d, 0x3c,
+                0x86, 0x75, 0xf6, 0x7b, 0xb9, 0xa6, 0x2b, 0x67, // FE::Graphics::ModelAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_2d0926a683124d3c8675f67bb9a62b67()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& ModelAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_2d0926a683124d3c8675f67bb9a62b67();
+    }
+
+    void* FE_VECTORCALL ModelAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_2d0926a683124d3c8675f67bb9a62b67(this, typeID);
+    }
+
+    const void* FE_VECTORCALL ModelAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_2d0926a683124d3c8675f67bb9a62b67(const_cast<ModelAsset*>(this), typeID);
+    }
+    void ModelAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_2d0926a683124d3c8675f67bb9a62b67();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x2d, 0x09, 0x26, 0xa6, 0x83, 0x12, 0x4d, 0x3c,
+            0x86, 0x75, 0xf6, 0x7b, 0xb9, 0xa6, 0x2b, 0x67, // FE::Graphics::ModelAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshes
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_textures
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_lodCount
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_textures = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lodCount = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshes",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &ModelAsset::m_meshes,
+                                                        kAttributes_m_meshes,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_textures",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &ModelAsset::m_textures,
+                                                        kAttributes_m_textures,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lodCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &ModelAsset::m_lodCount,
+                                                        kAttributes_m_lodCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<ModelAsset>(typeInstance,
+                                         Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                         "FE::Graphics::ModelAsset",
+                                         kBaseClassTypeIDs,
+                                         kAttributes,
+                                         kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_2d0926a683124d3c8675f67bb9a62b67(&ModelAsset::Reflect);
+
+    FE::Serialization::ResultCode ModelAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_meshes", m_meshes);
+            object.Field("m_textures", m_textures);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode ModelAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_meshes", m_meshes);
+            object.Field("m_textures", m_textures);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t ModelAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x2d, 0x09, 0x26, 0xa6, 0x83, 0x12, 0x4d, 0x3c, 0x86, 0x75, 0xf6, 0x7b, 0xb9, 0xa6, 0x2b, 0x67,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_meshes", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_meshes)>());
+            hasher.Update("m_textures", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_textures)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t ModelAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Vulkan
@@ -1434,6 +1682,166 @@ namespace FE::Graphics::Vulkan
 
     static Rtti::TypeRegistrar GTypeRegistrar_437e4387bde042da8986fa909d8bfede(&PipelineFactory::Reflect);
 } // namespace FE::Graphics::Vulkan
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MeshAsset::TypeID = Rtti::TypeID{
+        0x44, 0xeb, 0xc2, 0x48, 0xfd, 0x5e, 0x4c, 0xf4, 0xab, 0x4c, 0x09, 0x51, 0x1b, 0x78, 0x36, 0x2c,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_44ebc248fd5e4cf4ab4c09511b78362c(MeshAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x44, 0xeb, 0xc2, 0x48, 0xfd, 0x5e, 0x4c, 0xf4,
+                0xab, 0x4c, 0x09, 0x51, 0x1b, 0x78, 0x36, 0x2c, // FE::Graphics::MeshAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_44ebc248fd5e4cf4ab4c09511b78362c()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MeshAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_44ebc248fd5e4cf4ab4c09511b78362c();
+    }
+
+    void* FE_VECTORCALL MeshAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_44ebc248fd5e4cf4ab4c09511b78362c(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MeshAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_44ebc248fd5e4cf4ab4c09511b78362c(const_cast<MeshAsset*>(this), typeID);
+    }
+    void MeshAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_44ebc248fd5e4cf4ab4c09511b78362c();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x44, 0xeb, 0xc2, 0x48, 0xfd, 0x5e, 0x4c, 0xf4,
+            0xab, 0x4c, 0x09, 0x51, 0x1b, 0x78, 0x36, 0x2c, // FE::Graphics::MeshAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_vertexStride
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_submeshes
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_lodErrors
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_buffer
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexStride = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_submeshes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lodErrors = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_buffer = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexStride",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MeshAsset::m_vertexStride,
+                                                        kAttributes_m_vertexStride,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_submeshes",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MeshAsset::m_submeshes,
+                                                        kAttributes_m_submeshes,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lodErrors",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MeshAsset::m_lodErrors,
+                                                        kAttributes_m_lodErrors,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_buffer",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MeshAsset::m_buffer,
+                                                        kAttributes_m_buffer,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MeshAsset>(typeInstance,
+                                        Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                        "FE::Graphics::MeshAsset",
+                                        kBaseClassTypeIDs,
+                                        kAttributes,
+                                        kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_44ebc248fd5e4cf4ab4c09511b78362c(&MeshAsset::Reflect);
+
+    FE::Serialization::ResultCode MeshAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_vertexStride", m_vertexStride);
+            object.Field("m_submeshes", m_submeshes);
+            object.Field("m_lodErrors", m_lodErrors);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MeshAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_vertexStride", m_vertexStride);
+            object.Field("m_submeshes", m_submeshes);
+            object.Field("m_lodErrors", m_lodErrors);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MeshAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x44, 0xeb, 0xc2, 0x48, 0xfd, 0x5e, 0x4c, 0xf4, 0xab, 0x4c, 0x09, 0x51, 0x1b, 0x78, 0x36, 0x2c,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_vertexStride", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_vertexStride)>());
+            hasher.Update("m_submeshes", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_submeshes)>());
+            hasher.Update("m_lodErrors", 11);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_lodErrors)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MeshAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Vulkan
@@ -2825,6 +3233,166 @@ namespace FE::Graphics::Vulkan
 
     static Rtti::TypeRegistrar GTypeRegistrar_78363647338146f297b12a1ac8afc3c1(&Fence::Reflect);
 } // namespace FE::Graphics::Vulkan
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID TextureAsset::TypeID = Rtti::TypeID{
+        0x78, 0xa8, 0xf9, 0x95, 0xb5, 0x1c, 0x42, 0xe0, 0x85, 0x6d, 0x92, 0x29, 0x99, 0x07, 0x41, 0x83,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_78a8f995b51c42e0856d922999074183(TextureAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x78, 0xa8, 0xf9, 0x95, 0xb5, 0x1c, 0x42, 0xe0,
+                0x85, 0x6d, 0x92, 0x29, 0x99, 0x07, 0x41, 0x83, // FE::Graphics::TextureAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_78a8f995b51c42e0856d922999074183()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& TextureAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_78a8f995b51c42e0856d922999074183();
+    }
+
+    void* FE_VECTORCALL TextureAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_78a8f995b51c42e0856d922999074183(this, typeID);
+    }
+
+    const void* FE_VECTORCALL TextureAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_78a8f995b51c42e0856d922999074183(const_cast<TextureAsset*>(this), typeID);
+    }
+    void TextureAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_78a8f995b51c42e0856d922999074183();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x78, 0xa8, 0xf9, 0x95, 0xb5, 0x1c, 0x42, 0xe0,
+            0x85, 0x6d, 0x92, 0x29, 0x99, 0x07, 0x41, 0x83, // FE::Graphics::TextureAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_desc
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mipTailData
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_mipTailOffsets
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_texture
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_desc = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mipTailData = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_mipTailOffsets = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_texture = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_desc",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &TextureAsset::m_desc,
+                                                        kAttributes_m_desc,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mipTailData",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &TextureAsset::m_mipTailData,
+                                                        kAttributes_m_mipTailData,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_mipTailOffsets",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &TextureAsset::m_mipTailOffsets,
+                                                        kAttributes_m_mipTailOffsets,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_texture",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &TextureAsset::m_texture,
+                                                        kAttributes_m_texture,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<TextureAsset>(typeInstance,
+                                           Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                           "FE::Graphics::TextureAsset",
+                                           kBaseClassTypeIDs,
+                                           kAttributes,
+                                           kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_78a8f995b51c42e0856d922999074183(&TextureAsset::Reflect);
+
+    FE::Serialization::ResultCode TextureAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_desc", m_desc);
+            object.Field("m_mipTailData", m_mipTailData);
+            object.Field("m_mipTailOffsets", m_mipTailOffsets);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode TextureAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_desc", m_desc);
+            object.Field("m_mipTailData", m_mipTailData);
+            object.Field("m_mipTailOffsets", m_mipTailOffsets);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t TextureAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x78, 0xa8, 0xf9, 0x95, 0xb5, 0x1c, 0x42, 0xe0, 0x85, 0x6d, 0x92, 0x29, 0x99, 0x07, 0x41, 0x83,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_desc", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_desc)>());
+            hasher.Update("m_mipTailData", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mipTailData)>());
+            hasher.Update("m_mipTailOffsets", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_mipTailOffsets)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t TextureAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Vulkan
@@ -5151,6 +5719,146 @@ namespace FE::Graphics::Core
 
     static Rtti::TypeRegistrar GTypeRegistrar_f3d5e2841dbf40cc97907d97fa69b18d(&ShaderCompiler::Reflect);
 } // namespace FE::Graphics::Core
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MeshLodAssetInfo::TypeID = Rtti::TypeID{
+        0xf4, 0x9e, 0x16, 0x61, 0x43, 0xf4, 0x4a, 0x5e, 0x83, 0x6b, 0x14, 0x7b, 0xe6, 0x08, 0x28, 0xed,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_f49e166143f44a5e836b147be60828ed()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MeshLodAssetInfo::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_f49e166143f44a5e836b147be60828ed();
+    }
+
+    void MeshLodAssetInfo::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_f49e166143f44a5e836b147be60828ed();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xf4, 0x9e, 0x16, 0x61, 0x43, 0xf4, 0x4a, 0x5e,
+            0x83, 0x6b, 0x14, 0x7b, 0xe6, 0x08, 0x28, 0xed, // FE::Graphics::MeshLodAssetInfo
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_vertexCount
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_indexCount
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_meshletCount
+            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
+            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_primitiveCount
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexCount = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_indexCount = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshletCount = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_primitiveCount = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MeshLodAssetInfo::m_vertexCount,
+                                                        kAttributes_m_vertexCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_indexCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MeshLodAssetInfo::m_indexCount,
+                                                        kAttributes_m_indexCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshletCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MeshLodAssetInfo::m_meshletCount,
+                                                        kAttributes_m_meshletCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_primitiveCount",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MeshLodAssetInfo::m_primitiveCount,
+                                                        kAttributes_m_primitiveCount,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MeshLodAssetInfo>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Graphics::MeshLodAssetInfo",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_f49e166143f44a5e836b147be60828ed(&MeshLodAssetInfo::Reflect);
+
+    FE::Serialization::ResultCode MeshLodAssetInfo::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_vertexCount", m_vertexCount);
+            object.Field("m_indexCount", m_indexCount);
+            object.Field("m_meshletCount", m_meshletCount);
+            object.Field("m_primitiveCount", m_primitiveCount);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MeshLodAssetInfo::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_vertexCount", m_vertexCount);
+            object.Field("m_indexCount", m_indexCount);
+            object.Field("m_meshletCount", m_meshletCount);
+            object.Field("m_primitiveCount", m_primitiveCount);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MeshLodAssetInfo::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xf4, 0x9e, 0x16, 0x61, 0x43, 0xf4, 0x4a, 0x5e, 0x83, 0x6b, 0x14, 0x7b, 0xe6, 0x08, 0x28, 0xed,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_vertexCount", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_vertexCount)>());
+            hasher.Update("m_indexCount", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_indexCount)>());
+            hasher.Update("m_meshletCount", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_meshletCount)>());
+            hasher.Update("m_primitiveCount", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_primitiveCount)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MeshLodAssetInfo::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::Core

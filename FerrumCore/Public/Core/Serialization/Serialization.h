@@ -283,6 +283,24 @@ namespace FE::Serialization
             return GetResultCode();
         }
 
+        ResultCode Field(const festd::ascii_view name, const Rtti::Type& type, const void* value)
+        {
+            if (!IsValid())
+                return GetResultCode();
+
+            const ResultCode result = m_format->BeginStoreFieldImpl(name, DefaultHash(name));
+            m_format->Record(result);
+            if (result != ResultCode::kSuccess)
+                return GetResultCode();
+
+            if (type.m_serialize == nullptr || value == nullptr)
+                m_format->Record(ResultCode::kSerializerError);
+            else
+                m_format->Record(type.m_serialize(*this, value));
+            m_format->Record(m_format->EndStoreFieldImpl());
+            return GetResultCode();
+        }
+
         template<class T>
         ResultCode Element(const uint32_t index, const T& value)
         {
@@ -436,6 +454,25 @@ namespace FE::Serialization
             return GetResultCode();
         }
 
+        ResultCode Field(const festd::ascii_view name, const Rtti::Type& type, void* value)
+        {
+            if (!IsValid())
+                return GetResultCode();
+
+            bool exists = false;
+            const ResultCode result = m_format->BeginLoadFieldImpl(name, DefaultHash(name), exists);
+            m_format->Record(result);
+            if (result != ResultCode::kSuccess || !exists)
+                return GetResultCode();
+
+            if (type.m_deserialize == nullptr || value == nullptr)
+                m_format->Record(ResultCode::kSerializerError);
+            else
+                m_format->Record(type.m_deserialize(*this, value));
+            m_format->Record(m_format->EndLoadFieldImpl());
+            return GetResultCode();
+        }
+
         template<class T>
         ResultCode Element(const uint32_t index, T& value)
         {
@@ -497,6 +534,13 @@ namespace FE::Serialization
             return *this;
         }
 
+        SerializationObject& Field(const festd::ascii_view name, const Rtti::Type& type, const void* value)
+        {
+            if (m_context != nullptr)
+                m_context->Field(name, type, value);
+            return *this;
+        }
+
     private:
         friend SerializationContext;
 
@@ -536,6 +580,13 @@ namespace FE::Serialization
         {
             if (m_context != nullptr)
                 m_context->Field(name, value);
+            return *this;
+        }
+
+        DeserializationObject& Field(const festd::ascii_view name, const Rtti::Type& type, void* value)
+        {
+            if (m_context != nullptr)
+                m_context->Field(name, type, value);
             return *this;
         }
 

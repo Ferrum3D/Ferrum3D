@@ -40,18 +40,7 @@ namespace FE::Rtti
             type.m_name = GetShortName(qualifiedName);
             type.m_qualifiedName = qualifiedName;
 
-            if constexpr (std::is_default_constructible_v<T>)
-            {
-                type.m_defaultConstructor = [](void* storage) {
-                    ::new (storage) T();
-                };
-            }
-            if constexpr (std::is_destructible_v<T>)
-            {
-                type.m_destructor = [](void* storage) {
-                    static_cast<T*>(storage)->~T();
-                };
-            }
+            BindTypeLifecycle<T>(type);
 
             type.m_baseTypes = festd::span(reinterpret_cast<const TypeID*>(baseTypes.data()), baseTypes.size() / sizeof(TypeID));
             type.m_attributes = attributes;
@@ -89,6 +78,7 @@ namespace FE::Rtti
             type.m_alignment = alignof(T);
             type.m_flags = TypeFlags::kEnum | TypeFlags::kTrivial | TypeFlags::kStandardLayout;
 
+            BindTypeLifecycle<T>(type);
             BindTypeSerialization<T>(type);
             RegisterType(type);
         }
@@ -107,6 +97,7 @@ namespace FE::Rtti
             if (std::is_standard_layout_v<T>)
                 type.m_flags |= TypeFlags::kStandardLayout;
 
+            BindTypeLifecycle<T>(type);
             BindTypeSerialization<T>(type);
             RegisterType(type);
         }
@@ -138,6 +129,29 @@ namespace FE::Rtti
         virtual void RegisterType(Type& type) = 0;
 
     private:
+        template<class T>
+        static void BindTypeLifecycle(Type& type)
+        {
+            if constexpr (std::is_default_constructible_v<T>)
+            {
+                type.m_defaultConstructor = [](void* storage) {
+                    ::new (storage) T();
+                };
+            }
+            if constexpr (std::is_copy_constructible_v<T>)
+            {
+                type.m_copyConstructor = [](void* storage, const void* source) {
+                    ::new (storage) T(*static_cast<const T*>(source));
+                };
+            }
+            if constexpr (std::is_destructible_v<T>)
+            {
+                type.m_destructor = [](void* storage) {
+                    static_cast<T*>(storage)->~T();
+                };
+            }
+        }
+
         static festd::ascii_view GetShortName(festd::ascii_view qualifiedName)
         {
             if (const auto colonIndex = qualifiedName.find_last_of(':', qualifiedName.find_first_of('<'));

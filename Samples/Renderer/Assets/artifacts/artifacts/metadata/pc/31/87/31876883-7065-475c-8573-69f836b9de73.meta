@@ -1,0 +1,176 @@
+{
+    "$type": "BFCD80E4-DB85-41F2-B43D-F08EA62AA6EC",
+    "$typename": "FE::IO::ArtifactRecord",
+    "$version": 0,
+    "$schema": "0x4d3ae890a4a739c5",
+    "$value": {
+        "m_artifactId": "7B8EF531-EF67-4826-8267-ADC49126632C",
+        "m_assetId": "31876883-7065-475C-8573-69F836B9DE73",
+        "m_assetTypeId": "44EBC248-FD5E-4CF4-AB4C-09511B78362C",
+        "m_payloads": [
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 0,
+                    "m_byteSize": 168
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 168,
+                        "m_uncompressedSize": 216,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 135638867
+                        }
+                    }
+                ]
+            },
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 168,
+                    "m_byteSize": 1931106
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 124024,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 1527943269
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 124024,
+                        "m_compressedSize": 122112,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2351114936
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 246136,
+                        "m_compressedSize": 121428,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 4264104874
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 367564,
+                        "m_compressedSize": 122561,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2578531622
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 490125,
+                        "m_compressedSize": 122167,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 244098476
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 612292,
+                        "m_compressedSize": 124458,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 1796412851
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 736750,
+                        "m_compressedSize": 124145,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 1266415375
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 860895,
+                        "m_compressedSize": 123116,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 3984628259
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 984011,
+                        "m_compressedSize": 122336,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 3703004312
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1106347,
+                        "m_compressedSize": 121568,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 1340489487
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1227915,
+                        "m_compressedSize": 121018,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2333516472
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1348933,
+                        "m_compressedSize": 151259,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2754952350
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1500192,
+                        "m_compressedSize": 158720,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 3511661229
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1658912,
+                        "m_compressedSize": 145488,
+                        "m_uncompressedSize": 262144,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2212411415
+                        }
+                    },
+                    {
+                        "m_offsetInPayload": 1804400,
+                        "m_compressedSize": 126706,
+                        "m_uncompressedSize": 225168,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 2191978620
+                        }
+                    }
+                ]
+            }
+        ],
+        "m_dependencies": []
+    }
+}

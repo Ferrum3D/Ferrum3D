@@ -118,6 +118,126 @@ namespace FE::FerrumCli
 
 namespace FE::FerrumCli
 {
+    const Rtti::TypeID Import::TypeID = Rtti::TypeID{
+        0x3f, 0x41, 0x38, 0xaa, 0x84, 0xa9, 0x4c, 0x02, 0x88, 0x9b, 0x0e, 0x2b, 0x09, 0x0b, 0xe7, 0x23,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_3f4138aa84a94c02889b0e2b090be723(Import* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0x3f, 0x41, 0x38, 0xaa, 0x84, 0xa9, 0x4c, 0x02,
+                0x88, 0x9b, 0x0e, 0x2b, 0x09, 0x0b, 0xe7, 0x23, // FE::FerrumCli::Import (this type)
+                0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0,
+                0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+                0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4,
+                0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Subcommand*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Cli::Command*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_3f4138aa84a94c02889b0e2b090be723()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& Import::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_3f4138aa84a94c02889b0e2b090be723();
+    }
+
+    void* FE_VECTORCALL Import::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_3f4138aa84a94c02889b0e2b090be723(this, typeID);
+    }
+
+    const void* FE_VECTORCALL Import::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_3f4138aa84a94c02889b0e2b090be723(const_cast<Import*>(this), typeID);
+    }
+    void Import::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_3f4138aa84a94c02889b0e2b090be723();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x3f, 0x41, 0x38, 0xaa, 0x84, 0xa9, 0x4c, 0x02,
+            0x88, 0x9b, 0x0e, 0x2b, 0x09, 0x0b, 0xe7, 0x23, // FE::FerrumCli::Import
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
+            0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
+        };
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
+            0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_help
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
+            0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
+            0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_output
+        };
+        static constexpr auto kAttributeValues =
+            Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Import source assets");
+        static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
+
+        static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
+        static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
+
+        static constexpr auto kAttributeValues_m_asset = Cli::Description("Source asset to import") + Cli::ValueName("path");
+        static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
+
+        static constexpr auto kAttributeValues_m_output = Cli::Description("Generated .asset file") + Cli::ValueName("path");
+        static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &Import::m_help,
+                                                        kAttributes_m_help,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_asset",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &Import::m_asset,
+                                                        kAttributes_m_asset,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &Import::m_output,
+                                                        kAttributes_m_output,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<Import>(typeInstance,
+                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                     "FE::FerrumCli::Import",
+                                     kBaseClassTypeIDs,
+                                     kAttributes,
+                                     kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_3f4138aa84a94c02889b0e2b090be723(&Import::Reflect);
+} // namespace FE::FerrumCli
+
+
+namespace FE::FerrumCli
+{
     const Rtti::TypeID Build::TypeID = Rtti::TypeID{
         0x4d, 0x10, 0x5b, 0x8d, 0x0e, 0x84, 0x46, 0x0b, 0x98, 0xbc, 0x8a, 0x4c, 0x37, 0x10, 0xa1, 0x93,
     };
@@ -185,23 +305,29 @@ namespace FE::FerrumCli
             0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
             0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
             0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
             0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_help
             0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
             0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
+            0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_output
         };
         static constexpr auto kAttributeValues =
-            Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Build an asset");
+            Cli::Parent("FE::FerrumCli::CommandLineParser") + Cli::Description("Build an asset graph");
         static constexpr auto kAttributes = Rtti::DescribeAttributes(kAttributeValues);
 
         static constexpr auto kAttributeValues_m_help = Cli::Description("Print this help message");
         static constexpr auto kAttributes_m_help = Rtti::DescribeAttributes(kAttributeValues_m_help);
 
-        static constexpr auto kAttributeValues_m_asset = Cli::Description("Asset to build") + Cli::ValueName("path");
+        static constexpr auto kAttributeValues_m_asset = Cli::Description(".asset file to build") + Cli::ValueName("path");
         static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
-        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+        static constexpr auto kAttributeValues_m_output =
+            Cli::Description("Artifact output directory") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &Build::m_help,
@@ -211,6 +337,11 @@ namespace FE::FerrumCli
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &Build::m_asset,
                                                         kAttributes_m_asset,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &Build::m_output,
+                                                        kAttributes_m_output,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 

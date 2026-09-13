@@ -1,10 +1,23 @@
 ﻿#include <Core/IO/BaseIO.h>
 #include <Core/IO/BaseIOPrivate.h>
 #include <Core/IO/FileStream.h>
+#include <Core/IO/Platform/PlatformFile.h>
 #include <Core/IO/Platform/PlatformPath.h>
 
 namespace FE::IO
 {
+    bool File::Exists(const festd::string_view path)
+    {
+        return Platform::FileExists(path);
+    }
+
+
+    ResultCode File::Delete(const festd::string_view path)
+    {
+        return Platform::DeleteFilePath(path);
+    }
+
+
     namespace
     {
         struct StandardFiles final
@@ -125,5 +138,26 @@ namespace FE::IO
         };
 
         return Platform::IterateDirectoryRecursively(params);
+    }
+
+
+    ResultCode Directory::Create(const festd::string_view path)
+    {
+        FE_PROFILER_ZONE_TEXT("%.*s", path.size(), path.data());
+
+        const Path absolutePath = GetAbsolutePath(path);
+        Path currentPath;
+        ResultCode result = ResultCode::kSuccess;
+        TraversePath(absolutePath, [&currentPath, &result](const festd::string_view component) {
+            if (result != ResultCode::kSuccess || component.empty())
+                return;
+
+            if (currentPath.empty())
+                currentPath.assign(component.data(), component.size());
+            else
+                currentPath /= component;
+            result = Platform::CreateDirectoryPath(currentPath);
+        });
+        return result;
     }
 } // namespace FE::IO
