@@ -577,11 +577,11 @@ TEST(AssetHandles, ReferenceCountsAndLeaseConversion)
 
         IO::AssetLease<int> lease(ticket);
         EXPECT_EQ(slot.m_strongRefCount.load(), 2);
-        EXPECT_EQ(lease.Get(), &instance);
+        EXPECT_TRUE(lease.IsReady());
 
         IO::AssetHandle<int> handle(lease);
         EXPECT_EQ(slot.m_weakRefCount.load(), 1);
-        EXPECT_EQ(handle.Get(), &instance);
+        EXPECT_TRUE(handle.IsReady());
 
         IO::AssetHandle<int> handleCopy = handle;
         EXPECT_EQ(slot.m_weakRefCount.load(), 2);

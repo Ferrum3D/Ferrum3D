@@ -219,6 +219,8 @@ namespace FE::Serialization
         template<class T>
         ResultCode Store(const T& value)
         {
+            FE_PROFILER_ZONE();
+
             const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
             ResultCode result =
                 m_format->BeginDocument(m_stream, Direction::kSerialize, typeID, GetVersion<T>(), GetSchemaHash<T>());
@@ -364,6 +366,8 @@ namespace FE::Serialization
         template<class T>
         ResultCode Load(T& value)
         {
+            FE_PROFILER_ZONE();
+
             const Rtti::TypeID typeID = Rtti::GetTypeID<Internal::ValueType<T>>();
             ResultCode result =
                 m_format->BeginDocument(m_stream, Direction::kDeserialize, typeID, GetVersion<T>(), GetSchemaHash<T>());

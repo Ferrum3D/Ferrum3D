@@ -26,6 +26,9 @@ namespace FE::IO
         //! @brief Poll whether previously started asynchronous finalization has completed.
         virtual AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) = 0;
 
+        //! @brief Synchronously cancel pending finalization and release every asynchronous use of candidate before returning.
+        virtual void CancelFinalize(AssetSlot& assetSlot, void* candidate) = 0;
+
         //! @brief True when finalization needs dependencies to be published before it can start.
         virtual bool RequiresFinalizedDependencies() const
         {
@@ -39,6 +42,7 @@ namespace FE::IO
     {
         AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, void* candidate) override;
         AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) override;
+        void CancelFinalize(AssetSlot& assetSlot, void* candidate) override;
     };
 
 
@@ -62,9 +66,10 @@ namespace FE::IO
         [[nodiscard]] static AssetRequest LoadAsset(AssetID assetId);
 
 #if FE_DEVELOPMENT
-        //! @brief Explicitly build and publish a fresh generation while preserving the usable current generation on failure.
+        //! @brief Explicitly build and publish a fresh acyclic generation while preserving the usable current generation on failure.
         //!
-        //! Automatic file watching and reload propagation remain outside this milestone.
+        //! The asset must already have a published generation. Automatic file watching, cyclic-group replacement, and reload
+        //! propagation remain outside this milestone. An invalid request is returned when those preconditions are not met.
         [[nodiscard]] static AssetRequest ReloadAsset(AssetID assetId);
 #endif
 

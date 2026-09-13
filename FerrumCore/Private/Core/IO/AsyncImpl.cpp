@@ -395,6 +395,12 @@ namespace FE::IO::Async
     {
         FE_PROFILER_ZONE();
 
+        struct VectorDestinationPlan final
+        {
+            festd::pmr::vector<std::byte>* m_vector = nullptr;
+            size_t m_finalSize = 0;
+        };
+
         operation->m_controller->m_status.store(Status::kRunning, std::memory_order_release);
 
         if (operation->m_batch.m_validationResult != ResultCode::kSuccess)
@@ -424,6 +430,7 @@ namespace FE::IO::Async
         Rc file = fileOpenResult.value();
         FileStats fileStats;
         bool hasFileStats = false;
+        festd::inline_vector<VectorDestinationPlan, 4> vectorDestinationPlans;
 
         for (Batch::Command& command : operation->m_batch.m_commands)
         {
@@ -491,62 +498,35 @@ namespace FE::IO::Async
 
             if (command.m_vectorDestination)
             {
-                auto& v = *command.m_destination.m_vector;
-                size_t destinationOffset = v.size();
-                for (const Batch::Command& previousCommand : operation->m_batch.m_commands)
+                VectorDestinationPlan* destinationPlan = nullptr;
+                for (VectorDestinationPlan& plan : vectorDestinationPlans)
                 {
-                    if (&previousCommand == &command)
-                        break;
-                    if (previousCommand.m_vectorDestination && previousCommand.m_destination.m_vector == &v)
+                    if (plan.m_vector == command.m_destination.m_vector)
                     {
-                        if (destinationOffset > Constants::kMaxValue<size_t> - previousCommand.m_uncompressedSize)
-                        {
-                            SetOperationResult(operation, ResultCode::kInvalidArgument);
-                            return;
-                        }
-                        destinationOffset += previousCommand.m_uncompressedSize;
+                        destinationPlan = &plan;
+                        break;
                     }
                 }
-                command.m_destinationOffset = destinationOffset;
-            }
-        }
 
-        for (uint32_t commandIndex = 0; commandIndex < operation->m_batch.m_commands.size(); ++commandIndex)
-        {
-            Batch::Command& command = operation->m_batch.m_commands[commandIndex];
-            if (!command.m_vectorDestination)
-                continue;
-
-            if (!IsRangeWithinLimit(command.m_destinationOffset, command.m_uncompressedSize, Constants::kMaxValue<uint32_t>))
-            {
-                SetOperationResult(operation, ResultCode::kInvalidArgument);
-                return;
-            }
-        }
-
-        for (uint32_t commandIndex = 0; commandIndex < operation->m_batch.m_commands.size(); ++commandIndex)
-        {
-            Batch::Command& command = operation->m_batch.m_commands[commandIndex];
-            if (!command.m_vectorDestination)
-                continue;
-
-            bool isLastCommandForVector = true;
-            for (uint32_t nextIndex = commandIndex + 1; nextIndex < operation->m_batch.m_commands.size(); ++nextIndex)
-            {
-                const Batch::Command& nextCommand = operation->m_batch.m_commands[nextIndex];
-                if (nextCommand.m_vectorDestination && nextCommand.m_destination.m_vector == command.m_destination.m_vector)
+                if (!destinationPlan)
                 {
-                    isLastCommandForVector = false;
-                    break;
+                    vectorDestinationPlans.push_back({ command.m_destination.m_vector, command.m_destination.m_vector->size() });
+                    destinationPlan = &vectorDestinationPlans.back();
                 }
+
+                command.m_destinationOffset = destinationPlan->m_finalSize;
+                if (!IsRangeWithinLimit(command.m_destinationOffset, command.m_uncompressedSize, Constants::kMaxValue<uint32_t>))
+                {
+                    SetOperationResult(operation, ResultCode::kInvalidArgument);
+                    return;
+                }
+
+                destinationPlan->m_finalSize += command.m_uncompressedSize;
             }
-
-            if (!isLastCommandForVector)
-                continue;
-
-            command.m_destination.m_vector->resize(
-                static_cast<uint32_t>(command.m_destinationOffset + command.m_uncompressedSize));
         }
+
+        for (const VectorDestinationPlan& plan : vectorDestinationPlans)
+            plan.m_vector->resize(static_cast<uint32_t>(plan.m_finalSize));
 
         for (const Batch::Command& command : operation->m_batch.m_commands)
         {

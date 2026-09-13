@@ -135,6 +135,12 @@ namespace FE::IO
         //! when publication, replacement, and retirement are implemented.
         struct AssetHandleImpl
         {
+            //! @brief True when this handle identifies a stable asset slot.
+            [[nodiscard]] bool IsValid() const
+            {
+                return m_slot != nullptr;
+            }
+
             //! @brief Get the currently published generation number.
             [[nodiscard]] uint32_t GetGeneration() const;
 
@@ -148,9 +154,6 @@ namespace FE::IO
             }
 
         protected:
-            //! @brief Acquire the currently published instance pointer without changing residency.
-            const void* GetAssetInstance() const;
-
             //! Stable, manager-owned slot. Derived handle kinds decide which slot reference counter they affect.
             AssetSlot* m_slot = nullptr;
         };
@@ -267,20 +270,11 @@ namespace FE::IO
         //! Monotonically increasing published-generation number.
         std::atomic<uint32_t> m_generation = 0;
 
-        //! Strongly connected hard-reference group used for later group binding/publication, or kInvalidIndex when acyclic.
-        std::atomic<uint32_t> m_referenceGroup = kInvalidIndex;
-
         //! Number of non-owning handles that currently point at this stable slot.
         std::atomic<uint32_t> m_weakRefCount = 0;
 
         //! Aggregate residency demand, including one contribution per acquisition containing this slot.
         std::atomic<uint32_t> m_strongRefCount = 0;
-
-        //! Reserved controller for generation payload work; metadata-discovery status belongs to AssetRequest instead.
-        Rc<Async::IController> m_asyncController;
-
-        //! Shutdown detaches slots from the manager but leaves storage alive while public handles still reference it.
-        std::atomic<bool> m_managerAlive = true;
 
         //! One manager-owner reference plus one reference for each public weak or single-slot residency handle.
         std::atomic<uint32_t> m_lifetimeRefCount = 1;
@@ -320,7 +314,7 @@ namespace FE::IO
         //! @brief Cancel this acquisition and release its recorded residency contribution.
         void Cancel();
 
-        //! @brief Suspend the calling fiber until publication reaches a terminal result.
+        //! @brief Suspend a background fiber until publication reaches a terminal result.
         void Wait() const;
 
         //! @brief Suspend until the dependency metadata closure is known, without requiring Tick.
@@ -411,12 +405,6 @@ namespace FE::IO
         {
         }
 
-        //! @brief Get the published instance, or null when no generation is currently installed.
-        [[nodiscard]] const T* Get() const
-        {
-            return static_cast<const T*>(GetAssetInstance());
-        }
-
         //! @brief Pin the concrete generation currently visible through this lease.
         [[nodiscard]] AssetRead<T> Read() const
         {
@@ -438,12 +426,6 @@ namespace FE::IO
         explicit AssetHandle(const AssetLease<T>& lease)
             : WeakResidencyTicket(lease.GetAssetSlot())
         {
-        }
-
-        //! @brief Get the published instance, or null when no generation is currently installed.
-        [[nodiscard]] const T* Get() const
-        {
-            return static_cast<const T*>(GetAssetInstance());
         }
 
         //! @brief Pin the concrete generation currently visible through this handle.

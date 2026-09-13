@@ -7,14 +7,17 @@ namespace FE::IO
     {
         uint32_t AssetHandleImpl::GetGeneration() const
         {
-            FE_AssertDebug(m_slot);
-            return m_slot->m_generation.load(std::memory_order_acquire);
+            return m_slot ? m_slot->m_generation.load(std::memory_order_acquire) : 0;
         }
 
 
         bool AssetHandleImpl::IsReady() const
         {
-            FE_AssertDebug(m_slot);
+            if (!m_slot)
+            {
+                return false;
+            }
+
             if (!m_slot->m_completed.load(std::memory_order_acquire))
             {
                 return false;
@@ -25,15 +28,6 @@ namespace FE::IO
         }
 
 
-        const void* AssetHandleImpl::GetAssetInstance() const
-        {
-            FE_AssertDebug(m_slot);
-            if (!IsReady())
-            {
-                return nullptr;
-            }
-            return m_slot->m_instance.load(std::memory_order_acquire);
-        }
     } // namespace Internal
 
 

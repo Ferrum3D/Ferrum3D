@@ -86,6 +86,8 @@ namespace FE::IO
 
     ResolvedDataSource ArtifactStore::ResolveMeta(const AssetID assetID)
     {
+        FE_PROFILER_ZONE();
+
         // Deterministic sharded metadata lookup: artifacts/metadata/<platform>/<2>/<2>/<asset-id>.meta.
         const auto idString = Str::ToLower<festd::fixed_string>(Fmt::FixedFormat("{}", assetID));
         Path relativePath("artifacts/metadata/pc");
@@ -100,6 +102,8 @@ namespace FE::IO
 
     ResolvedDataSource ArtifactStore::ResolveData(const ArtifactID artifactID)
     {
+        FE_PROFILER_ZONE();
+
         // Immutable artifact-addressed payload lookup: artifacts/data/<2>/<2>/<artifact-id>.bin.
         const auto idString = Str::ToLower<festd::fixed_string>(Fmt::FixedFormat("{}", artifactID));
         Path relativePath("artifacts/data");
@@ -114,6 +118,8 @@ namespace FE::IO
 
     ArtifactDecodeResult ArtifactStore::Decode(const festd::span<const std::byte> bytes, const ArtifactResolutionContext& context)
     {
+        FE_PROFILER_ZONE();
+
         // Decode stage: ArtifactStore, rather than AssetManager, owns selection and use of the metadata serialization format.
         ReadOnlyMemoryStream stream(bytes);
         Serialization::JsonFormat format;
@@ -164,6 +170,8 @@ namespace FE::IO
 
     void ArtifactStore::SetCatalogSource(const festd::string_view assetDirectoryPath)
     {
+        FE_PROFILER_ZONE();
+
         GImpl->m_assetDirectoryPath = GetAbsolutePath(assetDirectoryPath);
     }
 } // namespace FE::IO
