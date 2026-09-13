@@ -13,6 +13,9 @@ set(MESHOPTIMIZER_SOURCES
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/indexanalyzer.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/indexcodec.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/indexgenerator.cpp
+    ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/meshletcodec.cpp
+    ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/meshletutils.cpp
+    ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/opacitymap.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/overdrawoptimizer.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/partition.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/quantization.cpp
@@ -20,6 +23,7 @@ set(MESHOPTIMIZER_SOURCES
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/simplifier.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/spatialorder.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/stripifier.cpp
+    ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/tangentspace.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/vcacheoptimizer.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/vertexcodec.cpp
     ${FE_THIRD_PARTY_DIR}/meshoptimizer/src/vertexfilter.cpp
