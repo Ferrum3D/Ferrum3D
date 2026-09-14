@@ -30,6 +30,8 @@ namespace FE::FerrumCli
         Cli::Flag m_help;
         FE_META(Cli::Description(".asset file to build") + Cli::ValueName("path"))
         Cli::Option m_asset;
+        FE_META(Cli::Description("Asset source depot root") + Cli::ValueName("directory"))
+        Cli::Option m_sourceRoot;
         FE_META(Cli::Description("Artifact output directory") + Cli::ValueName("directory"))
         Cli::Option m_output;
     };

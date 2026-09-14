@@ -19,6 +19,9 @@ namespace FE::AssetBuilder
 
     namespace
     {
+        constexpr festd::string_view kSourceDepotRootMarker = ".ferrum-source-depot-root";
+
+
         struct MemoryOutputStream final : public IO::BufferedStream
         {
             MemoryOutputStream()
@@ -112,6 +115,80 @@ namespace FE::AssetBuilder
         }
 
 
+        bool PathsHaveEqualPrefix(const festd::string_view lhs, const festd::string_view rhs)
+        {
+            if (lhs.size() < rhs.size())
+                return false;
+
+            for (uint32_t index = 0; index < rhs.size(); ++index)
+            {
+                if (ASCII::ToLower(lhs.byte_at(index)) != ASCII::ToLower(rhs.byte_at(index)))
+                    return false;
+            }
+            return true;
+        }
+
+
+        bool MakeSourceReference(const IO::Path& sourceRoot, const IO::Path& sourcePath, IO::Path& result)
+        {
+            const festd::string_view root = sourceRoot;
+            const festd::string_view source = sourcePath;
+            if (root.empty() || source.size() <= root.size() || !PathsHaveEqualPrefix(source, root))
+                return false;
+
+            uint32_t relativeOffset = root.size();
+            if (!PathParser::IsPathSeparator(root.byte_at(root.size() - 1)))
+            {
+                if (!PathParser::IsPathSeparator(source.byte_at(relativeOffset)))
+                    return false;
+                ++relativeOffset;
+            }
+
+            result = source.substr(relativeOffset);
+            return !result.empty();
+        }
+
+
+        bool FindSourceRoot(const IO::Path& sourcePath, IO::Path& result)
+        {
+            IO::Path directory = IO::NormalizePath(IO::PathView(sourcePath).parent_directory());
+            while (!directory.empty())
+            {
+                if (IO::File::Exists(directory / kSourceDepotRootMarker))
+                {
+                    result = directory;
+                    return true;
+                }
+
+                const IO::Path parent = IO::NormalizePath(IO::PathView(directory).parent_directory());
+                if (parent == directory)
+                    break;
+                directory = parent;
+            }
+
+            Logger::LogError("Source '{}' is not inside a depot marked by '{}'", sourcePath, kSourceDepotRootMarker);
+            return false;
+        }
+
+
+        bool ResolveSourceReference(const IO::Path& sourceRoot, const IO::Path& reference, IO::Path& result)
+        {
+            if (reference.empty() || IO::PathView(reference).is_absolute())
+            {
+                Logger::LogError("Source reference '{}' must be relative to the source depot root", reference);
+                return false;
+            }
+
+            result = IO::NormalizePath(sourceRoot / reference);
+            IO::Path verifiedReference;
+            if (MakeSourceReference(sourceRoot, result, verifiedReference))
+                return true;
+
+            Logger::LogError("Source reference '{}' escapes depot root '{}'", reference, sourceRoot);
+            return false;
+        }
+
+
         IO::AssetID GenerateAssetId()
         {
             IO::AssetID result{ kForceInit };
@@ -188,7 +265,7 @@ namespace FE::AssetBuilder
         }
 
 
-        bool ImportTexture(const IO::Path& sourcePath, const IO::Path& assetFilePath)
+        bool ImportTexture(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& assetFilePath)
         {
             festd::vector<std::byte> sourceBytes;
             if (!ReadFile(sourcePath, sourceBytes) || !ValidateTextureSource(sourcePath, sourceBytes))
@@ -200,7 +277,7 @@ namespace FE::AssetBuilder
                 return false;
 
             AssetFile assetFile;
-            assetFile.m_sourcePath = sourcePath;
+            assetFile.m_sourcePath = sourceReference;
             if (previousPtr != nullptr)
                 assetFile.m_builtArtifactIds = previousPtr->m_builtArtifactIds;
             AssetFileArtifact& texture = assetFile.m_artifacts.emplace_back();
@@ -219,7 +296,8 @@ namespace FE::AssetBuilder
         }
 
 
-        bool ImportModel(const IO::Path& sourcePath, const IO::Path& assetFilePath)
+        bool ImportModel(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& sourceRoot,
+                         const IO::Path& assetFilePath)
         {
             festd::vector<std::byte> sourceBytes;
             if (!ReadFile(sourcePath, sourceBytes))
@@ -248,7 +326,7 @@ namespace FE::AssetBuilder
                 return false;
 
             AssetFile assetFile;
-            assetFile.m_sourcePath = sourcePath;
+            assetFile.m_sourcePath = sourceReference;
             if (previousPtr != nullptr)
                 assetFile.m_builtArtifactIds = previousPtr->m_builtArtifactIds;
 
@@ -260,13 +338,20 @@ namespace FE::AssetBuilder
                 if (!ReadFile(texturePath, textureBytes) || !ValidateTextureSource(texturePath, textureBytes))
                     return false;
 
+                IO::Path textureReference;
+                if (!MakeSourceReference(sourceRoot, IO::NormalizePath(texturePath), textureReference))
+                {
+                    Logger::LogError("Referenced source '{}' is outside depot root '{}'", texturePath, sourceRoot);
+                    return false;
+                }
+
                 const auto name = Fmt::FixedFormat("Texture.{}", textureIndex);
                 AssetFileArtifact& texture = assetFile.m_artifacts.emplace_back();
                 if (!InitializeArtifact(texture, previousPtr, name, Rtti::GetTypeID<TextureAsset>()))
                     return false;
                 TextureBuildSettings textureSettings;
                 textureSettings.m_sourceObjectIndex = textureIndex;
-                textureSettings.m_sourcePath = texturePath;
+                textureSettings.m_sourcePath = textureReference;
                 texture.m_buildSettings.Emplace<TextureBuildSettings>(std::move(textureSettings));
                 textureArtifactIndices.push_back(assetFile.m_artifacts.size() - 1);
             }
@@ -418,6 +503,7 @@ namespace FE::AssetBuilder
         struct BuildContext final
         {
             AssetFile& m_assetFile;
+            IO::Path m_sourceRoot;
             IO::Path m_outputDirectory;
             IO::Path m_primarySourcePath;
             festd::span<const std::byte> m_primarySourceData;
@@ -468,7 +554,8 @@ namespace FE::AssetBuilder
                 if (const auto* textureSettings = artifact.m_buildSettings.TryGet<TextureBuildSettings>();
                     textureSettings != nullptr && !textureSettings->m_sourcePath.empty())
                 {
-                    sourcePath = textureSettings->m_sourcePath;
+                    if (!ResolveSourceReference(m_sourceRoot, textureSettings->m_sourcePath, sourcePath))
+                        return false;
                     if (!ReadFile(sourcePath, externalSourceData))
                     {
                         Logger::LogError("Failed to read source '{}' for product '{}'", sourcePath, artifact.m_name);
@@ -512,11 +599,22 @@ namespace FE::AssetBuilder
             return false;
         }
 
+        IO::Path sourceRoot;
+        if (!FindSourceRoot(sourcePath, sourceRoot))
+            return false;
+
+        IO::Path sourceReference;
+        if (!MakeSourceReference(sourceRoot, sourcePath, sourceReference))
+        {
+            Logger::LogError("Source '{}' is outside depot root '{}'", sourcePath, sourceRoot);
+            return false;
+        }
+
         const IO::PathView sourceView(sourcePath);
         if (sourceView.extension() == ".gltf" || sourceView.extension() == ".glb")
-            return ImportModel(sourcePath, assetFilePath);
+            return ImportModel(sourcePath, sourceReference, sourceRoot, assetFilePath);
         if (sourceView.extension() == ".dds")
-            return ImportTexture(sourcePath, assetFilePath);
+            return ImportTexture(sourcePath, sourceReference, assetFilePath);
 
         Logger::LogError("Unsupported source extension '{}'. Expected .gltf, .glb, or .dds", sourceView.extension());
         return false;
@@ -525,10 +623,22 @@ namespace FE::AssetBuilder
 
     bool BuildAsset(const BuildAssetSettings& settings)
     {
+        if (settings.m_sourceRoot.empty())
+        {
+            Logger::LogError("A source depot root is required to build an asset");
+            return false;
+        }
+
         const IO::Path assetFilePath = IO::GetAbsolutePath(settings.m_assetFile);
+        const IO::Path sourceRoot = IO::GetAbsolutePath(settings.m_sourceRoot);
         if (IO::PathView(assetFilePath).extension() != ".asset")
         {
             Logger::LogError("Build input '{}' is not an .asset file", assetFilePath);
+            return false;
+        }
+        if (!IO::File::Exists(sourceRoot / kSourceDepotRootMarker))
+        {
+            Logger::LogError("Source root '{}' does not contain '{}'", sourceRoot, kSourceDepotRootMarker);
             return false;
         }
 
@@ -558,7 +668,8 @@ namespace FE::AssetBuilder
         }
         else
         {
-            sourcePath = assetFile.m_sourcePath;
+            if (!ResolveSourceReference(sourceRoot, assetFile.m_sourcePath, sourcePath))
+                return false;
             if (!ReadFile(sourcePath, sourceBytes))
             {
                 Logger::LogError("Failed to read source '{}'", sourcePath);
@@ -566,7 +677,7 @@ namespace FE::AssetBuilder
             }
         }
 
-        BuildContext context{ assetFile, IO::GetAbsolutePath(settings.m_outputDirectory), sourcePath, sourceBytes };
+        BuildContext context{ assetFile, sourceRoot, IO::GetAbsolutePath(settings.m_outputDirectory), sourcePath, sourceBytes };
         for (uint32_t index = 0; index < assetFile.m_artifacts.size(); ++index)
         {
             const AssetFileArtifact& artifact = assetFile.m_artifacts[index];

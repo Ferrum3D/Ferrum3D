@@ -93,6 +93,12 @@ namespace FE::FerrumCli
             PrintHelp(*build);
             return 1;
         }
+        if (!build->m_sourceRoot || build->m_sourceRoot.Get().empty())
+        {
+            IO::EPrintLn("Error: Option '--source-root' is required");
+            PrintHelp(*build);
+            return 1;
+        }
 
         const IO::PathView assetFilePath(build->m_asset.Get());
         IO::Path outputPath;
@@ -108,6 +114,7 @@ namespace FE::FerrumCli
 
         AssetBuilder::BuildAssetSettings settings;
         settings.m_assetFile = assetFilePath;
+        settings.m_sourceRoot = build->m_sourceRoot.Get();
         settings.m_outputDirectory = outputPath;
         return AssetBuilder::BuildAsset(settings) ? 0 : 1;
     }

@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x9fafb8575a05a191",
     "$value": {
-        "m_sourcePath": "C:/Users/user/TheCode/Ferrum3D/Samples/Renderer/Assets/source/StanfordBunny.glb",
+        "m_sourcePath": "StanfordBunny.glb",
         "m_artifacts": [
             {
                 "m_name": "Mesh.0",
@@ -39,8 +39,8 @@
             }
         ],
         "m_builtArtifactIds": [
-            "7B8EF531-EF67-4826-8267-ADC49126632C",
-            "568E93AA-4CC8-40ED-B8F0-E3A9D89F7259"
+            "7FE967B6-4517-42E3-8A74-5FDE2FF73D8F",
+            "019411AB-3511-4C49-B0E6-5D9692A827BC"
         ],
         "m_embeddedSourceData": []
     }

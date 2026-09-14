@@ -4,7 +4,7 @@
     "$version": 0,
     "$schema": "0x9fafb8575a05a191",
     "$value": {
-        "m_sourcePath": "C:/Users/user/TheCode/Ferrum3D/Samples/Renderer/Assets/source/texture.dds",
+        "m_sourcePath": "texture.dds",
         "m_artifacts": [
             {
                 "m_name": "Texture",
@@ -21,7 +21,7 @@
             }
         ],
         "m_builtArtifactIds": [
-            "94228B87-8882-449E-BCAB-CF76CB40FF94"
+            "580EA1AE-5469-4294-B459-1C4B01902929"
         ],
         "m_embeddedSourceData": []
     }

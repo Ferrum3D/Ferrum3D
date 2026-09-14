@@ -13,6 +13,7 @@ namespace FE::AssetBuilder
     struct BuildAssetSettings final
     {
         IO::Path m_assetFile;
+        IO::Path m_sourceRoot;
         IO::Path m_outputDirectory;
     };
 

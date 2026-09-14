@@ -305,11 +305,13 @@ namespace FE::FerrumCli
             0x0f, 0x01, 0xe8, 0x27, 0xc9, 0xd9, 0x43, 0xf0, 0x89, 0x69, 0x47, 0xbf, 0x6d, 0x03, 0x5b, 0x82, // FE::Cli::Subcommand
             0x01, 0xdd, 0xd1, 0x16, 0xd0, 0x90, 0x49, 0xe4, 0x98, 0xb9, 0x41, 0x00, 0xcf, 0xb5, 0x05, 0x09, // FE::Cli::Command
         };
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
             0x9f, 0xf5, 0x6e, 0x68, 0x87, 0x57, 0x43, 0xe2,
             0x88, 0x26, 0xac, 0xf3, 0x41, 0x9f, 0x16, 0xfd, // FE::Cli::Flag m_help
             0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
             0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_asset
+            0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
+            0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_sourceRoot
             0x30, 0x1b, 0xc2, 0x48, 0xff, 0x31, 0x43, 0xdb,
             0xb2, 0x85, 0x92, 0x66, 0x23, 0xb3, 0x32, 0x6f, // FE::Cli::Option m_output
         };
@@ -323,11 +325,15 @@ namespace FE::FerrumCli
         static constexpr auto kAttributeValues_m_asset = Cli::Description(".asset file to build") + Cli::ValueName("path");
         static constexpr auto kAttributes_m_asset = Rtti::DescribeAttributes(kAttributeValues_m_asset);
 
+        static constexpr auto kAttributeValues_m_sourceRoot =
+            Cli::Description("Asset source depot root") + Cli::ValueName("directory");
+        static constexpr auto kAttributes_m_sourceRoot = Rtti::DescribeAttributes(kAttributeValues_m_sourceRoot);
+
         static constexpr auto kAttributeValues_m_output =
             Cli::Description("Artifact output directory") + Cli::ValueName("directory");
         static constexpr auto kAttributes_m_output = Rtti::DescribeAttributes(kAttributeValues_m_output);
 
-        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_help",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &Build::m_help,
@@ -338,8 +344,13 @@ namespace FE::FerrumCli
                                                         &Build::m_asset,
                                                         kAttributes_m_asset,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourceRoot",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &Build::m_sourceRoot,
+                                                        kAttributes_m_sourceRoot,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_output",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &Build::m_output,
                                                         kAttributes_m_output,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
