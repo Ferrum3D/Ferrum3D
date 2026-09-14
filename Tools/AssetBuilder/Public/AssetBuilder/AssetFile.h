@@ -21,11 +21,15 @@ namespace FE::AssetBuilder
     //! One artifact-producing product discovered in a source asset.
     struct AssetFileArtifact final
     {
+        festd::string m_productKey;
         festd::string m_name;
         IO::AssetID m_assetId = IO::AssetID::kNull;
         Rtti::TypeID m_assetTypeId = Rtti::TypeID::kNull;
         Rtti::Any m_buildSettings;
         festd::inline_vector<AssetFileDependency, 4> m_dependencies;
+        IO::BuildKey m_lastBuildKey = IO::BuildKey::kNull;
+        IO::ArtifactID m_builtArtifactId = IO::ArtifactID::kNull;
+        bool m_isRemoved = false;
 
         FE_RTTI_Reflect("5EC89B68-372E-4388-BD0D-869C03C9C65D");
         FE_RTTI_Serialize();
@@ -39,8 +43,8 @@ namespace FE::AssetBuilder
     struct AssetFile final
     {
         IO::Path m_sourcePath;
+        festd::inline_vector<IO::Path, 4> m_sourceDependencies;
         festd::inline_vector<AssetFileArtifact, 4> m_artifacts;
-        festd::inline_vector<IO::ArtifactID, 4> m_builtArtifactIds;
         festd::vector<std::byte> m_embeddedSourceData;
 
         FE_RTTI_Reflect("196D6B77-484F-429B-A74F-0E99C4F367B2");

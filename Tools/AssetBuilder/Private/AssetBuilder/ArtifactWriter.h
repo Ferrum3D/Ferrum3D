@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Base/Hash.h>
 #include <Core/IO/Artifact.h>
 #include <Core/IO/FileStream.h>
 #include <Core/IO/StreamBase.h>
@@ -89,7 +90,8 @@ namespace FE::AssetBuilder
 
     struct ArtifactWriter final
     {
-        ArtifactWriter(const IO::Path& outputRoot, IO::AssetID assetId, IO::ArtifactID artifactId, Rtti::TypeID assetTypeId);
+        ArtifactWriter(const IO::Path& outputRoot, IO::AssetID assetId, Rtti::TypeID assetTypeId);
+        ~ArtifactWriter();
 
         ArtifactWriter(const ArtifactWriter&) = delete;
         ArtifactWriter& operator=(const ArtifactWriter&) = delete;
@@ -113,20 +115,26 @@ namespace FE::AssetBuilder
         void AddDependency(IO::AssetID assetId, Rtti::TypeID typeId, IO::DependencyKind kind = IO::DependencyKind::kHard);
         bool Finish();
 
-        static IO::ArtifactID MakeArtifactID(IO::AssetID assetId, festd::span<const std::byte> sourceBytes,
-                                             festd::string_view productKey);
-        static IO::ArtifactID MakeArtifactID(IO::AssetID assetId, festd::span<const std::byte> sourceBytes,
-                                             festd::span<const std::byte> settingsBytes, festd::string_view productKey);
+        [[nodiscard]] IO::ArtifactID GetArtifactID() const;
+
+        static IO::Path GetPendingDataPath(const IO::Path& outputRoot, IO::AssetID assetId);
         static IO::Path GetDataPath(const IO::Path& outputRoot, IO::ArtifactID artifactId);
+        static IO::Path GetMetadataPath(const IO::Path& outputRoot, IO::AssetID assetId);
         static bool RemoveArtifact(const IO::Path& outputRoot, IO::ArtifactID artifactId);
+        static bool RemoveMetadata(const IO::Path& outputRoot, IO::AssetID assetId);
 
     private:
         bool OpenDataFile();
         bool WriteMetadata();
+        void HashCanonicalBytes(const void* data, size_t byteSize);
 
+        IO::Path m_outputRoot;
+        IO::Path m_pendingDataPath;
         IO::Path m_dataPath;
         IO::Path m_metadataPath;
         IO::ArtifactRecord m_record;
         Rc<IO::FileStream> m_dataFile;
+        Hasher m_lowHasher{ 0x04c013886f71ac52ull };
+        Hasher m_highHasher{ 0xba68ed2194375fc0ull };
     };
 } // namespace FE::AssetBuilder

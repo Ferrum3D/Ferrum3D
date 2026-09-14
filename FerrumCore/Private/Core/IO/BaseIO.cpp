@@ -18,6 +18,18 @@ namespace FE::IO
     }
 
 
+    ResultCode File::Move(const festd::string_view source, const festd::string_view destination)
+    {
+        return Platform::MoveFilePath(source, destination, false);
+    }
+
+
+    ResultCode File::Replace(const festd::string_view source, const festd::string_view destination)
+    {
+        return Platform::MoveFilePath(source, destination, true);
+    }
+
+
     namespace
     {
         struct StandardFiles final
@@ -159,5 +171,11 @@ namespace FE::IO
             result = Platform::CreateDirectoryPath(currentPath);
         });
         return result;
+    }
+
+
+    ResultCode Directory::Delete(const festd::string_view path)
+    {
+        return Platform::DeleteDirectoryPath(path);
     }
 } // namespace FE::IO

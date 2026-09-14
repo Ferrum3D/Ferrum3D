@@ -102,12 +102,13 @@ namespace FE::AssetBuilder
 
 
         IntermediateModel* ParseModel(IntermediateScene* intermediateScene, const tinygltf::Model& model, const int32_t meshIndex,
-                                      const Matrix4x4& worldTransform)
+                                      const festd::string_view productKey, const Matrix4x4& worldTransform)
         {
             const tinygltf::Mesh& mesh = model.meshes[meshIndex];
 
             IntermediateModel& intermediateModel = intermediateScene->m_models.push_back();
             intermediateModel.m_name = Env::Name(mesh.name);
+            intermediateModel.m_productKey = productKey;
             intermediateModel.m_meshes.reserve(static_cast<uint32_t>(mesh.primitives.size()));
 
             for (const tinygltf::Primitive& primitive : mesh.primitives)
@@ -233,9 +234,21 @@ namespace FE::AssetBuilder
 
 
         IntermediateSceneNode* ParseNode(IntermediateScene* intermediateScene, const tinygltf::Model& model,
-                                         const int32_t nodeIndex, IntermediateSceneNode* parent, const Matrix4x4& parentTransform)
+                                         const int32_t nodeIndex, IntermediateSceneNode* parent,
+                                         const festd::string_view parentProductKey, const Matrix4x4& parentTransform)
         {
             const tinygltf::Node& node = model.nodes[nodeIndex];
+
+            festd::string productKey(parentProductKey);
+            festd::string_view localKey(node.name);
+            if (localKey.empty() && node.mesh >= 0)
+                localKey = festd::string_view(model.meshes[node.mesh].name);
+            if (!localKey.empty())
+            {
+                if (!productKey.empty())
+                    productKey += "/";
+                productKey += localKey;
+            }
 
             IntermediateSceneNode* intermediateNode = intermediateScene->m_nodePool.New();
             intermediateNode->m_name = Env::Name(node.name);
@@ -301,11 +314,12 @@ namespace FE::AssetBuilder
             const Matrix4x4 worldTransform = localTransform * parentTransform;
 
             for (const int32_t childIndex : node.children)
-                ParseNode(intermediateScene, model, childIndex, intermediateNode, worldTransform);
+                ParseNode(intermediateScene, model, childIndex, intermediateNode, productKey, worldTransform);
 
             if (node.mesh >= 0)
             {
-                IntermediateModel* intermediateModel = ParseModel(intermediateScene, model, node.mesh, worldTransform);
+                IntermediateModel* intermediateModel =
+                    ParseModel(intermediateScene, model, node.mesh, productKey, worldTransform);
                 intermediateNode->m_model = intermediateModel;
             }
 
@@ -352,7 +366,20 @@ namespace FE::AssetBuilder
             tinygltf::Scene& scene = m_model.scenes[sceneIndex];
 
             for (const int32_t nodeIndex : scene.nodes)
-                ParseNode(intermediateScene, m_model, nodeIndex, nullptr, Matrix4x4::kIdentity);
+                ParseNode(intermediateScene, m_model, nodeIndex, nullptr, {}, Matrix4x4::kIdentity);
+
+            for (const tinygltf::Buffer& buffer : m_model.buffers)
+            {
+                if (buffer.uri.empty() || festd::string_view(buffer.uri).starts_with("data:"))
+                    continue;
+
+                const IO::Path sourcePath = IO::GetAbsolutePath(m_sourceDirectory / festd::string_view(buffer.uri));
+                if (festd::find(intermediateScene->m_sourcePaths.begin(), intermediateScene->m_sourcePaths.end(), sourcePath)
+                    == intermediateScene->m_sourcePaths.end())
+                {
+                    intermediateScene->m_sourcePaths.push_back(sourcePath);
+                }
+            }
 
             for (const tinygltf::Texture& texture : m_model.textures)
             {

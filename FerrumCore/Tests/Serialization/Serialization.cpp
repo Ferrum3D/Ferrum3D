@@ -457,6 +457,24 @@ namespace FE::Serialization::Tests
     }
 
 
+    TEST(Serialization, JsonNullUuidRoundTrip)
+    {
+        MemoryStream stream;
+        TestObject source = CreateObject();
+        source.m_id = Uuid::kNull;
+
+        JsonFormat format;
+        SerializationContext writer(&stream, format);
+        ASSERT_EQ(writer.Store(source), ResultCode::kSuccess);
+
+        stream.Rewind();
+        TestObject destination;
+        DeserializationContext reader(&stream, format);
+        ASSERT_EQ(reader.Load(destination), ResultCode::kSuccess);
+        EXPECT_EQ(destination.m_id, Uuid::kNull);
+    }
+
+
     TEST(Serialization, JsonEmptyValuesRoundTrip)
     {
         MemoryStream stream;

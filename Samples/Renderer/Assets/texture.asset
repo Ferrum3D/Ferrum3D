@@ -2,11 +2,13 @@
     "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
     "$typename": "FE::AssetBuilder::AssetFile",
     "$version": 0,
-    "$schema": "0x9fafb8575a05a191",
+    "$schema": "0x9322e5a965c41a4",
     "$value": {
         "m_sourcePath": "texture.dds",
+        "m_sourceDependencies": [],
         "m_artifacts": [
             {
+                "m_productKey": "Texture/Primary",
                 "m_name": "Texture",
                 "m_assetId": "5C9F4230-E3BD-447C-8344-407F710CF0CD",
                 "m_assetTypeId": "78A8F995-B51C-42E0-856D-922999074183",
@@ -17,11 +19,11 @@
                         "m_sourcePath": ""
                     }
                 },
-                "m_dependencies": []
+                "m_dependencies": [],
+                "m_lastBuildKey": "200E271F-491A-4E26-BF17-90BF667B7AE7",
+                "m_builtArtifactId": "A4B57B75-1311-4178-A1B7-8035DAF26A49",
+                "m_isRemoved": false
             }
-        ],
-        "m_builtArtifactIds": [
-            "580EA1AE-5469-4294-B459-1C4B01902929"
         ],
         "m_embeddedSourceData": []
     }

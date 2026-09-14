@@ -86,6 +86,8 @@ namespace FE::Graphics
         }
 
     private:
+        void DoRelease() override;
+
         MeshHandle AllocateHandle(DB::Ref<MeshInstanceTable> sourceIndex);
         void FreeHandle(MeshHandle handle);
         void EnsureCapacity();

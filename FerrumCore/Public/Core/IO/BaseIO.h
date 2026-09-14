@@ -141,6 +141,9 @@ namespace FE::IO
     //! Identity of one immutable compiled representation of a logical asset.
     using ArtifactID = Uuid;
 
+    //! Identity of one compilation request, including logical inputs, settings, tools, platform, and dependencies.
+    using BuildKey = Uuid;
+
     //! Legacy forward declarations for asset runtime types defined by the asset subsystem headers.
     struct AssetRecord;
     struct AssetSlot;
@@ -346,6 +349,12 @@ namespace FE::IO
 
         //! @brief Delete a file. Missing files are treated as successfully deleted.
         ResultCode Delete(festd::string_view path);
+
+        //! @brief Move a file without replacing an existing destination.
+        ResultCode Move(festd::string_view source, festd::string_view destination);
+
+        //! @brief Atomically replace a destination with a source file from the same volume.
+        ResultCode Replace(festd::string_view source, festd::string_view destination);
     } // namespace File
 
 
@@ -353,6 +362,9 @@ namespace FE::IO
     {
         //! @brief Create a directory and every missing parent directory.
         ResultCode Create(festd::string_view path);
+
+        //! @brief Delete an empty directory. Missing directories are treated as successfully deleted.
+        ResultCode Delete(festd::string_view path);
 
         //! @brief Iterate over a directory recursively.
         //!

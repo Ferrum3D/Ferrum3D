@@ -115,6 +115,20 @@ namespace FE::AssetBuilder
         }
 
 
+        bool AppendLogicalInput(festd::vector<std::byte>& result, const festd::span<const std::byte> bytes)
+        {
+            const uint32_t oldSize = result.size();
+            if (oldSize > Constants::kMaxU32 - sizeof(uint64_t) || bytes.size() > Constants::kMaxU32 - oldSize - sizeof(uint64_t))
+                return false;
+
+            const uint64_t byteSize = bytes.size();
+            result.resize(oldSize + sizeof(byteSize) + static_cast<uint32_t>(bytes.size()));
+            memcpy(result.data() + oldSize, &byteSize, sizeof(byteSize));
+            memcpy(result.data() + oldSize + sizeof(byteSize), bytes.data(), bytes.size());
+            return true;
+        }
+
+
         bool PathsHaveEqualPrefix(const festd::string_view lhs, const festd::string_view rhs)
         {
             if (lhs.size() < rhs.size())
@@ -203,30 +217,35 @@ namespace FE::AssetBuilder
         }
 
 
-        const AssetFileArtifact* FindPreviousArtifact(const AssetFile* previous, const festd::string_view name,
-                                                      const Rtti::TypeID typeId)
+        const AssetFileArtifact* FindPreviousArtifact(const AssetFile* previous, const festd::string_view productKey,
+                                                      const festd::string_view legacyName, const Rtti::TypeID typeId)
         {
             if (previous == nullptr)
                 return nullptr;
 
             for (const AssetFileArtifact& artifact : previous->m_artifacts)
             {
-                if (artifact.m_name == name && artifact.m_assetTypeId == typeId)
+                const bool productKeyMatches = artifact.m_productKey == productKey;
+                const bool legacyNameMatches = artifact.m_productKey.empty() && artifact.m_name == legacyName;
+                if ((productKeyMatches || legacyNameMatches) && artifact.m_assetTypeId == typeId)
                     return &artifact;
             }
             return nullptr;
         }
 
 
-        bool InitializeArtifact(AssetFileArtifact& artifact, const AssetFile* previous, const festd::string_view name,
-                                const Rtti::TypeID typeId)
+        bool InitializeArtifact(AssetFileArtifact& artifact, const AssetFile* previous, const festd::string_view productKey,
+                                const festd::string_view name, const Rtti::TypeID typeId)
         {
+            artifact.m_productKey = productKey;
             artifact.m_name = name;
             artifact.m_assetTypeId = typeId;
-            if (const AssetFileArtifact* oldArtifact = FindPreviousArtifact(previous, name, typeId))
+            if (const AssetFileArtifact* oldArtifact = FindPreviousArtifact(previous, productKey, name, typeId))
             {
                 artifact.m_assetId = oldArtifact->m_assetId;
                 artifact.m_buildSettings = oldArtifact->m_buildSettings;
+                artifact.m_lastBuildKey = oldArtifact->m_lastBuildKey;
+                artifact.m_builtArtifactId = oldArtifact->m_builtArtifactId;
             }
             else
             {
@@ -238,6 +257,37 @@ namespace FE::AssetBuilder
 
             Logger::LogError("Failed to generate an asset ID for product '{}'", name);
             return false;
+        }
+
+
+        bool HasArtifact(const AssetFile& assetFile, const festd::string_view productKey, const Rtti::TypeID typeId)
+        {
+            for (const AssetFileArtifact& artifact : assetFile.m_artifacts)
+            {
+                if (artifact.m_productKey == productKey && artifact.m_assetTypeId == typeId)
+                    return true;
+            }
+            return false;
+        }
+
+
+        void AppendRemovedArtifacts(AssetFile& assetFile, const AssetFile* previous)
+        {
+            if (previous == nullptr)
+                return;
+
+            for (const AssetFileArtifact& oldArtifact : previous->m_artifacts)
+            {
+                bool wasRediscovered = false;
+                for (const AssetFileArtifact& artifact : assetFile.m_artifacts)
+                    wasRediscovered |= artifact.m_assetId == oldArtifact.m_assetId;
+                if (wasRediscovered)
+                    continue;
+
+                AssetFileArtifact& removedArtifact = assetFile.m_artifacts.emplace_back(oldArtifact);
+                removedArtifact.m_dependencies.clear();
+                removedArtifact.m_isRemoved = true;
+            }
         }
 
 
@@ -278,12 +328,11 @@ namespace FE::AssetBuilder
 
             AssetFile assetFile;
             assetFile.m_sourcePath = sourceReference;
-            if (previousPtr != nullptr)
-                assetFile.m_builtArtifactIds = previousPtr->m_builtArtifactIds;
             AssetFileArtifact& texture = assetFile.m_artifacts.emplace_back();
-            if (!InitializeArtifact(texture, previousPtr, "Texture", Rtti::GetTypeID<TextureAsset>()))
+            if (!InitializeArtifact(texture, previousPtr, "Texture/Primary", "Texture", Rtti::GetTypeID<TextureAsset>()))
                 return false;
             texture.m_buildSettings.Emplace<TextureBuildSettings>();
+            AppendRemovedArtifacts(assetFile, previousPtr);
 
             if (!SaveAssetFile(assetFilePath, assetFile))
             {
@@ -327,8 +376,17 @@ namespace FE::AssetBuilder
 
             AssetFile assetFile;
             assetFile.m_sourcePath = sourceReference;
-            if (previousPtr != nullptr)
-                assetFile.m_builtArtifactIds = previousPtr->m_builtArtifactIds;
+
+            for (const IO::Path& dependencyPath : scene->m_sourcePaths)
+            {
+                IO::Path dependencyReference;
+                if (!MakeSourceReference(sourceRoot, IO::NormalizePath(dependencyPath), dependencyReference))
+                {
+                    Logger::LogError("Referenced source '{}' is outside depot root '{}'", dependencyPath, sourceRoot);
+                    return false;
+                }
+                assetFile.m_sourceDependencies.push_back(dependencyReference);
+            }
 
             festd::inline_vector<uint32_t, 4> textureArtifactIndices;
             for (uint32_t textureIndex = 0; textureIndex < scene->m_texturePaths.size(); ++textureIndex)
@@ -345,9 +403,9 @@ namespace FE::AssetBuilder
                     return false;
                 }
 
-                const auto name = Fmt::FixedFormat("Texture.{}", textureIndex);
+                const auto productKey = Fmt::FixedFormat("Texture/{}", textureReference);
                 AssetFileArtifact& texture = assetFile.m_artifacts.emplace_back();
-                if (!InitializeArtifact(texture, previousPtr, name, Rtti::GetTypeID<TextureAsset>()))
+                if (!InitializeArtifact(texture, previousPtr, productKey, productKey, Rtti::GetTypeID<TextureAsset>()))
                     return false;
                 TextureBuildSettings textureSettings;
                 textureSettings.m_sourceObjectIndex = textureIndex;
@@ -358,9 +416,21 @@ namespace FE::AssetBuilder
 
             for (uint32_t modelIndex = 0; modelIndex < scene->m_models.size(); ++modelIndex)
             {
-                const auto meshName = Fmt::FixedFormat("Mesh.{}", modelIndex);
+                const IntermediateModel& importedModel = scene->m_models[modelIndex];
+                if (importedModel.m_productKey.empty())
+                {
+                    Logger::LogError("Model '{}' contains an unnamed product with no stable import key", sourcePath);
+                    return false;
+                }
+
+                const auto meshKey = Fmt::FixedFormat("Mesh/{}", importedModel.m_productKey);
+                if (HasArtifact(assetFile, meshKey, Rtti::GetTypeID<MeshAsset>()))
+                {
+                    Logger::LogError("Model '{}' contains duplicate import product key '{}'", sourcePath, meshKey);
+                    return false;
+                }
                 AssetFileArtifact& mesh = assetFile.m_artifacts.emplace_back();
-                if (!InitializeArtifact(mesh, previousPtr, meshName, Rtti::GetTypeID<MeshAsset>()))
+                if (!InitializeArtifact(mesh, previousPtr, meshKey, meshKey, Rtti::GetTypeID<MeshAsset>()))
                     return false;
                 MeshBuildSettings meshSettings;
                 if (const auto* previousSettings = mesh.m_buildSettings.TryGet<MeshBuildSettings>())
@@ -369,9 +439,14 @@ namespace FE::AssetBuilder
                 mesh.m_buildSettings.Emplace<MeshBuildSettings>(meshSettings);
                 const uint32_t meshArtifactIndex = assetFile.m_artifacts.size() - 1;
 
-                const auto modelName = Fmt::FixedFormat("Model.{}", modelIndex);
+                const auto modelKey = Fmt::FixedFormat("Model/{}", importedModel.m_productKey);
+                if (HasArtifact(assetFile, modelKey, Rtti::GetTypeID<ModelAsset>()))
+                {
+                    Logger::LogError("Model '{}' contains duplicate import product key '{}'", sourcePath, modelKey);
+                    return false;
+                }
                 AssetFileArtifact& model = assetFile.m_artifacts.emplace_back();
-                if (!InitializeArtifact(model, previousPtr, modelName, Rtti::GetTypeID<ModelAsset>()))
+                if (!InitializeArtifact(model, previousPtr, modelKey, modelKey, Rtti::GetTypeID<ModelAsset>()))
                     return false;
                 ModelBuildSettings modelSettings;
                 modelSettings.m_sourceObjectIndex = modelIndex;
@@ -380,6 +455,8 @@ namespace FE::AssetBuilder
                 for (const uint32_t textureArtifactIndex : textureArtifactIndices)
                     AddDependency(model, assetFile.m_artifacts[textureArtifactIndex]);
             }
+
+            AppendRemovedArtifacts(assetFile, previousPtr);
 
             if (!SaveAssetFile(assetFilePath, assetFile))
             {
@@ -395,17 +472,65 @@ namespace FE::AssetBuilder
         }
 
 
-        bool MakeBuildFingerprint(const AssetFileArtifact& artifact, festd::vector<std::byte>& result)
+        bool SerializeBuildSettings(const AssetFileArtifact& artifact, festd::vector<std::byte>& result)
         {
             MemoryOutputStream stream;
             Serialization::TaggedBinaryFormat format;
             Serialization::SerializationContext context(&stream, format);
-            if (context.Store(artifact) != Serialization::ResultCode::kSuccess)
+            if (context.Store(artifact.m_buildSettings) != Serialization::ResultCode::kSuccess)
                 return false;
 
             const festd::span<const std::byte> data = stream.GetData();
             result.assign(data.begin(), data.end());
             return true;
+        }
+
+
+        Uuid MakeUuid(const uint64_t low, const uint64_t high)
+        {
+            alignas(16) uint64_t words[2] = { low, high };
+            Uuid result = Uuid::LoadAligned(words);
+            result.m_bytes[6] = (result.m_bytes[6] & 0x0f) | 0x40;
+            result.m_bytes[8] = (result.m_bytes[8] & 0x3f) | 0x80;
+            return result;
+        }
+
+
+        IO::BuildKey ComputeBuildKey(const AssetFileArtifact& artifact, const festd::span<const std::byte> sourceData,
+                                     const festd::span<const std::byte> settingsData,
+                                     const festd::span<const IO::ArtifactID> dependencyArtifacts)
+        {
+            constexpr festd::string_view domain = "FerrumBuild/v1";
+            constexpr festd::string_view compilerVersion = "AssetCompiler/v2";
+            constexpr festd::string_view platform = "pc";
+
+            Hasher lowHasher(0x1fd79b78c365ade1ull);
+            Hasher highHasher(0x86d2f9a3ab8c4075ull);
+            lowHasher.Update(domain.data(), domain.size())
+                .Update(artifact.m_assetId)
+                .Update(artifact.m_assetTypeId)
+                .Update(compilerVersion.data(), compilerVersion.size())
+                .Update(platform.data(), platform.size())
+                .Update(settingsData.data(), settingsData.size())
+                .Update(sourceData.data(), sourceData.size());
+            highHasher.Update(sourceData.data(), sourceData.size())
+                .Update(settingsData.data(), settingsData.size())
+                .Update(platform.data(), platform.size())
+                .Update(compilerVersion.data(), compilerVersion.size())
+                .Update(artifact.m_assetTypeId)
+                .Update(artifact.m_assetId)
+                .Update(domain.data(), domain.size());
+            FE_Assert(dependencyArtifacts.size() == artifact.m_dependencies.size());
+            for (uint32_t index = 0; index < dependencyArtifacts.size(); ++index)
+            {
+                const AssetFileDependency& dependency = artifact.m_dependencies[index];
+                const IO::ArtifactID dependencyArtifact = dependencyArtifacts[index];
+                lowHasher.Update(dependency.m_assetId).Update(dependency.m_expectedTypeId).Update(dependency.m_kind);
+                lowHasher.Update(dependencyArtifact);
+                highHasher.Update(dependency.m_kind).Update(dependency.m_expectedTypeId).Update(dependency.m_assetId);
+                highHasher.Update(dependencyArtifact);
+            }
+            return MakeUuid(lowHasher.Finalize(), highHasher.Finalize());
         }
 
 
@@ -415,7 +540,7 @@ namespace FE::AssetBuilder
             IO::Path m_sourcePath;
             festd::span<const std::byte> m_sourceData;
             IO::Path m_outputDirectory;
-            IO::ArtifactID m_artifactId;
+            IO::ArtifactID* m_resultArtifactId;
         };
 
 
@@ -430,7 +555,7 @@ namespace FE::AssetBuilder
             ModelProcessSettings settings;
             settings.m_outputDirectory = request.m_outputDirectory;
             settings.m_assetId = request.m_artifact.m_assetId;
-            settings.m_artifactId = request.m_artifactId;
+            settings.m_resultArtifactId = request.m_resultArtifactId;
             settings.m_dependencies = request.m_artifact.m_dependencies;
             return ProcessModel(settings);
         }
@@ -449,7 +574,7 @@ namespace FE::AssetBuilder
             settings.m_inputFile = request.m_sourcePath;
             settings.m_outputDirectory = request.m_outputDirectory;
             settings.m_assetId = request.m_artifact.m_assetId;
-            settings.m_artifactId = request.m_artifactId;
+            settings.m_resultArtifactId = request.m_resultArtifactId;
             settings.m_sourceObjectIndex = buildSettings->m_sourceObjectIndex;
             settings.m_generateLods = buildSettings->m_generateLods;
             settings.m_sourceData = request.m_sourceData;
@@ -469,7 +594,7 @@ namespace FE::AssetBuilder
             settings.m_inputFile = request.m_sourcePath;
             settings.m_outputDirectory = request.m_outputDirectory;
             settings.m_assetId = request.m_artifact.m_assetId;
-            settings.m_artifactId = request.m_artifactId;
+            settings.m_resultArtifactId = request.m_resultArtifactId;
             settings.m_sourceData = request.m_sourceData;
             return ProcessTexture(settings);
         }
@@ -504,17 +629,21 @@ namespace FE::AssetBuilder
         {
             AssetFile& m_assetFile;
             IO::Path m_sourceRoot;
-            IO::Path m_outputDirectory;
+            IO::Path m_finalOutputDirectory;
+            IO::Path m_stagingOutputDirectory;
             IO::Path m_primarySourcePath;
             festd::span<const std::byte> m_primarySourceData;
+            festd::span<const std::byte> m_primaryLogicalInputData;
             festd::unordered_dense_map<IO::AssetID, uint32_t> m_artifactIndices;
             festd::unordered_dense_set<IO::AssetID> m_visiting;
             festd::unordered_dense_set<IO::AssetID> m_built;
-            festd::inline_vector<IO::ArtifactID, 4> m_newArtifactIds;
+            festd::inline_vector<uint32_t, 4> m_changedArtifactIndices;
+            festd::inline_vector<IO::ArtifactID, 4> m_obsoleteArtifactIds;
 
             bool Build(const uint32_t artifactIndex)
             {
                 AssetFileArtifact& artifact = m_assetFile.m_artifacts[artifactIndex];
+                FE_Assert(!artifact.m_isRemoved);
                 if (m_built.contains(artifact.m_assetId))
                     return true;
                 if (m_visiting.contains(artifact.m_assetId))
@@ -537,6 +666,11 @@ namespace FE::AssetBuilder
                     }
 
                     const AssetFileArtifact& dependencyArtifact = m_assetFile.m_artifacts[iter->second];
+                    if (dependencyArtifact.m_isRemoved)
+                    {
+                        Logger::LogError("Asset {} requires removed product {}", artifact.m_assetId, dependency.m_assetId);
+                        return false;
+                    }
                     if (dependencyArtifact.m_assetTypeId != dependency.m_expectedTypeId)
                     {
                         Logger::LogError("Asset {} dependency {} has an incompatible type",
@@ -550,6 +684,7 @@ namespace FE::AssetBuilder
 
                 IO::Path sourcePath = m_primarySourcePath;
                 festd::span<const std::byte> sourceData = m_primarySourceData;
+                festd::span<const std::byte> logicalInputData = m_primaryLogicalInputData;
                 festd::vector<std::byte> externalSourceData;
                 if (const auto* textureSettings = artifact.m_buildSettings.TryGet<TextureBuildSettings>();
                     textureSettings != nullptr && !textureSettings->m_sourcePath.empty())
@@ -562,13 +697,28 @@ namespace FE::AssetBuilder
                         return false;
                     }
                     sourceData = externalSourceData;
+                    logicalInputData = externalSourceData;
                 }
 
-                festd::vector<std::byte> fingerprint;
-                if (!MakeBuildFingerprint(artifact, fingerprint))
+                festd::vector<std::byte> settingsData;
+                if (!SerializeBuildSettings(artifact, settingsData))
                     return false;
-                const IO::ArtifactID artifactId =
-                    ArtifactWriter::MakeArtifactID(artifact.m_assetId, sourceData, fingerprint, "AssetCompiler/v1");
+
+                festd::inline_vector<IO::ArtifactID, 4> dependencyArtifactIds;
+                for (const AssetFileDependency& dependency : artifact.m_dependencies)
+                    dependencyArtifactIds.push_back(
+                        m_assetFile.m_artifacts[m_artifactIndices.find(dependency.m_assetId)->second].m_builtArtifactId);
+                const IO::BuildKey buildKey = ComputeBuildKey(artifact, logicalInputData, settingsData, dependencyArtifactIds);
+
+                const bool dataExists = artifact.m_builtArtifactId.IsValid()
+                    && IO::File::Exists(ArtifactWriter::GetDataPath(m_finalOutputDirectory, artifact.m_builtArtifactId));
+                const bool metadataExists =
+                    IO::File::Exists(ArtifactWriter::GetMetadataPath(m_finalOutputDirectory, artifact.m_assetId));
+                if (artifact.m_lastBuildKey == buildKey && artifact.m_builtArtifactId.IsValid() && dataExists && metadataExists)
+                {
+                    m_built.insert(artifact.m_assetId);
+                    return true;
+                }
 
                 const BuildFunction builder = FindBuilder(artifact.m_assetTypeId);
                 if (builder == nullptr)
@@ -577,15 +727,200 @@ namespace FE::AssetBuilder
                     return false;
                 }
 
-                const BuildRequest request{ artifact, sourcePath, sourceData, m_outputDirectory, artifactId };
+                const IO::ArtifactID previousArtifactId = artifact.m_builtArtifactId;
+                IO::ArtifactID artifactId = IO::ArtifactID::kNull;
+                const BuildRequest request{ artifact, sourcePath, sourceData, m_stagingOutputDirectory, &artifactId };
                 if (!builder(request))
                     return false;
+                if (!artifactId.IsValid())
+                {
+                    Logger::LogError("Builder produced no artifact identity for product '{}'", artifact.m_name);
+                    return false;
+                }
 
-                m_newArtifactIds.push_back(artifactId);
+                artifact.m_lastBuildKey = buildKey;
+                artifact.m_builtArtifactId = artifactId;
+                m_changedArtifactIndices.push_back(artifactIndex);
+                if (previousArtifactId.IsValid() && previousArtifactId != artifactId)
+                    m_obsoleteArtifactIds.push_back(previousArtifactId);
                 m_built.insert(artifact.m_assetId);
                 return true;
             }
         };
+
+
+        struct MetadataPublication final
+        {
+            IO::Path m_candidatePath;
+            IO::Path m_finalPath;
+            IO::Path m_backupPath;
+            bool m_isRemoval = false;
+            bool m_hadPrevious = false;
+            bool m_candidatePublished = false;
+        };
+
+
+        void RollbackMetadata(festd::span<MetadataPublication> publications)
+        {
+            for (uint32_t index = publications.size(); index > 0; --index)
+            {
+                MetadataPublication& publication = publications[index - 1];
+                if (publication.m_candidatePublished)
+                    IO::File::Delete(publication.m_finalPath);
+                if (publication.m_hadPrevious)
+                    IO::File::Replace(publication.m_backupPath, publication.m_finalPath);
+            }
+        }
+
+
+        bool PublishBuild(BuildContext& context, const Uuid transactionId)
+        {
+            for (const uint32_t artifactIndex : context.m_changedArtifactIndices)
+            {
+                const AssetFileArtifact& artifact = context.m_assetFile.m_artifacts[artifactIndex];
+                const IO::Path candidatePath =
+                    ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifact.m_builtArtifactId);
+                const IO::Path finalPath =
+                    ArtifactWriter::GetDataPath(context.m_finalOutputDirectory, artifact.m_builtArtifactId);
+                const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(finalPath).parent_directory());
+                if (createResult != IO::ResultCode::kSuccess)
+                {
+                    Logger::LogError("Failed to create artifact publication directory '{}': {}",
+                                     finalPath,
+                                     IO::GetResultDesc(createResult));
+                    return false;
+                }
+
+                if (IO::File::Exists(finalPath))
+                {
+                    if (IO::File::Delete(candidatePath) != IO::ResultCode::kSuccess)
+                        return false;
+                    continue;
+                }
+
+                const IO::ResultCode moveResult = IO::File::Move(candidatePath, finalPath);
+                if (moveResult != IO::ResultCode::kSuccess)
+                {
+                    if (IO::File::Exists(finalPath))
+                    {
+                        if (IO::File::Delete(candidatePath) != IO::ResultCode::kSuccess)
+                            return false;
+                        continue;
+                    }
+
+                    Logger::LogError("Failed to publish immutable artifact '{}': {}", finalPath, IO::GetResultDesc(moveResult));
+                    return false;
+                }
+            }
+
+            festd::inline_vector<MetadataPublication, 4> publications;
+            for (const uint32_t artifactIndex : context.m_changedArtifactIndices)
+            {
+                const AssetFileArtifact& artifact = context.m_assetFile.m_artifacts[artifactIndex];
+                MetadataPublication& publication = publications.emplace_back();
+                publication.m_candidatePath =
+                    ArtifactWriter::GetMetadataPath(context.m_stagingOutputDirectory, artifact.m_assetId);
+                publication.m_finalPath = ArtifactWriter::GetMetadataPath(context.m_finalOutputDirectory, artifact.m_assetId);
+            }
+            for (const AssetFileArtifact& artifact : context.m_assetFile.m_artifacts)
+            {
+                if (!artifact.m_isRemoved)
+                    continue;
+
+                MetadataPublication& publication = publications.emplace_back();
+                publication.m_finalPath = ArtifactWriter::GetMetadataPath(context.m_finalOutputDirectory, artifact.m_assetId);
+                publication.m_isRemoval = true;
+            }
+
+            for (uint32_t index = 0; index < publications.size(); ++index)
+            {
+                MetadataPublication& publication = publications[index];
+                const IO::ResultCode createResult =
+                    IO::Directory::Create(IO::PathView(publication.m_finalPath).parent_directory());
+                if (createResult != IO::ResultCode::kSuccess)
+                {
+                    RollbackMetadata(festd::span(publications.data(), index));
+                    return false;
+                }
+
+                publication.m_backupPath = publication.m_finalPath;
+                publication.m_backupPath.AsBaseString() += Fmt::FixedFormat(".{}.backup", transactionId);
+                publication.m_hadPrevious = IO::File::Exists(publication.m_finalPath);
+                if (publication.m_hadPrevious)
+                {
+                    const IO::ResultCode backupResult = IO::File::Move(publication.m_finalPath, publication.m_backupPath);
+                    if (backupResult != IO::ResultCode::kSuccess)
+                    {
+                        Logger::LogError("Failed to back up artifact metadata '{}': {}",
+                                         publication.m_finalPath,
+                                         IO::GetResultDesc(backupResult));
+                        RollbackMetadata(festd::span(publications.data(), index));
+                        return false;
+                    }
+                }
+
+                if (!publication.m_isRemoval)
+                {
+                    const IO::ResultCode publishResult = IO::File::Move(publication.m_candidatePath, publication.m_finalPath);
+                    if (publishResult != IO::ResultCode::kSuccess)
+                    {
+                        Logger::LogError("Failed to publish artifact metadata '{}': {}",
+                                         publication.m_finalPath,
+                                         IO::GetResultDesc(publishResult));
+                        RollbackMetadata(festd::span(publications.data(), index + 1));
+                        return false;
+                    }
+                    publication.m_candidatePublished = true;
+                }
+            }
+
+            for (MetadataPublication& publication : publications)
+            {
+                if (publication.m_hadPrevious)
+                    IO::File::Delete(publication.m_backupPath);
+            }
+            return true;
+        }
+
+
+        void RemoveEmptyStagingAncestors(const IO::Path& filePath, const IO::Path& stagingDirectory)
+        {
+            IO::Path directory = IO::NormalizePath(IO::PathView(filePath).parent_directory());
+            while (directory.size() >= stagingDirectory.size() && PathsHaveEqualPrefix(directory, stagingDirectory))
+            {
+                if (IO::Directory::Delete(directory) != IO::ResultCode::kSuccess)
+                    break;
+                if (directory == stagingDirectory)
+                    break;
+                directory = IO::NormalizePath(IO::PathView(directory).parent_directory());
+            }
+        }
+
+
+        void RemoveStagingDirectory(const BuildContext& context)
+        {
+            for (const AssetFileArtifact& artifact : context.m_assetFile.m_artifacts)
+            {
+                const IO::Path pendingPath =
+                    ArtifactWriter::GetPendingDataPath(context.m_stagingOutputDirectory, artifact.m_assetId);
+                IO::File::Delete(pendingPath);
+                RemoveEmptyStagingAncestors(pendingPath, context.m_stagingOutputDirectory);
+
+                if (artifact.m_builtArtifactId.IsValid())
+                {
+                    const IO::Path dataPath =
+                        ArtifactWriter::GetDataPath(context.m_stagingOutputDirectory, artifact.m_builtArtifactId);
+                    IO::File::Delete(dataPath);
+                    RemoveEmptyStagingAncestors(dataPath, context.m_stagingOutputDirectory);
+                }
+
+                const IO::Path metadataPath =
+                    ArtifactWriter::GetMetadataPath(context.m_stagingOutputDirectory, artifact.m_assetId);
+                IO::File::Delete(metadataPath);
+                RemoveEmptyStagingAncestors(metadataPath, context.m_stagingOutputDirectory);
+            }
+            IO::Directory::Delete(context.m_stagingOutputDirectory);
+        }
     } // namespace
 
 
@@ -628,9 +963,15 @@ namespace FE::AssetBuilder
             Logger::LogError("A source depot root is required to build an asset");
             return false;
         }
+        if (settings.m_outputDirectory.empty())
+        {
+            Logger::LogError("An artifact output directory is required to build an asset");
+            return false;
+        }
 
         const IO::Path assetFilePath = IO::GetAbsolutePath(settings.m_assetFile);
         const IO::Path sourceRoot = IO::GetAbsolutePath(settings.m_sourceRoot);
+        const IO::Path outputDirectory = IO::GetAbsolutePath(settings.m_outputDirectory);
         if (IO::PathView(assetFilePath).extension() != ".asset")
         {
             Logger::LogError("Build input '{}' is not an .asset file", assetFilePath);
@@ -660,11 +1001,14 @@ namespace FE::AssetBuilder
         }
 
         festd::vector<std::byte> sourceBytes;
+        festd::vector<std::byte> logicalInputBytes;
         IO::Path sourcePath;
         if (assetFile.m_sourcePath.empty())
         {
             sourcePath = assetFilePath;
             sourceBytes = assetFile.m_embeddedSourceData;
+            if (!AppendLogicalInput(logicalInputBytes, sourceBytes))
+                return false;
         }
         else
         {
@@ -675,13 +1019,47 @@ namespace FE::AssetBuilder
                 Logger::LogError("Failed to read source '{}'", sourcePath);
                 return false;
             }
+            if (!AppendLogicalInput(logicalInputBytes, sourceBytes))
+                return false;
+            for (const IO::Path& dependencyReference : assetFile.m_sourceDependencies)
+            {
+                IO::Path dependencyPath;
+                if (!ResolveSourceReference(sourceRoot, dependencyReference, dependencyPath))
+                    return false;
+
+                festd::vector<std::byte> dependencyBytes;
+                if (!ReadFile(dependencyPath, dependencyBytes))
+                {
+                    Logger::LogError("Failed to read source dependency '{}'", dependencyPath);
+                    return false;
+                }
+
+                if (!AppendLogicalInput(logicalInputBytes, dependencyBytes))
+                {
+                    Logger::LogError("Logical inputs for '{}' exceed the supported size", assetFilePath);
+                    return false;
+                }
+            }
         }
 
-        BuildContext context{ assetFile, sourceRoot, IO::GetAbsolutePath(settings.m_outputDirectory), sourcePath, sourceBytes };
+        const Uuid transactionId = GenerateAssetId();
+        if (!transactionId.IsValid())
+        {
+            Logger::LogError("Failed to generate an asset build transaction ID");
+            return false;
+        }
+        IO::Path stagingDirectory = outputDirectory / ".ferrum-build";
+        stagingDirectory /= Fmt::FixedFormat("{}", transactionId);
+        BuildContext context{
+            assetFile, sourceRoot, outputDirectory, stagingDirectory, sourcePath, sourceBytes, logicalInputBytes
+        };
+        const auto deferRemoveStaging = festd::defer([&context] {
+            RemoveStagingDirectory(context);
+        });
         for (uint32_t index = 0; index < assetFile.m_artifacts.size(); ++index)
         {
             const AssetFileArtifact& artifact = assetFile.m_artifacts[index];
-            if (!artifact.m_assetId.IsValid() || !artifact.m_assetTypeId.IsValid())
+            if (artifact.m_productKey.empty() || !artifact.m_assetId.IsValid() || !artifact.m_assetTypeId.IsValid())
             {
                 Logger::LogError("Product '{}' has invalid identity", artifact.m_name);
                 return false;
@@ -691,15 +1069,39 @@ namespace FE::AssetBuilder
                 Logger::LogError("Asset file '{}' contains duplicate asset ID {}", assetFilePath, artifact.m_assetId);
                 return false;
             }
+
+            for (uint32_t previousIndex = 0; previousIndex < index; ++previousIndex)
+            {
+                const AssetFileArtifact& previousArtifact = assetFile.m_artifacts[previousIndex];
+                if (previousArtifact.m_productKey == artifact.m_productKey
+                    && previousArtifact.m_assetTypeId == artifact.m_assetTypeId)
+                {
+                    Logger::LogError("Asset file '{}' contains duplicate product key '{}'", assetFilePath, artifact.m_productKey);
+                    return false;
+                }
+            }
         }
 
         for (uint32_t index = 0; index < assetFile.m_artifacts.size(); ++index)
         {
+            if (assetFile.m_artifacts[index].m_isRemoved)
+                continue;
             if (!context.Build(index))
                 return false;
         }
-        const auto oldArtifactIds = std::move(assetFile.m_builtArtifactIds);
-        assetFile.m_builtArtifactIds = context.m_newArtifactIds;
+
+        if (!PublishBuild(context, transactionId))
+            return false;
+
+        for (AssetFileArtifact& artifact : assetFile.m_artifacts)
+        {
+            if (!artifact.m_isRemoved)
+                continue;
+            if (artifact.m_builtArtifactId.IsValid())
+                context.m_obsoleteArtifactIds.push_back(artifact.m_builtArtifactId);
+            artifact.m_lastBuildKey = IO::BuildKey::kNull;
+            artifact.m_builtArtifactId = IO::ArtifactID::kNull;
+        }
         if (!SaveAssetFile(assetFilePath, assetFile))
         {
             Logger::LogError("Failed to record build results in '{}'", assetFilePath);
@@ -707,14 +1109,8 @@ namespace FE::AssetBuilder
         }
 
         bool cleanupSucceeded = true;
-        for (const IO::ArtifactID oldArtifactId : oldArtifactIds)
-        {
-            if (festd::find(context.m_newArtifactIds.begin(), context.m_newArtifactIds.end(), oldArtifactId)
-                == context.m_newArtifactIds.end())
-            {
-                cleanupSucceeded &= ArtifactWriter::RemoveArtifact(context.m_outputDirectory, oldArtifactId);
-            }
-        }
+        for (const IO::ArtifactID obsoleteArtifactId : context.m_obsoleteArtifactIds)
+            cleanupSucceeded &= ArtifactWriter::RemoveArtifact(outputDirectory, obsoleteArtifactId);
         return cleanupSucceeded;
     }
 } // namespace FE::AssetBuilder

@@ -88,6 +88,12 @@ namespace FE::Graphics
     }
 
 
+    void MeshSceneModule::DoRelease()
+    {
+        Memory::DefaultDelete(this);
+    }
+
+
     MeshHandle MeshSceneModule::AllocateHandle(const DB::Ref<MeshInstanceTable> sourceIndex)
     {
         EnsureCapacity();

@@ -31,7 +31,7 @@ namespace FE::AssetBuilder
         IO::Path m_inputFile;
         IO::Path m_outputDirectory;
         IO::AssetID m_assetId = IO::AssetID::kNull;
-        IO::ArtifactID m_artifactId = IO::ArtifactID::kNull;
+        IO::ArtifactID* m_resultArtifactId = nullptr;
         uint32_t m_sourceObjectIndex = kInvalidIndex;
         bool m_generateLods = true;
         festd::span<const std::byte> m_sourceData;
@@ -41,7 +41,7 @@ namespace FE::AssetBuilder
     {
         IO::Path m_outputDirectory;
         IO::AssetID m_assetId = IO::AssetID::kNull;
-        IO::ArtifactID m_artifactId = IO::ArtifactID::kNull;
+        IO::ArtifactID* m_resultArtifactId = nullptr;
         festd::span<const AssetFileDependency> m_dependencies;
     };
 

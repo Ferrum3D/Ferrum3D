@@ -13,7 +13,18 @@ namespace FE::AssetBuilder
 
         Serialization::JsonFormat format;
         Serialization::DeserializationContext context(fileResult->Get(), format);
-        return context.Load(result) == Serialization::ResultCode::kSuccess;
+        const Serialization::ResultCode resultCode = context.Load(result);
+        if (resultCode == Serialization::ResultCode::kSuccess)
+            return true;
+
+        const Serialization::Error& error = context.GetError();
+        Logger::LogError("Failed to deserialize asset file '{}': {} at {}:{} (byte {})",
+                         path,
+                         festd::to_underlying(resultCode),
+                         error.m_line,
+                         error.m_column,
+                         error.m_byteOffset);
+        return false;
     }
 
 

@@ -99,23 +99,19 @@ namespace FE::FerrumCli
             PrintHelp(*build);
             return 1;
         }
+        if (!build->m_output || build->m_output.Get().empty())
+        {
+            IO::EPrintLn("Error: Option '--output' is required");
+            PrintHelp(*build);
+            return 1;
+        }
 
         const IO::PathView assetFilePath(build->m_asset.Get());
-        IO::Path outputPath;
-        if (build->m_output)
-        {
-            outputPath = build->m_output.Get();
-        }
-        else
-        {
-            outputPath = assetFilePath.parent_directory();
-            outputPath /= assetFilePath.stem();
-        }
 
         AssetBuilder::BuildAssetSettings settings;
         settings.m_assetFile = assetFilePath;
         settings.m_sourceRoot = build->m_sourceRoot.Get();
-        settings.m_outputDirectory = outputPath;
+        settings.m_outputDirectory = build->m_output.Get();
         return AssetBuilder::BuildAsset(settings) ? 0 : 1;
     }
 } // namespace FE::FerrumCli

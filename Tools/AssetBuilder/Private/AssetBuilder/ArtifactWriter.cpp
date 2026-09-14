@@ -32,15 +32,26 @@ namespace FE::AssetBuilder
     } // namespace
 
 
-    ArtifactWriter::ArtifactWriter(const IO::Path& outputRoot, const IO::AssetID assetId, const IO::ArtifactID artifactId,
-                                   const Rtti::TypeID assetTypeId)
+    ArtifactWriter::ArtifactWriter(const IO::Path& outputRoot, const IO::AssetID assetId, const Rtti::TypeID assetTypeId)
     {
-        const IO::Path absoluteOutputRoot = IO::GetAbsolutePath(outputRoot);
+        m_outputRoot = IO::GetAbsolutePath(outputRoot);
         m_record.m_assetId = assetId;
-        m_record.m_artifactId = artifactId;
         m_record.m_assetTypeId = assetTypeId;
-        m_dataPath = MakeShardedPath(absoluteOutputRoot, "artifacts/data", artifactId, ".bin");
-        m_metadataPath = MakeShardedPath(absoluteOutputRoot, "artifacts/metadata/pc", assetId, ".meta");
+        m_pendingDataPath = GetPendingDataPath(m_outputRoot, assetId);
+        m_metadataPath = GetMetadataPath(m_outputRoot, assetId);
+
+        constexpr festd::string_view domain = "FerrumArtifact/v1";
+        HashCanonicalBytes(domain.data(), domain.size());
+        HashCanonicalBytes(assetId.data(), assetId.size());
+        HashCanonicalBytes(assetTypeId.data(), assetTypeId.size());
+    }
+
+
+    ArtifactWriter::~ArtifactWriter()
+    {
+        m_dataFile.Reset();
+        if (!m_pendingDataPath.empty())
+            IO::File::Delete(m_pendingDataPath);
     }
 
 
@@ -49,17 +60,17 @@ namespace FE::AssetBuilder
         if (m_dataFile)
             return true;
 
-        const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(m_dataPath).parent_directory());
+        const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(m_pendingDataPath).parent_directory());
         if (createResult != IO::ResultCode::kSuccess)
         {
-            Logger::LogError("Failed to create artifact directory '{}': {}", m_dataPath, IO::GetResultDesc(createResult));
+            Logger::LogError("Failed to create artifact directory '{}': {}", m_pendingDataPath, IO::GetResultDesc(createResult));
             return false;
         }
 
-        auto fileResult = IO::FileStream::Open(m_dataPath, IO::OpenMode::kCreate);
+        auto fileResult = IO::FileStream::Open(m_pendingDataPath, IO::OpenMode::kCreateNew);
         if (!fileResult)
         {
-            Logger::LogError("Failed to create artifact '{}': {}", m_dataPath, IO::GetResultDesc(fileResult.error()));
+            Logger::LogError("Failed to create artifact '{}': {}", m_pendingDataPath, IO::GetResultDesc(fileResult.error()));
             return false;
         }
 
@@ -72,6 +83,10 @@ namespace FE::AssetBuilder
     {
         if (!OpenDataFile())
             return false;
+
+        const uint64_t payloadSize = bytes.size();
+        HashCanonicalBytes(&payloadSize, sizeof(payloadSize));
+        HashCanonicalBytes(bytes.data(), bytes.size());
 
         m_dataFile->FlushWrites();
         IO::ArtifactPayloadRecord& payload = m_record.m_payloads.emplace_back();
@@ -89,14 +104,14 @@ namespace FE::AssetBuilder
                 compressor.Compress(bytes.data() + offset, uncompressedSize, compressedBytes.data(), compressedBytes.size());
             if (result.m_result != Compression::ResultCode::kSuccess)
             {
-                Logger::LogError("Failed to compress artifact payload '{}': chunk at byte {}", m_dataPath, offset);
+                Logger::LogError("Failed to compress artifact payload '{}': chunk at byte {}", m_pendingDataPath, offset);
                 return false;
             }
 
             if (m_dataFile->WriteFromBuffer(compressedBytes.data(), result.m_compressedSize) != result.m_compressedSize)
             {
                 Logger::LogError("Failed to write compressed artifact payload '{}': expected {} bytes",
-                                 m_dataPath,
+                                 m_pendingDataPath,
                                  result.m_compressedSize);
                 return false;
             }
@@ -119,10 +134,15 @@ namespace FE::AssetBuilder
 
     void ArtifactWriter::AddDependency(const IO::AssetID assetId, const Rtti::TypeID typeId, const IO::DependencyKind kind)
     {
+        FE_Assert(m_record.m_payloads.empty(), "Dependencies must be declared before artifact payloads");
         IO::ArtifactDependencyRecord& dependency = m_record.m_dependencies.emplace_back();
         dependency.m_assetId = assetId;
         dependency.m_expectedTypeId = typeId;
         dependency.m_kind = kind;
+
+        HashCanonicalBytes(assetId.data(), assetId.size());
+        HashCanonicalBytes(typeId.data(), typeId.size());
+        HashCanonicalBytes(&kind, sizeof(kind));
     }
 
 
@@ -149,9 +169,28 @@ namespace FE::AssetBuilder
 
         m_dataFile->FlushWrites();
         m_dataFile.Reset();
+        m_record.m_artifactId = MakeUuid(m_lowHasher.Finalize(), m_highHasher.Finalize());
+        m_dataPath = GetDataPath(m_outputRoot, m_record.m_artifactId);
+
+        const IO::ResultCode createResult = IO::Directory::Create(IO::PathView(m_dataPath).parent_directory());
+        if (createResult != IO::ResultCode::kSuccess)
+        {
+            Logger::LogError("Failed to create artifact directory '{}': {}", m_dataPath, IO::GetResultDesc(createResult));
+            return false;
+        }
+
+        const IO::ResultCode moveResult = IO::File::Move(m_pendingDataPath, m_dataPath);
+        if (moveResult != IO::ResultCode::kSuccess)
+        {
+            Logger::LogError("Failed to finalize artifact data '{}': {}", m_dataPath, IO::GetResultDesc(moveResult));
+            return false;
+        }
+        m_pendingDataPath.clear();
+
         if (!WriteMetadata())
         {
-            Logger::LogError("Failed to finalize artifact metadata '{}', data remains at '{}'", m_metadataPath, m_dataPath);
+            IO::File::Delete(m_dataPath);
+            Logger::LogError("Failed to finalize artifact metadata '{}'", m_metadataPath);
             return false;
         }
 
@@ -163,6 +202,18 @@ namespace FE::AssetBuilder
     IO::Path ArtifactWriter::GetDataPath(const IO::Path& outputRoot, const IO::ArtifactID artifactId)
     {
         return MakeShardedPath(IO::GetAbsolutePath(outputRoot), "artifacts/data", artifactId, ".bin");
+    }
+
+
+    IO::Path ArtifactWriter::GetPendingDataPath(const IO::Path& outputRoot, const IO::AssetID assetId)
+    {
+        return MakeShardedPath(IO::GetAbsolutePath(outputRoot), "artifacts/pending", assetId, ".bin");
+    }
+
+
+    IO::Path ArtifactWriter::GetMetadataPath(const IO::Path& outputRoot, const IO::AssetID assetId)
+    {
+        return MakeShardedPath(IO::GetAbsolutePath(outputRoot), "artifacts/metadata/pc", assetId, ".meta");
     }
 
 
@@ -178,27 +229,27 @@ namespace FE::AssetBuilder
     }
 
 
-    IO::ArtifactID ArtifactWriter::MakeArtifactID(const IO::AssetID assetId, const festd::span<const std::byte> sourceBytes,
-                                                  const festd::string_view productKey)
+    bool ArtifactWriter::RemoveMetadata(const IO::Path& outputRoot, const IO::AssetID assetId)
     {
-        return MakeArtifactID(assetId, sourceBytes, {}, productKey);
+        const IO::Path path = GetMetadataPath(outputRoot, assetId);
+        const IO::ResultCode result = IO::File::Delete(path);
+        if (result == IO::ResultCode::kSuccess)
+            return true;
+
+        Logger::LogError("Failed to remove obsolete metadata '{}': {}", path, IO::GetResultDesc(result));
+        return false;
     }
 
 
-    IO::ArtifactID ArtifactWriter::MakeArtifactID(const IO::AssetID assetId, const festd::span<const std::byte> sourceBytes,
-                                                  const festd::span<const std::byte> settingsBytes,
-                                                  const festd::string_view productKey)
+    IO::ArtifactID ArtifactWriter::GetArtifactID() const
     {
-        Hasher lowHasher(0x04c013886f71ac52ull);
-        Hasher highHasher(0xba68ed2194375fc0ull);
-        lowHasher.Update(assetId)
-            .Update(productKey.data(), productKey.size())
-            .Update(settingsBytes.data(), settingsBytes.size())
-            .Update(sourceBytes.data(), sourceBytes.size());
-        highHasher.Update(sourceBytes.data(), sourceBytes.size())
-            .Update(settingsBytes.data(), settingsBytes.size())
-            .Update(assetId)
-            .Update(productKey.data(), productKey.size());
-        return MakeUuid(lowHasher.Finalize(), highHasher.Finalize());
+        return m_record.m_artifactId;
+    }
+
+
+    void ArtifactWriter::HashCanonicalBytes(const void* data, const size_t byteSize)
+    {
+        m_lowHasher.Update(data, byteSize);
+        m_highHasher.Update(data, byteSize);
     }
 } // namespace FE::AssetBuilder

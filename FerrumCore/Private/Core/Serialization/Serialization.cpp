@@ -175,7 +175,8 @@ namespace FE::Serialization
             return result;
 
         value = Uuid::Parse(festd::ascii_view{ buffer, sizeof(buffer) });
-        if (!value.IsValid())
+        constexpr char kNullUuid[] = "00000000-0000-0000-0000-000000000000";
+        if (!value.IsValid() && memcmp(buffer, kNullUuid, sizeof(buffer)) != 0)
             return context.ReportError(ResultCode::kInvalidString);
 
         return ResultCode::kSuccess;

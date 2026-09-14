@@ -15,6 +15,10 @@ namespace FE::Platform
 
     IO::ResultCode DeleteFilePath(festd::string_view filePath);
 
+    IO::ResultCode MoveFilePath(festd::string_view sourcePath, festd::string_view destinationPath, bool replaceExisting);
+
+    IO::ResultCode DeleteDirectoryPath(festd::string_view directoryPath);
+
     void CloseFile(FileHandle fileHandle);
 
     IO::ResultCode ReadFile(FileHandle fileHandle, void* buffer, size_t byteSize, size_t& bytesRead);

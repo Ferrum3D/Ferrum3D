@@ -104,10 +104,7 @@ namespace FE::AssetBuilder
                 }
             }
 
-            ArtifactWriter writer(settings.m_outputDirectory,
-                                  settings.m_assetId,
-                                  settings.m_artifactId,
-                                  Rtti::GetTypeID<MeshAsset>());
+            ArtifactWriter writer(settings.m_outputDirectory, settings.m_assetId, Rtti::GetTypeID<MeshAsset>());
             if (!writer.WriteHeader(header))
                 return false;
 
@@ -128,7 +125,12 @@ namespace FE::AssetBuilder
                 if (!writer.WritePayload(payload))
                     return false;
             }
-            return writer.Finish();
+            if (!writer.Finish())
+                return false;
+
+            FE_Assert(settings.m_resultArtifactId != nullptr);
+            *settings.m_resultArtifactId = writer.GetArtifactID();
+            return true;
         }
     } // namespace
 
@@ -136,10 +138,7 @@ namespace FE::AssetBuilder
     bool ProcessModel(const ModelProcessSettings& settings)
     {
         ModelAsset header;
-        ArtifactWriter writer(settings.m_outputDirectory,
-                              settings.m_assetId,
-                              settings.m_artifactId,
-                              Rtti::GetTypeID<ModelAsset>());
+        ArtifactWriter writer(settings.m_outputDirectory, settings.m_assetId, Rtti::GetTypeID<ModelAsset>());
         for (const AssetFileDependency& dependency : settings.m_dependencies)
         {
             if (dependency.m_expectedTypeId == Rtti::GetTypeID<MeshAsset>())
@@ -150,7 +149,12 @@ namespace FE::AssetBuilder
             writer.AddDependency(dependency.m_assetId, dependency.m_expectedTypeId, dependency.m_kind);
         }
 
-        return writer.WriteHeader(header) && writer.Finish();
+        if (!writer.WriteHeader(header) || !writer.Finish())
+            return false;
+
+        FE_Assert(settings.m_resultArtifactId != nullptr);
+        *settings.m_resultArtifactId = writer.GetArtifactID();
+        return true;
     }
 
 

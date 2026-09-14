@@ -20,7 +20,7 @@ namespace FE::AssetBuilder
         IO::Path m_inputFile;
         IO::Path m_outputDirectory;
         IO::AssetID m_assetId = IO::AssetID::kNull;
-        IO::ArtifactID m_artifactId = IO::ArtifactID::kNull;
+        IO::ArtifactID* m_resultArtifactId = nullptr;
         festd::span<const std::byte> m_sourceData;
     };
 

@@ -359,10 +359,7 @@ namespace FE::AssetBuilder
             ++tailMipCount;
         }
 
-        ArtifactWriter writer(settings.m_outputDirectory,
-                              settings.m_assetId,
-                              settings.m_artifactId,
-                              Rtti::GetTypeID<TextureAsset>());
+        ArtifactWriter writer(settings.m_outputDirectory, settings.m_assetId, Rtti::GetTypeID<TextureAsset>());
         if (!writer.WriteHeader(header))
             return false;
 
@@ -372,6 +369,11 @@ namespace FE::AssetBuilder
                 return false;
         }
 
-        return writer.Finish();
+        if (!writer.Finish())
+            return false;
+
+        FE_Assert(settings.m_resultArtifactId != nullptr);
+        *settings.m_resultArtifactId = writer.GetArtifactID();
+        return true;
     }
 } // namespace FE::AssetBuilder

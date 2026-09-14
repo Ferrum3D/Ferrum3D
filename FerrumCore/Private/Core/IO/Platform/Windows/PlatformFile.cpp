@@ -37,7 +37,7 @@ namespace FE::Platform
         DWORD GetFileShareMode(const IO::OpenMode openMode)
         {
             if (openMode == IO::OpenMode::kReadOnly)
-                return FILE_SHARE_READ | FILE_SHARE_WRITE;
+                return FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 
             return 0;
         }
@@ -175,8 +175,54 @@ namespace FE::Platform
 
     IO::ResultCode DeleteFilePath(const festd::string_view filePath)
     {
+        FE_PROFILER_ZONE();
+
         const Str::Utf8ToUtf16 widePath{ filePath.data(), filePath.size() };
         if (::DeleteFileW(widePath.ToWideString()))
+            return IO::ResultCode::kSuccess;
+
+        const DWORD error = GetLastError();
+        if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+            return IO::ResultCode::kSuccess;
+
+        return ConvertWin32IOError(error);
+    }
+
+
+    IO::ResultCode MoveFilePath(const festd::string_view sourcePath, const festd::string_view destinationPath,
+                                const bool replaceExisting)
+    {
+        FE_PROFILER_ZONE();
+
+        const Str::Utf8ToUtf16 wideSource{ sourcePath.data(), sourcePath.size() };
+        const Str::Utf8ToUtf16 wideDestination{ destinationPath.data(), destinationPath.size() };
+        if (replaceExisting && FileExists(destinationPath))
+        {
+            if (::ReplaceFileW(wideDestination.ToWideString(),
+                               wideSource.ToWideString(),
+                               nullptr,
+                               REPLACEFILE_WRITE_THROUGH | REPLACEFILE_IGNORE_MERGE_ERRORS,
+                               nullptr,
+                               nullptr))
+            {
+                return IO::ResultCode::kSuccess;
+            }
+            return ConvertWin32IOError(GetLastError());
+        }
+
+        if (::MoveFileExW(wideSource.ToWideString(), wideDestination.ToWideString(), MOVEFILE_WRITE_THROUGH))
+            return IO::ResultCode::kSuccess;
+
+        return ConvertWin32IOError(GetLastError());
+    }
+
+
+    IO::ResultCode DeleteDirectoryPath(const festd::string_view directoryPath)
+    {
+        FE_PROFILER_ZONE();
+
+        const Str::Utf8ToUtf16 widePath{ directoryPath.data(), directoryPath.size() };
+        if (::RemoveDirectoryW(widePath.ToWideString()))
             return IO::ResultCode::kSuccess;
 
         const DWORD error = GetLastError();

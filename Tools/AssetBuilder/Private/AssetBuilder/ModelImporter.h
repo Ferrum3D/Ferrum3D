@@ -71,6 +71,7 @@ namespace FE::AssetBuilder
     struct IntermediateModel final
     {
         Env::Name m_name;
+        festd::string m_productKey;
         festd::inline_vector<IntermediateMesh*> m_meshes;
         festd::inline_vector<float> m_lodErrors;
     };
@@ -95,6 +96,7 @@ namespace FE::AssetBuilder
         SegmentedVector<IntermediateMaterial> m_materials;
         SegmentedVector<IntermediateMesh> m_meshes;
         SegmentedVector<IntermediateModel> m_models;
+        festd::inline_vector<IO::Path, 4> m_sourcePaths;
         festd::inline_vector<IO::Path, 4> m_texturePaths;
 
         Memory::Pool<IntermediateSceneNode> m_nodePool{ "IntermediateSceneNodePool" };
