@@ -26,13 +26,13 @@ namespace FE::Graphics
     {
         uint32_t m_instanceCount = 0;
         DB::Ref<MeshGroupTable> m_tableRef = DB::Ref<MeshGroupTable>::CreateInvalid();
-        ModelAsset* m_asset = nullptr;
+        const MeshAsset* m_asset = nullptr;
     };
 
 
     struct MeshInstanceDesc final
     {
-        ModelAsset* m_asset = nullptr;
+        const MeshAsset* m_asset = nullptr;
         MeshBatch* m_batch = nullptr;
         Matrix4x4 m_transform;
     };
@@ -68,7 +68,7 @@ namespace FE::Graphics
             return m_batches;
         }
 
-        [[nodiscard]] ModelAsset* FindAsset(DB::Ref<MeshGroupTable> group) const;
+        [[nodiscard]] const MeshAsset* FindAsset(DB::Ref<MeshGroupTable> group) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
         {
@@ -92,14 +92,14 @@ namespace FE::Graphics
         void FreeHandle(MeshHandle handle);
         void EnsureCapacity();
 
-        MeshGroup* FindOrCreateMeshGroup(ModelAsset* modelAsset);
+        MeshGroup* FindOrCreateMeshGroup(const MeshAsset* meshAsset);
 
         DB::Ref<MeshInstanceTable> TranslateHandle(MeshHandle handle) const;
 
         festd::bit_vector m_freeHandles;
         festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
 
-        festd::unordered_dense_map<ModelAsset*, MeshGroup*> m_meshGroupsMap;
+        festd::unordered_dense_map<const MeshAsset*, MeshGroup*> m_meshGroupsMap;
         festd::vector<MeshGroup*> m_meshGroups;
         festd::vector<MeshBatch*> m_batches;
 

@@ -3,6 +3,7 @@
 #include <Core/Env/Environment.h>
 #include <Core/Jobs/Base.h>
 #include <Core/Memory/LinearAllocator.h>
+#include <festd/vector.h>
 
 namespace FE::Jobs
 {
@@ -108,7 +109,7 @@ namespace FE::Jobs
 
         using TaskFunction = void (*)(void* data);
 
-        festd::span<WaitGroup* const> MakeAllWaitGroupsArray();
+        festd::vector<WaitGroup*> MakeAllWaitGroupsArray();
         void CleanUp();
 
         Rc<WaitGroup> DispatchJobImpl(Env::Name name, festd::span<WaitGroup* const> prerequisites, TaskFunction taskFunction,

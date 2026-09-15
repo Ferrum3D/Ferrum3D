@@ -1,4 +1,3 @@
-#include <Core/DI/Builder.h>
 #include <Core/IO/BaseIO.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Logging/Logger.h>
@@ -16,6 +15,7 @@ namespace FE::Framework
     Application::Application()
     {
         FE_Assert(GInstance == nullptr, "Application already initialized");
+        Core::PlatformApplication::Init();
         GInstance = this;
     }
 
@@ -23,31 +23,16 @@ namespace FE::Framework
     Application::~Application()
     {
         FE_Assert(GInstance == this);
+        m_mainWindow.Reset();
+        m_platformApplication.Reset();
+        Core::PlatformApplication::Shutdown();
         GInstance = nullptr;
-    }
-
-
-    void Application::InitializeCore()
-    {
-        DI::ServiceRegistryBuilder builder{ Env::GetRootServiceRegistry() };
-        RegisterServices(builder);
-        builder.Build();
-
-        Env::Module* module = Env::Module::GetModuleList();
-        while (module)
-        {
-            DI::ServiceRegistryBuilder moduleBuilder{ module->m_serviceRegistry };
-            module->RegisterServices(moduleBuilder);
-            module = module->m_next;
-            moduleBuilder.Build();
-        }
     }
 
 
     void Application::InitializeWindow()
     {
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        m_platformApplication = serviceProvider->ResolveRequired<Core::PlatformApplication>();
+        m_platformApplication = &Core::PlatformApplication::Get();
 
         Core::PlatformWindowDesc windowDesc;
         windowDesc.m_rect = { 100, 100, 800, 600 };
@@ -107,7 +92,4 @@ namespace FE::Framework
         Jobs::StopJobSystem();
         m_application->m_exitCode = 0;
     }
-
-
-    void Application::RegisterServices([[maybe_unused]] const DI::ServiceRegistryBuilder& builder) {}
 } // namespace FE::Framework

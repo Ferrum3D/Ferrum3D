@@ -1,5 +1,4 @@
 #pragma once
-#include <Core/DI/BaseDI.h>
 #include <Core/Jobs/JobNode.h>
 #include <Core/Logging/Logger.h>
 #include <Framework/Application/Core/PlatformApplication.h>
@@ -21,7 +20,6 @@ namespace FE::Framework
         Application& operator=(const Application&) = delete;
         Application& operator=(Application&&) = delete;
 
-        void InitializeCore();
         void InitializeWindow();
 
         int32_t Run();
@@ -35,8 +33,6 @@ namespace FE::Framework
 
             Application* m_application = nullptr;
         };
-
-        virtual void RegisterServices(const DI::ServiceRegistryBuilder& builder);
 
         virtual Rc<WaitGroup> ScheduleUpdate() = 0;
 

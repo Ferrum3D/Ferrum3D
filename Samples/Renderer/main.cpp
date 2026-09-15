@@ -1,15 +1,16 @@
+#include <Core/IO/Artifact.h>
+#include <Core/IO/AssetManager.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Math/Matrix4x4.h>
+#include <Core/Threading/Thread.h>
 #include <Framework/Application/Application.h>
-#include <Framework/Module.h>
-#include <Graphics/Assets/IModelAssetManager.h>
+#include <Graphics/Assets/Streamers.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
 #include <Graphics/Core/PipelineFactory.h>
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
-#include <Graphics/Module.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/OpaquePass.h>
@@ -19,6 +20,7 @@ using namespace FE;
 using namespace FE::Graphics;
 
 inline constexpr const char* kExampleName = "Ferrum3D - Renderer Sample";
+const IO::AssetID kBunnyModelAssetId("4B01B878-5EEF-4D6A-AD04-FC9AF1F78416");
 
 namespace
 {
@@ -26,12 +28,30 @@ namespace
     {
         ~ExampleApplication() override
         {
+            m_device->WaitIdle();
+
+            m_scene.Reset();
+            m_view.Reset();
+            m_viewport.Reset();
+            m_pipelineFactory.Reset();
+
+            m_mesh.Reset();
+            m_modelRequest.Reset();
+            IO::AssetManager::Shutdown();
+
+            Memory::DefaultDelete(m_textureStreamer);
+            Memory::DefaultDelete(m_meshStreamer);
+
+            m_device.Reset();
             Renderer::Shutdown();
+            Core::DeviceFactory::Shutdown();
         }
 
         void InitializeApp()
         {
             FE_PROFILER_ZONE();
+
+            Core::DeviceFactory::Init(Core::GraphicsApi::kVulkan);
 
             auto& factory = Core::DeviceFactory::Get();
             for (const Core::AdapterInfo& adapterInfo : factory.EnumerateAdapters())
@@ -49,11 +69,18 @@ namespace
             Core::ResourcePool* resourcePool = renderer.GetResourcePool();
             Core::GraphicsQueue* graphicsQueue = renderer.GetGraphicsQueue();
 
+            IO::ArtifactStore::SetCatalogSource(FE_RENDERER_SAMPLE_ASSET_DIR);
+            IO::AssetManager::Init();
+            m_meshStreamer = Memory::DefaultNew<MeshStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue());
+            m_textureStreamer = Memory::DefaultNew<TextureStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue());
+            IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MeshAsset>(), m_meshStreamer);
+            IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<TextureAsset>(), m_textureStreamer);
+
             const RectInt clientRect = m_mainWindow->GetClientRect();
             m_viewport = m_device->CreateViewport(resourcePool, graphicsQueue);
             m_viewport->Init(Core::ViewportDesc::Create(clientRect, m_mainWindow->GetNativeHandle().m_value));
 
-            m_pipelineFactory = m_device->CreatePipelineFactory();
+            m_pipelineFactory = m_device->CreatePipelineFactory(renderer.GetDescriptorManager());
             Core::CompileGlobalPipelineSets(m_pipelineFactory.Get());
             Core::WaitForGlobalPipelineSets();
 
@@ -70,10 +97,20 @@ namespace
             m_view->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
             m_view->SetProjection(Constants::kPI * 0.3f, aspectRatio, 0.01f, 1000.0f);
 
-            IModelAssetManager* modelAssetManager = serviceProvider->ResolveRequired<IModelAssetManager>();
-            m_model = modelAssetManager->Load("Models/StanfordBunny.fmd");
-            m_model->m_completionWaitGroup->Wait();
-            FE_Assert(m_model->m_status == AssetLoadingStatus::kCompletelyLoaded);
+            const IO::Link<ModelAsset> modelLink(kBunnyModelAssetId);
+            m_modelRequest = IO::AssetManager::LoadAsset(modelLink);
+            while (!m_modelRequest.IsCompleted())
+            {
+                IO::AssetManager::Tick();
+                Threading::Sleep(1);
+            }
+            FE_Assert(m_modelRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load bunny model asset");
+
+            const IO::AssetHandle<ModelAsset> modelHandle(m_modelRequest.GetAssetSlot());
+            const IO::AssetRead<ModelAsset> model = modelHandle.Read();
+            FE_Assert(model && model->m_meshes.size() == 1);
+            m_mesh = model->m_meshes[0].GetAssetHandle().Read();
+            FE_Assert(m_mesh);
 
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
 
@@ -83,17 +120,18 @@ namespace
             m_batch = meshSceneModule.CreateBatch(batchDesc);
 
             MeshInstanceDesc instanceDesc;
-            instanceDesc.m_asset = m_model.Get();
+            instanceDesc.m_asset = m_mesh.Get();
             instanceDesc.m_batch = m_batch;
             instanceDesc.m_transform = Matrix4x4::RotationX(Constants::kPI * 0.5f);
             instanceDesc.m_transform *= Matrix4x4::RotationY(Constants::kPI);
 
-            m_mesh = meshSceneModule.CreateInstance(instanceDesc);
+            m_meshInstance = meshSceneModule.CreateInstance(instanceDesc);
         }
 
         Rc<WaitGroup> ScheduleUpdate() override
         {
             FE_PROFILER_ZONE();
+            IO::AssetManager::Tick();
             Renderer::Get().Render(m_scene.Get(), m_viewport.Get());
             return nullptr;
         }
@@ -110,9 +148,12 @@ namespace
         Rc<Scene> m_scene;
         Rc<View> m_view;
 
-        Rc<ModelAsset> m_model;
+        IO::AssetRequest m_modelRequest;
+        IO::AssetRead<MeshAsset> m_mesh;
+        MeshStreamer* m_meshStreamer = nullptr;
+        TextureStreamer* m_textureStreamer = nullptr;
         MeshBatch* m_batch = nullptr;
-        MeshHandle m_mesh;
+        MeshHandle m_meshInstance;
     };
 } // namespace
 
@@ -121,13 +162,10 @@ int main(const int32_t argc, const char** argv)
     Env::ApplicationInfo applicationInfo;
     applicationInfo.m_name = kExampleName;
 
-    Graphics::Module::Init();
-    Framework::Module::Init();
     Env::Init(applicationInfo, argc, argv);
 
     std::pmr::memory_resource* allocator = Env::GetStaticAllocator(Memory::StaticAllocatorType::kLinear);
     auto* application = Memory::New<ExampleApplication>(allocator);
-    application->InitializeCore();
 
     int32_t exitCode = 0;
     Jobs::DispatchMainThread([application, &exitCode] {
@@ -139,6 +177,6 @@ int main(const int32_t argc, const char** argv)
     Jobs::StartJobSystem();
 
     Memory::Delete(allocator, application);
-    Env::Module::ShutdownModules();
+    Env::Shutdown();
     return exitCode;
 }

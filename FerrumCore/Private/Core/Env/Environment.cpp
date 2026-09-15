@@ -245,9 +245,6 @@ namespace FE
         };
 
 
-        Env::Module* GModuleList = nullptr;
-
-
 #pragma warning(disable : 4075)
 #pragma warning(disable : 4073)
 #pragma init_seg(lib)
@@ -303,34 +300,6 @@ namespace FE
             return nullptr;
 
         return GEnvironment.m_nameDataAllocator.ResolvePointer(m_handle);
-    }
-
-
-    void Env::Module::Register(Module* module)
-    {
-        FE_Assert(!module->m_next, "Module already registered");
-        module->m_next = GModuleList;
-        GModuleList = module;
-    }
-
-
-    Env::Module* Env::Module::GetModuleList()
-    {
-        return GModuleList;
-    }
-
-
-    void Env::Module::ShutdownModules()
-    {
-        Module* module = GetModuleList();
-        while (module)
-        {
-            Module* next = module->m_next;
-            module->Shutdown();
-            module = next;
-        }
-
-        GModuleList = nullptr;
     }
 
 

@@ -58,6 +58,7 @@ namespace FE::Graphics::Vulkan
         VkImageView GetSubresourceView(const Core::Device* device, Core::TextureSubresource subresource);
 
         void Allocate(const Core::Device* device);
+        void SetImage(const Core::Device* device, VkImage image);
         void Invalidate(const Core::Device* device);
 
         void UpdateDebugNames(Core::Device* device, Env::Name name) override;

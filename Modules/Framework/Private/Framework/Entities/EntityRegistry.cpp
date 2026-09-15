@@ -9,7 +9,7 @@ namespace FE::Framework
 {
     namespace
     {
-        struct DeferredActionJob final : public JobNode
+        struct DeferredActionJob final : public Jobs::JobNode
         {
             void Execute() override
             {
@@ -21,7 +21,7 @@ namespace FE::Framework
         };
 
 
-        struct LocalSystemUpdateJob final : public JobNode
+        struct LocalSystemUpdateJob final : public Jobs::JobNode
         {
             void Execute() override
             {
@@ -203,14 +203,14 @@ namespace FE::Framework
 
         Rc waitGroup = WaitGroup::Create(deferredActionJobs.size());
         for (DeferredActionJob& job : deferredActionJobs)
-            job.DispatchForeground(context.m_jobSystem, waitGroup.Get());
+            job.DispatchForeground(waitGroup.Get());
         waitGroup->Wait();
 
         m_deferredActionsAllocator.Clear();
 
         waitGroup = WaitGroup::Create(localSystemUpdateJobs.size());
         for (LocalSystemUpdateJob& job : localSystemUpdateJobs)
-            job.DispatchForeground(context.m_jobSystem, waitGroup.Get());
+            job.DispatchForeground(waitGroup.Get());
         waitGroup->Wait();
     }
 } // namespace FE::Framework

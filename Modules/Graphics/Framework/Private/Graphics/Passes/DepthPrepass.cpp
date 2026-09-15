@@ -40,6 +40,12 @@ namespace FE::Graphics::DepthPrepass
     ViewModule::~ViewModule() = default;
 
 
+    void ViewModule::DoRelease()
+    {
+        Memory::DefaultDelete(this);
+    }
+
+
     void ViewModule::Update(Core::FrameGraphBlackboard& blackboard)
     {
         blackboard.Add<PassData>();
@@ -63,8 +69,8 @@ namespace FE::Graphics::DepthPrepass
 
         const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
         const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
-        ModelAsset* modelAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
-        FE_Assert(modelAsset);
+        const MeshAsset* meshAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
+        FE_Assert(meshAsset && meshAsset->m_buffer);
 
         const DB::Slice<MeshLodInfoTable> lods = groupRow.m_lods.Get();
         const Core::MeshLodInfo lodInfo = meshModule->GetMeshLodInfoTable()->ReadRow(lods.m_rowIndex).m_info.Get();
@@ -76,7 +82,7 @@ namespace FE::Graphics::DepthPrepass
         passDesc->m_constants.m_instanceIndex = instanceRef.m_rowIndex;
         passDesc->m_constants.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
         passDesc->m_geometryBuffer = {
-            Core::BufferView::Create(modelAsset->GetGeometryBuffer(0)),
+            Core::BufferView::Create(meshAsset->m_buffer.Get()),
             Core::BarrierSyncFlags::kMeshShading,
             Core::BarrierAccessFlags::kShaderRead,
         };

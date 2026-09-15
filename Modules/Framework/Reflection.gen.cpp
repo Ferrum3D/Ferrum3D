@@ -42,25 +42,10 @@ namespace FE::Framework::Core
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_63770294e7a24cdd866cbbc49ec93214()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_63770294e7a24cdd866cbbc49ec93214([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<PlatformApplication>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<PlatformApplication>();
-                return DI::ResultCode::kSuccess;
-            }
         }
     } // namespace
 
@@ -78,7 +63,6 @@ namespace FE::Framework::Core
     {
         return RTTI_TryCastImpl_63770294e7a24cdd866cbbc49ec93214(const_cast<PlatformApplication*>(this), typeID);
     }
-
     void PlatformApplication::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_63770294e7a24cdd866cbbc49ec93214();
@@ -101,8 +85,7 @@ namespace FE::Framework::Core
                                                   "FE::Framework::Core::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields,
-                                                  &RTTI_Activator_63770294e7a24cdd866cbbc49ec93214);
+                                                  kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_63770294e7a24cdd866cbbc49ec93214(&PlatformApplication::Reflect);
@@ -144,25 +127,10 @@ namespace FE::Framework::Windows
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_70a9df121d5d4d0a8c24c014e3963121()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_70a9df121d5d4d0a8c24c014e3963121([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<PlatformApplication>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<PlatformApplication>();
-                return DI::ResultCode::kSuccess;
-            }
         }
     } // namespace
 
@@ -180,7 +148,6 @@ namespace FE::Framework::Windows
     {
         return RTTI_TryCastImpl_70a9df121d5d4d0a8c24c014e3963121(const_cast<PlatformApplication*>(this), typeID);
     }
-
     void PlatformApplication::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_70a9df121d5d4d0a8c24c014e3963121();
@@ -205,8 +172,7 @@ namespace FE::Framework::Windows
                                                   "FE::Framework::Windows::PlatformApplication",
                                                   kBaseClassTypeIDs,
                                                   kAttributes,
-                                                  kFields,
-                                                  &RTTI_Activator_70a9df121d5d4d0a8c24c014e3963121);
+                                                  kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_70a9df121d5d4d0a8c24c014e3963121(&PlatformApplication::Reflect);
@@ -248,38 +214,10 @@ namespace FE::Framework::Windows
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_74e2d079ade74348ad82b1094b3b5171()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_74e2d079ade74348ad82b1094b3b5171([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<PlatformWindow>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                Rc<Framework::Core::PlatformApplication> arg0;
-                if (const auto resolveResult = serviceProvider->Resolve<Framework::Core::PlatformApplication>())
-                    arg0 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-
-                Rc<Logger> arg1;
-                if (const auto resolveResult = serviceProvider->Resolve<Logger>())
-                    arg1 = resolveResult.value();
-                else
-                    return resolveResult.error();
-
-                *result = Memory::DefaultNew<PlatformWindow>(arg0.Get(), arg1.Get());
-                return DI::ResultCode::kSuccess;
-            }
         }
     } // namespace
 
@@ -297,7 +235,6 @@ namespace FE::Framework::Windows
     {
         return RTTI_TryCastImpl_74e2d079ade74348ad82b1094b3b5171(const_cast<PlatformWindow*>(this), typeID);
     }
-
     void PlatformWindow::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_74e2d079ade74348ad82b1094b3b5171();
@@ -322,8 +259,7 @@ namespace FE::Framework::Windows
                                              "FE::Framework::Windows::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields,
-                                             &RTTI_Activator_74e2d079ade74348ad82b1094b3b5171);
+                                             kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_74e2d079ade74348ad82b1094b3b5171(&PlatformWindow::Reflect);
@@ -359,7 +295,6 @@ namespace FE::Framework
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_af07edca2d554e2da5ef85ed53b4cdab()
         {
             static Rtti::Type typeInstance;
@@ -381,7 +316,6 @@ namespace FE::Framework
     {
         return RTTI_TryCastImpl_af07edca2d554e2da5ef85ed53b4cdab(const_cast<Application*>(this), typeID);
     }
-
     void Application::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_af07edca2d554e2da5ef85ed53b4cdab();
@@ -440,25 +374,10 @@ namespace FE::Framework::Core
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_c1f93be65fe74e28a5f68a1e9a5f427f()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
-        }
-
-        DI::ResultCode RTTI_Activator_c1f93be65fe74e28a5f68a1e9a5f427f([[maybe_unused]] DI::IServiceProvider* serviceProvider,
-                                                                       Memory::RefCountedObjectBase** result)
-        {
-            if constexpr (std::is_abstract_v<PlatformWindow>)
-            {
-                return DI::ResultCode::kInvalidOperation;
-            }
-            else
-            {
-                *result = Memory::DefaultNew<PlatformWindow>();
-                return DI::ResultCode::kSuccess;
-            }
         }
     } // namespace
 
@@ -476,7 +395,6 @@ namespace FE::Framework::Core
     {
         return RTTI_TryCastImpl_c1f93be65fe74e28a5f68a1e9a5f427f(const_cast<PlatformWindow*>(this), typeID);
     }
-
     void PlatformWindow::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_c1f93be65fe74e28a5f68a1e9a5f427f();
@@ -499,8 +417,7 @@ namespace FE::Framework::Core
                                              "FE::Framework::Core::PlatformWindow",
                                              kBaseClassTypeIDs,
                                              kAttributes,
-                                             kFields,
-                                             &RTTI_Activator_c1f93be65fe74e28a5f68a1e9a5f427f);
+                                             kFields);
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_c1f93be65fe74e28a5f68a1e9a5f427f(&PlatformWindow::Reflect);
@@ -536,7 +453,6 @@ namespace FE::Framework
 
             return nullptr;
         }
-
         Rtti::Type& RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c()
         {
             static Rtti::Type typeInstance;
@@ -558,7 +474,6 @@ namespace FE::Framework
     {
         return RTTI_TryCastImpl_d7d3e880e1524014b598a9a97f5e463c(const_cast<EntityRegistry*>(this), typeID);
     }
-
     void EntityRegistry::Reflect(Rtti::ReflectionContext& context)
     {
         Rtti::Type& typeInstance = RTTI_GetMutableType_d7d3e880e1524014b598a9a97f5e463c();

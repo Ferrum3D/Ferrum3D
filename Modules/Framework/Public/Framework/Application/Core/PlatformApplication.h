@@ -51,5 +51,10 @@ namespace FE::Framework::Core
         virtual festd::span<const PlatformMonitorInfo> GetMonitors() const = 0;
         virtual festd::span<PlatformWindow* const> GetWindows() const = 0;
         virtual PlatformWindow* GetMainWindow() const = 0;
+
+        static void Init();
+        static void Shutdown();
+
+        static PlatformApplication& Get();
     };
 } // namespace FE::Framework::Core

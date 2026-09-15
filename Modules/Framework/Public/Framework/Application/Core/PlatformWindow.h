@@ -5,6 +5,7 @@
 
 namespace FE::Framework::Core
 {
+    struct PlatformApplication;
     struct PlatformWindow;
 
     struct NativeWindowHandle final : public TypedHandle<NativeWindowHandle, uint64_t>

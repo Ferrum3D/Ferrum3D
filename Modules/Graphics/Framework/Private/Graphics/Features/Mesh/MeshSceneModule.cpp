@@ -127,36 +127,46 @@ namespace FE::Graphics
     }
 
 
-    MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(ModelAsset* modelAsset)
+    MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(const MeshAsset* meshAsset)
     {
-        const auto it = m_meshGroupsMap.find(modelAsset);
+        const auto it = m_meshGroupsMap.find(meshAsset);
         if (it != m_meshGroupsMap.end())
             return it->second;
+
+        FE_Assert(!meshAsset->m_submeshes.empty());
+        FE_Assert(meshAsset->m_buffer);
+        const MeshSubmeshAssetInfo& submesh = meshAsset->m_submeshes[0];
 
         const DB::Ref<MeshGroupTable> tableRef = m_meshGroupTable->AllocateRow();
         const MeshGroupTable::RWRow tableRow = m_meshGroupTable->WriteRow(tableRef);
 
-        const DB::Slice<MeshLodInfoTable> lodsRef = m_meshLodInfoTable->AllocateRows(modelAsset->m_lodCount);
+        const DB::Slice<MeshLodInfoTable> lodsRef = m_meshLodInfoTable->AllocateRows(submesh.m_lods.size());
 
         Memory::FiberTempAllocator temp;
         festd::pmr::inline_vector<Core::MeshLodInfo> lodInfos{ &temp };
-        lodInfos.reserve(modelAsset->m_lodCount);
-        for (uint32_t lodIndex = 0; lodIndex < modelAsset->m_lodCount; ++lodIndex)
-            lodInfos.push_back(modelAsset->GetLodInfo(0, lodIndex));
+        lodInfos.reserve(submesh.m_lods.size());
+        for (const MeshLodAssetInfo& assetLod : submesh.m_lods)
+        {
+            Core::MeshLodInfo& lod = lodInfos.emplace_back();
+            lod.m_vertexCount = assetLod.m_vertexCount;
+            lod.m_indexCount = assetLod.m_indexCount;
+            lod.m_meshletCount = assetLod.m_meshletCount;
+            lod.m_primitiveCount = assetLod.m_primitiveCount;
+        }
 
         m_meshLodInfoTable->CopyColumn(lodsRef, lodInfos);
 
         Core::DescriptorManager* descriptorManager = Renderer::Get().GetDescriptorManager();
-        const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(modelAsset->GetGeometryBuffer(0));
+        const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(meshAsset->m_buffer.Get());
         descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
 
         tableRow.m_geometry.Get() = BufferPointer{ descriptorManager->GetDeviceAddress(descriptorIndex) };
         tableRow.m_lods.Get() = lodsRef;
 
         auto* meshGroup = Memory::DefaultNew<MeshGroup>();
-        meshGroup->m_asset = modelAsset;
+        meshGroup->m_asset = meshAsset;
         meshGroup->m_tableRef = tableRef;
-        m_meshGroupsMap.emplace(modelAsset, meshGroup);
+        m_meshGroupsMap.emplace(meshAsset, meshGroup);
 
         m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
         m_meshGroups[tableRef.m_rowIndex] = meshGroup;
@@ -165,7 +175,7 @@ namespace FE::Graphics
     }
 
 
-    ModelAsset* MeshSceneModule::FindAsset(const DB::Ref<MeshGroupTable> group) const
+    const MeshAsset* MeshSceneModule::FindAsset(const DB::Ref<MeshGroupTable> group) const
     {
         if (group.m_rowIndex >= m_meshGroups.size())
             return nullptr;

@@ -58,22 +58,9 @@ namespace FE::Graphics
         festd::inline_vector<IO::Link<MeshAsset>, 4> m_meshes;
         festd::inline_vector<IO::Link<TextureAsset>, 4> m_textures;
 
-        // Compatibility state for graphics consumers that have not migrated to streamed mesh payloads yet.
-        FE_SKIP_SERIALIZING uint32_t m_lodCount = 0;
-
         FE_RTTI("2D0926A6-8312-4D3C-8675-F67BB9A62B67");
         FE_RTTI_Reflect();
         FE_RTTI_Serialize();
-
-        Core::MeshLodInfo GetLodInfo(uint32_t, uint32_t) const
-        {
-            return {};
-        }
-
-        Core::Buffer* GetGeometryBuffer(uint32_t) const
-        {
-            return nullptr;
-        }
     };
 
 

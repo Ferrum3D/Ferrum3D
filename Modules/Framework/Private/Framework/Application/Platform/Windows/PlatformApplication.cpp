@@ -1,4 +1,3 @@
-#include <Core/DI/Activator.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Framework/Application/Core/PlatformEvent.h>
 #include <Framework/Application/Core/PlatformMonitor.h>
@@ -8,6 +7,31 @@
 #include <windowsx.h>
 
 #pragma comment(lib, "Shcore.lib")
+
+namespace FE::Framework::Core
+{
+    static Rc<PlatformApplication> GPlatformApplication;
+
+
+    void PlatformApplication::Init()
+    {
+        FE_Assert(!GPlatformApplication, "Platform application already initialized");
+        GPlatformApplication = Memory::DefaultNew<Windows::PlatformApplication>();
+    }
+
+
+    void PlatformApplication::Shutdown()
+    {
+        GPlatformApplication.Reset();
+    }
+
+
+    PlatformApplication& PlatformApplication::Get()
+    {
+        FE_Assert(GPlatformApplication, "Platform application not initialized");
+        return *GPlatformApplication;
+    }
+} // namespace FE::Framework::Core
 
 namespace FE::Framework::Windows
 {

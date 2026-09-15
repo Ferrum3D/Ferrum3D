@@ -394,6 +394,15 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void TextureInstance::SetImage(const Core::Device* device, const VkImage image)
+    {
+        FE_Assert(m_image == nullptr);
+        FE_Assert(m_wholeImageView == nullptr);
+        m_image = image;
+        InitWholeImageView(device);
+    }
+
+
     void TextureInstance::InitWholeImageView(const Core::Device* device)
     {
         FE_PROFILER_ZONE();

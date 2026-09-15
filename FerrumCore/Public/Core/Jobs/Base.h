@@ -52,7 +52,7 @@ namespace FE::Jobs
     //!   Values like 0b11 are considered invalid.
     //!   So, we intentionally do not provide any bit operators as all
     //!   the correct combinations can be specified using the enum values
-    //!   or IJobSystem::GetAffinityMaskForCurrentThread().
+    //!   or Jobs::GetAffinityMaskForCurrentThread().
     enum class FiberAffinityMask : uint64_t
     {
         kNone = 0,

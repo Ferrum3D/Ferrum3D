@@ -737,13 +737,11 @@ namespace FE::Graphics
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshes
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_textures
-            0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
-            0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_lodCount
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -751,9 +749,7 @@ namespace FE::Graphics
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_textures = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_lodCount = {};
-
-        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshes",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &ModelAsset::m_meshes,
@@ -763,11 +759,6 @@ namespace FE::Graphics
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &ModelAsset::m_textures,
                                                         kAttributes_m_textures,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_lodCount",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &ModelAsset::m_lodCount,
-                                                        kAttributes_m_lodCount,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 

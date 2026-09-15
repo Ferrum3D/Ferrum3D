@@ -1,4 +1,3 @@
-#include <Core/Jobs/IJobSystem.h>
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Core/Memory/PoolAllocator.h>
 #include <Framework/Entities/EntityRegistry.h>
@@ -181,12 +180,6 @@ namespace FE::Framework
         Bit::ScanForward(m_ID, GFreeEntityWorldIDs);
         FE_Assert(m_ID < kInvalidEntityWorldID);
         GFreeEntityWorldIDs &= ~(UINT32_C(1) << m_ID);
-
-        DI::IServiceProvider* serviceProvider = Env::GetServiceProvider();
-        IJobSystem* jobSystem = serviceProvider->ResolveRequired<IJobSystem>();
-
-        m_loadingContext.Initialize(jobSystem);
-        m_updateContext.Initialize(jobSystem);
 
         // Create persistent registry
         FE_Unused(CreateRegistry());

@@ -112,22 +112,22 @@ namespace FE::Jobs
     }
 
 
-    festd::span<WaitGroup* const> Graph::MakeAllWaitGroupsArray()
+    festd::vector<WaitGroup*> Graph::MakeAllWaitGroupsArray()
     {
         if (m_jobCount == 0)
             return {};
 
-        WaitGroup** array = Memory::AllocateArray<WaitGroup*>(&m_allocator, m_jobCount);
+        festd::vector<WaitGroup*> array;
+        array.reserve(m_jobCount);
 
-        uint32_t waitGroupIndex = 0;
         JobRecord* record = m_jobRecords;
         while (record)
         {
-            array[waitGroupIndex++] = record->m_completionWaitGroup.Get();
+            array.push_back(record->m_completionWaitGroup.Get());
             record = record->m_next;
         }
 
-        return { array, m_jobCount };
+        return array;
     }
 
 

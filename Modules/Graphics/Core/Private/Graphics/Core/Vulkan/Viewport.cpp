@@ -373,7 +373,7 @@ namespace FE::Graphics::Vulkan
                                                                .m_memory = Core::ResourceMemory::kDeviceLocal };
 
             auto* imageInstance = TextureInstance::Create(colorTargetDesc, commitParams);
-            imageInstance->m_image = vkImages[i];
+            imageInstance->SetImage(m_device, vkImages[i]);
             m_imageInstances.push_back(imageInstance);
 
             Common::SubresourceState initialState = {};

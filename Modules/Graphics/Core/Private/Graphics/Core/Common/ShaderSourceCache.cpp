@@ -24,8 +24,8 @@ namespace FE::Graphics::Core
         FE_PROFILER_ZONE();
 
         Jobs::Graph jobGraph{ "Graphics/ShaderSourceCache/Load", Jobs::FiberAffinityMask::kAllBackground };
-        ReadDirectory(jobGraph, IO::GetAbsolutePath("Shaders"));
-        ReadDirectory(jobGraph, IO::GetAbsolutePath("../../Modules/Graphics/Framework/Shaders"));
+        // ReadDirectory(jobGraph, IO::GetAbsolutePath("Shaders"));
+        ReadDirectory(jobGraph, IO::GetAbsolutePath("../../../../Modules/Graphics/Framework/Shaders"));
 
         // TODO: probably we can wait later...
         jobGraph.Wait();

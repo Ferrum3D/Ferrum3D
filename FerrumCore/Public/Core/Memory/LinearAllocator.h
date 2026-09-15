@@ -114,9 +114,12 @@ namespace FE::Memory
         if (!m_currentMarker.m_page)
             NewPage();
 
-        const size_t newOffset = AlignUp(m_currentMarker.m_offset, byteAlignment) + byteSize;
+        size_t newOffset = AlignUp(m_currentMarker.m_offset, byteAlignment) + byteSize;
         if (newOffset > m_pageByteSize)
+        {
             NewPage();
+            newOffset = AlignUp(m_currentMarker.m_offset, byteAlignment) + byteSize;
+        }
 
         m_currentMarker.m_offset = newOffset;
         return reinterpret_cast<uint8_t*>(m_currentMarker.m_page) + newOffset - byteSize;

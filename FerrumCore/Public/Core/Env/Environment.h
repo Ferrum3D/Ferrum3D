@@ -164,68 +164,6 @@ namespace FE::Env
     inline const Name Name::kEmpty;
 
 
-    struct Module
-    {
-        virtual ~Module() = default;
-        static Module* GetModuleList();
-        static void ShutdownModules();
-
-        Module* m_next = nullptr;
-
-    protected:
-        virtual void Shutdown() = 0;
-        static void Register(Module* module);
-    };
-
-
-#define FE_DECLARE_MODULE(name)                                                                                                  \
-private:                                                                                                                         \
-    static name* GInstance;                                                                                                      \
-    void Shutdown() override;                                                                                                    \
-                                                                                                                                 \
-public:                                                                                                                          \
-    static void Init()
-
-
-#define FE_IMPLEMENT_MODULE_2(name, dependencyHandler)                                                                           \
-    void name::Init()                                                                                                            \
-    {                                                                                                                            \
-        FE_PROFILER_ZONE();                                                                                                      \
-        if (GInstance)                                                                                                           \
-            return;                                                                                                              \
-                                                                                                                                 \
-        static bool calledOnce = false;                                                                                          \
-        FE_Assert_1(!calledOnce);                                                                                                \
-        calledOnce = true;                                                                                                       \
-                                                                                                                                 \
-        void (*handler)() = dependencyHandler;                                                                                   \
-        if (handler)                                                                                                             \
-            handler();                                                                                                           \
-                                                                                                                                 \
-        GInstance = FE::Memory::New<name>(FE::Env::GetStaticAllocator(FE::Memory::StaticAllocatorType::kLinear));                \
-        GInstance->m_serviceRegistry = FE::Env::CreateServiceRegistry();                                                         \
-        GInstance->m_serviceRegistry->AddRef();                                                                                  \
-        Register(GInstance);                                                                                                     \
-    }                                                                                                                            \
-                                                                                                                                 \
-    void name::Shutdown()                                                                                                        \
-    {                                                                                                                            \
-        FE_PROFILER_ZONE();                                                                                                      \
-        if (GInstance)                                                                                                           \
-        {                                                                                                                        \
-            GInstance->m_serviceRegistry->Release();                                                                             \
-            GInstance->~name();                                                                                                  \
-        }                                                                                                                        \
-        GInstance = nullptr;                                                                                                     \
-    }                                                                                                                            \
-                                                                                                                                 \
-    name* name::GInstance = nullptr
-
-#define FE_IMPLEMENT_MODULE_1(name) FE_IMPLEMENT_MODULE_2(name, nullptr)
-
-#define FE_IMPLEMENT_MODULE(...) FE_MACRO_SPECIALIZE(FE_IMPLEMENT_MODULE, __VA_ARGS__)
-
-
     struct ApplicationInfo final
     {
         const char* m_name = nullptr;

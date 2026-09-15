@@ -19,6 +19,9 @@ namespace FE::Graphics::DepthPrepass
         ~ViewModule() override;
 
         void Update(Core::FrameGraphBlackboard& blackboard) override;
+
+    private:
+        void DoRelease() override;
     };
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene);
