@@ -190,8 +190,15 @@ namespace FE::IO
             else if (operation->m_state == State::kRetiring)
                 object = operation->m_retiredObject;
 
-            if (operation->m_state == State::kFinalizing && object)
-                GetStreamer(*operation).CancelFinalize(*operation->m_slot, object);
+            if (object)
+            {
+                Streamer& streamer = GetStreamer(*operation);
+                if (operation->m_state == State::kFinalizing)
+                    streamer.CancelFinalize(*operation->m_slot, object);
+                else if (streamer.HasRunningOperations(*operation->m_slot, object))
+                    streamer.CancelAssetOperations(*operation->m_slot, object);
+                streamer.OnAssetDestroyed(*operation->m_slot, object);
+            }
 
             DestroyObject(*operation, object);
             Memory::DefaultDelete(operation);
@@ -1093,8 +1100,9 @@ namespace FE::IO
                     AssetSlot* slot = member->m_slot;
                     void* candidate = member->m_candidate;
                     lock.unlock();
-                    const AssetFinalizeResult result =
-                        isStarting ? streamer->FinalizeAssetLoading(*slot, candidate) : streamer->PollFinalize(*slot, candidate);
+                    const AssetFinalizeResult result = isStarting
+                        ? streamer->FinalizeAssetLoading(*slot, member->m_record, candidate)
+                        : streamer->PollFinalize(*slot, candidate);
                     lock.lock();
                     member->m_finalize = result;
                 }
@@ -1281,7 +1289,17 @@ namespace FE::IO
                 members.push_back(seed);
 
             for (Operation* member : members)
+            {
                 readersDrained &= member->m_state == State::kRetiring && member->m_readHolds.load(std::memory_order_acquire) == 0;
+                if (readersDrained)
+                {
+                    Streamer& streamer = GetStreamer(*member);
+                    void* object = member->m_retiredObject;
+                    lock.unlock();
+                    readersDrained &= !streamer.HasRunningOperations(*member->m_slot, object);
+                    lock.lock();
+                }
+            }
 
             if (!readersDrained)
                 continue;
@@ -1294,6 +1312,7 @@ namespace FE::IO
                 member->m_state = State::kDormant;
                 ++m_retiredGenerationCount;
                 lock.unlock();
+                GetStreamer(*member).OnAssetDestroyed(*member->m_slot, object);
                 DestroyObject(*member, object);
                 for (Operation* dependency : member->m_dependencyHolds)
                 {
@@ -1405,7 +1424,7 @@ namespace FE::IO
     } // namespace Internal
 
 
-    AssetFinalizeResult DefaultStreamer::FinalizeAssetLoading(AssetSlot&, void*)
+    AssetFinalizeResult DefaultStreamer::FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*)
     {
         return AssetFinalizeResult::kSucceeded;
     }
@@ -1542,11 +1561,35 @@ namespace FE::IO
     }
 
 
+    void AssetManager::UnregisterStreamer(Rtti::TypeID type, Streamer* streamer)
+    {
+        FE_Assert(GImpl && streamer);
+        std::lock_guard lock{ GImpl->m_mutex };
+        auto found = GImpl->m_streamers.find(type);
+        if (found != GImpl->m_streamers.end() && found->second == streamer)
+            GImpl->m_streamers.erase(found);
+    }
+
+
     void AssetManager::Tick()
     {
         FE_PROFILER_ZONE();
 
         FE_Assert(GImpl && Threading::IsMainThread());
+        festd::inline_vector<Streamer*, 8> streamers;
+        {
+            std::lock_guard lock{ GImpl->m_mutex };
+            festd::unordered_dense_set<Streamer*> uniqueStreamers;
+            for (const auto& entry : GImpl->m_streamers)
+            {
+                if (uniqueStreamers.insert(entry.second).second)
+                    streamers.push_back(entry.second);
+            }
+        }
+
+        for (Streamer* streamer : streamers)
+            streamer->Tick();
+
         GImpl->Tick();
     }
 

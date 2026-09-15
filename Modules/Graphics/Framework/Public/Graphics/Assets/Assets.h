@@ -7,6 +7,8 @@
 
 namespace FE::Graphics
 {
+    struct MeshStreamingOperation;
+    struct TextureStreamingOperation;
     struct TextureAsset;
 
     struct MeshLodAssetInfo final
@@ -41,6 +43,8 @@ namespace FE::Graphics
         festd::inline_vector<float, 4> m_lodErrors;
 
         FE_SKIP_SERIALIZING Rc<Core::Buffer> m_buffer;
+        FE_SKIP_SERIALIZING MeshStreamingOperation* m_currentOperation = nullptr;
+        FE_SKIP_SERIALIZING uint32_t m_residentLod = kInvalidIndex;
 
         FE_RTTI("44EBC248-FD5E-4CF4-AB4C-09511B78362C");
         FE_RTTI_Reflect();
@@ -86,6 +90,8 @@ namespace FE::Graphics
         festd::inline_vector<uint32_t, 4> m_mipTailOffsets;
 
         FE_SKIP_SERIALIZING Rc<Core::Texture> m_texture;
+        FE_SKIP_SERIALIZING TextureStreamingOperation* m_currentOperation = nullptr;
+        FE_SKIP_SERIALIZING uint32_t m_residentMip = kInvalidIndex;
 
         FE_RTTI("78A8F995-B51C-42E0-856D-922999074183");
         FE_RTTI_Reflect();

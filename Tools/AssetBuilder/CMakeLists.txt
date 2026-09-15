@@ -35,7 +35,7 @@ set_target_properties(AssetBuilder PROPERTIES FOLDER "Tools")
 target_link_libraries(AssetBuilder
     PUBLIC
         FeCore
-        FeGraphicsCore
+        FeGraphics
     PRIVATE
         meshoptimizer
         tiny_gltf

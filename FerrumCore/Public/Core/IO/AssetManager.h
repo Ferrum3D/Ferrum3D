@@ -4,6 +4,8 @@
 
 namespace FE::IO
 {
+    struct ArtifactRecord;
+
     enum class AssetFinalizeResult : uint8_t
     {
         kSucceeded,
@@ -21,13 +23,29 @@ namespace FE::IO
         virtual ~Streamer() = default;
 
         //! @brief Start or perform type-specific finalization for a deserialized candidate.
-        virtual AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, void* candidate) = 0;
+        virtual AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, const ArtifactRecord& artifact,
+                                                         void* candidate) = 0;
 
         //! @brief Poll whether previously started asynchronous finalization has completed.
         virtual AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) = 0;
 
         //! @brief Synchronously cancel pending finalization and release every asynchronous use of candidate before returning.
         virtual void CancelFinalize(AssetSlot& assetSlot, void* candidate) = 0;
+
+        //! @brief Advance residency requests and type-specific asynchronous work once per AssetManager tick.
+        virtual void Tick() {}
+
+        //! @brief True while background I/O or subsystem work still references a published or retiring asset.
+        virtual bool HasRunningOperations(const AssetSlot&, const void*) const
+        {
+            return false;
+        }
+
+        //! @brief Release streamer bookkeeping immediately before the asset object is destroyed.
+        virtual void OnAssetDestroyed(AssetSlot&, void*) {}
+
+        //! @brief Synchronously stop every operation referencing asset. Used while AssetManager shuts down.
+        virtual void CancelAssetOperations(AssetSlot&, void*) {}
 
         //! @brief True when finalization needs dependencies to be published before it can start.
         virtual bool RequiresFinalizedDependencies() const
@@ -40,7 +58,7 @@ namespace FE::IO
     //! @brief No-op finalizer used by asset types that need no specialized publication work.
     struct DefaultStreamer final : public Streamer
     {
-        AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, void* candidate) override;
+        AssetFinalizeResult FinalizeAssetLoading(AssetSlot& assetSlot, const ArtifactRecord& artifact, void* candidate) override;
         AssetFinalizeResult PollFinalize(AssetSlot& assetSlot, void* candidate) override;
         void CancelFinalize(AssetSlot& assetSlot, void* candidate) override;
     };
@@ -76,8 +94,11 @@ namespace FE::IO
         //! @brief Find the stable slot reserved for an asset, or null if the asset has never participated in a request.
         [[nodiscard]] static AssetSlot* FindAssetSlot(AssetID assetId);
 
-        //! @brief Register a non-owning type-specific finalizer. Registration must remain valid until Shutdown.
+        //! @brief Register a non-owning type-specific finalizer. Registration must remain valid until unregistered or Shutdown.
         static void RegisterStreamer(Rtti::TypeID typeId, Streamer* streamer);
+
+        //! @brief Remove a matching type-specific streamer before its lifetime ends.
+        static void UnregisterStreamer(Rtti::TypeID typeId, Streamer* streamer);
 
         //! @brief Typed-link convenience overload; the link's runtime handle does not contribute residency.
         template<class T, DependencyKind TKind = DependencyKind::kHard>

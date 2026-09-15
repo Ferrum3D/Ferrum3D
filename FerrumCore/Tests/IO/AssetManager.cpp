@@ -35,7 +35,7 @@ namespace FE::IO::Tests
 
         struct PendingStreamer final : Streamer
         {
-            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, void*) override
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*) override
             {
                 m_startedOnMainThread &= Threading::IsMainThread();
                 ++m_startCount;
@@ -57,7 +57,7 @@ namespace FE::IO::Tests
 
         struct OrderedStreamer final : Streamer
         {
-            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, void*) override
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*) override
             {
                 return AssetFinalizeResult::kSucceeded;
             }
@@ -74,7 +74,7 @@ namespace FE::IO::Tests
 
         struct FailingStreamer final : Streamer
         {
-            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, void*) override
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*) override
             {
                 return AssetFinalizeResult::kFailed;
             }
@@ -87,7 +87,7 @@ namespace FE::IO::Tests
 
         struct NeverCompletingStreamer final : Streamer
         {
-            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, void*) override
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*) override
             {
                 ++m_startCount;
                 return AssetFinalizeResult::kPending;
@@ -105,6 +105,41 @@ namespace FE::IO::Tests
 
             uint32_t m_startCount = 0;
             uint32_t m_cancelCount = 0;
+        };
+
+
+        struct ResidencyTrackingStreamer final : Streamer
+        {
+            AssetFinalizeResult FinalizeAssetLoading(AssetSlot&, const ArtifactRecord&, void*) override
+            {
+                return AssetFinalizeResult::kSucceeded;
+            }
+
+            AssetFinalizeResult PollFinalize(AssetSlot&, void*) override
+            {
+                return AssetFinalizeResult::kSucceeded;
+            }
+
+            void CancelFinalize(AssetSlot&, void*) override {}
+
+            void Tick() override
+            {
+                ++m_tickCount;
+            }
+
+            bool HasRunningOperations(const AssetSlot&, const void*) const override
+            {
+                return m_hasRunningOperation;
+            }
+
+            void OnAssetDestroyed(AssetSlot&, void*) override
+            {
+                ++m_destroyCount;
+            }
+
+            bool m_hasRunningOperation = false;
+            uint32_t m_tickCount = 0;
+            uint32_t m_destroyCount = 0;
         };
 
         struct AssetManagerTest : testing::Test
@@ -128,6 +163,9 @@ namespace FE::IO::Tests
     {
         PendingStreamer streamer;
         AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        auto unregisterStreamer = festd::defer([&streamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        });
         AssetRequest request = AssetManager::LoadAsset(kStage4Root);
         request.WaitForDiscovery();
         ASSERT_EQ(request.GetDiscoveryResult(), AssetLoadResult::kSucceeded);
@@ -166,6 +204,9 @@ namespace FE::IO::Tests
     {
         PendingStreamer streamer;
         AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        auto unregisterStreamer = festd::defer([&streamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        });
         AssetRequest request = AssetManager::LoadAsset(kStage4CycleA);
         request.WaitForDiscovery();
         AssetHandle<SyntheticAsset> cycleA(request.GetAssetSlot());
@@ -198,6 +239,9 @@ namespace FE::IO::Tests
     {
         OrderedStreamer orderedStreamer;
         AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &orderedStreamer);
+        auto unregisterStreamer = festd::defer([&orderedStreamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &orderedStreamer);
+        });
         AssetRequest cycle = AssetManager::LoadAsset(kStage4CycleA);
         cycle.WaitForDiscovery();
         for (uint32_t iteration = 0; iteration < 10000 && !cycle.IsCompleted(); ++iteration)
@@ -225,6 +269,9 @@ namespace FE::IO::Tests
     {
         OrderedStreamer orderedStreamer;
         AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &orderedStreamer);
+        auto unregisterStreamer = festd::defer([&orderedStreamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &orderedStreamer);
+        });
         AssetRequest request = AssetManager::LoadAsset(kStage4SelfCycle);
         request.WaitForDiscovery();
         PumpUntilCompleted(request);
@@ -708,6 +755,9 @@ namespace FE::IO::Tests
         const uint32_t generation = handle.GetGeneration();
         FailingStreamer failingStreamer;
         AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &failingStreamer);
+        auto unregisterStreamer = festd::defer([&failingStreamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &failingStreamer);
+        });
 
         AssetRequest replacement = AssetManager::ReloadAsset(kStage4Leaf);
         for (uint32_t iteration = 0; iteration < 10000 && !replacement.IsCompleted(); ++iteration)
@@ -820,6 +870,45 @@ namespace FE::IO::Tests
         leaf.Reset();
         AssetManager::Tick();
         EXPECT_FALSE(leafHandle.IsReady());
+    }
+
+
+    TEST_F(AssetManagerTest, TicksEachRegisteredStreamerOnce)
+    {
+        ResidencyTrackingStreamer streamer;
+        AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        auto unregisterStreamer = festd::defer([&streamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        });
+
+        AssetManager::Tick();
+        EXPECT_EQ(streamer.m_tickCount, 1);
+    }
+
+
+    TEST_F(AssetManagerTest, RunningStreamerOperationDelaysAssetDestruction)
+    {
+        ResidencyTrackingStreamer streamer;
+        AssetManager::RegisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        auto unregisterStreamer = festd::defer([&streamer] {
+            AssetManager::UnregisterStreamer(Rtti::GetTypeID<SyntheticAsset>(), &streamer);
+        });
+        AssetRequest request = AssetManager::LoadAsset(kStage4Leaf);
+        PumpUntilCompleted(request);
+        ASSERT_EQ(request.GetResult(), AssetLoadResult::kSucceeded);
+
+        const uint32_t retiredBefore = AssetManager::GetRetiredGenerationCountForTests();
+        streamer.m_hasRunningOperation = true;
+        request.Reset();
+        AssetManager::Tick();
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore);
+        EXPECT_EQ(streamer.m_destroyCount, 0);
+
+        streamer.m_hasRunningOperation = false;
+        AssetManager::Tick();
+        EXPECT_EQ(AssetManager::GetRetiredGenerationCountForTests(), retiredBefore + 1);
+        EXPECT_EQ(streamer.m_destroyCount, 1);
     }
 
 
