@@ -19,6 +19,8 @@ namespace FE::Graphics::Common
     FrameGraph::PassNode::PassNode(std::pmr::memory_resource* allocator)
         : m_textureOwnershipTransferBarriers(allocator)
         , m_bufferOwnershipTransferBarriers(allocator)
+        , m_texturePostOwnershipBarriers(allocator)
+        , m_ownershipTransferWaits(allocator)
         , m_barrierBatcher(allocator)
         , m_accessedTextures(allocator)
         , m_accessedBuffers(allocator)
@@ -36,6 +38,11 @@ namespace FE::Graphics::Common
     {
         Compile();
         Execute();
+
+        m_blackboard.Reset();
+        m_passes.clear();
+        m_resources.clear();
+        m_resourceIndexMap.clear();
     }
 
 
@@ -436,12 +443,13 @@ namespace FE::Graphics::Common
                 const auto transferBarrier = buffer->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer buffer ownership without matching release barrier");
 
-                Core::BufferBarrierDesc acquireBarrier = transferBarrier.value();
+                Core::BufferBarrierDesc acquireBarrier = transferBarrier->m_barrier;
                 acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
                 acquireBarrier.m_accessBefore = Core::BarrierAccessFlags::kNone;
                 acquireBarrier.m_syncAfter = access.m_syncFlags;
                 acquireBarrier.m_accessAfter = access.m_accessFlags;
                 pass.m_bufferOwnershipTransferBarriers.push_back(acquireBarrier);
+                pass.m_ownershipTransferWaits.push_back(transferBarrier->m_completionFence);
 
                 state.m_queueType = Core::DeviceQueueType::kGraphics;
                 state.m_sync = access.m_syncFlags;
@@ -532,14 +540,29 @@ namespace FE::Graphics::Common
                     texture->RetrieveQueueReleaseBarrier(Core::DeviceQueueType::kGraphics, access.m_subresource);
                 FE_Assert(transferBarrier.has_value(), "Cannot transfer texture ownership without matching release barrier");
 
-                Core::TextureBarrierDesc acquireBarrier = transferBarrier.value();
+                Core::TextureBarrierDesc acquireBarrier = transferBarrier->m_barrier;
                 acquireBarrier.m_syncBefore = Core::BarrierSyncFlags::kNone;
                 acquireBarrier.m_accessBefore = Core::BarrierAccessFlags::kNone;
                 acquireBarrier.m_syncAfter = access.m_syncFlags;
                 acquireBarrier.m_accessAfter = access.m_accessFlags;
-                acquireBarrier.m_layoutBefore = state.m_layout;
-                acquireBarrier.m_layoutAfter = access.m_layout;
                 pass.m_textureOwnershipTransferBarriers.push_back(acquireBarrier);
+                pass.m_ownershipTransferWaits.push_back(transferBarrier->m_completionFence);
+
+                if (acquireBarrier.m_layoutAfter != access.m_layout)
+                {
+                    Core::TextureBarrierDesc layoutBarrier;
+                    layoutBarrier.m_texture = texture;
+                    layoutBarrier.m_subresource = access.m_subresource;
+                    layoutBarrier.m_layoutBefore = acquireBarrier.m_layoutAfter;
+                    layoutBarrier.m_layoutAfter = access.m_layout;
+                    layoutBarrier.m_syncBefore = access.m_syncFlags;
+                    layoutBarrier.m_syncAfter = access.m_syncFlags;
+                    layoutBarrier.m_accessBefore = access.m_accessFlags;
+                    layoutBarrier.m_accessAfter = access.m_accessFlags;
+                    layoutBarrier.m_queueBefore = Core::DeviceQueueType::kGraphics;
+                    layoutBarrier.m_queueAfter = Core::DeviceQueueType::kGraphics;
+                    pass.m_texturePostOwnershipBarriers.push_back(layoutBarrier);
+                }
 
                 state.m_access = access.m_accessFlags;
                 state.m_layout = access.m_layout;

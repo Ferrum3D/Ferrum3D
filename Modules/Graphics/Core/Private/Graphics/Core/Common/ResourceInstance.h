@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Graphics/Core/Barrier.h>
 #include <Graphics/Core/Buffer.h>
+#include <Graphics/Core/Fence.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/Texture.h>
 #include <festd/vector.h>
@@ -21,6 +22,14 @@ namespace FE::Graphics::Common
     {
         return std::bit_cast<uint64_t>(lhs) == std::bit_cast<uint64_t>(rhs);
     }
+
+
+    template<class TBarrier>
+    struct QueueReleaseBarrier final
+    {
+        TBarrier m_barrier;
+        Core::FenceSyncPoint m_completionFence;
+    };
 
 
     struct ResourceInstance

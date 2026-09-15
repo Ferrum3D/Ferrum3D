@@ -356,7 +356,7 @@ namespace FE::Graphics::Vulkan
 
                     FlushBufferBarrier(ImplCast(m_device), commandBuffer, barrierDesc);
 
-                    buffer->AddQueueReleaseBarrier(barrierDesc);
+                    buffer->AddQueueReleaseBarrier(barrierDesc, { m_fence, item->m_fenceValue });
 
                     subresourceState.m_sync = Core::BarrierSyncFlags::kCopy;
                     subresourceState.m_access = Core::BarrierAccessFlags::kCopyDest;
@@ -446,7 +446,7 @@ namespace FE::Graphics::Vulkan
                         barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
                         barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
                         releaseBarriers.push_back(barrierDesc);
-                        texture->AddQueueReleaseBarrier(barrierDesc);
+                        texture->AddQueueReleaseBarrier(barrierDesc, { m_fence, item->m_fenceValue });
 
                         VkBufferImageCopy copy = {};
                         copy.imageSubresource.aspectMask = TranslateImageAspectFlags(imageDesc.m_imageFormat);

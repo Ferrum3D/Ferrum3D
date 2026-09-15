@@ -94,31 +94,32 @@ namespace FE::Graphics::Common
     }
 
 
-    void Texture::AddQueueReleaseBarrier(const Core::TextureBarrierDesc& barrier)
+    void Texture::AddQueueReleaseBarrier(const Core::TextureBarrierDesc& barrier, const Core::FenceSyncPoint& completionFence)
     {
         std::unique_lock lk{ m_lock };
 
         FE_Assert(barrier.m_queueBefore != barrier.m_queueAfter);
         auto& barriers = m_queueReleaseBarriers[festd::to_underlying(barrier.m_queueAfter)];
-        barriers.push_back(barrier);
+        barriers.push_back({ barrier, completionFence });
     }
 
 
-    festd::optional<Core::TextureBarrierDesc> Texture::RetrieveQueueReleaseBarrier(const Core::DeviceQueueType receiverQueue,
-                                                                                   const Core::TextureSubresource subresource)
+    festd::optional<Texture::ReleaseBarrier> Texture::RetrieveQueueReleaseBarrier(const Core::DeviceQueueType receiverQueue,
+                                                                                  const Core::TextureSubresource subresource)
     {
         std::unique_lock lk{ m_lock };
 
         auto& barriers = m_queueReleaseBarriers[festd::to_underlying(receiverQueue)];
-        const auto it = festd::find_if(barriers, [subresource](const Core::TextureBarrierDesc& barrier) {
-            return barrier.m_subresource.Contains(subresource);
+        const auto it = festd::find_if(barriers, [subresource](const ReleaseBarrier& release) {
+            return release.m_barrier.m_subresource.Contains(subresource);
         });
 
         if (it == barriers.end())
             return festd::nullopt;
 
+        ReleaseBarrier result = *it;
         barriers.erase(it);
-        return *it;
+        return result;
     }
 
 
@@ -165,7 +166,8 @@ namespace FE::Graphics::Common
         m_instance = instance;
         instance = oldInstance;
 
-        m_instance->UpdateDebugNames(m_device, m_name);
+        if (m_instance)
+            m_instance->UpdateDebugNames(m_device, m_name);
     }
 
 

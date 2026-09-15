@@ -52,11 +52,39 @@ namespace FE::Graphics::Vulkan
         festd::pmr::vector<VkImageMemoryBarrier2> imageBarriers{ &temp };
         festd::pmr::vector<VkBufferMemoryBarrier2> bufferBarriers{ &temp };
 
+        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
+        CommandBuffer* commandBuffer = commandQueue->GetCurrentCommandBuffer();
+        const VkCommandBuffer vkCommandBuffer = commandBuffer->GetNative();
+
+        for (const Core::FenceSyncPoint& wait : pass.m_ownershipTransferWaits)
+            commandBuffer->EnqueueFenceToWait(wait);
+
+        const auto flushBarriers = [&]() {
+            if (imageBarriers.empty() && bufferBarriers.empty())
+                return;
+
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = imageBarriers.size();
+            dependencyInfo.pImageMemoryBarriers = imageBarriers.data();
+            dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
+            dependencyInfo.pBufferMemoryBarriers = bufferBarriers.data();
+            vkCmdPipelineBarrier2(vkCommandBuffer, &dependencyInfo);
+
+            imageBarriers.clear();
+            bufferBarriers.clear();
+        };
+
         for (const Core::TextureBarrierDesc& barrier : pass.m_textureOwnershipTransferBarriers)
             imageBarriers.push_back(TranslateBarrier(barrier, ImplCast(m_device)));
 
         for (const Core::BufferBarrierDesc& barrier : pass.m_bufferOwnershipTransferBarriers)
             bufferBarriers.push_back(TranslateBarrier(barrier, ImplCast(m_device)));
+
+        flushBarriers();
+
+        for (const Core::TextureBarrierDesc& barrier : pass.m_texturePostOwnershipBarriers)
+            imageBarriers.push_back(TranslateBarrier(barrier, ImplCast(m_device)));
 
         for (const Core::TextureBarrierDesc& barrier : pass.m_barrierBatcher.m_textureBarriers)
             imageBarriers.push_back(TranslateBarrier(barrier, ImplCast(m_device)));
@@ -64,16 +92,6 @@ namespace FE::Graphics::Vulkan
         for (const Core::BufferBarrierDesc& barrier : pass.m_barrierBatcher.m_bufferBarriers)
             bufferBarriers.push_back(TranslateBarrier(barrier, ImplCast(m_device)));
 
-        VkDependencyInfo dependencyInfo = {};
-        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-        dependencyInfo.imageMemoryBarrierCount = imageBarriers.size();
-        dependencyInfo.pImageMemoryBarriers = imageBarriers.data();
-        dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
-        dependencyInfo.pBufferMemoryBarriers = bufferBarriers.data();
-
-        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
-        const CommandBuffer* commandBuffer = commandQueue->GetCurrentCommandBuffer();
-        const VkCommandBuffer vkCommandBuffer = commandBuffer->GetNative();
-        vkCmdPipelineBarrier2(vkCommandBuffer, &dependencyInfo);
+        flushBarriers();
     }
 } // namespace FE::Graphics::Vulkan

@@ -32,6 +32,17 @@ namespace FE::Graphics::Vulkan
         void EnqueueFenceToWait(const Core::FenceSyncPoint& fence)
         {
             FE_Assert(fence.m_fence);
+
+            for (Core::FenceSyncPoint& existing : m_waitFences)
+            {
+                if (existing.m_fence.Get() == fence.m_fence.Get())
+                {
+                    if (fence.m_value > existing.m_value)
+                        existing.m_value = fence.m_value;
+                    return;
+                }
+            }
+
             m_waitFences.push_back(fence);
         }
 

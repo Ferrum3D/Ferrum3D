@@ -18,9 +18,11 @@ namespace FE::Graphics::Common
         void SetState(Core::TextureSubresource subresource, SubresourceState state);
         SubresourceState GetState(Core::TextureSubresource subresource) const;
 
-        void AddQueueReleaseBarrier(const Core::TextureBarrierDesc& barrier);
-        festd::optional<Core::TextureBarrierDesc> RetrieveQueueReleaseBarrier(Core::DeviceQueueType receiverQueue,
-                                                                              Core::TextureSubresource subresource);
+        using ReleaseBarrier = QueueReleaseBarrier<Core::TextureBarrierDesc>;
+
+        void AddQueueReleaseBarrier(const Core::TextureBarrierDesc& barrier, const Core::FenceSyncPoint& completionFence);
+        festd::optional<ReleaseBarrier> RetrieveQueueReleaseBarrier(Core::DeviceQueueType receiverQueue,
+                                                                    Core::TextureSubresource subresource);
 
         void SetQueueOwnership(Core::TextureSubresource subresource, Core::DeviceQueueType queue);
 
@@ -38,8 +40,7 @@ namespace FE::Graphics::Common
 
     private:
         mutable Threading::SpinLock m_lock;
-        festd::inline_vector<Core::TextureBarrierDesc, 1>
-            m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
+        festd::inline_vector<ReleaseBarrier, 1> m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
 
         ResourceInstance* m_instance = nullptr;
 

@@ -84,9 +84,6 @@ namespace FE::Graphics::Common
             if (existing.m_syncBefore != added.m_syncBefore)
                 return existing.m_syncBefore < added.m_syncBefore;
 
-            FE_AssertDebug(Core::IsReadAccess(existing.m_accessAfter) && Core::IsReadAccess(added.m_accessAfter)
-                           || Core::IsWriteAccess(existing.m_accessAfter) && Core::IsWriteAccess(added.m_accessAfter));
-
             if (Core::IsReadAccess(existing.m_accessAfter) != Core::IsReadAccess(added.m_accessAfter))
                 return Core::IsReadAccess(existing.m_accessAfter);
 

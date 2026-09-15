@@ -86,17 +86,17 @@ namespace FE::Graphics::Common
     }
 
 
-    void Buffer::AddQueueReleaseBarrier(const Core::BufferBarrierDesc& barrier)
+    void Buffer::AddQueueReleaseBarrier(const Core::BufferBarrierDesc& barrier, const Core::FenceSyncPoint& completionFence)
     {
         std::unique_lock lk{ m_lock };
 
         auto& releaseBarrier = m_queueReleaseBarriers[festd::to_underlying(barrier.m_queueAfter)];
         FE_Assert(!releaseBarrier.has_value());
-        releaseBarrier = barrier;
+        releaseBarrier = ReleaseBarrier{ barrier, completionFence };
     }
 
 
-    festd::optional<Core::BufferBarrierDesc> Buffer::RetrieveQueueReleaseBarrier(const Core::DeviceQueueType receiverQueue)
+    festd::optional<Buffer::ReleaseBarrier> Buffer::RetrieveQueueReleaseBarrier(const Core::DeviceQueueType receiverQueue)
     {
         std::unique_lock lk{ m_lock };
 

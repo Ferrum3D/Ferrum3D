@@ -22,8 +22,10 @@ namespace FE::Graphics::Common
         void SetState(SubresourceState state);
         SubresourceState GetState() const;
 
-        void AddQueueReleaseBarrier(const Core::BufferBarrierDesc& barrier);
-        festd::optional<Core::BufferBarrierDesc> RetrieveQueueReleaseBarrier(Core::DeviceQueueType receiverQueue);
+        using ReleaseBarrier = QueueReleaseBarrier<Core::BufferBarrierDesc>;
+
+        void AddQueueReleaseBarrier(const Core::BufferBarrierDesc& barrier, const Core::FenceSyncPoint& completionFence);
+        festd::optional<ReleaseBarrier> RetrieveQueueReleaseBarrier(Core::DeviceQueueType receiverQueue);
 
         void SwapInstance(ResourceInstance*& instance);
         void AssignInstance(ResourceInstance* instance)
@@ -39,7 +41,7 @@ namespace FE::Graphics::Common
 
     private:
         mutable Threading::SpinLock m_lock;
-        festd::optional<Core::BufferBarrierDesc> m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
+        festd::optional<ReleaseBarrier> m_queueReleaseBarriers[festd::to_underlying(Core::DeviceQueueType::kCount)];
 
         ResourceInstance* m_instance = nullptr;
 

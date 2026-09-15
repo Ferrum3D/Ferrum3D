@@ -82,6 +82,8 @@ namespace FE::Graphics::Common
 
             festd::pmr::vector<Core::TextureBarrierDesc> m_textureOwnershipTransferBarriers;
             festd::pmr::vector<Core::BufferBarrierDesc> m_bufferOwnershipTransferBarriers;
+            festd::pmr::vector<Core::TextureBarrierDesc> m_texturePostOwnershipBarriers;
+            festd::pmr::vector<Core::FenceSyncPoint> m_ownershipTransferWaits;
 
             ResourceBarrierBatcher m_barrierBatcher;
 
