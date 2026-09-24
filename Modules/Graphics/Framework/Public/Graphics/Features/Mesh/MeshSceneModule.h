@@ -3,6 +3,7 @@
 #include <Graphics/Assets/Assets.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
+#include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Scene/Octree.h>
 #include <Graphics/Scene/Scene.h>
 #include <Graphics/Tables/Forwards.h>
@@ -27,6 +28,7 @@ namespace FE::Graphics
         uint32_t m_instanceCount = 0;
         DB::Ref<MeshGroupTable> m_tableRef = DB::Ref<MeshGroupTable>::CreateInvalid();
         const MeshAsset* m_asset = nullptr;
+        MaterialInstanceRuntime* m_material = nullptr;
     };
 
 
@@ -34,6 +36,8 @@ namespace FE::Graphics
     {
         const MeshAsset* m_asset = nullptr;
         MeshBatch* m_batch = nullptr;
+        MaterialInstanceRuntime* m_material = nullptr;
+        BufferPointer m_instanceData{};
         Matrix4x4 m_transform;
     };
 
@@ -85,6 +89,13 @@ namespace FE::Graphics
             return m_meshLodInfoTable.Get();
         }
 
+        [[nodiscard]] MaterialInstanceTable* GetMaterialInstanceTable() const
+        {
+            return m_materialInstanceTable.Get();
+        }
+
+        [[nodiscard]] MaterialInstanceRuntime* FindMaterial(DB::Ref<MeshGroupTable> group) const;
+
     private:
         void DoRelease() override;
 
@@ -92,14 +103,13 @@ namespace FE::Graphics
         void FreeHandle(MeshHandle handle);
         void EnsureCapacity();
 
-        MeshGroup* FindOrCreateMeshGroup(const MeshAsset* meshAsset);
+        MeshGroup* FindOrCreateMeshGroup(const MeshAsset* meshAsset, MaterialInstanceRuntime* material);
 
         DB::Ref<MeshInstanceTable> TranslateHandle(MeshHandle handle) const;
 
         festd::bit_vector m_freeHandles;
         festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
 
-        festd::unordered_dense_map<const MeshAsset*, MeshGroup*> m_meshGroupsMap;
         festd::vector<MeshGroup*> m_meshGroups;
         festd::vector<MeshBatch*> m_batches;
 
@@ -108,6 +118,7 @@ namespace FE::Graphics
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;
         Rc<MeshInstanceTable> m_meshInstanceTable;
+        Rc<MaterialInstanceTable> m_materialInstanceTable;
         Octree m_octree;
     };
 } // namespace FE::Graphics

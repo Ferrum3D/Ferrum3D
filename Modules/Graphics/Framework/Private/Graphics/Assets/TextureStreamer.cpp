@@ -153,7 +153,7 @@ namespace FE::Graphics
     }
 
 
-    void TextureStreamer::SetResidentMip(TextureAsset& asset, const uint32_t mipIndex)
+    void TextureStreamer::SetResidentMip(const TextureAsset& asset, const uint32_t mipIndex)
     {
         FE_Assert(Threading::IsMainThread());
         Impl::Entry* entry = FindTextureEntry(m_impl->m_entries, &asset);

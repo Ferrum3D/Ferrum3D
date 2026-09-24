@@ -1,0 +1,32 @@
+{
+    "$type": "BFCD80E4-DB85-41F2-B43D-F08EA62AA6EC",
+    "$typename": "FE::IO::ArtifactRecord",
+    "$version": 0,
+    "$schema": "0x4d3ae890a4a739c5",
+    "$value": {
+        "m_artifactId": "7D34328C-64F6-4B65-917E-B75924FD358B",
+        "m_assetId": "A56650D7-CD26-418C-B02C-514D54430555",
+        "m_assetTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+        "m_payloads": [
+            {
+                "m_resolvedDataSource": {
+                    "m_filePath": "",
+                    "m_byteOffset": 0,
+                    "m_byteSize": 545
+                },
+                "m_chunks": [
+                    {
+                        "m_offsetInPayload": 0,
+                        "m_compressedSize": 545,
+                        "m_uncompressedSize": 2011,
+                        "m_compressionMethod": 2,
+                        "m_checksum": {
+                            "m_current": 3845050543
+                        }
+                    }
+                ]
+            }
+        ],
+        "m_dependencies": []
+    }
+}

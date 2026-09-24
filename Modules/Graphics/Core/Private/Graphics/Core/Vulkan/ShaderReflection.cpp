@@ -8,6 +8,18 @@ namespace FE::Graphics::Vulkan
 
     namespace
     {
+        struct LayoutCompiler final : public SpvC::CompilerHLSL
+        {
+            using CompilerHLSL::CompilerHLSL;
+
+            template<class TFunction>
+            void ForEachType(TFunction&& function)
+            {
+                ir.for_each_typed_id<SpvC::SPIRType>(std::forward<TFunction>(function));
+            }
+        };
+
+
         Core::Format SPIRTypeToFormat(const SpvC::SPIRType& type)
         {
             using Core::Format;
@@ -148,10 +160,11 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        const auto compiler = festd::make_unique<SpvC::CompilerHLSL>(byteCode.data(), byteCode.size());
+        const auto compiler = festd::make_unique<LayoutCompiler>(byteCode.data(), byteCode.size());
         const auto resources = compiler->get_shader_resources();
         ParseInputAttributes(compiler.get(), resources);
         ParseResourceBindings(compiler.get(), resources);
+        ParseStructLayouts(compiler.get());
     }
 
 
@@ -170,6 +183,40 @@ namespace FE::Graphics::Vulkan
     festd::span<const Core::ShaderRootConstant> ShaderReflection::GetRootConstants() const
     {
         return m_rootConstants;
+    }
+
+
+    festd::span<const Core::ShaderStructLayout> ShaderReflection::GetStructLayouts() const
+    {
+        return m_structLayouts;
+    }
+
+
+    void ShaderReflection::ParseStructLayouts(SpvC::CompilerHLSL* compiler)
+    {
+        auto* layoutCompiler = static_cast<LayoutCompiler*>(compiler);
+        layoutCompiler->ForEachType([&](const uint32_t typeId, const SpvC::SPIRType& type) {
+            if (type.basetype != SpvC::SPIRType::Struct)
+                return;
+
+            const std::string& name = compiler->get_name(typeId);
+            if (name != "MaterialParameters" && name != "InstanceParameters")
+                return;
+
+            Core::ShaderStructLayout& layout = m_structLayouts.emplace_back();
+            layout.m_name = Env::Name(name);
+            layout.m_byteSize = static_cast<uint32_t>(compiler->get_declared_struct_size(type));
+            for (uint32_t index = 0; index < type.member_types.size(); ++index)
+            {
+                if (!compiler->has_member_decoration(typeId, index, spv::DecorationOffset))
+                    continue;
+                Core::ShaderStructMember& member = layout.m_members.emplace_back();
+                member.m_name = Env::Name(compiler->get_member_name(typeId, index));
+                member.m_offset = compiler->type_struct_member_offset(type, index);
+                member.m_byteSize = static_cast<uint32_t>(compiler->get_declared_struct_member_size(type, index));
+                member.m_format = SPIRTypeToFormat(compiler->get_type(type.member_types[index]));
+            }
+        });
     }
 
 

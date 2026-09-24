@@ -3,6 +3,7 @@
 #include <Graphics/Core/Format.h>
 #include <Graphics/Core/ShaderResourceType.h>
 #include <Graphics/Core/ShaderSpecialization.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Core
 {
@@ -33,6 +34,23 @@ namespace FE::Graphics::Core
     };
 
 
+    struct ShaderStructMember final
+    {
+        Env::Name m_name;
+        uint32_t m_offset = 0;
+        uint32_t m_byteSize = 0;
+        Format m_format = Format::kUndefined;
+    };
+
+
+    struct ShaderStructLayout final
+    {
+        Env::Name m_name;
+        uint32_t m_byteSize = 0;
+        festd::vector<ShaderStructMember> m_members;
+    };
+
+
     struct ShaderReflection : public Memory::RefCountedObjectBase
     {
         FE_RTTI("9ECFF14F-1D5A-4997-B6D5-735E935A9D64");
@@ -42,6 +60,7 @@ namespace FE::Graphics::Core
         virtual festd::span<const ShaderInputAttribute> GetInputAttributes() const = 0;
         virtual festd::span<const ShaderResourceBinding> GetResourceBindings() const = 0;
         virtual festd::span<const ShaderRootConstant> GetRootConstants() const = 0;
+        virtual festd::span<const ShaderStructLayout> GetStructLayouts() const = 0;
         virtual festd::span<const Env::Name> GetSpecializationConstantNames() const = 0;
 
         virtual uint32_t GetResourceBindingIndex(Env::Name name) const = 0;

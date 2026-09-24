@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Base/Base.h>
+#include <Core/Env/Environment.h>
 #include <Core/IO/IStream.h>
 #include <Core/RTTI/Reflection.h>
 #include <concepts>
@@ -1085,6 +1086,42 @@ namespace FE::Serialization
         {
             constexpr uint64_t kTypeNameHash = CompileTimeHash("string");
             return kTypeNameHash;
+        }
+
+        static constexpr uint32_t GetVersion()
+        {
+            return 0;
+        }
+    };
+
+
+    template<>
+    struct Serializer<Env::Name>
+    {
+        static ResultCode Serialize(SerializationContext& context, const Env::Name value)
+        {
+            return context.StoreString(value.IsValid() ? festd::string_view{ value.c_str(), value.size() }
+                                                       : festd::string_view{});
+        }
+
+        static ResultCode Deserialize(DeserializationContext& context, Env::Name& value)
+        {
+            uint32_t size = 0;
+            ResultCode result = context.LoadStringSize(size);
+            if (result != ResultCode::kSuccess)
+                return result;
+
+            festd::string text;
+            text.resize_uninitialized(size);
+            result = context.LoadString(festd::span<char>{ text.data(), size });
+            if (result == ResultCode::kSuccess)
+                value = size > 0 ? Env::Name(std::string_view{ text.data(), size }) : Env::Name::kEmpty;
+            return result;
+        }
+
+        static constexpr uint64_t GetSchemaHash()
+        {
+            return TypeNameHash<Env::Name>;
         }
 
         static constexpr uint32_t GetVersion()

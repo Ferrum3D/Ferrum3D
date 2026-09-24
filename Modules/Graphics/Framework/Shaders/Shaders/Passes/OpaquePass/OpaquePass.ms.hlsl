@@ -25,7 +25,6 @@ void main(const in uint32_t groupThreadID : SV_GroupThreadID,
         const uint32_t index =
             drawData.m_geometry.Read<uint32_t>((meshlet.m_vertexOffset + groupThreadID) * sizeof(uint32_t) + indicesByteOffset);
         PixelAttributes attributes = LoadAttributes(drawData, index);
-        attributes.m_meshletIndex = groupID;
         verts[groupThreadID] = attributes;
     }
 

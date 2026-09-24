@@ -28,6 +28,7 @@
 #include <Graphics/Core/GraphicsQueue.h>
 #include <Graphics/Core/PipelineBase.h>
 #include <Graphics/Core/PipelineFactory.h>
+#include <Graphics/Core/PipelineStates.h>
 #include <Graphics/Core/Resource.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Core/ShaderCompiler.h>
@@ -2542,6 +2543,60 @@ namespace FE::Graphics::Core
 } // namespace FE::Graphics::Core
 
 
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_737828ea5fc44efa8770890bcad69f9d()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::Core::DepthStencilState>()
+    {
+        return GetMutableType_737828ea5fc44efa8770890bcad69f9d();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::Core::DepthStencilState>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x73, 0x78, 0x28, 0xea, 0x5f, 0xc4, 0x4e, 0xfa,
+            0x87, 0x70, 0x89, 0x0b, 0xca, 0xd6, 0x9f, 0x9d, // FE::Graphics::Core::DepthStencilState
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::Core::DepthStencilState>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_737828ea5fc44efa8770890bcad69f9d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0x73, 0x78, 0x28, 0xea, 0x5f, 0xc4, 0x4e, 0xfa,
+            0x87, 0x70, 0x89, 0x0b, 0xca, 0xd6, 0x9f, 0x9d, // FE::Graphics::Core::DepthStencilState
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Graphics::Core::DepthStencilState>(typeInstance,
+                                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                                    "FE::Graphics::Core::DepthStencilState",
+                                                                    {},
+                                                                    kAttributes,
+                                                                    kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_737828ea5fc44efa8770890bcad69f9d(
+        &Internal::ExternalTypeReflector<FE::Graphics::Core::DepthStencilState>::Reflect);
+} // namespace FE::Rtti
+
+
 namespace FE::Graphics::Vulkan
 {
     const Rtti::TypeID AsyncCopyQueue::TypeID = Rtti::TypeID{
@@ -3741,6 +3796,60 @@ namespace FE::Rtti
 } // namespace FE::Rtti
 
 
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_b37666707b3244ef907f70b8937a0e52()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::Core::RasterizationState>()
+    {
+        return GetMutableType_b37666707b3244ef907f70b8937a0e52();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::Core::RasterizationState>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xb3, 0x76, 0x66, 0x70, 0x7b, 0x32, 0x44, 0xef,
+            0x90, 0x7f, 0x70, 0xb8, 0x93, 0x7a, 0x0e, 0x52, // FE::Graphics::Core::RasterizationState
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::Core::RasterizationState>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_b37666707b3244ef907f70b8937a0e52();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xb3, 0x76, 0x66, 0x70, 0x7b, 0x32, 0x44, 0xef,
+            0x90, 0x7f, 0x70, 0xb8, 0x93, 0x7a, 0x0e, 0x52, // FE::Graphics::Core::RasterizationState
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Graphics::Core::RasterizationState>(typeInstance,
+                                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                                     "FE::Graphics::Core::RasterizationState",
+                                                                     {},
+                                                                     kAttributes,
+                                                                     kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_b37666707b3244ef907f70b8937a0e52(
+        &Internal::ExternalTypeReflector<FE::Graphics::Core::RasterizationState>::Reflect);
+} // namespace FE::Rtti
+
+
 namespace FE::Graphics::Common
 {
     const Rtti::TypeID ResourceInstance::TypeID = Rtti::TypeID{
@@ -4108,6 +4217,60 @@ namespace FE::Graphics::Core
 
     static Rtti::TypeRegistrar GTypeRegistrar_bfa35db4e1aa491487fbd392b0308b34(&GraphicsQueue::Reflect);
 } // namespace FE::Graphics::Core
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_bfd8b468af884bf5b0e0595576248b50()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::Core::TargetColorBlending>()
+    {
+        return GetMutableType_bfd8b468af884bf5b0e0595576248b50();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::Core::TargetColorBlending>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xbf, 0xd8, 0xb4, 0x68, 0xaf, 0x88, 0x4b, 0xf5,
+            0xb0, 0xe0, 0x59, 0x55, 0x76, 0x24, 0x8b, 0x50, // FE::Graphics::Core::TargetColorBlending
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::Core::TargetColorBlending>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_bfd8b468af884bf5b0e0595576248b50();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xbf, 0xd8, 0xb4, 0x68, 0xaf, 0x88, 0x4b, 0xf5,
+            0xb0, 0xe0, 0x59, 0x55, 0x76, 0x24, 0x8b, 0x50, // FE::Graphics::Core::TargetColorBlending
+        };
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<FE::Graphics::Core::TargetColorBlending>(typeInstance,
+                                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                                      "FE::Graphics::Core::TargetColorBlending",
+                                                                      {},
+                                                                      kAttributes,
+                                                                      kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_bfd8b468af884bf5b0e0595576248b50(
+        &Internal::ExternalTypeReflector<FE::Graphics::Core::TargetColorBlending>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Graphics::Vulkan
@@ -4840,6 +5003,81 @@ namespace FE::Graphics::Vulkan
 
     static Rtti::TypeRegistrar GTypeRegistrar_e2254cbd679c431087cffa8da780bda1(&ShaderLibrary::Reflect);
 } // namespace FE::Graphics::Vulkan
+
+
+namespace FE::Rtti
+{
+    namespace
+    {
+        Type& GetMutableType_e36f3aa9f99d4839871f985669334aed()
+        {
+            static Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    template<>
+    const Type& GetType<FE::Graphics::Core::ColorBlendState>()
+    {
+        return GetMutableType_e36f3aa9f99d4839871f985669334aed();
+    }
+
+    template<>
+    TypeID GetTypeID<FE::Graphics::Core::ColorBlendState>()
+    {
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xe3, 0x6f, 0x3a, 0xa9, 0xf9, 0x9d, 0x48, 0x39,
+            0x87, 0x1f, 0x98, 0x56, 0x69, 0x33, 0x4a, 0xed, // FE::Graphics::Core::ColorBlendState
+        };
+
+        return TypeID::LoadAligned(kTypeIDBytes);
+    }
+
+    void Internal::ExternalTypeReflector<FE::Graphics::Core::ColorBlendState>::Reflect(ReflectionContext& context)
+    {
+        Type& typeInstance = GetMutableType_e36f3aa9f99d4839871f985669334aed();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(TypeID)] = {
+            0xe3, 0x6f, 0x3a, 0xa9, 0xf9, 0x9d, 0x48, 0x39,
+            0x87, 0x1f, 0x98, 0x56, 0x69, 0x33, 0x4a, 0xed, // FE::Graphics::Core::ColorBlendState
+        };
+
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(TypeID)] = {
+            0xbf, 0xd8, 0xb4, 0x68, 0xaf, 0x88, 0x4b, 0xf5,
+            0xb0, 0xe0, 0x59, 0x55, 0x76, 0x24, 0x8b, 0x50, // FE::Graphics::Core::TargetColorBlending m_targetBlendStates
+            0xdd, 0x3b, 0xa9, 0xbb, 0xe7, 0xd2, 0x42, 0x17,
+            0xa7, 0x97, 0xf7, 0xc8, 0x1e, 0xf3, 0x51, 0xa2, // bool m_enableIndependentBlend
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_targetBlendStates = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_enableIndependentBlend = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<8>("m_targetBlendStates",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &FE::Graphics::Core::ColorBlendState::m_targetBlendStates,
+                                                        kAttributes_m_targetBlendStates,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_enableIndependentBlend",
+                                                        TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &FE::Graphics::Core::ColorBlendState::m_enableIndependentBlend,
+                                                        kAttributes_m_enableIndependentBlend,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<FE::Graphics::Core::ColorBlendState>(typeInstance,
+                                                                  Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                                  "FE::Graphics::Core::ColorBlendState",
+                                                                  {},
+                                                                  kAttributes,
+                                                                  kFields);
+    }
+
+    static TypeRegistrar GTypeRegistrar_e36f3aa9f99d4839871f985669334aed(
+        &Internal::ExternalTypeReflector<FE::Graphics::Core::ColorBlendState>::Reflect);
+} // namespace FE::Rtti
 
 
 namespace FE::Graphics::Core

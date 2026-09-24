@@ -8,6 +8,7 @@
 namespace FE::Graphics
 {
     struct MeshLodInfoTable;
+    struct MaterialInstanceTable;
     struct MeshGroupTable;
     struct MeshInstanceTable;
 } // namespace FE::Graphics

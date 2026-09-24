@@ -9,15 +9,18 @@
 
 struct MeshGroupTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize
+        / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>) + sizeof(DB::Ref<MaterialInstanceTable>));
 
     FE_CONSTEXPR uint32_t kOffset_m_geometry = 0;
     FE_CONSTEXPR uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_materialInstance = kOffset_m_lods + sizeof(DB::Slice<MeshLodInfoTable>) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<BufferPointer, kOffset_m_geometry> m_geometry;
         DB::ElementHandle<DB::Slice<MeshLodInfoTable>, kOffset_m_lods> m_lods;
+        DB::ElementHandle<DB::Ref<MaterialInstanceTable>, kOffset_m_materialInstance> m_materialInstance;
     };
 
     struct Instance
@@ -42,6 +45,7 @@ struct MeshGroupTable
         Row row;
         row.m_geometry.Setup(pageAddress, localRowIndex);
         row.m_lods.Setup(pageAddress, localRowIndex);
+        row.m_materialInstance.Setup(pageAddress, localRowIndex);
         return row;
     }
 

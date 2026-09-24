@@ -26,6 +26,7 @@ fe_configure_target(AssetBuilder)
 
 target_include_directories(AssetBuilder PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Public")
 target_include_directories(AssetBuilder PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Private")
+target_compile_definitions(AssetBuilder PRIVATE FE_MATERIAL_LIBRARY_DIR="${FE_PROJECT_ROOT}/Modules/Graphics/Materials/engine")
 
 if(FE_COMPILER_MSVC)
     target_compile_options(AssetBuilder PRIVATE /wd5054)
@@ -40,6 +41,8 @@ target_link_libraries(AssetBuilder
         meshoptimizer
         tiny_gltf
         rapidjson
+        Luau.Compiler
+        Luau.VM
         bcrypt)
 
 get_property("TARGET_SOURCE_FILES" TARGET AssetBuilder PROPERTY SOURCES)

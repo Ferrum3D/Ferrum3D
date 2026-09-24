@@ -1,10 +1,10 @@
 #include <Core/Math/Colors.h>
-#include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
@@ -13,34 +13,6 @@
 
 namespace FE::Graphics::OpaquePass
 {
-    namespace
-    {
-        struct Pipeline final : public Core::GraphicsPipelineVariantSet
-        {
-            FE_SHADER_SPEC(ColorTargetFormat, Core::Format::kB8G8R8A8_SRGB, Core::Format::kR8G8B8A8_SRGB,
-                           Core::Format::kR8G8B8A8_UNORM, Core::Format::kB8G8R8A8_UNORM);
-            using Specializer = Core::ShaderSpecializer<ColorTargetFormat>;
-
-            FE_DECLARE_PIPELINE_SET(Pipeline, Specializer);
-
-        private:
-            void SetupRequest(const uint32_t variantIndex, Core::GraphicsPipelineRequest& request) override
-            {
-                const Specializer specializer(variantIndex);
-
-                request.m_desc.SetMeshShader("Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl")
-                    .SetPixelShader("Shaders/Passes/OpaquePass/OpaquePass.ps.hlsl")
-                    .SetRTVFormat(specializer.Get<ColorTargetFormat>())
-                    .SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
-                    .SetDepthStencil(Core::DepthStencilState::kWriteIfEqual)
-                    .SetColorBlend(Core::TargetColorBlending::kDisabled)
-                    .SetRasterization(Core::RasterizationState::kFillBackCull);
-            }
-        };
-        FE_IMPLEMENT_PIPELINE_SET(Pipeline);
-    } // namespace
-
-
     ViewModule::ViewModule(View* view)
         : ViewModuleBase(view)
     {
@@ -80,21 +52,20 @@ namespace FE::Graphics::OpaquePass
         const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
         const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
         const MeshAsset* meshAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
+        MaterialInstanceRuntime* material = meshModule->FindMaterial(instanceRow.m_meshGroup.Get());
         FE_Assert(meshAsset && meshAsset->m_buffer);
+        FE_Assert(material != nullptr);
 
         const DB::Slice<MeshLodInfoTable> lods = groupRow.m_lods.Get();
         const Core::MeshLodInfo lodInfo = meshModule->GetMeshLodInfoTable()->ReadRow(lods.m_rowIndex).m_info.Get();
-
-        Pipeline::Specializer specializer;
-        specializer.Set<Pipeline::ColorTargetFormat>(viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
         auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_constants.m_meshInstanceTable = meshModule->GetMeshInstanceTable()->GetDeviceAddress();
         passDesc->m_constants.m_meshGroupTable = meshModule->GetMeshGroupTable()->GetDeviceAddress();
         passDesc->m_constants.m_meshLodInfoTable = meshModule->GetMeshLodInfoTable()->GetDeviceAddress();
+        passDesc->m_constants.m_materialInstanceTable = meshModule->GetMaterialInstanceTable()->GetDeviceAddress();
         passDesc->m_constants.m_instanceIndex = instanceRef.m_rowIndex;
         passDesc->m_constants.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
-        passDesc->m_constants.m_baseColor = float4(0.78f, 0.74f, 0.68f, 1.0f);
         passDesc->m_geometryBuffer = {
             Core::BufferView::Create(meshAsset->m_buffer.Get()),
             Core::BarrierSyncFlags::kMeshShading,
@@ -103,7 +74,7 @@ namespace FE::Graphics::OpaquePass
         passDesc->m_colorTarget = Core::TextureView::Create(viewData.m_mainColorTarget);
         passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
         passDesc->m_viewport = viewData.m_viewportRect;
-        passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
+        passDesc->m_pipeline = material->GetPipeline("Opaque", viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
         const bool hasDepthPrepass = blackboard.Contains<DepthPrepass::PassData>();
         graph.AddPass("OpaquePass",

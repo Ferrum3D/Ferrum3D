@@ -6,6 +6,7 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <Graphics/Assets/Assets.h>
+#include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Database/Database.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DepthPrepass.h>
@@ -16,6 +17,7 @@
 #include <Graphics/Scene/SceneImpl.h>
 #include <Graphics/Scene/View.h>
 #include <Graphics/Scene/ViewImpl.h>
+#include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
@@ -384,6 +386,146 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_1784843c50854289aa8204c480e423ee(&MeshSceneModule::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MaterialParameterDesc::TypeID = Rtti::TypeID{
+        0x1e, 0x04, 0xce, 0x30, 0x99, 0x84, 0x48, 0x1c, 0xb7, 0x0b, 0xf6, 0x41, 0x77, 0x7f, 0x69, 0xc4,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_1e04ce309984481cb70bf641777f69c4()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialParameterDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_1e04ce309984481cb70bf641777f69c4();
+    }
+
+    void MaterialParameterDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_1e04ce309984481cb70bf641777f69c4();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x1e, 0x04, 0xce, 0x30, 0x99, 0x84, 0x48, 0x1c,
+            0xb7, 0x0b, 0xf6, 0x41, 0x77, 0x7f, 0x69, 0xc4, // FE::Graphics::MaterialParameterDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
+            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_type
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_scope
+            0xc0, 0x5e, 0xdb, 0x73, 0x4a, 0x72, 0x4b, 0x89,
+            0xb0, 0xe4, 0x2f, 0x4b, 0xfd, 0xc6, 0xc5, 0x38, // FE::Vector4 m_defaultValue
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_type = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_scope = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_defaultValue = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialParameterDesc::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_type",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialParameterDesc::m_type,
+                                                        kAttributes_m_type,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_scope",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialParameterDesc::m_scope,
+                                                        kAttributes_m_scope,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_defaultValue",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MaterialParameterDesc::m_defaultValue,
+                                                        kAttributes_m_defaultValue,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialParameterDesc>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Graphics::MaterialParameterDesc",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_1e04ce309984481cb70bf641777f69c4(&MaterialParameterDesc::Reflect);
+
+    FE::Serialization::ResultCode MaterialParameterDesc::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_type", m_type);
+            object.Field("m_scope", m_scope);
+            object.Field("m_defaultValue", m_defaultValue);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialParameterDesc::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_type", m_type);
+            object.Field("m_scope", m_scope);
+            object.Field("m_defaultValue", m_defaultValue);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialParameterDesc::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x1e, 0x04, 0xce, 0x30, 0x99, 0x84, 0x48, 0x1c, 0xb7, 0x0b, 0xf6, 0x41, 0x77, 0x7f, 0x69, 0xc4,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update("m_type", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_type)>());
+            hasher.Update("m_scope", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_scope)>());
+            hasher.Update("m_defaultValue", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_defaultValue)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialParameterDesc::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Graphics
 
 
@@ -1278,6 +1420,166 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID MaterialInstanceAsset::TypeID = Rtti::TypeID{
+        0x44, 0xf1, 0x65, 0x3f, 0xb7, 0x16, 0x4e, 0x1d, 0xa6, 0x31, 0xea, 0xa8, 0xe7, 0x28, 0xdc, 0x08,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_44f1653fb7164e1da631eaa8e728dc08(MaterialInstanceAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x44, 0xf1, 0x65, 0x3f, 0xb7, 0x16, 0x4e, 0x1d,
+                0xa6, 0x31, 0xea, 0xa8, 0xe7, 0x28, 0xdc, 0x08, // FE::Graphics::MaterialInstanceAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_44f1653fb7164e1da631eaa8e728dc08()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialInstanceAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_44f1653fb7164e1da631eaa8e728dc08();
+    }
+
+    void* FE_VECTORCALL MaterialInstanceAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_44f1653fb7164e1da631eaa8e728dc08(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MaterialInstanceAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_44f1653fb7164e1da631eaa8e728dc08(const_cast<MaterialInstanceAsset*>(this), typeID);
+    }
+    void MaterialInstanceAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_44f1653fb7164e1da631eaa8e728dc08();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x44, 0xf1, 0x65, 0x3f, 0xb7, 0x16, 0x4e, 0x1d,
+            0xa6, 0x31, 0xea, 0xa8, 0xe7, 0x28, 0xdc, 0x08, // FE::Graphics::MaterialInstanceAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_material
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_permutationKey
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_parameters
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_runtime
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_material = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_permutationKey = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_parameters = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_runtime = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_material",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialInstanceAsset::m_material,
+                                                        kAttributes_m_material,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialInstanceAsset::m_permutationKey,
+                                                        kAttributes_m_permutationKey,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parameters",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialInstanceAsset::m_parameters,
+                                                        kAttributes_m_parameters,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_runtime",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MaterialInstanceAsset::m_runtime,
+                                                        kAttributes_m_runtime,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialInstanceAsset>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Graphics::MaterialInstanceAsset",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_44f1653fb7164e1da631eaa8e728dc08(&MaterialInstanceAsset::Reflect);
+
+    FE::Serialization::ResultCode MaterialInstanceAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_material", m_material);
+            object.Field("m_permutationKey", m_permutationKey);
+            object.Field("m_parameters", m_parameters);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialInstanceAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_material", m_material);
+            object.Field("m_permutationKey", m_permutationKey);
+            object.Field("m_parameters", m_parameters);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialInstanceAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x44, 0xf1, 0x65, 0x3f, 0xb7, 0x16, 0x4e, 0x1d, 0xa6, 0x31, 0xea, 0xa8, 0xe7, 0x28, 0xdc, 0x08,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_material", 10);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_material)>());
+            hasher.Update("m_permutationKey", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_permutationKey)>());
+            hasher.Update("m_parameters", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_parameters)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialInstanceAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID View::TypeID = Rtti::TypeID{
         0x4b, 0x83, 0xaf, 0xa4, 0x70, 0xb9, 0x4a, 0xf9, 0x8a, 0xb8, 0x10, 0x82, 0xc6, 0xb4, 0x98, 0x49,
     };
@@ -1351,6 +1653,133 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_4b83afa470b94af98ab81082c6b49849(&View::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MaterialParameterValue::TypeID = Rtti::TypeID{
+        0x53, 0x04, 0xe3, 0x04, 0x61, 0x25, 0x47, 0xb1, 0x9b, 0xfc, 0xeb, 0xd8, 0x87, 0x4b, 0x6d, 0x53,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_5304e304612547b19bfcebd8874b6d53()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialParameterValue::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_5304e304612547b19bfcebd8874b6d53();
+    }
+
+    void MaterialParameterValue::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_5304e304612547b19bfcebd8874b6d53();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x53, 0x04, 0xe3, 0x04, 0x61, 0x25, 0x47, 0xb1,
+            0x9b, 0xfc, 0xeb, 0xd8, 0x87, 0x4b, 0x6d, 0x53, // FE::Graphics::MaterialParameterValue
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
+            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
+            0xc0, 0x5e, 0xdb, 0x73, 0x4a, 0x72, 0x4b, 0x89,
+            0xb0, 0xe4, 0x2f, 0x4b, 0xfd, 0xc6, 0xc5, 0x38, // FE::Vector4 m_value
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_texture
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_value = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_texture = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialParameterValue::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_value",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialParameterValue::m_value,
+                                                        kAttributes_m_value,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_texture",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialParameterValue::m_texture,
+                                                        kAttributes_m_texture,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialParameterValue>(typeInstance,
+                                                     Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                     "FE::Graphics::MaterialParameterValue",
+                                                     kBaseClassTypeIDs,
+                                                     kAttributes,
+                                                     kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_5304e304612547b19bfcebd8874b6d53(&MaterialParameterValue::Reflect);
+
+    FE::Serialization::ResultCode MaterialParameterValue::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_value", m_value);
+            object.Field("m_texture", m_texture);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialParameterValue::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_value", m_value);
+            object.Field("m_texture", m_texture);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialParameterValue::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x53, 0x04, 0xe3, 0x04, 0x61, 0x25, 0x47, 0xb1, 0x9b, 0xfc, 0xeb, 0xd8, 0x87, 0x4b, 0x6d, 0x53,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update("m_value", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_value)>());
+            hasher.Update("m_texture", 9);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_texture)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialParameterValue::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
 } // namespace FE::Graphics
 
 
@@ -1561,6 +1990,224 @@ namespace FE::Graphics::DepthPrepass
 
     static Rtti::TypeRegistrar GTypeRegistrar_6ae6d9a2f1714552a2b4208becb536aa(&PassData::Reflect);
 } // namespace FE::Graphics::DepthPrepass
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MaterialTechniqueDesc::TypeID = Rtti::TypeID{
+        0x72, 0x61, 0x63, 0xf8, 0xfa, 0x99, 0x40, 0x77, 0xbe, 0x18, 0x0d, 0x7c, 0x05, 0x00, 0x54, 0xdf,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_726163f8fa994077be180d7c050054df()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialTechniqueDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_726163f8fa994077be180d7c050054df();
+    }
+
+    void MaterialTechniqueDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_726163f8fa994077be180d7c050054df();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x72, 0x61, 0x63, 0xf8, 0xfa, 0x99, 0x40, 0x77,
+            0xbe, 0x18, 0x0d, 0x7c, 0x05, 0x00, 0x54, 0xdf, // FE::Graphics::MaterialTechniqueDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[10 * sizeof(Rtti::TypeID)] = {
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_role
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_permutationKey
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_vertexShader
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_amplificationShader
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_meshShader
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0, 0x8d,
+            0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_pixelShader
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_shaderDefines
+            0xb3, 0x76, 0x66, 0x70, 0x7b, 0x32, 0x44, 0xef, 0x90,
+            0x7f, 0x70, 0xb8, 0x93, 0x7a, 0x0e, 0x52, // FE::Graphics::Core::RasterizationState m_rasterization
+            0x73, 0x78, 0x28, 0xea, 0x5f, 0xc4, 0x4e, 0xfa, 0x87,
+            0x70, 0x89, 0x0b, 0xca, 0xd6, 0x9f, 0x9d, // FE::Graphics::Core::DepthStencilState m_depthStencil
+            0xe3, 0x6f, 0x3a, 0xa9, 0xf9, 0x9d, 0x48, 0x39, 0x87,
+            0x1f, 0x98, 0x56, 0x69, 0x33, 0x4a, 0xed, // FE::Graphics::Core::ColorBlendState m_blend
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_role = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_permutationKey = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_vertexShader = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_amplificationShader = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshShader = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_pixelShader = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_shaderDefines = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_rasterization = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthStencil = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_blend = {};
+
+        static const festd::array<Rtti::FieldInfo, 10> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_role",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_role,
+                                                        kAttributes_m_role,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_permutationKey",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_permutationKey,
+                                                        kAttributes_m_permutationKey,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_vertexShader",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_vertexShader,
+                                                        kAttributes_m_vertexShader,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_amplificationShader",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_amplificationShader,
+                                                        kAttributes_m_amplificationShader,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshShader",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_meshShader,
+                                                        kAttributes_m_meshShader,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_pixelShader",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_pixelShader,
+                                                        kAttributes_m_pixelShader,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_shaderDefines",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_shaderDefines,
+                                                        kAttributes_m_shaderDefines,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_rasterization",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_rasterization,
+                                                        kAttributes_m_rasterization,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthStencil",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 8 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_depthStencil,
+                                                        kAttributes_m_depthStencil,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_blend",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 9 * sizeof(TypeID)),
+                                                        &MaterialTechniqueDesc::m_blend,
+                                                        kAttributes_m_blend,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialTechniqueDesc>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Graphics::MaterialTechniqueDesc",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_726163f8fa994077be180d7c050054df(&MaterialTechniqueDesc::Reflect);
+
+    FE::Serialization::ResultCode MaterialTechniqueDesc::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_role", m_role);
+            object.Field("m_permutationKey", m_permutationKey);
+            object.Field("m_vertexShader", m_vertexShader);
+            object.Field("m_amplificationShader", m_amplificationShader);
+            object.Field("m_meshShader", m_meshShader);
+            object.Field("m_pixelShader", m_pixelShader);
+            object.Field("m_shaderDefines", m_shaderDefines);
+            object.Field("m_rasterization", m_rasterization);
+            object.Field("m_depthStencil", m_depthStencil);
+            object.Field("m_blend", m_blend);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialTechniqueDesc::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_role", m_role);
+            object.Field("m_permutationKey", m_permutationKey);
+            object.Field("m_vertexShader", m_vertexShader);
+            object.Field("m_amplificationShader", m_amplificationShader);
+            object.Field("m_meshShader", m_meshShader);
+            object.Field("m_pixelShader", m_pixelShader);
+            object.Field("m_shaderDefines", m_shaderDefines);
+            object.Field("m_rasterization", m_rasterization);
+            object.Field("m_depthStencil", m_depthStencil);
+            object.Field("m_blend", m_blend);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialTechniqueDesc::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x72, 0x61, 0x63, 0xf8, 0xfa, 0x99, 0x40, 0x77, 0xbe, 0x18, 0x0d, 0x7c, 0x05, 0x00, 0x54, 0xdf,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_role", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_role)>());
+            hasher.Update("m_permutationKey", 16);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_permutationKey)>());
+            hasher.Update("m_vertexShader", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_vertexShader)>());
+            hasher.Update("m_amplificationShader", 21);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_amplificationShader)>());
+            hasher.Update("m_meshShader", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_meshShader)>());
+            hasher.Update("m_pixelShader", 13);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_pixelShader)>());
+            hasher.Update("m_shaderDefines", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_shaderDefines)>());
+            hasher.Update("m_rasterization", 15);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_rasterization)>());
+            hasher.Update("m_depthStencil", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_depthStencil)>());
+            hasher.Update("m_blend", 7);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_blend)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialTechniqueDesc::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics
@@ -2067,6 +2714,170 @@ namespace FE::Graphics
 
 namespace FE::Graphics
 {
+    const Rtti::TypeID MaterialAsset::TypeID = Rtti::TypeID{
+        0x8a, 0x68, 0x56, 0x26, 0xdf, 0xe1, 0x4e, 0x08, 0xa4, 0xb0, 0x9b, 0xe0, 0x46, 0xf5, 0x8a, 0x5d,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_8a685626dfe14e08a4b09be046f58a5d(MaterialAsset* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x8a, 0x68, 0x56, 0x26, 0xdf, 0xe1, 0x4e, 0x08,
+                0xa4, 0xb0, 0x9b, 0xe0, 0x46, 0xf5, 0x8a, 0x5d, // FE::Graphics::MaterialAsset (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_8a685626dfe14e08a4b09be046f58a5d()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialAsset::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_8a685626dfe14e08a4b09be046f58a5d();
+    }
+
+    void* FE_VECTORCALL MaterialAsset::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_8a685626dfe14e08a4b09be046f58a5d(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MaterialAsset::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_8a685626dfe14e08a4b09be046f58a5d(const_cast<MaterialAsset*>(this), typeID);
+    }
+    void MaterialAsset::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_8a685626dfe14e08a4b09be046f58a5d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x8a, 0x68, 0x56, 0x26, 0xdf, 0xe1, 0x4e, 0x08,
+            0xa4, 0xb0, 0x9b, 0xe0, 0x46, 0xf5, 0x8a, 0x5d, // FE::Graphics::MaterialAsset
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+            0xa9, 0x08, 0x1c, 0xb4, 0x16, 0x14, 0x47, 0xe0, 0x9e,
+            0x5d, 0xbc, 0x66, 0x7a, 0x52, 0x60, 0x21, // FE::Internal::StringImpl<FE::Internal::BasicStringImpl<FE::Internal::DefaultAllocatorStringStorage<FE::Internal::DynamicStringStorage>>> m_name
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_specializers
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_parameters
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_techniques
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_specializers = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_parameters = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_techniques = {};
+
+        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialAsset::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_specializers",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialAsset::m_specializers,
+                                                        kAttributes_m_specializers,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_parameters",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialAsset::m_parameters,
+                                                        kAttributes_m_parameters,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_techniques",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        &MaterialAsset::m_techniques,
+                                                        kAttributes_m_techniques,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialAsset>(typeInstance,
+                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                            "FE::Graphics::MaterialAsset",
+                                            kBaseClassTypeIDs,
+                                            kAttributes,
+                                            kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_8a685626dfe14e08a4b09be046f58a5d(&MaterialAsset::Reflect);
+
+    FE::Serialization::ResultCode MaterialAsset::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_specializers", m_specializers);
+            object.Field("m_parameters", m_parameters);
+            object.Field("m_techniques", m_techniques);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialAsset::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_specializers", m_specializers);
+            object.Field("m_parameters", m_parameters);
+            object.Field("m_techniques", m_techniques);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialAsset::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x8a, 0x68, 0x56, 0x26, 0xdf, 0xe1, 0x4e, 0x08, 0xa4, 0xb0, 0x9b, 0xe0, 0x46, 0xf5, 0x8a, 0x5d,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update("m_specializers", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_specializers)>());
+            hasher.Update("m_parameters", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_parameters)>());
+            hasher.Update("m_techniques", 12);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_techniques)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialAsset::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
     const Rtti::TypeID MeshInstanceTable::TypeID = Rtti::TypeID{
         0x8a, 0x83, 0x60, 0x70, 0xa7, 0x98, 0x50, 0xfb, 0xa9, 0x3b, 0x6f, 0xe5, 0x84, 0x8b, 0x70, 0xb9,
     };
@@ -2182,29 +2993,23 @@ namespace FE::Graphics::MeshPass
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[8 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[6 * sizeof(Rtti::TypeID)] = {
             0xe9, 0xbb, 0x71, 0xce, 0xa3, 0xb2, 0x4e, 0x7d,
             0xaa, 0x6f, 0xe1, 0xba, 0xb7, 0x16, 0x05, 0xba, // FE::Matrix4x4 m_viewProjection
-            0xe9, 0x45, 0x1d, 0x19, 0xd3, 0xfb, 0x48, 0x45,
-            0x90, 0x27, 0xf1, 0x0a, 0x2f, 0x32, 0x33, 0xaf, // FE::PackedVector4F m_baseColor
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshInstanceTable
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshGroupTable
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_meshLodInfoTable
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_materialInstanceTable
             0x33, 0x4f, 0x07, 0x50, 0x1b, 0x4e, 0x4f, 0x4c,
             0xac, 0x6f, 0x98, 0x53, 0x82, 0xd4, 0xbd, 0x11, // uint32_t m_instanceIndex
-            0x03, 0xd4, 0x03, 0x8a, 0x9e, 0xdf, 0x4d, 0xb4,
-            0xb0, 0xe2, 0x7a, 0xf9, 0x0a, 0xa2, 0xd1, 0xa7, // FE::PackedVector3UInt m_padding
-            0x9b, 0x89, 0x43, 0xc5, 0x64, 0x3c, 0x4f, 0x9b,
-            0x9f, 0x20, 0xf2, 0xa2, 0x82, 0x35, 0x5a, 0xd2, // FE::Vector2Base<unsigned int> m_padding2
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewProjection = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_baseColor = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshInstanceTable = {};
 
@@ -2212,52 +3017,40 @@ namespace FE::Graphics::MeshPass
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_meshLodInfoTable = {};
 
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_materialInstanceTable = {};
+
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_instanceIndex = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_padding2 = {};
-
-        static const festd::array<Rtti::FieldInfo, 8> kFields = {
+        static const festd::array<Rtti::FieldInfo, 6> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewProjection",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &Constants::m_viewProjection,
                                                         kAttributes_m_viewProjection,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_baseColor",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &Constants::m_baseColor,
-                                                        kAttributes_m_baseColor,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshInstanceTable",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
                                                         &Constants::m_meshInstanceTable,
                                                         kAttributes_m_meshInstanceTable,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshGroupTable",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &Constants::m_meshGroupTable,
                                                         kAttributes_m_meshGroupTable,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_meshLodInfoTable",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
                                                         &Constants::m_meshLodInfoTable,
                                                         kAttributes_m_meshLodInfoTable,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_materialInstanceTable",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
+                                                        &Constants::m_materialInstanceTable,
+                                                        kAttributes_m_materialInstanceTable,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndex",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 5 * sizeof(TypeID)),
                                                         &Constants::m_instanceIndex,
                                                         kAttributes_m_instanceIndex,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 6 * sizeof(TypeID)),
-                                                        &Constants::m_padding,
-                                                        kAttributes_m_padding,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_padding2",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 7 * sizeof(TypeID)),
-                                                        &Constants::m_padding2,
-                                                        kAttributes_m_padding2,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -2271,6 +3064,133 @@ namespace FE::Graphics::MeshPass
 
     static Rtti::TypeRegistrar GTypeRegistrar_9565427ffe7249cda99e2a4082d638f7(&Constants::Reflect);
 } // namespace FE::Graphics::MeshPass
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MaterialSpecializerDesc::TypeID = Rtti::TypeID{
+        0xa4, 0xa4, 0x72, 0x48, 0x86, 0xf8, 0x4f, 0xc6, 0xb3, 0x12, 0xa9, 0x27, 0x13, 0x56, 0x8e, 0x55,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_a4a4724886f84fc6b312a92713568e55()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialSpecializerDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_a4a4724886f84fc6b312a92713568e55();
+    }
+
+    void MaterialSpecializerDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_a4a4724886f84fc6b312a92713568e55();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xa4, 0xa4, 0x72, 0x48, 0x86, 0xf8, 0x4f, 0xc6,
+            0xb3, 0x12, 0xa9, 0x27, 0x13, 0x56, 0x8e, 0x55, // FE::Graphics::MaterialSpecializerDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x99, 0xd4, 0x68, 0x40, 0x91, 0x4f, 0x44, 0xe0,
+            0x8d, 0x0e, 0x9c, 0x6f, 0x24, 0x92, 0x80, 0x15, // FE::Env::Name m_name
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_values
+            0x17, 0x41, 0x96, 0xbd, 0x8b, 0xfe, 0x40, 0x49,
+            0xb7, 0x2e, 0x8a, 0x07, 0xad, 0x37, 0x26, 0x59, // int32_t m_defaultValue
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_name = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_values = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_defaultValue = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_name",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &MaterialSpecializerDesc::m_name,
+                                                        kAttributes_m_name,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_values",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &MaterialSpecializerDesc::m_values,
+                                                        kAttributes_m_values,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_defaultValue",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &MaterialSpecializerDesc::m_defaultValue,
+                                                        kAttributes_m_defaultValue,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<MaterialSpecializerDesc>(typeInstance,
+                                                      Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                      "FE::Graphics::MaterialSpecializerDesc",
+                                                      kBaseClassTypeIDs,
+                                                      kAttributes,
+                                                      kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_a4a4724886f84fc6b312a92713568e55(&MaterialSpecializerDesc::Reflect);
+
+    FE::Serialization::ResultCode MaterialSpecializerDesc::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_values", m_values);
+            object.Field("m_defaultValue", m_defaultValue);
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialSpecializerDesc::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+            object.Field("m_name", m_name);
+            object.Field("m_values", m_values);
+            object.Field("m_defaultValue", m_defaultValue);
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialSpecializerDesc::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xa4, 0xa4, 0x72, 0x48, 0x86, 0xf8, 0x4f, 0xc6, 0xb3, 0x12, 0xa9, 0x27, 0x13, 0x56, 0x8e, 0x55,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update("m_name", 6);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_name)>());
+            hasher.Update("m_values", 8);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_values)>());
+            hasher.Update("m_defaultValue", 14);
+            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_defaultValue)>());
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialSpecializerDesc::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::Graphics
 
 
 namespace FE::Graphics::DepthPrepass
@@ -2643,6 +3563,93 @@ namespace FE::Graphics
     }
 
     static Rtti::TypeRegistrar GTypeRegistrar_cfd1e397fc2e4f9b99f34cf67f695b1e(&RendererImpl::Reflect);
+} // namespace FE::Graphics
+
+
+namespace FE::Graphics
+{
+    const Rtti::TypeID MaterialInstanceTable::TypeID = Rtti::TypeID{
+        0xda, 0x93, 0x72, 0x0c, 0xb6, 0xa5, 0x58, 0xc2, 0x98, 0x59, 0xe0, 0xa2, 0xbb, 0x3c, 0xa5, 0xf8,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_da93720cb6a558c29859e0a2bb3ca5f8(MaterialInstanceTable* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+                0xda, 0x93, 0x72, 0x0c, 0xb6, 0xa5, 0x58, 0xc2,
+                0x98, 0x59, 0xe0, 0xa2, 0xbb, 0x3c, 0xa5, 0xf8, // FE::Graphics::MaterialInstanceTable (this type)
+                0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+                0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+                0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+                0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 1 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Graphics::DB::TableBase*>(thisPtr);
+            id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs + 2 * sizeof(Rtti::TypeID)));
+            mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return static_cast<FE::Memory::RefCountedObjectBase*>(thisPtr);
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_da93720cb6a558c29859e0a2bb3ca5f8()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialInstanceTable::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_da93720cb6a558c29859e0a2bb3ca5f8();
+    }
+
+    void* FE_VECTORCALL MaterialInstanceTable::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_da93720cb6a558c29859e0a2bb3ca5f8(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MaterialInstanceTable::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_da93720cb6a558c29859e0a2bb3ca5f8(const_cast<MaterialInstanceTable*>(this), typeID);
+    }
+    void MaterialInstanceTable::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_da93720cb6a558c29859e0a2bb3ca5f8();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xda, 0x93, 0x72, 0x0c, 0xb6, 0xa5, 0x58, 0xc2,
+            0x98, 0x59, 0xe0, 0xa2, 0xbb, 0x3c, 0xa5, 0xf8, // FE::Graphics::MaterialInstanceTable
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 2 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {
+            0xb0, 0xb2, 0x92, 0x17, 0x3d, 0x30, 0x4b, 0x35,
+            0x80, 0x26, 0x9d, 0x0e, 0xb9, 0x1b, 0x8f, 0xd2, // FE::Graphics::DB::TableBase
+            0xb4, 0xfa, 0x5c, 0x63, 0x69, 0xc0, 0x46, 0x66,
+            0x8a, 0x92, 0x72, 0x6f, 0x07, 0x0d, 0x76, 0x9b, // FE::Memory::RefCountedObjectBase
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<MaterialInstanceTable>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::Graphics::MaterialInstanceTable",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_da93720cb6a558c29859e0a2bb3ca5f8(&MaterialInstanceTable::Reflect);
 } // namespace FE::Graphics
 
 

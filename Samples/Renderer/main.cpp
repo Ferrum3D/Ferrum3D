@@ -4,6 +4,7 @@
 #include <Core/Math/Matrix4x4.h>
 #include <Core/Threading/Thread.h>
 #include <Framework/Application/Application.h>
+#include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Assets/Streamers.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/DeviceFactory.h>
@@ -11,6 +12,7 @@
 #include <Graphics/Core/PipelineVariantSet.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
+#include <Graphics/Materials/MaterialInstance.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/OpaquePass.h>
@@ -21,6 +23,7 @@ using namespace FE::Graphics;
 
 inline constexpr const char* kExampleName = "Ferrum3D - Renderer Sample";
 const IO::AssetID kBunnyModelAssetId("4B01B878-5EEF-4D6A-AD04-FC9AF1F78416");
+const IO::AssetID kBunnyMaterialAssetId("EFA88960-2315-407E-BAAC-F88DFDF6FFBC");
 
 namespace
 {
@@ -33,15 +36,19 @@ namespace
             m_scene.Reset();
             m_view.Reset();
             m_viewport.Reset();
-            m_pipelineFactory.Reset();
+
+            m_materialInstance.Reset();
+            m_materialRequest.Reset();
 
             m_mesh.Reset();
             m_modelRequest.Reset();
             IO::AssetManager::Shutdown();
 
+            Memory::DefaultDelete(m_materialStreamer);
             Memory::DefaultDelete(m_textureStreamer);
             Memory::DefaultDelete(m_meshStreamer);
 
+            m_pipelineFactory.Reset();
             m_device.Reset();
             Renderer::Shutdown();
             Core::DeviceFactory::Shutdown();
@@ -81,10 +88,14 @@ namespace
             m_viewport->Init(Core::ViewportDesc::Create(clientRect, m_mainWindow->GetNativeHandle().m_value));
 
             m_pipelineFactory = m_device->CreatePipelineFactory(renderer.GetDescriptorManager());
+            m_scene = renderer.CreateScene();
+            m_materialStreamer = Memory::DefaultNew<MaterialStreamer>(renderer.GetMaterialParameterAllocator(),
+                                                                      renderer.GetDescriptorManager(),
+                                                                      m_pipelineFactory.Get());
+            IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MaterialInstanceAsset>(), m_materialStreamer);
             Core::CompileGlobalPipelineSets(m_pipelineFactory.Get());
             Core::WaitForGlobalPipelineSets();
 
-            m_scene = renderer.CreateScene();
             m_scene->GetModules().Add<MeshSceneModule>();
             m_view = m_scene->CreateView();
             m_view->GetModules().Add<DepthPrepass::ViewModule>();
@@ -112,6 +123,18 @@ namespace
             m_mesh = model->m_meshes[0].GetAssetHandle().Read();
             FE_Assert(m_mesh);
 
+            m_materialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kBunnyMaterialAssetId));
+            while (!m_materialRequest.IsCompleted())
+            {
+                IO::AssetManager::Tick();
+                Threading::Sleep(1);
+            }
+
+            FE_Assert(m_materialRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load bunny material instance");
+            m_materialInstance = IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
+            FE_Assert(m_materialInstance && m_materialInstance->m_runtime);
+            m_instanceParameters = m_materialInstance->m_runtime->AllocateInstanceParameters();
+
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
 
             MeshBatchDesc batchDesc;
@@ -122,8 +145,9 @@ namespace
             MeshInstanceDesc instanceDesc;
             instanceDesc.m_asset = m_mesh.Get();
             instanceDesc.m_batch = m_batch;
-            instanceDesc.m_transform = Matrix4x4::RotationX(Constants::kPI * 0.5f);
-            instanceDesc.m_transform *= Matrix4x4::RotationY(Constants::kPI);
+            instanceDesc.m_material = m_materialInstance->m_runtime;
+            instanceDesc.m_instanceData = m_instanceParameters.m_devicePointer;
+            instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI);
 
             m_meshInstance = meshSceneModule.CreateInstance(instanceDesc);
         }
@@ -149,7 +173,11 @@ namespace
         Rc<View> m_view;
 
         IO::AssetRequest m_modelRequest;
+        IO::AssetRequest m_materialRequest;
         IO::AssetRead<MeshAsset> m_mesh;
+        IO::AssetRead<MaterialInstanceAsset> m_materialInstance;
+        MaterialParameterAllocator::Allocation m_instanceParameters;
+        MaterialStreamer* m_materialStreamer = nullptr;
         MeshStreamer* m_meshStreamer = nullptr;
         TextureStreamer* m_textureStreamer = nullptr;
         MeshBatch* m_batch = nullptr;

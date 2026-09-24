@@ -66,5 +66,6 @@ namespace FE::Graphics::Core
 
         virtual GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineRequest& request) = 0;
         virtual ComputePipeline* CreateComputePipeline(const ComputePipelineRequest& request) = 0;
+        virtual ShaderLibrary* GetShaderLibrary() const = 0;
     };
 } // namespace FE::Graphics::Core

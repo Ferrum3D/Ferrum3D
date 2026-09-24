@@ -6,5 +6,6 @@
 #pragma once
 
 struct MeshLodInfoTable;
+struct MaterialInstanceTable;
 struct MeshGroupTable;
 struct MeshInstanceTable;

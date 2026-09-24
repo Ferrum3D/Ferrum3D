@@ -278,14 +278,16 @@ namespace FE::Graphics::Vulkan
             {
                 if (rootConstants.m_byteSize > 0)
                 {
-                    // HACK: assume VK_SHADER_STAGE_ALL always works.
-                    if (!pushConstantRanges.empty())
-                        break;
-
-                    VkPushConstantRange& range = pushConstantRanges.push_back();
-                    range.size = rootConstants.m_byteSize;
-                    range.offset = rootConstants.m_offset;
-                    range.stageFlags = VK_SHADER_STAGE_ALL;
+                    if (pushConstantRanges.empty())
+                    {
+                        VkPushConstantRange& range = pushConstantRanges.push_back();
+                        range.size = 0;
+                        range.offset = rootConstants.m_offset;
+                        range.stageFlags = VK_SHADER_STAGE_ALL;
+                    }
+                    FE_Assert(pushConstantRanges.front().offset == rootConstants.m_offset);
+                    pushConstantRanges.front().size =
+                        Math::Max(pushConstantRanges.front().size, AlignUp(rootConstants.m_byteSize, 16u));
                 }
             }
         }

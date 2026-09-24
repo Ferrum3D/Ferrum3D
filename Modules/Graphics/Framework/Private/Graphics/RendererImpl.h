@@ -3,6 +3,7 @@
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
+#include <Graphics/Materials/ParameterAllocator.h>
 #include <Graphics/Renderer.h>
 #include <festd/vector.h>
 #include <memory>
@@ -23,6 +24,7 @@ namespace FE::Graphics
         Core::AsyncCopyQueue* GetAsyncCopyQueue() const override;
         Core::ResourcePool* GetResourcePool() const override;
         Core::DescriptorManager* GetDescriptorManager() const override;
+        MaterialParameterAllocator* GetMaterialParameterAllocator() const override;
 
         [[nodiscard]] DB::Database* GetDatabase() const
         {
@@ -45,6 +47,7 @@ namespace FE::Graphics
         Rc<Core::FrameGraph> m_frameGraph;
 
         festd::unique_ptr<DB::Database> m_database;
+        festd::unique_ptr<MaterialParameterAllocator> m_materialParameters;
         festd::vector<Rc<Scene>> m_scenes;
         Rc<Core::Device> m_device;
         Rc<Core::Texture> m_mainColorTarget;

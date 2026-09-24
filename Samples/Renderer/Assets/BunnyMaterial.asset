@@ -1,0 +1,38 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0x9322e5a965c41a4",
+    "$value": {
+        "m_sourcePath": "Bunny.matinst.luau",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "MaterialInstance/Primary",
+                "m_name": "MaterialInstance",
+                "m_assetId": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC",
+                "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                "m_buildSettings": {
+                    "m_typeId": "42707CCB-1248-4ABB-A6A8-067B1D2D6A0B",
+                    "m_value": {}
+                },
+                "m_dependencies": [
+                    {
+                        "m_assetId": "A56650D7-CD26-418C-B02C-514D54430555",
+                        "m_expectedTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                        "m_kind": 0
+                    },
+                    {
+                        "m_assetId": "5C9F4230-E3BD-447C-8344-407F710CF0CD",
+                        "m_expectedTypeId": "78A8F995-B51C-42E0-856D-922999074183",
+                        "m_kind": 0
+                    }
+                ],
+                "m_lastBuildKey": "45BD7E62-BEAB-49D0-B09C-AC56D08115B2",
+                "m_builtArtifactId": "2B7791F5-35C6-482D-B08B-DADF26F4A0A1",
+                "m_isRemoved": false
+            }
+        ],
+        "m_embeddedSourceData": []
+    }
+}

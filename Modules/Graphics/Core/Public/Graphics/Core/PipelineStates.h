@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Core/Base/BaseMath.h>
+#include <Graphics/Core/Base.h>
 
 namespace FE::Graphics::Core
 {
@@ -94,6 +94,9 @@ namespace FE::Graphics::Core
         CullingModeFlags m_cullMode : 16;
         PolygonMode m_polyMode : 16;
 
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const RasterizationState& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, RasterizationState& value);
+
         [[nodiscard]] uint64_t GetHash() const
         {
             return std::bit_cast<uint32_t>(*this);
@@ -113,6 +116,9 @@ namespace FE::Graphics::Core
         uint32_t m_depthTestEnabled : 1;
         uint32_t m_depthWriteEnabled : 1;
         uint32_t m_stencilTestEnabled : 1;
+
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const DepthStencilState& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, DepthStencilState& value);
 
         [[nodiscard]] uint64_t GetHash() const
         {
@@ -143,6 +149,10 @@ namespace FE::Graphics::Core
         BlendOperation m_alphaBlendOp : 3;
         uint32_t m_blendEnabled : 1;
 
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context,
+                                                   const TargetColorBlending& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, TargetColorBlending& value);
+
         [[nodiscard]] uint64_t GetHash() const
         {
             return std::bit_cast<uint32_t>(*this);
@@ -161,6 +171,9 @@ namespace FE::Graphics::Core
     {
         TargetColorBlending m_targetBlendStates[Limits::Pipeline::kMaxColorAttachments];
         bool m_enableIndependentBlend = false;
+
+        static Serialization::ResultCode Serialize(Serialization::SerializationContext& context, const ColorBlendState& value);
+        static Serialization::ResultCode Deserialize(Serialization::DeserializationContext& context, ColorBlendState& value);
 
         [[nodiscard]] uint64_t GetHash(const uint32_t renderTargetCount) const
         {
@@ -183,9 +196,14 @@ namespace FE::Graphics::Core
 
         static ColorBlendState Create(const TargetColorBlending colorBlend)
         {
-            ColorBlendState state;
+            ColorBlendState state{};
             state.m_targetBlendStates[0] = colorBlend;
             return state;
         }
     };
 } // namespace FE::Graphics::Core
+
+FE_RTTI_Reflect(FE::Graphics::Core::RasterizationState, "B3766670-7B32-44EF-907F-70B8937A0E52");
+FE_RTTI_Reflect(FE::Graphics::Core::DepthStencilState, "737828EA-5FC4-4EFA-8770-890BCAD69F9D");
+FE_RTTI_Reflect(FE::Graphics::Core::TargetColorBlending, "BFD8B468-AF88-4BF5-B0E0-595576248B50");
+FE_RTTI_Reflect(FE::Graphics::Core::ColorBlendState, "E36F3AA9-F99D-4839-871F-985669334AED");

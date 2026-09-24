@@ -21,6 +21,7 @@ namespace FE::Graphics::Vulkan
 
         Core::GraphicsPipeline* CreateGraphicsPipeline(const Core::GraphicsPipelineRequest& request) override;
         Core::ComputePipeline* CreateComputePipeline(const Core::ComputePipelineRequest& request) override;
+        Core::ShaderLibrary* GetShaderLibrary() const override;
 
     private:
         void DestroyObject() override

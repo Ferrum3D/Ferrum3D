@@ -3,6 +3,7 @@
 #include <Shaders/Tables/MeshGroupTable.hlsli>
 #include <Shaders/Tables/MeshInstanceTable.hlsli>
 #include <Shaders/Tables/MeshLodInfoTable.hlsli>
+#include <Shaders/Tables/MaterialInstanceTable.hlsli>
 
 #include <Shaders/Passes/MeshPass/MeshPass.h>
 
@@ -32,7 +33,7 @@ struct PixelAttributes
     float4 m_pos : SV_Position;
     float3 m_worldPos : POSITION;
     float3 m_normal : NORMAL;
-    uint m_meshletIndex : DEBUG_INDEX;
+    float2 m_uv : TEXCOORD0;
 };
 
 struct MeshDrawData
@@ -72,7 +73,7 @@ PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t verte
     output.m_pos = mul(worldPosition, GConstants.m_viewProjection);
     output.m_worldPos = worldPosition.xyz;
     output.m_normal = mul(input.UnpackNormal(), normalMatrix);
-    output.m_meshletIndex = 0;
+    output.m_uv = input.UnpackUv();
     return output;
 }
 

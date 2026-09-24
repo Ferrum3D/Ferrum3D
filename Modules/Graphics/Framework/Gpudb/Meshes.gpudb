@@ -10,14 +10,21 @@ table MeshLodInfoTable
     Core::MeshLodInfo m_info;
 }
 
+table MaterialInstanceTable
+{
+	BufferPointer m_materialParameters;
+}
+
 table MeshGroupTable
 {
     BufferPointer m_geometry;
 	DB::Slice<MeshLodInfoTable> m_lods;
+	DB::Ref<MaterialInstanceTable> m_materialInstance;
 }
 
 table MeshInstanceTable
 {
 	DB::Ref<MeshGroupTable> m_meshGroup;
 	float4x4 m_transform;
+	BufferPointer m_instanceData;
 }

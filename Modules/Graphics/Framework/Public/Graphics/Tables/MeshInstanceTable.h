@@ -13,10 +13,12 @@ namespace FE::Graphics
     {
         FE_RTTI("8A836070-A798-50FB-A93B-6FE5848B70B9");
 
-        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float4x4));
+        static constexpr uint32_t kRowsPerPage =
+            DB::kTablePageSize / (sizeof(DB::Ref<MeshGroupTable>) + sizeof(float4x4) + sizeof(BufferPointer));
 
         static constexpr uint32_t kOffset_m_meshGroup = 0;
         static constexpr uint32_t kOffset_m_transform = kOffset_m_meshGroup + sizeof(DB::Ref<MeshGroupTable>) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_instanceData = kOffset_m_transform + sizeof(float4x4) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
@@ -24,12 +26,14 @@ namespace FE::Graphics
         {
             DB::ElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
             DB::ElementHandle<float4x4, kOffset_m_transform> m_transform;
+            DB::ElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
         };
 
         struct RWRow final
         {
             DB::RWElementHandle<DB::Ref<MeshGroupTable>, kOffset_m_meshGroup> m_meshGroup;
             DB::RWElementHandle<float4x4, kOffset_m_transform> m_transform;
+            DB::RWElementHandle<BufferPointer, kOffset_m_instanceData> m_instanceData;
         };
 
         using Instance = BufferPointer;
@@ -50,6 +54,7 @@ namespace FE::Graphics
             const RWRow row = WriteRow(rowIndex);
             row.m_meshGroup.Construct();
             row.m_transform.Construct();
+            row.m_instanceData.Construct();
             return DB::Ref<MeshInstanceTable>{ rowIndex };
         }
 
@@ -62,6 +67,7 @@ namespace FE::Graphics
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_meshGroup.Construct();
                 row.m_transform.Construct();
+                row.m_instanceData.Construct();
             }
 
             return DB::Slice<MeshInstanceTable>{ range.m_offset, range.m_size };
@@ -88,6 +94,7 @@ namespace FE::Graphics
             Row row;
             row.m_meshGroup.Setup(storage, localRowIndex);
             row.m_transform.Setup(storage, localRowIndex);
+            row.m_instanceData.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -108,6 +115,7 @@ namespace FE::Graphics
             RWRow row;
             row.m_meshGroup.Setup(storage, localRowIndex);
             row.m_transform.Setup(storage, localRowIndex);
+            row.m_instanceData.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -147,6 +155,23 @@ namespace FE::Graphics
             std::byte* storage = page->GetHostStorage();
 
             auto* destinationData = reinterpret_cast<float4x4*>(storage + kOffset_m_transform) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn(const DB::Slice<MeshInstanceTable> destination, const festd::span<const BufferPointer> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
+                      "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+
+            auto* destinationData = reinterpret_cast<BufferPointer*>(storage + kOffset_m_instanceData) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

@@ -13,11 +13,13 @@ namespace FE::Graphics
     {
         FE_RTTI("03321E1E-0A92-5203-B75C-027838609287");
 
-        static constexpr uint32_t kRowsPerPage =
-            DB::kTablePageSize / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>));
+        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize
+            / (sizeof(BufferPointer) + sizeof(DB::Slice<MeshLodInfoTable>) + sizeof(DB::Ref<MaterialInstanceTable>));
 
         static constexpr uint32_t kOffset_m_geometry = 0;
         static constexpr uint32_t kOffset_m_lods = kOffset_m_geometry + sizeof(BufferPointer) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_materialInstance =
+            kOffset_m_lods + sizeof(DB::Slice<MeshLodInfoTable>) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
@@ -25,12 +27,14 @@ namespace FE::Graphics
         {
             DB::ElementHandle<BufferPointer, kOffset_m_geometry> m_geometry;
             DB::ElementHandle<DB::Slice<MeshLodInfoTable>, kOffset_m_lods> m_lods;
+            DB::ElementHandle<DB::Ref<MaterialInstanceTable>, kOffset_m_materialInstance> m_materialInstance;
         };
 
         struct RWRow final
         {
             DB::RWElementHandle<BufferPointer, kOffset_m_geometry> m_geometry;
             DB::RWElementHandle<DB::Slice<MeshLodInfoTable>, kOffset_m_lods> m_lods;
+            DB::RWElementHandle<DB::Ref<MaterialInstanceTable>, kOffset_m_materialInstance> m_materialInstance;
         };
 
         using Instance = BufferPointer;
@@ -51,6 +55,7 @@ namespace FE::Graphics
             const RWRow row = WriteRow(rowIndex);
             row.m_geometry.Construct();
             row.m_lods.Construct();
+            row.m_materialInstance.Construct();
             return DB::Ref<MeshGroupTable>{ rowIndex };
         }
 
@@ -63,6 +68,7 @@ namespace FE::Graphics
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_geometry.Construct();
                 row.m_lods.Construct();
+                row.m_materialInstance.Construct();
             }
 
             return DB::Slice<MeshGroupTable>{ range.m_offset, range.m_size };
@@ -89,6 +95,7 @@ namespace FE::Graphics
             Row row;
             row.m_geometry.Setup(storage, localRowIndex);
             row.m_lods.Setup(storage, localRowIndex);
+            row.m_materialInstance.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -109,6 +116,7 @@ namespace FE::Graphics
             RWRow row;
             row.m_geometry.Setup(storage, localRowIndex);
             row.m_lods.Setup(storage, localRowIndex);
+            row.m_materialInstance.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -148,6 +156,25 @@ namespace FE::Graphics
             std::byte* storage = page->GetHostStorage();
 
             auto* destinationData = reinterpret_cast<DB::Slice<MeshLodInfoTable>*>(storage + kOffset_m_lods) + localRowIndex;
+            festd::copy(source, destinationData);
+        }
+
+        void CopyColumn(const DB::Slice<MeshGroupTable> destination,
+                        const festd::span<const DB::Ref<MaterialInstanceTable>> source)
+        {
+            FE_Assert(destination.m_count == source.size());
+
+            const uint32_t pageIndex = destination.m_rowIndex / kRowsPerPage;
+            const uint32_t localRowIndex = destination.m_rowIndex % kRowsPerPage;
+            FE_Assert(pageIndex == (destination.m_rowIndex + destination.m_count - 1) / kRowsPerPage,
+                      "The whole range must fit in a single page");
+
+            DB::StoragePage* page = m_pages[pageIndex];
+            m_database->MarkPageDirty(page);
+            std::byte* storage = page->GetHostStorage();
+
+            auto* destinationData =
+                reinterpret_cast<DB::Ref<MaterialInstanceTable>*>(storage + kOffset_m_materialInstance) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

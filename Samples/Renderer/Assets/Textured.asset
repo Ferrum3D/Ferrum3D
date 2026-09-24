@@ -1,0 +1,27 @@
+{
+    "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
+    "$typename": "FE::AssetBuilder::AssetFile",
+    "$version": 0,
+    "$schema": "0x9322e5a965c41a4",
+    "$value": {
+        "m_sourcePath": "Textured.mat.luau",
+        "m_sourceDependencies": [],
+        "m_artifacts": [
+            {
+                "m_productKey": "Material/Primary",
+                "m_name": "Material",
+                "m_assetId": "A56650D7-CD26-418C-B02C-514D54430555",
+                "m_assetTypeId": "8A685626-DFE1-4E08-A4B0-9BE046F58A5D",
+                "m_buildSettings": {
+                    "m_typeId": "A5F968E2-282C-4364-957B-DC52CC51014D",
+                    "m_value": {}
+                },
+                "m_dependencies": [],
+                "m_lastBuildKey": "3EE5E8E5-6A26-441E-A5D4-EC56B8B01865",
+                "m_builtArtifactId": "7D34328C-64F6-4B65-917E-B75924FD358B",
+                "m_isRemoved": false
+            }
+        ],
+        "m_embeddedSourceData": []
+    }
+}

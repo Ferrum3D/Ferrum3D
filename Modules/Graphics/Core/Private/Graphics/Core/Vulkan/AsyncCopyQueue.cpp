@@ -419,6 +419,7 @@ namespace FE::Graphics::Vulkan
 
                         // Transition the image to transfer destination
                         Core::TextureBarrierDesc barrierDesc;
+                        barrierDesc.m_texture = texture;
                         barrierDesc.m_syncBefore = subresourceState.m_sync;
                         barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kCopy;
                         barrierDesc.m_accessBefore = subresourceState.m_access;

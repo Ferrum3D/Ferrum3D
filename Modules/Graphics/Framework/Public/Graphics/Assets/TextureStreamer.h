@@ -21,7 +21,7 @@ namespace FE::Graphics
         TextureStreamer(const TextureStreamer&) = delete;
         TextureStreamer& operator=(const TextureStreamer&) = delete;
 
-        void SetResidentMip(TextureAsset& asset, uint32_t mipIndex);
+        void SetResidentMip(const TextureAsset& asset, uint32_t mipIndex);
 
         IO::AssetFinalizeResult FinalizeAssetLoading(IO::AssetSlot& assetSlot, const IO::ArtifactRecord& artifact,
                                                      void* candidate) override;

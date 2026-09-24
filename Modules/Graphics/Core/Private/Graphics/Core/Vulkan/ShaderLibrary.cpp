@@ -65,6 +65,14 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    const Core::ShaderReflection* ShaderLibrary::GetCompiledReflection(const Env::Name name, const Env::Name defines)
+    {
+        const Core::ShaderHandle shader = GetShader(name, defines);
+        GetCompletionWaitGroup(shader)->Wait();
+        return GetReflection(shader);
+    }
+
+
     void ShaderLibrary::CompileShader(const uint32_t shaderIndex)
     {
         std::unique_lock lock{ m_lock };

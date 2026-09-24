@@ -53,6 +53,12 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    Core::ShaderLibrary* PipelineFactory::GetShaderLibrary() const
+    {
+        return m_shaderLibrary.Get();
+    }
+
+
     Core::GraphicsPipeline* PipelineFactory::CreateGraphicsPipeline(const Core::GraphicsPipelineRequest& request)
     {
         FE_PROFILER_ZONE();

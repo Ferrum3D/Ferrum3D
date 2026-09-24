@@ -6,6 +6,7 @@
 #include <Core/RTTI/ReflectionContext.h>
 
 #include <AssetBuilder/AssetFile.h>
+#include <AssetBuilder/MaterialProcessor.h>
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/TextureProcessor.h>
 
@@ -257,6 +258,115 @@ namespace FE::AssetBuilder
     }
 
     uint32_t TextureBuildSettings::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::AssetBuilder
+
+
+namespace FE::AssetBuilder
+{
+    const Rtti::TypeID MaterialInstanceBuildSettings::TypeID = Rtti::TypeID{
+        0x42, 0x70, 0x7c, 0xcb, 0x12, 0x48, 0x4a, 0xbb, 0xa6, 0xa8, 0x06, 0x7b, 0x1d, 0x2d, 0x6a, 0x0b,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL
+        RTTI_TryCastImpl_42707ccb12484abba6a8067b1d2d6a0b(MaterialInstanceBuildSettings* thisPtr, const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0x42, 0x70, 0x7c, 0xcb, 0x12, 0x48, 0x4a, 0xbb,
+                0xa6, 0xa8, 0x06, 0x7b, 0x1d, 0x2d, 0x6a, 0x0b, // FE::AssetBuilder::MaterialInstanceBuildSettings (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_42707ccb12484abba6a8067b1d2d6a0b()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialInstanceBuildSettings::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_42707ccb12484abba6a8067b1d2d6a0b();
+    }
+
+    void* FE_VECTORCALL MaterialInstanceBuildSettings::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_42707ccb12484abba6a8067b1d2d6a0b(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MaterialInstanceBuildSettings::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_42707ccb12484abba6a8067b1d2d6a0b(const_cast<MaterialInstanceBuildSettings*>(this), typeID);
+    }
+    void MaterialInstanceBuildSettings::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_42707ccb12484abba6a8067b1d2d6a0b();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x42, 0x70, 0x7c, 0xcb, 0x12, 0x48, 0x4a, 0xbb,
+            0xa6, 0xa8, 0x06, 0x7b, 0x1d, 0x2d, 0x6a, 0x0b, // FE::AssetBuilder::MaterialInstanceBuildSettings
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<MaterialInstanceBuildSettings>(typeInstance,
+                                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                            "FE::AssetBuilder::MaterialInstanceBuildSettings",
+                                                            kBaseClassTypeIDs,
+                                                            kAttributes,
+                                                            kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_42707ccb12484abba6a8067b1d2d6a0b(&MaterialInstanceBuildSettings::Reflect);
+
+    FE::Serialization::ResultCode MaterialInstanceBuildSettings::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialInstanceBuildSettings::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialInstanceBuildSettings::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0x42, 0x70, 0x7c, 0xcb, 0x12, 0x48, 0x4a, 0xbb, 0xa6, 0xa8, 0x06, 0x7b, 0x1d, 0x2d, 0x6a, 0x0b,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialInstanceBuildSettings::RTTI_GetSerializationVersion()
     {
         return 0;
     }
@@ -804,6 +914,115 @@ namespace FE::AssetBuilder
     }
 
     uint32_t ModelBuildSettings::RTTI_GetSerializationVersion()
+    {
+        return 0;
+    }
+
+} // namespace FE::AssetBuilder
+
+
+namespace FE::AssetBuilder
+{
+    const Rtti::TypeID MaterialBuildSettings::TypeID = Rtti::TypeID{
+        0xa5, 0xf9, 0x68, 0xe2, 0x28, 0x2c, 0x43, 0x64, 0x95, 0x7b, 0xdc, 0x52, 0xcc, 0x51, 0x01, 0x4d,
+    };
+
+    namespace
+    {
+        FE_FORCE_INLINE void* FE_VECTORCALL RTTI_TryCastImpl_a5f968e2282c4364957bdc52cc51014d(MaterialBuildSettings* thisPtr,
+                                                                                              const Rtti::TypeID typeID)
+        {
+            static constexpr alignas(16) uint8_t kBaseClassTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+                0xa5, 0xf9, 0x68, 0xe2, 0x28, 0x2c, 0x43, 0x64,
+                0x95, 0x7b, 0xdc, 0x52, 0xcc, 0x51, 0x01, 0x4d, // FE::AssetBuilder::MaterialBuildSettings (this type)
+            };
+
+            __m128i id = _mm_loadu_si128(reinterpret_cast<const __m128i*>(kBaseClassTypeIDs));
+            __m128i mask = _mm_cmpeq_epi8(id, typeID.m_simdVector);
+            if (_mm_movemask_epi8(mask) == 0xffff)
+                return thisPtr;
+
+            return nullptr;
+        }
+        Rtti::Type& RTTI_GetMutableType_a5f968e2282c4364957bdc52cc51014d()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& MaterialBuildSettings::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_a5f968e2282c4364957bdc52cc51014d();
+    }
+
+    void* FE_VECTORCALL MaterialBuildSettings::RTTI_TryCast(const Rtti::TypeID typeID)
+    {
+        return RTTI_TryCastImpl_a5f968e2282c4364957bdc52cc51014d(this, typeID);
+    }
+
+    const void* FE_VECTORCALL MaterialBuildSettings::RTTI_TryCast(const Rtti::TypeID typeID) const
+    {
+        return RTTI_TryCastImpl_a5f968e2282c4364957bdc52cc51014d(const_cast<MaterialBuildSettings*>(this), typeID);
+    }
+    void MaterialBuildSettings::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_a5f968e2282c4364957bdc52cc51014d();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xa5, 0xf9, 0x68, 0xe2, 0x28, 0x2c, 0x43, 0x64,
+            0x95, 0x7b, 0xdc, 0x52, 0xcc, 0x51, 0x01, 0x4d, // FE::AssetBuilder::MaterialBuildSettings
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static const festd::array<Rtti::FieldInfo, 0> kFields = {};
+
+        context.ReflectClass<MaterialBuildSettings>(typeInstance,
+                                                    Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                                    "FE::AssetBuilder::MaterialBuildSettings",
+                                                    kBaseClassTypeIDs,
+                                                    kAttributes,
+                                                    kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_a5f968e2282c4364957bdc52cc51014d(&MaterialBuildSettings::Reflect);
+
+    FE::Serialization::ResultCode MaterialBuildSettings::Serialize(FE::Serialization::SerializationContext& context) const
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    FE::Serialization::ResultCode MaterialBuildSettings::Deserialize(FE::Serialization::DeserializationContext& context)
+    {
+        if (auto object = context.BeginObject())
+        {
+        }
+
+        return context.GetResultCode();
+    }
+
+    uint64_t MaterialBuildSettings::RTTI_GetSerializationSchemaHash()
+    {
+        static const uint64_t kHash = [] {
+            static constexpr uint8_t kTypeIDBytes[] = {
+                0xa5, 0xf9, 0x68, 0xe2, 0x28, 0x2c, 0x43, 0x64, 0x95, 0x7b, 0xdc, 0x52, 0xcc, 0x51, 0x01, 0x4d,
+            };
+            FE::Hasher hasher;
+            hasher.Update(kTypeIDBytes, sizeof(kTypeIDBytes));
+            hasher.Update(0);
+            return hasher.Finalize();
+        }();
+
+        return kHash;
+    }
+
+    uint32_t MaterialBuildSettings::RTTI_GetSerializationVersion()
     {
         return 0;
     }

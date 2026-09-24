@@ -4,6 +4,7 @@
 
 namespace FE::Graphics::Core
 {
+    struct ShaderReflection;
     struct ShaderHandle final : public TypedHandle<ShaderHandle, uint32_t>
     {
     };
@@ -14,5 +15,6 @@ namespace FE::Graphics::Core
         FE_RTTI("BE44FCFD-5540-49F6-AECE-569BE88A8450");
 
         virtual ShaderHandle GetShader(Env::Name name, Env::Name defines) = 0;
+        virtual const ShaderReflection* GetCompiledReflection(Env::Name name, Env::Name defines) = 0;
     };
 } // namespace FE::Graphics::Core

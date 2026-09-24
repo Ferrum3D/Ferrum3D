@@ -1,6 +1,7 @@
 #include <AssetBuilder/ArtifactWriter.h>
 #include <AssetBuilder/AssetFile.h>
 #include <AssetBuilder/AssetPipeline.h>
+#include <AssetBuilder/MaterialProcessor.h>
 #include <AssetBuilder/ModelImporter.h>
 #include <AssetBuilder/ModelProcessor.h>
 #include <AssetBuilder/TextureProcessor.h>
@@ -9,7 +10,9 @@
 #include <Core/IO/FileStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Serialization/BinarySerialization.h>
+#include <Core/Serialization/JsonSerialization.h>
 #include <Graphics/Assets/Assets.h>
+#include <Graphics/Assets/MaterialAssets.h>
 #include <bcrypt.h>
 #include <festd/unordered_map.h>
 
@@ -345,6 +348,71 @@ namespace FE::AssetBuilder
         }
 
 
+        bool ImportMaterial(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& assetFilePath)
+        {
+            festd::vector<std::byte> sourceBytes;
+            if (!ReadFile(sourcePath, sourceBytes) || !ValidateMaterialSource(sourcePath, sourceBytes))
+                return false;
+
+            AssetFile previous;
+            const AssetFile* previousPtr;
+            if (!LoadPreviousAssetFile(assetFilePath, previous, previousPtr))
+                return false;
+
+            AssetFile assetFile;
+            assetFile.m_sourcePath = sourceReference;
+            AssetFileArtifact& material = assetFile.m_artifacts.emplace_back();
+            if (!InitializeArtifact(material, previousPtr, "Material/Primary", "Material", Rtti::GetTypeID<MaterialAsset>()))
+                return false;
+            material.m_buildSettings.Emplace<MaterialBuildSettings>();
+            AppendRemovedArtifacts(assetFile, previousPtr);
+            return SaveAssetFile(assetFilePath, assetFile);
+        }
+
+
+        void AddExternalDependency(AssetFileArtifact& artifact, const IO::AssetID assetId, const Rtti::TypeID typeId)
+        {
+            AssetFileDependency& dependency = artifact.m_dependencies.emplace_back();
+            dependency.m_assetId = assetId;
+            dependency.m_expectedTypeId = typeId;
+        }
+
+
+        bool ImportMaterialInstance(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& assetFilePath)
+        {
+            festd::vector<std::byte> sourceBytes;
+            if (!ReadFile(sourcePath, sourceBytes))
+                return false;
+            MaterialInstanceAsset sourceInstance;
+            if (!ParseMaterialInstanceSource(sourcePath, sourceBytes, sourceInstance))
+                return false;
+
+            AssetFile previous;
+            const AssetFile* previousPtr;
+            if (!LoadPreviousAssetFile(assetFilePath, previous, previousPtr))
+                return false;
+
+            AssetFile assetFile;
+            assetFile.m_sourcePath = sourceReference;
+            AssetFileArtifact& instance = assetFile.m_artifacts.emplace_back();
+            if (!InitializeArtifact(instance,
+                                    previousPtr,
+                                    "MaterialInstance/Primary",
+                                    "MaterialInstance",
+                                    Rtti::GetTypeID<MaterialInstanceAsset>()))
+                return false;
+            instance.m_buildSettings.Emplace<MaterialInstanceBuildSettings>();
+            AddExternalDependency(instance, sourceInstance.m_material.GetAssetID(), Rtti::GetTypeID<MaterialAsset>());
+            for (const MaterialParameterValue& parameter : sourceInstance.m_parameters)
+            {
+                if (parameter.m_texture.GetAssetID().IsValid())
+                    AddExternalDependency(instance, parameter.m_texture.GetAssetID(), Rtti::GetTypeID<TextureAsset>());
+            }
+            AppendRemovedArtifacts(assetFile, previousPtr);
+            return SaveAssetFile(assetFilePath, assetFile);
+        }
+
+
         bool ImportModel(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& sourceRoot,
                          const IO::Path& assetFilePath)
         {
@@ -520,6 +588,16 @@ namespace FE::AssetBuilder
                 .Update(artifact.m_assetTypeId)
                 .Update(artifact.m_assetId)
                 .Update(domain.data(), domain.size());
+            uint64_t materialSchemaHash = 0;
+            if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
+                materialSchemaHash = Serialization::GetSchemaHash<MaterialAsset>();
+            else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialInstanceAsset>())
+                materialSchemaHash = Serialization::GetSchemaHash<MaterialInstanceAsset>();
+            if (materialSchemaHash != 0)
+            {
+                lowHasher.Update(materialSchemaHash);
+                highHasher.Update(materialSchemaHash);
+            }
             FE_Assert(dependencyArtifacts.size() == artifact.m_dependencies.size());
             for (uint32_t index = 0; index < dependencyArtifacts.size(); ++index)
             {
@@ -600,6 +678,36 @@ namespace FE::AssetBuilder
         }
 
 
+        bool BuildMaterialArtifact(const BuildRequest& request)
+        {
+            if (request.m_artifact.m_buildSettings.TryGet<MaterialBuildSettings>() == nullptr)
+                return false;
+
+            MaterialProcessSettings settings;
+            settings.m_inputFile = request.m_sourcePath;
+            settings.m_outputDirectory = request.m_outputDirectory;
+            settings.m_assetId = request.m_artifact.m_assetId;
+            settings.m_resultArtifactId = request.m_resultArtifactId;
+            settings.m_sourceData = request.m_sourceData;
+            return ProcessMaterial(settings);
+        }
+
+
+        bool BuildMaterialInstanceArtifact(const BuildRequest& request)
+        {
+            if (request.m_artifact.m_buildSettings.TryGet<MaterialInstanceBuildSettings>() == nullptr)
+                return false;
+
+            MaterialProcessSettings settings;
+            settings.m_inputFile = request.m_sourcePath;
+            settings.m_outputDirectory = request.m_outputDirectory;
+            settings.m_assetId = request.m_artifact.m_assetId;
+            settings.m_resultArtifactId = request.m_resultArtifactId;
+            settings.m_sourceData = request.m_sourceData;
+            return ProcessMaterialInstance(settings);
+        }
+
+
         using BuildFunction = bool (*)(const BuildRequest& request);
 
         struct BuilderEntry final
@@ -615,6 +723,8 @@ namespace FE::AssetBuilder
                 { Rtti::GetTypeID<ModelAsset>(), BuildModelArtifact },
                 { Rtti::GetTypeID<MeshAsset>(), BuildMeshArtifact },
                 { Rtti::GetTypeID<TextureAsset>(), BuildTextureArtifact },
+                { Rtti::GetTypeID<MaterialAsset>(), BuildMaterialArtifact },
+                { Rtti::GetTypeID<MaterialInstanceAsset>(), BuildMaterialInstanceArtifact },
             };
             for (const BuilderEntry& builder : builders)
             {
@@ -622,6 +732,31 @@ namespace FE::AssetBuilder
                     return builder.m_function;
             }
             return nullptr;
+        }
+
+
+        bool ResolveExternalDependency(const IO::Path& outputDirectory, const AssetFileDependency& dependency,
+                                       IO::ArtifactID& artifactId)
+        {
+            const IO::Path metadataPath = ArtifactWriter::GetMetadataPath(outputDirectory, dependency.m_assetId);
+            auto file = IO::FileStream::Open(metadataPath, IO::OpenMode::kReadOnly);
+            if (!file)
+            {
+                Logger::LogError("Missing built dependency {} at '{}'", dependency.m_assetId, metadataPath);
+                return false;
+            }
+
+            IO::ArtifactRecord record;
+            Serialization::JsonFormat format;
+            Serialization::DeserializationContext context(file->Get(), format);
+            if (context.Load(record) != Serialization::ResultCode::kSuccess || record.m_assetId != dependency.m_assetId
+                || record.m_assetTypeId != dependency.m_expectedTypeId || !record.m_artifactId.IsValid())
+            {
+                Logger::LogError("Invalid built dependency {} at '{}'", dependency.m_assetId, metadataPath);
+                return false;
+            }
+            artifactId = record.m_artifactId;
+            return true;
         }
 
 
@@ -661,8 +796,10 @@ namespace FE::AssetBuilder
                     const auto iter = m_artifactIndices.find(dependency.m_assetId);
                     if (iter == m_artifactIndices.end())
                     {
-                        Logger::LogError("Asset {} requires an undeclared artifact {}", artifact.m_assetId, dependency.m_assetId);
-                        return false;
+                        IO::ArtifactID externalId;
+                        if (!ResolveExternalDependency(m_finalOutputDirectory, dependency, externalId))
+                            return false;
+                        continue;
                     }
 
                     const AssetFileArtifact& dependencyArtifact = m_assetFile.m_artifacts[iter->second];
@@ -686,6 +823,7 @@ namespace FE::AssetBuilder
                 festd::span<const std::byte> sourceData = m_primarySourceData;
                 festd::span<const std::byte> logicalInputData = m_primaryLogicalInputData;
                 festd::vector<std::byte> externalSourceData;
+                festd::vector<std::byte> materialLogicalInput;
                 if (const auto* textureSettings = artifact.m_buildSettings.TryGet<TextureBuildSettings>();
                     textureSettings != nullptr && !textureSettings->m_sourcePath.empty())
                 {
@@ -700,14 +838,42 @@ namespace FE::AssetBuilder
                     logicalInputData = externalSourceData;
                 }
 
+                if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
+                {
+                    if (!AppendLogicalInput(materialLogicalInput, logicalInputData))
+                        return false;
+                    constexpr const char* modules[] = { "material", "specializer", "technique", "pipeline", "set" };
+                    for (const char* module : modules)
+                    {
+                        IO::Path path(FE_MATERIAL_LIBRARY_DIR);
+                        path /= Fmt::FixedFormat("{}.luau", module);
+                        festd::vector<std::byte> bytes;
+                        if (!ReadFile(path, bytes) || !AppendLogicalInput(materialLogicalInput, bytes))
+                            return false;
+                    }
+                    logicalInputData = materialLogicalInput;
+                }
+
                 festd::vector<std::byte> settingsData;
                 if (!SerializeBuildSettings(artifact, settingsData))
                     return false;
 
                 festd::inline_vector<IO::ArtifactID, 4> dependencyArtifactIds;
                 for (const AssetFileDependency& dependency : artifact.m_dependencies)
-                    dependencyArtifactIds.push_back(
-                        m_assetFile.m_artifacts[m_artifactIndices.find(dependency.m_assetId)->second].m_builtArtifactId);
+                {
+                    const auto iter = m_artifactIndices.find(dependency.m_assetId);
+                    if (iter != m_artifactIndices.end())
+                    {
+                        dependencyArtifactIds.push_back(m_assetFile.m_artifacts[iter->second].m_builtArtifactId);
+                    }
+                    else
+                    {
+                        IO::ArtifactID externalId;
+                        if (!ResolveExternalDependency(m_finalOutputDirectory, dependency, externalId))
+                            return false;
+                        dependencyArtifactIds.push_back(externalId);
+                    }
+                }
                 const IO::BuildKey buildKey = ComputeBuildKey(artifact, logicalInputData, settingsData, dependencyArtifactIds);
 
                 const bool dataExists = artifact.m_builtArtifactId.IsValid()
@@ -950,8 +1116,12 @@ namespace FE::AssetBuilder
             return ImportModel(sourcePath, sourceReference, sourceRoot, assetFilePath);
         if (sourceView.extension() == ".dds")
             return ImportTexture(sourcePath, sourceReference, assetFilePath);
+        if (sourceView.extension() == ".luau" && sourceView.stem().ends_with(".mat"))
+            return ImportMaterial(sourcePath, sourceReference, assetFilePath);
+        if (sourceView.extension() == ".luau" && sourceView.stem().ends_with(".matinst"))
+            return ImportMaterialInstance(sourcePath, sourceReference, assetFilePath);
 
-        Logger::LogError("Unsupported source extension '{}'. Expected .gltf, .glb, or .dds", sourceView.extension());
+        Logger::LogError("Unsupported source '{}'. Expected .gltf, .glb, .dds, .mat.luau, or .matinst.luau", sourcePath);
         return false;
     }
 

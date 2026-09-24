@@ -5,6 +5,8 @@
 
 namespace FE::Graphics
 {
+    struct MaterialParameterAllocator;
+
     struct RendererModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("273B0F50-B991-4323-A516-6C87BBCD83A1");
@@ -46,6 +48,7 @@ namespace FE::Graphics
         virtual Core::AsyncCopyQueue* GetAsyncCopyQueue() const = 0;
         virtual Core::ResourcePool* GetResourcePool() const = 0;
         virtual Core::DescriptorManager* GetDescriptorManager() const = 0;
+        virtual MaterialParameterAllocator* GetMaterialParameterAllocator() const = 0;
 
         static void Init(Core::Device* device);
         static void Shutdown();

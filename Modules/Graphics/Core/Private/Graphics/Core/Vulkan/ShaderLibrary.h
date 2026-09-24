@@ -25,6 +25,7 @@ namespace FE::Graphics::Vulkan
         ~ShaderLibrary() override;
 
         Core::ShaderHandle GetShader(Env::Name name, Env::Name defines) override;
+        const Core::ShaderReflection* GetCompiledReflection(Env::Name name, Env::Name defines) override;
 
         [[nodiscard]] WaitGroup* GetCompletionWaitGroup(const Core::ShaderHandle shaderHandle) const
         {

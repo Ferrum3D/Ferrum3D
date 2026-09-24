@@ -78,6 +78,7 @@ namespace FE::Graphics
         m_frameGraph->BeginFrame();
 
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
+        m_materialParameters->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 
         for (uint32_t viewIndex = 0; viewIndex < scene->GetViewCount(); ++viewIndex)
         {
@@ -121,12 +122,20 @@ namespace FE::Graphics
     }
 
 
+    MaterialParameterAllocator* RendererImpl::GetMaterialParameterAllocator() const
+    {
+        return m_materialParameters.get();
+    }
+
+
     void RendererImpl::EnsureDatabase()
     {
         if (m_database != nullptr)
             return;
 
         m_database = festd::make_unique<DB::Database>(m_device.Get(), m_resourcePool.Get());
+        m_materialParameters =
+            festd::make_unique<MaterialParameterAllocator>(m_device.Get(), m_resourcePool.Get(), m_descriptorManager.Get());
     }
 
 

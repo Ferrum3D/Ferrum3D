@@ -33,3 +33,4 @@ cmake-build/
 **/*/__pycache__
 
 *.ferrum-test-file.bin
+.luaurc

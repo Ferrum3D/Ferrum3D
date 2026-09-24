@@ -2,6 +2,7 @@
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>
+#include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
@@ -19,6 +20,7 @@ namespace FE::Graphics
         m_meshLodInfoTable = Memory::DefaultNew<MeshLodInfoTable>(database);
         m_meshGroupTable = Memory::DefaultNew<MeshGroupTable>(database);
         m_meshInstanceTable = Memory::DefaultNew<MeshInstanceTable>(database);
+        m_materialInstanceTable = Memory::DefaultNew<MaterialInstanceTable>(database);
     }
 
 
@@ -27,10 +29,10 @@ namespace FE::Graphics
         for (MeshBatch* batch : m_batches)
             Memory::DefaultDelete(batch);
 
-        for (const auto& [asset, group] : m_meshGroupsMap)
+        for (MeshGroup* group : m_meshGroups)
         {
-            FE_Unused(asset);
-            Memory::DefaultDelete(group);
+            if (group != nullptr)
+                Memory::DefaultDelete(group);
         }
     }
 
@@ -63,16 +65,18 @@ namespace FE::Graphics
     {
         FE_Assert(desc.m_asset != nullptr);
         FE_Assert(desc.m_batch != nullptr);
+        FE_Assert(desc.m_material != nullptr);
 
         const DB::Ref<MeshInstanceTable> instanceRef = m_meshInstanceTable->AllocateRow();
         const MeshHandle handle = AllocateHandle(instanceRef);
 
-        MeshGroup* meshGroup = FindOrCreateMeshGroup(desc.m_asset);
+        MeshGroup* meshGroup = FindOrCreateMeshGroup(desc.m_asset, desc.m_material);
         meshGroup->m_instanceCount++;
 
         const MeshInstanceTable::RWRow instance = m_meshInstanceTable->WriteRow(instanceRef);
         instance.m_meshGroup.Get() = meshGroup->m_tableRef;
         instance.m_transform.Get() = desc.m_transform;
+        instance.m_instanceData.Get() = desc.m_instanceData;
 
         desc.m_batch->m_meshInstances.push_back(instanceRef);
 
@@ -127,11 +131,13 @@ namespace FE::Graphics
     }
 
 
-    MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(const MeshAsset* meshAsset)
+    MeshGroup* MeshSceneModule::FindOrCreateMeshGroup(const MeshAsset* meshAsset, MaterialInstanceRuntime* material)
     {
-        const auto it = m_meshGroupsMap.find(meshAsset);
-        if (it != m_meshGroupsMap.end())
-            return it->second;
+        for (MeshGroup* group : m_meshGroups)
+        {
+            if (group != nullptr && group->m_asset == meshAsset && group->m_material == material)
+                return group;
+        }
 
         FE_Assert(!meshAsset->m_submeshes.empty());
         FE_Assert(meshAsset->m_buffer);
@@ -163,10 +169,14 @@ namespace FE::Graphics
         tableRow.m_geometry.Get() = BufferPointer{ descriptorManager->GetDeviceAddress(descriptorIndex) };
         tableRow.m_lods.Get() = lodsRef;
 
+        const DB::Ref<MaterialInstanceTable> materialRef = m_materialInstanceTable->AllocateRow();
+        m_materialInstanceTable->WriteRow(materialRef).m_materialParameters.Get() = material->GetMaterialParameters();
+        tableRow.m_materialInstance.Get() = materialRef;
+
         auto* meshGroup = Memory::DefaultNew<MeshGroup>();
         meshGroup->m_asset = meshAsset;
+        meshGroup->m_material = material;
         meshGroup->m_tableRef = tableRef;
-        m_meshGroupsMap.emplace(meshAsset, meshGroup);
 
         m_meshGroups.resize(m_meshGroupTable->GetReservedRowCount());
         m_meshGroups[tableRef.m_rowIndex] = meshGroup;
@@ -177,10 +187,18 @@ namespace FE::Graphics
 
     const MeshAsset* MeshSceneModule::FindAsset(const DB::Ref<MeshGroupTable> group) const
     {
-        if (group.m_rowIndex >= m_meshGroups.size())
+        if (group.m_rowIndex >= m_meshGroups.size() || m_meshGroups[group.m_rowIndex] == nullptr)
             return nullptr;
 
         return m_meshGroups[group.m_rowIndex]->m_asset;
+    }
+
+
+    MaterialInstanceRuntime* MeshSceneModule::FindMaterial(const DB::Ref<MeshGroupTable> group) const
+    {
+        if (group.m_rowIndex >= m_meshGroups.size() || m_meshGroups[group.m_rowIndex] == nullptr)
+            return nullptr;
+        return m_meshGroups[group.m_rowIndex]->m_material;
     }
 
 
