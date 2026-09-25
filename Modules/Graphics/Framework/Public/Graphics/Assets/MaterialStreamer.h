@@ -4,7 +4,6 @@
 
 namespace FE::Graphics::Core
 {
-    struct DescriptorManager;
     struct PipelineFactory;
 } // namespace FE::Graphics::Core
 
@@ -14,8 +13,7 @@ namespace FE::Graphics
 
     struct MaterialStreamer final : public IO::Streamer
     {
-        MaterialStreamer(MaterialParameterAllocator* allocator, Core::DescriptorManager* descriptorManager,
-                         Core::PipelineFactory* pipelineFactory);
+        MaterialStreamer(MaterialParameterAllocator* allocator, Core::PipelineFactory* pipelineFactory);
 
         IO::AssetFinalizeResult FinalizeAssetLoading(IO::AssetSlot& assetSlot, const IO::ArtifactRecord& artifact,
                                                      void* candidate) override;
@@ -26,7 +24,6 @@ namespace FE::Graphics
 
     private:
         MaterialParameterAllocator* m_allocator = nullptr;
-        Core::DescriptorManager* m_descriptorManager = nullptr;
         Core::PipelineFactory* m_pipelineFactory = nullptr;
     };
 } // namespace FE::Graphics

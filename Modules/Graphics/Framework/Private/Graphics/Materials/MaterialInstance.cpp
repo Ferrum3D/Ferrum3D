@@ -1,6 +1,4 @@
-#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/PipelineFactory.h>
-#include <Graphics/Core/Sampler.h>
 #include <Graphics/Core/ShaderReflection.h>
 #include <Graphics/Materials/MaterialInstance.h>
 
@@ -27,15 +25,13 @@ namespace FE::Graphics
 
     MaterialInstanceRuntime::MaterialInstanceRuntime(const MaterialAsset* material, const MaterialInstanceAsset* instance,
                                                      MaterialParameterAllocator* allocator,
-                                                     Core::DescriptorManager* descriptorManager,
                                                      Core::PipelineFactory* pipelineFactory)
         : m_material(material)
         , m_instance(instance)
         , m_allocator(allocator)
-        , m_descriptorManager(descriptorManager)
         , m_pipelineFactory(pipelineFactory)
     {
-        FE_Assert(material && instance && allocator && descriptorManager && pipelineFactory);
+        FE_Assert(material && instance && allocator && pipelineFactory);
         for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
         {
             if (technique.m_permutationKey != m_instance->m_permutationKey || !technique.m_pixelShader.IsValid())
@@ -128,21 +124,17 @@ namespace FE::Graphics
             const MaterialParameterValue* value = FindValue(parameter.m_name);
             if (parameter.m_type == MaterialParameterType::kTexture2D)
             {
-                FE_Assert(member->m_format == Core::Format::kR32G32_UINT);
+                FE_Assert(member->m_format == Core::Format::kR32_UINT);
                 uint32_t textureIndex = kInvalidIndex;
-                uint32_t samplerIndex = kInvalidIndex;
                 if (value != nullptr && value->m_texture.GetAssetID().IsValid())
                 {
                     const IO::AssetRead<TextureAsset> texture = value->m_texture.GetAssetHandle().Read();
                     FE_Assert(texture && texture->m_texture);
                     textureIndex = texture->m_descriptorIndex;
                     FE_Assert(textureIndex != kInvalidIndex);
-                    samplerIndex = m_descriptorManager->ReserveDescriptor(Core::SamplerState::kLinearWrap);
-                    m_descriptorManager->CommitSamplerDescriptor(samplerIndex);
                 }
 
                 memcpy(bytes.data() + offset, &textureIndex, sizeof(textureIndex));
-                memcpy(bytes.data() + offset + sizeof(textureIndex), &samplerIndex, sizeof(samplerIndex));
             }
             else
             {

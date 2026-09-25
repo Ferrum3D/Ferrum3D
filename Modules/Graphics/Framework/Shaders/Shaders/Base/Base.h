@@ -44,8 +44,23 @@ namespace FE
 
     struct BufferPointer final
     {
-        uint64_t m_deviceAddress;
+        uint2 m_deviceAddress;
+
+        BufferPointer() = default;
+
+        explicit BufferPointer(const uint64_t deviceAddress)
+            : m_deviceAddress(static_cast<uint32_t>(deviceAddress), static_cast<uint32_t>(deviceAddress >> 32))
+        {
+        }
+
+        [[nodiscard]] uint64_t GetDeviceAddress() const
+        {
+            return static_cast<uint64_t>(m_deviceAddress.x) | (static_cast<uint64_t>(m_deviceAddress.y) << 32);
+        }
     };
+
+    static_assert(sizeof(BufferPointer) == sizeof(uint64_t));
+    static_assert(alignof(BufferPointer) == alignof(uint32_t));
 } // namespace FE
 
 #endif

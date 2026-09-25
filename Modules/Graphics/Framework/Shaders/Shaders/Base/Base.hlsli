@@ -1,6 +1,7 @@
 #pragma once
 #include <Shaders/Base/BaseTypes.hlsli>
 #include <Shaders/Base/Descriptors.hlsli>
+#include <Shaders/Base/StaticSamplers.hlsli>
 
 namespace InlineMeshes
 {

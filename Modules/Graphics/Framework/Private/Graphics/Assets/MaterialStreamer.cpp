@@ -3,13 +3,10 @@
 
 namespace FE::Graphics
 {
-    MaterialStreamer::MaterialStreamer(MaterialParameterAllocator* allocator, Core::DescriptorManager* descriptorManager,
-                                       Core::PipelineFactory* pipelineFactory)
+    MaterialStreamer::MaterialStreamer(MaterialParameterAllocator* allocator, Core::PipelineFactory* pipelineFactory)
         : m_allocator(allocator)
-        , m_descriptorManager(descriptorManager)
         , m_pipelineFactory(pipelineFactory)
     {
-        FE_Assert(allocator && descriptorManager && pipelineFactory);
     }
 
 
@@ -22,11 +19,7 @@ namespace FE::Graphics
         if (!material)
             return IO::AssetFinalizeResult::kFailed;
 
-        asset->m_runtime = Memory::DefaultNew<MaterialInstanceRuntime>(material.Get(),
-                                                                       asset,
-                                                                       m_allocator,
-                                                                       m_descriptorManager,
-                                                                       m_pipelineFactory);
+        asset->m_runtime = Memory::DefaultNew<MaterialInstanceRuntime>(material.Get(), asset, m_allocator, m_pipelineFactory);
         return IO::AssetFinalizeResult::kSucceeded;
     }
 

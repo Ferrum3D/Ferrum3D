@@ -37,12 +37,37 @@ typedef uint2 uint64_t;
 struct BufferPointer
 {
 #if FE_PLATFORM_VULKAN
+
+#    if defined(__JETBRAINS_IDE__) || defined(__INTELLISENSE__)
     uint64_t m_deviceAddress;
+
+    uint64_t GetDeviceAddress() FE_CONST
+    {
+        return m_deviceAddress;
+    }
+
+    void SetDeviceAddress(const uint64_t deviceAddress)
+    {
+        m_deviceAddress = deviceAddress;
+    }
+#    else
+    uint2 m_deviceAddress;
+
+    uint64_t GetDeviceAddress() FE_CONST
+    {
+        return uint64_t(m_deviceAddress.x) | (uint64_t(m_deviceAddress.y) << 32);
+    }
+
+    void SetDeviceAddress(const uint64_t deviceAddress)
+    {
+        m_deviceAddress = uint2(uint32_t(deviceAddress), uint32_t(deviceAddress >> 32));
+    }
+#    endif
 
     template<typename T>
     T Read(uint32_t byteOffset) FE_CONST
     {
-        return vk::RawBufferLoad<T>(NonUniformResourceIndex(m_deviceAddress + byteOffset));
+        return vk::RawBufferLoad<T>(NonUniformResourceIndex(GetDeviceAddress() + byteOffset));
     }
 #else
 #    error Not implemented

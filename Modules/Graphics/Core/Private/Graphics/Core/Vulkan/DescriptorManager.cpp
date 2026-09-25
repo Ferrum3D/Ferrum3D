@@ -8,6 +8,9 @@ namespace FE::Graphics::Vulkan
 {
     namespace
     {
+        constexpr uint32_t kStaticSamplerBindingBase = 2;
+
+
         VkDescriptorSetLayoutBinding CreateBinding(const uint32_t binding, const VkDescriptorType type, const uint32_t count)
         {
             VkDescriptorSetLayoutBinding bindingInfo;
@@ -69,9 +72,22 @@ namespace FE::Graphics::Vulkan
 
         Memory::FiberTempAllocator temp;
 
+        // Keep the order in sync with Shaders/Base/StaticSamplers.hlsli.
+        const VkSampler staticSamplers[] = {
+            m_device->GetSampler(Core::SamplerState::kPointWrap),
+            m_device->GetSampler(Core::SamplerState::kPointMirror),
+            m_device->GetSampler(Core::SamplerState::kPointClamp),
+            m_device->GetSampler(Core::SamplerState::kPointBorderTransparentBlack),
+            m_device->GetSampler(Core::SamplerState::kLinearWrap),
+            m_device->GetSampler(Core::SamplerState::kLinearMirror),
+            m_device->GetSampler(Core::SamplerState::kLinearClamp),
+            m_device->GetSampler(Core::SamplerState::kLinearBorderTransparentBlack),
+        };
+        const uint32_t staticSamplerCount = festd::size(staticSamplers);
+
         festd::pmr::vector<VkDescriptorPoolSize> sizes{ &temp };
         sizes.push_back({ VK_DESCRIPTOR_TYPE_MUTABLE_EXT, kResourceDescriptorCount * kMaxDescriptorSets });
-        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, kSamplerDescriptorCount * kMaxDescriptorSets });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, (kSamplerDescriptorCount + staticSamplerCount) * kMaxDescriptorSets });
 
         VkDescriptorPoolCreateInfo poolCI = {};
         poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -85,12 +101,20 @@ namespace FE::Graphics::Vulkan
         bindings.push_back(CreateBinding(0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, kResourceDescriptorCount));
         bindings.push_back(CreateBinding(1, VK_DESCRIPTOR_TYPE_SAMPLER, kSamplerDescriptorCount));
 
+        for (uint32_t samplerIndex = 0; samplerIndex < staticSamplerCount; ++samplerIndex)
+        {
+            VkDescriptorSetLayoutBinding& binding = bindings.push_back();
+            binding = CreateBinding(kStaticSamplerBindingBase + samplerIndex, VK_DESCRIPTOR_TYPE_SAMPLER, 1);
+            binding.pImmutableSamplers = &staticSamplers[samplerIndex];
+        }
+
         festd::pmr::vector<VkDescriptorBindingFlags> descriptorBindingFlags{ &temp };
 
         for (uint32_t i = 0; i < bindings.size(); ++i)
         {
-            descriptorBindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
-                                             | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+            const bool isBindlessBinding = bindings[i].binding < kStaticSamplerBindingBase;
+            descriptorBindingFlags.push_back(
+                isBindlessBinding ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT : 0);
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI = {};

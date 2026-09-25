@@ -10,7 +10,7 @@ namespace DB
 
         void Setup(BufferPointer page, const uint32_t localRowIndex)
         {
-            m_ptr.m_deviceAddress = page.m_deviceAddress + TOffset + localRowIndex * sizeof(T);
+            m_ptr.SetDeviceAddress(page.GetDeviceAddress() + TOffset + localRowIndex * sizeof(T));
         }
 
         T Get() FE_CONST

@@ -2,8 +2,7 @@
 
 struct MaterialParameters
 {
-    uint2 Albedo;
-    uint2 m_padding;
+    uint Albedo;
     float4 Tint;
 };
 
@@ -28,13 +27,11 @@ void main(const in PixelAttributes input, out float4 output : SV_Target0)
     const InstanceParameters instanceParameters = instanceData.Read<InstanceParameters>(0);
 
     Texture2DDescriptor<float4> albedo;
-    albedo.m_index = materialParameters.Albedo.x;
-    SamplerDescriptor sampler;
-    sampler.m_index = materialParameters.Albedo.y;
+    albedo.m_index = materialParameters.Albedo;
 
     const float4 tint = materialParameters.Tint;
     const float2 uvScale = instanceParameters.UvScale.xy;
-    const float4 texel = albedo.Sample(sampler.Get(), input.m_uv * uvScale);
+    const float4 texel = albedo.Sample(GLinearWrapSampler, input.m_uv * uvScale);
 
     const float3 normal = normalize(input.m_normal);
     const float3 lightDirection = normalize(float3(0.4f, 0.7f, -0.2f));

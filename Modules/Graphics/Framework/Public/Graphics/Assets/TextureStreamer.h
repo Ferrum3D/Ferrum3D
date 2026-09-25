@@ -13,7 +13,7 @@ namespace FE::Graphics::Core
 
 namespace FE::Graphics
 {
-    //! Explicit mip residency controller. Asset mip indices are least-detailed-first and request the inclusive range [0, mipIndex].
+    //! Explicit mip residency controller.
     struct TextureStreamer final : public IO::Streamer
     {
         TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,

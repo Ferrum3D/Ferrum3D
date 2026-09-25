@@ -92,9 +92,8 @@ namespace
 
             m_pipelineFactory = m_device->CreatePipelineFactory(renderer.GetDescriptorManager());
             m_scene = renderer.CreateScene();
-            m_materialStreamer = Memory::DefaultNew<MaterialStreamer>(renderer.GetMaterialParameterAllocator(),
-                                                                      renderer.GetDescriptorManager(),
-                                                                      m_pipelineFactory.Get());
+            m_materialStreamer =
+                Memory::DefaultNew<MaterialStreamer>(renderer.GetMaterialParameterAllocator(), m_pipelineFactory.Get());
             IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MaterialInstanceAsset>(), m_materialStreamer);
             Core::CompileGlobalPipelineSets(m_pipelineFactory.Get());
             Core::WaitForGlobalPipelineSets();

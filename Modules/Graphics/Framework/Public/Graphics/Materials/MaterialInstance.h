@@ -9,8 +9,7 @@ namespace FE::Graphics
     struct MaterialInstanceRuntime final
     {
         MaterialInstanceRuntime(const MaterialAsset* material, const MaterialInstanceAsset* instance,
-                                MaterialParameterAllocator* allocator, Core::DescriptorManager* descriptorManager,
-                                Core::PipelineFactory* pipelineFactory);
+                                MaterialParameterAllocator* allocator, Core::PipelineFactory* pipelineFactory);
         ~MaterialInstanceRuntime();
 
         MaterialInstanceRuntime(const MaterialInstanceRuntime&) = delete;
@@ -36,7 +35,6 @@ namespace FE::Graphics
         const MaterialAsset* m_material = nullptr;
         const MaterialInstanceAsset* m_instance = nullptr;
         MaterialParameterAllocator* m_allocator = nullptr;
-        Core::DescriptorManager* m_descriptorManager = nullptr;
         Core::PipelineFactory* m_pipelineFactory = nullptr;
         Core::ShaderStructLayout m_materialLayout;
         Core::ShaderStructLayout m_instanceLayout;

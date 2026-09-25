@@ -1,9 +1,9 @@
 #pragma once
 #include <Shaders/Core/Meshlet.hlsli>
+#include <Shaders/Tables/MaterialInstanceTable.hlsli>
 #include <Shaders/Tables/MeshGroupTable.hlsli>
 #include <Shaders/Tables/MeshInstanceTable.hlsli>
 #include <Shaders/Tables/MeshLodInfoTable.hlsli>
-#include <Shaders/Tables/MaterialInstanceTable.hlsli>
 
 #include <Shaders/Passes/MeshPass/MeshPass.h>
 
