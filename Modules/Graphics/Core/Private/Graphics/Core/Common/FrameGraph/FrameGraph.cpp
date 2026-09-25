@@ -423,6 +423,7 @@ namespace FE::Graphics::Common
                 Core::ResourceCommitParams commitParams;
                 commitParams.m_bindFlags = resourceNode.m_bindFlags;
                 commitParams.m_memory = Core::ResourceMemory::kDeviceLocal; // TODO: host visible resources
+                commitParams.m_isTransient = true;
                 m_resourcePool->CommitBufferMemory(buffer, commitParams);
             }
 
@@ -521,6 +522,7 @@ namespace FE::Graphics::Common
                 Core::ResourceCommitParams commitParams;
                 commitParams.m_bindFlags = resourceNode.m_bindFlags;
                 commitParams.m_memory = Core::ResourceMemory::kDeviceLocal; // TODO: host visible resources
+                commitParams.m_isTransient = true;
                 m_resourcePool->CommitTextureMemory(texture, commitParams);
             }
 

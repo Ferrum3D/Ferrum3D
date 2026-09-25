@@ -50,7 +50,8 @@ namespace FE::Graphics
                                                                | Core::BarrierAccessFlags::kIndexBuffer
                                                                | Core::BarrierAccessFlags::kShaderRead
                                                                | Core::BarrierAccessFlags::kCopyDest,
-                                                           .m_memory = Core::ResourceMemory::kDeviceLocal };
+                                                           .m_memory = Core::ResourceMemory::kDeviceLocal,
+                                                           .m_queue = Core::DeviceQueueType::kTransfer };
         m_resourcePool->CommitBufferMemory(m_buffer.Get(), commitParams);
 
         Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kCommandPageSize);

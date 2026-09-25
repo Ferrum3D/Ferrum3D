@@ -79,7 +79,10 @@ namespace
             IO::ArtifactStore::SetCatalogSource(FE_RENDERER_SAMPLE_ASSET_DIR);
             IO::AssetManager::Init();
             m_meshStreamer = Memory::DefaultNew<MeshStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue());
-            m_textureStreamer = Memory::DefaultNew<TextureStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue());
+            m_textureStreamer = Memory::DefaultNew<TextureStreamer>(m_device.Get(),
+                                                                    resourcePool,
+                                                                    renderer.GetAsyncCopyQueue(),
+                                                                    renderer.GetDescriptorManager());
             IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MeshAsset>(), m_meshStreamer);
             IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<TextureAsset>(), m_textureStreamer);
 
@@ -133,6 +136,15 @@ namespace
             FE_Assert(m_materialRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load bunny material instance");
             m_materialInstance = IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
             FE_Assert(m_materialInstance && m_materialInstance->m_runtime);
+            for (const MaterialParameterValue& parameter : m_materialInstance->m_parameters)
+            {
+                if (!parameter.m_texture.GetAssetID().IsValid())
+                    continue;
+
+                const IO::AssetRead<TextureAsset> texture = parameter.m_texture.GetAssetHandle().Read();
+                FE_Assert(texture);
+                m_textureStreamer->SetResidentMip(*texture.Get(), 1);
+            }
             m_instanceParameters = m_materialInstance->m_runtime->AllocateInstanceParameters();
 
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();

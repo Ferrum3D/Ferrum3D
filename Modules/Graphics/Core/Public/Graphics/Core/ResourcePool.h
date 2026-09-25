@@ -9,6 +9,8 @@ namespace FE::Graphics::Core
     {
         BarrierAccessFlags m_bindFlags = BarrierAccessFlags::kNone;
         ResourceMemory m_memory = ResourceMemory::kNotCommitted;
+        DeviceQueueType m_queue = DeviceQueueType::kGraphics;
+        bool m_isTransient = false;
     };
 
 

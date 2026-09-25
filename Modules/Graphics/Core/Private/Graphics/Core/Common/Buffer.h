@@ -28,6 +28,7 @@ namespace FE::Graphics::Common
         festd::optional<ReleaseBarrier> RetrieveQueueReleaseBarrier(Core::DeviceQueueType receiverQueue);
 
         void SwapInstance(ResourceInstance*& instance);
+        DetachedResourceInstance DetachInstance();
         void AssignInstance(ResourceInstance* instance)
         {
             SwapInstance(instance);

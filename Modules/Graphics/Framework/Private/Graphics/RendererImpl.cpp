@@ -94,6 +94,7 @@ namespace FE::Graphics
 
         m_frameGraph->CompileAndExecute();
         viewport->Present();
+        m_resourcePool->EndFrame();
         m_device->EndFrame();
     }
 

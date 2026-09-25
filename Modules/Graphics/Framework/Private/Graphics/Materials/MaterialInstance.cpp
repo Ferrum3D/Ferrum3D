@@ -46,6 +46,7 @@ namespace FE::Graphics
             const Core::ShaderReflection* reflection =
                 m_pipelineFactory->GetShaderLibrary()->GetCompiledReflection(technique.m_pixelShader, defines);
             FE_Assert(reflection != nullptr, "Failed to compile material shader");
+
             for (const Core::ShaderStructLayout& layout : reflection->GetStructLayouts())
             {
                 if (layout.m_name == Env::Name("MaterialParameters"))
@@ -118,9 +119,12 @@ namespace FE::Graphics
                     break;
                 }
             }
+
             FE_Assert(member != nullptr, "Material parameter missing in shader reflection");
+
             const uint32_t offset = member->m_offset;
             FE_Assert(offset + member->m_byteSize <= bytes.size());
+
             const MaterialParameterValue* value = FindValue(parameter.m_name);
             if (parameter.m_type == MaterialParameterType::kTexture2D)
             {
@@ -131,22 +135,25 @@ namespace FE::Graphics
                 {
                     const IO::AssetRead<TextureAsset> texture = value->m_texture.GetAssetHandle().Read();
                     FE_Assert(texture && texture->m_texture);
-                    textureIndex = m_descriptorManager->ReserveDescriptor(texture->m_texture.Get());
-                    m_descriptorManager->CommitResourceDescriptor(textureIndex, Core::DescriptorType::kSRV);
+                    textureIndex = texture->m_descriptorIndex;
+                    FE_Assert(textureIndex != kInvalidIndex);
                     samplerIndex = m_descriptorManager->ReserveDescriptor(Core::SamplerState::kLinearWrap);
                     m_descriptorManager->CommitSamplerDescriptor(samplerIndex);
                 }
+
                 memcpy(bytes.data() + offset, &textureIndex, sizeof(textureIndex));
                 memcpy(bytes.data() + offset + sizeof(textureIndex), &samplerIndex, sizeof(samplerIndex));
             }
             else
             {
-                FE_Assert(parameter.m_type == MaterialParameterType::kScalar ? member->m_format == Core::Format::kR32_SFLOAT
-                                                                             : member->m_format == Core::Format::kR32G32_SFLOAT
-                                  || member->m_format == Core::Format::kR32G32B32_SFLOAT
-                                  || member->m_format == Core::Format::kR32G32B32A32_SFLOAT);
+                const bool isScalarFormat = member->m_format == Core::Format::kR32_SFLOAT;
+                const bool isVectorFormat = member->m_format == Core::Format::kR32G32_SFLOAT
+                    || member->m_format == Core::Format::kR32G32B32_SFLOAT
+                    || member->m_format == Core::Format::kR32G32B32A32_SFLOAT;
+                FE_Assert(parameter.m_type == MaterialParameterType::kScalar ? isScalarFormat : isVectorFormat);
+
                 const Vector4 parameterValue = value != nullptr ? value->m_value : parameter.m_defaultValue;
-                memcpy(bytes.data() + offset, &parameterValue, Math::Min(member->m_byteSize, uint32_t(sizeof(parameterValue))));
+                memcpy(bytes.data() + offset, &parameterValue, Math::Min<uint32_t>(member->m_byteSize, sizeof(parameterValue)));
             }
         }
         return bytes;
@@ -206,11 +213,15 @@ namespace FE::Graphics
                 break;
             }
         }
+
         if (technique == nullptr)
+        {
             Logger::LogError("Material '{}' lacks technique '{}' for permutation '{}'",
                              m_material->m_name,
                              role,
                              m_instance->m_permutationKey);
+        }
+
         FE_Assert(technique != nullptr, "Missing material technique");
 
         Core::GraphicsPipelineRequest request;
@@ -225,6 +236,7 @@ namespace FE::Graphics
         request.m_desc.SetDSVFormat(Core::Format::kD32_SFLOAT_S8_UINT)
             .SetDepthStencil(technique->m_depthStencil)
             .SetRasterization(technique->m_rasterization);
+
         if (role != "DepthOnly")
             request.m_desc.SetRTVFormat(colorFormat).SetColorBlend(technique->m_blend);
         request.m_defines = technique->m_shaderDefines.empty() ? Env::Name::kEmpty : Env::Name(technique->m_shaderDefines);

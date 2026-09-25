@@ -27,6 +27,7 @@ namespace FE::Graphics::Common
         void SetQueueOwnership(Core::TextureSubresource subresource, Core::DeviceQueueType queue);
 
         void SwapInstance(ResourceInstance*& instance);
+        DetachedResourceInstance DetachInstance();
         void AssignInstance(ResourceInstance* instance)
         {
             SwapInstance(instance);

@@ -125,6 +125,7 @@ namespace FE::Graphics::Vulkan
         instance->m_bufferDesc = desc;
         instance->m_bindFlags = commitParams.m_bindFlags;
         instance->m_memoryStatus = commitParams.m_memory;
+        instance->m_isTransient = commitParams.m_isTransient;
         instance->m_pool = pool;
         return instance;
     }
@@ -257,6 +258,7 @@ namespace FE::Graphics::Vulkan
         instance->m_textureDesc = desc;
         instance->m_bindFlags = commitParams.m_bindFlags;
         instance->m_memoryStatus = commitParams.m_memory;
+        instance->m_isTransient = commitParams.m_isTransient;
         instance->m_pool = pool;
         return instance;
     }

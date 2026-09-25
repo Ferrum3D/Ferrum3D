@@ -79,6 +79,7 @@ namespace FE::Graphics
         FE_SKIP_SERIALIZING Rc<Core::Texture> m_texture;
         FE_SKIP_SERIALIZING TextureStreamingOperation* m_currentOperation = nullptr;
         FE_SKIP_SERIALIZING uint32_t m_residentMip = kInvalidIndex;
+        FE_SKIP_SERIALIZING uint32_t m_descriptorIndex = kInvalidIndex;
 
         FE_RTTI("78A8F995-B51C-42E0-856D-922999074183");
         FE_RTTI_Reflect();

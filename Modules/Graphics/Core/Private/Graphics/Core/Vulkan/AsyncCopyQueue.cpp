@@ -414,9 +414,6 @@ namespace FE::Graphics::Vulkan
                         const auto currentSubresource = Core::TextureSubresource::Create(imageDesc, mipIndex, arrayIndex);
                         Common::SubresourceState subresourceState = texture->GetState(currentSubresource);
 
-                        // Resource must be discarded before being used as transfer destination.
-                        FE_Assert(subresourceState.m_layout == Core::BarrierLayout::kUndefined);
-
                         // Transition the image to transfer destination
                         Core::TextureBarrierDesc barrierDesc;
                         barrierDesc.m_texture = texture;
@@ -427,8 +424,8 @@ namespace FE::Graphics::Vulkan
                         barrierDesc.m_layoutBefore = subresourceState.m_layout;
                         barrierDesc.m_layoutAfter = Core::BarrierLayout::kCopyDest;
                         barrierDesc.m_subresource = currentSubresource;
-                        barrierDesc.m_queueBefore = Core::DeviceQueueType::kCount;
-                        barrierDesc.m_queueAfter = Core::DeviceQueueType::kCount;
+                        barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
+                        barrierDesc.m_queueAfter = Core::DeviceQueueType::kTransfer;
                         beforeBarrierBatcher.AddBarrier(barrierDesc);
 
                         subresourceState.m_sync = Core::BarrierSyncFlags::kCopy;

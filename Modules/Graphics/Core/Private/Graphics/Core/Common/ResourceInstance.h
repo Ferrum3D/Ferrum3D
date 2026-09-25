@@ -58,9 +58,10 @@ namespace FE::Graphics::Common
         festd::array<uint64_t, festd::to_underlying(Core::DeviceQueueType::kCount)> m_lastFenceValues = {};
 
         Core::ResourcePool* m_pool = nullptr;
-        Core::BarrierAccessFlags m_bindFlags : 26;
+        Core::BarrierAccessFlags m_bindFlags : 25;
         Core::ResourceMemory m_memoryStatus : 4;
         Core::ResourceType m_type : 2;
+        uint32_t m_isTransient : 1 = false;
 
         union
         {
@@ -115,5 +116,13 @@ namespace FE::Graphics::Common
 
             return 8 * sizeof(Core::BarrierAccessFlags) - Bit::PopCount(festd::to_underlying(unusedBindFlags));
         }
+    };
+
+
+    struct DetachedResourceInstance final
+    {
+        ResourceInstance* m_instance = nullptr;
+        Core::DeviceQueueType m_ownerQueue = Core::DeviceQueueType::kCount;
+        bool m_isReusable = false;
     };
 } // namespace FE::Graphics::Common

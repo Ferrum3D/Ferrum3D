@@ -42,8 +42,8 @@ namespace FE::Graphics
 
         Rc<Core::GraphicsQueue> m_graphicsQueue;
         Rc<Core::AsyncCopyQueue> m_asyncCopyQueue;
-        Rc<Core::DescriptorManager> m_descriptorManager;
         Rc<Core::ResourcePool> m_resourcePool;
+        Rc<Core::DescriptorManager> m_descriptorManager;
         Rc<Core::FrameGraph> m_frameGraph;
 
         festd::unique_ptr<DB::Database> m_database;

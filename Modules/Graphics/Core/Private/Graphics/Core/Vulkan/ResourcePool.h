@@ -25,12 +25,22 @@ namespace FE::Graphics::Vulkan
         void EndFrame() override;
 
     private:
+        struct ResourceSlot final
+        {
+            Core::DeviceQueueType m_ownerQueue = Core::DeviceQueueType::kCount;
+            uint64_t m_expirationFrame = 0;
+            bool m_isReusable = false;
+        };
+
         uint32_t AllocateResourceSlot();
 
         template<class TDesc, class TParams>
         uint32_t FindFreeResource(const TDesc& desc, const TParams& params);
 
-        void FinalizeDecommit(Common::ResourceInstance* resourceInstance);
+        void FinalizeDecommit(const Common::DetachedResourceInstance& detached);
+        bool IsRetirementComplete(const Common::ResourceInstance* resourceInstance, const ResourceSlot& slot,
+                                  uint64_t completedGraphicsFence, uint64_t completedTransferFence) const;
+        void DestroyResource(uint32_t resourceIndex);
 
         void DestroyObject() override
         {
@@ -43,9 +53,11 @@ namespace FE::Graphics::Vulkan
         AsyncCopyQueue* m_asyncCopyQueue = nullptr;
 
         festd::vector<Common::ResourceInstance*> m_resources;
+        festd::vector<ResourceSlot> m_resourceSlots;
         festd::bit_vector m_freedResources;
         festd::bit_vector m_pendingResources;
         festd::bit_vector m_emptyResources;
+        uint64_t m_frameIndex = 0;
     };
 
     FE_ENABLE_IMPL_CAST(ResourcePool);

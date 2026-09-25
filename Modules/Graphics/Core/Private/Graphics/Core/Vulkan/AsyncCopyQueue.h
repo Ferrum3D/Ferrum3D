@@ -22,6 +22,11 @@ namespace FE::Graphics::Vulkan
 
         Core::FenceSyncPoint GetCurrentFence() const override;
 
+        [[nodiscard]] uint64_t GetCompletedFenceValue() const
+        {
+            return m_fence->GetCompletedValue();
+        }
+
         void ExecuteCommandList(Core::AsyncCopyCommandList* commandList) override;
         void Drain() override;
 

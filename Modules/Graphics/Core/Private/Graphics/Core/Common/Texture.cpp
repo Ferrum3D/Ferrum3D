@@ -36,9 +36,6 @@ namespace FE::Graphics::Common
         if (m_instance == nullptr)
             return;
 
-        for (auto& barriers : m_queueReleaseBarriers)
-            FE_Assert(barriers.empty());
-
         FE_Assert(m_instance->m_pool, "Externally created textures not implemented");
         m_instance->m_pool->DecommitTextureMemory(this);
     }
@@ -168,6 +165,49 @@ namespace FE::Graphics::Common
 
         if (m_instance)
             m_instance->UpdateDebugNames(m_device, m_name);
+    }
+
+
+    DetachedResourceInstance Texture::DetachInstance()
+    {
+        FE_PROFILER_ZONE();
+
+        std::unique_lock lk{ m_lock };
+
+        DetachedResourceInstance result;
+        result.m_instance = m_instance;
+        if (m_instance == nullptr)
+            return result;
+
+        FE_Assert(!m_instance->m_subresourceStates.empty());
+        result.m_ownerQueue = m_instance->m_subresourceStates.front().m_queueType;
+        result.m_isReusable = result.m_ownerQueue != Core::DeviceQueueType::kCount;
+        for (const SubresourceState state : m_instance->m_subresourceStates)
+        {
+            if (state.m_queueType != result.m_ownerQueue)
+            {
+                result.m_ownerQueue = Core::DeviceQueueType::kCount;
+                result.m_isReusable = false;
+                break;
+            }
+        }
+
+        for (auto& barriers : m_queueReleaseBarriers)
+        {
+            for (const ReleaseBarrier& release : barriers)
+            {
+                const uint32_t queueIndex = festd::to_underlying(release.m_barrier.m_queueBefore);
+                uint64_t& fenceValue = m_instance->m_lastFenceValues[queueIndex];
+                fenceValue = Math::Max(fenceValue, release.m_completionFence.m_value);
+            }
+
+            if (!barriers.empty())
+                result.m_isReusable = false;
+            barriers.clear();
+        }
+
+        m_instance = nullptr;
+        return result;
     }
 
 

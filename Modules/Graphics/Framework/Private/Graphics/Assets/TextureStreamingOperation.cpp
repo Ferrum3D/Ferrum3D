@@ -27,7 +27,7 @@ namespace FE::Graphics
     void TextureStreamingOperation::Start()
     {
         Jobs::DispatchBackground(
-            [this]() {
+            [this] {
                 Prepare();
             },
             m_prepareDone.Get());
@@ -45,34 +45,34 @@ namespace FE::Graphics
 
         Core::TextureDesc residentDesc = m_asset.m_desc;
         const uint32_t firstSourceMip = m_asset.m_desc.m_mipSliceCount - m_targetIndex - 1;
-        residentDesc.m_width = Math::Max(static_cast<uint32_t>(residentDesc.m_width) >> firstSourceMip, 1u);
-        residentDesc.m_height = Math::Max(static_cast<uint32_t>(residentDesc.m_height) >> firstSourceMip, 1u);
+        residentDesc.m_width = Math::Max(residentDesc.m_width >> firstSourceMip, 1u);
+        residentDesc.m_height = Math::Max(residentDesc.m_height >> firstSourceMip, 1u);
         if (residentDesc.m_dimension == Core::TextureDimension::k3D)
-            residentDesc.m_depth = Math::Max(static_cast<uint32_t>(residentDesc.m_depth) >> firstSourceMip, 1u);
+            residentDesc.m_depth = Math::Max(residentDesc.m_depth >> firstSourceMip, 1u);
         residentDesc.m_mipSliceCount = m_targetIndex + 1;
 
         m_texture = Core::Texture::Create(m_device, "StreamedTexture", residentDesc);
         constexpr Core::ResourceCommitParams commitParams{ .m_bindFlags = Core::BarrierAccessFlags::kShaderRead
                                                                | Core::BarrierAccessFlags::kCopyDest,
-                                                           .m_memory = Core::ResourceMemory::kDeviceLocal };
+                                                           .m_memory = Core::ResourceMemory::kDeviceLocal,
+                                                           .m_queue = Core::DeviceQueueType::kTransfer };
         m_resourcePool->CommitTextureMemory(m_texture.Get(), commitParams);
 
         Core::AsyncCopyCommandListBuilder builder(&m_commandAllocator, kCommandPageSize);
         for (uint32_t assetMip = 0; assetMip < tailMipCount && assetMip <= m_targetIndex; ++assetMip)
         {
             const uint32_t gpuMip = m_targetIndex - assetMip;
-            const Core::TextureSubresource subresource{
-                Core::TextureSubresource::Create(residentDesc, gpuMip, 0).SliceArray(0, residentDesc.m_arraySize)
-            };
+            const auto subresource =
+                Core::TextureSubresource::Create(residentDesc, gpuMip, 0).SliceArray(0, residentDesc.m_arraySize);
             builder.UploadTexture(m_texture.Get(), m_asset.m_mipTailData.data(), m_asset.m_mipTailOffsets[assetMip], subresource);
         }
+
         for (uint32_t readIndex = 0; readIndex < m_reads.size(); ++readIndex)
         {
             const uint32_t assetMip = tailMipCount + readIndex;
             const uint32_t gpuMip = m_targetIndex - assetMip;
-            const Core::TextureSubresource subresource{
-                Core::TextureSubresource::Create(residentDesc, gpuMip, 0).SliceArray(0, residentDesc.m_arraySize)
-            };
+            const auto subresource =
+                Core::TextureSubresource::Create(residentDesc, gpuMip, 0).SliceArray(0, residentDesc.m_arraySize);
             builder.UploadTexture(m_texture.Get(), m_reads[readIndex].m_data.data(), 0, subresource);
         }
 

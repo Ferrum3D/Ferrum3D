@@ -6,6 +6,7 @@
 namespace FE::Graphics::Core
 {
     struct AsyncCopyQueue;
+    struct DescriptorManager;
     struct Device;
     struct ResourcePool;
 } // namespace FE::Graphics::Core
@@ -15,7 +16,8 @@ namespace FE::Graphics
     //! Explicit mip residency controller. Asset mip indices are least-detailed-first and request the inclusive range [0, mipIndex].
     struct TextureStreamer final : public IO::Streamer
     {
-        TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue);
+        TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+                        Core::DescriptorManager* descriptorManager);
         ~TextureStreamer() override;
 
         TextureStreamer(const TextureStreamer&) = delete;

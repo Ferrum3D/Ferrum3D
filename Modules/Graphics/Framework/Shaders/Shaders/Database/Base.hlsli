@@ -13,7 +13,7 @@ namespace DB
             m_ptr.m_deviceAddress = page.m_deviceAddress + TOffset + localRowIndex * sizeof(T);
         }
 
-        T Get()
+        T Get() FE_CONST
         {
             return m_ptr.Read<T>(0);
         }

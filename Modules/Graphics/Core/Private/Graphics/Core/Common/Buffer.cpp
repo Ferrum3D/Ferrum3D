@@ -46,9 +46,6 @@ namespace FE::Graphics::Common
         if (m_instance == nullptr)
             return;
 
-        for (auto& barrier : m_queueReleaseBarriers)
-            FE_Assert(!barrier.has_value());
-
         FE_Assert(m_instance->m_pool, "Externally created buffers not implemented");
         m_instance->m_pool->DecommitBufferMemory(this);
     }
@@ -127,7 +124,38 @@ namespace FE::Graphics::Common
         m_instance = instance;
         instance = oldInstance;
 
-        m_instance->UpdateDebugNames(m_device, m_name);
+        if (m_instance)
+            m_instance->UpdateDebugNames(m_device, m_name);
+    }
+
+
+    DetachedResourceInstance Buffer::DetachInstance()
+    {
+        std::unique_lock lk{ m_lock };
+
+        DetachedResourceInstance result;
+        result.m_instance = m_instance;
+        if (m_instance == nullptr)
+            return result;
+
+        FE_Assert(!m_instance->m_subresourceStates.empty());
+        result.m_ownerQueue = festd::single(m_instance->m_subresourceStates).m_queueType;
+        result.m_isReusable = result.m_ownerQueue != Core::DeviceQueueType::kCount;
+
+        for (auto& release : m_queueReleaseBarriers)
+        {
+            if (!release.has_value())
+                continue;
+
+            const uint32_t queueIndex = festd::to_underlying(release->m_barrier.m_queueBefore);
+            uint64_t& fenceValue = m_instance->m_lastFenceValues[queueIndex];
+            fenceValue = Math::Max(fenceValue, release->m_completionFence.m_value);
+            result.m_isReusable = false;
+            release.reset();
+        }
+
+        m_instance = nullptr;
+        return result;
     }
 
 

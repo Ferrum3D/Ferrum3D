@@ -26,14 +26,26 @@ namespace FE::Graphics::Vulkan
 
         VkDescriptorSet GetDescriptorSet() const
         {
-            return m_descriptorSet;
+            FE_Assert(m_currentSetIndex != kInvalidIndex);
+            return m_descriptorSets[m_currentSetIndex].m_set;
         }
 
     private:
-        struct RetiredSet final
+        struct DescriptorSetState final
         {
+            DescriptorSetState();
+
             VkDescriptorSet m_set = VK_NULL_HANDLE;
             uint64_t m_fenceValue = 0;
+            festd::bit_vector m_resourceDescriptorsToUpdate;
+            festd::bit_vector m_samplerDescriptorsToUpdate;
+        };
+
+        struct RetiredResourceDescriptor final
+        {
+            Rc<Core::Resource> m_resource;
+            uint32_t m_descriptorIndex = kInvalidIndex;
+            uint32_t m_pendingSetMask = 0;
         };
 
         void DoRelease() override
@@ -42,21 +54,28 @@ namespace FE::Graphics::Vulkan
         }
 
         VkDescriptorSet AllocateDescriptorSet() const;
+        void RetireResourceDescriptor(uint32_t descriptorIndex, Core::Resource* resource) override;
+        void AppendResourceDescriptorWrite(VkDescriptorSet descriptorSet, uint32_t descriptorIndex);
+        void FlushPersistentResourceDescriptors(uint32_t setIndex);
+        void ProcessCompletedDescriptorSet(uint32_t setIndex);
+        void ReleaseRewrittenResourceDescriptors(uint32_t setIndex);
+        void ReleaseRetiredResourceDescriptors();
 
         Device* m_device = nullptr;
         VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-        VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
 
         Memory::LinearAllocator m_linearAllocator;
 
         festd::vector<VkWriteDescriptorSet> m_vkResourceDescriptors;
-        festd::vector<VkDescriptorImageInfo> m_vkSamplerDescriptors;
+        festd::vector<VkWriteDescriptorSet> m_vkSamplerDescriptors;
 
         Rc<Fence> m_fence;
         uint64_t m_fenceValue = 0;
 
-        festd::fixed_vector<RetiredSet, kMaxDescriptorSets> m_retiredSets;
+        festd::fixed_vector<DescriptorSetState, kMaxDescriptorSets> m_descriptorSets;
+        festd::vector<RetiredResourceDescriptor> m_retiredResourceDescriptors;
+        uint32_t m_currentSetIndex = kInvalidIndex;
     };
 
     FE_ENABLE_IMPL_CAST(DescriptorManager);

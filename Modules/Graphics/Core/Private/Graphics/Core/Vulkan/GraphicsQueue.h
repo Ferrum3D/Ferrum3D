@@ -25,6 +25,16 @@ namespace FE::Graphics::Vulkan
             return m_nativeQueue;
         }
 
+        [[nodiscard]] uint64_t GetTrackedFenceValue() const
+        {
+            return m_isActive ? m_frameIndex.load() : m_frameIndex.load() - 1;
+        }
+
+        [[nodiscard]] uint64_t GetCompletedFenceValue() const
+        {
+            return m_fence->GetCompletedValue();
+        }
+
         Core::FenceSyncPoint GetCurrentFence() const override;
 
         void BeginFrame() override;

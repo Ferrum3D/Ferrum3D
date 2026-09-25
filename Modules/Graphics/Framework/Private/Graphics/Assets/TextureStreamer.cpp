@@ -1,6 +1,7 @@
 #include <Core/Threading/Thread.h>
 #include <Graphics/Assets/TextureStreamer.h>
 #include <Graphics/Assets/TextureStreamingOperation.h>
+#include <Graphics/Core/DescriptorManager.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics
@@ -43,12 +44,14 @@ namespace FE::Graphics
             bool m_failed = false;
         };
 
-        Impl(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue)
+        Impl(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+             Core::DescriptorManager* descriptorManager)
             : m_device(device)
             , m_resourcePool(resourcePool)
             , m_asyncCopyQueue(asyncCopyQueue)
+            , m_descriptorManager(descriptorManager)
         {
-            FE_Assert(device && resourcePool && asyncCopyQueue);
+            FE_Assert(device && resourcePool && asyncCopyQueue && descriptorManager);
         }
 
         ~Impl()
@@ -93,8 +96,19 @@ namespace FE::Graphics
         {
             TextureAsset& asset = *entry.m_asset;
             TextureStreamingOperation* operation = asset.m_currentOperation;
-            asset.m_texture = operation->TakeTexture();
+            Rc<Core::Texture> texture = operation->TakeTexture();
             asset.m_residentMip = operation->GetTargetIndex();
+            if (asset.m_descriptorIndex == kInvalidIndex)
+            {
+                asset.m_descriptorIndex =
+                    m_descriptorManager->ReserveDescriptor(texture.Get(), Core::DescriptorLifetime::kPersistent);
+            }
+            else
+            {
+                m_descriptorManager->UpdateDescriptor(asset.m_descriptorIndex, texture.Get());
+            }
+            m_descriptorManager->CommitResourceDescriptor(asset.m_descriptorIndex, Core::DescriptorType::kSRV);
+            asset.m_texture = std::move(texture);
             operation->Destroy();
             asset.m_currentOperation = nullptr;
         }
@@ -128,6 +142,11 @@ namespace FE::Graphics
                     continue;
 
                 Cancel(m_entries[index]);
+                if (asset->m_descriptorIndex != kInvalidIndex)
+                {
+                    m_descriptorManager->FreeResourceDescriptor(asset->m_descriptorIndex);
+                    asset->m_descriptorIndex = kInvalidIndex;
+                }
                 m_entries[index] = std::move(m_entries.back());
                 m_entries.pop_back();
                 return;
@@ -137,13 +156,15 @@ namespace FE::Graphics
         Core::Device* m_device = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
         Core::AsyncCopyQueue* m_asyncCopyQueue = nullptr;
+        Core::DescriptorManager* m_descriptorManager = nullptr;
         festd::vector<Entry> m_entries;
     };
 
 
-    TextureStreamer::TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue)
+    TextureStreamer::TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+                                     Core::DescriptorManager* descriptorManager)
     {
-        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue);
+        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue, descriptorManager);
     }
 
 
@@ -156,10 +177,13 @@ namespace FE::Graphics
     void TextureStreamer::SetResidentMip(const TextureAsset& asset, const uint32_t mipIndex)
     {
         FE_Assert(Threading::IsMainThread());
+
         Impl::Entry* entry = FindTextureEntry(m_impl->m_entries, &asset);
         FE_Assert(entry && mipIndex < asset.m_desc.m_mipSliceCount);
+
+        const uint32_t reverseMipIndex = asset.m_desc.m_mipSliceCount - mipIndex - 1;
         const uint32_t minimumMip = asset.m_mipTailOffsets.empty() ? 0 : asset.m_mipTailOffsets.size() - 1;
-        entry->m_requestedMip = Math::Max(mipIndex, minimumMip);
+        entry->m_requestedMip = Math::Max(reverseMipIndex, minimumMip);
         entry->m_failed = false;
     }
 
