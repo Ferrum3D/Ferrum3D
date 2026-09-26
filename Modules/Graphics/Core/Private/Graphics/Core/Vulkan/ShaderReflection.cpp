@@ -1,6 +1,8 @@
 ﻿#include <Core/Logging/Trace.h>
 #include <Graphics/Core/Vulkan/ShaderReflection.h>
 
+#include <spirv_common.hpp>
+
 namespace FE::Graphics::Vulkan
 {
     namespace SpvC = spirv_cross;
@@ -18,6 +20,44 @@ namespace FE::Graphics::Vulkan
                 ir.for_each_typed_id<SpvC::SPIRType>(std::forward<TFunction>(function));
             }
         };
+
+
+        Core::ShaderStructMemberType SPIRTypeToStructMemberType(const SpvC::CompilerHLSL* compiler, const uint32_t typeId)
+        {
+            using enum SpvC::SPIRType::BaseType;
+
+            const SpvC::SPIRType& type = compiler->get_type(typeId);
+
+            if (type.basetype == Float)
+                return Core::ShaderStructMemberType::kFloat;
+
+            if (type.basetype == Int)
+                return Core::ShaderStructMemberType::kInt;
+
+            if (type.basetype == UInt)
+                return Core::ShaderStructMemberType::kUint;
+
+            if (type.basetype == Struct)
+            {
+                const std::string& name = compiler->get_name(typeId);
+                if (name == "Texture1DDescriptor")
+                    return Core::ShaderStructMemberType::kTexture1DDescriptor;
+                if (name == "Texture2DDescriptor")
+                    return Core::ShaderStructMemberType::kTexture2DDescriptor;
+                if (name == "Texture3DDescriptor")
+                    return Core::ShaderStructMemberType::kTexture3DDescriptor;
+                if (name == "Texture1DArrayDescriptor")
+                    return Core::ShaderStructMemberType::kTexture1DArrayDescriptor;
+                if (name == "Texture2DArrayDescriptor")
+                    return Core::ShaderStructMemberType::kTexture2DArrayDescriptor;
+                if (name == "TextureCubeDescriptor")
+                    return Core::ShaderStructMemberType::kTextureCubeDescriptor;
+                if (name == "TextureCubeArrayDescriptor")
+                    return Core::ShaderStructMemberType::kTextureCubeArrayDescriptor;
+            }
+
+            return Core::ShaderStructMemberType::kInvalid;
+        }
 
 
         Core::Format SPIRTypeToFormat(const SpvC::SPIRType& type)
@@ -200,21 +240,22 @@ namespace FE::Graphics::Vulkan
                 return;
 
             const std::string& name = compiler->get_name(typeId);
-            if (name != "MaterialParameters" && name != "InstanceParameters")
-                return;
-
             Core::ShaderStructLayout& layout = m_structLayouts.emplace_back();
             layout.m_name = Env::Name(name);
-            layout.m_byteSize = static_cast<uint32_t>(compiler->get_declared_struct_size(type));
+            layout.m_byteSize = 0;
             for (uint32_t index = 0; index < type.member_types.size(); ++index)
             {
                 if (!compiler->has_member_decoration(typeId, index, spv::DecorationOffset))
                     continue;
-                Core::ShaderStructMember& member = layout.m_members.emplace_back();
+
+                Core::ShaderStructMember& member = layout.m_members.push_back();
                 member.m_name = Env::Name(compiler->get_member_name(typeId, index));
                 member.m_offset = compiler->type_struct_member_offset(type, index);
                 member.m_byteSize = static_cast<uint32_t>(compiler->get_declared_struct_member_size(type, index));
-                member.m_format = SPIRTypeToFormat(compiler->get_type(type.member_types[index]));
+                member.m_type = SPIRTypeToStructMemberType(compiler, type.member_types[index]);
+                member.m_vectorSize = compiler->get_type(type.member_types[index]).vecsize;
+
+                layout.m_byteSize += member.m_byteSize;
             }
         });
     }

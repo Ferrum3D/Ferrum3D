@@ -15,9 +15,10 @@ namespace FE::Graphics
             {
                 const Core::ShaderStructMember& a = lhs.m_members[index];
                 const Core::ShaderStructMember& b = rhs.m_members[index];
-                if (a.m_name != b.m_name || a.m_offset != b.m_offset || a.m_byteSize != b.m_byteSize || a.m_format != b.m_format)
+                if (a != b)
                     return false;
             }
+
             return true;
         }
     } // namespace
@@ -124,7 +125,8 @@ namespace FE::Graphics
             const MaterialParameterValue* value = FindValue(parameter.m_name);
             if (parameter.m_type == MaterialParameterType::kTexture2D)
             {
-                FE_Assert(member->m_format == Core::Format::kR32_UINT);
+                FE_Assert(member->m_type == Core::ShaderStructMemberType::kTexture2DDescriptor);
+
                 uint32_t textureIndex = kInvalidIndex;
                 if (value != nullptr && value->m_texture.GetAssetID().IsValid())
                 {
@@ -138,16 +140,11 @@ namespace FE::Graphics
             }
             else
             {
-                const bool isScalarFormat = member->m_format == Core::Format::kR32_SFLOAT;
-                const bool isVectorFormat = member->m_format == Core::Format::kR32G32_SFLOAT
-                    || member->m_format == Core::Format::kR32G32B32_SFLOAT
-                    || member->m_format == Core::Format::kR32G32B32A32_SFLOAT;
-                FE_Assert(parameter.m_type == MaterialParameterType::kScalar ? isScalarFormat : isVectorFormat);
-
                 const Vector4 parameterValue = value != nullptr ? value->m_value : parameter.m_defaultValue;
                 memcpy(bytes.data() + offset, &parameterValue, Math::Min<uint32_t>(member->m_byteSize, sizeof(parameterValue)));
             }
         }
+
         return bytes;
     }
 

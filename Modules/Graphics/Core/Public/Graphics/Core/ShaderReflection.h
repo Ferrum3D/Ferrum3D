@@ -29,8 +29,25 @@ namespace FE::Graphics::Core
     struct ShaderRootConstant final
     {
         Env::Name m_name;
-        uint32_t m_offset : 16;
-        uint32_t m_byteSize : 16;
+        uint32_t m_offset : 16 = 0;
+        uint32_t m_byteSize : 16 = 0;
+    };
+
+
+    enum class ShaderStructMemberType : uint32_t
+    {
+        kInvalid,
+        kFloat,
+        kInt,
+        kUint,
+
+        kTexture1DDescriptor,
+        kTexture2DDescriptor,
+        kTexture3DDescriptor,
+        kTexture1DArrayDescriptor,
+        kTexture2DArrayDescriptor,
+        kTextureCubeDescriptor,
+        kTextureCubeArrayDescriptor,
     };
 
 
@@ -39,7 +56,10 @@ namespace FE::Graphics::Core
         Env::Name m_name;
         uint32_t m_offset = 0;
         uint32_t m_byteSize = 0;
-        Format m_format = Format::kUndefined;
+        ShaderStructMemberType m_type : 16 = ShaderStructMemberType::kInvalid;
+        uint32_t m_vectorSize : 16 = 0;
+
+        bool operator==(const ShaderStructMember&) const = default;
     };
 
 
