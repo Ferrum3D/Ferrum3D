@@ -1,5 +1,6 @@
 #include <AssetBuilder/ArtifactWriter.h>
 
+#include <Core/IO/MemoryStream.h>
 #include <Core/Serialization/JsonSerialization.h>
 #include <Core/Strings/Utils.h>
 
@@ -57,7 +58,7 @@ namespace FE::AssetBuilder
 
     bool ArtifactWriter::WriteHeader(const Rtti::Type& type, const void* header)
     {
-        Internal::ArtifactMemoryOutputStream stream;
+        IO::WriteOnlyMemoryStream stream;
         Serialization::TaggedBinaryFormat format;
         Serialization::SerializationContext context(&stream, format);
         if (context.Store(type, header) != Serialization::ResultCode::kSuccess)
@@ -66,7 +67,10 @@ namespace FE::AssetBuilder
             return false;
         }
 
-        return WritePayload(stream.GetData());
+        // TODO: Remove unnecessary reallocation.
+        festd::pmr::vector<std::byte> data;
+        stream.DumpAll(data);
+        return WritePayload(data);
     }
 
 
@@ -114,7 +118,7 @@ namespace FE::AssetBuilder
         size_t offset = 0;
         while (offset < bytes.size())
         {
-            const size_t uncompressedSize = std::min(bytes.size() - offset, static_cast<size_t>(Compression::kBlockSize));
+            const size_t uncompressedSize = Math::Min(bytes.size() - offset, static_cast<size_t>(Compression::kBlockSize));
             const Compression::CompressionResult result =
                 compressor.Compress(bytes.data() + offset, uncompressedSize, compressedBytes.data(), compressedBytes.size());
             if (result.m_result != Compression::ResultCode::kSuccess)
@@ -136,7 +140,7 @@ namespace FE::AssetBuilder
             chunk.m_compressedSize = result.m_compressedSize;
             chunk.m_uncompressedSize = uncompressedSize;
             chunk.m_compressionMethod = Compression::Method::kZstd;
-            chunk.m_checksum.m_current = Crc32::Compute(bytes.data() + offset, uncompressedSize);
+            chunk.m_checksum.Update(bytes.data() + offset, uncompressedSize);
 
             payload.m_resolvedDataSource.m_byteSize += result.m_compressedSize;
             offset += uncompressedSize;

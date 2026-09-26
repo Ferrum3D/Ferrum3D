@@ -70,7 +70,7 @@ namespace FE::Serialization::Tests
             size_t ReadToBuffer(void* buffer, const size_t byteSize) override
             {
                 FlushWrites();
-                const size_t bytesRead = std::min(byteSize, m_data.size() - m_position);
+                const size_t bytesRead = Math::Min(byteSize, m_data.size() - m_position);
                 memcpy(buffer, m_data.data() + m_position, bytesRead);
                 m_position += bytesRead;
                 return bytesRead;

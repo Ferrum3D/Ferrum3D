@@ -2,6 +2,7 @@
 #include <Core/IO/Artifact.h>
 #include <Core/IO/AssetManager.h>
 #include <Core/IO/Async.h>
+#include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Jobs/Jobs.h>
 #include <Core/Serialization/BinarySerialization.h>

@@ -1,4 +1,5 @@
 #include <Core/IO/Artifact.h>
+#include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/RTTI/Reflection.h>
 #include <Core/Serialization/JsonSerialization.h>

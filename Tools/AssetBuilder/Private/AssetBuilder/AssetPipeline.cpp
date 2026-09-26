@@ -8,6 +8,7 @@
 
 #include <Core/Base/PlatformInclude.h>
 #include <Core/IO/FileStream.h>
+#include <Core/IO/MemoryStream.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Serialization/BinarySerialization.h>
 #include <Core/Serialization/JsonSerialization.h>
@@ -23,84 +24,6 @@ namespace FE::AssetBuilder
     namespace
     {
         constexpr festd::string_view kSourceDepotRootMarker = ".ferrum-source-depot-root";
-
-
-        struct MemoryOutputStream final : public IO::BufferedStream
-        {
-            MemoryOutputStream()
-                : BufferedStream(nullptr)
-            {
-            }
-
-            ~MemoryOutputStream() override
-            {
-                FlushWrites();
-            }
-
-            [[nodiscard]] bool SeekAllowed() const override
-            {
-                return false;
-            }
-
-            [[nodiscard]] bool IsOpen() const override
-            {
-                return true;
-            }
-
-            IO::ResultCode Seek(intptr_t, IO::SeekMode) override
-            {
-                return IO::ResultCode::kInvalidSeek;
-            }
-
-            [[nodiscard]] uintptr_t Tell() const override
-            {
-                return m_data.size() + m_bufferPosition;
-            }
-
-            [[nodiscard]] size_t Length() const override
-            {
-                return m_data.size() + m_bufferPosition;
-            }
-
-            size_t ReadToBuffer(void*, size_t) override
-            {
-                return 0;
-            }
-
-            [[nodiscard]] festd::string_view GetName() override
-            {
-                return "AssetBuildFingerprint";
-            }
-
-            [[nodiscard]] IO::OpenMode GetOpenMode() const override
-            {
-                return IO::OpenMode::kWriteOnly;
-            }
-
-            void Close() override {}
-
-            [[nodiscard]] festd::span<const std::byte> GetData()
-            {
-                FlushWrites();
-                return m_data;
-            }
-
-        private:
-            festd::vector<std::byte> m_data;
-
-            void DoRelease() override
-            {
-                FE_Assert(false, "Stack-owned stream cannot be released");
-            }
-
-            size_t WriteImpl(const void* buffer, const size_t byteSize) override
-            {
-                const uint32_t offset = m_data.size();
-                m_data.resize(offset + static_cast<uint32_t>(byteSize));
-                memcpy(m_data.data() + offset, buffer, byteSize);
-                return byteSize;
-            }
-        };
 
 
         bool ReadFile(const IO::Path& path, festd::vector<std::byte>& bytes)
@@ -405,7 +328,7 @@ namespace FE::AssetBuilder
                 return false;
 
             artifact.m_dependencies.clear();
-            MemoryOutputStream stream;
+            IO::WriteOnlyMemoryStream stream;
             Serialization::TaggedBinaryFormat format;
             Serialization::SerializationContext context(&stream, format, &artifact, CollectSerializedAssetDependency);
             if (context.Store(*type, artifact.m_buildSettings.GetValue()) == Serialization::ResultCode::kSuccess)
@@ -626,16 +549,15 @@ namespace FE::AssetBuilder
         }
 
 
-        bool SerializeBuildSettings(const AssetFileArtifact& artifact, festd::vector<std::byte>& result)
+        bool SerializeBuildSettings(const AssetFileArtifact& artifact, festd::pmr::vector<std::byte>& result)
         {
-            MemoryOutputStream stream;
+            IO::WriteOnlyMemoryStream stream;
             Serialization::TaggedBinaryFormat format;
             Serialization::SerializationContext context(&stream, format);
             if (context.Store(artifact.m_buildSettings) != Serialization::ResultCode::kSuccess)
                 return false;
 
-            const festd::span<const std::byte> data = stream.GetData();
-            result.assign(data.begin(), data.end());
+            stream.DumpAll(result);
             return true;
         }
 
@@ -960,19 +882,22 @@ namespace FE::AssetBuilder
                 {
                     if (!AppendLogicalInput(materialLogicalInput, logicalInputData))
                         return false;
+
                     constexpr const char* modules[] = { "material", "specializer", "technique", "pipeline", "set" };
                     for (const char* module : modules)
                     {
                         IO::Path path(FE_MATERIAL_LIBRARY_DIR);
                         path /= Fmt::FixedFormat("{}.luau", module);
+
                         festd::vector<std::byte> bytes;
                         if (!ReadFile(path, bytes) || !AppendLogicalInput(materialLogicalInput, bytes))
                             return false;
                     }
+
                     logicalInputData = materialLogicalInput;
                 }
 
-                festd::vector<std::byte> settingsData;
+                festd::pmr::vector<std::byte> settingsData;
                 if (!SerializeBuildSettings(artifact, settingsData))
                     return false;
 
@@ -992,6 +917,7 @@ namespace FE::AssetBuilder
                         dependencyArtifactIds.push_back(externalId);
                     }
                 }
+
                 const IO::BuildKey buildKey = ComputeBuildKey(artifact, logicalInputData, settingsData, dependencyArtifactIds);
 
                 const bool dataExists = artifact.m_builtArtifactId.IsValid()
@@ -1016,6 +942,7 @@ namespace FE::AssetBuilder
                 const BuildRequest request{ artifact, sourcePath, sourceData, m_stagingOutputDirectory, &artifactId };
                 if (!builder(request))
                     return false;
+
                 if (!artifactId.IsValid())
                 {
                     Logger::LogError("Builder produced no artifact identity for product '{}'", artifact.m_name);
