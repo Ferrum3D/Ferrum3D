@@ -2,7 +2,7 @@
     "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
     "$typename": "FE::AssetBuilder::AssetFile",
     "$version": 0,
-    "$schema": "0x9322e5a965c41a4",
+    "$schema": "0xe4105f5e8b39350b",
     "$value": {
         "m_sourcePath": "Textured.mat.luau",
         "m_sourceDependencies": [],
@@ -21,7 +21,6 @@
                 "m_builtArtifactId": "7D34328C-64F6-4B65-917E-B75924FD358B",
                 "m_isRemoved": false
             }
-        ],
-        "m_embeddedSourceData": []
+        ]
     }
 }

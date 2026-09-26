@@ -41,15 +41,13 @@ namespace FE::AssetBuilder
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_sourcePath
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_sourceDependencies
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_artifacts
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_embeddedSourceData
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 
@@ -59,9 +57,7 @@ namespace FE::AssetBuilder
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_artifacts = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_embeddedSourceData = {};
-
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_sourcePath",
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
                                                         &AssetFile::m_sourcePath,
@@ -76,11 +72,6 @@ namespace FE::AssetBuilder
                                                         Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
                                                         &AssetFile::m_artifacts,
                                                         kAttributes_m_artifacts,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_embeddedSourceData",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &AssetFile::m_embeddedSourceData,
-                                                        kAttributes_m_embeddedSourceData,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
@@ -101,7 +92,6 @@ namespace FE::AssetBuilder
             object.Field("m_sourcePath", m_sourcePath);
             object.Field("m_sourceDependencies", m_sourceDependencies);
             object.Field("m_artifacts", m_artifacts);
-            object.Field("m_embeddedSourceData", m_embeddedSourceData);
         }
 
         return context.GetResultCode();
@@ -114,7 +104,6 @@ namespace FE::AssetBuilder
             object.Field("m_sourcePath", m_sourcePath);
             object.Field("m_sourceDependencies", m_sourceDependencies);
             object.Field("m_artifacts", m_artifacts);
-            object.Field("m_embeddedSourceData", m_embeddedSourceData);
         }
 
         return context.GetResultCode();
@@ -134,8 +123,6 @@ namespace FE::AssetBuilder
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_sourceDependencies)>());
             hasher.Update("m_artifacts", 11);
             hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_artifacts)>());
-            hasher.Update("m_embeddedSourceData", 20);
-            hasher.UpdateRaw(FE::Serialization::GetSchemaHash<decltype(m_embeddedSourceData)>());
             hasher.Update(0);
             return hasher.Finalize();
         }();

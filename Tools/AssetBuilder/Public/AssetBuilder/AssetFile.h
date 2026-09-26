@@ -39,14 +39,12 @@ namespace FE::AssetBuilder
     //! Authoring metadata for every artifact produced from one source or serialized object.
     //!
     //! Its filesystem location never participates in asset or artifact identity. An empty source path denotes an engine-authored
-    //! asset whose complete authored representation is stored in the artifact build settings. Only source-less descriptors may
-    //! contain embedded source data.
+    //! asset whose complete authored representation is stored in the artifact build settings.
     struct AssetFile final
     {
         IO::Path m_sourcePath;
         festd::inline_vector<IO::Path, 4> m_sourceDependencies;
         festd::inline_vector<AssetFileArtifact, 4> m_artifacts;
-        festd::vector<std::byte> m_embeddedSourceData;
 
         FE_RTTI_Reflect("196D6B77-484F-429B-A74F-0E99C4F367B2");
         FE_RTTI_Serialize();

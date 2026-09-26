@@ -2,7 +2,7 @@
     "$type": "196D6B77-484F-429B-A74F-0E99C4F367B2",
     "$typename": "FE::AssetBuilder::AssetFile",
     "$version": 0,
-    "$schema": "0x9322e5a965c41a4",
+    "$schema": "0xe4105f5e8b39350b",
     "$value": {
         "m_sourcePath": "",
         "m_sourceDependencies": [],
@@ -63,11 +63,10 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "3F1885A2-579F-4384-9B8C-6BCF59F8BB7D",
+                "m_lastBuildKey": "B5FAE582-E331-4EFD-93CC-F092548B42E1",
                 "m_builtArtifactId": "2B7791F5-35C6-482D-B08B-DADF26F4A0A1",
                 "m_isRemoved": false
             }
-        ],
-        "m_embeddedSourceData": []
+        ]
     }
 }

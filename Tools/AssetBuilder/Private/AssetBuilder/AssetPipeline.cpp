@@ -1297,11 +1297,6 @@ namespace FE::AssetBuilder
                 return false;
             }
         }
-        if (!assetFile.m_sourcePath.empty() && !assetFile.m_embeddedSourceData.empty())
-        {
-            Logger::LogError("File-backed asset '{}' must not contain embedded source data", assetFilePath);
-            return false;
-        }
         if (assetFile.m_artifacts.empty())
         {
             Logger::LogError("Asset file '{}' declares no artifact products", assetFilePath);
@@ -1327,9 +1322,6 @@ namespace FE::AssetBuilder
         if (assetFile.m_sourcePath.empty())
         {
             sourcePath = assetFilePath;
-            sourceBytes = assetFile.m_embeddedSourceData;
-            if (!AppendLogicalInput(logicalInputBytes, sourceBytes))
-                return false;
         }
         else
         {
