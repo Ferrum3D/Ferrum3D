@@ -15,6 +15,8 @@ namespace FE::FerrumCli
         Cli::Flag m_help;
         FE_META(Cli::Description("Source asset to import") + Cli::ValueName("path"))
         Cli::Option m_asset;
+        FE_META(Cli::Description("Type UUID for a source-less serialized asset") + Cli::ValueName("UUID"))
+        Cli::Option m_assetType;
         FE_META(Cli::Description("Generated .asset file") + Cli::ValueName("path"))
         Cli::Option m_output;
     };
@@ -30,7 +32,7 @@ namespace FE::FerrumCli
         Cli::Flag m_help;
         FE_META(Cli::Description(".asset file to build") + Cli::ValueName("path"))
         Cli::Option m_asset;
-        FE_META(Cli::Description("Asset source depot root") + Cli::ValueName("directory"))
+        FE_META(Cli::Description("Asset source depot root (required for file-backed assets)") + Cli::ValueName("directory"))
         Cli::Option m_sourceRoot;
         FE_META(Cli::Description("Artifact output directory") + Cli::ValueName("directory"))
         Cli::Option m_output;

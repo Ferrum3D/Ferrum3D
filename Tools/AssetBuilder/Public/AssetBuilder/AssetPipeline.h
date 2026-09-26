@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/IO/Path.h>
+#include <Core/RTTI/RTTI.h>
 
 namespace FE::AssetBuilder
 {
@@ -7,6 +8,7 @@ namespace FE::AssetBuilder
     {
         IO::Path m_inputFile;
         IO::Path m_outputFile;
+        Rtti::TypeID m_assetTypeId = Rtti::TypeID::kNull;
     };
 
 

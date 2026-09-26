@@ -489,6 +489,7 @@ namespace FE::Serialization
     {
         static ResultCode Serialize(SerializationContext& context, const IO::Link<T, TKind>& value)
         {
+            context.VisitAssetReference(value.m_id, Rtti::GetTypeID<T>(), festd::to_underlying(TKind));
             return SerializeValue(context, value.m_id);
         }
 

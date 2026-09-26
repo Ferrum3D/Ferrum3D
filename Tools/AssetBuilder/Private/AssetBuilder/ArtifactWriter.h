@@ -111,6 +111,8 @@ namespace FE::AssetBuilder
             return WritePayload(stream.GetData());
         }
 
+        bool WriteHeader(const Rtti::Type& type, const void* header);
+
         bool WritePayload(festd::span<const std::byte> bytes);
         void AddDependency(IO::AssetID assetId, Rtti::TypeID typeId, IO::DependencyKind kind = IO::DependencyKind::kHard);
         bool Finish();

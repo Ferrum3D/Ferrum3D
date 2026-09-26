@@ -36,10 +36,11 @@ namespace FE::AssetBuilder
     };
 
 
-    //! Authoring metadata for every artifact produced from one source.
+    //! Authoring metadata for every artifact produced from one source or serialized object.
     //!
     //! Its filesystem location never participates in asset or artifact identity. An empty source path denotes an engine-authored
-    //! asset; only those descriptors may contain embedded source data.
+    //! asset whose complete authored representation is stored in the artifact build settings. Only source-less descriptors may
+    //! contain embedded source data.
     struct AssetFile final
     {
         IO::Path m_sourcePath;

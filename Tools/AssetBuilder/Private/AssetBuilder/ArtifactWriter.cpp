@@ -55,6 +55,21 @@ namespace FE::AssetBuilder
     }
 
 
+    bool ArtifactWriter::WriteHeader(const Rtti::Type& type, const void* header)
+    {
+        Internal::ArtifactMemoryOutputStream stream;
+        Serialization::TaggedBinaryFormat format;
+        Serialization::SerializationContext context(&stream, format);
+        if (context.Store(type, header) != Serialization::ResultCode::kSuccess)
+        {
+            Logger::LogError("Failed to serialize asset header of type {}", type.m_id);
+            return false;
+        }
+
+        return WritePayload(stream.GetData());
+    }
+
+
     bool ArtifactWriter::OpenDataFile()
     {
         if (m_dataFile)

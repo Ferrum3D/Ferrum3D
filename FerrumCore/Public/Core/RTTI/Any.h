@@ -26,6 +26,8 @@ namespace FE::Rtti
             return *::new (m_value) T(std::forward<TArgs>(args)...);
         }
 
+        bool Emplace(const Type& type);
+
         void Reset();
 
         [[nodiscard]] bool HasValue() const

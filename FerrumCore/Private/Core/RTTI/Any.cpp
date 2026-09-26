@@ -62,6 +62,19 @@ namespace FE::Rtti
     }
 
 
+    bool Any::Emplace(const Type& type)
+    {
+        Reset();
+        if (type.m_defaultConstructor == nullptr || type.m_destructor == nullptr)
+            return false;
+
+        m_type = &type;
+        m_value = Memory::DefaultAllocate(type.m_size, type.m_alignment);
+        type.m_defaultConstructor(m_value);
+        return true;
+    }
+
+
     void Any::Reset()
     {
         if (m_value == nullptr)

@@ -41,77 +41,92 @@ namespace FE::FerrumCli
             return 0;
         }
 
-        const Import* import = m_cli.GetSubcommand<Import>();
-        const Build* build = m_cli.GetSubcommand<Build>();
-        if (import == nullptr && build == nullptr)
-        {
-            PrintHelp(m_cli);
-            return 0;
-        }
-
-        if (import != nullptr)
+        if (const Import* import = m_cli.GetSubcommand<Import>())
         {
             if (import->m_help)
             {
                 PrintHelp(*import);
                 return 0;
             }
-            if (!import->m_asset || import->m_asset.Get().empty())
+
+            const bool hasSourceAsset = import->m_asset && !import->m_asset.Get().empty();
+            const bool hasAssetType = import->m_assetType && !import->m_assetType.Get().empty();
+            if (hasSourceAsset == hasAssetType)
             {
-                IO::EPrintLn("Error: Option '--asset' is required");
+                IO::EPrintLn("Error: Specify exactly one of '--asset' or '--asset-type'");
                 PrintHelp(*import);
                 return 1;
             }
 
-            const IO::PathView sourcePath(import->m_asset.Get());
             IO::Path outputPath;
             if (import->m_output)
-                outputPath = import->m_output.Get();
-            else
             {
+                outputPath = import->m_output.Get();
+            }
+            else if (hasSourceAsset)
+            {
+                const IO::PathView sourcePath(import->m_asset.Get());
                 outputPath = sourcePath.parent_directory();
                 IO::Path outputName(sourcePath.stem());
                 outputName.AsBaseString() += ".asset";
                 outputPath /= outputName;
             }
+            else
+            {
+                IO::EPrintLn("Error: Option '--output' is required with '--asset-type'");
+                PrintHelp(*import);
+                return 1;
+            }
 
             AssetBuilder::ImportAssetSettings settings;
-            settings.m_inputFile = sourcePath;
+            if (hasSourceAsset)
+            {
+                settings.m_inputFile = import->m_asset.Get();
+            }
+            else
+            {
+                const festd::string_view assetType = import->m_assetType.Get();
+                settings.m_assetTypeId = Rtti::TypeID(festd::ascii_view{ assetType.data(), assetType.size() });
+            }
+
             settings.m_outputFile = outputPath;
             return AssetBuilder::ImportAsset(settings) ? 0 : 1;
         }
 
-        FE_Assert(build != nullptr);
-        if (build->m_help)
+        if (const Build* build = m_cli.GetSubcommand<Build>())
         {
-            PrintHelp(*build);
-            return 0;
-        }
-        if (!build->m_asset || build->m_asset.Get().empty())
-        {
-            IO::EPrintLn("Error: Option '--asset' is required");
-            PrintHelp(*build);
-            return 1;
-        }
-        if (!build->m_sourceRoot || build->m_sourceRoot.Get().empty())
-        {
-            IO::EPrintLn("Error: Option '--source-root' is required");
-            PrintHelp(*build);
-            return 1;
-        }
-        if (!build->m_output || build->m_output.Get().empty())
-        {
-            IO::EPrintLn("Error: Option '--output' is required");
-            PrintHelp(*build);
-            return 1;
+            if (build->m_help)
+            {
+                PrintHelp(*build);
+                return 0;
+            }
+
+            if (!build->m_asset || build->m_asset.Get().empty())
+            {
+                IO::EPrintLn("Error: Option '--asset' is required");
+                PrintHelp(*build);
+                return 1;
+            }
+
+            if (!build->m_output || build->m_output.Get().empty())
+            {
+                IO::EPrintLn("Error: Option '--output' is required");
+                PrintHelp(*build);
+                return 1;
+            }
+
+            const IO::PathView assetFilePath(build->m_asset.Get());
+
+            AssetBuilder::BuildAssetSettings settings;
+            settings.m_assetFile = assetFilePath;
+            if (build->m_sourceRoot)
+                settings.m_sourceRoot = build->m_sourceRoot.Get();
+
+            settings.m_outputDirectory = build->m_output.Get();
+            return AssetBuilder::BuildAsset(settings) ? 0 : 1;
         }
 
-        const IO::PathView assetFilePath(build->m_asset.Get());
-
-        AssetBuilder::BuildAssetSettings settings;
-        settings.m_assetFile = assetFilePath;
-        settings.m_sourceRoot = build->m_sourceRoot.Get();
-        settings.m_outputDirectory = build->m_output.Get();
-        return AssetBuilder::BuildAsset(settings) ? 0 : 1;
+        PrintHelp(m_cli);
+        return 0;
     }
 } // namespace FE::FerrumCli

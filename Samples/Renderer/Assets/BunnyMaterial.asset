@@ -4,17 +4,52 @@
     "$version": 0,
     "$schema": "0x9322e5a965c41a4",
     "$value": {
-        "m_sourcePath": "Bunny.matinst.luau",
+        "m_sourcePath": "",
         "m_sourceDependencies": [],
         "m_artifacts": [
             {
-                "m_productKey": "MaterialInstance/Primary",
-                "m_name": "MaterialInstance",
+                "m_productKey": "Serialized/Primary",
+                "m_name": "MaterialInstanceAsset",
                 "m_assetId": "EFA88960-2315-407E-BAAC-F88DFDF6FFBC",
                 "m_assetTypeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
                 "m_buildSettings": {
-                    "m_typeId": "42707CCB-1248-4ABB-A6A8-067B1D2D6A0B",
-                    "m_value": {}
+                    "m_typeId": "44F1653F-B716-4E1D-A631-EAA8E728DC08",
+                    "m_value": {
+                        "m_material": "A56650D7-CD26-418C-B02C-514D54430555",
+                        "m_permutationKey": "TwoSided=0",
+                        "m_parameters": [
+                            {
+                                "m_name": "Albedo",
+                                "m_value": {
+                                    "x": "00000000",
+                                    "y": "00000000",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "5C9F4230-E3BD-447C-8344-407F710CF0CD"
+                            },
+                            {
+                                "m_name": "UvScale",
+                                "m_value": {
+                                    "x": "0000803f",
+                                    "y": "0000803f",
+                                    "z": "00000000",
+                                    "w": "00000000"
+                                },
+                                "m_texture": "00000000-0000-0000-0000-000000000000"
+                            },
+                            {
+                                "m_name": "Tint",
+                                "m_value": {
+                                    "x": "0000803f",
+                                    "y": "0000803f",
+                                    "z": "0000803f",
+                                    "w": "0000803f"
+                                },
+                                "m_texture": "00000000-0000-0000-0000-000000000000"
+                            }
+                        ]
+                    }
                 },
                 "m_dependencies": [
                     {
@@ -28,7 +63,7 @@
                         "m_kind": 0
                     }
                 ],
-                "m_lastBuildKey": "45BD7E62-BEAB-49D0-B09C-AC56D08115B2",
+                "m_lastBuildKey": "3F1885A2-579F-4384-9B8C-6BCF59F8BB7D",
                 "m_builtArtifactId": "2B7791F5-35C6-482D-B08B-DADF26F4A0A1",
                 "m_isRemoved": false
             }

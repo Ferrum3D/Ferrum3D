@@ -228,7 +228,7 @@ namespace FE::IO
     };
 
 
-    //! @brief A fixed string class that represents a file system path.
+    //! @brief Represents a file system path.
     struct Path final : private Internal::PathBase
     {
         using Iter = FE::Internal::StrIterator;

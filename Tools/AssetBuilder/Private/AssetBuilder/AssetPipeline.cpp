@@ -378,6 +378,92 @@ namespace FE::AssetBuilder
         }
 
 
+        void CollectSerializedAssetDependency(void* userData, const Uuid assetId, const Rtti::TypeID expectedTypeId,
+                                              const uint32_t dependencyKind)
+        {
+            auto* artifact = static_cast<AssetFileArtifact*>(userData);
+            const auto kind = static_cast<IO::DependencyKind>(dependencyKind);
+            for (const AssetFileDependency& dependency : artifact->m_dependencies)
+            {
+                if (dependency.m_assetId == assetId && dependency.m_expectedTypeId == expectedTypeId && dependency.m_kind == kind)
+                {
+                    return;
+                }
+            }
+
+            AssetFileDependency& dependency = artifact->m_dependencies.emplace_back();
+            dependency.m_assetId = assetId;
+            dependency.m_expectedTypeId = expectedTypeId;
+            dependency.m_kind = kind;
+        }
+
+
+        bool RefreshSerializedAssetDependencies(AssetFileArtifact& artifact)
+        {
+            const Rtti::Type* type = artifact.m_buildSettings.GetType();
+            if (type == nullptr || type->m_id != artifact.m_assetTypeId)
+                return false;
+
+            artifact.m_dependencies.clear();
+            MemoryOutputStream stream;
+            Serialization::TaggedBinaryFormat format;
+            Serialization::SerializationContext context(&stream, format, &artifact, CollectSerializedAssetDependency);
+            if (context.Store(*type, artifact.m_buildSettings.GetValue()) == Serialization::ResultCode::kSuccess)
+                return true;
+
+            Logger::LogError("Failed to inspect dependencies for serialized asset type {}", artifact.m_assetTypeId);
+            return false;
+        }
+
+
+        bool ImportSerializedAsset(const Rtti::TypeID assetTypeId, const IO::Path& assetFilePath)
+        {
+            const Rtti::Type* type = Rtti::TypeRegistry::FindType(assetTypeId);
+            if (type == nullptr)
+            {
+                Logger::LogError("Asset type {} is not registered", assetTypeId);
+                return false;
+            }
+            if (type->m_defaultConstructor == nullptr || type->m_copyConstructor == nullptr || type->m_destructor == nullptr
+                || type->m_serialize == nullptr || type->m_deserialize == nullptr)
+            {
+                Logger::LogError("Type {} cannot be used as a serialized asset", assetTypeId);
+                return false;
+            }
+
+            AssetFile previous;
+            const AssetFile* previousPtr;
+            if (!LoadPreviousAssetFile(assetFilePath, previous, previousPtr))
+                return false;
+
+            AssetFile assetFile;
+            AssetFileArtifact& artifact = assetFile.m_artifacts.emplace_back();
+            if (!InitializeArtifact(artifact, previousPtr, "Serialized/Primary", type->m_name, assetTypeId))
+                return false;
+            if (artifact.m_buildSettings.GetType() != nullptr && artifact.m_buildSettings.GetType()->m_id != assetTypeId)
+            {
+                artifact.m_buildSettings.Reset();
+            }
+            if (!artifact.m_buildSettings.HasValue() && !artifact.m_buildSettings.Emplace(*type))
+            {
+                Logger::LogError("Failed to default-construct serialized asset type {}", assetTypeId);
+                return false;
+            }
+            if (!RefreshSerializedAssetDependencies(artifact))
+                return false;
+
+            AppendRemovedArtifacts(assetFile, previousPtr);
+            if (!SaveAssetFile(assetFilePath, assetFile))
+            {
+                Logger::LogError("Failed to write asset file '{}'", assetFilePath);
+                return false;
+            }
+
+            Logger::LogInfo("Created serialized asset '{}' for type {}", assetFilePath, assetTypeId);
+            return true;
+        }
+
+
         bool ImportMaterialInstance(const IO::Path& sourcePath, const IO::Path& sourceReference, const IO::Path& assetFilePath)
         {
             festd::vector<std::byte> sourceBytes;
@@ -588,15 +674,20 @@ namespace FE::AssetBuilder
                 .Update(artifact.m_assetTypeId)
                 .Update(artifact.m_assetId)
                 .Update(domain.data(), domain.size());
-            uint64_t materialSchemaHash = 0;
-            if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
-                materialSchemaHash = Serialization::GetSchemaHash<MaterialAsset>();
-            else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialInstanceAsset>())
-                materialSchemaHash = Serialization::GetSchemaHash<MaterialInstanceAsset>();
-            if (materialSchemaHash != 0)
+            uint64_t assetSchemaHash = 0;
+            if (artifact.m_buildSettings.GetType() != nullptr
+                && artifact.m_buildSettings.GetType()->m_id == artifact.m_assetTypeId)
             {
-                lowHasher.Update(materialSchemaHash);
-                highHasher.Update(materialSchemaHash);
+                assetSchemaHash = artifact.m_buildSettings.GetType()->m_serializationSchemaHash;
+            }
+            else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialAsset>())
+                assetSchemaHash = Serialization::GetSchemaHash<MaterialAsset>();
+            else if (artifact.m_assetTypeId == Rtti::GetTypeID<MaterialInstanceAsset>())
+                assetSchemaHash = Serialization::GetSchemaHash<MaterialInstanceAsset>();
+            if (assetSchemaHash != 0)
+            {
+                lowHasher.Update(assetSchemaHash);
+                highHasher.Update(assetSchemaHash);
             }
             FE_Assert(dependencyArtifacts.size() == artifact.m_dependencies.size());
             for (uint32_t index = 0; index < dependencyArtifacts.size(); ++index)
@@ -693,8 +784,34 @@ namespace FE::AssetBuilder
         }
 
 
+        bool BuildSerializedArtifact(const BuildRequest& request)
+        {
+            const Rtti::Type* type = request.m_artifact.m_buildSettings.GetType();
+            if (type == nullptr || type->m_id != request.m_artifact.m_assetTypeId)
+            {
+                Logger::LogError("Product '{}' does not contain serialized build settings for type {}",
+                                 request.m_artifact.m_name,
+                                 request.m_artifact.m_assetTypeId);
+                return false;
+            }
+
+            ArtifactWriter writer(request.m_outputDirectory, request.m_artifact.m_assetId, request.m_artifact.m_assetTypeId);
+            for (const AssetFileDependency& dependency : request.m_artifact.m_dependencies)
+                writer.AddDependency(dependency.m_assetId, dependency.m_expectedTypeId, dependency.m_kind);
+            if (!writer.WriteHeader(*type, request.m_artifact.m_buildSettings.GetValue()) || !writer.Finish())
+                return false;
+            *request.m_resultArtifactId = writer.GetArtifactID();
+            return true;
+        }
+
+
         bool BuildMaterialInstanceArtifact(const BuildRequest& request)
         {
+            if (request.m_artifact.m_buildSettings.GetType() != nullptr
+                && request.m_artifact.m_buildSettings.GetType()->m_id == request.m_artifact.m_assetTypeId)
+            {
+                return BuildSerializedArtifact(request);
+            }
             if (request.m_artifact.m_buildSettings.TryGet<MaterialInstanceBuildSettings>() == nullptr)
                 return false;
 
@@ -731,7 +848,8 @@ namespace FE::AssetBuilder
                 if (builder.m_typeId == typeId)
                     return builder.m_function;
             }
-            return nullptr;
+            const Rtti::Type* type = Rtti::TypeRegistry::FindType(typeId);
+            return type != nullptr && type->m_serialize != nullptr ? BuildSerializedArtifact : nullptr;
         }
 
 
@@ -1092,13 +1210,29 @@ namespace FE::AssetBuilder
 
     bool ImportAsset(const ImportAssetSettings& settings)
     {
-        const IO::Path sourcePath = IO::GetAbsolutePath(settings.m_inputFile);
         const IO::Path assetFilePath = IO::GetAbsolutePath(settings.m_outputFile);
         if (IO::PathView(assetFilePath).extension() != ".asset")
         {
             Logger::LogError("Import output '{}' is not an .asset file", assetFilePath);
             return false;
         }
+
+        if (settings.m_assetTypeId.IsValid())
+        {
+            if (!settings.m_inputFile.empty())
+            {
+                Logger::LogError("A source-less serialized asset cannot also specify a source file");
+                return false;
+            }
+            return ImportSerializedAsset(settings.m_assetTypeId, assetFilePath);
+        }
+        if (settings.m_inputFile.empty())
+        {
+            Logger::LogError("An input source or serialized asset type is required");
+            return false;
+        }
+
+        const IO::Path sourcePath = IO::GetAbsolutePath(settings.m_inputFile);
 
         IO::Path sourceRoot;
         if (!FindSourceRoot(sourcePath, sourceRoot))
@@ -1128,11 +1262,6 @@ namespace FE::AssetBuilder
 
     bool BuildAsset(const BuildAssetSettings& settings)
     {
-        if (settings.m_sourceRoot.empty())
-        {
-            Logger::LogError("A source depot root is required to build an asset");
-            return false;
-        }
         if (settings.m_outputDirectory.empty())
         {
             Logger::LogError("An artifact output directory is required to build an asset");
@@ -1140,24 +1269,33 @@ namespace FE::AssetBuilder
         }
 
         const IO::Path assetFilePath = IO::GetAbsolutePath(settings.m_assetFile);
-        const IO::Path sourceRoot = IO::GetAbsolutePath(settings.m_sourceRoot);
+        IO::Path sourceRoot;
+        if (!settings.m_sourceRoot.empty())
+            sourceRoot = IO::GetAbsolutePath(settings.m_sourceRoot);
         const IO::Path outputDirectory = IO::GetAbsolutePath(settings.m_outputDirectory);
         if (IO::PathView(assetFilePath).extension() != ".asset")
         {
             Logger::LogError("Build input '{}' is not an .asset file", assetFilePath);
             return false;
         }
-        if (!IO::File::Exists(sourceRoot / kSourceDepotRootMarker))
-        {
-            Logger::LogError("Source root '{}' does not contain '{}'", sourceRoot, kSourceDepotRootMarker);
-            return false;
-        }
-
         AssetFile assetFile;
         if (!LoadAssetFile(assetFilePath, assetFile))
         {
             Logger::LogError("Failed to read asset file '{}'", assetFilePath);
             return false;
+        }
+        if (!assetFile.m_sourcePath.empty())
+        {
+            if (sourceRoot.empty())
+            {
+                Logger::LogError("A source depot root is required to build file-backed asset '{}'", assetFilePath);
+                return false;
+            }
+            if (!IO::File::Exists(sourceRoot / kSourceDepotRootMarker))
+            {
+                Logger::LogError("Source root '{}' does not contain '{}'", sourceRoot, kSourceDepotRootMarker);
+                return false;
+            }
         }
         if (!assetFile.m_sourcePath.empty() && !assetFile.m_embeddedSourceData.empty())
         {
@@ -1168,6 +1306,19 @@ namespace FE::AssetBuilder
         {
             Logger::LogError("Asset file '{}' declares no artifact products", assetFilePath);
             return false;
+        }
+
+        if (assetFile.m_sourcePath.empty())
+        {
+            for (AssetFileArtifact& artifact : assetFile.m_artifacts)
+            {
+                if (!artifact.m_isRemoved && artifact.m_buildSettings.GetType() != nullptr
+                    && artifact.m_buildSettings.GetType()->m_id == artifact.m_assetTypeId
+                    && !RefreshSerializedAssetDependencies(artifact))
+                {
+                    return false;
+                }
+            }
         }
 
         festd::vector<std::byte> sourceBytes;

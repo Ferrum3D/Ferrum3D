@@ -180,9 +180,14 @@ namespace FE::Serialization
 
     struct SerializationContext final
     {
-        SerializationContext(IO::IStream* stream, SerializationFormat& format)
+        using AssetReferenceCallback = void (*)(void*, Uuid, Rtti::TypeID, uint32_t);
+
+        SerializationContext(IO::IStream* stream, SerializationFormat& format, void* assetReferenceUserData = nullptr,
+                             AssetReferenceCallback assetReferenceCallback = nullptr)
             : m_stream(stream)
             , m_format(&format)
+            , m_assetReferenceUserData(assetReferenceUserData)
+            , m_assetReferenceCallback(assetReferenceCallback)
         {
             FE_Assert(stream != nullptr);
         }
@@ -261,12 +266,20 @@ namespace FE::Serialization
             return m_format->Record(code);
         }
 
+        void VisitAssetReference(const Uuid assetId, const Rtti::TypeID expectedTypeId, const uint32_t dependencyKind) const
+        {
+            if (m_assetReferenceCallback != nullptr && assetId.IsValid())
+                m_assetReferenceCallback(m_assetReferenceUserData, assetId, expectedTypeId, dependencyKind);
+        }
+
     private:
         friend SerializationObject;
         friend SerializationArray;
 
         IO::IStream* m_stream;
         SerializationFormat* m_format;
+        void* m_assetReferenceUserData = nullptr;
+        AssetReferenceCallback m_assetReferenceCallback = nullptr;
 
         template<class T>
         ResultCode Field(const festd::ascii_view name, const T& value)
