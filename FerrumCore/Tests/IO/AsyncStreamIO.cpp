@@ -1,5 +1,6 @@
 ﻿#include <Core/IO/Assets.h>
 #include <Core/IO/Async.h>
+#include <Core/IO/MemoryStream.h>
 #include <Core/IO/Platform/PlatformFile.h>
 #include <Core/IO/StreamBase.h>
 #include <Core/Math/Random.h>

@@ -358,11 +358,17 @@ namespace FE::AssetBuilder
                                                  m_sourceDirectory.data());
         }
 
+
         IntermediateScene* ParseScene()
         {
-            auto* intermediateScene = Memory::DefaultNew<IntermediateScene>();
-
             const int32_t sceneIndex = m_model.defaultScene >= 0 ? m_model.defaultScene : 0;
+            if (sceneIndex >= static_cast<int32_t>(m_model.scenes.size()))
+            {
+                Logger::LogError("GLTF contains no valid scene");
+                return nullptr;
+            }
+
+            auto* intermediateScene = Memory::DefaultNew<IntermediateScene>();
             tinygltf::Scene& scene = m_model.scenes[sceneIndex];
 
             for (const int32_t nodeIndex : scene.nodes)

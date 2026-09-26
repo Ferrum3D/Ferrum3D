@@ -1,5 +1,4 @@
 #pragma once
-#include <Core/Logging/Logger.h>
 #include <FerrumCli/CommandLine.h>
 
 namespace FE::FerrumCli
@@ -12,6 +11,8 @@ namespace FE::FerrumCli
 
     private:
         void PrintHelp(const Cli::Command& command);
+        int32_t RunImport(const Import& command);
+        int32_t RunBuild(const Build& command);
 
         CommandLineParser m_cli;
     };

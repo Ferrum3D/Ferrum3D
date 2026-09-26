@@ -2,6 +2,13 @@
 
 namespace FE::IO
 {
+    WriteOnlyMemoryStream::~WriteOnlyMemoryStream()
+    {
+        for (const Page& page : m_pages)
+            Memory::FreeVirtual(page.m_data, kPageCapacity);
+    }
+
+
     size_t WriteOnlyMemoryStream::ReadToBuffer(void*, size_t)
     {
         return 0;
@@ -10,23 +17,26 @@ namespace FE::IO
 
     size_t WriteOnlyMemoryStream::WriteFromBuffer(const void* buffer, const size_t byteSize)
     {
-        FE_Assert(byteSize <= kPageCapacity);
-
-        uint32_t pageIndex = kInvalidIndex;
-        if (!m_pages.empty())
-            pageIndex = m_pages.size() - 1;
-
-        if (pageIndex == kInvalidIndex || m_pages[pageIndex].m_byteSize + byteSize > kPageCapacity)
+        const auto* source = static_cast<const std::byte*>(buffer);
+        size_t remaining = byteSize;
+        while (remaining > 0)
         {
-            Page& page = m_pages.emplace_back();
-            page.m_byteSize = 0;
-            page.m_data = static_cast<std::byte*>(Memory::AllocateVirtual(kPageCapacity));
-            ++pageIndex;
+            if (m_pages.empty() || m_pages.back().m_byteSize == kPageCapacity)
+            {
+                Page& page = m_pages.emplace_back();
+                page.m_byteSize = 0;
+                page.m_data = static_cast<std::byte*>(Memory::AllocateVirtual(kPageCapacity));
+            }
+
+            Page& page = m_pages.back();
+            const size_t copySize = Math::Min(remaining, kPageCapacity - page.m_byteSize);
+            memcpy(page.m_data + page.m_byteSize, source, copySize);
+            page.m_byteSize += copySize;
+            source += copySize;
+            remaining -= copySize;
         }
 
-        Page& page = m_pages[pageIndex];
-        memcpy(page.m_data + page.m_byteSize, buffer, byteSize);
-        page.m_byteSize += byteSize;
+        m_totalByteSize += byteSize;
 
         return byteSize;
     }

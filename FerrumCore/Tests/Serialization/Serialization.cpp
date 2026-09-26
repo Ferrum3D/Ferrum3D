@@ -1,4 +1,5 @@
-﻿#include <Core/IO/StreamBase.h>
+﻿#include <Core/IO/MemoryStream.h>
+#include <Core/IO/StreamBase.h>
 #include <Core/Math/Aabb.h>
 #include <Core/Math/Color.h>
 #include <Core/Math/Matrix4x4.h>

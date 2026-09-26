@@ -166,6 +166,9 @@ namespace FE::AssetBuilder
             return false;
 
         IntermediateScene* scene = importer.ParseScene();
+        if (scene == nullptr)
+            return false;
+
         const auto deferDeleteScene = festd::defer([scene] {
             Memory::DefaultDelete(scene);
         });

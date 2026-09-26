@@ -180,6 +180,7 @@ namespace FE::Serialization
 
     struct SerializationContext final
     {
+        // HACK
         using AssetReferenceCallback = void (*)(void*, Uuid, Rtti::TypeID, uint32_t);
 
         SerializationContext(IO::IStream* stream, SerializationFormat& format, void* assetReferenceUserData = nullptr,

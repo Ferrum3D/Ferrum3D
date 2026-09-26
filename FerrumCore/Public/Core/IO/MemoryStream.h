@@ -7,6 +7,7 @@ namespace FE::IO
     struct WriteOnlyMemoryStream final : public StreamBase
     {
         WriteOnlyMemoryStream() = default;
+        ~WriteOnlyMemoryStream() override;
 
         [[nodiscard]] bool SeekAllowed() const override
         {
