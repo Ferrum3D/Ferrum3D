@@ -24,6 +24,8 @@ using namespace FE::Graphics;
 inline constexpr const char* kExampleName = "Ferrum3D - Renderer Sample";
 const IO::AssetID kBunnyModelAssetId("4B01B878-5EEF-4D6A-AD04-FC9AF1F78416");
 const IO::AssetID kBunnyMaterialAssetId("EFA88960-2315-407E-BAAC-F88DFDF6FFBC");
+const IO::AssetID kWarmBunnyMaterialAssetId("D5BA9140-9F93-4407-B5CE-E9FB01C2DDEC");
+const IO::AssetID kCoolBunnyMaterialAssetId("FBD2877D-D6CB-4A11-A8A6-569E066A68EF");
 
 namespace
 {
@@ -39,6 +41,8 @@ namespace
             m_viewport.Reset();
 
             m_materialRequest.Reset();
+            m_warmMaterialRequest.Reset();
+            m_coolMaterialRequest.Reset();
 
             m_modelRequest.Reset();
             IO::AssetManager::Shutdown();
@@ -77,10 +81,12 @@ namespace
 
             IO::ArtifactStore::SetCatalogSource(FE_RENDERER_SAMPLE_ASSET_DIR);
             IO::AssetManager::Init();
-            m_meshStreamer = Memory::DefaultNew<MeshStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue());
+            m_meshStreamer =
+                Memory::DefaultNew<MeshStreamer>(m_device.Get(), resourcePool, renderer.GetAsyncCopyQueue(), graphicsQueue);
             m_textureStreamer = Memory::DefaultNew<TextureStreamer>(m_device.Get(),
                                                                     resourcePool,
                                                                     renderer.GetAsyncCopyQueue(),
+                                                                    graphicsQueue,
                                                                     renderer.GetDescriptorManager());
             IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<MeshAsset>(), m_meshStreamer);
             IO::AssetManager::RegisterStreamer(Rtti::GetTypeID<TextureAsset>(), m_textureStreamer);
@@ -103,7 +109,7 @@ namespace
             m_view->GetModules().Add<OpaquePass::ViewModule>();
 
             const float aspectRatio = static_cast<float>(clientRect.Width()) / static_cast<float>(clientRect.Height());
-            const Vector3 cameraPosition(0.0f, 2.0f, -2.5f);
+            const Vector3 cameraPosition(0.0f, 3.0f, -8.0f);
             const Vector3 cameraTarget(0.0f, 0.75f, 0.0f);
             const Matrix4x4 cameraMatrix = Math::Invert(Matrix4x4::LookAt(cameraPosition, cameraTarget, Vector3::AxisY()));
             m_view->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
@@ -125,13 +131,20 @@ namespace
             FE_Assert(meshLease.IsReady());
 
             m_materialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kBunnyMaterialAssetId));
-            while (!m_materialRequest.IsCompleted())
+            m_warmMaterialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kWarmBunnyMaterialAssetId));
+            m_coolMaterialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kCoolBunnyMaterialAssetId));
+            while (!m_materialRequest.IsCompleted() || !m_warmMaterialRequest.IsCompleted()
+                   || !m_coolMaterialRequest.IsCompleted())
             {
                 IO::AssetManager::Tick();
                 Threading::Sleep(1);
             }
 
             FE_Assert(m_materialRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load bunny material instance");
+            FE_Assert(m_warmMaterialRequest.GetResult() == IO::AssetLoadResult::kSucceeded,
+                      "Failed to load warm bunny material instance");
+            FE_Assert(m_coolMaterialRequest.GetResult() == IO::AssetLoadResult::kSucceeded,
+                      "Failed to load cool bunny material instance");
             const IO::AssetRead<MaterialInstanceAsset> materialInstance =
                 IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
             FE_Assert(materialInstance && materialInstance->m_runtime);
@@ -146,18 +159,35 @@ namespace
             }
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
 
-            MeshBatchDesc batchDesc;
-            batchDesc.m_bounds = Aabb{ Vector3(-10.0f, -10.0f, -10.0f), Vector3(10.0f, 10.0f, 10.0f) };
-            batchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
-            m_batch = meshSceneModule.CreateBatch(batchDesc);
-
             MeshInstanceDesc instanceDesc;
             instanceDesc.m_asset = meshLease;
-            instanceDesc.m_batch = m_batch;
-            instanceDesc.m_material = IO::AssetLease<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot());
-            instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI);
+            const IO::AssetLease<MaterialInstanceAsset> originalMaterial(m_materialRequest.GetAssetSlot());
+            const IO::AssetLease<MaterialInstanceAsset> warmMaterial(m_warmMaterialRequest.GetAssetSlot());
+            const IO::AssetLease<MaterialInstanceAsset> coolMaterial(m_coolMaterialRequest.GetAssetSlot());
+            for (int32_t batchIndex = -1; batchIndex <= 1; ++batchIndex)
+            {
+                instanceDesc.m_material = batchIndex < 0 ? warmMaterial : batchIndex > 0 ? coolMaterial : originalMaterial;
+                const float batchX = static_cast<float>(batchIndex) * 2.5f;
+                MeshBatchDesc batchDesc;
+                batchDesc.m_bounds = Aabb{ Vector3(batchX - 5.0f, -5.0f, -5.0f), Vector3(batchX + 5.0f, 5.0f, 5.0f) };
+                batchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+                instanceDesc.m_batch = meshSceneModule.CreateBatch(batchDesc);
 
-            m_meshInstance = meshSceneModule.CreateInstance(instanceDesc);
+                for (int32_t instanceIndex = -1; instanceIndex <= 1; ++instanceIndex)
+                {
+                    instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI)
+                        * Matrix4x4::Translation(Vector3(batchX, 0.0f, static_cast<float>(instanceIndex) * 1.5f));
+                    m_meshInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
+                }
+            }
+
+            MeshBatchDesc culledBatchDesc;
+            instanceDesc.m_material = originalMaterial;
+            culledBatchDesc.m_bounds = Aabb{ Vector3(95.0f, -5.0f, -5.0f), Vector3(105.0f, 5.0f, 5.0f) };
+            culledBatchDesc.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+            instanceDesc.m_batch = meshSceneModule.CreateBatch(culledBatchDesc);
+            instanceDesc.m_transform = Matrix4x4::Translation(Vector3(100.0f, 0.0f, 0.0f));
+            m_meshInstances.push_back(meshSceneModule.CreateInstance(instanceDesc));
         }
 
         Rc<WaitGroup> ScheduleUpdate() override
@@ -182,11 +212,12 @@ namespace
 
         IO::AssetRequest m_modelRequest;
         IO::AssetRequest m_materialRequest;
+        IO::AssetRequest m_warmMaterialRequest;
+        IO::AssetRequest m_coolMaterialRequest;
         MaterialStreamer* m_materialStreamer = nullptr;
         MeshStreamer* m_meshStreamer = nullptr;
         TextureStreamer* m_textureStreamer = nullptr;
-        MeshBatch* m_batch = nullptr;
-        MeshHandle m_meshInstance;
+        festd::vector<MeshHandle> m_meshInstances;
     };
 } // namespace
 

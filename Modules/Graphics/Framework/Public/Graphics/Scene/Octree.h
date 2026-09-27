@@ -80,6 +80,11 @@ namespace FE::Graphics
 
         void Traverse(const Aabb& bounds, const OctreeTraverseCallback& callback);
 
+        [[nodiscard]] const Aabb& GetBounds() const
+        {
+            return m_bounds;
+        }
+
     private:
         friend OctreeNode;
 

@@ -4,6 +4,8 @@
 
 namespace FE::Graphics
 {
+    struct RenderBatchCollector;
+
     struct SceneModuleBase : public Memory::RefCountedObjectBase
     {
         FE_RTTI("7729E683-8638-4712-81D3-B1C78B16BFE3");
@@ -11,6 +13,7 @@ namespace FE::Graphics
         ~SceneModuleBase() override = default;
 
         virtual void Update() {}
+        virtual void CollectRenderBatches(RenderBatchCollector&) {}
 
     protected:
         explicit SceneModuleBase(Scene* scene)

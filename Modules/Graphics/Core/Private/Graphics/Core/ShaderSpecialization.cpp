@@ -46,28 +46,28 @@ namespace FE::Graphics::Core
             allocator = std::pmr::get_default_resource();
 
         uint32_t defineCount = 0;
-        festd::string_view storageView{ defineStorage };
-        while (!storageView.empty())
+        const festd::string_view storageView{ defineStorage };
+        festd::string_view countView = storageView;
+        while (!countView.empty())
         {
             ++defineCount;
 
-            const auto spaceIter = storageView.find_first_of(' ');
-            if (spaceIter == storageView.end())
+            const auto spaceIter = countView.find_first_of(' ');
+            if (spaceIter == countView.end())
                 break;
 
-            storageView = storageView.substr(spaceIter + 1);
+            countView = countView.substr(spaceIter + 1);
         }
 
         festd::pmr::vector<ShaderDefine> defines{ allocator };
         defines.reserve(defineCount);
 
-        while (!storageView.empty())
+        festd::string_view remainingView = storageView;
+        while (!remainingView.empty())
         {
-            const auto spaceIter = storageView.find_first_of(' ');
-            if (spaceIter == storageView.end())
-                break;
-
-            const festd::string_view define = storageView.substr(storageView.begin(), spaceIter);
+            const auto spaceIter = remainingView.find_first_of(' ');
+            const festd::string_view define =
+                spaceIter == remainingView.end() ? remainingView : remainingView.substr(remainingView.begin(), spaceIter);
             const auto equalIter = define.find_first_of('=');
             FE_Assert(equalIter != define.end());
 
@@ -75,7 +75,10 @@ namespace FE::Graphics::Core
             const festd::string_view value = define.substr(equalIter + 1);
             defines.push_back({ name, value });
 
-            storageView = storageView.substr(spaceIter + 1);
+            if (spaceIter == remainingView.end())
+                break;
+
+            remainingView = remainingView.substr(spaceIter + 1);
         }
 
         return defines;

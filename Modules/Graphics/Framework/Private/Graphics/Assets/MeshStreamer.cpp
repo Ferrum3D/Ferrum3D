@@ -1,6 +1,7 @@
 #include <Core/Threading/Thread.h>
 #include <Graphics/Assets/MeshStreamer.h>
 #include <Graphics/Assets/MeshStreamingOperation.h>
+#include <Graphics/Core/GraphicsQueue.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics
@@ -43,12 +44,14 @@ namespace FE::Graphics
             bool m_failed = false;
         };
 
-        Impl(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue)
+        Impl(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+             Core::GraphicsQueue* graphicsQueue)
             : m_device(device)
             , m_resourcePool(resourcePool)
             , m_asyncCopyQueue(asyncCopyQueue)
+            , m_graphicsQueue(graphicsQueue)
         {
-            FE_Assert(device && resourcePool && asyncCopyQueue);
+            FE_Assert(device && resourcePool && asyncCopyQueue && graphicsQueue);
         }
 
         ~Impl()
@@ -93,7 +96,9 @@ namespace FE::Graphics
         {
             MeshAsset& asset = *entry.m_asset;
             MeshStreamingOperation* operation = asset.m_currentOperation;
-            asset.m_buffer = operation->TakeBuffer();
+            Rc<Core::Buffer> buffer = operation->TakeBuffer();
+            m_graphicsQueue->PublishShaderRead(buffer.Get());
+            asset.m_buffer = std::move(buffer);
             asset.m_residentLod = operation->GetTargetIndex();
             operation->Destroy();
             asset.m_currentOperation = nullptr;
@@ -137,13 +142,15 @@ namespace FE::Graphics
         Core::Device* m_device = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
         Core::AsyncCopyQueue* m_asyncCopyQueue = nullptr;
+        Core::GraphicsQueue* m_graphicsQueue = nullptr;
         festd::vector<Entry> m_entries;
     };
 
 
-    MeshStreamer::MeshStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue)
+    MeshStreamer::MeshStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+                               Core::GraphicsQueue* graphicsQueue)
     {
-        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue);
+        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue, graphicsQueue);
     }
 
 

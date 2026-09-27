@@ -197,6 +197,18 @@ namespace FE::Graphics
     }
 
 
+    bool MaterialInstanceRuntime::HasTechnique(const Env::Name role) const
+    {
+        for (const MaterialTechniqueDesc& technique : m_material->m_techniques)
+        {
+            if (technique.m_role == role && technique.m_permutationKey == m_instance->m_permutationKey)
+                return true;
+        }
+
+        return false;
+    }
+
+
     Core::GraphicsPipeline* MaterialInstanceRuntime::GetPipeline(const Env::Name role, const Core::Format colorFormat)
     {
         for (const PipelineEntry& entry : m_pipelines)

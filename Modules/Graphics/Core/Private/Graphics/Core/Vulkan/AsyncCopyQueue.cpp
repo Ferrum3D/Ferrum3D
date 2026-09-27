@@ -241,6 +241,8 @@ namespace FE::Graphics::Vulkan
         ScopedMapper mapper;
         mapper.m_buffer = m_uploadBuffer.Get();
 
+        festd::pmr::vector<Common::Buffer*> uploadedBuffers{ &m_threadTempAllocator };
+
         Memory::SegmentedBufferReader reader{ item->m_queueItem.m_buffer };
         for (;;)
         {
@@ -347,16 +349,8 @@ namespace FE::Graphics::Vulkan
                         uploadedBytes += allocationSize;
                     }
 
-                    barrierDesc.m_syncBefore = Core::BarrierSyncFlags::kCopy;
-                    barrierDesc.m_syncAfter = Core::BarrierSyncFlags::kNone;
-                    barrierDesc.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
-                    barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kNone;
-                    barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
-                    barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
-
-                    FlushBufferBarrier(ImplCast(m_device), commandBuffer, barrierDesc);
-
-                    buffer->AddQueueReleaseBarrier(barrierDesc, { m_fence, item->m_fenceValue });
+                    if (festd::find(uploadedBuffers, buffer) == uploadedBuffers.end())
+                        uploadedBuffers.push_back(buffer);
 
                     subresourceState.m_sync = Core::BarrierSyncFlags::kCopy;
                     subresourceState.m_access = Core::BarrierAccessFlags::kCopyDest;
@@ -440,7 +434,7 @@ namespace FE::Graphics::Vulkan
                         barrierDesc.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
                         barrierDesc.m_accessAfter = Core::BarrierAccessFlags::kNone;
                         barrierDesc.m_layoutBefore = Core::BarrierLayout::kCopyDest;
-                        barrierDesc.m_layoutAfter = Core::BarrierLayout::kCopyDest;
+                        barrierDesc.m_layoutAfter = Core::BarrierLayout::kShaderRead;
                         barrierDesc.m_queueBefore = Core::DeviceQueueType::kTransfer;
                         barrierDesc.m_queueAfter = Core::DeviceQueueType::kGraphics;
                         releaseBarriers.push_back(barrierDesc);
@@ -474,6 +468,13 @@ namespace FE::Graphics::Vulkan
 
                     FlushTextureBarriers(&m_threadTempAllocator, ImplCast(m_device), commandBuffer, releaseBarriers);
 
+                    for (const Core::TextureBarrierDesc& releaseBarrier : releaseBarriers)
+                    {
+                        Common::SubresourceState state = texture->GetState(releaseBarrier.m_subresource);
+                        state.m_layout = Core::BarrierLayout::kShaderRead;
+                        texture->SetState(releaseBarrier.m_subresource, state);
+                    }
+
                     break;
                 }
 
@@ -485,6 +486,18 @@ namespace FE::Graphics::Vulkan
         }
 
         batcher.Flush();
+        for (Common::Buffer* buffer : uploadedBuffers)
+        {
+            Core::BufferBarrierDesc barrier;
+            barrier.m_buffer = buffer;
+            barrier.m_syncBefore = Core::BarrierSyncFlags::kCopy;
+            barrier.m_accessBefore = Core::BarrierAccessFlags::kCopyDest;
+            barrier.m_queueBefore = Core::DeviceQueueType::kTransfer;
+            barrier.m_queueAfter = Core::DeviceQueueType::kGraphics;
+            FlushBufferBarrier(ImplCast(m_device), commandBuffer, barrier);
+            buffer->AddQueueReleaseBarrier(barrier, { m_fence, item->m_fenceValue });
+        }
+
         item->m_commandBuffer->EnqueueFenceToSignal({ m_fence, item->m_fenceValue });
         item->m_commandBuffer->Submit();
     }

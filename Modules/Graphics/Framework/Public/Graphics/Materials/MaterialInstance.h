@@ -16,6 +16,7 @@ namespace FE::Graphics
         MaterialInstanceRuntime& operator=(const MaterialInstanceRuntime&) = delete;
 
         [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role, Core::Format colorFormat);
+        [[nodiscard]] bool HasTechnique(Env::Name role) const;
         [[nodiscard]] BufferPointer GetMaterialParameters() const;
         [[nodiscard]] MaterialParameterAllocator::Allocation AllocateInstanceParameters();
         void FreeInstanceParameters(MaterialParameterAllocator::Allocation allocation);

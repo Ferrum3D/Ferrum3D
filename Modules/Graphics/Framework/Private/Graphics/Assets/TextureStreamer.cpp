@@ -2,6 +2,7 @@
 #include <Graphics/Assets/TextureStreamer.h>
 #include <Graphics/Assets/TextureStreamingOperation.h>
 #include <Graphics/Core/DescriptorManager.h>
+#include <Graphics/Core/GraphicsQueue.h>
 #include <festd/vector.h>
 
 namespace FE::Graphics
@@ -45,13 +46,14 @@ namespace FE::Graphics
         };
 
         Impl(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
-             Core::DescriptorManager* descriptorManager)
+             Core::GraphicsQueue* graphicsQueue, Core::DescriptorManager* descriptorManager)
             : m_device(device)
             , m_resourcePool(resourcePool)
             , m_asyncCopyQueue(asyncCopyQueue)
+            , m_graphicsQueue(graphicsQueue)
             , m_descriptorManager(descriptorManager)
         {
-            FE_Assert(device && resourcePool && asyncCopyQueue && descriptorManager);
+            FE_Assert(device && resourcePool && asyncCopyQueue && graphicsQueue && descriptorManager);
         }
 
         ~Impl()
@@ -97,6 +99,7 @@ namespace FE::Graphics
             TextureAsset& asset = *entry.m_asset;
             TextureStreamingOperation* operation = asset.m_currentOperation;
             Rc<Core::Texture> texture = operation->TakeTexture();
+            m_graphicsQueue->PublishShaderRead(texture.Get());
             asset.m_residentMip = operation->GetTargetIndex();
             if (asset.m_descriptorIndex == kInvalidIndex)
             {
@@ -156,15 +159,16 @@ namespace FE::Graphics
         Core::Device* m_device = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
         Core::AsyncCopyQueue* m_asyncCopyQueue = nullptr;
+        Core::GraphicsQueue* m_graphicsQueue = nullptr;
         Core::DescriptorManager* m_descriptorManager = nullptr;
         festd::vector<Entry> m_entries;
     };
 
 
     TextureStreamer::TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
-                                     Core::DescriptorManager* descriptorManager)
+                                     Core::GraphicsQueue* graphicsQueue, Core::DescriptorManager* descriptorManager)
     {
-        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue, descriptorManager);
+        m_impl = Memory::DefaultNew<Impl>(device, resourcePool, asyncCopyQueue, graphicsQueue, descriptorManager);
     }
 
 

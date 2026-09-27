@@ -8,6 +8,8 @@ namespace FE::Graphics::DepthPrepass
 {
     struct PassData final
     {
+        bool m_hasDraws = false;
+
         FE_RTTI_Reflect("6AE6D9A2-F171-4552-A2B4-208BECB536AA");
     };
 
@@ -24,5 +26,5 @@ namespace FE::Graphics::DepthPrepass
         void DoRelease() override;
     };
 
-    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene);
+    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
 } // namespace FE::Graphics::DepthPrepass

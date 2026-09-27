@@ -86,6 +86,7 @@ namespace FE::Graphics
         [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
         void DestroyInstance(MeshHandle instance);
         void Update() override;
+        void CollectRenderBatches(RenderBatchCollector& collector) override;
 
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
         {

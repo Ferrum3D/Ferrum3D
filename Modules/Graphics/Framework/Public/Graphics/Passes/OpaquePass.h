@@ -24,5 +24,5 @@ namespace FE::Graphics::OpaquePass
         void DoRelease() override;
     };
 
-    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene);
+    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard);
 } // namespace FE::Graphics::OpaquePass

@@ -1,4 +1,5 @@
 ﻿#include <Core/Containers/SegmentedVector.h>
+#include <Core/Memory/LinearAllocator.h>
 #include <festd/vector.h>
 #include <gtest/gtest.h>
 
@@ -158,5 +159,46 @@ TEST(SegmentedVector, ManyElements)
     for (int32_t valueIndex = 0; valueIndex < 10000; ++valueIndex)
     {
         EXPECT_EQ(valueIndex, vec[valueIndex]);
+    }
+}
+
+
+TEST(SegmentedVector, AlignedNestedElementsWithLinearAllocator)
+{
+    struct alignas(16) AlignedValue final
+    {
+        uint32_t m_value = 0;
+    };
+
+    struct alignas(16) Batch final
+    {
+        explicit Batch(std::pmr::memory_resource* allocator)
+            : m_values(allocator)
+        {
+        }
+
+        SegmentedVector<AlignedValue, 256> m_values;
+    };
+
+    Memory::LinearAllocator allocator;
+    SegmentedVector<Batch, 256> batches(&allocator);
+    for (uint32_t batchIndex = 0; batchIndex < 64; ++batchIndex)
+    {
+        Batch& batch = batches.emplace_back(&allocator);
+        EXPECT_EQ(reinterpret_cast<uintptr_t>(&batch) % alignof(Batch), 0);
+
+        for (uint32_t valueIndex = 0; valueIndex < 32; ++valueIndex)
+        {
+            AlignedValue& value = batch.m_values.emplace_back();
+            value.m_value = batchIndex * 32 + valueIndex;
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(&value) % alignof(AlignedValue), 0);
+        }
+    }
+
+    for (uint32_t batchIndex = 0; batchIndex < batches.size(); ++batchIndex)
+    {
+        EXPECT_EQ(batches[batchIndex].m_values.size(), 32);
+        for (uint32_t valueIndex = 0; valueIndex < 32; ++valueIndex)
+            EXPECT_EQ(batches[batchIndex].m_values[valueIndex].m_value, batchIndex * 32 + valueIndex);
     }
 }

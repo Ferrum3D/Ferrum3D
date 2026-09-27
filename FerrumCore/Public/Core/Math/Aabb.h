@@ -170,13 +170,13 @@ namespace FE
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL Overlaps(const Aabb& lhs, const Aabb& rhs)
         {
-            return (CmpLessEqualMask(lhs.min, rhs.max) & CmpGreaterEqualMask(lhs.max, rhs.min)) == 0;
+            return (CmpLessEqualMask(lhs.min, rhs.max) & CmpGreaterEqualMask(lhs.max, rhs.min)) == 0b111;
         }
 
 
         FE_FORCE_INLINE FE_NO_SECURITY_COOKIE bool FE_VECTORCALL Contains(const Aabb& lhs, const Aabb& rhs)
         {
-            return (CmpGreaterEqualMask(rhs.min, lhs.min) & CmpLessEqualMask(rhs.max, lhs.min)) == 0;
+            return (CmpGreaterEqualMask(rhs.min, lhs.min) & CmpLessEqualMask(rhs.max, lhs.max)) == 0b111;
         }
 
 

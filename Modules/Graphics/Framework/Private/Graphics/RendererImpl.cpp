@@ -192,8 +192,8 @@ namespace FE::Graphics
 
         view.Update(blackboard);
 
-        DepthPrepass::AddPasses(graph, blackboard, scene);
-        OpaquePass::AddPasses(graph, blackboard, scene);
+        DepthPrepass::AddPasses(graph, blackboard);
+        OpaquePass::AddPasses(graph, blackboard);
     }
 
 

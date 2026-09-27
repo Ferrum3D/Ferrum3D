@@ -8,6 +8,7 @@ namespace FE::Graphics::Core
     struct AsyncCopyQueue;
     struct DescriptorManager;
     struct Device;
+    struct GraphicsQueue;
     struct ResourcePool;
 } // namespace FE::Graphics::Core
 
@@ -17,7 +18,7 @@ namespace FE::Graphics
     struct TextureStreamer final : public IO::Streamer
     {
         TextureStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
-                        Core::DescriptorManager* descriptorManager);
+                        Core::GraphicsQueue* graphicsQueue, Core::DescriptorManager* descriptorManager);
         ~TextureStreamer() override;
 
         TextureStreamer(const TextureStreamer&) = delete;

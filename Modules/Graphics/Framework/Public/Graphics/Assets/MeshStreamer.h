@@ -7,6 +7,7 @@ namespace FE::Graphics::Core
 {
     struct AsyncCopyQueue;
     struct Device;
+    struct GraphicsQueue;
     struct ResourcePool;
 } // namespace FE::Graphics::Core
 
@@ -15,7 +16,8 @@ namespace FE::Graphics
     //! Explicit LOD residency controller. Mesh LOD indices are least-detailed-first and request the inclusive range [0, lodIndex].
     struct MeshStreamer final : public IO::Streamer
     {
-        MeshStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue);
+        MeshStreamer(Core::Device* device, Core::ResourcePool* resourcePool, Core::AsyncCopyQueue* asyncCopyQueue,
+                     Core::GraphicsQueue* graphicsQueue);
         ~MeshStreamer() override;
 
         MeshStreamer(const MeshStreamer&) = delete;

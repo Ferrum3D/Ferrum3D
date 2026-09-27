@@ -85,7 +85,6 @@ typedef min16float4 fehalf4;
 #define FE_OUTPUT_TOPOLOGY(topology) [outputtopology(topology)]
 
 FE_CONSTEXPR uint32_t kInvalidIndex = 0xffffffff;
-FE_CONSTEXPR uint kLanesPerWave = 32;
 
 
 namespace Core

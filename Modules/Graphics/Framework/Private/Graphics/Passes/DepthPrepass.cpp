@@ -1,8 +1,7 @@
-#include <Core/Math/Colors.h>
-#include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Scene/RenderBatch.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
@@ -33,50 +32,54 @@ namespace FE::Graphics::DepthPrepass
     }
 
 
-    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard, Scene& scene)
+    void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
         if (!blackboard.Contains<PassData>())
             return;
 
         const RendererViewData& viewData = blackboard.Get<RendererViewData>();
-        auto* meshModule = scene.GetModules().TryFind<MeshSceneModule>();
-        if (meshModule == nullptr)
-            return;
+        RenderBatchCollector batches(graph.GetAllocator(),
+                                     viewData.m_view->GetViewProjectionMatrix(),
+                                     Core::Format::kUndefined,
+                                     DrawTags::DepthPrepass,
+                                     "DepthOnly");
+        batches.Collect(*viewData.m_scene);
 
-        MeshBatch* batch = festd::single(meshModule->GetBatches());
-        FE_Assert(batch != nullptr);
+        festd::inline_vector<const RenderDraw*, 64> draws;
+        for (const RenderBatch& batch : batches.GetBatches())
+        {
+            for (const RenderDraw& draw : batch.m_draws)
+                draws.push_back(&draw);
+        }
 
-        const DB::Ref<MeshInstanceTable> instanceRef = festd::single(batch->m_meshInstances);
-
-        const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
-        const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
-        const IO::AssetRead<MeshAsset> meshAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
-        const IO::AssetRead<MaterialInstanceAsset> material = meshModule->FindMaterial(instanceRow.m_meshGroup.Get());
-        FE_Assert(meshAsset && meshAsset->m_buffer);
-        FE_Assert(material && material->m_runtime);
-
-        const DB::Slice<MeshLodInfoTable> lods = groupRow.m_lods.Get();
-        const Core::MeshLodInfo lodInfo = meshModule->GetMeshLodInfoTable()->ReadRow(lods.m_rowIndex).m_info.Get();
-
-        auto* passDesc = graph.AllocatePassData<PassDesc>();
-        passDesc->m_constants.m_meshInstanceTable = meshModule->GetMeshInstanceTable()->GetDeviceAddress();
-        passDesc->m_constants.m_meshGroupTable = meshModule->GetMeshGroupTable()->GetDeviceAddress();
-        passDesc->m_constants.m_meshLodInfoTable = meshModule->GetMeshLodInfoTable()->GetDeviceAddress();
-        passDesc->m_constants.m_materialInstanceTable = meshModule->GetMaterialInstanceTable()->GetDeviceAddress();
-        passDesc->m_constants.m_instanceIndex = instanceRef.m_rowIndex;
-        passDesc->m_constants.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
-        passDesc->m_geometryBuffer = {
-            Core::BufferView::Create(meshAsset->m_buffer.Get()),
-            Core::BarrierSyncFlags::kMeshShading,
-            Core::BarrierAccessFlags::kShaderRead,
-        };
-        passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
-        passDesc->m_viewport = viewData.m_viewportRect;
-        passDesc->m_pipeline = material->m_runtime->GetPipeline("DepthOnly", Core::Format::kUndefined);
-
-        graph.AddPass("DepthPrepass", passDesc, [meshletCount = lodInfo.m_meshletCount](Core::FrameGraphContext& context) {
-            context.ClearDepthStencilTarget(0.0f, 0);
-            context.DispatchMesh(meshletCount);
+        festd::sort(draws, [](const RenderDraw* lhs, const RenderDraw* rhs) {
+            return reinterpret_cast<uintptr_t>(lhs->m_pipeline) < reinterpret_cast<uintptr_t>(rhs->m_pipeline);
         });
+
+        blackboard.Get<PassData>().m_hasDraws = !draws.empty();
+
+        bool isFirstDraw = true;
+        for (const RenderDraw* draw : draws)
+        {
+            auto* passDesc = graph.AllocatePassData<PassDesc>();
+            passDesc->m_constants.m_viewProjection = draw->m_viewProjection;
+            passDesc->m_constants.m_meshInstanceTable = draw->m_meshInstanceTable;
+            passDesc->m_constants.m_meshGroupTable = draw->m_meshGroupTable;
+            passDesc->m_constants.m_meshLodInfoTable = draw->m_meshLodInfoTable;
+            passDesc->m_constants.m_materialInstanceTable = draw->m_materialInstanceTable;
+            passDesc->m_constants.m_instanceIndex = draw->m_instanceIndex;
+            passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
+            passDesc->m_viewport = viewData.m_viewportRect;
+            passDesc->m_pipeline = draw->m_pipeline;
+
+            graph.AddPass("DepthPrepass",
+                          passDesc,
+                          [meshletCount = draw->m_meshletCount, isFirstDraw](Core::FrameGraphContext& context) {
+                              if (isFirstDraw)
+                                  context.ClearDepthStencilTarget(0.0f, 0);
+                              context.DispatchMesh(meshletCount);
+                          });
+            isFirstDraw = false;
+        }
     }
 } // namespace FE::Graphics::DepthPrepass

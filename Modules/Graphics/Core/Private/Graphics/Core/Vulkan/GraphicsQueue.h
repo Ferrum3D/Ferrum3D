@@ -37,6 +37,9 @@ namespace FE::Graphics::Vulkan
 
         Core::FenceSyncPoint GetCurrentFence() const override;
 
+        void PublishShaderRead(Core::Buffer* buffer) override;
+        void PublishShaderRead(Core::Texture* texture) override;
+
         void BeginFrame() override;
         Core::FenceSyncPoint CloseFrame() override;
         void Drain() override;
@@ -56,6 +59,8 @@ namespace FE::Graphics::Vulkan
 
         Memory::SpinLockedPoolAllocator m_sharedPagePool{ "Graphics/GraphicsCommandBufferPagePool", 8096 };
         festd::inline_vector<Rc<CommandBuffer>> m_graphicsCommandBuffers;
+        festd::vector<Rc<Core::Buffer>> m_pendingShaderReadBuffers;
+        festd::vector<Rc<Core::Texture>> m_pendingShaderReadTextures;
     };
 
     FE_ENABLE_IMPL_CAST(GraphicsQueue);

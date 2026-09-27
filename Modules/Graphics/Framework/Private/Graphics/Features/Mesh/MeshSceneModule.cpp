@@ -2,6 +2,7 @@
 #include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>
+#include <Graphics/Scene/RenderBatch.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
@@ -143,6 +144,57 @@ namespace FE::Graphics
             if (group != nullptr)
                 UpdateGroup(group);
         }
+    }
+
+
+    void MeshSceneModule::CollectRenderBatches(RenderBatchCollector& collector)
+    {
+        const auto collectBatch = [this, &collector](const MeshBatch* meshBatch) {
+            if (meshBatch->m_handles.empty() || !meshBatch->m_drawTagMask.Contains(collector.GetDrawTag())
+                || !collector.IsVisible(meshBatch->m_octreeEntry.m_bounds))
+                return;
+
+            RenderBatch* batch = nullptr;
+            for (const MeshHandle handle : meshBatch->m_handles)
+            {
+                const InstanceRecord& record = m_instances[handle.m_value];
+                const MeshGroup* group = record.m_group;
+                const IO::AssetRead<MeshAsset> mesh = group->m_asset.Read();
+                const IO::AssetRead<MaterialInstanceAsset> material = group->m_material.Read();
+                if (!mesh || !material || !material->m_runtime || !mesh->m_buffer || group->m_lodsRef.m_count == 0)
+                    continue;
+
+                const uint32_t meshletCount =
+                    m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
+                if (meshletCount == 0 || !material->m_runtime->HasTechnique(collector.GetTechniqueRole()))
+                    continue;
+
+                if (batch == nullptr)
+                    batch = &collector.AddBatch(meshBatch->m_octreeEntry.m_bounds);
+
+                RenderDraw& draw = batch->m_draws.emplace_back();
+                draw.m_viewProjection = collector.GetViewProjection();
+                draw.m_meshInstanceTable = m_meshInstanceTable->GetDeviceAddress();
+                draw.m_meshGroupTable = m_meshGroupTable->GetDeviceAddress();
+                draw.m_meshLodInfoTable = m_meshLodInfoTable->GetDeviceAddress();
+                draw.m_materialInstanceTable = m_materialInstanceTable->GetDeviceAddress();
+                draw.m_instanceIndex = record.m_tableRef.m_rowIndex;
+                draw.m_meshletCount = meshletCount;
+                draw.m_pipeline = material->m_runtime->GetPipeline(collector.GetTechniqueRole(), collector.GetColorFormat());
+            }
+        };
+
+        if (!Math::Overlaps(collector.GetFrustumBounds(), m_octree.GetBounds()))
+        {
+            for (const MeshBatch* meshBatch : m_batches)
+                collectBatch(meshBatch);
+            return;
+        }
+
+        m_octree.Traverse(collector.GetFrustumBounds(), [&](const Aabb&, const festd::span<OctreeEntry*> entries) {
+            for (const OctreeEntry* entry : entries)
+                collectBatch(m_batches[entry->m_userIndex]);
+        });
     }
 
 
