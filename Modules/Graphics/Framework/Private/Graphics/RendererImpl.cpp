@@ -1,4 +1,5 @@
 #include <Core/Env/Environment.h>
+#include <Core/Math/Colors.h>
 #include <Graphics/Core/AsyncCopyQueue.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
@@ -195,6 +196,16 @@ namespace FE::Graphics
         viewData.m_renderQueueUploader = &m_renderQueueUploader;
 
         view.Update(blackboard);
+
+        auto* clearPass = graph.AllocatePassData<RendererTargetClearPassDesc>();
+        clearPass->m_colorTarget = Core::TextureView::Create(viewData.m_mainColorTarget);
+        clearPass->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
+        clearPass->m_viewport = viewData.m_viewportRect;
+        graph.AddPass("ClearRendererTargets", clearPass, [](Core::FrameGraphContext& context) {
+            context.ClearColorTarget(0, Colors::kDarkSlateBlue);
+            context.ClearDepthStencilTarget(0.0f, 0);
+            context.ClearRenderTargets();
+        });
 
         DepthPrepass::AddPasses(graph, blackboard);
         OpaquePass::AddPasses(graph, blackboard);

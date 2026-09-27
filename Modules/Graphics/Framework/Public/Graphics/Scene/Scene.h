@@ -1,10 +1,30 @@
 #pragma once
+#include <Core/Env/Environment.h>
+#include <Core/Math/Matrix4x4.h>
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
+#include <Graphics/Base/DrawTag.h>
+#include <Graphics/Core/Texture.h>
+#include <Graphics/Core/Viewport.h>
 
 namespace FE::Graphics
 {
     struct RenderBatchCollector;
+    namespace Core
+    {
+        struct FrameGraph;
+        struct RingUploader;
+    } // namespace Core
+
+    struct SceneRenderPass final
+    {
+        Matrix4x4 m_viewProjection;
+        Core::Texture* m_colorTarget = nullptr;
+        Core::Texture* m_depthTarget = nullptr;
+        RectF m_viewport{ kForceInit };
+        DrawTag m_drawTag;
+        Env::Name m_techniqueRole;
+    };
 
     struct SceneModuleBase : public Memory::RefCountedObjectBase
     {
@@ -14,6 +34,7 @@ namespace FE::Graphics
 
         virtual void Update() {}
         virtual void CollectRenderBatches(RenderBatchCollector&) {}
+        virtual void AddRenderPasses(Core::FrameGraph&, Core::RingUploader&, const SceneRenderPass&) {}
 
     protected:
         explicit SceneModuleBase(Scene* scene)

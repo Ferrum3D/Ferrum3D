@@ -253,6 +253,37 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraphContext::BeginRenderPass()
+    {
+        FE_Assert(!m_renderPassActive);
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kRenderTargets));
+
+        if (m_viewportState.m_action == StateAction::kReset)
+        {
+            const Vector2UInt size = m_renderTargetState.m_renderTargetCount > 0
+                ? m_renderTargetState.m_renderTargets[0].GetBaseDesc().GetSize2D()
+                : m_renderTargetState.m_depthStencil.GetBaseDesc().GetSize2D();
+            SetViewport(RectF::FromPosAndSize({ 0.0f, 0.0f }, Vector2(size)));
+        }
+        if (m_scissorState.m_action == StateAction::kReset)
+            SetScissor(RectInt(m_viewportState.m_viewport));
+
+        BeginRenderPassImpl();
+        m_renderPassActive = true;
+        m_viewportState.m_action = StateAction::kKeep;
+        m_scissorState.m_action = StateAction::kKeep;
+    }
+
+
+    void FrameGraphContext::EndRenderPass()
+    {
+        FE_Assert(m_renderPassActive);
+        EndRenderPassImpl();
+        m_renderPassActive = false;
+        ClearStatesInternal();
+    }
+
+
     void FrameGraphContext::Dispatch(const Core::ComputeWorkGroupCount workGroupCount)
     {
         FE_PROFILER_ZONE();
@@ -276,9 +307,18 @@ namespace FE::Graphics::Common
 
     void FrameGraphContext::ClearStatesInternal()
     {
-        m_setStateMask = PipelineStateFlags::kNone;
-        m_viewportState.m_action = StateAction::kReset;
-        m_scissorState.m_action = StateAction::kReset;
+        if (m_renderPassActive)
+        {
+            m_setStateMask &= PipelineStateFlags::kRenderTargets | PipelineStateFlags::kViewport | PipelineStateFlags::kScissor;
+            m_viewportState.m_action = StateAction::kKeep;
+            m_scissorState.m_action = StateAction::kKeep;
+        }
+        else
+        {
+            m_setStateMask = PipelineStateFlags::kNone;
+            m_viewportState.m_action = StateAction::kReset;
+            m_scissorState.m_action = StateAction::kReset;
+        }
         m_pipelineState.m_action = StateAction::kReset;
         m_stencilRefState.m_action = StateAction::kReset;
         m_renderTargetState.m_loadOperations = Core::RenderTargetLoadOperations::kDefault;

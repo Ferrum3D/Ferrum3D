@@ -139,6 +139,31 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void FrameGraphContext::ClearRenderTargets()
+    {
+        FE_Assert(Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kRenderTargets));
+        if (m_scissorState.m_action == StateAction::kReset)
+            SetScissor(RectInt(m_viewportState.m_viewport));
+
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+        BeginRendering(vkCommandBuffer);
+        vkCmdEndRendering(vkCommandBuffer);
+        ClearStatesInternal();
+    }
+
+
+    void FrameGraphContext::BeginRenderPassImpl()
+    {
+        BeginRendering(m_graphicsCommandBuffer->GetNative());
+    }
+
+
+    void FrameGraphContext::EndRenderPassImpl()
+    {
+        vkCmdEndRendering(m_graphicsCommandBuffer->GetNative());
+    }
+
+
     void FrameGraphContext::PrepareDraw(const VkCommandBuffer vkCommandBuffer)
     {
         if (m_stencilRefState.m_action == StateAction::kSet)
@@ -198,12 +223,14 @@ namespace FE::Graphics::Vulkan
                                      const uint32_t instanceOffset)
     {
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
-        BeginRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            BeginRendering(vkCommandBuffer);
         PrepareDraw(vkCommandBuffer);
 
         vkCmdDraw(vkCommandBuffer, vertexCount, instanceCount, vertexOffset, instanceOffset);
 
-        vkCmdEndRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            vkCmdEndRendering(vkCommandBuffer);
     }
 
 
@@ -211,7 +238,8 @@ namespace FE::Graphics::Vulkan
                                             const uint32_t vertexOffset, const uint32_t instanceOffset)
     {
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
-        BeginRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            BeginRendering(vkCommandBuffer);
         PrepareDraw(vkCommandBuffer);
 
         vkCmdDrawIndexed(vkCommandBuffer,
@@ -221,7 +249,8 @@ namespace FE::Graphics::Vulkan
                          static_cast<int32_t>(vertexOffset),
                          instanceOffset);
 
-        vkCmdEndRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            vkCmdEndRendering(vkCommandBuffer);
     }
 
 
@@ -231,7 +260,8 @@ namespace FE::Graphics::Vulkan
         FE_Assert(pipelineImpl->IsReady());
 
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
-        BeginRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            BeginRendering(vkCommandBuffer);
 
         if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
@@ -258,7 +288,8 @@ namespace FE::Graphics::Vulkan
 
         vkCmdDrawMeshTasksEXT(vkCommandBuffer, workGroupCount.x, workGroupCount.y, workGroupCount.z);
 
-        vkCmdEndRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            vkCmdEndRendering(vkCommandBuffer);
     }
 
 
@@ -268,7 +299,8 @@ namespace FE::Graphics::Vulkan
         FE_Assert(pipelineImpl->IsReady());
 
         const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
-        BeginRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            BeginRendering(vkCommandBuffer);
 
         if (m_stencilRefState.m_action == StateAction::kSet)
             vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
@@ -299,7 +331,8 @@ namespace FE::Graphics::Vulkan
                                       1,
                                       sizeof(VkDrawMeshTasksIndirectCommandEXT));
 
-        vkCmdEndRendering(vkCommandBuffer);
+        if (!m_renderPassActive)
+            vkCmdEndRendering(vkCommandBuffer);
     }
 
 

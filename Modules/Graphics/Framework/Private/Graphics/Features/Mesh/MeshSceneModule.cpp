@@ -1,12 +1,17 @@
 #include <Core/Memory/FiberTempAllocator.h>
 #include <Graphics/Core/DescriptorManager.h>
+#include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>
+#include <Graphics/Scene/IndirectMeshBatcher.h>
 #include <Graphics/Scene/RenderBatch.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
 #include <Graphics/Tables/MeshInstanceTable.h>
 #include <Graphics/Tables/MeshLodInfoTable.h>
+
+#include <Shaders/Passes/MeshPass/IndirectArguments.h>
+#include <Shaders/Passes/MeshPass/MeshPass.h>
 
 namespace FE::Graphics
 {
@@ -196,6 +201,79 @@ namespace FE::Graphics
             for (const OctreeEntry* entry : entries)
                 collectBatch(m_batches[entry->m_userIndex]);
         });
+    }
+
+
+    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
+    {
+        const Core::Format colorFormat =
+            pass.m_colorTarget != nullptr ? pass.m_colorTarget->GetDesc().m_imageFormat : Core::Format::kUndefined;
+        RenderBatchCollector batches(graph.GetAllocator(),
+                                     pass.m_viewProjection,
+                                     colorFormat,
+                                     pass.m_drawTag,
+                                     pass.m_techniqueRole);
+        CollectRenderBatches(batches);
+
+        IndirectMeshBatcher batcher(graph.GetAllocator());
+        batcher.Build(graph, uploader, batches.GetBatches());
+        if (batcher.m_groups.empty())
+            return;
+
+        const Core::FrameGraphBufferDescriptorHandle indicesHandle = graph.GetDescriptor(batcher.m_instanceIndices.Get());
+        graph.GetDescriptorManager()->CommitResourceDescriptor(indicesHandle.m_descriptorIndex, Core::DescriptorType::kSRV);
+
+        const Core::PassBufferAccess indicesAccess{ batcher.m_instanceIndices.Get(),
+                                                    Core::BarrierSyncFlags::kMeshShading,
+                                                    Core::BarrierAccessFlags::kShaderRead };
+        const Core::PassBufferAccess argumentsAccess{ batcher.m_arguments.Get(),
+                                                      Core::BarrierSyncFlags::kExecuteIndirect,
+                                                      Core::BarrierAccessFlags::kIndirectArgument };
+
+        auto dispatch = [groups = std::move(batcher.m_groups),
+                         arguments = Core::BufferView(batcher.m_arguments.Get()),
+                         indices = BufferSRVDescriptor{ indicesHandle.m_descriptorIndex },
+                         viewProjection = pass.m_viewProjection](Core::FrameGraphContext& context) {
+            context.BeginRenderPass();
+            for (const IndirectMeshGroup& group : groups)
+            {
+                MeshPass::Constants constants;
+                constants.m_viewProjection = viewProjection;
+                constants.m_meshInstanceTable = group.m_meshInstanceTable;
+                constants.m_meshGroupTable = group.m_meshGroupTable;
+                constants.m_meshLodInfoTable = group.m_meshLodInfoTable;
+                constants.m_materialInstanceTable = group.m_materialInstanceTable;
+                constants.m_instanceIndices = indices;
+                constants.m_firstInstance = group.m_firstInstance;
+                constants.m_meshletCount = group.m_meshletCount;
+                constants.m_meshletX = group.m_meshletX;
+
+                context.SetPipeline(group.m_pipeline);
+                context.PushConstants(constants);
+                context.DispatchMeshIndirect(arguments, group.m_argumentIndex * sizeof(MeshPass::MeshDispatchArguments));
+            }
+            context.EndRenderPass();
+        };
+
+        if (pass.m_colorTarget == nullptr)
+        {
+            auto* passDesc = graph.AllocatePassData<MeshPass::DepthPassDesc>();
+            passDesc->m_depthTarget = Core::TextureView::Create(pass.m_depthTarget);
+            passDesc->m_viewport = pass.m_viewport;
+            passDesc->m_instanceIndices = indicesAccess;
+            passDesc->m_arguments = argumentsAccess;
+            graph.AddPass("MeshDepthPass", passDesc, std::move(dispatch));
+        }
+        else
+        {
+            auto* passDesc = graph.AllocatePassData<MeshPass::OpaquePassDesc>();
+            passDesc->m_colorTarget = Core::TextureView::Create(pass.m_colorTarget);
+            passDesc->m_depthTarget = Core::TextureView::Create(pass.m_depthTarget);
+            passDesc->m_viewport = pass.m_viewport;
+            passDesc->m_instanceIndices = indicesAccess;
+            passDesc->m_arguments = argumentsAccess;
+            graph.AddPass("MeshOpaquePass", passDesc, std::move(dispatch));
+        }
     }
 
 

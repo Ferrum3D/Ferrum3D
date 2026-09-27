@@ -19,6 +19,7 @@ namespace FE::Graphics::Vulkan
         void EnqueueFenceToWait(const Core::FenceSyncPoint& fence) override;
 
         void Copy(Core::BufferView destination, Core::BufferView source) override;
+        void ClearRenderTargets() override;
 
     private:
         void PrepareDraw(VkCommandBuffer vkCommandBuffer);
@@ -29,6 +30,8 @@ namespace FE::Graphics::Vulkan
         void DispatchMeshImpl(Vector3UInt workGroupCount) override;
         void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) override;
         void DispatchImpl(Vector3UInt workGroupCount) override;
+        void BeginRenderPassImpl() override;
+        void EndRenderPassImpl() override;
 
         void BeginRendering(VkCommandBuffer vkCommandBuffer) const;
 

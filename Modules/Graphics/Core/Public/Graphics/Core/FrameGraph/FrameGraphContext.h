@@ -186,6 +186,9 @@ namespace FE::Graphics::Core
 
         virtual void ClearColorTarget(uint32_t renderTargetIndex, Color4F color) = 0;
         virtual void ClearDepthStencilTarget(float depth, uint8_t stencil) = 0;
+        virtual void ClearRenderTargets() = 0;
+        virtual void BeginRenderPass() = 0;
+        virtual void EndRenderPass() = 0;
         virtual void DiscardColorTarget(uint32_t renderTargetIndex) = 0;
         virtual void DiscardDepthStencilTarget() = 0;
 

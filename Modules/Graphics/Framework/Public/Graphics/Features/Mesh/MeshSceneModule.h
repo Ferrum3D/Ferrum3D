@@ -87,6 +87,7 @@ namespace FE::Graphics
         void DestroyInstance(MeshHandle instance);
         void Update() override;
         void CollectRenderBatches(RenderBatchCollector& collector) override;
+        void AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass) override;
 
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
         {

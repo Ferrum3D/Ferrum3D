@@ -242,6 +242,7 @@ namespace FE::Graphics::Common
         }
 
         const bool isGraphicsPipeline = Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kGraphicsPipeline);
+        const bool isGraphicsPass = !Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kComputePipeline);
 
         for (const Rtti::FieldInfo& field : descType->m_fields)
         {
@@ -277,7 +278,7 @@ namespace FE::Graphics::Common
             {
                 for (uint32_t arrayIndex = 0; arrayIndex < field.m_arraySize; ++arrayIndex)
                 {
-                    FE_Assert(isGraphicsPipeline);
+                    FE_Assert(isGraphicsPass);
 
                     const Core::PassColorTarget colorTarget =
                         field.Get<Core::PassColorTarget>(pass.m_userPassDescPtr, arrayIndex);
@@ -304,15 +305,19 @@ namespace FE::Graphics::Common
             else if (field.m_type == Rtti::GetTypeID<Core::PassDepthTarget>())
             {
                 FE_Assert(field.m_arraySize == 1, "Depth target can only be specified once");
-                FE_Assert(isGraphicsPipeline);
+                FE_Assert(isGraphicsPass);
 
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kDepthTarget));
                 const Core::PassDepthTarget depthTarget = field.Get<Core::PassDepthTarget>(pass.m_userPassDescPtr);
                 FE_Assert(depthTarget.m_target.m_subresource.m_mipSliceCount == 1);
                 FE_Assert(depthTarget.m_target.m_subresource.m_arraySize == 1);
 
-                const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
-                const bool isDepthWriteEnabled = graphicsPipeline->GetDesc().m_depthStencil.m_depthWriteEnabled;
+                bool isDepthWriteEnabled = true;
+                if (isGraphicsPipeline)
+                {
+                    const auto* graphicsPipeline = Rtti::AssertCast<const Core::GraphicsPipeline*>(pass.m_pipeline);
+                    isDepthWriteEnabled = graphicsPipeline->GetDesc().m_depthStencil.m_depthWriteEnabled;
+                }
 
                 auto accessFlags = Core::BarrierAccessFlags::kDepthStencilRead;
                 if (isDepthWriteEnabled)
@@ -334,7 +339,7 @@ namespace FE::Graphics::Common
             else if (field.m_type == Rtti::GetTypeID<Core::PassViewport>())
             {
                 FE_Assert(field.m_arraySize == 1);
-                FE_Assert(isGraphicsPipeline);
+                FE_Assert(isGraphicsPass);
 
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kViewport));
                 const Core::PassViewport viewport = field.Get<Core::PassViewport>(pass.m_userPassDescPtr);
@@ -344,7 +349,7 @@ namespace FE::Graphics::Common
             else if (field.m_type == Rtti::GetTypeID<Core::PassScissor>())
             {
                 FE_Assert(field.m_arraySize == 1);
-                FE_Assert(isGraphicsPipeline);
+                FE_Assert(isGraphicsPass);
 
                 FE_Assert(!Bit::AnySet(pass.m_specifiedStatesMask, PassStateFlags::kScissor));
                 const Core::PassScissor scissor = field.Get<Core::PassScissor>(pass.m_userPassDescPtr);

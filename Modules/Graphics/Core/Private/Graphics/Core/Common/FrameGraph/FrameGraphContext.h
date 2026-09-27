@@ -63,6 +63,9 @@ namespace FE::Graphics::Common
 
         bool IsCleanState() const final;
 
+        void BeginRenderPass() final;
+        void EndRenderPass() final;
+
     protected:
         explicit FrameGraphContext(Core::FrameGraph* frameGraph);
 
@@ -72,9 +75,13 @@ namespace FE::Graphics::Common
         virtual void DispatchMeshImpl(Vector3UInt workGroupCount) = 0;
         virtual void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) = 0;
         virtual void DispatchImpl(Vector3UInt workGroupCount) = 0;
+        virtual void BeginRenderPassImpl() = 0;
+        virtual void EndRenderPassImpl() = 0;
 
         void ClearStatesInternal();
         void PrepareStatesInternal();
+
+        bool m_renderPassActive = false;
 
         enum class StateAction
         {
