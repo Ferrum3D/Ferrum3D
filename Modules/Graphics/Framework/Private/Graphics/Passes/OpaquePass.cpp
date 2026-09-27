@@ -51,10 +51,10 @@ namespace FE::Graphics::OpaquePass
 
         const MeshInstanceTable::Row instanceRow = meshModule->GetMeshInstanceTable()->ReadRow(instanceRef);
         const MeshGroupTable::Row groupRow = meshModule->GetMeshGroupTable()->ReadRow(instanceRow.m_meshGroup.Get());
-        const MeshAsset* meshAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
-        MaterialInstanceRuntime* material = meshModule->FindMaterial(instanceRow.m_meshGroup.Get());
+        const IO::AssetRead<MeshAsset> meshAsset = meshModule->FindAsset(instanceRow.m_meshGroup.Get());
+        const IO::AssetRead<MaterialInstanceAsset> material = meshModule->FindMaterial(instanceRow.m_meshGroup.Get());
         FE_Assert(meshAsset && meshAsset->m_buffer);
-        FE_Assert(material != nullptr);
+        FE_Assert(material && material->m_runtime);
 
         const DB::Slice<MeshLodInfoTable> lods = groupRow.m_lods.Get();
         const Core::MeshLodInfo lodInfo = meshModule->GetMeshLodInfoTable()->ReadRow(lods.m_rowIndex).m_info.Get();
@@ -74,7 +74,7 @@ namespace FE::Graphics::OpaquePass
         passDesc->m_colorTarget = Core::TextureView::Create(viewData.m_mainColorTarget);
         passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
         passDesc->m_viewport = viewData.m_viewportRect;
-        passDesc->m_pipeline = material->GetPipeline("Opaque", viewData.m_mainColorTarget->GetDesc().m_imageFormat);
+        passDesc->m_pipeline = material->m_runtime->GetPipeline("Opaque", viewData.m_mainColorTarget->GetDesc().m_imageFormat);
 
         const bool hasDepthPrepass = blackboard.Contains<DepthPrepass::PassData>();
         graph.AddPass("OpaquePass",

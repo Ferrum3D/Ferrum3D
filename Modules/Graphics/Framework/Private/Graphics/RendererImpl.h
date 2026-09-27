@@ -40,16 +40,16 @@ namespace FE::Graphics
 
         void DoRelease() override;
 
+        Rc<Core::Device> m_device;
+        Rc<Core::ResourcePool> m_resourcePool;
         Rc<Core::GraphicsQueue> m_graphicsQueue;
         Rc<Core::AsyncCopyQueue> m_asyncCopyQueue;
-        Rc<Core::ResourcePool> m_resourcePool;
         Rc<Core::DescriptorManager> m_descriptorManager;
         Rc<Core::FrameGraph> m_frameGraph;
 
         festd::unique_ptr<DB::Database> m_database;
         festd::unique_ptr<MaterialParameterAllocator> m_materialParameters;
         festd::vector<Rc<Scene>> m_scenes;
-        Rc<Core::Device> m_device;
         Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;
     };

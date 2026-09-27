@@ -10,6 +10,8 @@ namespace FE::Graphics
 
         ~SceneModuleBase() override = default;
 
+        virtual void Update() {}
+
     protected:
         explicit SceneModuleBase(Scene* scene)
             : m_scene(scene)

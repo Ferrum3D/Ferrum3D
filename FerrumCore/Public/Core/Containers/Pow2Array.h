@@ -223,7 +223,7 @@ namespace FE
     {
         const uint32_t currentCapacity = capacity();
         if (m_size == currentCapacity)
-            reserve(currentCapacity * 2);
+            reserve(currentCapacity == 0 ? 1 : currentCapacity * 2);
 
         return &m_data[m_size++];
     }
@@ -264,27 +264,27 @@ namespace FE
     template<class T>
     void Pow2Array<T>::shrink_to_fit()
     {
-        const uint32_t newCapacity = Math::CeilPowerOfTwo(m_size);
         const uint32_t currentCapacity = capacity();
+        if (m_size == 0)
+        {
+            if (currentCapacity != 0)
+                m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
+            m_data = nullptr;
+            m_capacityLog2 = 0;
+            return;
+        }
+
+        const uint32_t newCapacity = Math::CeilPowerOfTwo(m_size);
         if (currentCapacity > newCapacity)
         {
-            if (m_size == 0)
-            {
-                m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
-                m_data = nullptr;
-                m_capacityLog2 = 0;
-            }
-            else
-            {
-                const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
-                FE_AssertDebug((uint32_t{ 1 } << newCapacityLog2) == newCapacity);
+            const uint32_t newCapacityLog2 = Math::FloorLog2(newCapacity);
+            FE_AssertDebug((uint32_t{ 1 } << newCapacityLog2) == newCapacity);
 
-                T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
-                festd::uninitialized_copy_n(m_data.Get(), m_size, newData);
-                m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
-                m_data = newData;
-                m_capacityLog2 = newCapacityLog2 + 1;
-            }
+            T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
+            festd::uninitialized_copy_n(m_data.Get(), m_size, newData);
+            m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
+            m_data = newData;
+            m_capacityLog2 = newCapacityLog2 + 1;
         }
     }
 
@@ -303,7 +303,7 @@ namespace FE
     {
         iterator beginIt = m_data;
         iterator endIt = beginIt + m_size - 1;
-        FE_AssertDebug(it >= beginIt && it < endIt);
+        FE_AssertDebug(it >= beginIt && it <= endIt);
 
         iterator nonConst = const_cast<iterator>(it);
         *nonConst = std::move(*endIt);
@@ -349,6 +349,9 @@ namespace FE
     template<class T>
     void Pow2Array<T>::reserve(uint32_t newCapacity)
     {
+        if (newCapacity == 0)
+            return;
+
         newCapacity = Math::CeilPowerOfTwo(newCapacity);
         const uint32_t currentCapacity = capacity();
         if (newCapacity > currentCapacity)
@@ -358,7 +361,8 @@ namespace FE
 
             T* newData = Memory::AllocateArray<T>(m_allocator.Get(), newCapacity);
             festd::uninitialized_copy_n(m_data.Get(), m_size, newData);
-            m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
+            if (currentCapacity != 0)
+                m_allocator->deallocate(m_data.Get(), currentCapacity * sizeof(T), alignof(T));
             m_data = newData;
             m_capacityLog2 = newCapacityLog2 + 1;
         }

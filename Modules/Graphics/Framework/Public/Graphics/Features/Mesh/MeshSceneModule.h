@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Math/Sphere.h>
 #include <Graphics/Assets/Assets.h>
+#include <Graphics/Assets/MaterialAssets.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Database/Base.h>
 #include <Graphics/Materials/MaterialInstance.h>
@@ -14,12 +15,29 @@ namespace FE::Graphics
 {
     struct MeshSceneModule;
 
+    struct MeshHandle final
+    {
+        uint32_t m_value = kInvalidIndex;
+        uint32_t m_generation = 0;
+
+        [[nodiscard]] bool IsValid() const
+        {
+            return m_value != kInvalidIndex;
+        }
+
+        friend bool operator==(const MeshHandle& lhs, const MeshHandle& rhs)
+        {
+            return lhs.m_value == rhs.m_value && lhs.m_generation == rhs.m_generation;
+        }
+    };
+
     struct MeshBatch final
     {
         OctreeEntry m_octreeEntry;
         MeshSceneModule* m_parent = nullptr;
         DrawTagMask m_drawTagMask;
         festd::vector<DB::Ref<MeshInstanceTable>> m_meshInstances;
+        festd::vector<MeshHandle> m_handles;
     };
 
 
@@ -27,17 +45,23 @@ namespace FE::Graphics
     {
         uint32_t m_instanceCount = 0;
         DB::Ref<MeshGroupTable> m_tableRef = DB::Ref<MeshGroupTable>::CreateInvalid();
-        const MeshAsset* m_asset = nullptr;
-        MaterialInstanceRuntime* m_material = nullptr;
+        DB::Ref<MaterialInstanceTable> m_materialRef = DB::Ref<MaterialInstanceTable>::CreateInvalid();
+        DB::Slice<MeshLodInfoTable> m_lodsRef{};
+        IO::AssetLease<MeshAsset> m_asset;
+        IO::AssetLease<MaterialInstanceAsset> m_material;
+        Core::Buffer* m_buffer = nullptr;
+        uint32_t m_meshGeneration = 0;
+        uint32_t m_materialGeneration = kInvalidIndex;
+        uint32_t m_residentLod = kInvalidIndex;
+        festd::vector<MeshHandle> m_instances;
     };
 
 
     struct MeshInstanceDesc final
     {
-        const MeshAsset* m_asset = nullptr;
+        IO::AssetLease<MeshAsset> m_asset;
         MeshBatch* m_batch = nullptr;
-        MaterialInstanceRuntime* m_material = nullptr;
-        BufferPointer m_instanceData{};
+        IO::AssetLease<MaterialInstanceAsset> m_material;
         Matrix4x4 m_transform;
     };
 
@@ -46,11 +70,6 @@ namespace FE::Graphics
     {
         Aabb m_bounds = Aabb::kInvalid;
         DrawTagMask m_drawTagMask;
-    };
-
-
-    struct MeshHandle final : public TypedHandle<MeshHandle, uint32_t>
-    {
     };
 
 
@@ -66,13 +85,14 @@ namespace FE::Graphics
 
         [[nodiscard]] MeshHandle CreateInstance(const MeshInstanceDesc& desc);
         void DestroyInstance(MeshHandle instance);
+        void Update() override;
 
         [[nodiscard]] const festd::vector<MeshBatch*>& GetBatches() const
         {
             return m_batches;
         }
 
-        [[nodiscard]] const MeshAsset* FindAsset(DB::Ref<MeshGroupTable> group) const;
+        [[nodiscard]] IO::AssetRead<MeshAsset> FindAsset(DB::Ref<MeshGroupTable> group) const;
 
         [[nodiscard]] MeshInstanceTable* GetMeshInstanceTable() const
         {
@@ -94,26 +114,38 @@ namespace FE::Graphics
             return m_materialInstanceTable.Get();
         }
 
-        [[nodiscard]] MaterialInstanceRuntime* FindMaterial(DB::Ref<MeshGroupTable> group) const;
+        [[nodiscard]] IO::AssetRead<MaterialInstanceAsset> FindMaterial(DB::Ref<MeshGroupTable> group) const;
 
     private:
         void DoRelease() override;
 
-        MeshHandle AllocateHandle(DB::Ref<MeshInstanceTable> sourceIndex);
+        struct InstanceRecord final
+        {
+            DB::Ref<MeshInstanceTable> m_tableRef = DB::Ref<MeshInstanceTable>::CreateInvalid();
+            MeshBatch* m_batch = nullptr;
+            MeshGroup* m_group = nullptr;
+            MaterialParameterAllocator::Allocation m_parameters;
+            uint32_t m_materialGeneration = 0;
+            uint32_t m_generation = 1;
+        };
+
+        MeshHandle AllocateHandle(DB::Ref<MeshInstanceTable> sourceIndex, MeshBatch* batch, MeshGroup* group,
+                                  MaterialParameterAllocator::Allocation parameters);
         void FreeHandle(MeshHandle handle);
         void EnsureCapacity();
+        void DestroyGroup(MeshGroup* group);
+        void UpdateGroup(MeshGroup* group);
 
-        MeshGroup* FindOrCreateMeshGroup(const MeshAsset* meshAsset, MaterialInstanceRuntime* material);
+        MeshGroup* FindOrCreateMeshGroup(const IO::AssetLease<MeshAsset>& meshAsset,
+                                         const IO::AssetLease<MaterialInstanceAsset>& material);
 
         DB::Ref<MeshInstanceTable> TranslateHandle(MeshHandle handle) const;
 
         festd::bit_vector m_freeHandles;
-        festd::vector<DB::Ref<MeshInstanceTable>> m_handleTranslationTable;
+        festd::vector<InstanceRecord> m_instances;
 
         festd::vector<MeshGroup*> m_meshGroups;
         festd::vector<MeshBatch*> m_batches;
-
-        festd::bit_vector m_meshesToDestroy;
 
         Rc<MeshLodInfoTable> m_meshLodInfoTable;
         Rc<MeshGroupTable> m_meshGroupTable;

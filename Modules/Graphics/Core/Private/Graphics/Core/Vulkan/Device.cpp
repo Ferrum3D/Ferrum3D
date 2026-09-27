@@ -267,7 +267,6 @@ namespace FE::Graphics::Vulkan
 
         vkDeviceWaitIdle(m_nativeDevice);
         ForceReleasePendingDisposers();
-        vmaDestroyAllocator(m_vmaInstance);
     }
 
 
@@ -282,6 +281,7 @@ namespace FE::Graphics::Vulkan
 
         m_queueFamilyIndices.clear();
 
+        vmaDestroyAllocator(m_vmaInstance);
         vkDestroyDevice(m_nativeDevice, VK_NULL_HANDLE);
         m_nativeDevice = VK_NULL_HANDLE;
     }

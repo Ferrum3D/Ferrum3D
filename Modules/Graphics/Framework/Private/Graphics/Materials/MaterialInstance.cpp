@@ -164,6 +164,18 @@ namespace FE::Graphics
     }
 
 
+    void MaterialInstanceRuntime::FreeInstanceParameters(const MaterialParameterAllocator::Allocation allocation)
+    {
+        const auto it = festd::find_if(m_instanceAllocations, [&](const MaterialParameterAllocator::Allocation& candidate) {
+            return candidate.m_pageIndex == allocation.m_pageIndex && candidate.m_block.m_offset == allocation.m_block.m_offset
+                && candidate.m_block.m_level == allocation.m_block.m_level;
+        });
+        FE_Assert(it != m_instanceAllocations.end());
+        m_allocator->Free(allocation);
+        m_instanceAllocations.erase_unsorted(it);
+    }
+
+
     void MaterialInstanceRuntime::RefreshDescriptors()
     {
         const festd::vector<std::byte> materialBytes = PackParameters(MaterialParameterScope::kMaterial);

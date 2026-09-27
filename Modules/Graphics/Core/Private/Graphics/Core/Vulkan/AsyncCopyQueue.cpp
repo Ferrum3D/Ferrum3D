@@ -613,6 +613,13 @@ namespace FE::Graphics::Vulkan
             m_threadEvent.Send();
         }
 
+        {
+            const auto detached = Common::ImplCast(m_uploadBuffer.Get())->DetachInstance();
+            auto* instance = Rtti::AssertCast<BufferInstance*>(detached.m_instance);
+            instance->Invalidate(m_device);
+            BufferInstance::Delete(instance);
+        }
+
         Threading::CloseThread(m_thread);
     }
 

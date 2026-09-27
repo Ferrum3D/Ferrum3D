@@ -77,6 +77,10 @@ namespace FE::Graphics
 
         m_frameGraph->BeginFrame();
 
+        scene->GetModules().ForEachActive([](SceneModuleBase& module) {
+            module.Update();
+        });
+
         m_database->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
         m_materialParameters->Update(*m_frameGraph, m_graphicsQueue->GetCurrentFence());
 

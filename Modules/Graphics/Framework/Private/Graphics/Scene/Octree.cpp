@@ -119,9 +119,8 @@ namespace FE::Graphics
         if (m_isRoot)
             return;
 
-        Remove(octree, entry);
-
         OctreeNode* node = m_parent;
+        Remove(octree, entry);
         while (node)
         {
             if (Math::Contains(node->GetBounds(), entryBounds) || node->m_isRoot)
@@ -140,10 +139,14 @@ namespace FE::Graphics
         FE_AssertDebug(entry->m_node == this);
         FE_AssertDebug(m_entries[entry->m_indexInNode] == entry);
 
+        const uint32_t removedIndex = entry->m_indexInNode;
+        OctreeEntry* movedEntry = m_entries[m_entries.size() - 1];
         entry->m_node = nullptr;
         entry->m_indexInNode = kInvalidIndex;
 
-        m_entries.erase_unsorted(m_entries.begin() + entry->m_indexInNode);
+        m_entries.erase_unsorted(m_entries.begin() + removedIndex);
+        if (movedEntry != entry)
+            movedEntry->m_indexInNode = removedIndex;
 
         if (!m_isRoot)
             m_parent->Merge(octree);
@@ -265,6 +268,15 @@ namespace FE::Graphics
     {
         if (entry.m_node)
             entry.m_node->Update(*this, &entry);
+        else
+            m_root.Insert(*this, &entry);
+    }
+
+
+    void Octree::Remove(OctreeEntry& entry)
+    {
+        if (entry.m_node)
+            entry.m_node->Remove(*this, &entry);
     }
 
 
@@ -299,7 +311,7 @@ namespace FE::Graphics
 
         const uint32_t elementCount = static_cast<uint32_t>(byteSize) / m_elementSize;
         const uint32_t allocatorIndex = Math::FloorLog2(elementCount);
-        if (allocatorIndex > festd::size(m_allocators))
+        if (allocatorIndex >= festd::size(m_allocators))
             return Memory::DefaultAllocate(byteSize, byteAlignment);
 
         FE_AssertDebug(m_allocators[allocatorIndex].GetElementByteSize() == byteSize);
@@ -316,7 +328,7 @@ namespace FE::Graphics
 
         const uint32_t elementCount = static_cast<uint32_t>(byteSize) / m_elementSize;
         const uint32_t allocatorIndex = Math::FloorLog2(elementCount);
-        if (allocatorIndex > festd::size(m_allocators))
+        if (allocatorIndex >= festd::size(m_allocators))
         {
             Memory::DefaultFree(ptr);
             return;

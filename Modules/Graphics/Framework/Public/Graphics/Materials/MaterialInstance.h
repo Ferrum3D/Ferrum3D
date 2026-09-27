@@ -18,6 +18,7 @@ namespace FE::Graphics
         [[nodiscard]] Core::GraphicsPipeline* GetPipeline(Env::Name role, Core::Format colorFormat);
         [[nodiscard]] BufferPointer GetMaterialParameters() const;
         [[nodiscard]] MaterialParameterAllocator::Allocation AllocateInstanceParameters();
+        void FreeInstanceParameters(MaterialParameterAllocator::Allocation allocation);
         void RefreshDescriptors();
 
     private:

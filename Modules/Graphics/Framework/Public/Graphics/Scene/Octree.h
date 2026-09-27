@@ -76,6 +76,7 @@ namespace FE::Graphics
         explicit Octree(const Aabb& bounds);
 
         void InsertOrUpdate(OctreeEntry& entry);
+        void Remove(OctreeEntry& entry);
 
         void Traverse(const Aabb& bounds, const OctreeTraverseCallback& callback);
 

@@ -33,14 +33,13 @@ namespace
         {
             m_device->WaitIdle();
 
-            m_scene.Reset();
+            m_scene->GetModules().Remove<MeshSceneModule>();
             m_view.Reset();
+            m_scene.Reset();
             m_viewport.Reset();
 
-            m_materialInstance.Reset();
             m_materialRequest.Reset();
 
-            m_mesh.Reset();
             m_modelRequest.Reset();
             IO::AssetManager::Shutdown();
 
@@ -122,8 +121,8 @@ namespace
             const IO::AssetHandle<ModelAsset> modelHandle(m_modelRequest.GetAssetSlot());
             const IO::AssetRead<ModelAsset> model = modelHandle.Read();
             FE_Assert(model && model->m_meshes.size() == 1);
-            m_mesh = model->m_meshes[0].GetAssetHandle().Read();
-            FE_Assert(m_mesh);
+            const IO::AssetLease<MeshAsset> meshLease(model->m_meshes[0].GetAssetHandle().GetAssetSlot());
+            FE_Assert(meshLease.IsReady());
 
             m_materialRequest = IO::AssetManager::LoadAsset(IO::Link<MaterialInstanceAsset>(kBunnyMaterialAssetId));
             while (!m_materialRequest.IsCompleted())
@@ -133,9 +132,10 @@ namespace
             }
 
             FE_Assert(m_materialRequest.GetResult() == IO::AssetLoadResult::kSucceeded, "Failed to load bunny material instance");
-            m_materialInstance = IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
-            FE_Assert(m_materialInstance && m_materialInstance->m_runtime);
-            for (const MaterialParameterValue& parameter : m_materialInstance->m_parameters)
+            const IO::AssetRead<MaterialInstanceAsset> materialInstance =
+                IO::AssetHandle<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot()).Read();
+            FE_Assert(materialInstance && materialInstance->m_runtime);
+            for (const MaterialParameterValue& parameter : materialInstance->m_parameters)
             {
                 if (!parameter.m_texture.GetAssetID().IsValid())
                     continue;
@@ -144,8 +144,6 @@ namespace
                 FE_Assert(texture);
                 m_textureStreamer->SetResidentMip(*texture.Get(), 1);
             }
-            m_instanceParameters = m_materialInstance->m_runtime->AllocateInstanceParameters();
-
             auto& meshSceneModule = m_scene->GetModules().Find<MeshSceneModule>();
 
             MeshBatchDesc batchDesc;
@@ -154,10 +152,9 @@ namespace
             m_batch = meshSceneModule.CreateBatch(batchDesc);
 
             MeshInstanceDesc instanceDesc;
-            instanceDesc.m_asset = m_mesh.Get();
+            instanceDesc.m_asset = meshLease;
             instanceDesc.m_batch = m_batch;
-            instanceDesc.m_material = m_materialInstance->m_runtime;
-            instanceDesc.m_instanceData = m_instanceParameters.m_devicePointer;
+            instanceDesc.m_material = IO::AssetLease<MaterialInstanceAsset>(m_materialRequest.GetAssetSlot());
             instanceDesc.m_transform = Matrix4x4::RotationY(Constants::kPI);
 
             m_meshInstance = meshSceneModule.CreateInstance(instanceDesc);
@@ -185,9 +182,6 @@ namespace
 
         IO::AssetRequest m_modelRequest;
         IO::AssetRequest m_materialRequest;
-        IO::AssetRead<MeshAsset> m_mesh;
-        IO::AssetRead<MaterialInstanceAsset> m_materialInstance;
-        MaterialParameterAllocator::Allocation m_instanceParameters;
         MaterialStreamer* m_materialStreamer = nullptr;
         MeshStreamer* m_meshStreamer = nullptr;
         TextureStreamer* m_textureStreamer = nullptr;
