@@ -34,6 +34,7 @@ struct PixelAttributes
     float3 m_worldPos : POSITION;
     float3 m_normal : NORMAL;
     float2 m_uv : TEXCOORD0;
+    nointerpolation uint m_instanceIndex : TEXCOORD1;
 };
 
 struct MeshDrawData
@@ -45,13 +46,13 @@ struct MeshDrawData
 
 [[vk::push_constant]] Constants GConstants;
 
-MeshDrawData LoadMeshDrawData()
+MeshDrawData LoadMeshDrawData(const uint32_t instanceIndex)
 {
     MeshInstanceTable instanceTable = MeshInstanceTable::Create(GConstants.m_meshInstanceTable);
     MeshGroupTable groupTable = MeshGroupTable::Create(GConstants.m_meshGroupTable);
     MeshLodInfoTable lodTable = MeshLodInfoTable::Create(GConstants.m_meshLodInfoTable);
 
-    const MeshInstanceTable::Row instance = instanceTable.ReadRow(GConstants.m_instanceIndex);
+    const MeshInstanceTable::Row instance = instanceTable.ReadRow(instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());
     const DB::Slice<MeshLodInfoTable> lods = group.m_lods.Get();
     const MeshLodInfoTable::Row lod = lodTable.ReadRow(lods.m_rowIndex);
@@ -63,7 +64,7 @@ MeshDrawData LoadMeshDrawData()
     return result;
 }
 
-PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t vertexIndex)
+PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t vertexIndex, const uint32_t instanceIndex)
 {
     const VertexInput input = drawData.m_geometry.Read<VertexInput>(vertexIndex * sizeof(VertexInput));
     const float4 worldPosition = mul(float4(input.m_pos, 1.0f), drawData.m_worldTransform);
@@ -74,6 +75,7 @@ PixelAttributes LoadAttributes(const MeshDrawData drawData, const uint32_t verte
     output.m_worldPos = worldPosition.xyz;
     output.m_normal = mul(input.UnpackNormal(), normalMatrix);
     output.m_uv = input.UnpackUv();
+    output.m_instanceIndex = instanceIndex;
     return output;
 }
 

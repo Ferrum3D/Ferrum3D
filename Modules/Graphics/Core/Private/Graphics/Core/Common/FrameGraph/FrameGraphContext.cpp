@@ -237,6 +237,22 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraphContext::DispatchMeshIndirect(const Core::BufferView arguments, const uint32_t byteOffset)
+    {
+        FE_PROFILER_ZONE();
+
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kAllRequiredForGraphics),
+                  "All pipeline states must be set before drawing");
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
+                  "Compute pipeline must not be set when drawing");
+        FE_Assert(arguments.IsValid() && byteOffset + 3 * sizeof(uint32_t) <= arguments.m_slice.m_size);
+
+        PrepareStatesInternal();
+        DispatchMeshIndirectImpl(arguments, byteOffset);
+        ClearStatesInternal();
+    }
+
+
     void FrameGraphContext::Dispatch(const Core::ComputeWorkGroupCount workGroupCount)
     {
         FE_PROFILER_ZONE();

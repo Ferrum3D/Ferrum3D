@@ -16,7 +16,7 @@ namespace FE::Graphics::Core
 
     enum class DescriptorLifetime : uint32_t
     {
-        //! Released automatically by CloseFrame().
+        //! Retired automatically by CloseFrame() and recycled after the frame fence.
         kTransient,
 
         //! Keeps a stable index until explicitly freed.
@@ -74,7 +74,12 @@ namespace FE::Graphics::Core
         DescriptorManager();
 
         void ClearTransientDescriptors();
-        virtual void RetireResourceDescriptor(uint32_t descriptorIndex, Resource* resource) = 0;
+        void ReleaseResourceDescriptorIndex(uint32_t descriptorIndex);
+        void ReleaseSamplerDescriptorIndex(uint32_t descriptorIndex);
+        virtual void RetireResourceDescriptor(uint32_t descriptorIndex, Resource* resource, bool releaseIndex) = 0;
+        virtual void RetireTransientResourceDescriptor(uint32_t descriptorIndex, Resource* resource) = 0;
+        virtual void RetireTransientSamplerDescriptor(uint32_t descriptorIndex) = 0;
+        virtual void RetireSamplerDescriptor(uint32_t descriptorIndex) = 0;
 
         struct TextureKey final
         {

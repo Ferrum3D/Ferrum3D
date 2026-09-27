@@ -17,7 +17,7 @@ void main(const in PixelAttributes input, out float4 output : SV_Target0)
     MeshGroupTable groupTable = MeshGroupTable::Create(GConstants.m_meshGroupTable);
     MaterialInstanceTable materialTable = MaterialInstanceTable::Create(GConstants.m_materialInstanceTable);
 
-    const MeshInstanceTable::Row instance = instanceTable.ReadRow(GConstants.m_instanceIndex);
+    const MeshInstanceTable::Row instance = instanceTable.ReadRow(input.m_instanceIndex);
     const MeshGroupTable::Row group = groupTable.ReadRow(instance.m_meshGroup.Get());
     const MaterialInstanceTable::Row materialInstance = materialTable.ReadRow(group.m_materialInstance.Get());
     const BufferPointer parameters = materialInstance.m_materialParameters.Get();

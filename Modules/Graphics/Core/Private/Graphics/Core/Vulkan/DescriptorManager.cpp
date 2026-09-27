@@ -309,18 +309,54 @@ namespace FE::Graphics::Vulkan
     }
 
 
-    void DescriptorManager::RetireResourceDescriptor(const uint32_t descriptorIndex, Core::Resource* resource)
+    void DescriptorManager::RetireResourceDescriptor(const uint32_t descriptorIndex, Core::Resource* resource,
+                                                     const bool releaseIndex)
     {
         if (m_descriptorSets.empty())
+        {
+            if (releaseIndex)
+                ReleaseResourceDescriptorIndex(descriptorIndex);
             return;
+        }
 
         RetiredResourceDescriptor& retired = m_retiredResourceDescriptors.emplace_back();
         retired.m_resource = resource;
         retired.m_descriptorIndex = descriptorIndex;
         retired.m_pendingSetMask = (1u << m_descriptorSets.size()) - 1;
+        retired.m_releaseIndex = releaseIndex;
 
         for (DescriptorSetState& set : m_descriptorSets)
             set.m_resourceDescriptorsToUpdate.set(descriptorIndex);
+    }
+
+
+    void DescriptorManager::RetireTransientResourceDescriptor(const uint32_t descriptorIndex, Core::Resource* resource)
+    {
+        FE_Assert(m_currentSetIndex != kInvalidIndex);
+        TransientResourceDescriptor& retired = m_descriptorSets[m_currentSetIndex].m_transientResourceDescriptors.emplace_back();
+        retired.m_resource = resource;
+        retired.m_descriptorIndex = descriptorIndex;
+    }
+
+
+    void DescriptorManager::RetireTransientSamplerDescriptor(const uint32_t descriptorIndex)
+    {
+        FE_Assert(m_currentSetIndex != kInvalidIndex);
+        m_descriptorSets[m_currentSetIndex].m_transientSamplerDescriptors.push_back(descriptorIndex);
+    }
+
+
+    void DescriptorManager::RetireSamplerDescriptor(const uint32_t descriptorIndex)
+    {
+        if (m_descriptorSets.empty())
+        {
+            ReleaseSamplerDescriptorIndex(descriptorIndex);
+            return;
+        }
+
+        RetiredSamplerDescriptor& retired = m_retiredSamplerDescriptors.emplace_back();
+        retired.m_descriptorIndex = descriptorIndex;
+        retired.m_pendingSetMask = (1u << m_descriptorSets.size()) - 1;
     }
 
 
@@ -409,12 +445,21 @@ namespace FE::Graphics::Vulkan
     {
         DescriptorSetState& set = m_descriptorSets[setIndex];
         const uint32_t setMask = 1u << setIndex;
+        const bool hasRetiredTransients =
+            !set.m_transientResourceDescriptors.empty() || !set.m_transientSamplerDescriptors.empty();
+
         const bool hasRetiredResources = eastl::any_of(m_retiredResourceDescriptors.begin(),
                                                        m_retiredResourceDescriptors.end(),
                                                        [setMask](const RetiredResourceDescriptor& retired) {
                                                            return (retired.m_pendingSetMask & setMask) != 0;
                                                        });
-        if (hasRetiredResources)
+        const bool hasRetiredSamplers = eastl::any_of(m_retiredSamplerDescriptors.begin(),
+                                                      m_retiredSamplerDescriptors.end(),
+                                                      [setMask](const RetiredSamplerDescriptor& retired) {
+                                                          return (retired.m_pendingSetMask & setMask) != 0;
+                                                      });
+        // Discard stale bindings before releasing resources or recycling descriptor indices.
+        if (hasRetiredResources || hasRetiredSamplers || hasRetiredTransients)
         {
             VerifyVk(vkFreeDescriptorSets(NativeCast(m_device), m_descriptorPool, 1, &set.m_set));
             set.m_set = AllocateDescriptorSet();
@@ -430,6 +475,14 @@ namespace FE::Graphics::Vulkan
                           });
         }
 
+        for (const TransientResourceDescriptor& descriptor : set.m_transientResourceDescriptors)
+            ReleaseResourceDescriptorIndex(descriptor.m_descriptorIndex);
+        set.m_transientResourceDescriptors.clear();
+
+        for (const uint32_t descriptorIndex : set.m_transientSamplerDescriptors)
+            ReleaseSamplerDescriptorIndex(descriptorIndex);
+        set.m_transientSamplerDescriptors.clear();
+
         FlushPersistentResourceDescriptors(setIndex);
 
         for (RetiredResourceDescriptor& retired : m_retiredResourceDescriptors)
@@ -437,6 +490,9 @@ namespace FE::Graphics::Vulkan
             if (!m_persistentResourceDescriptors.test(retired.m_descriptorIndex))
                 retired.m_pendingSetMask &= ~setMask;
         }
+
+        for (RetiredSamplerDescriptor& retired : m_retiredSamplerDescriptors)
+            retired.m_pendingSetMask &= ~setMask;
     }
 
 
@@ -461,9 +517,23 @@ namespace FE::Graphics::Vulkan
     {
         m_retiredResourceDescriptors.erase(eastl::remove_if(m_retiredResourceDescriptors.begin(),
                                                             m_retiredResourceDescriptors.end(),
-                                                            [](const RetiredResourceDescriptor& retired) {
-                                                                return retired.m_pendingSetMask == 0;
+                                                            [this](const RetiredResourceDescriptor& retired) {
+                                                                if (retired.m_pendingSetMask != 0)
+                                                                    return false;
+                                                                if (retired.m_releaseIndex)
+                                                                    ReleaseResourceDescriptorIndex(retired.m_descriptorIndex);
+                                                                return true;
                                                             }),
                                            m_retiredResourceDescriptors.end());
+
+        m_retiredSamplerDescriptors.erase(eastl::remove_if(m_retiredSamplerDescriptors.begin(),
+                                                           m_retiredSamplerDescriptors.end(),
+                                                           [this](const RetiredSamplerDescriptor& retired) {
+                                                               if (retired.m_pendingSetMask != 0)
+                                                                   return false;
+                                                               ReleaseSamplerDescriptorIndex(retired.m_descriptorIndex);
+                                                               return true;
+                                                           }),
+                                          m_retiredSamplerDescriptors.end());
     }
 } // namespace FE::Graphics::Vulkan

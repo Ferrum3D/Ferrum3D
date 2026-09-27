@@ -44,12 +44,14 @@ namespace FE::Graphics
         m_descriptorManager = m_device->CreateDescriptorManager();
         m_resourcePool = m_device->CreateResourcePool(m_graphicsQueue.Get(), m_asyncCopyQueue.Get());
         m_frameGraph = m_device->CreateFrameGraph(m_descriptorManager.Get(), m_resourcePool.Get(), m_graphicsQueue.Get());
+        m_renderQueueUploader.Setup("RenderQueueUploader", m_resourcePool.Get(), 16 * 1024 * 1024);
     }
 
 
     RendererImpl::~RendererImpl()
     {
         m_device->WaitIdle();
+        m_renderQueueUploader.Shutdown();
     }
 
 
@@ -97,6 +99,7 @@ namespace FE::Graphics
                              Core::TextureView::Create(viewport->GetCurrentColorTarget()));
 
         m_frameGraph->CompileAndExecute();
+        m_renderQueueUploader.CloseFrame(m_graphicsQueue->GetCurrentFence());
         viewport->Present();
         m_resourcePool->EndFrame();
         m_device->EndFrame();
@@ -189,6 +192,7 @@ namespace FE::Graphics
         viewData.m_mainDepthTarget = m_mainDepthTarget.Get();
         viewData.m_viewportRect = viewport.GetDesc().GetRect();
         viewData.m_database = m_database.get();
+        viewData.m_renderQueueUploader = &m_renderQueueUploader;
 
         view.Update(blackboard);
 

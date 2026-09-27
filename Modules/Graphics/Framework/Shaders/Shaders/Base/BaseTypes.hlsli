@@ -69,6 +69,7 @@ struct BufferPointer
     {
         return vk::RawBufferLoad<T>(NonUniformResourceIndex(GetDeviceAddress() + byteOffset));
     }
+
 #else
 #    error Not implemented
 #endif
@@ -96,6 +97,8 @@ namespace Core
     struct PassDepthTarget {};
     struct PassViewport {};
     struct PassScissor {};
+    struct PassBufferAccess {};
+    struct PassTextureAccess {};
     // clang-format on
 } // namespace Core
 

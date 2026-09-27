@@ -10,6 +10,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::DepthPrepass)
         Core::PassDepthTarget m_depthTarget;
         Core::PassViewport m_viewport;
         Core::PassGraphicsPipeline m_pipeline;
+        Core::PassBufferAccess m_arguments;
 
         FE_RTTI_Reflect("A86B4026-4C36-45CE-B6E7-0431BF656B84");
     };

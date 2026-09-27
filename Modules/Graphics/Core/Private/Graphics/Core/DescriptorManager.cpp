@@ -57,8 +57,8 @@ namespace FE::Graphics::Core
                 m_bufferDescriptorMap.erase(key);
             }
 
+            RetireTransientResourceDescriptor(descriptorIndex, descriptor.m_resource);
             m_resourceDescriptors[descriptorIndex] = ResourceDescriptorInfo{};
-            m_freeResourceDescriptors.set(descriptorIndex);
             m_initializedResourceDescriptors.reset(descriptorIndex);
             m_resourceDescriptorsToUpdate.reset(descriptorIndex);
         });
@@ -67,11 +67,25 @@ namespace FE::Graphics::Core
         Bit::Traverse(m_transientSamplerDescriptors.view(), [this](const uint32_t descriptorIndex) {
             m_samplerDescriptorMap.erase({ m_samplerDescriptors[descriptorIndex], DescriptorLifetime::kTransient });
             m_samplerDescriptors[descriptorIndex] = SamplerState::kPointWrap;
-            m_freeSamplerDescriptors.set(descriptorIndex);
+            RetireTransientSamplerDescriptor(descriptorIndex);
             m_initializedSamplerDescriptors.reset(descriptorIndex);
             m_samplerDescriptorsToUpdate.reset(descriptorIndex);
         });
         m_transientSamplerDescriptors.reset();
+    }
+
+
+    void DescriptorManager::ReleaseResourceDescriptorIndex(const uint32_t descriptorIndex)
+    {
+        FE_Assert(!m_freeResourceDescriptors.test(descriptorIndex));
+        m_freeResourceDescriptors.set(descriptorIndex);
+    }
+
+
+    void DescriptorManager::ReleaseSamplerDescriptorIndex(const uint32_t descriptorIndex)
+    {
+        FE_Assert(!m_freeSamplerDescriptors.test(descriptorIndex));
+        m_freeSamplerDescriptors.set(descriptorIndex);
     }
 
 
@@ -164,7 +178,7 @@ namespace FE::Graphics::Core
         ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
         FE_Assert(descriptor.m_resource->GetType() == ResourceType::kTexture);
 
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource);
+        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, false);
 
         const TextureKey oldKey{ descriptor.m_resource->GetResourceID(),
                                  descriptor.m_textureSubresource,
@@ -185,7 +199,7 @@ namespace FE::Graphics::Core
         ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
         FE_Assert(descriptor.m_resource->GetType() == ResourceType::kBuffer);
 
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource);
+        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, false);
 
         const BufferKey oldKey{ descriptor.m_resource->GetResourceID(),
                                 descriptor.m_bufferSlice,
@@ -204,7 +218,7 @@ namespace FE::Graphics::Core
     {
         FE_Assert(m_persistentResourceDescriptors.test(descriptorIndex));
         const ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource);
+        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, true);
 
         if (descriptor.m_resource->GetType() == ResourceType::kTexture)
         {
@@ -225,19 +239,18 @@ namespace FE::Graphics::Core
         m_persistentResourceDescriptors.reset(descriptorIndex);
         m_initializedResourceDescriptors.reset(descriptorIndex);
         m_resourceDescriptorsToUpdate.reset(descriptorIndex);
-        m_freeResourceDescriptors.set(descriptorIndex);
     }
 
 
     void DescriptorManager::FreeSamplerDescriptor(const uint32_t descriptorIndex)
     {
         FE_Assert(m_persistentSamplerDescriptors.test(descriptorIndex));
+        RetireSamplerDescriptor(descriptorIndex);
         m_samplerDescriptorMap.erase({ m_samplerDescriptors[descriptorIndex], DescriptorLifetime::kPersistent });
         m_samplerDescriptors[descriptorIndex] = SamplerState::kPointWrap;
         m_persistentSamplerDescriptors.reset(descriptorIndex);
         m_initializedSamplerDescriptors.reset(descriptorIndex);
         m_samplerDescriptorsToUpdate.reset(descriptorIndex);
-        m_freeSamplerDescriptors.set(descriptorIndex);
     }
 
 

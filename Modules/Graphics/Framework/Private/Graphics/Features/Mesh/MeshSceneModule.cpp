@@ -179,6 +179,7 @@ namespace FE::Graphics
                 draw.m_meshLodInfoTable = m_meshLodInfoTable->GetDeviceAddress();
                 draw.m_materialInstanceTable = m_materialInstanceTable->GetDeviceAddress();
                 draw.m_instanceIndex = record.m_tableRef.m_rowIndex;
+                draw.m_meshGroupIndex = group->m_tableRef.m_rowIndex;
                 draw.m_meshletCount = meshletCount;
                 draw.m_pipeline = material->m_runtime->GetPipeline(collector.GetTechniqueRole(), collector.GetColorFormat());
             }

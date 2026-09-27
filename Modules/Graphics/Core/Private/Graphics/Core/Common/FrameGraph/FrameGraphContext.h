@@ -58,6 +58,7 @@ namespace FE::Graphics::Common
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                          uint32_t instanceOffset) final;
         void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
+        void DispatchMeshIndirect(Core::BufferView arguments, uint32_t byteOffset = 0) final;
         void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
 
         bool IsCleanState() const final;
@@ -69,6 +70,7 @@ namespace FE::Graphics::Common
         virtual void DrawIndexedImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                                      uint32_t instanceOffset) = 0;
         virtual void DispatchMeshImpl(Vector3UInt workGroupCount) = 0;
+        virtual void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) = 0;
         virtual void DispatchImpl(Vector3UInt workGroupCount) = 0;
 
         void ClearStatesInternal();

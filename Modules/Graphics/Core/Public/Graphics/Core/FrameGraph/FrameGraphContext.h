@@ -217,6 +217,7 @@ namespace FE::Graphics::Core
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                                  uint32_t instanceOffset) = 0;
         virtual void DispatchMesh(ComputeWorkGroupCount workGroupCount) = 0;
+        virtual void DispatchMeshIndirect(BufferView arguments, uint32_t byteOffset = 0) = 0;
         virtual void Dispatch(ComputeWorkGroupCount workGroupCount) = 0;
 
         virtual void Copy(BufferView destination, BufferView source) = 0;

@@ -262,6 +262,47 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void FrameGraphContext::DispatchMeshIndirectImpl(const Core::BufferView arguments, const uint32_t byteOffset)
+    {
+        const GraphicsPipeline* pipelineImpl = ImplCast(m_pipelineState.m_graphicsPipeline);
+        FE_Assert(pipelineImpl->IsReady());
+
+        const VkCommandBuffer vkCommandBuffer = m_graphicsCommandBuffer->GetNative();
+        BeginRendering(vkCommandBuffer);
+
+        if (m_stencilRefState.m_action == StateAction::kSet)
+            vkCmdSetStencilReference(vkCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, m_stencilRefState.m_stencilRef);
+
+        const VkDescriptorSet descriptorSet = m_descriptorManager->GetDescriptorSet();
+        const VkPipelineLayout pipelineLayout = pipelineImpl->GetNativeLayout();
+        if (descriptorSet && m_pipelineState.m_action == StateAction::kSet)
+        {
+            vkCmdBindDescriptorSets(vkCommandBuffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipelineLayout,
+                                    0,
+                                    1,
+                                    &descriptorSet,
+                                    0,
+                                    nullptr);
+        }
+
+        if (Bit::AllSet(m_setStateMask, Common::PipelineStateFlags::kPushConstants))
+            vkCmdPushConstants(vkCommandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, m_pushConstantsSize, m_pushConstants);
+
+        if (m_pipelineState.m_action == StateAction::kSet)
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineImpl->GetNative());
+
+        vkCmdDrawMeshTasksIndirectEXT(vkCommandBuffer,
+                                      NativeCast(arguments.m_resource),
+                                      arguments.m_slice.m_offset + byteOffset,
+                                      1,
+                                      sizeof(VkDrawMeshTasksIndirectCommandEXT));
+
+        vkCmdEndRendering(vkCommandBuffer);
+    }
+
+
     void FrameGraphContext::DispatchImpl(const Vector3UInt workGroupCount)
     {
         const ComputePipeline* pipelineImpl = ImplCast(m_pipelineState.m_computePipeline);

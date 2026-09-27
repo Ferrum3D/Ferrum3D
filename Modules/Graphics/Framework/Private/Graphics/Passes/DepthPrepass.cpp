@@ -1,6 +1,7 @@
 #include <Graphics/Passes/DepthPrepass.h>
 #include <Graphics/Passes/DrawTags.h>
 #include <Graphics/Passes/RendererPassCommon.h>
+#include <Graphics/Scene/IndirectMeshBatcher.h>
 #include <Graphics/Scene/RenderBatch.h>
 #include <Graphics/Tables/MaterialInstanceTable.h>
 #include <Graphics/Tables/MeshGroupTable.h>
@@ -8,6 +9,7 @@
 #include <Graphics/Tables/MeshLodInfoTable.h>
 
 #include <Shaders/Passes/DepthPrepass/DepthPrepass.h>
+#include <Shaders/Passes/MeshPass/IndirectArguments.h>
 
 namespace FE::Graphics::DepthPrepass
 {
@@ -34,7 +36,8 @@ namespace FE::Graphics::DepthPrepass
 
     void AddPasses(Core::FrameGraph& graph, Core::FrameGraphBlackboard& blackboard)
     {
-        if (!blackboard.Contains<PassData>())
+        auto* passData = blackboard.TryGet<PassData>();
+        if (passData == nullptr)
             return;
 
         const RendererViewData& viewData = blackboard.Get<RendererViewData>();
@@ -45,39 +48,39 @@ namespace FE::Graphics::DepthPrepass
                                      "DepthOnly");
         batches.Collect(*viewData.m_scene);
 
-        festd::inline_vector<const RenderDraw*, 64> draws;
-        for (const RenderBatch& batch : batches.GetBatches())
-        {
-            for (const RenderDraw& draw : batch.m_draws)
-                draws.push_back(&draw);
-        }
+        IndirectMeshBatcher batcher(graph.GetAllocator());
+        batcher.Build(graph, *viewData.m_renderQueueUploader, batches.GetBatches());
 
-        festd::sort(draws, [](const RenderDraw* lhs, const RenderDraw* rhs) {
-            return reinterpret_cast<uintptr_t>(lhs->m_pipeline) < reinterpret_cast<uintptr_t>(rhs->m_pipeline);
-        });
-
-        blackboard.Get<PassData>().m_hasDraws = !draws.empty();
+        passData->m_hasDraws = !batcher.m_groups.empty();
 
         bool isFirstDraw = true;
-        for (const RenderDraw* draw : draws)
+        for (const IndirectMeshGroup& group : batcher.m_groups)
         {
             auto* passDesc = graph.AllocatePassData<PassDesc>();
-            passDesc->m_constants.m_viewProjection = draw->m_viewProjection;
-            passDesc->m_constants.m_meshInstanceTable = draw->m_meshInstanceTable;
-            passDesc->m_constants.m_meshGroupTable = draw->m_meshGroupTable;
-            passDesc->m_constants.m_meshLodInfoTable = draw->m_meshLodInfoTable;
-            passDesc->m_constants.m_materialInstanceTable = draw->m_materialInstanceTable;
-            passDesc->m_constants.m_instanceIndex = draw->m_instanceIndex;
+            passDesc->m_constants.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
+            passDesc->m_constants.m_meshInstanceTable = group.m_meshInstanceTable;
+            passDesc->m_constants.m_meshGroupTable = group.m_meshGroupTable;
+            passDesc->m_constants.m_meshLodInfoTable = group.m_meshLodInfoTable;
+            passDesc->m_constants.m_materialInstanceTable = group.m_materialInstanceTable;
+            passDesc->m_constants.m_instanceIndices = graph.GetDescriptor(batcher.m_instanceIndices.Get());
+            passDesc->m_constants.m_firstInstance = group.m_firstInstance;
+            passDesc->m_constants.m_meshletCount = group.m_meshletCount;
+            passDesc->m_constants.m_meshletX = group.m_meshletX;
             passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
             passDesc->m_viewport = viewData.m_viewportRect;
-            passDesc->m_pipeline = draw->m_pipeline;
+            passDesc->m_pipeline = group.m_pipeline;
+            passDesc->m_arguments = { batcher.m_arguments.Get(),
+                                      Core::BarrierSyncFlags::kExecuteIndirect,
+                                      Core::BarrierAccessFlags::kIndirectArgument };
 
             graph.AddPass("DepthPrepass",
                           passDesc,
-                          [meshletCount = draw->m_meshletCount, isFirstDraw](Core::FrameGraphContext& context) {
+                          [arguments = Core::BufferView(batcher.m_arguments.Get()),
+                           argumentIndex = group.m_argumentIndex,
+                           isFirstDraw](Core::FrameGraphContext& context) {
                               if (isFirstDraw)
                                   context.ClearDepthStencilTarget(0.0f, 0);
-                              context.DispatchMesh(meshletCount);
+                              context.DispatchMeshIndirect(arguments, argumentIndex * sizeof(MeshPass::MeshDispatchArguments));
                           });
             isFirstDraw = false;
         }

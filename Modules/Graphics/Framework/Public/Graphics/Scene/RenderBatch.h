@@ -5,6 +5,7 @@
 #include <Core/Math/Matrix4x4.h>
 #include <Graphics/Base/DrawTag.h>
 #include <Graphics/Core/Base.h>
+#include <Graphics/Core/Buffer.h>
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Shaders/Base/Base.h>
 
@@ -18,6 +19,7 @@ namespace FE::Graphics
         BufferPointer m_meshLodInfoTable;
         BufferPointer m_materialInstanceTable;
         uint32_t m_instanceIndex = kInvalidIndex;
+        uint32_t m_meshGroupIndex = kInvalidIndex;
         uint32_t m_meshletCount = 0;
         Core::GraphicsPipeline* m_pipeline = nullptr;
     };
@@ -36,6 +38,7 @@ namespace FE::Graphics
 
 
     struct Scene;
+
 
     struct RenderBatchCollector final
     {

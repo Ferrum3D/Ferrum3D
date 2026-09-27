@@ -1,5 +1,7 @@
 #pragma once
 #include <Graphics/Core/Base.h>
+#include <Graphics/Core/Fence.h>
+#include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
@@ -52,5 +54,6 @@ namespace FE::Graphics
         festd::vector<Rc<Scene>> m_scenes;
         Rc<Core::Texture> m_mainColorTarget;
         Rc<Core::Texture> m_mainDepthTarget;
+        Core::RingUploader m_renderQueueUploader;
     };
 } // namespace FE::Graphics

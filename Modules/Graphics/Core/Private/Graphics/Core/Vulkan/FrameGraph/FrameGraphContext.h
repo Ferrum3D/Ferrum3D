@@ -27,6 +27,7 @@ namespace FE::Graphics::Vulkan
         void DrawIndexedImpl(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                              uint32_t instanceOffset) override;
         void DispatchMeshImpl(Vector3UInt workGroupCount) override;
+        void DispatchMeshIndirectImpl(Core::BufferView arguments, uint32_t byteOffset) override;
         void DispatchImpl(Vector3UInt workGroupCount) override;
 
         void BeginRendering(VkCommandBuffer vkCommandBuffer) const;

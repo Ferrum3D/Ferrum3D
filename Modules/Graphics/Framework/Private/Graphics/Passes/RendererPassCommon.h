@@ -1,4 +1,5 @@
 #pragma once
+#include <Graphics/Core/RingUploader.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 #include <Graphics/Database/Database.h>
@@ -16,5 +17,6 @@ namespace FE::Graphics
         Core::Texture* m_mainDepthTarget = nullptr;
         RectF m_viewportRect{ kForceInit };
         DB::Database* m_database = nullptr;
+        Core::RingUploader* m_renderQueueUploader = nullptr;
     };
 } // namespace FE::Graphics

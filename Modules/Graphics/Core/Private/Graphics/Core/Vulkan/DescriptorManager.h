@@ -31,6 +31,13 @@ namespace FE::Graphics::Vulkan
         }
 
     private:
+        struct TransientResourceDescriptor final
+        {
+            Rc<Core::Resource> m_resource;
+            uint32_t m_descriptorIndex = kInvalidIndex;
+        };
+
+
         struct DescriptorSetState final
         {
             DescriptorSetState();
@@ -39,11 +46,21 @@ namespace FE::Graphics::Vulkan
             uint64_t m_fenceValue = 0;
             festd::bit_vector m_resourceDescriptorsToUpdate;
             festd::bit_vector m_samplerDescriptorsToUpdate;
+            festd::vector<TransientResourceDescriptor> m_transientResourceDescriptors;
+            festd::vector<uint32_t> m_transientSamplerDescriptors;
         };
 
         struct RetiredResourceDescriptor final
         {
             Rc<Core::Resource> m_resource;
+            uint32_t m_descriptorIndex = kInvalidIndex;
+            uint32_t m_pendingSetMask = 0;
+            bool m_releaseIndex = false;
+        };
+
+
+        struct RetiredSamplerDescriptor final
+        {
             uint32_t m_descriptorIndex = kInvalidIndex;
             uint32_t m_pendingSetMask = 0;
         };
@@ -54,7 +71,10 @@ namespace FE::Graphics::Vulkan
         }
 
         VkDescriptorSet AllocateDescriptorSet() const;
-        void RetireResourceDescriptor(uint32_t descriptorIndex, Core::Resource* resource) override;
+        void RetireResourceDescriptor(uint32_t descriptorIndex, Core::Resource* resource, bool releaseIndex) override;
+        void RetireTransientResourceDescriptor(uint32_t descriptorIndex, Core::Resource* resource) override;
+        void RetireTransientSamplerDescriptor(uint32_t descriptorIndex) override;
+        void RetireSamplerDescriptor(uint32_t descriptorIndex) override;
         void AppendResourceDescriptorWrite(VkDescriptorSet descriptorSet, uint32_t descriptorIndex);
         void FlushPersistentResourceDescriptors(uint32_t setIndex);
         void ProcessCompletedDescriptorSet(uint32_t setIndex);
@@ -75,6 +95,7 @@ namespace FE::Graphics::Vulkan
 
         festd::fixed_vector<DescriptorSetState, kMaxDescriptorSets> m_descriptorSets;
         festd::vector<RetiredResourceDescriptor> m_retiredResourceDescriptors;
+        festd::vector<RetiredSamplerDescriptor> m_retiredSamplerDescriptors;
         uint32_t m_currentSetIndex = kInvalidIndex;
     };
 
