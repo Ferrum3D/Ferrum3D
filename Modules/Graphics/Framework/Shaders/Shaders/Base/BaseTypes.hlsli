@@ -98,6 +98,7 @@ namespace Core
     struct PassViewport {};
     struct PassScissor {};
     struct PassBufferAccess {};
+    struct PassIndirectArgs {};
     struct PassTextureAccess {};
     // clang-format on
 } // namespace Core

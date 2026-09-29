@@ -5082,6 +5082,64 @@ namespace FE::Rtti
 
 namespace FE::Graphics::Core
 {
+    const Rtti::TypeID PassIndirectArgs::TypeID = Rtti::TypeID{
+        0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8, 0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_e5f20d2377b140c8ab0a00da39e38b45()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PassIndirectArgs::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_e5f20d2377b140c8ab0a00da39e38b45();
+    }
+
+    void PassIndirectArgs::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_e5f20d2377b140c8ab0a00da39e38b45();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
+            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_arguments
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
+
+        static const festd::array<Rtti::FieldInfo, 1> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PassIndirectArgs::m_arguments,
+                                                        kAttributes_m_arguments,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PassIndirectArgs>(typeInstance,
+                                               Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                               "FE::Graphics::Core::PassIndirectArgs",
+                                               kBaseClassTypeIDs,
+                                               kAttributes,
+                                               kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_e5f20d2377b140c8ab0a00da39e38b45(&PassIndirectArgs::Reflect);
+} // namespace FE::Graphics::Core
+
+
+namespace FE::Graphics::Core
+{
     const Rtti::TypeID FrameGraph::TypeID = Rtti::TypeID{
         0xea, 0x57, 0x01, 0x24, 0x75, 0xf4, 0x4e, 0xfc, 0x9c, 0x49, 0x69, 0xeb, 0x5e, 0xb0, 0x40, 0x4c,
     };

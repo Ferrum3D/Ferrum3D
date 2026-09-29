@@ -19,26 +19,12 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     };
 
 
-    struct DepthPassDesc final
+    struct PassDesc final
     {
-        Core::PassDepthTarget m_depthTarget;
-        Core::PassViewport m_viewport;
         Core::PassBufferAccess m_instanceIndices;
-        Core::PassBufferAccess m_arguments;
+        Core::PassIndirectArgs m_arguments;
 
-        FE_RTTI_Reflect("A86B4026-4C36-45CE-B6E7-0431BF656B84");
-    };
-
-
-    struct OpaquePassDesc final
-    {
-        Core::PassColorTarget m_colorTarget;
-        Core::PassDepthTarget m_depthTarget;
-        Core::PassViewport m_viewport;
-        Core::PassBufferAccess m_instanceIndices;
-        Core::PassBufferAccess m_arguments;
-
-        FE_RTTI_Reflect("36F8EE1D-C760-4977-A8CD-A8CC79F66803");
+        FE_RTTI_Reflect("C3621D29-94E8-42DA-A4D8-BA3FD6EBEC1E");
     };
 
 FE_HOST_END_NAMESPACE

@@ -19,6 +19,7 @@ namespace FE::Graphics::Common
         kComputePipeline = 1 << 8,
         kStreamBuffers = 1 << 9,
         kIndexBuffer = 1 << 10,
+        kIndirectArgs = 1 << 11,
         kAllGraphics = kLoadOperations | kStoreOperations | kRenderTargets | kGraphicsPipeline,
         kAllRequiredForGraphics = kRenderTargets | kGraphicsPipeline,
         kAll = kAllGraphics | kPushConstants,
@@ -48,6 +49,7 @@ namespace FE::Graphics::Common
 
         void SetPipeline(const Core::GraphicsPipeline* pipeline) final;
         void SetPipeline(const Core::ComputePipeline* pipeline) final;
+        void SetIndirectArgs(Core::BufferView arguments) final;
 
         void SetStencilRef(uint8_t stencilRef) final;
 
@@ -58,7 +60,7 @@ namespace FE::Graphics::Common
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t indexOffset, uint32_t vertexOffset,
                          uint32_t instanceOffset) final;
         void DispatchMesh(Core::ComputeWorkGroupCount workGroupCount) final;
-        void DispatchMeshIndirect(Core::BufferView arguments, uint32_t byteOffset = 0) final;
+        void DispatchMeshIndirect(uint32_t byteOffset = 0) final;
         void Dispatch(Core::ComputeWorkGroupCount workGroupCount) final;
 
         bool IsCleanState() const final;
@@ -126,6 +128,7 @@ namespace FE::Graphics::Common
 
         Core::BufferView m_streamBufferViews[Core::Limits::Pipeline::kMaxVertexStreams] = {};
         Core::BufferView m_indexBufferView = Core::BufferView::kInvalid;
+        Core::BufferView m_indirectArgs = Core::BufferView::kInvalid;
         Core::IndexType m_indexType = Core::IndexType::kUint32;
 
         std::pmr::memory_resource* m_linearAllocator = nullptr;

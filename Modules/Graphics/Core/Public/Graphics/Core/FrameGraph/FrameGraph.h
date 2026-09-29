@@ -5,9 +5,11 @@
 #include <Graphics/Core/DeviceObject.h>
 #include <Graphics/Core/FrameGraph/Blackboard.h>
 #include <Graphics/Core/FrameGraph/FrameGraphContext.h>
+#include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Core/Sampler.h>
 #include <Graphics/Core/Texture.h>
+#include <festd/vector.h>
 
 namespace FE::Graphics::Core
 {
@@ -67,10 +69,19 @@ namespace FE::Graphics::Core
         virtual void AddCopyPass(const BufferView& destination, const BufferView& source) = 0;
 
         template<class TPassDesc>
+        BasePassDescToken AddBasePassDesc(const TPassDesc* passDesc);
+
+        template<class TPassDesc>
         void AddPass(festd::string_view name, TPassDesc* passDesc);
+
+        template<class TPassDesc>
+        void AddPass(festd::string_view name, TPassDesc* passDesc, BasePassDescToken token);
 
         template<class TPassDesc, class TFunctor>
         void AddPass(festd::string_view name, TPassDesc* passDesc, TFunctor&& functor);
+
+        template<class TPassDesc, class TFunctor>
+        void AddPass(festd::string_view name, TPassDesc* passDesc, BasePassDescToken token, TFunctor&& functor);
 
         template<class TFunctor>
         void AddPassWithoutBarriers(festd::string_view name, TFunctor&& functor);
@@ -99,6 +110,7 @@ namespace FE::Graphics::Core
 
             Rtti::TypeID m_userPassDescTypeID = Rtti::TypeID::kNull;
             void* m_userPassDescPtr = nullptr;
+            BasePassDescToken m_basePassDescToken;
         };
 
         FrameGraph()
@@ -111,12 +123,19 @@ namespace FE::Graphics::Core
 
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
 
+        struct BasePassDesc final
+        {
+            const void* m_data = nullptr;
+            Rtti::TypeID m_typeID = Rtti::TypeID::kNull;
+        };
+
         DescriptorManager* m_descriptorManager = nullptr;
         ResourcePool* m_resourcePool = nullptr;
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
         festd::fixed_string m_currentScope;
+        festd::inline_vector<BasePassDesc, 4> m_basePassDescs;
     };
 
 
@@ -157,7 +176,25 @@ namespace FE::Graphics::Core
 
 
     template<class TPassDesc>
+    BasePassDescToken FrameGraph::AddBasePassDesc(const TPassDesc* passDesc)
+    {
+        FE_Assert(passDesc);
+        BasePassDescToken token;
+        token.m_value = static_cast<uint32_t>(m_basePassDescs.size());
+        m_basePassDescs.push_back({ passDesc, Rtti::GetTypeID<TPassDesc>() });
+        return token;
+    }
+
+
+    template<class TPassDesc>
     void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc)
+    {
+        AddPass(name, passDesc, BasePassDescToken{});
+    }
+
+
+    template<class TPassDesc>
+    void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, const BasePassDescToken token)
     {
         FE_Assert(passDesc);
 
@@ -166,12 +203,21 @@ namespace FE::Graphics::Core
         desc.m_functor = nullptr;
         desc.m_userPassDescPtr = passDesc;
         desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
+        desc.m_basePassDescToken = token;
         AddPassInternal(desc);
     }
 
 
     template<class TPassDesc, class TFunctor>
     void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, TFunctor&& functor)
+    {
+        AddPass(name, passDesc, BasePassDescToken{}, std::forward<TFunctor>(functor));
+    }
+
+
+    template<class TPassDesc, class TFunctor>
+    void FrameGraph::AddPass(const festd::string_view name, TPassDesc* passDesc, const BasePassDescToken token,
+                             TFunctor&& functor)
     {
         FE_Assert(passDesc);
         using FunctorType = std::decay_t<TFunctor>;
@@ -191,6 +237,7 @@ namespace FE::Graphics::Core
 
         desc.m_userPassDescPtr = passDesc;
         desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
+        desc.m_basePassDescToken = token;
         AddPassInternal(desc);
     }
 

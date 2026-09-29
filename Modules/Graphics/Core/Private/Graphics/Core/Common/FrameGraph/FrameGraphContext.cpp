@@ -190,6 +190,15 @@ namespace FE::Graphics::Common
     }
 
 
+    void FrameGraphContext::SetIndirectArgs(const Core::BufferView arguments)
+    {
+        FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kIndirectArgs), "Indirect arguments already set");
+        FE_Assert(arguments.IsValid());
+        m_setStateMask |= PipelineStateFlags::kIndirectArgs;
+        m_indirectArgs = arguments;
+    }
+
+
     void FrameGraphContext::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t vertexOffset,
                                  const uint32_t instanceOffset)
     {
@@ -237,7 +246,7 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraphContext::DispatchMeshIndirect(const Core::BufferView arguments, const uint32_t byteOffset)
+    void FrameGraphContext::DispatchMeshIndirect(const uint32_t byteOffset)
     {
         FE_PROFILER_ZONE();
 
@@ -245,10 +254,13 @@ namespace FE::Graphics::Common
                   "All pipeline states must be set before drawing");
         FE_Assert(!Bit::AnySet(m_setStateMask, PipelineStateFlags::kComputePipeline),
                   "Compute pipeline must not be set when drawing");
-        FE_Assert(arguments.IsValid() && byteOffset + 3 * sizeof(uint32_t) <= arguments.m_slice.m_size);
+        FE_Assert(Bit::AllSet(m_setStateMask, PipelineStateFlags::kIndirectArgs));
+        FE_Assert(m_indirectArgs.IsValid());
+        FE_Assert(byteOffset <= m_indirectArgs.m_slice.m_size);
+        FE_Assert(3 * sizeof(uint32_t) <= m_indirectArgs.m_slice.m_size - byteOffset);
 
         PrepareStatesInternal();
-        DispatchMeshIndirectImpl(arguments, byteOffset);
+        DispatchMeshIndirectImpl(m_indirectArgs, byteOffset);
         ClearStatesInternal();
     }
 
@@ -260,6 +272,8 @@ namespace FE::Graphics::Common
 
         if (m_viewportState.m_action == StateAction::kReset)
         {
+            FE_Assert(m_renderTargetState.m_renderTargetCount > 0 || m_renderTargetState.m_depthStencil.IsValid(),
+                      "A pass without targets must provide a viewport");
             const Vector2UInt size = m_renderTargetState.m_renderTargetCount > 0
                 ? m_renderTargetState.m_renderTargets[0].GetBaseDesc().GetSize2D()
                 : m_renderTargetState.m_depthStencil.GetBaseDesc().GetSize2D();
@@ -309,7 +323,8 @@ namespace FE::Graphics::Common
     {
         if (m_renderPassActive)
         {
-            m_setStateMask &= PipelineStateFlags::kRenderTargets | PipelineStateFlags::kViewport | PipelineStateFlags::kScissor;
+            m_setStateMask &= PipelineStateFlags::kRenderTargets | PipelineStateFlags::kViewport | PipelineStateFlags::kScissor
+                | PipelineStateFlags::kIndirectArgs;
             m_viewportState.m_action = StateAction::kKeep;
             m_scissorState.m_action = StateAction::kKeep;
         }
@@ -326,6 +341,8 @@ namespace FE::Graphics::Common
 
         festd::fill_n(m_streamBufferViews, festd::size(m_streamBufferViews), Core::BufferView::kInvalid);
         m_indexBufferView = {};
+        if (!m_renderPassActive)
+            m_indirectArgs = Core::BufferView::kInvalid;
     }
 
 

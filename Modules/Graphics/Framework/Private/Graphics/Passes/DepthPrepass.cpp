@@ -31,10 +31,13 @@ namespace FE::Graphics::DepthPrepass
             return;
 
         const RendererViewData& viewData = blackboard.Get<RendererViewData>();
+        auto* passDesc = graph.AllocatePassData<PassDesc>();
+        passDesc->m_depthTarget = Core::TextureView::Create(viewData.m_mainDepthTarget);
+        passDesc->m_viewport = viewData.m_viewportRect;
+        const Core::BasePassDescToken token = graph.AddBasePassDesc(passDesc);
         SceneRenderPass pass;
         pass.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
-        pass.m_depthTarget = viewData.m_mainDepthTarget;
-        pass.m_viewport = viewData.m_viewportRect;
+        pass.m_passDescToken = token;
         pass.m_drawTag = DrawTags::DepthPrepass;
         pass.m_techniqueRole = "DepthOnly";
 

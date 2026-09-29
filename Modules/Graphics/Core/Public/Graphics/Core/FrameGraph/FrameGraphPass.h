@@ -5,6 +5,11 @@
 
 namespace FE::Graphics::Core
 {
+    struct BasePassDescToken final : TypedHandle<BasePassDescToken, uint32_t>
+    {
+    };
+
+
     struct GraphicsPipeline;
     struct ComputePipeline;
 
@@ -103,6 +108,20 @@ namespace FE::Graphics::Core
 
         PassDepthTarget(const TextureView target)
             : m_target(target)
+        {
+        }
+    };
+
+
+    struct PassIndirectArgs final
+    {
+        BufferView m_arguments = BufferView::kInvalid;
+
+        FE_RTTI_Reflect("E5F20D23-77B1-40C8-AB0A-00DA39E38B45");
+
+        PassIndirectArgs() = default;
+        PassIndirectArgs(const BufferView arguments)
+            : m_arguments(arguments)
         {
         }
     };

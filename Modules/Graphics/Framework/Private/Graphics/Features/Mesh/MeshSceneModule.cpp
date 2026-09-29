@@ -206,11 +206,9 @@ namespace FE::Graphics
 
     void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
     {
-        const Core::Format colorFormat =
-            pass.m_colorTarget != nullptr ? pass.m_colorTarget->GetDesc().m_imageFormat : Core::Format::kUndefined;
         RenderBatchCollector batches(graph.GetAllocator(),
                                      pass.m_viewProjection,
-                                     colorFormat,
+                                     pass.m_colorFormat,
                                      pass.m_drawTag,
                                      pass.m_techniqueRole);
         CollectRenderBatches(batches);
@@ -226,12 +224,9 @@ namespace FE::Graphics
         const Core::PassBufferAccess indicesAccess{ batcher.m_instanceIndices.Get(),
                                                     Core::BarrierSyncFlags::kMeshShading,
                                                     Core::BarrierAccessFlags::kShaderRead };
-        const Core::PassBufferAccess argumentsAccess{ batcher.m_arguments.Get(),
-                                                      Core::BarrierSyncFlags::kExecuteIndirect,
-                                                      Core::BarrierAccessFlags::kIndirectArgument };
+        const Core::PassIndirectArgs arguments{ Core::BufferView(batcher.m_arguments.Get()) };
 
         auto dispatch = [groups = std::move(batcher.m_groups),
-                         arguments = Core::BufferView(batcher.m_arguments.Get()),
                          indices = BufferSRVDescriptor{ indicesHandle.m_descriptorIndex },
                          viewProjection = pass.m_viewProjection](Core::FrameGraphContext& context) {
             context.BeginRenderPass();
@@ -250,30 +245,15 @@ namespace FE::Graphics
 
                 context.SetPipeline(group.m_pipeline);
                 context.PushConstants(constants);
-                context.DispatchMeshIndirect(arguments, group.m_argumentIndex * sizeof(MeshPass::MeshDispatchArguments));
+                context.DispatchMeshIndirect(group.m_argumentIndex * sizeof(MeshPass::MeshDispatchArguments));
             }
             context.EndRenderPass();
         };
 
-        if (pass.m_colorTarget == nullptr)
-        {
-            auto* passDesc = graph.AllocatePassData<MeshPass::DepthPassDesc>();
-            passDesc->m_depthTarget = Core::TextureView::Create(pass.m_depthTarget);
-            passDesc->m_viewport = pass.m_viewport;
-            passDesc->m_instanceIndices = indicesAccess;
-            passDesc->m_arguments = argumentsAccess;
-            graph.AddPass("MeshDepthPass", passDesc, std::move(dispatch));
-        }
-        else
-        {
-            auto* passDesc = graph.AllocatePassData<MeshPass::OpaquePassDesc>();
-            passDesc->m_colorTarget = Core::TextureView::Create(pass.m_colorTarget);
-            passDesc->m_depthTarget = Core::TextureView::Create(pass.m_depthTarget);
-            passDesc->m_viewport = pass.m_viewport;
-            passDesc->m_instanceIndices = indicesAccess;
-            passDesc->m_arguments = argumentsAccess;
-            graph.AddPass("MeshOpaquePass", passDesc, std::move(dispatch));
-        }
+        auto* passDesc = graph.AllocatePassData<MeshPass::PassDesc>();
+        passDesc->m_instanceIndices = indicesAccess;
+        passDesc->m_arguments = arguments;
+        graph.AddPass("MeshPass", passDesc, pass.m_passDescToken, std::move(dispatch));
     }
 
 

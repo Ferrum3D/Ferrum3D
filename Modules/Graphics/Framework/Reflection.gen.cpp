@@ -963,98 +963,71 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-namespace FE::Graphics::MeshPass
+namespace FE::Graphics::DepthPrepass
 {
-    const Rtti::TypeID OpaquePassDesc::TypeID = Rtti::TypeID{
-        0x36, 0xf8, 0xee, 0x1d, 0xc7, 0x60, 0x49, 0x77, 0xa8, 0xcd, 0xa8, 0xcc, 0x79, 0xf6, 0x68, 0x03,
+    const Rtti::TypeID PassDesc::TypeID = Rtti::TypeID{
+        0x31, 0x47, 0x2b, 0x80, 0x20, 0x96, 0x42, 0xd6, 0x94, 0x0d, 0xa1, 0x9f, 0x43, 0xe5, 0x79, 0x5e,
     };
 
     namespace
     {
-        Rtti::Type& RTTI_GetMutableType_36f8ee1dc7604977a8cda8cc79f66803()
+        Rtti::Type& RTTI_GetMutableType_31472b80209642d6940da19f43e5795e()
         {
             static Rtti::Type typeInstance;
             return typeInstance;
         }
     } // namespace
 
-    const Rtti::Type& OpaquePassDesc::RTTI_GetType()
+    const Rtti::Type& PassDesc::RTTI_GetType()
     {
-        return RTTI_GetMutableType_36f8ee1dc7604977a8cda8cc79f66803();
+        return RTTI_GetMutableType_31472b80209642d6940da19f43e5795e();
     }
 
-    void OpaquePassDesc::Reflect(Rtti::ReflectionContext& context)
+    void PassDesc::Reflect(Rtti::ReflectionContext& context)
     {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_36f8ee1dc7604977a8cda8cc79f66803();
+        Rtti::Type& typeInstance = RTTI_GetMutableType_31472b80209642d6940da19f43e5795e();
 
         static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0x36, 0xf8, 0xee, 0x1d, 0xc7, 0x60, 0x49, 0x77,
-            0xa8, 0xcd, 0xa8, 0xcc, 0x79, 0xf6, 0x68, 0x03, // FE::Graphics::MeshPass::OpaquePassDesc
+            0x31, 0x47, 0x2b, 0x80, 0x20, 0x96, 0x42, 0xd6,
+            0x94, 0x0d, 0xa1, 0x9f, 0x43, 0xe5, 0x79, 0x5e, // FE::Graphics::DepthPrepass::PassDesc
         };
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[5 * sizeof(Rtti::TypeID)] = {
-            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
-            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
             0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
             0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depthTarget
             0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
             0x9d, 0x95, 0xad, 0xc6, 0xd0, 0x80, 0xd8, 0xe7, // FE::Graphics::Core::PassViewport m_viewport
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_instanceIndices
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_arguments
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorTarget = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthTarget = {};
 
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
 
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_instanceIndices = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
-
-        static const festd::array<Rtti::FieldInfo, 5> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &OpaquePassDesc::m_colorTarget,
-                                                        kAttributes_m_colorTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &OpaquePassDesc::m_depthTarget,
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PassDesc::m_depthTarget,
                                                         kAttributes_m_depthTarget,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
             Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &OpaquePassDesc::m_viewport,
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PassDesc::m_viewport,
                                                         kAttributes_m_viewport,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &OpaquePassDesc::m_instanceIndices,
-                                                        kAttributes_m_instanceIndices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 4 * sizeof(TypeID)),
-                                                        &OpaquePassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
                                                         Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
         };
 
-        context.ReflectClass<OpaquePassDesc>(typeInstance,
-                                             Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                             "FE::Graphics::MeshPass::OpaquePassDesc",
-                                             kBaseClassTypeIDs,
-                                             kAttributes,
-                                             kFields);
+        context.ReflectClass<PassDesc>(typeInstance,
+                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                       "FE::Graphics::DepthPrepass::PassDesc",
+                                       kBaseClassTypeIDs,
+                                       kAttributes,
+                                       kFields);
     }
 
-    static Rtti::TypeRegistrar GTypeRegistrar_36f8ee1dc7604977a8cda8cc79f66803(&OpaquePassDesc::Reflect);
-} // namespace FE::Graphics::MeshPass
+    static Rtti::TypeRegistrar GTypeRegistrar_31472b80209642d6940da19f43e5795e(&PassDesc::Reflect);
+} // namespace FE::Graphics::DepthPrepass
 
 
 namespace FE::Graphics::OpaquePass
@@ -2855,6 +2828,82 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
+namespace FE::Graphics::OpaquePass
+{
+    const Rtti::TypeID PassDesc::TypeID = Rtti::TypeID{
+        0x86, 0xa4, 0x2c, 0x8e, 0xa9, 0x26, 0x4e, 0x59, 0x98, 0xef, 0x17, 0xaa, 0x0f, 0x79, 0xa7, 0x18,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_86a42c8ea9264e5998ef17aa0f79a718()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_86a42c8ea9264e5998ef17aa0f79a718();
+    }
+
+    void PassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_86a42c8ea9264e5998ef17aa0f79a718();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0x86, 0xa4, 0x2c, 0x8e, 0xa9, 0x26, 0x4e, 0x59,
+            0x98, 0xef, 0x17, 0xaa, 0x0f, 0x79, 0xa7, 0x18, // FE::Graphics::OpaquePass::PassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[3 * sizeof(Rtti::TypeID)] = {
+            0x1d, 0x24, 0x00, 0x0b, 0x33, 0xb4, 0x4b, 0xaf,
+            0x88, 0x25, 0x96, 0x02, 0xcd, 0xb0, 0x8c, 0xc8, // FE::Graphics::Core::PassColorTarget m_colorTarget
+            0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
+            0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depthTarget
+            0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
+            0x9d, 0x95, 0xad, 0xc6, 0xd0, 0x80, 0xd8, 0xe7, // FE::Graphics::Core::PassViewport m_viewport
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_colorTarget = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthTarget = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
+
+        static const festd::array<Rtti::FieldInfo, 3> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_colorTarget",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PassDesc::m_colorTarget,
+                                                        kAttributes_m_colorTarget,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PassDesc::m_depthTarget,
+                                                        kAttributes_m_depthTarget,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
+                                                        &PassDesc::m_viewport,
+                                                        kAttributes_m_viewport,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PassDesc>(typeInstance,
+                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                       "FE::Graphics::OpaquePass::PassDesc",
+                                       kBaseClassTypeIDs,
+                                       kAttributes,
+                                       kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_86a42c8ea9264e5998ef17aa0f79a718(&PassDesc::Reflect);
+} // namespace FE::Graphics::OpaquePass
+
+
 namespace FE::Graphics
 {
     const Rtti::TypeID MaterialAsset::TypeID = Rtti::TypeID{
@@ -3363,91 +3412,6 @@ namespace FE::Graphics
 } // namespace FE::Graphics
 
 
-namespace FE::Graphics::MeshPass
-{
-    const Rtti::TypeID DepthPassDesc::TypeID = Rtti::TypeID{
-        0xa8, 0x6b, 0x40, 0x26, 0x4c, 0x36, 0x45, 0xce, 0xb6, 0xe7, 0x04, 0x31, 0xbf, 0x65, 0x6b, 0x84,
-    };
-
-    namespace
-    {
-        Rtti::Type& RTTI_GetMutableType_a86b40264c3645ceb6e70431bf656b84()
-        {
-            static Rtti::Type typeInstance;
-            return typeInstance;
-        }
-    } // namespace
-
-    const Rtti::Type& DepthPassDesc::RTTI_GetType()
-    {
-        return RTTI_GetMutableType_a86b40264c3645ceb6e70431bf656b84();
-    }
-
-    void DepthPassDesc::Reflect(Rtti::ReflectionContext& context)
-    {
-        Rtti::Type& typeInstance = RTTI_GetMutableType_a86b40264c3645ceb6e70431bf656b84();
-
-        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
-            0xa8, 0x6b, 0x40, 0x26, 0x4c, 0x36, 0x45, 0xce,
-            0xb6, 0xe7, 0x04, 0x31, 0xbf, 0x65, 0x6b, 0x84, // FE::Graphics::MeshPass::DepthPassDesc
-        };
-
-        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
-        static constexpr alignas(16) uint8_t kFieldTypeIDs[4 * sizeof(Rtti::TypeID)] = {
-            0xd1, 0x1c, 0xe8, 0x81, 0x3d, 0x3c, 0x47, 0xaf,
-            0xa0, 0x50, 0x34, 0x64, 0x82, 0x67, 0x73, 0x16, // FE::Graphics::Core::PassDepthTarget m_depthTarget
-            0x37, 0x22, 0xe7, 0x47, 0xaa, 0xbe, 0x49, 0xd8,
-            0x9d, 0x95, 0xad, 0xc6, 0xd0, 0x80, 0xd8, 0xe7, // FE::Graphics::Core::PassViewport m_viewport
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_instanceIndices
-            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
-            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_arguments
-        };
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_depthTarget = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_viewport = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_instanceIndices = {};
-
-        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
-
-        static const festd::array<Rtti::FieldInfo, 4> kFields = {
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_depthTarget",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
-                                                        &DepthPassDesc::m_depthTarget,
-                                                        kAttributes_m_depthTarget,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_viewport",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
-                                                        &DepthPassDesc::m_viewport,
-                                                        kAttributes_m_viewport,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndices",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 2 * sizeof(TypeID)),
-                                                        &DepthPassDesc::m_instanceIndices,
-                                                        kAttributes_m_instanceIndices,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
-                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 3 * sizeof(TypeID)),
-                                                        &DepthPassDesc::m_arguments,
-                                                        kAttributes_m_arguments,
-                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
-        };
-
-        context.ReflectClass<DepthPassDesc>(typeInstance,
-                                            Rtti::TypeID::LoadAligned(kTypeIDBytes),
-                                            "FE::Graphics::MeshPass::DepthPassDesc",
-                                            kBaseClassTypeIDs,
-                                            kAttributes,
-                                            kFields);
-    }
-
-    static Rtti::TypeRegistrar GTypeRegistrar_a86b40264c3645ceb6e70431bf656b84(&DepthPassDesc::Reflect);
-} // namespace FE::Graphics::MeshPass
-
-
 namespace FE::Graphics::DB
 {
     const Rtti::TypeID TableBase::TypeID = Rtti::TypeID{
@@ -3571,6 +3535,73 @@ namespace FE::Graphics::OpaquePass
 
     static Rtti::TypeRegistrar GTypeRegistrar_b27600bc318749d2a81f254d6e0c606c(&PassData::Reflect);
 } // namespace FE::Graphics::OpaquePass
+
+
+namespace FE::Graphics::MeshPass
+{
+    const Rtti::TypeID PassDesc::TypeID = Rtti::TypeID{
+        0xc3, 0x62, 0x1d, 0x29, 0x94, 0xe8, 0x42, 0xda, 0xa4, 0xd8, 0xba, 0x3f, 0xd6, 0xeb, 0xec, 0x1e,
+    };
+
+    namespace
+    {
+        Rtti::Type& RTTI_GetMutableType_c3621d2994e842daa4d8ba3fd6ebec1e()
+        {
+            static Rtti::Type typeInstance;
+            return typeInstance;
+        }
+    } // namespace
+
+    const Rtti::Type& PassDesc::RTTI_GetType()
+    {
+        return RTTI_GetMutableType_c3621d2994e842daa4d8ba3fd6ebec1e();
+    }
+
+    void PassDesc::Reflect(Rtti::ReflectionContext& context)
+    {
+        Rtti::Type& typeInstance = RTTI_GetMutableType_c3621d2994e842daa4d8ba3fd6ebec1e();
+
+        static constexpr alignas(16) uint8_t kTypeIDBytes[sizeof(Rtti::TypeID)] = {
+            0xc3, 0x62, 0x1d, 0x29, 0x94, 0xe8, 0x42, 0xda,
+            0xa4, 0xd8, 0xba, 0x3f, 0xd6, 0xeb, 0xec, 0x1e, // FE::Graphics::MeshPass::PassDesc
+        };
+
+        static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
+        static constexpr alignas(16) uint8_t kFieldTypeIDs[2 * sizeof(Rtti::TypeID)] = {
+            0x6f, 0xf3, 0xf5, 0x9e, 0xae, 0xbb, 0x49, 0xe8,
+            0x9b, 0x1d, 0x13, 0xa9, 0x58, 0x08, 0x08, 0xff, // FE::Graphics::Core::PassBufferAccess m_instanceIndices
+            0xe5, 0xf2, 0x0d, 0x23, 0x77, 0xb1, 0x40, 0xc8,
+            0xab, 0x0a, 0x00, 0xda, 0x39, 0xe3, 0x8b, 0x45, // FE::Graphics::Core::PassIndirectArgs m_arguments
+        };
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_instanceIndices = {};
+
+        static constexpr festd::array<Rtti::Attribute, 0> kAttributes_m_arguments = {};
+
+        static const festd::array<Rtti::FieldInfo, 2> kFields = {
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_instanceIndices",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 0 * sizeof(TypeID)),
+                                                        &PassDesc::m_instanceIndices,
+                                                        kAttributes_m_instanceIndices,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+            Rtti::ReflectionContext::CreateFieldInfo<1>("m_arguments",
+                                                        Rtti::TypeID::LoadAligned(kFieldTypeIDs + 1 * sizeof(TypeID)),
+                                                        &PassDesc::m_arguments,
+                                                        kAttributes_m_arguments,
+                                                        Rtti::FieldFlags::kInstance | Rtti::FieldFlags::kPublic),
+        };
+
+        context.ReflectClass<PassDesc>(typeInstance,
+                                       Rtti::TypeID::LoadAligned(kTypeIDBytes),
+                                       "FE::Graphics::MeshPass::PassDesc",
+                                       kBaseClassTypeIDs,
+                                       kAttributes,
+                                       kFields);
+    }
+
+    static Rtti::TypeRegistrar GTypeRegistrar_c3621d2994e842daa4d8ba3fd6ebec1e(&PassDesc::Reflect);
+} // namespace FE::Graphics::MeshPass
 
 
 namespace FE::Graphics::Tools::Downsample

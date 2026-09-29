@@ -4,6 +4,7 @@
 #include <Graphics/Base/Base.h>
 #include <Graphics/Base/BaseModuleList.h>
 #include <Graphics/Base/DrawTag.h>
+#include <Graphics/Core/FrameGraph/FrameGraphPass.h>
 #include <Graphics/Core/Texture.h>
 #include <Graphics/Core/Viewport.h>
 
@@ -19,9 +20,8 @@ namespace FE::Graphics
     struct SceneRenderPass final
     {
         Matrix4x4 m_viewProjection;
-        Core::Texture* m_colorTarget = nullptr;
-        Core::Texture* m_depthTarget = nullptr;
-        RectF m_viewport{ kForceInit };
+        Core::Format m_colorFormat = Core::Format::kUndefined;
+        Core::BasePassDescToken m_passDescToken;
         DrawTag m_drawTag;
         Env::Name m_techniqueRole;
     };

@@ -31,6 +31,8 @@ namespace FE::Graphics::Common
         kScissor = 1 << 4,
         kGraphicsPipeline = 1 << 5,
         kComputePipeline = 1 << 6,
+        kIndirectArgs = 1 << 7,
+        kRenderTargets = 1 << 8,
     };
 
     FE_ENUM_OPERATORS(PassStateFlags);
@@ -79,6 +81,7 @@ namespace FE::Graphics::Common
 
             Rtti::TypeID m_userPassDescTypeID = Rtti::TypeID::kNull;
             void* m_userPassDescPtr = nullptr;
+            Core::BasePassDescToken m_basePassDescToken;
 
             festd::pmr::vector<Core::TextureBarrierDesc> m_textureOwnershipTransferBarriers;
             festd::pmr::vector<Core::BufferBarrierDesc> m_bufferOwnershipTransferBarriers;
@@ -99,6 +102,7 @@ namespace FE::Graphics::Common
 
             festd::fixed_vector<uint32_t, Core::Limits::Pipeline::kMaxColorAttachments> m_colorTargetAccessIndices;
             uint32_t m_depthTargetAccessIndex = kInvalidIndex;
+            Core::BufferView m_indirectArgs = Core::BufferView::kInvalid;
 
             RectF m_viewport{ kForceInit };
             RectInt m_scissor{ kForceInit };
@@ -130,7 +134,7 @@ namespace FE::Graphics::Common
         virtual void FinishExecuteInternal() = 0;
         virtual void ExecutePassBarriersInternal(PassNode& pass) = 0;
 
-        void ParsePassPushConstants(PassNode& pass, const Rtti::Type& type);
+        void ParsePassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data);
         void PreparePassCompileInfo(PassNode& pass);
         void AccumulateBindFlags(ResourceNode& resource);
         void CompilePassBarriers(PassNode& pass);
