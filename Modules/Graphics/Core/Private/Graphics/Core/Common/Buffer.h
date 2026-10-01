@@ -15,6 +15,8 @@ namespace FE::Graphics::Common
 
         void DecommitMemory() override;
 
+        [[nodiscard]] uint64_t GetDeviceAddress() const override;
+
         [[nodiscard]] void* Map() override;
         void Unmap() override;
         void FlushMappedRange(uint32_t offset, uint32_t byteSize) override;

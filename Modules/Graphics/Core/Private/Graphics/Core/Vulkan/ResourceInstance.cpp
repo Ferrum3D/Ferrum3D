@@ -24,7 +24,8 @@ namespace FE::Graphics::Vulkan
             if (Bit::AnySet(accessFlags, Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite))
             {
                 usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-                usage |= isTexelBuffer ? VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+                usage |= isTexelBuffer ? VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT
+                                       : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
             if (Bit::AllSet(accessFlags, Core::BarrierAccessFlags::kIndexBuffer))
                 usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -155,6 +156,14 @@ namespace FE::Graphics::Vulkan
 
         VerifyVk(vmaCreateBuffer(allocator, &bufferCI, &allocationCI, &m_buffer, &m_vmaAllocation, nullptr));
 
+        if (bufferCI.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+        {
+            VkBufferDeviceAddressInfo addressInfo = {};
+            addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+            addressInfo.buffer = m_buffer;
+            m_bufferDeviceAddress = vkGetBufferDeviceAddress(NativeCast(device), &addressInfo);
+        }
+
         if (isTexelBuffer)
         {
             VkBufferViewCreateInfo viewCI{};
@@ -168,15 +177,43 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    VkBufferView BufferInstance::GetSliceView(const Core::Device* device, const Core::BufferSlice slice)
+    {
+        std::unique_lock lk{ m_viewCacheLock };
+        FE_Assert(slice.m_size > 0 && slice.m_offset <= m_bufferDesc.m_size);
+        FE_Assert(slice.m_size <= m_bufferDesc.m_size - slice.m_offset);
+        if (slice.m_offset == 0 && slice.m_size == m_bufferDesc.m_size)
+            return m_view;
+        for (const ViewCacheEntry& entry : m_viewCache)
+        {
+            if (entry.m_slice.m_offset == slice.m_offset && entry.m_slice.m_size == slice.m_size)
+                return entry.m_view;
+        }
+        VkBufferViewCreateInfo viewCI = {};
+        viewCI.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+        viewCI.buffer = m_buffer;
+        viewCI.format = Translate(m_bufferDesc.m_format);
+        viewCI.offset = slice.m_offset;
+        viewCI.range = slice.m_size;
+        VkBufferView view = VK_NULL_HANDLE;
+        VerifyVk(vkCreateBufferView(NativeCast(device), &viewCI, nullptr, &view));
+        m_viewCache.push_back({ slice, view });
+        return view;
+    }
+
+
     void BufferInstance::Invalidate(const Core::Device* device)
     {
         if (m_buffer)
         {
-            const VmaAllocator allocator = ImplCast(device)->GetVmaInstance();
-            vmaDestroyBuffer(allocator, m_buffer, m_vmaAllocation);
-
+            for (const ViewCacheEntry& entry : m_viewCache)
+                vkDestroyBufferView(NativeCast(device), entry.m_view, nullptr);
+            m_viewCache.clear();
             if (m_view)
                 vkDestroyBufferView(NativeCast(device), m_view, nullptr);
+            const VmaAllocator allocator = ImplCast(device)->GetVmaInstance();
+            vmaDestroyBuffer(allocator, m_buffer, m_vmaAllocation);
+            m_bufferDeviceAddress = 0;
 
             m_vmaAllocation = nullptr;
             m_buffer = VK_NULL_HANDLE;

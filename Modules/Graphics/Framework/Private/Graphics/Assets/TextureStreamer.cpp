@@ -103,14 +103,12 @@ namespace FE::Graphics
             asset.m_residentMip = operation->GetTargetIndex();
             if (asset.m_descriptorIndex == kInvalidIndex)
             {
-                asset.m_descriptorIndex =
-                    m_descriptorManager->ReserveDescriptor(texture.Get(), Core::DescriptorLifetime::kPersistent);
+                asset.m_descriptorIndex = m_descriptorManager->CreateSRV(texture.Get()).m_value;
             }
             else
             {
-                m_descriptorManager->UpdateDescriptor(asset.m_descriptorIndex, texture.Get());
+                m_descriptorManager->Update(TextureSRVDescriptor{ asset.m_descriptorIndex }, texture.Get());
             }
-            m_descriptorManager->CommitResourceDescriptor(asset.m_descriptorIndex, Core::DescriptorType::kSRV);
             asset.m_texture = std::move(texture);
             operation->Destroy();
             asset.m_currentOperation = nullptr;
@@ -147,7 +145,7 @@ namespace FE::Graphics
                 Cancel(m_entries[index]);
                 if (asset->m_descriptorIndex != kInvalidIndex)
                 {
-                    m_descriptorManager->FreeResourceDescriptor(asset->m_descriptorIndex);
+                    m_descriptorManager->FreePersistentDescriptor(asset->m_descriptorIndex);
                     asset->m_descriptorIndex = kInvalidIndex;
                 }
                 m_entries[index] = std::move(m_entries.back());

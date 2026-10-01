@@ -1,5 +1,4 @@
 #include <Core/Memory/FiberTempAllocator.h>
-#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
 #include <Graphics/RendererImpl.h>
@@ -218,17 +217,15 @@ namespace FE::Graphics
         if (batcher.m_groups.empty())
             return;
 
-        const Core::FrameGraphBufferDescriptorHandle indicesHandle = graph.GetDescriptor(batcher.m_instanceIndices.Get());
-        graph.GetDescriptorManager()->CommitResourceDescriptor(indicesHandle.m_descriptorIndex, Core::DescriptorType::kSRV);
+        const BufferSRVDescriptor indices = graph.GetSRV(batcher.m_instanceIndices.Get());
 
         const Core::PassBufferAccess indicesAccess{ batcher.m_instanceIndices.Get(),
                                                     Core::BarrierSyncFlags::kMeshShading,
                                                     Core::BarrierAccessFlags::kShaderRead };
         const Core::PassIndirectArgs arguments{ Core::BufferView(batcher.m_arguments.Get()) };
 
-        auto dispatch = [groups = std::move(batcher.m_groups),
-                         indices = BufferSRVDescriptor{ indicesHandle.m_descriptorIndex },
-                         viewProjection = pass.m_viewProjection](Core::FrameGraphContext& context) {
+        auto dispatch = [groups = std::move(batcher.m_groups), indices, viewProjection = pass.m_viewProjection](
+                            Core::FrameGraphContext& context) {
             context.BeginRenderPass();
             for (const IndirectMeshGroup& group : groups)
             {
@@ -391,10 +388,7 @@ namespace FE::Graphics
             }
             FE_Assert(geometryOffset < mesh->m_buffer->GetDesc().m_size);
 
-            Core::DescriptorManager* descriptorManager = Renderer::Get().GetDescriptorManager();
-            const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(mesh->m_buffer.Get());
-            descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
-            tableRow.m_geometry.Get() = BufferPointer{ descriptorManager->GetDeviceAddress(descriptorIndex) + geometryOffset };
+            tableRow.m_geometry.Get() = BufferPointer{ mesh->m_buffer->GetDeviceAddress() + geometryOffset };
             tableRow.m_lods.Get() = DB::Slice<MeshLodInfoTable>{ group->m_lodsRef.m_rowIndex + lodIndex, 1 };
             group->m_buffer = mesh->m_buffer.Get();
             group->m_meshGeneration = meshGeneration;

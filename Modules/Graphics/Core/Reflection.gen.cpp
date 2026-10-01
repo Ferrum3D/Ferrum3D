@@ -4018,8 +4018,8 @@ namespace FE::Graphics::Core
 
         static constexpr alignas(16) festd::array<uint8_t, 0 * sizeof(Rtti::TypeID)> kBaseClassTypeIDs = {};
         static constexpr alignas(16) uint8_t kFieldTypeIDs[1 * sizeof(Rtti::TypeID)] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // <unknown> m_pipeline
+            0x76, 0x8e, 0x75, 0x4c, 0xd5, 0x8b, 0x4f, 0xdc,
+            0xbc, 0x8d, 0x89, 0x3e, 0x8a, 0x7e, 0x04, 0x38, // FE::Graphics::Core::ComputePipeline m_pipeline
         };
         static constexpr festd::array<Rtti::Attribute, 0> kAttributes = {};
 

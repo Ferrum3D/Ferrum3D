@@ -1,6 +1,8 @@
 #pragma once
 #include <Core/Math/Rect.h>
 #include <Graphics/Core/Buffer.h>
+#include <Graphics/Core/ComputePipeline.h>
+#include <Graphics/Core/GraphicsPipeline.h>
 #include <Graphics/Core/Texture.h>
 
 namespace FE::Graphics::Core
@@ -8,10 +10,6 @@ namespace FE::Graphics::Core
     struct BasePassDescToken final : TypedHandle<BasePassDescToken, uint32_t>
     {
     };
-
-
-    struct GraphicsPipeline;
-    struct ComputePipeline;
 
 
     struct PassGraphicsPipeline final

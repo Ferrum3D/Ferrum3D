@@ -87,38 +87,6 @@ namespace FE::Graphics::Core
     };
 
 
-    struct [[nodiscard]] FrameGraphTextureDescriptorHandle final
-    {
-        operator TextureSRVDescriptor() const
-        {
-            return TextureSRVDescriptor{ m_descriptorIndex };
-        }
-
-        operator TextureUAVDescriptor() const
-        {
-            return TextureUAVDescriptor{ m_descriptorIndex };
-        }
-
-        uint32_t m_descriptorIndex = kInvalidIndex;
-    };
-
-
-    struct [[nodiscard]] FrameGraphBufferDescriptorHandle final
-    {
-        operator BufferSRVDescriptor() const
-        {
-            return BufferSRVDescriptor{ m_descriptorIndex };
-        }
-
-        operator BufferUAVDescriptor() const
-        {
-            return BufferUAVDescriptor{ m_descriptorIndex };
-        }
-
-        uint32_t m_descriptorIndex = kInvalidIndex;
-    };
-
-
     enum class GraphicsApi : uint32_t
     {
         kNone,

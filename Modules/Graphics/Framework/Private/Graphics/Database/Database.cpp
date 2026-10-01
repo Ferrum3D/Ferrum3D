@@ -1,5 +1,4 @@
 #include <Core/Memory/PoolAllocator.h>
-#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Database/Database.h>
 
@@ -304,10 +303,7 @@ namespace FE::Graphics::DB
 
         constexpr auto kUploadOptions = Core::RingUploader::Options::kDisableBarriers;
 
-        Core::DescriptorManager* descriptorManager = graph.GetDescriptorManager();
-        const uint32_t pageTableDescriptorIndex = descriptorManager->ReserveDescriptor(m_pageTableDeviceStorage.Get());
-        descriptorManager->CommitResourceDescriptor(pageTableDescriptorIndex, Core::DescriptorType::kSRV);
-        m_pageTableDeviceAddress = descriptorManager->GetDeviceAddress(pageTableDescriptorIndex);
+        m_pageTableDeviceAddress = m_pageTableDeviceStorage->GetDeviceAddress();
 
         // We place barriers manually here as we know that the page tables do not overlap in memory.
         // Currently, our FrameGraph cannot figure it out on its own.
@@ -334,10 +330,7 @@ namespace FE::Graphics::DB
             for (uint32_t i = 0; i < pageCount; ++i)
             {
                 StoragePage* page = table->m_pages[i];
-                const uint32_t descriptorIndex = descriptorManager->ReserveDescriptor(page->m_deviceStorage.Get());
-                descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
-
-                const uint64_t address = descriptorManager->GetDeviceAddress(descriptorIndex);
+                const uint64_t address = page->m_deviceStorage->GetDeviceAddress();
                 m_pageTableHostStorage[offset + i] = BufferPointer{ address };
             }
 

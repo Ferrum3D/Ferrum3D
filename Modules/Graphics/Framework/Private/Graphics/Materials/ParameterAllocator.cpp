@@ -1,4 +1,3 @@
-#include <Graphics/Core/DescriptorManager.h>
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/ResourcePool.h>
 #include <Graphics/Materials/MaterialInstance.h>
@@ -15,11 +14,9 @@ namespace FE::Graphics
     };
 
 
-    MaterialParameterAllocator::MaterialParameterAllocator(Core::Device* device, Core::ResourcePool* resourcePool,
-                                                           Core::DescriptorManager* descriptorManager)
+    MaterialParameterAllocator::MaterialParameterAllocator(Core::Device* device, Core::ResourcePool* resourcePool)
         : m_device(device)
         , m_resourcePool(resourcePool)
-        , m_descriptorManager(descriptorManager)
     {
         m_uploader.Setup("MaterialParameterUploader", resourcePool, 4 * 1024 * 1024);
     }
@@ -49,9 +46,7 @@ namespace FE::Graphics
         commitParams.m_bindFlags = Core::BarrierAccessFlags::kCopyDest | Core::BarrierAccessFlags::kShaderRead;
         m_resourcePool->CommitBufferMemory(page->m_buffer.Get(), commitParams);
 
-        const uint32_t descriptorIndex = m_descriptorManager->ReserveDescriptor(page->m_buffer.Get());
-        m_descriptorManager->CommitResourceDescriptor(descriptorIndex, Core::DescriptorType::kSRV);
-        page->m_deviceAddress = m_descriptorManager->GetDeviceAddress(descriptorIndex);
+        page->m_deviceAddress = page->m_buffer->GetDeviceAddress();
         m_pages.push_back(page);
         if (m_dirtyPages.size() < m_pages.size())
             m_dirtyPages.resize(m_pages.size(), false);
@@ -72,7 +67,7 @@ namespace FE::Graphics
         Page* page = AllocatePage();
         const Memory::BuddyAllocator::Handle block = page->m_allocator.Allocate(byteSize, 16);
         FE_Assert(block.IsValid());
-        return { static_cast<uint32_t>(m_pages.size() - 1), block, BufferPointer{ page->m_deviceAddress + block.m_offset } };
+        return { m_pages.size() - 1, block, BufferPointer{ page->m_deviceAddress + block.m_offset } };
     }
 
 

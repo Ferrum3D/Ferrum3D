@@ -98,11 +98,11 @@ namespace FE::Graphics::Tools
         constants.m_numWorkGroups = numWorkGroups;
         constants.m_workGroupOffset = workGroupOffset;
         constants.m_invInputSize = Math::Reciprocal(Vector2(sourceDesc.GetSize2D()));
-        constants.m_internalGlobalAtomic = graph.GetDescriptor(globalAtomic.Get());
+        constants.m_internalGlobalAtomic = graph.GetUAV(globalAtomic.Get());
 
-        constants.m_input = graph.GetDescriptor(src);
+        constants.m_input = graph.GetSRV(src);
         for (uint32_t mipIndex = 0; mipIndex < numMips; ++mipIndex)
-            constants.m_inputSrcMips[mipIndex] = graph.GetDescriptor(dst[mipIndex].Get());
+            constants.m_inputSrcMips[mipIndex] = graph.GetUAV(dst[mipIndex].Get());
 
         constants.m_inputSrcMidMip = constants.m_inputSrcMips[5];
         constants.m_linearClamp = graph.GetSampler(Core::SamplerState::kLinearClamp);

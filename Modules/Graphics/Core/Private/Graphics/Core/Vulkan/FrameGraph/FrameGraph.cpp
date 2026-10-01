@@ -20,6 +20,12 @@ namespace FE::Graphics::Vulkan
     FrameGraph::~FrameGraph() = default;
 
 
+    void FrameGraph::BeginFrame()
+    {
+        m_descriptorManager->BeginFrame(m_commandQueue->GetCurrentFence());
+    }
+
+
     void FrameGraph::PrepareExecuteInternal()
     {
         FE_PROFILER_ZONE();
@@ -37,8 +43,7 @@ namespace FE::Graphics::Vulkan
     {
         FE_PROFILER_ZONE();
 
-        FrameGraphContext* context = ImplCast(m_currentContext.Get());
-        context->EnqueueFenceToSignal(m_descriptorManager->CloseFrame());
+        m_descriptorManager->EndFrame();
 
         m_currentContext.Reset();
     }

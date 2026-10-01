@@ -14,6 +14,16 @@ namespace FE::Graphics::Vulkan
     {
         FE_RTTI("82BD426F-A6C0-45BD-9F67-8223CA9B70CC");
 
+        struct ViewCacheEntry final
+        {
+            Core::BufferSlice m_slice;
+            VkBufferView m_view;
+        };
+
+        Threading::SpinLock m_viewCacheLock;
+        festd::inline_vector<ViewCacheEntry, 4> m_viewCache;
+        VkBufferView GetSliceView(const Core::Device* device, Core::BufferSlice slice);
+
         VkBuffer m_buffer = VK_NULL_HANDLE;
         VkBufferView m_view = VK_NULL_HANDLE;
         VmaAllocation m_vmaAllocation = nullptr;

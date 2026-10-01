@@ -46,24 +46,90 @@ namespace FE::Graphics::Common
         m_resources.clear();
         m_resourceIndexMap.clear();
         m_basePassDescs.clear();
+        m_descriptorViews.clear();
+        m_textureViews.clear();
+        m_bufferViews.clear();
     }
 
 
-    Core::FrameGraphTextureDescriptorHandle FrameGraph::GetDescriptor(const Core::TextureView texture)
+    TextureSRVDescriptor FrameGraph::GetSRV(const Core::TextureView texture)
     {
-        return Core::FrameGraphTextureDescriptorHandle{ m_descriptorManager->ReserveDescriptor(texture) };
+        return { ReserveDescriptor(texture, Core::DescriptorType::kSRV) };
     }
 
 
-    Core::FrameGraphBufferDescriptorHandle FrameGraph::GetDescriptor(const Core::BufferView buffer)
+    TextureUAVDescriptor FrameGraph::GetUAV(const Core::TextureView texture)
     {
-        return Core::FrameGraphBufferDescriptorHandle{ m_descriptorManager->ReserveDescriptor(buffer) };
+        return { ReserveDescriptor(texture, Core::DescriptorType::kUAV) };
+    }
+
+
+    BufferSRVDescriptor FrameGraph::GetSRV(const Core::BufferView buffer)
+    {
+        return { ReserveDescriptor(buffer, Core::DescriptorType::kSRV) };
+    }
+
+
+    BufferUAVDescriptor FrameGraph::GetUAV(const Core::BufferView buffer)
+    {
+        return { ReserveDescriptor(buffer, Core::DescriptorType::kUAV) };
+    }
+
+
+    uint32_t FrameGraph::ReserveDescriptor(const Core::TextureView texture, const Core::DescriptorType type)
+    {
+        FE_Assert(texture.IsValid());
+        const TextureViewKey key{ texture.m_resource->GetResourceID(), texture.m_subresource, type };
+        const auto it = m_textureViews.find(key);
+        if (it != m_textureViews.end())
+            return it->second;
+
+        FE_Assert(m_descriptorViews.size() < Core::DescriptorManager::kTransientDescriptorCount,
+                  "Frame descriptor arena exhausted");
+        const uint32_t index = Core::DescriptorManager::kPersistentDescriptorCount + m_descriptorViews.size();
+        m_descriptorViews.emplace_back(texture, type);
+        m_textureViews.emplace(key, index);
+        return index;
+    }
+
+
+    uint32_t FrameGraph::ReserveDescriptor(const Core::BufferView buffer, const Core::DescriptorType type)
+    {
+        FE_Assert(buffer.IsValid());
+        const BufferViewKey key{ buffer.m_resource->GetResourceID(), buffer.m_slice, type };
+        const auto it = m_bufferViews.find(key);
+        if (it != m_bufferViews.end())
+            return it->second;
+
+        FE_Assert(m_descriptorViews.size() < Core::DescriptorManager::kTransientDescriptorCount,
+                  "Frame descriptor arena exhausted");
+        const uint32_t index = Core::DescriptorManager::kPersistentDescriptorCount + m_descriptorViews.size();
+        m_descriptorViews.emplace_back(buffer, type);
+        m_bufferViews.emplace(key, index);
+        return index;
+    }
+
+
+    const Core::ResourceDescriptorInfo& FrameGraph::GetResourceInfo(const uint32_t index, const Core::DescriptorType type) const
+    {
+        if (index < Core::DescriptorManager::kPersistentDescriptorCount)
+        {
+            const auto& info = m_descriptorManager->GetPersistentResourceInfo(index);
+            FE_Assert(info.m_descriptorType == type);
+            return info;
+        }
+
+        const uint32_t localIndex = index - Core::DescriptorManager::kPersistentDescriptorCount;
+        FE_Assert(localIndex < m_descriptorViews.size(), "Descriptor does not belong to this frame");
+        const auto& info = m_descriptorViews[localIndex];
+        FE_Assert(info.m_descriptorType == type);
+        return info;
     }
 
 
     SamplerDescriptor FrameGraph::GetSampler(const Core::SamplerState sampler)
     {
-        return SamplerDescriptor{ m_descriptorManager->ReserveDescriptor(sampler) };
+        return m_descriptorManager->GetSampler(sampler);
     }
 
 
@@ -111,12 +177,6 @@ namespace FE::Graphics::Common
     }
 
 
-    void FrameGraph::BeginFrame()
-    {
-        m_descriptorManager->BeginFrame();
-    }
-
-
     void FrameGraph::ParsePassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data)
     {
         FE_PROFILER_ZONE();
@@ -161,59 +221,62 @@ namespace FE::Graphics::Common
                 if (field.m_type == Rtti::GetTypeID<TextureSRVDescriptor>())
                 {
                     const TextureSRVDescriptor descriptor = field.Get<TextureSRVDescriptor>(data, arrayIndex);
-                    const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
+                    if (descriptor.m_value == kInvalidIndex)
+                        continue;
+                    const Core::ResourceDescriptorInfo& resourceInfo =
+                        GetResourceInfo(descriptor.m_value, Core::DescriptorType::kSRV);
                     FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kTexture);
-                    m_descriptorManager->CommitResourceDescriptor(descriptor.m_value, Core::DescriptorType::kSRV);
 
                     TextureAccess access;
                     access.m_syncFlags = shaderSyncFlags;
                     access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
                     access.m_layout = Core::BarrierLayout::kShaderRead;
                     access.m_subresource = resourceInfo.m_textureSubresource;
-                    RegisterResource(resourceInfo.m_resource, pass, access);
+                    RegisterResource(resourceInfo.m_resource.Get(), pass, access);
                 }
                 else if (field.m_type == Rtti::GetTypeID<TextureUAVDescriptor>())
                 {
                     const TextureUAVDescriptor descriptor = field.Get<TextureUAVDescriptor>(data, arrayIndex);
-                    const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
+                    if (descriptor.m_value == kInvalidIndex)
+                        continue;
+                    const Core::ResourceDescriptorInfo& resourceInfo =
+                        GetResourceInfo(descriptor.m_value, Core::DescriptorType::kUAV);
                     FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kTexture);
-                    m_descriptorManager->CommitResourceDescriptor(descriptor.m_value, Core::DescriptorType::kUAV);
 
                     TextureAccess access;
                     access.m_syncFlags = shaderSyncFlags;
-                    access.m_accessFlags = Core::BarrierAccessFlags::kShaderWrite;
+                    access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
                     access.m_layout = Core::BarrierLayout::kShaderReadWrite;
                     access.m_subresource = resourceInfo.m_textureSubresource;
-                    RegisterResource(resourceInfo.m_resource, pass, access);
+                    RegisterResource(resourceInfo.m_resource.Get(), pass, access);
                 }
                 else if (field.m_type == Rtti::GetTypeID<BufferSRVDescriptor>())
                 {
                     const BufferSRVDescriptor descriptor = field.Get<BufferSRVDescriptor>(data, arrayIndex);
-                    const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
+                    if (descriptor.m_value == kInvalidIndex)
+                        continue;
+                    const Core::ResourceDescriptorInfo& resourceInfo =
+                        GetResourceInfo(descriptor.m_value, Core::DescriptorType::kSRV);
                     FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kBuffer);
-                    m_descriptorManager->CommitResourceDescriptor(descriptor.m_value, Core::DescriptorType::kSRV);
 
                     BufferAccess access;
                     access.m_syncFlags = shaderSyncFlags;
                     access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead;
-                    RegisterResource(resourceInfo.m_resource, pass, access);
+                    RegisterResource(resourceInfo.m_resource.Get(), pass, access);
                 }
                 else if (field.m_type == Rtti::GetTypeID<BufferUAVDescriptor>())
                 {
                     const BufferUAVDescriptor descriptor = field.Get<BufferUAVDescriptor>(data, arrayIndex);
-                    const Core::ResourceDescriptorInfo resourceInfo = m_descriptorManager->GetResourceInfo(descriptor.m_value);
+                    if (descriptor.m_value == kInvalidIndex)
+                        continue;
+                    const Core::ResourceDescriptorInfo& resourceInfo =
+                        GetResourceInfo(descriptor.m_value, Core::DescriptorType::kUAV);
                     FE_Assert(resourceInfo.m_resource->GetType() == Core::ResourceType::kBuffer);
-                    m_descriptorManager->CommitResourceDescriptor(descriptor.m_value, Core::DescriptorType::kUAV);
 
                     BufferAccess access;
                     access.m_syncFlags = shaderSyncFlags;
-                    access.m_accessFlags = Core::BarrierAccessFlags::kShaderWrite;
-                    RegisterResource(resourceInfo.m_resource, pass, access);
-                }
-                else if (field.m_type == Rtti::GetTypeID<SamplerDescriptor>())
-                {
-                    const SamplerDescriptor descriptor = field.Get<SamplerDescriptor>(data, arrayIndex);
-                    m_descriptorManager->CommitSamplerDescriptor(descriptor.m_value);
+                    access.m_accessFlags = Core::BarrierAccessFlags::kShaderRead | Core::BarrierAccessFlags::kShaderWrite;
+                    RegisterResource(resourceInfo.m_resource.Get(), pass, access);
                 }
             }
         }
@@ -714,6 +777,13 @@ namespace FE::Graphics::Common
 
         for (PassNode& pass : m_passes)
             CompilePassBarriers(pass);
+
+        for (Core::ResourceDescriptorInfo& descriptor : m_descriptorViews)
+        {
+            if (descriptor.m_resource->GetMemoryStatus() == Core::ResourceMemory::kNotCommitted)
+                descriptor = {};
+        }
+        m_descriptorManager->PrepareDescriptors(m_descriptorViews);
     }
 
 
@@ -800,20 +870,22 @@ namespace FE::Graphics::Common
         const Core::TextureSubresourceIterator subresourceIterator(access.m_subresource);
         for (const auto [mipIndex, arrayIndex] : subresourceIterator)
         {
+            const Core::TextureSubresource subresource = access.m_subresource.Slice(mipIndex, arrayIndex);
+            const auto existing = festd::find_if(pass.m_accessedTextures, [&](const TextureAccess& other) {
+                return other.m_localResourceIndex == localResourceIndex && other.m_subresource == subresource;
+            });
+            if (existing != pass.m_accessedTextures.end())
+            {
+                FE_Assert(existing->m_layout == access.m_layout, "Incompatible texture views in the same pass");
+                FE_Assert(access.m_layout == Core::BarrierLayout::kShaderRead
+                          || access.m_layout == Core::BarrierLayout::kShaderReadWrite, "Duplicate attachment access");
+                existing->m_syncFlags |= access.m_syncFlags;
+                existing->m_accessFlags |= access.m_accessFlags;
+                continue;
+            }
+
             const uint32_t passAccessIndex = pass.m_accessedTextures.size();
             resourceNode.m_accesses.push_back({ pass.m_passIndex, passAccessIndex });
-
-            const Core::TextureSubresource subresource = access.m_subresource.Slice(mipIndex, arrayIndex);
-
-            if (Build::IsDebug())
-            {
-                for (const TextureAccess& other : pass.m_accessedTextures)
-                {
-                    // TODO: we could deduplicate compatible accesses, but it would probably be too expensive.
-                    FE_Assert(other.m_subresource != subresource || other.m_localResourceIndex != localResourceIndex,
-                              "Duplicate subresource access");
-                }
-            }
 
             TextureAccess& subresourceAccess = pass.m_accessedTextures.emplace_back(access);
             subresourceAccess.m_localResourceIndex = localResourceIndex;
@@ -838,16 +910,17 @@ namespace FE::Graphics::Common
         ResourceNode& resourceNode = m_resources[localResourceIndex];
         FE_Assert(resourceNode.m_resource == resource);
 
+        for (BufferAccess& other : pass.m_accessedBuffers)
+        {
+            if (other.m_localResourceIndex != localResourceIndex)
+                continue;
+            other.m_syncFlags |= access.m_syncFlags;
+            other.m_accessFlags |= access.m_accessFlags;
+            return localResourceIndex;
+        }
+
         const uint32_t passAccessIndex = pass.m_accessedBuffers.size();
         resourceNode.m_accesses.push_back({ pass.m_passIndex, passAccessIndex });
-
-        if (Build::IsDebug())
-        {
-            for (const BufferAccess& other : pass.m_accessedBuffers)
-            {
-                FE_Assert(other.m_localResourceIndex != localResourceIndex, "Duplicate buffer access");
-            }
-        }
 
         BufferAccess& bufferAccess = pass.m_accessedBuffers.emplace_back(access);
         bufferAccess.m_localResourceIndex = localResourceIndex;

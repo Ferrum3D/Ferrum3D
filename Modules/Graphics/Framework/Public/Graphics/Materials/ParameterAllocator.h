@@ -26,8 +26,7 @@ namespace FE::Graphics
             }
         };
 
-        MaterialParameterAllocator(Core::Device* device, Core::ResourcePool* resourcePool,
-                                   Core::DescriptorManager* descriptorManager);
+        MaterialParameterAllocator(Core::Device* device, Core::ResourcePool* resourcePool);
         ~MaterialParameterAllocator();
 
         [[nodiscard]] Allocation Allocate(uint32_t byteSize);
@@ -44,7 +43,6 @@ namespace FE::Graphics
 
         Core::Device* m_device = nullptr;
         Core::ResourcePool* m_resourcePool = nullptr;
-        Core::DescriptorManager* m_descriptorManager = nullptr;
         Core::RingUploader m_uploader;
         festd::vector<Page*> m_pages;
         festd::bit_vector m_dirtyPages;

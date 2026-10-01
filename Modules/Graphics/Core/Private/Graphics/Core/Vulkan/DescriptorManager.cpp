@@ -56,19 +56,11 @@ namespace FE::Graphics::Vulkan
     } // namespace
 
 
-    DescriptorManager::DescriptorSetState::DescriptorSetState()
-    {
-        m_resourceDescriptorsToUpdate.resize(kResourceDescriptorCount, false);
-        m_samplerDescriptorsToUpdate.resize(kSamplerDescriptorCount, false);
-    }
-
-
     DescriptorManager::DescriptorManager(Core::Device* device)
     {
         FE_PROFILER_ZONE();
 
         m_device = ImplCast(device);
-        m_fence = Fence::Create(m_device, 0);
 
         Memory::FiberTempAllocator temp;
 
@@ -86,13 +78,14 @@ namespace FE::Graphics::Vulkan
         const uint32_t staticSamplerCount = festd::size(staticSamplers);
 
         festd::pmr::vector<VkDescriptorPoolSize> sizes{ &temp };
-        sizes.push_back({ VK_DESCRIPTOR_TYPE_MUTABLE_EXT, kResourceDescriptorCount * kMaxDescriptorSets });
-        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, (kSamplerDescriptorCount + staticSamplerCount) * kMaxDescriptorSets });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_MUTABLE_EXT, kResourceDescriptorCount * kMaxInFlightFrames });
+        sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, (kSamplerDescriptorCount + staticSamplerCount) * kMaxInFlightFrames });
 
         VkDescriptorPoolCreateInfo poolCI = {};
         poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCI.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        poolCI.maxSets = kMaxDescriptorSets;
+        // Use the bindless descriptor limits; sets themselves are frozen while in flight.
+        poolCI.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+        poolCI.maxSets = kMaxInFlightFrames;
         poolCI.poolSizeCount = sizes.size();
         poolCI.pPoolSizes = sizes.data();
         VerifyVk(vkCreateDescriptorPool(NativeCast(m_device), &poolCI, nullptr, &m_descriptorPool));
@@ -114,7 +107,7 @@ namespace FE::Graphics::Vulkan
         {
             const bool isBindlessBinding = bindings[i].binding < kStaticSamplerBindingBase;
             descriptorBindingFlags.push_back(
-                isBindlessBinding ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT : 0);
+                isBindlessBinding ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0);
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI = {};
@@ -122,10 +115,11 @@ namespace FE::Graphics::Vulkan
         flagsCI.bindingCount = descriptorBindingFlags.size();
         flagsCI.pBindingFlags = descriptorBindingFlags.data();
 
-        constexpr VkDescriptorType mutableDescriptorTypes[] = {
-            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-            VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
-        };
+        constexpr VkDescriptorType mutableDescriptorTypes[] = { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                                VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+                                                                VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER };
 
         VkMutableDescriptorTypeListEXT typeList = {};
         typeList.descriptorTypeCount = sizeof(mutableDescriptorTypes) / sizeof(VkDescriptorType);
@@ -144,396 +138,124 @@ namespace FE::Graphics::Vulkan
         setLayoutCI.bindingCount = bindings.size();
         setLayoutCI.pBindings = bindings.data();
         VerifyVk(vkCreateDescriptorSetLayout(NativeCast(m_device), &setLayoutCI, nullptr, &m_descriptorSetLayout));
+
+        for (DescriptorSetState& set : m_descriptorSets)
+        {
+            VkDescriptorSetAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = m_descriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &m_descriptorSetLayout;
+            VerifyVk(vkAllocateDescriptorSets(NativeCast(m_device), &allocInfo, &set.m_set));
+            set.m_dirtyDescriptors.resize(kPersistentDescriptorCount, false);
+        }
     }
 
 
     DescriptorManager::~DescriptorManager()
     {
-        const VkDevice device = NativeCast(m_device);
-
-        vkDestroyDescriptorSetLayout(device, m_descriptorSetLayout, nullptr);
-        vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
-    }
-
-
-    uint64_t DescriptorManager::GetDeviceAddress(const uint32_t descriptorIndex)
-    {
-        const Core::ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-        FE_Assert(descriptor.m_resource != nullptr && descriptor.m_resource->GetType() == Core::ResourceType::kBuffer);
-        FE_Assert(m_initializedResourceDescriptors.test(descriptorIndex));
-
-        const Core::Buffer* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource);
-
-        VkBufferDeviceAddressInfo addressInfo{};
-        addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        addressInfo.buffer = NativeCast(buffer);
-
-        const VkDeviceAddress address = vkGetBufferDeviceAddress(NativeCast(m_device), &addressInfo);
-        return address + descriptor.m_bufferSlice.m_offset;
-    }
-
-
-    void DescriptorManager::BeginFrame()
-    {
-        FE_PROFILER_ZONE();
-
-        const uint64_t completedValue = m_fence->GetCompletedValue();
-
-        for (uint32_t i = 0; i < m_descriptorSets.size(); ++i)
-        {
-            DescriptorSetState& set = m_descriptorSets[i];
-            if (set.m_fenceValue <= completedValue)
-            {
-                ProcessCompletedDescriptorSet(i);
-                if (m_currentSetIndex == kInvalidIndex)
-                    m_currentSetIndex = i;
-            }
-        }
-
-        ReleaseRetiredResourceDescriptors();
-
-        if (m_currentSetIndex == kInvalidIndex)
-        {
-            FE_Assert(m_descriptorSets.size() < kMaxDescriptorSets, "Too many descriptor sets in flight");
-            m_currentSetIndex = m_descriptorSets.size();
-            DescriptorSetState& set = m_descriptorSets.emplace_back();
-            set.m_set = AllocateDescriptorSet();
-            Bit::Traverse(m_persistentResourceDescriptors.view() & m_initializedResourceDescriptors.view(),
-                          [&set](const uint32_t index) {
-                              set.m_resourceDescriptorsToUpdate.set(index);
-                          });
-            Bit::Traverse(m_persistentSamplerDescriptors.view() & m_initializedSamplerDescriptors.view(),
-                          [&set](const uint32_t index) {
-                              set.m_samplerDescriptorsToUpdate.set(index);
-                          });
-        }
-    }
-
-
-    Core::FenceSyncPoint DescriptorManager::CloseFrame()
-    {
-        FE_PROFILER_ZONE();
-        FE_Assert(m_currentSetIndex != kInvalidIndex);
-        DescriptorSetState& currentSet = m_descriptorSets[m_currentSetIndex];
-
-        Bit::Traverse(m_resourceDescriptorsToUpdate.view() & m_persistentResourceDescriptors.view()
-                          & m_initializedResourceDescriptors.view(),
-                      [this](const uint32_t descriptorIndex) {
-                          for (DescriptorSetState& set : m_descriptorSets)
-                              set.m_resourceDescriptorsToUpdate.set(descriptorIndex);
-                      });
-        Bit::Traverse(m_samplerDescriptorsToUpdate.view() & m_persistentSamplerDescriptors.view()
-                          & m_initializedSamplerDescriptors.view(),
-                      [this](const uint32_t descriptorIndex) {
-                          for (DescriptorSetState& set : m_descriptorSets)
-                              set.m_samplerDescriptorsToUpdate.set(descriptorIndex);
-                      });
-
-        FlushPersistentResourceDescriptors(m_currentSetIndex);
-
-        m_vkResourceDescriptors.reserve(m_resourceDescriptors.size());
-        Bit::Traverse(m_resourceDescriptorsToUpdate.view() & m_transientResourceDescriptors.view()
-                          & m_initializedResourceDescriptors.view(),
-                      [this, &currentSet](const uint32_t descriptorIndex) {
-                          AppendResourceDescriptorWrite(currentSet.m_set, descriptorIndex);
-                      });
-
-        if (!m_vkResourceDescriptors.empty())
-        {
-            vkUpdateDescriptorSets(NativeCast(m_device),
-                                   m_vkResourceDescriptors.size(),
-                                   m_vkResourceDescriptors.data(),
-                                   0,
-                                   nullptr);
-        }
-
-        m_vkResourceDescriptors.clear();
-        m_linearAllocator.Clear();
-
-        m_vkSamplerDescriptors.reserve(m_samplerDescriptors.size());
-        const auto appendSamplerWrite = [this, &currentSet](const uint32_t descriptorIndex) {
-            const Core::SamplerState descriptor = m_samplerDescriptors[descriptorIndex];
-            const VkSampler sampler = m_device->GetSampler(descriptor);
-
-            auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
-            imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo->imageView = VK_NULL_HANDLE;
-            imageInfo->sampler = sampler;
-            m_vkSamplerDescriptors.push_back(
-                CreateWrite(1, currentSet.m_set, VK_DESCRIPTOR_TYPE_SAMPLER, descriptorIndex, 1, imageInfo));
-        };
-        Bit::Traverse(m_samplerDescriptorsToUpdate.view() & m_transientSamplerDescriptors.view()
-                          & m_initializedSamplerDescriptors.view(),
-                      appendSamplerWrite);
-        Bit::Traverse(currentSet.m_samplerDescriptorsToUpdate.view() & m_persistentSamplerDescriptors.view()
-                          & m_initializedSamplerDescriptors.view(),
-                      appendSamplerWrite);
-
-        if (!m_vkSamplerDescriptors.empty())
-        {
-            FE_PROFILER_ZONE_NAMED("vkUpdateDescriptorSets");
-            vkUpdateDescriptorSets(NativeCast(m_device),
-                                   m_vkSamplerDescriptors.size(),
-                                   m_vkSamplerDescriptors.data(),
-                                   0,
-                                   nullptr);
-        }
-
-        m_vkSamplerDescriptors.clear();
-        m_linearAllocator.Clear();
-        currentSet.m_samplerDescriptorsToUpdate.reset();
-
-        m_resourceDescriptorsToUpdate.reset();
-        m_samplerDescriptorsToUpdate.reset();
-        ClearTransientDescriptors();
-
-        currentSet.m_fenceValue = ++m_fenceValue;
-        m_currentSetIndex = kInvalidIndex;
-        return Core::FenceSyncPoint{ m_fence, m_fenceValue };
-    }
-
-
-    VkDescriptorSet DescriptorManager::AllocateDescriptorSet() const
-    {
-        FE_PROFILER_ZONE();
-
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_descriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = &m_descriptorSetLayout;
-
-        VkDescriptorSet set;
-        VerifyVk(vkAllocateDescriptorSets(NativeCast(m_device), &allocInfo, &set));
-        return set;
-    }
-
-
-    void DescriptorManager::RetireResourceDescriptor(const uint32_t descriptorIndex, Core::Resource* resource,
-                                                     const bool releaseIndex)
-    {
-        if (m_descriptorSets.empty())
-        {
-            if (releaseIndex)
-                ReleaseResourceDescriptorIndex(descriptorIndex);
-            return;
-        }
-
-        RetiredResourceDescriptor& retired = m_retiredResourceDescriptors.emplace_back();
-        retired.m_resource = resource;
-        retired.m_descriptorIndex = descriptorIndex;
-        retired.m_pendingSetMask = (1u << m_descriptorSets.size()) - 1;
-        retired.m_releaseIndex = releaseIndex;
-
         for (DescriptorSetState& set : m_descriptorSets)
-            set.m_resourceDescriptorsToUpdate.set(descriptorIndex);
-    }
-
-
-    void DescriptorManager::RetireTransientResourceDescriptor(const uint32_t descriptorIndex, Core::Resource* resource)
-    {
-        FE_Assert(m_currentSetIndex != kInvalidIndex);
-        TransientResourceDescriptor& retired = m_descriptorSets[m_currentSetIndex].m_transientResourceDescriptors.emplace_back();
-        retired.m_resource = resource;
-        retired.m_descriptorIndex = descriptorIndex;
-    }
-
-
-    void DescriptorManager::RetireTransientSamplerDescriptor(const uint32_t descriptorIndex)
-    {
-        FE_Assert(m_currentSetIndex != kInvalidIndex);
-        m_descriptorSets[m_currentSetIndex].m_transientSamplerDescriptors.push_back(descriptorIndex);
-    }
-
-
-    void DescriptorManager::RetireSamplerDescriptor(const uint32_t descriptorIndex)
-    {
-        if (m_descriptorSets.empty())
         {
-            ReleaseSamplerDescriptorIndex(descriptorIndex);
+            if (set.m_completion.m_fence)
+                set.m_completion.Wait();
+            set.m_transientResources.clear();
+        }
+        vkDestroyDescriptorPool(NativeCast(m_device), m_descriptorPool, nullptr);
+        vkDestroyDescriptorSetLayout(NativeCast(m_device), m_descriptorSetLayout, nullptr);
+    }
+
+
+    void DescriptorManager::BeginFrameInternal(const Core::FenceSyncPoint& completion)
+    {
+        m_currentSetIndex = static_cast<uint32_t>(completion.m_value % kMaxInFlightFrames);
+        DescriptorSetState& set = m_descriptorSets[m_currentSetIndex];
+        if (set.m_completion.m_fence)
+            set.m_completion.Wait();
+        set.m_transientResources.clear();
+        set.m_completion = completion;
+    }
+
+
+    void DescriptorManager::InvalidatePersistentDescriptor(const uint32_t descriptorIndex)
+    {
+        for (DescriptorSetState& set : m_descriptorSets)
+            set.m_dirtyDescriptors.set(descriptorIndex);
+    }
+
+
+    void DescriptorManager::PrepareDescriptorsInternal(const festd::span<const Core::ResourceDescriptorInfo> descriptors)
+    {
+        FE_PROFILER_ZONE();
+        DescriptorSetState& set = m_descriptorSets[m_currentSetIndex];
+        Bit::Traverse(set.m_dirtyDescriptors.view(), [this](const uint32_t index) {
+            const Core::ResourceDescriptorInfo& descriptor = m_persistentDescriptors[index];
+            if (descriptor.m_resource)
+                AppendResourceDescriptorWrite(index, descriptor);
+        });
+        set.m_dirtyDescriptors.reset();
+
+        for (uint32_t index = 0; index < descriptors.size(); ++index)
+        {
+            const Core::ResourceDescriptorInfo& descriptor = descriptors[index];
+            if (!descriptor.m_resource)
+                continue;
+            AppendResourceDescriptorWrite(kPersistentDescriptorCount + index, descriptor);
+            set.m_transientResources.push_back(descriptor.m_resource);
+        }
+
+        for (uint32_t index = set.m_samplerCount; index < m_samplers.size(); ++index)
+        {
+            auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
+            *imageInfo = {};
+            imageInfo->sampler = m_device->GetSampler(m_samplers[index]);
+            m_writes.push_back(CreateWrite(1, set.m_set, VK_DESCRIPTOR_TYPE_SAMPLER, index, 1, imageInfo));
+        }
+        set.m_samplerCount = m_samplers.size();
+
+        if (!m_writes.empty())
+            vkUpdateDescriptorSets(NativeCast(m_device), m_writes.size(), m_writes.data(), 0, nullptr);
+        m_writes.clear();
+        m_linearAllocator.Clear();
+    }
+
+
+    void DescriptorManager::AppendResourceDescriptorWrite(const uint32_t index, const Core::ResourceDescriptorInfo& descriptor)
+    {
+        const VkDescriptorSet set = GetDescriptorSet();
+        const bool isUAV = descriptor.m_descriptorType == Core::DescriptorType::kUAV;
+        if (descriptor.m_resource->GetType() == Core::ResourceType::kBuffer)
+        {
+            const auto* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource.Get());
+            if (buffer->GetDesc().m_format != Core::Format::kUndefined)
+            {
+                auto* view = Memory::New<VkBufferView>(&m_linearAllocator);
+                *view = GetInstance(buffer)->GetSliceView(m_device, descriptor.m_bufferSlice);
+                VkWriteDescriptorSet write = {};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = set;
+                write.dstBinding = 0;
+                write.dstArrayElement = index;
+                write.descriptorCount = 1;
+                write.descriptorType = isUAV ? VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                write.pTexelBufferView = view;
+                m_writes.push_back(write);
+                return;
+            }
+
+            auto* bufferInfo = Memory::New<VkDescriptorBufferInfo>(&m_linearAllocator);
+            bufferInfo->buffer = NativeCast(buffer);
+            bufferInfo->offset = descriptor.m_bufferSlice.m_offset;
+            bufferInfo->range = descriptor.m_bufferSlice.m_size;
+            m_writes.push_back(CreateWrite(0, set, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, index, 1, bufferInfo));
             return;
         }
 
-        RetiredSamplerDescriptor& retired = m_retiredSamplerDescriptors.emplace_back();
-        retired.m_descriptorIndex = descriptorIndex;
-        retired.m_pendingSetMask = (1u << m_descriptorSets.size()) - 1;
-    }
-
-
-    void DescriptorManager::AppendResourceDescriptorWrite(const VkDescriptorSet descriptorSet, const uint32_t descriptorIndex)
-    {
-        const Core::ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-
-        switch (descriptor.m_resource->GetType())
-        {
-        default:
-        case Core::ResourceType::kUnknown:
-            FE_DebugBreak();
-            break;
-
-        case Core::ResourceType::kBuffer:
-            {
-                const Core::Buffer* buffer = Rtti::AssertCast<const Core::Buffer*>(descriptor.m_resource);
-                const Core::BufferDesc bufferDesc = buffer->GetDesc();
-
-                VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                if (bufferDesc.m_format != Core::Format::kUndefined)
-                    descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-
-                auto* bufferInfo = Memory::New<VkDescriptorBufferInfo>(&m_linearAllocator);
-                bufferInfo->buffer = NativeCast(buffer);
-                bufferInfo->offset = descriptor.m_bufferSlice.m_offset;
-                bufferInfo->range = descriptor.m_bufferSlice.m_size;
-
-                m_vkResourceDescriptors.push_back(CreateWrite(0, descriptorSet, descriptorType, descriptorIndex, 1, bufferInfo));
-            }
-            break;
-
-        case Core::ResourceType::kTexture:
-            {
-                const Core::Texture* texture = Rtti::AssertCast<const Core::Texture*>(descriptor.m_resource);
-                auto* instance = GetInstance(texture);
-
-                VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                if (descriptor.m_descriptorType == Core::DescriptorType::kUAV)
-                {
-                    descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                    layout = VK_IMAGE_LAYOUT_GENERAL;
-                }
-
-                auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
-                imageInfo->imageLayout = layout;
-                imageInfo->imageView = instance->GetSubresourceView(m_device, descriptor.m_textureSubresource);
-                imageInfo->sampler = VK_NULL_HANDLE;
-
-                m_vkResourceDescriptors.push_back(CreateWrite(0, descriptorSet, descriptorType, descriptorIndex, 1, imageInfo));
-            }
-            break;
-        }
-    }
-
-
-    void DescriptorManager::FlushPersistentResourceDescriptors(const uint32_t setIndex)
-    {
-        DescriptorSetState& set = m_descriptorSets[setIndex];
-        m_vkResourceDescriptors.reserve(m_resourceDescriptors.size());
-
-        Bit::Traverse(set.m_resourceDescriptorsToUpdate.view() & m_persistentResourceDescriptors.view()
-                          & m_initializedResourceDescriptors.view(),
-                      [this, &set](const uint32_t descriptorIndex) {
-                          AppendResourceDescriptorWrite(set.m_set, descriptorIndex);
-                      });
-
-        if (!m_vkResourceDescriptors.empty())
-        {
-            vkUpdateDescriptorSets(NativeCast(m_device),
-                                   m_vkResourceDescriptors.size(),
-                                   m_vkResourceDescriptors.data(),
-                                   0,
-                                   nullptr);
-        }
-
-        ReleaseRewrittenResourceDescriptors(setIndex);
-        m_vkResourceDescriptors.clear();
-        m_linearAllocator.Clear();
-        set.m_resourceDescriptorsToUpdate.reset();
-    }
-
-
-    void DescriptorManager::ProcessCompletedDescriptorSet(const uint32_t setIndex)
-    {
-        DescriptorSetState& set = m_descriptorSets[setIndex];
-        const uint32_t setMask = 1u << setIndex;
-        const bool hasRetiredTransients =
-            !set.m_transientResourceDescriptors.empty() || !set.m_transientSamplerDescriptors.empty();
-
-        const bool hasRetiredResources = eastl::any_of(m_retiredResourceDescriptors.begin(),
-                                                       m_retiredResourceDescriptors.end(),
-                                                       [setMask](const RetiredResourceDescriptor& retired) {
-                                                           return (retired.m_pendingSetMask & setMask) != 0;
-                                                       });
-        const bool hasRetiredSamplers = eastl::any_of(m_retiredSamplerDescriptors.begin(),
-                                                      m_retiredSamplerDescriptors.end(),
-                                                      [setMask](const RetiredSamplerDescriptor& retired) {
-                                                          return (retired.m_pendingSetMask & setMask) != 0;
-                                                      });
-        // Discard stale bindings before releasing resources or recycling descriptor indices.
-        if (hasRetiredResources || hasRetiredSamplers || hasRetiredTransients)
-        {
-            VerifyVk(vkFreeDescriptorSets(NativeCast(m_device), m_descriptorPool, 1, &set.m_set));
-            set.m_set = AllocateDescriptorSet();
-            set.m_resourceDescriptorsToUpdate.reset();
-            set.m_samplerDescriptorsToUpdate.reset();
-            Bit::Traverse(m_persistentResourceDescriptors.view() & m_initializedResourceDescriptors.view(),
-                          [&set](const uint32_t index) {
-                              set.m_resourceDescriptorsToUpdate.set(index);
-                          });
-            Bit::Traverse(m_persistentSamplerDescriptors.view() & m_initializedSamplerDescriptors.view(),
-                          [&set](const uint32_t index) {
-                              set.m_samplerDescriptorsToUpdate.set(index);
-                          });
-        }
-
-        for (const TransientResourceDescriptor& descriptor : set.m_transientResourceDescriptors)
-            ReleaseResourceDescriptorIndex(descriptor.m_descriptorIndex);
-        set.m_transientResourceDescriptors.clear();
-
-        for (const uint32_t descriptorIndex : set.m_transientSamplerDescriptors)
-            ReleaseSamplerDescriptorIndex(descriptorIndex);
-        set.m_transientSamplerDescriptors.clear();
-
-        FlushPersistentResourceDescriptors(setIndex);
-
-        for (RetiredResourceDescriptor& retired : m_retiredResourceDescriptors)
-        {
-            if (!m_persistentResourceDescriptors.test(retired.m_descriptorIndex))
-                retired.m_pendingSetMask &= ~setMask;
-        }
-
-        for (RetiredSamplerDescriptor& retired : m_retiredSamplerDescriptors)
-            retired.m_pendingSetMask &= ~setMask;
-    }
-
-
-    void DescriptorManager::ReleaseRewrittenResourceDescriptors(const uint32_t setIndex)
-    {
-        const DescriptorSetState& set = m_descriptorSets[setIndex];
-        const uint32_t setMask = 1u << setIndex;
-
-        for (RetiredResourceDescriptor& retired : m_retiredResourceDescriptors)
-        {
-            if (set.m_resourceDescriptorsToUpdate.test(retired.m_descriptorIndex)
-                && m_persistentResourceDescriptors.test(retired.m_descriptorIndex)
-                && m_initializedResourceDescriptors.test(retired.m_descriptorIndex))
-            {
-                retired.m_pendingSetMask &= ~setMask;
-            }
-        }
-    }
-
-
-    void DescriptorManager::ReleaseRetiredResourceDescriptors()
-    {
-        m_retiredResourceDescriptors.erase(eastl::remove_if(m_retiredResourceDescriptors.begin(),
-                                                            m_retiredResourceDescriptors.end(),
-                                                            [this](const RetiredResourceDescriptor& retired) {
-                                                                if (retired.m_pendingSetMask != 0)
-                                                                    return false;
-                                                                if (retired.m_releaseIndex)
-                                                                    ReleaseResourceDescriptorIndex(retired.m_descriptorIndex);
-                                                                return true;
-                                                            }),
-                                           m_retiredResourceDescriptors.end());
-
-        m_retiredSamplerDescriptors.erase(eastl::remove_if(m_retiredSamplerDescriptors.begin(),
-                                                           m_retiredSamplerDescriptors.end(),
-                                                           [this](const RetiredSamplerDescriptor& retired) {
-                                                               if (retired.m_pendingSetMask != 0)
-                                                                   return false;
-                                                               ReleaseSamplerDescriptorIndex(retired.m_descriptorIndex);
-                                                               return true;
-                                                           }),
-                                          m_retiredSamplerDescriptors.end());
+        const auto* texture = Rtti::AssertCast<const Core::Texture*>(descriptor.m_resource.Get());
+        auto* imageInfo = Memory::New<VkDescriptorImageInfo>(&m_linearAllocator);
+        imageInfo->imageLayout = isUAV ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo->imageView = GetInstance(texture)->GetSubresourceView(m_device, descriptor.m_textureSubresource);
+        imageInfo->sampler = VK_NULL_HANDLE;
+        const VkDescriptorType type = isUAV ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        m_writes.push_back(CreateWrite(0, set, type, index, 1, imageInfo));
     }
 } // namespace FE::Graphics::Vulkan

@@ -160,6 +160,8 @@ namespace FE::Graphics::Vulkan
         deviceFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageImageUpdateAfterBind = true;
         deviceFeatures12.descriptorBindingStorageBufferUpdateAfterBind = true;
+        deviceFeatures12.descriptorBindingUniformTexelBufferUpdateAfterBind = true;
+        deviceFeatures12.descriptorBindingStorageTexelBufferUpdateAfterBind = true;
         deviceFeatures12.bufferDeviceAddress = true;
 
         deviceFeatures12.shaderSampledImageArrayNonUniformIndexing = true;

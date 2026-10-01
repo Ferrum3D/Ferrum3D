@@ -129,8 +129,8 @@ namespace FE::Graphics
                                   groupCounts.size() * sizeof(MeshPass::MeshDispatchArguments)));
 
         auto* passDesc = graph.AllocatePassData<MeshPass::BuildIndirectArgs::PassDesc>();
-        passDesc->m_constants.m_groupCounts = graph.GetDescriptor(counts.Get());
-        passDesc->m_constants.m_arguments = graph.GetDescriptor(m_arguments.Get());
+        passDesc->m_constants.m_groupCounts = graph.GetSRV(counts.Get());
+        passDesc->m_constants.m_arguments = graph.GetUAV(m_arguments.Get());
         passDesc->m_constants.m_groupCount = groupCounts.size();
         passDesc->m_pipeline = IndirectArgsPipeline::GetPipeline();
         graph.AddDispatchPass("BuildIndirectArgs", passDesc, Math::CeilDivide(uint32_t(groupCounts.size()), 64u));

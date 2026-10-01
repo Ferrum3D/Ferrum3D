@@ -51,6 +51,14 @@ namespace FE::Graphics::Common
     }
 
 
+    uint64_t Buffer::GetDeviceAddress() const
+    {
+        std::unique_lock lk{ m_lock };
+        FE_Assert(m_instance && m_instance->m_bufferDeviceAddress != 0);
+        return m_instance->m_bufferDeviceAddress;
+    }
+
+
     void* Buffer::Map()
     {
         return m_instance->Map(m_device);

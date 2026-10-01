@@ -49,19 +49,13 @@ namespace FE::Graphics::Core
         virtual void BeginFrame() = 0;
         virtual void CompileAndExecute() = 0;
 
-        virtual FrameGraphTextureDescriptorHandle GetDescriptor(TextureView texture) = 0;
-        virtual FrameGraphBufferDescriptorHandle GetDescriptor(BufferView buffer) = 0;
-        virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
-
-        FrameGraphTextureDescriptorHandle GetDescriptor(Texture* texture)
-        {
-            return GetDescriptor(TextureView::Create(texture));
-        }
-
-        FrameGraphBufferDescriptorHandle GetDescriptor(Buffer* buffer)
-        {
-            return GetDescriptor(BufferView::Create(buffer));
-        }
+        //! Returns a final shader index for this graph execution. Reflected fields declare its accesses.
+        //! Request views during graph setup; native descriptors are published after resources are committed.
+        [[nodiscard]] virtual TextureSRVDescriptor GetSRV(TextureView texture) = 0;
+        [[nodiscard]] virtual TextureUAVDescriptor GetUAV(TextureView texture) = 0;
+        [[nodiscard]] virtual BufferSRVDescriptor GetSRV(BufferView buffer) = 0;
+        [[nodiscard]] virtual BufferUAVDescriptor GetUAV(BufferView buffer) = 0;
+        [[nodiscard]] virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
         void BeginScope(festd::string_view name);
         void EndScope();
@@ -98,9 +92,6 @@ namespace FE::Graphics::Core
         void AddDispatchPass(festd::string_view name, TPassDesc* passDesc, ComputeWorkGroupCount workGroupCount);
 
     protected:
-        friend FrameGraphTextureDescriptorHandle;
-        friend FrameGraphBufferDescriptorHandle;
-
         struct PassNodeDesc final
         {
             Env::Name m_name;

@@ -15,6 +15,8 @@ namespace FE::Graphics::Vulkan
 
         ~FrameGraph() override;
 
+        void BeginFrame() override;
+
     private:
         void PrepareExecuteInternal() override;
         void FinishExecuteInternal() override;

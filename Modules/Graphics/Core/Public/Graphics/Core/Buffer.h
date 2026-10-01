@@ -66,6 +66,8 @@ namespace FE::Graphics::Core
             return Create(device, name, desc);
         }
 
+        [[nodiscard]] virtual uint64_t GetDeviceAddress() const = 0;
+
         [[nodiscard]] virtual void* Map() = 0;
         virtual void Unmap() = 0;
         virtual void FlushMappedRange(uint32_t offset, uint32_t byteSize) = 0;
@@ -113,6 +115,12 @@ namespace FE::Graphics::Core
             slice.m_offset += offset;
             slice.m_size = realSize;
             return Create(m_resource, slice);
+        }
+
+        [[nodiscard]] uint64_t GetDeviceAddress() const
+        {
+            FE_Assert(IsValid());
+            return m_resource->GetDeviceAddress() + m_slice.m_offset;
         }
 
         [[nodiscard]] const BufferDesc& GetBaseDesc() const

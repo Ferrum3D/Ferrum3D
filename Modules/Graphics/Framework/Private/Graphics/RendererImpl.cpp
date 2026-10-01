@@ -143,8 +143,7 @@ namespace FE::Graphics
             return;
 
         m_database = festd::make_unique<DB::Database>(m_device.Get(), m_resourcePool.Get());
-        m_materialParameters =
-            festd::make_unique<MaterialParameterAllocator>(m_device.Get(), m_resourcePool.Get(), m_descriptorManager.Get());
+        m_materialParameters = festd::make_unique<MaterialParameterAllocator>(m_device.Get(), m_resourcePool.Get());
     }
 
 

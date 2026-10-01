@@ -44,7 +44,7 @@ namespace FE::Graphics::Tools
         auto* passDesc = graph.AllocatePassData<PassDesc>();
         passDesc->m_colorTarget = dst;
         passDesc->m_pipeline = Pipeline::GetPipeline(specializer);
-        passDesc->m_constants.m_input = graph.GetDescriptor(src);
+        passDesc->m_constants.m_input = graph.GetSRV(src);
         passDesc->m_constants.m_sampler = graph.GetSampler(Core::SamplerState::kLinearWrap);
         passDesc->m_constants.m_uvScale = settings.m_destinationRect.Size();
         passDesc->m_constants.m_uvOffset = settings.m_destinationRect.min;

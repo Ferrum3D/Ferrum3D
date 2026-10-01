@@ -42,11 +42,12 @@ namespace FE::Graphics::Common
     {
         FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
-        void BeginFrame() override;
         void CompileAndExecute() override;
 
-        Core::FrameGraphTextureDescriptorHandle GetDescriptor(Core::TextureView texture) override;
-        Core::FrameGraphBufferDescriptorHandle GetDescriptor(Core::BufferView buffer) override;
+        TextureSRVDescriptor GetSRV(Core::TextureView texture) override;
+        TextureUAVDescriptor GetUAV(Core::TextureView texture) override;
+        BufferSRVDescriptor GetSRV(Core::BufferView buffer) override;
+        BufferUAVDescriptor GetUAV(Core::BufferView buffer) override;
         SamplerDescriptor GetSampler(Core::SamplerState sampler) override;
 
         void AddCopyPass(const Core::BufferView& destination, const Core::BufferView& source) override;
@@ -144,6 +145,31 @@ namespace FE::Graphics::Common
 
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const TextureAccess& access);
         uint32_t RegisterResource(Core::Resource* resource, PassNode& pass, const BufferAccess& access);
+
+        struct TextureViewKey final
+        {
+            uint32_t m_resourceID;
+            Core::TextureSubresource m_subresource;
+            Core::DescriptorType m_type;
+            FE_DECLARE_POD_HASH(TextureViewKey);
+        };
+
+
+        struct BufferViewKey final
+        {
+            uint32_t m_resourceID;
+            Core::BufferSlice m_slice;
+            Core::DescriptorType m_type;
+            FE_DECLARE_POD_HASH(BufferViewKey);
+        };
+
+        uint32_t ReserveDescriptor(Core::TextureView texture, Core::DescriptorType type);
+        uint32_t ReserveDescriptor(Core::BufferView buffer, Core::DescriptorType type);
+        const Core::ResourceDescriptorInfo& GetResourceInfo(uint32_t descriptorIndex, Core::DescriptorType type) const;
+
+        festd::unordered_dense_map<TextureViewKey, uint32_t, TextureViewKey::Hash, TextureViewKey::Eq> m_textureViews;
+        festd::unordered_dense_map<BufferViewKey, uint32_t, BufferViewKey::Hash, BufferViewKey::Eq> m_bufferViews;
+        festd::vector<Core::ResourceDescriptorInfo> m_descriptorViews;
 
         Rc<Core::FrameGraphContext> m_currentContext;
         SegmentedVector<PassNode> m_passes;

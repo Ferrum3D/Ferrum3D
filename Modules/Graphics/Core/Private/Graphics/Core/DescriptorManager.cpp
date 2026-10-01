@@ -2,280 +2,195 @@
 
 namespace FE::Graphics::Core
 {
-    ResourceDescriptorInfo::ResourceDescriptorInfo()
-        : m_textureSubresource(TextureSubresource::kInvalid)
+    ResourceDescriptorInfo::ResourceDescriptorInfo(const TextureView texture, const DescriptorType type)
+        : m_resource(texture.m_resource)
+        , m_descriptorType(type)
+        , m_textureSubresource(texture.m_subresource)
     {
+        FE_Assert(texture.IsValid());
+        FE_Assert(type == DescriptorType::kSRV || type == DescriptorType::kUAV);
     }
 
 
-    ResourceDescriptorInfo::ResourceDescriptorInfo(const TextureView texture)
+    ResourceDescriptorInfo::ResourceDescriptorInfo(const BufferView buffer, const DescriptorType type)
+        : m_resource(buffer.m_resource)
+        , m_descriptorType(type)
+        , m_bufferSlice(buffer.m_slice)
     {
-        m_resource = texture.m_resource;
-        m_textureSubresource = texture.m_subresource;
-    }
-
-
-    ResourceDescriptorInfo::ResourceDescriptorInfo(const BufferView buffer)
-    {
-        m_resource = buffer.m_resource;
-        m_bufferSlice = buffer.m_slice;
+        FE_Assert(buffer.IsValid());
+        FE_Assert(type == DescriptorType::kSRV || type == DescriptorType::kUAV);
     }
 
 
     DescriptorManager::DescriptorManager()
     {
-        m_freeResourceDescriptors.resize(kResourceDescriptorCount, true);
-        m_transientResourceDescriptors.resize(kResourceDescriptorCount, false);
-        m_persistentResourceDescriptors.resize(kResourceDescriptorCount, false);
-        m_initializedResourceDescriptors.resize(kResourceDescriptorCount, false);
-        m_resourceDescriptorsToUpdate.resize(kResourceDescriptorCount, false);
-
-        m_freeSamplerDescriptors.resize(kSamplerDescriptorCount, true);
-        m_transientSamplerDescriptors.resize(kSamplerDescriptorCount, false);
-        m_persistentSamplerDescriptors.resize(kSamplerDescriptorCount, false);
-        m_initializedSamplerDescriptors.resize(kSamplerDescriptorCount, false);
-        m_samplerDescriptorsToUpdate.resize(kSamplerDescriptorCount, false);
+        m_freePersistentDescriptors.resize(kPersistentDescriptorCount, true);
     }
 
 
-    void DescriptorManager::ClearTransientDescriptors()
+    TextureSRVDescriptor DescriptorManager::CreateSRV(const TextureView texture)
     {
-        Bit::Traverse(m_transientResourceDescriptors.view(), [this](const uint32_t descriptorIndex) {
-            const ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-            if (descriptor.m_resource->GetType() == ResourceType::kTexture)
-            {
-                const TextureKey key{ descriptor.m_resource->GetResourceID(),
-                                      descriptor.m_textureSubresource,
-                                      DescriptorLifetime::kTransient };
-                m_textureDescriptorMap.erase(key);
-            }
-            else
-            {
-                const BufferKey key{ descriptor.m_resource->GetResourceID(),
-                                     descriptor.m_bufferSlice,
-                                     DescriptorLifetime::kTransient };
-                m_bufferDescriptorMap.erase(key);
-            }
-
-            RetireTransientResourceDescriptor(descriptorIndex, descriptor.m_resource);
-            m_resourceDescriptors[descriptorIndex] = ResourceDescriptorInfo{};
-            m_initializedResourceDescriptors.reset(descriptorIndex);
-            m_resourceDescriptorsToUpdate.reset(descriptorIndex);
-        });
-        m_transientResourceDescriptors.reset();
-
-        Bit::Traverse(m_transientSamplerDescriptors.view(), [this](const uint32_t descriptorIndex) {
-            m_samplerDescriptorMap.erase({ m_samplerDescriptors[descriptorIndex], DescriptorLifetime::kTransient });
-            m_samplerDescriptors[descriptorIndex] = SamplerState::kPointWrap;
-            RetireTransientSamplerDescriptor(descriptorIndex);
-            m_initializedSamplerDescriptors.reset(descriptorIndex);
-            m_samplerDescriptorsToUpdate.reset(descriptorIndex);
-        });
-        m_transientSamplerDescriptors.reset();
+        return { AllocatePersistentDescriptor({ texture, DescriptorType::kSRV }) };
     }
 
 
-    void DescriptorManager::ReleaseResourceDescriptorIndex(const uint32_t descriptorIndex)
+    TextureUAVDescriptor DescriptorManager::CreateUAV(const TextureView texture)
     {
-        FE_Assert(!m_freeResourceDescriptors.test(descriptorIndex));
-        m_freeResourceDescriptors.set(descriptorIndex);
+        return { AllocatePersistentDescriptor({ texture, DescriptorType::kUAV }) };
     }
 
 
-    void DescriptorManager::ReleaseSamplerDescriptorIndex(const uint32_t descriptorIndex)
+    BufferSRVDescriptor DescriptorManager::CreateSRV(const BufferView buffer)
     {
-        FE_Assert(!m_freeSamplerDescriptors.test(descriptorIndex));
-        m_freeSamplerDescriptors.set(descriptorIndex);
+        return { AllocatePersistentDescriptor({ buffer, DescriptorType::kSRV }) };
     }
 
 
-    uint32_t DescriptorManager::ReserveDescriptor(const TextureView texture, const DescriptorLifetime lifetime)
+    BufferUAVDescriptor DescriptorManager::CreateUAV(const BufferView buffer)
     {
-        TextureKey key;
-        key.m_resourceID = texture.m_resource->GetResourceID();
-        key.m_subresource = texture.m_subresource;
-        key.m_lifetime = lifetime;
+        return { AllocatePersistentDescriptor({ buffer, DescriptorType::kUAV }) };
+    }
 
-        const auto it = m_textureDescriptorMap.find(key);
-        if (it != m_textureDescriptorMap.end())
-            return it->second;
 
-        const uint32_t descriptorIndex = m_freeResourceDescriptors.find_first();
-        FE_Assert(descriptorIndex != kInvalidIndex, "Resource descriptor heap exhausted");
-        m_freeResourceDescriptors.reset(descriptorIndex);
+    void DescriptorManager::Update(const TextureSRVDescriptor descriptor, const TextureView texture)
+    {
+        UpdatePersistentDescriptor(descriptor.m_value, { texture, DescriptorType::kSRV });
+    }
 
-        switch (lifetime)
+
+    void DescriptorManager::Update(const TextureUAVDescriptor descriptor, const TextureView texture)
+    {
+        UpdatePersistentDescriptor(descriptor.m_value, { texture, DescriptorType::kUAV });
+    }
+
+
+    void DescriptorManager::Update(const BufferSRVDescriptor descriptor, const BufferView buffer)
+    {
+        UpdatePersistentDescriptor(descriptor.m_value, { buffer, DescriptorType::kSRV });
+    }
+
+
+    void DescriptorManager::Update(const BufferUAVDescriptor descriptor, const BufferView buffer)
+    {
+        UpdatePersistentDescriptor(descriptor.m_value, { buffer, DescriptorType::kUAV });
+    }
+
+
+    uint32_t DescriptorManager::AllocatePersistentDescriptor(ResourceDescriptorInfo info)
+    {
+        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
+        CollectRetiredDescriptors();
+        const uint32_t index = m_freePersistentDescriptors.find_first();
+        FE_Assert(index != kInvalidIndex, "Persistent descriptor heap exhausted");
+        m_freePersistentDescriptors.reset(index);
+        if (index == m_persistentDescriptors.size())
+            m_persistentDescriptors.push_back(std::move(info));
+        else
+            m_persistentDescriptors[index] = std::move(info);
+        InvalidatePersistentDescriptor(index);
+        return index;
+    }
+
+
+    void DescriptorManager::UpdatePersistentDescriptor(const uint32_t index, ResourceDescriptorInfo info)
+    {
+        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
+        const ResourceDescriptorInfo& previous = GetPersistentResourceInfo(index);
+        FE_Assert(previous.m_resource->GetType() == info.m_resource->GetType());
+        FE_Assert(previous.m_descriptorType == info.m_descriptorType);
+        RetireDescriptor(index, false);
+        m_persistentDescriptors[index] = std::move(info);
+        InvalidatePersistentDescriptor(index);
+    }
+
+
+    void DescriptorManager::FreePersistentDescriptor(const uint32_t index)
+    {
+        FE_Assert(!m_frameActive, "Persistent descriptors are frozen for the current frame");
+        FE_Assert(GetPersistentResourceInfo(index).m_resource);
+        RetireDescriptor(index, true);
+        m_persistentDescriptors[index] = {};
+        InvalidatePersistentDescriptor(index);
+    }
+
+
+    const ResourceDescriptorInfo& DescriptorManager::GetPersistentResourceInfo(const uint32_t index) const
+    {
+        FE_Assert(index < m_persistentDescriptors.size());
+        FE_Assert(m_persistentDescriptors[index].m_resource);
+        return m_persistentDescriptors[index];
+    }
+
+
+    SamplerDescriptor DescriptorManager::GetSampler(const SamplerState sampler)
+    {
+        FE_Assert(!m_descriptorsPrepared, "Descriptors have already been published for this frame");
+        const auto it = m_samplerMap.find(sampler);
+        if (it != m_samplerMap.end())
+            return { it->second };
+        FE_Assert(m_samplers.size() < kSamplerDescriptorCount, "Sampler descriptor heap exhausted");
+        const uint32_t index = m_samplers.size();
+        m_samplers.push_back(sampler);
+        m_samplerMap.emplace(sampler, index);
+        return { index };
+    }
+
+
+    void DescriptorManager::RetireDescriptor(const uint32_t index, const bool releaseIndex)
+    {
+        RetiredDescriptor retired;
+        retired.m_resource = m_persistentDescriptors[index].m_resource;
+        retired.m_completion = m_lastFrameCompletion;
+        retired.m_indexToRelease = releaseIndex ? index : kInvalidIndex;
+        m_retiredDescriptors.push_back(std::move(retired));
+    }
+
+
+    void DescriptorManager::CollectRetiredDescriptors()
+    {
+        m_retiredDescriptors.erase(eastl::remove_if(m_retiredDescriptors.begin(),
+                                                    m_retiredDescriptors.end(),
+                                                    [this](const RetiredDescriptor& retired) {
+                                                        if (retired.m_completion.m_fence && !retired.m_completion.IsReady())
+                                                            return false;
+                                                        if (retired.m_indexToRelease != kInvalidIndex)
+                                                            m_freePersistentDescriptors.set(retired.m_indexToRelease);
+                                                        return true;
+                                                    }),
+                                   m_retiredDescriptors.end());
+    }
+
+
+    void DescriptorManager::BeginFrame(const FenceSyncPoint& completion)
+    {
+        FE_Assert(!m_frameActive);
+        FE_Assert(completion.m_fence);
+        if (m_lastFrameCompletion.m_fence)
         {
-        case DescriptorLifetime::kTransient:
-            m_transientResourceDescriptors.set(descriptorIndex);
-            break;
-        case DescriptorLifetime::kPersistent:
-            m_persistentResourceDescriptors.set(descriptorIndex);
-            break;
+            FE_Assert(completion.m_fence == m_lastFrameCompletion.m_fence);
+            FE_Assert(completion.m_value > m_lastFrameCompletion.m_value);
         }
-
-        if (descriptorIndex == m_resourceDescriptors.size())
-            m_resourceDescriptors.push_back(ResourceDescriptorInfo{ texture });
-        else
-            m_resourceDescriptors[descriptorIndex] = ResourceDescriptorInfo{ texture };
-
-        m_textureDescriptorMap[key] = descriptorIndex;
-        return descriptorIndex;
+        CollectRetiredDescriptors();
+        BeginFrameInternal(completion);
+        m_lastFrameCompletion = completion;
+        m_frameActive = true;
+        m_descriptorsPrepared = false;
     }
 
 
-    uint32_t DescriptorManager::ReserveDescriptor(const BufferView buffer, const DescriptorLifetime lifetime)
+    void DescriptorManager::PrepareDescriptors(const festd::span<const ResourceDescriptorInfo> descriptors)
     {
-        BufferKey key;
-        key.m_resourceID = buffer.m_resource->GetResourceID();
-        key.m_subresource = buffer.m_slice;
-        key.m_lifetime = lifetime;
-
-        const auto it = m_bufferDescriptorMap.find(key);
-        if (it != m_bufferDescriptorMap.end())
-            return it->second;
-
-        const uint32_t descriptorIndex = m_freeResourceDescriptors.find_first();
-        FE_Assert(descriptorIndex != kInvalidIndex, "Resource descriptor heap exhausted");
-        m_freeResourceDescriptors.reset(descriptorIndex);
-        (lifetime == DescriptorLifetime::kPersistent ? m_persistentResourceDescriptors : m_transientResourceDescriptors)
-            .set(descriptorIndex);
-
-        if (descriptorIndex == m_resourceDescriptors.size())
-            m_resourceDescriptors.push_back(ResourceDescriptorInfo{ buffer });
-        else
-            m_resourceDescriptors[descriptorIndex] = ResourceDescriptorInfo{ buffer };
-        m_bufferDescriptorMap[key] = descriptorIndex;
-        return descriptorIndex;
+        FE_Assert(m_frameActive && !m_descriptorsPrepared);
+        FE_Assert(descriptors.size() <= kTransientDescriptorCount);
+        PrepareDescriptorsInternal(descriptors);
+        m_descriptorsPrepared = true;
     }
 
 
-    uint32_t DescriptorManager::ReserveDescriptor(const SamplerState samplerState, const DescriptorLifetime lifetime)
+    void DescriptorManager::EndFrame()
     {
-        const SamplerKey key{ samplerState, lifetime };
-        const auto it = m_samplerDescriptorMap.find(key);
-        if (it != m_samplerDescriptorMap.end())
-            return it->second;
-
-        const uint32_t descriptorIndex = m_freeSamplerDescriptors.find_first();
-        FE_Assert(descriptorIndex != kInvalidIndex, "Sampler descriptor heap exhausted");
-        m_freeSamplerDescriptors.reset(descriptorIndex);
-        (lifetime == DescriptorLifetime::kPersistent ? m_persistentSamplerDescriptors : m_transientSamplerDescriptors)
-            .set(descriptorIndex);
-
-        if (descriptorIndex == m_samplerDescriptors.size())
-            m_samplerDescriptors.push_back(samplerState);
-        else
-            m_samplerDescriptors[descriptorIndex] = samplerState;
-        m_samplerDescriptorMap[key] = descriptorIndex;
-        return descriptorIndex;
-    }
-
-
-    void DescriptorManager::UpdateDescriptor(const uint32_t descriptorIndex, const TextureView texture)
-    {
-        FE_Assert(m_persistentResourceDescriptors.test(descriptorIndex));
-        ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-        FE_Assert(descriptor.m_resource->GetType() == ResourceType::kTexture);
-
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, false);
-
-        const TextureKey oldKey{ descriptor.m_resource->GetResourceID(),
-                                 descriptor.m_textureSubresource,
-                                 DescriptorLifetime::kPersistent };
-        const DescriptorType descriptorType = descriptor.m_descriptorType;
-        m_textureDescriptorMap.erase(oldKey);
-        descriptor = ResourceDescriptorInfo{ texture };
-        descriptor.m_descriptorType = descriptorType;
-        const TextureKey newKey{ texture.m_resource->GetResourceID(), texture.m_subresource, DescriptorLifetime::kPersistent };
-        m_textureDescriptorMap[newKey] = descriptorIndex;
-        m_resourceDescriptorsToUpdate.set(descriptorIndex);
-    }
-
-
-    void DescriptorManager::UpdateDescriptor(const uint32_t descriptorIndex, const BufferView buffer)
-    {
-        FE_Assert(m_persistentResourceDescriptors.test(descriptorIndex));
-        ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-        FE_Assert(descriptor.m_resource->GetType() == ResourceType::kBuffer);
-
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, false);
-
-        const BufferKey oldKey{ descriptor.m_resource->GetResourceID(),
-                                descriptor.m_bufferSlice,
-                                DescriptorLifetime::kPersistent };
-        const DescriptorType descriptorType = descriptor.m_descriptorType;
-        m_bufferDescriptorMap.erase(oldKey);
-        descriptor = ResourceDescriptorInfo{ buffer };
-        descriptor.m_descriptorType = descriptorType;
-        const BufferKey newKey{ buffer.m_resource->GetResourceID(), buffer.m_slice, DescriptorLifetime::kPersistent };
-        m_bufferDescriptorMap[newKey] = descriptorIndex;
-        m_resourceDescriptorsToUpdate.set(descriptorIndex);
-    }
-
-
-    void DescriptorManager::FreeResourceDescriptor(const uint32_t descriptorIndex)
-    {
-        FE_Assert(m_persistentResourceDescriptors.test(descriptorIndex));
-        const ResourceDescriptorInfo& descriptor = m_resourceDescriptors[descriptorIndex];
-        RetireResourceDescriptor(descriptorIndex, descriptor.m_resource, true);
-
-        if (descriptor.m_resource->GetType() == ResourceType::kTexture)
-        {
-            const TextureKey key{ descriptor.m_resource->GetResourceID(),
-                                  descriptor.m_textureSubresource,
-                                  DescriptorLifetime::kPersistent };
-            m_textureDescriptorMap.erase(key);
-        }
-        else
-        {
-            const BufferKey key{ descriptor.m_resource->GetResourceID(),
-                                 descriptor.m_bufferSlice,
-                                 DescriptorLifetime::kPersistent };
-            m_bufferDescriptorMap.erase(key);
-        }
-
-        m_resourceDescriptors[descriptorIndex] = ResourceDescriptorInfo{};
-        m_persistentResourceDescriptors.reset(descriptorIndex);
-        m_initializedResourceDescriptors.reset(descriptorIndex);
-        m_resourceDescriptorsToUpdate.reset(descriptorIndex);
-    }
-
-
-    void DescriptorManager::FreeSamplerDescriptor(const uint32_t descriptorIndex)
-    {
-        FE_Assert(m_persistentSamplerDescriptors.test(descriptorIndex));
-        RetireSamplerDescriptor(descriptorIndex);
-        m_samplerDescriptorMap.erase({ m_samplerDescriptors[descriptorIndex], DescriptorLifetime::kPersistent });
-        m_samplerDescriptors[descriptorIndex] = SamplerState::kPointWrap;
-        m_persistentSamplerDescriptors.reset(descriptorIndex);
-        m_initializedSamplerDescriptors.reset(descriptorIndex);
-        m_samplerDescriptorsToUpdate.reset(descriptorIndex);
-    }
-
-
-    void DescriptorManager::CommitResourceDescriptor(const uint32_t descriptorIndex, const DescriptorType type)
-    {
-        FE_Assert(type == DescriptorType::kSRV || type == DescriptorType::kUAV);
-
-        FE_Assert(!m_freeResourceDescriptors.test(descriptorIndex));
-        m_initializedResourceDescriptors.set(descriptorIndex);
-        m_resourceDescriptorsToUpdate.set(descriptorIndex);
-        m_resourceDescriptors[descriptorIndex].m_descriptorType = type;
-    }
-
-
-    void DescriptorManager::CommitSamplerDescriptor(const uint32_t descriptorIndex)
-    {
-        FE_Assert(!m_freeSamplerDescriptors.test(descriptorIndex));
-        m_initializedSamplerDescriptors.set(descriptorIndex);
-        m_samplerDescriptorsToUpdate.set(descriptorIndex);
-    }
-
-
-    ResourceDescriptorInfo DescriptorManager::GetResourceInfo(const uint32_t descriptorIndex)
-    {
-        FE_Assert(!m_freeResourceDescriptors.test(descriptorIndex));
-        return m_resourceDescriptors[descriptorIndex];
+        FE_Assert(m_frameActive && m_descriptorsPrepared);
+        m_frameActive = false;
+        m_descriptorsPrepared = false;
     }
 } // namespace FE::Graphics::Core

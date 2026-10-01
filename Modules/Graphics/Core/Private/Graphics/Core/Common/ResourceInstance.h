@@ -57,6 +57,7 @@ namespace FE::Graphics::Common
 
         festd::array<uint64_t, festd::to_underlying(Core::DeviceQueueType::kCount)> m_lastFenceValues = {};
 
+        uint64_t m_bufferDeviceAddress = 0;
         Core::ResourcePool* m_pool = nullptr;
         Core::BarrierAccessFlags m_bindFlags : 25;
         Core::ResourceMemory m_memoryStatus : 4;
