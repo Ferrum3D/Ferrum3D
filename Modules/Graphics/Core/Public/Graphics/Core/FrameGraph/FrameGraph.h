@@ -57,8 +57,8 @@ namespace FE::Graphics::Core
         [[nodiscard]] virtual BufferUAVDescriptor GetUAV(BufferView buffer) = 0;
         [[nodiscard]] virtual SamplerDescriptor GetSampler(SamplerState sampler) = 0;
 
-        void BeginScope(festd::string_view name);
-        void EndScope();
+        virtual void BeginScope(festd::string_view name) = 0;
+        virtual void EndScope() = 0;
 
         virtual void AddCopyPass(const BufferView& destination, const BufferView& source) = 0;
 
@@ -110,8 +110,6 @@ namespace FE::Graphics::Core
         {
         }
 
-        Env::Name FormatPassName(festd::string_view name);
-
         virtual void AddPassInternal(const PassNodeDesc& desc) = 0;
 
         struct BasePassDesc final
@@ -125,45 +123,8 @@ namespace FE::Graphics::Core
 
         Memory::LinearAllocator m_linearAllocator;
         FrameGraphBlackboard m_blackboard;
-        festd::fixed_string m_currentScope;
         festd::inline_vector<BasePassDesc, 4> m_basePassDescs;
     };
-
-
-    inline void FrameGraph::BeginScope(const festd::string_view name)
-    {
-        if (Build::IsDebug())
-        {
-            for (const int32_t codepoint : name)
-                FE_Assert(ASCII::IsValid(codepoint));
-        }
-
-        if (!m_currentScope.empty())
-            m_currentScope += "/";
-        m_currentScope += name;
-    }
-
-
-    inline void FrameGraph::EndScope()
-    {
-        const auto it = m_currentScope.find_last_of('/');
-        if (it == m_currentScope.end())
-        {
-            m_currentScope.clear();
-            return;
-        }
-
-        m_currentScope.resize(static_cast<uint32_t>(it.m_iter - m_currentScope.data()), 0);
-    }
-
-
-    inline Env::Name FrameGraph::FormatPassName(const festd::string_view name)
-    {
-        if (m_currentScope.empty())
-            return Env::Name(name);
-
-        return Fmt::FormatName("{}/{}", m_currentScope, name);
-    }
 
 
     template<class TPassDesc>
@@ -190,7 +151,7 @@ namespace FE::Graphics::Core
         FE_Assert(passDesc);
 
         PassNodeDesc desc;
-        desc.m_name = FormatPassName(name);
+        desc.m_name = Env::Name(name);
         desc.m_functor = nullptr;
         desc.m_userPassDescPtr = passDesc;
         desc.m_userPassDescTypeID = Rtti::GetTypeID<TPassDesc>();
@@ -214,7 +175,7 @@ namespace FE::Graphics::Core
         using FunctorType = std::decay_t<TFunctor>;
 
         PassNodeDesc desc;
-        desc.m_name = FormatPassName(name);
+        desc.m_name = Env::Name(name);
         desc.m_functor = Memory::New<FunctorType>(&m_linearAllocator, std::forward<TFunctor>(functor));
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {
@@ -239,7 +200,7 @@ namespace FE::Graphics::Core
         using FunctorType = std::decay_t<TFunctor>;
 
         PassNodeDesc desc;
-        desc.m_name = FormatPassName(name);
+        desc.m_name = Env::Name(name);
         desc.m_functor = Memory::New<FunctorType>(&m_linearAllocator, std::forward<TFunctor>(functor));
 
         desc.m_execute = [](void* functorPtr, FrameGraphContext& context) {

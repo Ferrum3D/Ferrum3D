@@ -13,23 +13,23 @@ namespace FE::Graphics
     {
         FE_RTTI("1F14D47F-BEE3-5EFA-93D2-7F97311A9ED3");
 
-        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(DB::Slice<MeshMemberTable>) + sizeof(uint32_t));
+        static constexpr uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(DB::Slice<MeshMemberTable>) + sizeof(uint2));
 
         static constexpr uint32_t kOffset_m_members = 0;
-        static constexpr uint32_t kOffset_m_passMask = kOffset_m_members + sizeof(DB::Slice<MeshMemberTable>) * kRowsPerPage;
+        static constexpr uint32_t kOffset_m_drawTagMask = kOffset_m_members + sizeof(DB::Slice<MeshMemberTable>) * kRowsPerPage;
 
         static_assert(kRowsPerPage > 0);
 
         struct Row final
         {
             DB::ElementHandle<DB::Slice<MeshMemberTable>, kOffset_m_members> m_members;
-            DB::ElementHandle<uint32_t, kOffset_m_passMask> m_passMask;
+            DB::ElementHandle<uint2, kOffset_m_drawTagMask> m_drawTagMask;
         };
 
         struct RWRow final
         {
             DB::RWElementHandle<DB::Slice<MeshMemberTable>, kOffset_m_members> m_members;
-            DB::RWElementHandle<uint32_t, kOffset_m_passMask> m_passMask;
+            DB::RWElementHandle<uint2, kOffset_m_drawTagMask> m_drawTagMask;
         };
 
         using Instance = BufferPointer;
@@ -49,7 +49,7 @@ namespace FE::Graphics
             const uint32_t rowIndex = AllocateRowUninitialized();
             const RWRow row = WriteRow(rowIndex);
             row.m_members.Construct();
-            row.m_passMask.Construct();
+            row.m_drawTagMask.Construct();
             return DB::Ref<MeshBatchTable>{ rowIndex };
         }
 
@@ -61,7 +61,7 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_members.Construct();
-                row.m_passMask.Construct();
+                row.m_drawTagMask.Construct();
             }
 
             return DB::Slice<MeshBatchTable>{ range.m_offset, range.m_size };
@@ -77,7 +77,7 @@ namespace FE::Graphics
             {
                 const RWRow row = WriteRow(rowIndex + range.m_offset);
                 row.m_members.Construct();
-                row.m_passMask.Construct();
+                row.m_drawTagMask.Construct();
             }
 
             rows = { range.m_offset, range.m_size };
@@ -104,7 +104,7 @@ namespace FE::Graphics
 
             Row row;
             row.m_members.Setup(storage, localRowIndex);
-            row.m_passMask.Setup(storage, localRowIndex);
+            row.m_drawTagMask.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -124,7 +124,7 @@ namespace FE::Graphics
 
             RWRow row;
             row.m_members.Setup(storage, localRowIndex);
-            row.m_passMask.Setup(storage, localRowIndex);
+            row.m_drawTagMask.Setup(storage, localRowIndex);
             return row;
         }
 
@@ -151,7 +151,7 @@ namespace FE::Graphics
             festd::copy(source, destinationData);
         }
 
-        void CopyColumn(const DB::Slice<MeshBatchTable> destination, const festd::span<const uint32_t> source)
+        void CopyColumn(const DB::Slice<MeshBatchTable> destination, const festd::span<const uint2> source)
         {
             FE_Assert(destination.m_count == source.size());
 
@@ -165,7 +165,7 @@ namespace FE::Graphics
             DB::StoragePage* page = m_pages[pageIndex];
             m_database->MarkPageDirty(page);
             std::byte* storage = page->GetHostStorage();
-            auto* destinationData = reinterpret_cast<uint32_t*>(storage + kOffset_m_passMask) + localRowIndex;
+            auto* destinationData = reinterpret_cast<uint2*>(storage + kOffset_m_drawTagMask) + localRowIndex;
             festd::copy(source, destinationData);
         }
     };

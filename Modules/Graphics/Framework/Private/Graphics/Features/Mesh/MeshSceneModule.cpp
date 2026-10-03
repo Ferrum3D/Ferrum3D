@@ -2,9 +2,6 @@
 #include <Graphics/Core/Device.h>
 #include <Graphics/Core/FrameGraph/FrameGraph.h>
 #include <Graphics/Features/Mesh/MeshSceneModule.h>
-#include <Graphics/Passes/DepthPrepass.h>
-#include <Graphics/Passes/DrawTags.h>
-#include <Graphics/Passes/OpaquePass.h>
 #include <Graphics/Passes/RendererPassCommon.h>
 #include <Graphics/RendererImpl.h>
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
@@ -234,11 +231,10 @@ namespace FE::Graphics
             batch->m_members = m_memberTable->AllocateRows(count);
         }
 
-        const uint32_t passMask = (batch->m_drawTagMask.Contains(DrawTags::DepthPrepass) ? 1u : 0u)
-            | (batch->m_drawTagMask.Contains(DrawTags::Opaque) ? 2u : 0u);
         const auto row = m_batchTable->WriteRow(batch->m_tableRef);
         row.m_members.Get() = batch->m_members;
-        row.m_passMask.Get() = passMask;
+        row.m_drawTagMask.Get() = Vector2UInt(static_cast<uint32_t>(batch->m_drawTagMask.m_value),
+                                              static_cast<uint32_t>(batch->m_drawTagMask.m_value >> 32));
 
         m_memberTable->CopyColumn(batch->m_members, festd::span(batch->m_meshInstances));
     }
@@ -326,80 +322,87 @@ namespace FE::Graphics
     }
 
 
-    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader& uploader)
+    MeshPipelineRegistry& MeshSceneModule::UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader,
+                                                                  const Env::Name role)
     {
-        if (m_registry.m_revision != m_revision)
+        MeshPipelineRegistry* registry = nullptr;
+        for (auto& candidate : m_registries)
         {
-            for (auto& slot : m_registry.m_slots)
+            if (candidate.m_techniqueRole == role)
             {
-                slot.m_instanceCapacity = 0;
-                slot.m_workCapacity = 0;
+                registry = &candidate;
+                break;
             }
+        }
+        if (registry == nullptr)
+        {
+            registry = &m_registries.emplace_back();
+            registry->m_techniqueRole = role;
+        }
+        if (registry->m_revision == m_revision)
+            return *registry;
 
-            festd::vector<MeshPass::PipelineRouting> routing(m_meshGroups.size());
-            Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
-                const MeshGroup* group = m_meshGroups[groupIndex];
-                if (!group->m_buffer)
-                    return;
-
-                const auto material = group->m_material.Read();
-                if (!material || !material->m_runtime)
-                    return;
-
-                const uint32_t meshletCount =
-                    m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
-                if (meshletCount == 0)
-                    return;
-
-                for (uint32_t passIndex = 0; passIndex < 2; ++passIndex)
-                {
-                    const Env::Name role = passIndex == 0 ? Env::Name("DepthOnly") : Env::Name("Opaque");
-                    if (!material->m_runtime->HasTechnique(role))
-                        continue;
-
-                    Core::GraphicsPipeline* pipeline = material->m_runtime->GetPipeline(role);
-                    if (pipeline == nullptr)
-                        continue;
-
-                    uint32_t bucket = kInvalidIndex;
-                    for (uint32_t slotIndex = 0; slotIndex < m_registry.m_slots.size(); ++slotIndex)
-                    {
-                        const auto& slot = m_registry.m_slots[slotIndex];
-                        if (slot.m_pipeline.Get() == pipeline && slot.m_pass == passIndex)
-                            bucket = slotIndex;
-                    }
-
-                    if (bucket == kInvalidIndex)
-                    {
-                        bucket = m_registry.m_slots.size();
-                        m_registry.m_slots.push_back({ pipeline, passIndex, 0, 0 });
-                    }
-
-                    auto& slot = m_registry.m_slots[bucket];
-                    const uint32_t chunksPerInstance = Math::CeilDivide(meshletCount, MeshPass::kMeshletsPerWorkChunk);
-                    slot.m_instanceCapacity += group->m_instanceCount;
-                    slot.m_workCapacity += group->m_instanceCount * chunksPerInstance;
-
-                    auto& route = routing[group->m_tableRef.m_rowIndex];
-                    if (passIndex == 0)
-                        route.m_depthBucket = bucket;
-                    else
-                        route.m_opaqueBucket = bucket;
-                }
-            });
-
-            if (!routing.empty())
-            {
-                const uint32_t byteSize = routing.size() * sizeof(MeshPass::PipelineRouting);
-                m_registry.m_routing = Core::Buffer::CreateStructured<MeshPass::PipelineRouting>(graph.GetDevice(),
-                                                                                                 "MeshPipelineRouting",
-                                                                                                 routing.size());
-                FE_Verify(uploader.UploadBytes(graph, m_registry.m_routing.Get(), routing.data(), byteSize));
-            }
-
-            m_registry.m_revision = m_revision;
+        // Retain bucket identities while refreshing capacities and group routing for this technique.
+        for (auto& slot : registry->m_slots)
+        {
+            slot.m_instanceCapacity = 0;
+            slot.m_workCapacity = 0;
         }
 
+        festd::vector<MeshPass::PipelineRouting> routing(m_meshGroups.size());
+        Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
+            const MeshGroup* group = m_meshGroups[groupIndex];
+            if (!group->m_buffer)
+                return;
+
+            const auto material = group->m_material.Read();
+            if (!material || !material->m_runtime || !material->m_runtime->HasTechnique(role))
+                return;
+
+            const uint32_t meshletCount =
+                m_meshLodInfoTable->ReadRow(group->m_lodsRef.m_rowIndex + group->m_residentLod).m_info.Get().m_meshletCount;
+            if (meshletCount == 0)
+                return;
+            Core::GraphicsPipeline* pipeline = material->m_runtime->GetPipeline(role);
+            if (pipeline == nullptr)
+                return;
+
+            uint32_t bucket = kInvalidIndex;
+            for (uint32_t slotIndex = 0; slotIndex < registry->m_slots.size(); ++slotIndex)
+            {
+                if (registry->m_slots[slotIndex].m_pipeline.Get() == pipeline)
+                {
+                    bucket = slotIndex;
+                    break;
+                }
+            }
+            if (bucket == kInvalidIndex)
+            {
+                bucket = registry->m_slots.size();
+                registry->m_slots.push_back({ pipeline, 0, 0 });
+            }
+
+            auto& slot = registry->m_slots[bucket];
+            const uint32_t chunksPerInstance = Math::CeilDivide(meshletCount, MeshPass::kMeshletsPerWorkChunk);
+            slot.m_instanceCapacity += group->m_instanceCount;
+            slot.m_workCapacity += group->m_instanceCount * chunksPerInstance;
+            routing[groupIndex].m_bucket = bucket;
+        });
+
+        if (!routing.empty())
+        {
+            registry->m_routing = Core::Buffer::CreateStructured<MeshPass::PipelineRouting>(graph.GetDevice(),
+                                                                                            "MeshPipelineRouting",
+                                                                                            routing.size());
+            FE_Verify(uploader.UploadArray(graph, registry->m_routing.Get(), festd::span(routing)));
+        }
+        registry->m_revision = m_revision;
+        return *registry;
+    }
+
+
+    void MeshSceneModule::UpdateRenderData(Core::FrameGraph& graph, Core::RingUploader&)
+    {
         // Device-address geometry reads must be visible to the graph and retained through execution.
         Bit::Traverse(m_activeMeshGroups.view(), [&](const uint32_t groupIndex) {
             const MeshGroup* group = m_meshGroups[groupIndex];
@@ -419,23 +422,17 @@ namespace FE::Graphics
     {
         auto& blackboard = graph.GetBlackboard();
         const auto& view = blackboard.Get<RendererViewData>();
-        const uint32_t enabledPasses =
-            (blackboard.Contains<DepthPrepass::PassData>() ? 1u : 0u) | (blackboard.Contains<OpaquePass::PassData>() ? 2u : 0u);
-        auto& prepared = blackboard.Add<PreparedMeshView>();
-        if (enabledPasses == 0)
-            return;
-
+        auto& culled = blackboard.Add<CulledMeshView>();
         const Matrix4x4 viewProjection = view.m_view->GetViewProjectionMatrix();
-        RenderBatchCollector visibility(graph.GetAllocator(), viewProjection, DrawTags::Opaque, "Opaque");
+        RenderBatchCollector visibility(graph.GetAllocator(), viewProjection);
         festd::pmr::vector<MeshPass::CullDispatch> accepted{ graph.GetAllocator() };
         const auto collectBatch = [&](const MeshBatch* batch) {
             if (batch == nullptr)
                 return;
 
-            const uint32_t mask = (batch->m_drawTagMask.Contains(DrawTags::DepthPrepass) ? 1u : 0u)
-                | (batch->m_drawTagMask.Contains(DrawTags::Opaque) ? 2u : 0u);
-            if ((mask & enabledPasses) == 0 || !visibility.IsVisible(batch->m_octreeEntry.m_bounds))
+            if (!visibility.IsVisible(batch->m_octreeEntry.m_bounds))
                 return;
+
             for (uint32_t firstMember = 0; firstMember < batch->m_members.m_count;
                  firstMember += MeshPass::kInstancesPerCullGroup)
             {
@@ -464,24 +461,23 @@ namespace FE::Graphics
         data.m_materials = m_materialInstanceTable->GetDeviceAddress();
         data.m_batches = m_batchTable->GetDeviceAddress();
         data.m_members = m_memberTable->GetDeviceAddress();
-        data.m_enabledPasses = enabledPasses;
-        GpuMeshWorkBuilder::Build(graph, uploader, m_registry, accepted, data, prepared);
+        GpuMeshWorkBuilder::CullView(graph, uploader, accepted, data, culled);
     }
 
 
-    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader&, const SceneRenderPass& pass)
+    void MeshSceneModule::AddRenderPasses(Core::FrameGraph& graph, Core::RingUploader& uploader, const SceneRenderPass& pass)
     {
-        const auto& prepared = graph.GetBlackboard().Get<PreparedMeshView>();
-        if (!prepared.m_view)
+        const auto& culled = graph.GetBlackboard().Get<CulledMeshView>();
+        if (!culled.m_classification)
             return;
 
-        const uint32_t passIndex = pass.m_techniqueRole == "DepthOnly" ? 0u : 1u;
-        festd::vector<MeshPipelineSubmission> submissions;
-        for (const auto& submission : prepared.m_submissions)
-        {
-            if (submission.m_pass == passIndex)
-                submissions.push_back(submission);
-        }
+        MeshPipelineRegistry& registry = UpdatePipelineRegistry(graph, uploader, pass.m_techniqueRole);
+        PreparedMeshPass prepared;
+        const DrawTagMask mask(pass.m_drawTag);
+        const Vector2UInt drawTagMask(static_cast<uint32_t>(mask.m_value), static_cast<uint32_t>(mask.m_value >> 32));
+        GpuMeshWorkBuilder::Build(graph, uploader, registry, culled, drawTagMask, prepared);
+        if (!prepared.m_view)
+            return;
 
         auto* desc = graph.AllocatePassData<MeshPass::PassDesc>();
         constexpr auto sync = Core::BarrierSyncFlags::kAmplificationShading | Core::BarrierSyncFlags::kMeshShading
@@ -493,10 +489,10 @@ namespace FE::Graphics
         desc->m_arguments = Core::BufferView(prepared.m_arguments.Get());
 
         const BufferSRVDescriptor viewAddress = graph.GetSRV(prepared.m_view.Get());
-        graph.AddPass(passIndex == 0 ? "DepthMeshes" : "OpaqueMeshes",
+        graph.AddPass(festd::string_view(pass.m_techniqueRole.c_str(), pass.m_techniqueRole.size()),
                       desc,
                       pass.m_passDescToken,
-                      [submissions = std::move(submissions), viewAddress](Core::FrameGraphContext& context) {
+                      [submissions = std::move(prepared.m_submissions), viewAddress](Core::FrameGraphContext& context) {
                           context.BeginRenderPass();
                           for (const auto& submission : submissions)
                           {

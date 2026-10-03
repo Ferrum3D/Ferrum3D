@@ -47,15 +47,14 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
     {
         uint32_t m_instanceId;
         uint32_t m_lodId;
-        uint32_t m_depthBucket;
-        uint32_t m_opaqueBucket;
+        uint32_t m_groupId;
+        uint2 m_drawTagMask;
         uint32_t m_meshletCount;
     };
 
     struct PipelineRouting final
     {
-        uint32_t m_depthBucket FE_INIT(kInvalidIndex);
-        uint32_t m_opaqueBucket FE_INIT(kInvalidIndex);
+        uint32_t m_bucket FE_INIT(kInvalidIndex);
     };
 
     struct BucketLayout final
@@ -87,10 +86,8 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass)
         MaterialInstanceTable::Instance m_materials;
         MeshBatchTable::Instance m_batches;
         MeshMemberTable::Instance m_members;
-        StructuredBufferDescriptor<PipelineRouting> m_routing;
         StructuredBufferDescriptor<VisibleInstance> m_visibleInstances;
         StructuredBufferDescriptor<MeshletWorkChunk> m_workChunks;
         StructuredBufferDescriptor<MeshCommandRange> m_commands;
-        uint32_t m_enabledPasses;
     };
 FE_HOST_END_NAMESPACE

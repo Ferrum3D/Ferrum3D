@@ -4,6 +4,7 @@
 #include <Graphics/Scene/GpuMeshWorkBuilder.h>
 
 #include <Shaders/Passes/MeshPass/ClearMeshWork.h>
+#include <Shaders/Passes/MeshPass/CountMeshInstances.h>
 #include <Shaders/Passes/MeshPass/CullMeshInstances.h>
 #include <Shaders/Passes/MeshPass/FinalizeMeshBuckets.h>
 #include <Shaders/Passes/MeshPass/PropagateMeshBucketOffsets.h>
@@ -15,6 +16,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
     namespace
     {
         FE_COMPUTE_PIPELINE_SET(ClearMeshWorkPipeline, "Shaders/Passes/MeshPass/ClearMeshWork.cs.hlsl");
+        FE_COMPUTE_PIPELINE_SET(CountMeshInstancesPipeline, "Shaders/Passes/MeshPass/CountMeshInstances.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(CullMeshInstancesPipeline, "Shaders/Passes/MeshPass/CullMeshInstances.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(FinalizeMeshBucketsPipeline, "Shaders/Passes/MeshPass/FinalizeMeshBuckets.cs.hlsl");
         FE_COMPUTE_PIPELINE_SET(PropagateMeshBucketOffsetsPipeline, "Shaders/Passes/MeshPass/PropagateMeshBucketOffsets.cs.hlsl");
@@ -24,8 +26,8 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
         struct PreparationData final
         {
-            PreparedMeshView m_output;
-            Rc<Core::Buffer> m_dispatches;
+            PreparedMeshPass m_output;
+            Rc<Core::Buffer> m_instanceBuckets;
             Rc<Core::Buffer> m_classification;
             Rc<Core::Buffer> m_routing;
             Rc<Core::Buffer> m_layouts;
@@ -51,20 +53,18 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         }
 
 
-        void Cull(Core::FrameGraph& graph, const PreparationData& work)
+        void Count(Core::FrameGraph& graph, const PreparationData& work, const Vector2UInt drawTagMask)
         {
-            auto* desc = graph.AllocatePassData<MeshPass::CullMeshInstances::PassDesc>();
+            auto* desc = graph.AllocatePassData<MeshPass::CountMeshInstances::PassDesc>();
             auto& constants = desc->m_constants;
-            constants.m_view = graph.GetSRV(work.m_output.m_view.Get());
-            constants.m_dispatches = graph.GetSRV(work.m_dispatches.Get());
-            constants.m_classification = graph.GetUAV(work.m_classification.Get());
+            constants.m_classification = graph.GetSRV(work.m_classification.Get());
+            constants.m_routing = graph.GetSRV(work.m_routing.Get());
+            constants.m_instanceBuckets = graph.GetUAV(work.m_instanceBuckets.Get());
             constants.m_counts = graph.GetUAV(work.m_counts.Get());
-            desc->m_routing = { work.m_routing.Get(),
-                                Core::BarrierSyncFlags::kComputeShading,
-                                Core::BarrierAccessFlags::kShaderRead };
+            constants.m_drawTagMask = drawTagMask;
 
-            desc->m_pipeline = CullMeshInstancesPipeline::GetPipeline();
-            graph.AddDispatchPass("CullAndCountMeshInstances", desc, work.m_dispatchCount);
+            desc->m_pipeline = CountMeshInstancesPipeline::GetPipeline();
+            graph.AddDispatchPass("CountEligibleMeshInstances", desc, work.m_dispatchCount);
         }
 
 
@@ -144,6 +144,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
             auto* desc = graph.AllocatePassData<MeshPass::ScatterMeshWork::PassDesc>();
             auto& constants = desc->m_constants;
             constants.m_classification = graph.GetSRV(work.m_classification.Get());
+            constants.m_instanceBuckets = graph.GetSRV(work.m_instanceBuckets.Get());
             constants.m_buckets = graph.GetSRV(work.m_buckets.Get());
             constants.m_cursors = graph.GetUAV(work.m_cursors.Get());
             constants.m_instances = graph.GetUAV(work.m_output.m_instances.Get());
@@ -155,11 +156,40 @@ namespace FE::Graphics::GpuMeshWorkBuilder
     } // namespace
 
 
-    void Build(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
-               festd::span<const MeshPass::CullDispatch> dispatches, MeshPass::ViewData viewData, PreparedMeshView& result)
+    void CullView(Core::FrameGraph& graph, Core::RingUploader& uploader, festd::span<const MeshPass::CullDispatch> dispatches,
+                  MeshPass::ViewData viewData, CulledMeshView& result)
     {
-        FE_FG_SCOPE(graph, "PrepareMeshView");
-        if (registry.m_slots.empty() || dispatches.empty())
+        FE_FG_SCOPE(graph, "CullMeshView");
+        if (dispatches.empty())
+            return;
+
+        Core::Device* device = graph.GetDevice();
+        const auto view = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "MeshCullView", 1);
+        const auto dispatchBuffer =
+            Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatches.size());
+        result.m_viewData = viewData;
+        result.m_dispatchCount = dispatches.size();
+        result.m_classification = Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(
+            device,
+            "MeshClassification",
+            dispatches.size() * MeshPass::kInstancesPerCullGroup);
+        FE_Verify(uploader.Upload(graph, view.Get(), viewData));
+        FE_Verify(uploader.UploadArray(graph, dispatchBuffer.Get(), dispatches));
+
+        auto* desc = graph.AllocatePassData<MeshPass::CullMeshInstances::PassDesc>();
+        desc->m_constants.m_view = graph.GetSRV(view.Get());
+        desc->m_constants.m_dispatches = graph.GetSRV(dispatchBuffer.Get());
+        desc->m_constants.m_classification = graph.GetUAV(result.m_classification.Get());
+        desc->m_pipeline = CullMeshInstancesPipeline::GetPipeline();
+        graph.AddDispatchPass("CullMeshInstances", desc, result.m_dispatchCount);
+    }
+
+
+    void Build(Core::FrameGraph& graph, Core::RingUploader& uploader, const MeshPipelineRegistry& registry,
+               const CulledMeshView& culled, const Vector2UInt drawTagMask, PreparedMeshPass& result)
+    {
+        FE_FG_SCOPE(graph, "PrepareMeshPass");
+        if (registry.m_slots.empty() || culled.m_dispatchCount == 0)
             return;
 
         Core::Device* device = graph.GetDevice();
@@ -178,7 +208,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
 
             layouts.push_back({ commandCapacity, pageCount });
             if (pageCount != 0)
-                work.m_output.m_submissions.push_back({ slot.m_pipeline, slot.m_pass, commandCapacity, pageCount });
+                work.m_output.m_submissions.push_back({ slot.m_pipeline, commandCapacity, pageCount });
 
             instanceCapacity += slot.m_instanceCapacity;
             workCapacity += slot.m_workCapacity;
@@ -188,7 +218,7 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         if (workCapacity == 0)
             return;
 
-        // Allocate per-view outputs and upload only view data, culling dispatch entries, and page layouts.
+        // Allocate per-pass outputs while reusing the view classification.
         work.m_output.m_instances =
             Core::Buffer::CreateStructured<MeshPass::VisibleInstance>(device, "VisibleMeshInstances", instanceCapacity);
         work.m_output.m_work =
@@ -198,30 +228,28 @@ namespace FE::Graphics::GpuMeshWorkBuilder
         work.m_output.m_arguments =
             Core::Buffer::CreateStructured<MeshPass::MeshDispatchArguments>(device, "MeshIndirectArguments", commandCapacity);
         work.m_output.m_view = Core::Buffer::CreateStructured<MeshPass::ViewData>(device, "MeshView", 1);
-        work.m_dispatches =
-            Core::Buffer::CreateStructured<MeshPass::CullDispatch>(device, "MeshCullDispatches", dispatches.size());
         work.m_layouts = Core::Buffer::CreateStructured<MeshPass::BucketLayout>(device, "MeshBucketLayouts", layouts.size());
-        work.m_classification = Core::Buffer::CreateStructured<MeshPass::InstanceClassification>(
-            device,
-            "MeshClassification",
-            dispatches.size() * MeshPass::kInstancesPerCullGroup);
+        work.m_classification = culled.m_classification;
+        work.m_instanceBuckets =
+            Core::Buffer::CreateStructured<uint32_t>(device,
+                                                     "MeshInstanceBuckets",
+                                                     culled.m_dispatchCount * MeshPass::kInstancesPerCullGroup);
         work.m_counts = Core::Buffer::CreateStructured<uint32_t>(device, "MeshBucketCounts", layouts.size() * 2);
         work.m_cursors = Core::Buffer::CreateStructured<uint32_t>(device, "MeshBucketCursors", layouts.size() * 2);
         work.m_buckets = Core::Buffer::CreateStructured<MeshPass::PipelineBucket>(device, "MeshBuckets", layouts.size());
         work.m_routing = registry.m_routing;
-        work.m_dispatchCount = dispatches.size();
+        work.m_dispatchCount = culled.m_dispatchCount;
 
-        viewData.m_routing = graph.GetSRV(registry.m_routing.Get());
+        MeshPass::ViewData viewData = culled.m_viewData;
         viewData.m_visibleInstances = graph.GetSRV(work.m_output.m_instances.Get());
         viewData.m_workChunks = graph.GetSRV(work.m_output.m_work.Get());
         viewData.m_commands = graph.GetSRV(work.m_output.m_commands.Get());
         FE_Verify(uploader.Upload(graph, work.m_output.m_view.Get(), viewData));
         FE_Verify(uploader.UploadArray(graph, work.m_layouts.Get(), festd::span(layouts)));
-        FE_Verify(uploader.UploadArray(graph, work.m_dispatches.Get(), dispatches));
 
-        // Count visible work, scan bucket ranges, construct all command pages, then scatter meshlet chunks.
+        // Select eligible instances, scan bucket ranges, construct command pages, then scatter meshlet chunks.
         Clear(graph, work, layouts.size());
-        Cull(graph, work);
+        Count(graph, work, drawTagMask);
         const auto offsets = Scan(graph, work, layouts.size());
         Finalize(graph, work, offsets.Get(), layouts.size());
         Scatter(graph, work);

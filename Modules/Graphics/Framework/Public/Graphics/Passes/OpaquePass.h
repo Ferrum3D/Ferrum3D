@@ -22,9 +22,13 @@ namespace FE::Graphics::OpaquePass
         FE_RTTI_Reflect("B27600BC-3187-49D2-A81F-254D6E0C606C");
     };
 
+
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("38D17F97-8B8F-40E0-AEF7-3B828C04182E");
+
+        DrawTag m_drawTag;
+        Env::Name m_techniqueRole = "Opaque";
 
         explicit ViewModule(View* view);
         ~ViewModule() override;

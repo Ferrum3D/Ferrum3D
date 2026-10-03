@@ -43,6 +43,8 @@ namespace FE::Graphics::Common
         FE_RTTI("39F873DC-8F3D-4821-BA66-92FCD380B69A");
 
         void CompileAndExecute() override;
+        void BeginScope(festd::string_view name) override;
+        void EndScope() override;
 
         TextureSRVDescriptor GetSRV(Core::TextureView texture) override;
         TextureUAVDescriptor GetUAV(Core::TextureView texture) override;
@@ -109,6 +111,14 @@ namespace FE::Graphics::Common
             RectInt m_scissor{ kForceInit };
         };
 
+        struct ScopeEvent final
+        {
+            Env::Name m_name;
+            uint32_t m_passIndex;
+            bool m_isBegin;
+        };
+
+
         struct PassResourceAccess final
         {
             uint32_t m_passIndex = kInvalidIndex;
@@ -133,7 +143,9 @@ namespace FE::Graphics::Common
 
         virtual void PrepareExecuteInternal() = 0;
         virtual void FinishExecuteInternal() = 0;
+        virtual void BeginMarkerInternal(Env::Name name) = 0;
         virtual void ExecutePassBarriersInternal(PassNode& pass) = 0;
+        virtual void EndMarkerInternal() = 0;
 
         void ParsePassPushConstants(PassNode& pass, const Rtti::Type& type, const void* data);
         void PreparePassCompileInfo(PassNode& pass);
@@ -173,6 +185,8 @@ namespace FE::Graphics::Common
 
         Rc<Core::FrameGraphContext> m_currentContext;
         SegmentedVector<PassNode> m_passes;
+        festd::pmr::vector<ScopeEvent> m_scopeEvents;
+        uint32_t m_scopeDepth = 0;
         SegmentedVector<ResourceNode> m_resources;
         festd::segmented_unordered_dense_map<uint32_t, uint32_t> m_resourceIndexMap;
     };

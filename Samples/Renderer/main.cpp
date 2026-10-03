@@ -34,6 +34,13 @@ const IO::AssetID kCoolBunnyMaterialAssetId("FBD2877D-D6CB-4A11-A8A6-569E066A68E
 
 namespace
 {
+    // Exercise the upper word of the mask with a statically allocated draw tag.
+    const DrawTag GMaskProbeTag = [] {
+        for (uint32_t index = 0; index < 32; ++index)
+            FE::Graphics::Internal::GetNextDrawTagValue();
+        return DrawTag(FE::Graphics::Internal::GetNextDrawTagValue());
+    }();
+
     bool GStressMode = false;
     bool GBenchmarkMode = false;
     bool GFlightMode = false;
@@ -286,9 +293,15 @@ namespace
 
             if (GStressMode)
             {
+                FE_Assert(GMaskProbeTag.m_value >= 32);
+                FE_Assert(warmMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
+                FE_Assert(coolMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
+                FE_Assert(!originalMaterial.Read()->m_runtime->HasTechnique("MaskProbe"));
+
                 MeshBatchDesc stressBatch;
                 stressBatch.m_bounds = Aabb{ Vector3(-200.0f), Vector3(200.0f) };
-                stressBatch.m_drawTagMask = DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque);
+                stressBatch.m_drawTagMask =
+                    DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque) | DrawTagMask(GMaskProbeTag);
                 m_slotTestBatch = meshSceneModule.CreateBatch(stressBatch);
                 m_slotTestIndex = m_slotTestBatch->m_octreeEntry.m_userIndex;
                 m_stressBatch = meshSceneModule.CreateBatch(stressBatch);
@@ -307,6 +320,9 @@ namespace
                 m_secondView = m_scene->CreateView();
                 m_secondView->GetModules().Add<DepthPrepass::ViewModule>();
                 m_secondView->GetModules().Add<OpaquePass::ViewModule>();
+                auto& probePass = m_secondView->GetModules().Find<OpaquePass::ViewModule>();
+                probePass.m_drawTag = GMaskProbeTag;
+                probePass.m_techniqueRole = "MaskProbe";
                 m_secondView->SetCameraTransform(Transform::Create(cameraPosition, Math::ExtractRotation(cameraMatrix), 1.0f));
                 m_secondView->SetProjection(Constants::kPI * 0.2f, aspectRatio, 0.01f, 1000.0f);
             }
@@ -389,14 +405,16 @@ namespace
                 }
                 if (m_frameIndex == 5)
                 {
-                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::DepthPrepass));
+                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(GMaskProbeTag));
                     m_view->GetModules().Deactivate<OpaquePass::ViewModule>();
                 }
                 if (m_frameIndex == 6)
                     m_view->GetModules().Activate<OpaquePass::ViewModule>();
                 if (m_frameIndex == 7)
                 {
-                    scene.SetBatchDrawTags(m_stressBatch, DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque));
+                    scene.SetBatchDrawTags(m_stressBatch,
+                                           DrawTagMask(DrawTags::DepthPrepass) | DrawTagMask(DrawTags::Opaque)
+                                               | DrawTagMask(GMaskProbeTag));
                     scene.MoveInstance(m_stressInstances.back(), m_migrationBatch);
                 }
                 if (m_frameIndex == 8 || m_frameIndex == 9)

@@ -42,15 +42,12 @@ namespace FE::Graphics
 
     struct RenderBatchCollector final
     {
-        RenderBatchCollector(std::pmr::memory_resource* allocator, const Matrix4x4& viewProjection, DrawTag drawTag,
-                             Env::Name techniqueRole);
+        RenderBatchCollector(std::pmr::memory_resource* allocator, const Matrix4x4& viewProjection);
 
         void Collect(Scene& scene);
         [[nodiscard]] bool IsVisible(const Aabb& bounds) const;
         [[nodiscard]] const Aabb& GetFrustumBounds() const;
         [[nodiscard]] const Matrix4x4& GetViewProjection() const;
-        [[nodiscard]] DrawTag GetDrawTag() const;
-        [[nodiscard]] Env::Name GetTechniqueRole() const;
         RenderBatch& AddBatch(const Aabb& bounds);
 
         [[nodiscard]] const SegmentedVector<RenderBatch>& GetBatches() const
@@ -61,8 +58,6 @@ namespace FE::Graphics
     private:
         Matrix4x4 m_viewProjection;
         Aabb m_frustumBounds = Aabb::kInvalid;
-        DrawTag m_drawTag;
-        Env::Name m_techniqueRole;
         SegmentedVector<RenderBatch> m_batches;
         std::pmr::memory_resource* m_allocator = nullptr;
     };

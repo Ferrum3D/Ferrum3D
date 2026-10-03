@@ -34,4 +34,16 @@ material:technique("Opaque", function(t, ctx)
     return true
 end)
 
+material:technique("MaskProbe", function(t, ctx)
+    t.rasterization = Pipeline.RasterizationState.fillBackCull()
+    t.depthStencil = Pipeline.DepthStencilState.writeIfGreater()
+    t.depthTargetFormat = "D32_SFLOAT_S8_UINT"
+    t.renderTargetFormats = { "B10G11R11_UFLOAT" }
+    t.amplificationShader = "Shaders/Passes/MeshPass/MeshCull.as.hlsl"
+    t.meshShader = "Shaders/Passes/OpaquePass/OpaquePass.ms.hlsl"
+    t.pixelShader = "Shaders/Materials/BunnyVariants.ps.hlsl"
+    t.shaderDefines["BUNNY_PALETTE"] = tostring(ctx:getInt(palette))
+    return true
+end)
+
 return material

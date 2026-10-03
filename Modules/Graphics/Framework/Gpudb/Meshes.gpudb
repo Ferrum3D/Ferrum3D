@@ -33,7 +33,7 @@ table MeshMemberTable
 table MeshBatchTable
 {
     DB::Slice<MeshMemberTable> m_members;
-    uint32_t m_passMask;
+    uint2 m_drawTagMask;
 }
 
 table MeshInstanceTable

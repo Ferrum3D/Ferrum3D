@@ -6,6 +6,7 @@ namespace FE::Graphics::OpaquePass
 {
     ViewModule::ViewModule(View* view)
         : ViewModuleBase(view)
+        , m_drawTag(DrawTags::Opaque)
     {
     }
 
@@ -40,8 +41,9 @@ namespace FE::Graphics::OpaquePass
         SceneRenderPass pass;
         pass.m_viewProjection = viewData.m_view->GetViewProjectionMatrix();
         pass.m_passDescToken = graph.AddBasePassDesc(passDesc);
-        pass.m_drawTag = DrawTags::Opaque;
-        pass.m_techniqueRole = "Opaque";
+        const auto& module = viewData.m_view->GetModules().Find<ViewModule>();
+        pass.m_drawTag = module.m_drawTag;
+        pass.m_techniqueRole = module.m_techniqueRole;
 
         viewData.m_scene->GetModules().ForEachActive([&](SceneModuleBase& module) {
             module.AddRenderPasses(graph, *viewData.m_renderQueueUploader, pass);

@@ -49,6 +49,25 @@ namespace FE::Graphics::Vulkan
     }
 
 
+    void FrameGraph::BeginMarkerInternal(const Env::Name name)
+    {
+        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
+        const VkCommandBuffer commandBuffer = commandQueue->GetCurrentCommandBuffer()->GetNative();
+
+        VkDebugUtilsLabelEXT label{};
+        label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        label.pLabelName = name.c_str();
+        vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &label);
+    }
+
+
+    void FrameGraph::EndMarkerInternal()
+    {
+        auto* commandQueue = Rtti::AssertCast<GraphicsQueue*>(m_commandQueue);
+        vkCmdEndDebugUtilsLabelEXT(commandQueue->GetCurrentCommandBuffer()->GetNative());
+    }
+
+
     void FrameGraph::ExecutePassBarriersInternal(PassNode& pass)
     {
         FE_PROFILER_ZONE();

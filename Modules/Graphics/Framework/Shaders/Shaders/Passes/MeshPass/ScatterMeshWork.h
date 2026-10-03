@@ -5,6 +5,7 @@ FE_HOST_BEGIN_NAMESPACE(FE::Graphics::MeshPass::ScatterMeshWork)
     struct Constants final
     {
         StructuredBufferDescriptor<InstanceClassification> m_classification;
+        StructuredBufferDescriptor<uint32_t> m_instanceBuckets;
         StructuredBufferDescriptor<PipelineBucket> m_buckets;
         RWStructuredBufferDescriptor<uint32_t> m_cursors;
         RWStructuredBufferDescriptor<VisibleInstance> m_instances;

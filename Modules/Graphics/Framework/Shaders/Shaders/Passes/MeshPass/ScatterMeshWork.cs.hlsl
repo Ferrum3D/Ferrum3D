@@ -33,7 +33,7 @@ void ScatterBucket(InstanceClassification item, uint bucket)
 FE_NUM_THREADS(kInstancesPerCullGroup, 1, 1)
 void main(uint lane : SV_GroupThreadID, uint3 group : SV_GroupID)
 {
-    const InstanceClassification item = GConstants.m_classification.Load(group.x * kInstancesPerCullGroup + lane);
-    ScatterBucket(item, item.m_depthBucket);
-    ScatterBucket(item, item.m_opaqueBucket);
+    const uint index = group.x * kInstancesPerCullGroup + lane;
+    const InstanceClassification item = GConstants.m_classification.Load(index);
+    ScatterBucket(item, GConstants.m_instanceBuckets.Load(index));
 }

@@ -9,15 +9,15 @@
 
 struct MeshBatchTable
 {
-    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(DB::Slice<MeshMemberTable>) + sizeof(uint32_t));
+    FE_CONSTEXPR uint32_t kRowsPerPage = DB::kTablePageSize / (sizeof(DB::Slice<MeshMemberTable>) + sizeof(uint2));
 
     FE_CONSTEXPR uint32_t kOffset_m_members = 0;
-    FE_CONSTEXPR uint32_t kOffset_m_passMask = kOffset_m_members + sizeof(DB::Slice<MeshMemberTable>) * kRowsPerPage;
+    FE_CONSTEXPR uint32_t kOffset_m_drawTagMask = kOffset_m_members + sizeof(DB::Slice<MeshMemberTable>) * kRowsPerPage;
 
     struct Row
     {
         DB::ElementHandle<DB::Slice<MeshMemberTable>, kOffset_m_members> m_members;
-        DB::ElementHandle<uint32_t, kOffset_m_passMask> m_passMask;
+        DB::ElementHandle<uint2, kOffset_m_drawTagMask> m_drawTagMask;
     };
 
     struct Instance
@@ -41,7 +41,7 @@ struct MeshBatchTable
 
         Row row;
         row.m_members.Setup(pageAddress, localRowIndex);
-        row.m_passMask.Setup(pageAddress, localRowIndex);
+        row.m_drawTagMask.Setup(pageAddress, localRowIndex);
         return row;
     }
 

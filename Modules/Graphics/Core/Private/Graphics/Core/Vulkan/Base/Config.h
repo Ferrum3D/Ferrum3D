@@ -53,8 +53,8 @@ namespace FE::Graphics::Vulkan
     inline constexpr auto kRequiredInstanceExtensions = std::array{
 #if FE_DEVELOPMENT
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #endif
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         FE_VK_SURFACE_EXT,

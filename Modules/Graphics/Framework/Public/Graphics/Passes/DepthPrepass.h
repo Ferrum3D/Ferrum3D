@@ -21,6 +21,7 @@ namespace FE::Graphics::DepthPrepass
         FE_RTTI_Reflect("6AE6D9A2-F171-4552-A2B4-208BECB536AA");
     };
 
+
     struct ViewModule final : public ViewModuleBase
     {
         FE_RTTI("682BB365-E2A5-46D7-A859-D9621F16AAE1");

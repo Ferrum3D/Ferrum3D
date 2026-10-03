@@ -20,7 +20,9 @@ namespace FE::Graphics::Vulkan
     private:
         void PrepareExecuteInternal() override;
         void FinishExecuteInternal() override;
+        void BeginMarkerInternal(Env::Name name) override;
         void ExecutePassBarriersInternal(PassNode& pass) override;
+        void EndMarkerInternal() override;
 
         void DestroyObject() override
         {

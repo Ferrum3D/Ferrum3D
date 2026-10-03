@@ -153,6 +153,7 @@ namespace FE::Graphics
         void EnsureCapacity();
         void DestroyGroup(MeshGroup* group);
         void UpdateGroup(MeshGroup* group);
+        MeshPipelineRegistry& UpdatePipelineRegistry(Core::FrameGraph& graph, Core::RingUploader& uploader, Env::Name role);
         void UpdateBatchBounds(MeshBatch* batch);
         void UpdateBatchMembership(MeshBatch* batch);
 
@@ -176,7 +177,7 @@ namespace FE::Graphics
         Rc<MaterialInstanceTable> m_materialInstanceTable;
         Rc<MeshBatchTable> m_batchTable;
         Rc<MeshMemberTable> m_memberTable;
-        MeshPipelineRegistry m_registry;
+        festd::vector<MeshPipelineRegistry> m_registries;
         uint64_t m_revision = 1;
         Octree m_octree;
     };

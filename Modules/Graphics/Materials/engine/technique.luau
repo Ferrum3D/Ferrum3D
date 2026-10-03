@@ -5,7 +5,7 @@ local Pipeline = require("@engine/pipeline")
 local TechniqueContext = {}
 TechniqueContext.__index = TechniqueContext
 
-export type TechniqueRole = "DepthOnly" | "Opaque"
+export type TechniqueRole = string
 
 export type TechniqueDesc = {
     role: TechniqueRole,

@@ -38,17 +38,40 @@ namespace FE::Graphics::Common
 
     void FrameGraph::CompileAndExecute()
     {
+        FE_Assert(m_scopeDepth == 0, "Frame graph scopes must end before execution");
         Compile();
         Execute();
 
         m_blackboard.Reset();
         m_passes.clear();
+        m_scopeEvents.clear();
         m_resources.clear();
         m_resourceIndexMap.clear();
         m_basePassDescs.clear();
         m_descriptorViews.clear();
         m_textureViews.clear();
         m_bufferViews.clear();
+    }
+
+
+    void FrameGraph::BeginScope(const festd::string_view name)
+    {
+        if (Build::IsDebug())
+        {
+            for (const int32_t codepoint : name)
+                FE_Assert(ASCII::IsValid(codepoint));
+        }
+
+        m_scopeEvents.push_back({ Env::Name(name), m_passes.size(), true });
+        ++m_scopeDepth;
+    }
+
+
+    void FrameGraph::EndScope()
+    {
+        FE_Assert(m_scopeDepth != 0, "No frame graph scope to end");
+        m_scopeEvents.push_back({ {}, m_passes.size(), false });
+        --m_scopeDepth;
     }
 
 
@@ -135,6 +158,7 @@ namespace FE::Graphics::Common
 
     FrameGraph::FrameGraph(Core::Device* device, Core::DescriptorManager* descriptorManager, Core::ResourcePool* resourcePool)
         : m_passes(&m_linearAllocator)
+        , m_scopeEvents(&m_linearAllocator)
         , m_resources(&m_linearAllocator)
     {
         m_device = device;
@@ -793,10 +817,29 @@ namespace FE::Graphics::Common
 
         PrepareExecuteInternal();
 
+        // Replay scope boundaries at their original positions, including scopes without passes.
+        uint32_t scopeEventIndex = 0;
+        const auto executeScopeEvents = [&](const uint32_t passIndex) {
+            while (scopeEventIndex < m_scopeEvents.size())
+            {
+                const ScopeEvent& event = m_scopeEvents[scopeEventIndex];
+                if (event.m_passIndex != passIndex)
+                    break;
+
+                if (event.m_isBegin)
+                    BeginMarkerInternal(event.m_name);
+                else
+                    EndMarkerInternal();
+                ++scopeEventIndex;
+            }
+        };
+
         for (PassNode& pass : m_passes)
         {
             FE_PROFILER_ZONE_TEXT("%s", pass.m_name.c_str());
 
+            executeScopeEvents(pass.m_passIndex);
+            BeginMarkerInternal(pass.m_name);
             ExecutePassBarriersInternal(pass);
 
             if (Bit::AllSet(pass.m_specifiedStatesMask, PassStateFlags::kPushConstants))
@@ -844,11 +887,13 @@ namespace FE::Graphics::Common
                 pass.m_execute(pass.m_functor, *m_currentContext);
 
             FE_Assert(m_currentContext->IsCleanState());
+            EndMarkerInternal();
 
             if (pass.m_functor)
                 pass.m_destroy(pass.m_functor, pass.m_userPassDescPtr);
         }
 
+        executeScopeEvents(m_passes.size());
         FinishExecuteInternal();
     }
 

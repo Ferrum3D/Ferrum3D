@@ -3,11 +3,8 @@
 
 namespace FE::Graphics
 {
-    RenderBatchCollector::RenderBatchCollector(std::pmr::memory_resource* allocator, const Matrix4x4& viewProjection,
-                                               const DrawTag drawTag, const Env::Name techniqueRole)
+    RenderBatchCollector::RenderBatchCollector(std::pmr::memory_resource* allocator, const Matrix4x4& viewProjection)
         : m_viewProjection(viewProjection)
-        , m_drawTag(drawTag)
-        , m_techniqueRole(techniqueRole)
         , m_batches(allocator)
         , m_allocator(allocator)
     {
@@ -92,18 +89,6 @@ namespace FE::Graphics
     const Matrix4x4& RenderBatchCollector::GetViewProjection() const
     {
         return m_viewProjection;
-    }
-
-
-    DrawTag RenderBatchCollector::GetDrawTag() const
-    {
-        return m_drawTag;
-    }
-
-
-    Env::Name RenderBatchCollector::GetTechniqueRole() const
-    {
-        return m_techniqueRole;
     }
 
 
